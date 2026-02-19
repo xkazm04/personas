@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Eye, EyeOff, Activity, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Activity, CheckCircle, XCircle, Loader2, Info } from 'lucide-react';
 import type { CredentialTemplateField } from '@/lib/types/types';
 
 interface CredentialEditFormProps {
@@ -7,9 +7,13 @@ interface CredentialEditFormProps {
   initialValues?: Record<string, string>;
   onSave: (values: Record<string, string>) => void;
   onCancel: () => void;
-  onHealthcheck?: () => void;
+  onHealthcheck?: (values: Record<string, string>) => void;
+  testHint?: string;
+  onValuesChanged?: () => void;
   isHealthchecking?: boolean;
   healthcheckResult?: { success: boolean; message: string } | null;
+  saveDisabled?: boolean;
+  saveDisabledReason?: string;
 }
 
 export function CredentialEditForm({
@@ -18,8 +22,12 @@ export function CredentialEditForm({
   onSave,
   onCancel,
   onHealthcheck,
+  testHint,
+  onValuesChanged,
   isHealthchecking,
   healthcheckResult,
+  saveDisabled,
+  saveDisabledReason,
 }: CredentialEditFormProps) {
   const [values, setValues] = useState<Record<string, string>>(() => {
     const defaults: Record<string, string> = {};
@@ -31,9 +39,11 @@ export function CredentialEditForm({
 
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showTestHint, setShowTestHint] = useState(false);
 
   const handleChange = useCallback((key: string, value: string) => {
     setValues(prev => ({ ...prev, [key]: value }));
+    onValuesChanged?.();
     if (errors[key]) {
       setErrors(prev => {
         const next = { ...prev };
@@ -41,7 +51,7 @@ export function CredentialEditForm({
         return next;
       });
     }
-  }, [errors]);
+  }, [errors, onValuesChanged]);
 
   const togglePassword = useCallback((key: string) => {
     setShowPasswords(prev => ({ ...prev, [key]: !prev[key] }));
@@ -61,6 +71,12 @@ export function CredentialEditForm({
   const handleSave = () => {
     if (validate()) {
       onSave(values);
+    }
+  };
+
+  const handleHealthcheck = () => {
+    if (validate()) {
+      onHealthcheck?.(values);
     }
   };
 
@@ -102,7 +118,7 @@ export function CredentialEditForm({
             <p className="mt-1 text-xs text-red-400">{errors[field.key]}</p>
           )}
           {field.helpText && !errors[field.key] && (
-            <p className="mt-1 text-xs text-muted-foreground/40">{field.helpText}</p>
+            <p className="mt-1 text-xs text-muted-foreground/70">{field.helpText}</p>
           )}
         </div>
       ))}
@@ -110,18 +126,44 @@ export function CredentialEditForm({
       {/* Healthcheck */}
       {onHealthcheck && (
         <div className="pt-2">
-          <button
-            onClick={onHealthcheck}
-            disabled={isHealthchecking}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 rounded-xl text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isHealthchecking ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Activity className="w-4 h-4" />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleHealthcheck}
+              disabled={isHealthchecking}
+              className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                healthcheckResult?.success
+                  ? 'bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20 text-emerald-400'
+                  : 'bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/25 text-amber-300'
+              }`}
+            >
+              {isHealthchecking ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Activity className="w-4 h-4" />
+              )}
+              Test Connection
+            </button>
+
+            {testHint && (
+              <div
+                className="relative"
+                onMouseEnter={() => setShowTestHint(true)}
+                onMouseLeave={() => setShowTestHint(false)}
+              >
+                <button
+                  type="button"
+                  className="p-1.5 rounded-full border border-primary/15 text-muted-foreground/80 hover:text-foreground hover:bg-secondary/40 transition-colors"
+                >
+                  <Info className="w-3.5 h-3.5" />
+                </button>
+                {showTestHint && (
+                  <div className="absolute left-8 top-1/2 -translate-y-1/2 w-72 px-3 py-2 rounded-lg bg-background border border-primary/20 shadow-xl text-xs text-foreground/85 z-20">
+                    {testHint}
+                  </div>
+                )}
+              </div>
             )}
-            Test Connection
-          </button>
+          </div>
 
           {healthcheckResult && (
             <div className={`mt-2 flex items-start gap-2 px-3 py-2 rounded-xl text-sm ${
@@ -150,11 +192,17 @@ export function CredentialEditForm({
         </button>
         <button
           onClick={handleSave}
-          className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-primary/20"
+          disabled={saveDisabled}
+          title={saveDisabled ? saveDisabledReason : undefined}
+          className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-primary/20 disabled:opacity-45 disabled:cursor-not-allowed"
         >
           Save Credential
         </button>
       </div>
+
+      {saveDisabled && saveDisabledReason && (
+        <p className="text-xs text-amber-300 text-right">{saveDisabledReason}</p>
+      )}
     </div>
   );
 }

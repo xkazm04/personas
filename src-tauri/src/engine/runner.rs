@@ -7,8 +7,8 @@ use tokio::process::Command;
 use tokio::sync::Mutex;
 
 use crate::db::models::{
-    CreateManualReviewInput, CreateMessageInput, CreatePersonaEventInput,
-    CreatePersonaMemoryInput, Persona, PersonaToolDefinition,
+    CreateManualReviewInput, CreateMessageInput, CreatePersonaEventInput, CreatePersonaMemoryInput,
+    Persona, PersonaToolDefinition,
 };
 use crate::db::repos::{
     connectors as connector_repo, credentials as cred_repo, events as event_repo,
@@ -52,7 +52,23 @@ pub async fn run_execution(
     let log_file_path = logger.path().to_string_lossy().to_string();
 
     // Parse model profile
-    let model_profile = prompt::parse_model_profile(persona.model_profile.as_deref());
+    let mut model_profile = prompt::parse_model_profile(persona.model_profile.as_deref());
+
+    // Resolve global Ollama API key when provider is "ollama" and no per-persona auth token
+    if let Some(ref mut profile) = model_profile {
+        if profile.provider.as_deref() == Some("ollama") {
+            let needs_global_key = profile.auth_token.as_ref().map_or(true, |t| t.is_empty());
+            if needs_global_key {
+                if let Ok(Some(global_key)) =
+                    crate::db::repos::settings::get(&pool, "ollama_api_key")
+                {
+                    if !global_key.is_empty() {
+                        profile.auth_token = Some(global_key);
+                    }
+                }
+            }
+        }
+    }
 
     // Build CLI args
     let mut cli_args = prompt::build_cli_args(&persona, &model_profile);
@@ -69,7 +85,11 @@ pub async fn run_execution(
         &persona,
         &tools,
         input_data.as_ref(),
-        if hint_refs.is_empty() { None } else { Some(&hint_refs) },
+        if hint_refs.is_empty() {
+            None
+        } else {
+            Some(&hint_refs)
+        },
     );
 
     logger.log("=== Persona Execution Started ===");
@@ -242,7 +262,11 @@ pub async fn run_execution(
             parser::update_metrics_from_result(&mut metrics, &line_type);
 
             // Track tool usage and build tool steps for inspector
-            if let StreamLineType::AssistantToolUse { ref tool_name, ref input_preview } = line_type {
+            if let StreamLineType::AssistantToolUse {
+                ref tool_name,
+                ref input_preview,
+            } = line_type
+            {
                 tool_use_lines.push(line_type.clone());
                 step_counter += 1;
                 tool_steps.push(ToolCallStep {
@@ -257,7 +281,10 @@ pub async fn run_execution(
             }
 
             // Fill last tool step with result output
-            if let StreamLineType::ToolResult { ref content_preview } = line_type {
+            if let StreamLineType::ToolResult {
+                ref content_preview,
+            } = line_type
+            {
                 if let Some(last) = tool_steps.last_mut() {
                     if last.ended_at_ms.is_none() {
                         let now = start_time.elapsed().as_millis() as u64;
@@ -327,17 +354,12 @@ pub async fn run_execution(
             "execution-output",
             ExecutionOutputEvent {
                 execution_id: execution_id.clone(),
-                line: format!(
-                    "[TIMEOUT] Execution timed out after {}s",
-                    timeout_ms / 1000
-                ),
+                line: format!("[TIMEOUT] Execution timed out after {}s", timeout_ms / 1000),
             },
         );
     }
 
-    let exit_code = exit_status
-        .map(|s| s.code().unwrap_or(-1))
-        .unwrap_or(-1);
+    let exit_code = exit_status.map(|s| s.code().unwrap_or(-1)).unwrap_or(-1);
 
     logger.log(&format!("Process exited with code: {}", exit_code));
     logger.log(&format!("Duration: {}ms", duration_ms));
@@ -369,10 +391,7 @@ pub async fn run_execution(
     // Build result
     let success = !timed_out && exit_code == 0;
     let error = if timed_out {
-        Some(format!(
-            "Execution timed out after {}s",
-            timeout_ms / 1000
-        ))
+        Some(format!("Execution timed out after {}s", timeout_ms / 1000))
     } else if exit_code != 0 {
         if parser::is_session_limit_error(&stderr_text) {
             Some("Session limit reached".into())
@@ -496,10 +515,7 @@ fn handle_protocol_message(
                     "[EVENT] Published persona_action targeting '{}'",
                     target
                 )),
-                Err(e) => logger.log(&format!(
-                    "[EVENT] Failed to publish persona_action: {}",
-                    e
-                )),
+                Err(e) => logger.log(&format!("[EVENT] Failed to publish persona_action: {}", e)),
             }
         }
         ProtocolMessage::EmitEvent { event_type, data } => {
@@ -653,11 +669,7 @@ fn resolve_credential_env_vars(
                     match super::crypto::decrypt_from_db(&cred.encrypted_data, &cred.iv) {
                         Ok(pt) => pt,
                         Err(e) => {
-                            tracing::error!(
-                                "Failed to decrypt credential '{}': {}",
-                                cred.name,
-                                e
-                            );
+                            tracing::error!("Failed to decrypt credential '{}': {}", cred.name, e);
                             continue;
                         }
                     }

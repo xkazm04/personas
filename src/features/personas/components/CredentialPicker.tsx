@@ -1,62 +1,92 @@
-import { Plug } from 'lucide-react';
+import { useState } from 'react';
+import { Plug, ChevronDown, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { ConnectorDefinition } from '@/lib/types/types';
 
 interface CredentialPickerProps {
-  groupedConnectors: Record<string, ConnectorDefinition[]>;
+  connectors: ConnectorDefinition[];
   onPickType: (connector: ConnectorDefinition) => void;
 }
 
-export function CredentialPicker({ groupedConnectors, onPickType }: CredentialPickerProps) {
-  return (
-    <div className="space-y-4">
-      <p className="text-sm text-muted-foreground/60">Select a service type:</p>
+export function CredentialPicker({ connectors, onPickType }: CredentialPickerProps) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
-      {Object.entries(groupedConnectors).map(([category, connectors]) => (
-        <div key={category} className="space-y-2">
-          <h4 className="text-[11px] font-mono text-muted-foreground/50 uppercase tracking-wider">
-            {category}
-          </h4>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {connectors.map((connector) => (
-              <button
-                key={connector.id}
-                onClick={() => onPickType(connector)}
-                className="group p-3 bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-2xl hover:border-primary/30 hover:bg-secondary/60 transition-all text-left"
-              >
-                <div className="flex items-center gap-3 mb-2">
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center border"
-                    style={{
-                      backgroundColor: `${connector.color}15`,
-                      borderColor: `${connector.color}30`,
-                    }}
-                  >
-                    {connector.icon_url ? (
-                      <img src={connector.icon_url} alt={connector.label} className="w-5 h-5" />
-                    ) : (
-                      <Plug className="w-5 h-5" style={{ color: connector.color }} />
+  return (
+    <div className="space-y-2">
+      <p className="text-sm text-foreground/85">Select a template</p>
+
+      {connectors.map((connector) => {
+        const isExpanded = expandedId === connector.id;
+        const metadata = (connector.metadata ?? {}) as Record<string, unknown>;
+        const summary = typeof metadata.summary === 'string' ? metadata.summary : null;
+
+        return (
+          <div key={connector.id} className="rounded-lg border border-primary/15 bg-secondary/25 overflow-hidden">
+            <button
+              onClick={() => setExpandedId((prev) => (prev === connector.id ? null : connector.id))}
+              className="w-full px-3 py-2.5 text-left hover:bg-secondary/50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center border shrink-0"
+                  style={{
+                    backgroundColor: `${connector.color}15`,
+                    borderColor: `${connector.color}30`,
+                  }}
+                >
+                  {connector.icon_url ? (
+                    <img src={connector.icon_url} alt={connector.label} className="w-4 h-4" />
+                  ) : (
+                    <Plug className="w-4 h-4" style={{ color: connector.color }} />
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-foreground truncate">{connector.label}</p>
+                  <p className="text-[11px] text-muted-foreground/75 truncate">
+                    {connector.category} · {connector.fields.length} fields
+                  </p>
+                </div>
+
+                {isExpanded ? (
+                  <ChevronDown className="w-4 h-4 text-muted-foreground/60" />
+                ) : (
+                  <ChevronRight className="w-4 h-4 text-muted-foreground/60" />
+                )}
+              </div>
+            </button>
+
+            <AnimatePresence>
+              {isExpanded && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden border-t border-primary/10"
+                >
+                  <div className="px-3 py-2.5 space-y-2">
+                    {summary && (
+                      <p className="text-xs text-muted-foreground/80">{summary}</p>
                     )}
+                    <button
+                      onClick={() => onPickType(connector)}
+                      className="px-3 py-1.5 rounded-lg border border-primary/20 bg-primary/10 text-primary text-xs font-medium hover:bg-primary/15 transition-colors"
+                    >
+                      Use Template
+                    </button>
                   </div>
-                  <div>
-                    <h4 className="font-medium text-foreground text-sm group-hover:text-primary transition-colors">
-                      {connector.label}
-                    </h4>
-                  </div>
-                </div>
-                <div className="text-xs text-muted-foreground/40 mt-1">
-                  {connector.fields.length} field{connector.fields.length !== 1 ? 's' : ''}
-                  {connector.services.length > 0 && (
-                    <span> &middot; {connector.services.length} service{connector.services.length !== 1 ? 's' : ''}</span>
-                  )}
-                  {connector.events.length > 0 && (
-                    <span> &middot; {connector.events.length} event{connector.events.length !== 1 ? 's' : ''}</span>
-                  )}
-                </div>
-              </button>
-            ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
+        );
+      })}
+
+      {connectors.length === 0 && (
+        <div className="py-6 text-center text-sm text-muted-foreground/70 border border-dashed border-primary/15 rounded-lg">
+          No templates found
         </div>
-      ))}
+      )}
     </div>
   );
 }

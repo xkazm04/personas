@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Save, AlertTriangle, AlertCircle, FileText, Play, Settings, X, Cpu, DollarSign } from 'lucide-react';
+import { Trash2, Save, AlertTriangle, AlertCircle, FileText, Play, Settings, X, Cpu, DollarSign, ExternalLink } from 'lucide-react';
 import type { ModelProfile, ModelProvider } from '@/lib/types/frontendTypes';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { EditorTab } from '@/lib/types/types';
+import { getAppSetting, setAppSetting } from '@/api/tauriApi';
 import { PersonaPromptEditor } from './PersonaPromptEditor';
 import { ExecutionList } from './ExecutionList';
 import { PersonaRunner } from './PersonaRunner';
@@ -14,6 +15,53 @@ const tabDefs: Array<{ id: EditorTab; label: string; icon: typeof FileText }> = 
   { id: 'executions', label: 'Executions', icon: Play },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
+
+// ── Ollama Cloud model presets ──────────────────────────────────────────
+
+const OLLAMA_CLOUD_BASE_URL = 'https://api.ollama.com';
+const OLLAMA_API_KEY_SETTING = 'ollama_api_key';
+
+interface OllamaCloudPreset {
+  /** Value used in the <select> dropdown */
+  value: string;
+  /** User-facing label */
+  label: string;
+  /** Model ID sent to the Ollama API */
+  modelId: string;
+}
+
+const OLLAMA_CLOUD_PRESETS: OllamaCloudPreset[] = [
+  { value: 'ollama:qwen3-coder', label: 'Qwen3 Coder (free, Ollama Cloud)', modelId: 'qwen3-coder-next' },
+  { value: 'ollama:glm-5', label: 'GLM-5 (free, Ollama Cloud)', modelId: 'glm-5' },
+  { value: 'ollama:kimi-k2.5', label: 'Kimi K2.5 (free, Ollama Cloud)', modelId: 'kimi-k2.5' },
+];
+
+/** Reverse-map a stored ModelProfile back to a dropdown value. */
+function profileToDropdownValue(mp: ModelProfile): string {
+  // Check if it matches an Ollama Cloud preset
+  if (mp.provider === 'ollama' && mp.base_url === OLLAMA_CLOUD_BASE_URL && mp.model) {
+    const preset = OLLAMA_CLOUD_PRESETS.find((p) => p.modelId === mp.model);
+    if (preset) return preset.value;
+  }
+  // Standard Anthropic models
+  if (!mp.provider || mp.provider === 'anthropic') {
+    if (mp.model === 'haiku') return 'haiku';
+    if (mp.model === 'sonnet') return 'sonnet';
+    if (mp.model === 'opus') return 'opus';
+    if (!mp.model) return '';
+  }
+  return 'custom';
+}
+
+/** Check if a dropdown value is an Ollama Cloud preset. */
+function isOllamaCloudValue(value: string): boolean {
+  return value.startsWith('ollama:');
+}
+
+/** Get the preset for a dropdown value, or undefined. */
+function getOllamaPreset(value: string): OllamaCloudPreset | undefined {
+  return OLLAMA_CLOUD_PRESETS.find((p) => p.value === value);
+}
 
 // ── Draft type for all editable persona fields ─────────────────────────
 
@@ -34,13 +82,13 @@ interface PersonaDraft {
 }
 
 function buildDraft(persona: { name: string; description?: string | null; icon?: string | null; color?: string | null; max_concurrent?: number | null; timeout_ms?: number | null; enabled: boolean; model_profile?: string | null; max_budget_usd?: number | null; max_turns?: number | null }): PersonaDraft {
-  let model = '';
+  let selectedModel = '';
   let provider: ModelProvider = 'anthropic';
   let baseUrl = '';
   let authToken = '';
   try {
     const mp: ModelProfile = persona.model_profile ? JSON.parse(persona.model_profile) : {};
-    model = mp.model || '';
+    selectedModel = profileToDropdownValue(mp);
     provider = (mp.provider as ModelProvider) || 'anthropic';
     baseUrl = mp.base_url || '';
     authToken = mp.auth_token || '';
@@ -55,13 +103,81 @@ function buildDraft(persona: { name: string; description?: string | null; icon?:
     maxConcurrent: persona.max_concurrent || 1,
     timeout: persona.timeout_ms || 300000,
     enabled: persona.enabled,
-    selectedModel: model,
+    selectedModel,
     selectedProvider: provider,
     baseUrl,
     authToken,
     maxBudget: persona.max_budget_usd ?? '',
     maxTurns: persona.max_turns ?? '',
   };
+}
+
+// ── Global Ollama API Key field ─────────────────────────────────────────
+
+function OllamaApiKeyField() {
+  const [apiKey, setApiKey] = useState('');
+  const [saved, setSaved] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    getAppSetting(OLLAMA_API_KEY_SETTING).then((val) => {
+      if (val) setApiKey(val);
+      setLoaded(true);
+    }).catch(() => setLoaded(true));
+  }, []);
+
+  const handleSave = async () => {
+    if (apiKey.trim()) {
+      await setAppSetting(OLLAMA_API_KEY_SETTING, apiKey.trim());
+    }
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  if (!loaded) return null;
+
+  return (
+    <div className="space-y-1.5">
+      <label className="block text-sm font-medium text-foreground/60 mb-1">
+        Ollama API Key
+        <span className="text-muted-foreground/40 font-normal ml-1">(global, shared across all personas)</span>
+      </label>
+      <div className="flex gap-2">
+        <input
+          type="password"
+          value={apiKey}
+          onChange={(e) => { setApiKey(e.target.value); setSaved(false); }}
+          placeholder="Paste your key from ollama.com/settings"
+          className="flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+        />
+        <button
+          onClick={handleSave}
+          disabled={!apiKey.trim() || saved}
+          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+            saved
+              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+              : apiKey.trim()
+                ? 'bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30'
+                : 'bg-secondary/40 text-muted-foreground/30 border border-primary/10 cursor-not-allowed'
+          }`}
+        >
+          {saved ? 'Saved' : 'Save Key'}
+        </button>
+      </div>
+      <p className="text-xs text-muted-foreground/40">
+        Sign up free at{' '}
+        <a
+          href="https://ollama.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary/60 hover:text-primary inline-flex items-center gap-0.5"
+        >
+          ollama.com <ExternalLink className="w-2.5 h-2.5" />
+        </a>
+        {' '}and copy your API key from Settings.
+      </p>
+    </div>
+  );
 }
 
 export default function PersonaEditor() {
@@ -196,12 +312,31 @@ export default function PersonaEditor() {
 
   const saveModelSettings = async () => {
     if (!selectedPersona) return;
-    const profile = draft.selectedModel === '' ? null : JSON.stringify({
-      model: draft.selectedModel === 'custom' ? undefined : draft.selectedModel,
-      provider: draft.selectedModel === 'custom' ? draft.selectedProvider : 'anthropic',
-      base_url: draft.baseUrl || undefined,
-      auth_token: draft.authToken || undefined,
-    } satisfies ModelProfile);
+
+    let profile: string | null = null;
+    const ollamaPreset = getOllamaPreset(draft.selectedModel);
+
+    if (ollamaPreset) {
+      // Ollama Cloud preset — store model ID, provider, and cloud base URL.
+      // Auth token is resolved from global setting at execution time.
+      profile = JSON.stringify({
+        model: ollamaPreset.modelId,
+        provider: 'ollama',
+        base_url: OLLAMA_CLOUD_BASE_URL,
+      } satisfies ModelProfile);
+    } else if (draft.selectedModel === 'custom') {
+      profile = JSON.stringify({
+        provider: draft.selectedProvider,
+        base_url: draft.baseUrl || undefined,
+        auth_token: draft.authToken || undefined,
+      } satisfies ModelProfile);
+    } else if (draft.selectedModel !== '') {
+      // Standard Anthropic model shorthand (haiku/sonnet/opus)
+      profile = JSON.stringify({
+        model: draft.selectedModel,
+        provider: 'anthropic',
+      } satisfies ModelProfile);
+    }
 
     await updatePersona(selectedPersona.id, {
       model_profile: profile,
@@ -358,12 +493,24 @@ export default function PersonaEditor() {
                     className="w-full px-3 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
                   >
                     <option value="">Default (Opus)</option>
-                    <option value="haiku">Haiku (fast/cheap)</option>
-                    <option value="sonnet">Sonnet (balanced)</option>
-                    <option value="opus">Opus (quality)</option>
+                    <optgroup label="Anthropic">
+                      <option value="haiku">Haiku (fast/cheap)</option>
+                      <option value="sonnet">Sonnet (balanced)</option>
+                      <option value="opus">Opus (quality)</option>
+                    </optgroup>
+                    <optgroup label="Ollama Cloud (free)">
+                      {OLLAMA_CLOUD_PRESETS.map((p) => (
+                        <option key={p.value} value={p.value}>{p.label}</option>
+                      ))}
+                    </optgroup>
                     <option value="custom">Custom</option>
                   </select>
                 </div>
+
+                {/* Ollama Cloud API key — shown when an Ollama Cloud model is selected */}
+                {isOllamaCloudValue(draft.selectedModel) && (
+                  <OllamaApiKeyField />
+                )}
 
                 {draft.selectedModel === 'custom' && (
                   <div>

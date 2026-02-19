@@ -22,12 +22,16 @@ pub struct AppState {
     /// Tracks the currently active design analysis ID.
     /// Set when analysis starts, cleared on cancel or completion.
     pub active_design_id: Arc<Mutex<Option<String>>>,
+    /// Tracks the currently active credential design ID.
+    pub active_credential_design_id: Arc<Mutex<Option<String>>>,
     /// Authentication state (Supabase OAuth).
     pub auth: Arc<tokio::sync::Mutex<commands::auth::AuthStateInner>>,
     /// Cloud orchestrator HTTP client (None when not connected).
     pub cloud_client: Arc<tokio::sync::Mutex<Option<Arc<cloud::client::CloudClient>>>>,
     /// Maps local execution ID → cloud execution ID for active cloud runs.
     pub cloud_exec_ids: Arc<tokio::sync::Mutex<HashMap<String, String>>>,
+    /// Cancellation flag for the auto-installer (setup commands).
+    pub active_setup_cancelled: Arc<Mutex<bool>>,
 }
 
 /// Hello world IPC command — verifies the Rust ↔ React bridge works.
@@ -100,9 +104,11 @@ pub fn run() {
                 engine: engine.clone(),
                 scheduler: scheduler.clone(),
                 active_design_id: Arc::new(Mutex::new(None)),
+                active_credential_design_id: Arc::new(Mutex::new(None)),
                 auth: auth.clone(),
                 cloud_client: Arc::new(tokio::sync::Mutex::new(cloud_client_opt)),
                 cloud_exec_ids: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
+                active_setup_cancelled: Arc::new(Mutex::new(false)),
             });
             app.manage(state_arc.clone());
 
@@ -120,7 +126,7 @@ pub fn run() {
                         let url_str = url.to_string();
                         if url_str.starts_with("personas://auth/callback") {
                             let handle = dl_handle.clone();
-                            tokio::spawn(async move {
+                            tauri::async_runtime::spawn(async move {
                                 if let Err(e) =
                                     commands::auth::handle_auth_callback(&handle, &url_str).await
                                 {
@@ -142,7 +148,7 @@ pub fn run() {
             let app_handle = app.handle().clone();
             let restore_handle = app.handle().clone();
             let restore_state = state_arc.clone();
-            tokio::spawn(async move {
+            tauri::async_runtime::spawn(async move {
                 tokio::time::sleep(std::time::Duration::from_secs(2)).await;
                 engine::background::start_loops(
                     scheduler,
@@ -155,7 +161,7 @@ pub fn run() {
             });
 
             // Attempt auth session restore from keyring
-            tokio::spawn(async move {
+            tauri::async_runtime::spawn(async move {
                 commands::auth::try_restore_session(&restore_handle, &restore_state).await;
             });
 
@@ -227,6 +233,10 @@ pub fn run() {
             commands::design::refine_design,
             commands::design::test_design_feasibility,
             commands::design::cancel_design_analysis,
+            // Credential Design
+            commands::credential_design::start_credential_design,
+            commands::credential_design::cancel_credential_design,
+            commands::credential_design::test_credential_design_healthcheck,
             // Design Reviews
             commands::design_reviews::list_design_reviews,
             commands::design_reviews::get_design_review,
@@ -289,6 +299,13 @@ pub fn run() {
             commands::auth::refresh_session,
             // System
             commands::system::system_health_check,
+            // Setup / Auto-install
+            commands::setup::start_setup_install,
+            commands::setup::cancel_setup_install,
+            // Settings
+            commands::settings::get_app_setting,
+            commands::settings::set_app_setting,
+            commands::settings::delete_app_setting,
             // Import/Export
             commands::import_export::export_persona,
             commands::import_export::import_persona,

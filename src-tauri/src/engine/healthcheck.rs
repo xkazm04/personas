@@ -133,7 +133,11 @@ struct HealthcheckConfig {
 
 fn parse_healthcheck_config(json: &str) -> Option<HealthcheckConfig> {
     let val: serde_json::Value = serde_json::from_str(json).ok()?;
-    let endpoint = val.get("endpoint")?.as_str()?.to_string();
+    let endpoint = val
+        .get("endpoint")
+        .and_then(|v| v.as_str())
+        .or_else(|| val.get("url").and_then(|v| v.as_str()))?
+        .to_string();
     if endpoint.is_empty() {
         return None;
     }

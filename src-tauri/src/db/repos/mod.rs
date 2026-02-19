@@ -14,3 +14,4 @@ pub mod reviews;
 pub mod connectors;
 pub mod manual_reviews;
 pub mod tool_usage;
+pub mod settings;

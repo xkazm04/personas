@@ -73,22 +73,98 @@ Personas Desktop provides a local-first environment for creating AI agents with 
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org/) >= 18
-- [Rust](https://www.rust-lang.org/tools/install) >= 1.77.2
-- Platform-specific Tauri dependencies ([see Tauri docs](https://v2.tauri.app/start/prerequisites/))
+| Dependency | Minimum Version | Check command |
+|-----------|----------------|---------------|
+| [Node.js](https://nodejs.org/) | >= 18 | `node --version` |
+| [Rust](https://www.rust-lang.org/tools/install) | >= 1.77.2 | `rustc --version` |
+| WebView2 Runtime | (bundled with Windows 10+) | — |
+| C++ Build Tools | MSVC (Visual Studio) | — |
+
+### Windows Setup
+
+1. **Install Node.js** (if not already installed):
+   ```powershell
+   winget install OpenJS.NodeJS.LTS
+   ```
+
+2. **Install Rust** via rustup:
+   ```powershell
+   winget install Rustlang.Rustup
+   ```
+   After installation, **restart your terminal** so `cargo` and `rustc` are on your PATH. Verify with:
+   ```powershell
+   rustc --version
+   cargo --version
+   ```
+
+3. **Install Visual Studio C++ Build Tools** (if not already installed):
+   - Download [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+   - In the installer, select **"Desktop development with C++"** workload
+   - This provides the MSVC compiler and Windows SDK required by Tauri
+
+4. **Install LLVM/Clang** (required on Windows ARM64 for the `ring` crypto crate):
+   ```powershell
+   winget install LLVM.LLVM
+   ```
+   After installation, ensure `C:\Program Files\LLVM\bin` is on your PATH (the installer usually adds it automatically; restart your terminal to pick it up).
+
+5. **WebView2 Runtime** ships with Windows 10 (version 1803+) and Windows 11. No action needed on modern Windows.
+
+6. **Run from a Developer Command Prompt** or ensure the MSVC environment is active. The easiest way is to launch your terminal from **"Developer Command Prompt for VS"** or **"Developer PowerShell for VS"** so that `cl.exe`, `INCLUDE`, and `LIB` are set. Alternatively, run:
+   ```powershell
+   # PowerShell: load VS environment into your current session
+   & "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\Launch-VsDevShell.ps1" -Arch arm64
+   ```
+
+### macOS Setup
+
+1. Install Xcode Command Line Tools:
+   ```bash
+   xcode-select --install
+   ```
+2. Install Node.js and Rust:
+   ```bash
+   brew install node
+   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+   ```
+3. Restart your terminal, then verify:
+   ```bash
+   node --version && rustc --version && cargo --version
+   ```
+
+### Linux Setup (Debian/Ubuntu)
+
+1. Install system dependencies:
+   ```bash
+   sudo apt update
+   sudo apt install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
+     libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+   ```
+2. Install Node.js (via [NodeSource](https://github.com/nodesource/distributions)):
+   ```bash
+   curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+   sudo apt install -y nodejs
+   ```
+3. Install Rust:
+   ```bash
+   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+   source "$HOME/.cargo/env"
+   ```
 
 ## Getting Started
 
 ```bash
-# Install frontend dependencies
+# 1. Install frontend dependencies
 npm install
 
-# Run in development mode (starts Vite + Tauri)
+# 2. Run in development mode (starts Vite + Tauri)
 npm run tauri dev
 
-# Build for production
+# 3. Build for production
 npm run tauri build
 ```
+
+> **Note:** The first run will compile all Rust dependencies, which can take several minutes. Subsequent builds are incremental and much faster.
 
 ### Available Scripts
 
@@ -139,6 +215,24 @@ personas-desktop/
 ├── vite.config.ts
 └── tsconfig.json
 ```
+
+## Troubleshooting
+
+### `failed to run 'cargo metadata'` / `program not found`
+Rust is not installed. Install it with `winget install Rustlang.Rustup` (Windows) or `rustup` (macOS/Linux), then **restart your terminal**.
+
+### `failed to find tool "clang": program not found` (Windows ARM64)
+The `ring` crate requires Clang for ARM64 assembly. Install LLVM:
+```powershell
+winget install LLVM.LLVM
+```
+Restart your terminal so `clang` is on your PATH.
+
+### `Cannot open include file: 'windows.h'`
+The MSVC environment variables (`INCLUDE`, `LIB`) are not set. Run your build from a **Developer Command Prompt for VS** or **Developer PowerShell for VS**, not a plain terminal.
+
+### First build is very slow
+This is expected — Cargo compiles ~200+ Rust crates on the first build. Subsequent builds use incremental compilation and are much faster.
 
 ## Security
 
