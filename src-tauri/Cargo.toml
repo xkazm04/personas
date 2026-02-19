@@ -1,0 +1,46 @@
+[package]
+name = "personas-desktop"
+version = "0.1.0"
+description = "Personas AI Agent Platform"
+authors = ["Personas"]
+license = "MIT"
+edition = "2021"
+rust-version = "1.77.2"
+
+[lib]
+name = "app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-notification = "2"
+tauri-plugin-window-state = "2"
+tauri-plugin-updater = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+tracing-appender = "0.2"
+thiserror = "2"
+rusqlite = { version = "0.38", features = ["bundled"] }
+r2d2 = "0.8"
+r2d2_sqlite = "0.32"
+uuid = { version = "1", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+ts-rs = { version = "10", features = ["serde-compat", "chrono-impl"] }
+aes-gcm = "0.10"
+base64 = "0.22"
+keyring = "3"
+pbkdf2 = { version = "0.12", features = ["simple"] }
+sha2 = "0.10"
+whoami = "1"
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+tauri-plugin-dialog = "2"
+tauri-plugin-deep-link = "2"
+tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
+open = "5"
+url = "2"

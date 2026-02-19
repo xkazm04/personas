@@ -1,0 +1,92 @@
+/**
+ * Types for the Persona Design Analysis system.
+ * Used by the Design tab to drive LLM-based prompt generation.
+ */
+
+/** Structured prompt section (identity, instructions, etc.) */
+export interface StructuredPromptSection {
+  key: string;
+  label: string;
+  content: string;
+}
+
+/** A structured highlight category from design analysis */
+export interface DesignHighlight {
+  category: string;
+  icon: string;
+  color: string;
+  items: string[];
+  section?: "identity" | "instructions" | "toolGuidance" | "examples" | "errorHandling" | string;
+}
+
+/** Enriched connector suggestion from design analysis */
+export interface SuggestedConnector {
+  name: string;
+  setup_url?: string;
+  setup_instructions?: string;
+  oauth_type?: string;
+  credential_fields?: Array<{
+    key: string;
+    label: string;
+    type: "text" | "password" | "url";
+    placeholder?: string;
+    helpText?: string;
+    required?: boolean;
+  }>;
+  related_tools?: string[];
+  related_triggers?: number[];
+}
+
+/** The JSON output schema from Claude design analysis */
+export interface DesignAnalysisResult {
+  structured_prompt: {
+    identity: string;
+    instructions: string;
+    toolGuidance: string;
+    examples: string;
+    errorHandling: string;
+    customSections: StructuredPromptSection[];
+  };
+  suggested_tools: string[];
+  suggested_triggers: SuggestedTrigger[];
+  full_prompt_markdown: string;
+  summary: string;
+  design_highlights?: DesignHighlight[];
+  suggested_connectors?: SuggestedConnector[];
+  suggested_notification_channels?: SuggestedNotificationChannel[];
+  feasibility?: DesignTestResult;
+  suggested_event_subscriptions?: SuggestedEventSubscription[];
+}
+
+/** A notification channel suggestion from design analysis */
+export interface SuggestedNotificationChannel {
+  type: "slack" | "telegram" | "email";
+  description: string;
+  required_connector: string;
+  config_hints: Record<string, string>;
+}
+
+/** A trigger suggestion from design analysis */
+export interface SuggestedTrigger {
+  trigger_type: "manual" | "schedule" | "polling" | "webhook";
+  config: Record<string, unknown>;
+  description: string;
+}
+
+/** Phase of the design analysis lifecycle */
+export type DesignPhase = "idle" | "analyzing" | "preview" | "applying" | "applied" | "refining";
+
+/** Result of a design feasibility test */
+export interface DesignTestResult {
+  confirmed_capabilities: string[];
+  issues: string[];
+  overall_feasibility: "ready" | "partial" | "blocked";
+}
+
+/** An event subscription suggestion from design analysis */
+export interface SuggestedEventSubscription {
+  event_type: string;
+  source_filter?: Record<string, unknown>;
+  description: string;
+}
+

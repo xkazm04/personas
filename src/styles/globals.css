@@ -1,0 +1,193 @@
+@import "tailwindcss";
+
+/* ── Design Tokens ── */
+@theme inline {
+  --color-background: #0a0a12;
+  --color-foreground: #f0f0f5;
+  --color-muted: #a0a0b0;
+  --color-muted-dark: #60607a;
+  --color-card-bg: rgba(255, 255, 255, 0.02);
+  --color-card-border: rgba(255, 255, 255, 0.04);
+
+  /* Source-compatible semantic tokens (used throughout migrated components) */
+  --color-primary: #3b82f6;
+  --color-secondary: #1e293b;
+  --color-accent: #8b5cf6;
+  --color-muted-foreground: #94a3b8;
+  --color-border: #334155;
+
+  --color-brand-cyan: #06b6d4;
+  --color-brand-purple: #a855f7;
+  --color-brand-emerald: #34d399;
+  --color-brand-amber: #fbbf24;
+  --color-brand-rose: #f43f5e;
+
+  --font-sans: var(--font-geist-sans, ui-sans-serif, system-ui, sans-serif);
+  --font-mono: var(--font-geist-mono, ui-monospace, monospace);
+}
+
+/* ── Base Styles ── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.06) transparent;
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* ── Glass Morphism ── */
+.glass {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* ── Animations ── */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-float { animation: float 5s ease-in-out infinite; }
+.animate-pulse-slow { animation: pulse-slow 4s ease-in-out infinite; }
+.animate-shimmer { animation: shimmer 2s ease-in-out infinite; }
+.animate-spin-slow { animation: spin-slow 30s linear infinite; }
+
+/* ── Dot Grid ── */
+.dot-grid {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* ── Selection ── */
+::selection {
+  background-color: rgba(6, 182, 212, 0.25);
+  color: #f0f0f5;
+}
+
+/* ── Theme Variants ── */
+
+/* Dark: Cyan */
+[data-theme="dark-cyan"] {
+  --color-primary: #06b6d4;
+  --color-accent: #22d3ee;
+  --color-background: #0a1214;
+  --color-foreground: #e0f2fe;
+  --color-secondary: #0d2025;
+  --color-border: #164e63;
+  --color-brand-cyan: #22d3ee;
+  --color-brand-purple: #0ea5e9;
+}
+
+/* Dark: Bronze */
+[data-theme="dark-bronze"] {
+  --color-primary: #d97706;
+  --color-accent: #f59e0b;
+  --color-background: #121008;
+  --color-foreground: #fef3c7;
+  --color-secondary: #1c1505;
+  --color-border: #78350f;
+  --color-brand-cyan: #f59e0b;
+  --color-brand-amber: #fbbf24;
+}
+
+/* Dark: Frost */
+[data-theme="dark-frost"] {
+  --color-primary: #e2e8f0;
+  --color-accent: #f8fafc;
+  --color-background: #0f1115;
+  --color-foreground: #f1f5f9;
+  --color-secondary: #1a1f28;
+  --color-border: #334155;
+  --color-brand-cyan: #cbd5e1;
+  --color-brand-purple: #94a3b8;
+}
+
+/* Dark: Purple */
+[data-theme="dark-purple"] {
+  --color-primary: #a855f7;
+  --color-accent: #c084fc;
+  --color-background: #0e0a14;
+  --color-foreground: #f3e8ff;
+  --color-secondary: #1a1028;
+  --color-border: #4c1d95;
+  --color-brand-purple: #c084fc;
+  --color-brand-cyan: #8b5cf6;
+}
+
+/* Dark: Pink */
+[data-theme="dark-pink"] {
+  --color-primary: #ec4899;
+  --color-accent: #f472b6;
+  --color-background: #140a10;
+  --color-foreground: #fce7f3;
+  --color-secondary: #200d1a;
+  --color-border: #831843;
+  --color-brand-rose: #f472b6;
+  --color-brand-purple: #db2777;
+}
+
+/* Dark: Red */
+[data-theme="dark-red"] {
+  --color-primary: #ef4444;
+  --color-accent: #f87171;
+  --color-background: #140a0a;
+  --color-foreground: #fee2e2;
+  --color-secondary: #200d0d;
+  --color-border: #7f1d1d;
+  --color-brand-rose: #f87171;
+  --color-brand-amber: #f97316;
+}
+
+/* Light */
+[data-theme="light"] {
+  --color-primary: #2563eb;
+  --color-accent: #3b82f6;
+  --color-background: #f8fafc;
+  --color-foreground: #0f172a;
+  --color-secondary: #e2e8f0;
+  --color-muted: #64748b;
+  --color-muted-dark: #94a3b8;
+  --color-muted-foreground: #475569;
+  --color-border: #cbd5e1;
+  --color-card-bg: rgba(0, 0, 0, 0.03);
+  --color-card-border: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] * {
+  scrollbar-color: rgba(0, 0, 0, 0.12) transparent;
+}
+
+[data-theme="light"] ::selection {
+  background-color: rgba(37, 99, 235, 0.2);
+  color: #0f172a;
+}
+
+/* ── Pipeline Animations ── */
+@keyframes dash-flow {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -28; }
+}
+
+@keyframes spin-ring {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

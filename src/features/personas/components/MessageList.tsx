@@ -1,0 +1,434 @@
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown, ChevronRight, MessageSquare, CheckCheck, RefreshCw, Trash2, Send, AlertCircle, Clock, CheckCircle2, Loader2, ExternalLink, Check, X } from 'lucide-react';
+import { usePersonaStore } from '@/stores/personaStore';
+import type { PersonaMessage } from '@/lib/types/types';
+import type { PersonaMessageDelivery } from '@/lib/bindings/PersonaMessageDelivery';
+import { getMessageDeliveries } from '@/api/tauriApi';
+import { formatRelativeTime } from '@/lib/utils/formatters';
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+const priorityConfig: Record<string, { color: string; bgColor: string; borderColor: string; label: string }> = {
+  high: { color: 'text-red-400', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30', label: 'High' },
+  normal: { color: 'text-foreground/60', bgColor: 'bg-secondary/30', borderColor: 'border-primary/15', label: 'Normal' },
+  low: { color: 'text-muted-foreground/50', bgColor: 'bg-muted/20', borderColor: 'border-muted-foreground/20', label: 'Low' },
+};
+
+type FilterType = 'all' | 'unread' | 'high';
+
+const filterOptions: Array<{ id: FilterType; label: string }> = [
+  { id: 'all', label: 'All' },
+  { id: 'unread', label: 'Unread' },
+  { id: 'high', label: 'High Priority' },
+];
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+export default function MessageList() {
+  const messages = usePersonaStore((s) => s.messages);
+  const messagesTotal = usePersonaStore((s) => s.messagesTotal);
+  const fetchMessages = usePersonaStore((s) => s.fetchMessages);
+  const markMessageAsRead = usePersonaStore((s) => s.markMessageAsRead);
+  const markAllMessagesAsRead = usePersonaStore((s) => s.markAllMessagesAsRead);
+  const deleteMessage = usePersonaStore((s) => s.deleteMessage);
+
+  const [filter, setFilter] = useState<FilterType>('all');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Fetch all messages (no server-side filtering available)
+  useEffect(() => {
+    fetchMessages(true);
+    const interval = setInterval(() => fetchMessages(true), 10000);
+    return () => clearInterval(interval);
+  }, [fetchMessages]);
+
+  // Client-side filtering
+  const filteredMessages = useMemo(() => {
+    switch (filter) {
+      case 'unread': return messages.filter((m) => !m.is_read);
+      case 'high': return messages.filter((m) => m.priority === 'high');
+      default: return messages;
+    }
+  }, [messages, filter]);
+
+  const handleLoadMore = () => {
+    fetchMessages(false);
+  };
+
+  const remaining = messagesTotal - messages.length;
+
+  const badgeCounts: Record<FilterType, number> = useMemo(() => ({
+    all: 0,
+    unread: messages.filter((m) => !m.is_read).length,
+    high: messages.filter((m) => m.priority === 'high').length,
+  }), [messages]);
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden p-6 pt-4">
+      {/* Filter bar */}
+      <div className="flex items-center gap-2 mb-4">
+        {filterOptions.map((opt) => {
+          const count = badgeCounts[opt.id];
+          return (
+            <button
+              key={opt.id}
+              onClick={() => setFilter(opt.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border flex items-center gap-1.5 ${
+                filter === opt.id
+                  ? 'bg-blue-500/15 text-blue-400 border-blue-500/30'
+                  : 'bg-secondary/30 text-muted-foreground/60 border-primary/15 hover:text-muted-foreground hover:bg-secondary/50'
+              }`}
+            >
+              {opt.label}
+              {count > 0 && (
+                <span className="text-[10px] bg-blue-500/20 text-blue-400 rounded-full min-w-[18px] px-1 inline-flex items-center justify-center">
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+
+        <div className="flex-1" />
+
+        <button
+          onClick={() => fetchMessages(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground/60 hover:text-muted-foreground border border-primary/15 hover:bg-secondary/50 transition-all"
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+          Refresh
+        </button>
+
+        <button
+          onClick={() => markAllMessagesAsRead()}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-blue-400/80 hover:text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15 transition-all"
+        >
+          <CheckCheck className="w-3.5 h-3.5" />
+          Mark All Read
+        </button>
+      </div>
+
+      {/* Message list */}
+      <div className="flex-1 overflow-y-auto space-y-1.5">
+        {filteredMessages.length === 0 && (
+          <div className="text-center py-16">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
+              <MessageSquare className="w-5 h-5 text-muted-foreground/30" />
+            </div>
+            <p className="text-sm text-muted-foreground/50">{filter !== 'all' ? 'No matching messages' : 'No messages yet'}</p>
+            <p className="text-xs text-muted-foreground/30 mt-1">{filter !== 'all' ? 'Try changing the filter above' : 'Messages from persona executions will appear here'}</p>
+          </div>
+        )}
+
+        <AnimatePresence initial={false}>
+          {filteredMessages.map((message) => (
+            <MessageRow
+              key={message.id}
+              message={message}
+              isExpanded={expandedId === message.id}
+              onToggle={() => {
+                setExpandedId(expandedId === message.id ? null : message.id);
+                if (!message.is_read) markMessageAsRead(message.id);
+              }}
+              onDelete={() => deleteMessage(message.id)}
+            />
+          ))}
+        </AnimatePresence>
+
+        {/* Load More */}
+        {remaining > 0 && (
+          <button
+            onClick={handleLoadMore}
+            className="w-full py-2.5 text-sm text-muted-foreground/60 hover:text-muted-foreground bg-secondary/20 hover:bg-secondary/40 rounded-xl border border-primary/15 transition-all mt-2"
+          >
+            Load More ({remaining} remaining)
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Message Row
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Delivery status config
+// ---------------------------------------------------------------------------
+
+const deliveryStatusConfig: Record<string, { icon: typeof CheckCircle2; color: string; bgColor: string; borderColor: string; label: string }> = {
+  delivered: { icon: CheckCircle2, color: 'text-emerald-400', bgColor: 'bg-emerald-500/10', borderColor: 'border-emerald-500/30', label: 'Delivered' },
+  failed: { icon: AlertCircle, color: 'text-red-400', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30', label: 'Failed' },
+  pending: { icon: Clock, color: 'text-amber-400', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30', label: 'Pending' },
+  queued: { icon: Loader2, color: 'text-blue-400', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/30', label: 'Queued' },
+};
+
+const channelLabels: Record<string, string> = {
+  email: 'Email',
+  slack: 'Slack',
+  telegram: 'Telegram',
+  desktop: 'Desktop',
+};
+
+function MessageRow({
+  message,
+  isExpanded,
+  onToggle,
+  onDelete,
+}: {
+  message: PersonaMessage;
+  isExpanded: boolean;
+  onToggle: () => void;
+  onDelete: () => void;
+}) {
+  const defaultPriority = { color: 'text-foreground/60', bgColor: 'bg-secondary/30', borderColor: 'border-primary/15', label: 'Normal' };
+  const priority = priorityConfig[message.priority] ?? defaultPriority;
+
+  const [deliveries, setDeliveries] = useState<PersonaMessageDelivery[]>([]);
+  const [deliveriesLoading, setDeliveriesLoading] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+    };
+  }, []);
+
+  const fetchDeliveries = useCallback(async () => {
+    setDeliveriesLoading(true);
+    try {
+      const result = await getMessageDeliveries(message.id);
+      setDeliveries(result);
+    } catch {
+      setDeliveries([]);
+    } finally {
+      setDeliveriesLoading(false);
+    }
+  }, [message.id]);
+
+  useEffect(() => {
+    if (isExpanded) {
+      fetchDeliveries();
+    }
+  }, [isExpanded, fetchDeliveries]);
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -4 }}
+      className="rounded-xl border border-primary/15 bg-secondary/20 hover:bg-secondary/30 transition-colors overflow-hidden"
+    >
+      {/* Main row — wide (md+) */}
+      <button
+        onClick={onToggle}
+        className="w-full hidden md:flex items-center gap-3 px-3 py-2.5 text-left"
+      >
+        <div className="text-muted-foreground/40">
+          {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+        </div>
+        {!message.is_read && (
+          <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
+        )}
+        <div className="flex items-center gap-2 min-w-[120px]">
+          <div
+            className="w-6 h-6 rounded-md flex items-center justify-center text-xs border border-primary/15"
+            style={{ backgroundColor: (message.persona_color || '#6366f1') + '15' }}
+          >
+            {message.persona_icon || '?'}
+          </div>
+          <span className="text-xs text-muted-foreground/60 truncate max-w-[80px]">
+            {message.persona_name || 'Unknown'}
+          </span>
+        </div>
+        <span className={`flex-1 text-sm truncate ${message.is_read ? 'text-foreground/60' : 'text-foreground/90 font-medium'}`}>
+          {message.title || message.content.slice(0, 80)}
+        </span>
+        {message.priority !== 'normal' && (
+          <div className={`px-2 py-0.5 rounded-md text-[11px] font-medium border ${priority.bgColor} ${priority.color} ${priority.borderColor}`}>
+            {priority.label}
+          </div>
+        )}
+        <span className="text-xs text-muted-foreground/40 min-w-[70px] text-right">
+          {formatRelativeTime(message.created_at)}
+        </span>
+      </button>
+
+      {/* Main row — narrow (< md) stacked card */}
+      <button
+        onClick={onToggle}
+        className="w-full flex md:hidden flex-col gap-1.5 px-3 py-2.5 text-left"
+      >
+        {/* Line 1: persona + priority */}
+        <div className="flex items-center gap-2">
+          <div className="text-muted-foreground/40">
+            {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+          </div>
+          {!message.is_read && (
+            <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
+          )}
+          <div
+            className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] border border-primary/15 flex-shrink-0"
+            style={{ backgroundColor: (message.persona_color || '#6366f1') + '15' }}
+          >
+            {message.persona_icon || '?'}
+          </div>
+          <span className="text-xs text-muted-foreground/60 truncate">
+            {message.persona_name || 'Unknown'}
+          </span>
+          <div className="flex-1" />
+          {message.priority !== 'normal' && (
+            <div className={`px-2 py-0.5 rounded-md text-[11px] font-medium border ${priority.bgColor} ${priority.color} ${priority.borderColor}`}>
+              {priority.label}
+            </div>
+          )}
+        </div>
+        {/* Line 2: title */}
+        <span className={`text-sm truncate pl-6 ${message.is_read ? 'text-foreground/60' : 'text-foreground/90 font-medium'}`}>
+          {message.title || message.content.slice(0, 80)}
+        </span>
+        {/* Line 3: timestamp */}
+        <span className="text-xs text-muted-foreground/40 pl-6">
+          {formatRelativeTime(message.created_at)}
+        </span>
+      </button>
+
+      {/* Expanded detail */}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-3 pb-3 pt-1 border-t border-primary/15 space-y-3">
+              {/* Content */}
+              <div>
+                <div className="text-[11px] font-mono text-muted-foreground/50 uppercase mb-1.5">Content</div>
+                <div className={`text-sm leading-relaxed ${message.content_type === 'markdown' ? 'prose prose-sm prose-invert max-w-none' : 'text-foreground/70'}`}>
+                  {message.content}
+                </div>
+              </div>
+
+              {/* Delivery Status */}
+              <div>
+                <div className="text-[11px] font-mono text-muted-foreground/50 uppercase mb-1.5 flex items-center gap-1.5">
+                  <Send className="w-3 h-3" />
+                  Delivery Status
+                </div>
+                {deliveriesLoading ? (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground/40 py-1">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Loading...
+                  </div>
+                ) : deliveries.length === 0 ? (
+                  <div className="text-xs text-muted-foreground/40 py-1">
+                    No delivery channels configured
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    {deliveries.map((d) => {
+                      const defaultStatus = deliveryStatusConfig.pending!;
+                      const statusCfg = deliveryStatusConfig[d.status] ?? defaultStatus;
+                      const StatusIcon = statusCfg.icon;
+                      return (
+                        <div
+                          key={d.id}
+                          className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg border ${statusCfg.bgColor} ${statusCfg.borderColor}`}
+                        >
+                          <StatusIcon className={`w-3.5 h-3.5 flex-shrink-0 ${statusCfg.color}`} />
+                          <span className="text-xs font-medium text-foreground/70 min-w-[60px]">
+                            {channelLabels[d.channel_type] ?? d.channel_type}
+                          </span>
+                          <span className={`text-xs font-medium ${statusCfg.color}`}>
+                            {statusCfg.label}
+                          </span>
+                          {d.delivered_at && (
+                            <span className="text-[11px] text-muted-foreground/40 ml-auto">
+                              {formatRelativeTime(d.delivered_at)}
+                            </span>
+                          )}
+                          {d.error_message && (
+                            <span className="text-[11px] text-red-400/80 ml-auto truncate max-w-[200px]" title={d.error_message}>
+                              {d.error_message}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-2 pt-1">
+                {confirmingDelete ? (
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                      className="p-1.5 bg-red-500/15 hover:bg-red-500/25 rounded-lg transition-colors"
+                      title="Confirm delete"
+                    >
+                      <Check className="w-4 h-4 text-red-400" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setConfirmingDelete(false); }}
+                      className="p-1.5 hover:bg-secondary/60 rounded-lg transition-colors"
+                      title="Cancel"
+                    >
+                      <X className="w-4 h-4 text-muted-foreground/50" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setConfirmingDelete(true);
+                      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+                      confirmTimerRef.current = setTimeout(() => setConfirmingDelete(false), 3000);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Delete
+                  </button>
+                )}
+              </div>
+
+              {/* Metadata */}
+              <div className="flex items-center gap-4 text-[11px] text-muted-foreground/40">
+                <span>ID: <span className="font-mono">{message.id}</span></span>
+                {message.execution_id && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const store = usePersonaStore.getState();
+                      store.selectPersona(message.persona_id);
+                      store.setEditorTab('executions');
+                    }}
+                    className="inline-flex items-center gap-1 text-blue-400/70 hover:text-blue-400 transition-colors"
+                    title="View execution"
+                  >
+                    Execution: <span className="font-mono">{message.execution_id}</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </button>
+                )}
+                <span>Type: {message.content_type}</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}

@@ -1,0 +1,48 @@
+{
+  "name": "personas-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "lint": "eslint src/",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@tauri-apps/api": "^2.10.1",
+    "@tauri-apps/plugin-deep-link": "^2.4.7",
+    "@tauri-apps/plugin-dialog": "^2.6.0",
+    "@tauri-apps/plugin-notification": "^2.3.3",
+    "@tauri-apps/plugin-shell": "^2.3.5",
+    "@tauri-apps/plugin-updater": "^2.10.0",
+    "@xyflow/react": "^12.10.0",
+    "framer-motion": "^12.34.1",
+    "lucide-react": "^0.574.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-markdown": "^10.1.0",
+    "react-router": "^7.13.0",
+    "react-router-dom": "^7.13.0",
+    "recharts": "^3.7.0",
+    "rehype-highlight": "^7.0.2",
+    "remark-gfm": "^4.0.1",
+    "zustand": "^5.0.11"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@tailwindcss/vite": "^4.1.18",
+    "@tauri-apps/cli": "^2.10.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.4",
+    "eslint": "^10.0.0",
+    "globals": "^17.3.0",
+    "tailwindcss": "^4.1.18",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.0",
+    "vite": "^7.3.1"
+  }
+}
