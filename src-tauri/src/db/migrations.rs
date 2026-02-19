@@ -521,6 +521,16 @@ CREATE TABLE IF NOT EXISTS pipeline_runs (
 CREATE INDEX IF NOT EXISTS idx_pr_team   ON pipeline_runs(team_id);
 CREATE INDEX IF NOT EXISTS idx_pr_status ON pipeline_runs(status);
 
+-- ============================================================================
+-- Application Settings (key-value store for global config)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS app_settings (
+    key         TEXT PRIMARY KEY,
+    value       TEXT NOT NULL,
+    updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 "#;
 
 /// Incremental migrations for columns added after the initial schema.

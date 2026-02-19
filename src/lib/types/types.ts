@@ -111,6 +111,7 @@ export interface ConnectorDefinition {
   healthcheck_config: { description: string; endpoint?: string; method?: string } | null;
   services: { toolName: string; label: string }[];
   events: CredentialTemplateEvent[];
+  metadata: Record<string, unknown> | null;
   is_builtin: boolean;
   created_at: string;
   updated_at: string;
@@ -129,6 +130,7 @@ export function parseConnectorDefinition(raw: RawConnectorDefinition): Connector
     healthcheck_config: raw.healthcheck_config ? safeJsonParse(raw.healthcheck_config, null) : null,
     services: safeJsonParse(raw.services, []),
     events: safeJsonParse(raw.events, []),
+    metadata: raw.metadata ? safeJsonParse(raw.metadata, null) : null,
     is_builtin: raw.is_builtin,
     created_at: raw.created_at,
     updated_at: raw.updated_at,

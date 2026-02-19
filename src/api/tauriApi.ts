@@ -318,6 +318,33 @@ export const cancelDesignAnalysis = () =>
   invoke<void>("cancel_design_analysis");
 
 // ============================================================================
+// Credential Design
+// ============================================================================
+
+export const startCredentialDesign = (instruction: string) =>
+  invoke<DesignStartResult>("start_credential_design", { instruction });
+
+export const cancelCredentialDesign = () =>
+  invoke<void>("cancel_credential_design");
+
+export interface CredentialDesignHealthcheckResult {
+  success: boolean;
+  message: string;
+  healthcheck_config: Record<string, unknown> | null;
+}
+
+export const testCredentialDesignHealthcheck = (
+  instruction: string,
+  connector: Record<string, unknown>,
+  fieldValues: Record<string, string>,
+) =>
+  invoke<CredentialDesignHealthcheckResult>("test_credential_design_healthcheck", {
+    instruction,
+    connector,
+    fieldValues,
+  });
+
+// ============================================================================
 // Design Reviews
 // ============================================================================
 
@@ -647,15 +674,49 @@ export interface HealthCheckItem {
   label: string;
   status: string;
   detail: string | null;
+  installable: boolean;
+}
+
+export interface HealthCheckSection {
+  id: string;
+  label: string;
+  items: HealthCheckItem[];
 }
 
 export interface SystemHealthReport {
-  checks: HealthCheckItem[];
+  sections: HealthCheckSection[];
   all_ok: boolean;
 }
 
 export const systemHealthCheck = () =>
   invoke<SystemHealthReport>("system_health_check");
+
+// ============================================================================
+// Setup / Auto-install
+// ============================================================================
+
+export interface SetupStartResult {
+  install_id: string;
+}
+
+export const startSetupInstall = (target: string) =>
+  invoke<SetupStartResult>("start_setup_install", { target });
+
+export const cancelSetupInstall = () =>
+  invoke<void>("cancel_setup_install");
+
+// ============================================================================
+// Settings (global key-value store)
+// ============================================================================
+
+export const getAppSetting = (key: string) =>
+  invoke<string | null>("get_app_setting", { key });
+
+export const setAppSetting = (key: string, value: string) =>
+  invoke<void>("set_app_setting", { key, value });
+
+export const deleteAppSetting = (key: string) =>
+  invoke<boolean>("delete_app_setting", { key });
 
 // ============================================================================
 // Import/Export

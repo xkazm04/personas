@@ -113,14 +113,30 @@ impl SupabaseUserResponse {
 // Helpers: environment
 // ---------------------------------------------------------------------------
 
+/// Resolve Supabase URL.
+///
+/// Priority: compile-time `SUPABASE_URL` (set during CI build) → runtime env var.
+/// The compile-time path is the production default; runtime override is useful
+/// during development.
 fn supabase_url() -> Result<String, AppError> {
+    if let Some(url) = option_env!("SUPABASE_URL") {
+        return Ok(url.to_string());
+    }
     std::env::var("SUPABASE_URL")
-        .map_err(|_| AppError::Auth("SUPABASE_URL environment variable not configured".into()))
+        .map_err(|_| AppError::Auth("SUPABASE_URL not configured. Set it as an environment variable or rebuild with SUPABASE_URL set at compile time.".into()))
 }
 
+/// Resolve Supabase anon key.
+///
+/// The anon key is a **public** client key by Supabase design — it is safe to
+/// embed in the binary. Security is enforced by Row Level Security policies and
+/// OAuth access tokens, not by the secrecy of this key.
 fn supabase_anon_key() -> Result<String, AppError> {
+    if let Some(key) = option_env!("SUPABASE_ANON_KEY") {
+        return Ok(key.to_string());
+    }
     std::env::var("SUPABASE_ANON_KEY")
-        .map_err(|_| AppError::Auth("SUPABASE_ANON_KEY environment variable not configured".into()))
+        .map_err(|_| AppError::Auth("SUPABASE_ANON_KEY not configured. Set it as an environment variable or rebuild with SUPABASE_ANON_KEY set at compile time.".into()))
 }
 
 // ---------------------------------------------------------------------------

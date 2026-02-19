@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { LogIn, LogOut, User } from "lucide-react";
+import { Chrome, LogOut, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -36,7 +36,7 @@ export default function AuthButton() {
           disabled:opacity-50"
         title="Sign in with Google"
       >
-        <LogIn
+        <Chrome
           className={`w-5 h-5 transition-colors text-muted-foreground/50 group-hover:text-primary ${
             isLoading ? "animate-pulse" : ""
           }`}

@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Eye, Users, Radio, Brain, DollarSign, Cloud } from 'lucide-react';
+import { getVersion } from '@tauri-apps/api/app';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { SidebarSection, OverviewTab } from '@/lib/types/types';
 import GroupedAgentSidebar from './GroupedAgentSidebar';
@@ -21,6 +22,8 @@ const sections: Array<{ id: SidebarSection; icon: typeof Bot; label: string }> =
 export default function Sidebar() {
   const sidebarSection = usePersonaStore((s) => s.sidebarSection);
   const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
+  const credentialView = usePersonaStore((s) => s.credentialView);
+  const setCredentialView = usePersonaStore((s) => s.setCredentialView);
   const credentials = usePersonaStore((s) => s.credentials);
   const overviewTab = usePersonaStore((s) => s.overviewTab);
   const setOverviewTab = usePersonaStore((s) => s.setOverviewTab);
@@ -32,11 +35,13 @@ export default function Sidebar() {
   const fetchRecentEvents = usePersonaStore((s) => s.fetchRecentEvents);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [appVersion, setAppVersion] = useState('');
 
   useEffect(() => {
     fetchPendingReviewCount();
     fetchUnreadMessageCount();
     fetchRecentEvents();
+    getVersion().then(setAppVersion).catch(() => {});
   }, [fetchPendingReviewCount, fetchUnreadMessageCount, fetchRecentEvents]);
 
   const handleCreatePersona = () => {
@@ -121,30 +126,56 @@ export default function Sidebar() {
     }
 
     if (sidebarSection === 'credentials') {
+      const items = [
+        { id: 'credentials', label: 'Credentials' },
+        { id: 'from-template', label: 'Add from template' },
+        { id: 'add-new', label: 'Add new' },
+      ] as const;
+
       return (
         <>
-          {credentials.map((cred) => (
-            <div
-              key={cred.id}
-              className="mb-2 p-3 rounded-xl border border-primary/15 bg-secondary/40 hover:bg-secondary/60 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                  <Key className="w-4 h-4 text-emerald-400/80" />
+          {items.map((item) => {
+            const active = credentialView === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setSidebarSection('credentials');
+                  setCredentialView(item.id);
+                }}
+                className={`w-full mb-1 p-2.5 rounded-xl border transition-all text-left ${
+                  active
+                    ? 'bg-primary/10 border-primary/20'
+                    : 'bg-secondary/30 border-primary/10 hover:bg-secondary/50'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-7 h-7 rounded-lg border flex items-center justify-center ${
+                    active
+                      ? 'bg-primary/15 border-primary/25'
+                      : 'bg-secondary/40 border-primary/15'
+                  }`}>
+                    <Key className={`w-3.5 h-3.5 ${active ? 'text-primary' : 'text-muted-foreground/60'}`} />
+                  </div>
+                  <span className={`text-sm ${active ? 'text-foreground/90' : 'text-muted-foreground/65'}`}>
+                    {item.label}
+                  </span>
+                  {item.id === 'credentials' && (
+                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-secondary/50 border border-primary/10 text-muted-foreground/70">
+                      {credentials.length}
+                    </span>
+                  )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-foreground/90 truncate">{cred.name}</div>
-                  <div className="text-[11px] font-mono text-muted-foreground/50 uppercase">{cred.service_type}</div>
-                </div>
+              </button>
+            );
+          })}
+
+          {credentials.length === 0 && credentialView === 'credentials' && (
+            <div className="text-center py-8">
+              <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                <Key className="w-5 h-5 text-emerald-400/60" />
               </div>
-            </div>
-          ))}
-          {credentials.length === 0 && (
-            <div className="text-center py-12">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                <Key className="w-6 h-6 text-emerald-400/60" />
-              </div>
-              <p className="text-sm text-muted-foreground/60">No credentials</p>
+              <p className="text-xs text-muted-foreground/60">No credentials yet</p>
             </div>
           )}
         </>
@@ -228,6 +259,13 @@ export default function Sidebar() {
         <div className="pb-1">
           <AuthButton />
         </div>
+        {appVersion && (
+          <div className="pb-2 pt-1">
+            <span className="text-[10px] font-mono text-muted-foreground/40 block text-center">
+              v{appVersion}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Level 2: Item list */}

@@ -49,17 +49,17 @@ export function CredentialCard({
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-2xl overflow-hidden"
+      className="bg-secondary/25 backdrop-blur-sm border border-primary/15 rounded-lg overflow-hidden"
     >
       {/* Header */}
       <div
-        className="p-3 cursor-pointer hover:bg-secondary/60 transition-colors"
+        className="px-3 py-2.5 cursor-pointer hover:bg-secondary/50 transition-colors"
         onClick={handleToggle}
       >
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3 flex-1">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
             <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 border"
+              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border"
               style={{
                 backgroundColor: connector ? `${connector.color}15` : undefined,
                 borderColor: connector ? `${connector.color}30` : undefined,
@@ -75,12 +75,12 @@ export function CredentialCard({
             </div>
 
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h4 className="font-medium text-foreground text-sm">
+              <div className="flex items-center gap-2 min-w-0">
+                <h4 className="font-medium text-foreground text-sm truncate max-w-[220px] sm:max-w-[320px]">
                   {credential.name}
                 </h4>
                 <span
-                  className="text-[11px] px-2 py-0.5 rounded-md font-mono border"
+                  className="text-[10px] px-1.5 py-0.5 rounded-md font-mono border shrink-0"
                   style={{
                     backgroundColor: connector ? `${connector.color}15` : undefined,
                     borderColor: connector ? `${connector.color}25` : undefined,
@@ -111,9 +111,8 @@ export function CredentialCard({
                 )}
               </div>
 
-              <div className="mt-1.5 text-xs text-muted-foreground/40 space-y-0.5">
-                <div>Created: {formatTimestamp(credential.created_at, 'Never')}</div>
-                <div>Last Used: {formatTimestamp(credential.last_used_at, 'Never')}</div>
+              <div className="mt-1 text-[11px] text-muted-foreground/70">
+                Created {formatTimestamp(credential.created_at, 'Never')} · Last used {formatTimestamp(credential.last_used_at, 'Never')}
               </div>
             </div>
           </div>
@@ -146,9 +145,9 @@ export function CredentialCard({
               )}
             </div>
             {isExpanded ? (
-              <ChevronDown className="w-4 h-4 text-muted-foreground/40" />
+              <ChevronDown className="w-4 h-4 text-muted-foreground/60" />
             ) : (
-              <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
+              <ChevronRight className="w-4 h-4 text-muted-foreground/60" />
             )}
           </div>
         </div>
@@ -164,7 +163,7 @@ export function CredentialCard({
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-3 pb-3 border-t border-primary/15">
+            <div className="px-3 pb-3 border-t border-primary/10">
               {/* Section Tabs */}
               <div className="flex gap-1 pt-3 pb-3">
                 <button

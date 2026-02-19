@@ -1,0 +1,287 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  # ─── Job 1: Bump version, commit, tag, push ───────────────
+  bump-version:
+    runs-on: ubuntu-latest
+    if: "!startsWith(github.event.head_commit.message, 'chore: bump version')"
+    outputs:
+      new_version: ${{ steps.bump.outputs.new_version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Bump version in all files
+        id: bump
+        run: |
+          NEW_VERSION=$(node scripts/bump-version.mjs)
+          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Bumped to $NEW_VERSION"
+
+      - name: Commit and tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json src-tauri/Cargo.toml src-tauri/tauri.conf.json
+          git commit -m "chore: bump version to ${{ steps.bump.outputs.new_version }}"
+          git tag "v${{ steps.bump.outputs.new_version }}"
+          git push origin master --tags
+
+  # ─── Job 2: Build on all platforms ─────────────────────────
+  build:
+    needs: bump-version
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            rust_target: x86_64-pc-windows-msvc
+            args: --target x86_64-pc-windows-msvc
+            label: windows-x64
+
+          - platform: windows-latest
+            rust_target: aarch64-pc-windows-msvc
+            args: --target aarch64-pc-windows-msvc
+            label: windows-arm64
+
+          - platform: macos-latest
+            rust_target: universal-apple-darwin
+            args: --target universal-apple-darwin
+            label: macos-universal
+
+          - platform: ubuntu-22.04
+            rust_target: x86_64-unknown-linux-gnu
+            args: --target x86_64-unknown-linux-gnu
+            label: linux-x64
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - name: Checkout at tag
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.bump-version.outputs.new_version }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_target }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libgtk-3-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev
+
+      - name: Add macOS targets
+        if: matrix.platform == 'macos-latest'
+        run: |
+          rustup target add aarch64-apple-darwin
+          rustup target add x86_64-apple-darwin
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build with tauri-action
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          VITE_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+        with:
+          tagName: v${{ needs.bump-version.outputs.new_version }}
+          releaseName: "Personas v${{ needs.bump-version.outputs.new_version }}"
+          releaseBody: "See the assets below to download and install this version."
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}
+
+      - name: Upload source maps to Sentry
+        if: matrix.label == 'linux-x64'
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: |
+          VERSION="${{ needs.bump-version.outputs.new_version }}"
+          if [ -n "$SENTRY_AUTH_TOKEN" ] && [ -n "$SENTRY_ORG" ] && [ -n "$SENTRY_PROJECT" ]; then
+            npx @sentry/cli@latest releases \
+              --org "$SENTRY_ORG" \
+              --project "$SENTRY_PROJECT" \
+              new "$VERSION"
+            npx @sentry/cli@latest releases \
+              --org "$SENTRY_ORG" \
+              --project "$SENTRY_PROJECT" \
+              files "$VERSION" \
+              upload-sourcemaps ./dist \
+              --url-prefix "~/"
+            npx @sentry/cli@latest releases \
+              --org "$SENTRY_ORG" \
+              --project "$SENTRY_PROJECT" \
+              finalize "$VERSION"
+            echo "Source maps uploaded for v$VERSION"
+          else
+            echo "Sentry source map upload skipped (secrets not configured)"
+          fi
+
+  # ─── Job 3: Generate latest.json for Tauri updater ─────────
+  updater-manifest:
+    needs: [bump-version, build]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate and upload latest.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v${{ needs.bump-version.outputs.new_version }}"
+          VERSION="${{ needs.bump-version.outputs.new_version }}"
+          REPO="${{ github.repository }}"
+          BASE_URL="https://github.com/${REPO}/releases/download/${TAG}"
+
+          # Give GitHub a moment to finalize all assets
+          sleep 15
+
+          # Get release metadata
+          RELEASE_JSON=$(gh api "repos/${REPO}/releases/tags/${TAG}")
+          RELEASE_NOTES=$(echo "$RELEASE_JSON" | jq -r '.body // "New release available."')
+          PUB_DATE=$(echo "$RELEASE_JSON" | jq -r '.published_at // empty')
+          if [ -z "$PUB_DATE" ]; then
+            PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          fi
+
+          ASSETS=$(echo "$RELEASE_JSON" | jq -r '.assets[].name')
+
+          # Download all .sig files
+          mkdir -p /tmp/sigs
+          gh release download "$TAG" --repo "$REPO" --pattern "*.sig" --dir /tmp/sigs 2>/dev/null || true
+
+          # Helper to read a signature file
+          read_sig() {
+            local pattern="$1"
+            local sig_file=$(ls /tmp/sigs/ 2>/dev/null | grep -i "$pattern" | head -1)
+            if [ -n "$sig_file" ] && [ -f "/tmp/sigs/$sig_file" ]; then
+              cat "/tmp/sigs/$sig_file"
+            else
+              echo ""
+            fi
+          }
+
+          # Helper to find an asset URL
+          find_asset() {
+            local pattern="$1"
+            local asset=$(echo "$ASSETS" | grep -i "$pattern" | grep -v '\.sig$' | head -1)
+            if [ -n "$asset" ]; then
+              echo "${BASE_URL}/${asset}"
+            else
+              echo ""
+            fi
+          }
+
+          # Find updater bundles (tauri-action creates .msi.zip and .nsis.zip for Windows,
+          # .app.tar.gz for macOS, .AppImage.tar.gz for Linux)
+          WIN_X64_URL=$(find_asset 'x64.*\.msi\.zip$\|x64.*\.nsis\.zip$')
+          WIN_X64_SIG=$(read_sig 'x64.*\.msi\.zip\.sig$\|x64.*\.nsis\.zip\.sig$')
+          WIN_ARM64_URL=$(find_asset 'arm64.*\.msi\.zip$\|arm64.*\.nsis\.zip$')
+          WIN_ARM64_SIG=$(read_sig 'arm64.*\.msi\.zip\.sig$\|arm64.*\.nsis\.zip\.sig$')
+          MACOS_URL=$(find_asset '\.app\.tar\.gz$')
+          MACOS_SIG=$(read_sig '\.app\.tar\.gz\.sig$')
+          LINUX_URL=$(find_asset '\.AppImage\.tar\.gz$')
+          LINUX_SIG=$(read_sig '\.AppImage\.tar\.gz\.sig$')
+
+          echo "Assets found:"
+          echo "  WIN_X64_URL=$WIN_X64_URL"
+          echo "  WIN_ARM64_URL=$WIN_ARM64_URL"
+          echo "  MACOS_URL=$MACOS_URL"
+          echo "  LINUX_URL=$LINUX_URL"
+
+          # Build latest.json
+          jq -n \
+            --arg version "$VERSION" \
+            --arg notes "$RELEASE_NOTES" \
+            --arg pub_date "$PUB_DATE" \
+            --arg win_x64_url "$WIN_X64_URL" \
+            --arg win_x64_sig "$WIN_X64_SIG" \
+            --arg win_arm64_url "$WIN_ARM64_URL" \
+            --arg win_arm64_sig "$WIN_ARM64_SIG" \
+            --arg macos_url "$MACOS_URL" \
+            --arg macos_sig "$MACOS_SIG" \
+            --arg linux_url "$LINUX_URL" \
+            --arg linux_sig "$LINUX_SIG" \
+            '{
+              version: $version,
+              notes: $notes,
+              pub_date: $pub_date,
+              platforms: {
+                "windows-x86_64": {
+                  url: $win_x64_url,
+                  signature: $win_x64_sig
+                },
+                "windows-aarch64": {
+                  url: $win_arm64_url,
+                  signature: $win_arm64_sig
+                },
+                "darwin-universal": {
+                  url: $macos_url,
+                  signature: $macos_sig
+                },
+                "darwin-x86_64": {
+                  url: $macos_url,
+                  signature: $macos_sig
+                },
+                "darwin-aarch64": {
+                  url: $macos_url,
+                  signature: $macos_sig
+                },
+                "linux-x86_64": {
+                  url: $linux_url,
+                  signature: $linux_sig
+                }
+              }
+            }' > latest.json
+
+          echo "--- latest.json ---"
+          cat latest.json
+
+          # Upload to release
+          gh release delete-asset "$TAG" latest.json --repo "$REPO" --yes 2>/dev/null || true
+          gh release upload "$TAG" latest.json --repo "$REPO"

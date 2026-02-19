@@ -1,5 +1,6 @@
 pub mod background;
 pub mod bus;
+pub mod credential_design;
 pub mod cron;
 pub mod crypto;
 pub mod delivery;

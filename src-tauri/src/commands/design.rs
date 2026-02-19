@@ -380,7 +380,7 @@ async fn run_design_analysis(params: DesignRunParams) {
 }
 
 /// Extract display-friendly text from a Claude stream-json line.
-fn extract_display_text(line: &str) -> Option<String> {
+pub(crate) fn extract_display_text(line: &str) -> Option<String> {
     // Try parsing as stream-json
     if let Ok(val) = serde_json::from_str::<serde_json::Value>(line) {
         // Assistant text message

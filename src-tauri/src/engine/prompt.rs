@@ -171,6 +171,36 @@ pub fn assemble_prompt(
     prompt
 }
 
+/// Build default CLI arguments for spawning the Claude CLI process without persona-specific overrides.
+/// Used for credential design and other non-persona CLI invocations.
+pub fn build_default_cli_args() -> CliArgs {
+    let (command, mut args) = if cfg!(windows) {
+        ("cmd".to_string(), vec!["/C".to_string(), "claude.cmd".to_string()])
+    } else {
+        ("claude".to_string(), vec![])
+    };
+
+    args.extend([
+        "-p".to_string(),
+        "-".to_string(),
+        "--output-format".to_string(),
+        "stream-json".to_string(),
+        "--verbose".to_string(),
+        "--dangerously-skip-permissions".to_string(),
+    ]);
+
+    CliArgs {
+        command,
+        args,
+        env_overrides: Vec::new(),
+        env_removals: vec![
+            "CLAUDECODE".to_string(),
+            "CLAUDE_CODE".to_string(),
+        ],
+        cwd: None,
+    }
+}
+
 /// Build CLI arguments for spawning the Claude CLI process.
 pub fn build_cli_args(persona: &Persona, model_profile: &Option<ModelProfile>) -> CliArgs {
     let (command, mut args) = if cfg!(windows) {
@@ -228,6 +258,14 @@ pub fn build_cli_args(persona: &Persona, model_profile: &Option<ModelProfile>) -
                         base_url.clone(),
                     ));
                 }
+                if let Some(ref auth_token) = profile.auth_token {
+                    if !auth_token.is_empty() {
+                        env_overrides.push((
+                            "OLLAMA_API_KEY".to_string(),
+                            auth_token.clone(),
+                        ));
+                    }
+                }
                 env_removals.push("ANTHROPIC_API_KEY".to_string());
             }
             Some("custom") | Some("litellm") => {
@@ -250,6 +288,9 @@ pub fn build_cli_args(persona: &Persona, model_profile: &Option<ModelProfile>) -
             }
         }
     }
+
+    env_removals.push("CLAUDECODE".to_string());
+    env_removals.push("CLAUDE_CODE".to_string());
 
     CliArgs {
         command,

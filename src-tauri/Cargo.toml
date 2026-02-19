@@ -38,9 +38,14 @@ keyring = "3"
 pbkdf2 = { version = "0.12", features = ["simple"] }
 sha2 = "0.10"
 whoami = "1"
-reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+reqwest = { version = "0.12", features = ["json", "rustls-tls", "stream"], default-features = false }
+futures-util = "0.3"
 tauri-plugin-dialog = "2"
 tauri-plugin-deep-link = "2"
 tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
 open = "5"
 url = "2"
+sentry = { version = "0.34", default-features = false, features = [
+    "backtrace", "contexts", "panic", "rustls", "reqwest"
+] }
+sentry-tracing = "0.34"

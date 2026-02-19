@@ -156,7 +156,7 @@ pub fn extract_design_result(output: &str) -> Option<serde_json::Value> {
 }
 
 /// Extract JSON from a fenced ```json ... ``` block.
-fn extract_fenced_json(output: &str) -> Option<serde_json::Value> {
+pub(crate) fn extract_fenced_json(output: &str) -> Option<serde_json::Value> {
     let mut in_block = false;
     let mut json_content = String::new();
     let mut best_result: Option<serde_json::Value> = None;
@@ -212,7 +212,7 @@ fn extract_bare_json(output: &str) -> Option<serde_json::Value> {
 }
 
 /// Find the index of the matching closing brace for an opening brace at `start`.
-fn find_matching_brace(chars: &[char], start: usize) -> Option<usize> {
+pub(crate) fn find_matching_brace(chars: &[char], start: usize) -> Option<usize> {
     let mut depth = 0;
     let mut in_string = false;
     let mut escape_next = false;

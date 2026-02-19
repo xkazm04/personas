@@ -111,6 +111,7 @@ interface PersonaState {
 
   // UI State
   sidebarSection: SidebarSection;
+  credentialView: "credentials" | "from-template" | "add-new";
   editorTab: EditorTab;
   isLoading: boolean;
   isExecuting: boolean;
@@ -153,7 +154,18 @@ interface PersonaActions {
 
   // Connector Definitions & Credential Events
   fetchConnectorDefinitions: () => Promise<void>;
-  createConnectorDefinition: (input: { name: string; label: string; category: string; color: string; fields: string; services: string; events: string }) => Promise<ConnectorDefinition>;
+  createConnectorDefinition: (input: {
+    name: string;
+    label: string;
+    category: string;
+    color: string;
+    fields: string;
+    services: string;
+    events: string;
+    healthcheck_config?: string | null;
+    metadata?: string | null;
+    is_builtin?: boolean | null;
+  }) => Promise<ConnectorDefinition>;
   deleteConnectorDefinition: (id: string) => Promise<void>;
   fetchCredentialEvents: () => Promise<void>;
   createCredentialEvent: (input: { credential_id: string; event_template_id: string; name: string; config?: object | null }) => Promise<void>;
@@ -217,6 +229,7 @@ interface PersonaActions {
 
   // UI
   setSidebarSection: (section: SidebarSection) => void;
+  setCredentialView: (view: "credentials" | "from-template" | "add-new") => void;
   setEditorTab: (tab: EditorTab) => void;
   setError: (error: string | null) => void;
 }
@@ -283,6 +296,7 @@ export const usePersonaStore = create<PersonaStore>()(
       designPhase: "idle" as DesignPhase,
       activeDesignSession: null,
       sidebarSection: "personas" as SidebarSection,
+      credentialView: "credentials",
       editorTab: "prompt" as EditorTab,
       isLoading: false,
       isExecuting: false,
@@ -620,11 +634,11 @@ export const usePersonaStore = create<PersonaStore>()(
             color: input.color,
             category: input.category,
             fields: input.fields,
-            healthcheck_config: null,
+            healthcheck_config: input.healthcheck_config ?? null,
             services: input.services,
             events: input.events,
-            metadata: null,
-            is_builtin: null,
+            metadata: input.metadata ?? null,
+            is_builtin: input.is_builtin ?? null,
           });
           const connector = parseConn(raw);
           set((state) => ({ connectorDefinitions: [...state.connectorDefinitions, connector] }));
@@ -1153,6 +1167,7 @@ export const usePersonaStore = create<PersonaStore>()(
 
       // ── UI ───────────────────────────────────────────────────────
       setSidebarSection: (section) => set({ sidebarSection: section }),
+      setCredentialView: (view) => set({ credentialView: view }),
       setEditorTab: (tab) => set({ editorTab: tab }),
       setError: (error) => set({ error }),
     }),
@@ -1160,6 +1175,7 @@ export const usePersonaStore = create<PersonaStore>()(
       name: "persona-ui-state",
       partialize: (state) => ({
         sidebarSection: state.sidebarSection,
+        credentialView: state.credentialView,
         selectedPersonaId: state.selectedPersonaId,
         overviewTab: state.overviewTab,
         editorTab: state.editorTab,
