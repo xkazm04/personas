@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
-import Sidebar from './components/Sidebar';
-import OverviewPage from './components/OverviewPage';
-import PersonaEditor from './components/PersonaEditor';
-import { TriggerList } from './components/TriggerList';
-import { CredentialManager } from './components/CredentialManager';
-import PersonaOverviewPage from './components/PersonaOverviewPage';
-import DesignReviewsPage from './components/DesignReviewsPage';
-import TeamCanvas from './components/TeamCanvas';
-import CloudDeployPanel from './components/CloudDeployPanel';
-import OnboardingWizard from './components/OnboardingWizard';
+import Sidebar from '@/features/shared/components/Sidebar';
+import OverviewPage from '@/features/overview/components/OverviewPage';
+import PersonaEditor from '@/features/agents/sub_editor/PersonaEditor';
+import { TriggerList } from '@/features/triggers/components/TriggerList';
+import { CredentialManager } from '@/features/vault/components/CredentialManager';
+import PersonaOverviewPage from '@/features/agents/components/PersonaOverviewPage';
+import DesignReviewsPage from '@/features/templates/components/DesignReviewsPage';
+import TeamCanvas from '@/features/pipeline/components/TeamCanvas';
+import CloudDeployPanel from '@/features/deployment/components/CloudDeployPanel';
+import OnboardingWizard from '@/features/agents/components/OnboardingWizard';
 
 export default function PersonasPage() {
   const sidebarSection = usePersonaStore((s) => s.sidebarSection);

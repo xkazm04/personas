@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import PersonasPage from "@/features/personas/PersonasPage";
-import UpdateBanner from "@/features/personas/components/UpdateBanner";
+import UpdateBanner from "@/features/shared/components/UpdateBanner";
 import { initAuthListener, useAuthStore } from "@/stores/authStore";
 
 export default function App() {
