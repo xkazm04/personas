@@ -1,36 +1,165 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Upload,
-  FileJson,
   AlertCircle,
   Check,
   RefreshCw,
   Sparkles,
-  Wrench,
-  Zap,
-  Link,
 } from 'lucide-react';
 import { parseN8nWorkflow } from '@/lib/personas/n8nParser';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import {
+  clearN8nTransformSnapshot,
+  confirmN8nPersonaDraft,
+  getN8nTransformSnapshot,
+  startN8nTransformBackground,
+  type N8nPersonaDraft,
+} from '@/api/tauriApi';
 import { usePersonaStore } from '@/stores/personaStore';
+import { useCorrelatedCliStream } from '@/hooks/useCorrelatedCliStream';
+import {
+  normalizeDraft,
+  normalizeDraftFromUnknown,
+  stringifyDraft,
+  N8N_TRANSFORM_CONTEXT_KEY,
+  type PersistedTransformContext,
+} from '@/features/templates/sub_n8n/n8nTypes';
+import { N8nUploadStep } from '@/features/templates/sub_n8n/N8nUploadStep';
+import { N8nParserResults } from '@/features/templates/sub_n8n/N8nParserResults';
+import { N8nTransformStep } from '@/features/templates/sub_n8n/N8nTransformStep';
 
 export default function N8nImportTab() {
-  const createPersona = usePersonaStore((s) => s.createPersona);
+  const fetchPersonas = usePersonaStore((s) => s.fetchPersonas);
   const selectPersona = usePersonaStore((s) => s.selectPersona);
 
-  const [isDragOver, setIsDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [parsedResult, setParsedResult] = useState<DesignAnalysisResult | null>(null);
   const [workflowName, setWorkflowName] = useState<string>('');
-  const [creating, setCreating] = useState(false);
+  const [rawWorkflowJson, setRawWorkflowJson] = useState<string>('');
+  const [transforming, setTransforming] = useState(false);
   const [created, setCreated] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [draft, setDraft] = useState<N8nPersonaDraft | null>(null);
+  const [draftJson, setDraftJson] = useState('');
+  const [draftJsonError, setDraftJsonError] = useState<string | null>(null);
+  const [showRawJson, setShowRawJson] = useState(false);
+  const [adjustmentRequest, setAdjustmentRequest] = useState('');
+  const [backgroundTransformId, setBackgroundTransformId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pollTimerRef = useRef<number | null>(null);
+  const {
+    runId: currentTransformId,
+    phase: transformPhase,
+    lines: transformLines,
+    setLines: setTransformLines,
+    start: startTransformStream,
+    reset: resetTransformStream,
+    setPhase: setTransformPhase,
+  } = useCorrelatedCliStream({
+    outputEvent: 'n8n-transform-output',
+    statusEvent: 'n8n-transform-status',
+    idField: 'transform_id',
+    lineField: 'line',
+    statusField: 'status',
+    errorField: 'error',
+    onFailed: (message) => setError(message),
+  });
+
+  useEffect(() => {
+    if (!draft) return;
+    setDraftJson(stringifyDraft(draft));
+    setDraftJsonError(null);
+  }, [draft]);
+
+  useEffect(() => {
+    return () => {
+      if (pollTimerRef.current !== null) {
+        window.clearInterval(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const raw = window.localStorage.getItem(N8N_TRANSFORM_CONTEXT_KEY);
+    if (!raw) return;
+
+    try {
+      const parsed = JSON.parse(raw) as PersistedTransformContext;
+      if (!parsed?.transformId) return;
+
+      setBackgroundTransformId(parsed.transformId);
+      setWorkflowName(parsed.workflowName || 'Imported n8n Workflow');
+      setRawWorkflowJson(parsed.rawWorkflowJson || '');
+      setParsedResult(parsed.parsedResult || null);
+
+      void startTransformStream(parsed.transformId);
+    } catch {
+      window.localStorage.removeItem(N8N_TRANSFORM_CONTEXT_KEY);
+    }
+  }, [startTransformStream]);
+
+  useEffect(() => {
+    if (!backgroundTransformId) return;
+
+    const syncSnapshot = async () => {
+      try {
+        const snapshot = await getN8nTransformSnapshot(backgroundTransformId);
+        setTransformLines(snapshot.lines ?? []);
+        if (snapshot.status === 'running' || snapshot.status === 'completed' || snapshot.status === 'failed') {
+          setTransformPhase(snapshot.status);
+        }
+
+        if (snapshot.draft) {
+          setDraft(normalizeDraft(snapshot.draft));
+        }
+
+        if (snapshot.status === 'running') {
+          setTransforming(true);
+          return;
+        }
+
+        setTransforming(false);
+      } catch {
+        // Snapshot may not exist yet or may have been cleared.
+      }
+    };
+
+    void syncSnapshot();
+
+    if (pollTimerRef.current !== null) {
+      window.clearInterval(pollTimerRef.current);
+      pollTimerRef.current = null;
+    }
+
+    pollTimerRef.current = window.setInterval(() => {
+      void syncSnapshot();
+    }, 1500);
+
+    return () => {
+      if (pollTimerRef.current !== null) {
+        window.clearInterval(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
+    };
+  }, [backgroundTransformId, setTransformLines, setTransformPhase]);
+
+  const updateDraft = useCallback((updater: (current: N8nPersonaDraft) => N8nPersonaDraft) => {
+    setDraft((current) => {
+      if (!current) return current;
+      return updater(current);
+    });
+  }, []);
 
   const processFile = useCallback((file: File) => {
     setError(null);
     setParsedResult(null);
     setCreated(false);
+    setDraft(null);
+    setDraftJson('');
+    setDraftJsonError(null);
+    setShowRawJson(false);
+    setAdjustmentRequest('');
 
     if (!file.name.endsWith('.json')) {
       setError('Please upload a .json file exported from n8n.');
@@ -40,35 +169,18 @@ export default function N8nImportTab() {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const json = JSON.parse(e.target?.result as string);
+        const content = e.target?.result as string;
+        const json = JSON.parse(content);
         const result = parseN8nWorkflow(json);
         setParsedResult(result);
         setWorkflowName(json.name || 'Imported n8n Workflow');
+        setRawWorkflowJson(JSON.stringify(json, null, 2));
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to parse workflow file.');
       }
     };
     reader.onerror = () => setError('Failed to read the file.');
     reader.readAsText(file);
-  }, []);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragOver(false);
-      const file = e.dataTransfer.files[0];
-      if (file) processFile(file);
-    },
-    [processFile],
-  );
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  }, []);
-
-  const handleDragLeave = useCallback(() => {
-    setIsDragOver(false);
   }, []);
 
   const handleFileSelect = useCallback(
@@ -79,82 +191,112 @@ export default function N8nImportTab() {
     [processFile],
   );
 
-  const handleCreate = async () => {
-    if (!parsedResult) return;
-    setCreating(true);
+  const handleTransform = async () => {
+    if (!parsedResult || !rawWorkflowJson || transforming || confirming) return;
+
+    const transformId =
+      typeof crypto !== 'undefined' && 'randomUUID' in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+    await startTransformStream(transformId);
+
+    setError(null);
+    setTransforming(true);
+    setTransformPhase('running');
+
+    const previousDraftJson = draft ? stringifyDraft(draft) : draftJson.trim() || null;
+
     try {
-      const persona = await createPersona({
-        name: workflowName,
-        description: parsedResult.summary,
-        system_prompt: parsedResult.full_prompt_markdown,
-      });
-      setCreated(true);
-      setTimeout(() => {
-        selectPersona(persona.id);
-      }, 1200);
+      const context: PersistedTransformContext = {
+        transformId,
+        workflowName: workflowName || 'Imported n8n Workflow',
+        rawWorkflowJson,
+        parsedResult,
+      };
+      window.localStorage.setItem(N8N_TRANSFORM_CONTEXT_KEY, JSON.stringify(context));
+      setBackgroundTransformId(transformId);
+
+      await startN8nTransformBackground(
+        transformId,
+        workflowName || 'Imported n8n Workflow',
+        rawWorkflowJson,
+        JSON.stringify(parsedResult, null, 2),
+        adjustmentRequest.trim() || null,
+        previousDraftJson,
+      );
+      if (adjustmentRequest.trim()) {
+        setAdjustmentRequest('');
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create persona.');
+      setError(err instanceof Error ? err.message : 'Failed to generate transformation draft.');
+      setTransformPhase('failed');
+      setTransforming(false);
+    }
+  };
+
+  const handleConfirmSave = async () => {
+    const payloadJson = draft ? stringifyDraft(draft) : draftJson.trim();
+
+    if (!payloadJson || transforming || confirming || (showRawJson && !!draftJsonError)) return;
+
+    setError(null);
+    setConfirming(true);
+
+    try {
+      const normalized = normalizeDraftFromUnknown(JSON.parse(payloadJson));
+      if (!normalized) {
+        setError('Draft JSON is invalid. Please fix draft fields before confirming save.');
+        setConfirming(false);
+        return;
+      }
+
+      const response = await confirmN8nPersonaDraft(stringifyDraft(normalized));
+      await fetchPersonas();
+      selectPersona(response.persona.id);
+      setCreated(true);
+      if (backgroundTransformId) {
+        void clearN8nTransformSnapshot(backgroundTransformId);
+      }
+      window.localStorage.removeItem(N8N_TRANSFORM_CONTEXT_KEY);
+      setBackgroundTransformId(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to confirm and save persona.');
     } finally {
-      setCreating(false);
+      setConfirming(false);
     }
   };
 
   const handleReset = () => {
+    const snapshotId = backgroundTransformId || currentTransformId;
+    if (snapshotId) {
+      void clearN8nTransformSnapshot(snapshotId);
+    }
+    window.localStorage.removeItem(N8N_TRANSFORM_CONTEXT_KEY);
+
     setParsedResult(null);
     setError(null);
     setWorkflowName('');
+    setRawWorkflowJson('');
+    setTransforming(false);
     setCreated(false);
+    setConfirming(false);
+    setDraft(null);
+    setDraftJson('');
+    setDraftJsonError(null);
+    setShowRawJson(false);
+    setAdjustmentRequest('');
+    setBackgroundTransformId(null);
+    void resetTransformStream();
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (
     <div className="p-6 overflow-y-auto h-full">
-      {/* Drop zone */}
       {!parsedResult && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onClick={() => fileInputRef.current?.click()}
-          className={`relative flex flex-col items-center justify-center gap-4 p-12 rounded-xl border-2 border-dashed cursor-pointer transition-colors ${
-            isDragOver
-              ? 'border-violet-500/50 bg-violet-500/10'
-              : 'border-primary/15 bg-secondary/20 hover:border-primary/30 hover:bg-secondary/30'
-          }`}
-        >
-          <motion.div
-            animate={isDragOver ? { scale: 1.1, y: -4 } : { scale: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-            className="w-16 h-16 rounded-2xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center"
-          >
-            <Upload className="w-8 h-8 text-violet-400" />
-          </motion.div>
-          <div className="text-center">
-            <p className="text-sm font-medium text-foreground/80">
-              Drop your n8n workflow JSON here
-            </p>
-            <p className="text-xs text-muted-foreground/50 mt-1">
-              or click to browse files
-            </p>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground/40">
-            <FileJson className="w-4 h-4" />
-            <span>Accepts .json files exported from n8n</span>
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".json"
-            onChange={handleFileSelect}
-            className="hidden"
-          />
-        </motion.div>
+        <N8nUploadStep fileInputRef={fileInputRef} onFileSelect={handleFileSelect} />
       )}
 
-      {/* Error */}
       {error && (
         <motion.div
           initial={{ opacity: 0, y: 4 }}
@@ -169,7 +311,6 @@ export default function N8nImportTab() {
         </motion.div>
       )}
 
-      {/* Parsed result preview */}
       {parsedResult && (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -177,115 +318,81 @@ export default function N8nImportTab() {
           transition={{ duration: 0.35 }}
           className="space-y-4"
         >
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-500/25 flex items-center justify-center">
-                <FileJson className="w-5 h-5 text-cyan-400" />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-foreground/90">{workflowName}</h3>
-                <p className="text-xs text-muted-foreground/50">{parsedResult.summary}</p>
-              </div>
-            </div>
+          <N8nParserResults
+            parsedResult={parsedResult}
+            workflowName={workflowName}
+            onReset={handleReset}
+          />
+
+          <div className="rounded-xl border border-primary/10 bg-secondary/20 divide-y divide-primary/10">
+            <N8nTransformStep
+              parsedResult={parsedResult}
+              draft={draft}
+              draftJson={draftJson}
+              draftJsonError={draftJsonError}
+              showRawJson={showRawJson}
+              adjustmentRequest={adjustmentRequest}
+              transforming={transforming}
+              confirming={confirming}
+              created={created}
+              transformPhase={transformPhase}
+              currentTransformId={currentTransformId}
+              transformLines={transformLines}
+              updateDraft={updateDraft}
+              setDraft={setDraft}
+              setDraftJson={setDraftJson}
+              setDraftJsonError={setDraftJsonError}
+              setShowRawJson={setShowRawJson}
+              setAdjustmentRequest={setAdjustmentRequest}
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
             <button
-              onClick={handleReset}
-              className="px-3 py-1.5 text-xs rounded-lg border border-primary/15 hover:bg-secondary/50 text-muted-foreground/60 transition-colors"
+              onClick={handleTransform}
+              disabled={!parsedResult || !rawWorkflowJson || transforming || confirming || created}
+              className="flex-1 px-4 py-3 text-sm font-medium rounded-xl border transition-colors flex items-center justify-center gap-2 bg-violet-500/15 text-violet-300 border-violet-500/25 hover:bg-violet-500/25 disabled:opacity-50"
             >
-              Import Another
+              {transforming ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  {draft ? 'Applying Adjustment...' : 'Generating Draft...'}
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  {draft ? 'Apply Adjustment via Claude CLI' : 'Generate Draft via Claude CLI'}
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={handleConfirmSave}
+              disabled={!draft || transforming || confirming || created || (showRawJson && !!draftJsonError)}
+              className={`flex-1 px-4 py-3 text-sm font-medium rounded-xl border transition-colors flex items-center justify-center gap-2 ${
+                created
+                  ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25'
+                  : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/25 hover:bg-emerald-500/20 disabled:opacity-50'
+              }`}
+            >
+              {created ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  Persona Saved (Confirmed)
+                </>
+              ) : confirming ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Confirming Save...
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4" />
+                  Confirm & Save Persona
+                </>
+              )}
             </button>
           </div>
-
-          {/* Preview sections */}
-          <div className="rounded-xl border border-primary/10 bg-secondary/20 divide-y divide-primary/10">
-            {/* Tools */}
-            {parsedResult.suggested_tools.length > 0 && (
-              <div className="p-4">
-                <h4 className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-2 flex items-center gap-1">
-                  <Wrench className="w-3 h-3" />
-                  Tools ({parsedResult.suggested_tools.length})
-                </h4>
-                <div className="flex flex-wrap gap-1.5">
-                  {parsedResult.suggested_tools.map((tool) => (
-                    <span
-                      key={tool}
-                      className="px-2 py-0.5 text-[10px] font-mono rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20"
-                    >
-                      {tool}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Triggers */}
-            {parsedResult.suggested_triggers.length > 0 && (
-              <div className="p-4">
-                <h4 className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-2 flex items-center gap-1">
-                  <Zap className="w-3 h-3" />
-                  Triggers ({parsedResult.suggested_triggers.length})
-                </h4>
-                <div className="space-y-1.5">
-                  {parsedResult.suggested_triggers.map((trigger, i) => (
-                    <div key={i} className="flex items-center gap-2 text-xs text-foreground/60">
-                      <span className="px-1.5 py-0.5 text-[10px] font-mono rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                        {trigger.trigger_type}
-                      </span>
-                      <span className="truncate">{trigger.description}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Connectors */}
-            {parsedResult.suggested_connectors && parsedResult.suggested_connectors.length > 0 && (
-              <div className="p-4">
-                <h4 className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-2 flex items-center gap-1">
-                  <Link className="w-3 h-3" />
-                  Connectors ({parsedResult.suggested_connectors.length})
-                </h4>
-                <div className="flex flex-wrap gap-1.5">
-                  {parsedResult.suggested_connectors.map((conn) => (
-                    <span
-                      key={conn.name}
-                      className="px-2 py-0.5 text-[10px] font-medium rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                    >
-                      {conn.name}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Create button */}
-          <button
-            onClick={handleCreate}
-            disabled={creating || created}
-            className={`w-full px-4 py-3 text-sm font-medium rounded-xl border transition-colors flex items-center justify-center gap-2 ${
-              created
-                ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25'
-                : 'bg-violet-500/15 text-violet-300 border-violet-500/25 hover:bg-violet-500/25'
-            }`}
-          >
-            {created ? (
-              <>
-                <Check className="w-4 h-4" />
-                Persona Created
-              </>
-            ) : creating ? (
-              <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                Creating Persona...
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4" />
-                Create Persona from Workflow
-              </>
-            )}
-          </button>
         </motion.div>
       )}
     </div>
