@@ -102,10 +102,6 @@ pub async fn cloud_status(
 }
 
 /// Submit a persona for cloud execution.
-///
-/// Assembles the prompt locally, creates a local execution record, submits to the
-/// cloud orchestrator, then spawns a background task to poll for results.
-/// Returns the local execution ID immediately.
 #[tauri::command]
 pub async fn cloud_execute_persona(
     state: State<'_, Arc<AppState>>,
@@ -115,16 +111,13 @@ pub async fn cloud_execute_persona(
 ) -> Result<String, AppError> {
     let client = get_cloud_client(&state).await?;
 
-    // Load persona and tools
     let persona = personas::get_by_id(&state.db, &persona_id)?;
     let tools = tools::get_tools_for_persona(&state.db, &persona_id)?;
 
-    // Parse input data JSON
     let input_value: Option<serde_json::Value> = input_data
         .as_deref()
         .and_then(|s| serde_json::from_str(s).ok());
 
-    // Assemble prompt (no credential hints for cloud — the orchestrator handles auth)
     let prompt = engine::prompt::assemble_prompt(
         &persona,
         &tools,
@@ -132,32 +125,26 @@ pub async fn cloud_execute_persona(
         None,
     );
 
-    // Create local execution record
     let exec = executions::create(&state.db, &persona_id, None, input_data.clone(), None)?;
 
-    // Determine timeout
     let timeout_ms = if persona.timeout_ms > 0 {
         persona.timeout_ms as u64
     } else {
         600_000
     };
 
-    // Submit to cloud orchestrator
     let cloud_resp = client
         .submit_execution(&prompt, &persona_id, Some(timeout_ms))
         .await?;
 
-    // Store local ↔ cloud execution ID mapping
     state
         .cloud_exec_ids
         .lock()
         .await
         .insert(exec.id.clone(), cloud_resp.execution_id.clone());
 
-    // Create cancellation flag
     let cancelled = Arc::new(AtomicBool::new(false));
 
-    // Clone values for the background task
     let exec_id = exec.id.clone();
     let cloud_exec_id = cloud_resp.execution_id.clone();
     let persona_id_clone = persona_id.clone();
@@ -166,7 +153,6 @@ pub async fn cloud_execute_persona(
     let cancelled_clone = cancelled.clone();
     let app_clone = app.clone();
 
-    // Spawn background task to poll for cloud execution completion
     let handle = tokio::spawn(async move {
         let result = cloud::runner::run_cloud_execution(
             app_clone,
@@ -177,7 +163,6 @@ pub async fn cloud_execute_persona(
         )
         .await;
 
-        // Only write final status if not cancelled
         if !cancelled_clone.load(Ordering::Acquire) {
             let status = if result.success { "completed" } else { "failed" };
             let _ = executions::update_status(
@@ -202,7 +187,6 @@ pub async fn cloud_execute_persona(
         }
     });
 
-    // Register with the execution engine for tracking and cancellation
     state
         .engine
         .register_cloud_task(&persona_id, exec.id.clone(), cancelled, handle)
@@ -219,14 +203,11 @@ pub async fn cloud_execute_persona(
 }
 
 /// Cancel a running cloud execution.
-///
-/// Signals the local engine to cancel, then best-effort cancels on the cloud side.
 #[tauri::command]
 pub async fn cloud_cancel_execution(
     state: State<'_, Arc<AppState>>,
     execution_id: String,
 ) -> Result<bool, AppError> {
-    // Look up the cloud execution ID
     let cloud_exec_id = state
         .cloud_exec_ids
         .lock()
@@ -234,20 +215,17 @@ pub async fn cloud_cancel_execution(
         .get(&execution_id)
         .cloned();
 
-    // Cancel locally via the engine
     let cancelled = state
         .engine
         .cancel_cloud_execution(&execution_id, &state.db, None)
         .await;
 
-    // Best-effort cancel on the cloud side
     if let Some(cloud_id) = cloud_exec_id {
         if let Ok(client) = get_cloud_client(&state).await {
             let _ = client.cancel_execution(&cloud_id).await;
         }
     }
 
-    // Remove the mapping
     state.cloud_exec_ids.lock().await.remove(&execution_id);
 
     if cancelled {
@@ -258,7 +236,6 @@ pub async fn cloud_cancel_execution(
 }
 
 /// Initiate OAuth authorization via the cloud orchestrator.
-/// Opens the authorization URL in the system browser.
 #[tauri::command]
 pub async fn cloud_oauth_authorize(
     state: State<'_, Arc<AppState>>,
@@ -266,7 +243,6 @@ pub async fn cloud_oauth_authorize(
     let client = get_cloud_client(&state).await?;
     let resp = client.oauth_authorize().await?;
 
-    // Open the authorization URL in the default browser
     let _ = open::that(&resp.auth_url);
 
     tracing::info!("Opened browser for cloud OAuth authorization");

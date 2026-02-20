@@ -26,6 +26,7 @@ struct DesignStatusEvent {
     status: String,
     result: Option<serde_json::Value>,
     error: Option<String>,
+    question: Option<serde_json::Value>,
 }
 
 // ── Commands ────────────────────────────────────────────────────
@@ -185,6 +186,7 @@ async fn run_design_analysis(params: DesignRunParams) {
             status: "analyzing".into(),
             result: None,
             error: None,
+            question: None,
         },
     );
 
@@ -225,6 +227,7 @@ async fn run_design_analysis(params: DesignRunParams) {
                     status: "failed".into(),
                     result: None,
                     error: Some(error_msg),
+                    question: None,
                 },
             );
             return;
@@ -280,6 +283,7 @@ async fn run_design_analysis(params: DesignRunParams) {
                 status: "failed".into(),
                 result: None,
                 error: Some("Design analysis timed out after 10 minutes".into()),
+                question: None,
             },
         );
         return;
@@ -293,6 +297,24 @@ async fn run_design_analysis(params: DesignRunParams) {
 
     if is_cancelled {
         tracing::info!(design_id = %design_id, "Design analysis cancelled, skipping DB write");
+        return;
+    }
+
+    // Check for a clarification question before extracting the full result.
+    // When Claude asks a question, the active_design_id is kept alive so the
+    // user can answer and continue via refine_design.
+    if let Some(question) = design::extract_design_question(&full_output) {
+        tracing::info!(design_id = %design_id, "Design analysis paused — question emitted");
+        let _ = app.emit(
+            "design-status",
+            DesignStatusEvent {
+                design_id,
+                status: "awaiting-input".into(),
+                result: None,
+                error: None,
+                question: Some(question),
+            },
+        );
         return;
     }
 
@@ -334,6 +356,7 @@ async fn run_design_analysis(params: DesignRunParams) {
                         status: "failed".into(),
                         result: Some(result),
                         error: Some(format!("Design completed but failed to save: {e}")),
+                        question: None,
                     },
                 );
                 return;
@@ -354,6 +377,7 @@ async fn run_design_analysis(params: DesignRunParams) {
                     status: "completed".into(),
                     result: Some(result),
                     error: None,
+                    question: None,
                 },
             );
         }
@@ -373,6 +397,7 @@ async fn run_design_analysis(params: DesignRunParams) {
                     status: "failed".into(),
                     result: None,
                     error: Some("Failed to extract design result from Claude output".into()),
+                    question: None,
                 },
             );
         }
@@ -401,9 +426,12 @@ pub(crate) fn extract_display_text(line: &str) -> Option<String> {
                 return Some(text.to_string());
             }
         }
-        // System init
+        // System event (only surface init once-friendly line)
         if val.get("type").and_then(|t| t.as_str()) == Some("system") {
-            return Some("[System] Design analysis started...".into());
+            if val.get("subtype").and_then(|s| s.as_str()) == Some("init") {
+                return Some("[System] Claude stream initialized.".into());
+            }
+            return None;
         }
         None
     } else {

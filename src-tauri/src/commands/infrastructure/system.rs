@@ -75,10 +75,9 @@ pub async fn system_health_check(
 ) -> Result<SystemHealthReport, AppError> {
     let mut sections = Vec::new();
 
-    // ── Section 1: Local Environment ────────────────────────────────────
+    // -- Section 1: Local Environment --
     let mut local_items = Vec::new();
 
-    // Check: Claude CLI in PATH
     let claude_candidates: &[&str] = if cfg!(target_os = "windows") {
         &["claude", "claude.cmd", "claude.exe", "claude-code"]
     } else {
@@ -140,7 +139,6 @@ pub async fn system_health_check(
         });
     }
 
-    // Check: Node.js available (optional)
     let node_candidates = ["node", "nodejs"];
     let mut node_ok = None;
 
@@ -172,7 +170,6 @@ pub async fn system_health_check(
         });
     }
 
-    // Check: Scheduler running
     let sched_running = state.scheduler.is_running();
     local_items.push(HealthCheckItem {
         id: "scheduler".into(),
@@ -192,10 +189,9 @@ pub async fn system_health_check(
         items: local_items,
     });
 
-    // ── Section 2: Agents ────────────────────────────────────────────────
+    // -- Section 2: Agents --
     let mut agent_items = Vec::new();
 
-    // Check: Ollama API key configured (optional — enables free cloud models)
     let ollama_key_configured = crate::db::repos::settings::get(&state.db, "ollama_api_key")
         .ok()
         .flatten()
@@ -219,7 +215,6 @@ pub async fn system_health_check(
         installable: false,
     });
 
-    // Check: LiteLLM Proxy configured (optional — enables routing through LiteLLM)
     let litellm_url_configured = crate::db::repos::settings::get(&state.db, "litellm_base_url")
         .ok()
         .flatten()
@@ -259,7 +254,7 @@ pub async fn system_health_check(
         items: agent_items,
     });
 
-    // ── Section 3: Cloud Deployment ────────────────────────────────────
+    // -- Section 3: Cloud Deployment --
     let cloud_connected = state.cloud_client.lock().await.is_some();
     let mut cloud_items = Vec::new();
 
@@ -281,7 +276,7 @@ pub async fn system_health_check(
         items: cloud_items,
     });
 
-    // ── Section 4: Account ──────────────────────────────────────────────
+    // -- Section 4: Account --
     let auth = state.auth.lock().await;
     let auth_resp = auth.to_response();
     drop(auth);

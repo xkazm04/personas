@@ -4,7 +4,7 @@ use serde::Serialize;
 use serde_json::json;
 use tauri::{Emitter, State};
 
-use crate::db::models::{CreateDesignReviewInput, PersonaDesignReview, PersonaManualReview};
+use crate::db::models::{CreateDesignReviewInput, CreatePersonaInput, PersonaDesignReview, PersonaManualReview};
 use crate::db::repos::{
     connectors as connector_repo, manual_reviews as manual_repo, personas as persona_repo,
     reviews as repo, tools as tool_repo,
@@ -132,6 +132,7 @@ pub async fn start_design_review_run(
                     had_references: None,
                     suggested_adjustment: None,
                     adjustment_generation: None,
+                    use_case_flows: None,
                     reviewed_at: now,
                 },
             );
@@ -205,6 +206,144 @@ pub fn get_pending_review_count(
     persona_id: Option<String>,
 ) -> Result<i64, AppError> {
     manual_repo::get_pending_count(&state.db, persona_id.as_deref())
+}
+
+#[tauri::command]
+pub fn import_design_review(
+    state: State<'_, Arc<AppState>>,
+    input: serde_json::Value,
+) -> Result<PersonaDesignReview, AppError> {
+    let now = chrono::Utc::now().to_rfc3339();
+
+    let review_input = CreateDesignReviewInput {
+        test_case_id: input
+            .get("test_case_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("unknown")
+            .to_string(),
+        test_case_name: input
+            .get("test_case_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Unnamed")
+            .to_string(),
+        instruction: input
+            .get("instruction")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
+        status: input
+            .get("status")
+            .and_then(|v| v.as_str())
+            .unwrap_or("passed")
+            .to_string(),
+        structural_score: input
+            .get("structural_score")
+            .and_then(|v| v.as_i64())
+            .map(|v| v as i32),
+        semantic_score: input
+            .get("semantic_score")
+            .and_then(|v| v.as_i64())
+            .map(|v| v as i32),
+        connectors_used: input
+            .get("connectors_used")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        trigger_types: input
+            .get("trigger_types")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        design_result: input
+            .get("design_result")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        structural_evaluation: input
+            .get("structural_evaluation")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        semantic_evaluation: input
+            .get("semantic_evaluation")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        test_run_id: input
+            .get("test_run_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("imported")
+            .to_string(),
+        had_references: input
+            .get("had_references")
+            .and_then(|v| v.as_bool()),
+        suggested_adjustment: None,
+        adjustment_generation: None,
+        use_case_flows: input
+            .get("use_case_flows")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        reviewed_at: input
+            .get("reviewed_at")
+            .and_then(|v| v.as_str())
+            .unwrap_or(&now)
+            .to_string(),
+    };
+
+    repo::create_review(&state.db, &review_input)
+}
+
+// ── Adopt Design Review as Persona ────────────────────────────
+
+#[tauri::command]
+pub fn adopt_design_review(
+    state: State<'_, Arc<AppState>>,
+    review_id: String,
+) -> Result<serde_json::Value, AppError> {
+    let review = repo::get_review_by_id(&state.db, &review_id)?;
+
+    let design_result_str = review
+        .design_result
+        .as_deref()
+        .ok_or_else(|| AppError::Validation("No design data available for this template".into()))?;
+
+    let design: serde_json::Value = serde_json::from_str(design_result_str)
+        .map_err(|e| AppError::Validation(format!("Invalid design result JSON: {e}")))?;
+
+    // Extract fields from the design result
+    let full_prompt = design
+        .get("full_prompt_markdown")
+        .and_then(|v| v.as_str())
+        .unwrap_or("You are a helpful AI assistant.")
+        .to_string();
+
+    let summary = design
+        .get("summary")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .or_else(|| Some(format!("Adopted from template: {}", review.test_case_name)));
+
+    let structured_prompt = design
+        .get("structured_prompt")
+        .map(|v| v.to_string());
+
+    let persona = persona_repo::create(
+        &state.db,
+        CreatePersonaInput {
+            name: review.test_case_name,
+            system_prompt: full_prompt,
+            project_id: None,
+            description: summary,
+            structured_prompt,
+            icon: None,
+            color: None,
+            enabled: Some(false),
+            max_concurrent: None,
+            timeout_ms: None,
+            model_profile: None,
+            max_budget_usd: None,
+            max_turns: None,
+            design_context: Some(design_result_str.to_string()),
+            group_id: None,
+        },
+    )?;
+
+    Ok(json!({ "persona": persona }))
 }
 
 /// Score a design prompt based on structural completeness.
