@@ -6,7 +6,7 @@ use crate::db::models::{
     CreateCredentialEventInput, CreateCredentialInput, CredentialEvent, PersonaCredential,
     UpdateCredentialEventInput, UpdateCredentialInput,
 };
-use crate::db::repos::credentials as repo;
+use crate::db::repos::resources::credentials as repo;
 use crate::engine::crypto;
 use crate::error::AppError;
 use crate::AppState;

@@ -428,7 +428,7 @@ mod tests {
     use crate::db::models::{CreatePersonaInput, CreateTeamInput, UpdateTeamInput};
 
     fn create_test_persona(pool: &DbPool, name: &str) -> crate::db::models::Persona {
-        crate::db::repos::personas::create(
+        crate::db::repos::core::personas::create(
             pool,
             CreatePersonaInput {
                 name: name.into(),

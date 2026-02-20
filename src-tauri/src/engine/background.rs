@@ -6,8 +6,10 @@ use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 
 use crate::db::models::{CreatePersonaEventInput, PersonaEvent, UpdateExecutionStatus};
-use crate::db::repos::{events as event_repo, executions as exec_repo, personas as persona_repo};
-use crate::db::repos::{tools as tool_repo, triggers as trigger_repo};
+use crate::db::repos::communication::events as event_repo;
+use crate::db::repos::core::personas as persona_repo;
+use crate::db::repos::execution::executions as exec_repo;
+use crate::db::repos::resources::{tools as tool_repo, triggers as trigger_repo};
 use crate::db::DbPool;
 use crate::engine::bus;
 use crate::engine::scheduler as sched_logic;

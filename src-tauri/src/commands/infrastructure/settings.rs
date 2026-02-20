@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use tauri::State;
 
-use crate::db::repos::settings as repo;
+use crate::db::repos::core::settings as repo;
 use crate::error::AppError;
 use crate::AppState;
 

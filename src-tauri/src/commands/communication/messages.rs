@@ -2,7 +2,7 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::db::models::{PersonaMessage, PersonaMessageDelivery};
-use crate::db::repos::messages as repo;
+use crate::db::repos::communication::messages as repo;
 use crate::error::AppError;
 use crate::AppState;
 

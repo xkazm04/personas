@@ -4,7 +4,9 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
 
-use crate::db::repos;
+use crate::db::repos::communication::events as event_repo;
+use crate::db::repos::core::{memories as memory_repo, personas as persona_repo};
+use crate::db::repos::resources::triggers as trigger_repo;
 use crate::error::AppError;
 use crate::AppState;
 
@@ -75,10 +77,10 @@ pub async fn export_persona(
     let pool = &state.db;
 
     // Gather data
-    let persona = repos::personas::get_by_id(pool, &persona_id)?;
-    let triggers = repos::triggers::get_by_persona_id(pool, &persona_id)?;
-    let subscriptions = repos::events::get_subscriptions_by_persona(pool, &persona_id)?;
-    let memories = repos::memories::get_all(pool, Some(&persona_id), None, None, None)?;
+    let persona = persona_repo::get_by_id(pool, &persona_id)?;
+    let triggers = trigger_repo::get_by_persona_id(pool, &persona_id)?;
+    let subscriptions = event_repo::get_subscriptions_by_persona(pool, &persona_id)?;
+    let memories = memory_repo::get_all(pool, Some(&persona_id), None, None, None)?;
 
     let bundle = PersonaExportBundle {
         version: 1,
@@ -185,7 +187,7 @@ pub async fn import_persona(
     let p = &bundle.persona;
 
     // Create the persona (disabled by default, with "(imported)" suffix)
-    let new_persona = repos::personas::create(
+    let new_persona = persona_repo::create(
         pool,
         crate::db::models::CreatePersonaInput {
             name: format!("{} (imported)", p.name),
@@ -209,7 +211,7 @@ pub async fn import_persona(
 
     // Set notification_channels via update if present
     if p.notification_channels.is_some() {
-        let _ = repos::personas::update(
+        let _ = persona_repo::update(
             pool,
             &new_id,
             crate::db::models::UpdatePersonaInput {
@@ -235,7 +237,7 @@ pub async fn import_persona(
 
     // Re-create triggers
     for t in &bundle.triggers {
-        let _ = repos::triggers::create(
+        let _ = trigger_repo::create(
             pool,
             crate::db::models::CreateTriggerInput {
                 persona_id: new_id.clone(),
@@ -248,7 +250,7 @@ pub async fn import_persona(
 
     // Re-create subscriptions
     for s in &bundle.subscriptions {
-        let _ = repos::events::create_subscription(
+        let _ = event_repo::create_subscription(
             pool,
             crate::db::models::CreateEventSubscriptionInput {
                 persona_id: new_id.clone(),
@@ -261,7 +263,7 @@ pub async fn import_persona(
 
     // Re-create memories
     for m in &bundle.memories {
-        let _ = repos::memories::create(
+        let _ = memory_repo::create(
             pool,
             crate::db::models::CreatePersonaMemoryInput {
                 persona_id: new_id.clone(),

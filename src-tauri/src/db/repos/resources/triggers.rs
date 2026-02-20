@@ -207,7 +207,7 @@ mod tests {
     use crate::db::models::CreatePersonaInput;
 
     fn create_test_persona(pool: &DbPool) -> crate::db::models::Persona {
-        crate::db::repos::personas::create(
+        crate::db::repos::core::personas::create(
             pool,
             CreatePersonaInput {
                 name: "Trigger Test Agent".into(),

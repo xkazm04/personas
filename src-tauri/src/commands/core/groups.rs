@@ -2,7 +2,7 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::db::models::{CreatePersonaGroupInput, PersonaGroup, UpdatePersonaGroupInput};
-use crate::db::repos::groups as repo;
+use crate::db::repos::core::groups as repo;
 use crate::error::AppError;
 use crate::AppState;
 

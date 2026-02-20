@@ -2,7 +2,7 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::db::models::{CreatePersonaMemoryInput, PersonaMemory};
-use crate::db::repos::memories as repo;
+use crate::db::repos::core::memories as repo;
 use crate::error::AppError;
 use crate::AppState;
 

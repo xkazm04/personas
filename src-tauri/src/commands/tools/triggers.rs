@@ -2,7 +2,7 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::db::models::{CreateTriggerInput, PersonaTrigger, UpdateTriggerInput};
-use crate::db::repos::triggers as repo;
+use crate::db::repos::resources::triggers as repo;
 use crate::error::AppError;
 use crate::AppState;
 

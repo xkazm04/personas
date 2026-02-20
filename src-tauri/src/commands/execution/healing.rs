@@ -2,8 +2,8 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::db::models::PersonaHealingIssue;
-use crate::db::repos::executions as exec_repo;
-use crate::db::repos::healing as repo;
+use crate::db::repos::execution::executions as exec_repo;
+use crate::db::repos::execution::healing as repo;
 use crate::engine::healing;
 use crate::error::AppError;
 use crate::AppState;

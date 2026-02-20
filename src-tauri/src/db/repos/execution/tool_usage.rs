@@ -166,7 +166,7 @@ mod tests {
     use super::*;
     use crate::db::init_test_db;
     use crate::db::models::CreatePersonaInput;
-    use crate::db::repos::{executions, personas};
+    use crate::db::repos::{core::personas, execution::executions};
 
     #[test]
     fn test_tool_usage_crud() {
