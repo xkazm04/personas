@@ -29,6 +29,7 @@ fn row_to_review(row: &Row) -> rusqlite::Result<PersonaDesignReview> {
         },
         suggested_adjustment: row.get("suggested_adjustment")?,
         adjustment_generation: row.get("adjustment_generation")?,
+        use_case_flows: row.get("use_case_flows")?,
         reviewed_at: row.get("reviewed_at")?,
         created_at: row.get("created_at")?,
     })
@@ -106,8 +107,8 @@ pub fn create_review(
           structural_score, semantic_score, connectors_used, trigger_types,
           design_result, structural_evaluation, semantic_evaluation,
           test_run_id, had_references, suggested_adjustment, adjustment_generation,
-          reviewed_at, created_at)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18)",
+          use_case_flows, reviewed_at, created_at)
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19)",
         params![
             id,
             input.test_case_id,
@@ -125,6 +126,7 @@ pub fn create_review(
             had_refs_int,
             input.suggested_adjustment,
             input.adjustment_generation,
+            input.use_case_flows,
             input.reviewed_at,
             now,
         ],
@@ -217,6 +219,7 @@ mod tests {
                 had_references: Some(true),
                 suggested_adjustment: None,
                 adjustment_generation: None,
+                use_case_flows: None,
                 reviewed_at: now,
             },
         )

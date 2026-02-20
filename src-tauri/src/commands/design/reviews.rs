@@ -5,10 +5,9 @@ use serde_json::json;
 use tauri::{Emitter, State};
 
 use crate::db::models::{CreateDesignReviewInput, CreatePersonaInput, PersonaDesignReview, PersonaManualReview};
-use crate::db::repos::{
-    connectors as connector_repo, manual_reviews as manual_repo, personas as persona_repo,
-    reviews as repo, tools as tool_repo,
-};
+use crate::db::repos::communication::{manual_reviews as manual_repo, reviews as repo};
+use crate::db::repos::core::personas as persona_repo;
+use crate::db::repos::resources::{connectors as connector_repo, tools as tool_repo};
 use crate::engine::design;
 use crate::error::AppError;
 use crate::AppState;

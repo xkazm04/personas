@@ -2,7 +2,7 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::db::models::{PersonaMetricsSnapshot, PersonaPromptVersion};
-use crate::db::repos::metrics as repo;
+use crate::db::repos::execution::metrics as repo;
 use crate::error::AppError;
 use crate::AppState;
 
@@ -42,10 +42,10 @@ pub fn get_prompt_versions(
 pub fn get_all_monthly_spend(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<(String, f64)>, AppError> {
-    let personas = crate::db::repos::personas::get_all(&state.db)?;
+    let personas = crate::db::repos::core::personas::get_all(&state.db)?;
     let mut result = Vec::new();
     for persona in &personas {
-        let spend = crate::db::repos::executions::get_monthly_spend(&state.db, &persona.id)?;
+        let spend = crate::db::repos::execution::executions::get_monthly_spend(&state.db, &persona.id)?;
         result.push((persona.id.clone(), spend));
     }
     Ok(result)

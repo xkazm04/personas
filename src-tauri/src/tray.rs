@@ -3,7 +3,7 @@ use tauri::menu::{MenuBuilder, MenuItemBuilder};
 use tauri::tray::TrayIconBuilder;
 use tauri::{AppHandle, Manager};
 
-use crate::db::repos::executions as exec_repo;
+use crate::db::repos::execution::executions as exec_repo;
 use crate::engine::background;
 use crate::AppState;
 
@@ -159,7 +159,7 @@ fn recent_execution_labels(state: &AppState, limit: usize) -> Vec<String> {
     };
 
     // Look up persona names
-    let personas = crate::db::repos::personas::get_all(&state.db).unwrap_or_default();
+    let personas = crate::db::repos::core::personas::get_all(&state.db).unwrap_or_default();
     let name_for = |pid: &str| -> &str {
         personas
             .iter()

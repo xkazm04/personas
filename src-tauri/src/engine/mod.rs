@@ -25,8 +25,8 @@ use tokio::sync::Mutex;
 use tauri::Emitter;
 
 use crate::db::models::{Persona, PersonaToolDefinition, UpdateExecutionStatus};
-use crate::db::repos::executions as exec_repo;
-use crate::db::repos::healing as healing_repo;
+use crate::db::repos::execution::executions as exec_repo;
+use crate::db::repos::execution::healing as healing_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -179,7 +179,7 @@ impl ExecutionEngine {
                 // --- OS Notification: execution completed ---
                 {
                     let persona_for_notify =
-                        crate::db::repos::personas::get_by_id(&pool_clone, &persona_id).ok();
+                        crate::db::repos::core::personas::get_by_id(&pool_clone, &persona_id).ok();
                     let notif_channels = persona_for_notify
                         .as_ref()
                         .and_then(|p| p.notification_channels.as_deref());
@@ -200,7 +200,7 @@ impl ExecutionEngine {
                 // --- Budget enforcement ---
                 if result.success {
                     let monthly_spend = exec_repo::get_monthly_spend(&pool_clone, &persona_id).unwrap_or(0.0);
-                    let persona_data = crate::db::repos::personas::get_by_id(&pool_clone, &persona_id).ok();
+                    let persona_data = crate::db::repos::core::personas::get_by_id(&pool_clone, &persona_id).ok();
 
                     if let Some(ref p) = persona_data {
                         if let Some(budget) = p.max_budget_usd {
@@ -210,7 +210,7 @@ impl ExecutionEngine {
                                     "Budget alert: {} has spent ${:.4} this month (budget: ${:.2}). Agent may be automatically paused.",
                                     p.name, monthly_spend, budget
                                 );
-                                let _ = crate::db::repos::messages::create(
+                                let _ = crate::db::repos::communication::messages::create(
                                     &pool_clone,
                                     crate::db::models::CreateMessageInput {
                                         persona_id: persona_id.clone(),
@@ -282,7 +282,7 @@ impl ExecutionEngine {
                         // Notify healing issue
                         {
                             let persona_for_heal =
-                                crate::db::repos::personas::get_by_id(&pool_clone, &persona_id)
+                                crate::db::repos::core::personas::get_by_id(&pool_clone, &persona_id)
                                     .ok();
                             let heal_channels = persona_for_heal
                                 .as_ref()

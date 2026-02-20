@@ -10,11 +10,12 @@ use crate::db::models::{
     CreateManualReviewInput, CreateMessageInput, CreatePersonaEventInput, CreatePersonaMemoryInput,
     Persona, PersonaToolDefinition,
 };
-use crate::db::repos::{
-    connectors as connector_repo, credentials as cred_repo, events as event_repo,
-    manual_reviews as review_repo, memories as mem_repo, messages as msg_repo,
-    tool_usage as usage_repo,
+use crate::db::repos::communication::{
+    events as event_repo, manual_reviews as review_repo, messages as msg_repo,
 };
+use crate::db::repos::core::memories as mem_repo;
+use crate::db::repos::execution::tool_usage as usage_repo;
+use crate::db::repos::resources::{connectors as connector_repo, credentials as cred_repo};
 use crate::db::DbPool;
 
 use super::logger::ExecutionLogger;
@@ -60,7 +61,7 @@ pub async fn run_execution(
             let needs_global_key = profile.auth_token.as_ref().map_or(true, |t| t.is_empty());
             if needs_global_key {
                 if let Ok(Some(global_key)) =
-                    crate::db::repos::settings::get(&pool, "ollama_api_key")
+                    crate::db::repos::core::settings::get(&pool, "ollama_api_key")
                 {
                     if !global_key.is_empty() {
                         profile.auth_token = Some(global_key);
@@ -76,7 +77,7 @@ pub async fn run_execution(
             let needs_global_url = profile.base_url.as_ref().map_or(true, |u| u.is_empty());
             if needs_global_url {
                 if let Ok(Some(global_url)) =
-                    crate::db::repos::settings::get(&pool, "litellm_base_url")
+                    crate::db::repos::core::settings::get(&pool, "litellm_base_url")
                 {
                     if !global_url.is_empty() {
                         profile.base_url = Some(global_url);
@@ -87,7 +88,7 @@ pub async fn run_execution(
             let needs_global_key = profile.auth_token.as_ref().map_or(true, |t| t.is_empty());
             if needs_global_key {
                 if let Ok(Some(global_key)) =
-                    crate::db::repos::settings::get(&pool, "litellm_master_key")
+                    crate::db::repos::core::settings::get(&pool, "litellm_master_key")
                 {
                     if !global_key.is_empty() {
                         profile.auth_token = Some(global_key);

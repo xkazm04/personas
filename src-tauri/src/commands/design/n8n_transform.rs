@@ -8,7 +8,7 @@ use tauri::{Emitter, State};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
 
-use crate::db::repos::personas as persona_repo;
+use crate::db::repos::core::personas as persona_repo;
 use crate::db::models::CreatePersonaInput;
 use crate::engine::prompt;
 use crate::error::AppError;

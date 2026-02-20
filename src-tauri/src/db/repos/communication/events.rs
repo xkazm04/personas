@@ -377,7 +377,7 @@ mod tests {
     use super::*;
     use crate::db::init_test_db;
     use crate::db::models::{CreatePersonaInput, CreateEventSubscriptionInput};
-    use crate::db::repos::personas;
+    use crate::db::repos::core::personas;
 
     fn create_test_persona(pool: &DbPool) -> String {
         let persona = personas::create(

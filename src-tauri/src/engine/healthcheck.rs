@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use crate::db::repos::connectors as connector_repo;
-use crate::db::repos::credentials as cred_repo;
+use crate::db::repos::resources::connectors as connector_repo;
+use crate::db::repos::resources::credentials as cred_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -31,43 +31,74 @@ pub async fn run_healthcheck(
 
     let fields = parse_credential_fields(&cred.encrypted_data, &cred.iv)?;
 
-    // Find connector for this service_type
+    let (connector, hc_config) = resolve_connector_healthcheck(pool, &cred.service_type)?;
+
+    // Find a token in credential fields
+    let token = resolve_auth_token(&cred.service_type, connector.metadata.as_deref(), &fields).await?;
+
+    execute_healthcheck_request(&cred.service_type, &hc_config, &fields, token).await
+}
+
+pub async fn run_healthcheck_with_fields(
+    pool: &DbPool,
+    service_type: &str,
+    fields: &HashMap<String, String>,
+) -> Result<HealthcheckResult, AppError> {
+    let (connector, hc_config) = resolve_connector_healthcheck(pool, service_type)?;
+    let token = resolve_auth_token(service_type, connector.metadata.as_deref(), fields).await?;
+
+    execute_healthcheck_request(service_type, &hc_config, fields, token).await
+}
+
+fn resolve_connector_healthcheck(
+    pool: &DbPool,
+    service_type: &str,
+) -> Result<(crate::db::models::ConnectorDefinition, HealthcheckConfig), AppError> {
     let connectors = connector_repo::get_all(pool)?;
     let connector = connectors
         .iter()
-        .find(|c| c.name == cred.service_type);
+        .find(|c| c.name == service_type)
+        .cloned();
 
     let connector = match connector {
         Some(c) => c,
         None => {
-            return Ok(HealthcheckResult {
-                success: false,
-                message: format!("No connector definition found for '{}'", cred.service_type),
-            });
+            return Err(AppError::NotFound(format!(
+                "No connector definition found for '{}'",
+                service_type
+            )));
         }
     };
 
-    // Parse healthcheck config
     let hc_config = match &connector.healthcheck_config {
-        Some(json_str) => match parse_healthcheck_config(json_str) {
-            Some(config) => config,
-            None => {
-                return Ok(HealthcheckResult {
-                    success: false,
-                    message: "No healthcheck configured for this connector".into(),
-                });
-            }
-        },
-        None => {
-            return Ok(HealthcheckResult {
-                success: false,
-                message: "No healthcheck configured for this connector".into(),
-            });
-        }
-    };
+        Some(json_str) => parse_healthcheck_config(json_str),
+        None => None,
+    }
+    .ok_or_else(|| AppError::Validation("No healthcheck configured for this connector".into()))?;
 
-    // Find a token in credential fields
-    let token = resolve_auth_token(&cred.service_type, connector.metadata.as_deref(), &fields).await?;
+    Ok((connector, hc_config))
+}
+
+async fn execute_healthcheck_request(
+    service_type: &str,
+    hc_config: &HealthcheckConfig,
+    fields: &HashMap<String, String>,
+    token: Option<String>,
+) -> Result<HealthcheckResult, AppError> {
+    let mut resolved_values = fields.clone();
+    if let Some(ref tok) = token {
+        if !resolved_values.contains_key("access_token") {
+            resolved_values.insert("access_token".into(), tok.clone());
+        }
+        if !resolved_values.contains_key("accessToken") {
+            resolved_values.insert("accessToken".into(), tok.clone());
+        }
+        if !resolved_values.contains_key("token") {
+            resolved_values.insert("token".into(), tok.clone());
+        }
+    }
+
+    let resolved_endpoint = resolve_template(&hc_config.endpoint, &resolved_values);
 
     // Build and send the request
     let client = reqwest::Client::builder()
@@ -82,13 +113,32 @@ pub async fn run_healthcheck(
         .to_uppercase();
 
     let mut request = match method.as_str() {
-        "POST" => client.post(&hc_config.endpoint),
-        "PUT" => client.put(&hc_config.endpoint),
-        _ => client.get(&hc_config.endpoint),
+        "POST" => client.post(&resolved_endpoint),
+        "PUT" => client.put(&resolved_endpoint),
+        "PATCH" => client.patch(&resolved_endpoint),
+        "DELETE" => client.delete(&resolved_endpoint),
+        _ => client.get(&resolved_endpoint),
     };
 
+    let mut has_auth_header = false;
+    for (header_name, header_template) in &hc_config.headers {
+        let header_value = resolve_template(header_template, &resolved_values);
+        if header_name.eq_ignore_ascii_case("authorization") {
+            if !header_value.contains("{{") {
+                has_auth_header = true;
+            }
+        }
+        request = request.header(header_name, header_value);
+    }
+
     if let Some(ref tok) = token {
-        request = request.bearer_auth(tok);
+        if !has_auth_header {
+            if service_type.contains("clickup") {
+                request = request.header("Authorization", tok);
+            } else {
+                request = request.bearer_auth(tok);
+            }
+        }
     }
 
     match request.send().await {
@@ -111,6 +161,14 @@ pub async fn run_healthcheck(
             message: format!("Connection failed: {}", e),
         }),
     }
+}
+
+fn resolve_template(template: &str, values: &HashMap<String, String>) -> String {
+    let mut resolved = template.to_string();
+    for (key, value) in values {
+        resolved = resolved.replace(&format!("{{{{{}}}}}", key), value);
+    }
+    resolved
 }
 
 fn parse_credential_fields(
@@ -309,6 +367,7 @@ fn dotenv_var_first_nonempty(keys: &[&str]) -> Option<String> {
 struct HealthcheckConfig {
     endpoint: String,
     method: Option<String>,
+    headers: HashMap<String, String>,
 }
 
 fn parse_healthcheck_config(json: &str) -> Option<HealthcheckConfig> {
@@ -325,7 +384,21 @@ fn parse_healthcheck_config(json: &str) -> Option<HealthcheckConfig> {
         .get("method")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
-    Some(HealthcheckConfig { endpoint, method })
+
+    let mut headers = HashMap::new();
+    if let Some(map) = val.get("headers").and_then(|v| v.as_object()) {
+        for (k, v) in map {
+            if let Some(text) = v.as_str() {
+                headers.insert(k.to_string(), text.to_string());
+            }
+        }
+    }
+
+    Some(HealthcheckConfig {
+        endpoint,
+        method,
+        headers,
+    })
 }
 
 /// Look for an auth token in credential fields by checking common key names.

@@ -145,7 +145,7 @@ mod tests {
     use super::*;
     use crate::db::init_test_db;
     use crate::db::models::{CreatePersonaInput, CreatePersonaMemoryInput};
-    use crate::db::repos::personas;
+    use crate::db::repos::core::personas;
 
     #[test]
     fn test_memory_crud() {

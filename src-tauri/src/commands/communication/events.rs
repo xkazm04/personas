@@ -5,7 +5,7 @@ use crate::db::models::{
     CreateEventSubscriptionInput, CreatePersonaEventInput, PersonaEvent,
     PersonaEventSubscription, UpdateEventSubscriptionInput,
 };
-use crate::db::repos::events as repo;
+use crate::db::repos::communication::events as repo;
 use crate::error::AppError;
 use crate::AppState;
 

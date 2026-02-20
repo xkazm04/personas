@@ -7,7 +7,7 @@ use tauri::{Emitter, State};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
 
-use crate::db::repos::connectors as connector_repo;
+use crate::db::repos::resources::connectors as connector_repo;
 use crate::engine::credential_design;
 use crate::engine::parser::parse_stream_line;
 use crate::engine::types::StreamLineType;

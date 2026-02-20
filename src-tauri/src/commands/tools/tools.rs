@@ -2,8 +2,8 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::db::models::{CreateToolDefinitionInput, PersonaTool, PersonaToolDefinition, UpdateToolDefinitionInput};
-use crate::db::repos::tools as repo;
-use crate::db::repos::tool_usage;
+use crate::db::repos::execution::tool_usage;
+use crate::db::repos::resources::tools as repo;
 use crate::error::AppError;
 use crate::AppState;
 

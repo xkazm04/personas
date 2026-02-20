@@ -5,7 +5,7 @@ use crate::db::models::{
     CreateTeamInput, PersonaTeam, PersonaTeamConnection, PersonaTeamMember, PipelineRun,
     UpdateTeamInput,
 };
-use crate::db::repos::teams as repo;
+use crate::db::repos::resources::teams as repo;
 use crate::error::AppError;
 use crate::AppState;
 
@@ -138,9 +138,9 @@ pub async fn execute_team(
     team_id: String,
     input_data: Option<String>,
 ) -> Result<String, AppError> {
-    use crate::db::repos::teams as team_repo;
-    use crate::db::repos::personas as persona_repo;
-    use crate::db::repos::tools as tool_repo;
+    use crate::db::repos::resources::teams as team_repo;
+    use crate::db::repos::core::personas as persona_repo;
+    use crate::db::repos::resources::tools as tool_repo;
     use tauri::Emitter;
 
     // Create pipeline run
@@ -316,7 +316,7 @@ pub async fn execute_team(
             });
 
             // Create execution
-            let exec = match crate::db::repos::executions::create(
+            let exec = match crate::db::repos::execution::executions::create(
                 &db,
                 &member.persona_id,
                 None,
@@ -381,7 +381,7 @@ pub async fn execute_team(
             for _ in 0..600 {
                 tokio::time::sleep(std::time::Duration::from_secs(1)).await;
                 if let Ok(execution) =
-                    crate::db::repos::executions::get_by_id(&db, &exec.id)
+                    crate::db::repos::execution::executions::get_by_id(&db, &exec.id)
                 {
                     match execution.status.as_str() {
                         "completed" => {

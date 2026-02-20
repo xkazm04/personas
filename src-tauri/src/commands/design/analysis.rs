@@ -6,7 +6,8 @@ use tauri::{Emitter, State};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
 
-use crate::db::repos::{connectors as connector_repo, personas as persona_repo, tools as tool_repo};
+use crate::db::repos::core::personas as persona_repo;
+use crate::db::repos::resources::{connectors as connector_repo, tools as tool_repo};
 use crate::engine::design;
 use crate::engine::prompt;
 use crate::error::AppError;

@@ -198,7 +198,7 @@ pub fn get_monthly_spend(pool: &DbPool, persona_id: &str) -> Result<f64, AppErro
 mod tests {
     use super::*;
     use crate::db::init_test_db;
-    use crate::db::repos::personas;
+    use crate::db::repos::core::personas;
     use crate::db::models::CreatePersonaInput;
 
     #[test]

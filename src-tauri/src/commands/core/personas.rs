@@ -2,7 +2,8 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::db::models::{CreatePersonaInput, Persona, UpdatePersonaInput};
-use crate::db::repos::{executions as exec_repo, personas as repo};
+use crate::db::repos::core::personas as repo;
+use crate::db::repos::execution::executions as exec_repo;
 use crate::error::AppError;
 use crate::AppState;
 

@@ -4,7 +4,7 @@ use tauri::State;
 use crate::db::models::{
     ConnectorDefinition, CreateConnectorDefinitionInput, UpdateConnectorDefinitionInput,
 };
-use crate::db::repos::connectors as repo;
+use crate::db::repos::resources::connectors as repo;
 use crate::error::AppError;
 use crate::AppState;
 

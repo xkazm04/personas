@@ -192,7 +192,7 @@ pub async fn system_health_check(
     // -- Section 2: Agents --
     let mut agent_items = Vec::new();
 
-    let ollama_key_configured = crate::db::repos::settings::get(&state.db, "ollama_api_key")
+    let ollama_key_configured = crate::db::repos::core::settings::get(&state.db, "ollama_api_key")
         .ok()
         .flatten()
         .is_some_and(|k| !k.is_empty());
@@ -215,11 +215,11 @@ pub async fn system_health_check(
         installable: false,
     });
 
-    let litellm_url_configured = crate::db::repos::settings::get(&state.db, "litellm_base_url")
+    let litellm_url_configured = crate::db::repos::core::settings::get(&state.db, "litellm_base_url")
         .ok()
         .flatten()
         .map_or(false, |u| !u.is_empty());
-    let litellm_key_configured = crate::db::repos::settings::get(&state.db, "litellm_master_key")
+    let litellm_key_configured = crate::db::repos::core::settings::get(&state.db, "litellm_master_key")
         .ok()
         .flatten()
         .map_or(false, |k| !k.is_empty());

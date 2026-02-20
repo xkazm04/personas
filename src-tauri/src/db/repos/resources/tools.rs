@@ -313,7 +313,7 @@ mod tests {
 
         // Create a persona first
         use crate::db::models::CreatePersonaInput;
-        let persona = crate::db::repos::personas::create(
+        let persona = crate::db::repos::core::personas::create(
             &pool,
             CreatePersonaInput {
                 name: "Tool Test Agent".into(),
@@ -362,7 +362,7 @@ mod tests {
         let pool = init_test_db().unwrap();
 
         use crate::db::models::CreatePersonaInput;
-        let persona = crate::db::repos::personas::create(
+        let persona = crate::db::repos::core::personas::create(
             &pool,
             CreatePersonaInput {
                 name: "Dup Tool Agent".into(),
