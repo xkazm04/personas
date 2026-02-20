@@ -78,6 +78,7 @@ interface PersonaDraft {
   selectedProvider: ModelProvider;
   baseUrl: string;
   authToken: string;
+  customModelName: string;
   maxBudget: number | '';
   maxTurns: number | '';
 }
@@ -87,12 +88,16 @@ function buildDraft(persona: { name: string; description?: string | null; icon?:
   let provider: ModelProvider = 'anthropic';
   let baseUrl = '';
   let authToken = '';
+  let customModelName = '';
   try {
     const mp: ModelProfile = persona.model_profile ? JSON.parse(persona.model_profile) : {};
     selectedModel = profileToDropdownValue(mp);
     provider = (mp.provider as ModelProvider) || 'anthropic';
     baseUrl = mp.base_url || '';
     authToken = mp.auth_token || '';
+    if (selectedModel === 'custom' && mp.model) {
+      customModelName = mp.model;
+    }
   } catch {
     // ignore
   }
@@ -108,6 +113,7 @@ function buildDraft(persona: { name: string; description?: string | null; icon?:
     selectedProvider: provider,
     baseUrl,
     authToken,
+    customModelName,
     maxBudget: persona.max_budget_usd ?? '',
     maxTurns: persona.max_turns ?? '',
   };
@@ -181,6 +187,78 @@ function OllamaApiKeyField() {
   );
 }
 
+// ── Global LiteLLM Proxy Config field ────────────────────────────────────
+
+function LiteLLMConfigField() {
+  const [baseUrl, setBaseUrl] = useState('');
+  const [masterKey, setMasterKey] = useState('');
+  const [saved, setSaved] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    Promise.all([
+      getAppSetting('litellm_base_url'),
+      getAppSetting('litellm_master_key'),
+    ]).then(([url, key]) => {
+      if (url) setBaseUrl(url);
+      if (key) setMasterKey(key);
+      setLoaded(true);
+    }).catch(() => setLoaded(true));
+  }, []);
+
+  const handleSave = async () => {
+    if (baseUrl.trim()) await setAppSetting('litellm_base_url', baseUrl.trim());
+    if (masterKey.trim()) await setAppSetting('litellm_master_key', masterKey.trim());
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  if (!loaded) return null;
+
+  return (
+    <div className="space-y-1.5 bg-sky-500/5 border border-sky-500/15 rounded-lg p-3">
+      <label className="block text-sm font-medium text-foreground/60 mb-1">
+        LiteLLM Proxy Settings
+        <span className="text-muted-foreground/40 font-normal ml-1">(global, shared across all agents)</span>
+      </label>
+      <div className="space-y-2">
+        <input
+          type="text"
+          value={baseUrl}
+          onChange={(e) => { setBaseUrl(e.target.value); setSaved(false); }}
+          placeholder="Proxy Base URL (http://localhost:4000)"
+          className="w-full px-3 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+        />
+        <input
+          type="password"
+          value={masterKey}
+          onChange={(e) => { setMasterKey(e.target.value); setSaved(false); }}
+          placeholder="Master Key (sk-...)"
+          className="w-full px-3 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+        />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleSave}
+            disabled={(!baseUrl.trim() && !masterKey.trim()) || saved}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+              saved
+                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                : (baseUrl.trim() || masterKey.trim())
+                  ? 'bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30'
+                  : 'bg-secondary/40 text-muted-foreground/30 border border-primary/10 cursor-not-allowed'
+            }`}
+          >
+            {saved ? 'Saved' : 'Save Global Config'}
+          </button>
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground/40">
+        These global settings are used as defaults for all agents using the LiteLLM provider. Per-agent overrides above take precedence.
+      </p>
+    </div>
+  );
+}
+
 export default function PersonaEditor() {
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
   const editorTab = usePersonaStore((s) => s.editorTab);
@@ -233,6 +311,7 @@ export default function PersonaEditor() {
     || draft.selectedProvider !== baseline.selectedProvider
     || draft.baseUrl !== baseline.baseUrl
     || draft.authToken !== baseline.authToken
+    || draft.customModelName !== baseline.customModelName
     || draft.maxBudget !== baseline.maxBudget
     || draft.maxTurns !== baseline.maxTurns;
 
@@ -327,6 +406,7 @@ export default function PersonaEditor() {
       } satisfies ModelProfile);
     } else if (draft.selectedModel === 'custom') {
       profile = JSON.stringify({
+        model: draft.customModelName || undefined,
         provider: draft.selectedProvider,
         base_url: draft.baseUrl || undefined,
         auth_token: draft.authToken || undefined,
@@ -344,7 +424,7 @@ export default function PersonaEditor() {
       max_budget_usd: draft.maxBudget === '' ? null : draft.maxBudget,
       max_turns: draft.maxTurns === '' ? null : draft.maxTurns,
     });
-    setBaseline((prev) => ({ ...prev, selectedModel: draft.selectedModel, selectedProvider: draft.selectedProvider, baseUrl: draft.baseUrl, authToken: draft.authToken, maxBudget: draft.maxBudget, maxTurns: draft.maxTurns }));
+    setBaseline((prev) => ({ ...prev, selectedModel: draft.selectedModel, selectedProvider: draft.selectedProvider, baseUrl: draft.baseUrl, authToken: draft.authToken, customModelName: draft.customModelName, maxBudget: draft.maxBudget, maxTurns: draft.maxTurns }));
   };
 
   const handleDiscardAndSwitch = () => {
@@ -541,12 +621,32 @@ export default function PersonaEditor() {
                 {draft.selectedModel === 'custom' && draft.selectedProvider !== 'anthropic' && (
                   <div className="space-y-3">
                     <div>
+                      <label className="block text-sm font-medium text-foreground/60 mb-1">Model Name</label>
+                      <input
+                        type="text"
+                        value={draft.customModelName}
+                        onChange={(e) => patch({ customModelName: e.target.value })}
+                        placeholder={
+                          draft.selectedProvider === 'litellm'
+                            ? 'e.g. anthropic/claude-sonnet-4-20250514'
+                            : draft.selectedProvider === 'ollama'
+                              ? 'e.g. llama3.1:8b'
+                              : 'Model identifier'
+                        }
+                        className="w-full px-3 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+                      />
+                    </div>
+                    <div>
                       <label className="block text-sm font-medium text-foreground/60 mb-1">Base URL</label>
                       <input
                         type="text"
                         value={draft.baseUrl}
                         onChange={(e) => patch({ baseUrl: e.target.value })}
-                        placeholder="http://localhost:11434"
+                        placeholder={
+                          draft.selectedProvider === 'litellm'
+                            ? 'http://localhost:4000'
+                            : 'http://localhost:11434'
+                        }
                         className="w-full px-3 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
                       />
                     </div>
@@ -556,11 +656,22 @@ export default function PersonaEditor() {
                         type="text"
                         value={draft.authToken}
                         onChange={(e) => patch({ authToken: e.target.value })}
-                        placeholder={draft.selectedProvider === 'ollama' ? 'ollama' : 'Bearer token'}
+                        placeholder={
+                          draft.selectedProvider === 'litellm'
+                            ? 'LiteLLM master key (sk-...)'
+                            : draft.selectedProvider === 'ollama'
+                              ? 'ollama'
+                              : 'Bearer token'
+                        }
                         className="w-full px-3 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
                       />
                     </div>
                   </div>
+                )}
+
+                {/* LiteLLM global config — shown when LiteLLM provider is selected */}
+                {draft.selectedModel === 'custom' && draft.selectedProvider === 'litellm' && (
+                  <LiteLLMConfigField />
                 )}
 
                 {/* Budget Controls */}

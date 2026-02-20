@@ -25,6 +25,7 @@ export default function Sidebar() {
   const credentialView = usePersonaStore((s) => s.credentialView);
   const setCredentialView = usePersonaStore((s) => s.setCredentialView);
   const credentials = usePersonaStore((s) => s.credentials);
+  const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
   const overviewTab = usePersonaStore((s) => s.overviewTab);
   const setOverviewTab = usePersonaStore((s) => s.setOverviewTab);
   const pendingReviewCount = usePersonaStore((s) => s.pendingReviewCount);
@@ -33,6 +34,11 @@ export default function Sidebar() {
   const fetchUnreadMessageCount = usePersonaStore((s) => s.fetchUnreadMessageCount);
   const pendingEventCount = usePersonaStore((s) => s.pendingEventCount);
   const fetchRecentEvents = usePersonaStore((s) => s.fetchRecentEvents);
+
+  const templateCount = connectorDefinitions.filter((conn) => {
+    const metadata = conn.metadata as Record<string, unknown> | null;
+    return metadata?.template_enabled === true;
+  }).length;
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [appVersion, setAppVersion] = useState('');
@@ -170,6 +176,11 @@ export default function Sidebar() {
                   {item.id === 'credentials' && (
                     <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-secondary/50 border border-primary/10 text-muted-foreground/70">
                       {credentials.length}
+                    </span>
+                  )}
+                  {item.id === 'from-template' && (
+                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-secondary/50 border border-primary/10 text-muted-foreground/70">
+                      {templateCount}
                     </span>
                   )}
                 </div>

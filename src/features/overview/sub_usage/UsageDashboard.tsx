@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { BarChart3, Play, ArrowRight, Sparkles } from 'lucide-react';
+import { BarChart3, Play, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import {
   BarChart,
@@ -47,9 +47,24 @@ export function UsageDashboard() {
 
   const [days, setDays] = useState<DayRange>(30);
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchToolUsage(days, selectedPersonaId || undefined);
+    let active = true;
+    const load = async () => {
+      setIsLoading(true);
+      try {
+        await fetchToolUsage(days, selectedPersonaId || undefined);
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    };
+    load();
+    return () => {
+      active = false;
+    };
   }, [days, selectedPersonaId, fetchToolUsage]);
 
   // Pivot overTime data into wide format for AreaChart
@@ -181,6 +196,15 @@ export function UsageDashboard() {
     toolUsageOverTime.length === 0 &&
     toolUsageByPersona.length === 0;
 
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4 text-muted-foreground/50">
+        <Loader2 className="w-8 h-8 animate-spin text-primary/70" />
+        <p className="text-sm">Loading usage analytics...</p>
+      </div>
+    );
+  }
+
   // ── Empty State ──────────────────────────────────────────────
   if (isEmpty) {
     const hasPersonas = personas.length > 0;
@@ -267,6 +291,14 @@ export function UsageDashboard() {
       <div className="flex items-center gap-4 flex-wrap">
         <PersonaSelect value={selectedPersonaId || ''} onChange={(v) => setSelectedPersonaId(v || null)} personas={personas} />
         <DayRangePicker value={days} onChange={setDays} />
+        <div className="ml-auto flex items-center gap-2">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium border border-primary/15 bg-secondary/30 text-foreground/70">
+            {toolUsageSummary.length} tools
+          </span>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium border border-primary/15 bg-secondary/30 text-foreground/70">
+            {pieTotal.toLocaleString()} invocations
+          </span>
+        </div>
       </div>
 
       {/* ── Top Row: Bar Chart + Pie Chart ─────────────────────── */}

@@ -289,6 +289,113 @@ function OllamaApiKeyPopup({
   );
 }
 
+// ─── LiteLLM Config Popup ─────────────────────────────────────────────────────
+
+function LiteLLMConfigPopup({
+  onClose,
+  onSaved,
+}: {
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [baseUrl, setBaseUrl] = useState('');
+  const [masterKey, setMasterKey] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    Promise.all([
+      getAppSetting('litellm_base_url'),
+      getAppSetting('litellm_master_key'),
+    ])
+      .then(([url, key]) => {
+        if (url) setBaseUrl(url);
+        if (key) setMasterKey(key);
+        setLoaded(true);
+      })
+      .catch(() => setLoaded(true));
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await setAppSetting('litellm_base_url', baseUrl.trim());
+      await setAppSetting('litellm_master_key', masterKey.trim());
+      onSaved();
+    } catch {
+      // keep popup open
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="bg-background border border-primary/15 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+      >
+        <div className="px-5 py-4 border-b border-primary/10">
+          <h3 className="text-sm font-semibold text-foreground/90 flex items-center gap-2">
+            <Key className="w-4 h-4 text-sky-400" />
+            LiteLLM Proxy Configuration
+          </h3>
+          <p className="text-xs text-muted-foreground/50 mt-1">
+            Optional — route agents through your LiteLLM proxy for model management and cost tracking.
+          </p>
+        </div>
+
+        <div className="px-5 py-4 space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-foreground/60 mb-1.5">Proxy Base URL</label>
+            <input
+              type="text"
+              value={baseUrl}
+              onChange={(e) => setBaseUrl(e.target.value)}
+              placeholder={loaded ? 'http://localhost:4000' : 'Loading\u2026'}
+              disabled={!loaded}
+              autoFocus
+              className="w-full px-3 py-2 bg-secondary/40 border border-primary/15 rounded-lg text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-sky-500/40 transition-all disabled:opacity-50"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-foreground/60 mb-1.5">Master Key</label>
+            <input
+              type="password"
+              value={masterKey}
+              onChange={(e) => setMasterKey(e.target.value)}
+              placeholder={loaded ? 'sk-...' : 'Loading\u2026'}
+              disabled={!loaded}
+              className="w-full px-3 py-2 bg-secondary/40 border border-primary/15 rounded-lg text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-sky-500/40 transition-all disabled:opacity-50"
+            />
+          </div>
+          <p className="text-[11px] text-muted-foreground/40 leading-relaxed">
+            These settings are stored locally and shared across all agents configured to use the LiteLLM provider.
+          </p>
+        </div>
+
+        <div className="px-5 py-3 border-t border-primary/10 flex items-center justify-end gap-2">
+          <button
+            onClick={onClose}
+            className="px-3 py-1.5 text-xs font-medium rounded-lg text-muted-foreground/60 hover:bg-secondary/60 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={!baseUrl.trim() || saving}
+            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-sky-500/15 text-sky-300 border border-sky-500/25 hover:bg-sky-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {saving ? 'Saving\u2026' : 'Save Configuration'}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 // ─── Step 1: System Checks ────────────────────────────────────────────────────
 
 function getStatusIcon(status: string) {
@@ -309,6 +416,7 @@ function SystemChecksStep({ onNext }: { onNext: () => void }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const { nodeState, claudeState, install } = useAutoInstaller();
   const [showOllamaPopup, setShowOllamaPopup] = useState(false);
+  const [showLiteLLMPopup, setShowLiteLLMPopup] = useState(false);
 
   const runChecks = useCallback(() => {
     setLoading(true);
@@ -340,6 +448,7 @@ function SystemChecksStep({ onNext }: { onNext: () => void }) {
             label: 'Agents',
             items: [
               { id: 'ollama_api_key', label: 'Ollama Cloud API Key', status: 'inactive', detail: 'Cannot check \u2014 IPC unavailable', installable: false },
+              { id: 'litellm_proxy', label: 'LiteLLM Proxy', status: 'inactive', detail: 'Cannot check \u2014 IPC unavailable', installable: false },
             ],
           },
           {
@@ -560,6 +669,15 @@ function SystemChecksStep({ onNext }: { onNext: () => void }) {
                             {check.status === 'ok' ? 'Edit Key' : 'Configure'}
                           </button>
                         )}
+                        {check.id === 'litellm_proxy' && !ipcError && (
+                          <button
+                            onClick={() => setShowLiteLLMPopup(true)}
+                            className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-md bg-sky-500/10 text-sky-300 border border-sky-500/20 hover:bg-sky-500/20 transition-colors"
+                          >
+                            <Key className="w-3 h-3" />
+                            {check.status === 'ok' ? 'Edit Config' : 'Configure'}
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -621,6 +739,19 @@ function SystemChecksStep({ onNext }: { onNext: () => void }) {
             onClose={() => setShowOllamaPopup(false)}
             onSaved={() => {
               setShowOllamaPopup(false);
+              runChecks();
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* LiteLLM Config popup */}
+      <AnimatePresence>
+        {showLiteLLMPopup && (
+          <LiteLLMConfigPopup
+            onClose={() => setShowLiteLLMPopup(false)}
+            onSaved={() => {
+              setShowLiteLLMPopup(false);
               runChecks();
             }}
           />

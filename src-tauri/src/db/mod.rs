@@ -63,6 +63,7 @@ pub fn init_db(app_data_dir: &PathBuf) -> Result<DbPool, AppError> {
     {
         let conn = pool.get()?;
         seed_builtin_tools(&conn)?;
+        seed_builtin_connectors(&conn)?;
     }
 
     tracing::info!("Database initialized successfully");
@@ -95,6 +96,70 @@ fn seed_builtin_tools(conn: &rusqlite::Connection) -> Result<(), AppError> {
     Ok(())
 }
 
+/// Seed built-in connector templates that should be available to all users.
+fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> {
+        let now = chrono::Utc::now().to_rfc3339();
+
+    let google_fields = r#"[]"#;
+
+        let google_healthcheck = r#"{
+            "endpoint": "https://www.googleapis.com/oauth2/v1/userinfo?alt=json",
+            "method": "GET",
+            "headers": {
+                "Authorization": "Bearer {{access_token}}"
+            },
+            "description": "Validates Google OAuth identity access"
+        }"#;
+
+        let google_metadata = r#"{
+            "template_enabled": true,
+            "recommended": true,
+            "summary": "Google Workspace consent-first template for Gmail, Drive, and Calendar automation.",
+            "setup_instructions": "1. Open Google Cloud Console (https://console.cloud.google.com).\n2. Create/select a project and enable Gmail API, Google Drive API, and Google Calendar API.\n3. Configure OAuth consent screen and add authorized test users (up to your dev quota).\n4. In Personas, click Authorize with Google.\n5. Complete consent in your browser (you can uncheck permissions you do not want).\n6. Return to Personas; token metadata is saved automatically.",
+            "oauth_type": "google"
+        }"#;
+
+        conn.execute(
+                "INSERT OR IGNORE INTO connector_definitions
+                 (id, name, label, icon_url, color, category, fields,
+                    healthcheck_config, services, events, metadata, is_builtin,
+                    created_at, updated_at)
+                 VALUES (?1, ?2, ?3, NULL, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 1, ?11, ?11)",
+                params![
+                        "builtin-google-workspace-oauth-template",
+                        "google_workspace_oauth_template",
+                    "Google Workspace",
+                        "#4285F4",
+                        "productivity",
+                        google_fields,
+                        google_healthcheck,
+                        "[]",
+                        "[]",
+                        google_metadata,
+                        now,
+                ],
+        )?;
+
+            conn.execute(
+                "UPDATE connector_definitions
+                 SET label = ?1,
+                     fields = ?2,
+                     metadata = ?3,
+                     updated_at = ?4
+                 WHERE name = ?5",
+                params![
+                    "Google Workspace",
+                    google_fields,
+                    google_metadata,
+                    now,
+                    "google_workspace_oauth_template",
+                ],
+            )?;
+
+        tracing::debug!("Builtin connector templates seeded");
+        Ok(())
+}
+
 #[cfg(test)]
 pub fn init_test_db() -> Result<DbPool, AppError> {
     use std::time::Duration;
@@ -112,6 +177,7 @@ pub fn init_test_db() -> Result<DbPool, AppError> {
     migrations::run(&conn)?;
     migrations::run_incremental(&conn)?;
     seed_builtin_tools(&conn)?;
+    seed_builtin_connectors(&conn)?;
     drop(conn);
     Ok(pool)
 }

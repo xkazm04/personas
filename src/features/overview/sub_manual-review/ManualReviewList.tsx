@@ -200,7 +200,8 @@ export default function ManualReviewList() {
             <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
               <ClipboardCheck className="w-5 h-5 text-muted-foreground/30" />
             </div>
-            <p className="text-sm text-muted-foreground/50">No items requiring review</p>
+            <p className="text-sm text-muted-foreground/50">No review items yet</p>
+            <p className="text-xs text-muted-foreground/30 mt-1">Items that require approval will appear here</p>
           </div>
         )}
 
@@ -401,7 +402,7 @@ function ReviewRow({
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-3 pb-3 pt-1 border-t border-primary/15 space-y-3">
+            <div className="px-4 pb-3 pt-1 border-t border-primary/15 space-y-3">
               {/* Content */}
               <div>
                 <div className="text-[11px] font-mono text-muted-foreground/50 uppercase mb-1.5">Content</div>

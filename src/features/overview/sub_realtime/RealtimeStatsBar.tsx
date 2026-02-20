@@ -115,6 +115,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
         {/* Pause/Resume */}
         <button
           onClick={onPause}
+          aria-label={isPaused ? 'Resume realtime stream' : 'Pause realtime stream'}
           className={`p-1.5 rounded-lg border transition-all ${
             isPaused
               ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'

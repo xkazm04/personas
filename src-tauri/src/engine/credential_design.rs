@@ -34,6 +34,8 @@ pub fn build_credential_design_prompt(
     prompt.push_str(instruction);
     prompt.push_str("\n\n");
 
+    prompt.push_str(GOOGLE_OAUTH_PRIORITY_GUIDANCE);
+
     // Output schema
     prompt.push_str(CREDENTIAL_DESIGN_OUTPUT_SCHEMA);
 
@@ -153,6 +155,28 @@ fn extract_bare_connector_json(output: &str) -> Option<serde_json::Value> {
 // Output Schema
 // ============================================================================
 
+const GOOGLE_OAUTH_PRIORITY_GUIDANCE: &str = r####"## Google OAuth Priority Guidance
+
+Apply this guidance whenever the user request mentions Google, Gmail, Google Calendar, Google Drive, Google Workspace, or Google OAuth.
+
+High-priority rules:
+- Treat Google connectors as OAuth flows, not static API key flows.
+- Set `connector.oauth_type` to `"google"`.
+- Prefer credential fields: `client_id`, `client_secret`, `refresh_token` (all required).
+- Do NOT require a `redirect_uri` field in credentials. Redirect/callback is handled by the app.
+- When the user asks for general Google automation credentials, default to a broad baseline consent set spanning Gmail, Google Drive, and Google Calendar.
+- In `setup_instructions`, explicitly say users can uncheck permissions they do not want to grant on the Google consent screen.
+- Include `helpText` for Google fields that explains practical setup.
+- For `refresh_token`, explain it is obtained by in-app authorization and can be auto-filled after authorization.
+- In `setup_instructions`, guide users to create a Google OAuth client in Google Cloud Console, then complete authorization in-app.
+
+Google field examples:
+- `client_id`: "OAuth client ID from Google Cloud Console (Desktop/Web app client)"
+- `client_secret`: "OAuth client secret from the same Google OAuth client"
+- `refresh_token`: "Generated after clicking Authorize with Google in the app"
+
+"####;
+
 const CREDENTIAL_DESIGN_OUTPUT_SCHEMA: &str = r####"## Required Output Format
 
 You MUST output your result as a single JSON code block. The JSON must conform to this exact schema:
@@ -165,13 +189,15 @@ You MUST output your result as a single JSON code block. The JSON must conform t
     "label": "Service Display Name",
     "category": "category_name",
     "color": "#HEX_COLOR",
+        "oauth_type": null,
     "fields": [
       {
         "key": "field_key",
         "label": "Field Label",
         "type": "password",
         "required": true,
-        "placeholder": "Example value..."
+                "placeholder": "Example value...",
+                "helpText": "Short setup guidance for this field"
       }
     ],
     "healthcheck_config": {
@@ -192,14 +218,20 @@ You MUST output your result as a single JSON code block. The JSON must conform t
 Important rules:
 1. `match_existing` — set to the existing connector `name` string if the user's request matches an existing connector listed above, or `null` if a new connector is needed. When matching existing, still provide the full `connector` object matching the existing definition.
 2. `connector.name` — lowercase snake_case identifier (e.g. `slack`, `github`, `openai_api`)
-3. `connector.fields` — each field needs: `key` (snake_case), `label`, `type` ("text" or "password"), `required` (boolean), `placeholder`
-4. `connector.fields[].type` — use "password" for API keys, tokens, and secrets; "text" for everything else
-5. `connector.healthcheck_config` — provide if the service has a simple health/auth-check endpoint, otherwise set to `null`. Use `{{field_key}}` placeholders in URL and headers to reference credential field values.
-6. `connector.services` — JSON array of service definitions (can be empty `[]`)
-7. `connector.events` — JSON array of event definitions (can be empty `[]`)
-8. `setup_instructions` — markdown instructions helping the user obtain the required credentials
-9. `connector.color` — a brand-appropriate hex color for the service
-10. Output ONLY the JSON block — no additional text before or after
+3. `connector.oauth_type` — set to `"google"` for Google OAuth connectors (`gmail`, `google_calendar`, `google_drive`), otherwise `null`.
+4. `connector.fields` — each field needs: `key` (snake_case), `label`, `type` ("text" or "password"), `required` (boolean), `placeholder`, optional `helpText`
+5. `connector.fields[].type` — use "password" for API keys, tokens, refresh tokens, and secrets; "text" for everything else.
+6. `connector.fields[].helpText` — provide concise, practical setup guidance for the user when useful.
+7. For Google OAuth connectors, prefer fields: `client_id`, `client_secret`, `refresh_token` (all required). `refresh_token` should indicate it is obtained by OAuth authorization and can be auto-filled after authorization.
+8. For Google OAuth connectors, do NOT include a `redirect_uri` credential field. Redirect/callback handling is application-managed.
+9. For Google OAuth connectors, `setup_instructions` should guide users to create a Google Cloud OAuth client and then authorize in-app to obtain refresh token.
+10. For general Google office automation requests, prefer setup language that requests broad baseline consent across Gmail, Google Drive, and Google Calendar, while making it clear users may uncheck permissions at consent time.
+11. `connector.healthcheck_config` — provide if the service has a simple health/auth-check endpoint, otherwise set to `null`. Use `{{field_key}}` placeholders in URL and headers to reference credential field values.
+12. `connector.services` — JSON array of service definitions (can be empty `[]`)
+13. `connector.events` — JSON array of event definitions (can be empty `[]`)
+14. `setup_instructions` — markdown instructions helping the user obtain the required credentials
+15. `connector.color` — a brand-appropriate hex color for the service
+16. Output ONLY the JSON block — no additional text before or after
 "####;
 
 const CREDENTIAL_HEALTHCHECK_OUTPUT_SCHEMA: &str = r####"## Required Output Format
@@ -302,6 +334,16 @@ mod tests {
     fn test_prompt_no_existing_connectors() {
         let prompt = build_credential_design_prompt("Connect to Slack", &[]);
         assert!(!prompt.contains("## Existing Connectors"));
+    }
+
+    #[test]
+    fn test_prompt_contains_google_oauth_guidance() {
+        let prompt = build_credential_design_prompt("Connect Gmail", &[]);
+        assert!(prompt.contains("## Google OAuth Priority Guidance"));
+        assert!(prompt.contains("Do NOT require a `redirect_uri` field in credentials"));
+        assert!(prompt.contains("`refresh_token`"));
+        assert!(prompt.contains("broad baseline consent set spanning Gmail, Google Drive, and Google Calendar"));
+        assert!(prompt.contains("users can uncheck permissions"));
     }
 
     #[test]

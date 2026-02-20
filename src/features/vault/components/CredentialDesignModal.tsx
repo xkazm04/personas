@@ -6,7 +6,7 @@ import remarkGfm from 'remark-gfm';
 import { useCredentialDesign } from '@/hooks/useCredentialDesign';
 import { CredentialEditForm } from '@/features/vault/components/CredentialEditForm';
 import type { CredentialTemplateField } from '@/lib/types/types';
-import { testCredentialDesignHealthcheck } from '@/api/tauriApi';
+import { testCredentialDesignHealthcheck, startGoogleCredentialOAuth, getGoogleCredentialOAuthStatus, openExternalUrl } from '@/api/tauriApi';
 import { usePersonaStore } from '@/stores/personaStore';
 
 interface CredentialDesignModalProps {
@@ -88,10 +88,14 @@ export function CredentialDesignModal({ open, embedded = false, onClose, onCompl
   const [showTemplates, setShowTemplates] = useState(false);
   const [templateSearch, setTemplateSearch] = useState('');
   const [expandedTemplateId, setExpandedTemplateId] = useState<string | null>(null);
+  const [oauthInitialValues, setOauthInitialValues] = useState<Record<string, string>>({});
+  const [oauthSessionId, setOauthSessionId] = useState<string | null>(null);
+  const [isAuthorizingOAuth, setIsAuthorizingOAuth] = useState(false);
+  const [oauthConsentCompletedAt, setOauthConsentCompletedAt] = useState<string | null>(null);
+  const [oauthScopeFromConsent, setOauthScopeFromConsent] = useState<string | null>(null);
 
   const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
   const fetchConnectorDefinitions = usePersonaStore((s) => s.fetchConnectorDefinitions);
-  const isDevMode = import.meta.env.DEV;
 
   // Reset when modal opens
   useEffect(() => {
@@ -106,12 +110,15 @@ export function CredentialDesignModal({ open, embedded = false, onClose, onCompl
       setShowTemplates(false);
       setTemplateSearch('');
       setExpandedTemplateId(null);
+      setOauthInitialValues({});
+      setOauthSessionId(null);
+      setIsAuthorizingOAuth(false);
+      setOauthConsentCompletedAt(null);
+      setOauthScopeFromConsent(null);
 
-      if (isDevMode) {
-        fetchConnectorDefinitions();
-      }
+      fetchConnectorDefinitions();
     }
-  }, [open, reset, fetchConnectorDefinitions, isDevMode]);
+  }, [open, reset, fetchConnectorDefinitions]);
 
   useEffect(() => {
     if (phase === 'preview' && result) {
@@ -119,12 +126,88 @@ export function CredentialDesignModal({ open, embedded = false, onClose, onCompl
     }
   }, [phase, result]);
 
+  useEffect(() => {
+    if (!oauthSessionId) return;
+
+    let cancelled = false;
+    let timer: number | null = null;
+
+    const poll = async () => {
+      try {
+        const status = await getGoogleCredentialOAuthStatus(oauthSessionId);
+        if (cancelled) return;
+
+        if (status.status === 'pending') {
+          timer = window.setTimeout(poll, 1500);
+          return;
+        }
+
+        setOauthSessionId(null);
+        setIsAuthorizingOAuth(false);
+
+        if (status.status === 'success' && status.refresh_token) {
+          const nowIso = new Date().toISOString();
+          const effectiveScope = status.scope ?? oauthScopeFromConsent ?? [
+            'https://www.googleapis.com/auth/gmail.modify',
+            'https://www.googleapis.com/auth/calendar.events',
+            'https://www.googleapis.com/auth/drive.file',
+            'openid',
+            'https://www.googleapis.com/auth/userinfo.email',
+          ].join(' ');
+
+          setOauthInitialValues((prev) => ({
+            ...prev,
+            refresh_token: status.refresh_token!,
+            scopes: effectiveScope,
+            oauth_scope: effectiveScope,
+            oauth_completed_at: nowIso,
+            oauth_client_mode: 'app_managed',
+          }));
+          setOauthConsentCompletedAt(new Date().toLocaleTimeString());
+          setHealthcheckResult({
+            success: true,
+            message: 'Google authorization completed. Refresh token was auto-filled.',
+          });
+          return;
+        }
+
+        setHealthcheckResult({
+          success: false,
+          message: status.error || 'Google authorization failed. Please try again.',
+        });
+      } catch (err) {
+        if (cancelled) return;
+        setOauthSessionId(null);
+        setIsAuthorizingOAuth(false);
+        setHealthcheckResult({
+          success: false,
+          message: err instanceof Error ? err.message : 'Failed to check OAuth status.',
+        });
+      }
+    };
+
+    poll();
+
+    return () => {
+      cancelled = true;
+      if (timer) {
+        window.clearTimeout(timer);
+      }
+    };
+  }, [oauthSessionId, oauthScopeFromConsent]);
+
   const handleStart = () => {
     if (!instruction.trim()) return;
     start(instruction.trim());
   };
 
   const handleSave = (values: Record<string, string>) => {
+    if (isGoogleOAuthFlow && values.refresh_token?.trim()) {
+      const name = credentialName.trim() || `${result?.connector.label} Credential`;
+      save(name, values, testedHealthcheckConfig);
+      return;
+    }
+
     if (!healthcheckResult?.success || !testedHealthcheckConfig) {
       setHealthcheckResult({
         success: false,
@@ -236,6 +319,9 @@ export function CredentialDesignModal({ open, embedded = false, onClose, onCompl
     setTestedHealthcheckConfig(null);
     setTestedValues(null);
     setLastSuccessfulTestAt(null);
+    if (oauthConsentCompletedAt) {
+      setOauthConsentCompletedAt(null);
+    }
   };
 
   const handleClose = () => {
@@ -264,16 +350,31 @@ export function CredentialDesignModal({ open, embedded = false, onClose, onCompl
     type: f.type as CredentialTemplateField['type'],
     required: f.required,
     placeholder: f.placeholder,
+    helpText: f.helpText,
   })) ?? [];
 
   const firstSetupUrl = extractFirstUrl(result?.setup_instructions);
   const requiredCount = fields.filter((f) => f.required).length;
   const optionalCount = Math.max(0, fields.length - requiredCount);
-  const canSaveCredential = healthcheckResult?.success === true && testedHealthcheckConfig !== null;
+
+  const fieldKeys = new Set(fields.map((f) => f.key));
+  const isGoogleOAuthFlow = Boolean(
+    result
+    && (result.connector.oauth_type === 'google'
+      || (fieldKeys.has('client_id') && fieldKeys.has('client_secret') && fieldKeys.has('refresh_token'))),
+  );
+
+  const effectiveFields = isGoogleOAuthFlow
+    ? fields.filter((f) => !['client_id', 'client_secret', 'refresh_token', 'scopes'].includes(f.key))
+    : fields;
+
+  const canSaveCredential = isGoogleOAuthFlow
+    ? Boolean(oauthInitialValues.refresh_token)
+    : (healthcheckResult?.success === true && testedHealthcheckConfig !== null);
 
   const templateConnectors = connectorDefinitions.filter((conn) => {
     const metadata = conn.metadata as Record<string, unknown> | null;
-    if (!metadata || !isDevMode) return false;
+    if (!metadata) return false;
     if (metadata.template_enabled !== true) return false;
 
     const q = templateSearch.trim().toLowerCase();
@@ -323,6 +424,78 @@ export function CredentialDesignModal({ open, embedded = false, onClose, onCompl
     setHealthcheckResult(null);
     setTestedHealthcheckConfig(null);
     setShowTemplates(false);
+  };
+
+  const handleOAuthConsent = (values: Record<string, string>) => {
+    const defaultScopes = [
+      'https://www.googleapis.com/auth/gmail.modify',
+      'https://www.googleapis.com/auth/calendar.events',
+      'https://www.googleapis.com/auth/drive.file',
+      'openid',
+      'https://www.googleapis.com/auth/userinfo.email',
+    ];
+
+    const scopes = values.scopes?.trim()
+      ? values.scopes.trim().split(/\s+/)
+      : defaultScopes;
+    setOauthScopeFromConsent(scopes.join(' '));
+
+    setIsAuthorizingOAuth(true);
+    setOauthConsentCompletedAt(null);
+    setHealthcheckResult({
+      success: false,
+      message: 'Starting Google authorization (requesting OAuth session)...',
+    });
+
+    const startPromise = startGoogleCredentialOAuth(undefined, undefined, result?.connector.name || 'google', scopes);
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      window.setTimeout(() => {
+        reject(new Error('OAuth session start timed out (no IPC response in 12s).'));
+      }, 12000);
+    });
+
+    Promise.race([startPromise, timeoutPromise])
+      .then(async (oauthStart) => {
+        const resolved = oauthStart as { auth_url: string; session_id: string };
+        let opened = false;
+        if (!opened) {
+          try {
+            await openExternalUrl(resolved.auth_url);
+            opened = true;
+          } catch {
+            // fallback below
+          }
+        }
+
+        if (!opened) {
+          try {
+            const popup = window.open(resolved.auth_url, '_blank', 'noopener,noreferrer');
+            opened = popup !== null;
+          } catch {
+            // no-op
+          }
+        }
+
+        if (!opened) {
+          throw new Error('Could not open Google consent page. Please allow popups or external browser open.');
+        }
+
+        setHealthcheckResult({
+          success: false,
+          message: 'Google consent page opened. Complete consent in browser; refresh token will be auto-filled.',
+        });
+        setOauthSessionId(resolved.session_id);
+      })
+      .catch((err) => {
+        setOauthSessionId(null);
+        setIsAuthorizingOAuth(false);
+        setHealthcheckResult({
+          success: false,
+          message: err instanceof Error
+            ? `Google authorization did not start: ${err.message}`
+            : 'Google authorization did not start.',
+        });
+      });
   };
 
   return (
@@ -388,14 +561,12 @@ export function CredentialDesignModal({ open, embedded = false, onClose, onCompl
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  {isDevMode && (
-                    <button
-                      onClick={() => setShowTemplates((prev) => !prev)}
-                      className="px-2.5 py-1 text-xs rounded-lg border border-primary/20 text-primary hover:bg-primary/10 transition-colors"
-                    >
-                      From Template
-                    </button>
-                  )}
+                  <button
+                    onClick={() => setShowTemplates((prev) => !prev)}
+                    className="px-2.5 py-1 text-xs rounded-lg border border-primary/20 text-primary hover:bg-primary/10 transition-colors"
+                  >
+                    From Template
+                  </button>
 
                   {QUICK_SERVICE_HINTS.map((hint) => (
                     <button
@@ -408,7 +579,7 @@ export function CredentialDesignModal({ open, embedded = false, onClose, onCompl
                   ))}
                 </div>
 
-                {isDevMode && showTemplates && (
+                {showTemplates && (
                   <div className="p-3 rounded-xl border border-primary/15 bg-secondary/20 space-y-2">
                     <p className="text-xs text-muted-foreground/75">Saved local templates</p>
                     <input
@@ -627,7 +798,13 @@ export function CredentialDesignModal({ open, embedded = false, onClose, onCompl
                     {firstSetupUrl && (
                       <div className="mt-2">
                         <button
-                          onClick={() => window.open(firstSetupUrl, '_blank', 'noopener,noreferrer')}
+                          onClick={async () => {
+                            try {
+                              await openExternalUrl(firstSetupUrl);
+                            } catch {
+                              window.open(firstSetupUrl, '_blank', 'noopener,noreferrer');
+                            }
+                          }}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-primary/20 text-foreground/90 hover:bg-secondary/50 transition-colors"
                         >
                           Open setup page
@@ -661,15 +838,25 @@ export function CredentialDesignModal({ open, embedded = false, onClose, onCompl
                 </div>
 
                 <CredentialEditForm
-                  fields={fields}
+                  initialValues={oauthInitialValues}
+                  fields={effectiveFields}
                   onSave={handleSave}
+                  onOAuthConsent={isGoogleOAuthFlow ? handleOAuthConsent : undefined}
+                  oauthConsentLabel={isAuthorizingOAuth ? 'Authorizing with Google...' : 'Authorize with Google'}
+                  oauthConsentDisabled={isAuthorizingOAuth}
+                  oauthConsentHint={isGoogleOAuthFlow
+                    ? 'One click consent using app-managed Google OAuth. You can uncheck permissions on the consent screen.'
+                    : undefined}
+                  oauthConsentSuccessBadge={oauthConsentCompletedAt ? `Google consent completed at ${oauthConsentCompletedAt}` : undefined}
                   onHealthcheck={handleHealthcheck}
                   testHint="Run Test Connection to let Claude choose the best endpoint for this service and verify your entered credentials dynamically."
                   onValuesChanged={handleCredentialValuesChanged}
                   isHealthchecking={isHealthchecking}
                   healthcheckResult={healthcheckResult}
                   saveDisabled={!canSaveCredential}
-                  saveDisabledReason="Save is locked until Test Connection succeeds for the current credential values."
+                  saveDisabledReason={isGoogleOAuthFlow
+                    ? 'Save is unlocked after Google consent returns a refresh token.'
+                    : 'Save is locked until Test Connection succeeds for the current credential values.'}
                   onCancel={() => {
                     reset();
                     setHealthcheckResult(null);
