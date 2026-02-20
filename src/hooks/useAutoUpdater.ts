@@ -72,7 +72,6 @@ export function useAutoUpdater() {
       clearTimeout(initialTimeout);
       clearInterval(interval);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {

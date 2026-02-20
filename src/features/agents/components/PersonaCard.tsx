@@ -65,6 +65,7 @@ export default function PersonaCard({ persona, isSelected, onClick }: PersonaCar
             persona.enabled ? 'bg-emerald-400' : 'bg-muted-foreground/30'
           }`}
         />
+        <span className="sr-only">{persona.enabled ? 'Active' : 'Inactive'}</span>
       </div>
 
       {/* Trigger count + last run badges */}

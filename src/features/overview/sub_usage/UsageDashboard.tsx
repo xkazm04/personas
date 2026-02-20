@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { BarChart3 } from 'lucide-react';
+import { BarChart3, Play, ArrowRight, Sparkles } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import {
   BarChart,
@@ -26,7 +26,11 @@ import { ChartTooltip } from '@/features/overview/sub_usage/charts/ChartTooltip'
 // ---------------------------------------------------------------------------
 
 function formatToolName(name: string): string {
-  return name.replace(/_/g, ' ');
+  return name
+    .replace(/_/g, ' ')
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }
 
 // ---------------------------------------------------------------------------
@@ -39,6 +43,7 @@ export function UsageDashboard() {
   const toolUsageByPersona = usePersonaStore((s) => s.toolUsageByPersona);
   const fetchToolUsage = usePersonaStore((s) => s.fetchToolUsage);
   const personas = usePersonaStore((s) => s.personas);
+  const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
 
   const [days, setDays] = useState<DayRange>(30);
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
@@ -114,6 +119,63 @@ export function UsageDashboard() {
     [toolUsageByPersona]
   );
 
+  // ── Insight annotations ─────────────────────────────────────────
+  const barInsight = useMemo(() => {
+    if (barData.length < 2) return null;
+    const top = barData[0]!;
+    const second = barData[1]!;
+    if (second.invocations === 0) return `${top.name} is the only tool used`;
+    const ratio = top.invocations / second.invocations;
+    if (ratio >= 2) return `${top.name} is used ${ratio.toFixed(1)}x more than ${second.name}`;
+    return `${top.name} leads with ${top.invocations.toLocaleString()} invocations`;
+  }, [barData]);
+
+  const pieTotal = useMemo(
+    () => pieData.reduce((sum, d) => sum + d.value, 0),
+    [pieData]
+  );
+
+  const pieInsight = useMemo(() => {
+    if (pieData.length === 0) return null;
+    const total = pieData.reduce((sum, d) => sum + d.value, 0);
+    if (total === 0) return null;
+    const top = pieData.reduce((a, b) => (a.value > b.value ? a : b));
+    const pct = Math.round((top.value / total) * 100);
+    return `${top.name} accounts for ${pct}% of all tool calls`;
+  }, [pieData]);
+
+  const areaInsight = useMemo(() => {
+    if (areaData.length < 4) return null;
+    const mid = Math.floor(areaData.length / 2);
+    let firstHalf = 0;
+    let secondHalf = 0;
+    for (let i = 0; i < areaData.length; i++) {
+      const row = areaData[i]!;
+      const rowTotal = Object.keys(row).reduce((s, k) => {
+        if (k === 'date') return s;
+        const val = row[k as keyof typeof row];
+        return s + (typeof val === 'number' ? val : 0);
+      }, 0);
+      if (i < mid) firstHalf += rowTotal;
+      else secondHalf += rowTotal;
+    }
+    if (firstHalf === 0) return 'Usage is ramping up from zero in the earlier period';
+    const pctChange = Math.round(((secondHalf - firstHalf) / firstHalf) * 100);
+    if (pctChange > 5) return `Usage up ${pctChange}% vs previous period`;
+    if (pctChange < -5) return `Usage down ${Math.abs(pctChange)}% vs previous period`;
+    return 'Usage is stable compared to previous period';
+  }, [areaData]);
+
+  const personaInsight = useMemo(() => {
+    if (personaBarData.length < 2) return null;
+    const avg = personaBarData.reduce((s, p) => s + p.invocations, 0) / personaBarData.length;
+    if (avg === 0) return null;
+    const top = personaBarData[0]!;
+    const ratio = top.invocations / avg;
+    if (ratio >= 2) return `${top.name} uses ${ratio.toFixed(1)}x more tools than average`;
+    return `${top.name} is the most active with ${top.invocations.toLocaleString()} invocations`;
+  }, [personaBarData]);
+
   const isEmpty =
     toolUsageSummary.length === 0 &&
     toolUsageOverTime.length === 0 &&
@@ -121,13 +183,80 @@ export function UsageDashboard() {
 
   // ── Empty State ──────────────────────────────────────────────
   if (isEmpty) {
+    const hasPersonas = personas.length > 0;
+
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-4 text-muted-foreground/50">
-        <BarChart3 className="w-12 h-12" />
-        <p className="text-sm">No tool usage data yet</p>
-        <p className="text-xs text-muted-foreground/30">
-          Usage analytics will appear after personas execute tools
-        </p>
+      <div className="flex flex-col items-center justify-center h-full px-6">
+        <div className="max-w-sm w-full flex flex-col items-center gap-5">
+          {/* Icon */}
+          <div className="relative">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/15 flex items-center justify-center">
+              <BarChart3 className="w-7 h-7 text-primary/60" />
+            </div>
+            <Sparkles className="w-4 h-4 text-amber-400/60 absolute -top-1 -right-1" />
+          </div>
+
+          {/* Heading & description */}
+          <div className="text-center space-y-2">
+            <h3 className="text-sm font-medium text-foreground/70">
+              Your analytics dashboard
+            </h3>
+            <p className="text-xs text-muted-foreground/50 leading-relaxed">
+              When your personas run and use tools, you'll see detailed charts showing
+              which tools are used most, usage trends over time, and per-persona breakdowns.
+            </p>
+          </div>
+
+          {/* Steps */}
+          <div className="w-full space-y-2 mt-1">
+            {[
+              { step: '1', label: hasPersonas ? 'Create a persona' : 'Create a persona', done: hasPersonas },
+              { step: '2', label: 'Assign tools to it', done: false },
+              { step: '3', label: 'Run an execution', done: false },
+            ].map(({ step, label, done }) => (
+              <div
+                key={step}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl border transition-colors ${
+                  done
+                    ? 'bg-emerald-500/5 border-emerald-500/15'
+                    : 'bg-secondary/30 border-primary/10'
+                }`}
+              >
+                <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                  done
+                    ? 'bg-emerald-500/20 text-emerald-400'
+                    : 'bg-primary/10 text-muted-foreground/40'
+                }`}>
+                  {step}
+                </span>
+                <span className={`text-xs ${done ? 'text-emerald-400/80' : 'text-muted-foreground/50'}`}>
+                  {label}
+                </span>
+                {done && (
+                  <span className="ml-auto text-[10px] text-emerald-400/60 font-medium">Done</span>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <button
+            onClick={() => setSidebarSection('personas')}
+            className="flex items-center gap-2 px-4 py-2 bg-primary/15 hover:bg-primary/25 text-primary border border-primary/20 rounded-xl text-xs font-medium transition-all group"
+          >
+            {hasPersonas ? (
+              <>
+                <Play className="w-3.5 h-3.5" />
+                Run a persona
+              </>
+            ) : (
+              <>
+                Get started
+              </>
+            )}
+            <ArrowRight className="w-3 h-3 opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+          </button>
+        </div>
       </div>
     );
   }
@@ -144,7 +273,9 @@ export function UsageDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Tool Invocations (horizontal bar) */}
         <div className="lg:col-span-3 bg-secondary/30 border border-primary/10 rounded-xl p-4">
-          <h3 className="text-sm font-medium text-foreground/70 mb-4">Tool Invocations</h3>
+          <h3 className="text-sm font-medium text-foreground/70 mb-1">Tool Invocations</h3>
+          {barInsight && <p className="text-[11px] text-muted-foreground/40 mb-3">{barInsight}</p>}
+          {!barInsight && <div className="mb-3" />}
           <ResponsiveContainer width="100%" height={Math.max(200, barData.length * 40)}>
             <BarChart data={barData} layout="vertical" margin={{ left: 10, right: 20, top: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} horizontal={false} />
@@ -165,7 +296,9 @@ export function UsageDashboard() {
 
         {/* Distribution (pie) */}
         <div className="lg:col-span-2 bg-secondary/30 border border-primary/10 rounded-xl p-4">
-          <h3 className="text-sm font-medium text-foreground/70 mb-4">Distribution</h3>
+          <h3 className="text-sm font-medium text-foreground/70 mb-1">Distribution</h3>
+          {pieInsight && <p className="text-[11px] text-muted-foreground/40 mb-3">{pieInsight}</p>}
+          {!pieInsight && <div className="mb-3" />}
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
               <Pie
@@ -183,6 +316,13 @@ export function UsageDashboard() {
                   <Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
                 ))}
               </Pie>
+              {/* Donut center total */}
+              <text x="50%" y="46%" textAnchor="middle" dominantBaseline="central" className="fill-foreground text-lg font-bold">
+                {pieTotal.toLocaleString()}
+              </text>
+              <text x="50%" y="58%" textAnchor="middle" dominantBaseline="central" className="fill-muted-foreground/50 text-[10px]">
+                total
+              </text>
               <Tooltip content={<ChartTooltip />} />
               <Legend
                 verticalAlign="bottom"
@@ -200,7 +340,9 @@ export function UsageDashboard() {
       {/* ── Usage Over Time (stacked area) ─────────────────────── */}
       {areaData.length > 0 && (
         <div className="bg-secondary/30 border border-primary/10 rounded-xl p-4">
-          <h3 className="text-sm font-medium text-foreground/70 mb-4">Usage Over Time</h3>
+          <h3 className="text-sm font-medium text-foreground/70 mb-1">Usage Over Time</h3>
+          {areaInsight && <p className="text-[11px] text-muted-foreground/40 mb-3">{areaInsight}</p>}
+          {!areaInsight && <div className="mb-3" />}
           <ResponsiveContainer width="100%" height={280}>
             <AreaChart data={areaData} margin={{ left: 0, right: 10, top: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
@@ -209,6 +351,7 @@ export function UsageDashboard() {
                 tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }}
                 axisLine={false}
                 tickLine={false}
+                tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
               />
               <YAxis
                 tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }}
@@ -246,7 +389,9 @@ export function UsageDashboard() {
       {/* ── By Persona (horizontal bar) ───────────────────────── */}
       {personaBarData.length > 0 && (
         <div className="bg-secondary/30 border border-primary/10 rounded-xl p-4">
-          <h3 className="text-sm font-medium text-foreground/70 mb-4">By Persona</h3>
+          <h3 className="text-sm font-medium text-foreground/70 mb-1">By Persona</h3>
+          {personaInsight && <p className="text-[11px] text-muted-foreground/40 mb-3">{personaInsight}</p>}
+          {!personaInsight && <div className="mb-3" />}
           <ResponsiveContainer width="100%" height={Math.max(180, personaBarData.length * 44)}>
             <BarChart data={personaBarData} layout="vertical" margin={{ left: 10, right: 20, top: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} horizontal={false} />

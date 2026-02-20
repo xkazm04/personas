@@ -40,7 +40,6 @@ export default function PersonasPage() {
     if (selectedPersonaId) {
       fetchDetail(selectedPersonaId);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Wait for initial fetch to complete before checking onboarding

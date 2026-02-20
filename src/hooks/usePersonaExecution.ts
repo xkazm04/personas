@@ -42,12 +42,12 @@ export function usePersonaExecution() {
               if (event.payload.error) {
                 appendOutput(`[ERROR] ${event.payload.error}`);
               }
-              if (event.payload.duration_ms != null) {
-                appendOutput(`Completed in ${(event.payload.duration_ms / 1000).toFixed(1)}s`);
-              }
-              if (event.payload.cost_usd != null) {
-                appendOutput(`Cost: $${event.payload.cost_usd.toFixed(4)}`);
-              }
+              const summary = JSON.stringify({
+                status: event.payload.status,
+                duration_ms: event.payload.duration_ms ?? null,
+                cost_usd: event.payload.cost_usd ?? null,
+              });
+              appendOutput(`[SUMMARY]${summary}`);
               finishExecution(event.payload.status);
             }
           }

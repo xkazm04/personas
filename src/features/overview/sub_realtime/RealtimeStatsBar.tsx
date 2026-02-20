@@ -20,7 +20,7 @@ function AnimatedNumber({ value, color }: { value: string | number; color?: stri
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 8 }}
         transition={{ duration: 0.15 }}
-        className={`font-bold text-lg ${color ?? 'text-foreground'}`}
+        className={`font-bold text-sm ${color ?? 'text-foreground'}`}
       >
         {value}
       </motion.span>
@@ -35,55 +35,62 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
       <div className="flex items-center gap-6">
         {/* Connection status */}
         <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
+          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} aria-hidden="true" />
           <span className="text-[10px] font-mono text-muted-foreground/40 uppercase tracking-wider">
             {isPaused ? 'Paused' : isConnected ? 'Live' : 'Disconnected'}
           </span>
+          <span className="sr-only">Connection status: {isPaused ? 'Paused' : isConnected ? 'Live' : 'Disconnected'}</span>
         </div>
 
         {/* Events/min */}
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
-            <Zap className="w-3.5 h-3.5 text-purple-400" />
+          <div className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
+            <Zap className="w-3 h-3 text-purple-400" />
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={stats.eventsPerMinute} color="text-purple-400" />
-            <span className="text-[9px] text-muted-foreground/30 -mt-1">events/min</span>
+            <span className="text-[10px] text-muted-foreground/30 -mt-0.5">events/min</span>
           </div>
         </div>
+
+        <div className="w-px h-6 bg-primary/10" />
 
         {/* Pending */}
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-            <Clock className="w-3.5 h-3.5 text-amber-400" />
+          <div className="w-6 h-6 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+            <Clock className="w-3 h-3 text-amber-400" />
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={stats.pendingCount} color="text-amber-400" />
-            <span className="text-[9px] text-muted-foreground/30 -mt-1">pending</span>
+            <span className="text-[10px] text-muted-foreground/30 -mt-0.5">pending</span>
           </div>
         </div>
+
+        <div className="w-px h-6 bg-primary/10" />
 
         {/* Success rate */}
         <div className="flex items-center gap-2">
-          <div className={`w-7 h-7 rounded-lg border flex items-center justify-center ${
+          <div className={`w-6 h-6 rounded-lg border flex items-center justify-center ${
             stats.successRate >= 90 ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-red-500/10 border-red-500/20'
           }`}>
-            <CheckCircle2 className={`w-3.5 h-3.5 ${stats.successRate >= 90 ? 'text-emerald-400' : 'text-red-400'}`} />
+            <CheckCircle2 className={`w-3 h-3 ${stats.successRate >= 90 ? 'text-emerald-400' : 'text-red-400'}`} />
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={`${stats.successRate}%`} color={stats.successRate >= 90 ? 'text-emerald-400' : 'text-red-400'} />
-            <span className="text-[9px] text-muted-foreground/30 -mt-1">success</span>
+            <span className="text-[10px] text-muted-foreground/30 -mt-0.5">success</span>
           </div>
         </div>
 
+        <div className="w-px h-6 bg-primary/10" />
+
         {/* Total in window */}
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-            <TrendingUp className="w-3.5 h-3.5 text-blue-400" />
+          <div className="w-6 h-6 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+            <TrendingUp className="w-3 h-3 text-blue-400" />
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={stats.totalInWindow} color="text-blue-400" />
-            <span className="text-[9px] text-muted-foreground/30 -mt-1">in window</span>
+            <span className="text-[10px] text-muted-foreground/30 -mt-0.5">in window</span>
           </div>
         </div>
       </div>
@@ -94,6 +101,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
         <button
           onClick={onTestFlow}
           disabled={testFlowLoading}
+          aria-label={testFlowLoading ? 'Testing flow...' : 'Test event flow'}
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-purple-500/15 to-primary/15 border border-purple-500/25 text-purple-300 hover:from-purple-500/25 hover:to-primary/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
           {testFlowLoading ? (
@@ -113,6 +121,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
               : 'border-primary/15 text-muted-foreground/50 hover:text-foreground/70 hover:bg-secondary/50'
           }`}
           title={isPaused ? 'Resume' : 'Pause'}
+          aria-label={isPaused ? 'Resume event stream' : 'Pause event stream'}
         >
           {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
         </button>

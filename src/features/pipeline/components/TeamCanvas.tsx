@@ -11,6 +11,7 @@ import {
   type Edge,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { AnimatePresence } from 'framer-motion';
 import { Users } from 'lucide-react';
 import { listen } from '@tauri-apps/api/event';
 import { usePersonaStore } from '@/stores/personaStore';
@@ -21,6 +22,7 @@ import ConnectionEdge from '@/features/pipeline/sub_canvas/ConnectionEdge';
 import TeamToolbar from '@/features/pipeline/sub_canvas/TeamToolbar';
 import TeamConfigPanel from '@/features/pipeline/components/TeamConfigPanel';
 import NodeContextMenu from '@/features/pipeline/sub_canvas/NodeContextMenu';
+import EdgeDeleteTooltip from '@/features/pipeline/sub_canvas/EdgeDeleteTooltip';
 import PipelineControls from '@/features/pipeline/sub_canvas/PipelineControls';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
@@ -59,6 +61,7 @@ export default function TeamCanvas() {
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [selectedMember, setSelectedMember] = useState<MemberWithPersonaInfo | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; member: MemberWithPersonaInfo } | null>(null);
+  const [edgeTooltip, setEdgeTooltip] = useState<{ x: number; y: number; edge: Edge } | null>(null);
 
   // Pipeline state
   const [pipelineRunning, setPipelineRunning] = useState(false);
@@ -91,6 +94,7 @@ export default function TeamCanvas() {
   useEffect(() => {
     if (!selectedTeamId) return;
 
+    const edgeCount = teamConnections.length;
     const newNodes: Node[] = teamMembers.map((m, i) => {
       const persona = personas.find((p) => p.id === m.persona_id);
       return {
@@ -107,12 +111,13 @@ export default function TeamCanvas() {
           role: m.role || 'worker',
           memberId: m.id,
           personaId: m.persona_id,
+          edgeCount,
         },
       };
     });
 
     setNodes(newNodes);
-  }, [selectedTeamId, teamMembers, personas, setNodes]);
+  }, [selectedTeamId, teamMembers, teamConnections, personas, setNodes]);
 
   // Enrich nodes with pipeline status
   useEffect(() => {
@@ -255,19 +260,25 @@ export default function TeamCanvas() {
     [removeTeamMember],
   );
 
-  // Handle edge click to delete connection from DB
+  // Handle edge click — show confirmation tooltip
   const onEdgeClick = useCallback(
-    async (_event: React.MouseEvent, edge: Edge) => {
-      if (!selectedTeamId) return;
-      try {
-        await api.deleteTeamConnection(edge.id);
-        await fetchTeamDetails(selectedTeamId);
-      } catch (err) {
-        console.error('Failed to delete connection:', err);
-      }
+    (event: React.MouseEvent, edge: Edge) => {
+      setEdgeTooltip({ x: event.clientX, y: event.clientY, edge });
     },
-    [selectedTeamId, fetchTeamDetails],
+    [],
   );
+
+  // Handle confirmed edge deletion
+  const handleDeleteEdge = useCallback(async () => {
+    if (!edgeTooltip || !selectedTeamId) return;
+    try {
+      await api.deleteTeamConnection(edgeTooltip.edge.id);
+      await fetchTeamDetails(selectedTeamId);
+    } catch (err) {
+      console.error('Failed to delete connection:', err);
+    }
+    setEdgeTooltip(null);
+  }, [edgeTooltip, selectedTeamId, fetchTeamDetails]);
 
   // Handle node right-click context menu
   const onNodeContextMenu = useCallback(
@@ -330,7 +341,7 @@ export default function TeamCanvas() {
           onNodeClick={onNodeClick}
           onEdgeClick={onEdgeClick}
           onNodeContextMenu={onNodeContextMenu}
-          onPaneClick={() => setContextMenu(null)}
+          onPaneClick={() => { setContextMenu(null); setEdgeTooltip(null); }}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           fitView
@@ -378,6 +389,20 @@ export default function TeamCanvas() {
             onClose={() => setContextMenu(null)}
           />
         )}
+
+        {/* Edge Delete Tooltip */}
+        <AnimatePresence>
+          {edgeTooltip && (
+            <EdgeDeleteTooltip
+              x={edgeTooltip.x}
+              y={edgeTooltip.y}
+              connectionType={(edgeTooltip.edge.data as Record<string, unknown>)?.connection_type as string || 'sequential'}
+              label={(edgeTooltip.edge.data as Record<string, unknown>)?.label as string || ''}
+              onDelete={handleDeleteEdge}
+              onClose={() => setEdgeTooltip(null)}
+            />
+          )}
+        </AnimatePresence>
 
         {/* Empty state */}
         {teamMembers.length === 0 && (

@@ -21,6 +21,7 @@ export const DEFAULT_TRIGGER_META: TriggerTypeMeta = { Icon: Zap, color: 'text-p
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function parseTriggerConfig(config: string | object | null | undefined): Record<string, any> {
   if (!config) return {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (typeof config === 'object') return config as Record<string, any>;
   try {
     return JSON.parse(config);

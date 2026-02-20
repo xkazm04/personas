@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { usePersonaStore, initHealingListener } from '@/stores/personaStore';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   AreaChart, Area, PieChart, Pie, Cell, Legend,
 } from 'recharts';
-import { DollarSign, Zap, CheckCircle, TrendingUp, RefreshCw, Stethoscope, CheckCircle2 } from 'lucide-react';
+import { DollarSign, Zap, CheckCircle, TrendingUp, TrendingDown, ArrowRight, RefreshCw, Stethoscope, CheckCircle2, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import HealingIssueModal from '@/features/overview/sub_observability/HealingIssueModal';
 import { DayRangePicker, PersonaSelect } from '@/features/overview/sub_usage/DashboardFilters';
@@ -29,6 +29,18 @@ export default function ObservabilityDashboard() {
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<PersonaHealingIssue | null>(null);
+  const [issueFilter, setIssueFilter] = useState<'all' | 'open' | 'auto-fixed'>('all');
+  const [analysisResult, setAnalysisResult] = useState<{
+    failures_analyzed: number;
+    issues_created: number;
+    auto_fixed: number;
+  } | null>(null);
+
+  const handleRunAnalysis = useCallback(async () => {
+    setAnalysisResult(null);
+    const result = await triggerHealing(selectedPersonaId || personas[0]?.id);
+    if (result) setAnalysisResult(result);
+  }, [triggerHealing, selectedPersonaId, personas]);
 
   useEffect(() => {
     initHealingListener();
@@ -80,6 +92,68 @@ export default function ObservabilityDashboard() {
     ? ((summary.successful_executions / summary.total_executions) * 100).toFixed(1)
     : '0';
 
+  // Period-over-period trend comparison: split sorted chart data into two halves
+  const trends = useMemo(() => {
+    if (chartData.length < 2) return { cost: null, executions: null, successRate: null, personas: null };
+
+    const mid = Math.floor(chartData.length / 2);
+    const prev = chartData.slice(0, mid);
+    const curr = chartData.slice(mid);
+
+    const sum = (arr: typeof chartData, key: 'cost' | 'executions' | 'success' | 'failed') =>
+      arr.reduce((acc, d) => acc + d[key], 0);
+
+    const prevCost = sum(prev, 'cost');
+    const currCost = sum(curr, 'cost');
+    const prevExec = sum(prev, 'executions');
+    const currExec = sum(curr, 'executions');
+
+    const prevSuccess = sum(prev, 'success');
+    const prevTotal = prevSuccess + sum(prev, 'failed');
+    const currSuccess = sum(curr, 'success');
+    const currTotal = currSuccess + sum(curr, 'failed');
+    const prevRate = prevTotal > 0 ? (prevSuccess / prevTotal) * 100 : 0;
+    const currRate = currTotal > 0 ? (currSuccess / currTotal) * 100 : 0;
+
+    const pctChange = (curr: number, prev: number) => prev === 0 ? (curr > 0 ? 100 : 0) : ((curr - prev) / prev) * 100;
+
+    // Active personas: count unique persona IDs per half from raw time series
+    const prevDates = new Set(prev.map(d => d.date));
+    const prevPersonas = new Set(timeSeries.filter(r => prevDates.has(r.snapshot_date) && r.total_executions > 0).map(r => r.persona_id));
+    const currDates = new Set(curr.map(d => d.date));
+    const currPersonas = new Set(timeSeries.filter(r => currDates.has(r.snapshot_date) && r.total_executions > 0).map(r => r.persona_id));
+
+    return {
+      cost: { pct: pctChange(currCost, prevCost), invertColor: true },
+      executions: { pct: pctChange(currExec, prevExec), invertColor: false },
+      successRate: { pct: currRate - prevRate, invertColor: false },
+      personas: { pct: pctChange(currPersonas.size, prevPersonas.size), invertColor: false },
+    };
+  }, [chartData, timeSeries]);
+
+  // Issue counts and filtered/sorted list
+  const issueCounts = useMemo(() => {
+    const open = healingIssues.filter((i) => !i.auto_fixed).length;
+    const autoFixed = healingIssues.filter((i) => i.auto_fixed).length;
+    return { all: healingIssues.length, open, autoFixed };
+  }, [healingIssues]);
+
+  const sortedFilteredIssues = useMemo(() => {
+    const severityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+    const filtered = issueFilter === 'all'
+      ? healingIssues
+      : issueFilter === 'open'
+        ? healingIssues.filter((i) => !i.auto_fixed)
+        : healingIssues.filter((i) => i.auto_fixed);
+
+    return [...filtered].sort((a, b) => {
+      // Auto-fixed always sink to bottom
+      if (a.auto_fixed !== b.auto_fixed) return a.auto_fixed ? 1 : -1;
+      // Then by severity
+      return (severityOrder[a.severity] ?? 99) - (severityOrder[b.severity] ?? 99);
+    });
+  }, [healingIssues, issueFilter]);
+
   return (
     <div className="h-full overflow-y-auto p-6 space-y-6">
       {/* Header */}
@@ -106,10 +180,10 @@ export default function ObservabilityDashboard() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <SummaryCard icon={DollarSign} label="Total Cost" numericValue={summary?.total_cost_usd || 0} format={(n) => `$${n.toFixed(2)}`} color="emerald" />
-        <SummaryCard icon={Zap} label="Executions" numericValue={summary?.total_executions || 0} format={(n) => String(Math.round(n))} color="blue" />
-        <SummaryCard icon={CheckCircle} label="Success Rate" numericValue={parseFloat(successRate)} format={(n) => `${n.toFixed(1)}%`} color="green" />
-        <SummaryCard icon={TrendingUp} label="Active Personas" numericValue={summary?.active_personas || 0} format={(n) => String(Math.round(n))} color="purple" />
+        <SummaryCard icon={DollarSign} label="Total Cost" numericValue={summary?.total_cost_usd || 0} format={(n) => `$${n.toFixed(2)}`} color="emerald" trend={trends.cost} sparklineData={chartData.slice(-7).map((d) => d.cost)} />
+        <SummaryCard icon={Zap} label="Executions" numericValue={summary?.total_executions || 0} format={(n) => String(Math.round(n))} color="blue" trend={trends.executions} sparklineData={chartData.slice(-7).map((d) => d.executions)} />
+        <SummaryCard icon={CheckCircle} label="Success Rate" numericValue={parseFloat(successRate)} format={(n) => `${n.toFixed(1)}%`} color="green" trend={trends.successRate} sparklineData={chartData.slice(-7).map((d) => { const total = d.success + d.failed; return total > 0 ? (d.success / total) * 100 : 0; })} />
+        <SummaryCard icon={TrendingUp} label="Active Personas" numericValue={summary?.active_personas || 0} format={(n) => String(Math.round(n))} color="purple" trend={trends.personas} sparklineData={chartData.slice(-7).map((d) => { const personas = new Set(timeSeries.filter((r) => r.snapshot_date === d.date && r.total_executions > 0).map((r) => r.persona_id)); return personas.size; })} />
       </div>
 
       {/* Charts Row 1 */}
@@ -120,7 +194,7 @@ export default function ObservabilityDashboard() {
           <ResponsiveContainer width="100%" height={240}>
             <AreaChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-              <XAxis dataKey="date" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} />
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
               <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => `$${v}`} />
               <Tooltip content={<ChartTooltip />} />
               <Area type="monotone" dataKey="cost" stroke="#6366f1" fill="url(#costGradient)" strokeWidth={2} />
@@ -160,7 +234,7 @@ export default function ObservabilityDashboard() {
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-            <XAxis dataKey="date" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} />
+            <XAxis dataKey="date" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
             <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} />
             <Tooltip content={<ChartTooltip />} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
@@ -184,7 +258,7 @@ export default function ObservabilityDashboard() {
             )}
           </div>
           <button
-            onClick={() => triggerHealing()}
+            onClick={handleRunAnalysis}
             disabled={healingRunning}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-cyan-500/10 border border-cyan-500/25 text-cyan-300 hover:bg-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
@@ -202,6 +276,59 @@ export default function ObservabilityDashboard() {
           </button>
         </div>
 
+        {/* Analysis Result Summary */}
+        {analysisResult && !healingRunning && (
+          <div className="flex items-center justify-between px-5 py-2.5 bg-cyan-500/10 border-b border-cyan-500/20">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="text-xs text-cyan-300">
+                Analysis complete: {analysisResult.issues_created} issue{analysisResult.issues_created !== 1 ? 's' : ''} found
+                {analysisResult.auto_fixed > 0 && ` (${analysisResult.auto_fixed} auto-fixed)`}
+                , {analysisResult.failures_analyzed} execution{analysisResult.failures_analyzed !== 1 ? 's' : ''} scanned
+              </span>
+            </div>
+            <button
+              onClick={() => setAnalysisResult(null)}
+              className="p-1 rounded hover:bg-cyan-500/20 text-cyan-400/50 hover:text-cyan-300 transition-colors"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+
+        {/* Issues Summary */}
+        {healingIssues.length > 0 && <HealingIssueSummary issues={healingIssues} />}
+
+        {/* Filter Chips */}
+        {healingIssues.length > 0 && (
+          <div className="px-5 py-2.5 border-b border-primary/10 flex items-center gap-1">
+            {([
+              { key: 'all' as const, label: 'All', count: issueCounts.all },
+              { key: 'open' as const, label: 'Open', count: issueCounts.open },
+              { key: 'auto-fixed' as const, label: 'Auto-fixed', count: issueCounts.autoFixed },
+            ]).map((chip) => (
+              <button
+                key={chip.key}
+                onClick={() => setIssueFilter(chip.key)}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                  issueFilter === chip.key
+                    ? 'bg-background text-foreground shadow-sm border border-primary/20'
+                    : 'text-muted-foreground/60 hover:text-muted-foreground'
+                }`}
+              >
+                {chip.label}
+                <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-full ${
+                  issueFilter === chip.key
+                    ? 'bg-primary/15 text-foreground/70'
+                    : 'bg-secondary/60 text-muted-foreground/40'
+                }`}>
+                  {chip.count}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Issues List */}
         {healingIssues.length === 0 ? (
           <div className="flex items-center justify-center py-10">
@@ -213,7 +340,7 @@ export default function ObservabilityDashboard() {
           </div>
         ) : (
           <div className="divide-y divide-primary/10">
-            {healingIssues.map((issue: PersonaHealingIssue) => {
+            {sortedFilteredIssues.map((issue: PersonaHealingIssue) => {
               const sevBadge = SEVERITY_COLORS[issue.severity] ?? SEVERITY_COLORS.medium!;
               const age = Math.floor((Date.now() - new Date(issue.created_at).getTime()) / (1000 * 60 * 60));
               const ageLabel = age < 1 ? 'just now' : age < 24 ? `${age}h ago` : `${Math.floor(age / 24)}d ago`;
@@ -268,7 +395,122 @@ export default function ObservabilityDashboard() {
   );
 }
 
-function SummaryCard({ icon: Icon, label, numericValue, format, color }: { icon: LucideIcon; label: string; numericValue: number; format: (n: number) => string; color: string }) {
+function HealingIssueSummary({ issues }: { issues: PersonaHealingIssue[] }) {
+  const stats = useMemo(() => {
+    const now = Date.now();
+    const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
+    const twoWeeksAgo = now - 14 * 24 * 60 * 60 * 1000;
+
+    const openIssues = issues.filter((i) => i.status !== 'resolved');
+    const autoFixedThisWeek = issues.filter(
+      (i) => i.auto_fixed && new Date(i.created_at).getTime() >= weekAgo,
+    );
+
+    // Recurring categories in the last 7 days
+    const recentCategoryCounts = new Map<string, number>();
+    for (const issue of issues) {
+      if (new Date(issue.created_at).getTime() >= weekAgo) {
+        recentCategoryCounts.set(issue.category, (recentCategoryCounts.get(issue.category) || 0) + 1);
+      }
+    }
+    const recurring = Array.from(recentCategoryCounts.entries())
+      .filter(([, count]) => count >= 2)
+      .sort((a, b) => b[1] - a[1]);
+
+    // Trend: compare issues created this week vs last week
+    const thisWeekCount = issues.filter(
+      (i) => new Date(i.created_at).getTime() >= weekAgo,
+    ).length;
+    const lastWeekCount = issues.filter((i) => {
+      const t = new Date(i.created_at).getTime();
+      return t >= twoWeeksAgo && t < weekAgo;
+    }).length;
+
+    let trend: 'improving' | 'worsening' | 'stable' = 'stable';
+    if (thisWeekCount < lastWeekCount) trend = 'improving';
+    else if (thisWeekCount > lastWeekCount) trend = 'worsening';
+
+    return { openIssues: openIssues.length, autoFixedThisWeek: autoFixedThisWeek.length, recurring, trend, thisWeekCount, lastWeekCount };
+  }, [issues]);
+
+  const TrendIcon = stats.trend === 'improving' ? TrendingDown : stats.trend === 'worsening' ? TrendingUp : ArrowRight;
+  const trendColor = stats.trend === 'improving' ? 'text-emerald-400' : stats.trend === 'worsening' ? 'text-red-400' : 'text-muted-foreground/50';
+  const trendBg = stats.trend === 'improving' ? 'bg-emerald-500/10' : stats.trend === 'worsening' ? 'bg-red-500/10' : 'bg-secondary/40';
+  const trendLabel = stats.trend === 'improving' ? 'Improving' : stats.trend === 'worsening' ? 'Worsening' : 'Stable';
+
+  return (
+    <div className="px-5 py-3 border-b border-primary/10 bg-secondary/20">
+      <div className="flex items-center gap-4 flex-wrap text-[11px]">
+        {/* Open issues */}
+        <div className="flex items-center gap-1.5">
+          <span className="font-medium text-foreground/70">{stats.openIssues}</span>
+          <span className="text-muted-foreground/50">open</span>
+        </div>
+
+        <span className="text-primary/15">|</span>
+
+        {/* Auto-fixed this week */}
+        <div className="flex items-center gap-1.5">
+          <span className="font-medium text-emerald-400">{stats.autoFixedThisWeek}</span>
+          <span className="text-muted-foreground/50">auto-fixed this week</span>
+        </div>
+
+        <span className="text-primary/15">|</span>
+
+        {/* Trend */}
+        <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md ${trendBg}`}>
+          <TrendIcon className={`w-3 h-3 ${trendColor}`} />
+          <span className={`font-medium ${trendColor}`}>{trendLabel}</span>
+        </div>
+
+        {/* Recurring patterns */}
+        {stats.recurring.length > 0 && (
+          <>
+            <span className="text-primary/15">|</span>
+            {stats.recurring.map(([category, count]) => (
+              <span key={category} className="text-amber-400/80">
+                {count} {category} issues in 7d
+              </span>
+            ))}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface TrendData {
+  /** Percentage change (positive = increase, negative = decrease) */
+  pct: number;
+  /** If true, a decrease is good (green) and increase is bad (red) — e.g. cost */
+  invertColor: boolean;
+}
+
+function Sparkline({ data, color }: { data: number[]; color: string }) {
+  if (data.length < 2) return null;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const w = 32;
+  const h = 16;
+  const points = data
+    .map((v, i) => `${(i / (data.length - 1)) * w},${h - ((v - min) / range) * h}`)
+    .join(' ');
+  return (
+    <svg width={w} height={h} className="mt-1" aria-hidden="true">
+      <polyline points={points} fill="none" stroke={color} strokeOpacity={0.4} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+const SPARKLINE_HEX: Record<string, string> = {
+  emerald: '#10b981',
+  blue: '#3b82f6',
+  green: '#22c55e',
+  purple: '#a855f7',
+};
+
+function SummaryCard({ icon: Icon, label, numericValue, format, color, trend, sparklineData }: { icon: LucideIcon; label: string; numericValue: number; format: (n: number) => string; color: string; trend?: TrendData | null; sparklineData?: number[] }) {
   const colorMap: Record<string, string> = {
     emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
     blue: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
@@ -278,6 +520,17 @@ function SummaryCard({ icon: Icon, label, numericValue, format, color }: { icon:
   const cls = colorMap[color] || colorMap.blue;
   const animated = useAnimatedNumber(numericValue);
 
+  const trendDisplay = useMemo(() => {
+    if (!trend || (trend.pct === 0)) return null;
+    const isUp = trend.pct > 0;
+    const isGood = trend.invertColor ? !isUp : isUp;
+    const TIcon = isUp ? TrendingUp : TrendingDown;
+    const trendColor = isGood ? 'text-emerald-400' : 'text-red-400';
+    const absPct = Math.abs(trend.pct);
+    const label = absPct >= 1000 ? '999+%' : absPct < 0.1 ? '<0.1%' : `${absPct.toFixed(1)}%`;
+    return { TIcon, trendColor, label };
+  }, [trend]);
+
   return (
     <div className="bg-secondary/30 border border-primary/15 rounded-xl p-4">
       <div className="flex items-center gap-2 mb-2">
@@ -286,7 +539,17 @@ function SummaryCard({ icon: Icon, label, numericValue, format, color }: { icon:
         </div>
         <span className="text-xs text-muted-foreground/60">{label}</span>
       </div>
-      <div className="text-2xl font-bold text-foreground">{format(animated)}</div>
+      <div className="text-xl font-bold text-foreground">{format(animated)}</div>
+      {sparklineData && sparklineData.length >= 2 && (
+        <Sparkline data={sparklineData} color={SPARKLINE_HEX[color] || '#3b82f6'} />
+      )}
+      {trendDisplay && (
+        <div className={`flex items-center gap-1 mt-1.5 text-[11px] ${trendDisplay.trendColor}`}>
+          <trendDisplay.TIcon className="w-3 h-3" />
+          <span>{trendDisplay.label}</span>
+          <span className="text-muted-foreground/30 ml-0.5">vs prev</span>
+        </div>
+      )}
     </div>
   );
 }

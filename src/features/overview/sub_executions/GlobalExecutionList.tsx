@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronRight, Loader2, RefreshCw } from 'lucide-react';
+import { ChevronDown, ChevronRight, Loader2, RefreshCw, Copy, Check } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { GlobalExecution } from '@/lib/types/types';
 import type { PersonaExecutionStatus } from '@/lib/types/frontendTypes';
@@ -41,6 +41,16 @@ export default function GlobalExecutionList() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const statusCounts = useMemo(() => {
+    const counts: Record<FilterStatus, number> = { all: globalExecutions.length, running: 0, completed: 0, failed: 0 };
+    for (const exec of globalExecutions) {
+      if (exec.status === 'running' || exec.status === 'pending') counts.running++;
+      else if (exec.status === 'completed') counts.completed++;
+      else if (exec.status === 'failed') counts.failed++;
+    }
+    return counts;
+  }, [globalExecutions]);
+
   // Initial fetch and filter changes
   useEffect(() => {
     const statusParam = filter === 'all' ? undefined : filter;
@@ -78,13 +88,17 @@ export default function GlobalExecutionList() {
           <button
             key={opt.id}
             onClick={() => setFilter(opt.id)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
               filter === opt.id
                 ? 'bg-primary/15 text-primary border-primary/30'
                 : 'bg-secondary/30 text-muted-foreground/60 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
             }`}
           >
+            {opt.id === 'running' && statusCounts.running > 0 && (
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+            )}
             {opt.label}
+            <span className="opacity-60">({statusCounts[opt.id]})</span>
           </button>
         ))}
         <button
@@ -151,6 +165,14 @@ function ExecutionRow({
   onToggle: () => void;
 }) {
   const status = statusConfig[execution.status as PersonaExecutionStatus] || statusConfig.pending;
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const copyToClipboard = (value: string, field: string) => {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopiedField(field);
+      setTimeout(() => setCopiedField(null), 2000);
+    }).catch(() => {});
+  };
 
   return (
     <motion.div
@@ -248,9 +270,31 @@ function ExecutionRow({
 
               {/* Metadata */}
               <div className="flex items-center gap-4 text-[11px] text-muted-foreground/40">
-                <span>ID: <span className="font-mono">{execution.id}</span></span>
+                <button
+                  onClick={(e) => { e.stopPropagation(); copyToClipboard(execution.id, 'id'); }}
+                  className="inline-flex items-center gap-1 hover:text-muted-foreground/70 transition-colors group"
+                  title={execution.id}
+                >
+                  ID: <span className="font-mono">#{execution.id.slice(0, 8)}</span>
+                  {copiedField === 'id' ? (
+                    <Check className="w-3 h-3 text-emerald-400" />
+                  ) : (
+                    <Copy className="w-3 h-3 opacity-0 group-hover:opacity-60 transition-opacity" />
+                  )}
+                </button>
                 {execution.claude_session_id && (
-                  <span>Session: <span className="font-mono">{execution.claude_session_id}</span></span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); copyToClipboard(execution.claude_session_id!, 'session'); }}
+                    className="inline-flex items-center gap-1 hover:text-muted-foreground/70 transition-colors group"
+                    title={execution.claude_session_id}
+                  >
+                    Session: <span className="font-mono">#{execution.claude_session_id.slice(0, 8)}</span>
+                    {copiedField === 'session' ? (
+                      <Check className="w-3 h-3 text-emerald-400" />
+                    ) : (
+                      <Copy className="w-3 h-3 opacity-0 group-hover:opacity-60 transition-opacity" />
+                    )}
+                  </button>
                 )}
                 {execution.started_at && (
                   <span>Started: {new Date(execution.started_at).toLocaleString()}</span>

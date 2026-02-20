@@ -182,6 +182,7 @@ export function DesignResultPreview({
               readOnly={readOnly}
               actualTriggers={actualTriggers}
               onTriggerEnabledToggle={onTriggerEnabledToggle}
+              defaultExpanded={rows.length <= 3}
             />
           ))}
         </div>
@@ -252,6 +253,7 @@ function ConnectorCard({
   readOnly,
   actualTriggers,
   onTriggerEnabledToggle,
+  defaultExpanded,
 }: {
   row: ConnectorRow;
   result: DesignAnalysisResult;
@@ -270,8 +272,9 @@ function ConnectorCard({
   readOnly: boolean;
   actualTriggers: DbPersonaTrigger[];
   onTriggerEnabledToggle?: (triggerId: string, enabled: boolean) => void;
+  defaultExpanded?: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState<boolean>(defaultExpanded ?? false);
 
   const connector = row.connector;
   const connDef = connector ? connectorDefinitions.find((c) => c.name === connector.name) : null;
@@ -376,118 +379,133 @@ function ConnectorCard({
               ) : null}
 
               {/* Tools */}
-              {row.tools.map((toolName) => {
-                const toolDef = allToolDefs.find((t) => t.name === toolName);
-                const isAlreadyAssigned = currentToolNames.includes(toolName);
-                const isSelected = selectedTools.has(toolName);
+              {row.tools.length > 0 && (
+                <div className="space-y-2">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/40">Tools</span>
+                  {row.tools.map((toolName) => {
+                    const toolDef = allToolDefs.find((t) => t.name === toolName);
+                    const isAlreadyAssigned = currentToolNames.includes(toolName);
+                    const isSelected = selectedTools.has(toolName);
 
-                return (
-                  <div key={toolName} className="flex items-start gap-2">
-                    {!readOnly && (
-                      <div className="mt-0.5">
-                        <DesignCheckbox
-                          checked={isSelected || isAlreadyAssigned}
-                          disabled={isAlreadyAssigned}
-                          onChange={() => onToolToggle(toolName)}
-                        />
+                    return (
+                      <div key={toolName} className="flex items-start gap-2">
+                        {!readOnly && (
+                          <div className="mt-0.5">
+                            <DesignCheckbox
+                              checked={isSelected || isAlreadyAssigned}
+                              disabled={isAlreadyAssigned}
+                              onChange={() => onToolToggle(toolName)}
+                            />
+                          </div>
+                        )}
+                        <Wrench className="w-3.5 h-3.5 text-primary/40 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm text-foreground/70 truncate block">
+                            {toolDef?.name || toolName}
+                          </span>
+                        </div>
                       </div>
-                    )}
-                    <Wrench className="w-3.5 h-3.5 text-primary/40 mt-0.5 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm text-foreground/70 truncate block">
-                        {toolDef?.name || toolName}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              )}
 
               {/* Triggers */}
-              {readOnly && relevantActualTriggers.length > 0 ? (
-                relevantActualTriggers.map((trigger) => {
-                  const config = parseTriggerConfig(trigger.config);
-                  return (
-                    <div key={trigger.id} className="flex items-center gap-2">
-                      <div className="flex-shrink-0">{triggerIcon(trigger.trigger_type as SuggestedTrigger['trigger_type'])}</div>
-                      <span className={`text-sm capitalize truncate flex-1 ${trigger.enabled ? 'text-foreground/70' : 'text-muted-foreground/40'}`}>
-                        {trigger.trigger_type}
-                        {config.interval_seconds ? ` (${config.interval_seconds}s)` : ''}
-                      </span>
-                      {onTriggerEnabledToggle && (
-                        <button
-                          onClick={() => onTriggerEnabledToggle(trigger.id, !trigger.enabled)}
-                          className="flex-shrink-0 p-0.5 rounded transition-colors hover:bg-secondary/50"
-                          title={trigger.enabled ? 'Disable' : 'Enable'}
-                        >
-                          {trigger.enabled ? (
-                            <ToggleRight className="w-5 h-5 text-emerald-400" />
-                          ) : (
-                            <ToggleLeft className="w-5 h-5 text-muted-foreground/30" />
+              {((readOnly && relevantActualTriggers.length > 0) || (!readOnly && row.triggerIndices.length > 0)) && (
+                <div className={`space-y-2 ${row.tools.length > 0 ? 'pt-2 border-t border-primary/10' : ''}`}>
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/40">Triggers</span>
+                  {readOnly && relevantActualTriggers.length > 0 ? (
+                    relevantActualTriggers.map((trigger) => {
+                      const config = parseTriggerConfig(trigger.config);
+                      return (
+                        <div key={trigger.id} className="flex items-center gap-2">
+                          <div className="flex-shrink-0">{triggerIcon(trigger.trigger_type as SuggestedTrigger['trigger_type'])}</div>
+                          <span className={`text-sm capitalize truncate flex-1 ${trigger.enabled ? 'text-foreground/70' : 'text-muted-foreground/40'}`}>
+                            {trigger.trigger_type}
+                            {config.interval_seconds ? ` (${config.interval_seconds}s)` : ''}
+                          </span>
+                          {onTriggerEnabledToggle && (
+                            <button
+                              onClick={() => onTriggerEnabledToggle(trigger.id, !trigger.enabled)}
+                              className="flex-shrink-0 p-0.5 rounded transition-colors hover:bg-secondary/50"
+                              title={trigger.enabled ? 'Disable' : 'Enable'}
+                            >
+                              {trigger.enabled ? (
+                                <ToggleRight className="w-5 h-5 text-emerald-400" />
+                              ) : (
+                                <ToggleLeft className="w-5 h-5 text-muted-foreground/30" />
+                              )}
+                            </button>
                           )}
-                        </button>
-                      )}
-                    </div>
-                  );
-                })
-              ) : (
-                row.triggerIndices.map((trigIdx) => {
-                  const trigger = result.suggested_triggers[trigIdx];
-                  if (!trigger) return null;
-                  const isSelected = selectedTriggerIndices.has(trigIdx);
-
-                  return (
-                    <div key={trigIdx} className="flex items-start gap-2">
-                      {!readOnly && (
-                        <div className="mt-0.5">
-                          <DesignCheckbox
-                            checked={isSelected}
-                            onChange={() => onTriggerToggle(trigIdx)}
-                          />
                         </div>
-                      )}
-                      <div className="flex-shrink-0 mt-0.5">{triggerIcon(trigger.trigger_type)}</div>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm text-foreground/70 capitalize truncate block">
-                          {trigger.trigger_type}
-                        </span>
-                        <span className="text-sm text-muted-foreground/40 leading-snug block">
-                          {trigger.description}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })
+                      );
+                    })
+                  ) : (
+                    row.triggerIndices.map((trigIdx) => {
+                      const trigger = result.suggested_triggers[trigIdx];
+                      if (!trigger) return null;
+                      const isSelected = selectedTriggerIndices.has(trigIdx);
+
+                      return (
+                        <div key={trigIdx} className="flex items-start gap-2">
+                          {!readOnly && (
+                            <div className="mt-0.5">
+                              <DesignCheckbox
+                                checked={isSelected}
+                                onChange={() => onTriggerToggle(trigIdx)}
+                              />
+                            </div>
+                          )}
+                          <div className="flex-shrink-0 mt-0.5">{triggerIcon(trigger.trigger_type)}</div>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-sm text-foreground/70 capitalize truncate block">
+                              {trigger.trigger_type}
+                            </span>
+                            <span className="text-sm text-muted-foreground/40 leading-snug block">
+                              {trigger.description}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
               )}
 
               {/* Notification Channels */}
-              {row.channelIndices.map((chIdx) => {
-                const channel = suggestedChannels[chIdx];
-                if (!channel) return null;
-                const isSelected = selectedChannelIndices.has(chIdx);
+              {row.channelIndices.length > 0 && (
+                <div className={`space-y-2 ${row.tools.length > 0 || row.triggerIndices.length > 0 ? 'pt-2 border-t border-primary/10' : ''}`}>
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/40">Channels</span>
+                  {row.channelIndices.map((chIdx) => {
+                    const channel = suggestedChannels[chIdx];
+                    if (!channel) return null;
+                    const isSelected = selectedChannelIndices.has(chIdx);
 
-                return (
-                  <div key={`ch-${chIdx}`} className="flex items-start gap-2">
-                    {!readOnly && (
-                      <div className="mt-0.5">
-                        <DesignCheckbox
-                          checked={isSelected}
-                          onChange={() => onChannelToggle?.(chIdx)}
-                          color="blue"
-                        />
+                    return (
+                      <div key={`ch-${chIdx}`} className="flex items-start gap-2">
+                        {!readOnly && (
+                          <div className="mt-0.5">
+                            <DesignCheckbox
+                              checked={isSelected}
+                              onChange={() => onChannelToggle?.(chIdx)}
+                              color="blue"
+                            />
+                          </div>
+                        )}
+                        {channelIcon(channel.type)}
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm text-foreground/70 capitalize truncate block">
+                            {channel.type}
+                          </span>
+                          <span className="text-sm text-muted-foreground/40 leading-snug block">
+                            {channel.description}
+                          </span>
+                        </div>
                       </div>
-                    )}
-                    {channelIcon(channel.type)}
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm text-foreground/70 capitalize truncate block">
-                        {channel.type}
-                      </span>
-                      <span className="text-sm text-muted-foreground/40 leading-snug block">
-                        {channel.description}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              )}
 
               {/* Empty state */}
               {row.tools.length === 0 && row.triggerIndices.length === 0 && row.channelIndices.length === 0 && (

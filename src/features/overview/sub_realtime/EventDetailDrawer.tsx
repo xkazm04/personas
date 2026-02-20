@@ -3,6 +3,8 @@ import { X, Clock, CheckCircle2, AlertCircle, Loader2, ChevronDown } from 'lucid
 import type { RealtimeEvent } from '@/hooks/useRealtimeEvents';
 import { EVENT_TYPE_HEX_COLORS } from '@/hooks/useRealtimeEvents';
 import { formatRelativeTime } from '@/lib/utils/formatters';
+import { usePersonaStore } from '@/stores/personaStore';
+import { UuidLabel } from '@/lib/utils/UuidLabel';
 
 interface Props {
   event: RealtimeEvent;
@@ -27,9 +29,15 @@ function formatPayload(payload: string | null): string {
 }
 
 export default function EventDetailDrawer({ event, onClose }: Props) {
+  const personas = usePersonaStore((s) => s.personas);
   const statusInfo = STATUS_ICONS[event.status] ?? STATUS_ICONS.pending!;
   const StatusIcon = statusInfo.icon;
   const typeColor = EVENT_TYPE_HEX_COLORS[event.event_type] ?? '#818cf8';
+
+  const getPersonaName = (id: string | null) => {
+    if (!id) return null;
+    return personas.find((p) => p.id === id)?.name || null;
+  };
 
   return (
     <motion.div
@@ -73,15 +81,24 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
         <div className="grid grid-cols-2 gap-x-6 gap-y-2">
           <div>
             <span className="text-[9px] font-mono uppercase text-muted-foreground/30">Event ID</span>
-            <p className="text-xs font-mono text-foreground/60">{event.id}</p>
+            <p className="text-xs"><UuidLabel value={event.id} /></p>
           </div>
           <div>
             <span className="text-[9px] font-mono uppercase text-muted-foreground/30">Source</span>
-            <p className="text-xs font-mono text-foreground/60">{event.source_type}{event.source_id ? ` : ${event.source_id}` : ''}</p>
+            <p className="text-xs">
+              <span className="text-foreground/60">{event.source_type}</span>
+              {event.source_id && <span className="text-muted-foreground/30"> : </span>}
+              {event.source_id && <UuidLabel value={event.source_id} label={event.source_type || undefined} />}
+            </p>
           </div>
           <div>
             <span className="text-[9px] font-mono uppercase text-muted-foreground/30">Target</span>
-            <p className="text-xs font-mono text-foreground/60">{event.target_persona_id ?? '(broadcast)'}</p>
+            <p className="text-xs">
+              {event.target_persona_id
+                ? <UuidLabel value={event.target_persona_id} label={getPersonaName(event.target_persona_id)} />
+                : <span className="text-foreground/40">(broadcast)</span>
+              }
+            </p>
           </div>
           <div>
             <span className="text-[9px] font-mono uppercase text-muted-foreground/30">Created</span>

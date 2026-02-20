@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { X, Plug, ExternalLink, Check } from 'lucide-react';
 import { CredentialEditForm } from '@/features/vault/components/CredentialEditForm';
 import type { SuggestedConnector } from '@/lib/types/designTypes';
@@ -20,6 +20,7 @@ export function ConnectorCredentialModal({
   onClose,
 }: ConnectorCredentialModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   // Close on Escape
   useEffect(() => {
@@ -29,6 +30,40 @@ export function ConnectorCredentialModal({
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [onClose]);
+
+  // Auto-focus first input on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const firstInput = dialogRef.current?.querySelector<HTMLElement>('input, textarea, select');
+      firstInput?.focus();
+    }, 50);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Focus trap: keep Tab within the modal
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key !== 'Tab' || !dialogRef.current) return;
+
+    const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    );
+    if (focusable.length === 0) return;
+
+    const first = focusable[0]!;
+    const last = focusable[focusable.length - 1]!;
+
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  }, []);
 
   // Click outside to close
   const handleOverlayClick = (e: React.MouseEvent) => {
@@ -56,7 +91,14 @@ export function ConnectorCredentialModal({
       onClick={handleOverlayClick}
       className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center"
     >
-      <div className="bg-secondary/95 backdrop-blur-xl border border-primary/15 rounded-2xl shadow-2xl max-w-lg w-full mx-4 p-6 max-h-[85vh] overflow-y-auto">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="connector-credential-title"
+        onKeyDown={handleKeyDown}
+        className="bg-secondary/95 backdrop-blur-xl border border-primary/15 rounded-2xl shadow-2xl max-w-lg w-full mx-4 p-6 max-h-[85vh] overflow-y-auto"
+      >
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
@@ -68,7 +110,7 @@ export function ConnectorCredentialModal({
               </div>
             )}
             <div>
-              <h3 className="text-sm font-semibold text-foreground">{label}</h3>
+              <h3 id="connector-credential-title" className="text-sm font-semibold text-foreground">{label}</h3>
               {category && (
                 <span className="text-[10px] text-muted-foreground/40 px-1.5 py-0.5 bg-muted/30 rounded mt-0.5 inline-block">
                   {category}
@@ -92,8 +134,27 @@ export function ConnectorCredentialModal({
           </div>
         )}
 
-        {/* Setup URL */}
-        {connector.setup_url && (
+        {/* Setup URL — prominent for first-time, subtle for updates */}
+        {connector.setup_url && !existingCredential && (
+          <a
+            href={connector.setup_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 px-4 py-3 mb-4 bg-amber-500/10 border-2 border-amber-500/30 rounded-xl text-sm text-foreground/80 hover:bg-amber-500/15 hover:border-amber-500/40 transition-colors group"
+          >
+            <span className="w-6 h-6 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-xs font-bold text-amber-400 flex-shrink-0">
+              1
+            </span>
+            <div className="flex-1 min-w-0">
+              <span className="font-semibold text-foreground/90">Get your credentials</span>
+              <span className="text-xs text-muted-foreground/50 block truncate mt-0.5">
+                Open {label} to generate an API key or token
+              </span>
+            </div>
+            <ExternalLink className="w-4 h-4 text-amber-400/70 flex-shrink-0 group-hover:scale-110 transition-transform" />
+          </a>
+        )}
+        {connector.setup_url && existingCredential && (
           <a
             href={connector.setup_url}
             target="_blank"

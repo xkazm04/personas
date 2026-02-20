@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { motion } from 'framer-motion';
 import { Check, AlertTriangle } from 'lucide-react';
 import { ROLE_COLORS, PersonaAvatar } from './teamConstants';
 
@@ -11,6 +12,7 @@ interface PersonaNodeData {
   memberId: string;
   personaId: string;
   pipelineStatus?: 'idle' | 'queued' | 'running' | 'completed' | 'failed';
+  edgeCount?: number;
   [key: string]: unknown;
 }
 
@@ -38,10 +40,26 @@ function PersonaNodeComponent({ data, selected }: NodeProps) {
   const color = d.color || '#6366f1';
   const role = d.role || 'worker';
   const pipelineStatus = d.pipelineStatus;
+  const edgeCount = (d.edgeCount as number) ?? 0;
+  const showHandleGlow = edgeCount < 2;
   const defaultRole = { bg: 'bg-blue-500/15', text: 'text-blue-400', border: 'border-blue-500/25' };
   const roleDef = ROLE_COLORS[role] ?? defaultRole;
 
   const borderStyles = getPipelineStyles(pipelineStatus, selected);
+
+  const handleGlowAnimation = showHandleGlow
+    ? {
+        boxShadow: [
+          '0 0 0 0 rgba(99,102,241,0)',
+          '0 0 0 4px rgba(99,102,241,0.15)',
+          '0 0 0 0 rgba(99,102,241,0)',
+        ],
+      }
+    : undefined;
+
+  const handleGlowTransition = showHandleGlow
+    ? { duration: 2, repeat: Infinity, ease: 'easeInOut' as const }
+    : undefined;
 
   return (
     <div
@@ -69,18 +87,24 @@ function PersonaNodeComponent({ data, selected }: NodeProps) {
         </div>
       )}
 
-      <Handle
-        type="target"
-        position={Position.Top}
-        className="!w-3 !h-3 !rounded-full !border-2 !border-indigo-500/40 !bg-background group-hover:!scale-150 group-hover:!border-indigo-400 !transition-transform"
-      />
+      <motion.div
+        className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
+        animate={handleGlowAnimation}
+        transition={handleGlowTransition}
+      >
+        <Handle
+          type="target"
+          position={Position.Top}
+          className="!w-3.5 !h-3.5 !rounded-full !border-2 !border-indigo-500/40 !bg-background group-hover:!scale-150 group-hover:!border-indigo-400 !transition-transform"
+        />
+      </motion.div>
 
       <div className="flex items-center gap-2.5">
         <PersonaAvatar icon={icon} color={color} />
 
         {/* Info */}
         <div className="min-w-0">
-          <div className="text-xs font-semibold text-foreground/90 truncate max-w-[100px]">
+          <div className="text-xs font-semibold text-foreground/90 truncate max-w-[140px]" title={name}>
             {name}
           </div>
           <div className={`inline-flex items-center mt-0.5 px-1.5 py-0.5 text-[9px] font-mono uppercase rounded-md border ${roleDef.bg} ${roleDef.text} ${roleDef.border}`}>
@@ -89,11 +113,17 @@ function PersonaNodeComponent({ data, selected }: NodeProps) {
         </div>
       </div>
 
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        className="!w-3 !h-3 !rounded-full !border-2 !border-indigo-500/40 !bg-background group-hover:!scale-150 group-hover:!border-indigo-400 !transition-transform"
-      />
+      <motion.div
+        className="absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 rounded-full"
+        animate={handleGlowAnimation}
+        transition={handleGlowTransition}
+      >
+        <Handle
+          type="source"
+          position={Position.Bottom}
+          className="!w-3.5 !h-3.5 !rounded-full !border-2 !border-indigo-500/40 !bg-background group-hover:!scale-150 group-hover:!border-indigo-400 !transition-transform"
+        />
+      </motion.div>
     </div>
   );
 }

@@ -83,6 +83,7 @@ export function CredentialDesignModal({ open, embedded = false, onClose, onCompl
   const [isHealthchecking, setIsHealthchecking] = useState(false);
   const [healthcheckResult, setHealthcheckResult] = useState<{ success: boolean; message: string } | null>(null);
   const [testedHealthcheckConfig, setTestedHealthcheckConfig] = useState<Record<string, unknown> | null>(null);
+  const [testedValues, setTestedValues] = useState<Record<string, string> | null>(null);
   const [lastSuccessfulTestAt, setLastSuccessfulTestAt] = useState<string | null>(null);
   const [showTemplates, setShowTemplates] = useState(false);
   const [templateSearch, setTemplateSearch] = useState('');
@@ -142,6 +143,7 @@ export function CredentialDesignModal({ open, embedded = false, onClose, onCompl
     setIsHealthchecking(true);
     setHealthcheckResult(null);
     setTestedHealthcheckConfig(null);
+    setTestedValues({ ...values });
 
     try {
       const response = await testCredentialDesignHealthcheck(
@@ -227,12 +229,13 @@ export function CredentialDesignModal({ open, embedded = false, onClose, onCompl
     }
   };
 
-  const handleCredentialValuesChanged = () => {
-    if (healthcheckResult || testedHealthcheckConfig) {
-      setHealthcheckResult(null);
-      setTestedHealthcheckConfig(null);
-      setLastSuccessfulTestAt(null);
-    }
+  const handleCredentialValuesChanged = (key: string, value: string) => {
+    if (!testedValues) return;
+    if (testedValues[key] === value) return;
+    setHealthcheckResult(null);
+    setTestedHealthcheckConfig(null);
+    setTestedValues(null);
+    setLastSuccessfulTestAt(null);
   };
 
   const handleClose = () => {
@@ -615,12 +618,11 @@ export function CredentialDesignModal({ open, embedded = false, onClose, onCompl
                       Setup instructions
                     </summary>
                     <div className="mt-3 px-4 py-3 bg-background/40 rounded-xl border border-primary/10">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        className="prose prose-invert prose-sm max-w-none text-foreground/90 prose-p:my-1.5 prose-headings:my-2 prose-li:my-0.5 prose-strong:text-foreground prose-code:text-amber-300"
-                      >
-                        {result.setup_instructions}
-                      </ReactMarkdown>
+                      <div className="prose prose-invert prose-sm max-w-none text-foreground/90 prose-p:my-1.5 prose-headings:my-2 prose-li:my-0.5 prose-strong:text-foreground prose-code:text-amber-300">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {result.setup_instructions}
+                        </ReactMarkdown>
+                      </div>
                     </div>
                     {firstSetupUrl && (
                       <div className="mt-2">
@@ -672,6 +674,7 @@ export function CredentialDesignModal({ open, embedded = false, onClose, onCompl
                     reset();
                     setHealthcheckResult(null);
                     setTestedHealthcheckConfig(null);
+                    setTestedValues(null);
                     setLastSuccessfulTestAt(null);
                   }}
                 />

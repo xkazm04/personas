@@ -1,5 +1,6 @@
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Trash2 } from 'lucide-react';
+import { X, Trash2, AlertTriangle } from 'lucide-react';
 import { TEAM_ROLES, PersonaAvatar } from '@/features/pipeline/sub_canvas/teamConstants';
 
 interface TeamConfigPanelProps {
@@ -19,6 +20,15 @@ interface TeamConfigPanelProps {
 }
 
 export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemove }: TeamConfigPanelProps) {
+  const [confirmRemove, setConfirmRemove] = useState(false);
+
+  // Auto-revert confirm state after 3 seconds
+  useEffect(() => {
+    if (!confirmRemove) return;
+    const timer = setTimeout(() => setConfirmRemove(false), 3000);
+    return () => clearTimeout(timer);
+  }, [confirmRemove]);
+
   if (!member) return null;
 
   const personaName = member.persona_name || member.name || 'Agent';
@@ -84,18 +94,51 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
 
         {/* Footer */}
         <div className="p-4 border-t border-primary/10">
-          <button
-            onClick={() => {
-              if (confirm(`Remove "${personaName}" from team?`)) {
-                onRemove(member.id);
-                onClose();
-              }
-            }}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-red-500/20 bg-red-500/5 text-red-400 hover:bg-red-500/15 text-xs font-medium transition-all"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            Remove from Team
-          </button>
+          <AnimatePresence mode="wait">
+            {confirmRemove ? (
+              <motion.div
+                key="confirm"
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                className="space-y-2"
+              >
+                <div className="flex items-center gap-2 text-xs text-amber-400/70">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  Remove "{personaName}" from team?
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      onRemove(member.id);
+                      onClose();
+                    }}
+                    className="flex-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors"
+                  >
+                    Confirm
+                  </button>
+                  <button
+                    onClick={() => setConfirmRemove(false)}
+                    className="flex-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-secondary/50 text-muted-foreground/60 hover:text-foreground/70 hover:bg-secondary/70 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.button
+                key="remove"
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                onClick={() => setConfirmRemove(true)}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-red-500/20 bg-red-500/5 text-red-400 hover:bg-red-500/15 text-xs font-medium transition-all"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Remove from Team
+              </motion.button>
+            )}
+          </AnimatePresence>
         </div>
       </motion.div>
     </AnimatePresence>

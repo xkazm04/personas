@@ -91,7 +91,7 @@ pub async fn test_credential_design_healthcheck(
     field_values: serde_json::Value,
 ) -> Result<serde_json::Value, AppError> {
     let values_map: HashMap<String, String> = serde_json::from_value(field_values)
-        .map_err(|e| AppError::BadRequest(format!("Invalid field values: {}", e)))?;
+        .map_err(|e| AppError::Validation(format!("Invalid field values: {}", e)))?;
 
     let field_keys: Vec<String> = values_map.keys().cloned().collect();
     let prompt_text = credential_design::build_credential_healthcheck_prompt(

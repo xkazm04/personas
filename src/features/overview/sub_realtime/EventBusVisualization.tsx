@@ -1,4 +1,5 @@
 import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { RealtimeEvent } from '@/hooks/useRealtimeEvents';
 import { EVENT_TYPE_HEX_COLORS } from '@/hooks/useRealtimeEvents';
 import BusLane from './BusLane';
@@ -31,6 +32,16 @@ const PADDING_X = 60;
 const PADDING_Y = 40;
 const NODE_RADIUS = 20;
 const BUS_HEIGHT = 4;
+const MAX_LEGEND_ITEMS = 6;
+
+const EVENT_TYPE_LABELS: Record<string, string> = {
+  webhook_received: 'Webhook',
+  execution_completed: 'Execution',
+  persona_action: 'Persona Action',
+  credential_event: 'Credential',
+  task_created: 'Task Created',
+  custom: 'Custom',
+};
 
 export default function EventBusVisualization({ events, personas, onSelectEvent }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -151,6 +162,22 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
     return ids;
   }, [activeEvents]);
 
+  // Track seen event types across the session (accumulate, never remove)
+  const [seenTypes, setSeenTypes] = useState<string[]>([]);
+  useEffect(() => {
+    setSeenTypes((prev) => {
+      const existing = new Set(prev);
+      const added: string[] = [];
+      for (const evt of events) {
+        if (!existing.has(evt.event_type)) {
+          existing.add(evt.event_type);
+          added.push(evt.event_type);
+        }
+      }
+      return added.length > 0 ? [...prev, ...added] : prev;
+    });
+  }, [events]);
+
   return (
     <div ref={containerRef} className="w-full h-full relative">
       <svg
@@ -241,7 +268,7 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
       {producers.map(node => (
         <div
           key={`label-prod-${node.id}`}
-          className="absolute flex flex-col items-center pointer-events-none"
+          className="absolute flex flex-col items-center"
           style={{
             left: node.x - 40,
             top: node.y - NODE_RADIUS - 4,
@@ -257,7 +284,7 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
           >
             {node.icon && node.icon.length <= 2 ? node.icon : node.label[0]?.toUpperCase()}
           </div>
-          <span className="text-[9px] text-muted-foreground/50 mt-1 truncate max-w-[80px] text-center">
+          <span className="text-[10px] text-muted-foreground/50 mt-1 truncate max-w-[80px] text-center" title={node.label}>
             {node.label}
           </span>
         </div>
@@ -267,7 +294,7 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
       {consumers.map(node => (
         <div
           key={`label-cons-${node.id}`}
-          className="absolute flex flex-col items-center pointer-events-none"
+          className="absolute flex flex-col items-center"
           style={{
             left: node.x - 40,
             top: node.y + NODE_RADIUS + 4,
@@ -282,25 +309,71 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
           >
             {node.icon && node.icon.length <= 2 ? node.icon : node.label[0]?.toUpperCase()}
           </div>
-          <span className="text-[9px] text-muted-foreground/50 mt-1 truncate max-w-[80px] text-center">
+          <span className="text-[10px] text-muted-foreground/50 mt-1 truncate max-w-[80px] text-center" title={node.label}>
             {node.label}
           </span>
         </div>
       ))}
 
+      {/* Event type color legend */}
+      {seenTypes.length > 0 && (
+        <div className="absolute bottom-3 left-3 z-10 bg-background/80 backdrop-blur-sm border border-primary/10 rounded-lg px-3 py-2">
+          <AnimatePresence initial={false}>
+            {seenTypes.slice(0, MAX_LEGEND_ITEMS).map((type) => (
+              <motion.div
+                key={type}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -8 }}
+                transition={{ duration: 0.2 }}
+                className="flex items-center gap-2 py-0.5"
+              >
+                <div
+                  className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: EVENT_TYPE_HEX_COLORS[type] ?? '#818cf8' }}
+                />
+                <span className="text-[9px] font-mono text-muted-foreground/60">
+                  {EVENT_TYPE_LABELS[type] ?? type.replace(/_/g, ' ')}
+                </span>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+          {seenTypes.length > MAX_LEGEND_ITEMS && (
+            <div className="text-[9px] font-mono text-muted-foreground/40 pt-0.5">
+              +{seenTypes.length - MAX_LEGEND_ITEMS} more
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Empty state */}
       {events.length === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+          className="absolute inset-0 flex items-center justify-center pointer-events-none"
+        >
           <div className="text-center">
             <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-purple-500/5 border border-purple-500/15 flex items-center justify-center">
-              <svg className="w-5 h-5 text-purple-400/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <motion.svg
+                className="w-5 h-5 text-purple-400/40"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                animate={{ y: [0, -3, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
+              </motion.svg>
             </div>
-            <p className="text-sm text-muted-foreground/40">Waiting for events...</p>
+            <p className="text-sm text-muted-foreground/40 flex items-center justify-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+              Waiting for events...
+            </p>
             <p className="text-xs text-muted-foreground/25 mt-1">Click &quot;Test Flow&quot; to see it in action</p>
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   );

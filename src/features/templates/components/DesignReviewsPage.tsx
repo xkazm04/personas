@@ -16,6 +16,86 @@ import GeneratedReviewsTab from '@/features/templates/sub_generated/GeneratedRev
 import BuiltinTemplatesTab from '@/features/templates/sub_builtin/BuiltinTemplatesTab';
 import N8nImportTab from '@/features/templates/sub_n8n/N8nImportTab';
 
+function PassRateGauge({ percentage }: { percentage: number }) {
+  const size = 48;
+  const strokeWidth = 5;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (percentage / 100) * circumference;
+
+  // Color transitions: red (0%) → amber (50%) → green (100%)
+  const getColor = (pct: number) => {
+    if (pct < 40) return '#f87171';   // red-400
+    if (pct < 70) return '#fbbf24';   // amber-400
+    return '#34d399';                  // emerald-400
+  };
+
+  const color = getColor(percentage);
+
+  return (
+    <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          className="text-primary/10"
+          strokeWidth={strokeWidth}
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          style={{ transition: 'stroke-dashoffset 0.6s ease, stroke 0.6s ease' }}
+        />
+      </svg>
+      <span
+        className="absolute inset-0 flex items-center justify-center text-xs font-semibold"
+        style={{ color }}
+      >
+        {percentage}%
+      </span>
+    </div>
+  );
+}
+
+function ReviewTimeline({ reviews }: { reviews: Array<{ status: string; reviewed_at: string }> }) {
+  // Take last 10 reviews sorted by reviewed_at descending, then reverse for left-to-right chronological
+  const recent = useMemo(() => {
+    const sorted = [...reviews].sort((a, b) => b.reviewed_at.localeCompare(a.reviewed_at));
+    return sorted.slice(0, 10).reverse();
+  }, [reviews]);
+
+  if (recent.length === 0) return null;
+
+  const dotColor = (status: string) => {
+    if (status === 'passed') return 'bg-emerald-400';
+    if (status === 'failed' || status === 'errored') return 'bg-red-400';
+    return 'bg-muted-foreground/30'; // in-progress or unknown
+  };
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="text-[11px] text-muted-foreground/40 mr-1">Recent:</span>
+      {recent.map((r, i) => (
+        <span
+          key={i}
+          title={`${r.status} — ${formatRelativeTime(r.reviewed_at)}`}
+          className={`w-2.5 h-2.5 rounded-full ${dotColor(r.status)} transition-colors`}
+        />
+      ))}
+    </div>
+  );
+}
+
 type TemplateTab = 'builtin' | 'n8n' | 'generated';
 
 const TABS: Array<{ id: TemplateTab; label: string; icon: typeof Blocks }> = [
@@ -32,6 +112,7 @@ export default function DesignReviewsPage() {
     runLines,
     isRunning,
     runResult,
+    runProgress,
     refresh,
     startNewReview,
     cancelReview,
@@ -97,15 +178,18 @@ export default function DesignReviewsPage() {
       <div className="px-6 py-5 border-b border-primary/10 bg-primary/5 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
-              <FlaskConical className="w-5 h-5 text-violet-400" />
-            </div>
+            {passRate !== null ? (
+              <PassRateGauge percentage={passRate} />
+            ) : (
+              <div className="w-10 h-10 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
+                <FlaskConical className="w-5 h-5 text-violet-400" />
+              </div>
+            )}
             <div>
               <h1 className="text-lg font-semibold text-foreground/90">Agentic Templates</h1>
               <p className="text-xs text-muted-foreground/50">
                 {reviews.length} template{reviews.length !== 1 ? 's' : ''} available
                 {lastReviewDate && ` \u00B7 Last run: ${formatRelativeTime(lastReviewDate)}`}
-                {passRate !== null && ` \u00B7 ${passRate}% pass rate`}
               </p>
             </div>
           </div>
@@ -128,6 +212,11 @@ export default function DesignReviewsPage() {
             </button>
           </div>
         </div>
+        {reviews.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-primary/10">
+            <ReviewTimeline reviews={reviews} />
+          </div>
+        )}
       </div>
 
       {/* Tab bar */}
@@ -175,6 +264,13 @@ export default function DesignReviewsPage() {
             selectedPersonaId={selectedPersonaId}
             startNewReview={startNewReview}
             onContextMenu={handleContextMenu}
+            onDelete={async (id) => {
+              try {
+                await deleteReview(id);
+              } catch (err) {
+                console.error('Failed to delete template:', err);
+              }
+            }}
             handleStartReview={handleStartReview}
           />
         )}
@@ -215,6 +311,7 @@ export default function DesignReviewsPage() {
         lines={runLines}
         isRunning={isRunning}
         result={runResult}
+        runProgress={runProgress}
         onStart={handleRunnerStart}
         onCancel={cancelReview}
       />

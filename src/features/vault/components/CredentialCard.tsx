@@ -34,7 +34,6 @@ export function CredentialCard({
 }: CredentialCardProps) {
   const [expandedSection, setExpandedSection] = useState<ExpandedSection>('edit');
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
   const handleToggle = () => {
@@ -90,24 +89,45 @@ export function CredentialCard({
                   {credential.service_type}
                 </span>
                 {isHealthchecking ? (
-                  <span className="w-2 h-2 rounded-full border border-amber-400 border-t-transparent animate-spin flex-shrink-0" title="Checking..." />
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 flex-shrink-0">
+                    <span className="w-2 h-2 rounded-full border border-amber-400 border-t-transparent animate-spin" />
+                    <span className="text-[10px] text-amber-400">Checking…</span>
+                  </span>
                 ) : (
                   <span
-                    className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full flex-shrink-0 border ${
                       healthcheckResult === null
-                        ? 'bg-amber-400/60'
+                        ? 'bg-amber-500/10 border-amber-500/20'
                         : healthcheckResult.success
-                          ? 'bg-emerald-400'
-                          : 'bg-red-400'
+                          ? 'bg-emerald-500/10 border-emerald-500/20'
+                          : 'bg-red-500/10 border-red-500/20'
                     }`}
-                    title={
-                      healthcheckResult === null
-                        ? 'Not checked'
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        healthcheckResult === null
+                          ? 'bg-amber-400/60'
+                          : healthcheckResult.success
+                            ? 'bg-emerald-400'
+                            : 'bg-red-400'
+                      }`}
+                    />
+                    <span
+                      className={`text-[10px] ${
+                        healthcheckResult === null
+                          ? 'text-amber-400'
+                          : healthcheckResult.success
+                            ? 'text-emerald-400'
+                            : 'text-red-400'
+                      }`}
+                    >
+                      {healthcheckResult === null
+                        ? 'Untested'
                         : healthcheckResult.success
                           ? 'Healthy'
-                          : 'Connection failed'
-                    }
-                  />
+                          : 'Failed'}
+                    </span>
+                  </span>
                 )}
               </div>
 
@@ -119,30 +139,13 @@ export function CredentialCard({
 
           <div className="flex items-center gap-1">
             <div onClick={(e) => e.stopPropagation()}>
-              {confirmDelete ? (
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => { onDelete(credential.id); setConfirmDelete(false); }}
-                    className="px-2 py-1 text-[11px] font-medium text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-colors"
-                  >
-                    Delete
-                  </button>
-                  <button
-                    onClick={() => setConfirmDelete(false)}
-                    className="px-2 py-1 text-[11px] font-medium text-muted-foreground/50 hover:text-foreground/60 rounded-lg transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setConfirmDelete(true)}
-                  className="p-1.5 hover:bg-red-500/10 rounded-lg transition-colors"
-                  title="Delete credential"
-                >
-                  <Trash2 className="w-4 h-4 text-red-400/70" />
-                </button>
-              )}
+              <button
+                onClick={() => onDelete(credential.id)}
+                className="p-1.5 hover:bg-red-500/10 rounded-lg transition-colors"
+                title="Delete credential"
+              >
+                <Trash2 className="w-4 h-4 text-red-400/70" />
+              </button>
             </div>
             {isExpanded ? (
               <ChevronDown className="w-4 h-4 text-muted-foreground/60" />

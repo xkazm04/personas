@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, AlertTriangle, Wrench, CheckCircle } from 'lucide-react';
+import { X, AlertTriangle, Wrench, CheckCircle, Copy, ClipboardCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 import { SEVERITY_COLORS, HEALING_CATEGORY_COLORS } from '@/lib/utils/formatters';
@@ -69,10 +69,19 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
     }
   }, []);
 
+  const [copied, setCopied] = useState(false);
+
   const handleResolve = useCallback(() => {
     onResolve(issue.id);
     setResolved(true);
   }, [onResolve, issue.id]);
+
+  const handleCopyFix = useCallback(() => {
+    if (!issue.suggested_fix) return;
+    navigator.clipboard.writeText(issue.suggested_fix);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [issue.suggested_fix]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
@@ -185,9 +194,18 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
 
                 {issue.suggested_fix && (
                   <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/15">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Wrench className="w-3.5 h-3.5 text-emerald-400" />
-                      <h4 className="text-xs font-mono uppercase text-emerald-400/80">Suggested Fix</h4>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Wrench className="w-3.5 h-3.5 text-emerald-400" />
+                        <h4 className="text-xs font-mono uppercase text-emerald-400/80">Suggested Fix</h4>
+                      </div>
+                      <button
+                        onClick={handleCopyFix}
+                        className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-emerald-400/70 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-md transition-colors"
+                      >
+                        {copied ? <ClipboardCheck className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                        {copied ? 'Copied' : 'Copy Fix'}
+                      </button>
                     </div>
                     <div className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
                       {issue.suggested_fix}
@@ -203,7 +221,32 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
               </div>
 
               {/* Footer */}
-              <div className="flex items-center justify-end gap-2 p-4 border-t border-primary/10 bg-secondary/20">
+              {!isAutoFixed && (
+                <div className="px-4 pt-3 border-t border-primary/10 space-y-2">
+                  {(issue.severity === 'high' || issue.severity === 'critical') && (
+                    <div className="flex items-center gap-1.5 text-[10px] text-amber-400/60">
+                      <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+                      This issue is marked as {issue.severity} severity
+                    </div>
+                  )}
+                  <p className="text-[11px] text-muted-foreground/40">
+                    Marking resolved means you have addressed this issue outside the healing system.
+                  </p>
+                </div>
+              )}
+              <div className="flex items-center justify-end gap-2 p-4 bg-secondary/20">
+                {isAutoFixed && (
+                  <div className="flex items-center gap-1.5 mr-auto">
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: 'spring', damping: 12, stiffness: 300 }}
+                    >
+                      <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                    </motion.div>
+                    <span className="text-[11px] text-emerald-400/60">This issue was automatically resolved</span>
+                  </div>
+                )}
                 <button
                   onClick={onClose}
                   className="px-4 py-2 text-xs font-medium text-muted-foreground/60 hover:text-foreground/80 rounded-lg hover:bg-secondary/60 transition-colors"
@@ -216,7 +259,10 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
                     className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 rounded-lg hover:bg-emerald-500/20 transition-colors"
                   >
                     <CheckCircle className="w-3.5 h-3.5" />
-                    Resolve
+                    <span className="flex flex-col items-start leading-tight">
+                      <span>Mark as Resolved</span>
+                      <span className="text-[9px] text-emerald-400/50">(manual fix applied)</span>
+                    </span>
                   </button>
                 )}
               </div>

@@ -199,7 +199,7 @@ pub async fn system_health_check(
     let ollama_key_configured = crate::db::repos::settings::get(&state.db, "ollama_api_key")
         .ok()
         .flatten()
-        .map_or(false, |k| !k.is_empty());
+        .is_some_and(|k| !k.is_empty());
 
     agent_items.push(HealthCheckItem {
         id: "ollama_api_key".into(),

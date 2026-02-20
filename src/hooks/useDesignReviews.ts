@@ -19,6 +19,12 @@ interface TestRunResult {
   errored: number;
 }
 
+export interface RunProgress {
+  current: number;
+  total: number;
+  startedAt: number;
+}
+
 export function useDesignReviews() {
   const [reviews, setReviews] = useState<PersonaDesignReview[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -26,6 +32,7 @@ export function useDesignReviews() {
   const [runLines, setRunLines] = useState<string[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [runResult, setRunResult] = useState<TestRunResult | null>(null);
+  const [runProgress, setRunProgress] = useState<RunProgress | null>(null);
   const unlistenRef = useRef<UnlistenFn | null>(null);
   const countersRef = useRef({ passed: 0, failed: 0, errored: 0 });
 
@@ -53,6 +60,7 @@ export function useDesignReviews() {
     setIsRunning(true);
     setRunLines([]);
     setRunResult(null);
+    setRunProgress(null);
     countersRef.current = { passed: 0, failed: 0, errored: 0 };
 
     try {
@@ -65,6 +73,7 @@ export function useDesignReviews() {
 
         if (status === 'completed' && test_case_index === total) {
           setIsRunning(false);
+          setRunProgress(null);
           setRunResult({
             testRunId: run_id,
             totalTests: total,
@@ -79,6 +88,11 @@ export function useDesignReviews() {
           if (status === 'passed') countersRef.current.passed++;
           else if (status === 'failed') countersRef.current.failed++;
           else if (status === 'errored') countersRef.current.errored++;
+          setRunProgress((prev) => ({
+            current: test_case_index + 1,
+            total,
+            startedAt: prev?.startedAt ?? Date.now(),
+          }));
           setRunLines((prev) => [
             ...prev,
             `[${test_case_index + 1}/${total}] ${test_case_name}: ${status}`,
@@ -127,6 +141,7 @@ export function useDesignReviews() {
     runLines,
     isRunning,
     runResult,
+    runProgress,
     refresh,
     startNewReview,
     cancelReview,

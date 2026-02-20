@@ -9,6 +9,7 @@ import { PersonaPromptEditor } from '@/features/agents/sub_editor/PersonaPromptE
 import { ExecutionList } from '@/features/agents/sub_executions/ExecutionList';
 import { PersonaRunner } from '@/features/agents/sub_executions/PersonaRunner';
 import { NotificationChannelSettings } from '@/features/agents/sub_editor/NotificationChannelSettings';
+import { AccessibleToggle } from '@/lib/utils/AccessibleToggle';
 
 const tabDefs: Array<{ id: EditorTab; label: string; icon: typeof FileText }> = [
   { id: 'prompt', label: 'Prompt', icon: FileText },
@@ -212,7 +213,7 @@ export default function PersonaEditor() {
       setBaseline(d);
       prevPersonaIdRef.current = selectedPersona.id;
     }
-  }, [selectedPersona?.id, pendingPersonaId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedPersona?.id, pendingPersonaId]);
 
   // Patch helper — merges partial updates into draft
   const patch = useCallback((updates: Partial<PersonaDraft>) => {
@@ -251,7 +252,7 @@ export default function PersonaEditor() {
       }
     });
     return unsub;
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // Compute readiness: persona can only be enabled if it has triggers/subscriptions and all tool credentials
   const readiness = useMemo(() => {
@@ -365,6 +366,15 @@ export default function PersonaEditor() {
       usePersonaStore.getState().selectPersona(target);
     }
   };
+
+  const handleSaveAll = async () => {
+    if (settingsDirty) await handleSaveSettings();
+    if (modelDirty) await saveModelSettings();
+  };
+
+  const changedSections: string[] = [];
+  if (settingsDirty) changedSections.push('Settings');
+  if (modelDirty) changedSections.push('Model');
 
   const handleDelete = async () => {
     await deletePersona(selectedPersona.id);
@@ -583,22 +593,15 @@ export default function PersonaEditor() {
                   </div>
                 </div>
 
-                {/* Save button */}
-                <div className="pt-1">
-                  <button
-                    onClick={saveModelSettings}
-                    disabled={!modelDirty}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium text-sm transition-all ${
-                      modelDirty
-                        ? 'bg-gradient-to-r from-primary to-accent text-foreground shadow-lg shadow-primary/20 hover:from-primary/90 hover:to-accent/90'
-                        : 'bg-secondary/40 text-muted-foreground/30 cursor-not-allowed'
-                    }`}
-                  >
-                    <Save className="w-3.5 h-3.5" />
-                    Save Model Settings
-                    {modelDirty && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />}
-                  </button>
-                </div>
+                {/* Model dirty indicator */}
+                {modelDirty && (
+                  <div className="pt-1">
+                    <span className="flex items-center gap-1.5 text-xs text-amber-400/70">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                      Unsaved changes
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -636,12 +639,12 @@ export default function PersonaEditor() {
 
                 <div className="flex items-center justify-between py-1">
                   <span className="text-sm font-medium text-foreground/60">Persona Enabled</span>
-                  <div
-                    className={`w-9 h-5 rounded-full relative cursor-pointer transition-colors ${draft.enabled ? 'bg-emerald-500/80' : 'bg-muted-foreground/20'}`}
-                    onClick={() => patch({ enabled: !draft.enabled })}
-                  >
-                    <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${draft.enabled ? 'left-[18px]' : 'left-0.5'}`} />
-                  </div>
+                  <AccessibleToggle
+                    checked={draft.enabled}
+                    onChange={() => patch({ enabled: !draft.enabled })}
+                    label="Persona Enabled"
+                    size="md"
+                  />
                 </div>
               </div>
             </div>
@@ -661,21 +664,28 @@ export default function PersonaEditor() {
               </div>
             )}
 
-            {/* Save + Danger */}
+            {/* Unified Save + Danger */}
             <div className="flex items-center justify-between pt-2 border-t border-primary/10">
-              <button
-                onClick={handleSaveSettings}
-                disabled={!settingsDirty}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium text-sm transition-all ${
-                  settingsDirty
-                    ? 'bg-gradient-to-r from-primary to-accent text-foreground shadow-lg shadow-primary/20 hover:from-primary/90 hover:to-accent/90'
-                    : 'bg-secondary/40 text-muted-foreground/30 cursor-not-allowed'
-                }`}
-              >
-                <Save className="w-3.5 h-3.5" />
-                Save Settings
-                {settingsDirty && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />}
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleSaveAll}
+                  disabled={!isDirty}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium text-sm transition-all ${
+                    isDirty
+                      ? 'bg-gradient-to-r from-primary to-accent text-foreground shadow-lg shadow-primary/20 hover:from-primary/90 hover:to-accent/90'
+                      : 'bg-secondary/40 text-muted-foreground/30 cursor-not-allowed'
+                  }`}
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  Save All
+                  {isDirty && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />}
+                </button>
+                {isDirty && (
+                  <span className="text-[11px] text-muted-foreground/40">
+                    {changedSections.join(' + ')} changed
+                  </span>
+                )}
+              </div>
 
               {!showDeleteConfirm ? (
                 <button
@@ -737,19 +747,14 @@ export default function PersonaEditor() {
             <span className={`text-xs font-medium transition-colors ${selectedPersona.enabled ? 'text-emerald-400' : 'text-muted-foreground/40'}`}>
               {selectedPersona.enabled ? 'Active' : 'Off'}
             </span>
-            <button
-              onClick={handleHeaderToggle}
-              className={`w-11 h-6 rounded-full relative transition-all ${
-                selectedPersona.enabled
-                  ? 'bg-emerald-500/80 shadow-[0_0_12px_rgba(16,185,129,0.25)]'
-                  : !readiness.canEnable
-                    ? 'bg-muted-foreground/15 cursor-not-allowed'
-                    : 'bg-muted-foreground/20 hover:bg-muted-foreground/30'
-              }`}
-              title={!readiness.canEnable && !selectedPersona.enabled ? readiness.reasons.join('; ') : undefined}
-            >
-              <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-transform ${selectedPersona.enabled ? 'left-[22px]' : 'left-0.5'}`} />
-            </button>
+            <AccessibleToggle
+              checked={selectedPersona.enabled}
+              onChange={handleHeaderToggle}
+              label={`${selectedPersona.enabled ? 'Disable' : 'Enable'} ${selectedPersona.name}`}
+              disabled={!selectedPersona.enabled && !readiness.canEnable}
+              size="lg"
+              className={selectedPersona.enabled ? 'shadow-[0_0_12px_rgba(16,185,129,0.25)]' : ''}
+            />
 
             {/* Readiness tooltip */}
             <AnimatePresence>

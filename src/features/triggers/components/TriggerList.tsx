@@ -57,7 +57,7 @@ function TriggerCountdown({ trigger }: { trigger: PersonaTrigger }) {
     }, 1000);
 
     return () => clearInterval(id);
-  }, [remaining === null, computeRemaining]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [remaining === null, computeRemaining]);
 
   if (!trigger.enabled) return <span>Disabled</span>;
   if (trigger.trigger_type === 'manual') return <span>Manual only</span>;
@@ -154,9 +154,18 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
               return (
                 <motion.div
                   key={trigger.id}
+                  role="button"
+                  tabIndex={0}
                   whileHover={{ x: 4 }}
+                  whileFocus={{ x: 4 }}
                   onClick={() => onNavigateToPersona?.(persona.id)}
-                  className="p-3 bg-secondary/40 backdrop-blur-sm border border-border/30 rounded-xl cursor-pointer hover:border-primary/20 transition-all"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onNavigateToPersona?.(persona.id);
+                    }
+                  }}
+                  className="p-3 bg-secondary/40 backdrop-blur-sm border border-border/30 rounded-xl cursor-pointer hover:border-primary/20 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 >
                   <div className="flex items-start gap-2.5">
                     <Icon className={`w-4 h-4 mt-0.5 ${colorClass}`} />
@@ -178,6 +187,11 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
                       <div className="mt-1.5 text-xs text-muted-foreground/40 space-y-0.5">
                         <div>Last: {formatTimestamp(trigger.last_triggered_at, 'Never')}</div>
                         <div>Next: <TriggerCountdown trigger={trigger} /></div>
+                        {trigger.trigger_type === 'webhook' && (
+                          <div className="font-mono text-[10px] text-muted-foreground/30 truncate mt-0.5">
+                            localhost:9420/webhook/{trigger.id.slice(0, 8)}...
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

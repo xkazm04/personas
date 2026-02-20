@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Plus, Users, Trash2, ChevronRight } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, Users, Trash2, ChevronRight, GitBranch } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
+import { listTeamMembers, listTeamConnections } from '@/api/tauriApi';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 
 export default function TeamList() {
@@ -15,12 +16,43 @@ export default function TeamList() {
   const [newName, setNewName] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [newColor, setNewColor] = useState('#6366f1');
+  const [teamCounts, setTeamCounts] = useState<Record<string, { members: number; connections: number }>>({});
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  // Auto-revert confirm state after 3 seconds
+  useEffect(() => {
+    if (!confirmDeleteId) return;
+    const timer = setTimeout(() => setConfirmDeleteId(null), 3000);
+    return () => clearTimeout(timer);
+  }, [confirmDeleteId]);
 
   const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6'];
+
+  const fetchCounts = useCallback(async (teamList: PersonaTeam[]) => {
+    const counts: Record<string, { members: number; connections: number }> = {};
+    await Promise.all(
+      teamList.map(async (team) => {
+        try {
+          const [members, connections] = await Promise.all([
+            listTeamMembers(team.id),
+            listTeamConnections(team.id),
+          ]);
+          counts[team.id] = { members: members.length, connections: connections.length };
+        } catch {
+          counts[team.id] = { members: 0, connections: 0 };
+        }
+      }),
+    );
+    setTeamCounts(counts);
+  }, []);
 
   useEffect(() => {
     fetchTeams();
   }, [fetchTeams]);
+
+  useEffect(() => {
+    if (teams.length > 0) fetchCounts(teams);
+  }, [teams, fetchCounts]);
 
   const handleCreate = async () => {
     if (!newName.trim()) return;
@@ -154,15 +186,46 @@ export default function TeamList() {
                   </div>
                 </div>
 
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (confirm(`Delete team "${team.name}"?`)) deleteTeam(team.id);
-                  }}
-                  className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-500/15 text-muted-foreground/40 hover:text-red-400 transition-all"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <AnimatePresence mode="wait">
+                    {confirmDeleteId === team.id ? (
+                      <motion.div
+                        key="confirm"
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        className="flex items-center gap-1.5"
+                      >
+                        <button
+                          onClick={() => {
+                            deleteTeam(team.id);
+                            setConfirmDeleteId(null);
+                          }}
+                          className="px-2 py-1 text-[11px] font-medium text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-colors"
+                        >
+                          Delete
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="px-2 py-1 text-[11px] font-medium text-muted-foreground/50 hover:text-foreground/60 rounded-lg transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </motion.div>
+                    ) : (
+                      <motion.button
+                        key="trash"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setConfirmDeleteId(team.id)}
+                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-500/15 text-muted-foreground/40 hover:text-red-400 transition-all"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </motion.button>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
 
               <div className="mt-4 flex items-center justify-between">
@@ -170,6 +233,22 @@ export default function TeamList() {
                   <span className={`px-2 py-0.5 text-[10px] font-mono rounded-full ${team.enabled ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' : 'bg-zinc-500/15 text-muted-foreground border border-zinc-500/20'}`}>
                     {team.enabled ? 'active' : 'draft'}
                   </span>
+                  {(() => {
+                    const counts = teamCounts[team.id];
+                    if (!counts) return null;
+                    return (
+                      <>
+                        <span className="flex items-center gap-1 text-[10px] text-muted-foreground/50">
+                          <Users className="w-3 h-3" />
+                          {counts.members}
+                        </span>
+                        <span className="flex items-center gap-1 text-[10px] text-muted-foreground/50">
+                          <GitBranch className="w-3 h-3" />
+                          {counts.connections}
+                        </span>
+                      </>
+                    );
+                  })()}
                 </div>
                 <ChevronRight className="w-4 h-4 text-muted-foreground/30 group-hover:text-indigo-400/60 group-hover:translate-x-0.5 transition-all" />
               </div>
