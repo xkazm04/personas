@@ -47,17 +47,29 @@ export default function ObservabilityDashboard() {
   }, []);
 
   useEffect(() => {
-    fetchObservabilityMetrics(days, selectedPersonaId || undefined);
-    fetchHealingIssues();
+    Promise.all([
+      fetchObservabilityMetrics(days, selectedPersonaId || undefined),
+      fetchHealingIssues(),
+    ]);
   }, [days, selectedPersonaId, fetchObservabilityMetrics, fetchHealingIssues]);
+
+  const handleRefresh = async () => {
+    await Promise.all([
+      fetchObservabilityMetrics(days, selectedPersonaId || undefined),
+      fetchHealingIssues(),
+    ]);
+  };
 
   useEffect(() => {
     if (!autoRefresh) return;
     const interval = setInterval(() => {
-      fetchObservabilityMetrics(days, selectedPersonaId || undefined);
+      Promise.all([
+        fetchObservabilityMetrics(days, selectedPersonaId || undefined),
+        fetchHealingIssues(),
+      ]);
     }, 30000);
     return () => clearInterval(interval);
-  }, [autoRefresh, days, selectedPersonaId, fetchObservabilityMetrics]);
+  }, [autoRefresh, days, selectedPersonaId, fetchObservabilityMetrics, fetchHealingIssues]);
 
   const summary = observabilityMetrics?.summary;
   const timeSeries: PersonaMetricsSnapshot[] = observabilityMetrics?.timeSeries || [];
@@ -159,12 +171,19 @@ export default function ObservabilityDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-foreground">Observability</h1>
-          <p className="text-sm text-muted-foreground/60 mt-0.5">Performance metrics, cost tracking, execution health</p>
+          <h1 className="text-xl font-semibold text-foreground/90">Observability</h1>
+          <p className="text-sm text-muted-foreground/50 mt-0.5">Performance metrics, cost tracking, execution health</p>
         </div>
         <div className="flex items-center gap-3">
           <PersonaSelect value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />
           <DayRangePicker value={days} onChange={setDays} />
+          <button
+            onClick={handleRefresh}
+            className="p-1.5 rounded-lg border border-primary/15 text-muted-foreground/50 hover:text-foreground/70 hover:bg-secondary/40 transition-colors"
+            title="Refresh metrics"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
           {/* Auto-refresh */}
           <button
             onClick={() => setAutoRefresh(!autoRefresh)}
@@ -252,7 +271,7 @@ export default function ObservabilityDashboard() {
             <Stethoscope className="w-4 h-4 text-cyan-400" />
             <h3 className="text-sm font-semibold text-foreground/80">Health Issues</h3>
             {healingIssues.length > 0 && (
-              <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
+              <span className="px-1.5 py-0.5 text-[11px] font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
                 {healingIssues.length}
               </span>
             )}
@@ -350,28 +369,28 @@ export default function ObservabilityDashboard() {
               return (
                 <div key={issue.id} className={`flex items-center gap-3 px-5 py-3 hover:bg-secondary/40 transition-colors ${isAutoFixed ? 'opacity-70' : ''}`}>
                   {isAutoFixed ? (
-                    <span className="inline-flex px-1.5 py-0.5 text-[9px] font-mono uppercase rounded-md border bg-emerald-500/15 text-emerald-400 border-emerald-500/20">
+                    <span className="inline-flex px-1.5 py-0.5 text-[10px] font-mono uppercase rounded-md border bg-emerald-500/15 text-emerald-400 border-emerald-500/20">
                       fixed
                     </span>
                   ) : (
-                    <span className={`inline-flex px-1.5 py-0.5 text-[9px] font-mono uppercase rounded-md ${badgeClass(sevBadge)}`}>
+                    <span className={`inline-flex px-1.5 py-0.5 text-[10px] font-mono uppercase rounded-md ${badgeClass(sevBadge)}`}>
                       {issue.severity}
                     </span>
                   )}
                   <button
                     onClick={() => setSelectedIssue(issue)}
-                    className={`flex-1 text-left text-sm transition-colors truncate ${isAutoFixed ? 'text-foreground/50 line-through decoration-emerald-500/30' : 'text-foreground/80 hover:text-foreground'}`}
+                    className={`flex-1 text-left text-sm transition-colors line-clamp-2 ${isAutoFixed ? 'text-foreground/50 line-through decoration-emerald-500/30' : 'text-foreground/80 hover:text-foreground'}`}
                   >
                     {issue.title}
                   </button>
-                  <span className={`text-[10px] font-mono ${HEALING_CATEGORY_COLORS[issue.category]?.text || 'text-muted-foreground/40'}`}>
+                  <span className={`text-[11px] font-mono min-w-[90px] text-right ${HEALING_CATEGORY_COLORS[issue.category]?.text || 'text-muted-foreground/40'}`}>
                     {issue.category}
                   </span>
-                  <span className="text-[10px] text-muted-foreground/30 w-16 text-right">{ageLabel}</span>
+                  <span className="text-[11px] text-muted-foreground/30 w-16 text-right">{ageLabel}</span>
                   {!isAutoFixed && (
                     <button
                       onClick={() => resolveHealingIssue(issue.id)}
-                      className="px-2 py-1 text-[10px] font-medium text-emerald-400 hover:bg-emerald-500/10 rounded-md transition-colors"
+                      className="px-2 py-1 text-[11px] font-medium text-emerald-400 hover:bg-emerald-500/10 rounded-md transition-colors"
                     >
                       Resolve
                     </button>

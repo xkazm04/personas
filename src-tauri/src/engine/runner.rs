@@ -70,6 +70,33 @@ pub async fn run_execution(
         }
     }
 
+    // Resolve global LiteLLM settings when provider is "litellm" and no per-persona values
+    if let Some(ref mut profile) = model_profile {
+        if profile.provider.as_deref() == Some("litellm") {
+            let needs_global_url = profile.base_url.as_ref().map_or(true, |u| u.is_empty());
+            if needs_global_url {
+                if let Ok(Some(global_url)) =
+                    crate::db::repos::settings::get(&pool, "litellm_base_url")
+                {
+                    if !global_url.is_empty() {
+                        profile.base_url = Some(global_url);
+                    }
+                }
+            }
+
+            let needs_global_key = profile.auth_token.as_ref().map_or(true, |t| t.is_empty());
+            if needs_global_key {
+                if let Ok(Some(global_key)) =
+                    crate::db::repos::settings::get(&pool, "litellm_master_key")
+                {
+                    if !global_key.is_empty() {
+                        profile.auth_token = Some(global_key);
+                    }
+                }
+            }
+        }
+    }
+
     // Build CLI args
     let mut cli_args = prompt::build_cli_args(&persona, &model_profile);
 

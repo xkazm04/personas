@@ -39,6 +39,8 @@ export default function GlobalExecutionList() {
 
   const [filter, setFilter] = useState<FilterStatus>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const statusCounts = useMemo(() => {
@@ -53,8 +55,22 @@ export default function GlobalExecutionList() {
 
   // Initial fetch and filter changes
   useEffect(() => {
-    const statusParam = filter === 'all' ? undefined : filter;
-    fetchGlobalExecutions(true, statusParam);
+    let active = true;
+    const load = async () => {
+      setIsLoading(true);
+      const statusParam = filter === 'all' ? undefined : filter;
+      try {
+        await fetchGlobalExecutions(true, statusParam);
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    };
+    load();
+    return () => {
+      active = false;
+    };
   }, [filter, fetchGlobalExecutions]);
 
   // Poll for running executions every 5s
@@ -78,6 +94,16 @@ export default function GlobalExecutionList() {
     fetchGlobalExecutions(false, statusParam);
   };
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      const statusParam = filter === 'all' ? undefined : filter;
+      await fetchGlobalExecutions(true, statusParam);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const hasMore = globalExecutionsOffset < globalExecutionsTotal;
 
   return (
@@ -91,7 +117,7 @@ export default function GlobalExecutionList() {
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
               filter === opt.id
                 ? 'bg-primary/15 text-primary border-primary/30'
-                : 'bg-secondary/30 text-muted-foreground/60 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
+                : 'bg-secondary/30 text-muted-foreground/60 border-primary/15 hover:text-muted-foreground hover:bg-secondary/50'
             }`}
           >
             {opt.id === 'running' && statusCounts.running > 0 && (
@@ -102,25 +128,37 @@ export default function GlobalExecutionList() {
           </button>
         ))}
         <button
-          onClick={() => {
-            const statusParam = filter === 'all' ? undefined : filter;
-            fetchGlobalExecutions(true, statusParam);
-          }}
-          className="ml-auto p-1.5 rounded-lg text-muted-foreground/40 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="ml-auto p-1.5 rounded-lg text-muted-foreground/40 hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors"
           title="Refresh"
         >
-          <RefreshCw className="w-3.5 h-3.5" />
+          <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
         </button>
+      </div>
+
+      <div className="mb-2 text-[11px] font-mono text-muted-foreground/40">
+        Showing {globalExecutions.length} of {globalExecutionsTotal} executions
       </div>
 
       {/* Execution list */}
       <div className="flex-1 overflow-y-auto space-y-1.5">
-        {globalExecutions.length === 0 && (
+        {isLoading && (
           <div className="text-center py-16">
-            <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-border/30 flex items-center justify-center">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
+              <Loader2 className="w-5 h-5 text-primary/70 animate-spin" />
+            </div>
+            <p className="text-sm text-muted-foreground/50">Loading executions...</p>
+          </div>
+        )}
+
+        {!isLoading && globalExecutions.length === 0 && (
+          <div className="text-center py-16">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
               <Loader2 className="w-5 h-5 text-muted-foreground/30" />
             </div>
-            <p className="text-sm text-muted-foreground/50">No executions found</p>
+            <p className="text-sm text-muted-foreground/50">No executions yet</p>
+            <p className="text-xs text-muted-foreground/30 mt-1">Execution activity from personas will appear here</p>
           </div>
         )}
 
@@ -140,7 +178,7 @@ export default function GlobalExecutionList() {
           <div className="pt-3 pb-2 text-center">
             <button
               onClick={handleLoadMore}
-              className="px-4 py-2 text-xs font-medium text-muted-foreground/60 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 rounded-lg border border-border/30 transition-all"
+              className="px-4 py-2 text-xs font-medium text-muted-foreground/60 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 rounded-lg border border-primary/15 transition-all"
             >
               Load More ({globalExecutionsTotal - globalExecutionsOffset} remaining)
             </button>
@@ -180,7 +218,7 @@ function ExecutionRow({
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -4 }}
-      className="rounded-xl border border-border/40 bg-secondary/20 hover:bg-secondary/30 transition-colors overflow-hidden"
+      className="rounded-xl border border-primary/15 bg-secondary/20 hover:bg-secondary/30 transition-colors overflow-hidden"
     >
       {/* Main row */}
       <div
@@ -198,7 +236,7 @@ function ExecutionRow({
         {/* Persona icon + name */}
         <div className="flex items-center gap-2 min-w-[140px]">
           <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-sm border border-border/30"
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-sm border border-primary/15"
             style={{ backgroundColor: (execution.persona_color || '#6366f1') + '15' }}
           >
             {execution.persona_icon || '?'}
@@ -247,12 +285,12 @@ function ExecutionRow({
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-4 pb-4 pt-1 border-t border-border/20 space-y-3">
+            <div className="px-4 pb-4 pt-1 border-t border-primary/15 space-y-3">
               {/* Output */}
               {execution.output_data && (
                 <div>
                   <div className="text-[11px] font-mono text-muted-foreground/50 uppercase mb-1.5">Output</div>
-                  <pre className="text-xs text-foreground/70 bg-background/50 border border-border/20 rounded-lg p-3 max-h-48 overflow-auto whitespace-pre-wrap break-words font-mono">
+                  <pre className="text-xs text-foreground/70 bg-background/50 border border-primary/10 rounded-lg p-3 max-h-48 overflow-auto whitespace-pre-wrap break-words font-mono">
                     {execution.output_data}
                   </pre>
                 </div>

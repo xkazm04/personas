@@ -219,6 +219,40 @@ pub async fn system_health_check(
         installable: false,
     });
 
+    // Check: LiteLLM Proxy configured (optional — enables routing through LiteLLM)
+    let litellm_url_configured = crate::db::repos::settings::get(&state.db, "litellm_base_url")
+        .ok()
+        .flatten()
+        .map_or(false, |u| !u.is_empty());
+    let litellm_key_configured = crate::db::repos::settings::get(&state.db, "litellm_master_key")
+        .ok()
+        .flatten()
+        .map_or(false, |k| !k.is_empty());
+    let litellm_configured = litellm_url_configured && litellm_key_configured;
+
+    agent_items.push(HealthCheckItem {
+        id: "litellm_proxy".into(),
+        label: "LiteLLM Proxy".into(),
+        status: if litellm_configured {
+            "ok"
+        } else {
+            "inactive"
+        }
+        .into(),
+        detail: Some(
+            if litellm_configured {
+                "Configured — LiteLLM proxy available for all agents".into()
+            } else if litellm_url_configured {
+                "Base URL set but master key missing — add master key to complete setup".into()
+            } else if litellm_key_configured {
+                "Master key set but base URL missing — add proxy URL to complete setup".into()
+            } else {
+                "Not configured (optional) — add a LiteLLM proxy URL and master key to route agents through your proxy".into()
+            },
+        ),
+        installable: false,
+    });
+
     sections.push(HealthCheckSection {
         id: "agents".into(),
         label: "Agents".into(),
@@ -298,6 +332,23 @@ pub async fn system_health_check(
     });
 
     Ok(SystemHealthReport { sections, all_ok })
+}
+
+#[tauri::command]
+pub async fn open_external_url(url: String) -> Result<(), AppError> {
+    let trimmed = url.trim();
+    if !(trimmed.starts_with("https://") || trimmed.starts_with("http://")) {
+        return Err(AppError::Validation(
+            "Only http/https URLs are allowed".into(),
+        ));
+    }
+
+    tracing::info!(url = %trimmed, "open_external_url requested");
+
+    open::that(trimmed)
+        .map_err(|e| AppError::Internal(format!("Failed to open URL: {e}")))?;
+
+    Ok(())
 }
 
 #[cfg(test)]

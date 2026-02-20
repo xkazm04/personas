@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Eye, EyeOff, Activity, CheckCircle, XCircle, Loader2, Info, Lock } from 'lucide-react';
+import { Eye, EyeOff, Activity, CheckCircle, XCircle, Loader2, Info, Lock, Shield } from 'lucide-react';
 import type { CredentialTemplateField } from '@/lib/types/types';
 import { vaultStatus, type VaultStatus } from '@/api/tauriApi';
 
@@ -9,6 +9,11 @@ interface CredentialEditFormProps {
   onSave: (values: Record<string, string>) => void;
   onCancel: () => void;
   onHealthcheck?: (values: Record<string, string>) => void;
+  onOAuthConsent?: (values: Record<string, string>) => void;
+  oauthConsentLabel?: string;
+  oauthConsentHint?: string;
+  oauthConsentDisabled?: boolean;
+  oauthConsentSuccessBadge?: string;
   testHint?: string;
   onValuesChanged?: (key: string, value: string) => void;
   isHealthchecking?: boolean;
@@ -23,6 +28,11 @@ export function CredentialEditForm({
   onSave,
   onCancel,
   onHealthcheck,
+  onOAuthConsent,
+  oauthConsentLabel,
+  oauthConsentHint,
+  oauthConsentDisabled,
+  oauthConsentSuccessBadge,
   testHint,
   onValuesChanged,
   isHealthchecking,
@@ -46,6 +56,11 @@ export function CredentialEditForm({
   useEffect(() => {
     vaultStatus().then(setVault).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!initialValues) return;
+    setValues((prev) => ({ ...prev, ...initialValues }));
+  }, [initialValues]);
 
   const handleChange = useCallback((key: string, value: string) => {
     setValues(prev => ({ ...prev, [key]: value }));
@@ -84,6 +99,10 @@ export function CredentialEditForm({
     if (validate()) {
       onHealthcheck?.(values);
     }
+  };
+
+  const handleOAuthConsent = () => {
+    onOAuthConsent?.(values);
   };
 
   return (
@@ -138,6 +157,30 @@ export function CredentialEditForm({
               ? 'Encrypted with OS Keychain'
               : 'Encrypted at rest'}
           </span>
+        </div>
+      )}
+
+      {/* OAuth Consent */}
+      {onOAuthConsent && (
+        <div className="pt-1">
+          <button
+            onClick={handleOAuthConsent}
+            type="button"
+            disabled={oauthConsentDisabled}
+            className="flex items-center gap-2 px-4 py-2 border rounded-xl text-sm font-medium transition-all bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/25 text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Shield className="w-4 h-4" />
+            {oauthConsentLabel || 'Authorize with Google'}
+          </button>
+          {oauthConsentHint && (
+            <p className="mt-1.5 text-xs text-muted-foreground/75">{oauthConsentHint}</p>
+          )}
+          {oauthConsentSuccessBadge && (
+            <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 text-xs">
+              <CheckCircle className="w-3.5 h-3.5" />
+              {oauthConsentSuccessBadge}
+            </div>
+          )}
         </div>
       )}
 

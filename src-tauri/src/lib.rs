@@ -237,6 +237,8 @@ pub fn run() {
             commands::credential_design::start_credential_design,
             commands::credential_design::cancel_credential_design,
             commands::credential_design::test_credential_design_healthcheck,
+            commands::credential_design::start_google_credential_oauth,
+            commands::credential_design::get_google_credential_oauth_status,
             // Design Reviews
             commands::design_reviews::list_design_reviews,
             commands::design_reviews::get_design_review,
@@ -299,6 +301,7 @@ pub fn run() {
             commands::auth::refresh_session,
             // System
             commands::system::system_health_check,
+            commands::system::open_external_url,
             // Setup / Auto-install
             commands::setup::start_setup_install,
             commands::setup::cancel_setup_install,

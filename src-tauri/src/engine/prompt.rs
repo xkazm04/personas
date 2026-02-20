@@ -1,5 +1,5 @@
-use crate::db::models::{Persona, PersonaToolDefinition};
 use super::types::{CliArgs, ModelProfile};
+use crate::db::models::{Persona, PersonaToolDefinition};
 
 /// Parse the model_profile JSON string into a ModelProfile struct.
 /// Returns None if the input is None, empty, or invalid JSON.
@@ -133,7 +133,9 @@ pub fn assemble_prompt(
             for hint in hints {
                 prompt.push_str(&format!("- {}\n", hint));
             }
-            prompt.push_str("\nUse these environment variables to authenticate with external services.\n\n");
+            prompt.push_str(
+                "\nUse these environment variables to authenticate with external services.\n\n",
+            );
         }
     }
 
@@ -175,7 +177,10 @@ pub fn assemble_prompt(
 /// Used for credential design and other non-persona CLI invocations.
 pub fn build_default_cli_args() -> CliArgs {
     let (command, mut args) = if cfg!(windows) {
-        ("cmd".to_string(), vec!["/C".to_string(), "claude.cmd".to_string()])
+        (
+            "cmd".to_string(),
+            vec!["/C".to_string(), "claude.cmd".to_string()],
+        )
     } else {
         ("claude".to_string(), vec![])
     };
@@ -193,10 +198,7 @@ pub fn build_default_cli_args() -> CliArgs {
         command,
         args,
         env_overrides: Vec::new(),
-        env_removals: vec![
-            "CLAUDECODE".to_string(),
-            "CLAUDE_CODE".to_string(),
-        ],
+        env_removals: vec!["CLAUDECODE".to_string(), "CLAUDE_CODE".to_string()],
         cwd: None,
     }
 }
@@ -204,7 +206,10 @@ pub fn build_default_cli_args() -> CliArgs {
 /// Build CLI arguments for spawning the Claude CLI process.
 pub fn build_cli_args(persona: &Persona, model_profile: &Option<ModelProfile>) -> CliArgs {
     let (command, mut args) = if cfg!(windows) {
-        ("cmd".to_string(), vec!["/C".to_string(), "claude.cmd".to_string()])
+        (
+            "cmd".to_string(),
+            vec!["/C".to_string(), "claude.cmd".to_string()],
+        )
     } else {
         ("claude".to_string(), vec![])
     };
@@ -253,33 +258,33 @@ pub fn build_cli_args(persona: &Persona, model_profile: &Option<ModelProfile>) -
         match profile.provider.as_deref() {
             Some("ollama") => {
                 if let Some(ref base_url) = profile.base_url {
-                    env_overrides.push((
-                        "OLLAMA_BASE_URL".to_string(),
-                        base_url.clone(),
-                    ));
+                    env_overrides.push(("OLLAMA_BASE_URL".to_string(), base_url.clone()));
                 }
                 if let Some(ref auth_token) = profile.auth_token {
                     if !auth_token.is_empty() {
-                        env_overrides.push((
-                            "OLLAMA_API_KEY".to_string(),
-                            auth_token.clone(),
-                        ));
+                        env_overrides.push(("OLLAMA_API_KEY".to_string(), auth_token.clone()));
                     }
                 }
                 env_removals.push("ANTHROPIC_API_KEY".to_string());
             }
-            Some("custom") | Some("litellm") => {
+            Some("litellm") => {
                 if let Some(ref base_url) = profile.base_url {
-                    env_overrides.push((
-                        "OPENAI_BASE_URL".to_string(),
-                        base_url.clone(),
-                    ));
+                    env_overrides.push(("ANTHROPIC_BASE_URL".to_string(), base_url.clone()));
                 }
                 if let Some(ref auth_token) = profile.auth_token {
-                    env_overrides.push((
-                        "OPENAI_API_KEY".to_string(),
-                        auth_token.clone(),
-                    ));
+                    if !auth_token.is_empty() {
+                        env_overrides
+                            .push(("ANTHROPIC_AUTH_TOKEN".to_string(), auth_token.clone()));
+                    }
+                }
+                env_removals.push("ANTHROPIC_API_KEY".to_string());
+            }
+            Some("custom") => {
+                if let Some(ref base_url) = profile.base_url {
+                    env_overrides.push(("OPENAI_BASE_URL".to_string(), base_url.clone()));
+                }
+                if let Some(ref auth_token) = profile.auth_token {
+                    env_overrides.push(("OPENAI_API_KEY".to_string(), auth_token.clone()));
                 }
                 env_removals.push("ANTHROPIC_API_KEY".to_string());
             }
@@ -464,16 +469,19 @@ mod tests {
     #[test]
     fn test_prompt_with_structured_prompt() {
         let mut persona = test_persona();
-        persona.structured_prompt = Some(serde_json::json!({
-            "identity": "I am a code reviewer.",
-            "instructions": "Review all pull requests carefully.",
-            "toolGuidance": "Use the linter tool first.",
-            "examples": "Example: Check for null pointers.",
-            "errorHandling": "Report errors clearly.",
-            "customSections": [
-                {"name": "Security", "content": "Always check for SQL injection."}
-            ]
-        }).to_string());
+        persona.structured_prompt = Some(
+            serde_json::json!({
+                "identity": "I am a code reviewer.",
+                "instructions": "Review all pull requests carefully.",
+                "toolGuidance": "Use the linter tool first.",
+                "examples": "Example: Check for null pointers.",
+                "errorHandling": "Report errors clearly.",
+                "customSections": [
+                    {"name": "Security", "content": "Always check for SQL injection."}
+                ]
+            })
+            .to_string(),
+        );
 
         let prompt = assemble_prompt(&persona, &[], None, None);
 
@@ -553,7 +561,9 @@ mod tests {
         assert!(args.args.contains(&"--output-format".to_string()));
         assert!(args.args.contains(&"stream-json".to_string()));
         assert!(args.args.contains(&"--verbose".to_string()));
-        assert!(args.args.contains(&"--dangerously-skip-permissions".to_string()));
+        assert!(args
+            .args
+            .contains(&"--dangerously-skip-permissions".to_string()));
 
         // Platform-specific command
         if cfg!(windows) {

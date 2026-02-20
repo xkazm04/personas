@@ -39,12 +39,32 @@ export default function MessageList() {
 
   const [filter, setFilter] = useState<FilterType>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Fetch all messages (no server-side filtering available)
   useEffect(() => {
-    fetchMessages(true);
-    const interval = setInterval(() => fetchMessages(true), 10000);
-    return () => clearInterval(interval);
+    let active = true;
+    const loadInitial = async () => {
+      setIsLoading(true);
+      try {
+        await fetchMessages(true);
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadInitial();
+    const interval = setInterval(() => {
+      fetchMessages(true);
+    }, 10000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
   }, [fetchMessages]);
 
   // Client-side filtering
@@ -58,6 +78,15 @@ export default function MessageList() {
 
   const handleLoadMore = () => {
     fetchMessages(false);
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await fetchMessages(true);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const remaining = messagesTotal - messages.length;
@@ -80,13 +109,13 @@ export default function MessageList() {
               onClick={() => setFilter(opt.id)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border flex items-center gap-1.5 ${
                 filter === opt.id
-                  ? 'bg-blue-500/15 text-blue-400 border-blue-500/30'
+                  ? 'bg-primary/15 text-primary border-primary/30'
                   : 'bg-secondary/30 text-muted-foreground/60 border-primary/15 hover:text-muted-foreground hover:bg-secondary/50'
               }`}
             >
               {opt.label}
               {count > 0 && (
-                <span className="text-[10px] bg-blue-500/20 text-blue-400 rounded-full min-w-[18px] px-1 inline-flex items-center justify-center">
+                <span className="text-[11px] bg-primary/20 text-primary rounded-full min-w-[18px] px-1 inline-flex items-center justify-center">
                   {count}
                 </span>
               )}
@@ -97,10 +126,11 @@ export default function MessageList() {
         <div className="flex-1" />
 
         <button
-          onClick={() => fetchMessages(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground/60 hover:text-muted-foreground border border-primary/15 hover:bg-secondary/50 transition-all"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground/60 hover:text-muted-foreground border border-primary/15 hover:bg-secondary/50 disabled:opacity-60 transition-all"
         >
-          <RefreshCw className="w-3.5 h-3.5" />
+          <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
           Refresh
         </button>
 
@@ -113,9 +143,22 @@ export default function MessageList() {
         </button>
       </div>
 
+      <div className="mb-2 text-[11px] font-mono text-muted-foreground/40">
+        Showing {filteredMessages.length} of {messagesTotal} messages
+      </div>
+
       {/* Message list */}
       <div className="flex-1 overflow-y-auto space-y-1.5">
-        {filteredMessages.length === 0 && (
+        {isLoading && (
+          <div className="text-center py-16">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
+              <Loader2 className="w-5 h-5 text-primary/70 animate-spin" />
+            </div>
+            <p className="text-sm text-muted-foreground/50">Loading messages...</p>
+          </div>
+        )}
+
+        {!isLoading && filteredMessages.length === 0 && (
           <div className="text-center py-16">
             <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
               <MessageSquare className="w-5 h-5 text-muted-foreground/30" />

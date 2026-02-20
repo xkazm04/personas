@@ -10,7 +10,8 @@ export interface CredentialDesignConnector {
   label: string;
   category: string;
   color: string;
-  fields: { key: string; label: string; type: string; required: boolean; placeholder?: string }[];
+  oauth_type?: string | null;
+  fields: { key: string; label: string; type: string; required: boolean; placeholder?: string; helpText?: string }[];
   healthcheck_config: object | null;
   services: unknown[];
   events: unknown[];

@@ -73,7 +73,7 @@ function MemoryRow({
   );
 
   const categoryBadge = (
-    <span className={`inline-flex px-2 py-0.5 text-[10px] font-mono uppercase rounded-md border flex-shrink-0 ${cat.bg} ${cat.text} ${cat.border}`}>
+    <span className={`inline-flex px-2 py-0.5 text-[11px] font-mono uppercase rounded-md border flex-shrink-0 ${cat.bg} ${cat.text} ${cat.border}`}>
       {cat.label}
     </span>
   );
@@ -124,7 +124,7 @@ function MemoryRow({
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -4 }}
-      className="border-b border-primary/5 hover:bg-secondary/20 transition-colors"
+      className="border-b border-primary/10 hover:bg-secondary/20 transition-colors"
     >
       {/* Desktop table row (md+) */}
       <div className="hidden md:flex items-center gap-4 px-6 py-3 cursor-pointer" onClick={() => setExpanded(!expanded)}>
@@ -145,12 +145,12 @@ function MemoryRow({
 
         <div className="w-[120px] flex items-center gap-1 flex-shrink-0 overflow-hidden">
           {tags.slice(0, 2).map((tag) => (
-            <span key={tag} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-mono bg-secondary/40 text-muted-foreground/50 rounded border border-primary/10 truncate max-w-[55px]">
+            <span key={tag} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono bg-secondary/40 text-muted-foreground/50 rounded border border-primary/10 truncate max-w-[55px]">
               {tag}
             </span>
           ))}
           {tags.length > 2 && (
-            <span className="text-[9px] text-muted-foreground/30">+{tags.length - 2}</span>
+            <span className="text-[10px] text-muted-foreground/30">+{tags.length - 2}</span>
           )}
         </div>
 
@@ -184,12 +184,12 @@ function MemoryRow({
           {categoryBadge}
           <ImportanceDots value={memory.importance} />
           {tags.slice(0, 2).map((tag) => (
-            <span key={tag} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-mono bg-secondary/40 text-muted-foreground/50 rounded border border-primary/10 truncate max-w-[80px]">
+            <span key={tag} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono bg-secondary/40 text-muted-foreground/50 rounded border border-primary/10 truncate max-w-[80px]">
               {tag}
             </span>
           ))}
           {tags.length > 2 && (
-            <span className="text-[9px] text-muted-foreground/30">+{tags.length - 2}</span>
+            <span className="text-[10px] text-muted-foreground/30">+{tags.length - 2}</span>
           )}
           <span className="text-[10px] text-muted-foreground/40 ml-auto">
             {formatRelativeTime(memory.created_at)}
@@ -745,6 +745,10 @@ export default function MemoriesPage() {
 
       {/* Table */}
       <div className="flex-1 overflow-y-auto">
+        <div className="px-4 md:px-6 py-2 text-[11px] font-mono text-muted-foreground/40 border-b border-primary/10 bg-secondary/10">
+          Showing {sortedMemories.length} of {memoriesTotal} memories
+        </div>
+
         {filteredMemories.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-4 text-muted-foreground/40">
             <div className="w-16 h-16 rounded-2xl bg-violet-500/10 border border-violet-500/15 flex items-center justify-center">
@@ -763,12 +767,12 @@ export default function MemoriesPage() {
           <>
             {/* Table header (desktop only) */}
             <div className="hidden md:flex items-center gap-4 px-6 py-2 bg-secondary/30 border-b border-primary/10 sticky top-0 z-10">
-              <span className="w-[140px] text-[10px] font-mono uppercase text-muted-foreground/40 flex-shrink-0">Agent</span>
-              <span className="flex-1 text-[10px] font-mono uppercase text-muted-foreground/40">Title</span>
-              <span className="w-[70px] text-[10px] font-mono uppercase text-muted-foreground/40 flex-shrink-0">Category</span>
+              <span className="w-[140px] text-[11px] font-mono uppercase text-muted-foreground/40 flex-shrink-0">Agent</span>
+              <span className="flex-1 text-[11px] font-mono uppercase text-muted-foreground/40">Title</span>
+              <span className="w-[70px] text-[11px] font-mono uppercase text-muted-foreground/40 flex-shrink-0">Category</span>
               <button
                 onClick={() => toggleSort('importance')}
-                className={`w-[60px] flex items-center gap-0.5 text-[10px] font-mono uppercase flex-shrink-0 transition-colors ${sort.column === 'importance' ? 'text-foreground/70' : 'text-muted-foreground/40 hover:text-muted-foreground/60'}`}
+                className={`w-[60px] flex items-center gap-0.5 text-[11px] font-mono uppercase flex-shrink-0 transition-colors ${sort.column === 'importance' ? 'text-foreground/70' : 'text-muted-foreground/40 hover:text-muted-foreground/60'}`}
               >
                 Priority
                 {sort.column === 'importance' ? (
@@ -777,10 +781,10 @@ export default function MemoriesPage() {
                   <ChevronDown className="w-3 h-3 opacity-30" />
                 )}
               </button>
-              <span className="w-[120px] text-[10px] font-mono uppercase text-muted-foreground/40 flex-shrink-0">Tags</span>
+              <span className="w-[120px] text-[11px] font-mono uppercase text-muted-foreground/40 flex-shrink-0">Tags</span>
               <button
                 onClick={() => toggleSort('created_at')}
-                className={`w-[60px] flex items-center justify-end gap-0.5 text-[10px] font-mono uppercase flex-shrink-0 transition-colors ${sort.column === 'created_at' ? 'text-foreground/70' : 'text-muted-foreground/40 hover:text-muted-foreground/60'}`}
+                className={`w-[60px] flex items-center justify-end gap-0.5 text-[11px] font-mono uppercase flex-shrink-0 transition-colors ${sort.column === 'created_at' ? 'text-foreground/70' : 'text-muted-foreground/40 hover:text-muted-foreground/60'}`}
               >
                 Created
                 {sort.column === 'created_at' ? (

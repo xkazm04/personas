@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { DollarSign, AlertTriangle, TrendingUp } from 'lucide-react';
+import { DollarSign, AlertTriangle, TrendingUp, Loader2, RefreshCw } from 'lucide-react';
 import * as api from '@/api/tauriApi';
 
 function formatUsd(value: number): string {
@@ -32,14 +32,41 @@ function progressBarColor(spend: number, budget: number | null): string {
   return 'bg-emerald-500/60';
 }
 
+function budgetProgressDetail(spend: number, budget: number | null): { text: string; color: string } {
+  if (!budget || budget <= 0) {
+    return { text: 'No budget limit set', color: 'text-muted-foreground/40' };
+  }
+
+  const ratio = (spend / budget) * 100;
+  const delta = budget - spend;
+
+  if (delta >= 0) {
+    return {
+      text: `${Math.min(100, ratio).toFixed(0)}% used · ${formatUsd(delta)} left`,
+      color: ratio >= 80 ? 'text-amber-400/80' : 'text-emerald-400/80',
+    };
+  }
+
+  return {
+    text: `${ratio.toFixed(0)}% used · ${formatUsd(Math.abs(delta))} over`,
+    color: 'text-red-400/80',
+  };
+}
+
 export default function BudgetSettingsPage() {
   const personas = usePersonaStore((s) => s.personas);
   const updatePersona = usePersonaStore((s) => s.updatePersona);
   const [monthlySpend, setMonthlySpend] = useState<Record<string, number>>({});
   const [editingBudgets, setEditingBudgets] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [savingBudgetId, setSavingBudgetId] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [savedBudgetId, setSavedBudgetId] = useState<string | null>(null);
 
   const fetchSpend = useCallback(async () => {
+    setLoading(true);
+    setFetchError(null);
     try {
       const data = await api.getAllMonthlySpend();
       const map: Record<string, number> = {};
@@ -49,6 +76,8 @@ export default function BudgetSettingsPage() {
       setMonthlySpend(map);
     } catch (err) {
       console.error('Failed to fetch monthly spend:', err);
+      setFetchError('Failed to load monthly spend. Try again.');
+      setMonthlySpend({});
     } finally {
       setLoading(false);
     }
@@ -69,6 +98,8 @@ export default function BudgetSettingsPage() {
     if (raw === undefined) return;
     const parsed = parseFloat(raw);
     const budget = isNaN(parsed) || parsed <= 0 ? null : parsed;
+    setSaveError(null);
+    setSavingBudgetId(personaId);
     try {
       await updatePersona(personaId, { max_budget_usd: budget });
       setEditingBudgets((prev) => {
@@ -76,8 +107,15 @@ export default function BudgetSettingsPage() {
         delete next[personaId];
         return next;
       });
+      setSavedBudgetId(personaId);
+      setTimeout(() => {
+        setSavedBudgetId((current) => (current === personaId ? null : current));
+      }, 1600);
     } catch (err) {
       console.error('Failed to update budget:', err);
+      setSaveError('Failed to save budget. Please retry.');
+    } finally {
+      setSavingBudgetId(null);
     }
   };
 
@@ -91,8 +129,25 @@ export default function BudgetSettingsPage() {
         </p>
       </div>
 
+      {fetchError && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5">
+          <div className="flex items-center gap-2 text-sm text-red-300">
+            <AlertTriangle className="w-4 h-4" />
+            {fetchError}
+          </div>
+          <button
+            onClick={fetchSpend}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/25 px-2.5 py-1 text-xs text-red-200 hover:bg-red-500/10 disabled:opacity-50 transition-colors"
+          >
+            {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Monthly Spend Summary */}
-      <div className="rounded-xl border border-primary/15 bg-secondary/40 p-5">
+      <div className="rounded-xl border border-primary/15 bg-secondary/30 p-5">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
             <TrendingUp className="w-5 h-5 text-primary/70" />
@@ -115,9 +170,22 @@ export default function BudgetSettingsPage() {
           Persona Budgets ({personas.length})
         </div>
 
+        {saveError && (
+          <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+            <AlertTriangle className="w-3.5 h-3.5" />
+            {saveError}
+          </div>
+        )}
+
+        {loading && (
+          <div className="rounded-xl border border-primary/15 bg-secondary/30 p-4 text-sm text-muted-foreground/60">
+            Loading current monthly spend…
+          </div>
+        )}
+
         {personas.length === 0 && (
           <div className="text-center py-12">
-            <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/60 border border-primary/15 flex items-center justify-center">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
               <DollarSign className="w-6 h-6 text-muted-foreground/30" />
             </div>
             <p className="text-sm text-muted-foreground/50">No personas configured</p>
@@ -129,13 +197,14 @@ export default function BudgetSettingsPage() {
           const budget = persona.max_budget_usd;
           const status = budgetStatus(spend, budget);
           const ratio = budget && budget > 0 ? Math.min(spend / budget, 1) : 0;
+          const progress = budgetProgressDetail(spend, budget);
           const isEditing = editingBudgets[persona.id] !== undefined;
           const editValue = isEditing ? editingBudgets[persona.id] : (budget?.toString() ?? '');
 
           return (
             <div
               key={persona.id}
-              className="rounded-xl border border-primary/15 bg-secondary/40 p-4 space-y-3"
+              className="rounded-xl border border-primary/15 bg-secondary/30 p-4 space-y-3"
             >
               {/* Row 1: Name + Status */}
               <div className="flex items-center gap-3">
@@ -150,6 +219,9 @@ export default function BudgetSettingsPage() {
                   <div className="text-[11px] font-mono text-muted-foreground/40">
                     Spend: {formatUsd(spend)}
                     {budget && budget > 0 ? ` / ${formatUsd(budget)}` : ''}
+                  </div>
+                  <div className={`text-[11px] font-mono mt-0.5 ${progress.color}`}>
+                    {progress.text}
                   </div>
                 </div>
                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium border ${budgetBadgeClass(spend, budget)}`}>
@@ -189,10 +261,17 @@ export default function BudgetSettingsPage() {
                 {isEditing && (
                   <button
                     onClick={() => handleBudgetSubmit(persona.id)}
-                    className="px-2.5 py-1 rounded-lg bg-primary/15 border border-primary/25 text-xs font-medium text-primary hover:bg-primary/25 transition-colors"
+                    disabled={savingBudgetId === persona.id}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/15 border border-primary/25 text-xs font-medium text-primary hover:bg-primary/25 disabled:opacity-60 transition-colors"
                   >
-                    Save
+                    {savingBudgetId === persona.id && <Loader2 className="w-3 h-3 animate-spin" />}
+                    {savingBudgetId === persona.id ? 'Saving...' : 'Save'}
                   </button>
+                )}
+                {!isEditing && savedBudgetId === persona.id && (
+                  <span className="px-2 py-1 text-[11px] rounded-lg border border-emerald-500/25 bg-emerald-500/10 text-emerald-300">
+                    Saved
+                  </span>
                 )}
               </div>
             </div>

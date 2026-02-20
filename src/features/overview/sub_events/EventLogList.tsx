@@ -17,10 +17,26 @@ export default function EventLogList() {
 
   const [filter, setFilter] = useState<EventFilter>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Initial fetch for historical events
   useEffect(() => {
-    fetchRecentEvents(100);
+    let active = true;
+    const load = async () => {
+      setIsLoading(true);
+      try {
+        await fetchRecentEvents(100);
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    };
+    load();
+    return () => {
+      active = false;
+    };
   }, [fetchRecentEvents]);
 
   // Listen to Tauri event-bus for push updates
@@ -59,6 +75,15 @@ export default function EventLogList() {
     ? recentEvents
     : recentEvents.filter((e: PersonaEvent) => e.status === filter);
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await fetchRecentEvents(100);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const getPersonaName = (id: string | null) => {
     if (!id) return null;
     const p = personas.find((persona) => persona.id === id);
@@ -77,13 +102,13 @@ export default function EventLogList() {
                 onClick={() => setFilter(f)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   filter === f
-                    ? 'bg-primary/20 text-primary border border-primary/30'
-                    : 'bg-secondary/40 text-muted-foreground/50 hover:text-muted-foreground/70 border border-transparent'
+                    ? 'bg-primary/15 text-primary border border-primary/30'
+                    : 'bg-secondary/30 text-muted-foreground/60 hover:text-muted-foreground border border-primary/15'
                 }`}
               >
                 {f.charAt(0).toUpperCase() + f.slice(1)}
                 {f === 'pending' && pendingEventCount > 0 && (
-                  <span className="ml-1.5 px-1.5 py-0.5 text-[10px] rounded-full bg-amber-500/20 text-amber-400">
+                  <span className="ml-1.5 px-1.5 py-0.5 text-[11px] rounded-full bg-amber-500/20 text-amber-400">
                     {pendingEventCount}
                   </span>
                 )}
@@ -92,17 +117,27 @@ export default function EventLogList() {
           </div>
         </div>
         <button
-          onClick={() => fetchRecentEvents(100)}
-          className="p-2 hover:bg-secondary/60 rounded-lg transition-colors"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="p-1.5 rounded-lg text-muted-foreground/50 hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors"
           title="Refresh"
         >
-          <RefreshCw className="w-4 h-4 text-muted-foreground/50" />
+          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
         </button>
+      </div>
+
+      <div className="mb-2 text-[11px] font-mono text-muted-foreground/40">
+        Showing {filteredEvents.length} of {recentEvents.length} events
       </div>
 
       {/* Event List */}
       <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-        {filteredEvents.length === 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground/40">
+            <Loader2 className="w-8 h-8 mb-3 animate-spin text-primary/70" />
+            <p className="text-sm">Loading events...</p>
+          </div>
+        ) : filteredEvents.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground/30">
             <Zap className="w-10 h-10 mb-3" />
             <p className="text-sm">No events yet</p>
@@ -117,12 +152,12 @@ export default function EventLogList() {
               const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-muted-foreground';
 
               return (
-                <motion.div
+                  <motion.div
                   key={event.id}
-                  initial={{ opacity: 0, y: -8 }}
+                    initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  className="bg-secondary/30 backdrop-blur-sm border border-primary/10 rounded-xl overflow-hidden"
+                    exit={{ opacity: 0, y: -4 }}
+                  className="bg-secondary/20 border border-primary/15 rounded-xl overflow-hidden"
                 >
                   <button
                     onClick={() => setExpandedId(isExpanded ? null : event.id)}
@@ -151,7 +186,7 @@ export default function EventLogList() {
                     </span>
 
                     {/* Status badge */}
-                    <span className={`text-[10px] px-2 py-0.5 rounded-md font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border} flex-shrink-0`}>
+                    <span className={`text-[11px] px-2 py-0.5 rounded-md font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border} flex-shrink-0`}>
                       {event.status}
                     </span>
 
@@ -175,7 +210,7 @@ export default function EventLogList() {
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="border-t border-primary/10"
+                        className="border-t border-primary/15"
                       >
                         <div className="p-3 space-y-2 text-xs">
                           <div className="grid grid-cols-2 gap-2">
@@ -194,8 +229,8 @@ export default function EventLogList() {
                               </div>
                             )}
                             {event.processed_at && (
-                              <div>
-                                <span className="text-muted-foreground/40">Processed:</span>
+                              <div className="rounded-lg border border-primary/10 bg-background/30 px-2.5 py-2">
+                                <span className="text-[11px] font-mono text-muted-foreground/40">Processed</span>
                                 <span className="ml-2 text-foreground/60">{new Date(event.processed_at).toLocaleString()}</span>
                               </div>
                             )}

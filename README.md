@@ -157,11 +157,30 @@ Personas Desktop provides a local-first environment for creating AI agents with 
 # 1. Install frontend dependencies
 npm install
 
-# 2. Run in development mode (starts Vite + Tauri)
-npm run tauri dev
+# 2. Run in development mode (recommended, Windows)
+# PowerShell
+.\scripts\desktop-dev.ps1 -Restart
 
-# 3. Build for production
+# 3. (optional) Preflight check only
+.\scripts\desktop-dev.ps1 -CheckOnly
+
+# 4. Build for production
 npm run tauri build
+```
+
+### Developer run (recommended)
+
+To avoid common restart/startup issues (missing clang on PATH, stale app process, stale Vite process), use the helper script instead of calling `npm run tauri dev` directly:
+
+```powershell
+Set-Location .\personas
+.\scripts\desktop-dev.ps1 -Restart
+```
+
+If you prefer the raw command, it still works once your environment is healthy:
+
+```bash
+npm run tauri dev
 ```
 
 > **Note:** The first run will compile all Rust dependencies, which can take several minutes. Subsequent builds are incremental and much faster.

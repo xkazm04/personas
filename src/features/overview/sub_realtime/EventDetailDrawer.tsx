@@ -65,10 +65,11 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
             <StatusIcon className={`w-3.5 h-3.5 ${event.status === 'processing' ? 'animate-spin' : ''}`} />
             <span className="text-xs font-mono">{event.status}</span>
           </div>
-          <span className="text-[10px] text-muted-foreground/30">{formatRelativeTime(event.created_at)}</span>
+          <span className="text-[11px] text-muted-foreground/30">{formatRelativeTime(event.created_at)}</span>
         </div>
         <button
           onClick={onClose}
+          title="Close event details"
           className="p-1 rounded-md hover:bg-secondary/60 text-muted-foreground/40 hover:text-foreground/60 transition-colors"
         >
           <X className="w-4 h-4" />
@@ -100,13 +101,13 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
               }
             </p>
           </div>
-          <div>
-            <span className="text-[9px] font-mono uppercase text-muted-foreground/30">Created</span>
+          <div className="rounded-lg border border-primary/10 bg-secondary/20 px-2.5 py-2">
+            <span className="text-[11px] font-mono uppercase text-muted-foreground/35">Created</span>
             <p className="text-xs font-mono text-foreground/60">{new Date(event.created_at).toLocaleTimeString()}</p>
           </div>
           {event.processed_at && (
-            <div>
-              <span className="text-[9px] font-mono uppercase text-muted-foreground/30">Processed</span>
+            <div className="rounded-lg border border-primary/10 bg-secondary/20 px-2.5 py-2">
+              <span className="text-[11px] font-mono uppercase text-muted-foreground/35">Processed</span>
               <p className="text-xs font-mono text-foreground/60">{new Date(event.processed_at).toLocaleTimeString()}</p>
             </div>
           )}
@@ -115,7 +116,7 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
         {/* Error message */}
         {event.error_message && (
           <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/15">
-            <span className="text-[9px] font-mono uppercase text-red-400/60 block mb-1">Error</span>
+            <span className="text-[11px] font-mono uppercase text-red-400/60 block mb-1">Error</span>
             <p className="text-xs text-red-300/80 font-mono">{event.error_message}</p>
           </div>
         )}
@@ -123,7 +124,7 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
         {/* Payload */}
         {event.payload && (
           <div>
-            <span className="text-[9px] font-mono uppercase text-muted-foreground/30 block mb-1">Payload</span>
+            <span className="text-[11px] font-mono uppercase text-muted-foreground/35 block mb-1">Payload</span>
             <pre className="p-3 rounded-lg bg-secondary/40 border border-primary/10 text-xs font-mono text-foreground/60 overflow-x-auto max-h-40 whitespace-pre-wrap">
               {formatPayload(event.payload)}
             </pre>

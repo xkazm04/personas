@@ -31,6 +31,10 @@ export function CredentialManager() {
   const [error, setError] = useState<string | null>(null);
   const [credentialSearch, setCredentialSearch] = useState('');
   const [templateSearch, setTemplateSearch] = useState('');
+  const [oauthSessionId, setOauthSessionId] = useState<string | null>(null);
+  const [isAuthorizingOAuth, setIsAuthorizingOAuth] = useState(false);
+  const [pendingOAuthValues, setPendingOAuthValues] = useState<Record<string, string> | null>(null);
+  const [oauthCompletedAt, setOauthCompletedAt] = useState<string | null>(null);
 
   // Confirmation dialog state
   const [deleteConfirm, setDeleteConfirm] = useState<{
@@ -64,6 +68,22 @@ export function CredentialManager() {
     setCredentialName(`${connector.label} Credential`);
     setTemplateMode('add-form');
   };
+
+  const isGoogleTemplate = Boolean(
+    selectedConnector && (() => {
+      const metadata = (selectedConnector.metadata ?? {}) as Record<string, unknown>;
+      return metadata.oauth_type === 'google'
+        || selectedConnector.name === 'google_workspace_oauth_template';
+    })(),
+  );
+
+  const defaultGoogleScopes = [
+    'https://www.googleapis.com/auth/gmail.modify',
+    'https://www.googleapis.com/auth/calendar.events',
+    'https://www.googleapis.com/auth/drive.file',
+    'openid',
+    'https://www.googleapis.com/auth/userinfo.email',
+  ];
 
   const handleCreateCredential = async (values: Record<string, string>) => {
     if (!selectedConnector) return;
@@ -99,6 +119,138 @@ export function CredentialManager() {
       setDeleteConfirm({ credential: cred, eventCount: 0 });
     }
   }, [credentials]);
+
+  useEffect(() => {
+    if (!oauthSessionId) return;
+
+    let cancelled = false;
+    let timer: number | null = null;
+
+    const poll = async () => {
+      try {
+        const status = await api.getGoogleCredentialOAuthStatus(oauthSessionId);
+        if (cancelled) return;
+
+        if (status.status === 'pending') {
+          timer = window.setTimeout(poll, 1200);
+          return;
+        }
+
+        setOauthSessionId(null);
+        setIsAuthorizingOAuth(false);
+
+        if (!selectedConnector || !pendingOAuthValues) {
+          setError('OAuth finished but connector context was lost. Please retry.');
+          return;
+        }
+
+        if (status.status !== 'success' || !status.refresh_token) {
+          setError(status.error || 'Google authorization failed. Please retry.');
+          return;
+        }
+
+        const nowIso = new Date().toISOString();
+        const effectiveScopes = pendingOAuthValues.scopes?.trim()
+          ? pendingOAuthValues.scopes.trim()
+          : defaultGoogleScopes.join(' ');
+
+        const { client_id: _clientId, client_secret: _clientSecret, ...safePendingValues } = pendingOAuthValues;
+
+        const credentialData = {
+          ...safePendingValues,
+          refresh_token: status.refresh_token,
+          scopes: effectiveScopes,
+          oauth_scope: status.scope ?? effectiveScopes,
+          oauth_completed_at: nowIso,
+          oauth_client_mode: 'app_managed',
+        };
+
+        const name = credentialName.trim() || `${selectedConnector.label} Credential`;
+        await createCredential({
+          name,
+          service_type: selectedConnector.name,
+          data: credentialData,
+        });
+
+        setOauthCompletedAt(new Date().toLocaleTimeString());
+        setPendingOAuthValues(null);
+        await fetchCredentials();
+        setCredentialView('credentials');
+        setSelectedConnector(null);
+        setCredentialName('');
+        setCredentialSearch('');
+        setTemplateSearch('');
+        setTemplateMode('pick-type');
+      } catch (err) {
+        if (cancelled) return;
+        setOauthSessionId(null);
+        setIsAuthorizingOAuth(false);
+        setError(err instanceof Error ? err.message : 'OAuth flow failed.');
+      }
+    };
+
+    poll();
+
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [oauthSessionId, selectedConnector, pendingOAuthValues, credentialName, createCredential, fetchCredentials, setCredentialView]);
+
+  const handleTemplateOAuthConsent = (values: Record<string, string>) => {
+    if (!selectedConnector) return;
+
+    const scopes = values.scopes?.trim()
+      ? values.scopes.trim().split(/\s+/)
+      : defaultGoogleScopes;
+
+    setError(null);
+    setIsAuthorizingOAuth(true);
+    setOauthCompletedAt(null);
+    setPendingOAuthValues(values);
+
+    const startPromise = api.startGoogleCredentialOAuth(undefined, undefined, selectedConnector.name, scopes);
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      window.setTimeout(() => {
+        reject(new Error('OAuth session start timed out (no IPC response in 12s).'));
+      }, 12000);
+    });
+
+    Promise.race([startPromise, timeoutPromise])
+      .then(async (oauthStart) => {
+        const resolved = oauthStart as api.GoogleCredentialOAuthStartResult;
+        let opened = false;
+        if (!opened) {
+          try {
+            await api.openExternalUrl(resolved.auth_url);
+            opened = true;
+          } catch {
+            // fallback below
+          }
+        }
+
+        if (!opened) {
+          try {
+            const popup = window.open(resolved.auth_url, '_blank', 'noopener,noreferrer');
+            opened = popup !== null;
+          } catch {
+            // no-op
+          }
+        }
+
+        if (!opened) {
+          throw new Error('Could not open Google consent page. Please allow popups or external browser open.');
+        }
+
+        setOauthSessionId(resolved.session_id);
+      })
+      .catch((err) => {
+        setOauthSessionId(null);
+        setIsAuthorizingOAuth(false);
+        const message = err instanceof Error ? err.message : 'Failed to start Google authorization.';
+        setError(`Google authorization did not start: ${message}`);
+      });
+  };
 
   const clearUndoTimer = useCallback(() => {
     if (undoTimerRef.current) {
@@ -156,6 +308,12 @@ export function CredentialManager() {
       || connector.category.toLowerCase().includes(q)
     );
   });
+
+  const effectiveTemplateFields = selectedConnector?.fields
+    ? (isGoogleTemplate
+      ? selectedConnector.fields.filter((f) => !['client_id', 'client_secret', 'refresh_token', 'scopes'].includes(f.key))
+      : selectedConnector.fields)
+    : [];
 
   if (loading) {
     return (
@@ -272,11 +430,26 @@ export function CredentialManager() {
             </div>
 
             <CredentialEditForm
-              fields={selectedConnector.fields}
+              fields={effectiveTemplateFields}
               onSave={handleCreateCredential}
+              onOAuthConsent={isGoogleTemplate ? handleTemplateOAuthConsent : undefined}
+              oauthConsentLabel={isAuthorizingOAuth ? 'Authorizing with Google...' : 'Authorize with Google'}
+              oauthConsentDisabled={isAuthorizingOAuth}
+              oauthConsentHint={isGoogleTemplate
+                ? 'One click consent: uses app-managed Google OAuth and saves token metadata in background.'
+                : undefined}
+              oauthConsentSuccessBadge={oauthCompletedAt ? `Google consent completed at ${oauthCompletedAt}` : undefined}
+              saveDisabled={isGoogleTemplate}
+              saveDisabledReason={isGoogleTemplate ? 'Use Authorize with Google to create this credential.' : undefined}
+              onValuesChanged={() => {
+                if (oauthCompletedAt) setOauthCompletedAt(null);
+              }}
               onCancel={() => {
                 setTemplateMode('pick-type');
                 setSelectedConnector(null);
+                setIsAuthorizingOAuth(false);
+                setOauthSessionId(null);
+                setPendingOAuthValues(null);
               }}
             />
           </motion.div>
