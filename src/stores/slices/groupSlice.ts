@@ -1,0 +1,106 @@
+import type { StateCreator } from "zustand";
+import type { PersonaStore } from "../storeTypes";
+import { errMsg } from "../storeTypes";
+import type { DbPersonaGroup } from "@/lib/types/types";
+import * as api from "@/api/tauriApi";
+
+export interface GroupSlice {
+  // State
+  groups: DbPersonaGroup[];
+
+  // Actions
+  fetchGroups: () => Promise<void>;
+  createGroup: (input: { name: string; color?: string }) => Promise<DbPersonaGroup | null>;
+  updateGroup: (id: string, updates: { name?: string; color?: string; collapsed?: boolean }) => Promise<void>;
+  deleteGroup: (id: string) => Promise<void>;
+  reorderGroups: (orderedIds: string[]) => Promise<void>;
+  movePersonaToGroup: (personaId: string, groupId: string | null) => Promise<void>;
+}
+
+export const createGroupSlice: StateCreator<PersonaStore, [], [], GroupSlice> = (set, _get) => ({
+  groups: [],
+
+  fetchGroups: async () => {
+    try {
+      const groups = await api.listGroups();
+      set({ groups });
+    } catch {
+      // Silent fail
+    }
+  },
+
+  createGroup: async (input) => {
+    try {
+      const group = await api.createGroup({
+        name: input.name,
+        color: input.color ?? "#6B7280",
+        sort_order: null,
+      });
+      set((state) => ({ groups: [...state.groups, group] }));
+      return group;
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to create group") });
+      return null;
+    }
+  },
+
+  updateGroup: async (id, updates) => {
+    try {
+      const group = await api.updateGroup(id, {
+        name: updates.name ?? null,
+        color: updates.color ?? null,
+        sort_order: null,
+        collapsed: updates.collapsed !== undefined ? updates.collapsed : null,
+      });
+      set((state) => ({
+        groups: state.groups.map((g) => (g.id === id ? group : g)),
+      }));
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to update group") });
+    }
+  },
+
+  deleteGroup: async (id) => {
+    try {
+      await api.deleteGroup(id);
+      set((state) => ({
+        groups: state.groups.filter((g) => g.id !== id),
+        personas: state.personas.map((p) =>
+          p.group_id === id ? { ...p, group_id: null } : p,
+        ),
+      }));
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to delete group") });
+    }
+  },
+
+  reorderGroups: async (orderedIds) => {
+    try {
+      await api.reorderGroups(orderedIds);
+      set((state) => ({
+        groups: state.groups
+          .map((g) => ({ ...g, sort_order: orderedIds.indexOf(g.id) }))
+          .sort((a, b) => a.sort_order - b.sort_order),
+      }));
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to reorder groups") });
+    }
+  },
+
+  movePersonaToGroup: async (personaId, groupId) => {
+    try {
+      await api.updatePersona(personaId, {
+        name: null, system_prompt: null, enabled: null,
+        max_concurrent: null, timeout_ms: null, notification_channels: null,
+        group_id: groupId,
+      } as import("@/lib/bindings/UpdatePersonaInput").UpdatePersonaInput);
+      set((state) => ({
+        personas: state.personas.map((p) =>
+          p.id === personaId ? { ...p, group_id: groupId } : p,
+        ),
+      }));
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to move persona") });
+    }
+  },
+});
