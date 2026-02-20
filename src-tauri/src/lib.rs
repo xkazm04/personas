@@ -25,7 +25,7 @@ pub struct AppState {
     /// Tracks the currently active credential design ID.
     pub active_credential_design_id: Arc<Mutex<Option<String>>>,
     /// Authentication state (Supabase OAuth).
-    pub auth: Arc<tokio::sync::Mutex<commands::auth::AuthStateInner>>,
+    pub auth: Arc<tokio::sync::Mutex<commands::infrastructure::auth::AuthStateInner>>,
     /// Cloud orchestrator HTTP client (None when not connected).
     pub cloud_client: Arc<tokio::sync::Mutex<Option<Arc<cloud::client::CloudClient>>>>,
     /// Maps local execution ID → cloud execution ID for active cloud runs.
@@ -89,7 +89,7 @@ pub fn run() {
             let engine = Arc::new(engine::ExecutionEngine::new(log_dir));
             let scheduler = Arc::new(engine::background::SchedulerState::new());
             let auth = Arc::new(tokio::sync::Mutex::new(
-                commands::auth::AuthStateInner::default(),
+                commands::infrastructure::auth::AuthStateInner::default(),
             ));
 
             // Restore cloud client from keyring if previously connected
@@ -128,7 +128,7 @@ pub fn run() {
                             let handle = dl_handle.clone();
                             tauri::async_runtime::spawn(async move {
                                 if let Err(e) =
-                                    commands::auth::handle_auth_callback(&handle, &url_str).await
+                                    commands::infrastructure::auth::handle_auth_callback(&handle, &url_str).await
                                 {
                                     tracing::error!("Auth callback failed: {}", e);
                                 }
@@ -162,7 +162,7 @@ pub fn run() {
 
             // Attempt auth session restore from keyring
             tauri::async_runtime::spawn(async move {
-                commands::auth::try_restore_session(&restore_handle, &restore_state).await;
+                commands::infrastructure::auth::try_restore_session(&restore_handle, &restore_state).await;
             });
 
             Ok(())
@@ -170,160 +170,169 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             // Phase 1
             greet,
-            // Personas
-            commands::personas::list_personas,
-            commands::personas::get_persona,
-            commands::personas::create_persona,
-            commands::personas::update_persona,
-            commands::personas::delete_persona,
-            // Tools
-            commands::tools::list_tool_definitions,
-            commands::tools::get_tool_definition,
-            commands::tools::get_tool_definitions_by_category,
-            commands::tools::create_tool_definition,
-            commands::tools::update_tool_definition,
-            commands::tools::delete_tool_definition,
-            commands::tools::assign_tool,
-            commands::tools::unassign_tool,
-            commands::tools::get_tool_usage_summary,
-            commands::tools::get_tool_usage_over_time,
-            commands::tools::get_tool_usage_by_persona,
-            // Triggers
-            commands::triggers::list_all_triggers,
-            commands::triggers::list_triggers,
-            commands::triggers::create_trigger,
-            commands::triggers::update_trigger,
-            commands::triggers::delete_trigger,
-            // Executions
-            commands::executions::list_executions,
-            commands::executions::get_execution,
-            commands::executions::create_execution,
-            commands::executions::execute_persona,
-            commands::executions::cancel_execution,
-            commands::executions::get_execution_log,
-            // Credentials
-            commands::credentials::list_credentials,
-            commands::credentials::create_credential,
-            commands::credentials::update_credential,
-            commands::credentials::delete_credential,
-            commands::credentials::list_credential_events,
-            commands::credentials::create_credential_event,
-            commands::credentials::update_credential_event,
-            commands::credentials::healthcheck_credential,
-            commands::credentials::vault_status,
-            // Events
-            commands::events::list_events,
-            commands::events::publish_event,
-            commands::events::list_subscriptions,
-            commands::events::create_subscription,
-            commands::events::update_subscription,
-            commands::events::delete_subscription,
-            commands::events::test_event_flow,
-            // Messages
-            commands::messages::list_messages,
-            commands::messages::get_message,
-            commands::messages::mark_message_read,
-            commands::messages::mark_all_messages_read,
-            commands::messages::delete_message,
-            commands::messages::get_unread_message_count,
-            commands::messages::get_message_count,
-            commands::messages::get_message_deliveries,
-            // Design
-            commands::design::start_design_analysis,
-            commands::design::refine_design,
-            commands::design::test_design_feasibility,
-            commands::design::cancel_design_analysis,
-            // Credential Design
-            commands::credential_design::start_credential_design,
-            commands::credential_design::cancel_credential_design,
-            commands::credential_design::test_credential_design_healthcheck,
-            commands::credential_design::start_google_credential_oauth,
-            commands::credential_design::get_google_credential_oauth_status,
-            // Design Reviews
-            commands::design_reviews::list_design_reviews,
-            commands::design_reviews::get_design_review,
-            commands::design_reviews::delete_design_review,
-            commands::design_reviews::start_design_review_run,
-            // Manual Reviews
-            commands::design_reviews::list_manual_reviews,
-            commands::design_reviews::update_manual_review_status,
-            commands::design_reviews::get_pending_review_count,
-            // Observability
-            commands::observability::get_metrics_summary,
-            commands::observability::get_metrics_snapshots,
-            commands::observability::get_prompt_versions,
-            commands::observability::get_all_monthly_spend,
-            // Groups
-            commands::groups::list_groups,
-            commands::groups::create_group,
-            commands::groups::update_group,
-            commands::groups::delete_group,
-            commands::groups::reorder_groups,
-            // Memories
-            commands::memories::list_memories,
-            commands::memories::create_memory,
-            commands::memories::delete_memory,
-            // Healing
-            commands::healing::list_healing_issues,
-            commands::healing::get_healing_issue,
-            commands::healing::update_healing_status,
-            commands::healing::run_healing_analysis,
+            // Core — Personas
+            commands::core::personas::list_personas,
+            commands::core::personas::get_persona,
+            commands::core::personas::create_persona,
+            commands::core::personas::update_persona,
+            commands::core::personas::delete_persona,
+            // Core — Groups
+            commands::core::groups::list_groups,
+            commands::core::groups::create_group,
+            commands::core::groups::update_group,
+            commands::core::groups::delete_group,
+            commands::core::groups::reorder_groups,
+            // Core — Memories
+            commands::core::memories::list_memories,
+            commands::core::memories::create_memory,
+            commands::core::memories::delete_memory,
+            // Core — Import/Export
+            commands::core::import_export::export_persona,
+            commands::core::import_export::import_persona,
+            // Execution — Executions
+            commands::execution::executions::list_executions,
+            commands::execution::executions::get_execution,
+            commands::execution::executions::create_execution,
+            commands::execution::executions::execute_persona,
+            commands::execution::executions::cancel_execution,
+            commands::execution::executions::get_execution_log,
+            // Execution — Scheduler
+            commands::execution::scheduler::get_scheduler_status,
+            commands::execution::scheduler::start_scheduler,
+            commands::execution::scheduler::stop_scheduler,
+            // Execution — Healing
+            commands::execution::healing::list_healing_issues,
+            commands::execution::healing::get_healing_issue,
+            commands::execution::healing::update_healing_status,
+            commands::execution::healing::run_healing_analysis,
+            // Design — Analysis
+            commands::design::analysis::start_design_analysis,
+            commands::design::analysis::refine_design,
+            commands::design::analysis::test_design_feasibility,
+            commands::design::analysis::cancel_design_analysis,
+            // Design — N8n Transform
+            commands::design::n8n_transform::transform_n8n_to_persona,
+            commands::design::n8n_transform::start_n8n_transform_background,
+            commands::design::n8n_transform::get_n8n_transform_snapshot,
+            commands::design::n8n_transform::clear_n8n_transform_snapshot,
+            commands::design::n8n_transform::confirm_n8n_persona_draft,
+            // Design — Reviews
+            commands::design::reviews::list_design_reviews,
+            commands::design::reviews::get_design_review,
+            commands::design::reviews::delete_design_review,
+            commands::design::reviews::start_design_review_run,
+            commands::design::reviews::import_design_review,
+            commands::design::reviews::adopt_design_review,
+            commands::design::reviews::list_manual_reviews,
+            commands::design::reviews::update_manual_review_status,
+            commands::design::reviews::get_pending_review_count,
+            // Credentials — CRUD
+            commands::credentials::crud::list_credentials,
+            commands::credentials::crud::create_credential,
+            commands::credentials::crud::update_credential,
+            commands::credentials::crud::delete_credential,
+            commands::credentials::crud::list_credential_events,
+            commands::credentials::crud::create_credential_event,
+            commands::credentials::crud::update_credential_event,
+            commands::credentials::crud::healthcheck_credential,
+            commands::credentials::crud::healthcheck_credential_preview,
+            commands::credentials::crud::vault_status,
+            // Credentials — Connectors
+            commands::credentials::connectors::list_connectors,
+            commands::credentials::connectors::get_connector,
+            commands::credentials::connectors::create_connector,
+            commands::credentials::connectors::update_connector,
+            commands::credentials::connectors::delete_connector,
+            // Credentials — Credential Design
+            commands::credentials::credential_design::start_credential_design,
+            commands::credentials::credential_design::cancel_credential_design,
+            commands::credentials::credential_design::test_credential_design_healthcheck,
+            // Credentials — OAuth
+            commands::credentials::oauth::start_google_credential_oauth,
+            commands::credentials::oauth::get_google_credential_oauth_status,
+            // Communication — Events
+            commands::communication::events::list_events,
+            commands::communication::events::publish_event,
+            commands::communication::events::list_subscriptions,
+            commands::communication::events::create_subscription,
+            commands::communication::events::update_subscription,
+            commands::communication::events::delete_subscription,
+            commands::communication::events::test_event_flow,
+            // Communication — Messages
+            commands::communication::messages::list_messages,
+            commands::communication::messages::get_message,
+            commands::communication::messages::mark_message_read,
+            commands::communication::messages::mark_all_messages_read,
+            commands::communication::messages::delete_message,
+            commands::communication::messages::get_unread_message_count,
+            commands::communication::messages::get_message_count,
+            commands::communication::messages::get_message_deliveries,
+            // Communication — Observability
+            commands::communication::observability::get_metrics_summary,
+            commands::communication::observability::get_metrics_snapshots,
+            commands::communication::observability::get_prompt_versions,
+            commands::communication::observability::get_all_monthly_spend,
             // Teams
-            commands::teams::list_teams,
-            commands::teams::get_team,
-            commands::teams::create_team,
-            commands::teams::update_team,
-            commands::teams::delete_team,
-            commands::teams::list_team_members,
-            commands::teams::add_team_member,
-            commands::teams::update_team_member,
-            commands::teams::remove_team_member,
-            commands::teams::list_team_connections,
-            commands::teams::create_team_connection,
-            commands::teams::delete_team_connection,
-            commands::teams::list_pipeline_runs,
-            commands::teams::get_pipeline_run,
-            commands::teams::execute_team,
-            // Connectors
-            commands::connectors::list_connectors,
-            commands::connectors::get_connector,
-            commands::connectors::create_connector,
-            commands::connectors::update_connector,
-            commands::connectors::delete_connector,
-            // Scheduler (stubs — Phase 6)
-            commands::scheduler::get_scheduler_status,
-            commands::scheduler::start_scheduler,
-            commands::scheduler::stop_scheduler,
-            // Auth
-            commands::auth::login_with_google,
-            commands::auth::get_auth_state,
-            commands::auth::logout,
-            commands::auth::refresh_session,
-            // System
-            commands::system::system_health_check,
-            commands::system::open_external_url,
-            // Setup / Auto-install
-            commands::setup::start_setup_install,
-            commands::setup::cancel_setup_install,
-            // Settings
-            commands::settings::get_app_setting,
-            commands::settings::set_app_setting,
-            commands::settings::delete_app_setting,
-            // Import/Export
-            commands::import_export::export_persona,
-            commands::import_export::import_persona,
-            // Cloud
-            commands::cloud::cloud_connect,
-            commands::cloud::cloud_disconnect,
-            commands::cloud::cloud_get_config,
-            commands::cloud::cloud_status,
-            commands::cloud::cloud_execute_persona,
-            commands::cloud::cloud_cancel_execution,
-            commands::cloud::cloud_oauth_authorize,
-            commands::cloud::cloud_oauth_callback,
-            commands::cloud::cloud_oauth_status,
-            commands::cloud::cloud_oauth_refresh,
-            commands::cloud::cloud_oauth_disconnect,
+            commands::teams::teams::list_teams,
+            commands::teams::teams::get_team,
+            commands::teams::teams::create_team,
+            commands::teams::teams::update_team,
+            commands::teams::teams::delete_team,
+            commands::teams::teams::list_team_members,
+            commands::teams::teams::add_team_member,
+            commands::teams::teams::update_team_member,
+            commands::teams::teams::remove_team_member,
+            commands::teams::teams::list_team_connections,
+            commands::teams::teams::create_team_connection,
+            commands::teams::teams::delete_team_connection,
+            commands::teams::teams::list_pipeline_runs,
+            commands::teams::teams::get_pipeline_run,
+            commands::teams::teams::execute_team,
+            // Tools
+            commands::tools::tools::list_tool_definitions,
+            commands::tools::tools::get_tool_definition,
+            commands::tools::tools::get_tool_definitions_by_category,
+            commands::tools::tools::create_tool_definition,
+            commands::tools::tools::update_tool_definition,
+            commands::tools::tools::delete_tool_definition,
+            commands::tools::tools::assign_tool,
+            commands::tools::tools::unassign_tool,
+            commands::tools::tools::get_tool_usage_summary,
+            commands::tools::tools::get_tool_usage_over_time,
+            commands::tools::tools::get_tool_usage_by_persona,
+            // Tools — Triggers
+            commands::tools::triggers::list_all_triggers,
+            commands::tools::triggers::list_triggers,
+            commands::tools::triggers::create_trigger,
+            commands::tools::triggers::update_trigger,
+            commands::tools::triggers::delete_trigger,
+            // Infrastructure — Auth
+            commands::infrastructure::auth::login_with_google,
+            commands::infrastructure::auth::get_auth_state,
+            commands::infrastructure::auth::logout,
+            commands::infrastructure::auth::refresh_session,
+            // Infrastructure — System
+            commands::infrastructure::system::system_health_check,
+            commands::infrastructure::system::open_external_url,
+            // Infrastructure — Setup / Auto-install
+            commands::infrastructure::setup::start_setup_install,
+            commands::infrastructure::setup::cancel_setup_install,
+            // Infrastructure — Settings
+            commands::infrastructure::settings::get_app_setting,
+            commands::infrastructure::settings::set_app_setting,
+            commands::infrastructure::settings::delete_app_setting,
+            // Infrastructure — Cloud
+            commands::infrastructure::cloud::cloud_connect,
+            commands::infrastructure::cloud::cloud_disconnect,
+            commands::infrastructure::cloud::cloud_get_config,
+            commands::infrastructure::cloud::cloud_status,
+            commands::infrastructure::cloud::cloud_execute_persona,
+            commands::infrastructure::cloud::cloud_cancel_execution,
+            commands::infrastructure::cloud::cloud_oauth_authorize,
+            commands::infrastructure::cloud::cloud_oauth_callback,
+            commands::infrastructure::cloud::cloud_oauth_status,
+            commands::infrastructure::cloud::cloud_oauth_refresh,
+            commands::infrastructure::cloud::cloud_oauth_disconnect,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

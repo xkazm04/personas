@@ -115,7 +115,7 @@ impl SupabaseUserResponse {
 
 /// Resolve Supabase URL.
 ///
-/// Priority: compile-time `SUPABASE_URL` (set during CI build) → runtime env var.
+/// Priority: compile-time `SUPABASE_URL` (set during CI build) -> runtime env var.
 /// The compile-time path is the production default; runtime override is useful
 /// during development.
 fn supabase_url() -> Result<String, AppError> {
@@ -128,7 +128,7 @@ fn supabase_url() -> Result<String, AppError> {
 
 /// Resolve Supabase anon key.
 ///
-/// The anon key is a **public** client key by Supabase design — it is safe to
+/// The anon key is a **public** client key by Supabase design -- it is safe to
 /// embed in the binary. Security is enforced by Row Level Security policies and
 /// OAuth access tokens, not by the secrecy of this key.
 fn supabase_anon_key() -> Result<String, AppError> {
@@ -467,7 +467,7 @@ pub async fn try_restore_session(app: &AppHandle, state: &Arc<AppState>) {
         }
         Err(e) => {
             let err_str = e.to_string();
-            // Network error → offline mode with cached profile
+            // Network error -> offline mode with cached profile
             if err_str.contains("Token refresh failed")
                 || err_str.contains("dns error")
                 || err_str.contains("connect error")
@@ -484,7 +484,7 @@ pub async fn try_restore_session(app: &AppHandle, state: &Arc<AppState>) {
                     return;
                 }
             }
-            // Token invalid or no cached profile → clear and stay unauthenticated
+            // Token invalid or no cached profile -> clear and stay unauthenticated
             tracing::warn!("Session restore failed: {}, clearing tokens", err_str);
             clear_tokens();
         }

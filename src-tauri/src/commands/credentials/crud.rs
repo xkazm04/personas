@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::collections::HashMap;
 use tauri::State;
 
 use crate::db::models::{
@@ -95,6 +96,24 @@ pub async fn healthcheck_credential(
 ) -> Result<serde_json::Value, AppError> {
     let result =
         crate::engine::healthcheck::run_healthcheck(&state.db, &credential_id).await?;
+    Ok(serde_json::json!({
+        "success": result.success,
+        "message": result.message,
+    }))
+}
+
+#[tauri::command]
+pub async fn healthcheck_credential_preview(
+    state: State<'_, Arc<AppState>>,
+    service_type: String,
+    field_values: HashMap<String, String>,
+) -> Result<serde_json::Value, AppError> {
+    let result = crate::engine::healthcheck::run_healthcheck_with_fields(
+        &state.db,
+        &service_type,
+        &field_values,
+    )
+    .await?;
     Ok(serde_json::json!({
         "success": result.success,
         "message": result.message,
