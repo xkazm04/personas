@@ -16,7 +16,7 @@ import {
   type N8nPersonaDraft,
 } from '@/api/tauriApi';
 import { usePersonaStore } from '@/stores/personaStore';
-import { useCorrelatedCliStream } from '@/hooks/useCorrelatedCliStream';
+import { useCorrelatedCliStream } from '@/hooks/execution/useCorrelatedCliStream';
 import {
   normalizeDraft,
   normalizeDraftFromUnknown,

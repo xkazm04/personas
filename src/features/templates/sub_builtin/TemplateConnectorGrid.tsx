@@ -9,7 +9,7 @@ import {
   Webhook,
   Zap,
 } from 'lucide-react';
-import { getConnectorMeta, ConnectorIcon } from '@/lib/utils/connector-meta';
+import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import type { DesignAnalysisResult, SuggestedTrigger, SuggestedConnector } from '@/lib/types/designTypes';
 
 interface ConnectorRow {

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { getConnectorMeta, ConnectorIcon } from '@/lib/utils/connector-meta';
+import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { usePersonaStore } from '@/stores/personaStore';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import type { DbPersona } from '@/lib/types/types';

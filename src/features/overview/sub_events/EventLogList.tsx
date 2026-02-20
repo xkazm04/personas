@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { Zap, ChevronDown, ChevronUp, RefreshCw, AlertCircle, CheckCircle2, Clock, Loader2 } from 'lucide-react';
-import { UuidLabel } from '@/lib/utils/UuidLabel';
+import { UuidLabel } from '@/features/shared/components/UuidLabel';
 import { motion, AnimatePresence } from 'framer-motion';
 import { listen } from '@tauri-apps/api/event';
 import { formatRelativeTime, EVENT_STATUS_COLORS, EVENT_TYPE_COLORS } from '@/lib/utils/formatters';

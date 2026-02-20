@@ -7,6 +7,7 @@ import {
   MessageSquare,
   Github,
   Globe,
+  CheckSquare,
 } from 'lucide-react';
 
 export interface ConnectorMeta {
@@ -27,6 +28,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   discord: { label: 'Discord', color: '#5865F2', iconUrl: 'https://cdn.simpleicons.org/discord/5865F2', Icon: MessageSquare },
   jira: { label: 'Jira', color: '#0052CC', iconUrl: 'https://cdn.simpleicons.org/jira/0052CC', Icon: Globe },
   notion: { label: 'Notion', color: '#FFFFFF', iconUrl: 'https://cdn.simpleicons.org/notion/f0f0f0', Icon: Globe },
+  clickup: { label: 'ClickUp', color: '#7B68EE', iconUrl: 'https://cdn.simpleicons.org/clickup/7B68EE', Icon: CheckSquare },
 };
 
 export function getConnectorMeta(name: string): ConnectorMeta {

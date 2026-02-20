@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Sparkles, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useCredentialDesign } from '@/hooks/useCredentialDesign';
+import { useCredentialDesign } from '@/hooks/design/useCredentialDesign';
 import type { CredentialTemplateField } from '@/lib/types/types';
 import { testCredentialDesignHealthcheck, startGoogleCredentialOAuth, getGoogleCredentialOAuthStatus, openExternalUrl } from '@/api/tauriApi';
 import { usePersonaStore } from '@/stores/personaStore';

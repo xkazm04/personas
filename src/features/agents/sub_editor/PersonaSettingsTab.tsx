@@ -2,7 +2,7 @@ import { Trash2, Save, AlertTriangle, X } from 'lucide-react';
 import type { PersonaDraft } from '@/features/agents/sub_editor/PersonaDraft';
 import { ModelSelector } from '@/features/agents/sub_editor/model-config/ModelSelector';
 import { NotificationChannelSettings } from '@/features/agents/sub_editor/NotificationChannelSettings';
-import { AccessibleToggle } from '@/lib/utils/AccessibleToggle';
+import { AccessibleToggle } from '@/features/shared/components/AccessibleToggle';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
 
 interface PersonaSettingsTabProps {

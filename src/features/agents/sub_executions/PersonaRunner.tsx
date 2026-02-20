@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useCloudStore } from '@/stores/cloudStore';
-import { usePersonaExecution } from '@/hooks/usePersonaExecution';
+import { usePersonaExecution } from '@/hooks/execution/usePersonaExecution';
 import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, CheckCircle2, XCircle, Timer, DollarSign } from 'lucide-react';
 import { TerminalHeader } from '@/features/shared/components/TerminalHeader';
 import { classifyLine, TERMINAL_STYLE_MAP, parseSummaryLine } from '@/lib/utils/terminalColors';

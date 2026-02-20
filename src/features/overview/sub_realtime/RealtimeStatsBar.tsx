@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, Zap, Clock, CheckCircle2, TrendingUp, Loader2, Radio } from 'lucide-react';
-import type { RealtimeStats } from '@/hooks/useRealtimeEvents';
+import type { RealtimeStats } from '@/hooks/realtime/useRealtimeEvents';
 
 interface Props {
   stats: RealtimeStats;
@@ -122,7 +122,6 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
               : 'border-primary/15 text-muted-foreground/50 hover:text-foreground/70 hover:bg-secondary/50'
           }`}
           title={isPaused ? 'Resume' : 'Pause'}
-          aria-label={isPaused ? 'Resume event stream' : 'Pause event stream'}
         >
           {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
         </button>

@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { Bot, Zap, Clock } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { getConnectorMeta, ConnectorIcon } from '@/lib/utils/connector-meta';
+import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 

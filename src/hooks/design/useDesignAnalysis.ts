@@ -2,7 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { startDesignAnalysis, refineDesign, cancelDesignAnalysis } from '@/api/tauriApi';
 import { usePersonaStore } from '@/stores/personaStore';
-import type { DesignPhase, DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { DesignPhase, DesignAnalysisResult, DesignQuestion } from '@/lib/types/designTypes';
 
 interface DesignOutputPayload {
   design_id: string;
@@ -14,6 +14,7 @@ interface DesignStatusPayload {
   status: string;
   result?: DesignAnalysisResult;
   error?: string;
+  question?: DesignQuestion;
 }
 
 export function useDesignAnalysis() {
@@ -21,6 +22,7 @@ export function useDesignAnalysis() {
   const [outputLines, setOutputLines] = useState<string[]>([]);
   const [result, setResult] = useState<DesignAnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [question, setQuestion] = useState<DesignQuestion | null>(null);
   const personaIdRef = useRef<string | null>(null);
   const unlistenersRef = useRef<UnlistenFn[]>([]);
 
@@ -43,9 +45,13 @@ export function useDesignAnalysis() {
     });
 
     const unlistenStatus = await listen<DesignStatusPayload>('design-status', (event) => {
-      const { status, result: designResult, error: designError } = event.payload;
+      const { status, result: designResult, error: designError, question: designQuestion } = event.payload;
 
-      if (status === 'completed' && designResult) {
+      if (status === 'awaiting-input' && designQuestion) {
+        setQuestion(designQuestion);
+        setPhase('awaiting-input');
+        cleanup();
+      } else if (status === 'completed' && designResult) {
         setResult(designResult);
         setPhase('preview');
         cleanup();
@@ -65,6 +71,7 @@ export function useDesignAnalysis() {
     setOutputLines([]);
     setResult(null);
     setError(null);
+    setQuestion(null);
     personaIdRef.current = personaId;
 
     try {
@@ -84,6 +91,7 @@ export function useDesignAnalysis() {
     setPhase('refining');
     setOutputLines([]);
     setError(null);
+    setQuestion(null);
 
     try {
       await setupDesignListeners('Refinement failed', 'preview');
@@ -95,12 +103,21 @@ export function useDesignAnalysis() {
     }
   }, [cleanup, setupDesignListeners]);
 
+  const answerQuestion = useCallback((answer: string) => {
+    if (!personaIdRef.current) return;
+    // Clear the question and continue analysis — the answer is sent as
+    // a refinement message which re-runs the CLI with the answer context.
+    setQuestion(null);
+    refineAnalysis(answer);
+  }, [refineAnalysis]);
+
   const cancelAnalysis = useCallback(() => {
     cancelDesignAnalysis().catch(() => {});
     cleanup();
     setPhase('idle');
     setOutputLines([]);
     setError(null);
+    setQuestion(null);
   }, [cleanup]);
 
   const applyResult = useCallback(async (selections?: {
@@ -160,6 +177,7 @@ export function useDesignAnalysis() {
     setOutputLines([]);
     setResult(null);
     setError(null);
+    setQuestion(null);
   }, [cleanup]);
 
   return {
@@ -167,8 +185,10 @@ export function useDesignAnalysis() {
     outputLines,
     result,
     error,
+    question,
     startAnalysis,
     refineAnalysis,
+    answerQuestion,
     cancelAnalysis,
     applyResult,
     reset,

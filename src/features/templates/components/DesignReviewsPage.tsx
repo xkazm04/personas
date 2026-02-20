@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import {
   FlaskConical,
@@ -8,13 +8,26 @@ import {
   Blocks,
   Upload,
   List,
+  Filter,
+  ChevronDown,
+  CheckCircle2,
+  X,
+  AlertTriangle,
 } from 'lucide-react';
-import { useDesignReviews } from '@/hooks/useDesignReviews';
+import { useDesignReviews } from '@/hooks/design/useDesignReviews';
 import { usePersonaStore } from '@/stores/personaStore';
+import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import DesignReviewRunner from '@/features/templates/sub_generated/DesignReviewRunner';
 import GeneratedReviewsTab from '@/features/templates/sub_generated/GeneratedReviewsTab';
 import BuiltinTemplatesTab from '@/features/templates/sub_builtin/BuiltinTemplatesTab';
 import N8nImportTab from '@/features/templates/sub_n8n/N8nImportTab';
+import ActivityDiagramModal from '@/features/triggers/components/ActivityDiagramModal';
+import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
+import type { UseCaseFlow } from '@/lib/types/frontendTypes';
+
+// ============================================================================
+// Sub-Components
+// ============================================================================
 
 function PassRateGauge({ percentage }: { percentage: number }) {
   const size = 48;
@@ -23,11 +36,10 @@ function PassRateGauge({ percentage }: { percentage: number }) {
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (percentage / 100) * circumference;
 
-  // Color transitions: red (0%) → amber (50%) → green (100%)
   const getColor = (pct: number) => {
-    if (pct < 40) return '#f87171';   // red-400
-    if (pct < 70) return '#fbbf24';   // amber-400
-    return '#34d399';                  // emerald-400
+    if (pct < 40) return '#f87171';
+    if (pct < 70) return '#fbbf24';
+    return '#34d399';
   };
 
   const color = getColor(percentage);
@@ -68,7 +80,6 @@ function PassRateGauge({ percentage }: { percentage: number }) {
 }
 
 function ReviewTimeline({ reviews }: { reviews: Array<{ status: string; reviewed_at: string }> }) {
-  // Take last 10 reviews sorted by reviewed_at descending, then reverse for left-to-right chronological
   const recent = useMemo(() => {
     const sorted = [...reviews].sort((a, b) => b.reviewed_at.localeCompare(a.reviewed_at));
     return sorted.slice(0, 10).reverse();
@@ -79,7 +90,7 @@ function ReviewTimeline({ reviews }: { reviews: Array<{ status: string; reviewed
   const dotColor = (status: string) => {
     if (status === 'passed') return 'bg-emerald-400';
     if (status === 'failed' || status === 'errored') return 'bg-red-400';
-    return 'bg-muted-foreground/30'; // in-progress or unknown
+    return 'bg-muted-foreground/30';
   };
 
   return (
@@ -95,6 +106,132 @@ function ReviewTimeline({ reviews }: { reviews: Array<{ status: string; reviewed
     </div>
   );
 }
+
+function ConnectorDropdown({
+  availableConnectors,
+  connectorFilter,
+  setConnectorFilter,
+}: {
+  availableConnectors: string[];
+  connectorFilter: string[];
+  setConnectorFilter: (connectors: string[]) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  const toggleConnector = (name: string) => {
+    if (connectorFilter.includes(name)) {
+      setConnectorFilter(connectorFilter.filter((c) => c !== name));
+    } else {
+      setConnectorFilter([...connectorFilter, name]);
+    }
+  };
+
+  const sorted = useMemo(() => {
+    return [...availableConnectors].sort((a, b) => {
+      const la = getConnectorMeta(a).label;
+      const lb = getConnectorMeta(b).label;
+      return la.localeCompare(lb);
+    });
+  }, [availableConnectors]);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="px-3 py-2 text-xs rounded-xl border border-primary/15 hover:bg-secondary/50 text-muted-foreground/60 transition-colors flex items-center gap-1.5"
+      >
+        <Filter className="w-3.5 h-3.5" />
+        Filter by connector
+        {connectorFilter.length > 0 && (
+          <span className="ml-1 px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300 text-[10px] font-medium">
+            {connectorFilter.length}
+          </span>
+        )}
+        <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-1 z-20 bg-background border border-primary/20 rounded-xl shadow-xl min-w-[220px] py-1.5 overflow-hidden">
+          {sorted.map((name) => {
+            const meta = getConnectorMeta(name);
+            const isSelected = connectorFilter.includes(name);
+            return (
+              <button
+                key={name}
+                onClick={() => toggleConnector(name)}
+                className="flex items-center gap-2.5 w-full px-3.5 py-2 text-left hover:bg-primary/5 transition-colors"
+              >
+                <div
+                  className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: `${meta.color}20` }}
+                >
+                  <ConnectorIcon meta={meta} size="w-3.5 h-3.5" />
+                </div>
+                <span className="text-sm text-foreground/70 flex-1">{meta.label}</span>
+                <div
+                  className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
+                    isSelected
+                      ? 'bg-violet-500/30 border-violet-500/50'
+                      : 'border-primary/20'
+                  }`}
+                >
+                  {isSelected && <CheckCircle2 className="w-3 h-3 text-violet-300" />}
+                </div>
+              </button>
+            );
+          })}
+          {connectorFilter.length > 0 && (
+            <div className="border-t border-primary/10 mt-1 pt-1">
+              <button
+                onClick={() => {
+                  setConnectorFilter([]);
+                  setIsOpen(false);
+                }}
+                className="w-full px-3.5 py-2 text-left text-xs text-muted-foreground/50 hover:text-foreground/60 transition-colors"
+              >
+                Clear all
+              </button>
+            </div>
+          )}
+          {sorted.length === 0 && (
+            <div className="px-3.5 py-2 text-xs text-muted-foreground/30 italic">
+              No connectors available
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
+function parseJsonSafe<T>(json: string | null, fallback: T): T {
+  if (!json) return fallback;
+  try {
+    return JSON.parse(json);
+  } catch {
+    return fallback;
+  }
+}
+
+// ============================================================================
+// Main Component
+// ============================================================================
 
 type TemplateTab = 'builtin' | 'n8n' | 'generated';
 
@@ -113,10 +250,16 @@ export default function DesignReviewsPage() {
     isRunning,
     runResult,
     runProgress,
+    connectorFilter,
+    setConnectorFilter,
+    availableConnectors,
     refresh,
     startNewReview,
     cancelReview,
     deleteReview,
+    adoptTemplate,
+    isAdopting,
+    adoptError,
   } = useDesignReviews();
 
   const selectedPersonaId = usePersonaStore((s) => s.selectedPersonaId);
@@ -125,6 +268,7 @@ export default function DesignReviewsPage() {
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [showRunner, setShowRunner] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; reviewId: string } | null>(null);
+  const [diagramReview, setDiagramReview] = useState<PersonaDesignReview | null>(null);
 
   // Close context menu on any click or scroll
   useEffect(() => {
@@ -154,12 +298,13 @@ export default function DesignReviewsPage() {
     setShowRunner(true);
   };
 
-  const handleRunnerStart = (options?: { customInstructions?: string[] }) => {
-    const testCases = options?.customInstructions?.map((instruction, i) => ({
-      id: `custom_${i}`,
-      name: `Custom Case ${i + 1}`,
-      instruction,
-    }));
+  const handleRunnerStart = (options?: { customInstructions?: string[]; testCases?: Array<{ id: string; name: string; instruction: string }> }) => {
+    const testCases = options?.testCases
+      ?? options?.customInstructions?.map((instruction, i) => ({
+        id: `custom_${i}`,
+        name: `Custom Case ${i + 1}`,
+        instruction,
+      }));
     startNewReview(selectedPersonaId ?? undefined, testCases);
   };
 
@@ -170,6 +315,14 @@ export default function DesignReviewsPage() {
   const handleContextMenu = (e: React.MouseEvent, reviewId: string) => {
     e.preventDefault();
     setContextMenu({ x: e.clientX, y: e.clientY, reviewId });
+  };
+
+  const handleAdopt = async (reviewId: string) => {
+    try {
+      await adoptTemplate(reviewId);
+    } catch {
+      // adoptError state is set inside the hook
+    }
   };
 
   return (
@@ -243,10 +396,51 @@ export default function DesignReviewsPage() {
         </div>
       </div>
 
+      {/* Connector filter bar (visible on generated tab) */}
+      {activeTab === 'generated' && availableConnectors.length > 0 && (
+        <div className="px-6 py-3 border-b border-primary/10 flex items-center gap-2 flex-shrink-0">
+          <ConnectorDropdown
+            availableConnectors={availableConnectors}
+            connectorFilter={connectorFilter}
+            setConnectorFilter={setConnectorFilter}
+          />
+          {connectorFilter.length > 0 && (
+            <div className="flex items-center gap-1.5 ml-2">
+              {connectorFilter.map((name) => {
+                const meta = getConnectorMeta(name);
+                return (
+                  <span
+                    key={name}
+                    className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300"
+                  >
+                    <ConnectorIcon meta={meta} size="w-3 h-3" />
+                    {meta.label}
+                    <button
+                      onClick={() => setConnectorFilter(connectorFilter.filter((c) => c !== name))}
+                      className="ml-0.5 hover:text-white transition-colors"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Error */}
       {error && (
         <div className="px-6 py-3 bg-red-500/10 border-b border-red-500/20 text-sm text-red-400">
           {error}
+        </div>
+      )}
+
+      {/* Adopt error */}
+      {adoptError && (
+        <div className="px-6 py-3 bg-red-500/10 border-b border-red-500/20 text-sm text-red-400 flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+          {adoptError}
         </div>
       )}
 
@@ -263,6 +457,7 @@ export default function DesignReviewsPage() {
             setExpandedRow={setExpandedRow}
             selectedPersonaId={selectedPersonaId}
             startNewReview={startNewReview}
+            connectorFilter={connectorFilter}
             onContextMenu={handleContextMenu}
             onDelete={async (id) => {
               try {
@@ -271,6 +466,9 @@ export default function DesignReviewsPage() {
                 console.error('Failed to delete template:', err);
               }
             }}
+            onAdopt={handleAdopt}
+            isAdopting={isAdopting}
+            onViewFlows={setDiagramReview}
             handleStartReview={handleStartReview}
           />
         )}
@@ -315,6 +513,16 @@ export default function DesignReviewsPage() {
         onStart={handleRunnerStart}
         onCancel={cancelReview}
       />
+
+      {/* Activity diagram modal */}
+      {diagramReview && (
+        <ActivityDiagramModal
+          isOpen={!!diagramReview}
+          onClose={() => setDiagramReview(null)}
+          templateName={diagramReview.test_case_name}
+          flows={parseJsonSafe<UseCaseFlow[]>(diagramReview.use_case_flows, [])}
+        />
+      )}
     </div>
   );
 }

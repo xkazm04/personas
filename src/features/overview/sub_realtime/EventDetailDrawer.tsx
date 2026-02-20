@@ -1,10 +1,10 @@
 import { motion } from 'framer-motion';
 import { X, Clock, CheckCircle2, AlertCircle, Loader2, ChevronDown } from 'lucide-react';
-import type { RealtimeEvent } from '@/hooks/useRealtimeEvents';
-import { EVENT_TYPE_HEX_COLORS } from '@/hooks/useRealtimeEvents';
+import type { RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
+import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { usePersonaStore } from '@/stores/personaStore';
-import { UuidLabel } from '@/lib/utils/UuidLabel';
+import { UuidLabel } from '@/features/shared/components/UuidLabel';
 
 interface Props {
   event: RealtimeEvent;

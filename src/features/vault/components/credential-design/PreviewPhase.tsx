@@ -5,7 +5,7 @@ import remarkGfm from 'remark-gfm';
 import { CredentialEditForm } from '@/features/vault/components/CredentialEditForm';
 import type { CredentialTemplateField } from '@/lib/types/types';
 import { openExternalUrl } from '@/api/tauriApi';
-import type { CredentialDesignResult } from '@/hooks/useCredentialDesign';
+import type { CredentialDesignResult } from '@/hooks/design/useCredentialDesign';
 
 interface PreviewPhaseProps {
   result: CredentialDesignResult;

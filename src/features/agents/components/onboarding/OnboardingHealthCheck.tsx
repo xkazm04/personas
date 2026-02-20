@@ -20,7 +20,7 @@ import type { LucideIcon } from 'lucide-react';
 import { systemHealthCheck, getAppSetting, setAppSetting } from '@/api/tauriApi';
 import type { HealthCheckSection, HealthCheckItem } from '@/api/tauriApi';
 import { useAuthStore } from '@/stores/authStore';
-import { useAutoInstaller, type InstallState } from '@/hooks/useAutoInstaller';
+import { useAutoInstaller, type InstallState } from '@/hooks/utility/useAutoInstaller';
 import { ExternalLink } from 'lucide-react';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
