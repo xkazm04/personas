@@ -311,7 +311,7 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
 
     // ── Persona reordering ──
     const personaId = activeIdStr;
-    let targetGroupId: string | null = null;
+    let targetGroupId: string | null;
     if (overId === 'ungrouped') {
       targetGroupId = null;
     } else if (overId.startsWith('group:')) {

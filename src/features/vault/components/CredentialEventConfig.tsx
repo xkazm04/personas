@@ -143,17 +143,21 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
 
               {/* Toggle */}
               <button
+                role="switch"
+                aria-checked={isEnabled}
+                aria-label={`${et.name} event trigger`}
                 onClick={() => handleToggleEvent(et.id, et.name)}
                 disabled={isSaving}
-                className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${
+                className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${
                   isEnabled ? 'bg-amber-500' : 'bg-secondary/60'
                 } ${isSaving ? 'opacity-50' : ''}`}
               >
                 <span
-                  className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
                     isEnabled ? 'translate-x-5' : 'translate-x-0'
                   }`}
                 />
+                <span className="sr-only">Toggle {et.name}</span>
               </button>
             </div>
 
@@ -175,6 +179,9 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
                     <option value={300}>5 minutes</option>
                     <option value={600}>10 minutes</option>
                   </select>
+                </div>
+                <div className="text-[10px] text-muted-foreground/40">
+                  Approx. {Math.round(86400 / pollingInterval).toLocaleString()} checks/day
                 </div>
 
                 {existing.last_polled_at && (

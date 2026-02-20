@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Bell, Hash, Send, Mail, Plus, X, Check, ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { NotificationChannel, NotificationChannelType } from '@/lib/types/frontendTypes';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
+import { AccessibleToggle } from '@/lib/utils/AccessibleToggle';
 
 interface NotificationChannelSettingsProps {
   personaId: string;
@@ -25,6 +27,121 @@ function channelIcon(type: string) {
   }
 }
 
+function CredentialPicker({
+  credentials: creds,
+  selectedId,
+  onChange,
+}: {
+  credentials: CredentialMetadata[];
+  selectedId: string | undefined;
+  onChange: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [focusIndex, setFocusIndex] = useState(-1);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const selected = creds.find((c) => c.id === selectedId);
+  // Options: empty option + credentials
+  const optionCount = creds.length + 1;
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { setOpen(false); return; }
+      if (e.key === 'ArrowDown') { e.preventDefault(); setFocusIndex((i) => Math.min(i + 1, optionCount - 1)); return; }
+      if (e.key === 'ArrowUp') { e.preventDefault(); setFocusIndex((i) => Math.max(i - 1, 0)); return; }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (focusIndex === 0) { onChange(''); setOpen(false); }
+        else if (focusIndex > 0) { const cred = creds[focusIndex - 1]; if (cred) { onChange(cred.id); setOpen(false); } }
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [open, focusIndex, optionCount, creds, onChange]);
+
+  useEffect(() => {
+    if (open) setFocusIndex(-1);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        className="w-full flex items-center gap-2 px-2.5 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all"
+      >
+        {selected ? (
+          <>
+            {channelIcon(selected.service_type)}
+            <span className="flex-1 text-left truncate">{selected.name}</span>
+            <span className="text-[10px] text-muted-foreground/40">{selected.service_type}</span>
+          </>
+        ) : (
+          <span className="flex-1 text-left text-muted-foreground/40">Select credential...</span>
+        )}
+        <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/40 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -4, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.97 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            className="absolute top-full mt-1 left-0 right-0 bg-background border border-primary/15 rounded-xl shadow-lg z-20 overflow-hidden"
+            role="listbox"
+            aria-label="Select credential"
+          >
+            <button
+              role="option"
+              aria-selected={!selectedId}
+              onClick={() => { onChange(''); setOpen(false); }}
+              className={`flex items-center gap-3 w-full px-3 py-2 text-sm transition-colors ${
+                focusIndex === 0 ? 'bg-secondary/60' : 'hover:bg-secondary/50'
+              } ${!selectedId ? 'text-foreground/80' : 'text-muted-foreground/50'}`}
+            >
+              <span className="text-muted-foreground/30">—</span>
+              <span>None</span>
+            </button>
+            {creds.map((cred, i) => (
+              <button
+                key={cred.id}
+                role="option"
+                aria-selected={cred.id === selectedId}
+                onClick={() => { onChange(cred.id); setOpen(false); }}
+                className={`flex items-center gap-3 w-full px-3 py-2 text-sm transition-colors ${
+                  focusIndex === i + 1 ? 'bg-secondary/60' : 'hover:bg-secondary/50'
+                } ${cred.id === selectedId ? 'text-foreground' : 'text-foreground/80'}`}
+              >
+                {channelIcon(cred.service_type)}
+                <span className="flex-1 text-left truncate">{cred.name}</span>
+                <span className="text-[10px] text-muted-foreground/40">{cred.service_type}</span>
+                {cred.id === selectedId && <Check className="w-3 h-3 text-emerald-400 flex-shrink-0" />}
+              </button>
+            ))}
+            {creds.length === 0 && (
+              <div className="px-3 py-2 text-xs text-muted-foreground/40">No credentials available</div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export function NotificationChannelSettings({ personaId, credentials, connectorDefinitions }: NotificationChannelSettingsProps) {
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
   const updatePersona = usePersonaStore((s) => s.updatePersona);
@@ -34,6 +151,31 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const addMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on click-outside or Escape key
+  useEffect(() => {
+    if (!showAddMenu) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (addMenuRef.current && !addMenuRef.current.contains(e.target as Node)) {
+        setShowAddMenu(false);
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowAddMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showAddMenu]);
 
   // Load channels from persona's notification_channels JSON string
   const loadChannels = useCallback(() => {
@@ -167,12 +309,12 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
                 <span className="text-sm font-medium text-foreground/80 flex-1 capitalize">{channel.type}</span>
 
                 {/* Enable/disable toggle */}
-                <div
-                  className={`w-8 h-5 rounded-full relative cursor-pointer transition-colors ${channel.enabled ? 'bg-emerald-500/80' : 'bg-muted-foreground/20'}`}
-                  onClick={() => handleToggleEnabled(index)}
-                >
-                  <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${channel.enabled ? 'left-[14px]' : 'left-0.5'}`} />
-                </div>
+                <AccessibleToggle
+                  checked={channel.enabled}
+                  onChange={() => handleToggleEnabled(index)}
+                  label={`Enable ${channel.type} notifications`}
+                  size="sm"
+                />
 
                 {/* Delete */}
                 <button
@@ -203,16 +345,11 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
               {/* Credential picker */}
               <div>
                 <label className="block text-[11px] font-mono text-muted-foreground/40 uppercase mb-1">Credential</label>
-                <select
-                  value={channel.credential_id || ''}
-                  onChange={(e) => handleCredentialChange(index, e.target.value)}
-                  className="w-full px-2.5 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
-                >
-                  <option value="">Select credential...</option>
-                  {matchingCreds.map((cred) => (
-                    <option key={cred.id} value={cred.id}>{cred.name} ({cred.service_type})</option>
-                  ))}
-                </select>
+                <CredentialPicker
+                  credentials={matchingCreds}
+                  selectedId={channel.credential_id}
+                  onChange={(id) => handleCredentialChange(index, id)}
+                />
                 {channel.credential_id ? (
                   <span className="text-[10px] text-emerald-400/70 mt-0.5 block">Connected</span>
                 ) : (
@@ -224,9 +361,11 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
         })}
 
         {/* Add channel button */}
-        <div className="relative">
+        <div className="relative" ref={addMenuRef}>
           <button
             onClick={() => setShowAddMenu(!showAddMenu)}
+            aria-expanded={showAddMenu}
+            aria-haspopup="listbox"
             className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-primary/15 hover:border-primary/40 text-sm text-muted-foreground/60 hover:text-primary/80 transition-all w-full"
           >
             <Plus className="w-4 h-4" />
@@ -234,28 +373,40 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
             <ChevronDown className={`w-3.5 h-3.5 ml-auto transition-transform ${showAddMenu ? 'rotate-180' : ''}`} />
           </button>
 
-          {showAddMenu && (
-            <div className="absolute top-full mt-1 left-0 right-0 bg-background border border-primary/15 rounded-xl shadow-lg z-10 overflow-hidden">
-              {channelTypes
-                .filter(t => !existingTypes.has(t.type))
-                .map((t) => {
-                  const Icon = t.icon;
-                  return (
-                    <button
-                      key={t.type}
-                      onClick={() => handleAddChannel(t.type)}
-                      className="flex items-center gap-3 w-full px-4 py-2.5 hover:bg-secondary/50 text-sm text-foreground/80 transition-colors"
-                    >
-                      <Icon className="w-4 h-4 text-muted-foreground/50" />
-                      {t.label}
-                    </button>
-                  );
-                })}
-              {channelTypes.filter(t => !existingTypes.has(t.type)).length === 0 && (
-                <div className="px-4 py-2.5 text-xs text-muted-foreground/50">All channel types added</div>
-              )}
-            </div>
-          )}
+          <AnimatePresence>
+            {showAddMenu && (
+              <motion.div
+                initial={{ opacity: 0, y: -4, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -4, scale: 0.97 }}
+                transition={{ duration: 0.15, ease: 'easeOut' }}
+                className="absolute top-full mt-1 left-0 right-0 bg-background border border-primary/15 rounded-xl shadow-lg z-10 overflow-hidden"
+                role="listbox"
+                aria-label="Add notification channel"
+              >
+                {channelTypes
+                  .filter(t => !existingTypes.has(t.type))
+                  .map((t) => {
+                    const Icon = t.icon;
+                    return (
+                      <button
+                        key={t.type}
+                        onClick={() => handleAddChannel(t.type)}
+                        role="option"
+                        aria-selected={false}
+                        className="flex items-center gap-3 w-full px-4 py-2.5 hover:bg-secondary/50 text-sm text-foreground/80 transition-colors"
+                      >
+                        <Icon className="w-4 h-4 text-muted-foreground/50" />
+                        {t.label}
+                      </button>
+                    );
+                  })}
+                {channelTypes.filter(t => !existingTypes.has(t.type)).length === 0 && (
+                  <div className="px-4 py-2.5 text-xs text-muted-foreground/50">All channel types added</div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Validation errors */}

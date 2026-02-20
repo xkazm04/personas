@@ -163,7 +163,6 @@ export function PersonaPromptEditor() {
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sp]);
 
   // Update a field in the structured prompt

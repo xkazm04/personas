@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { Key, LayoutTemplate, Plus } from 'lucide-react';
 import { CredentialCard } from '@/features/vault/components/CredentialCard';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { usePersonaStore } from '@/stores/personaStore';
@@ -69,10 +70,42 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
         />
       ))}
 
-      {filteredCredentials.length === 0 && (
+      {filteredCredentials.length === 0 && credentials.length > 0 && (
         <div className="text-center py-10 text-muted-foreground/40 text-sm">
-          {credentials.length === 0 ? 'No credentials configured yet' : 'No credentials match your search'}
+          No credentials match your search
         </div>
+      )}
+
+      {credentials.length === 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col items-center justify-center py-16 text-center"
+        >
+          <div className="w-14 h-14 rounded-2xl bg-secondary/60 border border-primary/15 flex items-center justify-center mb-4">
+            <Key className="w-7 h-7 text-muted-foreground/60" />
+          </div>
+          <h3 className="text-sm font-medium text-foreground/70 mb-1">No credentials configured yet</h3>
+          <p className="text-xs text-muted-foreground/50 max-w-xs">
+            Add your first credential to connect external services
+          </p>
+          <div className="flex items-center gap-2 mt-4">
+            <button
+              onClick={() => usePersonaStore.getState().setCredentialView('from-template')}
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg bg-secondary/60 border border-primary/15 text-foreground/70 hover:bg-secondary transition-colors"
+            >
+              <LayoutTemplate className="w-3.5 h-3.5" />
+              From Template
+            </button>
+            <button
+              onClick={() => usePersonaStore.getState().setCredentialView('add-new')}
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary/15 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Design New
+            </button>
+          </div>
+        </motion.div>
       )}
     </motion.div>
   );

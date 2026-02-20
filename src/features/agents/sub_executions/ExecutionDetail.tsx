@@ -1,15 +1,42 @@
 import { useState } from 'react';
 import type { DbPersonaExecution } from '@/lib/types/types';
-import { ChevronDown, ChevronRight, Clock, Calendar, FileText, AlertCircle, Search, ListTree } from 'lucide-react';
+import { ChevronDown, ChevronRight, Clock, Calendar, FileText, AlertCircle, Search, ListTree, Lightbulb, RotateCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatTimestamp, formatDuration, EXECUTION_STATUS_COLORS, badgeClass } from '@/lib/utils/formatters';
 import { ExecutionInspector } from '@/features/agents/sub_executions/ExecutionInspector';
+import { usePersonaStore } from '@/stores/personaStore';
+
+const ERROR_PATTERNS: Array<{ pattern: RegExp; summary: string; guidance: string }> = [
+  { pattern: /api key/i, summary: 'API key issue detected.', guidance: 'Check that your API key is valid and hasn\'t expired in Settings > API Keys.' },
+  { pattern: /invalid.*key|invalid_api_key|authentication|unauthorized|401/i, summary: 'Authentication failed.', guidance: 'Your API key may be invalid or expired. Verify it in Settings > API Keys.' },
+  { pattern: /rate.?limit|429|too many requests/i, summary: 'Rate limit reached.', guidance: 'The API rate limit was hit. Wait a few minutes and try again, or reduce the trigger frequency.' },
+  { pattern: /timeout|timed?\s*out|ETIMEDOUT|ESOCKETTIMEDOUT/i, summary: 'The operation timed out.', guidance: 'The request took too long to complete. Check your network connection or increase the timeout in persona settings.' },
+  { pattern: /ECONNREFUSED|ECONNRESET|ENOTFOUND|network|DNS/i, summary: 'Network connection failed.', guidance: 'Could not reach the server. Check your internet connection and that the target service is available.' },
+  { pattern: /permission.?denied|forbidden|403/i, summary: 'Permission denied.', guidance: 'The tool or API denied access. Verify your credentials have the necessary permissions.' },
+  { pattern: /quota|billing|payment|insufficient.?funds|402/i, summary: 'Account quota or billing issue.', guidance: 'Your API account may have reached its spending limit. Check your account billing status.' },
+  { pattern: /spawn\s+ENOENT|command not found|not recognized/i, summary: 'Required command not found.', guidance: 'A system command needed for this execution is not installed. Check that all required CLI tools are available on your system.' },
+  { pattern: /exit\s+code\s+1|exited?\s+with\s+1/i, summary: 'The process exited with an error.', guidance: 'The underlying process reported a failure. Check the execution log for more details.' },
+  { pattern: /ENOMEM|out of memory/i, summary: 'Out of memory.', guidance: 'The system ran out of memory. Try closing other applications or reducing the task complexity.' },
+  { pattern: /500|internal.?server.?error/i, summary: 'The remote server encountered an error.', guidance: 'The API returned a server error. This is usually temporary — try again in a few minutes.' },
+  { pattern: /JSON|parse|unexpected token/i, summary: 'Failed to parse response data.', guidance: 'The response was not in the expected format. This may indicate an API change or malformed data.' },
+  { pattern: /credential|secret|token/i, summary: 'Credential issue.', guidance: 'A required credential may be missing or invalid. Check the credential vault for this persona\'s connected services.' },
+];
+
+function getErrorExplanation(errorMessage: string): { summary: string; guidance: string } | null {
+  for (const { pattern, summary, guidance } of ERROR_PATTERNS) {
+    if (pattern.test(errorMessage)) {
+      return { summary, guidance };
+    }
+  }
+  return null;
+}
 
 interface ExecutionDetailProps {
   execution: DbPersonaExecution;
 }
 
 export function ExecutionDetail({ execution }: ExecutionDetailProps) {
+  const setRerunInputData = usePersonaStore((s) => s.setRerunInputData);
   const [activeTab, setActiveTab] = useState<'detail' | 'inspector'>('detail');
   const [showInputData, setShowInputData] = useState(false);
   const [showOutputData, setShowOutputData] = useState(false);
@@ -132,18 +159,45 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
           </div>
 
           {/* Error Message */}
-          {execution.error_message && (
-            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
-              <div className="flex items-start gap-2.5">
-                <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-[11px] font-mono font-medium text-red-400 mb-1.5 uppercase tracking-wider">Error</div>
-                  <pre className="text-xs text-red-300/80 whitespace-pre-wrap break-words font-mono">
-                    {execution.error_message}
-                  </pre>
+          {execution.error_message && (() => {
+            const explanation = getErrorExplanation(execution.error_message);
+            return (
+              <div className="space-y-2">
+                {explanation && (
+                  <div className="p-3.5 bg-amber-500/8 border border-amber-500/15 rounded-xl">
+                    <div className="flex items-start gap-2.5">
+                      <Lightbulb className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-amber-300/90">{explanation.summary}</p>
+                        <p className="text-xs text-amber-300/60 mt-1">{explanation.guidance}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+                  <div className="flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[11px] font-mono font-medium text-red-400 mb-1.5 uppercase tracking-wider">Error</div>
+                      <pre className="text-xs text-red-300/80 whitespace-pre-wrap break-words font-mono">
+                        {execution.error_message}
+                      </pre>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            );
+          })()}
+
+          {/* Re-run Button */}
+          {(execution.status === 'completed' || execution.status === 'failed' || execution.status === 'error') && (
+            <button
+              onClick={() => setRerunInputData(execution.input_data || '{}')}
+              className="flex items-center gap-2 px-3.5 py-2 text-sm font-medium rounded-xl bg-primary/10 text-primary/80 border border-primary/15 hover:bg-primary/20 hover:text-primary transition-colors"
+            >
+              <RotateCw className="w-3.5 h-3.5" />
+              Re-run with same input
+            </button>
           )}
 
           {/* Input Data */}

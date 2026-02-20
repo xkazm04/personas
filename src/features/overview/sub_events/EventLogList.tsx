@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { Zap, ChevronDown, ChevronUp, RefreshCw, AlertCircle, CheckCircle2, Clock, Loader2 } from 'lucide-react';
+import { UuidLabel } from '@/lib/utils/UuidLabel';
 import { motion, AnimatePresence } from 'framer-motion';
 import { listen } from '@tauri-apps/api/event';
 import { formatRelativeTime, EVENT_STATUS_COLORS, EVENT_TYPE_COLORS } from '@/lib/utils/formatters';
@@ -180,16 +181,16 @@ export default function EventLogList() {
                           <div className="grid grid-cols-2 gap-2">
                             <div>
                               <span className="text-muted-foreground/40">Event ID:</span>
-                              <span className="ml-2 text-foreground/60 font-mono">{event.id}</span>
+                              <span className="ml-2 text-xs"><UuidLabel value={event.id} /></span>
                             </div>
                             <div>
                               <span className="text-muted-foreground/40">Project:</span>
-                              <span className="ml-2 text-foreground/60">{event.project_id}</span>
+                              <span className="ml-2 text-xs"><UuidLabel value={event.project_id} /></span>
                             </div>
                             {event.source_id && (
                               <div>
-                                <span className="text-muted-foreground/40">Source ID:</span>
-                                <span className="ml-2 text-foreground/60 font-mono">{event.source_id}</span>
+                                <span className="text-muted-foreground/40">Source:</span>
+                                <span className="ml-2 text-xs"><UuidLabel value={event.source_id} label={event.source_type || undefined} /></span>
                               </div>
                             )}
                             {event.processed_at && (

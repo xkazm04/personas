@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronRight, MessageSquare, CheckCheck, RefreshCw, Trash2, Send, AlertCircle, Clock, CheckCircle2, Loader2, ExternalLink, Check, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, MessageSquare, CheckCheck, RefreshCw, Trash2, Send, AlertCircle, Clock, CheckCircle2, Loader2, ExternalLink, Check, X, Copy } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { PersonaMessage } from '@/lib/types/types';
 import type { PersonaMessageDelivery } from '@/lib/bindings/PersonaMessageDelivery';
@@ -193,6 +193,7 @@ function MessageRow({
   const [deliveries, setDeliveries] = useState<PersonaMessageDelivery[]>([]);
   const [deliveriesLoading, setDeliveriesLoading] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [copiedId, setCopiedId] = useState(false);
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -236,7 +237,9 @@ function MessageRow({
           {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
         </div>
         {!message.is_read && (
-          <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
+          <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" aria-label="Unread">
+            <span className="sr-only">Unread</span>
+          </div>
         )}
         <div className="flex items-center gap-2 min-w-[120px]">
           <div
@@ -273,7 +276,9 @@ function MessageRow({
             {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
           </div>
           {!message.is_read && (
-            <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
+            <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" aria-label="Unread">
+              <span className="sr-only">Unread</span>
+            </div>
           )}
           <div
             className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] border border-primary/15 flex-shrink-0"
@@ -407,7 +412,24 @@ function MessageRow({
 
               {/* Metadata */}
               <div className="flex items-center gap-4 text-[11px] text-muted-foreground/40">
-                <span>ID: <span className="font-mono">{message.id}</span></span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(message.id).then(() => {
+                      setCopiedId(true);
+                      setTimeout(() => setCopiedId(false), 2000);
+                    }).catch(() => {});
+                  }}
+                  className="inline-flex items-center gap-1 hover:text-muted-foreground/70 transition-colors"
+                  title={message.id}
+                >
+                  ID: <span className="font-mono">{message.id.slice(0, 8)}</span>
+                  {copiedId ? (
+                    <Check className="w-3 h-3 text-emerald-400" />
+                  ) : (
+                    <Copy className="w-3 h-3" />
+                  )}
+                </button>
                 {message.execution_id && (
                   <button
                     onClick={(e) => {
@@ -417,9 +439,9 @@ function MessageRow({
                       store.setEditorTab('executions');
                     }}
                     className="inline-flex items-center gap-1 text-blue-400/70 hover:text-blue-400 transition-colors"
-                    title="View execution"
+                    title={message.execution_id}
                   >
-                    Execution: <span className="font-mono">{message.execution_id}</span>
+                    View Execution
                     <ExternalLink className="w-3 h-3" />
                   </button>
                 )}

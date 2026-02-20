@@ -1,4 +1,4 @@
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import type { RealtimeEvent } from '@/hooks/useRealtimeEvents';
 
@@ -12,6 +12,7 @@ interface Props {
 }
 
 const PARTICLE_R = 5;
+const HIT_AREA_R = 12;
 const TRAIL_COUNT = 2;
 
 function EventParticleComponent({ event, sourcePos, busY, targetPos, color, onClick }: Props) {
@@ -37,8 +38,30 @@ function EventParticleComponent({ event, sourcePos, busY, targetPos, color, onCl
   // Burst effect on completion/failure
   const showBurst = event._phase === 'delivering' && (isCompleted || isFailed);
 
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onClick();
+    }
+  }, [onClick]);
+
   return (
-    <g onClick={onClick} style={{ cursor: 'pointer' }}>
+    <g
+      onClick={onClick}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      role="button"
+      aria-label={`Event: ${event.event_type} – ${event.status}`}
+      style={{ cursor: 'pointer' }}
+    >
+      {/* Invisible hit-area for easier clicking */}
+      <motion.circle
+        animate={{ cx: position.cx, cy: position.cy }}
+        transition={{ duration: 0.8, ease: 'easeInOut' }}
+        r={HIT_AREA_R}
+        fill="transparent"
+      />
+
       {/* Trail particles */}
       {TRAIL_COUNT > 0 && event._phase !== 'done' && (
         <>

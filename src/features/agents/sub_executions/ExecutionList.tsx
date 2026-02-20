@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, RotateCw, Copy, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as api from '@/api/tauriApi';
 import { formatTimestamp, formatDuration, formatRelativeTime, EXECUTION_STATUS_COLORS, badgeClass } from '@/lib/utils/formatters';
@@ -9,8 +9,10 @@ import { formatTimestamp, formatDuration, formatRelativeTime, EXECUTION_STATUS_C
 export function ExecutionList() {
   const selectedPersona = usePersonaStore((state) => state.selectedPersona);
   const isExecuting = usePersonaStore((state) => state.isExecuting);
+  const setRerunInputData = usePersonaStore((state) => state.setRerunInputData);
   const [executions, setExecutions] = useState<PersonaExecution[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const prevIsExecutingRef = useRef(isExecuting);
 
@@ -33,7 +35,7 @@ export function ExecutionList() {
     if (personaId) {
       fetchExecutions();
     }
-  }, [personaId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [personaId]);
 
   // Re-fetch when execution finishes (isExecuting transitions true -> false)
   useEffect(() => {
@@ -41,7 +43,7 @@ export function ExecutionList() {
       fetchExecutions();
     }
     prevIsExecutingRef.current = isExecuting;
-  }, [isExecuting, personaId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isExecuting, personaId]);
 
   if (!selectedPersona) {
     return (
@@ -172,7 +174,24 @@ export function ExecutionList() {
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
                             <span className="text-muted-foreground/50 text-xs font-mono uppercase">Execution ID</span>
-                            <p className="text-foreground/70 font-mono text-xs mt-0.5">{execution.id}</p>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(execution.id).then(() => {
+                                  setCopiedId(execution.id);
+                                  setTimeout(() => setCopiedId(null), 2000);
+                                }).catch(() => {});
+                              }}
+                              className="flex items-center gap-1.5 mt-0.5 text-foreground/70 hover:text-foreground/90 transition-colors group"
+                              title={execution.id}
+                            >
+                              <span className="font-mono text-xs">#{execution.id.slice(0, 8)}</span>
+                              {copiedId === execution.id ? (
+                                <Check className="w-3 h-3 text-emerald-400" />
+                              ) : (
+                                <Copy className="w-3 h-3 opacity-0 group-hover:opacity-60 transition-opacity" />
+                              )}
+                            </button>
                           </div>
                           <div>
                             <span className="text-muted-foreground/50 text-xs font-mono uppercase">Model</span>
@@ -209,6 +228,19 @@ export function ExecutionList() {
                             <p className="mt-1 text-sm text-red-400/80">{execution.error_message}</p>
                           </div>
                         )}
+                        {/* Re-run button */}
+                        <div className="pt-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setRerunInputData(execution.input_data || '{}');
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-primary/10 text-primary/80 border border-primary/15 hover:bg-primary/20 hover:text-primary transition-colors"
+                          >
+                            <RotateCw className="w-3 h-3" />
+                            Re-run with same input
+                          </button>
+                        </div>
                       </div>
                     </motion.div>
                   )}

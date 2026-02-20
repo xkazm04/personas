@@ -384,7 +384,6 @@ function SystemChecksStep({ onNext }: { onNext: () => void }) {
       runChecks();
     }
     // Only trigger on auth state change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
   // Re-run health checks after installation completes (3s delay for PATH propagation)

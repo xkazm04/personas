@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
-import { Eye, EyeOff, Activity, CheckCircle, XCircle, Loader2, Info } from 'lucide-react';
+import { useState, useCallback, useEffect } from 'react';
+import { Eye, EyeOff, Activity, CheckCircle, XCircle, Loader2, Info, Lock } from 'lucide-react';
 import type { CredentialTemplateField } from '@/lib/types/types';
+import { vaultStatus, type VaultStatus } from '@/api/tauriApi';
 
 interface CredentialEditFormProps {
   fields: CredentialTemplateField[];
@@ -9,7 +10,7 @@ interface CredentialEditFormProps {
   onCancel: () => void;
   onHealthcheck?: (values: Record<string, string>) => void;
   testHint?: string;
-  onValuesChanged?: () => void;
+  onValuesChanged?: (key: string, value: string) => void;
   isHealthchecking?: boolean;
   healthcheckResult?: { success: boolean; message: string } | null;
   saveDisabled?: boolean;
@@ -40,10 +41,15 @@ export function CredentialEditForm({
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showTestHint, setShowTestHint] = useState(false);
+  const [vault, setVault] = useState<VaultStatus | null>(null);
+
+  useEffect(() => {
+    vaultStatus().then(setVault).catch(() => {});
+  }, []);
 
   const handleChange = useCallback((key: string, value: string) => {
     setValues(prev => ({ ...prev, [key]: value }));
-    onValuesChanged?.();
+    onValuesChanged?.(key, value);
     if (errors[key]) {
       setErrors(prev => {
         const next = { ...prev };
@@ -122,6 +128,18 @@ export function CredentialEditForm({
           )}
         </div>
       ))}
+
+      {/* Encryption reassurance */}
+      {vault && fields.some((f) => f.type === 'password') && (
+        <div className="flex items-center gap-1.5 text-[11px] text-emerald-400/70">
+          <Lock className="w-3 h-3" />
+          <span>
+            {vault.key_source === 'keychain'
+              ? 'Encrypted with OS Keychain'
+              : 'Encrypted at rest'}
+          </span>
+        </div>
+      )}
 
       {/* Healthcheck */}
       {onHealthcheck && (

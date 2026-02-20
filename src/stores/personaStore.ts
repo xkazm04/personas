@@ -82,15 +82,19 @@ interface PersonaState {
 
   // Observability
   observabilityMetrics: ObservabilityMetrics | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   promptVersions: any[];
 
   // Healing
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   healingIssues: any[];
   healingRunning: boolean;
 
   // Teams
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   teams: any[];
   selectedTeamId: string | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   teamMembers: any[];
   teamConnections: PersonaTeamConnection[];
 
@@ -113,6 +117,7 @@ interface PersonaState {
   sidebarSection: SidebarSection;
   credentialView: "credentials" | "from-template" | "add-new";
   editorTab: EditorTab;
+  rerunInputData: string | null;
   isLoading: boolean;
   isExecuting: boolean;
   error: string | null;
@@ -198,13 +203,14 @@ interface PersonaActions {
 
   // Healing
   fetchHealingIssues: () => Promise<void>;
-  triggerHealing: (personaId?: string) => Promise<void>;
+  triggerHealing: (personaId?: string) => Promise<{ failures_analyzed: number; issues_created: number; auto_fixed: number } | null>;
   resolveHealingIssue: (id: string) => Promise<void>;
 
   // Teams
   fetchTeams: () => Promise<void>;
   selectTeam: (teamId: string | null) => void;
   fetchTeamDetails: (teamId: string) => Promise<void>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createTeam: (data: { name: string; description?: string; icon?: string; color?: string }) => Promise<any>;
   deleteTeam: (teamId: string) => Promise<void>;
   addTeamMember: (personaId: string, role?: string, posX?: number, posY?: number) => Promise<void>;
@@ -220,6 +226,7 @@ interface PersonaActions {
 
   // Memories
   fetchMemories: (filters?: { persona_id?: string; category?: string }) => Promise<void>;
+  createMemory: (input: { persona_id: string; title: string; content: string; category: string; importance: number; tags: string[] }) => Promise<void>;
   deleteMemory: (id: string) => Promise<void>;
 
   // Design
@@ -231,6 +238,7 @@ interface PersonaActions {
   setSidebarSection: (section: SidebarSection) => void;
   setCredentialView: (view: "credentials" | "from-template" | "add-new") => void;
   setEditorTab: (tab: EditorTab) => void;
+  setRerunInputData: (data: string | null) => void;
   setError: (error: string | null) => void;
 }
 
@@ -242,6 +250,7 @@ type PersonaStore = PersonaState & PersonaActions;
 
 function errMsg(err: unknown, fallback: string): string {
   if (err instanceof Error) return err.message;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (typeof err === "object" && err !== null && "error" in err) return String((err as any).error);
   return fallback;
 }
@@ -298,6 +307,7 @@ export const usePersonaStore = create<PersonaStore>()(
       sidebarSection: "personas" as SidebarSection,
       credentialView: "credentials",
       editorTab: "prompt" as EditorTab,
+      rerunInputData: null,
       isLoading: false,
       isExecuting: false,
       error: null,
@@ -594,15 +604,11 @@ export const usePersonaStore = create<PersonaStore>()(
       },
 
       deleteCredential: async (id) => {
-        try {
-          await api.deleteCredential(id);
-          set((state) => ({
-            credentials: state.credentials.filter((c) => c.id !== id),
-            credentialEvents: state.credentialEvents.filter((e) => e.credential_id !== id),
-          }));
-        } catch (err) {
-          throw err;
-        }
+        await api.deleteCredential(id);
+        set((state) => ({
+          credentials: state.credentials.filter((c) => c.id !== id),
+          credentialEvents: state.credentialEvents.filter((e) => e.credential_id !== id),
+        }));
       },
 
       healthcheckCredential: async (credentialId) => {
@@ -941,20 +947,23 @@ export const usePersonaStore = create<PersonaStore>()(
       },
 
       triggerHealing: async (personaId?: string) => {
-        if (!personaId) return;
+        if (!personaId) return null;
         set({ healingRunning: true });
         try {
-          await api.runHealingAnalysis(personaId);
+          const result = await api.runHealingAnalysis(personaId);
           const issues = await api.listHealingIssues(personaId);
           set({ healingIssues: issues, healingRunning: false });
+          return { failures_analyzed: result.failures_analyzed, issues_created: result.issues_created, auto_fixed: result.auto_fixed };
         } catch {
           set({ healingRunning: false });
+          return null;
         }
       },
 
       resolveHealingIssue: async (id: string) => {
         try {
           await api.updateHealingStatus(id, "resolved");
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           set({ healingIssues: get().healingIssues.filter((i: any) => i.id !== id) });
         } catch {
           // Silent fail
@@ -1139,6 +1148,26 @@ export const usePersonaStore = create<PersonaStore>()(
         }
       },
 
+      createMemory: async (input) => {
+        try {
+          const created = await api.createMemory({
+            persona_id: input.persona_id,
+            title: input.title,
+            content: input.content,
+            category: input.category,
+            importance: input.importance,
+            tags: JSON.stringify(input.tags),
+            source_execution_id: null,
+          });
+          set((state) => ({
+            memories: [created, ...state.memories],
+            memoriesTotal: state.memoriesTotal + 1,
+          }));
+        } catch (err) {
+          set({ error: errMsg(err, "Failed to create memory") });
+        }
+      },
+
       deleteMemory: async (id) => {
         try {
           await api.deleteMemory(id);
@@ -1169,6 +1198,7 @@ export const usePersonaStore = create<PersonaStore>()(
       setSidebarSection: (section) => set({ sidebarSection: section }),
       setCredentialView: (view) => set({ credentialView: view }),
       setEditorTab: (tab) => set({ editorTab: tab }),
+      setRerunInputData: (data) => set({ rerunInputData: data }),
       setError: (error) => set({ error }),
     }),
     {

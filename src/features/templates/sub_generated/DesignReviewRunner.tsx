@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Play, Square, CheckCircle2, XCircle, AlertTriangle, Upload, Plus, Trash2, FileText, Beaker, Copy, Check } from 'lucide-react';
+import { X, Play, Square, CheckCircle2, XCircle, AlertTriangle, Upload, Plus, Trash2, FileText, Beaker, Copy, Check, Clock } from 'lucide-react';
+import type { RunProgress } from '@/hooks/useDesignReviews';
 
 type RunMode = 'predefined' | 'custom';
 
@@ -18,6 +19,7 @@ interface DesignReviewRunnerProps {
   lines: string[];
   isRunning: boolean;
   result: TestRunResult | null;
+  runProgress: RunProgress | null;
   onStart: (options?: { customInstructions?: string[] }) => void;
   onCancel: () => void;
 }
@@ -28,6 +30,7 @@ export default function DesignReviewRunner({
   lines,
   isRunning,
   result,
+  runProgress,
   onStart,
   onCancel,
 }: DesignReviewRunnerProps) {
@@ -35,9 +38,68 @@ export default function DesignReviewRunner({
   const shouldAutoScroll = useRef(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const animateFromRef = useRef(0);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
   const [mode, setMode] = useState<RunMode>('predefined');
   const [customInstructions, setCustomInstructions] = useState<string[]>(['']);
   const [copied, setCopied] = useState(false);
+
+  // Capture the trigger element on open, restore focus on close
+  useEffect(() => {
+    if (isOpen) {
+      triggerRef.current = document.activeElement as HTMLElement;
+    } else if (triggerRef.current) {
+      triggerRef.current.focus();
+      triggerRef.current = null;
+    }
+  }, [isOpen]);
+
+  // Focus trap: keep Tab cycling within the modal
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isRunning) {
+        onClose();
+        return;
+      }
+
+      if (e.key !== 'Tab' || !modalRef.current) return;
+
+      const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) return;
+
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    // Auto-focus the first focusable element
+    requestAnimationFrame(() => {
+      if (modalRef.current) {
+        const first = modalRef.current.querySelector<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        first?.focus();
+      }
+    });
+
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, isRunning, onClose]);
 
   useEffect(() => {
     if (terminalRef.current && shouldAutoScroll.current) {
@@ -50,7 +112,7 @@ export default function DesignReviewRunner({
     if (isRunning) {
       animateFromRef.current = lines.length;
     }
-  }, [isRunning]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isRunning]);
 
   const handleScroll = () => {
     if (terminalRef.current) {
@@ -115,6 +177,27 @@ export default function DesignReviewRunner({
     });
   }, [lines]);
 
+  const progressInfo = useMemo(() => {
+    if (!runProgress) return null;
+    const { current, total, startedAt } = runProgress;
+    const pct = Math.round((current / total) * 100);
+    const elapsed = Date.now() - startedAt;
+    const msPerTest = current > 0 ? elapsed / current : 0;
+    const remaining = Math.max(0, (total - current) * msPerTest);
+    const etaSeconds = Math.ceil(remaining / 1000);
+    let eta: string;
+    if (current === 0) {
+      eta = 'Estimating...';
+    } else if (etaSeconds < 60) {
+      eta = `~${etaSeconds}s remaining`;
+    } else {
+      const mins = Math.floor(etaSeconds / 60);
+      const secs = etaSeconds % 60;
+      eta = `~${mins}m ${secs}s remaining`;
+    }
+    return { current, total, pct, eta };
+  }, [runProgress]);
+
   if (!isOpen) return null;
 
   const hasStarted = lines.length > 0 || isRunning;
@@ -130,6 +213,10 @@ export default function DesignReviewRunner({
         onClick={(e) => e.target === e.currentTarget && !isRunning && onClose()}
       >
         <motion.div
+          ref={modalRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="design-runner-title"
           initial={{ opacity: 0, scale: 0.95, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 12 }}
@@ -142,7 +229,7 @@ export default function DesignReviewRunner({
                 <Play className="w-4 h-4 text-violet-400" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-foreground/90">Run Design Review</h3>
+                <h3 id="design-runner-title" className="text-sm font-semibold text-foreground/90">Run Design Review</h3>
                 <p className="text-xs text-muted-foreground/50">
                   {isRunning ? 'Running tests...' : result ? 'Review complete' : 'Configure and start a review run'}
                 </p>
@@ -264,6 +351,30 @@ export default function DesignReviewRunner({
                   </p>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Progress Bar */}
+          {isRunning && progressInfo && (
+            <div className="px-5 py-3 border-b border-primary/10 bg-primary/5">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-foreground/80">
+                  Test {progressInfo.current} of {progressInfo.total}
+                  <span className="text-muted-foreground/50 ml-1.5">— {progressInfo.pct}% complete</span>
+                </span>
+                <span className="flex items-center gap-1.5 text-xs text-muted-foreground/50">
+                  <Clock className="w-3 h-3" />
+                  {progressInfo.eta}
+                </span>
+              </div>
+              <div className="w-full h-2 rounded-full bg-secondary/50 border border-primary/10 overflow-hidden">
+                <motion.div
+                  className="h-full rounded-full bg-violet-500/80"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progressInfo.pct}%` }}
+                  transition={{ duration: 0.4, ease: 'easeOut' }}
+                />
+              </div>
             </div>
           )}
 

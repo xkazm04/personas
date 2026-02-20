@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   FlaskConical,
   Play,
@@ -10,6 +10,8 @@ import {
   Clock,
   Lightbulb,
   Download,
+  MoreVertical,
+  Trash2,
 } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/lib/utils/connector-meta';
 import { ReviewExpandedDetail } from '@/features/overview/sub_manual-review/ReviewExpandedDetail';
@@ -38,6 +40,54 @@ function getQualityColor(score: number): string {
   return 'text-red-400 bg-red-500/10 border-red-500/20';
 }
 
+function RowActionMenu({ reviewId, onDelete }: { reviewId: string; onDelete: (id: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    window.addEventListener('click', close);
+    return () => window.removeEventListener('click', close);
+  }, [open]);
+
+  return (
+    <div ref={menuRef} className="relative">
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((prev) => !prev);
+        }}
+        className="p-1 rounded-md opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-secondary/60 transition-all"
+        aria-label="Row actions"
+        aria-haspopup="true"
+        aria-expanded={open}
+      >
+        <MoreVertical className="w-4 h-4 text-muted-foreground/50" />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 z-50 min-w-[150px] py-1 bg-background border border-primary/20 rounded-lg shadow-2xl backdrop-blur-sm">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpen(false);
+              onDelete(reviewId);
+            }}
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors text-left"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Delete template
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface Props {
   reviews: PersonaDesignReview[];
   isLoading: boolean;
@@ -47,6 +97,7 @@ interface Props {
   selectedPersonaId: string | null;
   startNewReview: (personaId?: string, testCases?: Array<{ id: string; name: string; instruction: string }>) => void;
   onContextMenu: (e: React.MouseEvent, reviewId: string) => void;
+  onDelete: (id: string) => void;
   handleStartReview: () => void;
 }
 
@@ -59,6 +110,7 @@ export default function GeneratedReviewsTab({
   selectedPersonaId,
   startNewReview,
   onContextMenu,
+  onDelete,
   handleStartReview,
 }: Props) {
   const sortedReviews = React.useMemo(() => {
@@ -127,7 +179,7 @@ export default function GeneratedReviewsTab({
                   e.preventDefault();
                   onContextMenu(e, review.id);
                 }}
-                className="border-b border-primary/5 hover:bg-secondary/30 cursor-pointer transition-colors"
+                className="group border-b border-primary/5 hover:bg-secondary/30 cursor-pointer transition-colors"
               >
                 <td className="px-6 py-3">
                   {isExpanded ? (
@@ -192,16 +244,19 @@ export default function GeneratedReviewsTab({
                   </div>
                 </td>
                 <td className="px-6 py-3 text-right">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setExpandedRow(isExpanded ? null : review.id);
-                    }}
-                    className="px-3 py-1.5 text-xs rounded-lg bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors inline-flex items-center gap-1.5"
-                  >
-                    <Download className="w-3 h-3" />
-                    Details
-                  </button>
+                  <div className="flex items-center justify-end gap-1.5">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedRow(isExpanded ? null : review.id);
+                      }}
+                      className="px-3 py-1.5 text-xs rounded-lg bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors inline-flex items-center gap-1.5"
+                    >
+                      <Download className="w-3 h-3" />
+                      Details
+                    </button>
+                    <RowActionMenu reviewId={review.id} onDelete={onDelete} />
+                  </div>
                 </td>
               </tr>
               {isExpanded && (

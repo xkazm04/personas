@@ -5,7 +5,7 @@ import { useToggleSet } from '@/hooks/useToggleSet';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import { DesignTerminal } from '@/features/templates/sub_generated/DesignTerminal';
 import { DesignResultPreview } from '@/features/templates/sub_generated/DesignResultPreview';
-import { Sparkles, Send, X, Check, RefreshCw, Loader2, Pencil } from 'lucide-react';
+import { Sparkles, Send, X, Check, RefreshCw, Loader2, Pencil, ArrowRight, Wrench, Zap, Bell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DesignInput } from '@/features/templates/sub_generated/DesignInput';
 import { DesignChatInput } from '@/features/templates/sub_generated/DesignChatInput';
@@ -77,7 +77,7 @@ export function DesignTab() {
     } else {
       setDesignContext({ files: [], references: [] });
     }
-  }, [selectedPersona?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedPersona?.id]);
 
   // Initialize selections when result arrives
   const resultId = result
@@ -97,12 +97,56 @@ export function DesignTab() {
         setSelectedSubscriptionIndices(new Set(result.suggested_event_subscriptions.map((_: unknown, i: number) => i)));
       }
     }
-  }, [resultId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [resultId]);
 
   const currentToolNames = useMemo(
     () => (selectedPersona?.tools || []).map((t) => t.name),
     [selectedPersona]
   );
+
+  const changeSummary = useMemo(() => {
+    if (!result) return [];
+    const items: string[] = [];
+
+    // System prompt change
+    if (result.full_prompt_markdown) {
+      const hasExisting = !!selectedPersona?.system_prompt?.trim();
+      items.push(hasExisting ? 'Update system prompt' : 'Set system prompt');
+    }
+
+    // Tools
+    const selectedToolCount = selectedTools.size;
+    if (selectedToolCount > 0) {
+      const newTools = [...selectedTools].filter((t) => !currentToolNames.includes(t));
+      if (newTools.length > 0 && newTools.length < selectedToolCount) {
+        items.push(`Add ${newTools.length} new tool${newTools.length !== 1 ? 's' : ''}, keep ${selectedToolCount - newTools.length} existing`);
+      } else if (newTools.length === selectedToolCount) {
+        items.push(`Add ${selectedToolCount} tool${selectedToolCount !== 1 ? 's' : ''}`);
+      } else {
+        items.push(`Keep ${selectedToolCount} tool${selectedToolCount !== 1 ? 's' : ''}`);
+      }
+    }
+
+    // Triggers
+    const triggerCount = selectedTriggerIndices.size;
+    if (triggerCount > 0) {
+      items.push(`Add ${triggerCount} trigger${triggerCount !== 1 ? 's' : ''}`);
+    }
+
+    // Notification channels
+    const channelCount = selectedChannelIndices.size;
+    if (channelCount > 0) {
+      items.push(`Add ${channelCount} notification channel${channelCount !== 1 ? 's' : ''}`);
+    }
+
+    // Event subscriptions
+    const subCount = selectedSubscriptionIndices.size;
+    if (subCount > 0) {
+      items.push(`Add ${subCount} event subscription${subCount !== 1 ? 's' : ''}`);
+    }
+
+    return items;
+  }, [result, selectedTools, selectedTriggerIndices, selectedChannelIndices, selectedSubscriptionIndices, currentToolNames, selectedPersona?.system_prompt]);
 
   const handleStartAnalysis = async () => {
     if (!selectedPersona || !instruction.trim()) return;
@@ -335,6 +379,19 @@ export function DesignTab() {
               <p className="text-sm text-red-400 px-1">{error}</p>
             )}
 
+            {/* Change summary */}
+            {changeSummary.length > 0 && (
+              <div className="px-3 py-2.5 rounded-xl bg-primary/5 border border-primary/10">
+                <div className="flex items-start gap-2">
+                  <ArrowRight className="w-3.5 h-3.5 text-primary/60 mt-0.5 shrink-0" />
+                  <p className="text-xs text-muted-foreground/70">
+                    <span className="font-medium text-foreground/70">Will apply: </span>
+                    {changeSummary.join(', ').toLowerCase()}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Action buttons */}
             <div className="flex items-center gap-2">
               <button
@@ -403,6 +460,37 @@ export function DesignTab() {
             <span className="text-sm text-emerald-400 font-medium">
               Design applied successfully!
             </span>
+
+            {result && (
+              <div className="mt-2 w-full max-w-sm space-y-2">
+                <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground/60">
+                  {(result.suggested_tools?.length ?? 0) > 0 && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Wrench className="w-3 h-3" />
+                      {result.suggested_tools.length} tool{result.suggested_tools.length !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                  {(result.suggested_triggers?.length ?? 0) > 0 && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Zap className="w-3 h-3" />
+                      {result.suggested_triggers.length} trigger{result.suggested_triggers.length !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                  {(result.suggested_notification_channels?.length ?? 0) > 0 && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Bell className="w-3 h-3" />
+                      {result.suggested_notification_channels!.length} channel{result.suggested_notification_channels!.length !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
+                {result.summary && (
+                  <p className="text-xs text-muted-foreground/40 text-center line-clamp-2">
+                    {result.summary}
+                  </p>
+                )}
+              </div>
+            )}
+
             <button
               onClick={handleReset}
               className="mt-2 flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-secondary/50 text-foreground/70 hover:bg-secondary/70 transition-colors"

@@ -42,6 +42,12 @@ export default function Sidebar() {
     fetchUnreadMessageCount();
     fetchRecentEvents();
     getVersion().then(setAppVersion).catch(() => {});
+
+    // Poll for pending reviews periodically so users discover them promptly
+    const interval = setInterval(() => {
+      fetchPendingReviewCount();
+    }, 30_000);
+    return () => clearInterval(interval);
   }, [fetchPendingReviewCount, fetchUnreadMessageCount, fetchRecentEvents]);
 
   const handleCreatePersona = () => {
@@ -249,6 +255,11 @@ export default function Sidebar() {
               <Icon className={`relative z-10 w-5 h-5 transition-colors ${
                 isActive ? 'text-primary' : 'text-muted-foreground/50 group-hover:text-foreground/70'
               }`} />
+              {section.id === 'overview' && pendingReviewCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 z-20 min-w-[16px] h-4 px-1 flex items-center justify-center text-[9px] font-bold leading-none rounded-full bg-amber-500 text-white shadow-sm shadow-amber-500/30">
+                  {pendingReviewCount > 99 ? '99+' : pendingReviewCount}
+                </span>
+              )}
             </button>
           );
         })}
