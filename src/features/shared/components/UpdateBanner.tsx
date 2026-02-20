@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useAutoUpdater } from "@/hooks/useAutoUpdater";
+import { useAutoUpdater } from "@/hooks/utility/useAutoUpdater";
 
 export default function UpdateBanner() {
   const {

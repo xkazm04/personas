@@ -1,7 +1,9 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import * as api from '@/api/tauriApi';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
+import { getSeedReviews, SEED_RUN_ID } from '@/lib/personas/seedTemplates';
+import { usePersonaStore } from '@/stores/personaStore';
 
 interface ReviewStatusPayload {
   run_id: string;
@@ -33,8 +35,23 @@ export function useDesignReviews() {
   const [isRunning, setIsRunning] = useState(false);
   const [runResult, setRunResult] = useState<TestRunResult | null>(null);
   const [runProgress, setRunProgress] = useState<RunProgress | null>(null);
+  const [connectorFilter, setConnectorFilter] = useState<string[]>([]);
+  const [isAdopting, setIsAdopting] = useState(false);
+  const [adoptError, setAdoptError] = useState<string | null>(null);
   const unlistenRef = useRef<UnlistenFn | null>(null);
   const countersRef = useRef({ passed: 0, failed: 0, errored: 0 });
+
+  // Derive unique connectors from review data
+  const availableConnectors = useMemo(() => {
+    const connectorSet = new Set<string>();
+    for (const review of reviews) {
+      try {
+        const connectors: string[] = JSON.parse(review.connectors_used || '[]');
+        connectors.forEach((c) => connectorSet.add(c));
+      } catch { /* ignore */ }
+    }
+    return Array.from(connectorSet).sort();
+  }, [reviews]);
 
   const refresh = useCallback(async () => {
     setIsLoading(true);
@@ -48,7 +65,47 @@ export function useDesignReviews() {
     }
   }, []);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  const seedDoneRef = useRef(false);
+
+  // Seed built-in templates into the database on first mount
+  const seedBuiltinTemplates = useCallback(async (existingReviews: PersonaDesignReview[]) => {
+    if (seedDoneRef.current) return;
+    seedDoneRef.current = true;
+
+    const seeds = getSeedReviews();
+    const existingIds = new Set(
+      existingReviews
+        .filter((r) => r.test_run_id === SEED_RUN_ID)
+        .map((r) => r.test_case_id),
+    );
+
+    const missing = seeds.filter((s) => !existingIds.has(s.test_case_id));
+    if (missing.length === 0) return;
+
+    try {
+      await Promise.all(missing.map((input) => api.importDesignReview(input)));
+      // Re-fetch to include seeded records
+      const data = await api.listDesignReviews();
+      setReviews(data);
+    } catch {
+      // Seeding is best-effort — don't block the UI
+    }
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      setIsLoading(true);
+      try {
+        const data = await api.listDesignReviews();
+        setReviews(data);
+        await seedBuiltinTemplates(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch reviews');
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, [seedBuiltinTemplates]);
 
   const startNewReview = useCallback(async (personaId?: string, testCases?: object[]) => {
     if (!personaId) {
@@ -134,6 +191,22 @@ export function useDesignReviews() {
     }
   }, []);
 
+  const adoptTemplate = useCallback(async (reviewId: string) => {
+    setIsAdopting(true);
+    setAdoptError(null);
+    try {
+      await api.adoptDesignReview(reviewId);
+      // Refresh persona list so the new persona appears in the sidebar
+      await usePersonaStore.getState().fetchPersonas();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to adopt template';
+      setAdoptError(msg);
+      throw err;
+    } finally {
+      setIsAdopting(false);
+    }
+  }, []);
+
   return {
     reviews,
     isLoading,
@@ -142,9 +215,15 @@ export function useDesignReviews() {
     isRunning,
     runResult,
     runProgress,
+    connectorFilter,
+    setConnectorFilter,
+    availableConnectors,
     refresh,
     startNewReview,
     cancelReview,
     deleteReview,
+    adoptTemplate,
+    isAdopting,
+    adoptError,
   };
 }

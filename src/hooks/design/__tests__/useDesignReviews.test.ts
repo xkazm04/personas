@@ -22,6 +22,7 @@ function makeReview(overrides: Partial<PersonaDesignReview> = {}): PersonaDesign
     had_references: null,
     suggested_adjustment: null,
     adjustment_generation: null,
+    use_case_flows: null,
     reviewed_at: "2025-01-01T00:00:00Z",
     created_at: "2025-01-01T00:00:00Z",
     ...overrides,

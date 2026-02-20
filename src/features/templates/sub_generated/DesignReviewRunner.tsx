@@ -1,9 +1,43 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Play, Square, CheckCircle2, XCircle, AlertTriangle, Upload, Plus, Trash2, FileText, Beaker, Copy, Check, Clock } from 'lucide-react';
-import type { RunProgress } from '@/hooks/useDesignReviews';
+import type { RunProgress } from '@/hooks/design/useDesignReviews';
 
 type RunMode = 'predefined' | 'custom';
+
+export interface PredefinedTestCase {
+  id: string;
+  name: string;
+  instruction: string;
+}
+
+const PREDEFINED_TEST_CASES: PredefinedTestCase[] = [
+  {
+    id: 'gmail-filter',
+    name: 'Gmail Smart Filter',
+    instruction: 'Create an agent that monitors Gmail for important emails, categorizes them by sender and urgency, applies labels, and forwards urgent ones to Slack. Use polling trigger with gmail and slack connectors.',
+  },
+  {
+    id: 'github-reviewer',
+    name: 'GitHub PR Reviewer',
+    instruction: 'Create an agent that automatically reviews pull requests for code quality, security issues, and best practices. Triggers on webhook when a PR is opened or updated. Uses github connector.',
+  },
+  {
+    id: 'calendar-digest',
+    name: 'Daily Calendar Digest',
+    instruction: 'Create an agent that compiles a daily digest of upcoming meetings, prep notes, and schedule conflicts. Runs on a morning schedule trigger. Uses google_calendar connector and sends summary via email.',
+  },
+  {
+    id: 'webhook-processor',
+    name: 'Webhook Data Processor',
+    instruction: 'Create an agent that receives webhook payloads, validates the data, transforms it, and routes it to the appropriate downstream system via HTTP requests. Uses webhook trigger and http connector.',
+  },
+  {
+    id: 'multi-agent-coord',
+    name: 'Multi-Agent Coordinator',
+    instruction: 'Create an agent that orchestrates other personas by subscribing to their execution events, aggregating results, handling failures, and triggering follow-up actions. Uses event subscriptions for execution_completed and execution_failed events.',
+  },
+];
 
 interface TestRunResult {
   testRunId: string;
@@ -20,7 +54,7 @@ interface DesignReviewRunnerProps {
   isRunning: boolean;
   result: TestRunResult | null;
   runProgress: RunProgress | null;
-  onStart: (options?: { customInstructions?: string[] }) => void;
+  onStart: (options?: { customInstructions?: string[]; testCases?: PredefinedTestCase[] }) => void;
   onCancel: () => void;
 }
 
@@ -161,7 +195,7 @@ export default function DesignReviewRunner({
 
   const handleStart = () => {
     if (mode === 'predefined') {
-      onStart();
+      onStart({ testCases: PREDEFINED_TEST_CASES });
     } else {
       const validInstructions = customInstructions.filter((s) => s.trim().length > 0);
       if (validInstructions.length === 0) return;
@@ -277,13 +311,11 @@ export default function DesignReviewRunner({
               {/* Predefined mode content */}
               {mode === 'predefined' && (
                 <div className="text-xs text-muted-foreground/50 space-y-1">
-                  <p>Runs all 5 predefined use cases through the design engine:</p>
+                  <p>Runs {PREDEFINED_TEST_CASES.length} predefined use cases through the design engine:</p>
                   <ul className="list-disc list-inside text-muted-foreground/40 space-y-0.5 ml-1">
-                    <li>Gmail Smart Filter (polling + gmail + slack)</li>
-                    <li>GitHub PR Reviewer (webhook + github)</li>
-                    <li>Daily Calendar Digest (schedule + calendar)</li>
-                    <li>Webhook Data Processor (webhook + http)</li>
-                    <li>Multi-Agent Coordinator (event subscriptions)</li>
+                    {PREDEFINED_TEST_CASES.map((tc) => (
+                      <li key={tc.id}>{tc.name}</li>
+                    ))}
                   </ul>
                 </div>
               )}

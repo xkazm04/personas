@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { NotificationChannel, NotificationChannelType } from '@/lib/types/frontendTypes';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
-import { AccessibleToggle } from '@/lib/utils/AccessibleToggle';
+import { AccessibleToggle } from '@/features/shared/components/AccessibleToggle';
 
 interface NotificationChannelSettingsProps {
   personaId: string;

@@ -12,10 +12,12 @@ import {
   Download,
   MoreVertical,
   Trash2,
+  Workflow,
 } from 'lucide-react';
-import { getConnectorMeta, ConnectorIcon } from '@/lib/utils/connector-meta';
+import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { ReviewExpandedDetail } from '@/features/overview/sub_manual-review/ReviewExpandedDetail';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
+import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 
 function parseJsonSafe<T>(json: string | null, fallback: T): T {
   if (!json) return fallback;
@@ -96,8 +98,12 @@ interface Props {
   setExpandedRow: (id: string | null) => void;
   selectedPersonaId: string | null;
   startNewReview: (personaId?: string, testCases?: Array<{ id: string; name: string; instruction: string }>) => void;
+  connectorFilter: string[];
   onContextMenu: (e: React.MouseEvent, reviewId: string) => void;
   onDelete: (id: string) => void;
+  onAdopt: (reviewId: string) => void;
+  isAdopting: boolean;
+  onViewFlows: (review: PersonaDesignReview) => void;
   handleStartReview: () => void;
 }
 
@@ -109,13 +115,27 @@ export default function GeneratedReviewsTab({
   setExpandedRow,
   selectedPersonaId,
   startNewReview,
+  connectorFilter,
   onContextMenu,
   onDelete,
+  onAdopt,
+  isAdopting,
+  onViewFlows,
   handleStartReview,
 }: Props) {
   const sortedReviews = React.useMemo(() => {
-    return [...reviews].sort((a, b) => a.test_case_name.localeCompare(b.test_case_name));
-  }, [reviews]);
+    let filtered = [...reviews];
+
+    // Apply connector filter
+    if (connectorFilter.length > 0) {
+      filtered = filtered.filter((review) => {
+        const connectors: string[] = parseJsonSafe(review.connectors_used, []);
+        return connectorFilter.some((c) => connectors.includes(c));
+      });
+    }
+
+    return filtered.sort((a, b) => a.test_case_name.localeCompare(b.test_case_name));
+  }, [reviews, connectorFilter]);
 
   if (isLoading && reviews.length === 0) {
     return (
@@ -154,6 +174,7 @@ export default function GeneratedReviewsTab({
           <th className="text-left text-xs font-medium text-muted-foreground/50 px-4 py-3 bg-secondary/80">Connectors</th>
           <th className="text-center text-xs font-medium text-muted-foreground/50 px-4 py-3 bg-secondary/80">Quality</th>
           <th className="text-center text-xs font-medium text-muted-foreground/50 px-4 py-3 bg-secondary/80">Status</th>
+          <th className="text-center text-xs font-medium text-muted-foreground/50 px-4 py-3 bg-secondary/80">Flows</th>
           <th className="text-right text-xs font-medium text-muted-foreground/50 px-6 py-3 w-28 bg-secondary/80" />
         </tr>
       </thead>
@@ -162,6 +183,7 @@ export default function GeneratedReviewsTab({
           const isExpanded = expandedRow === review.id;
           const connectors: string[] = parseJsonSafe(review.connectors_used, []);
           const qualityScore = getQualityScore(review);
+          const flows = parseJsonSafe<UseCaseFlow[]>(review.use_case_flows, []);
 
           const statusBadge = {
             passed: { Icon: CheckCircle2, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20', label: 'pass' },
@@ -243,17 +265,34 @@ export default function GeneratedReviewsTab({
                     )}
                   </div>
                 </td>
+                <td className="px-4 py-3 text-center">
+                  {flows.length > 0 ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onViewFlows(review);
+                      }}
+                      className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-lg bg-violet-500/10 text-violet-300 border border-violet-500/20 hover:bg-violet-500/20 transition-colors"
+                    >
+                      <Workflow className="w-3 h-3" />
+                      {flows.length}
+                    </button>
+                  ) : (
+                    <span className="text-xs text-muted-foreground/30">--</span>
+                  )}
+                </td>
                 <td className="px-6 py-3 text-right">
                   <div className="flex items-center justify-end gap-1.5">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setExpandedRow(isExpanded ? null : review.id);
+                        onAdopt(review.id);
                       }}
-                      className="px-3 py-1.5 text-xs rounded-lg bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors inline-flex items-center gap-1.5"
+                      disabled={isAdopting}
+                      className="px-3 py-1.5 text-xs rounded-lg bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors inline-flex items-center gap-1.5"
                     >
                       <Download className="w-3 h-3" />
-                      Details
+                      Adopt
                     </button>
                     <RowActionMenu reviewId={review.id} onDelete={onDelete} />
                   </div>
@@ -261,7 +300,7 @@ export default function GeneratedReviewsTab({
               </tr>
               {isExpanded && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-4 bg-secondary/20 border-b border-primary/10">
+                  <td colSpan={7} className="px-6 py-4 bg-secondary/20 border-b border-primary/10">
                     <ReviewExpandedDetail
                       review={review}
                       isRunning={isRunning}
@@ -271,6 +310,9 @@ export default function GeneratedReviewsTab({
                         ]);
                         setExpandedRow(null);
                       }}
+                      onAdopt={() => onAdopt(review.id)}
+                      isAdopting={isAdopting}
+                      onViewDiagram={() => onViewFlows(review)}
                     />
                   </td>
                 </tr>

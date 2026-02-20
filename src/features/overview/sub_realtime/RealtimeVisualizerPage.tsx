@@ -1,6 +1,6 @@
 import { AnimatePresence } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
-import { useRealtimeEvents } from '@/hooks/useRealtimeEvents';
+import { useRealtimeEvents } from '@/hooks/realtime/useRealtimeEvents';
 import RealtimeStatsBar from '@/features/overview/sub_realtime/RealtimeStatsBar';
 import EventBusVisualization from '@/features/overview/sub_realtime/EventBusVisualization';
 import EventDetailDrawer from '@/features/overview/sub_realtime/EventDetailDrawer';

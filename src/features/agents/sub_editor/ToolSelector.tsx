@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { Check, CheckCircle, AlertCircle, ArrowRight, Undo2, Search, BarChart3, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getConnectorMeta } from '@/lib/utils/connector-meta';
+import { getConnectorMeta } from '@/features/shared/components/ConnectorMeta';
 
 export function ToolSelector() {
   const selectedPersona = usePersonaStore((state) => state.selectedPersona);

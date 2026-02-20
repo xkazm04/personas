@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { useDesignAnalysis } from '@/hooks/useDesignAnalysis';
-import { useToggleSet } from '@/hooks/useToggleSet';
+import { useDesignAnalysis } from '@/hooks/design/useDesignAnalysis';
+import { useToggleSet } from '@/hooks/utility/useToggleSet';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import { DesignTerminal } from '@/features/templates/sub_generated/DesignTerminal';
 import { DesignResultPreview } from '@/features/templates/sub_generated/DesignResultPreview';

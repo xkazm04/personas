@@ -1,7 +1,7 @@
 import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { RealtimeEvent } from '@/hooks/useRealtimeEvents';
-import { EVENT_TYPE_HEX_COLORS } from '@/hooks/useRealtimeEvents';
+import type { RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
+import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
 import BusLane from './BusLane';
 import EventParticle from './EventParticle';
 

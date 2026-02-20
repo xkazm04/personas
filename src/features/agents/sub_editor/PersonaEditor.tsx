@@ -7,7 +7,7 @@ import type { EditorTab } from '@/lib/types/types';
 import { PersonaPromptEditor } from '@/features/agents/sub_editor/PersonaPromptEditor';
 import { ExecutionList } from '@/features/agents/sub_executions/ExecutionList';
 import { PersonaRunner } from '@/features/agents/sub_executions/PersonaRunner';
-import { AccessibleToggle } from '@/lib/utils/AccessibleToggle';
+import { AccessibleToggle } from '@/features/shared/components/AccessibleToggle';
 import { PersonaSettingsTab } from '@/features/agents/sub_editor/PersonaSettingsTab';
 import { type PersonaDraft, buildDraft } from '@/features/agents/sub_editor/PersonaDraft';
 import { OLLAMA_CLOUD_BASE_URL, getOllamaPreset } from '@/features/agents/sub_editor/model-config/OllamaCloudPresets';

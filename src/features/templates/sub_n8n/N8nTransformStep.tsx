@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import type { N8nPersonaDraft } from '@/api/tauriApi';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
-import type { CliRunPhase } from '@/hooks/useCorrelatedCliStream';
+import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import CliOutputPanel from '@/features/shared/components/CliOutputPanel';
 import {
   type EditableStructuredPrompt,

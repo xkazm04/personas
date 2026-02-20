@@ -1,6 +1,6 @@
 import { memo, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import type { RealtimeEvent } from '@/hooks/useRealtimeEvents';
+import type { RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
 
 interface Props {
   event: RealtimeEvent;
