@@ -1,20 +1,15 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { usePersonaStore, initHealingListener } from '@/stores/personaStore';
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  AreaChart, Area, PieChart, Pie, Cell, Legend,
-} from 'recharts';
 import { DollarSign, Zap, CheckCircle, TrendingUp, TrendingDown, ArrowRight, RefreshCw, Stethoscope, CheckCircle2, X } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 import HealingIssueModal from '@/features/overview/sub_observability/HealingIssueModal';
 import { DayRangePicker, PersonaSelect } from '@/features/overview/sub_usage/DashboardFilters';
 import type { DayRange } from '@/features/overview/sub_usage/DashboardFilters';
-import { CHART_COLORS_PURPLE, GRID_STROKE, AXIS_TICK_FILL } from '@/features/overview/sub_usage/charts/chartConstants';
 import { SEVERITY_COLORS, HEALING_CATEGORY_COLORS, badgeClass } from '@/lib/utils/formatters';
-import { ChartTooltip } from '@/features/overview/sub_usage/charts/ChartTooltip';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 import type { PersonaMetricsSnapshot } from '@/lib/bindings/PersonaMetricsSnapshot';
-import { useAnimatedNumber } from '@/hooks/useAnimatedNumber';
+import { MetricsCharts } from '@/features/overview/sub_observability/MetricsCharts';
+import type { ChartDataPoint, PieDataPoint } from '@/features/overview/sub_observability/MetricsCharts';
+import { SummaryCard } from '@/features/overview/sub_observability/SpendOverview';
 
 export default function ObservabilityDashboard() {
   const fetchObservabilityMetrics = usePersonaStore((s) => s.fetchObservabilityMetrics);
@@ -75,7 +70,7 @@ export default function ObservabilityDashboard() {
   const timeSeries: PersonaMetricsSnapshot[] = observabilityMetrics?.timeSeries || [];
 
   // Aggregate time series by date for charts
-  const dateMap = new Map<string, { date: string; cost: number; executions: number; success: number; failed: number; tokens: number }>();
+  const dateMap = new Map<string, ChartDataPoint>();
   for (const row of timeSeries) {
     const date = row.snapshot_date;
     const existing = dateMap.get(date) || { date, cost: 0, executions: 0, success: 0, failed: 0, tokens: 0 };
@@ -89,7 +84,7 @@ export default function ObservabilityDashboard() {
   const chartData = Array.from(dateMap.values()).sort((a, b) => a.date.localeCompare(b.date));
 
   // Per-persona breakdown for pie chart
-  const personaMap = new Map<string, { name: string; executions: number; cost: number }>();
+  const personaMap = new Map<string, PieDataPoint>();
   for (const row of timeSeries) {
     const pid = row.persona_id;
     const personaName = personas.find((p) => p.id === pid)?.name || pid;
@@ -202,66 +197,11 @@ export default function ObservabilityDashboard() {
         <SummaryCard icon={DollarSign} label="Total Cost" numericValue={summary?.total_cost_usd || 0} format={(n) => `$${n.toFixed(2)}`} color="emerald" trend={trends.cost} sparklineData={chartData.slice(-7).map((d) => d.cost)} />
         <SummaryCard icon={Zap} label="Executions" numericValue={summary?.total_executions || 0} format={(n) => String(Math.round(n))} color="blue" trend={trends.executions} sparklineData={chartData.slice(-7).map((d) => d.executions)} />
         <SummaryCard icon={CheckCircle} label="Success Rate" numericValue={parseFloat(successRate)} format={(n) => `${n.toFixed(1)}%`} color="green" trend={trends.successRate} sparklineData={chartData.slice(-7).map((d) => { const total = d.success + d.failed; return total > 0 ? (d.success / total) * 100 : 0; })} />
-        <SummaryCard icon={TrendingUp} label="Active Personas" numericValue={summary?.active_personas || 0} format={(n) => String(Math.round(n))} color="purple" trend={trends.personas} sparklineData={chartData.slice(-7).map((d) => { const personas = new Set(timeSeries.filter((r) => r.snapshot_date === d.date && r.total_executions > 0).map((r) => r.persona_id)); return personas.size; })} />
+        <SummaryCard icon={TrendingUp} label="Active Personas" numericValue={summary?.active_personas || 0} format={(n) => String(Math.round(n))} color="purple" trend={trends.personas} sparklineData={chartData.slice(-7).map((d) => { const personasSet = new Set(timeSeries.filter((r) => r.snapshot_date === d.date && r.total_executions > 0).map((r) => r.persona_id)); return personasSet.size; })} />
       </div>
 
-      {/* Charts Row 1 */}
-      <div className="grid grid-cols-2 gap-6">
-        {/* Cost Over Time */}
-        <div className="bg-secondary/30 border border-primary/15 rounded-xl p-4">
-          <h3 className="text-sm font-semibold text-foreground/80 mb-3">Cost Over Time</h3>
-          <ResponsiveContainer width="100%" height={240}>
-            <AreaChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-              <XAxis dataKey="date" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
-              <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => `$${v}`} />
-              <Tooltip content={<ChartTooltip />} />
-              <Area type="monotone" dataKey="cost" stroke="#6366f1" fill="url(#costGradient)" strokeWidth={2} />
-              <defs>
-                <linearGradient id="costGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#6366f1" stopOpacity={0.3} />
-                  <stop offset="100%" stopColor="#6366f1" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Execution Distribution */}
-        <div className="bg-secondary/30 border border-primary/15 rounded-xl p-4">
-          <h3 className="text-sm font-semibold text-foreground/80 mb-3">Executions by Persona</h3>
-          {pieData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={240}>
-              <PieChart>
-                <Pie data={pieData} dataKey="executions" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) => `${String(name ?? '')} ${((percent ?? 0) * 100).toFixed(0)}%`} labelLine={false}>
-                  {pieData.map((_, i) => (
-                    <Cell key={i} fill={CHART_COLORS_PURPLE[i % CHART_COLORS_PURPLE.length]} />
-                  ))}
-                </Pie>
-                <Tooltip content={<ChartTooltip />} />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-[240px] flex items-center justify-center text-sm text-muted-foreground/40">No execution data</div>
-          )}
-        </div>
-      </div>
-
-      {/* Charts Row 2 */}
-      <div className="bg-secondary/30 border border-primary/15 rounded-xl p-4">
-        <h3 className="text-sm font-semibold text-foreground/80 mb-3">Execution Health</h3>
-        <ResponsiveContainer width="100%" height={240}>
-          <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-            <XAxis dataKey="date" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
-            <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} />
-            <Tooltip content={<ChartTooltip />} />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Bar dataKey="success" name="Successful" fill="#22c55e" radius={[2, 2, 0, 0]} />
-            <Bar dataKey="failed" name="Failed" fill="#ef4444" radius={[2, 2, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+      {/* Charts */}
+      <MetricsCharts chartData={chartData} pieData={pieData} />
 
       {/* Health Issues Section */}
       <div className="rounded-2xl border border-primary/15 bg-secondary/30 overflow-hidden">
@@ -494,81 +434,6 @@ function HealingIssueSummary({ issues }: { issues: PersonaHealingIssue[] }) {
           </>
         )}
       </div>
-    </div>
-  );
-}
-
-interface TrendData {
-  /** Percentage change (positive = increase, negative = decrease) */
-  pct: number;
-  /** If true, a decrease is good (green) and increase is bad (red) — e.g. cost */
-  invertColor: boolean;
-}
-
-function Sparkline({ data, color }: { data: number[]; color: string }) {
-  if (data.length < 2) return null;
-  const min = Math.min(...data);
-  const max = Math.max(...data);
-  const range = max - min || 1;
-  const w = 32;
-  const h = 16;
-  const points = data
-    .map((v, i) => `${(i / (data.length - 1)) * w},${h - ((v - min) / range) * h}`)
-    .join(' ');
-  return (
-    <svg width={w} height={h} className="mt-1" aria-hidden="true">
-      <polyline points={points} fill="none" stroke={color} strokeOpacity={0.4} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-const SPARKLINE_HEX: Record<string, string> = {
-  emerald: '#10b981',
-  blue: '#3b82f6',
-  green: '#22c55e',
-  purple: '#a855f7',
-};
-
-function SummaryCard({ icon: Icon, label, numericValue, format, color, trend, sparklineData }: { icon: LucideIcon; label: string; numericValue: number; format: (n: number) => string; color: string; trend?: TrendData | null; sparklineData?: number[] }) {
-  const colorMap: Record<string, string> = {
-    emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
-    blue: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
-    green: 'bg-green-500/10 border-green-500/20 text-green-400',
-    purple: 'bg-purple-500/10 border-purple-500/20 text-purple-400',
-  };
-  const cls = colorMap[color] || colorMap.blue;
-  const animated = useAnimatedNumber(numericValue);
-
-  const trendDisplay = useMemo(() => {
-    if (!trend || (trend.pct === 0)) return null;
-    const isUp = trend.pct > 0;
-    const isGood = trend.invertColor ? !isUp : isUp;
-    const TIcon = isUp ? TrendingUp : TrendingDown;
-    const trendColor = isGood ? 'text-emerald-400' : 'text-red-400';
-    const absPct = Math.abs(trend.pct);
-    const label = absPct >= 1000 ? '999+%' : absPct < 0.1 ? '<0.1%' : `${absPct.toFixed(1)}%`;
-    return { TIcon, trendColor, label };
-  }, [trend]);
-
-  return (
-    <div className="bg-secondary/30 border border-primary/15 rounded-xl p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <div className={`w-8 h-8 rounded-lg border flex items-center justify-center ${cls}`}>
-          <Icon className="w-4 h-4" />
-        </div>
-        <span className="text-xs text-muted-foreground/60">{label}</span>
-      </div>
-      <div className="text-xl font-bold text-foreground">{format(animated)}</div>
-      {sparklineData && sparklineData.length >= 2 && (
-        <Sparkline data={sparklineData} color={SPARKLINE_HEX[color] || '#3b82f6'} />
-      )}
-      {trendDisplay && (
-        <div className={`flex items-center gap-1 mt-1.5 text-[11px] ${trendDisplay.trendColor}`}>
-          <trendDisplay.TIcon className="w-3 h-3" />
-          <span>{trendDisplay.label}</span>
-          <span className="text-muted-foreground/30 ml-0.5">vs prev</span>
-        </div>
-      )}
     </div>
   );
 }

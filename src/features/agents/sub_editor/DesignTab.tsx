@@ -5,12 +5,15 @@ import { useToggleSet } from '@/hooks/useToggleSet';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import { DesignTerminal } from '@/features/templates/sub_generated/DesignTerminal';
 import { DesignResultPreview } from '@/features/templates/sub_generated/DesignResultPreview';
-import { Sparkles, Send, X, Check, RefreshCw, Loader2, Pencil, ArrowRight, Wrench, Zap, Bell } from 'lucide-react';
+import { Send, X, Check, RefreshCw, Loader2, Pencil, ArrowRight, Wrench, Zap, Bell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DesignInput } from '@/features/templates/sub_generated/DesignInput';
 import { DesignChatInput } from '@/features/templates/sub_generated/DesignChatInput';
 import { PhaseIndicator } from '@/features/agents/sub_editor/PhaseIndicator';
+import { DesignPhasePanel } from '@/features/agents/sub_editor/DesignPhasePanel';
+import { DesignQuestionPanel } from '@/features/agents/sub_editor/DesignQuestionPanel';
 import type { DesignContext } from '@/lib/types/frontendTypes';
+
+type DesignMode = 'guided' | 'manual';
 
 export function DesignTab() {
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
@@ -32,9 +35,11 @@ export function DesignTab() {
     outputLines,
     result,
     error,
+    question,
     startAnalysis,
     cancelAnalysis,
     refineAnalysis,
+    answerQuestion,
     applyResult,
     reset,
   } = useDesignAnalysis();
@@ -42,6 +47,7 @@ export function DesignTab() {
   const [instruction, setInstruction] = useState('');
   const [designContext, setDesignContext] = useState<DesignContext>({ files: [], references: [] });
   const [refinementMessage, setRefinementMessage] = useState('');
+  const [designMode, setDesignMode] = useState<DesignMode>('guided');
   const [selectedTools, handleToolToggle, setSelectedTools] = useToggleSet<string>();
   const [selectedTriggerIndices, handleTriggerToggle, setSelectedTriggerIndices] = useToggleSet<number>();
   const [selectedChannelIndices, handleChannelToggle, setSelectedChannelIndices] = useToggleSet<number>();
@@ -190,6 +196,12 @@ export function DesignTab() {
     setInstruction('');
   };
 
+  const handleWizardComplete = (compiledInstruction: string) => {
+    setInstruction(compiledInstruction);
+    if (!selectedPersona) return;
+    startAnalysis(selectedPersona.id, compiledInstruction);
+  };
+
   if (!selectedPersona) {
     return (
       <div className="flex items-center justify-center py-8 text-muted-foreground/40">
@@ -204,85 +216,24 @@ export function DesignTab() {
       <AnimatePresence mode="wait">
         {/* Phase: idle */}
         {phase === 'idle' && (
-          <motion.div
-            key="idle"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.15 }}
-            className="space-y-4"
-          >
-            {savedDesignResult ? (
-              <>
-                {/* Read-only overview of saved design */}
-                <DesignResultPreview
-                  result={savedDesignResult}
-                  allToolDefs={toolDefinitions}
-                  currentToolNames={currentToolNames}
-                  credentials={credentials}
-                  connectorDefinitions={connectorDefinitions}
-                  selectedTools={new Set(savedDesignResult.suggested_tools)}
-                  selectedTriggerIndices={new Set(savedDesignResult.suggested_triggers.map((_: unknown, i: number) => i))}
-                  selectedChannelIndices={new Set((savedDesignResult.suggested_notification_channels || []).map((_: unknown, i: number) => i))}
-                  suggestedSubscriptions={savedDesignResult.suggested_event_subscriptions}
-                  selectedSubscriptionIndices={new Set((savedDesignResult.suggested_event_subscriptions || []).map((_: unknown, i: number) => i))}
-                  onToolToggle={() => {}}
-                  onTriggerToggle={() => {}}
-                  onChannelToggle={() => {}}
-                  onConnectorClick={() => {}}
-                  readOnly
-                  actualTriggers={selectedPersona.triggers || []}
-                  feasibility={savedDesignResult.feasibility}
-                />
-
-                {/* Chat input for modifications */}
-                <div className="pt-2 border-t border-primary/10 space-y-2">
-                  <div className="flex items-center gap-2 px-1 text-xs text-muted-foreground/50">
-                    <Pencil className="w-3 h-3 shrink-0" />
-                    <span>Current configuration will be preserved. Describe what to change.</span>
-                  </div>
-                  <DesignChatInput
-                    value={instruction}
-                    onChange={setInstruction}
-                    onSubmit={handleStartAnalysis}
-                    placeholder="Describe changes to this design..."
-                    buttonLabel="Update Design"
-                    buttonIcon={Pencil}
-                    variant="primary"
-                  />
-                </div>
-              </>
-            ) : (
-              <>
-                {/* Fresh design */}
-                <DesignInput
-                  instruction={instruction}
-                  onInstructionChange={setInstruction}
-                  designContext={designContext}
-                  onDesignContextChange={setDesignContext}
-                  disabled={phase !== 'idle'}
-                  onSubmit={handleStartAnalysis}
-                />
-
-                {error && (
-                  <p className="text-sm text-red-400 px-1">{error}</p>
-                )}
-
-                <button
-                  onClick={handleStartAnalysis}
-                  disabled={!instruction.trim()}
-                  className={`flex items-center justify-center gap-2.5 px-4 py-2 rounded-xl font-medium text-sm transition-all w-full ${
-                    !instruction.trim()
-                      ? 'bg-secondary/60 text-muted-foreground/40 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99]'
-                  }`}
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Analyze &amp; Build
-                </button>
-              </>
-            )}
-          </motion.div>
+          <DesignPhasePanel
+            savedDesignResult={savedDesignResult}
+            selectedPersona={selectedPersona}
+            toolDefinitions={toolDefinitions}
+            currentToolNames={currentToolNames}
+            credentials={credentials}
+            connectorDefinitions={connectorDefinitions}
+            instruction={instruction}
+            onInstructionChange={setInstruction}
+            designContext={designContext}
+            onDesignContextChange={setDesignContext}
+            designMode={designMode}
+            onDesignModeChange={setDesignMode}
+            phase={phase}
+            error={error}
+            onStartAnalysis={handleStartAnalysis}
+            onWizardComplete={handleWizardComplete}
+          />
         )}
 
         {/* Phase: analyzing */}
@@ -344,6 +295,16 @@ export function DesignTab() {
               Cancel
             </button>
           </motion.div>
+        )}
+
+        {/* Phase: awaiting-input */}
+        {phase === 'awaiting-input' && question && (
+          <DesignQuestionPanel
+            outputLines={outputLines}
+            question={question}
+            onAnswerQuestion={answerQuestion}
+            onCancelAnalysis={cancelAnalysis}
+          />
         )}
 
         {/* Phase: preview */}

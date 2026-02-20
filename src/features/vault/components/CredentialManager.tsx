@@ -1,13 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { Plug, XCircle, Search, AlertTriangle, Undo2 } from 'lucide-react';
+import { Search } from 'lucide-react';
+import { XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CredentialEditForm } from '@/features/vault/components/CredentialEditForm';
 import { CredentialList } from '@/features/vault/components/CredentialList';
 import { CredentialPicker } from '@/features/vault/components/CredentialPicker';
 import { CredentialDesignModal } from '@/features/vault/components/CredentialDesignModal';
+import { CredentialTemplateForm } from '@/features/vault/components/CredentialTemplateForm';
+import { CredentialDeleteDialog } from '@/features/vault/components/CredentialDeleteDialog';
+import type { DeleteConfirmState, UndoToastState } from '@/features/vault/components/CredentialDeleteDialog';
 import { VaultStatusBadge } from '@/features/vault/components/VaultStatusBadge';
-import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
+import type { ConnectorDefinition } from '@/lib/types/types';
 import * as api from '@/api/tauriApi';
 import type { VaultStatus } from '@/api/tauriApi';
 
@@ -37,17 +40,10 @@ export function CredentialManager() {
   const [oauthCompletedAt, setOauthCompletedAt] = useState<string | null>(null);
 
   // Confirmation dialog state
-  const [deleteConfirm, setDeleteConfirm] = useState<{
-    credential: CredentialMetadata;
-    eventCount: number;
-  } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirmState | null>(null);
 
   // Undo toast state
-  const [undoToast, setUndoToast] = useState<{
-    credentialId: string;
-    credentialName: string;
-    remaining: number;
-  } | null>(null);
+  const [undoToast, setUndoToast] = useState<UndoToastState | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const undoCancelledRef = useRef(false);
 
@@ -387,72 +383,27 @@ export function CredentialManager() {
         )}
 
         {credentialView === 'from-template' && templateMode === 'add-form' && selectedConnector && (
-          <motion.div
-            key="form"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-2xl p-6 space-y-4"
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center border"
-                style={{
-                  backgroundColor: `${selectedConnector.color}15`,
-                  borderColor: `${selectedConnector.color}30`,
-                }}
-              >
-                {selectedConnector.icon_url ? (
-                  <img src={selectedConnector.icon_url} alt={selectedConnector.label} className="w-5 h-5" />
-                ) : (
-                  <Plug className="w-5 h-5" style={{ color: selectedConnector.color }} />
-                )}
-              </div>
-              <div>
-                <h4 className="font-medium text-foreground">New {selectedConnector.label} Credential</h4>
-                <p className="text-xs text-muted-foreground/40">
-                  {selectedConnector.healthcheck_config?.description || 'Configure credential fields'}
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-                Credential Name
-              </label>
-              <input
-                type="text"
-                value={credentialName}
-                onChange={(e) => setCredentialName(e.target.value)}
-                placeholder={`My ${selectedConnector.label} Account`}
-                className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all"
-              />
-            </div>
-
-            <CredentialEditForm
-              fields={effectiveTemplateFields}
-              onSave={handleCreateCredential}
-              onOAuthConsent={isGoogleTemplate ? handleTemplateOAuthConsent : undefined}
-              oauthConsentLabel={isAuthorizingOAuth ? 'Authorizing with Google...' : 'Authorize with Google'}
-              oauthConsentDisabled={isAuthorizingOAuth}
-              oauthConsentHint={isGoogleTemplate
-                ? 'One click consent: uses app-managed Google OAuth and saves token metadata in background.'
-                : undefined}
-              oauthConsentSuccessBadge={oauthCompletedAt ? `Google consent completed at ${oauthCompletedAt}` : undefined}
-              saveDisabled={isGoogleTemplate}
-              saveDisabledReason={isGoogleTemplate ? 'Use Authorize with Google to create this credential.' : undefined}
-              onValuesChanged={() => {
-                if (oauthCompletedAt) setOauthCompletedAt(null);
-              }}
-              onCancel={() => {
-                setTemplateMode('pick-type');
-                setSelectedConnector(null);
-                setIsAuthorizingOAuth(false);
-                setOauthSessionId(null);
-                setPendingOAuthValues(null);
-              }}
-            />
-          </motion.div>
+          <CredentialTemplateForm
+            selectedConnector={selectedConnector}
+            credentialName={credentialName}
+            onCredentialNameChange={setCredentialName}
+            effectiveTemplateFields={effectiveTemplateFields}
+            isGoogleTemplate={isGoogleTemplate}
+            isAuthorizingOAuth={isAuthorizingOAuth}
+            oauthCompletedAt={oauthCompletedAt}
+            onCreateCredential={handleCreateCredential}
+            onOAuthConsent={handleTemplateOAuthConsent}
+            onCancel={() => {
+              setTemplateMode('pick-type');
+              setSelectedConnector(null);
+              setIsAuthorizingOAuth(false);
+              setOauthSessionId(null);
+              setPendingOAuthValues(null);
+            }}
+            onValuesChanged={() => {
+              if (oauthCompletedAt) setOauthCompletedAt(null);
+            }}
+          />
         )}
 
         {credentialView === 'credentials' && (
@@ -486,97 +437,13 @@ export function CredentialManager() {
         )}
       </AnimatePresence>
 
-      {/* Delete Confirmation Dialog */}
-      <AnimatePresence>
-        {deleteConfirm && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 z-40"
-              onClick={() => setDeleteConfirm(null)}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            >
-              <div className="bg-background border border-primary/15 rounded-2xl shadow-2xl w-full max-w-sm p-5 space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-red-500/15 border border-red-500/25 flex items-center justify-center flex-shrink-0">
-                    <AlertTriangle className="w-5 h-5 text-red-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-foreground/90">Delete Credential</h3>
-                    <p className="text-xs text-muted-foreground/50 mt-1">This action cannot be undone after the undo window expires.</p>
-                  </div>
-                </div>
-
-                <div className="bg-secondary/40 border border-primary/10 rounded-xl p-3 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-mono uppercase text-muted-foreground/40">Name</span>
-                    <span className="text-sm text-foreground/80">{deleteConfirm.credential.name}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-mono uppercase text-muted-foreground/40">Type</span>
-                    <span className="text-xs font-mono text-muted-foreground/60">{deleteConfirm.credential.service_type}</span>
-                  </div>
-                  {deleteConfirm.eventCount > 0 && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-mono uppercase text-muted-foreground/40">Event triggers</span>
-                      <span className="text-xs font-medium text-amber-400">
-                        {deleteConfirm.eventCount} will be removed
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-end gap-2 pt-1">
-                  <button
-                    onClick={() => setDeleteConfirm(null)}
-                    className="px-4 py-2 text-xs text-muted-foreground/60 hover:text-foreground/70 rounded-lg hover:bg-secondary/40 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleDeleteConfirm}
-                    className="px-4 py-2 text-xs font-medium rounded-lg bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* Undo Toast */}
-      <AnimatePresence>
-        {undoToast && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
-          >
-            <div className="flex items-center gap-3 px-4 py-3 bg-background border border-primary/15 rounded-xl shadow-2xl">
-              <span className="text-sm text-foreground/80">
-                Deleting <span className="font-medium">{undoToast.credentialName}</span> in {undoToast.remaining}s
-              </span>
-              <button
-                onClick={handleUndo}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30 transition-colors"
-              >
-                <Undo2 className="w-3.5 h-3.5" />
-                Undo
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <CredentialDeleteDialog
+        deleteConfirm={deleteConfirm}
+        onConfirmDelete={handleDeleteConfirm}
+        onCancelDelete={() => setDeleteConfirm(null)}
+        undoToast={undoToast}
+        onUndo={handleUndo}
+      />
     </div>
   );
 }
