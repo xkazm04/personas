@@ -27,6 +27,13 @@ export function useCorrelatedCliStream({
   const [lines, setLines] = useState<string[]>([]);
   const unlistenersRef = useRef<UnlistenFn[]>([]);
 
+  // Use a ref for onFailed so that the `start` callback has a stable identity.
+  // Without this, any inline onFailed arrow function causes `start` to be
+  // recreated every render, which can trigger infinite update loops in effects
+  // that depend on `start`.
+  const onFailedRef = useRef(onFailed);
+  onFailedRef.current = onFailed;
+
   const cleanup = useCallback(async () => {
     for (const unlisten of unlistenersRef.current) {
       unlisten();
@@ -65,15 +72,15 @@ export function useCorrelatedCliStream({
           setPhase(nextStatus);
         }
 
-        if (nextStatus === 'failed' && onFailed) {
+        if (nextStatus === 'failed' && onFailedRef.current) {
           const err = payload[errorField];
-          onFailed(typeof err === 'string' ? err : 'CLI transformation failed.');
+          onFailedRef.current(typeof err === 'string' ? err : 'CLI transformation failed.');
         }
       });
 
       unlistenersRef.current = [unlistenOutput, unlistenStatus];
     },
-    [cleanup, errorField, idField, lineField, onFailed, outputEvent, statusEvent, statusField],
+    [cleanup, errorField, idField, lineField, outputEvent, statusEvent, statusField],
   );
 
   const reset = useCallback(async () => {

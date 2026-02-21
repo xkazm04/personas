@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { X, Sparkles, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCredentialDesign } from '@/hooks/design/useCredentialDesign';
+import { useOAuthConsent } from '@/hooks/design/useOAuthConsent';
+import { useUniversalOAuth } from '@/hooks/design/useUniversalOAuth';
+import { useHealthcheckState } from '@/features/vault/hooks/useHealthcheckState';
 import type { CredentialTemplateField } from '@/lib/types/types';
-import { testCredentialDesignHealthcheck, startGoogleCredentialOAuth, getGoogleCredentialOAuthStatus, openExternalUrl } from '@/api/tauriApi';
 import { usePersonaStore } from '@/stores/personaStore';
-import { normalizeHealthcheckConfig, resolveTemplate, extractFirstUrl } from '@/features/vault/components/credential-design/CredentialDesignHelpers';
+import { extractFirstUrl } from '@/features/vault/components/credential-design/CredentialDesignHelpers';
 import { IdlePhase } from '@/features/vault/components/credential-design/IdlePhase';
 import { AnalyzingPhase } from '@/features/vault/components/credential-design/AnalyzingPhase';
 import { PreviewPhase } from '@/features/vault/components/credential-design/PreviewPhase';
@@ -20,124 +22,58 @@ interface CredentialDesignModalProps {
 }
 
 export function CredentialDesignModal({ open, embedded = false, onClose, onComplete }: CredentialDesignModalProps) {
-  const { phase, outputLines, result, error, start, cancel, save, reset, loadTemplate } = useCredentialDesign();
+  const { phase, outputLines, result, error, savedCredentialId, start, cancel, save, reset, loadTemplate } = useCredentialDesign();
+  const oauth = useOAuthConsent();
+  const universalOAuth = useUniversalOAuth();
+  const healthcheck = useHealthcheckState();
+  const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
+  const setCredentialView = usePersonaStore((s) => s.setCredentialView);
   const [instruction, setInstruction] = useState('');
   const [credentialName, setCredentialName] = useState('');
-  const [isHealthchecking, setIsHealthchecking] = useState(false);
-  const [healthcheckResult, setHealthcheckResult] = useState<{ success: boolean; message: string } | null>(null);
-  const [testedHealthcheckConfig, setTestedHealthcheckConfig] = useState<Record<string, unknown> | null>(null);
-  const [testedValues, setTestedValues] = useState<Record<string, string> | null>(null);
-  const [lastSuccessfulTestAt, setLastSuccessfulTestAt] = useState<string | null>(null);
   const [showTemplates, setShowTemplates] = useState(false);
   const [templateSearch, setTemplateSearch] = useState('');
   const [expandedTemplateId, setExpandedTemplateId] = useState<string | null>(null);
-  const [oauthInitialValues, setOauthInitialValues] = useState<Record<string, string>>({});
-  const [oauthSessionId, setOauthSessionId] = useState<string | null>(null);
-  const [isAuthorizingOAuth, setIsAuthorizingOAuth] = useState(false);
-  const [oauthConsentCompletedAt, setOauthConsentCompletedAt] = useState<string | null>(null);
-  const [oauthScopeFromConsent, setOauthScopeFromConsent] = useState<string | null>(null);
+  const [negotiatorValues, setNegotiatorValues] = useState<Record<string, string>>({});
 
   const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
   const fetchConnectorDefinitions = usePersonaStore((s) => s.fetchConnectorDefinitions);
+
+  // Sync OAuth message into healthcheckResult
+  useEffect(() => {
+    if (oauth.message) {
+      healthcheck.setHealthcheckResult(oauth.message);
+    }
+  }, [oauth.message, healthcheck.setHealthcheckResult]);
+
+  useEffect(() => {
+    if (universalOAuth.message) {
+      healthcheck.setHealthcheckResult(universalOAuth.message);
+    }
+  }, [universalOAuth.message, healthcheck.setHealthcheckResult]);
 
   // Reset when modal opens
   useEffect(() => {
     if (open) {
       reset();
+      oauth.reset();
+      universalOAuth.reset();
+      healthcheck.reset();
       setInstruction('');
       setCredentialName('');
-      setIsHealthchecking(false);
-      setHealthcheckResult(null);
-      setTestedHealthcheckConfig(null);
-      setLastSuccessfulTestAt(null);
       setShowTemplates(false);
       setTemplateSearch('');
       setExpandedTemplateId(null);
-      setOauthInitialValues({});
-      setOauthSessionId(null);
-      setIsAuthorizingOAuth(false);
-      setOauthConsentCompletedAt(null);
-      setOauthScopeFromConsent(null);
+      setNegotiatorValues({});
 
       fetchConnectorDefinitions();
     }
-  }, [open, reset, fetchConnectorDefinitions]);
+  }, [open, reset, oauth.reset, universalOAuth.reset, healthcheck.reset, fetchConnectorDefinitions]);
 
   useEffect(() => {
     if (phase === 'preview' && result) {
       setCredentialName((prev) => prev || `${result.connector.label} Credential`);
     }
   }, [phase, result]);
-
-  useEffect(() => {
-    if (!oauthSessionId) return;
-
-    let cancelled = false;
-    let timer: number | null = null;
-
-    const poll = async () => {
-      try {
-        const status = await getGoogleCredentialOAuthStatus(oauthSessionId);
-        if (cancelled) return;
-
-        if (status.status === 'pending') {
-          timer = window.setTimeout(poll, 1500);
-          return;
-        }
-
-        setOauthSessionId(null);
-        setIsAuthorizingOAuth(false);
-
-        if (status.status === 'success' && status.refresh_token) {
-          const nowIso = new Date().toISOString();
-          const effectiveScope = status.scope ?? oauthScopeFromConsent ?? [
-            'https://www.googleapis.com/auth/gmail.modify',
-            'https://www.googleapis.com/auth/calendar.events',
-            'https://www.googleapis.com/auth/drive.file',
-            'openid',
-            'https://www.googleapis.com/auth/userinfo.email',
-          ].join(' ');
-
-          setOauthInitialValues((prev) => ({
-            ...prev,
-            refresh_token: status.refresh_token!,
-            scopes: effectiveScope,
-            oauth_scope: effectiveScope,
-            oauth_completed_at: nowIso,
-            oauth_client_mode: 'app_managed',
-          }));
-          setOauthConsentCompletedAt(new Date().toLocaleTimeString());
-          setHealthcheckResult({
-            success: true,
-            message: 'Google authorization completed. Refresh token was auto-filled.',
-          });
-          return;
-        }
-
-        setHealthcheckResult({
-          success: false,
-          message: status.error || 'Google authorization failed. Please try again.',
-        });
-      } catch (err) {
-        if (cancelled) return;
-        setOauthSessionId(null);
-        setIsAuthorizingOAuth(false);
-        setHealthcheckResult({
-          success: false,
-          message: err instanceof Error ? err.message : 'Failed to check OAuth status.',
-        });
-      }
-    };
-
-    poll();
-
-    return () => {
-      cancelled = true;
-      if (timer) {
-        window.clearTimeout(timer);
-      }
-    };
-  }, [oauthSessionId, oauthScopeFromConsent]);
 
   const handleStart = () => {
     if (!instruction.trim()) return;
@@ -147,12 +83,12 @@ export function CredentialDesignModal({ open, embedded = false, onClose, onCompl
   const handleSave = (values: Record<string, string>) => {
     if (isGoogleOAuthFlow && values.refresh_token?.trim()) {
       const name = credentialName.trim() || `${result?.connector.label} Credential`;
-      save(name, values, testedHealthcheckConfig);
+      save(name, values, healthcheck.testedHealthcheckConfig);
       return;
     }
 
-    if (!healthcheckResult?.success || !testedHealthcheckConfig) {
-      setHealthcheckResult({
+    if (!healthcheck.healthcheckResult?.success || !healthcheck.testedHealthcheckConfig) {
+      healthcheck.setHealthcheckResult({
         success: false,
         message: 'Run Test Connection and get a successful result before saving.',
       });
@@ -160,110 +96,40 @@ export function CredentialDesignModal({ open, embedded = false, onClose, onCompl
     }
 
     const name = credentialName.trim() || `${result?.connector.label} Credential`;
-    save(name, values, testedHealthcheckConfig);
+    save(name, values, healthcheck.testedHealthcheckConfig);
   };
 
   const handleHealthcheck = async (values: Record<string, string>) => {
     if (!result) return;
-
-    setIsHealthchecking(true);
-    setHealthcheckResult(null);
-    setTestedHealthcheckConfig(null);
-    setTestedValues({ ...values });
-
-    try {
-      const response = await testCredentialDesignHealthcheck(
-        instruction.trim() || result.connector.label,
-        result.connector as unknown as Record<string, unknown>,
-        values,
-      );
-
-      setHealthcheckResult({
-        success: response.success,
-        message: response.message,
-      });
-
-      if (response.healthcheck_config) {
-        const skip = response.healthcheck_config.skip === true;
-        if (!skip) {
-          setTestedHealthcheckConfig(response.healthcheck_config);
-          if (response.success) {
-            setLastSuccessfulTestAt(new Date().toLocaleTimeString());
-          }
-        }
-      }
-    } catch (e) {
-      const message = e instanceof Error ? e.message : 'Failed to run Claude healthcheck';
-      const normalized = normalizeHealthcheckConfig(result.connector.healthcheck_config);
-      if (!normalized) {
-        setHealthcheckResult({
-          success: false,
-          message: `Claude healthcheck unavailable: ${message}`,
-        });
-        setTestedHealthcheckConfig(null);
-        setLastSuccessfulTestAt(null);
-      } else {
-        try {
-          const endpoint = resolveTemplate(normalized.endpoint, values);
-          const resolvedHeaders = Object.fromEntries(
-            Object.entries(normalized.headers).map(([key, val]) => [key, resolveTemplate(val, values)]),
-          );
-
-          const response = await fetch(endpoint, {
-            method: normalized.method,
-            headers: resolvedHeaders,
-          });
-
-          const expected = normalized.expected_status;
-          const success = typeof expected === 'number'
-            ? response.status === expected
-            : response.ok;
-
-          setHealthcheckResult({
-            success,
-            message: success
-              ? `Connection successful (HTTP ${response.status}) using fallback check. Claude error: ${message}`
-              : `Connection failed (HTTP ${response.status}) using fallback check. Claude error: ${message}`,
-          });
-
-          if (success) {
-            setTestedHealthcheckConfig({
-              endpoint: normalized.endpoint,
-              method: normalized.method,
-              headers: normalized.headers,
-              expected_status: normalized.expected_status,
-              description: normalized.description,
-            });
-            setLastSuccessfulTestAt(new Date().toLocaleTimeString());
-          } else {
-            setTestedHealthcheckConfig(null);
-            setLastSuccessfulTestAt(null);
-          }
-        } catch (fallbackErr) {
-          setHealthcheckResult({
-            success: false,
-            message: fallbackErr instanceof Error
-              ? `Fallback healthcheck failed: ${fallbackErr.message}. Claude error: ${message}`
-              : `Fallback healthcheck failed. Claude error: ${message}`,
-          });
-          setTestedHealthcheckConfig(null);
-          setLastSuccessfulTestAt(null);
-        }
-      }
-    } finally {
-      setIsHealthchecking(false);
-    }
+    await healthcheck.runHealthcheck(
+      instruction.trim() || result.connector.label,
+      result.connector as unknown as Record<string, unknown>,
+      values,
+    );
   };
 
   const handleCredentialValuesChanged = (key: string, value: string) => {
-    if (!testedValues) return;
-    if (testedValues[key] === value) return;
-    setHealthcheckResult(null);
-    setTestedHealthcheckConfig(null);
-    setTestedValues(null);
-    setLastSuccessfulTestAt(null);
-    if (oauthConsentCompletedAt) {
-      setOauthConsentCompletedAt(null);
+    healthcheck.handleValuesChanged(key, value);
+    if (oauth.completedAt) {
+      oauth.reset();
+    }
+  };
+
+  const handleOAuthConsent = (values: Record<string, string>) => {
+    if (universalOAuthProvider) {
+      // Universal OAuth flow
+      const clientId = values.client_id?.trim();
+      const clientSecret = values.client_secret?.trim();
+      if (!clientId) return;
+      universalOAuth.startConsent({
+        providerId: universalOAuthProvider,
+        clientId,
+        clientSecret: clientSecret || undefined,
+        scopes: values.scopes?.trim() ? values.scopes.trim().split(/\s+/) : undefined,
+      });
+    } else {
+      // Google OAuth flow
+      oauth.startConsent(result?.connector.name || 'google', values);
     }
   };
 
@@ -277,6 +143,13 @@ export function CredentialDesignModal({ open, embedded = false, onClose, onCompl
     onClose();
   };
 
+  const handleViewCredential = () => {
+    onComplete();
+    onClose();
+    setSidebarSection('credentials');
+    setCredentialView('credentials');
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey && phase === 'idle') {
       e.preventDefault();
@@ -286,10 +159,16 @@ export function CredentialDesignModal({ open, embedded = false, onClose, onCompl
 
   const handleResetPreview = () => {
     reset();
-    setHealthcheckResult(null);
-    setTestedHealthcheckConfig(null);
-    setTestedValues(null);
-    setLastSuccessfulTestAt(null);
+    healthcheck.reset();
+  };
+
+  const handleRefine = () => {
+    const preserved = instruction;
+    reset();
+    setInstruction(preserved);
+    setCredentialName('');
+    healthcheck.reset();
+    setNegotiatorValues({});
   };
 
   if (!open) return null;
@@ -315,13 +194,23 @@ export function CredentialDesignModal({ open, embedded = false, onClose, onCompl
       || (fieldKeys.has('client_id') && fieldKeys.has('client_secret') && fieldKeys.has('refresh_token'))),
   );
 
+  // Detect non-Google OAuth providers (universal OAuth)
+  const universalOAuthProvider = result?.connector.oauth_type
+    && result.connector.oauth_type !== 'google'
+    ? result.connector.oauth_type
+    : null;
+
   const effectiveFields = isGoogleOAuthFlow
     ? fields.filter((f) => !['client_id', 'client_secret', 'refresh_token', 'scopes'].includes(f.key))
-    : fields;
+    : universalOAuthProvider
+      ? fields.filter((f) => !['access_token', 'refresh_token', 'scopes', 'oauth_scope'].includes(f.key))
+      : fields;
 
   const canSaveCredential = isGoogleOAuthFlow
-    ? Boolean(oauthInitialValues.refresh_token)
-    : (healthcheckResult?.success === true && testedHealthcheckConfig !== null);
+    ? Boolean(oauth.initialValues.refresh_token)
+    : universalOAuthProvider
+      ? Boolean(universalOAuth.initialValues.access_token)
+      : (healthcheck.healthcheckResult?.success === true && healthcheck.testedHealthcheckConfig !== null);
 
   const templateConnectors = connectorDefinitions.filter((conn) => {
     const metadata = conn.metadata as Record<string, unknown> | null;
@@ -372,81 +261,8 @@ export function CredentialDesignModal({ open, embedded = false, onClose, onCompl
     });
 
     setInstruction(`${template.label} credential`);
-    setHealthcheckResult(null);
-    setTestedHealthcheckConfig(null);
+    healthcheck.reset();
     setShowTemplates(false);
-  };
-
-  const handleOAuthConsent = (values: Record<string, string>) => {
-    const defaultScopes = [
-      'https://www.googleapis.com/auth/gmail.modify',
-      'https://www.googleapis.com/auth/calendar.events',
-      'https://www.googleapis.com/auth/drive.file',
-      'openid',
-      'https://www.googleapis.com/auth/userinfo.email',
-    ];
-
-    const scopes = values.scopes?.trim()
-      ? values.scopes.trim().split(/\s+/)
-      : defaultScopes;
-    setOauthScopeFromConsent(scopes.join(' '));
-
-    setIsAuthorizingOAuth(true);
-    setOauthConsentCompletedAt(null);
-    setHealthcheckResult({
-      success: false,
-      message: 'Starting Google authorization (requesting OAuth session)...',
-    });
-
-    const startPromise = startGoogleCredentialOAuth(undefined, undefined, result?.connector.name || 'google', scopes);
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      window.setTimeout(() => {
-        reject(new Error('OAuth session start timed out (no IPC response in 12s).'));
-      }, 12000);
-    });
-
-    Promise.race([startPromise, timeoutPromise])
-      .then(async (oauthStart) => {
-        const resolved = oauthStart as { auth_url: string; session_id: string };
-        let opened = false;
-        if (!opened) {
-          try {
-            await openExternalUrl(resolved.auth_url);
-            opened = true;
-          } catch {
-            // fallback below
-          }
-        }
-
-        if (!opened) {
-          try {
-            const popup = window.open(resolved.auth_url, '_blank', 'noopener,noreferrer');
-            opened = popup !== null;
-          } catch {
-            // no-op
-          }
-        }
-
-        if (!opened) {
-          throw new Error('Could not open Google consent page. Please allow popups or external browser open.');
-        }
-
-        setHealthcheckResult({
-          success: false,
-          message: 'Google consent page opened. Complete consent in browser; refresh token will be auto-filled.',
-        });
-        setOauthSessionId(resolved.session_id);
-      })
-      .catch((err) => {
-        setOauthSessionId(null);
-        setIsAuthorizingOAuth(false);
-        setHealthcheckResult({
-          success: false,
-          message: err instanceof Error
-            ? `Google authorization did not start: ${err.message}`
-            : 'Google authorization did not start.',
-        });
-      });
   };
 
   return (
@@ -530,18 +346,25 @@ export function CredentialDesignModal({ open, embedded = false, onClose, onCompl
                 optionalCount={optionalCount}
                 firstSetupUrl={firstSetupUrl}
                 isGoogleOAuthFlow={isGoogleOAuthFlow}
-                oauthInitialValues={oauthInitialValues}
-                isAuthorizingOAuth={isAuthorizingOAuth}
-                oauthConsentCompletedAt={oauthConsentCompletedAt}
-                isHealthchecking={isHealthchecking}
-                healthcheckResult={healthcheckResult}
+                oauthInitialValues={{ ...oauth.initialValues, ...universalOAuth.initialValues, ...negotiatorValues }}
+                isAuthorizingOAuth={oauth.isAuthorizing || universalOAuth.isAuthorizing}
+                oauthConsentCompletedAt={oauth.completedAt || universalOAuth.completedAt}
+                universalOAuthProvider={universalOAuthProvider}
+                isHealthchecking={healthcheck.isHealthchecking}
+                healthcheckResult={healthcheck.healthcheckResult}
                 canSaveCredential={canSaveCredential}
-                lastSuccessfulTestAt={lastSuccessfulTestAt}
+                lastSuccessfulTestAt={healthcheck.lastSuccessfulTestAt}
                 onSave={handleSave}
                 onOAuthConsent={handleOAuthConsent}
                 onHealthcheck={handleHealthcheck}
                 onValuesChanged={handleCredentialValuesChanged}
                 onReset={handleResetPreview}
+                onRefine={handleRefine}
+                onNegotiatorValues={(values) => {
+                  setNegotiatorValues(values);
+                  // Reset healthcheck state since values changed
+                  healthcheck.reset();
+                }}
               />
             )}
 
@@ -559,11 +382,28 @@ export function CredentialDesignModal({ open, embedded = false, onClose, onCompl
             )}
 
             {phase === 'done' && (
-              <DonePhase connectorLabel={result?.connector.label} onClose={handleClose} />
+              <DonePhase
+                connectorLabel={result?.connector.label}
+                onClose={handleClose}
+                onViewCredential={savedCredentialId ? handleViewCredential : undefined}
+              />
             )}
 
             {phase === 'error' && (
-              <ErrorPhase error={error} onReset={reset} />
+              <ErrorPhase
+                error={error}
+                instruction={instruction}
+                onRetry={() => {
+                  // Go back to idle but KEEP the instruction text
+                  const preserved = instruction;
+                  reset();
+                  setInstruction(preserved);
+                }}
+                onStartOver={() => {
+                  reset();
+                  setInstruction('');
+                }}
+              />
             )}
           </AnimatePresence>
         </div>

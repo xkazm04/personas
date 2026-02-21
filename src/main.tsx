@@ -16,8 +16,29 @@ async function bootstrap() {
 
   initSentry(appVersion);
 
+  const persistFrontendCrash = (label: string, err: unknown) => {
+    try {
+      const crashes = JSON.parse(
+        localStorage.getItem("__personas_frontend_crashes") || "[]"
+      );
+      crashes.unshift({
+        timestamp: new Date().toISOString(),
+        component: label,
+        message: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack?.slice(0, 2000) : undefined,
+      });
+      localStorage.setItem(
+        "__personas_frontend_crashes",
+        JSON.stringify(crashes.slice(0, 20))
+      );
+    } catch {
+      // localStorage may be full
+    }
+  };
+
   window.onerror = (_message, _source, _lineno, _colno, error) => {
     Sentry.captureException(error ?? new Error(String(_message)));
+    persistFrontendCrash("window.onerror", error ?? _message);
   };
 
   window.addEventListener("unhandledrejection", (event) => {
@@ -26,6 +47,7 @@ async function bootstrap() {
         ? event.reason
         : new Error(String(event.reason))
     );
+    persistFrontendCrash("unhandledrejection", event.reason);
   });
 
   const AppWithBoundary = Sentry.withErrorBoundary(App, {

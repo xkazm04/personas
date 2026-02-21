@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, Fragment } from 'react';
 import type { DbPersonaExecution } from '@/lib/types/types';
 import { Wrench, Clock, DollarSign, ChevronDown, ChevronRight, Zap, Hash } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -39,6 +39,12 @@ function durationColor(ms: number | undefined): string {
 function formatCost(value: number): string {
   if (value < 0.001) return '<$0.001';
   return `$${value.toFixed(4)}`;
+}
+
+function formatTimeGap(ms: number): string {
+  if (ms < 1000) return `+${Math.round(ms)}ms`;
+  if (ms < 60000) return `+${(ms / 1000).toFixed(1)}s`;
+  return `+${(ms / 60000).toFixed(1)}m`;
 }
 
 function ToolCallCard({ step }: { step: ToolCallStep }) {
@@ -219,10 +225,38 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
             Tool Call Timeline ({steps.length} steps)
           </div>
 
-          <div className="space-y-2">
-            {steps.map((step) => (
-              <ToolCallCard key={step.step_index} step={step} />
-            ))}
+          <div className="relative pl-7">
+            {/* Vertical timeline rail */}
+            <div className="absolute left-[10px] top-5 bottom-5 w-[2px] bg-primary/20 rounded-full" />
+
+            {steps.map((step, i) => {
+              const prev = steps[i - 1];
+              const gapMs =
+                prev?.ended_at_ms != null
+                  ? step.started_at_ms - prev.ended_at_ms
+                  : null;
+
+              return (
+                <Fragment key={step.step_index}>
+                  {/* Time gap label between steps */}
+                  {i > 0 && (
+                    <div className="relative h-6 flex items-center">
+                      {gapMs != null && gapMs >= 10 && (
+                        <span className="absolute left-[-16px] text-[9px] font-mono text-muted-foreground/35 leading-none bg-background z-10 px-0.5">
+                          {formatTimeGap(gapMs)}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Step with circle node */}
+                  <div className="relative">
+                    <div className="absolute left-[-22px] top-[16px] w-2.5 h-2.5 rounded-full border-2 border-primary/30 bg-background z-10" />
+                    <ToolCallCard step={step} />
+                  </div>
+                </Fragment>
+              );
+            })}
           </div>
         </div>
       )}

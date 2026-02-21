@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* ── Design Tokens ── */
-@theme inline {
+@theme {
   --color-background: #0a0a12;
   --color-foreground: #f0f0f5;
   --color-muted: #a0a0b0;
@@ -64,6 +64,11 @@ body {
 @keyframes spin-slow {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+@keyframes health-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
 }
 
 .animate-float { animation: float 5s ease-in-out infinite; }
@@ -157,28 +162,42 @@ body {
   --color-brand-amber: #f97316;
 }
 
-/* Light */
+/* Light — warm paper-like palette */
 [data-theme="light"] {
-  --color-primary: #2563eb;
-  --color-accent: #3b82f6;
-  --color-background: #f8fafc;
-  --color-foreground: #0f172a;
-  --color-secondary: #e2e8f0;
-  --color-muted: #64748b;
-  --color-muted-dark: #94a3b8;
-  --color-muted-foreground: #475569;
-  --color-border: #cbd5e1;
-  --color-card-bg: rgba(0, 0, 0, 0.03);
-  --color-card-border: rgba(0, 0, 0, 0.08);
+  --color-primary: #2554b0;
+  --color-accent: #3568c7;
+  --color-background: #f0ede6;
+  --color-foreground: #1c1c28;
+  --color-secondary: #e0dbd1;
+  --color-muted: #55555f;
+  --color-muted-dark: #3e3e4a;
+  --color-muted-foreground: #44444f;
+  --color-border: #c4bdb0;
+  --color-card-bg: rgba(0, 0, 0, 0.04);
+  --color-card-border: rgba(0, 0, 0, 0.10);
+  --color-brand-cyan: #0e7490;
+  --color-brand-purple: #7c3aed;
+  --color-brand-emerald: #059669;
+  --color-brand-amber: #b45309;
+  --color-brand-rose: #be123c;
 }
 
 [data-theme="light"] * {
-  scrollbar-color: rgba(0, 0, 0, 0.12) transparent;
+  scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
+}
+
+[data-theme="light"] .glass {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .dot-grid {
+  background-image: radial-gradient(circle, rgba(0, 0, 0, 0.06) 1px, transparent 1px);
 }
 
 [data-theme="light"] ::selection {
-  background-color: rgba(37, 99, 235, 0.2);
-  color: #0f172a;
+  background-color: rgba(37, 84, 176, 0.2);
+  color: #1c1c28;
 }
 
 /* ── Pipeline Animations ── */

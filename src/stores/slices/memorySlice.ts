@@ -10,7 +10,7 @@ export interface MemorySlice {
   memoriesTotal: number;
 
   // Actions
-  fetchMemories: (filters?: { persona_id?: string; category?: string }) => Promise<void>;
+  fetchMemories: (filters?: { persona_id?: string; category?: string; search?: string }) => Promise<void>;
   createMemory: (input: { persona_id: string; title: string; content: string; category: string; importance: number; tags: string[] }) => Promise<void>;
   deleteMemory: (id: string) => Promise<void>;
 }
@@ -21,15 +21,21 @@ export const createMemorySlice: StateCreator<PersonaStore, [], [], MemorySlice> 
 
   fetchMemories: async (filters?) => {
     try {
-      const memories = await api.listMemories(
-        filters?.persona_id,
-        filters?.category,
-        100,
-        0,
-      );
-      set({ memories, memoriesTotal: memories.length });
-    } catch {
-      // Silent fail
+      const hasSearch = !!filters?.search?.trim();
+      const limit = hasSearch ? 500 : 100;
+      const [memories, total] = await Promise.all([
+        api.listMemories(
+          filters?.persona_id,
+          filters?.category,
+          filters?.search,
+          limit,
+          0,
+        ),
+        api.getMemoryCount(filters?.persona_id, filters?.category, filters?.search),
+      ]);
+      set({ memories, memoriesTotal: total });
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to fetch memories") });
     }
   },
 

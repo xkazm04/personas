@@ -1,16 +1,27 @@
 import type { StateCreator } from "zustand";
 import type { PersonaStore } from "../storeTypes";
 import { errMsg } from "../storeTypes";
+import type { TriggerChainLink } from "@/lib/bindings/TriggerChainLink";
+import type { WebhookStatus } from "@/lib/bindings/WebhookStatus";
 import * as api from "@/api/tauriApi";
 
 export interface TriggerSlice {
-  // Actions only (no owned state)
+  // State
+  triggerChains: TriggerChainLink[];
+  webhookStatus: WebhookStatus | null;
+
+  // Actions
   createTrigger: (personaId: string, input: { trigger_type: string; config?: object; enabled?: boolean }) => Promise<void>;
   updateTrigger: (personaId: string, triggerId: string, updates: Record<string, unknown>) => Promise<void>;
   deleteTrigger: (personaId: string, triggerId: string) => Promise<void>;
+  fetchTriggerChains: () => Promise<void>;
+  fetchWebhookStatus: () => Promise<void>;
 }
 
 export const createTriggerSlice: StateCreator<PersonaStore, [], [], TriggerSlice> = (set, get) => ({
+  triggerChains: [],
+  webhookStatus: null,
+
   createTrigger: async (personaId, input) => {
     try {
       await api.createTrigger({
@@ -45,6 +56,24 @@ export const createTriggerSlice: StateCreator<PersonaStore, [], [], TriggerSlice
       get().fetchDetail(personaId);
     } catch (err) {
       set({ error: errMsg(err, "Failed to delete trigger") });
+    }
+  },
+
+  fetchTriggerChains: async () => {
+    try {
+      const chains = await api.listTriggerChains();
+      set({ triggerChains: chains });
+    } catch {
+      // Silent fail
+    }
+  },
+
+  fetchWebhookStatus: async () => {
+    try {
+      const status = await api.getWebhookStatus();
+      set({ webhookStatus: status });
+    } catch {
+      // Silent fail
     }
   },
 });

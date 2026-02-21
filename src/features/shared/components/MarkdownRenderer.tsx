@@ -79,6 +79,12 @@ const components: Components = {
   strong: ({ children }) => (
     <strong className="font-semibold text-foreground/80">{children}</strong>
   ),
+  img: ({ src, alt }) => (
+    <img src={src} alt={alt || ''} className="max-w-full h-auto rounded-lg my-2 border border-border/20" />
+  ),
+  em: ({ children }) => (
+    <em className="italic text-foreground/60">{children}</em>
+  ),
 };
 
 export function MarkdownRenderer({ content, className }: MarkdownRendererProps) {

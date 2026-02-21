@@ -32,6 +32,9 @@ export const createCredentialEvent = (input: CreateCredentialEventInput) =>
 export const updateCredentialEvent = (id: string, input: UpdateCredentialEventInput) =>
   invoke<CredentialEvent>("update_credential_event", { id, input });
 
+export const deleteCredentialEvent = (id: string) =>
+  invoke<boolean>("delete_credential_event", { id });
+
 // ── Credential Security ─────────────────────────────────────────────────
 
 export interface HealthcheckResult {
@@ -60,3 +63,28 @@ export const healthcheckCredentialPreview = (
 
 export const vaultStatus = () =>
   invoke<VaultStatus>("vault_status");
+
+export interface MigrationResult {
+  migrated: number;
+  failed: number;
+}
+
+export const migratePlaintextCredentials = () =>
+  invoke<MigrationResult>("migrate_plaintext_credentials");
+
+// ── Credential Intelligence ───────────────────────────────────────────
+
+import type { CredentialAuditEntry } from "@/lib/bindings/CredentialAuditEntry";
+import type { CredentialUsageStats } from "@/lib/bindings/CredentialUsageStats";
+import type { CredentialDependent } from "@/lib/bindings/CredentialDependent";
+
+export type { CredentialAuditEntry, CredentialUsageStats, CredentialDependent };
+
+export const getCredentialAuditLog = (credentialId: string, limit?: number) =>
+  invoke<CredentialAuditEntry[]>("credential_audit_log", { credentialId, limit });
+
+export const getCredentialUsageStats = (credentialId: string) =>
+  invoke<CredentialUsageStats>("credential_usage_stats", { credentialId });
+
+export const getCredentialDependents = (credentialId: string) =>
+  invoke<CredentialDependent[]>("credential_dependents", { credentialId });

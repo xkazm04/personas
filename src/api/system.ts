@@ -30,6 +30,21 @@ export const openExternalUrl = (url: string) =>
   invoke<void>("open_external_url", { url });
 
 // ============================================================================
+// Crash Logs
+// ============================================================================
+
+export interface CrashLogEntry {
+  filename: string;
+  content: string;
+}
+
+export const getCrashLogs = () =>
+  invoke<CrashLogEntry[]>("get_crash_logs");
+
+export const clearCrashLogs = () =>
+  invoke<void>("clear_crash_logs");
+
+// ============================================================================
 // Setup / Auto-install
 // ============================================================================
 

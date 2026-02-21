@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { TerminalHeader } from '@/features/shared/components/TerminalHeader';
+import { TerminalSearchBar, useTerminalFilter } from '@/features/shared/components/TerminalSearchBar';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 
 interface ExecutionTerminalProps {
@@ -13,6 +14,7 @@ export function ExecutionTerminal({ lines, isRunning, onStop }: ExecutionTermina
   const terminalRef = useRef<HTMLDivElement>(null);
   const shouldAutoScroll = useRef(true);
   const [copied, setCopied] = useState(false);
+  const { filter, setFilter, isLineVisible, isFiltering } = useTerminalFilter();
 
   const handleCopyLog = async () => {
     await navigator.clipboard.writeText(lines.join('\n'));
@@ -44,6 +46,8 @@ export function ExecutionTerminal({ lines, isRunning, onStop }: ExecutionTermina
         onStop={onStop}
       />
 
+      <TerminalSearchBar filter={filter} onChange={setFilter} />
+
       {/* Terminal Content */}
       <div
         ref={terminalRef}
@@ -59,8 +63,9 @@ export function ExecutionTerminal({ lines, isRunning, onStop }: ExecutionTermina
             {lines.map((line, i) => {
               if (!line.trim()) return <div key={i} className="h-2" />;
               const style = classifyLine(line);
+              const visible = isLineVisible(line, style);
               return (
-                <div key={i} className={`text-xs leading-5 whitespace-pre-wrap break-words ${TERMINAL_STYLE_MAP[style]}`}>
+                <div key={i} className={`text-xs leading-5 whitespace-pre-wrap break-words ${TERMINAL_STYLE_MAP[style]} transition-opacity ${isFiltering && !visible ? 'opacity-20' : ''}`}>
                   {line}
                 </div>
               );

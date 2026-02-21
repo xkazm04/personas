@@ -9,10 +9,12 @@ import {
   Code2,
   ShieldAlert,
   Sparkles,
+  Eye,
 } from 'lucide-react';
+import { MarkdownRenderer } from '@/features/shared/components/MarkdownRenderer';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 
-interface PromptSection {
+interface PromptTab {
   key: string;
   label: string;
   Icon: React.ComponentType<{ className?: string }>;
@@ -24,23 +26,20 @@ export function TemplatePromptPreview({
 }: {
   designResult: DesignAnalysisResult;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [openSections, setOpenSections] = useState<Set<string>>(new Set());
-
-  const sections = useMemo<PromptSection[]>(() => {
+  const tabs = useMemo<PromptTab[]>(() => {
     const sp = designResult.structured_prompt;
-    const builtIn: PromptSection[] = [];
+    const list: PromptTab[] = [];
 
-    if (sp.identity) builtIn.push({ key: 'identity', label: 'Identity', Icon: Brain, content: sp.identity });
-    if (sp.instructions) builtIn.push({ key: 'instructions', label: 'Instructions', Icon: FileText, content: sp.instructions });
-    if (sp.toolGuidance) builtIn.push({ key: 'toolGuidance', label: 'Tool Guidance', Icon: Wrench, content: sp.toolGuidance });
-    if (sp.examples) builtIn.push({ key: 'examples', label: 'Examples', Icon: Code2, content: sp.examples });
-    if (sp.errorHandling) builtIn.push({ key: 'errorHandling', label: 'Error Handling', Icon: ShieldAlert, content: sp.errorHandling });
+    if (sp.identity) list.push({ key: 'identity', label: 'Identity', Icon: Brain, content: sp.identity });
+    if (sp.instructions) list.push({ key: 'instructions', label: 'Instructions', Icon: FileText, content: sp.instructions });
+    if (sp.toolGuidance) list.push({ key: 'toolGuidance', label: 'Tool Guidance', Icon: Wrench, content: sp.toolGuidance });
+    if (sp.examples) list.push({ key: 'examples', label: 'Examples', Icon: Code2, content: sp.examples });
+    if (sp.errorHandling) list.push({ key: 'errorHandling', label: 'Error Handling', Icon: ShieldAlert, content: sp.errorHandling });
 
     if (sp.customSections) {
       for (const cs of sp.customSections) {
-        builtIn.push({
-          key: `custom_${cs.label}`,
+        list.push({
+          key: `custom_${cs.key}`,
           label: cs.label,
           Icon: Sparkles,
           content: cs.content,
@@ -48,84 +47,89 @@ export function TemplatePromptPreview({
       }
     }
 
-    return builtIn;
+    return list;
   }, [designResult.structured_prompt]);
 
-  const toggleSection = (key: string) => {
-    setOpenSections((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  };
+  const [activeTab, setActiveTab] = useState(tabs[0]?.key ?? '');
+  const [showFullPrompt, setShowFullPrompt] = useState(false);
+  const activeSection = tabs.find((t) => t.key === activeTab);
+
+  if (tabs.length === 0) return null;
 
   return (
-    <div>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2.5 text-sm font-semibold text-foreground/70 tracking-wide hover:text-foreground/90 transition-colors"
-      >
-        {isOpen ? (
-          <ChevronDown className="w-3.5 h-3.5" />
-        ) : (
-          <ChevronRight className="w-3.5 h-3.5" />
-        )}
-        Prompt Preview
-        <span className="text-xs text-muted-foreground/40 font-normal">
-          ({sections.length} sections)
-        </span>
-      </button>
+    <div className="bg-secondary/20 border border-primary/10 rounded-xl overflow-hidden">
+      {/* Tab bar */}
+      <div className="flex items-center gap-1 px-3 pt-3 pb-0 overflow-x-auto scrollbar-none">
+        {tabs.map((tab) => {
+          const TabIcon = tab.Icon;
+          const isActive = tab.key === activeTab;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-t-lg border border-b-0 transition-all whitespace-nowrap ${
+                isActive
+                  ? 'bg-violet-500/10 border-violet-500/20 text-violet-300'
+                  : 'border-transparent text-muted-foreground/50 hover:text-muted-foreground/70 hover:bg-secondary/40'
+              }`}
+            >
+              <TabIcon className="w-3.5 h-3.5" />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
 
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: 'easeInOut' }}
-            className="overflow-hidden"
+      {/* Content area */}
+      <div className="border-t border-primary/10">
+        <AnimatePresence mode="wait">
+          {activeSection && (
+            <motion.div
+              key={activeSection.key}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.15 }}
+              className="max-h-[400px] overflow-y-auto p-4"
+            >
+              <MarkdownRenderer content={activeSection.content} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Full prompt toggle */}
+      {designResult.full_prompt_markdown && (
+        <div className="border-t border-primary/10">
+          <button
+            onClick={() => setShowFullPrompt(!showFullPrompt)}
+            className="flex items-center gap-2 px-4 py-2.5 text-xs text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors w-full"
           >
-            <div className="mt-3 space-y-1.5">
-              {sections.map((section) => {
-                const SectionIcon = section.Icon;
-                const sectionOpen = openSections.has(section.key);
-                return (
-                  <div key={section.key} className="bg-secondary/20 border border-primary/[0.08] rounded-lg overflow-hidden">
-                    <button
-                      onClick={() => toggleSection(section.key)}
-                      className="flex items-center gap-2.5 px-3.5 py-2.5 w-full text-left hover:bg-primary/5 transition-colors"
-                    >
-                      {sectionOpen ? (
-                        <ChevronDown className="w-3 h-3 text-muted-foreground/40" />
-                      ) : (
-                        <ChevronRight className="w-3 h-3 text-muted-foreground/40" />
-                      )}
-                      <SectionIcon className="w-3.5 h-3.5 text-violet-400/70" />
-                      <span className="text-xs font-medium text-foreground/60">{section.label}</span>
-                    </button>
-                    <AnimatePresence initial={false}>
-                      {sectionOpen && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.15 }}
-                          className="overflow-hidden"
-                        >
-                          <div className="px-3.5 py-2.5 border-t border-primary/[0.08] max-h-[300px] overflow-y-auto">
-                            <pre className="text-xs text-foreground/60 whitespace-pre-wrap font-sans leading-relaxed">{section.content}</pre>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                );
-              })}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <Eye className="w-3.5 h-3.5" />
+            {showFullPrompt ? 'Hide' : 'View'} Full Prompt
+            {showFullPrompt ? (
+              <ChevronDown className="w-3 h-3 ml-auto" />
+            ) : (
+              <ChevronRight className="w-3 h-3 ml-auto" />
+            )}
+          </button>
+          <AnimatePresence>
+            {showFullPrompt && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="max-h-[500px] overflow-y-auto px-4 pb-4 border-t border-primary/[0.06]">
+                  <MarkdownRenderer content={designResult.full_prompt_markdown} className="mt-3" />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 }

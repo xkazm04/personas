@@ -15,7 +15,9 @@ use crate::db::repos::communication::{
 };
 use crate::db::repos::core::memories as mem_repo;
 use crate::db::repos::execution::tool_usage as usage_repo;
-use crate::db::repos::resources::{connectors as connector_repo, credentials as cred_repo};
+use crate::db::repos::resources::{
+    audit_log, connectors as connector_repo, credentials as cred_repo,
+};
 use crate::db::DbPool;
 
 use super::logger::ExecutionLogger;
@@ -102,7 +104,7 @@ pub async fn run_execution(
     let mut cli_args = prompt::build_cli_args(&persona, &model_profile);
 
     // Inject decrypted service credentials as env vars
-    let (cred_env, cred_hints) = resolve_credential_env_vars(&pool, &tools);
+    let (cred_env, cred_hints) = resolve_credential_env_vars(&pool, &tools, &persona.id, &persona.name);
     for (key, val) in cred_env {
         cli_args.env_overrides.push((key, val));
     }
@@ -654,6 +656,8 @@ fn default_result() -> ExecutionResult {
 fn resolve_credential_env_vars(
     pool: &DbPool,
     tools: &[PersonaToolDefinition],
+    persona_id: &str,
+    persona_name: &str,
 ) -> (Vec<(String, String)>, Vec<String>) {
     let mut env_vars: Vec<(String, String)> = Vec::new();
     let mut hints: Vec<String> = Vec::new();
@@ -718,8 +722,17 @@ fn resolve_credential_env_vars(
                     ));
                 }
 
-                // Mark credential as used
+                // Mark credential as used and log the access
                 let _ = cred_repo::mark_used(pool, &cred.id);
+                let _ = audit_log::insert(
+                    pool,
+                    &cred.id,
+                    &cred.name,
+                    "decrypt",
+                    Some(persona_id),
+                    Some(persona_name),
+                    Some(&format!("injected via connector '{}'", connector.label)),
+                );
             }
         }
     }

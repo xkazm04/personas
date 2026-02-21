@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, AlertTriangle, Wrench, CheckCircle, Copy, ClipboardCheck } from 'lucide-react';
+import { X, AlertTriangle, Wrench, CheckCircle, Copy, ClipboardCheck, Zap, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 import { SEVERITY_COLORS, HEALING_CATEGORY_COLORS } from '@/lib/utils/formatters';
@@ -17,6 +17,7 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
   const sev = SEVERITY_COLORS[issue.severity] ?? defaultSev;
   const cat = HEALING_CATEGORY_COLORS[issue.category] ?? defaultCat;
   const isAutoFixed = issue.auto_fixed;
+  const isCircuitBreaker = /circuit\s*breaker/i.test(issue.title);
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -153,8 +154,13 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
               <div className="flex items-start justify-between p-5 border-b border-primary/10">
                 <div className="flex-1 min-w-0 pr-4">
                   <h3 id="healing-issue-title" className="text-sm font-semibold text-foreground/90 mb-2">{issue.title}</h3>
-                  <div className="flex items-center gap-2">
-                    {isAutoFixed ? (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {isCircuitBreaker ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono uppercase rounded-md border bg-red-500/15 text-red-400 border-red-500/25">
+                        <Zap className="w-3 h-3" />
+                        circuit breaker
+                      </span>
+                    ) : isAutoFixed ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono uppercase rounded-md border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
                         <CheckCircle className="w-3 h-3" />
                         auto-fixed
@@ -163,6 +169,12 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono uppercase rounded-md border ${sev.bg} ${sev.text} ${sev.border}`}>
                         <AlertTriangle className="w-3 h-3" />
                         {issue.severity}
+                      </span>
+                    )}
+                    {isAutoFixed && issue.execution_id && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                        <RefreshCw className="w-2.5 h-2.5" />
+                        healed via retry
                       </span>
                     )}
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono uppercase rounded-md border ${cat.bg} ${cat.text} ${cat.border}`}>
@@ -185,6 +197,17 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
 
               {/* Description */}
               <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
+                {isCircuitBreaker && (
+                  <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-red-500/10 border border-red-500/20">
+                    <Zap className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-red-300/90">Persona auto-disabled</p>
+                      <p className="text-xs text-red-300/60 mt-1">
+                        This persona was automatically disabled after 5 consecutive failures. Review the error pattern below and re-enable manually once the root cause is resolved.
+                      </p>
+                    </div>
+                  </div>
+                )}
                 <div>
                   <h4 className="text-xs font-mono uppercase text-muted-foreground/50 mb-2">Analysis</h4>
                   <div className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">

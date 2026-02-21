@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
-import { ChevronDown, ChevronRight, RotateCw, Copy, Check } from 'lucide-react';
+import { ChevronDown, ChevronRight, RotateCw, Copy, Check, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as api from '@/api/tauriApi';
 import { formatTimestamp, formatDuration, formatRelativeTime, EXECUTION_STATUS_COLORS, badgeClass } from '@/lib/utils/formatters';
@@ -106,6 +106,13 @@ export function ExecutionList() {
               </span>
             );
 
+            const retryBadge = execution.retry_count > 0 ? (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" title={`Healing retry #${execution.retry_count}`}>
+                <RefreshCw className="w-2.5 h-2.5" />
+                #{execution.retry_count}
+              </span>
+            ) : null;
+
             const duration = (
               <span className="text-sm text-foreground/70 font-mono">
                 {formatDuration(execution.duration_ms)}
@@ -122,6 +129,7 @@ export function ExecutionList() {
                   <div className="col-span-2 flex items-center gap-2">
                     {chevron}
                     {statusBadge}
+                    {retryBadge}
                   </div>
                   <div className="col-span-2 flex items-center">
                     {duration}
@@ -149,6 +157,7 @@ export function ExecutionList() {
                   <div className="flex items-center gap-2">
                     {chevron}
                     {statusBadge}
+                    {retryBadge}
                     {duration}
                     <span className="text-[10px] text-muted-foreground/40 ml-auto">
                       {formatRelativeTime(execution.started_at)}

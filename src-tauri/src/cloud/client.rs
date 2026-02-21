@@ -1,3 +1,4 @@
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -123,7 +124,6 @@ pub struct CloudClient {
     api_key: String,
 }
 
-#[allow(dead_code)]
 impl CloudClient {
     /// Create a new `CloudClient` with the given orchestrator base URL and API key.
     ///
@@ -142,39 +142,53 @@ impl CloudClient {
     }
 
     // --------------------------------------------------------------------
+    // Private HTTP helpers
+    // --------------------------------------------------------------------
+
+    /// Build an authenticated request to the given endpoint path.
+    fn authed(&self, method: reqwest::Method, path: &str) -> reqwest::RequestBuilder {
+        self.http
+            .request(method, format!("{}{}", self.base_url, path))
+            .bearer_auth(&self.api_key)
+    }
+
+    /// Send a request, check the status code, and deserialize the JSON response.
+    async fn send_json<T: DeserializeOwned>(
+        &self,
+        req: reqwest::RequestBuilder,
+    ) -> Result<T, AppError> {
+        req.send()
+            .await
+            .map_err(cloud_err)?
+            .error_for_status()
+            .map_err(cloud_err)?
+            .json()
+            .await
+            .map_err(cloud_err)
+    }
+
+    /// Send a request, check the status code, and discard the response body.
+    async fn send_ok(&self, req: reqwest::RequestBuilder) -> Result<(), AppError> {
+        req.send()
+            .await
+            .map_err(cloud_err)?
+            .error_for_status()
+            .map_err(cloud_err)?;
+        Ok(())
+    }
+
+    // --------------------------------------------------------------------
     // Health & Status
     // --------------------------------------------------------------------
 
     /// `GET /health` -- basic health check.
     pub async fn health(&self) -> Result<CloudHealthResponse, AppError> {
-        let url = format!("{}/health", self.base_url);
-        let resp = self
-            .http
-            .get(&url)
-            .bearer_auth(&self.api_key)
-            .send()
-            .await
-            .map_err(cloud_err)?
-            .error_for_status()
-            .map_err(cloud_err)?;
-
-        resp.json::<CloudHealthResponse>().await.map_err(cloud_err)
+        self.send_json(self.authed(reqwest::Method::GET, "/health")).await
     }
 
     /// `GET /api/status` -- orchestrator status including worker counts and OAuth state.
     pub async fn status(&self) -> Result<CloudStatusResponse, AppError> {
-        let url = format!("{}/api/status", self.base_url);
-        let resp = self
-            .http
-            .get(&url)
-            .bearer_auth(&self.api_key)
-            .send()
-            .await
-            .map_err(cloud_err)?
-            .error_for_status()
-            .map_err(cloud_err)?;
-
-        resp.json::<CloudStatusResponse>().await.map_err(cloud_err)
+        self.send_json(self.authed(reqwest::Method::GET, "/api/status")).await
     }
 
     // --------------------------------------------------------------------
@@ -188,25 +202,10 @@ impl CloudClient {
         persona_id: &str,
         timeout_ms: Option<u64>,
     ) -> Result<CloudSubmitResponse, AppError> {
-        let url = format!("{}/api/execute", self.base_url);
-        let body = SubmitExecutionBody {
-            prompt,
-            persona_id,
-            timeout_ms,
-        };
-
-        let resp = self
-            .http
-            .post(&url)
-            .bearer_auth(&self.api_key)
-            .json(&body)
-            .send()
-            .await
-            .map_err(cloud_err)?
-            .error_for_status()
-            .map_err(cloud_err)?;
-
-        resp.json::<CloudSubmitResponse>().await.map_err(cloud_err)
+        let req = self
+            .authed(reqwest::Method::POST, "/api/execute")
+            .json(&SubmitExecutionBody { prompt, persona_id, timeout_ms });
+        self.send_json(req).await
     }
 
     /// `GET /api/executions/{id}?offset={offset}` -- poll execution progress.
@@ -215,41 +214,14 @@ impl CloudClient {
         execution_id: &str,
         offset: u32,
     ) -> Result<CloudExecutionPoll, AppError> {
-        let url = format!(
-            "{}/api/executions/{}?offset={}",
-            self.base_url, execution_id, offset
-        );
-
-        let resp = self
-            .http
-            .get(&url)
-            .bearer_auth(&self.api_key)
-            .send()
-            .await
-            .map_err(cloud_err)?
-            .error_for_status()
-            .map_err(cloud_err)?;
-
-        resp.json::<CloudExecutionPoll>().await.map_err(cloud_err)
+        let path = format!("/api/executions/{}?offset={}", execution_id, offset);
+        self.send_json(self.authed(reqwest::Method::GET, &path)).await
     }
 
     /// `POST /api/executions/{id}/cancel` -- cancel a running execution.
     pub async fn cancel_execution(&self, execution_id: &str) -> Result<(), AppError> {
-        let url = format!(
-            "{}/api/executions/{}/cancel",
-            self.base_url, execution_id
-        );
-
-        self.http
-            .post(&url)
-            .bearer_auth(&self.api_key)
-            .send()
-            .await
-            .map_err(cloud_err)?
-            .error_for_status()
-            .map_err(cloud_err)?;
-
-        Ok(())
+        let path = format!("/api/executions/{}/cancel", execution_id);
+        self.send_ok(self.authed(reqwest::Method::POST, &path)).await
     }
 
     // --------------------------------------------------------------------
@@ -258,20 +230,7 @@ impl CloudClient {
 
     /// `POST /api/oauth/authorize` -- initiate OAuth authorization flow.
     pub async fn oauth_authorize(&self) -> Result<CloudOAuthAuthorizeResponse, AppError> {
-        let url = format!("{}/api/oauth/authorize", self.base_url);
-        let resp = self
-            .http
-            .post(&url)
-            .bearer_auth(&self.api_key)
-            .send()
-            .await
-            .map_err(cloud_err)?
-            .error_for_status()
-            .map_err(cloud_err)?;
-
-        resp.json::<CloudOAuthAuthorizeResponse>()
-            .await
-            .map_err(cloud_err)
+        self.send_json(self.authed(reqwest::Method::POST, "/api/oauth/authorize")).await
     }
 
     /// `POST /api/oauth/callback` -- exchange authorization code for tokens.
@@ -280,70 +239,24 @@ impl CloudClient {
         code: &str,
         state: &str,
     ) -> Result<serde_json::Value, AppError> {
-        let url = format!("{}/api/oauth/callback", self.base_url);
-        let body = OAuthCallbackBody { code, state };
-
-        let resp = self
-            .http
-            .post(&url)
-            .bearer_auth(&self.api_key)
-            .json(&body)
-            .send()
-            .await
-            .map_err(cloud_err)?
-            .error_for_status()
-            .map_err(cloud_err)?;
-
-        resp.json::<serde_json::Value>().await.map_err(cloud_err)
+        let req = self
+            .authed(reqwest::Method::POST, "/api/oauth/callback")
+            .json(&OAuthCallbackBody { code, state });
+        self.send_json(req).await
     }
 
     /// `GET /api/oauth/status` -- check current OAuth connection status.
     pub async fn oauth_status(&self) -> Result<CloudOAuthStatusResponse, AppError> {
-        let url = format!("{}/api/oauth/status", self.base_url);
-        let resp = self
-            .http
-            .get(&url)
-            .bearer_auth(&self.api_key)
-            .send()
-            .await
-            .map_err(cloud_err)?
-            .error_for_status()
-            .map_err(cloud_err)?;
-
-        resp.json::<CloudOAuthStatusResponse>()
-            .await
-            .map_err(cloud_err)
+        self.send_json(self.authed(reqwest::Method::GET, "/api/oauth/status")).await
     }
 
     /// `POST /api/oauth/refresh` -- refresh the OAuth token.
     pub async fn oauth_refresh(&self) -> Result<serde_json::Value, AppError> {
-        let url = format!("{}/api/oauth/refresh", self.base_url);
-        let resp = self
-            .http
-            .post(&url)
-            .bearer_auth(&self.api_key)
-            .send()
-            .await
-            .map_err(cloud_err)?
-            .error_for_status()
-            .map_err(cloud_err)?;
-
-        resp.json::<serde_json::Value>().await.map_err(cloud_err)
+        self.send_json(self.authed(reqwest::Method::POST, "/api/oauth/refresh")).await
     }
 
     /// `DELETE /api/oauth/disconnect` -- disconnect the OAuth integration.
     pub async fn oauth_disconnect(&self) -> Result<(), AppError> {
-        let url = format!("{}/api/oauth/disconnect", self.base_url);
-
-        self.http
-            .delete(&url)
-            .bearer_auth(&self.api_key)
-            .send()
-            .await
-            .map_err(cloud_err)?
-            .error_for_status()
-            .map_err(cloud_err)?;
-
-        Ok(())
+        self.send_ok(self.authed(reqwest::Method::DELETE, "/api/oauth/disconnect")).await
     }
 }

@@ -218,7 +218,7 @@ You MUST output your result as a single JSON code block. The JSON must conform t
 Important rules:
 1. `match_existing` — set to the existing connector `name` string if the user's request matches an existing connector listed above, or `null` if a new connector is needed. When matching existing, still provide the full `connector` object matching the existing definition.
 2. `connector.name` — lowercase snake_case identifier (e.g. `slack`, `github`, `openai_api`)
-3. `connector.oauth_type` — set to `"google"` for Google OAuth connectors (`gmail`, `google_calendar`, `google_drive`), otherwise `null`.
+3. `connector.oauth_type` — set to the provider ID when the service uses OAuth 2.0. Supported values: `"google"` (Gmail, Google Calendar, Google Drive), `"microsoft"` (Microsoft 365, Outlook, Azure), `"github"` (GitHub), `"slack"` (Slack), `"atlassian"` (Jira, Confluence), `"salesforce"` (Salesforce), `"discord"` (Discord), `"spotify"` (Spotify), `"linear"` (Linear), `"notion"` (Notion). Set to `null` for services that only use API keys/tokens.
 4. `connector.fields` — each field needs: `key` (snake_case), `label`, `type` ("text" or "password"), `required` (boolean), `placeholder`, optional `helpText`
 5. `connector.fields[].type` — use "password" for API keys, tokens, refresh tokens, and secrets; "text" for everything else.
 6. `connector.fields[].helpText` — provide concise, practical setup guidance for the user when useful.
@@ -226,12 +226,13 @@ Important rules:
 8. For Google OAuth connectors, do NOT include a `redirect_uri` credential field. Redirect/callback handling is application-managed.
 9. For Google OAuth connectors, `setup_instructions` should guide users to create a Google Cloud OAuth client and then authorize in-app to obtain refresh token.
 10. For general Google office automation requests, prefer setup language that requests broad baseline consent across Gmail, Google Drive, and Google Calendar, while making it clear users may uncheck permissions at consent time.
-11. `connector.healthcheck_config` — provide if the service has a simple health/auth-check endpoint, otherwise set to `null`. Use `{{field_key}}` placeholders in URL and headers to reference credential field values.
-12. `connector.services` — JSON array of service definitions (can be empty `[]`)
-13. `connector.events` — JSON array of event definitions (can be empty `[]`)
-14. `setup_instructions` — markdown instructions helping the user obtain the required credentials
-15. `connector.color` — a brand-appropriate hex color for the service
-16. Output ONLY the JSON block — no additional text before or after
+11. For non-Google OAuth providers (Microsoft, GitHub, Slack, Atlassian, Salesforce, etc.): include `client_id` and `client_secret` fields (both required). Include `access_token` field (type "password", required: false, helpText: "Auto-filled after OAuth authorization"). Set `connector.oauth_type` to the provider ID. In `setup_instructions`, guide users to create an OAuth application on the provider's developer portal and then authorize in-app.
+12. `connector.healthcheck_config` — provide if the service has a simple health/auth-check endpoint, otherwise set to `null`. Use `{{field_key}}` placeholders in URL and headers to reference credential field values.
+13. `connector.services` — JSON array of service definitions (can be empty `[]`)
+14. `connector.events` — JSON array of event definitions (can be empty `[]`)
+15. `setup_instructions` — markdown instructions helping the user obtain the required credentials
+16. `connector.color` — a brand-appropriate hex color for the service
+17. Output ONLY the JSON block — no additional text before or after
 "####;
 
 const CREDENTIAL_HEALTHCHECK_OUTPUT_SCHEMA: &str = r####"## Required Output Format

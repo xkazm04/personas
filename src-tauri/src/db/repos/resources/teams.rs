@@ -2,7 +2,7 @@ use rusqlite::{params, Row};
 
 use crate::db::models::{
     CreateTeamInput, PersonaTeam, PersonaTeamConnection, PersonaTeamMember, PipelineRun,
-    UpdateTeamInput,
+    TeamCounts, UpdateTeamInput,
 };
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -53,6 +53,19 @@ fn row_to_connection(row: &Row) -> rusqlite::Result<PersonaTeamConnection> {
     })
 }
 
+fn row_to_pipeline_run(row: &Row) -> rusqlite::Result<PipelineRun> {
+    Ok(PipelineRun {
+        id: row.get("id")?,
+        team_id: row.get("team_id")?,
+        status: row.get("status")?,
+        node_statuses: row.get("node_statuses")?,
+        input_data: row.get("input_data")?,
+        started_at: row.get("started_at")?,
+        completed_at: row.get("completed_at")?,
+        error_message: row.get("error_message")?,
+    })
+}
+
 // ============================================================================
 // Team CRUD
 // ============================================================================
@@ -61,7 +74,35 @@ pub fn get_all(pool: &DbPool) -> Result<Vec<PersonaTeam>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare("SELECT * FROM persona_teams ORDER BY updated_at DESC")?;
     let rows = stmt.query_map([], row_to_team)?;
-    Ok(rows.filter_map(|r| r.ok()).collect())
+    let teams = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+    Ok(teams)
+}
+
+/// Fetch member and connection counts for all teams in a single query.
+pub fn get_all_team_counts(pool: &DbPool) -> Result<Vec<TeamCounts>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT
+             t.id AS team_id,
+             COALESCE(m.cnt, 0) AS member_count,
+             COALESCE(c.cnt, 0) AS connection_count
+         FROM persona_teams t
+         LEFT JOIN (
+             SELECT team_id, COUNT(*) AS cnt FROM persona_team_members GROUP BY team_id
+         ) m ON m.team_id = t.id
+         LEFT JOIN (
+             SELECT team_id, COUNT(*) AS cnt FROM persona_team_connections GROUP BY team_id
+         ) c ON c.team_id = t.id",
+    )?;
+    let rows = stmt.query_map([], |row| {
+        Ok(TeamCounts {
+            team_id: row.get("team_id")?,
+            member_count: row.get("member_count")?,
+            connection_count: row.get("connection_count")?,
+        })
+    })?;
+    let counts = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+    Ok(counts)
 }
 
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaTeam, AppError> {
@@ -178,7 +219,8 @@ pub fn get_members(pool: &DbPool, team_id: &str) -> Result<Vec<PersonaTeamMember
         "SELECT * FROM persona_team_members WHERE team_id = ?1 ORDER BY created_at ASC",
     )?;
     let rows = stmt.query_map(params![team_id], row_to_member)?;
-    Ok(rows.filter_map(|r| r.ok()).collect())
+    let members = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+    Ok(members)
 }
 
 pub fn add_member(
@@ -292,7 +334,8 @@ pub fn get_connections(
         "SELECT * FROM persona_team_connections WHERE team_id = ?1 ORDER BY created_at ASC",
     )?;
     let rows = stmt.query_map(params![team_id], row_to_connection)?;
-    Ok(rows.filter_map(|r| r.ok()).collect())
+    let connections = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+    Ok(connections)
 }
 
 pub fn create_connection(
@@ -326,6 +369,19 @@ pub fn create_connection(
         label,
         created_at: now,
     })
+}
+
+pub fn update_connection_type(
+    pool: &DbPool,
+    id: &str,
+    connection_type: &str,
+) -> Result<(), AppError> {
+    let conn = pool.get()?;
+    conn.execute(
+        "UPDATE persona_team_connections SET connection_type = ?1 WHERE id = ?2",
+        params![connection_type, id],
+    )?;
+    Ok(())
 }
 
 pub fn delete_connection(pool: &DbPool, id: &str) -> Result<bool, AppError> {
@@ -382,18 +438,7 @@ pub fn get_pipeline_run(pool: &DbPool, id: &str) -> Result<PipelineRun, AppError
     conn.query_row(
         "SELECT * FROM pipeline_runs WHERE id = ?1",
         params![id],
-        |row| {
-            Ok(PipelineRun {
-                id: row.get("id")?,
-                team_id: row.get("team_id")?,
-                status: row.get("status")?,
-                node_statuses: row.get("node_statuses")?,
-                input_data: row.get("input_data")?,
-                started_at: row.get("started_at")?,
-                completed_at: row.get("completed_at")?,
-                error_message: row.get("error_message")?,
-            })
-        },
+        row_to_pipeline_run,
     )
     .map_err(|e| match e {
         rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("PipelineRun {id}")),
@@ -406,19 +451,9 @@ pub fn list_pipeline_runs(pool: &DbPool, team_id: &str) -> Result<Vec<PipelineRu
     let mut stmt = conn.prepare(
         "SELECT * FROM pipeline_runs WHERE team_id = ?1 ORDER BY started_at DESC LIMIT 50",
     )?;
-    let rows = stmt.query_map(params![team_id], |row| {
-        Ok(PipelineRun {
-            id: row.get("id")?,
-            team_id: row.get("team_id")?,
-            status: row.get("status")?,
-            node_statuses: row.get("node_statuses")?,
-            input_data: row.get("input_data")?,
-            started_at: row.get("started_at")?,
-            completed_at: row.get("completed_at")?,
-            error_message: row.get("error_message")?,
-        })
-    })?;
-    Ok(rows.filter_map(|r| r.ok()).collect())
+    let rows = stmt.query_map(params![team_id], row_to_pipeline_run)?;
+    let runs = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+    Ok(runs)
 }
 
 #[cfg(test)]

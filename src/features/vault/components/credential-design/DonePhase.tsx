@@ -1,12 +1,13 @@
 import { motion } from 'framer-motion';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, ArrowRight } from 'lucide-react';
 
 interface DonePhaseProps {
   connectorLabel?: string;
   onClose: () => void;
+  onViewCredential?: () => void;
 }
 
-export function DonePhase({ connectorLabel, onClose }: DonePhaseProps) {
+export function DonePhase({ connectorLabel, onClose, onViewCredential }: DonePhaseProps) {
   return (
     <motion.div
       key="done"
@@ -24,12 +25,23 @@ export function DonePhase({ connectorLabel, onClose }: DonePhaseProps) {
           {connectorLabel} credential has been securely saved.
         </p>
       </div>
-      <button
-        onClick={onClose}
-        className="mt-2 px-5 py-2 bg-primary hover:bg-primary/90 text-foreground rounded-xl text-sm font-medium transition-all"
-      >
-        Done
-      </button>
+      <div className="flex items-center gap-2 mt-2">
+        <button
+          onClick={onClose}
+          className="px-5 py-2 bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/70 rounded-xl text-sm font-medium transition-all"
+        >
+          Done
+        </button>
+        {onViewCredential && (
+          <button
+            onClick={onViewCredential}
+            className="flex items-center gap-1.5 px-5 py-2 bg-primary hover:bg-primary/90 text-foreground rounded-xl text-sm font-medium transition-all"
+          >
+            View Credential
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
     </motion.div>
   );
 }

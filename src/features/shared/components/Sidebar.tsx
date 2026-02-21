@@ -1,13 +1,13 @@
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Eye, Users, Radio, Brain, DollarSign, Cloud, Plus, LayoutTemplate, Monitor } from 'lucide-react';
+import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Eye, Users, Radio, Brain, DollarSign, Cloud, Plus, LayoutTemplate, Monitor, Blocks, Upload, List, Settings, Chrome, Palette, Bell } from 'lucide-react';
 import { getVersion } from '@tauri-apps/api/app';
 import { usePersonaStore } from '@/stores/personaStore';
-import type { SidebarSection, OverviewTab } from '@/lib/types/types';
+import type { SidebarSection, OverviewTab, TemplateTab, SettingsTab } from '@/lib/types/types';
 import GroupedAgentSidebar from '@/features/agents/components/GroupedAgentSidebar';
 import CreatePersonaModal from '@/features/agents/components/CreatePersonaModal';
-import AuthButton from '@/features/shared/components/AuthButton';
-import ThemeSelector from '@/features/shared/components/ThemeSelector';
+
+const disabledSections = new Set<SidebarSection>(['team', 'cloud']);
 
 const sections: Array<{ id: SidebarSection; icon: typeof Bot; label: string }> = [
   { id: 'overview', icon: BarChart3, label: 'Overview' },
@@ -17,6 +17,7 @@ const sections: Array<{ id: SidebarSection; icon: typeof Bot; label: string }> =
   { id: 'design-reviews', icon: FlaskConical, label: 'Templates' },
   { id: 'team', icon: Users, label: 'Teams' },
   { id: 'cloud', icon: Cloud, label: 'Cloud' },
+  { id: 'settings', icon: Settings, label: 'Settings' },
 ];
 
 export default function Sidebar() {
@@ -28,12 +29,17 @@ export default function Sidebar() {
   const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
   const overviewTab = usePersonaStore((s) => s.overviewTab);
   const setOverviewTab = usePersonaStore((s) => s.setOverviewTab);
+  const templateTab = usePersonaStore((s) => s.templateTab);
+  const setTemplateTab = usePersonaStore((s) => s.setTemplateTab);
   const pendingReviewCount = usePersonaStore((s) => s.pendingReviewCount);
   const fetchPendingReviewCount = usePersonaStore((s) => s.fetchPendingReviewCount);
   const unreadMessageCount = usePersonaStore((s) => s.unreadMessageCount);
   const fetchUnreadMessageCount = usePersonaStore((s) => s.fetchUnreadMessageCount);
   const pendingEventCount = usePersonaStore((s) => s.pendingEventCount);
   const fetchRecentEvents = usePersonaStore((s) => s.fetchRecentEvents);
+  const n8nTransformActive = usePersonaStore((s) => s.n8nTransformActive);
+  const settingsTab = usePersonaStore((s) => s.settingsTab);
+  const setSettingsTab = usePersonaStore((s) => s.setSettingsTab);
 
   const templateCount = connectorDefinitions.filter((conn) => {
     const metadata = conn.metadata as Record<string, unknown> | null;
@@ -202,14 +208,46 @@ export default function Sidebar() {
     }
 
     if (sidebarSection === 'design-reviews') {
+      const templateItems: Array<{ id: TemplateTab; label: string; icon: typeof Blocks }> = [
+        { id: 'builtin', label: 'Built-in Templates', icon: Blocks },
+        { id: 'n8n', label: 'n8n Import', icon: Upload },
+        { id: 'generated', label: 'Generated', icon: List },
+      ];
+
       return (
-        <div className="text-center py-12">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
-            <FlaskConical className="w-6 h-6 text-violet-400/60" />
-          </div>
-          <p className="text-sm text-muted-foreground/60">Agentic Templates</p>
-          <p className="text-xs text-muted-foreground/40 mt-1">Browse and adopt persona templates</p>
-        </div>
+        <>
+          {templateItems.map((item) => {
+            const active = templateTab === item.id;
+            const ItemIcon = item.icon;
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setSidebarSection('design-reviews');
+                  setTemplateTab(item.id);
+                }}
+                className={`w-full mb-1 p-2.5 rounded-xl border transition-all text-left ${
+                  active
+                    ? 'bg-primary/10 border-primary/20'
+                    : 'bg-secondary/30 border-primary/10 hover:bg-secondary/50'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-7 h-7 rounded-lg border flex items-center justify-center ${
+                    active
+                      ? 'bg-primary/15 border-primary/25'
+                      : 'bg-secondary/40 border-primary/15'
+                  }`}>
+                    <ItemIcon className={`w-3.5 h-3.5 ${active ? 'text-primary' : 'text-muted-foreground/60'}`} />
+                  </div>
+                  <span className={`text-sm ${active ? 'text-foreground/90' : 'text-muted-foreground/65'}`}>
+                    {item.label}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </>
       );
     }
 
@@ -237,6 +275,47 @@ export default function Sidebar() {
       );
     }
 
+    if (sidebarSection === 'settings') {
+      const settingsItems: Array<{ id: SettingsTab; label: string; icon: typeof Chrome }> = [
+        { id: 'account', label: 'Account', icon: Chrome },
+        { id: 'appearance', label: 'Appearance', icon: Palette },
+        { id: 'notifications', label: 'Notifications', icon: Bell },
+      ];
+
+      return (
+        <>
+          {settingsItems.map((item) => {
+            const active = settingsTab === item.id;
+            const ItemIcon = item.icon;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setSettingsTab(item.id)}
+                className={`w-full mb-1 p-2.5 rounded-xl border transition-all text-left ${
+                  active
+                    ? 'bg-primary/10 border-primary/20'
+                    : 'bg-secondary/30 border-primary/10 hover:bg-secondary/50'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-7 h-7 rounded-lg border flex items-center justify-center ${
+                    active
+                      ? 'bg-primary/15 border-primary/25'
+                      : 'bg-secondary/40 border-primary/15'
+                  }`}>
+                    <ItemIcon className={`w-3.5 h-3.5 ${active ? 'text-primary' : 'text-muted-foreground/60'}`} />
+                  </div>
+                  <span className={`text-sm ${active ? 'text-foreground/90' : 'text-muted-foreground/65'}`}>
+                    {item.label}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </>
+      );
+    }
+
     return null;
   };
 
@@ -249,15 +328,19 @@ export default function Sidebar() {
         {sections.map((section) => {
           const Icon = section.icon;
           const isActive = sidebarSection === section.id;
+          const isDisabled = disabledSections.has(section.id);
 
           return (
             <button
               key={section.id}
-              onClick={() => setSidebarSection(section.id)}
-              className="relative w-11 h-11 rounded-xl flex items-center justify-center transition-all group"
-              title={section.label}
+              onClick={() => !isDisabled && setSidebarSection(section.id)}
+              disabled={isDisabled}
+              className={`relative w-11 h-11 rounded-xl flex items-center justify-center transition-all group ${
+                isDisabled ? 'cursor-not-allowed opacity-40' : ''
+              }`}
+              title={isDisabled ? `${section.label} (Coming soon)` : section.label}
             >
-              {isActive && (
+              {isActive && !isDisabled && (
                 <motion.div
                   layoutId="sidebarSectionIndicator"
                   className="absolute inset-0 rounded-xl bg-primary/15 border border-primary/30 shadow-[0_0_12px_rgba(59,130,246,0.15)]"
@@ -265,11 +348,24 @@ export default function Sidebar() {
                 />
               )}
               <Icon className={`relative z-10 w-5 h-5 transition-colors ${
-                isActive ? 'text-primary' : 'text-muted-foreground/50 group-hover:text-foreground/70'
+                isDisabled
+                  ? 'text-muted-foreground/30'
+                  : isActive ? 'text-primary' : 'text-muted-foreground/50 group-hover:text-foreground/70'
               }`} />
+              {isDisabled && (
+                <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 z-20 px-1 py-px text-[7px] font-semibold uppercase tracking-wider leading-none rounded bg-muted-foreground/15 text-muted-foreground/40 whitespace-nowrap">
+                  soon
+                </span>
+              )}
               {section.id === 'overview' && pendingReviewCount > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 z-20 min-w-[16px] h-4 px-1 flex items-center justify-center text-[9px] font-bold leading-none rounded-full bg-amber-500 text-white shadow-sm shadow-amber-500/30">
                   {pendingReviewCount > 99 ? '99+' : pendingReviewCount}
+                </span>
+              )}
+              {section.id === 'design-reviews' && n8nTransformActive && (
+                <span className="absolute -top-0.5 -right-0.5 z-20 w-4 h-4 flex items-center justify-center">
+                  <span className="absolute inset-0 rounded-full bg-amber-500/40 animate-ping" />
+                  <span className="relative w-2.5 h-2.5 rounded-full bg-amber-500 border border-amber-600/50" />
                 </span>
               )}
             </button>
@@ -277,12 +373,6 @@ export default function Sidebar() {
         })}
 
         <div className="flex-1" />
-        <div className="pb-1">
-          <ThemeSelector />
-        </div>
-        <div className="pb-1">
-          <AuthButton />
-        </div>
         {appVersion && (
           <div className="pb-2 pt-1">
             <span className="text-[10px] font-mono text-muted-foreground/40 block text-center">

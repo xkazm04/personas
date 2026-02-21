@@ -1,6 +1,6 @@
 use rusqlite::{params, Row};
 
-use crate::db::models::PersonaHealingIssue;
+use crate::db::models::{HealingKnowledge, PersonaHealingIssue};
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -161,6 +161,117 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
         params![id],
     )?;
     Ok(rows > 0)
+}
+
+// ============================================================================
+// Healing Knowledge Base
+// ============================================================================
+
+fn row_to_knowledge(row: &Row) -> rusqlite::Result<HealingKnowledge> {
+    Ok(HealingKnowledge {
+        id: row.get("id")?,
+        service_type: row.get("service_type")?,
+        pattern_key: row.get("pattern_key")?,
+        description: row.get("description")?,
+        recommended_delay_secs: row.get("recommended_delay_secs")?,
+        occurrence_count: row.get::<_, Option<i64>>("occurrence_count")?.unwrap_or(1),
+        last_seen_at: row.get("last_seen_at")?,
+        created_at: row.get("created_at")?,
+    })
+}
+
+/// Upsert a knowledge entry: increment count if exists, create if not.
+pub fn upsert_knowledge(
+    pool: &DbPool,
+    service_type: &str,
+    pattern_key: &str,
+    description: &str,
+    recommended_delay_secs: Option<i64>,
+) -> Result<HealingKnowledge, AppError> {
+    let conn = pool.get()?;
+    let now = chrono::Utc::now().to_rfc3339();
+
+    // Try to update existing entry
+    let updated = conn.execute(
+        "UPDATE healing_knowledge SET
+            occurrence_count = occurrence_count + 1,
+            last_seen_at = ?1,
+            description = ?2,
+            recommended_delay_secs = COALESCE(?3, recommended_delay_secs)
+         WHERE service_type = ?4 AND pattern_key = ?5",
+        params![now, description, recommended_delay_secs, service_type, pattern_key],
+    )?;
+
+    if updated > 0 {
+        // Return the updated entry
+        let entry = conn.query_row(
+            "SELECT * FROM healing_knowledge WHERE service_type = ?1 AND pattern_key = ?2",
+            params![service_type, pattern_key],
+            row_to_knowledge,
+        )?;
+        return Ok(entry);
+    }
+
+    // Insert new entry
+    let id = uuid::Uuid::new_v4().to_string();
+    conn.execute(
+        "INSERT INTO healing_knowledge
+         (id, service_type, pattern_key, description, recommended_delay_secs, occurrence_count, last_seen_at, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, 1, ?6, ?6)",
+        params![id, service_type, pattern_key, description, recommended_delay_secs, now],
+    )?;
+
+    conn.query_row(
+        "SELECT * FROM healing_knowledge WHERE id = ?1",
+        params![id],
+        row_to_knowledge,
+    )
+    .map_err(AppError::Database)
+}
+
+/// Get knowledge entries for a given service type (e.g., "gmail", "slack").
+pub fn get_knowledge_by_service(
+    pool: &DbPool,
+    service_type: &str,
+) -> Result<Vec<HealingKnowledge>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT * FROM healing_knowledge WHERE service_type = ?1 ORDER BY occurrence_count DESC",
+    )?;
+    let rows = stmt.query_map(params![service_type], row_to_knowledge)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+}
+
+/// Get all knowledge entries.
+pub fn get_all_knowledge(pool: &DbPool) -> Result<Vec<HealingKnowledge>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT * FROM healing_knowledge ORDER BY occurrence_count DESC, last_seen_at DESC",
+    )?;
+    let rows = stmt.query_map([], row_to_knowledge)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+}
+
+/// Look up recommended delay for a specific service + pattern combination.
+/// Returns the recommended delay if a knowledge entry exists with sufficient occurrences.
+pub fn get_recommended_delay(
+    pool: &DbPool,
+    service_type: &str,
+    pattern_key: &str,
+) -> Result<Option<u64>, AppError> {
+    let conn = pool.get()?;
+    let result: Result<Option<i64>, _> = conn.query_row(
+        "SELECT recommended_delay_secs FROM healing_knowledge
+         WHERE service_type = ?1 AND pattern_key = ?2 AND occurrence_count >= 2",
+        params![service_type, pattern_key],
+        |row| row.get(0),
+    );
+    match result {
+        Ok(Some(delay)) => Ok(Some(delay as u64)),
+        Ok(None) => Ok(None),
+        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+        Err(e) => Err(AppError::Database(e)),
+    }
 }
 
 #[cfg(test)]

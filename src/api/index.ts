@@ -20,3 +20,6 @@ export * from "./system";
 export * from "./settings";
 export * from "./importExport";
 export * from "./cloud";
+export * from "./tests";
+export * from "./negotiator";
+export * from "./rotation";

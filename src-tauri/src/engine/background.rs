@@ -21,7 +21,7 @@ pub struct SchedulerState {
     events_processed: AtomicU64,
     events_delivered: AtomicU64,
     events_failed: AtomicU64,
-    triggers_fired: AtomicU64,
+    pub(crate) triggers_fired: AtomicU64,
 }
 
 impl Default for SchedulerState {
@@ -65,15 +65,18 @@ pub struct SchedulerStats {
     pub triggers_fired: u64,
 }
 
-/// Start both background loops. Returns immediately.
+/// Start all background loops. Returns immediately.
+///
+/// Returns a webhook shutdown sender — hold onto it to keep the server running,
+/// send `true` or drop it to trigger graceful shutdown.
 pub fn start_loops(
     scheduler: Arc<SchedulerState>,
     app: AppHandle,
     pool: DbPool,
     engine: Arc<ExecutionEngine>,
-) {
+) -> tokio::sync::watch::Sender<bool> {
     scheduler.running.store(true, Ordering::Relaxed);
-    tracing::info!("Scheduler starting: event bus (2s) + trigger scheduler (5s)");
+    tracing::info!("Scheduler starting: event bus (2s) + trigger scheduler (5s) + polling (dedicated) + webhook server (port 9420)");
 
     // Event bus loop
     tokio::spawn({
@@ -86,12 +89,21 @@ pub fn start_loops(
         }
     });
 
-    // Trigger scheduler loop
+    // Trigger scheduler loop (handles schedule + manual triggers)
     tokio::spawn({
         let scheduler = scheduler.clone();
         let pool = pool.clone();
         async move {
             trigger_scheduler_loop(scheduler, pool).await;
+        }
+    });
+
+    // Polling loop (dedicated for HTTP polling triggers with content-hash diffing)
+    tokio::spawn({
+        let scheduler = scheduler.clone();
+        let pool = pool.clone();
+        async move {
+            polling_loop(scheduler, pool).await;
         }
     });
 
@@ -103,6 +115,28 @@ pub fn start_loops(
             cleanup_loop(scheduler, pool).await;
         }
     });
+
+    // Credential rotation loop (every 60s)
+    tokio::spawn({
+        let scheduler = scheduler.clone();
+        let pool = pool.clone();
+        async move {
+            rotation_loop(scheduler, pool).await;
+        }
+    });
+
+    // Webhook HTTP server
+    let (webhook_shutdown_tx, webhook_shutdown_rx) = tokio::sync::watch::channel(false);
+    tokio::spawn({
+        let pool = pool.clone();
+        async move {
+            if let Err(e) = super::webhook::start_webhook_server(pool, webhook_shutdown_rx).await {
+                tracing::error!("Webhook server failed: {}", e);
+            }
+        }
+    });
+
+    webhook_shutdown_tx
 }
 
 /// Stop both background loops.
@@ -333,6 +367,44 @@ async fn cleanup_loop(scheduler: Arc<SchedulerState>, pool: DbPool) {
             Err(e) => tracing::error!("Event cleanup error: {}", e),
         }
     }
+}
+
+/// Credential rotation: evaluate due policies and detect anomalies.
+async fn rotation_loop(scheduler: Arc<SchedulerState>, pool: DbPool) {
+    // Initial delay — let the app fully start before running rotation checks
+    tokio::time::sleep(Duration::from_secs(30)).await;
+    let mut interval = tokio::time::interval(Duration::from_secs(60));
+    loop {
+        interval.tick().await;
+        if !scheduler.is_running() {
+            break;
+        }
+        super::rotation::evaluate_due_rotations(&pool).await;
+        super::rotation::detect_anomalies(&pool).await;
+    }
+    tracing::info!("Credential rotation loop exited");
+}
+
+/// Polling loop: GETs configured endpoints for polling triggers and fires events
+/// when content changes (detected via SHA-256 content-hash diffing).
+async fn polling_loop(scheduler: Arc<SchedulerState>, pool: DbPool) {
+    // Initial delay — let the app fully start before polling external endpoints
+    tokio::time::sleep(Duration::from_secs(10)).await;
+    let http = reqwest::Client::builder()
+        .timeout(Duration::from_secs(30))
+        .user_agent("Personas-Polling/1.0")
+        .build()
+        .unwrap_or_default();
+
+    let mut interval = tokio::time::interval(Duration::from_secs(10));
+    loop {
+        interval.tick().await;
+        if !scheduler.is_running() {
+            break;
+        }
+        super::polling::poll_due_triggers(&pool, &scheduler, &http).await;
+    }
+    tracing::info!("Polling loop exited");
 }
 
 /// Emit event update to frontend for realtime visualization.

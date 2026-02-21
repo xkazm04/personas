@@ -11,10 +11,11 @@ pub fn list_memories(
     state: State<'_, Arc<AppState>>,
     persona_id: Option<String>,
     category: Option<String>,
+    search: Option<String>,
     limit: Option<i64>,
     offset: Option<i64>,
 ) -> Result<Vec<PersonaMemory>, AppError> {
-    repo::get_all(&state.db, persona_id.as_deref(), category.as_deref(), limit, offset)
+    repo::get_all(&state.db, persona_id.as_deref(), category.as_deref(), search.as_deref(), limit, offset)
 }
 
 #[tauri::command]
@@ -23,6 +24,16 @@ pub fn create_memory(
     input: CreatePersonaMemoryInput,
 ) -> Result<PersonaMemory, AppError> {
     repo::create(&state.db, input)
+}
+
+#[tauri::command]
+pub fn get_memory_count(
+    state: State<'_, Arc<AppState>>,
+    persona_id: Option<String>,
+    category: Option<String>,
+    search: Option<String>,
+) -> Result<i64, AppError> {
+    repo::get_total_count(&state.db, persona_id.as_deref(), category.as_deref(), search.as_deref())
 }
 
 #[tauri::command]

@@ -4,6 +4,7 @@ use std::sync::Arc;
 use serde::Serialize;
 use tauri::State;
 use ts_rs::TS;
+use url::Url;
 
 use crate::cloud;
 use crate::cloud::client::CloudClient;
@@ -27,8 +28,36 @@ pub struct CloudConfig {
 }
 
 // ---------------------------------------------------------------------------
-// Helper
+// Helpers
 // ---------------------------------------------------------------------------
+
+/// Validate that a cloud orchestrator URL is well-formed and uses a safe scheme.
+///
+/// Enforces HTTPS for all remote hosts. HTTP is only permitted for loopback
+/// addresses (`localhost`, `127.0.0.1`, `[::1]`) to support local development.
+fn validate_cloud_url(raw: &str) -> Result<Url, AppError> {
+    let parsed = Url::parse(raw)
+        .map_err(|e| AppError::Cloud(format!("Invalid orchestrator URL: {e}")))?;
+
+    match parsed.scheme() {
+        "https" => Ok(parsed),
+        "http" => {
+            let host = parsed.host_str().unwrap_or("");
+            if host == "localhost" || host == "127.0.0.1" || host == "[::1]" {
+                Ok(parsed)
+            } else {
+                Err(AppError::Cloud(
+                    "HTTP is only allowed for localhost. Use HTTPS for remote orchestrators \
+                     to protect your API key in transit."
+                        .into(),
+                ))
+            }
+        }
+        other => Err(AppError::Cloud(format!(
+            "Unsupported URL scheme \"{other}://\". Use HTTPS (or HTTP for localhost)."
+        ))),
+    }
+}
 
 async fn get_cloud_client(state: &AppState) -> Result<Arc<CloudClient>, AppError> {
     state
@@ -58,13 +87,53 @@ pub async fn cloud_connect(
         return Err(AppError::Cloud("API key must not be empty".into()));
     }
 
-    cloud::config::store_cloud_config(&url, &api_key)
+    let parsed = validate_cloud_url(url.trim())?;
+    let normalized = parsed.as_str().trim_end_matches('/').to_string();
+
+    let client = Arc::new(CloudClient::new(normalized.clone(), api_key.clone()));
+
+    // Verify the orchestrator is actually reachable before storing credentials
+    client.health().await.map_err(|e| {
+        AppError::Cloud(format!("Cloud orchestrator is not reachable: {e}"))
+    })?;
+
+    // Only persist credentials after we've confirmed the connection works
+    cloud::config::store_cloud_config(&normalized, &api_key)
         .map_err(|e| AppError::Cloud(format!("Failed to store cloud config: {e}")))?;
 
-    let client = Arc::new(CloudClient::new(url.clone(), api_key.clone()));
     *state.cloud_client.lock().await = Some(client);
 
-    tracing::info!(url = %url, "Connected to cloud orchestrator");
+    tracing::info!(url = %normalized, "Connected to cloud orchestrator");
+    Ok(())
+}
+
+/// Reconnect to the cloud orchestrator using credentials already stored in the
+/// OS keyring.  Called automatically on app startup so users don't have to
+/// re-enter their URL and API key every session.
+#[tauri::command]
+pub async fn cloud_reconnect_from_keyring(
+    state: State<'_, Arc<AppState>>,
+) -> Result<(), AppError> {
+    // Already connected — nothing to do
+    if state.cloud_client.lock().await.is_some() {
+        return Ok(());
+    }
+
+    let (url, api_key) = cloud::config::load_cloud_config()
+        .ok_or_else(|| AppError::Cloud("No cloud credentials stored in keyring".into()))?;
+
+    // Validate stored URL in case it was saved before URL validation was added
+    validate_cloud_url(&url)?;
+
+    let client = Arc::new(CloudClient::new(url.clone(), api_key));
+
+    client.health().await.map_err(|e| {
+        AppError::Cloud(format!("Cloud orchestrator is not reachable: {e}"))
+    })?;
+
+    *state.cloud_client.lock().await = Some(client);
+
+    tracing::info!(url = %url, "Auto-reconnected to cloud orchestrator from keyring");
     Ok(())
 }
 
@@ -154,6 +223,7 @@ pub async fn cloud_execute_persona(
     let client_clone = client.clone();
     let cancelled_clone = cancelled.clone();
     let app_clone = app.clone();
+    let exec_ids_map = state.cloud_exec_ids.clone();
 
     let handle = tokio::spawn(async move {
         let result = cloud::runner::run_cloud_execution(
@@ -164,6 +234,9 @@ pub async fn cloud_execute_persona(
             cancelled_clone.clone(),
         )
         .await;
+
+        // Clean up the local→cloud execution ID mapping
+        exec_ids_map.lock().await.remove(&exec_id);
 
         if !cancelled_clone.load(Ordering::Acquire) {
             let status = if result.success { "completed" } else { "failed" };

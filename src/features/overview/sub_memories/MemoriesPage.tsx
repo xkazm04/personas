@@ -2,13 +2,10 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Brain, Bot, Plus, Star, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
-import { MEMORY_CATEGORY_COLORS } from '@/lib/utils/formatters';
-import type { PersonaMemoryCategory } from '@/lib/types/frontendTypes';
+import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
 import { MemoryRow } from '@/features/overview/sub_memories/MemoryCard';
 import { InlineAddMemoryForm } from '@/features/overview/sub_memories/CreateMemoryForm';
 import { MemoryFilterBar } from '@/features/overview/sub_memories/MemoryFilterBar';
-
-const ALL_CATEGORIES: PersonaMemoryCategory[] = ['fact', 'preference', 'instruction', 'context', 'learned', 'custom'];
 
 type SortColumn = 'importance' | 'created_at';
 type SortDirection = 'asc' | 'desc';
@@ -35,13 +32,14 @@ export default function MemoriesPage() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Fetch on filter change (search is applied client-side only)
+  // Fetch on filter change (search is server-side)
   useEffect(() => {
     fetchMemories({
       persona_id: selectedPersonaId || undefined,
       category: selectedCategory || undefined,
+      search: debouncedSearch || undefined,
     });
-  }, [fetchMemories, selectedPersonaId, selectedCategory]);
+  }, [fetchMemories, selectedPersonaId, selectedCategory, debouncedSearch]);
 
   // Build persona lookup
   const personaMap = useMemo(() => {
@@ -60,14 +58,8 @@ export default function MemoriesPage() {
     setSelectedCategory(null);
   }, []);
 
-  // Client-side search filtering (backend filters by persona/category only)
-  const filteredMemories = useMemo(() => {
-    if (!debouncedSearch) return memories;
-    const q = debouncedSearch.toLowerCase();
-    return memories.filter(
-      (m) => m.title.toLowerCase().includes(q) || m.content.toLowerCase().includes(q),
-    );
-  }, [memories, debouncedSearch]);
+  // Server-side search — memories are already filtered by the backend
+  const filteredMemories = memories;
 
   const toggleSort = useCallback((column: SortColumn) => {
     setSort((prev) =>
@@ -119,7 +111,7 @@ export default function MemoriesPage() {
       fact: '#3b82f6', preference: '#f59e0b', instruction: '#8b5cf6',
       context: '#10b981', learned: '#06b6d4', custom: '#6b7280',
     };
-    const segments = ALL_CATEGORIES
+    const segments = ALL_MEMORY_CATEGORIES
       .filter((cat) => (categoryCounts.get(cat) || 0) > 0)
       .map((cat) => ({
         category: cat,
@@ -133,7 +125,7 @@ export default function MemoriesPage() {
   }, [filteredMemories, personaMap]);
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
       {/* Header */}
       <div className="px-4 md:px-6 py-5 border-b border-primary/10 bg-primary/5 flex-shrink-0">
         <div className="flex items-center justify-between mb-4">
@@ -182,33 +174,33 @@ export default function MemoriesPage() {
         )}
       </AnimatePresence>
 
-      {/* Stats Bar */}
-      {memoryStats.total > 0 && (
-        <div className="px-4 md:px-6 py-3 border-b border-primary/10 bg-secondary/20 flex-shrink-0">
-          <div className="flex items-center gap-6 flex-wrap">
-            {/* Total */}
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
-                <Brain className="w-3.5 h-3.5 text-violet-400" />
-              </div>
-              <div className="flex flex-col">
-                <AnimatePresence mode="wait">
-                  <motion.span
-                    key={memoryStats.total}
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 8 }}
-                    transition={{ duration: 0.15 }}
-                    className="font-bold text-lg text-violet-400"
-                  >
-                    {memoryStats.total}
-                  </motion.span>
-                </AnimatePresence>
-                <span className="text-[9px] text-muted-foreground/30 -mt-1">memories</span>
-              </div>
+      {/* Stats Bar — always visible to show total knowledge base size */}
+      <div className="px-4 md:px-6 py-3 border-b border-primary/10 bg-secondary/20 flex-shrink-0">
+        <div className="flex items-center gap-6 flex-wrap">
+          {/* Total knowledge base count (global, not filtered) */}
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+              <Brain className="w-3.5 h-3.5 text-violet-400" />
             </div>
+            <div className="flex flex-col">
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={memoriesTotal}
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 8 }}
+                  transition={{ duration: 0.15 }}
+                  className="font-bold text-lg text-violet-400"
+                >
+                  {memoriesTotal}
+                </motion.span>
+              </AnimatePresence>
+              <span className="text-[9px] text-muted-foreground/30 -mt-1">total memories</span>
+            </div>
+          </div>
 
-            {/* Category stacked bar */}
+          {/* Category stacked bar — only when there are memories */}
+          {memoryStats.total > 0 && (
             <div className="flex-1 min-w-[120px] max-w-xs">
               <div className="w-full h-1.5 rounded-full overflow-hidden flex bg-secondary/40">
                 {memoryStats.segments.map((seg) => (
@@ -229,27 +221,29 @@ export default function MemoriesPage() {
                 ))}
               </div>
             </div>
+          )}
 
-            {/* Top agent */}
-            {memoryStats.topAgent && (
-              <div className="flex items-center gap-2">
-                <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center"
-                  style={{
-                    background: `linear-gradient(135deg, ${memoryStats.topAgent.color}20, ${memoryStats.topAgent.color}40)`,
-                    border: `1px solid ${memoryStats.topAgent.color}50`,
-                  }}
-                >
-                  <Bot className="w-3.5 h-3.5" style={{ color: memoryStats.topAgent.color }} />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs font-medium text-foreground/70 truncate max-w-[80px]">{memoryStats.topAgent.name}</span>
-                  <span className="text-[9px] text-muted-foreground/30 -mt-0.5">{memoryStats.topAgentCount} memories</span>
-                </div>
+          {/* Top agent */}
+          {memoryStats.topAgent && (
+            <div className="flex items-center gap-2">
+              <div
+                className="w-7 h-7 rounded-lg flex items-center justify-center"
+                style={{
+                  background: `linear-gradient(135deg, ${memoryStats.topAgent.color}20, ${memoryStats.topAgent.color}40)`,
+                  border: `1px solid ${memoryStats.topAgent.color}50`,
+                }}
+              >
+                <Bot className="w-3.5 h-3.5" style={{ color: memoryStats.topAgent.color }} />
               </div>
-            )}
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-foreground/70 truncate max-w-[80px]">{memoryStats.topAgent.name}</span>
+                <span className="text-[9px] text-muted-foreground/30 -mt-0.5">{memoryStats.topAgentCount} memories</span>
+              </div>
+            </div>
+          )}
 
-            {/* Avg importance */}
+          {/* Avg importance */}
+          {memoryStats.total > 0 && (
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
                 <Star className="w-3.5 h-3.5 text-amber-400" />
@@ -270,18 +264,18 @@ export default function MemoriesPage() {
                 <span className="text-[9px] text-muted-foreground/30 -mt-1">avg importance</span>
               </div>
             </div>
-          </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Table */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="px-4 md:px-6 py-2 text-[11px] font-mono text-muted-foreground/40 border-b border-primary/10 bg-secondary/10">
+      <div className="flex-1 overflow-y-auto flex flex-col">
+        <div className="px-4 md:px-6 py-2 text-[11px] font-mono text-muted-foreground/40 border-b border-primary/10 bg-secondary/10 flex-shrink-0">
           Showing {sortedMemories.length} of {memoriesTotal} memories
         </div>
 
         {filteredMemories.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full gap-4 text-muted-foreground/40">
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 text-muted-foreground/40">
             <div className="w-16 h-16 rounded-2xl bg-violet-500/10 border border-violet-500/15 flex items-center justify-center">
               <Brain className="w-8 h-8 text-violet-400/40" />
             </div>

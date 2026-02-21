@@ -27,6 +27,11 @@ pub struct PersonaExecution {
     #[ts(type = "number | null")]
     pub duration_ms: Option<i64>,
     pub tool_steps: Option<String>,
+    /// If this execution is a healing retry, links to the original execution.
+    pub retry_of_execution_id: Option<String>,
+    /// Number of retries attempted (0 = original execution).
+    #[ts(type = "number")]
+    pub retry_count: i64,
     pub started_at: Option<String>,
     pub completed_at: Option<String>,
     pub created_at: String,

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use serde::Serialize;
-use tauri::State;
+use tauri::{Manager, State};
 use ts_rs::TS;
 
 use crate::error::AppError;
@@ -343,6 +343,29 @@ pub async fn open_external_url(url: String) -> Result<(), AppError> {
     open::that(trimmed)
         .map_err(|e| AppError::Internal(format!("Failed to open URL: {e}")))?;
 
+    Ok(())
+}
+
+// ── Crash log commands ──────────────────────────────────────────
+
+#[tauri::command]
+pub fn get_crash_logs(app: tauri::AppHandle) -> Result<Vec<crate::logging::CrashLogEntry>, AppError> {
+    let app_data_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| AppError::Internal(format!("Failed to resolve app data dir: {e}")))?;
+
+    Ok(crate::logging::read_crash_logs(&app_data_dir))
+}
+
+#[tauri::command]
+pub fn clear_crash_logs(app: tauri::AppHandle) -> Result<(), AppError> {
+    let app_data_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| AppError::Internal(format!("Failed to resolve app data dir: {e}")))?;
+
+    crate::logging::clear_crash_logs(&app_data_dir);
     Ok(())
 }
 

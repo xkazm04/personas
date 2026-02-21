@@ -101,15 +101,26 @@ pub fn notify_healing_issue(
     app: &AppHandle,
     persona_name: &str,
     title: &str,
+    severity: &str,
+    suggested_fix: Option<&str>,
     channels: Option<&str>,
 ) {
     if !parse_prefs(channels).healing_issue {
         return;
     }
+    // Per-severity gating: critical and high always notify, medium/low are silent
+    match severity {
+        "critical" | "high" => {}
+        _ => return,
+    }
+    let body = match suggested_fix {
+        Some(fix) => format!("{}: {}\nFix: {}", persona_name, title, fix),
+        None => format!("{}: {}", persona_name, title),
+    };
     send(
         app,
-        "Healing Issue Detected",
-        &format!("{}: {}", persona_name, title),
+        &format!("Healing Alert ({})", severity),
+        &body,
     );
 }
 

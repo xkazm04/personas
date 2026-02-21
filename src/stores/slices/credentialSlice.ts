@@ -20,7 +20,7 @@ export interface CredentialSlice {
 
   // Actions
   fetchCredentials: () => Promise<void>;
-  createCredential: (input: { name: string; service_type: string; data: object }) => Promise<void>;
+  createCredential: (input: { name: string; service_type: string; data: object }) => Promise<string | undefined>;
   deleteCredential: (id: string) => Promise<void>;
   healthcheckCredential: (credentialId: string) => Promise<{ success: boolean; message: string }>;
   healthcheckCredentialPreview: (serviceType: string, fieldValues: Record<string, string>) => Promise<{ success: boolean; message: string }>;
@@ -61,7 +61,7 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
 
   createCredential: async (input) => {
     try {
-      await api.createCredential({
+      const created = await api.createCredential({
         name: input.name,
         service_type: input.service_type,
         encrypted_data: JSON.stringify(input.data),
@@ -69,8 +69,10 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
         metadata: null,
       });
       get().fetchCredentials();
+      return created.id;
     } catch (err) {
       set({ error: errMsg(err, "Failed to create credential") });
+      return undefined;
     }
   },
 
@@ -194,6 +196,7 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
 
   deleteCredentialEvent: async (id) => {
     try {
+      await api.deleteCredentialEvent(id);
       set((state) => ({
         credentialEvents: state.credentialEvents.filter((e) => e.id !== id),
       }));

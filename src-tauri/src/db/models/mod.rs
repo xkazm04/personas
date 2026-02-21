@@ -14,6 +14,10 @@ mod memory;
 mod healing;
 mod budget;
 mod tool_usage;
+mod test_run;
+mod n8n_session;
+mod audit_log;
+mod rotation;
 
 pub use persona::*;
 pub use tool::*;
@@ -31,3 +35,7 @@ pub use memory::*;
 pub use healing::*;
 pub use budget::*;
 pub use tool_usage::*;
+pub use test_run::*;
+pub use n8n_session::*;
+pub use audit_log::*;
+pub use rotation::*;

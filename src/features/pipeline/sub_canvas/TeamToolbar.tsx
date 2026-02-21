@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Plus, LayoutGrid, Save, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Plus, LayoutGrid, Save, ChevronDown, Check, Loader2 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { PersonaAvatar } from './teamConstants';
 
@@ -9,9 +9,10 @@ interface TeamToolbarProps {
   onAutoLayout: () => void;
   onSave: () => void;
   onAddMember: (personaId: string) => void;
+  saveStatus?: 'saved' | 'saving' | 'unsaved';
 }
 
-export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, onAddMember }: TeamToolbarProps) {
+export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, onAddMember, saveStatus = 'saved' }: TeamToolbarProps) {
   const personas = usePersonaStore((s) => s.personas);
   const teamMembers = usePersonaStore((s) => s.teamMembers);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -94,10 +95,23 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
         {/* Save */}
         <button
           onClick={onSave}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/20 text-xs font-medium transition-all"
+          disabled={saveStatus === 'saving'}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+            saveStatus === 'saved'
+              ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-300/60'
+              : saveStatus === 'saving'
+                ? 'bg-amber-500/10 border-amber-500/25 text-amber-300 cursor-wait'
+                : 'bg-emerald-500/10 border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/20'
+          }`}
         >
-          <Save className="w-3.5 h-3.5" />
-          Save
+          {saveStatus === 'saving' ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : saveStatus === 'saved' ? (
+            <Check className="w-3.5 h-3.5" />
+          ) : (
+            <Save className="w-3.5 h-3.5" />
+          )}
+          {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : 'Save'}
         </button>
       </div>
     </div>

@@ -151,7 +151,11 @@ pub struct HealingEventPayload {
     pub persona_id: String,
     pub execution_id: String,
     pub title: String,
-    /// "auto_retry" | "issue_created"
+    /// "auto_retry" | "issue_created" | "circuit_breaker"
     pub action: String,
     pub auto_fixed: bool,
+    /// "low" | "medium" | "high" | "critical"
+    pub severity: String,
+    pub suggested_fix: Option<String>,
+    pub persona_name: String,
 }

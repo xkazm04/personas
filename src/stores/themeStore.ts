@@ -27,7 +27,7 @@ export const THEMES: ThemeDefinition[] = [
   { id: 'dark-purple', label: 'Purple', primaryColor: '#a855f7', backgroundSample: '#0e0a14', isLight: false },
   { id: 'dark-pink', label: 'Pink', primaryColor: '#ec4899', backgroundSample: '#140a10', isLight: false },
   { id: 'dark-red', label: 'Red', primaryColor: '#ef4444', backgroundSample: '#140a0a', isLight: false },
-  { id: 'light', label: 'Light', primaryColor: '#2563eb', backgroundSample: '#f8fafc', isLight: true },
+  { id: 'light', label: 'Light', primaryColor: '#2554b0', backgroundSample: '#f0ede6', isLight: true },
 ];
 
 function applyTheme(id: ThemeId) {

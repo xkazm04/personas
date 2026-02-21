@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use tauri::State;
 
-use crate::db::models::PersonaHealingIssue;
+use crate::db::models::{HealingKnowledge, PersonaExecution, PersonaHealingIssue};
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::healing as repo;
 use crate::engine::healing;
@@ -92,4 +92,25 @@ pub fn run_healing_analysis(
         "issues_created": created,
         "auto_fixed": auto_fixed,
     }))
+}
+
+/// Get the retry chain for an execution (original + all retries).
+#[tauri::command]
+pub fn get_retry_chain(
+    state: State<'_, Arc<AppState>>,
+    execution_id: String,
+) -> Result<Vec<PersonaExecution>, AppError> {
+    exec_repo::get_retry_chain(&state.db, &execution_id)
+}
+
+/// Get all entries from the fleet-wide healing knowledge base.
+#[tauri::command]
+pub fn list_healing_knowledge(
+    state: State<'_, Arc<AppState>>,
+    service_type: Option<String>,
+) -> Result<Vec<HealingKnowledge>, AppError> {
+    match service_type {
+        Some(st) => repo::get_knowledge_by_service(&state.db, &st),
+        None => repo::get_all_knowledge(&state.db),
+    }
 }

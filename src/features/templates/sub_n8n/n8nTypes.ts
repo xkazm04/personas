@@ -113,4 +113,9 @@ export type PersistedTransformContext = {
   workflowName: string;
   rawWorkflowJson: string;
   parsedResult: DesignAnalysisResult;
+  /** Timestamp when context was persisted (ms since epoch) */
+  savedAt?: number;
 };
+
+/** Max age for persisted context before it's considered stale (10 minutes) */
+export const TRANSFORM_CONTEXT_MAX_AGE_MS = 10 * 60 * 1000;

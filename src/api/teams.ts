@@ -5,6 +5,9 @@ import type { CreateTeamInput } from "@/lib/bindings/CreateTeamInput";
 import type { UpdateTeamInput } from "@/lib/bindings/UpdateTeamInput";
 import type { PersonaTeamMember } from "@/lib/bindings/PersonaTeamMember";
 import type { PersonaTeamConnection } from "@/lib/bindings/PersonaTeamConnection";
+import type { PipelineAnalytics } from "@/lib/bindings/PipelineAnalytics";
+import type { TopologyBlueprint } from "@/lib/bindings/TopologyBlueprint";
+import type { TeamCounts } from "@/lib/bindings/TeamCounts";
 
 // ============================================================================
 // Teams
@@ -12,6 +15,9 @@ import type { PersonaTeamConnection } from "@/lib/bindings/PersonaTeamConnection
 
 export const listTeams = () =>
   invoke<PersonaTeam[]>("list_teams");
+
+export const getTeamCounts = () =>
+  invoke<TeamCounts[]>("get_team_counts");
 
 export const getTeam = (id: string) =>
   invoke<PersonaTeam>("get_team", { id });
@@ -83,6 +89,9 @@ export const createTeamConnection = (
     label: label ?? null,
   });
 
+export const updateTeamConnection = (id: string, connectionType: string) =>
+  invoke<void>("update_team_connection", { id, connectionType });
+
 export const deleteTeamConnection = (id: string) =>
   invoke<boolean>("delete_team_connection", { id });
 
@@ -107,3 +116,13 @@ export const listPipelineRuns = (teamId: string) =>
 
 export const getPipelineRun = (id: string) =>
   invoke<PipelineRun>("get_pipeline_run", { id });
+
+// ── Pipeline Analytics & Optimizer ──────────────────────────────────────
+
+export const getPipelineAnalytics = (teamId: string) =>
+  invoke<PipelineAnalytics>("get_pipeline_analytics", { teamId });
+
+// ── Canvas Assistant — Topology Suggestions ─────────────────────────────
+
+export const suggestTopology = (query: string, teamId?: string) =>
+  invoke<TopologyBlueprint>("suggest_topology", { query, teamId: teamId ?? null });

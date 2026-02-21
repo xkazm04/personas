@@ -1,3 +1,23 @@
+export interface ConnectionTypeStyle {
+  stroke: string;
+  strokeWidth: number;
+  strokeDasharray?: string;
+  label: string;
+}
+
+export const DEFAULT_CONNECTION_STYLE: ConnectionTypeStyle = { stroke: '#3b82f6', strokeWidth: 2, label: 'Sequential' };
+
+export const CONNECTION_TYPE_STYLES: Record<string, ConnectionTypeStyle> = {
+  sequential: DEFAULT_CONNECTION_STYLE,
+  conditional: { stroke: '#f59e0b', strokeWidth: 2, strokeDasharray: '6 3', label: 'Conditional' },
+  parallel: { stroke: '#10b981', strokeWidth: 3, label: 'Parallel' },
+  feedback: { stroke: '#8b5cf6', strokeWidth: 2, strokeDasharray: '2 4', label: 'Feedback' },
+};
+
+export function getConnectionStyle(type: string): ConnectionTypeStyle {
+  return CONNECTION_TYPE_STYLES[type] ?? DEFAULT_CONNECTION_STYLE;
+}
+
 export const TEAM_ROLES = [
   { value: 'orchestrator', label: 'Orchestrator', description: 'Coordinates other agents' },
   { value: 'worker', label: 'Worker', description: 'Executes assigned tasks' },

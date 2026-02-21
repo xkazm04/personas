@@ -32,6 +32,8 @@ pub struct AppState {
     pub cloud_exec_ids: Arc<tokio::sync::Mutex<HashMap<String, String>>>,
     /// Cancellation flag for the auto-installer (setup commands).
     pub active_setup_cancelled: Arc<Mutex<bool>>,
+    /// Cancellation flags for active test runs, keyed by run ID.
+    pub active_test_run_cancelled: Arc<Mutex<HashMap<String, Arc<std::sync::atomic::AtomicBool>>>>,
 }
 
 /// Hello world IPC command — verifies the Rust ↔ React bridge works.
@@ -80,11 +82,25 @@ pub fn run() {
                 }
             }
 
+            // Install panic crash hook that writes to crash_logs/ before aborting
+            logging::install_crash_hook(&app_data_dir);
+
             let log_dir = app_data_dir.join("logs");
 
             // Mark any executions left in running/queued state as failed
             // (their processes died when the app last exited)
             engine::ExecutionEngine::recover_stale_executions(&pool);
+
+            // Mark n8n transform sessions interrupted by app exit as failed
+            match db::repos::resources::n8n_sessions::recover_interrupted_sessions(&pool) {
+                Ok(count) if count > 0 => {
+                    tracing::info!("Recovered {} interrupted n8n transform session(s)", count);
+                }
+                Err(e) => {
+                    tracing::warn!("Failed to recover n8n sessions: {}", e);
+                }
+                _ => {}
+            }
 
             let engine = Arc::new(engine::ExecutionEngine::new(log_dir));
             let scheduler = Arc::new(engine::background::SchedulerState::new());
@@ -109,6 +125,7 @@ pub fn run() {
                 cloud_client: Arc::new(tokio::sync::Mutex::new(cloud_client_opt)),
                 cloud_exec_ids: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
                 active_setup_cancelled: Arc::new(Mutex::new(false)),
+                active_test_run_cancelled: Arc::new(Mutex::new(HashMap::new())),
             });
             app.manage(state_arc.clone());
 
@@ -150,14 +167,18 @@ pub fn run() {
             let restore_state = state_arc.clone();
             tauri::async_runtime::spawn(async move {
                 tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-                engine::background::start_loops(
+                let _webhook_shutdown = engine::background::start_loops(
                     scheduler,
                     app_handle.clone(),
                     pool,
                     engine,
                 );
-                tracing::info!("Scheduler auto-started");
+                tracing::info!("Scheduler auto-started (with webhook server on port 9420)");
                 tray::refresh_tray(&app_handle);
+                // Keep _webhook_shutdown alive for the lifetime of the app.
+                // When this task ends (app shutdown), the sender is dropped,
+                // triggering graceful webhook server shutdown.
+                futures_util::future::pending::<()>().await;
             });
 
             // Attempt auth session restore from keyring
@@ -184,6 +205,7 @@ pub fn run() {
             commands::core::groups::reorder_groups,
             // Core — Memories
             commands::core::memories::list_memories,
+            commands::core::memories::get_memory_count,
             commands::core::memories::create_memory,
             commands::core::memories::delete_memory,
             // Core — Import/Export
@@ -200,11 +222,19 @@ pub fn run() {
             commands::execution::scheduler::get_scheduler_status,
             commands::execution::scheduler::start_scheduler,
             commands::execution::scheduler::stop_scheduler,
+            // Execution — Tests
+            commands::execution::tests::start_test_run,
+            commands::execution::tests::list_test_runs,
+            commands::execution::tests::get_test_results,
+            commands::execution::tests::delete_test_run,
+            commands::execution::tests::cancel_test_run,
             // Execution — Healing
             commands::execution::healing::list_healing_issues,
             commands::execution::healing::get_healing_issue,
             commands::execution::healing::update_healing_status,
             commands::execution::healing::run_healing_analysis,
+            commands::execution::healing::get_retry_chain,
+            commands::execution::healing::list_healing_knowledge,
             // Design — Analysis
             commands::design::analysis::start_design_analysis,
             commands::design::analysis::refine_design,
@@ -215,7 +245,22 @@ pub fn run() {
             commands::design::n8n_transform::start_n8n_transform_background,
             commands::design::n8n_transform::get_n8n_transform_snapshot,
             commands::design::n8n_transform::clear_n8n_transform_snapshot,
+            commands::design::n8n_transform::cancel_n8n_transform,
             commands::design::n8n_transform::confirm_n8n_persona_draft,
+            commands::design::n8n_transform::generate_n8n_transform_questions,
+            // Design — N8n Sessions
+            commands::design::n8n_sessions::create_n8n_session,
+            commands::design::n8n_sessions::get_n8n_session,
+            commands::design::n8n_sessions::list_n8n_sessions,
+            commands::design::n8n_sessions::update_n8n_session,
+            commands::design::n8n_sessions::delete_n8n_session,
+            // Design — Template Adopt
+            commands::design::template_adopt::start_template_adopt_background,
+            commands::design::template_adopt::get_template_adopt_snapshot,
+            commands::design::template_adopt::clear_template_adopt_snapshot,
+            commands::design::template_adopt::cancel_template_adopt,
+            commands::design::template_adopt::confirm_template_adopt_draft,
+            commands::design::template_adopt::generate_template_adopt_questions,
             // Design — Reviews
             commands::design::reviews::list_design_reviews,
             commands::design::reviews::get_design_review,
@@ -234,9 +279,11 @@ pub fn run() {
             commands::credentials::crud::list_credential_events,
             commands::credentials::crud::create_credential_event,
             commands::credentials::crud::update_credential_event,
+            commands::credentials::crud::delete_credential_event,
             commands::credentials::crud::healthcheck_credential,
             commands::credentials::crud::healthcheck_credential_preview,
             commands::credentials::crud::vault_status,
+            commands::credentials::crud::migrate_plaintext_credentials,
             // Credentials — Connectors
             commands::credentials::connectors::list_connectors,
             commands::credentials::connectors::get_connector,
@@ -247,9 +294,30 @@ pub fn run() {
             commands::credentials::credential_design::start_credential_design,
             commands::credentials::credential_design::cancel_credential_design,
             commands::credentials::credential_design::test_credential_design_healthcheck,
+            // Credentials — Negotiator
+            commands::credentials::negotiator::start_credential_negotiation,
+            commands::credentials::negotiator::cancel_credential_negotiation,
+            commands::credentials::negotiator::get_negotiation_step_help,
+            // Credentials — Intelligence
+            commands::credentials::intelligence::credential_audit_log,
+            commands::credentials::intelligence::credential_usage_stats,
+            commands::credentials::intelligence::credential_dependents,
             // Credentials — OAuth
             commands::credentials::oauth::start_google_credential_oauth,
             commands::credentials::oauth::get_google_credential_oauth_status,
+            // Credentials — Universal OAuth
+            commands::credentials::oauth::list_oauth_providers,
+            commands::credentials::oauth::start_oauth,
+            commands::credentials::oauth::get_oauth_status,
+            commands::credentials::oauth::refresh_oauth_token,
+            // Credentials — Rotation
+            commands::credentials::rotation::list_rotation_policies,
+            commands::credentials::rotation::create_rotation_policy,
+            commands::credentials::rotation::update_rotation_policy,
+            commands::credentials::rotation::delete_rotation_policy,
+            commands::credentials::rotation::get_rotation_history,
+            commands::credentials::rotation::get_rotation_status,
+            commands::credentials::rotation::rotate_credential_now,
             // Communication — Events
             commands::communication::events::list_events,
             commands::communication::events::publish_event,
@@ -274,6 +342,7 @@ pub fn run() {
             commands::communication::observability::get_all_monthly_spend,
             // Teams
             commands::teams::teams::list_teams,
+            commands::teams::teams::get_team_counts,
             commands::teams::teams::get_team,
             commands::teams::teams::create_team,
             commands::teams::teams::update_team,
@@ -284,10 +353,13 @@ pub fn run() {
             commands::teams::teams::remove_team_member,
             commands::teams::teams::list_team_connections,
             commands::teams::teams::create_team_connection,
+            commands::teams::teams::update_team_connection,
             commands::teams::teams::delete_team_connection,
             commands::teams::teams::list_pipeline_runs,
             commands::teams::teams::get_pipeline_run,
             commands::teams::teams::execute_team,
+            commands::teams::teams::get_pipeline_analytics,
+            commands::teams::teams::suggest_topology,
             // Tools
             commands::tools::tools::list_tool_definitions,
             commands::tools::tools::get_tool_definition,
@@ -306,6 +378,8 @@ pub fn run() {
             commands::tools::triggers::create_trigger,
             commands::tools::triggers::update_trigger,
             commands::tools::triggers::delete_trigger,
+            commands::tools::triggers::list_trigger_chains,
+            commands::tools::triggers::get_webhook_status,
             // Infrastructure — Auth
             commands::infrastructure::auth::login_with_google,
             commands::infrastructure::auth::get_auth_state,
@@ -314,6 +388,8 @@ pub fn run() {
             // Infrastructure — System
             commands::infrastructure::system::system_health_check,
             commands::infrastructure::system::open_external_url,
+            commands::infrastructure::system::get_crash_logs,
+            commands::infrastructure::system::clear_crash_logs,
             // Infrastructure — Setup / Auto-install
             commands::infrastructure::setup::start_setup_install,
             commands::infrastructure::setup::cancel_setup_install,
@@ -323,6 +399,7 @@ pub fn run() {
             commands::infrastructure::settings::delete_app_setting,
             // Infrastructure — Cloud
             commands::infrastructure::cloud::cloud_connect,
+            commands::infrastructure::cloud::cloud_reconnect_from_keyring,
             commands::infrastructure::cloud::cloud_disconnect,
             commands::infrastructure::cloud::cloud_get_config,
             commands::infrastructure::cloud::cloud_status,

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plug, ChevronDown, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ConnectorDefinition } from '@/lib/types/types';
+import { isGoogleOAuthConnector } from '@/lib/utils/connectors';
 
 interface CredentialPickerProps {
   connectors: ConnectorDefinition[];
@@ -13,9 +14,7 @@ export function CredentialPicker({ connectors, onPickType }: CredentialPickerPro
 
   const isRecommended = (connector: ConnectorDefinition) => {
     const metadata = (connector.metadata ?? {}) as Record<string, unknown>;
-    return metadata.recommended === true
-      || metadata.oauth_type === 'google'
-      || connector.name === 'google_workspace_oauth_template';
+    return metadata.recommended === true || isGoogleOAuthConnector(connector);
   };
 
   const recommendedConnectors = connectors.filter(isRecommended);

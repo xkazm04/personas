@@ -1,22 +1,30 @@
 import type { StateCreator } from "zustand";
 import type { PersonaStore } from "../storeTypes";
+import type { PersonaHealingIssue } from "@/lib/bindings/PersonaHealingIssue";
+import type { PersonaExecution } from "@/lib/bindings/PersonaExecution";
+import type { HealingKnowledge } from "@/lib/bindings/HealingKnowledge";
 import * as api from "@/api/tauriApi";
 
 export interface HealingSlice {
   // State
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  healingIssues: any[];
+  healingIssues: PersonaHealingIssue[];
   healingRunning: boolean;
+  healingKnowledge: HealingKnowledge[];
+  retryChain: PersonaExecution[];
 
   // Actions
   fetchHealingIssues: () => Promise<void>;
   triggerHealing: (personaId?: string) => Promise<{ failures_analyzed: number; issues_created: number; auto_fixed: number } | null>;
   resolveHealingIssue: (id: string) => Promise<void>;
+  fetchHealingKnowledge: () => Promise<void>;
+  fetchRetryChain: (executionId: string) => Promise<void>;
 }
 
 export const createHealingSlice: StateCreator<PersonaStore, [], [], HealingSlice> = (set, get) => ({
   healingIssues: [],
   healingRunning: false,
+  healingKnowledge: [],
+  retryChain: [],
 
   fetchHealingIssues: async () => {
     try {
@@ -44,10 +52,27 @@ export const createHealingSlice: StateCreator<PersonaStore, [], [], HealingSlice
   resolveHealingIssue: async (id: string) => {
     try {
       await api.updateHealingStatus(id, "resolved");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      set({ healingIssues: get().healingIssues.filter((i: any) => i.id !== id) });
+      set({ healingIssues: get().healingIssues.filter((i) => i.id !== id) });
     } catch {
       // Silent fail
+    }
+  },
+
+  fetchHealingKnowledge: async () => {
+    try {
+      const knowledge = await api.listHealingKnowledge();
+      set({ healingKnowledge: knowledge });
+    } catch {
+      // Silent fail
+    }
+  },
+
+  fetchRetryChain: async (executionId: string) => {
+    try {
+      const chain = await api.getRetryChain(executionId);
+      set({ retryChain: chain });
+    } catch {
+      set({ retryChain: [] });
     }
   },
 });

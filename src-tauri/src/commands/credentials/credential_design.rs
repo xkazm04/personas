@@ -9,6 +9,7 @@ use tokio::process::Command;
 
 use crate::db::repos::resources::connectors as connector_repo;
 use crate::engine::credential_design;
+use crate::engine::healthcheck::resolve_template;
 use crate::engine::parser::parse_stream_line;
 use crate::engine::types::StreamLineType;
 use crate::engine::prompt;
@@ -101,7 +102,7 @@ pub async fn test_credential_design_healthcheck(
     );
 
     let cli_args = build_credential_cli_args();
-    let output_text = run_claude_prompt(prompt_text, &cli_args)
+    let output_text = run_claude_prompt(prompt_text, &cli_args, 300, "Claude produced no output for healthcheck generation")
         .await
         .map_err(AppError::Internal)?;
 
@@ -214,7 +215,7 @@ fn emit_progress(app: &tauri::AppHandle, design_id: &str, line: &str) {
 
 /// Try to extract the response text from a stream-json "result" line.
 /// The result event has a `result` field containing the full response text.
-fn extract_result_text(line: &str) -> Option<String> {
+pub(crate) fn extract_result_text(line: &str) -> Option<String> {
     let value: serde_json::Value = serde_json::from_str(line.trim()).ok()?;
     if value.get("type").and_then(|t| t.as_str()) != Some("result") {
         return None;
@@ -235,7 +236,6 @@ async fn run_credential_design(params: CredentialDesignRunParams) {
         active_design_id,
     } = params;
 
-    // Emit analyzing status
     let _ = app.emit(
         "credential-design-status",
         CredentialDesignStatusEvent {
@@ -248,201 +248,45 @@ async fn run_credential_design(params: CredentialDesignRunParams) {
 
     emit_progress(&app, &design_id, "Connecting to Claude...");
 
-    // Spawn Claude CLI process
-    let mut cmd = Command::new(&cli_args.command);
-    cmd.args(&cli_args.args)
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped());
-
-    #[cfg(windows)]
-    {
-        #[allow(unused_imports)]
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-    }
-
-    for key in &cli_args.env_removals {
-        cmd.env_remove(key);
-    }
-    cmd.env_remove("CLAUDECODE");
-    cmd.env_remove("CLAUDE_CODE");
-    for (key, val) in &cli_args.env_overrides {
-        cmd.env(key, val);
-    }
-
-    let mut child = match cmd.spawn() {
-        Ok(c) => c,
-        Err(e) => {
-            let error_msg = if e.kind() == std::io::ErrorKind::NotFound {
-                "Claude CLI not found. Install from https://docs.anthropic.com/en/docs/claude-code"
-                    .to_string()
-            } else {
-                format!("Failed to spawn Claude CLI: {}", e)
-            };
-            let _ = app.emit(
-                "credential-design-status",
-                CredentialDesignStatusEvent {
-                    design_id,
-                    status: "failed".into(),
-                    result: None,
-                    error: Some(error_msg),
-                },
-            );
-            return;
-        }
-    };
-
-    // Write prompt to stdin
-    if let Some(mut stdin) = child.stdin.take() {
-        let prompt_bytes = prompt_text.into_bytes();
-        let _ = stdin.write_all(&prompt_bytes).await;
-        let _ = stdin.shutdown().await;
-    }
-
-    // Drain stderr in background to prevent pipe deadlock and capture errors
-    let stderr = child.stderr.take().expect("stderr was piped");
-    let stderr_task = tokio::spawn(async move {
-        let mut stderr_reader = BufReader::new(stderr);
-        let mut stderr_buf = String::new();
-        let _ = tokio::io::AsyncReadExt::read_to_string(&mut stderr_reader, &mut stderr_buf).await;
-        stderr_buf
-    });
-
-    // Read stdout line by line, extract text content for JSON extraction
-    let stdout = child.stdout.take().expect("stdout was piped");
-    let mut reader = BufReader::new(stdout).lines();
-    let mut text_output = String::new(); // Accumulated text content (for JSON extraction)
     let mut emitted_analyzing = false;
-
-    let timeout_duration = std::time::Duration::from_secs(600); // 10 min
-    let stream_result = tokio::time::timeout(timeout_duration, async {
-        while let Ok(Some(line)) = reader.next_line().await {
-            if line.trim().is_empty() {
-                continue;
+    let result = spawn_claude_and_collect(
+        &cli_args,
+        prompt_text,
+        600,
+        |line_type, _raw_line| match line_type {
+            StreamLineType::SystemInit { model, .. } => {
+                emit_progress(&app, &design_id, &format!("Connected ({})", model));
+                emit_progress(&app, &design_id, "Analyzing service requirements...");
             }
-
-            tracing::debug!(design_id = %design_id, raw_line_len = line.len(), "stream-json line received");
-
-            // Parse stream-json line using the existing parser
-            let (line_type, _display) = parse_stream_line(&line);
-
-            match &line_type {
-                StreamLineType::SystemInit { model, .. } => {
-                    emit_progress(&app, &design_id, &format!("Connected ({})", model));
-                    emit_progress(&app, &design_id, "Analyzing service requirements...");
-                }
-                StreamLineType::AssistantText { text } => {
-                    // Accumulate text content for JSON extraction
-                    text_output.push_str(text);
-                    text_output.push('\n');
-
-                    // Emit a one-time progress update when Claude starts writing
-                    if !emitted_analyzing {
-                        emitted_analyzing = true;
-                        emit_progress(&app, &design_id, "Designing connector structure...");
-                    }
-                }
-                StreamLineType::AssistantToolUse { tool_name, .. } => {
-                    emit_progress(&app, &design_id, &format!("Researching: {}", tool_name));
-                }
-                StreamLineType::ToolResult { .. } => {
-                    // Silently accumulate — not user-relevant
-                }
-                StreamLineType::Result { duration_ms, total_cost_usd, .. } => {
-                    // Also try to extract the response text from the result event.
-                    // The result event's `result` field contains the full response text,
-                    // which may be the primary/only source of Claude's text output.
-                    if let Some(result_text) = extract_result_text(&line) {
-                        if !result_text.is_empty() {
-                            tracing::debug!(
-                                design_id = %design_id,
-                                result_text_len = result_text.len(),
-                                "Extracted text from result event"
-                            );
-                            // If we didn't get assistant text events, use the result text
-                            if text_output.trim().is_empty() {
-                                text_output = result_text;
-                            }
-                        }
-                    }
-
-                    let mut msg = "Analysis complete".to_string();
-                    if let Some(ms) = duration_ms {
-                        let secs = *ms as f64 / 1000.0;
-                        msg = format!("Analysis complete ({:.1}s", secs);
-                        if let Some(cost) = total_cost_usd {
-                            msg.push_str(&format!(", ${:.4}", cost));
-                        }
-                        msg.push(')');
-                    }
-                    emit_progress(&app, &design_id, &msg);
-                }
-                StreamLineType::Unknown => {
-                    // Non-JSON line — could be plain text output, accumulate it
-                    let trimmed = line.trim();
-                    if !trimmed.is_empty() {
-                        text_output.push_str(trimmed);
-                        text_output.push('\n');
-                    }
+            StreamLineType::AssistantText { .. } => {
+                if !emitted_analyzing {
+                    emitted_analyzing = true;
+                    emit_progress(&app, &design_id, "Designing connector structure...");
                 }
             }
-        }
-    })
+            StreamLineType::AssistantToolUse { tool_name, .. } => {
+                emit_progress(&app, &design_id, &format!("Researching: {}", tool_name));
+            }
+            StreamLineType::Result {
+                duration_ms,
+                total_cost_usd,
+                ..
+            } => {
+                let mut msg = "Analysis complete".to_string();
+                if let Some(ms) = duration_ms {
+                    let secs = *ms as f64 / 1000.0;
+                    msg = format!("Analysis complete ({:.1}s", secs);
+                    if let Some(cost) = total_cost_usd {
+                        msg.push_str(&format!(", ${:.4}", cost));
+                    }
+                    msg.push(')');
+                }
+                emit_progress(&app, &design_id, &msg);
+            }
+            _ => {}
+        },
+    )
     .await;
-
-    // Wait for process and collect stderr
-    let exit_status = child.wait().await;
-    let stderr_output = stderr_task.await.unwrap_or_default();
-
-    if !stderr_output.trim().is_empty() {
-        tracing::warn!(
-            design_id = %design_id,
-            stderr = %stderr_output.trim(),
-            "Claude CLI stderr output"
-        );
-    }
-
-    if stream_result.is_err() {
-        let _ = child.kill().await;
-        let _ = app.emit(
-            "credential-design-status",
-            CredentialDesignStatusEvent {
-                design_id,
-                status: "failed".into(),
-                result: None,
-                error: Some("Credential design timed out after 10 minutes".into()),
-            },
-        );
-        return;
-    }
-
-    // Check process exit status
-    if let Ok(status) = &exit_status {
-        if !status.success() {
-            let stderr_trimmed = stderr_output.trim();
-            let error_msg = if !stderr_trimmed.is_empty() {
-                if stderr_trimmed.contains("unset the CLAUDECODE environment variable") {
-                    "Claude CLI refused to run due to a conflicting CLAUDECODE environment variable. The app now removes this automatically. Please restart the app and try again.".to_string()
-                } else {
-                    format!("Claude CLI exited with error: {}", stderr_trimmed.lines().last().unwrap_or("unknown error"))
-                }
-            } else {
-                format!("Claude CLI exited with status: {}", status)
-            };
-            tracing::error!(design_id = %design_id, error = %error_msg, "Claude CLI failed");
-            let _ = app.emit(
-                "credential-design-status",
-                CredentialDesignStatusEvent {
-                    design_id,
-                    status: "failed".into(),
-                    result: None,
-                    error: Some(error_msg),
-                },
-            );
-            return;
-        }
-    }
 
     // Check if cancelled
     let is_cancelled = {
@@ -455,62 +299,78 @@ async fn run_credential_design(params: CredentialDesignRunParams) {
         return;
     }
 
-    tracing::info!(
-        design_id = %design_id,
-        text_output_len = text_output.len(),
-        text_output_preview = %text_output.chars().take(500).collect::<String>(),
-        "Attempting to extract credential design from text output"
-    );
-
-    // Extract design result from the accumulated TEXT content (not raw stream-json)
-    match credential_design::extract_credential_design_result(&text_output) {
-        Some(result) => {
-            // Clear active design ID on success
-            {
-                let mut guard = active_design_id.lock().unwrap();
-                if guard.as_deref() == Some(&design_id) {
-                    *guard = None;
-                }
-            }
-
-            emit_progress(&app, &design_id, "Connector designed successfully");
-
-            // Emit result — user will confirm and save from the frontend
-            let _ = app.emit(
-                "credential-design-status",
-                CredentialDesignStatusEvent {
-                    design_id,
-                    status: "completed".into(),
-                    result: Some(result),
-                    error: None,
-                },
-            );
-        }
-        None => {
-            // Clear active design ID on failure
-            {
-                let mut guard = active_design_id.lock().unwrap();
-                if guard.as_deref() == Some(&design_id) {
-                    *guard = None;
-                }
-            }
-
-            tracing::warn!(
-                design_id = %design_id,
-                text_output_len = text_output.len(),
-                text_output_tail = %text_output.chars().rev().take(500).collect::<String>().chars().rev().collect::<String>(),
-                "Failed to extract connector design from Claude text output"
-            );
-
+    match result {
+        Err(error_msg) => {
+            tracing::error!(design_id = %design_id, error = %error_msg, "Claude CLI failed");
             let _ = app.emit(
                 "credential-design-status",
                 CredentialDesignStatusEvent {
                     design_id,
                     status: "failed".into(),
                     result: None,
-                    error: Some("Failed to extract connector design from Claude output. Try describing the service more specifically.".into()),
+                    error: Some(error_msg),
                 },
             );
+        }
+        Ok(spawn_result) => {
+            if !spawn_result.stderr_output.trim().is_empty() {
+                tracing::warn!(
+                    design_id = %design_id,
+                    stderr = %spawn_result.stderr_output.trim(),
+                    "Claude CLI stderr output"
+                );
+            }
+
+            tracing::info!(
+                design_id = %design_id,
+                text_output_len = spawn_result.text_output.len(),
+                text_output_preview = %spawn_result.text_output.chars().take(500).collect::<String>(),
+                "Attempting to extract credential design from text output"
+            );
+
+            match credential_design::extract_credential_design_result(&spawn_result.text_output) {
+                Some(design_result) => {
+                    {
+                        let mut guard = active_design_id.lock().unwrap();
+                        if guard.as_deref() == Some(&design_id) {
+                            *guard = None;
+                        }
+                    }
+                    emit_progress(&app, &design_id, "Connector designed successfully");
+                    let _ = app.emit(
+                        "credential-design-status",
+                        CredentialDesignStatusEvent {
+                            design_id,
+                            status: "completed".into(),
+                            result: Some(design_result),
+                            error: None,
+                        },
+                    );
+                }
+                None => {
+                    {
+                        let mut guard = active_design_id.lock().unwrap();
+                        if guard.as_deref() == Some(&design_id) {
+                            *guard = None;
+                        }
+                    }
+                    tracing::warn!(
+                        design_id = %design_id,
+                        text_output_len = spawn_result.text_output.len(),
+                        text_output_tail = %spawn_result.text_output.chars().rev().take(500).collect::<String>().chars().rev().collect::<String>(),
+                        "Failed to extract connector design from Claude text output"
+                    );
+                    let _ = app.emit(
+                        "credential-design-status",
+                        CredentialDesignStatusEvent {
+                            design_id,
+                            status: "failed".into(),
+                            result: None,
+                            error: Some("Failed to extract connector design from Claude output. Try describing the service more specifically.".into()),
+                        },
+                    );
+                }
+            }
         }
     }
 }
@@ -524,19 +384,25 @@ fn build_credential_cli_args() -> crate::engine::types::CliArgs {
     cli_args
 }
 
-fn resolve_template(template: &str, values: &HashMap<String, String>) -> String {
-    let mut resolved = template.to_string();
-    for (key, value) in values {
-        let needle = format!("{{{{{}}}}}", key);
-        resolved = resolved.replace(&needle, value);
-    }
-    resolved
+// ── Shared Claude CLI helper ────────────────────────────────────
+
+/// Result from spawning Claude CLI and collecting output.
+pub(crate) struct ClaudeSpawnResult {
+    pub(crate) text_output: String,
+    pub(crate) stderr_output: String,
 }
 
-async fn run_claude_prompt(
-    prompt_text: String,
+/// Spawn Claude CLI, pipe prompt to stdin, collect text output from stdout.
+///
+/// `on_line` is called for each parsed stream-json line, allowing callers to
+/// emit progress events or handle line-type-specific logic. Text accumulation
+/// (AssistantText, Result, Unknown) is handled internally.
+pub(crate) async fn spawn_claude_and_collect(
     cli_args: &crate::engine::types::CliArgs,
-) -> Result<String, String> {
+    prompt_text: String,
+    timeout_secs: u64,
+    mut on_line: impl FnMut(&StreamLineType, &str),
+) -> Result<ClaudeSpawnResult, String> {
     let mut cmd = Command::new(&cli_args.command);
     cmd.args(&cli_args.args)
         .stdin(std::process::Stdio::piped())
@@ -547,7 +413,7 @@ async fn run_claude_prompt(
     {
         #[allow(unused_imports)]
         use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000);
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
 
     for key in &cli_args.env_removals {
@@ -585,7 +451,7 @@ async fn run_claude_prompt(
     let mut reader = BufReader::new(stdout).lines();
     let mut text_output = String::new();
 
-    let timeout_duration = std::time::Duration::from_secs(300);
+    let timeout_duration = std::time::Duration::from_secs(timeout_secs);
     let stream_result = tokio::time::timeout(timeout_duration, async {
         while let Ok(Some(line)) = reader.next_line().await {
             if line.trim().is_empty() {
@@ -593,6 +459,8 @@ async fn run_claude_prompt(
             }
 
             let (line_type, _) = parse_stream_line(&line);
+            on_line(&line_type, &line);
+
             match &line_type {
                 StreamLineType::AssistantText { text } => {
                     text_output.push_str(text);
@@ -618,30 +486,47 @@ async fn run_claude_prompt(
     })
     .await;
 
-    let exit_status = child.wait().await.map_err(|e| format!("Failed waiting for Claude CLI: {}", e))?;
+    let exit_status = child
+        .wait()
+        .await
+        .map_err(|e| format!("Failed waiting for Claude CLI: {}", e))?;
     let stderr_output = stderr_task.await.unwrap_or_default();
 
     if stream_result.is_err() {
         let _ = child.kill().await;
-        return Err("Claude healthcheck generation timed out after 5 minutes".into());
+        return Err(format!("Claude CLI timed out after {} seconds", timeout_secs));
     }
 
     if !exit_status.success() {
-        if stderr_output.contains("unset the CLAUDECODE environment variable") {
-            return Err("Claude CLI refused to run due to CLAUDECODE conflict. Restart the app and retry.".into());
+        let stderr_trimmed = stderr_output.trim();
+        if stderr_trimmed.contains("unset the CLAUDECODE environment variable") {
+            return Err(
+                "Claude CLI refused to run due to a conflicting CLAUDECODE environment variable. \
+                 The app now removes this automatically. Please restart the app and try again."
+                    .to_string(),
+            );
         }
-        let msg = stderr_output
-            .trim()
-            .lines()
-            .last()
-            .unwrap_or("unknown error")
-            .to_string();
+        let msg = stderr_trimmed.lines().last().unwrap_or("unknown error");
         return Err(format!("Claude CLI exited with error: {}", msg));
     }
 
-    if text_output.trim().is_empty() {
-        return Err("Claude produced no output for healthcheck generation".into());
+    Ok(ClaudeSpawnResult {
+        text_output,
+        stderr_output,
+    })
+}
+
+pub(crate) async fn run_claude_prompt(
+    prompt_text: String,
+    cli_args: &crate::engine::types::CliArgs,
+    timeout_secs: u64,
+    empty_error: &str,
+) -> Result<String, String> {
+    let result = spawn_claude_and_collect(cli_args, prompt_text, timeout_secs, |_, _| {}).await?;
+
+    if result.text_output.trim().is_empty() {
+        return Err(empty_error.into());
     }
 
-    Ok(text_output)
+    Ok(result.text_output)
 }

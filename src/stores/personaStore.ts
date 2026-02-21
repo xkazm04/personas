@@ -28,6 +28,8 @@ import { createGroupSlice } from "./slices/groupSlice";
 import { createMemorySlice } from "./slices/memorySlice";
 import { createDesignSlice } from "./slices/designSlice";
 import { createUiSlice } from "./slices/uiSlice";
+import { createTestSlice } from "./slices/testSlice";
+import { createCloudSlice } from "./slices/cloudSlice";
 
 // ── Store ──────────────────────────────────────────────────────────────
 
@@ -50,6 +52,8 @@ export const usePersonaStore = create<PersonaStore>()(
         ...createMemorySlice(...a),
         ...createDesignSlice(...a),
         ...createUiSlice(...a),
+        ...createTestSlice(...a),
+        ...createCloudSlice(...a),
       }),
       {
         name: "persona-ui-state",
@@ -59,6 +63,7 @@ export const usePersonaStore = create<PersonaStore>()(
           selectedPersonaId: state.selectedPersonaId,
           overviewTab: state.overviewTab,
           editorTab: state.editorTab,
+          settingsTab: state.settingsTab,
         }),
       },
     ),

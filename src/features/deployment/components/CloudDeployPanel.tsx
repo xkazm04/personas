@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Cloud, Wifi, WifiOff } from 'lucide-react';
-import { useCloudStore } from '@/stores/cloudStore';
+import { usePersonaStore } from '@/stores/personaStore';
 import { CloudConnectionForm } from '@/features/deployment/components/CloudConnectionForm';
 import { CloudStatusPanel } from '@/features/deployment/components/CloudStatusPanel';
 import { CloudOAuthPanel } from '@/features/deployment/components/CloudOAuthPanel';
@@ -33,23 +33,23 @@ export default function CloudDeployPanel() {
   const [apiKey, setApiKey] = useState('');
   const [oauthCode, setOauthCode] = useState('');
 
-  const config = useCloudStore((s) => s.config);
-  const isConnecting = useCloudStore((s) => s.isConnecting);
-  const status = useCloudStore((s) => s.status);
-  const isLoadingStatus = useCloudStore((s) => s.isLoadingStatus);
-  const oauthStatus = useCloudStore((s) => s.oauthStatus);
-  const pendingOAuthState = useCloudStore((s) => s.pendingOAuthState);
-  const error = useCloudStore((s) => s.error);
+  const config = usePersonaStore((s) => s.cloudConfig);
+  const isConnecting = usePersonaStore((s) => s.cloudIsConnecting);
+  const status = usePersonaStore((s) => s.cloudStatus);
+  const isLoadingStatus = usePersonaStore((s) => s.cloudIsLoadingStatus);
+  const oauthStatus = usePersonaStore((s) => s.cloudOAuthStatus);
+  const pendingOAuthState = usePersonaStore((s) => s.cloudPendingOAuthState);
+  const error = usePersonaStore((s) => s.cloudError);
 
-  const initialize = useCloudStore((s) => s.initialize);
-  const connect = useCloudStore((s) => s.connect);
-  const disconnect = useCloudStore((s) => s.disconnect);
-  const fetchStatus = useCloudStore((s) => s.fetchStatus);
-  const fetchOAuthStatus = useCloudStore((s) => s.fetchOAuthStatus);
-  const startOAuth = useCloudStore((s) => s.startOAuth);
-  const completeOAuth = useCloudStore((s) => s.completeOAuth);
-  const refreshOAuth = useCloudStore((s) => s.refreshOAuth);
-  const disconnectOAuth = useCloudStore((s) => s.disconnectOAuth);
+  const initialize = usePersonaStore((s) => s.cloudInitialize);
+  const connect = usePersonaStore((s) => s.cloudConnectAction);
+  const disconnect = usePersonaStore((s) => s.cloudDisconnectAction);
+  const fetchStatus = usePersonaStore((s) => s.cloudFetchStatus);
+  const fetchOAuthStatus = usePersonaStore((s) => s.cloudFetchOAuthStatus);
+  const startOAuth = usePersonaStore((s) => s.cloudStartOAuth);
+  const completeOAuth = usePersonaStore((s) => s.cloudCompleteOAuth);
+  const refreshOAuth = usePersonaStore((s) => s.cloudRefreshOAuth);
+  const disconnectOAuth = usePersonaStore((s) => s.cloudDisconnectOAuth);
 
   const isConnected = config?.is_connected ?? false;
 
@@ -112,7 +112,7 @@ export default function CloudDeployPanel() {
   );
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
       {/* Header */}
       <div className="px-6 py-4 border-b border-primary/10 bg-secondary/20">
         <div className="flex items-center gap-3">

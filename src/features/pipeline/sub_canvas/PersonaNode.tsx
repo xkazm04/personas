@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { motion } from 'framer-motion';
-import { Check, AlertTriangle } from 'lucide-react';
+import { Check, AlertTriangle, Sparkles } from 'lucide-react';
 import { ROLE_COLORS, PersonaAvatar } from './teamConstants';
 
 interface PersonaNodeData {
@@ -40,6 +40,7 @@ function PersonaNodeComponent({ data, selected }: NodeProps) {
   const color = d.color || '#6366f1';
   const role = d.role || 'worker';
   const pipelineStatus = d.pipelineStatus;
+  const hasOptimizerSuggestion = d.hasOptimizerSuggestion as boolean | undefined;
   const edgeCount = (d.edgeCount as number) ?? 0;
   const showHandleGlow = edgeCount < 2;
   const defaultRole = { bg: 'bg-blue-500/15', text: 'text-blue-400', border: 'border-blue-500/25' };
@@ -84,6 +85,13 @@ function PersonaNodeComponent({ data, selected }: NodeProps) {
       {pipelineStatus === 'failed' && (
         <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center z-10">
           <AlertTriangle className="w-3 h-3 text-foreground" strokeWidth={3} />
+        </div>
+      )}
+
+      {/* Optimizer suggestion indicator */}
+      {hasOptimizerSuggestion && !pipelineStatus && (
+        <div className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-indigo-500/90 flex items-center justify-center z-10 animate-pulse">
+          <Sparkles className="w-2.5 h-2.5 text-foreground" strokeWidth={2.5} />
         </div>
       )}
 

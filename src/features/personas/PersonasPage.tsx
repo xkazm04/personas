@@ -4,12 +4,13 @@ import { usePersonaStore } from '@/stores/personaStore';
 import Sidebar from '@/features/shared/components/Sidebar';
 import OverviewPage from '@/features/overview/components/OverviewPage';
 import PersonaEditor from '@/features/agents/sub_editor/PersonaEditor';
-import { TriggerList } from '@/features/triggers/components/TriggerList';
+import { EventsPage } from '@/features/triggers/components/EventsPage';
 import { CredentialManager } from '@/features/vault/components/CredentialManager';
 import PersonaOverviewPage from '@/features/agents/components/PersonaOverviewPage';
 import DesignReviewsPage from '@/features/templates/components/DesignReviewsPage';
 import TeamCanvas from '@/features/pipeline/components/TeamCanvas';
 import CloudDeployPanel from '@/features/deployment/components/CloudDeployPanel';
+import SettingsPage from '@/features/settings/components/SettingsPage';
 import OnboardingWizard from '@/features/agents/components/OnboardingWizard';
 
 export default function PersonasPage() {
@@ -58,14 +59,15 @@ export default function PersonasPage() {
     if (sidebarSection === 'cloud') return <CloudDeployPanel />;
     if (sidebarSection === 'overview') return <OverviewPage />;
     if (sidebarSection === 'credentials') return <CredentialManager />;
-    if (sidebarSection === 'events') return <TriggerList />;
+    if (sidebarSection === 'events') return <EventsPage />;
     if (sidebarSection === 'design-reviews') return <DesignReviewsPage />;
+    if (sidebarSection === 'settings') return <SettingsPage />;
     if (selectedPersonaId) return <PersonaEditor />;
     return <PersonaOverviewPage />;
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] bg-background text-foreground overflow-hidden">
+    <div className="flex flex-col h-full bg-background text-foreground overflow-hidden">
       {/* Background effects matching GoalsLayout */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
       <div className="absolute inset-0 bg-gradient-to-b from-background/0 via-background/0 to-background/80 pointer-events-none" />
@@ -82,7 +84,7 @@ export default function PersonasPage() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-          className="flex-1 overflow-hidden"
+          className="flex-1 flex flex-col overflow-hidden"
         >
           {renderContent()}
         </motion.div>

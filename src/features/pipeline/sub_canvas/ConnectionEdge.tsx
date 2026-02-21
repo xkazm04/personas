@@ -1,11 +1,5 @@
 import { BaseEdge, getSmoothStepPath, type EdgeProps } from '@xyflow/react';
-
-const TYPE_STYLES: Record<string, { stroke: string; strokeDasharray?: string; strokeWidth: number }> = {
-  sequential: { stroke: '#3b82f6', strokeWidth: 2 },
-  conditional: { stroke: '#f59e0b', strokeDasharray: '6 3', strokeWidth: 2 },
-  parallel: { stroke: '#10b981', strokeWidth: 3 },
-  feedback: { stroke: '#8b5cf6', strokeDasharray: '2 4', strokeWidth: 2 },
-};
+import { getConnectionStyle } from './teamConstants';
 
 export default function ConnectionEdge({
   id,
@@ -22,8 +16,7 @@ export default function ConnectionEdge({
   const connType = (data as Record<string, unknown>)?.connection_type as string || 'sequential';
   const label = (data as Record<string, unknown>)?.label as string || '';
   const isActive = (data as Record<string, unknown>)?.isActive === true;
-  const defaultStyle: { stroke: string; strokeDasharray?: string; strokeWidth: number } = { stroke: '#3b82f6', strokeWidth: 2 };
-  const typeStyle = TYPE_STYLES[connType] ?? defaultStyle;
+  const typeStyle = getConnectionStyle(connType);
 
   const [edgePath, labelX, labelY] = getSmoothStepPath({
     sourceX,

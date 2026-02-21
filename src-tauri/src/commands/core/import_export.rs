@@ -80,7 +80,7 @@ pub async fn export_persona(
     let persona = persona_repo::get_by_id(pool, &persona_id)?;
     let triggers = trigger_repo::get_by_persona_id(pool, &persona_id)?;
     let subscriptions = event_repo::get_subscriptions_by_persona(pool, &persona_id)?;
-    let memories = memory_repo::get_all(pool, Some(&persona_id), None, None, None)?;
+    let memories = memory_repo::get_all(pool, Some(&persona_id), None, None, None, None)?;
 
     let bundle = PersonaExportBundle {
         version: 1,
