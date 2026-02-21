@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Eye, Users, Radio, Brain, DollarSign, Cloud, Plus, LayoutTemplate } from 'lucide-react';
+import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Eye, Users, Radio, Brain, DollarSign, Cloud, Plus, LayoutTemplate, Monitor } from 'lucide-react';
 import { getVersion } from '@tauri-apps/api/app';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { SidebarSection, OverviewTab } from '@/lib/types/types';
@@ -61,6 +61,7 @@ export default function Sidebar() {
   };
 
   const overviewItems: Array<{ id: OverviewTab; icon: typeof Activity; label: string }> = [
+    { id: 'system-check', icon: Monitor, label: 'System Check' },
     { id: 'executions', icon: Activity, label: 'Executions' },
     { id: 'manual-review', icon: ClipboardCheck, label: 'Manual Review' },
     { id: 'messages', icon: MessageSquare, label: 'Messages' },

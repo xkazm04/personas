@@ -113,6 +113,26 @@ pub fn notify_healing_issue(
     );
 }
 
+pub fn notify_n8n_transform_completed(
+    app: &AppHandle,
+    workflow_name: &str,
+    success: bool,
+) {
+    if success {
+        send(
+            app,
+            "n8n Transform Complete",
+            &format!("{} draft is ready for review.", workflow_name),
+        );
+    } else {
+        send(
+            app,
+            "n8n Transform Failed",
+            &format!("{} transformation failed. Re-open importer for details.", workflow_name),
+        );
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Low-level send
 // ---------------------------------------------------------------------------

@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Lightbulb, RotateCcw } from 'lucide-react';
+import { Lightbulb, RotateCcw, Download, Workflow } from 'lucide-react';
 import { TemplatePromptPreview } from '@/features/templates/sub_builtin/TemplatePromptPreview';
 import { TemplateConnectorGrid } from '@/features/templates/sub_builtin/TemplateConnectorGrid';
 import { TemplateQualitySection } from '@/features/templates/sub_builtin/TemplateQualitySection';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 
 function parseJsonSafe<T>(json: string | null, fallback: T): T {
   if (!json) return fallback;
@@ -19,10 +20,16 @@ export function ReviewExpandedDetail({
   review,
   isRunning,
   onApplyAdjustment,
+  onAdopt,
+  isAdopting,
+  onViewDiagram,
 }: {
   review: PersonaDesignReview;
   isRunning: boolean;
   onApplyAdjustment: (adjustedInstruction: string) => void;
+  onAdopt?: () => void;
+  isAdopting?: boolean;
+  onViewDiagram?: () => void;
 }) {
   const [showJson, setShowJson] = useState(false);
 
@@ -32,6 +39,7 @@ export function ReviewExpandedDetail({
     reason: string;
     appliedFixes: string[];
   } | null>(review.suggested_adjustment, null);
+  const flows = parseJsonSafe<UseCaseFlow[]>(review.use_case_flows, []);
 
   if (!designResult) {
     return (
@@ -55,6 +63,38 @@ export function ReviewExpandedDetail({
 
       {/* 3. Connector Grid */}
       <TemplateConnectorGrid designResult={designResult} />
+
+      {/* 3.5. Use Case Flows Preview */}
+      {flows.length > 0 && onViewDiagram && (
+        <div>
+          <h4 className="text-xs font-medium text-muted-foreground/50 uppercase tracking-wide mb-2">
+            Use Case Flows
+          </h4>
+          <div className="flex items-center gap-3 flex-wrap">
+            {flows.map((flow) => (
+              <button
+                key={flow.id}
+                onClick={onViewDiagram}
+                className="bg-violet-500/5 border border-violet-500/15 rounded-xl px-4 py-3 text-left hover:bg-violet-500/10 hover:border-violet-500/25 transition-all group min-w-[180px]"
+              >
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Workflow className="w-4 h-4 text-violet-400/70 group-hover:text-violet-400 transition-colors" />
+                  <span className="text-sm font-medium text-foreground/80 group-hover:text-foreground/90 truncate">
+                    {flow.name}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 text-[11px] text-muted-foreground/40">
+                  <span>{flow.nodes.length} nodes</span>
+                  <span>{flow.edges.length} edges</span>
+                </div>
+                <div className="text-[10px] text-violet-400/50 mt-1.5 group-hover:text-violet-400/70 transition-colors">
+                  View diagram
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 4. Quality Section */}
       <TemplateQualitySection review={review} />
@@ -109,7 +149,19 @@ export function ReviewExpandedDetail({
       )}
 
       {/* 7. Footer */}
-      <div className="flex items-center justify-end pt-2 border-t border-primary/[0.08]">
+      <div className="flex items-center justify-between pt-2 border-t border-primary/[0.08]">
+        {onAdopt ? (
+          <button
+            onClick={onAdopt}
+            disabled={isAdopting}
+            className="px-4 py-2.5 text-sm rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            Adopt as New Persona
+          </button>
+        ) : (
+          <div />
+        )}
         <button
           onClick={() => setShowJson(!showJson)}
           className="text-xs text-violet-400/60 hover:text-violet-400/80 transition-colors"

@@ -3,6 +3,13 @@
  * Used by the Design tab to drive LLM-based prompt generation.
  */
 
+/** A question from the design engine asking for user clarification */
+export interface DesignQuestion {
+  question: string;
+  options?: string[];
+  context?: string;
+}
+
 /** Structured prompt section (identity, instructions, etc.) */
 export interface StructuredPromptSection {
   key: string;
@@ -74,7 +81,7 @@ export interface SuggestedTrigger {
 }
 
 /** Phase of the design analysis lifecycle */
-export type DesignPhase = "idle" | "analyzing" | "preview" | "applying" | "applied" | "refining";
+export type DesignPhase = "idle" | "analyzing" | "preview" | "applying" | "applied" | "refining" | "awaiting-input";
 
 /** Result of a design feasibility test */
 export interface DesignTestResult {

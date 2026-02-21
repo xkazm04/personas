@@ -137,6 +137,42 @@ pub fn build_refinement_prompt(
 // Result Parser
 // ============================================================================
 
+/// Extract a design question JSON from Claude's output text.
+/// Looks for JSON objects containing `design_question` key.
+pub fn extract_design_question(output: &str) -> Option<serde_json::Value> {
+    // Strategy 1: fenced JSON block
+    if let Some(val) = extract_fenced_json(output) {
+        if let Some(q) = val.get("design_question") {
+            if q.get("question").and_then(|v| v.as_str()).is_some() {
+                return Some(q.clone());
+            }
+        }
+    }
+
+    // Strategy 2: bare JSON object
+    let chars: Vec<char> = output.chars().collect();
+    let len = chars.len();
+    let mut i = 0;
+
+    while i < len {
+        if chars[i] == '{' {
+            if let Some(end) = find_matching_brace(&chars, i) {
+                let candidate: String = chars[i..=end].iter().collect();
+                if let Ok(val) = serde_json::from_str::<serde_json::Value>(&candidate) {
+                    if let Some(q) = val.get("design_question") {
+                        if q.get("question").and_then(|v| v.as_str()).is_some() {
+                            return Some(q.clone());
+                        }
+                    }
+                }
+            }
+        }
+        i += 1;
+    }
+
+    None
+}
+
 /// Extract a DesignAnalysisResult JSON object from Claude's output text.
 /// Looks for fenced ```json blocks or bare JSON objects with `structured_prompt`.
 pub fn extract_design_result(output: &str) -> Option<serde_json::Value> {
@@ -401,6 +437,26 @@ Important rules:
 3. `suggested_triggers[].related_triggers` are zero-based indices into the `suggested_triggers` array
 4. `full_prompt_markdown` must be the complete, ready-to-use system prompt in markdown format
 5. Output ONLY the JSON block — no additional text before or after
+
+## Clarification Questions
+
+If the user's instruction is ambiguous or you need critical information before producing a good design, you MAY output a question instead of the full result. Use this format:
+
+```json
+{
+  "design_question": {
+    "question": "Your clarification question here",
+    "options": ["Option A", "Option B", "Option C"],
+    "context": "Brief context explaining why you need this information"
+  }
+}
+```
+
+Rules for questions:
+- Only ask when the answer would meaningfully change the design (e.g., scope, data sources, autonomy level)
+- Provide 2-4 concrete options when possible
+- Ask at most ONE question, then wait for the answer
+- If the instruction is clear enough to produce a reasonable design, produce the full result instead
 "##;
 
 // ============================================================================
@@ -598,6 +654,45 @@ mod tests {
         let output = "I analyzed the requirements but could not produce a valid design.";
         let result = extract_design_result(output);
         assert!(result.is_none());
+    }
+
+    // ── Question Extraction Tests ─────────────────────────────────
+
+    #[test]
+    fn test_extract_question_fenced_json() {
+        let output = r#"I need some clarification:
+
+```json
+{"design_question":{"question":"What data sources should this agent monitor?","options":["Email only","Email and Slack","All messaging platforms"],"context":"The scope affects which tools and connectors to suggest."}}
+```
+"#;
+        let question = extract_design_question(output);
+        assert!(question.is_some());
+        let q = question.unwrap();
+        assert_eq!(
+            q.get("question").and_then(|v| v.as_str()),
+            Some("What data sources should this agent monitor?")
+        );
+        assert!(q.get("options").and_then(|v| v.as_array()).is_some());
+    }
+
+    #[test]
+    fn test_extract_question_bare_json() {
+        let output = r#"Before I can design this, I need to ask: {"design_question":{"question":"How autonomous should this agent be?","options":["Read-only","Full access with approval","Fully autonomous"]}}"#;
+        let question = extract_design_question(output);
+        assert!(question.is_some());
+        let q = question.unwrap();
+        assert_eq!(
+            q.get("question").and_then(|v| v.as_str()),
+            Some("How autonomous should this agent be?")
+        );
+    }
+
+    #[test]
+    fn test_extract_question_not_present() {
+        let output = format!("Here is the full design:\n```json\n{}\n```", sample_design_result());
+        let question = extract_design_question(&output);
+        assert!(question.is_none());
     }
 
     // ── Feasibility Checker Tests ────────────────────────────────

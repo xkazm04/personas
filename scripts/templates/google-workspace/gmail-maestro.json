@@ -136,7 +136,7 @@
     ],
     "suggested_connectors": [
       {
-        "name": "Gmail",
+        "name": "gmail",
         "oauth_type": "oauth2",
         "credential_fields": [
           {
@@ -169,7 +169,7 @@
         "setup_instructions": "1. Go to Google Cloud Console (https://console.cloud.google.com).\n2. Create or select a project.\n3. Enable the Gmail API under APIs & Services > Library.\n4. Create OAuth 2.0 credentials under APIs & Services > Credentials.\n5. Set the authorized redirect URI to your Personas app callback URL.\n6. Copy the Client ID and Client Secret into the fields above.\n7. For push notifications: Create a Pub/Sub topic, grant Gmail publish permissions, and set up a push subscription pointing to your webhook endpoint.\n8. The agent will initiate the OAuth flow to obtain access and refresh tokens."
       },
       {
-        "name": "ClickUp",
+        "name": "clickup",
         "credential_fields": [
           {
             "key": "api_key",
@@ -201,12 +201,12 @@
         "setup_instructions": "1. Log in to your ClickUp workspace.\n2. Navigate to Settings > Apps (or click your avatar > Settings > Apps).\n3. Under API Token, click 'Generate' to create a personal API token.\n4. Copy the token (starts with 'pk_') and paste it in the API Key field.\n5. Create a dedicated List called 'Email Tasks' in your preferred Space/Folder.\n6. Copy the List ID from the list's URL (the numeric ID) and paste it in the List ID field.\n7. Optionally, note your Workspace ID from Settings or by calling GET https://api.clickup.com/api/v2/team."
       },
       {
-        "name": "HTTP",
+        "name": "http",
         "credential_fields": [
           {
             "key": "default_headers",
             "label": "Default Headers (JSON)",
-            "type": "textarea",
+            "type": "text",
             "placeholder": "{\"Content-Type\": \"application/json\"}",
             "helpText": "Optional default headers to include with every HTTP request. Useful for common headers across multiple API calls.",
             "required": false
@@ -221,7 +221,7 @@
       {
         "type": "email",
         "description": "Daily digest email summarizing all email processing activity — emails processed, ClickUp tasks created, items needing attention, pending approvals, follow-ups due, and any errors encountered. Sent at the configured time (default 8:00 AM) via the Gmail API using the connected account.",
-        "required_connector": "Gmail",
+        "required_connector": "gmail",
         "config_hints": {
           "send_time": "08:00",
           "timezone": "America/New_York",
@@ -234,22 +234,22 @@
     "suggested_event_subscriptions": [
       {
         "event_type": "manual_review",
-        "source_filter": "gmail-maestro",
+        "source_filter": { "persona": "gmail-maestro" },
         "description": "Triggered when the agent encounters an action requiring human approval — such as sending a drafted reply, deleting emails, or bulk archiving. The event payload includes the proposed action details, the relevant email context, and an approve/reject interface."
       },
       {
         "event_type": "execution_completed",
-        "source_filter": "gmail-maestro",
+        "source_filter": { "persona": "gmail-maestro" },
         "description": "Triggered when a full email processing cycle completes — from initial triage through task creation and labeling. The event payload includes the processing outcome: email ID, assigned project, urgency level, whether a task was created, and any flags or errors."
       },
       {
         "event_type": "execution_error",
-        "source_filter": "gmail-maestro",
+        "source_filter": { "persona": "gmail-maestro" },
         "description": "Triggered when the agent encounters an unrecoverable error during processing — such as persistent API failures, authentication expiration, or malformed email payloads. Enables external monitoring and alerting."
       },
       {
         "event_type": "low_confidence_extraction",
-        "source_filter": "gmail-maestro",
+        "source_filter": { "persona": "gmail-maestro" },
         "description": "Triggered when the agent's confidence score for urgency assessment or action extraction falls below the 0.6 threshold. Allows external systems to queue these items for priority human review outside of the daily digest cycle."
       }
     ]

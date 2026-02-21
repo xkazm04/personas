@@ -9,6 +9,7 @@ import ObservabilityDashboard from '@/features/overview/sub_observability/Observ
 import MemoriesPage from '@/features/overview/sub_memories/MemoriesPage';
 import RealtimeVisualizerPage from '@/features/overview/sub_realtime/RealtimeVisualizerPage';
 import BudgetSettingsPage from '@/features/overview/sub_budget/BudgetSettingsPage';
+import { SystemChecksPanel } from '@/features/agents/components/OnboardingWizard';
 
 export default function OverviewPage() {
   const overviewTab = usePersonaStore((s) => s.overviewTab);
@@ -21,7 +22,8 @@ export default function OverviewPage() {
       transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
       className="flex-1 h-full overflow-hidden"
     >
-      {overviewTab === 'executions' ? <GlobalExecutionList /> :
+      {overviewTab === 'system-check' ? <SystemChecksPanel /> :
+       overviewTab === 'executions' ? <GlobalExecutionList /> :
        overviewTab === 'manual-review' ? <ManualReviewList /> :
        overviewTab === 'messages' ? <MessageList /> :
        overviewTab === 'events' ? <EventLogList /> :

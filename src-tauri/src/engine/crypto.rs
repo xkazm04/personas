@@ -1,4 +1,5 @@
 use std::sync::OnceLock;
+use std::{fs, path::PathBuf};
 
 use aes_gcm::aead::rand_core::RngCore;
 use aes_gcm::aead::{Aead, KeyInit, OsRng};
@@ -69,14 +70,26 @@ fn try_keychain() -> Result<[u8; 32], CryptoError> {
             Ok(key)
         }
         Err(keyring::Error::NoEntry) => {
-            // Generate a new key and store it
+            // Keychain has no entry; try local persisted key first to avoid churn across rebuilds.
+            if let Some(local_key) = load_local_fallback_key()? {
+                if let Err(e) = entry.set_password(&B64.encode(local_key)) {
+                    tracing::warn!("Failed to backfill keychain from local fallback key: {}", e);
+                }
+                tracing::info!("Master key loaded from local fallback key file");
+                return Ok(local_key);
+            }
+
+            // Generate a new key, persist locally, and try keychain.
             let mut key = [0u8; 32];
             OsRng.fill_bytes(&mut key);
+
+            save_local_fallback_key(&key)?;
+
             let encoded = B64.encode(key);
-            entry
-                .set_password(&encoded)
-                .map_err(|e| CryptoError::KeyManagement(format!("Failed to store key: {}", e)))?;
-            tracing::info!("New master key generated and stored in OS keychain");
+            match entry.set_password(&encoded) {
+                Ok(_) => tracing::info!("New master key generated and stored in OS keychain"),
+                Err(e) => tracing::warn!("Failed to store new master key in OS keychain: {}", e),
+            }
             Ok(key)
         }
         Err(e) => Err(CryptoError::KeyManagement(format!(
@@ -101,6 +114,51 @@ fn derive_fallback_key() -> [u8; 32] {
     pbkdf2_hmac::<Sha256>(password.as_bytes(), salt, 600_000, &mut key);
     tracing::info!("Fallback master key derived from machine identity");
     key
+}
+
+fn local_fallback_key_path() -> Option<PathBuf> {
+    let appdata = std::env::var("APPDATA").ok()?;
+    let dir = PathBuf::from(appdata).join("com.personas.desktop");
+    Some(dir.join("master.key"))
+}
+
+fn load_local_fallback_key() -> Result<Option<[u8; 32]>, CryptoError> {
+    let Some(path) = local_fallback_key_path() else {
+        return Ok(None);
+    };
+
+    if !path.exists() {
+        return Ok(None);
+    }
+
+    let raw = fs::read_to_string(&path)
+        .map_err(|e| CryptoError::KeyManagement(format!("Failed reading local key file: {}", e)))?;
+    let bytes = B64.decode(raw.trim())?;
+    if bytes.len() != 32 {
+        return Err(CryptoError::KeyManagement(format!(
+            "Local key has wrong length: {} (expected 32)",
+            bytes.len()
+        )));
+    }
+
+    let mut key = [0u8; 32];
+    key.copy_from_slice(&bytes);
+    Ok(Some(key))
+}
+
+fn save_local_fallback_key(key: &[u8; 32]) -> Result<(), CryptoError> {
+    let Some(path) = local_fallback_key_path() else {
+        return Ok(());
+    };
+
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)
+            .map_err(|e| CryptoError::KeyManagement(format!("Failed creating local key dir: {}", e)))?;
+    }
+
+    fs::write(&path, B64.encode(key))
+        .map_err(|e| CryptoError::KeyManagement(format!("Failed writing local key file: {}", e)))?;
+    Ok(())
 }
 
 /// Returns the key source: "keychain" or "fallback".
