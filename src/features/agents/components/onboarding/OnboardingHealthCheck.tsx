@@ -15,10 +15,14 @@ import {
   Download,
   Cpu,
   Key,
+  ChevronDown,
+  ChevronRight,
+  Trash2,
+  FileWarning,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { systemHealthCheck, getAppSetting, setAppSetting } from '@/api/tauriApi';
-import type { HealthCheckSection, HealthCheckItem } from '@/api/tauriApi';
+import { systemHealthCheck, getAppSetting, setAppSetting, getCrashLogs, clearCrashLogs } from '@/api/tauriApi';
+import type { HealthCheckSection, HealthCheckItem, CrashLogEntry } from '@/api/tauriApi';
 import { useAuthStore } from '@/stores/authStore';
 import { useAutoInstaller, type InstallState } from '@/hooks/utility/useAutoInstaller';
 import { ExternalLink } from 'lucide-react';
@@ -361,6 +365,150 @@ function LiteLLMConfigPopup({
   );
 }
 
+// ── Crash Logs Section ───────────────────────────────────────────────────────
+
+function CrashLogsSection() {
+  const [expanded, setExpanded] = useState(false);
+  const [backendLogs, setBackendLogs] = useState<CrashLogEntry[]>([]);
+  const [frontendLogs, setFrontendLogs] = useState<Array<{ timestamp: string; component: string; message: string; stack?: string }>>([]);
+  const [selectedLog, setSelectedLog] = useState<string | null>(null);
+  const [clearing, setClearing] = useState(false);
+
+  const loadLogs = useCallback(() => {
+    getCrashLogs()
+      .then(setBackendLogs)
+      .catch(() => setBackendLogs([]));
+    try {
+      const raw = localStorage.getItem('__personas_frontend_crashes');
+      if (raw) setFrontendLogs(JSON.parse(raw));
+      else setFrontendLogs([]);
+    } catch {
+      setFrontendLogs([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (expanded) loadLogs();
+  }, [expanded, loadLogs]);
+
+  const totalCount = backendLogs.length + frontendLogs.length;
+
+  const handleClear = async () => {
+    setClearing(true);
+    try {
+      await clearCrashLogs();
+      localStorage.removeItem('__personas_frontend_crashes');
+      setBackendLogs([]);
+      setFrontendLogs([]);
+      setSelectedLog(null);
+    } catch {
+      // ignore
+    } finally {
+      setClearing(false);
+    }
+  };
+
+  return (
+    <div className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-secondary/30 transition-colors"
+      >
+        <div className="w-6 h-6 rounded-md flex items-center justify-center bg-red-500/10">
+          <FileWarning className="w-3.5 h-3.5 text-red-300" />
+        </div>
+        <span className="text-xs font-medium text-foreground/60 uppercase tracking-wider">
+          Crash Logs
+        </span>
+        {totalCount > 0 && (
+          <span className="ml-1 px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-red-500/15 text-red-400">
+            {totalCount}
+          </span>
+        )}
+        <div className="ml-auto flex items-center gap-2">
+          {totalCount > 0 && expanded && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                void handleClear();
+              }}
+              disabled={clearing}
+              className="flex items-center gap-1 px-2 py-1 text-[10px] rounded-md text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
+            >
+              <Trash2 className="w-3 h-3" />
+              Clear
+            </button>
+          )}
+          {expanded ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/40" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40" />}
+        </div>
+      </button>
+
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="border-t border-primary/5 px-4 py-3 space-y-2 max-h-80 overflow-y-auto">
+              {totalCount === 0 && (
+                <p className="text-xs text-muted-foreground/40 py-2">No crash logs recorded.</p>
+              )}
+
+              {backendLogs.map((log) => (
+                <div key={log.filename} className="rounded-lg border border-primary/10 bg-background/40 overflow-hidden">
+                  <button
+                    onClick={() => setSelectedLog(selectedLog === log.filename ? null : log.filename)}
+                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-secondary/30 transition-colors"
+                  >
+                    <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+                    <span className="text-[11px] text-foreground/70 font-mono truncate">{log.filename}</span>
+                    <span className="ml-auto text-[10px] text-red-400/60 font-medium">Rust panic</span>
+                  </button>
+                  {selectedLog === log.filename && (
+                    <div className="border-t border-primary/5 px-3 py-2">
+                      <pre className="text-[10px] text-muted-foreground/50 whitespace-pre-wrap break-all max-h-48 overflow-y-auto font-mono leading-relaxed">
+                        {log.content}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {frontendLogs.map((log, i) => (
+                <div key={`fe-${i}`} className="rounded-lg border border-primary/10 bg-background/40 overflow-hidden">
+                  <button
+                    onClick={() => setSelectedLog(selectedLog === `fe-${i}` ? null : `fe-${i}`)}
+                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-secondary/30 transition-colors"
+                  >
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                    <span className="text-[11px] text-foreground/70 truncate">{log.message}</span>
+                    <span className="ml-auto text-[10px] text-amber-400/60 font-medium flex-shrink-0">{log.component}</span>
+                  </button>
+                  {selectedLog === `fe-${i}` && (
+                    <div className="border-t border-primary/5 px-3 py-2 space-y-1">
+                      <p className="text-[10px] text-muted-foreground/40">
+                        {log.timestamp}
+                      </p>
+                      {log.stack && (
+                        <pre className="text-[10px] text-muted-foreground/50 whitespace-pre-wrap break-all max-h-48 overflow-y-auto font-mono leading-relaxed">
+                          {log.stack}
+                        </pre>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 // ── Main SystemChecksPanel ─────────────────────────────────────────────────────
 
 export function SystemChecksPanel({ onNext }: { onNext?: () => void }) {
@@ -652,6 +800,8 @@ export function SystemChecksPanel({ onNext }: { onNext?: () => void }) {
           </div>
         </div>
       )}
+
+      <CrashLogsSection />
 
       {hasIssues && !loading && (
         <p className="text-xs text-amber-400/80">

@@ -1,10 +1,9 @@
-import { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useCallback, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle2 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { PersonaMemoryCategory } from '@/lib/types/frontendTypes';
-import { MEMORY_CATEGORY_COLORS } from '@/lib/utils/formatters';
-
-const ALL_CATEGORIES: PersonaMemoryCategory[] = ['fact', 'preference', 'instruction', 'context', 'learned', 'custom'];
+import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
 
 // ── Interactive Importance Dots (clickable) ─────────────────────
 function InteractiveImportanceDots({
@@ -53,8 +52,16 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
   const [importance, setImportance] = useState(3);
   const [tagsInput, setTagsInput] = useState('');
   const [saving, setSaving] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const canSave = personaId && title.trim() && content.trim();
+
+  // Auto-close after showing success
+  useEffect(() => {
+    if (!showSuccess) return;
+    const timer = setTimeout(() => onClose(), 1200);
+    return () => clearTimeout(timer);
+  }, [showSuccess, onClose]);
 
   const handleSave = useCallback(async () => {
     if (!canSave) return;
@@ -65,8 +72,8 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
       .filter(Boolean);
     await createMemory({ persona_id: personaId, title: title.trim(), content: content.trim(), category, importance, tags });
     setSaving(false);
-    onClose();
-  }, [canSave, personaId, title, content, category, importance, tagsInput, createMemory, onClose]);
+    setShowSuccess(true);
+  }, [canSave, personaId, title, content, category, importance, tagsInput, createMemory]);
 
   return (
     <motion.div
@@ -74,8 +81,25 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ type: 'spring', damping: 24, stiffness: 300 }}
-      className="mx-4 md:mx-6 mb-1 mt-4 p-5 rounded-2xl bg-secondary/40 backdrop-blur-sm border border-violet-500/20"
+      className="mx-4 md:mx-6 mb-1 mt-4 p-5 rounded-2xl bg-secondary/40 backdrop-blur-sm border border-violet-500/20 relative overflow-hidden"
     >
+      {/* Success confirmation overlay */}
+      <AnimatePresence>
+        {showSuccess && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="absolute inset-0 z-10 flex items-center justify-center bg-secondary/80 backdrop-blur-sm rounded-2xl"
+          >
+            <div className="flex items-center gap-2.5">
+              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+              <span className="text-sm font-medium text-emerald-300">Memory created successfully</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="space-y-4">
         {/* Row 1: Agent + Category side by side */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -95,7 +119,7 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
           <div>
             <label className="text-[11px] font-mono uppercase text-muted-foreground/50 mb-1.5 block">Category</label>
             <div className="flex items-center gap-1.5 flex-wrap">
-              {ALL_CATEGORIES.map((cat) => {
+              {ALL_MEMORY_CATEGORIES.map((cat) => {
                 const defaultColors = { label: cat, bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/20' };
                 const colors = MEMORY_CATEGORY_COLORS[cat] ?? defaultColors;
                 const isActive = category === cat;

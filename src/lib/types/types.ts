@@ -196,10 +196,11 @@ export interface CredentialTemplateEvent {
 
 // ── Navigation Types ───────────────────────────────────────────────────
 
-export type SidebarSection = "overview" | "personas" | "events" | "credentials" | "design-reviews" | "team" | "cloud";
-export type EditorTab = "prompt" | "executions" | "settings";
+export type SidebarSection = "overview" | "personas" | "events" | "credentials" | "design-reviews" | "team" | "cloud" | "settings";
+export type EditorTab = "prompt" | "executions" | "settings" | "tests";
 export type OverviewTab = "system-check" | "executions" | "manual-review" | "messages" | "usage" | "events" | "observability" | "realtime" | "memories" | "budget";
 export type TemplateTab = "builtin" | "n8n" | "generated";
+export type SettingsTab = "account" | "appearance" | "notifications";
 
 // ── Analytics Types ────────────────────────────────────────────────────
 

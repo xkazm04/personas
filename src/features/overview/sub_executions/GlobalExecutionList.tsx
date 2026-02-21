@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronRight, Loader2, RefreshCw, Copy, Check } from 'lucide-react';
+import { ChevronDown, ChevronRight, Loader2, RefreshCw, Copy, Check, RotateCw } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { GlobalExecution } from '@/lib/types/types';
 import type { PersonaExecutionStatus } from '@/lib/types/frontendTypes';
@@ -107,9 +107,32 @@ export default function GlobalExecutionList() {
   const hasMore = globalExecutionsOffset < globalExecutionsTotal;
 
   return (
-    <div className="flex flex-col h-full overflow-hidden p-6 pt-4">
-      {/* Filter pills */}
-      <div className="flex items-center gap-2 mb-4">
+    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
+      {/* Header */}
+      <div className="px-4 md:px-6 py-5 border-b border-primary/10 bg-primary/5 flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center">
+            <Loader2 className="w-5 h-5 text-blue-400" />
+          </div>
+          <div className="flex-1">
+            <h1 className="text-lg font-semibold text-foreground/90">Executions</h1>
+            <p className="text-xs text-muted-foreground/50">
+              {globalExecutionsTotal} execution{globalExecutionsTotal !== 1 ? 's' : ''} recorded
+            </p>
+          </div>
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="p-1.5 rounded-lg text-muted-foreground/40 hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors"
+            title="Refresh"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+      </div>
+
+      {/* Filter bar */}
+      <div className="px-4 md:px-6 py-3 border-b border-primary/10 flex items-center gap-2 flex-shrink-0">
         {filterOptions.map((opt) => (
           <button
             key={opt.id}
@@ -127,61 +150,56 @@ export default function GlobalExecutionList() {
             <span className="opacity-60">({statusCounts[opt.id]})</span>
           </button>
         ))}
-        <button
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          className="ml-auto p-1.5 rounded-lg text-muted-foreground/40 hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors"
-          title="Refresh"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-        </button>
-      </div>
-
-      <div className="mb-2 text-[11px] font-mono text-muted-foreground/40">
-        Showing {globalExecutions.length} of {globalExecutionsTotal} executions
+        <span className="ml-auto text-[11px] font-mono text-muted-foreground/40">
+          Showing {globalExecutions.length} of {globalExecutionsTotal}
+        </span>
       </div>
 
       {/* Execution list */}
-      <div className="flex-1 overflow-y-auto space-y-1.5">
-        {isLoading && (
-          <div className="text-center py-16">
-            <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
-              <Loader2 className="w-5 h-5 text-primary/70 animate-spin" />
+      <div className="flex-1 overflow-y-auto flex flex-col">
+        {isLoading ? (
+          <div className="flex-1 flex items-center justify-center p-4 md:p-6">
+            <div className="text-center">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
+                <Loader2 className="w-5 h-5 text-primary/70 animate-spin" />
+              </div>
+              <p className="text-sm text-muted-foreground/50">Loading executions...</p>
             </div>
-            <p className="text-sm text-muted-foreground/50">Loading executions...</p>
           </div>
-        )}
-
-        {!isLoading && globalExecutions.length === 0 && (
-          <div className="text-center py-16">
-            <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
-              <Loader2 className="w-5 h-5 text-muted-foreground/30" />
+        ) : globalExecutions.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center p-4 md:p-6">
+            <div className="text-center">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
+                <Loader2 className="w-5 h-5 text-muted-foreground/30" />
+              </div>
+              <p className="text-sm text-muted-foreground/50">No executions yet</p>
+              <p className="text-xs text-muted-foreground/30 mt-1">Execution activity from personas will appear here</p>
             </div>
-            <p className="text-sm text-muted-foreground/50">No executions yet</p>
-            <p className="text-xs text-muted-foreground/30 mt-1">Execution activity from personas will appear here</p>
           </div>
-        )}
+        ) : (
+          <div className="p-4 md:p-6 space-y-1.5">
+            <AnimatePresence initial={false}>
+              {globalExecutions.map((exec) => (
+                <ExecutionRow
+                  key={exec.id}
+                  execution={exec}
+                  isExpanded={expandedId === exec.id}
+                  onToggle={() => setExpandedId(expandedId === exec.id ? null : exec.id)}
+                />
+              ))}
+            </AnimatePresence>
 
-        <AnimatePresence initial={false}>
-          {globalExecutions.map((exec) => (
-            <ExecutionRow
-              key={exec.id}
-              execution={exec}
-              isExpanded={expandedId === exec.id}
-              onToggle={() => setExpandedId(expandedId === exec.id ? null : exec.id)}
-            />
-          ))}
-        </AnimatePresence>
-
-        {/* Load more */}
-        {hasMore && (
-          <div className="pt-3 pb-2 text-center">
-            <button
-              onClick={handleLoadMore}
-              className="px-4 py-2 text-xs font-medium text-muted-foreground/60 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 rounded-lg border border-primary/15 transition-all"
-            >
-              Load More ({globalExecutionsTotal - globalExecutionsOffset} remaining)
-            </button>
+            {/* Load more */}
+            {hasMore && (
+              <div className="pt-3 pb-2 text-center">
+                <button
+                  onClick={handleLoadMore}
+                  className="px-4 py-2 text-xs font-medium text-muted-foreground/60 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 rounded-lg border border-primary/15 transition-all"
+                >
+                  Load More ({globalExecutionsTotal - globalExecutionsOffset} remaining)
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -256,6 +274,14 @@ function ExecutionRow({
           )}
           {status.label}
         </div>
+
+        {/* Retry badge */}
+        {execution.retry_count > 0 && (
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" title={`Healing retry #${execution.retry_count}`}>
+            <RotateCw className="w-2.5 h-2.5" />
+            #{execution.retry_count}
+          </span>
+        )}
 
         {/* Duration */}
         <span className="text-xs text-muted-foreground/50 min-w-[60px] text-right font-mono">

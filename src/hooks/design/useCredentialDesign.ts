@@ -41,6 +41,7 @@ export function useCredentialDesign() {
   const [outputLines, setOutputLines] = useState<string[]>([]);
   const [result, setResult] = useState<CredentialDesignResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [savedCredentialId, setSavedCredentialId] = useState<string | null>(null);
   const unlistenersRef = useRef<UnlistenFn[]>([]);
 
   const createConnectorDefinition = usePersonaStore((s) => s.createConnectorDefinition);
@@ -129,12 +130,13 @@ export function useCredentialDesign() {
 
       // Create the credential
       const serviceType = result.match_existing || result.connector.name;
-      await createCredential({
+      const credId = await createCredential({
         name: credentialName,
         service_type: serviceType,
         data: fieldValues,
       });
 
+      setSavedCredentialId(credId ?? null);
       setPhase('done');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save credential');
@@ -148,6 +150,7 @@ export function useCredentialDesign() {
     setOutputLines([]);
     setResult(null);
     setError(null);
+    setSavedCredentialId(null);
   }, [cleanup]);
 
   const loadTemplate = useCallback((template: CredentialDesignResult) => {
@@ -163,6 +166,7 @@ export function useCredentialDesign() {
     outputLines,
     result,
     error,
+    savedCredentialId,
     start,
     cancel,
     save,

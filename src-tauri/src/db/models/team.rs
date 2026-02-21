@@ -73,6 +73,18 @@ pub struct PersonaTeamConnection {
 }
 
 // ============================================================================
+// Team Counts (batch query result)
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct TeamCounts {
+    pub team_id: String,
+    pub member_count: u32,
+    pub connection_count: u32,
+}
+
+// ============================================================================
 // Pipeline Runs
 // ============================================================================
 

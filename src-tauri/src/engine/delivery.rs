@@ -1,7 +1,7 @@
-#![allow(dead_code)]
 use crate::error::AppError;
 
 /// Deliver a message to an external channel
+#[allow(dead_code)]
 pub async fn deliver_message(
     channel_type: &str,
     message: &str,
@@ -17,6 +17,7 @@ pub async fn deliver_message(
     }
 }
 
+#[allow(dead_code)]
 async fn deliver_slack(message: &str, cred: &serde_json::Value) -> Result<String, AppError> {
     let token = cred
         .get("bot_token")
@@ -58,6 +59,7 @@ async fn deliver_slack(message: &str, cred: &serde_json::Value) -> Result<String
     }
 }
 
+#[allow(dead_code)]
 async fn deliver_telegram(message: &str, cred: &serde_json::Value) -> Result<String, AppError> {
     let token = cred
         .get("bot_token")

@@ -62,3 +62,94 @@ export const getGoogleCredentialOAuthStatus = (sessionId: string) =>
   invoke<GoogleCredentialOAuthStatusResult>("get_google_credential_oauth_status", {
     sessionId,
   });
+
+// ============================================================================
+// Universal OAuth Gateway
+// ============================================================================
+
+export interface OAuthProvider {
+  id: string;
+  name: string;
+  supports_pkce: boolean;
+  default_scopes: string[];
+}
+
+export interface OAuthProviderListResult {
+  providers: OAuthProvider[];
+}
+
+export interface OAuthStartResult {
+  session_id: string;
+  auth_url: string;
+  redirect_uri: string;
+  provider_id: string;
+  pkce_used: boolean;
+}
+
+export interface OAuthStatusResult {
+  status: 'pending' | 'success' | 'error' | 'not_found';
+  provider_id?: string;
+  access_token: string | null;
+  refresh_token: string | null;
+  scope: string | null;
+  token_type: string | null;
+  expires_in: number | null;
+  extra: Record<string, unknown> | null;
+  error: string | null;
+}
+
+export interface OAuthRefreshResult {
+  access_token: string | null;
+  refresh_token: string | null;
+  expires_in: number | null;
+  token_type: string | null;
+  scope: string | null;
+}
+
+export const listOAuthProviders = () =>
+  invoke<OAuthProviderListResult>("list_oauth_providers");
+
+export interface StartOAuthParams {
+  providerId: string;
+  clientId: string;
+  clientSecret?: string;
+  scopes?: string[];
+  authorizeUrl?: string;
+  tokenUrl?: string;
+  oidcIssuer?: string;
+  usePkce?: boolean;
+  extraParams?: Record<string, string>;
+}
+
+export const startOAuth = (params: StartOAuthParams) =>
+  invoke<OAuthStartResult>("start_oauth", {
+    providerId: params.providerId,
+    clientId: params.clientId,
+    clientSecret: params.clientSecret ?? null,
+    scopes: params.scopes ?? null,
+    authorizeUrl: params.authorizeUrl ?? null,
+    tokenUrl: params.tokenUrl ?? null,
+    oidcIssuer: params.oidcIssuer ?? null,
+    usePkce: params.usePkce ?? null,
+    extraParams: params.extraParams ?? null,
+  });
+
+export const getOAuthStatus = (sessionId: string) =>
+  invoke<OAuthStatusResult>("get_oauth_status", { sessionId });
+
+export const refreshOAuthToken = (params: {
+  providerId: string;
+  clientId: string;
+  clientSecret?: string;
+  refreshToken: string;
+  tokenUrl?: string;
+  oidcIssuer?: string;
+}) =>
+  invoke<OAuthRefreshResult>("refresh_oauth_token", {
+    providerId: params.providerId,
+    clientId: params.clientId,
+    clientSecret: params.clientSecret ?? null,
+    refreshToken: params.refreshToken,
+    tokenUrl: params.tokenUrl ?? null,
+    oidcIssuer: params.oidcIssuer ?? null,
+  });

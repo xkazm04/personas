@@ -4,7 +4,7 @@ use crate::db::models::{CreateTriggerInput, PersonaTrigger, UpdateTriggerInput};
 use crate::db::DbPool;
 use crate::error::AppError;
 
-const VALID_TRIGGER_TYPES: &[&str] = &["schedule", "polling", "webhook", "manual"];
+const VALID_TRIGGER_TYPES: &[&str] = &["schedule", "polling", "webhook", "manual", "chain"];
 const MIN_INTERVAL_SECONDS: i64 = 60;
 
 fn validate_trigger_type(trigger_type: &str) -> Result<(), AppError> {

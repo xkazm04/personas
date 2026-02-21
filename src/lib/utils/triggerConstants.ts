@@ -1,4 +1,4 @@
-import { Clock, Webhook, Play, Zap } from 'lucide-react';
+import { Clock, Webhook, Play, Zap, Link, RefreshCw } from 'lucide-react';
 
 export interface TriggerTypeMeta {
   Icon: typeof Clock;
@@ -7,9 +7,10 @@ export interface TriggerTypeMeta {
 
 export const TRIGGER_TYPE_META: Record<string, TriggerTypeMeta> = {
   schedule: { Icon: Clock, color: 'text-amber-400' },
-  polling: { Icon: Clock, color: 'text-amber-400' },
+  polling: { Icon: RefreshCw, color: 'text-teal-400' },
   webhook: { Icon: Webhook, color: 'text-blue-400' },
   manual: { Icon: Play, color: 'text-emerald-400' },
+  chain: { Icon: Link, color: 'text-purple-400' },
 };
 
 export const DEFAULT_TRIGGER_META: TriggerTypeMeta = { Icon: Zap, color: 'text-purple-400' };

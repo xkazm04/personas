@@ -1,23 +1,22 @@
 import type { StateCreator } from "zustand";
 import type { PersonaStore } from "../storeTypes";
+import type { PersonaTeam } from "@/lib/bindings/PersonaTeam";
+import type { PersonaTeamMember } from "@/lib/bindings/PersonaTeamMember";
 import type { PersonaTeamConnection } from "@/lib/bindings/PersonaTeamConnection";
 import * as api from "@/api/tauriApi";
 
 export interface TeamSlice {
   // State
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  teams: any[];
+  teams: PersonaTeam[];
   selectedTeamId: string | null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  teamMembers: any[];
+  teamMembers: PersonaTeamMember[];
   teamConnections: PersonaTeamConnection[];
 
   // Actions
   fetchTeams: () => Promise<void>;
   selectTeam: (teamId: string | null) => void;
   fetchTeamDetails: (teamId: string) => Promise<void>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  createTeam: (data: { name: string; description?: string; icon?: string; color?: string }) => Promise<any>;
+  createTeam: (data: { name: string; description?: string; icon?: string; color?: string }) => Promise<PersonaTeam | null>;
   deleteTeam: (teamId: string) => Promise<void>;
   addTeamMember: (personaId: string, role?: string, posX?: number, posY?: number) => Promise<void>;
   removeTeamMember: (memberId: string) => Promise<void>;

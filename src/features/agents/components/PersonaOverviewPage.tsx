@@ -12,11 +12,23 @@ export default function PersonaOverviewPage() {
   const lastRunMap = usePersonaStore(s => s.personaLastRun);
 
   return (
-    <div className="h-full overflow-y-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-foreground">All Agents</h1>
-        <p className="text-sm text-muted-foreground/50 mt-1">{personas.length} agents configured</p>
+    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
+      {/* Header */}
+      <div className="px-4 md:px-6 py-5 border-b border-primary/10 bg-primary/5 flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
+            <Bot className="w-5 h-5 text-violet-400" />
+          </div>
+          <div>
+            <h1 className="text-lg font-semibold text-foreground/90">All Agents</h1>
+            <p className="text-xs text-muted-foreground/50">{personas.length} agent{personas.length !== 1 ? 's' : ''} configured</p>
+          </div>
+        </div>
       </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="min-h-full p-6">
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         {personas.map((persona, i) => {
           const connectors = (() => {
@@ -107,6 +119,8 @@ export default function PersonaOverviewPage() {
             </motion.button>
           );
         })}
+      </div>
+        </div>
       </div>
     </div>
   );

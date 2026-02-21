@@ -100,7 +100,7 @@ CREATE INDEX IF NOT EXISTS idx_pt_tool    ON persona_tools(tool_id);
 CREATE TABLE IF NOT EXISTS persona_triggers (
     id                TEXT PRIMARY KEY,
     persona_id        TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
-    trigger_type      TEXT NOT NULL CHECK(trigger_type IN ('manual', 'schedule', 'polling', 'webhook')),
+    trigger_type      TEXT NOT NULL CHECK(trigger_type IN ('manual', 'schedule', 'polling', 'webhook', 'chain')),
     config            TEXT,
     enabled           INTEGER NOT NULL DEFAULT 1,
     last_triggered_at TEXT,
@@ -532,6 +532,144 @@ CREATE TABLE IF NOT EXISTS app_settings (
     updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- ============================================================================
+-- Test Runs (Multi-LLM Sandbox Testing)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS persona_test_runs (
+    id              TEXT PRIMARY KEY,
+    persona_id      TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+    status          TEXT NOT NULL DEFAULT 'generating',
+    models_tested   TEXT NOT NULL DEFAULT '[]',
+    scenarios_count INTEGER NOT NULL DEFAULT 0,
+    summary         TEXT,
+    error           TEXT,
+    created_at      TEXT NOT NULL,
+    completed_at    TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_test_runs_persona ON persona_test_runs(persona_id);
+CREATE INDEX IF NOT EXISTS idx_test_runs_created ON persona_test_runs(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS persona_test_results (
+    id                    TEXT PRIMARY KEY,
+    test_run_id           TEXT NOT NULL REFERENCES persona_test_runs(id) ON DELETE CASCADE,
+    scenario_name         TEXT NOT NULL,
+    model_id              TEXT NOT NULL,
+    provider              TEXT NOT NULL DEFAULT 'anthropic',
+    status                TEXT NOT NULL DEFAULT 'pending',
+    output_preview        TEXT,
+    tool_calls_expected   TEXT,
+    tool_calls_actual     TEXT,
+    tool_accuracy_score   INTEGER,
+    output_quality_score  INTEGER,
+    protocol_compliance   INTEGER,
+    input_tokens          INTEGER NOT NULL DEFAULT 0,
+    output_tokens         INTEGER NOT NULL DEFAULT 0,
+    cost_usd              REAL NOT NULL DEFAULT 0.0,
+    duration_ms           INTEGER NOT NULL DEFAULT 0,
+    error_message         TEXT,
+    created_at            TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_test_results_run ON persona_test_results(test_run_id);
+
+-- ============================================================================
+-- N8n Transform Sessions (persisted import wizard state)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS n8n_transform_sessions (
+    id                TEXT PRIMARY KEY,
+    workflow_name     TEXT NOT NULL,
+    status            TEXT NOT NULL DEFAULT 'draft'
+                      CHECK(status IN ('draft','analyzing','transforming','editing','confirmed','failed')),
+    raw_workflow_json TEXT NOT NULL,
+    parser_result     TEXT,
+    draft_json        TEXT,
+    user_answers      TEXT,
+    step              TEXT NOT NULL DEFAULT 'upload',
+    error             TEXT,
+    persona_id        TEXT,
+    created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at        TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_nts_status  ON n8n_transform_sessions(status);
+CREATE INDEX IF NOT EXISTS idx_nts_created ON n8n_transform_sessions(created_at DESC);
+
+-- ============================================================================
+-- Credential Audit Log (append-only, never updated or deleted)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS credential_audit_log (
+    id              TEXT PRIMARY KEY,
+    credential_id   TEXT NOT NULL,
+    credential_name TEXT NOT NULL,
+    operation       TEXT NOT NULL,
+    persona_id      TEXT,
+    persona_name    TEXT,
+    detail          TEXT,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_cal_credential ON credential_audit_log(credential_id);
+CREATE INDEX IF NOT EXISTS idx_cal_persona    ON credential_audit_log(persona_id);
+CREATE INDEX IF NOT EXISTS idx_cal_operation  ON credential_audit_log(operation);
+CREATE INDEX IF NOT EXISTS idx_cal_created    ON credential_audit_log(created_at DESC);
+
+-- ============================================================================
+-- Credential Rotation Policies
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS credential_rotation_policies (
+    id                TEXT PRIMARY KEY,
+    credential_id     TEXT NOT NULL REFERENCES persona_credentials(id) ON DELETE CASCADE,
+    enabled           INTEGER NOT NULL DEFAULT 1,
+    rotation_interval_days INTEGER NOT NULL DEFAULT 90,
+    policy_type       TEXT NOT NULL DEFAULT 'scheduled'
+                      CHECK(policy_type IN ('scheduled','on_suspicious','on_member_departure','manual')),
+    last_rotated_at   TEXT,
+    next_rotation_at  TEXT,
+    created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at        TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(credential_id, policy_type)
+);
+CREATE INDEX IF NOT EXISTS idx_crp_credential ON credential_rotation_policies(credential_id);
+CREATE INDEX IF NOT EXISTS idx_crp_next       ON credential_rotation_policies(next_rotation_at);
+CREATE INDEX IF NOT EXISTS idx_crp_enabled    ON credential_rotation_policies(enabled);
+
+-- ============================================================================
+-- Credential Rotation History (append-only timeline)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS credential_rotation_history (
+    id              TEXT PRIMARY KEY,
+    credential_id   TEXT NOT NULL REFERENCES persona_credentials(id) ON DELETE CASCADE,
+    rotation_type   TEXT NOT NULL DEFAULT 'scheduled'
+                    CHECK(rotation_type IN ('scheduled','manual','token_refresh','suspicious','anomaly')),
+    status          TEXT NOT NULL DEFAULT 'success'
+                    CHECK(status IN ('success','failed','skipped')),
+    detail          TEXT,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_crh_credential ON credential_rotation_history(credential_id);
+CREATE INDEX IF NOT EXISTS idx_crh_created    ON credential_rotation_history(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_crh_status     ON credential_rotation_history(status);
+
+-- ============================================================================
+-- Healing Knowledge Base (fleet-wide failure pattern learning)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS healing_knowledge (
+    id                      TEXT PRIMARY KEY,
+    service_type            TEXT NOT NULL,
+    pattern_key             TEXT NOT NULL,
+    description             TEXT NOT NULL,
+    recommended_delay_secs  INTEGER,
+    occurrence_count        INTEGER NOT NULL DEFAULT 1,
+    last_seen_at            TEXT NOT NULL,
+    created_at              TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(service_type, pattern_key)
+);
+CREATE INDEX IF NOT EXISTS idx_hk_service ON healing_knowledge(service_type);
+CREATE INDEX IF NOT EXISTS idx_hk_pattern ON healing_knowledge(pattern_key);
+
 "#;
 
 /// Incremental migrations for columns added after the initial schema.
@@ -559,6 +697,59 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     if !has_use_case_flows {
         conn.execute_batch("ALTER TABLE persona_design_reviews ADD COLUMN use_case_flows TEXT;")?;
         tracing::info!("Added use_case_flows column to persona_design_reviews");
+    }
+
+    // Add retry lineage columns to persona_executions (Healing: autonomous retry)
+    let has_retry_of: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_executions') WHERE name = 'retry_of_execution_id'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_retry_of {
+        conn.execute_batch(
+            "ALTER TABLE persona_executions ADD COLUMN retry_of_execution_id TEXT;
+             ALTER TABLE persona_executions ADD COLUMN retry_count INTEGER DEFAULT 0;"
+        )?;
+        tracing::info!("Added retry lineage columns to persona_executions");
+    }
+
+    // Recreate persona_triggers with 'chain' trigger type support.
+    // SQLite doesn't support ALTER CHECK, so we recreate the table.
+    // We detect by trying to insert a chain trigger — if the CHECK rejects it,
+    // we need to migrate.
+    let needs_chain_migration = conn
+        .execute(
+            "INSERT INTO persona_triggers (id, persona_id, trigger_type, config, enabled, created_at, updated_at)
+             VALUES ('__chain_check__', '__none__', 'chain', NULL, 0, '', '')",
+            [],
+        )
+        .is_err();
+
+    if needs_chain_migration {
+        conn.execute_batch(
+            "CREATE TABLE IF NOT EXISTS persona_triggers_new (
+                id                TEXT PRIMARY KEY,
+                persona_id        TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+                trigger_type      TEXT NOT NULL CHECK(trigger_type IN ('manual', 'schedule', 'polling', 'webhook', 'chain')),
+                config            TEXT,
+                enabled           INTEGER NOT NULL DEFAULT 1,
+                last_triggered_at TEXT,
+                next_trigger_at   TEXT,
+                created_at        TEXT NOT NULL,
+                updated_at        TEXT NOT NULL
+            );
+            INSERT INTO persona_triggers_new SELECT * FROM persona_triggers;
+            DROP TABLE persona_triggers;
+            ALTER TABLE persona_triggers_new RENAME TO persona_triggers;
+            CREATE INDEX IF NOT EXISTS idx_ptr_persona      ON persona_triggers(persona_id);
+            CREATE INDEX IF NOT EXISTS idx_ptr_next_trigger ON persona_triggers(next_trigger_at);
+            CREATE INDEX IF NOT EXISTS idx_ptr_enabled      ON persona_triggers(enabled);"
+        )?;
+        tracing::info!("Migrated persona_triggers to support 'chain' trigger type");
+    } else {
+        // Clean up the test row
+        let _ = conn.execute("DELETE FROM persona_triggers WHERE id = '__chain_check__'", []);
     }
 
     Ok(())

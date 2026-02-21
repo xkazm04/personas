@@ -22,6 +22,8 @@ fn row_to_execution(row: &Row) -> rusqlite::Result<PersonaExecution> {
         error_message: row.get("error_message")?,
         duration_ms: row.get("duration_ms")?,
         tool_steps: row.get("tool_steps")?,
+        retry_of_execution_id: row.get("retry_of_execution_id")?,
+        retry_count: row.get::<_, Option<i64>>("retry_count")?.unwrap_or(0),
         started_at: row.get("started_at")?,
         completed_at: row.get("completed_at")?,
         created_at: row.get("created_at")?,
@@ -180,6 +182,74 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     let conn = pool.get()?;
     let rows = conn.execute("DELETE FROM persona_executions WHERE id = ?1", params![id])?;
     Ok(rows > 0)
+}
+
+/// Create an execution record that is a healing retry of `original_exec_id`.
+pub fn create_retry(
+    pool: &DbPool,
+    persona_id: &str,
+    original_exec_id: &str,
+    retry_count: i64,
+) -> Result<PersonaExecution, AppError> {
+    let id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().to_rfc3339();
+
+    let conn = pool.get()?;
+    conn.execute(
+        "INSERT INTO persona_executions
+         (id, persona_id, status, input_tokens, output_tokens, cost_usd, retry_of_execution_id, retry_count, created_at)
+         VALUES (?1, ?2, 'queued', 0, 0, 0, ?3, ?4, ?5)",
+        params![id, persona_id, original_exec_id, retry_count, now],
+    )?;
+
+    get_by_id(pool, &id)
+}
+
+/// Count consecutive recent failures for a persona (unbroken streak of 'failed' status).
+pub fn get_consecutive_failure_count(pool: &DbPool, persona_id: &str) -> Result<i64, AppError> {
+    let conn = pool.get()?;
+    // Count recent executions that are 'failed' until the first non-failed one
+    let count: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM (
+            SELECT status FROM persona_executions
+            WHERE persona_id = ?1
+            ORDER BY created_at DESC
+            LIMIT 20
+        ) sub
+        WHERE status = 'failed'
+        AND NOT EXISTS (
+            SELECT 1 FROM persona_executions e2
+            WHERE e2.persona_id = ?1
+            AND e2.status IN ('completed', 'running', 'queued')
+            AND e2.created_at > (
+                SELECT MIN(created_at) FROM (
+                    SELECT created_at FROM persona_executions
+                    WHERE persona_id = ?1 AND status = 'failed'
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                )
+            )
+        )",
+        params![persona_id],
+        |row| row.get(0),
+    ).unwrap_or(0);
+    Ok(count)
+}
+
+/// Get the retry chain for an execution (all retries linked to the same original).
+pub fn get_retry_chain(pool: &DbPool, execution_id: &str) -> Result<Vec<PersonaExecution>, AppError> {
+    // First, find the root execution
+    let exec = get_by_id(pool, execution_id)?;
+    let root_id = exec.retry_of_execution_id.as_deref().unwrap_or(execution_id);
+
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT * FROM persona_executions
+         WHERE id = ?1 OR retry_of_execution_id = ?1
+         ORDER BY retry_count ASC, created_at ASC",
+    )?;
+    let rows = stmt.query_map(params![root_id], row_to_execution)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
 }
 
 pub fn get_monthly_spend(pool: &DbPool, persona_id: &str) -> Result<f64, AppError> {

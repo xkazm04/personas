@@ -27,8 +27,12 @@ pub async fn run_cloud_execution(
     cancelled: Arc<AtomicBool>,
 ) -> CloudRunResult {
     let mut offset: u32 = 0;
-    let poll_interval = std::time::Duration::from_millis(800);
+    let base_interval = std::time::Duration::from_millis(800);
+    let max_backoff = std::time::Duration::from_secs(30);
+    let max_consecutive_errors: u32 = 10;
     let max_polls = 7500; // ~100 minutes max
+
+    let mut consecutive_errors: u32 = 0;
 
     for _ in 0..max_polls {
         if cancelled.load(Ordering::Acquire) {
@@ -40,22 +44,85 @@ pub async fn run_cloud_execution(
             };
         }
 
-        tokio::time::sleep(poll_interval).await;
+        // Apply exponential backoff when experiencing consecutive errors,
+        // otherwise use the normal poll interval.
+        let sleep_duration = if consecutive_errors > 0 {
+            let backoff = base_interval * 2u32.saturating_pow(consecutive_errors - 1);
+            backoff.min(max_backoff)
+        } else {
+            base_interval
+        };
+        tokio::time::sleep(sleep_duration).await;
 
         let poll = match client.poll_execution(&cloud_execution_id, offset).await {
-            Ok(p) => p,
+            Ok(p) => {
+                if consecutive_errors > 0 {
+                    tracing::info!(
+                        execution_id = %local_execution_id,
+                        previous_errors = consecutive_errors,
+                        "Cloud poll recovered after {} consecutive errors", consecutive_errors
+                    );
+                }
+                consecutive_errors = 0;
+                p
+            }
             Err(e) => {
+                consecutive_errors += 1;
                 tracing::warn!(
                     execution_id = %local_execution_id,
-                    "Cloud poll error: {}", e
+                    consecutive_errors,
+                    "Cloud poll error ({}/{}): {}", consecutive_errors, max_consecutive_errors, e
                 );
-                // Transient error — retry on next poll
+
+                if consecutive_errors >= max_consecutive_errors {
+                    let _ = app.emit(
+                        "execution-status",
+                        serde_json::json!({
+                            "execution_id": local_execution_id,
+                            "status": "failed",
+                        }),
+                    );
+                    return CloudRunResult {
+                        success: false,
+                        error: Some(format!(
+                            "Cloud orchestrator unreachable after {} consecutive poll failures: {}",
+                            max_consecutive_errors, e
+                        )),
+                        duration_ms: 0,
+                        cost_usd: None,
+                    };
+                }
+
+                // Notify UI that polling is degraded
+                if consecutive_errors == 1 {
+                    let _ = app.emit(
+                        "execution-status",
+                        serde_json::json!({
+                            "execution_id": local_execution_id,
+                            "status": "warning",
+                            "message": "Cloud orchestrator connection issue, retrying...",
+                        }),
+                    );
+                }
+
                 continue;
             }
         };
 
-        // Emit new output lines
-        let new_lines = &poll.output[offset as usize..];
+        // Emit new output lines — use safe slice to avoid panic if the
+        // orchestrator restarted and returned fewer lines than our offset.
+        let new_lines = if poll.output_lines < offset {
+            tracing::warn!(
+                execution_id = %local_execution_id,
+                expected_offset = offset,
+                actual_lines = poll.output_lines,
+                "Cloud orchestrator returned fewer output lines than offset — possible state reset"
+            );
+            offset = 0;
+            poll.output.as_slice()
+        } else {
+            poll.output.get(offset as usize..).unwrap_or(&[])
+        };
         for line in new_lines {
             let _ = app.emit(
                 "execution-output",

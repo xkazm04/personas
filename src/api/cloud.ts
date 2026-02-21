@@ -1,50 +1,23 @@
 import { invoke } from "@tauri-apps/api/core";
 
-// ============================================================================
-// Cloud
-// ============================================================================
+import type { CloudConfig } from "@/lib/bindings/CloudConfig";
+import type { CloudStatusResponse } from "@/lib/bindings/CloudStatusResponse";
+import type { CloudOAuthAuthorizeResponse } from "@/lib/bindings/CloudOAuthAuthorizeResponse";
+import type { CloudOAuthStatusResponse } from "@/lib/bindings/CloudOAuthStatusResponse";
 
-export interface CloudConfig {
-  url: string;
-  is_connected: boolean;
-}
-
-export interface CloudWorkerCounts {
-  idle: number;
-  executing: number;
-  disconnected: number;
-}
-
-export interface CloudOAuthState {
-  connected: boolean;
-  scopes: string[] | null;
-  expiresAt: string | null;
-}
-
-export interface CloudStatusResult {
-  workerCounts: CloudWorkerCounts;
-  queueLength: number;
-  activeExecutions: number;
-  hasClaudeToken: boolean;
-  oauth: CloudOAuthState | null;
-}
-
-export interface OAuthAuthorizeResult {
-  authUrl: string;
-  state: string;
-  instructions: string | null;
-}
-
-export interface OAuthStatusResult {
-  connected: boolean;
-  scopes: string[] | null;
-  expiresAt: string | null;
-  isExpired: boolean | null;
-}
+export type { CloudConfig } from "@/lib/bindings/CloudConfig";
+export type { CloudWorkerCounts } from "@/lib/bindings/CloudWorkerCounts";
+export type { CloudOAuthState } from "@/lib/bindings/CloudOAuthState";
+export type { CloudStatusResponse } from "@/lib/bindings/CloudStatusResponse";
+export type { CloudOAuthAuthorizeResponse } from "@/lib/bindings/CloudOAuthAuthorizeResponse";
+export type { CloudOAuthStatusResponse } from "@/lib/bindings/CloudOAuthStatusResponse";
 
 // Config
 export const cloudConnect = (url: string, apiKey: string) =>
   invoke<void>("cloud_connect", { url, apiKey });
+
+export const cloudReconnectFromKeyring = () =>
+  invoke<void>("cloud_reconnect_from_keyring");
 
 export const cloudDisconnect = () =>
   invoke<void>("cloud_disconnect");
@@ -54,7 +27,7 @@ export const cloudGetConfig = () =>
 
 // Status
 export const cloudStatus = () =>
-  invoke<CloudStatusResult>("cloud_status");
+  invoke<CloudStatusResponse>("cloud_status");
 
 // Execution
 export const cloudExecutePersona = (personaId: string, inputData?: string) =>
@@ -65,13 +38,13 @@ export const cloudCancelExecution = (executionId: string) =>
 
 // OAuth
 export const cloudOAuthAuthorize = () =>
-  invoke<OAuthAuthorizeResult>("cloud_oauth_authorize");
+  invoke<CloudOAuthAuthorizeResponse>("cloud_oauth_authorize");
 
 export const cloudOAuthCallback = (code: string, oauthState: string) =>
   invoke<unknown>("cloud_oauth_callback", { code, oauthState });
 
 export const cloudOAuthStatus = () =>
-  invoke<OAuthStatusResult>("cloud_oauth_status");
+  invoke<CloudOAuthStatusResponse>("cloud_oauth_status");
 
 export const cloudOAuthRefresh = () =>
   invoke<unknown>("cloud_oauth_refresh");

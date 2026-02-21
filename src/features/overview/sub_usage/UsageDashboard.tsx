@@ -196,110 +196,87 @@ export function UsageDashboard() {
     toolUsageOverTime.length === 0 &&
     toolUsageByPersona.length === 0;
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-4 text-muted-foreground/50">
-        <Loader2 className="w-8 h-8 animate-spin text-primary/70" />
-        <p className="text-sm">Loading usage analytics...</p>
-      </div>
-    );
-  }
-
-  // ── Empty State ──────────────────────────────────────────────
-  if (isEmpty) {
-    const hasPersonas = personas.length > 0;
-
-    return (
-      <div className="flex flex-col items-center justify-center h-full px-6">
-        <div className="max-w-sm w-full flex flex-col items-center gap-5">
-          {/* Icon */}
-          <div className="relative">
-            <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/15 flex items-center justify-center">
-              <BarChart3 className="w-7 h-7 text-primary/60" />
-            </div>
-            <Sparkles className="w-4 h-4 text-amber-400/60 absolute -top-1 -right-1" />
+  return (
+    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
+      {/* Header */}
+      <div className="px-4 md:px-6 py-5 border-b border-primary/10 bg-primary/5 flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
+            <BarChart3 className="w-5 h-5 text-violet-400" />
           </div>
-
-          {/* Heading & description */}
-          <div className="text-center space-y-2">
-            <h3 className="text-sm font-medium text-foreground/70">
-              Your analytics dashboard
-            </h3>
-            <p className="text-xs text-muted-foreground/50 leading-relaxed">
-              When your personas run and use tools, you'll see detailed charts showing
-              which tools are used most, usage trends over time, and per-persona breakdowns.
+          <div className="flex-1">
+            <h1 className="text-lg font-semibold text-foreground/90">Usage Analytics</h1>
+            <p className="text-xs text-muted-foreground/50">
+              {toolUsageSummary.length} tool{toolUsageSummary.length !== 1 ? 's' : ''} &middot; {pieTotal.toLocaleString()} invocation{pieTotal !== 1 ? 's' : ''}
             </p>
           </div>
-
-          {/* Steps */}
-          <div className="w-full space-y-2 mt-1">
-            {[
-              { step: '1', label: hasPersonas ? 'Create a persona' : 'Create a persona', done: hasPersonas },
-              { step: '2', label: 'Assign tools to it', done: false },
-              { step: '3', label: 'Run an execution', done: false },
-            ].map(({ step, label, done }) => (
-              <div
-                key={step}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl border transition-colors ${
-                  done
-                    ? 'bg-emerald-500/5 border-emerald-500/15'
-                    : 'bg-secondary/30 border-primary/10'
-                }`}
-              >
-                <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                  done
-                    ? 'bg-emerald-500/20 text-emerald-400'
-                    : 'bg-primary/10 text-muted-foreground/40'
-                }`}>
-                  {step}
-                </span>
-                <span className={`text-xs ${done ? 'text-emerald-400/80' : 'text-muted-foreground/50'}`}>
-                  {label}
-                </span>
-                {done && (
-                  <span className="ml-auto text-[10px] text-emerald-400/60 font-medium">Done</span>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* CTA */}
-          <button
-            onClick={() => setSidebarSection('personas')}
-            className="flex items-center gap-2 px-4 py-2 bg-primary/15 hover:bg-primary/25 text-primary border border-primary/20 rounded-xl text-xs font-medium transition-all group"
-          >
-            {hasPersonas ? (
-              <>
-                <Play className="w-3.5 h-3.5" />
-                Run a persona
-              </>
-            ) : (
-              <>
-                Get started
-              </>
-            )}
-            <ArrowRight className="w-3 h-3 opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-          </button>
         </div>
       </div>
-    );
-  }
 
-  return (
-    <div className="flex flex-col h-full overflow-y-auto px-6 py-5 gap-6">
-      {/* ── Filters ────────────────────────────────────────────── */}
-      <div className="flex items-center gap-4 flex-wrap">
+      {/* Filter bar */}
+      <div className="px-4 md:px-6 py-3 border-b border-primary/10 flex items-center gap-4 flex-wrap flex-shrink-0">
         <PersonaSelect value={selectedPersonaId || ''} onChange={(v) => setSelectedPersonaId(v || null)} personas={personas} />
         <DayRangePicker value={days} onChange={setDays} />
-        <div className="ml-auto flex items-center gap-2">
-          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium border border-primary/15 bg-secondary/30 text-foreground/70">
-            {toolUsageSummary.length} tools
-          </span>
-          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium border border-primary/15 bg-secondary/30 text-foreground/70">
-            {pieTotal.toLocaleString()} invocations
-          </span>
-        </div>
       </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto flex flex-col">
+        {isLoading ? (
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 text-muted-foreground/50">
+            <Loader2 className="w-8 h-8 animate-spin text-primary/70" />
+            <p className="text-sm">Loading usage analytics...</p>
+          </div>
+        ) : isEmpty ? (
+          <div className="flex-1 flex flex-col items-center justify-center px-6">
+            <div className="max-w-sm w-full flex flex-col items-center gap-5">
+              <div className="relative">
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/15 flex items-center justify-center">
+                  <BarChart3 className="w-7 h-7 text-primary/60" />
+                </div>
+                <Sparkles className="w-4 h-4 text-amber-400/60 absolute -top-1 -right-1" />
+              </div>
+              <div className="text-center space-y-2">
+                <h3 className="text-sm font-medium text-foreground/70">Your analytics dashboard</h3>
+                <p className="text-xs text-muted-foreground/50 leading-relaxed">
+                  When your personas run and use tools, you'll see detailed charts showing
+                  which tools are used most, usage trends over time, and per-persona breakdowns.
+                </p>
+              </div>
+              <div className="w-full space-y-2 mt-1">
+                {[
+                  { step: '1', label: 'Create a persona', done: personas.length > 0 },
+                  { step: '2', label: 'Assign tools to it', done: false },
+                  { step: '3', label: 'Run an execution', done: false },
+                ].map(({ step, label, done }) => (
+                  <div
+                    key={step}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-xl border transition-colors ${
+                      done ? 'bg-emerald-500/5 border-emerald-500/15' : 'bg-secondary/30 border-primary/10'
+                    }`}
+                  >
+                    <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                      done ? 'bg-emerald-500/20 text-emerald-400' : 'bg-primary/10 text-muted-foreground/40'
+                    }`}>{step}</span>
+                    <span className={`text-xs ${done ? 'text-emerald-400/80' : 'text-muted-foreground/50'}`}>{label}</span>
+                    {done && <span className="ml-auto text-[10px] text-emerald-400/60 font-medium">Done</span>}
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={() => setSidebarSection('personas')}
+                className="flex items-center gap-2 px-4 py-2 bg-primary/15 hover:bg-primary/25 text-primary border border-primary/20 rounded-xl text-xs font-medium transition-all group"
+              >
+                {personas.length > 0 ? (
+                  <><Play className="w-3.5 h-3.5" />Run a persona</>
+                ) : (
+                  <>Get started</>
+                )}
+                <ArrowRight className="w-3 h-3 opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="p-4 md:p-6 space-y-6">
 
       {/* ── Top Row: Bar Chart + Pie Chart ─────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
@@ -446,6 +423,9 @@ export function UsageDashboard() {
           </ResponsiveContainer>
         </div>
       )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

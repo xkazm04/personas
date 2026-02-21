@@ -1,10 +1,7 @@
 import { Search, X } from 'lucide-react';
 import { motion } from 'framer-motion';
-import type { PersonaMemoryCategory } from '@/lib/types/frontendTypes';
-import { MEMORY_CATEGORY_COLORS } from '@/lib/utils/formatters';
+import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
 import type { DbPersona } from '@/lib/types/types';
-
-const ALL_CATEGORIES: PersonaMemoryCategory[] = ['fact', 'preference', 'instruction', 'context', 'learned', 'custom'];
 
 export interface MemoryFilterBarProps {
   search: string;
@@ -73,7 +70,7 @@ export function MemoryFilterBar({
           )}
           <span className="relative">All</span>
         </button>
-        {ALL_CATEGORIES.map((cat) => {
+        {ALL_MEMORY_CATEGORIES.map((cat) => {
           const defaultColors = { label: cat, bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/20' };
           const colors = MEMORY_CATEGORY_COLORS[cat] ?? defaultColors;
           const isActive = selectedCategory === cat;

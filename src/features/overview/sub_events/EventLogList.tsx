@@ -91,59 +91,70 @@ export default function EventLogList() {
   };
 
   return (
-    <div className="flex flex-col h-full p-6 pt-4 overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="px-4 md:px-6 py-5 border-b border-primary/10 bg-primary/5 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className="flex gap-1.5">
-            {(['all', 'pending', 'completed', 'failed'] as EventFilter[]).map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  filter === f
-                    ? 'bg-primary/15 text-primary border border-primary/30'
-                    : 'bg-secondary/30 text-muted-foreground/60 hover:text-muted-foreground border border-primary/15'
-                }`}
-              >
-                {f.charAt(0).toUpperCase() + f.slice(1)}
-                {f === 'pending' && pendingEventCount > 0 && (
-                  <span className="ml-1.5 px-1.5 py-0.5 text-[11px] rounded-full bg-amber-500/20 text-amber-400">
-                    {pendingEventCount}
-                  </span>
-                )}
-              </button>
-            ))}
+          <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
+            <Zap className="w-5 h-5 text-amber-400" />
           </div>
+          <div className="flex-1">
+            <h1 className="text-lg font-semibold text-foreground/90">Events</h1>
+            <p className="text-xs text-muted-foreground/50">
+              {recentEvents.length} event{recentEvents.length !== 1 ? 's' : ''} recorded
+            </p>
+          </div>
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="p-1.5 rounded-lg text-muted-foreground/40 hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors"
+            title="Refresh"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </button>
         </div>
-        <button
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          className="p-1.5 rounded-lg text-muted-foreground/50 hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors"
-          title="Refresh"
-        >
-          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-        </button>
       </div>
 
-      <div className="mb-2 text-[11px] font-mono text-muted-foreground/40">
-        Showing {filteredEvents.length} of {recentEvents.length} events
+      {/* Filter bar */}
+      <div className="px-4 md:px-6 py-3 border-b border-primary/10 flex items-center gap-2 flex-shrink-0">
+        {(['all', 'pending', 'completed', 'failed'] as EventFilter[]).map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+              filter === f
+                ? 'bg-primary/15 text-primary border-primary/30'
+                : 'bg-secondary/30 text-muted-foreground/60 border-primary/15 hover:text-muted-foreground hover:bg-secondary/50'
+            }`}
+          >
+            {f.charAt(0).toUpperCase() + f.slice(1)}
+            {f === 'pending' && pendingEventCount > 0 && (
+              <span className="ml-1.5 px-1.5 py-0.5 text-[11px] rounded-full bg-amber-500/20 text-amber-400">
+                {pendingEventCount}
+              </span>
+            )}
+          </button>
+        ))}
+        <span className="ml-auto text-[11px] font-mono text-muted-foreground/40">
+          Showing {filteredEvents.length} of {recentEvents.length}
+        </span>
       </div>
 
       {/* Event List */}
-      <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+      <div className="flex-1 overflow-y-auto flex flex-col">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground/40">
+          <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-6 text-muted-foreground/40">
             <Loader2 className="w-8 h-8 mb-3 animate-spin text-primary/70" />
             <p className="text-sm">Loading events...</p>
           </div>
         ) : filteredEvents.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground/30">
+          <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-6 text-muted-foreground/30">
             <Zap className="w-10 h-10 mb-3" />
             <p className="text-sm">No events yet</p>
             <p className="text-xs mt-1">Events from webhooks, executions, and persona actions will appear here</p>
           </div>
         ) : (
+          <div className="p-4 md:p-6 space-y-2">
           <AnimatePresence initial={false}>
             {filteredEvents.map((event: PersonaEvent) => {
               const isExpanded = expandedId === event.id;
@@ -265,6 +276,7 @@ export default function EventLogList() {
               );
             })}
           </AnimatePresence>
+          </div>
         )}
       </div>
     </div>

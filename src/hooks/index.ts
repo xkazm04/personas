@@ -2,6 +2,9 @@
 export * from "./design/useDesignAnalysis";
 export * from "./design/useDesignReviews";
 export * from "./design/useCredentialDesign";
+export * from "./design/useOAuthConsent";
+export * from "./design/useCredentialNegotiator";
+export * from "./design/useUniversalOAuth";
 
 // Execution hooks
 export * from "./execution/usePersonaExecution";

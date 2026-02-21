@@ -162,24 +162,24 @@ export default function ObservabilityDashboard() {
   }, [healingIssues, issueFilter]);
 
   return (
-    <div className="h-full overflow-y-auto p-6 space-y-6">
+    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground/90">Observability</h1>
-          <p className="text-sm text-muted-foreground/50 mt-0.5">Performance metrics, cost tracking, execution health</p>
-        </div>
+      <div className="px-4 md:px-6 py-5 border-b border-primary/10 bg-primary/5 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <PersonaSelect value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />
-          <DayRangePicker value={days} onChange={setDays} />
+          <div className="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-500/25 flex items-center justify-center">
+            <Stethoscope className="w-5 h-5 text-cyan-400" />
+          </div>
+          <div className="flex-1">
+            <h1 className="text-lg font-semibold text-foreground/90">Observability</h1>
+            <p className="text-xs text-muted-foreground/50">Performance metrics, cost tracking, execution health</p>
+          </div>
           <button
             onClick={handleRefresh}
-            className="p-1.5 rounded-lg border border-primary/15 text-muted-foreground/50 hover:text-foreground/70 hover:bg-secondary/40 transition-colors"
+            className="p-1.5 rounded-lg text-muted-foreground/40 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
             title="Refresh metrics"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className="w-3.5 h-3.5" />
           </button>
-          {/* Auto-refresh */}
           <button
             onClick={() => setAutoRefresh(!autoRefresh)}
             className={`p-1.5 rounded-lg border transition-colors ${
@@ -187,10 +187,20 @@ export default function ObservabilityDashboard() {
             }`}
             title={autoRefresh ? 'Auto-refresh ON (30s)' : 'Auto-refresh OFF'}
           >
-            <RefreshCw className={`w-4 h-4 ${autoRefresh ? 'animate-spin' : ''}`} style={autoRefresh ? { animationDuration: '3s' } : {}} />
+            <RefreshCw className={`w-3.5 h-3.5 ${autoRefresh ? 'animate-spin' : ''}`} style={autoRefresh ? { animationDuration: '3s' } : {}} />
           </button>
         </div>
       </div>
+
+      {/* Filter bar */}
+      <div className="px-4 md:px-6 py-3 border-b border-primary/10 flex items-center gap-4 flex-wrap flex-shrink-0">
+        <PersonaSelect value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />
+        <DayRangePicker value={days} onChange={setDays} />
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="min-h-full p-4 md:p-6 space-y-6">
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -306,9 +316,16 @@ export default function ObservabilityDashboard() {
 
               const isAutoFixed = issue.auto_fixed;
 
+              const isCircuitBreaker = /circuit\s*breaker/i.test(issue.title);
+
               return (
-                <div key={issue.id} className={`flex items-center gap-3 px-5 py-3 hover:bg-secondary/40 transition-colors ${isAutoFixed ? 'opacity-70' : ''}`}>
-                  {isAutoFixed ? (
+                <div key={issue.id} className={`flex items-center gap-3 px-5 py-3 hover:bg-secondary/40 transition-colors ${isAutoFixed ? 'opacity-70' : ''} ${isCircuitBreaker ? 'bg-red-500/5' : ''}`}>
+                  {isCircuitBreaker ? (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono uppercase rounded-md border bg-red-500/15 text-red-400 border-red-500/25">
+                      <Zap className="w-3 h-3" />
+                      breaker
+                    </span>
+                  ) : isAutoFixed ? (
                     <span className="inline-flex px-1.5 py-0.5 text-[10px] font-mono uppercase rounded-md border bg-emerald-500/15 text-emerald-400 border-emerald-500/20">
                       fixed
                     </span>
@@ -317,9 +334,15 @@ export default function ObservabilityDashboard() {
                       {issue.severity}
                     </span>
                   )}
+                  {isAutoFixed && issue.execution_id && (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" title="Auto-healed via retry">
+                      <RefreshCw className="w-2.5 h-2.5" />
+                      retry
+                    </span>
+                  )}
                   <button
                     onClick={() => setSelectedIssue(issue)}
-                    className={`flex-1 text-left text-sm transition-colors line-clamp-2 ${isAutoFixed ? 'text-foreground/50 line-through decoration-emerald-500/30' : 'text-foreground/80 hover:text-foreground'}`}
+                    className={`flex-1 text-left text-sm transition-colors line-clamp-2 ${isCircuitBreaker ? 'text-red-400/90 hover:text-red-300 font-medium' : isAutoFixed ? 'text-foreground/50 line-through decoration-emerald-500/30' : 'text-foreground/80 hover:text-foreground'}`}
                   >
                     {issue.title}
                   </button>
@@ -340,6 +363,9 @@ export default function ObservabilityDashboard() {
             })}
           </div>
         )}
+      </div>
+
+        </div>
       </div>
 
       {/* Healing Issue Detail Modal */}

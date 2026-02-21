@@ -3,15 +3,22 @@ use tauri::State;
 
 use crate::db::models::{
     CreateTeamInput, PersonaTeam, PersonaTeamConnection, PersonaTeamMember, PipelineRun,
-    UpdateTeamInput,
+    TeamCounts, UpdateTeamInput,
 };
 use crate::db::repos::resources::teams as repo;
+use crate::engine::optimizer::{self, PipelineAnalytics};
+use crate::engine::topology::{self, TopologyBlueprint};
 use crate::error::AppError;
 use crate::AppState;
 
 #[tauri::command]
 pub fn list_teams(state: State<'_, Arc<AppState>>) -> Result<Vec<PersonaTeam>, AppError> {
     repo::get_all(&state.db)
+}
+
+#[tauri::command]
+pub fn get_team_counts(state: State<'_, Arc<AppState>>) -> Result<Vec<TeamCounts>, AppError> {
+    repo::get_all_team_counts(&state.db)
 }
 
 #[tauri::command]
@@ -104,11 +111,41 @@ pub fn create_team_connection(
 }
 
 #[tauri::command]
+pub fn update_team_connection(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    connection_type: String,
+) -> Result<(), AppError> {
+    repo::update_connection_type(&state.db, &id, &connection_type)
+}
+
+#[tauri::command]
 pub fn delete_team_connection(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
     repo::delete_connection(&state.db, &id)
+}
+
+// ============================================================================
+// Pipeline Helpers
+// ============================================================================
+
+/// Update a node's fields in the pipeline status array by member_id.
+fn update_node_status(
+    statuses: &mut [serde_json::Value],
+    member_id: &str,
+    fields: &[(&str, serde_json::Value)],
+) {
+    for ns in statuses.iter_mut() {
+        if ns.get("member_id").and_then(|v| v.as_str()) == Some(member_id) {
+            if let Some(obj) = ns.as_object_mut() {
+                for (key, value) in fields {
+                    obj.insert((*key).into(), value.clone());
+                }
+            }
+        }
+    }
 }
 
 // ============================================================================
@@ -255,13 +292,9 @@ pub async fn execute_team(
             };
 
             // Update this node to "running"
-            for ns in &mut final_statuses {
-                if ns.get("member_id").and_then(|v| v.as_str()) == Some(member_id) {
-                    if let Some(o) = ns.as_object_mut() {
-                        o.insert("status".into(), serde_json::json!("running"));
-                    }
-                }
-            }
+            update_node_status(&mut final_statuses, member_id, &[
+                ("status", serde_json::json!("running")),
+            ]);
             let status_json = serde_json::to_string(&final_statuses).unwrap_or_default();
             let _ = team_repo::update_pipeline_run(
                 &db,
@@ -284,17 +317,10 @@ pub async fn execute_team(
             let persona = match persona_repo::get_by_id(&db, &member.persona_id) {
                 Ok(p) => p,
                 Err(_) => {
-                    for ns in &mut final_statuses {
-                        if ns.get("member_id").and_then(|v| v.as_str()) == Some(member_id) {
-                            if let Some(o) = ns.as_object_mut() {
-                                o.insert("status".into(), serde_json::json!("failed"));
-                                o.insert(
-                                    "error".into(),
-                                    serde_json::json!("Persona not found"),
-                                );
-                            }
-                        }
-                    }
+                    update_node_status(&mut final_statuses, member_id, &[
+                        ("status", serde_json::json!("failed")),
+                        ("error", serde_json::json!("Persona not found")),
+                    ]);
                     has_failure = true;
                     continue;
                 }
@@ -327,30 +353,19 @@ pub async fn execute_team(
             ) {
                 Ok(e) => e,
                 Err(_) => {
-                    for ns in &mut final_statuses {
-                        if ns.get("member_id").and_then(|v| v.as_str()) == Some(member_id) {
-                            if let Some(o) = ns.as_object_mut() {
-                                o.insert("status".into(), serde_json::json!("failed"));
-                                o.insert(
-                                    "error".into(),
-                                    serde_json::json!("Failed to create execution"),
-                                );
-                            }
-                        }
-                    }
+                    update_node_status(&mut final_statuses, member_id, &[
+                        ("status", serde_json::json!("failed")),
+                        ("error", serde_json::json!("Failed to create execution")),
+                    ]);
                     has_failure = true;
                     continue;
                 }
             };
 
             // Update node status with execution_id
-            for ns in &mut final_statuses {
-                if ns.get("member_id").and_then(|v| v.as_str()) == Some(member_id) {
-                    if let Some(o) = ns.as_object_mut() {
-                        o.insert("execution_id".into(), serde_json::json!(exec.id));
-                    }
-                }
-            }
+            update_node_status(&mut final_statuses, member_id, &[
+                ("execution_id", serde_json::json!(exec.id)),
+            ]);
 
             // Run execution
             if let Err(e) = engine
@@ -364,14 +379,10 @@ pub async fn execute_team(
                 )
                 .await
             {
-                for ns in &mut final_statuses {
-                    if ns.get("member_id").and_then(|v| v.as_str()) == Some(member_id) {
-                        if let Some(o) = ns.as_object_mut() {
-                            o.insert("status".into(), serde_json::json!("failed"));
-                            o.insert("error".into(), serde_json::json!(format!("{}", e)));
-                        }
-                    }
-                }
+                update_node_status(&mut final_statuses, member_id, &[
+                    ("status", serde_json::json!("failed")),
+                    ("error", serde_json::json!(format!("{}", e))),
+                ]);
                 has_failure = true;
                 continue;
             }
@@ -386,42 +397,18 @@ pub async fn execute_team(
                     match execution.status.as_str() {
                         "completed" => {
                             last_output = execution.output_data.clone();
-                            for ns in &mut final_statuses {
-                                if ns.get("member_id").and_then(|v| v.as_str())
-                                    == Some(member_id)
-                                {
-                                    if let Some(o) = ns.as_object_mut() {
-                                        o.insert(
-                                            "status".into(),
-                                            serde_json::json!("completed"),
-                                        );
-                                        o.insert(
-                                            "output".into(),
-                                            serde_json::json!(execution.output_data),
-                                        );
-                                    }
-                                }
-                            }
+                            update_node_status(&mut final_statuses, member_id, &[
+                                ("status", serde_json::json!("completed")),
+                                ("output", serde_json::json!(execution.output_data)),
+                            ]);
                             completed = true;
                             break;
                         }
                         "failed" | "cancelled" => {
-                            for ns in &mut final_statuses {
-                                if ns.get("member_id").and_then(|v| v.as_str())
-                                    == Some(member_id)
-                                {
-                                    if let Some(o) = ns.as_object_mut() {
-                                        o.insert(
-                                            "status".into(),
-                                            serde_json::json!("failed"),
-                                        );
-                                        o.insert(
-                                            "error".into(),
-                                            serde_json::json!(execution.error_message),
-                                        );
-                                    }
-                                }
-                            }
+                            update_node_status(&mut final_statuses, member_id, &[
+                                ("status", serde_json::json!("failed")),
+                                ("error", serde_json::json!(execution.error_message)),
+                            ]);
                             has_failure = true;
                             completed = true;
                             break;
@@ -432,17 +419,10 @@ pub async fn execute_team(
             }
 
             if !completed {
-                for ns in &mut final_statuses {
-                    if ns.get("member_id").and_then(|v| v.as_str()) == Some(member_id) {
-                        if let Some(o) = ns.as_object_mut() {
-                            o.insert("status".into(), serde_json::json!("failed"));
-                            o.insert(
-                                "error".into(),
-                                serde_json::json!("Execution timed out"),
-                            );
-                        }
-                    }
-                }
+                update_node_status(&mut final_statuses, member_id, &[
+                    ("status", serde_json::json!("failed")),
+                    ("error", serde_json::json!("Execution timed out")),
+                ]);
                 has_failure = true;
             }
 
@@ -492,4 +472,41 @@ pub async fn execute_team(
     });
 
     Ok(run_id)
+}
+
+// ============================================================================
+// Pipeline Analytics & Topology Optimizer
+// ============================================================================
+
+#[tauri::command]
+pub fn get_pipeline_analytics(
+    state: State<'_, Arc<AppState>>,
+    team_id: String,
+) -> Result<PipelineAnalytics, AppError> {
+    let runs = repo::list_pipeline_runs(&state.db, &team_id)?;
+    let members = repo::get_members(&state.db, &team_id)?;
+    let connections = repo::get_connections(&state.db, &team_id)?;
+
+    Ok(optimizer::analyze_pipeline(&team_id, &runs, &members, &connections))
+}
+
+#[tauri::command]
+pub fn suggest_topology(
+    state: State<'_, Arc<AppState>>,
+    query: String,
+    team_id: Option<String>,
+) -> Result<TopologyBlueprint, AppError> {
+    use crate::db::repos::core::personas as persona_repo;
+
+    let personas = persona_repo::get_all(&state.db)?;
+    let existing_member_ids: Vec<String> = if let Some(ref tid) = team_id {
+        repo::get_members(&state.db, tid)?
+            .iter()
+            .map(|m| m.persona_id.clone())
+            .collect()
+    } else {
+        vec![]
+    };
+
+    Ok(topology::suggest_topology(&query, &personas, &existing_member_ids))
 }

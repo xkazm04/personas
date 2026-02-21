@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Play, Square, Loader2 } from 'lucide-react';
+import { Play, Loader2, Info } from 'lucide-react';
 
 interface NodeStatus {
   member_id: string;
@@ -13,6 +13,7 @@ interface PipelineControlsProps {
   isRunning: boolean;
   nodeStatuses: NodeStatus[];
   onExecute: () => void;
+  agentNames?: Record<string, string>;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -48,6 +49,7 @@ export default function PipelineControls({
   isRunning,
   nodeStatuses,
   onExecute,
+  agentNames = {},
 }: PipelineControlsProps) {
   const [hoveredDot, setHoveredDot] = useState<string | null>(null);
 
@@ -63,7 +65,7 @@ export default function PipelineControls({
   return (
     <div className="sticky bottom-0 z-20 bg-secondary/80 backdrop-blur-sm border-t border-primary/15 px-4 py-3">
       <div className="flex items-center gap-4">
-        {/* Execute / Cancel button */}
+        {/* Execute button */}
         <button
           onClick={onExecute}
           disabled={isRunning}
@@ -103,9 +105,9 @@ export default function PipelineControls({
                 />
                 {hoveredDot === ns.member_id && (
                   <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[10px] font-mono rounded bg-background border border-primary/20 text-foreground/80 whitespace-nowrap shadow-lg z-50 pointer-events-none">
-                    {ns.persona_id ? ns.persona_id.slice(0, 8) : ns.member_id.slice(0, 8)}
-                    {' - '}
-                    {ns.status}
+                    {agentNames[ns.member_id] || 'Agent'}
+                    {' — '}
+                    <span className={ns.status === 'failed' ? 'text-red-400' : ns.status === 'completed' ? 'text-emerald-400' : ns.status === 'running' ? 'text-blue-400' : ''}>{ns.status}</span>
                     {ns.error && (
                       <span className="text-red-400 block">{ns.error}</span>
                     )}
@@ -132,18 +134,12 @@ export default function PipelineControls({
         {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Cancel button (visual only for now) */}
+        {/* Honest status: pipeline runs until completion */}
         {isRunning && (
-          <button
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors"
-            onClick={() => {
-              // Cancel not wired to backend yet -- visual placeholder
-              console.warn('Pipeline cancellation not yet implemented');
-            }}
-          >
-            <Square className="w-3 h-3" />
-            Cancel
-          </button>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary/5 text-muted-foreground border border-primary/10">
+            <Info className="w-3 h-3" />
+            Runs until completion
+          </span>
         )}
       </div>
     </div>

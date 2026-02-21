@@ -1,11 +1,11 @@
-import { motion } from 'framer-motion';
-import { Plug, CheckCircle, ExternalLink, Shield, ListChecks, KeyRound, CircleHelp } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plug, CheckCircle, Shield, ListChecks, KeyRound, CircleHelp, Bot, PenLine } from 'lucide-react';
 import { CredentialEditForm } from '@/features/vault/components/CredentialEditForm';
 import type { CredentialTemplateField } from '@/lib/types/types';
-import { openExternalUrl } from '@/api/tauriApi';
 import type { CredentialDesignResult } from '@/hooks/design/useCredentialDesign';
+import { NegotiatorPanel } from '@/features/vault/components/credential-negotiator/NegotiatorPanel';
+import { InteractiveSetupInstructions } from './InteractiveSetupInstructions';
 
 interface PreviewPhaseProps {
   result: CredentialDesignResult;
@@ -17,6 +17,7 @@ interface PreviewPhaseProps {
   optionalCount: number;
   firstSetupUrl: string | null;
   isGoogleOAuthFlow: boolean;
+  universalOAuthProvider?: string | null;
   oauthInitialValues: Record<string, string>;
   isAuthorizingOAuth: boolean;
   oauthConsentCompletedAt: string | null;
@@ -29,6 +30,8 @@ interface PreviewPhaseProps {
   onHealthcheck: (values: Record<string, string>) => void;
   onValuesChanged: (key: string, value: string) => void;
   onReset: () => void;
+  onRefine?: () => void;
+  onNegotiatorValues?: (capturedValues: Record<string, string>) => void;
 }
 
 export function PreviewPhase({
@@ -41,6 +44,7 @@ export function PreviewPhase({
   optionalCount,
   firstSetupUrl,
   isGoogleOAuthFlow,
+  universalOAuthProvider,
   oauthInitialValues,
   isAuthorizingOAuth,
   oauthConsentCompletedAt,
@@ -53,7 +57,15 @@ export function PreviewPhase({
   onHealthcheck,
   onValuesChanged,
   onReset,
+  onRefine,
+  onNegotiatorValues,
 }: PreviewPhaseProps) {
+  const [showNegotiator, setShowNegotiator] = useState(false);
+
+  const oauthProviderLabel = universalOAuthProvider
+    ? universalOAuthProvider.charAt(0).toUpperCase() + universalOAuthProvider.slice(1)
+    : 'Google';
+
   return (
     <motion.div
       key="preview"
@@ -110,37 +122,64 @@ export function PreviewPhase({
         </span>
       </div>
 
+      {/* Refine request */}
+      {onRefine && (
+        <button
+          onClick={onRefine}
+          className="flex items-center gap-1.5 text-xs text-muted-foreground/50 hover:text-primary/70 transition-colors"
+        >
+          <PenLine className="w-3 h-3" />
+          Not quite right? Refine your request
+        </button>
+      )}
+
       {/* Setup instructions */}
       {result.setup_instructions && (
-        <details className="group rounded-xl border border-primary/10 bg-secondary/20 px-4 py-3">
-          <summary className="cursor-pointer text-xs text-foreground/85 hover:text-foreground transition-colors font-medium">
-            Setup instructions
-          </summary>
-          <div className="mt-3 px-4 py-3 bg-background/40 rounded-xl border border-primary/10">
-            <div className="prose prose-invert prose-sm max-w-none text-foreground/90 prose-p:my-1.5 prose-headings:my-2 prose-li:my-0.5 prose-strong:text-foreground prose-code:text-amber-300">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {result.setup_instructions}
-              </ReactMarkdown>
-            </div>
-          </div>
-          {firstSetupUrl && (
-            <div className="mt-2">
+        <InteractiveSetupInstructions
+          markdown={result.setup_instructions}
+          firstSetupUrl={firstSetupUrl}
+        />
+      )}
+
+      {/* AI Auto-Provision */}
+      {!isGoogleOAuthFlow && (
+        <AnimatePresence>
+          {!showNegotiator ? (
+            <motion.div
+              key="neg-trigger"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500/10 to-indigo-500/10 border border-violet-500/20"
+            >
+              <Bot className="w-4 h-4 text-violet-400 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-foreground/70">
+                  <span className="text-violet-300 font-medium">Auto-provision available</span>{' '}
+                  — let AI guide you through obtaining your {result.connector.label} credentials step-by-step.
+                </p>
+              </div>
               <button
-                onClick={async () => {
-                  try {
-                    await openExternalUrl(firstSetupUrl);
-                  } catch {
-                    window.open(firstSetupUrl, '_blank', 'noopener,noreferrer');
-                  }
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-primary/20 text-foreground/90 hover:bg-secondary/50 transition-colors"
+                onClick={() => setShowNegotiator(true)}
+                className="shrink-0 px-3 py-1.5 rounded-lg bg-violet-500/15 border border-violet-500/25 text-violet-300 text-xs font-medium hover:bg-violet-500/25 transition-colors"
               >
-                Open setup page
-                <ExternalLink className="w-3 h-3" />
+                Start
               </button>
-            </div>
+            </motion.div>
+          ) : (
+            <NegotiatorPanel
+              key="neg-panel"
+              designResult={result}
+              onComplete={(values) => {
+                setShowNegotiator(false);
+                if (onNegotiatorValues) {
+                  onNegotiatorValues(values);
+                }
+              }}
+              onClose={() => setShowNegotiator(false)}
+            />
           )}
-        </details>
+        </AnimatePresence>
       )}
 
       {/* Credential name */}
@@ -169,14 +208,20 @@ export function PreviewPhase({
         initialValues={oauthInitialValues}
         fields={effectiveFields}
         onSave={onSave}
-        onOAuthConsent={isGoogleOAuthFlow ? onOAuthConsent : undefined}
-        oauthConsentLabel={isAuthorizingOAuth ? 'Authorizing with Google...' : 'Authorize with Google'}
+        onOAuthConsent={(isGoogleOAuthFlow || universalOAuthProvider) ? onOAuthConsent : undefined}
+        oauthConsentLabel={isAuthorizingOAuth
+          ? `Authorizing with ${oauthProviderLabel}...`
+          : `Authorize with ${oauthProviderLabel}`}
         oauthConsentDisabled={isAuthorizingOAuth}
         oauthConsentHint={isGoogleOAuthFlow
           ? 'One click consent using app-managed Google OAuth. You can uncheck permissions on the consent screen.'
+          : universalOAuthProvider
+            ? `Enter your ${oauthProviderLabel} OAuth client credentials above, then click to authorize.`
+            : undefined}
+        oauthConsentSuccessBadge={oauthConsentCompletedAt
+          ? `${oauthProviderLabel} consent completed at ${oauthConsentCompletedAt}`
           : undefined}
-        oauthConsentSuccessBadge={oauthConsentCompletedAt ? `Google consent completed at ${oauthConsentCompletedAt}` : undefined}
-        onHealthcheck={onHealthcheck}
+        onHealthcheck={universalOAuthProvider ? undefined : onHealthcheck}
         testHint="Run Test Connection to let Claude choose the best endpoint for this service and verify your entered credentials dynamically."
         onValuesChanged={onValuesChanged}
         isHealthchecking={isHealthchecking}
@@ -184,7 +229,9 @@ export function PreviewPhase({
         saveDisabled={!canSaveCredential}
         saveDisabledReason={isGoogleOAuthFlow
           ? 'Save is unlocked after Google consent returns a refresh token.'
-          : 'Save is locked until Test Connection succeeds for the current credential values.'}
+          : universalOAuthProvider
+            ? `Save is unlocked after ${oauthProviderLabel} authorization completes.`
+            : 'Save is locked until Test Connection succeeds for the current credential values.'}
         onCancel={onReset}
       />
 

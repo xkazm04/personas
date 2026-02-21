@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { useCloudStore } from '@/stores/cloudStore';
 import { usePersonaExecution } from '@/hooks/execution/usePersonaExecution';
-import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, CheckCircle2, XCircle, Timer, DollarSign } from 'lucide-react';
+import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, CheckCircle2, XCircle, Timer, DollarSign, ArrowDown } from 'lucide-react';
 import { TerminalHeader } from '@/features/shared/components/TerminalHeader';
+import { TerminalSearchBar, useTerminalFilter } from '@/features/shared/components/TerminalSearchBar';
 import { classifyLine, TERMINAL_STYLE_MAP, parseSummaryLine } from '@/lib/utils/terminalColors';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as api from '@/api/tauriApi';
@@ -27,12 +27,18 @@ export function PersonaRunner() {
   const rerunInputData = usePersonaStore((state) => state.rerunInputData);
   const setRerunInputData = usePersonaStore((state) => state.setRerunInputData);
 
-  const cloudConfig = useCloudStore((s) => s.config);
-  const cloudExecute = useCloudStore((s) => s.cloudExecute);
+  const cloudConfig = usePersonaStore((s) => s.cloudConfig);
+  const cloudExecute = usePersonaStore((s) => s.cloudExecute);
 
   const { disconnect } = usePersonaExecution();
 
+  const { filter, setFilter, isLineVisible, isFiltering } = useTerminalFilter();
+
   const runnerRef = useRef<HTMLDivElement>(null);
+  const terminalBodyRef = useRef<HTMLDivElement>(null);
+  const shouldAutoScroll = useRef(true);
+  const lastSeenLineCount = useRef(0);
+  const [unseenCount, setUnseenCount] = useState(0);
   const [inputData, setInputData] = useState('{}');
   const [showInputEditor, setShowInputEditor] = useState(false);
   const [outputLines, setOutputLines] = useState<string[]>([]);
@@ -44,6 +50,18 @@ export function PersonaRunner() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const personaId = selectedPersona?.id || '';
+
+  // Extract summary from terminal output for the persistent card
+  const executionSummary = useMemo(() => {
+    for (let i = outputLines.length - 1; i >= 0; i--) {
+      const line = outputLines[i]!;
+      if (classifyLine(line) === 'summary') {
+        const parsed = parseSummaryLine(line);
+        if (parsed) return parsed;
+      }
+    }
+    return null;
+  }, [outputLines]);
 
   const fetchTypicalDuration = useCallback(async (pId: string) => {
     try {
@@ -91,6 +109,38 @@ export function PersonaRunner() {
       setOutputLines(executionOutput);
     }
   }, [executionOutput]);
+
+  // Auto-scroll terminal and track unseen lines
+  useEffect(() => {
+    if (terminalBodyRef.current && shouldAutoScroll.current) {
+      terminalBodyRef.current.scrollTop = terminalBodyRef.current.scrollHeight;
+      lastSeenLineCount.current = outputLines.length;
+      setUnseenCount(0);
+    } else if (!shouldAutoScroll.current && outputLines.length > lastSeenLineCount.current) {
+      setUnseenCount(outputLines.length - lastSeenLineCount.current);
+    }
+  }, [outputLines.length]);
+
+  const handleTerminalScroll = useCallback(() => {
+    if (terminalBodyRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = terminalBodyRef.current;
+      const atBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 10;
+      shouldAutoScroll.current = atBottom;
+      if (atBottom) {
+        lastSeenLineCount.current = outputLines.length;
+        setUnseenCount(0);
+      }
+    }
+  }, [outputLines.length]);
+
+  const scrollToBottom = useCallback(() => {
+    if (terminalBodyRef.current) {
+      terminalBodyRef.current.scrollTo({ top: terminalBodyRef.current.scrollHeight, behavior: 'smooth' });
+      shouldAutoScroll.current = true;
+      lastSeenLineCount.current = outputLines.length;
+      setUnseenCount(0);
+    }
+  }, [outputLines.length]);
 
   // Clean up on unmount
   useEffect(() => {
@@ -279,6 +329,57 @@ export function PersonaRunner() {
         </motion.div>
       )}
 
+      {/* Persistent Execution Summary Card */}
+      {!isExecuting && executionSummary && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+          className={`rounded-xl border p-4 ${
+            executionSummary.status === 'completed'
+              ? 'border-emerald-500/20 bg-emerald-500/5'
+              : executionSummary.status === 'failed'
+                ? 'border-red-500/20 bg-red-500/5'
+                : 'border-amber-500/20 bg-amber-500/5'
+          }`}
+        >
+          <div className="flex items-center gap-5 flex-wrap">
+            <div className="flex items-center gap-2">
+              {executionSummary.status === 'completed' ? (
+                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+              ) : executionSummary.status === 'failed' ? (
+                <XCircle className="w-5 h-5 text-red-400" />
+              ) : (
+                <XCircle className="w-5 h-5 text-amber-400" />
+              )}
+              <span className={`text-sm font-semibold capitalize ${
+                executionSummary.status === 'completed'
+                  ? 'text-emerald-400'
+                  : executionSummary.status === 'failed'
+                    ? 'text-red-400'
+                    : 'text-amber-400'
+              }`}>
+                {executionSummary.status}
+              </span>
+            </div>
+
+            {executionSummary.duration_ms != null && (
+              <div className="flex items-center gap-1.5 text-muted-foreground/60">
+                <Timer className="w-3.5 h-3.5" />
+                <span className="text-sm font-mono">{(executionSummary.duration_ms / 1000).toFixed(1)}s</span>
+              </div>
+            )}
+
+            {executionSummary.cost_usd != null && (
+              <div className="flex items-center gap-1.5 text-muted-foreground/60">
+                <DollarSign className="w-3.5 h-3.5" />
+                <span className="text-sm font-mono">${executionSummary.cost_usd.toFixed(4)}</span>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      )}
+
       {/* Terminal Output */}
       {(isExecuting || outputLines.length > 0) && (
         <motion.div
@@ -294,11 +395,19 @@ export function PersonaRunner() {
               label={activeExecutionId ? `exec:${activeExecutionId.slice(0, 8)}` : undefined}
             />
 
+            <TerminalSearchBar filter={filter} onChange={setFilter} />
+
             {/* Terminal body */}
-            <div className="p-4 max-h-[400px] overflow-y-auto font-mono text-xs space-y-0.5">
+            <div className="relative">
+            <div
+              ref={terminalBodyRef}
+              onScroll={handleTerminalScroll}
+              className="p-4 max-h-[400px] overflow-y-auto font-mono text-xs space-y-0.5"
+            >
               {outputLines.map((line, i) => {
                 if (!line.trim()) return <div key={i} className="h-2" />;
                 const style = classifyLine(line);
+                const visible = isLineVisible(line, style);
 
                 if (style === 'summary') {
                   const summary = parseSummaryLine(line);
@@ -306,7 +415,7 @@ export function PersonaRunner() {
                     const isSuccess = summary.status === 'completed';
                     const isFailed = summary.status === 'failed';
                     return (
-                      <div key={i} className="border-t border-primary/15 pt-2 mt-2">
+                      <div key={i} className={`border-t border-primary/15 pt-2 mt-2 transition-opacity ${isFiltering && !visible ? 'opacity-20' : ''}`}>
                         <div className="flex items-center gap-4 flex-wrap">
                           <div className="flex items-center gap-1.5">
                             {isSuccess ? (
@@ -339,7 +448,7 @@ export function PersonaRunner() {
                 }
 
                 return (
-                  <div key={i} className={`leading-5 whitespace-pre-wrap break-all ${TERMINAL_STYLE_MAP[style]}`}>
+                  <div key={i} className={`leading-5 whitespace-pre-wrap break-all ${TERMINAL_STYLE_MAP[style]} transition-opacity ${isFiltering && !visible ? 'opacity-20' : ''}`}>
                     {line}
                   </div>
                 );
@@ -347,6 +456,24 @@ export function PersonaRunner() {
               {isExecuting && (
                 <div className="text-muted-foreground/30 animate-pulse">{'>'} _</div>
               )}
+            </div>
+
+            {/* Jump-to-bottom FAB */}
+            <AnimatePresence>
+              {unseenCount > 0 && (
+                <motion.button
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 8 }}
+                  transition={{ duration: 0.15 }}
+                  onClick={scrollToBottom}
+                  className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/90 text-foreground text-[11px] font-medium shadow-lg shadow-primary/20 hover:bg-primary transition-colors backdrop-blur-sm"
+                >
+                  <ArrowDown className="w-3 h-3" />
+                  {unseenCount} new line{unseenCount !== 1 ? 's' : ''} below
+                </motion.button>
+              )}
+            </AnimatePresence>
             </div>
           </div>
         </motion.div>

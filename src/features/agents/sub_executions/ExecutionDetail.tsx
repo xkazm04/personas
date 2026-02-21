@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { DbPersonaExecution } from '@/lib/types/types';
-import { ChevronDown, ChevronRight, Clock, Calendar, FileText, AlertCircle, Search, ListTree, Lightbulb, RotateCw } from 'lucide-react';
+import { ChevronDown, ChevronRight, Clock, Calendar, FileText, AlertCircle, Search, ListTree, Lightbulb, RotateCw, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatTimestamp, formatDuration, EXECUTION_STATUS_COLORS, badgeClass } from '@/lib/utils/formatters';
 import { ExecutionInspector } from '@/features/agents/sub_executions/ExecutionInspector';
@@ -120,10 +120,16 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="space-y-1.5">
               <div className="text-[11px] font-mono text-muted-foreground/40 uppercase tracking-wider">Status</div>
-              <div>
+              <div className="flex items-center gap-2">
                 <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-medium ${EXECUTION_STATUS_COLORS[execution.status] ? badgeClass(EXECUTION_STATUS_COLORS[execution.status]!) : ''}`}>
                   {execution.status}
                 </span>
+                {execution.retry_count > 0 && (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" title={`Healing retry #${execution.retry_count} of original execution`}>
+                    <RefreshCw className="w-2.5 h-2.5" />
+                    Retry #{execution.retry_count}
+                  </span>
+                )}
               </div>
             </div>
 

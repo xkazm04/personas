@@ -203,6 +203,38 @@ pub fn build_default_cli_args() -> CliArgs {
     }
 }
 
+/// Build CLI arguments to resume an existing Claude session.
+/// Uses `--resume <id>` instead of `-p -` to continue a prior conversation.
+pub fn build_resume_cli_args(claude_session_id: &str) -> CliArgs {
+    let (command, mut args) = if cfg!(windows) {
+        (
+            "cmd".to_string(),
+            vec!["/C".to_string(), "claude.cmd".to_string()],
+        )
+    } else {
+        ("claude".to_string(), vec![])
+    };
+
+    args.extend([
+        "--resume".to_string(),
+        claude_session_id.to_string(),
+        "-p".to_string(),
+        "-".to_string(),
+        "--output-format".to_string(),
+        "stream-json".to_string(),
+        "--verbose".to_string(),
+        "--dangerously-skip-permissions".to_string(),
+    ]);
+
+    CliArgs {
+        command,
+        args,
+        env_overrides: Vec::new(),
+        env_removals: vec!["CLAUDECODE".to_string(), "CLAUDE_CODE".to_string()],
+        cwd: None,
+    }
+}
+
 /// Build CLI arguments for spawning the Claude CLI process.
 pub fn build_cli_args(persona: &Persona, model_profile: &Option<ModelProfile>) -> CliArgs {
     let (command, mut args) = if cfg!(windows) {

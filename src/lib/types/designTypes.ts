@@ -63,6 +63,7 @@ export interface DesignAnalysisResult {
   suggested_notification_channels?: SuggestedNotificationChannel[];
   feasibility?: DesignTestResult;
   suggested_event_subscriptions?: SuggestedEventSubscription[];
+  adoption_requirements?: AdoptionRequirement[];
 }
 
 /** A notification channel suggestion from design analysis */
@@ -95,5 +96,25 @@ export interface SuggestedEventSubscription {
   event_type: string;
   source_filter?: Record<string, unknown>;
   description: string;
+}
+
+/** A requirement that must be fulfilled during template adoption */
+export interface AdoptionRequirement {
+  key: string;
+  label: string;
+  description: string;
+  type: "text" | "select" | "cron" | "url";
+  required: boolean;
+  default_value?: string;
+  options?: string[];
+  source: "connector" | "trigger" | "channel";
+}
+
+/** Readiness status for a connector in a template */
+export interface ConnectorReadinessStatus {
+  connector_name: string;
+  installed: boolean;
+  has_credential: boolean;
+  health: "ready" | "missing" | "unhealthy" | "unknown";
 }
 

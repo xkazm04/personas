@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, AlertCircle, FileText, Play, Settings, X } from 'lucide-react';
+import { AlertTriangle, AlertCircle, FileText, Play, Settings, FlaskConical, X } from 'lucide-react';
 import type { ModelProfile } from '@/lib/types/frontendTypes';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { EditorTab } from '@/lib/types/types';
@@ -9,6 +9,7 @@ import { ExecutionList } from '@/features/agents/sub_executions/ExecutionList';
 import { PersonaRunner } from '@/features/agents/sub_executions/PersonaRunner';
 import { AccessibleToggle } from '@/features/shared/components/AccessibleToggle';
 import { PersonaSettingsTab } from '@/features/agents/sub_editor/PersonaSettingsTab';
+import { PersonaTestsTab } from '@/features/agents/sub_tests/PersonaTestsTab';
 import { type PersonaDraft, buildDraft } from '@/features/agents/sub_editor/PersonaDraft';
 import { OLLAMA_CLOUD_BASE_URL, getOllamaPreset } from '@/features/agents/sub_editor/model-config/OllamaCloudPresets';
 
@@ -16,6 +17,7 @@ const tabDefs: Array<{ id: EditorTab; label: string; icon: typeof FileText }> = 
   { id: 'prompt', label: 'Prompt', icon: FileText },
   { id: 'executions', label: 'Executions', icon: Play },
   { id: 'settings', label: 'Settings', icon: Settings },
+  { id: 'tests', label: 'Tests', icon: FlaskConical },
 ];
 
 export default function PersonaEditor() {
@@ -130,7 +132,7 @@ export default function PersonaEditor() {
 
   if (!selectedPersona) {
     return (
-      <div className="flex items-center justify-center h-full text-muted-foreground/40">
+      <div className="flex-1 min-h-0 w-full flex items-center justify-center text-muted-foreground/40">
         No persona selected
       </div>
     );
@@ -246,13 +248,15 @@ export default function PersonaEditor() {
             onDelete={handleDelete}
           />
         );
+      case 'tests':
+        return <PersonaTestsTab />;
       default:
         return null;
     }
   };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
       {/* Header */}
       <div className="border-b border-primary/10 bg-secondary/40 backdrop-blur-md px-6 py-3">
         <div className="flex items-center gap-3">

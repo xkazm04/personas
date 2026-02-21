@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Users, Trash2, ChevronRight, GitBranch } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { listTeamMembers, listTeamConnections } from '@/api/tauriApi';
+import { getTeamCounts } from '@/api/tauriApi';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 
 export default function TeamList() {
@@ -28,22 +28,17 @@ export default function TeamList() {
 
   const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6'];
 
-  const fetchCounts = useCallback(async (teamList: PersonaTeam[]) => {
-    const counts: Record<string, { members: number; connections: number }> = {};
-    await Promise.all(
-      teamList.map(async (team) => {
-        try {
-          const [members, connections] = await Promise.all([
-            listTeamMembers(team.id),
-            listTeamConnections(team.id),
-          ]);
-          counts[team.id] = { members: members.length, connections: connections.length };
-        } catch {
-          counts[team.id] = { members: 0, connections: 0 };
-        }
-      }),
-    );
-    setTeamCounts(counts);
+  const fetchCounts = useCallback(async () => {
+    try {
+      const counts = await getTeamCounts();
+      const map: Record<string, { members: number; connections: number }> = {};
+      for (const c of counts) {
+        map[c.team_id] = { members: c.member_count, connections: c.connection_count };
+      }
+      setTeamCounts(map);
+    } catch {
+      // Silent fail
+    }
   }, []);
 
   useEffect(() => {
@@ -51,7 +46,7 @@ export default function TeamList() {
   }, [fetchTeams]);
 
   useEffect(() => {
-    if (teams.length > 0) fetchCounts(teams);
+    if (teams.length > 0) fetchCounts();
   }, [teams, fetchCounts]);
 
   const handleCreate = async () => {
@@ -64,7 +59,9 @@ export default function TeamList() {
   };
 
   return (
-    <div className="h-full overflow-y-auto p-6">
+    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
+      <div className="flex-1 overflow-y-auto">
+      <div className="min-h-full p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -279,6 +276,8 @@ export default function TeamList() {
             </button>
           </motion.div>
         )}
+      </div>
+      </div>
       </div>
     </div>
   );

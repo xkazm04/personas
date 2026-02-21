@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import PersonasPage from "@/features/personas/PersonasPage";
 import UpdateBanner from "@/features/shared/components/UpdateBanner";
+import { HealingToast } from "@/features/shared/components/HealingToast";
 import { initAuthListener, useAuthStore } from "@/stores/authStore";
 
 export default function App() {
@@ -15,6 +16,7 @@ export default function App() {
       <div className="flex flex-1 overflow-hidden">
         <PersonasPage />
       </div>
+      <HealingToast />
     </div>
   );
 }

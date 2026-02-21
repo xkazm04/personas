@@ -23,7 +23,7 @@ pub fn compute_next_trigger_at(trigger: &PersonaTrigger, now: DateTime<Utc>) -> 
             let next = now + Duration::seconds(interval_secs as i64);
             Some(next.to_rfc3339())
         }
-        _ => None, // "manual" and "webhook" have no scheduled next time
+        _ => None, // "manual", "webhook", and "chain" have no scheduled next time
     }
 }
 

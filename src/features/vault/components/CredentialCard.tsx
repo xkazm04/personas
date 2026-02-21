@@ -1,15 +1,20 @@
-import { useEffect, useState } from 'react';
-import { Trash2, Key, ChevronDown, ChevronRight, Wrench, Zap, Pencil, Plug, XCircle } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Trash2, Key, ChevronDown, ChevronRight, Wrench, Zap, Pencil, Plug, XCircle, BarChart3, RotateCw, ShieldCheck, AlertTriangle, Clock, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CredentialEditForm } from '@/features/vault/components/CredentialEditForm';
 import { CredentialEventConfig } from '@/features/vault/components/CredentialEventConfig';
+import { CredentialIntelligence } from '@/features/vault/components/CredentialIntelligence';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { toCredentialMetadata } from '@/lib/types/types';
+import { isGoogleOAuthConnector } from '@/lib/utils/connectors';
+import { useGoogleOAuth } from '@/features/vault/hooks/useGoogleOAuth';
 import { usePersonaStore } from '@/stores/personaStore';
 import * as api from '@/api/tauriApi';
-import { formatTimestamp } from '@/lib/utils/formatters';
+import { formatTimestamp, formatRelativeTime } from '@/lib/utils/formatters';
+import type { RotationStatus } from '@/api/rotation';
+import { getRotationStatus, createRotationPolicy, rotateCredentialNow, deleteRotationPolicy } from '@/api/rotation';
 
-type ExpandedSection = 'services' | 'events' | null;
+type ExpandedSection = 'services' | 'events' | 'intelligence' | 'rotation' | null;
 
 interface CredentialCardProps {
   credential: CredentialMetadata;
@@ -35,19 +40,57 @@ export function CredentialCard({
   const [expandedSection, setExpandedSection] = useState<ExpandedSection>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
-  const [oauthInitialValues, setOauthInitialValues] = useState<Record<string, string>>({});
-  const [oauthSessionId, setOauthSessionId] = useState<string | null>(null);
-  const [isAuthorizingOAuth, setIsAuthorizingOAuth] = useState(false);
-  const [oauthConsentCompletedAt, setOauthConsentCompletedAt] = useState<string | null>(null);
+  const [rotationStatus, setRotationStatus] = useState<RotationStatus | null>(null);
+  const [isRotating, setIsRotating] = useState(false);
+  const [rotationCountdown, setRotationCountdown] = useState<string | null>(null);
 
-  const connectorMetadata = (connector?.metadata ?? {}) as Record<string, unknown>;
-  const isGoogleOAuthFlow = Boolean(
-    connector && (
-      credential.service_type.includes('google')
-      || connectorMetadata.oauth_type === 'google'
-      || connector.name === 'google_workspace_oauth_template'
-    ),
-  );
+  const googleOAuth = useGoogleOAuth({
+    onSuccess: () => setEditError(null),
+    onError: (msg) => setEditError(msg),
+  });
+
+  const fetchRotationStatus = useCallback(async () => {
+    try {
+      const status = await getRotationStatus(credential.id);
+      setRotationStatus(status);
+    } catch {
+      // No rotation data yet — that's fine
+    }
+  }, [credential.id]);
+
+  // Fetch rotation status on mount (for header badge) and on expand
+  useEffect(() => {
+    fetchRotationStatus();
+  }, [fetchRotationStatus]);
+
+  // Countdown timer for next rotation
+  useEffect(() => {
+    if (!rotationStatus?.next_rotation_at) {
+      setRotationCountdown(null);
+      return;
+    }
+    const update = () => {
+      const diff = Math.max(0, Math.floor((new Date(rotationStatus.next_rotation_at!).getTime() - Date.now()) / 1000));
+      if (diff <= 0) {
+        setRotationCountdown('Due now');
+        return;
+      }
+      const d = Math.floor(diff / 86400);
+      const h = Math.floor((diff % 86400) / 3600);
+      if (d > 0) setRotationCountdown(`${d}d ${h}h`);
+      else {
+        const m = Math.floor((diff % 3600) / 60);
+        setRotationCountdown(h > 0 ? `${h}h ${m}m` : `${m}m`);
+      }
+    };
+    update();
+    const timer = window.setInterval(update, 60_000);
+    return () => clearInterval(timer);
+  }, [rotationStatus?.next_rotation_at]);
+
+  const isGoogleOAuthFlow = connector
+    ? isGoogleOAuthConnector(connector, credential.service_type)
+    : false;
 
   const effectiveHealthcheckResult = healthcheckResult ?? (
     credential.healthcheck_last_success === null
@@ -66,104 +109,12 @@ export function CredentialCard({
     onToggleExpand();
   };
 
-  useEffect(() => {
-    if (!oauthSessionId) return;
-
-    let cancelled = false;
-    let timer: number | null = null;
-
-    const poll = async () => {
-      try {
-        const status = await api.getGoogleCredentialOAuthStatus(oauthSessionId);
-        if (cancelled) return;
-
-        if (status.status === 'pending') {
-          timer = window.setTimeout(poll, 1500);
-          return;
-        }
-
-        setOauthSessionId(null);
-        setIsAuthorizingOAuth(false);
-
-        if (status.status === 'success' && status.refresh_token) {
-          setOauthInitialValues((prev) => ({
-            ...prev,
-            refresh_token: status.refresh_token!,
-            scopes: status.scope || prev.scopes || [
-              'https://www.googleapis.com/auth/gmail.modify',
-              'https://www.googleapis.com/auth/calendar.events',
-              'https://www.googleapis.com/auth/drive.file',
-              'openid',
-              'https://www.googleapis.com/auth/userinfo.email',
-            ].join(' '),
-          }));
-          setOauthConsentCompletedAt(new Date().toLocaleTimeString());
-          setEditError(null);
-          return;
-        }
-
-        setEditError(status.error || 'Google authorization failed. Please try again.');
-      } catch (err) {
-        if (cancelled) return;
-        setOauthSessionId(null);
-        setIsAuthorizingOAuth(false);
-        setEditError(err instanceof Error ? err.message : 'Failed to check OAuth status.');
-      }
-    };
-
-    poll();
-
-    return () => {
-      cancelled = true;
-      if (timer) window.clearTimeout(timer);
-    };
-  }, [oauthSessionId]);
-
   const handleOAuthConsent = (values: Record<string, string>) => {
-    const scopes = values.scopes?.trim()
+    const extraScopes = values.scopes?.trim()
       ? values.scopes.trim().split(/\s+/)
-      : [
-          'https://www.googleapis.com/auth/gmail.modify',
-          'https://www.googleapis.com/auth/calendar.events',
-          'https://www.googleapis.com/auth/drive.file',
-          'openid',
-          'https://www.googleapis.com/auth/userinfo.email',
-        ];
-
-    setIsAuthorizingOAuth(true);
-    setOauthConsentCompletedAt(null);
+      : undefined;
     setEditError(null);
-
-    api.startGoogleCredentialOAuth(undefined, undefined, connector?.name || credential.service_type, scopes)
-      .then(async (oauthStart) => {
-        let opened = false;
-        try {
-          await api.openExternalUrl(oauthStart.auth_url);
-          opened = true;
-        } catch {
-          // fallback below
-        }
-
-        if (!opened) {
-          try {
-            const popup = window.open(oauthStart.auth_url, '_blank', 'noopener,noreferrer');
-            opened = popup !== null;
-          } catch {
-            // no-op
-          }
-        }
-
-        if (!opened) {
-          throw new Error('Could not open Google consent page. Please allow popups or external browser open.');
-        }
-
-        setOauthSessionId(oauthStart.session_id);
-      })
-      .catch((err) => {
-        setOauthSessionId(null);
-        setIsAuthorizingOAuth(false);
-        setEditError(err instanceof Error ? err.message : 'Failed to start Google authorization.');
-      });
+    googleOAuth.startConsent(connector?.name || credential.service_type, extraScopes);
   };
 
   return (
@@ -251,6 +202,18 @@ export function CredentialCard({
                     </span>
                   </span>
                 )}
+                {rotationStatus?.policy_enabled && rotationCountdown && (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 flex-shrink-0">
+                    <RotateCw className="w-2.5 h-2.5 text-cyan-400/70" />
+                    <span className="text-[10px] text-cyan-400/70 font-mono">{rotationCountdown}</span>
+                  </span>
+                )}
+                {rotationStatus?.anomaly_detected && (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 flex-shrink-0">
+                    <AlertTriangle className="w-2.5 h-2.5 text-amber-400" />
+                    <span className="text-[10px] text-amber-400">Anomaly</span>
+                  </span>
+                )}
               </div>
 
               <div className="mt-1 text-[11px] text-muted-foreground/70">
@@ -320,6 +283,34 @@ export function CredentialCard({
                     Events ({connector.events.length})
                   </button>
                 )}
+                <button
+                  onClick={() => setExpandedSection(expandedSection === 'intelligence' ? null : 'intelligence')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    expandedSection === 'intelligence'
+                      ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/25'
+                      : 'text-muted-foreground/50 hover:text-foreground/70 hover:bg-secondary/60'
+                  }`}
+                >
+                  <BarChart3 className="w-3 h-3" />
+                  Intelligence
+                </button>
+                <button
+                  onClick={() => {
+                    setExpandedSection(expandedSection === 'rotation' ? null : 'rotation');
+                    if (expandedSection !== 'rotation') fetchRotationStatus();
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    expandedSection === 'rotation'
+                      ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/25'
+                      : 'text-muted-foreground/50 hover:text-foreground/70 hover:bg-secondary/60'
+                  }`}
+                >
+                  <RotateCw className="w-3 h-3" />
+                  Rotation
+                  {rotationStatus?.anomaly_detected && (
+                    <AlertTriangle className="w-3 h-3 text-amber-400" />
+                  )}
+                </button>
               </div>
 
               {/* Edit Section */}
@@ -339,7 +330,7 @@ export function CredentialCard({
                   )}
                   {editingId === credential.id ? (
                     <CredentialEditForm
-                      initialValues={oauthInitialValues}
+                      initialValues={googleOAuth.initialValues}
                       fields={connector.fields}
                       onSave={async (values) => {
                         try {
@@ -357,22 +348,22 @@ export function CredentialCard({
                               c.id === credential.id ? updated : c
                             ),
                           }));
-                          setOauthConsentCompletedAt(null);
+                          googleOAuth.reset();
                           setEditingId(null);
                         } catch (err) {
                           setEditError(err instanceof Error ? err.message : 'Failed to update credential');
                         }
                       }}
                       onOAuthConsent={isGoogleOAuthFlow ? handleOAuthConsent : undefined}
-                      oauthConsentLabel={isAuthorizingOAuth ? 'Authorizing with Google...' : 'Authorize with Google'}
-                      oauthConsentDisabled={isAuthorizingOAuth}
+                      oauthConsentLabel={googleOAuth.isAuthorizing ? 'Authorizing with Google...' : 'Authorize with Google'}
+                      oauthConsentDisabled={googleOAuth.isAuthorizing}
                       oauthConsentHint={isGoogleOAuthFlow ? 'Launches app-managed Google consent and updates refresh token after approval.' : undefined}
-                      oauthConsentSuccessBadge={oauthConsentCompletedAt ? `Google consent completed at ${oauthConsentCompletedAt}` : undefined}
+                      oauthConsentSuccessBadge={googleOAuth.completedAt ? `Google consent completed at ${googleOAuth.completedAt}` : undefined}
                       onCancel={() => setEditingId(null)}
                       onHealthcheck={(values) => onHealthcheck(credential.id, values, credential.service_type)}
                       onValuesChanged={() => {
-                        if (oauthConsentCompletedAt) {
-                          setOauthConsentCompletedAt(null);
+                        if (googleOAuth.completedAt) {
+                          googleOAuth.reset();
                         }
                       }}
                       isHealthchecking={isHealthchecking}
@@ -468,6 +459,151 @@ export function CredentialCard({
                   credentialId={credential.id}
                   events={connector.events}
                 />
+              )}
+
+              {/* Intelligence Section */}
+              {expandedSection === 'intelligence' && (
+                <CredentialIntelligence credentialId={credential.id} />
+              )}
+
+              {/* Rotation Section */}
+              {expandedSection === 'rotation' && (
+                <div className="space-y-3">
+                  {/* Anomaly Warning */}
+                  {rotationStatus?.anomaly_detected && (
+                    <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-400">
+                      <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                      <span>Anomaly detected: credential suddenly failing after previous success. Possible revocation.</span>
+                    </div>
+                  )}
+
+                  {/* Rotation Status Summary */}
+                  {rotationStatus?.has_policy ? (
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className={`w-4 h-4 ${rotationStatus.policy_enabled ? 'text-cyan-400' : 'text-muted-foreground/40'}`} />
+                        <div className="text-xs">
+                          <span className={rotationStatus.policy_enabled ? 'text-cyan-400 font-medium' : 'text-muted-foreground/50'}>
+                            {rotationStatus.policy_enabled ? 'Auto-rotation active' : 'Rotation paused'}
+                          </span>
+                          {rotationStatus.rotation_interval_days && (
+                            <span className="text-muted-foreground/40 ml-1.5">
+                              every {rotationStatus.rotation_interval_days}d
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {rotationCountdown && rotationStatus.policy_enabled && (
+                          <span className="flex items-center gap-1 text-[10px] text-muted-foreground/50 font-mono">
+                            <Clock className="w-3 h-3" />
+                            {rotationCountdown}
+                          </span>
+                        )}
+                        <button
+                          onClick={async () => {
+                            setIsRotating(true);
+                            try {
+                              await rotateCredentialNow(credential.id);
+                              await fetchRotationStatus();
+                              onHealthcheck(credential.id);
+                            } catch {
+                              // handled silently; rotation history records failures
+                            } finally {
+                              setIsRotating(false);
+                            }
+                          }}
+                          disabled={isRotating}
+                          className="flex items-center gap-1 px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-400 rounded-lg text-[11px] font-medium transition-all disabled:opacity-50"
+                        >
+                          <RotateCw className={`w-3 h-3 ${isRotating ? 'animate-spin' : ''}`} />
+                          Rotate Now
+                        </button>
+                        <button
+                          onClick={async () => {
+                            try {
+                              const allPolicies = await api.listRotationPolicies(credential.id);
+                              for (const p of allPolicies) {
+                                await deleteRotationPolicy(p.id);
+                              }
+                              await fetchRotationStatus();
+                            } catch {
+                              // silent
+                            }
+                          }}
+                          className="p-1 hover:bg-red-500/10 rounded-lg transition-colors"
+                          title="Remove rotation policy"
+                        >
+                          <Trash2 className="w-3 h-3 text-red-400/50" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-xs text-muted-foreground/40">No rotation policy configured.</p>
+                      <button
+                        onClick={async () => {
+                          try {
+                            await createRotationPolicy({
+                              credential_id: credential.id,
+                              rotation_interval_days: 90,
+                              policy_type: 'scheduled',
+                              enabled: true,
+                            });
+                            await fetchRotationStatus();
+                          } catch {
+                            // silent
+                          }
+                        }}
+                        className="flex items-center gap-1 px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-400 rounded-lg text-[11px] font-medium transition-all"
+                      >
+                        <Plus className="w-3 h-3" />
+                        Enable (90 days)
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Last Rotation Info */}
+                  {rotationStatus?.last_rotated_at && (
+                    <div className="text-[11px] text-muted-foreground/40">
+                      Last rotated {formatRelativeTime(rotationStatus.last_rotated_at)}
+                      {rotationStatus.last_status && (
+                        <span className={`ml-1.5 ${
+                          rotationStatus.last_status === 'success' ? 'text-emerald-400/60' : 'text-red-400/60'
+                        }`}>
+                          ({rotationStatus.last_status})
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Rotation History Timeline */}
+                  {rotationStatus && rotationStatus.recent_history.length > 0 && (
+                    <div className="space-y-1">
+                      <p className="text-[10px] text-muted-foreground/30 uppercase tracking-wider font-medium">History</p>
+                      <div className="space-y-1 max-h-[160px] overflow-y-auto">
+                        {rotationStatus.recent_history.map((entry) => (
+                          <div key={entry.id} className="flex items-start gap-2 text-[11px]">
+                            <span className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${
+                              entry.status === 'success' ? 'bg-emerald-400' :
+                              entry.status === 'failed' ? 'bg-red-400' :
+                              'bg-amber-400/60'
+                            }`} />
+                            <div className="flex-1 min-w-0">
+                              <span className="text-muted-foreground/50 font-mono">{entry.rotation_type}</span>
+                              {entry.detail && (
+                                <span className="text-muted-foreground/30 ml-1.5 truncate">{entry.detail}</span>
+                              )}
+                            </div>
+                            <span className="text-muted-foreground/25 shrink-0">
+                              {formatRelativeTime(entry.created_at)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </motion.div>

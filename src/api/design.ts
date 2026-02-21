@@ -81,6 +81,10 @@ export const startN8nTransformBackground = (
   parserResultJson: string,
   adjustmentRequest?: string | null,
   previousDraftJson?: string | null,
+  connectorsJson?: string | null,
+  credentialsJson?: string | null,
+  userAnswersJson?: string | null,
+  sessionId?: string | null,
 ) =>
   invoke<N8nTransformStartResult>("start_n8n_transform_background", {
     transformId,
@@ -89,6 +93,10 @@ export const startN8nTransformBackground = (
     parserResultJson,
     adjustmentRequest: adjustmentRequest ?? null,
     previousDraftJson: previousDraftJson ?? null,
+    connectorsJson: connectorsJson ?? null,
+    credentialsJson: credentialsJson ?? null,
+    userAnswersJson: userAnswersJson ?? null,
+    sessionId: sessionId ?? null,
   });
 
 export const getN8nTransformSnapshot = (transformId: string) =>
@@ -101,7 +109,147 @@ export const clearN8nTransformSnapshot = (transformId: string) =>
     transformId,
   });
 
+export const cancelN8nTransform = (transformId: string) =>
+  invoke<void>("cancel_n8n_transform", {
+    transformId,
+  });
+
 export const confirmN8nPersonaDraft = (draftJson: string) =>
   invoke<{ persona: Persona }>("confirm_n8n_persona_draft", {
     draftJson,
+  });
+
+export interface TransformQuestionResponse {
+  id: string;
+  question: string;
+  type: 'select' | 'text' | 'boolean';
+  options?: string[];
+  default?: string;
+  context?: string;
+}
+
+export const generateN8nTransformQuestions = (
+  workflowName: string,
+  workflowJson: string,
+  parserResultJson: string,
+  connectorsJson?: string | null,
+  credentialsJson?: string | null,
+) =>
+  invoke<TransformQuestionResponse[]>("generate_n8n_transform_questions", {
+    workflowName,
+    workflowJson,
+    parserResultJson,
+    connectorsJson: connectorsJson ?? null,
+    credentialsJson: credentialsJson ?? null,
+  });
+
+// ============================================================================
+// N8n Transform Sessions (persisted wizard state)
+// ============================================================================
+
+export type { N8nTransformSession } from '@/lib/bindings/N8nTransformSession';
+
+export const createN8nSession = (
+  workflowName: string,
+  rawWorkflowJson: string,
+  step: string,
+  status: string,
+) =>
+  invoke<import('@/lib/bindings/N8nTransformSession').N8nTransformSession>(
+    "create_n8n_session",
+    { workflowName, rawWorkflowJson, step, status },
+  );
+
+export const getN8nSession = (id: string) =>
+  invoke<import('@/lib/bindings/N8nTransformSession').N8nTransformSession>(
+    "get_n8n_session",
+    { id },
+  );
+
+export const listN8nSessions = () =>
+  invoke<import('@/lib/bindings/N8nTransformSession').N8nTransformSession[]>(
+    "list_n8n_sessions",
+  );
+
+export const updateN8nSession = (
+  id: string,
+  updates: {
+    workflowName?: string;
+    status?: string;
+    parserResult?: string | null;
+    draftJson?: string | null;
+    userAnswers?: string | null;
+    step?: string;
+    error?: string | null;
+    personaId?: string | null;
+  },
+) =>
+  invoke<import('@/lib/bindings/N8nTransformSession').N8nTransformSession>(
+    "update_n8n_session",
+    { id, ...updates },
+  );
+
+export const deleteN8nSession = (id: string) =>
+  invoke<boolean>("delete_n8n_session", { id });
+
+// ============================================================================
+// Template Adoption (CLI-driven)
+// ============================================================================
+
+export interface TemplateAdoptStartResult {
+  adopt_id: string;
+}
+
+export interface TemplateAdoptSnapshot {
+  adopt_id: string;
+  status: 'idle' | 'running' | 'completed' | 'failed';
+  error: string | null;
+  lines: string[];
+  draft: N8nPersonaDraft | null;
+}
+
+export const startTemplateAdoptBackground = (
+  adoptId: string,
+  templateName: string,
+  designResultJson: string,
+  adjustmentRequest?: string | null,
+  previousDraftJson?: string | null,
+  userAnswersJson?: string | null,
+) =>
+  invoke<TemplateAdoptStartResult>("start_template_adopt_background", {
+    adoptId,
+    templateName,
+    designResultJson,
+    adjustmentRequest: adjustmentRequest ?? null,
+    previousDraftJson: previousDraftJson ?? null,
+    userAnswersJson: userAnswersJson ?? null,
+  });
+
+export const getTemplateAdoptSnapshot = (adoptId: string) =>
+  invoke<TemplateAdoptSnapshot>("get_template_adopt_snapshot", {
+    adoptId,
+  });
+
+export const clearTemplateAdoptSnapshot = (adoptId: string) =>
+  invoke<void>("clear_template_adopt_snapshot", {
+    adoptId,
+  });
+
+export const cancelTemplateAdopt = (adoptId: string) =>
+  invoke<void>("cancel_template_adopt", {
+    adoptId,
+  });
+
+export const confirmTemplateAdoptDraft = (draftJson: string) =>
+  invoke<{ persona: Persona }>("confirm_template_adopt_draft", {
+    draftJson,
+  });
+
+export const generateTemplateAdoptQuestions = (
+  templateName: string,
+  designResultJson: string,
+) =>
+  invoke<TransformQuestionResponse[]>("generate_template_adopt_questions", {
+    templateName,
+    designResultJson,
   });

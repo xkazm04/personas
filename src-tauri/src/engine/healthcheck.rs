@@ -163,7 +163,8 @@ async fn execute_healthcheck_request(
     }
 }
 
-fn resolve_template(template: &str, values: &HashMap<String, String>) -> String {
+/// Replace `{{key}}` placeholders in a template string with values from the map.
+pub(crate) fn resolve_template(template: &str, values: &HashMap<String, String>) -> String {
     let mut resolved = template.to_string();
     for (key, value) in values {
         resolved = resolved.replace(&format!("{{{{{}}}}}", key), value);

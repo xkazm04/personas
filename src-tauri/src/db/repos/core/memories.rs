@@ -23,6 +23,7 @@ pub fn get_all(
     pool: &DbPool,
     persona_id: Option<&str>,
     category: Option<&str>,
+    search: Option<&str>,
     limit: Option<i64>,
     offset: Option<i64>,
 ) -> Result<Vec<PersonaMemory>, AppError> {
@@ -44,6 +45,20 @@ pub fn get_all(
         conditions.push(format!("category = ?{}", param_idx));
         param_values.push(Box::new(cat.to_string()));
         param_idx += 1;
+    }
+    if let Some(q) = search {
+        let trimmed = q.trim();
+        if !trimmed.is_empty() {
+            let pattern = format!("%{}%", trimmed);
+            conditions.push(format!(
+                "(title LIKE ?{} OR content LIKE ?{})",
+                param_idx,
+                param_idx + 1
+            ));
+            param_values.push(Box::new(pattern.clone()));
+            param_values.push(Box::new(pattern));
+            param_idx += 2;
+        }
     }
 
     let where_clause = if conditions.is_empty() {
@@ -67,7 +82,8 @@ pub fn get_all(
 
     let mut stmt = conn.prepare(&sql)?;
     let rows = stmt.query_map(params_ref.as_slice(), row_to_memory)?;
-    Ok(rows.filter_map(|r| r.ok()).collect())
+    let results: Vec<PersonaMemory> = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+    Ok(results)
 }
 
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaMemory, AppError> {
@@ -97,7 +113,8 @@ pub fn get_by_persona(
          ORDER BY importance DESC, created_at DESC LIMIT ?2",
     )?;
     let rows = stmt.query_map(params![persona_id, limit], row_to_memory)?;
-    Ok(rows.filter_map(|r| r.ok()).collect())
+    let results: Vec<PersonaMemory> = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+    Ok(results)
 }
 
 pub fn create(pool: &DbPool, input: CreatePersonaMemoryInput) -> Result<PersonaMemory, AppError> {
@@ -132,6 +149,56 @@ pub fn create(pool: &DbPool, input: CreatePersonaMemoryInput) -> Result<PersonaM
     )?;
 
     get_by_id(pool, &id)
+}
+
+pub fn get_total_count(
+    pool: &DbPool,
+    persona_id: Option<&str>,
+    category: Option<&str>,
+    search: Option<&str>,
+) -> Result<i64, AppError> {
+    let conn = pool.get()?;
+
+    let mut conditions: Vec<String> = Vec::new();
+    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+    let mut param_idx = 1u32;
+
+    if let Some(pid) = persona_id {
+        conditions.push(format!("persona_id = ?{}", param_idx));
+        param_values.push(Box::new(pid.to_string()));
+        param_idx += 1;
+    }
+    if let Some(cat) = category {
+        conditions.push(format!("category = ?{}", param_idx));
+        param_values.push(Box::new(cat.to_string()));
+        param_idx += 1;
+    }
+    if let Some(q) = search {
+        let trimmed = q.trim();
+        if !trimmed.is_empty() {
+            let pattern = format!("%{}%", trimmed);
+            conditions.push(format!(
+                "(title LIKE ?{} OR content LIKE ?{})",
+                param_idx,
+                param_idx + 1
+            ));
+            param_values.push(Box::new(pattern.clone()));
+            param_values.push(Box::new(pattern));
+        }
+    }
+
+    let where_clause = if conditions.is_empty() {
+        String::new()
+    } else {
+        format!("WHERE {}", conditions.join(" AND "))
+    };
+
+    let sql = format!("SELECT COUNT(*) FROM persona_memories {}", where_clause);
+    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+        param_values.iter().map(|p| p.as_ref()).collect();
+
+    let count: i64 = conn.query_row(&sql, params_ref.as_slice(), |row| row.get(0))?;
+    Ok(count)
 }
 
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
@@ -214,20 +281,20 @@ mod tests {
         assert_eq!(fetched.tags, Some("ui,preference".into()));
 
         // Get all (no filters)
-        let all = get_all(&pool, None, None, None, None).unwrap();
+        let all = get_all(&pool, None, None, None, None, None).unwrap();
         assert_eq!(all.len(), 2);
 
         // Get all filtered by persona_id
-        let by_persona = get_all(&pool, Some(&persona.id), None, None, None).unwrap();
+        let by_persona = get_all(&pool, Some(&persona.id), None, None, None, None).unwrap();
         assert_eq!(by_persona.len(), 2);
 
         // Get all filtered by category
-        let by_category = get_all(&pool, None, Some("preference"), None, None).unwrap();
+        let by_category = get_all(&pool, None, Some("preference"), None, None, None).unwrap();
         assert_eq!(by_category.len(), 1);
         assert_eq!(by_category[0].title, "User prefers dark mode");
 
         // Get all with limit
-        let limited = get_all(&pool, None, None, Some(1), None).unwrap();
+        let limited = get_all(&pool, None, None, None, Some(1), None).unwrap();
         assert_eq!(limited.len(), 1);
 
         // Get by persona (ordered by importance DESC)
@@ -241,7 +308,7 @@ mod tests {
         assert!(deleted);
         assert!(get_by_id(&pool, &m1.id).is_err());
 
-        let remaining = get_all(&pool, None, None, None, None).unwrap();
+        let remaining = get_all(&pool, None, None, None, None, None).unwrap();
         assert_eq!(remaining.len(), 1);
     }
 }

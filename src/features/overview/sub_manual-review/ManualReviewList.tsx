@@ -159,9 +159,24 @@ export default function ManualReviewList() {
   );
 
   return (
-    <div className="flex flex-col h-full overflow-hidden p-6 pt-4">
-      {/* Filter pills with count badges */}
-      <div className="flex items-center gap-2 mb-4">
+    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
+      {/* Header */}
+      <div className="px-4 md:px-6 py-5 border-b border-primary/10 bg-primary/5 flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
+            <ClipboardCheck className="w-5 h-5 text-amber-400" />
+          </div>
+          <div className="flex-1">
+            <h1 className="text-lg font-semibold text-foreground/90">Manual Reviews</h1>
+            <p className="text-xs text-muted-foreground/50">
+              {manualReviews.length} review{manualReviews.length !== 1 ? 's' : ''} recorded
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Filter bar */}
+      <div className="px-4 md:px-6 py-3 border-b border-primary/10 flex items-center gap-2 flex-shrink-0">
         {filterOptions.map((opt) => (
           <button
             key={opt.id}
@@ -194,30 +209,34 @@ export default function ManualReviewList() {
       </div>
 
       {/* Review list */}
-      <div className="flex-1 overflow-y-auto space-y-1.5">
-        {filteredReviews.length === 0 && (
-          <div className="text-center py-16">
-            <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
-              <ClipboardCheck className="w-5 h-5 text-muted-foreground/30" />
+      <div className="flex-1 overflow-y-auto flex flex-col">
+        {filteredReviews.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center p-4 md:p-6">
+            <div className="text-center">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
+                <ClipboardCheck className="w-5 h-5 text-muted-foreground/30" />
+              </div>
+              <p className="text-sm text-muted-foreground/50">No review items yet</p>
+              <p className="text-xs text-muted-foreground/30 mt-1">Items that require approval will appear here</p>
             </div>
-            <p className="text-sm text-muted-foreground/50">No review items yet</p>
-            <p className="text-xs text-muted-foreground/30 mt-1">Items that require approval will appear here</p>
+          </div>
+        ) : (
+          <div className="p-4 md:p-6 space-y-1.5">
+            <AnimatePresence initial={false}>
+              {filteredReviews.map((review) => (
+                <ReviewRow
+                  key={review.id}
+                  review={review}
+                  isExpanded={expandedId === review.id}
+                  onToggle={() => setExpandedId(expandedId === review.id ? null : review.id)}
+                  onAction={updateManualReview}
+                  isSelected={selectedIds.has(review.id)}
+                  onSelect={review.status === 'pending' ? () => toggleSelect(review.id) : undefined}
+                />
+              ))}
+            </AnimatePresence>
           </div>
         )}
-
-        <AnimatePresence initial={false}>
-          {filteredReviews.map((review) => (
-            <ReviewRow
-              key={review.id}
-              review={review}
-              isExpanded={expandedId === review.id}
-              onToggle={() => setExpandedId(expandedId === review.id ? null : review.id)}
-              onAction={updateManualReview}
-              isSelected={selectedIds.has(review.id)}
-              onSelect={review.status === 'pending' ? () => toggleSelect(review.id) : undefined}
-            />
-          ))}
-        </AnimatePresence>
       </div>
 
       {/* Sticky bulk action bar */}

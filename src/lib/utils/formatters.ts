@@ -1,3 +1,5 @@
+import type { PersonaMemoryCategory } from '@/lib/types/frontendTypes';
+
 export function formatTimestamp(timestamp: string | null, fallback = '-'): string {
   if (!timestamp) return fallback;
   return new Date(timestamp).toLocaleString();
@@ -69,6 +71,8 @@ export const MEMORY_CATEGORY_COLORS: Record<string, BadgeColors & { label: strin
   learned: { label: 'Learned', bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/20' },
   custom: { label: 'Custom', bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/20' },
 };
+
+export const ALL_MEMORY_CATEGORIES = Object.keys(MEMORY_CATEGORY_COLORS) as PersonaMemoryCategory[];
 
 export interface EventTypeColor {
   tailwind: string;
