@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Trash2, Key, ChevronDown, ChevronRight, Wrench, Zap, Pencil, Plug, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CredentialEditForm } from '@/features/vault/components/CredentialEditForm';
@@ -9,7 +9,7 @@ import { usePersonaStore } from '@/stores/personaStore';
 import * as api from '@/api/tauriApi';
 import { formatTimestamp } from '@/lib/utils/formatters';
 
-type ExpandedSection = 'edit' | 'services' | 'events';
+type ExpandedSection = 'services' | 'events' | null;
 
 interface CredentialCardProps {
   credential: CredentialMetadata;
@@ -17,7 +17,7 @@ interface CredentialCardProps {
   isExpanded: boolean;
   onToggleExpand: () => void;
   onDelete: (id: string) => void;
-  onHealthcheck: (id: string) => void;
+  onHealthcheck: (id: string, fieldValues?: Record<string, string>, serviceType?: string) => void;
   isHealthchecking: boolean;
   healthcheckResult: { success: boolean; message: string } | null;
 }
@@ -32,16 +32,138 @@ export function CredentialCard({
   isHealthchecking,
   healthcheckResult,
 }: CredentialCardProps) {
-  const [expandedSection, setExpandedSection] = useState<ExpandedSection>('edit');
+  const [expandedSection, setExpandedSection] = useState<ExpandedSection>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
+  const [oauthInitialValues, setOauthInitialValues] = useState<Record<string, string>>({});
+  const [oauthSessionId, setOauthSessionId] = useState<string | null>(null);
+  const [isAuthorizingOAuth, setIsAuthorizingOAuth] = useState(false);
+  const [oauthConsentCompletedAt, setOauthConsentCompletedAt] = useState<string | null>(null);
+
+  const connectorMetadata = (connector?.metadata ?? {}) as Record<string, unknown>;
+  const isGoogleOAuthFlow = Boolean(
+    connector && (
+      credential.service_type.includes('google')
+      || connectorMetadata.oauth_type === 'google'
+      || connector.name === 'google_workspace_oauth_template'
+    ),
+  );
+
+  const effectiveHealthcheckResult = healthcheckResult ?? (
+    credential.healthcheck_last_success === null
+      ? null
+      : {
+          success: credential.healthcheck_last_success,
+          message: credential.healthcheck_last_message ?? 'Stored connection test result',
+        }
+  );
 
   const handleToggle = () => {
     if (!isExpanded) {
-      setExpandedSection('edit');
+      setExpandedSection(null);
       setEditingId(null);
     }
     onToggleExpand();
+  };
+
+  useEffect(() => {
+    if (!oauthSessionId) return;
+
+    let cancelled = false;
+    let timer: number | null = null;
+
+    const poll = async () => {
+      try {
+        const status = await api.getGoogleCredentialOAuthStatus(oauthSessionId);
+        if (cancelled) return;
+
+        if (status.status === 'pending') {
+          timer = window.setTimeout(poll, 1500);
+          return;
+        }
+
+        setOauthSessionId(null);
+        setIsAuthorizingOAuth(false);
+
+        if (status.status === 'success' && status.refresh_token) {
+          setOauthInitialValues((prev) => ({
+            ...prev,
+            refresh_token: status.refresh_token!,
+            scopes: status.scope || prev.scopes || [
+              'https://www.googleapis.com/auth/gmail.modify',
+              'https://www.googleapis.com/auth/calendar.events',
+              'https://www.googleapis.com/auth/drive.file',
+              'openid',
+              'https://www.googleapis.com/auth/userinfo.email',
+            ].join(' '),
+          }));
+          setOauthConsentCompletedAt(new Date().toLocaleTimeString());
+          setEditError(null);
+          return;
+        }
+
+        setEditError(status.error || 'Google authorization failed. Please try again.');
+      } catch (err) {
+        if (cancelled) return;
+        setOauthSessionId(null);
+        setIsAuthorizingOAuth(false);
+        setEditError(err instanceof Error ? err.message : 'Failed to check OAuth status.');
+      }
+    };
+
+    poll();
+
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [oauthSessionId]);
+
+  const handleOAuthConsent = (values: Record<string, string>) => {
+    const scopes = values.scopes?.trim()
+      ? values.scopes.trim().split(/\s+/)
+      : [
+          'https://www.googleapis.com/auth/gmail.modify',
+          'https://www.googleapis.com/auth/calendar.events',
+          'https://www.googleapis.com/auth/drive.file',
+          'openid',
+          'https://www.googleapis.com/auth/userinfo.email',
+        ];
+
+    setIsAuthorizingOAuth(true);
+    setOauthConsentCompletedAt(null);
+    setEditError(null);
+
+    api.startGoogleCredentialOAuth(undefined, undefined, connector?.name || credential.service_type, scopes)
+      .then(async (oauthStart) => {
+        let opened = false;
+        try {
+          await api.openExternalUrl(oauthStart.auth_url);
+          opened = true;
+        } catch {
+          // fallback below
+        }
+
+        if (!opened) {
+          try {
+            const popup = window.open(oauthStart.auth_url, '_blank', 'noopener,noreferrer');
+            opened = popup !== null;
+          } catch {
+            // no-op
+          }
+        }
+
+        if (!opened) {
+          throw new Error('Could not open Google consent page. Please allow popups or external browser open.');
+        }
+
+        setOauthSessionId(oauthStart.session_id);
+      })
+      .catch((err) => {
+        setOauthSessionId(null);
+        setIsAuthorizingOAuth(false);
+        setEditError(err instanceof Error ? err.message : 'Failed to start Google authorization.');
+      });
   };
 
   return (
@@ -96,34 +218,34 @@ export function CredentialCard({
                 ) : (
                   <span
                     className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full flex-shrink-0 border ${
-                      healthcheckResult === null
+                      effectiveHealthcheckResult === null
                         ? 'bg-amber-500/10 border-amber-500/20'
-                        : healthcheckResult.success
+                        : effectiveHealthcheckResult.success
                           ? 'bg-emerald-500/10 border-emerald-500/20'
                           : 'bg-red-500/10 border-red-500/20'
                     }`}
                   >
                     <span
                       className={`w-1.5 h-1.5 rounded-full ${
-                        healthcheckResult === null
+                        effectiveHealthcheckResult === null
                           ? 'bg-amber-400/60'
-                          : healthcheckResult.success
+                          : effectiveHealthcheckResult.success
                             ? 'bg-emerald-400'
                             : 'bg-red-400'
                       }`}
                     />
                     <span
                       className={`text-[10px] ${
-                        healthcheckResult === null
+                        effectiveHealthcheckResult === null
                           ? 'text-amber-400'
-                          : healthcheckResult.success
+                          : effectiveHealthcheckResult.success
                             ? 'text-emerald-400'
                             : 'text-red-400'
                       }`}
                     >
-                      {healthcheckResult === null
+                      {effectiveHealthcheckResult === null
                         ? 'Untested'
-                        : healthcheckResult.success
+                        : effectiveHealthcheckResult.success
                           ? 'Healthy'
                           : 'Failed'}
                     </span>
@@ -133,6 +255,9 @@ export function CredentialCard({
 
               <div className="mt-1 text-[11px] text-muted-foreground/70">
                 Created {formatTimestamp(credential.created_at, 'Never')} · Last used {formatTimestamp(credential.last_used_at, 'Never')}
+                {credential.healthcheck_last_tested_at && (
+                  <> · Last tested {formatTimestamp(credential.healthcheck_last_tested_at, 'Never')}</>
+                )}
               </div>
             </div>
           </div>
@@ -169,17 +294,6 @@ export function CredentialCard({
             <div className="px-3 pb-3 border-t border-primary/10">
               {/* Section Tabs */}
               <div className="flex gap-1 pt-3 pb-3">
-                <button
-                  onClick={() => setExpandedSection('edit')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    expandedSection === 'edit'
-                      ? 'bg-primary/10 text-primary border border-primary/20'
-                      : 'text-muted-foreground/50 hover:text-foreground/70 hover:bg-secondary/60'
-                  }`}
-                >
-                  <Pencil className="w-3 h-3" />
-                  Edit
-                </button>
                 {connector && connector.services.length > 0 && (
                   <button
                     onClick={() => setExpandedSection('services')}
@@ -209,7 +323,7 @@ export function CredentialCard({
               </div>
 
               {/* Edit Section */}
-              {expandedSection === 'edit' && connector && (
+              {connector && (
                 <div className="space-y-3">
                   {editError && (
                     <div className="flex items-start gap-2.5 px-3 py-2.5 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-400">
@@ -225,6 +339,7 @@ export function CredentialCard({
                   )}
                   {editingId === credential.id ? (
                     <CredentialEditForm
+                      initialValues={oauthInitialValues}
                       fields={connector.fields}
                       onSave={async (values) => {
                         try {
@@ -234,7 +349,7 @@ export function CredentialCard({
                             service_type: null,
                             encrypted_data: JSON.stringify(values),
                             iv: null,
-                            metadata: null,
+                            metadata: credential.metadata,
                           });
                           const updated = toCredentialMetadata(raw);
                           usePersonaStore.setState((state) => ({
@@ -242,15 +357,26 @@ export function CredentialCard({
                               c.id === credential.id ? updated : c
                             ),
                           }));
+                          setOauthConsentCompletedAt(null);
                           setEditingId(null);
                         } catch (err) {
                           setEditError(err instanceof Error ? err.message : 'Failed to update credential');
                         }
                       }}
+                      onOAuthConsent={isGoogleOAuthFlow ? handleOAuthConsent : undefined}
+                      oauthConsentLabel={isAuthorizingOAuth ? 'Authorizing with Google...' : 'Authorize with Google'}
+                      oauthConsentDisabled={isAuthorizingOAuth}
+                      oauthConsentHint={isGoogleOAuthFlow ? 'Launches app-managed Google consent and updates refresh token after approval.' : undefined}
+                      oauthConsentSuccessBadge={oauthConsentCompletedAt ? `Google consent completed at ${oauthConsentCompletedAt}` : undefined}
                       onCancel={() => setEditingId(null)}
-                      onHealthcheck={() => onHealthcheck(credential.id)}
+                      onHealthcheck={(values) => onHealthcheck(credential.id, values, credential.service_type)}
+                      onValuesChanged={() => {
+                        if (oauthConsentCompletedAt) {
+                          setOauthConsentCompletedAt(null);
+                        }
+                      }}
                       isHealthchecking={isHealthchecking}
-                      healthcheckResult={healthcheckResult}
+                      healthcheckResult={effectiveHealthcheckResult}
                     />
                   ) : (
                     <div className="space-y-3">
@@ -282,15 +408,15 @@ export function CredentialCard({
                       </div>
 
                       {(() => {
-                        if (!healthcheckResult) return null;
+                        if (!effectiveHealthcheckResult) return null;
                         return (
                           <div className={`flex items-start gap-2 px-3 py-2 rounded-xl text-xs ${
-                            healthcheckResult.success
+                            effectiveHealthcheckResult.success
                               ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
                               : 'bg-red-500/10 border border-red-500/20 text-red-400'
                           }`}>
-                            <span>{healthcheckResult.success ? 'OK' : 'FAIL'}:</span>
-                            <span>{healthcheckResult.message}</span>
+                            <span>{effectiveHealthcheckResult.success ? 'OK' : 'FAIL'}:</span>
+                            <span>{effectiveHealthcheckResult.message}</span>
                           </div>
                         );
                       })()}
@@ -312,7 +438,7 @@ export function CredentialCard({
               )}
 
               {/* Edit section fallback for no connector */}
-              {expandedSection === 'edit' && !connector && (
+              {!connector && (
                 <div className="text-xs text-muted-foreground/40 py-2">
                   No connector definition available for this credential type.
                 </div>

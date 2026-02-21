@@ -1,6 +1,8 @@
 import type { BuiltinTemplate } from '@/lib/types/templateTypes';
+import gmailMaestroTemplate from '../../../scripts/templates/google-workspace/gmail-maestro.json';
 
 export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
+  gmailMaestroTemplate as BuiltinTemplate,
   {
     id: 'code-reviewer',
     name: 'Code Reviewer',

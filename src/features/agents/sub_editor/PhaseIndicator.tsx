@@ -4,17 +4,19 @@ import type { DesignPhase } from '@/lib/types/designTypes';
 const STAGES = [
   { key: 'input', label: 'Input' },
   { key: 'analyzing', label: 'Analyzing' },
+  { key: 'question', label: 'Question' },
   { key: 'review', label: 'Review' },
   { key: 'applied', label: 'Applied' },
 ] as const;
 
 type StageKey = (typeof STAGES)[number]['key'];
 
-/** Map the 6 internal DesignPhase values to 4 visible stage keys */
+/** Map the 7 internal DesignPhase values to 5 visible stage keys */
 function phaseToStageIndex(phase: DesignPhase): number {
   const map: Record<DesignPhase, StageKey> = {
     idle: 'input',
     analyzing: 'analyzing',
+    'awaiting-input': 'question',
     refining: 'analyzing',
     preview: 'review',
     applying: 'applied',
@@ -49,7 +51,9 @@ export function PhaseIndicator({ phase }: PhaseIndicatorProps) {
                 {isActive && (
                   <motion.div
                     layoutId="phase-ring"
-                    className="absolute w-4 h-4 rounded-full bg-primary/20"
+                    className={`absolute w-4 h-4 rounded-full ${
+                      phase === 'awaiting-input' ? 'bg-purple-500/20' : 'bg-primary/20'
+                    }`}
                     initial={false}
                     animate={{ scale: [1, 1.4, 1], opacity: [0.4, 0, 0.4] }}
                     transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
@@ -59,7 +63,9 @@ export function PhaseIndicator({ phase }: PhaseIndicatorProps) {
                   layoutId="phase-dot-highlight"
                   className={`w-2 h-2 rounded-full transition-colors duration-300 ${
                     isActive
-                      ? 'bg-primary shadow-sm shadow-primary/40'
+                      ? phase === 'awaiting-input'
+                        ? 'bg-purple-400 shadow-sm shadow-purple-400/40'
+                        : 'bg-primary shadow-sm shadow-primary/40'
                       : isCompleted
                         ? 'bg-emerald-400'
                         : 'bg-secondary/40'
@@ -73,7 +79,9 @@ export function PhaseIndicator({ phase }: PhaseIndicatorProps) {
               <span
                 className={`text-[10px] font-medium truncate transition-colors duration-300 ${
                   isActive
-                    ? 'text-foreground/80'
+                    ? phase === 'awaiting-input'
+                      ? 'text-purple-300'
+                      : 'text-foreground/80'
                     : isCompleted
                       ? 'text-emerald-400/70'
                       : 'text-muted-foreground/30'

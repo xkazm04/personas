@@ -81,6 +81,10 @@ export interface CredentialMetadata {
   name: string;
   service_type: string;
   metadata: string | null;
+  healthcheck_last_success: boolean | null;
+  healthcheck_last_message: string | null;
+  healthcheck_last_tested_at: string | null;
+  healthcheck_last_success_at: string | null;
   last_used_at: string | null;
   created_at: string;
   updated_at: string;
@@ -88,11 +92,37 @@ export interface CredentialMetadata {
 
 /** Map a raw PersonaCredential to CredentialMetadata (strip encrypted fields) */
 export function toCredentialMetadata(c: PersonaCredential): CredentialMetadata {
+  let parsedMetadata: Record<string, unknown> | null = null;
+  if (c.metadata) {
+    try {
+      parsedMetadata = JSON.parse(c.metadata) as Record<string, unknown>;
+    } catch {
+      parsedMetadata = null;
+    }
+  }
+
+  const lastSuccess = typeof parsedMetadata?.healthcheck_last_success === "boolean"
+    ? parsedMetadata.healthcheck_last_success
+    : null;
+  const lastMessage = typeof parsedMetadata?.healthcheck_last_message === "string"
+    ? parsedMetadata.healthcheck_last_message
+    : null;
+  const lastTestedAt = typeof parsedMetadata?.healthcheck_last_tested_at === "string"
+    ? parsedMetadata.healthcheck_last_tested_at
+    : null;
+  const lastSuccessAt = typeof parsedMetadata?.healthcheck_last_success_at === "string"
+    ? parsedMetadata.healthcheck_last_success_at
+    : null;
+
   return {
     id: c.id,
     name: c.name,
     service_type: c.service_type,
     metadata: c.metadata,
+    healthcheck_last_success: lastSuccess,
+    healthcheck_last_message: lastMessage,
+    healthcheck_last_tested_at: lastTestedAt,
+    healthcheck_last_success_at: lastSuccessAt,
     last_used_at: c.last_used_at,
     created_at: c.created_at,
     updated_at: c.updated_at,
@@ -168,7 +198,8 @@ export interface CredentialTemplateEvent {
 
 export type SidebarSection = "overview" | "personas" | "events" | "credentials" | "design-reviews" | "team" | "cloud";
 export type EditorTab = "prompt" | "executions" | "settings";
-export type OverviewTab = "executions" | "manual-review" | "messages" | "usage" | "events" | "observability" | "realtime" | "memories" | "budget";
+export type OverviewTab = "system-check" | "executions" | "manual-review" | "messages" | "usage" | "events" | "observability" | "realtime" | "memories" | "budget";
+export type TemplateTab = "builtin" | "n8n" | "generated";
 
 // ── Analytics Types ────────────────────────────────────────────────────
 

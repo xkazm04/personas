@@ -314,6 +314,7 @@ CREATE TABLE IF NOT EXISTS persona_design_reviews (
     had_references          INTEGER DEFAULT 0,
     suggested_adjustment    TEXT,
     adjustment_generation   INTEGER DEFAULT 0,
+    use_case_flows          TEXT,
     reviewed_at             TEXT NOT NULL,
     created_at              TEXT NOT NULL
 );
@@ -546,6 +547,18 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     if !has_tool_steps {
         conn.execute_batch("ALTER TABLE persona_executions ADD COLUMN tool_steps TEXT;")?;
         tracing::info!("Added tool_steps column to persona_executions");
+    }
+
+    // Add use_case_flows column to persona_design_reviews
+    let has_use_case_flows: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_design_reviews') WHERE name = 'use_case_flows'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_use_case_flows {
+        conn.execute_batch("ALTER TABLE persona_design_reviews ADD COLUMN use_case_flows TEXT;")?;
+        tracing::info!("Added use_case_flows column to persona_design_reviews");
     }
 
     Ok(())
