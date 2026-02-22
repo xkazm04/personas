@@ -1,8 +1,98 @@
-import { useState, useRef } from 'react';
-import { Zap, Eye, EyeOff, Copy, CheckCircle2 } from 'lucide-react';
+import { useState, useRef, useMemo } from 'react';
+import { Zap, Eye, EyeOff, Copy, CheckCircle2, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META } from '@/lib/utils/triggerConstants';
 import { formatInterval } from '@/lib/utils/formatters';
+
+/** Compute the next N scheduled run times starting from now */
+function computeNextRuns(intervalSeconds: number, count: number): Date[] {
+  const now = new Date();
+  const runs: Date[] = [];
+  for (let i = 1; i <= count; i++) {
+    runs.push(new Date(now.getTime() + intervalSeconds * 1000 * i));
+  }
+  return runs;
+}
+
+/** Format a date as a short wall-clock time like "3:45 PM" or "Tomorrow 9:00 AM" */
+function formatRunTime(date: Date): string {
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const isTomorrow = date.toDateString() === tomorrow.toDateString();
+
+  const time = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  if (isToday) return time;
+  if (isTomorrow) return `Tomorrow ${time}`;
+  return date.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }) + ` ${time}`;
+}
+
+function SchedulePreview({ intervalSeconds, triggerType }: { intervalSeconds: number; triggerType: string }) {
+  const runs = useMemo(() => computeNextRuns(intervalSeconds, 5), [intervalSeconds]);
+  const firstRun = runs[0];
+  const lastRun = runs[runs.length - 1];
+  if (!firstRun || !lastRun) return null;
+
+  // Timeline spans from now to last run
+  const now = Date.now();
+  const totalSpan = lastRun.getTime() - now;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: 'auto' }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.2 }}
+      className="mt-3 p-3 rounded-xl bg-primary/5 border border-primary/10"
+    >
+      {/* Human-readable summary */}
+      <div className="flex items-center gap-2 mb-2.5">
+        <Clock className="w-3.5 h-3.5 text-primary/50 flex-shrink-0" />
+        <p className="text-xs text-foreground/70">
+          First {triggerType === 'polling' ? 'poll' : 'run'}:{' '}
+          <span className="font-medium text-foreground/90">{formatRunTime(firstRun)}</span>
+          , then every{' '}
+          <span className="font-medium text-foreground/90">{formatInterval(intervalSeconds)}</span>
+        </p>
+      </div>
+
+      {/* Mini timeline */}
+      <div className="relative h-6 mx-1">
+        {/* Track */}
+        <div className="absolute top-1/2 left-0 right-0 h-px bg-primary/15 -translate-y-1/2" />
+
+        {/* "Now" marker */}
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 flex flex-col items-center">
+          <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
+          <span className="text-[9px] text-muted-foreground/40 mt-1.5 absolute top-full whitespace-nowrap">now</span>
+        </div>
+
+        {/* Run dots */}
+        {runs.map((run, i) => {
+          const pct = ((run.getTime() - now) / totalSpan) * 100;
+          return (
+            <motion.div
+              key={i}
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: i * 0.06, type: 'spring', stiffness: 500, damping: 25 }}
+              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center group"
+              style={{ left: `${pct}%` }}
+            >
+              <div className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-primary' : 'bg-primary/40'} ring-2 ring-primary/10`} />
+              <span className={`text-[9px] mt-1.5 absolute top-full whitespace-nowrap ${
+                i === 0 ? 'text-primary/70 font-medium' : 'text-muted-foreground/30 opacity-0 group-hover:opacity-100 transition-opacity'
+              }`}>
+                {formatRunTime(run)}
+              </span>
+            </motion.div>
+          );
+        })}
+      </div>
+    </motion.div>
+  );
+}
 
 export interface TriggerAddFormProps {
   credentialEventsList: { id: string; name: string }[];
@@ -204,14 +294,17 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
             if (secs < 60) return null;
             const runsPerDay = Math.floor(86400 / secs);
             return (
-              <p className="text-xs text-muted-foreground/50 mt-1.5">
-                This persona will {triggerType === 'polling' ? 'poll' : 'run'} every{' '}
-                <span className="text-foreground/60 font-medium">{formatInterval(secs)}</span>
-                , starting from when you enable it.{' '}
-                <span className="text-muted-foreground/40">
-                  Approximately {runsPerDay.toLocaleString()} run{runsPerDay !== 1 ? 's' : ''} per day.
-                </span>
-              </p>
+              <>
+                <p className="text-xs text-muted-foreground/50 mt-1.5">
+                  This persona will {triggerType === 'polling' ? 'poll' : 'run'} every{' '}
+                  <span className="text-foreground/60 font-medium">{formatInterval(secs)}</span>
+                  , starting from when you enable it.{' '}
+                  <span className="text-muted-foreground/40">
+                    Approximately {runsPerDay.toLocaleString()} run{runsPerDay !== 1 ? 's' : ''} per day.
+                  </span>
+                </p>
+                <SchedulePreview intervalSeconds={secs} triggerType={triggerType} />
+              </>
             );
           })()}
         </div>

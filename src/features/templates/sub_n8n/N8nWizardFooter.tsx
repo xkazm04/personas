@@ -11,8 +11,8 @@ interface N8nWizardFooterProps {
   created: boolean;
   hasDraft: boolean;
   hasParseResult: boolean;
-  questionGenerating?: boolean;
   transformSubPhase?: TransformSubPhase;
+  analyzing?: boolean;
 }
 
 export function N8nWizardFooter({
@@ -25,8 +25,8 @@ export function N8nWizardFooter({
   created,
   hasDraft,
   hasParseResult,
-  questionGenerating,
   transformSubPhase,
+  analyzing,
 }: N8nWizardFooterProps) {
   // No footer on upload step
   if (step === 'upload') return null;
@@ -40,21 +40,22 @@ export function N8nWizardFooter({
   } | null => {
     switch (step) {
       case 'analyze':
-        return questionGenerating
-          ? { label: 'Analyzing...', icon: RefreshCw, disabled: true, variant: 'violet', spinning: true }
-          : {
-              label: 'Transform',
-              icon: Sparkles,
-              disabled: !hasParseResult || transforming,
-              variant: 'violet',
-            };
+        if (analyzing) {
+          return { label: 'Analyzing...', icon: RefreshCw, disabled: true, variant: 'violet', spinning: true };
+        }
+        return {
+          label: 'Analyze & Transform',
+          icon: Sparkles,
+          disabled: !hasParseResult || transforming,
+          variant: 'violet',
+        };
       case 'transform': {
         const sub = transformSubPhase ?? 'idle';
         if (sub === 'asking') {
           return { label: 'Analyzing...', icon: RefreshCw, disabled: true, variant: 'violet', spinning: true };
         }
         if (sub === 'answering') {
-          return { label: 'Generate Persona Draft', icon: Sparkles, disabled: false, variant: 'violet' };
+          return { label: 'Submit Answers & Generate', icon: Sparkles, disabled: false, variant: 'violet' };
         }
         if (sub === 'generating') {
           return { label: 'Generating...', icon: RefreshCw, disabled: true, variant: 'violet', spinning: true };

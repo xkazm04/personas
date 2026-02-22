@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronRight, MessageSquare, CheckCheck, RefreshCw, Trash2, Send, AlertCircle, Clock, CheckCircle2, Loader2, ExternalLink, Check, X, Copy } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import type { PersonaMessage } from '@/lib/types/types';
 import type { PersonaMessageDelivery } from '@/lib/bindings/PersonaMessageDelivery';
 import { getMessageDeliveries } from '@/api/tauriApi';
@@ -98,36 +99,32 @@ export default function MessageList() {
   }), [messages]);
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
-      {/* Header */}
-      <div className="px-4 md:px-6 py-5 border-b border-primary/10 bg-primary/5 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center">
-            <MessageSquare className="w-5 h-5 text-indigo-400" />
-          </div>
-          <div className="flex-1">
-            <h1 className="text-lg font-semibold text-foreground/90">Messages</h1>
-            <p className="text-xs text-muted-foreground/50">
-              {messagesTotal} message{messagesTotal !== 1 ? 's' : ''} recorded
-            </p>
-          </div>
-          <button
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="p-1.5 rounded-lg text-muted-foreground/40 hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors"
-            title="Refresh"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-          </button>
-          <button
-            onClick={() => markAllMessagesAsRead()}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-blue-400/80 hover:text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15 transition-all"
-          >
-            <CheckCheck className="w-3.5 h-3.5" />
-            Mark All Read
-          </button>
-        </div>
-      </div>
+    <ContentBox>
+      <ContentHeader
+        icon={<MessageSquare className="w-5 h-5 text-indigo-400" />}
+        iconColor="indigo"
+        title="Messages"
+        subtitle={`${messagesTotal} message${messagesTotal !== 1 ? 's' : ''} recorded`}
+        actions={
+          <>
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="p-1.5 rounded-lg text-muted-foreground/40 hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors"
+              title="Refresh"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </button>
+            <button
+              onClick={() => markAllMessagesAsRead()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-blue-400/80 hover:text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15 transition-all"
+            >
+              <CheckCheck className="w-3.5 h-3.5" />
+              Mark All Read
+            </button>
+          </>
+        }
+      />
 
       {/* Filter bar */}
       <div className="px-4 md:px-6 py-3 border-b border-primary/10 flex items-center gap-2 flex-shrink-0">
@@ -158,7 +155,7 @@ export default function MessageList() {
       </div>
 
       {/* Message list */}
-      <div className="flex-1 overflow-y-auto flex flex-col">
+      <ContentBody flex>
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center p-4 md:p-6">
             <div className="text-center">
@@ -228,8 +225,8 @@ export default function MessageList() {
             )}
           </div>
         )}
-      </div>
-    </div>
+      </ContentBody>
+    </ContentBox>
   );
 }
 

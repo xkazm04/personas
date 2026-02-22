@@ -57,7 +57,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
               className={`w-full flex items-center gap-2 px-2.5 py-2 text-xs font-medium rounded-lg transition-colors text-left ${
                 active
                   ? 'bg-primary/10 text-foreground/80 border border-primary/20'
-                  : 'text-muted-foreground/50 hover:text-muted-foreground/70 hover:bg-secondary/30 border border-transparent'
+                  : 'text-muted-foreground/60 hover:text-muted-foreground/80 hover:bg-secondary/30 border border-transparent'
               }`}
             >
               <tab.Icon className="w-3.5 h-3.5 flex-shrink-0" />
@@ -88,7 +88,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
           <div className="flex flex-col h-full min-h-0 gap-2">
             {/* Custom section toolbar */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              <span className="text-xs font-medium text-foreground/60">Custom Sections</span>
+              <span className="text-xs font-medium text-foreground/80">Custom Sections</span>
               <button
                 onClick={() => {
                   const next = {

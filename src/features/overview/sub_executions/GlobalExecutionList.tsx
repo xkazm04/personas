@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronRight, Loader2, RefreshCw, Copy, Check, RotateCw } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import type { GlobalExecution } from '@/lib/types/types';
 import type { PersonaExecutionStatus } from '@/lib/types/frontendTypes';
 import { formatDuration, formatRelativeTime } from '@/lib/utils/formatters';
@@ -107,19 +108,13 @@ export default function GlobalExecutionList() {
   const hasMore = globalExecutionsOffset < globalExecutionsTotal;
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
-      {/* Header */}
-      <div className="px-4 md:px-6 py-5 border-b border-primary/10 bg-primary/5 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center">
-            <Loader2 className="w-5 h-5 text-blue-400" />
-          </div>
-          <div className="flex-1">
-            <h1 className="text-lg font-semibold text-foreground/90">Executions</h1>
-            <p className="text-xs text-muted-foreground/50">
-              {globalExecutionsTotal} execution{globalExecutionsTotal !== 1 ? 's' : ''} recorded
-            </p>
-          </div>
+    <ContentBox>
+      <ContentHeader
+        icon={<Loader2 className="w-5 h-5 text-blue-400" />}
+        iconColor="blue"
+        title="Executions"
+        subtitle={`${globalExecutionsTotal} execution${globalExecutionsTotal !== 1 ? 's' : ''} recorded`}
+        actions={
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
@@ -128,8 +123,8 @@ export default function GlobalExecutionList() {
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Filter bar */}
       <div className="px-4 md:px-6 py-3 border-b border-primary/10 flex items-center gap-2 flex-shrink-0">
@@ -156,7 +151,7 @@ export default function GlobalExecutionList() {
       </div>
 
       {/* Execution list */}
-      <div className="flex-1 overflow-y-auto flex flex-col">
+      <ContentBody flex>
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center p-4 md:p-6">
             <div className="text-center">
@@ -202,8 +197,8 @@ export default function GlobalExecutionList() {
             )}
           </div>
         )}
-      </div>
-    </div>
+      </ContentBody>
+    </ContentBox>
   );
 }
 

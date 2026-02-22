@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Cloud, Wifi, WifiOff } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { CloudConnectionForm } from '@/features/deployment/components/CloudConnectionForm';
 import { CloudStatusPanel } from '@/features/deployment/components/CloudStatusPanel';
 import { CloudOAuthPanel } from '@/features/deployment/components/CloudOAuthPanel';
@@ -112,42 +113,40 @@ export default function CloudDeployPanel() {
   );
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-primary/10 bg-secondary/20">
-        <div className="flex items-center gap-3">
-          <Cloud className="w-5 h-5 text-indigo-400" />
-          <h2 className="text-lg font-semibold text-foreground/90">Cloud Execution</h2>
-          <div className="ml-auto">{connectionBadge}</div>
+    <ContentBox>
+      <ContentHeader
+        icon={<Cloud className="w-5 h-5 text-indigo-400" />}
+        iconColor="indigo"
+        title="Cloud Execution"
+        actions={connectionBadge}
+      >
+        {/* Tab bar */}
+        <div className="flex gap-0 mt-4 -mb-5 -mx-4 md:-mx-6 border-t border-primary/10">
+          {TABS.map((tab) => {
+            const disabled = tab.disabledWhenOffline && !isConnected;
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                disabled={disabled}
+                onClick={() => setActiveTab(tab.id)}
+                className={`
+                  px-5 py-2.5 text-sm font-medium transition-colors relative
+                  ${active
+                    ? 'text-foreground/90 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-indigo-500'
+                    : 'text-muted-foreground/50 hover:text-foreground/70'}
+                  ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
+                `}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
-      </div>
-
-      {/* Tab bar */}
-      <div className="flex border-b border-primary/10 bg-secondary/10">
-        {TABS.map((tab) => {
-          const disabled = tab.disabledWhenOffline && !isConnected;
-          const active = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              disabled={disabled}
-              onClick={() => setActiveTab(tab.id)}
-              className={`
-                px-5 py-2.5 text-sm font-medium transition-colors relative
-                ${active
-                  ? 'text-foreground/90 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-indigo-500'
-                  : 'text-muted-foreground/50 hover:text-foreground/70'}
-                ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
-              `}
-            >
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
+      </ContentHeader>
 
       {/* Tab content */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <ContentBody>
         {activeTab === 'connection' && <CloudConnectionForm
           isConnected={isConnected}
           config={config}
@@ -174,7 +173,7 @@ export default function CloudDeployPanel() {
           onRefreshOAuth={refreshOAuth}
           onDisconnectOAuth={disconnectOAuth}
         />}
-      </div>
+      </ContentBody>
 
       {/* Error banner */}
       {error && (
@@ -182,6 +181,6 @@ export default function CloudDeployPanel() {
           {error}
         </div>
       )}
-    </div>
+    </ContentBox>
   );
 }

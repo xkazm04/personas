@@ -60,7 +60,6 @@ export interface N8nImportState {
   // Configure (pre-transform questions) — now inline within transform step
   questions: TransformQuestion[] | null;
   userAnswers: Record<string, string>;
-  questionGenerating: boolean;
   questionsSkipped: boolean;
 
   // Transform sub-phase tracking
@@ -95,7 +94,6 @@ const INITIAL_STATE: N8nImportState = {
   selectedConnectorNames: new Set(),
   questions: null,
   userAnswers: {},
-  questionGenerating: false,
   questionsSkipped: false,
   transformSubPhase: 'idle',
   transforming: false,
@@ -118,12 +116,11 @@ export type N8nImportAction =
   | { type: 'TOGGLE_TRIGGER'; index: number }
   | { type: 'TOGGLE_CONNECTOR'; name: string }
   | { type: 'SET_ADJUSTMENT'; text: string }
-  | { type: 'QUESTIONS_GENERATING' }
   | { type: 'QUESTIONS_GENERATED'; questions: TransformQuestion[] }
   | { type: 'QUESTIONS_FAILED'; error: string }
   | { type: 'QUESTIONS_SKIPPED' }
   | { type: 'ANSWER_UPDATED'; questionId: string; answer: string }
-  | { type: 'TRANSFORM_STARTED'; transformId: string }
+  | { type: 'TRANSFORM_STARTED'; transformId: string; subPhase?: TransformSubPhase }
   | { type: 'TRANSFORM_LINES'; lines: string[] }
   | { type: 'TRANSFORM_PHASE'; phase: CliRunPhase }
   | { type: 'TRANSFORM_COMPLETED'; draft: N8nPersonaDraft }
@@ -191,13 +188,9 @@ function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nIm
     case 'SET_ADJUSTMENT':
       return { ...state, adjustmentRequest: action.text };
 
-    case 'QUESTIONS_GENERATING':
-      return { ...state, step: 'transform', transformSubPhase: 'asking', questionGenerating: true, error: null };
-
     case 'QUESTIONS_GENERATED':
       return {
         ...state,
-        questionGenerating: false,
         transformSubPhase: 'answering',
         questions: action.questions,
         // Pre-fill default answers
@@ -211,7 +204,6 @@ function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nIm
       // Stay on transform step — user can still generate with defaults
       return {
         ...state,
-        questionGenerating: false,
         transformSubPhase: 'answering',
         questionsSkipped: true,
         questions: null,
@@ -222,7 +214,6 @@ function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nIm
       return {
         ...state,
         step: 'transform',
-        questionGenerating: false,
         transformSubPhase: 'answering',
         questionsSkipped: true,
         questions: null,
@@ -238,7 +229,7 @@ function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nIm
       return {
         ...state,
         step: 'transform',
-        transformSubPhase: 'generating',
+        transformSubPhase: action.subPhase ?? 'generating',
         transforming: true,
         backgroundTransformId: action.transformId,
         transformPhase: 'running',
@@ -370,7 +361,7 @@ function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nIm
 export function useN8nImportReducer() {
   const [state, dispatch] = useReducer(n8nImportReducer, INITIAL_STATE);
 
-  const canGoBack = state.step !== 'upload' && !state.transforming && !state.confirming && !state.questionGenerating;
+  const canGoBack = state.step !== 'upload' && !state.transforming && !state.confirming && state.transformSubPhase !== 'asking';
 
   const goBack = useCallback(() => {
     if (!canGoBack) return;

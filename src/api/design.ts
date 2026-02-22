@@ -51,10 +51,11 @@ export interface N8nTransformStartResult {
 
 export interface N8nTransformSnapshot {
   transform_id: string;
-  status: 'idle' | 'running' | 'completed' | 'failed';
+  status: 'idle' | 'running' | 'completed' | 'failed' | 'awaiting_answers';
   error: string | null;
   lines: string[];
   draft: N8nPersonaDraft | null;
+  questions: TransformQuestionResponse[] | null;
 }
 
 export const transformN8nToPersona = (
@@ -128,19 +129,15 @@ export interface TransformQuestionResponse {
   context?: string;
 }
 
-export const generateN8nTransformQuestions = (
-  workflowName: string,
-  workflowJson: string,
-  parserResultJson: string,
-  connectorsJson?: string | null,
-  credentialsJson?: string | null,
+export const continueN8nTransform = (
+  transformId: string,
+  userAnswersJson: string,
+  sessionId?: string | null,
 ) =>
-  invoke<TransformQuestionResponse[]>("generate_n8n_transform_questions", {
-    workflowName,
-    workflowJson,
-    parserResultJson,
-    connectorsJson: connectorsJson ?? null,
-    credentialsJson: credentialsJson ?? null,
+  invoke<{ transform_id: string }>("continue_n8n_transform", {
+    transformId,
+    userAnswersJson,
+    sessionId: sessionId ?? null,
   });
 
 // ============================================================================
@@ -202,10 +199,11 @@ export interface TemplateAdoptStartResult {
 
 export interface TemplateAdoptSnapshot {
   adopt_id: string;
-  status: 'idle' | 'running' | 'completed' | 'failed';
+  status: 'idle' | 'running' | 'completed' | 'failed' | 'awaiting_answers';
   error: string | null;
   lines: string[];
   draft: N8nPersonaDraft | null;
+  questions: TransformQuestionResponse[] | null;
 }
 
 export const startTemplateAdoptBackground = (
@@ -252,4 +250,13 @@ export const generateTemplateAdoptQuestions = (
   invoke<TransformQuestionResponse[]>("generate_template_adopt_questions", {
     templateName,
     designResultJson,
+  });
+
+export const continueTemplateAdopt = (
+  adoptId: string,
+  userAnswersJson: string,
+) =>
+  invoke<{ adopt_id: string }>("continue_template_adopt", {
+    adoptId,
+    userAnswersJson,
   });

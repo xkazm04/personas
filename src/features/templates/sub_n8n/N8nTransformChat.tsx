@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, SkipForward, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Sparkles, SkipForward, CheckCircle2, AlertTriangle, ChevronDown } from 'lucide-react';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import type { TransformQuestion, TransformSubPhase } from './useN8nImportReducer';
 import { N8nTransformProgress } from './N8nTransformProgress';
@@ -52,7 +52,7 @@ export function N8nTransformChat({
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-xl border border-violet-500/15 bg-violet-500/5 p-5"
+          className="rounded-xl border border-primary/10 bg-secondary/20 p-5"
         >
           <div className="flex items-center gap-3">
             <div className="relative flex-shrink-0">
@@ -66,14 +66,14 @@ export function N8nTransformChat({
               </div>
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-foreground/70">Analyzing workflow requirements...</p>
-              <p className="text-xs text-muted-foreground/40 mt-0.5">Preparing customization questions</p>
+              <p className="text-sm font-medium text-foreground/85">Analyzing workflow...</p>
+              <p className="text-xs text-muted-foreground/60 mt-0.5">The model will ask questions if needed, or generate directly</p>
             </div>
           </div>
 
           <button
             onClick={onSkipQuestions}
-            className="mt-4 flex items-center gap-2 text-xs text-muted-foreground/40 hover:text-muted-foreground/60 transition-colors"
+            className="mt-4 flex items-center gap-2 text-xs text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors"
           >
             <SkipForward className="w-3.5 h-3.5" />
             Skip to generation
@@ -89,7 +89,7 @@ export function N8nTransformChat({
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-xl border border-violet-500/15 bg-violet-500/5 p-5"
+              className="rounded-xl border border-primary/10 bg-secondary/20 p-5"
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -97,10 +97,10 @@ export function N8nTransformChat({
                     <Sparkles className="w-4 h-4 text-violet-400" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground/70">
+                    <p className="text-sm font-medium text-foreground/85">
                       A few questions to customize your persona
                     </p>
-                    <p className="text-xs text-muted-foreground/40 mt-0.5">
+                    <p className="text-xs text-muted-foreground/60 mt-0.5">
                       Answer below, then click Generate
                     </p>
                   </div>
@@ -114,31 +114,34 @@ export function N8nTransformChat({
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
-                    className="p-4 rounded-xl border border-primary/10 bg-secondary/10"
+                    className="p-4 rounded-xl border border-primary/10 bg-secondary/30"
                   >
-                    <label className="block text-xs font-medium text-foreground/70 mb-2">
+                    <label className="block text-xs font-medium text-foreground/85 mb-2">
                       {q.question}
                     </label>
 
                     {q.context && (
-                      <p className="text-[10px] text-muted-foreground/40 mb-2 leading-relaxed">
+                      <p className="text-[10px] text-muted-foreground/60 mb-2 leading-relaxed">
                         {q.context}
                       </p>
                     )}
 
                     {q.type === 'select' && q.options && (
-                      <select
-                        value={userAnswers[q.id] ?? q.default ?? ''}
-                        onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
-                        className="w-full px-3 py-2 text-xs rounded-lg border border-primary/15 bg-background/40 text-foreground/75"
-                      >
-                        <option value="">Select...</option>
-                        {q.options.map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="relative">
+                        <select
+                          value={userAnswers[q.id] ?? q.default ?? ''}
+                          onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
+                          className="w-full px-3 py-2 text-xs rounded-lg border border-primary/10 bg-secondary/40 text-foreground/80 appearance-none cursor-pointer focus:outline-none focus:border-primary/30 transition-colors"
+                        >
+                          <option value="">Select...</option>
+                          {q.options.map((opt) => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground/40 pointer-events-none" />
+                      </div>
                     )}
 
                     {q.type === 'text' && (
@@ -147,7 +150,7 @@ export function N8nTransformChat({
                         value={userAnswers[q.id] ?? q.default ?? ''}
                         onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
                         placeholder={q.default ?? 'Type your answer...'}
-                        className="w-full px-3 py-2 text-xs rounded-lg border border-primary/15 bg-background/40 text-foreground/75 placeholder-muted-foreground/30"
+                        className="w-full px-3 py-2 text-xs rounded-lg border border-primary/10 bg-secondary/40 text-foreground/80 placeholder-muted-foreground/30 focus:outline-none focus:border-primary/30 transition-colors"
                       />
                     )}
 
@@ -182,7 +185,7 @@ export function N8nTransformChat({
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-xl border border-primary/10 bg-secondary/10 p-5"
+              className="rounded-xl border border-primary/10 bg-secondary/20 p-5"
             >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-secondary/40 border border-primary/10 flex items-center justify-center">
@@ -193,12 +196,12 @@ export function N8nTransformChat({
                   )}
                 </div>
                 <div>
-                  <p className="text-sm text-foreground/60">
+                  <p className="text-sm text-foreground/70">
                     {questionsSkipped
                       ? 'Configuration skipped'
                       : 'No configuration needed'}
                   </p>
-                  <p className="text-xs text-muted-foreground/40 mt-0.5">
+                  <p className="text-xs text-muted-foreground/60 mt-0.5">
                     Click Generate to create your persona draft with defaults.
                   </p>
                 </div>
@@ -226,9 +229,9 @@ export function N8nTransformChat({
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-xl border border-primary/10 bg-secondary/10 p-4"
+              className="rounded-xl border border-primary/10 bg-secondary/20 p-4"
             >
-              <p className="text-[10px] font-medium text-muted-foreground/40 uppercase tracking-wider mb-2">
+              <p className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider mb-2">
                 Your answers
               </p>
               <div className="flex flex-wrap gap-1.5">

@@ -11,13 +11,13 @@ interface SectionEditorProps {
 }
 
 export function SectionEditor({ value, onChange, label, placeholder, disabled }: SectionEditorProps) {
-  const [mode, setMode] = useState<'edit' | 'preview'>('edit');
+  const [mode, setMode] = useState<'edit' | 'preview'>('preview');
 
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Header with label and toggle */}
       <div className="flex items-center justify-between px-1 pb-2 flex-shrink-0">
-        <span className="text-xs font-medium text-foreground/60">{label}</span>
+        <span className="text-xs font-medium text-foreground/80">{label}</span>
         <div className="flex gap-0.5 p-0.5 rounded-lg bg-secondary/30 border border-primary/10">
           <button
             onClick={() => setMode('edit')}

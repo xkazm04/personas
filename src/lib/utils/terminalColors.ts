@@ -24,6 +24,7 @@ export interface ExecutionSummary {
   status: string;
   duration_ms: number | null;
   cost_usd: number | null;
+  last_tool?: string | null;
 }
 
 /** Parse a [SUMMARY] line into structured data. Returns null if not a summary line. */

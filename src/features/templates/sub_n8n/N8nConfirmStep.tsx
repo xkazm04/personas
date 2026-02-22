@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion';
-import { CheckCircle2, Wrench, Zap, Link, ChevronDown, ChevronRight, RefreshCw, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, Wrench, Zap, Link, ChevronDown, ChevronRight, RefreshCw, AlertTriangle, Bell, Brain, Activity } from 'lucide-react';
 import { useState } from 'react';
 import type { N8nPersonaDraft } from '@/api/design';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import { MarkdownRenderer } from '@/features/shared/components/MarkdownRenderer';
 
 export interface ConfirmResult {
   triggersCreated: number;
@@ -51,6 +52,15 @@ export function N8nConfirmStep({
   const triggerCount = draftTriggers ? draftTriggers.length : selectedTriggers.length;
   const connectorCount = draftConnectors ? draftConnectors.length : selectedConnectors.length;
   const connectorsNeedingSetup = draftConnectors?.filter((c) => !c.has_credential) ?? [];
+
+  // Derived counts for additional cards
+  const notificationCount = draft.structured_prompt
+    ? Object.keys(draft.structured_prompt).filter((k) =>
+        k.toLowerCase().includes('error') || k.toLowerCase().includes('notification'),
+      ).length
+    : 0;
+  const memoryEnabled = (draft.design_context?.trim().length ?? 0) > 0 ? 1 : 0;
+  const eventCount = triggerCount;
 
   return (
     <div className="space-y-4">
@@ -129,7 +139,7 @@ export function N8nConfirmStep({
       {/* Persona preview card */}
       {!created && (
         <div className="bg-secondary/20 border border-primary/10 rounded-2xl p-5">
-          <p className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-wider mb-3">
+          <p className="text-[10px] font-semibold text-muted-foreground/55 uppercase tracking-wider mb-3">
             Persona Preview
           </p>
 
@@ -150,28 +160,43 @@ export function N8nConfirmStep({
               <p className="text-base font-semibold text-foreground/90">
                 {draft.name ?? 'Unnamed Persona'}
               </p>
-              <p className="text-xs text-muted-foreground/50 mt-0.5">
+              <p className="text-xs text-muted-foreground/65 mt-0.5">
                 {draft.description ?? 'No description provided'}
               </p>
             </div>
           </div>
 
-          {/* Entity summary grid */}
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            <div className="px-3 py-3 rounded-xl bg-blue-500/5 border border-blue-500/10 text-center">
-              <Wrench className="w-4 h-4 text-blue-400/60 mx-auto mb-1" />
-              <p className="text-lg font-semibold text-foreground/80">{toolCount}</p>
-              <p className="text-[10px] text-muted-foreground/40 uppercase tracking-wider">Tools</p>
+          {/* Entity summary grid — 6 cards */}
+          <div className="grid grid-cols-6 gap-2 mb-4">
+            <div className="px-2 py-2.5 rounded-xl bg-blue-500/5 border border-blue-500/10 text-center">
+              <Wrench className="w-3.5 h-3.5 text-blue-400/60 mx-auto mb-1" />
+              <p className="text-base font-semibold text-foreground/80">{toolCount}</p>
+              <p className="text-[10px] text-muted-foreground/55 uppercase tracking-wider">Tools</p>
             </div>
-            <div className="px-3 py-3 rounded-xl bg-amber-500/5 border border-amber-500/10 text-center">
-              <Zap className="w-4 h-4 text-amber-400/60 mx-auto mb-1" />
-              <p className="text-lg font-semibold text-foreground/80">{triggerCount}</p>
-              <p className="text-[10px] text-muted-foreground/40 uppercase tracking-wider">Triggers</p>
+            <div className="px-2 py-2.5 rounded-xl bg-amber-500/5 border border-amber-500/10 text-center">
+              <Zap className="w-3.5 h-3.5 text-amber-400/60 mx-auto mb-1" />
+              <p className="text-base font-semibold text-foreground/80">{triggerCount}</p>
+              <p className="text-[10px] text-muted-foreground/55 uppercase tracking-wider">Triggers</p>
             </div>
-            <div className="px-3 py-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10 text-center">
-              <Link className="w-4 h-4 text-emerald-400/60 mx-auto mb-1" />
-              <p className="text-lg font-semibold text-foreground/80">{connectorCount}</p>
-              <p className="text-[10px] text-muted-foreground/40 uppercase tracking-wider">Connectors</p>
+            <div className="px-2 py-2.5 rounded-xl bg-emerald-500/5 border border-emerald-500/10 text-center">
+              <Link className="w-3.5 h-3.5 text-emerald-400/60 mx-auto mb-1" />
+              <p className="text-base font-semibold text-foreground/80">{connectorCount}</p>
+              <p className="text-[10px] text-muted-foreground/55 uppercase tracking-wider">Connectors</p>
+            </div>
+            <div className="px-2 py-2.5 rounded-xl bg-rose-500/5 border border-rose-500/10 text-center">
+              <Bell className="w-3.5 h-3.5 text-rose-400/60 mx-auto mb-1" />
+              <p className="text-base font-semibold text-foreground/80">{notificationCount}</p>
+              <p className="text-[10px] text-muted-foreground/55 uppercase tracking-wider">Alerts</p>
+            </div>
+            <div className="px-2 py-2.5 rounded-xl bg-cyan-500/5 border border-cyan-500/10 text-center">
+              <Brain className="w-3.5 h-3.5 text-cyan-400/60 mx-auto mb-1" />
+              <p className="text-base font-semibold text-foreground/80">{memoryEnabled}</p>
+              <p className="text-[10px] text-muted-foreground/55 uppercase tracking-wider">Memory</p>
+            </div>
+            <div className="px-2 py-2.5 rounded-xl bg-orange-500/5 border border-orange-500/10 text-center">
+              <Activity className="w-3.5 h-3.5 text-orange-400/60 mx-auto mb-1" />
+              <p className="text-base font-semibold text-foreground/80">{eventCount}</p>
+              <p className="text-[10px] text-muted-foreground/55 uppercase tracking-wider">Events</p>
             </div>
           </div>
 
@@ -242,7 +267,7 @@ export function N8nConfirmStep({
             <div className="mt-3 border-t border-primary/10 pt-3">
               <button
                 onClick={() => setShowPrompt(!showPrompt)}
-                className="flex items-center gap-2 text-xs text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors w-full"
+                className="flex items-center gap-2 text-xs text-muted-foreground/65 hover:text-muted-foreground/80 transition-colors w-full"
               >
                 {showPrompt ? (
                   <ChevronDown className="w-3.5 h-3.5" />
@@ -257,9 +282,9 @@ export function N8nConfirmStep({
                   animate={{ opacity: 1, height: 'auto' }}
                   className="mt-2 p-3 rounded-lg bg-background/40 border border-primary/10 overflow-hidden"
                 >
-                  <p className="text-xs text-foreground/60 whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto">
-                    {draft.system_prompt}
-                  </p>
+                  <div className="text-xs max-h-48 overflow-y-auto leading-relaxed">
+                    <MarkdownRenderer content={draft.system_prompt} />
+                  </div>
                 </motion.div>
               )}
             </div>

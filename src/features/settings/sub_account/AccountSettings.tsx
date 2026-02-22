@@ -1,5 +1,6 @@
 import { Chrome, LogOut, User } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 
 export default function AccountSettings() {
   const user = useAuthStore((s) => s.user);
@@ -10,23 +11,15 @@ export default function AccountSettings() {
   const logout = useAuthStore((s) => s.logout);
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
-      {/* Header */}
-      <div className="px-4 md:px-6 py-5 border-b border-primary/10 bg-primary/5 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center">
-            <User className="w-5 h-5 text-blue-400" />
-          </div>
-          <div>
-            <h1 className="text-lg font-semibold text-foreground/90">Account</h1>
-            <p className="text-xs text-muted-foreground/50">Manage your sign-in and profile</p>
-          </div>
-        </div>
-      </div>
+    <ContentBox>
+      <ContentHeader
+        icon={<User className="w-5 h-5 text-blue-400" />}
+        iconColor="blue"
+        title="Account"
+        subtitle="Manage your sign-in and profile"
+      />
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="min-h-full p-6">
+      <ContentBody centered>
         <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-5">
           {isAuthenticated && user ? (
             <>
@@ -87,8 +80,7 @@ export default function AccountSettings() {
             </div>
           )}
         </div>
-        </div>
-      </div>
-    </div>
+      </ContentBody>
+    </ContentBox>
   );
 }

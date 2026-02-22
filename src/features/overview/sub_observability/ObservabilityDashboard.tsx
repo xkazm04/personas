@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { usePersonaStore, initHealingListener } from '@/stores/personaStore';
 import { DollarSign, Zap, CheckCircle, TrendingUp, TrendingDown, ArrowRight, RefreshCw, Stethoscope, CheckCircle2, X } from 'lucide-react';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import HealingIssueModal from '@/features/overview/sub_observability/HealingIssueModal';
 import { DayRangePicker, PersonaSelect } from '@/features/overview/sub_usage/DashboardFilters';
 import type { DayRange } from '@/features/overview/sub_usage/DashboardFilters';
@@ -162,35 +163,33 @@ export default function ObservabilityDashboard() {
   }, [healingIssues, issueFilter]);
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
-      {/* Header */}
-      <div className="px-4 md:px-6 py-5 border-b border-primary/10 bg-primary/5 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-500/25 flex items-center justify-center">
-            <Stethoscope className="w-5 h-5 text-cyan-400" />
-          </div>
-          <div className="flex-1">
-            <h1 className="text-lg font-semibold text-foreground/90">Observability</h1>
-            <p className="text-xs text-muted-foreground/50">Performance metrics, cost tracking, execution health</p>
-          </div>
-          <button
-            onClick={handleRefresh}
-            className="p-1.5 rounded-lg text-muted-foreground/40 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
-            title="Refresh metrics"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => setAutoRefresh(!autoRefresh)}
-            className={`p-1.5 rounded-lg border transition-colors ${
-              autoRefresh ? 'border-primary/30 bg-primary/10 text-primary' : 'border-primary/15 text-muted-foreground/50'
-            }`}
-            title={autoRefresh ? 'Auto-refresh ON (30s)' : 'Auto-refresh OFF'}
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${autoRefresh ? 'animate-spin' : ''}`} style={autoRefresh ? { animationDuration: '3s' } : {}} />
-          </button>
-        </div>
-      </div>
+    <ContentBox>
+      <ContentHeader
+        icon={<Stethoscope className="w-5 h-5 text-cyan-400" />}
+        iconColor="cyan"
+        title="Observability"
+        subtitle="Performance metrics, cost tracking, execution health"
+        actions={
+          <>
+            <button
+              onClick={handleRefresh}
+              className="p-1.5 rounded-lg text-muted-foreground/40 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
+              title="Refresh metrics"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setAutoRefresh(!autoRefresh)}
+              className={`p-1.5 rounded-lg border transition-colors ${
+                autoRefresh ? 'border-primary/30 bg-primary/10 text-primary' : 'border-primary/15 text-muted-foreground/50'
+              }`}
+              title={autoRefresh ? 'Auto-refresh ON (30s)' : 'Auto-refresh OFF'}
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${autoRefresh ? 'animate-spin' : ''}`} style={autoRefresh ? { animationDuration: '3s' } : {}} />
+            </button>
+          </>
+        }
+      />
 
       {/* Filter bar */}
       <div className="px-4 md:px-6 py-3 border-b border-primary/10 flex items-center gap-4 flex-wrap flex-shrink-0">
@@ -199,8 +198,7 @@ export default function ObservabilityDashboard() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="min-h-full p-4 md:p-6 space-y-6">
+      <ContentBody>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -365,8 +363,7 @@ export default function ObservabilityDashboard() {
         )}
       </div>
 
-        </div>
-      </div>
+      </ContentBody>
 
       {/* Healing Issue Detail Modal */}
       {selectedIssue && (
@@ -376,7 +373,7 @@ export default function ObservabilityDashboard() {
           onClose={() => setSelectedIssue(null)}
         />
       )}
-    </div>
+    </ContentBox>
   );
 }
 

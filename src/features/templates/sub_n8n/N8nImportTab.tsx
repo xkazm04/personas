@@ -6,7 +6,7 @@ import {
   cancelN8nTransform,
   clearN8nTransformSnapshot,
   confirmN8nPersonaDraft,
-  generateN8nTransformQuestions,
+  continueN8nTransform,
   getN8nTransformSnapshot,
   startN8nTransformBackground,
   createN8nSession,
@@ -61,6 +61,7 @@ export default function N8nImportTab() {
   const hasRestoredRef = useRef(false);
   const sessionIdRef = useRef<string | null>(null);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
   const [confirmResult, setConfirmResult] = useState<ConfirmResult | null>(null);
 
   // Keep sessionId ref in sync for use in closures
@@ -151,6 +152,24 @@ export default function N8nImportTab() {
           setStreamPhase(snapshot.status);
         }
 
+        // Handle awaiting_answers: questions are ready for user
+        if (snapshot.status === 'awaiting_answers') {
+          const questionsArray = Array.isArray(snapshot.questions) ? snapshot.questions : [];
+          if (questionsArray.length > 0) {
+            dispatch({ type: 'QUESTIONS_GENERATED', questions: questionsArray });
+          } else {
+            // Model decided no questions needed but didn't produce persona — treat as skip
+            dispatch({ type: 'QUESTIONS_SKIPPED' });
+          }
+          setN8nTransformActive(false);
+          // Stop polling — awaiting user input
+          if (pollTimerRef.current !== null) {
+            window.clearInterval(pollTimerRef.current);
+            pollTimerRef.current = null;
+          }
+          return;
+        }
+
         if (snapshot.draft) {
           let completedDraft: import('@/api/design').N8nPersonaDraft;
           try {
@@ -230,9 +249,10 @@ export default function N8nImportTab() {
       pollTimerRef.current = null;
     }
 
+    const pollInterval = state.transformSubPhase === 'generating' ? 800 : 1500;
     pollTimerRef.current = window.setInterval(() => {
       void syncSnapshot();
-    }, 1500);
+    }, pollInterval);
 
     return () => {
       if (pollTimerRef.current !== null) {
@@ -369,10 +389,16 @@ export default function N8nImportTab() {
           ? crypto.randomUUID()
           : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
+      // Determine if this is an adjustment re-run or initial
+      const isAdjustment = !!state.adjustmentRequest.trim() || !!state.draft;
+      const subPhase = isAdjustment ? 'generating' as const : 'asking' as const;
+
       setIsRestoring(false);
+      setAnalyzing(true);
       await startTransformStream(transformId);
-      dispatch({ type: 'TRANSFORM_STARTED', transformId });
+      dispatch({ type: 'TRANSFORM_STARTED', transformId, subPhase });
       setN8nTransformActive(true);
+      setAnalyzing(false);
 
       // Update session status
       if (state.sessionId) {
@@ -434,6 +460,7 @@ export default function N8nImportTab() {
         dispatch({ type: 'SET_ADJUSTMENT', text: '' });
       }
     } catch (err) {
+      setAnalyzing(false);
       setN8nTransformActive(false);
       dispatch({
         type: 'TRANSFORM_FAILED',
@@ -551,75 +578,50 @@ export default function N8nImportTab() {
     [state.draft, dispatch],
   );
 
-  // ── Question generation ──
+  // ── Continue transform (Turn 2: submit answers) ──
 
-  const handleGenerateQuestions = async () => {
-    if (!state.parsedResult || !state.rawWorkflowJson) return;
-
-    dispatch({ type: 'QUESTIONS_GENERATING' });
-
-    // Update session to reflect transform step (question sub-phase)
-    if (state.sessionId) {
-      void updateN8nSession(state.sessionId, { status: 'analyzing', step: 'transform' }).catch(() => {});
-    }
+  const handleContinueTransform = async () => {
+    if (!state.backgroundTransformId) return;
 
     try {
-      const storeState = usePersonaStore.getState();
-      const connectorsJson = JSON.stringify(
-        storeState.connectorDefinitions.map((c) => ({ name: c.name, label: c.label })),
-      );
-      const credentialsJson = JSON.stringify(
-        storeState.credentials.map((c) => ({ name: c.name, service_type: c.service_type })),
-      );
+      dispatch({ type: 'TRANSFORM_STARTED', transformId: state.backgroundTransformId, subPhase: 'generating' });
+      setN8nTransformActive(true);
+      await startTransformStream(state.backgroundTransformId);
 
-      const questions = await generateN8nTransformQuestions(
-        state.workflowName,
-        state.rawWorkflowJson,
-        JSON.stringify(state.parsedResult),
-        connectorsJson,
-        credentialsJson,
+      const userAnswersJson = Object.keys(state.userAnswers).length > 0
+        ? JSON.stringify(state.userAnswers)
+        : '{}';
+
+      await continueN8nTransform(
+        state.backgroundTransformId,
+        userAnswersJson,
+        state.sessionId,
       );
 
-      // Normalize response — backend returns serde_json::Value which may be a raw array
-      const questionsArray = Array.isArray(questions) ? questions : [];
-      dispatch({ type: 'QUESTIONS_GENERATED', questions: questionsArray });
-
-      // Update session step
       if (state.sessionId) {
-        void updateN8nSession(state.sessionId, { step: 'transform' }).catch(() => {});
+        void updateN8nSession(state.sessionId, { status: 'transforming', step: 'transform' }).catch(() => {});
       }
     } catch (err) {
-      // On failure, stay on transform step — user can still generate with defaults
-      const msg = err instanceof Error ? err.message : typeof err === 'string' ? err : '';
+      setN8nTransformActive(false);
       dispatch({
-        type: 'QUESTIONS_FAILED',
-        error: msg || 'Configuration questions could not be generated. You can generate with defaults.',
+        type: 'TRANSFORM_FAILED',
+        error: err instanceof Error ? err.message : 'Failed to continue transformation.',
       });
-
-      // Persist failure to session
-      if (state.sessionId) {
-        void updateN8nSession(state.sessionId, {
-          status: 'failed',
-          error: msg || 'Question generation failed',
-        }).catch(() => {});
-      }
     }
   };
 
   // ── Next step handler ──
 
-  const handleSkipToTransform = () => {
-    dispatch({ type: 'QUESTIONS_SKIPPED' });
-  };
-
   const handleNext = () => {
     switch (state.step) {
       case 'analyze':
-        void handleGenerateQuestions();
+        // Directly start the unified transform (Turn 1: analyze + maybe ask questions)
+        void handleTransform();
         break;
       case 'transform':
         if (state.transformSubPhase === 'answering') {
-          void handleTransform();
+          // User answered questions — submit answers (Turn 2)
+          void handleContinueTransform();
         } else if (state.draft) {
           dispatch({ type: 'GO_TO_STEP', step: 'edit' });
         }
@@ -704,29 +706,18 @@ export default function N8nImportTab() {
             )}
 
             {state.step === 'analyze' && state.parsedResult && (
-              <>
-                <N8nParserResults
-                  parsedResult={state.parsedResult}
-                  workflowName={state.workflowName}
-                  onReset={handleReset}
-                  selectedToolIndices={state.selectedToolIndices}
-                  selectedTriggerIndices={state.selectedTriggerIndices}
-                  selectedConnectorNames={state.selectedConnectorNames}
-                  onToggleTool={(i) => dispatch({ type: 'TOGGLE_TOOL', index: i })}
-                  onToggleTrigger={(i) => dispatch({ type: 'TOGGLE_TRIGGER', index: i })}
-                  onToggleConnector={(n) => dispatch({ type: 'TOGGLE_CONNECTOR', name: n })}
-                />
-                {!state.transforming && !state.questionGenerating && (
-                  <div className="mt-3 flex justify-end">
-                    <button
-                      onClick={handleSkipToTransform}
-                      className="text-[11px] text-muted-foreground/40 hover:text-muted-foreground/60 transition-colors"
-                    >
-                      Skip configuration &amp; transform directly &rarr;
-                    </button>
-                  </div>
-                )}
-              </>
+              <N8nParserResults
+                parsedResult={state.parsedResult}
+                workflowName={state.workflowName}
+                onReset={handleReset}
+                selectedToolIndices={state.selectedToolIndices}
+                selectedTriggerIndices={state.selectedTriggerIndices}
+                selectedConnectorNames={state.selectedConnectorNames}
+                onToggleTool={(i) => dispatch({ type: 'TOGGLE_TOOL', index: i })}
+                onToggleTrigger={(i) => dispatch({ type: 'TOGGLE_TRIGGER', index: i })}
+                onToggleConnector={(n) => dispatch({ type: 'TOGGLE_CONNECTOR', name: n })}
+                isAnalyzing={analyzing}
+              />
             )}
 
             {state.step === 'transform' && (
@@ -738,7 +729,13 @@ export default function N8nImportTab() {
                 onAnswerUpdated={(questionId, answer) =>
                   dispatch({ type: 'ANSWER_UPDATED', questionId, answer })
                 }
-                onSkipQuestions={() => dispatch({ type: 'QUESTIONS_SKIPPED' })}
+                onSkipQuestions={() => {
+                  // Cancel the current Turn 1 and go to answering without questions
+                  if (state.backgroundTransformId) {
+                    void cancelN8nTransform(state.backgroundTransformId).catch(() => {});
+                  }
+                  dispatch({ type: 'QUESTIONS_SKIPPED' });
+                }}
                 transformPhase={state.transformPhase}
                 transformLines={state.transformLines}
                 runId={currentTransformId}
@@ -797,8 +794,8 @@ export default function N8nImportTab() {
         created={state.created}
         hasDraft={!!state.draft}
         hasParseResult={!!state.parsedResult}
-        questionGenerating={state.questionGenerating}
         transformSubPhase={state.transformSubPhase}
+        analyzing={analyzing}
       />
     </div>
   );

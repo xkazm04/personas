@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { Check, CheckCircle, AlertCircle, ArrowRight, Undo2, Search, BarChart3, X } from 'lucide-react';
+import { Check, CheckCircle, AlertCircle, ArrowRight, Undo2, Search, BarChart3, X, LayoutGrid, List } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getConnectorMeta } from '@/features/shared/components/ConnectorMeta';
+import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 
 export function ToolSelector() {
   const selectedPersona = usePersonaStore((state) => state.selectedPersona);
@@ -74,6 +74,7 @@ export function ToolSelector() {
   const [justToggledId, setJustToggledId] = useState<string | null>(null);
   const [undoToast, setUndoToast] = useState<{ toolId: string; toolName: string } | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'grouped'>('grid');
 
   const isSearching = searchQuery.trim().length > 0;
 
@@ -91,6 +92,24 @@ export function ToolSelector() {
     }
     return tools;
   }, [toolDefinitions, selectedCategory, searchQuery, isSearching]);
+
+  // Group filtered tools by connector type for grouped view
+  const connectorGroups = useMemo(() => {
+    const groups = new Map<string, typeof filteredTools>();
+    for (const tool of filteredTools) {
+      const key = tool.requires_credential_type || '__general__';
+      const existing = groups.get(key);
+      if (existing) existing.push(tool);
+      else groups.set(key, [tool]);
+    }
+    // Sort: groups with credential type first (alphabetically), then general at end
+    const entries = Array.from(groups.entries()).sort((a, b) => {
+      if (a[0] === '__general__') return 1;
+      if (b[0] === '__general__') return -1;
+      return a[0].localeCompare(b[0]);
+    });
+    return entries;
+  }, [filteredTools]);
 
   const clearUndoToast = useCallback(() => {
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
@@ -133,22 +152,60 @@ export function ToolSelector() {
     }
   };
 
+  const handleBulkToggle = async (tools: typeof filteredTools, allAssigned: boolean) => {
+    clearUndoToast();
+    for (const tool of tools) {
+      const isAssigned = assignedToolIds.includes(tool.id);
+      if (allAssigned && isAssigned) {
+        await removeTool(personaId, tool.id);
+      } else if (!allAssigned && !isAssigned) {
+        await assignTool(personaId, tool.id);
+      }
+    }
+  };
+
   return (
     <div className="space-y-5">
-      {/* Search Input */}
-      <div className="relative max-w-[280px]">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search tools..."
-          className="w-full pl-9 pr-3 py-2 rounded-lg border border-primary/15 bg-secondary/25 text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30"
-        />
+      {/* Search Input + View Toggle */}
+      <div className="flex items-center gap-2">
+        <div className="relative max-w-[280px] flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search tools..."
+            className="w-full pl-9 pr-3 py-2 rounded-lg border border-primary/15 bg-secondary/25 text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+        <div className="flex gap-0.5 p-0.5 rounded-lg bg-secondary/40 border border-primary/10">
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`p-1.5 rounded-md transition-all ${
+              viewMode === 'grid'
+                ? 'bg-primary/15 text-foreground/80'
+                : 'text-muted-foreground/40 hover:text-foreground/60'
+            }`}
+            title="Category view"
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => setViewMode('grouped')}
+            className={`p-1.5 rounded-md transition-all ${
+              viewMode === 'grouped'
+                ? 'bg-primary/15 text-foreground/80'
+                : 'text-muted-foreground/40 hover:text-foreground/60'
+            }`}
+            title="Connector view"
+          >
+            <List className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
-      {/* Category Filter */}
-      <div className={`flex items-center gap-2 flex-wrap transition-opacity ${isSearching ? 'opacity-40 pointer-events-none' : ''}`}>
+      {/* Category Filter (grid mode only) */}
+      <div className={`flex items-center gap-2 flex-wrap transition-opacity ${viewMode !== 'grid' ? 'hidden' : isSearching ? 'opacity-40 pointer-events-none' : ''}`}>
         {categories.map((category) => (
           <button
             key={category}
@@ -202,109 +259,254 @@ export function ToolSelector() {
         </div>
       )}
 
-      {/* Tools Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-        {filteredTools.map((tool) => {
-          const isAssigned = assignedToolIds.includes(tool.id);
-          const missingCredential = tool.requires_credential_type && !credentialTypeSet.has(tool.requires_credential_type);
-          return (
-            <motion.div
-              key={tool.id}
-              role="checkbox"
-              aria-checked={isAssigned}
-              aria-label={tool.name}
-              aria-disabled={missingCredential ? true : undefined}
-              tabIndex={0}
-              whileHover={missingCredential ? undefined : { scale: 1.02 }}
-              whileTap={missingCredential ? undefined : { scale: 0.98 }}
-              onClick={() => !missingCredential && handleToggleTool(tool.id, tool.name, isAssigned)}
-              onKeyDown={(e: React.KeyboardEvent) => {
-                if ((e.key === ' ' || e.key === 'Enter') && !missingCredential) {
-                  e.preventDefault();
-                  handleToggleTool(tool.id, tool.name, isAssigned);
-                }
-              }}
-              className={`p-3 rounded-2xl border backdrop-blur-sm transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
-                missingCredential
-                  ? 'bg-secondary/20 border-primary/10 opacity-60 cursor-not-allowed'
-                  : isAssigned
-                    ? 'bg-primary/10 border-primary/30 shadow-[0_0_15px_rgba(59,130,246,0.08)] cursor-pointer'
-                    : 'bg-secondary/40 border-primary/15 hover:border-primary/20 cursor-pointer'
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                {/* Checkbox */}
+      {/* Tools Grid (category view) */}
+      {viewMode === 'grid' && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+            {filteredTools.map((tool) => {
+              const isAssigned = assignedToolIds.includes(tool.id);
+              const missingCredential = tool.requires_credential_type && !credentialTypeSet.has(tool.requires_credential_type);
+              return (
                 <motion.div
-                  animate={justToggledId === tool.id ? { scale: [1, 1.3, 1] } : {}}
-                  transition={{ duration: 0.3 }}
-                  className={`flex-shrink-0 w-5 h-5 rounded-md border flex items-center justify-center mt-0.5 transition-colors ${
-                    isAssigned
-                      ? 'bg-primary border-primary'
-                      : 'bg-background/50 border-primary/15'
+                  key={tool.id}
+                  role="checkbox"
+                  aria-checked={isAssigned}
+                  aria-label={tool.name}
+                  aria-disabled={missingCredential ? true : undefined}
+                  tabIndex={0}
+                  whileHover={missingCredential ? undefined : { scale: 1.02 }}
+                  whileTap={missingCredential ? undefined : { scale: 0.98 }}
+                  onClick={() => !missingCredential && handleToggleTool(tool.id, tool.name, isAssigned)}
+                  onKeyDown={(e: React.KeyboardEvent) => {
+                    if ((e.key === ' ' || e.key === 'Enter') && !missingCredential) {
+                      e.preventDefault();
+                      handleToggleTool(tool.id, tool.name, isAssigned);
+                    }
+                  }}
+                  className={`p-3 rounded-2xl border backdrop-blur-sm transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+                    missingCredential
+                      ? 'bg-secondary/20 border-primary/10 opacity-60 cursor-not-allowed'
+                      : isAssigned
+                        ? 'bg-primary/10 border-primary/30 shadow-[0_0_15px_rgba(59,130,246,0.08)] cursor-pointer'
+                        : 'bg-secondary/40 border-primary/15 hover:border-primary/20 cursor-pointer'
                   }`}
                 >
-                  {isAssigned && <Check className="w-3 h-3 text-foreground" />}
-                </motion.div>
+                  <div className="flex items-start gap-3">
+                    {/* Checkbox */}
+                    <motion.div
+                      animate={justToggledId === tool.id ? { scale: [1, 1.3, 1] } : {}}
+                      transition={{ duration: 0.3 }}
+                      className={`flex-shrink-0 w-5 h-5 rounded-md border flex items-center justify-center mt-0.5 transition-colors ${
+                        isAssigned
+                          ? 'bg-primary border-primary'
+                          : 'bg-background/50 border-primary/15'
+                      }`}
+                    >
+                      {isAssigned && <Check className="w-3 h-3 text-foreground" />}
+                    </motion.div>
 
-                {/* Tool Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <h4 className="font-medium text-foreground text-sm truncate">
-                      {tool.name}
-                    </h4>
-                    {tool.requires_credential_type && (
-                      credentialTypeSet.has(tool.requires_credential_type) ? (
-                        <span title={`${credentialLabel(tool.requires_credential_type)} credential available`}><CheckCircle className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" /></span>
+                    {/* Tool Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className="font-medium text-foreground text-sm truncate">
+                          {tool.name}
+                        </h4>
+                        {tool.requires_credential_type && (
+                          credentialTypeSet.has(tool.requires_credential_type) ? (
+                            <span title={`${credentialLabel(tool.requires_credential_type)} credential available`}><CheckCircle className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" /></span>
+                          ) : (
+                            <span title={`Needs ${credentialLabel(tool.requires_credential_type)} credential`}><AlertCircle className="w-3.5 h-3.5 text-amber-400/80 flex-shrink-0" /></span>
+                          )
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground/50 mt-1.5 line-clamp-2">
+                        {tool.description}
+                      </p>
+                      {missingCredential && (
+                        <div className="mt-1.5 space-y-1">
+                          <p className="text-[11px] text-amber-400/80">
+                            Requires a <span className="font-medium">{credentialLabel(tool.requires_credential_type!)}</span> credential to connect
+                          </p>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSidebarSection('credentials');
+                              setCredentialView('add-new');
+                            }}
+                            className="inline-flex items-center gap-1 text-[11px] text-primary/80 hover:text-primary transition-colors group"
+                          >
+                            Add credential
+                            <ArrowRight className="w-3 h-3 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                          </button>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 mt-2 flex-wrap">
+                        {tool.category && (
+                          <span className="inline-block px-2 py-0.5 rounded-md text-[11px] font-mono bg-background/50 text-muted-foreground/40 border border-primary/15">
+                            {tool.category}
+                          </span>
+                        )}
+                        {(usageByTool.get(tool.name) ?? 0) > 0 && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] bg-primary/5 text-muted-foreground/50 border border-primary/10">
+                            <BarChart3 className="w-3 h-3" />
+                            {(usageByTool.get(tool.name) ?? 0).toLocaleString()} calls
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {filteredTools.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground/40 text-sm">
+              {isSearching ? `No tools matching "${searchQuery.trim()}"` : 'No tools found in this category'}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Connector-grouped view */}
+      {viewMode === 'grouped' && (
+        <>
+          <div className="space-y-3">
+            {connectorGroups.map(([connectorKey, tools]) => {
+              const isGeneral = connectorKey === '__general__';
+              const meta = isGeneral ? null : getConnectorMeta(connectorKey);
+              const label = isGeneral ? 'General' : credentialLabel(connectorKey);
+              const hasCredential = isGeneral || credentialTypeSet.has(connectorKey);
+              const missingCredential = !isGeneral && !hasCredential;
+
+              const assignableTools = missingCredential ? [] : tools;
+              const assignedInGroup = tools.filter(t => assignedToolIds.includes(t.id));
+              const allAssigned = assignableTools.length > 0 && assignedInGroup.length === assignableTools.length;
+              const someAssigned = assignedInGroup.length > 0 && !allAssigned;
+
+              return (
+                <div key={connectorKey} className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
+                  {/* Group header */}
+                  <div className="flex items-center gap-3 px-4 py-2.5 bg-secondary/30 border-b border-primary/8">
+                    {/* Bulk toggle checkbox */}
+                    <button
+                      onClick={() => !missingCredential && handleBulkToggle(tools, allAssigned)}
+                      disabled={missingCredential}
+                      className={`flex-shrink-0 w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${
+                        missingCredential
+                          ? 'bg-background/30 border-primary/10 cursor-not-allowed'
+                          : allAssigned
+                            ? 'bg-primary border-primary cursor-pointer'
+                            : someAssigned
+                              ? 'bg-primary/40 border-primary/60 cursor-pointer'
+                              : 'bg-background/50 border-primary/15 cursor-pointer hover:border-primary/30'
+                      }`}
+                    >
+                      {(allAssigned || someAssigned) && <Check className={`w-3 h-3 ${allAssigned ? 'text-foreground' : 'text-foreground/60'}`} />}
+                    </button>
+
+                    {/* Connector icon + label */}
+                    {meta && (
+                      <div
+                        className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: `${meta.color}15` }}
+                      >
+                        <ConnectorIcon meta={meta} size="w-3.5 h-3.5" />
+                      </div>
+                    )}
+                    <span className="text-sm font-medium text-foreground/80 flex-1">{label}</span>
+
+                    {/* Credential status */}
+                    {!isGeneral && (
+                      hasCredential ? (
+                        <span title={`${label} credential connected`}>
+                          <CheckCircle className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                        </span>
                       ) : (
-                        <span title={`Needs ${credentialLabel(tool.requires_credential_type)} credential`}><AlertCircle className="w-3.5 h-3.5 text-amber-400/80 flex-shrink-0" /></span>
+                        <button
+                          onClick={() => {
+                            setSidebarSection('credentials');
+                            setCredentialView('add-new');
+                          }}
+                          className="inline-flex items-center gap-1 text-[11px] text-amber-400/80 hover:text-amber-300 transition-colors"
+                          title={`Needs ${label} credential`}
+                        >
+                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span className="hidden sm:inline">Add credential</span>
+                        </button>
                       )
                     )}
+
+                    {/* Count badge */}
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-secondary/50 border border-primary/10 text-muted-foreground/50">
+                      {assignedInGroup.length}/{tools.length}
+                    </span>
                   </div>
-                  <p className="text-xs text-muted-foreground/50 mt-1.5 line-clamp-2">
-                    {tool.description}
-                  </p>
-                  {missingCredential && (
-                    <div className="mt-1.5 space-y-1">
-                      <p className="text-[11px] text-amber-400/80">
-                        Requires a <span className="font-medium">{credentialLabel(tool.requires_credential_type!)}</span> credential to connect
-                      </p>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSidebarSection('credentials');
-                          setCredentialView('add-new');
-                        }}
-                        className="inline-flex items-center gap-1 text-[11px] text-primary/80 hover:text-primary transition-colors group"
-                      >
-                        Add credential
-                        <ArrowRight className="w-3 h-3 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-                      </button>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    {tool.category && (
-                      <span className="inline-block px-2 py-0.5 rounded-md text-[11px] font-mono bg-background/50 text-muted-foreground/40 border border-primary/15">
-                        {tool.category}
-                      </span>
-                    )}
-                    {(usageByTool.get(tool.name) ?? 0) > 0 && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] bg-primary/5 text-muted-foreground/50 border border-primary/10">
-                        <BarChart3 className="w-3 h-3" />
-                        {(usageByTool.get(tool.name) ?? 0).toLocaleString()} calls
-                      </span>
-                    )}
+
+                  {/* Tool list within group */}
+                  <div className="divide-y divide-primary/5">
+                    {tools.map((tool) => {
+                      const isAssigned = assignedToolIds.includes(tool.id);
+                      return (
+                        <div
+                          key={tool.id}
+                          role="checkbox"
+                          aria-checked={isAssigned}
+                          aria-label={tool.name}
+                          tabIndex={0}
+                          onClick={() => !missingCredential && handleToggleTool(tool.id, tool.name, isAssigned)}
+                          onKeyDown={(e: React.KeyboardEvent) => {
+                            if ((e.key === ' ' || e.key === 'Enter') && !missingCredential) {
+                              e.preventDefault();
+                              handleToggleTool(tool.id, tool.name, isAssigned);
+                            }
+                          }}
+                          className={`flex items-center gap-3 px-4 py-2.5 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40 ${
+                            missingCredential
+                              ? 'opacity-50 cursor-not-allowed'
+                              : isAssigned
+                                ? 'bg-primary/5 hover:bg-primary/10 cursor-pointer'
+                                : 'hover:bg-secondary/30 cursor-pointer'
+                          }`}
+                        >
+                          <motion.div
+                            animate={justToggledId === tool.id ? { scale: [1, 1.3, 1] } : {}}
+                            transition={{ duration: 0.3 }}
+                            className={`flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                              isAssigned
+                                ? 'bg-primary border-primary'
+                                : 'bg-background/50 border-primary/15'
+                            }`}
+                          >
+                            {isAssigned && <Check className="w-2.5 h-2.5 text-foreground" />}
+                          </motion.div>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-sm text-foreground/80">{tool.name}</span>
+                            {tool.description && (
+                              <p className="text-[11px] text-muted-foreground/40 truncate">{tool.description}</p>
+                            )}
+                          </div>
+                          {(usageByTool.get(tool.name) ?? 0) > 0 && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-primary/5 text-muted-foreground/40 border border-primary/8 flex-shrink-0">
+                              <BarChart3 className="w-2.5 h-2.5" />
+                              {(usageByTool.get(tool.name) ?? 0).toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
+              );
+            })}
+          </div>
 
-      {filteredTools.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground/40 text-sm">
-          {isSearching ? `No tools matching "${searchQuery.trim()}"` : 'No tools found in this category'}
-        </div>
+          {filteredTools.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground/40 text-sm">
+              {isSearching ? `No tools matching "${searchQuery.trim()}"` : 'No tools available'}
+            </div>
+          )}
+        </>
       )}
 
       {/* Undo toast for accidental removal */}

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { usePersonaExecution } from '@/hooks/execution/usePersonaExecution';
-import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, CheckCircle2, XCircle, Timer, DollarSign, ArrowDown } from 'lucide-react';
+import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, CheckCircle2, XCircle, Timer, DollarSign, ArrowDown, Pause, RotateCw, Wrench, Zap, Brain, Cpu, CheckCheck, AlertTriangle } from 'lucide-react';
 import { TerminalHeader } from '@/features/shared/components/TerminalHeader';
 import { TerminalSearchBar, useTerminalFilter } from '@/features/shared/components/TerminalSearchBar';
 import { classifyLine, TERMINAL_STYLE_MAP, parseSummaryLine } from '@/lib/utils/terminalColors';
@@ -14,6 +14,34 @@ function formatElapsed(ms: number): string {
   const mins = Math.floor(secs / 60);
   const rem = secs % 60;
   return `${mins}m ${rem}s`;
+}
+
+interface PhaseEntry {
+  id: string;
+  label: string;
+  startMs: number;
+  endMs?: number;
+}
+
+const PHASE_META: Record<string, { label: string; icon: typeof Zap }> = {
+  initializing: { label: 'Initializing', icon: Zap },
+  thinking: { label: 'Thinking', icon: Brain },
+  calling_tools: { label: 'Running tools', icon: Cpu },
+  responding: { label: 'Responding', icon: Brain },
+  finalizing: { label: 'Finalizing', icon: CheckCheck },
+  error: { label: 'Error', icon: AlertTriangle },
+};
+
+function detectPhaseFromLine(line: string, hasSeenTools: boolean): string | null {
+  if (!line.trim()) return null;
+  if (line.startsWith('Execution started') || line.startsWith('Cloud execution started') || line.startsWith('Session started')) return 'initializing';
+  if (line.startsWith('> Using tool:') || line.startsWith('  Tool result:')) return 'calling_tools';
+  if (line.startsWith('[ERROR]') || line.startsWith('[TIMEOUT]') || line.startsWith('[WARN]')) return 'error';
+  if (line.startsWith('[SUMMARY]') || line.startsWith('Completed in') || line.startsWith('Cost: $') || line.startsWith('Process exited')) return 'finalizing';
+  if (line.startsWith('=== Execution cancelled ===')) return 'finalizing';
+  const style = classifyLine(line);
+  if (style === 'text') return hasSeenTools ? 'responding' : 'thinking';
+  return null;
 }
 
 export function PersonaRunner() {
@@ -50,6 +78,12 @@ export function PersonaRunner() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const personaId = selectedPersona?.id || '';
+
+  // Phase tracking for breadcrumb strip
+  const [phases, setPhases] = useState<PhaseEntry[]>([]);
+  const [showPhases, setShowPhases] = useState(true);
+  const phaseLineCount = useRef(0);
+  const hasSeenToolsRef = useRef(false);
 
   // Extract summary from terminal output for the persistent card
   const executionSummary = useMemo(() => {
@@ -109,6 +143,42 @@ export function PersonaRunner() {
       setOutputLines(executionOutput);
     }
   }, [executionOutput]);
+
+  // Derive phases from new output lines
+  useEffect(() => {
+    if (outputLines.length <= phaseLineCount.current) return;
+    const now = elapsedMs;
+
+    setPhases((prev) => {
+      const updated = [...prev];
+      for (let i = phaseLineCount.current; i < outputLines.length; i++) {
+        const line = outputLines[i]!;
+        const detected = detectPhaseFromLine(line, hasSeenToolsRef.current);
+        if (!detected) continue;
+        if (detected === 'calling_tools') hasSeenToolsRef.current = true;
+
+        const currentPhase = updated[updated.length - 1];
+        if (currentPhase?.id === detected) continue;
+
+        if (currentPhase && !currentPhase.endMs) {
+          currentPhase.endMs = now;
+        }
+        updated.push({ id: detected, label: PHASE_META[detected]?.label ?? detected, startMs: now });
+      }
+      return updated;
+    });
+
+    phaseLineCount.current = outputLines.length;
+  }, [outputLines, elapsedMs]);
+
+  // Reset phase tracking when a new execution starts
+  useEffect(() => {
+    if (isExecuting) {
+      setPhases([]);
+      phaseLineCount.current = 0;
+      hasSeenToolsRef.current = false;
+    }
+  }, [isExecuting]);
 
   // Auto-scroll terminal and track unseen lines
   useEffect(() => {
@@ -208,10 +278,44 @@ export function PersonaRunner() {
 
   const handleStop = () => {
     if (activeExecutionId) {
+      // Capture state before cancelling
+      const lastToolLine = [...outputLines].reverse().find(l => l.startsWith('> Using tool:'));
+      const lastTool = lastToolLine?.replace('> Using tool: ', '').trim() || null;
+
+      const cancelSummary = JSON.stringify({
+        status: 'cancelled',
+        duration_ms: elapsedMs,
+        cost_usd: null,
+        last_tool: lastTool,
+      });
+
       disconnect();
       cancelExecution(activeExecutionId);
-      setOutputLines((prev) => [...prev, '', '=== Execution cancelled ===']);
+      setOutputLines((prev) => [...prev, '', `[SUMMARY]${cancelSummary}`]);
     }
+  };
+
+  const handleResume = () => {
+    if (!selectedPersona) return;
+    const lastTool = executionSummary?.last_tool;
+    let resumeInput: Record<string, unknown> = {};
+    try {
+      resumeInput = JSON.parse(inputData);
+    } catch {
+      // keep empty
+    }
+    resumeInput._resume_hint = `Previous execution was cancelled${
+      executionSummary?.duration_ms ? ` after ${formatElapsed(executionSummary.duration_ms)}` : ''
+    }${lastTool ? ` while running tool "${lastTool}"` : ''}. Please continue from where the previous execution left off.`;
+
+    const formatted = JSON.stringify(resumeInput, null, 2);
+    setInputData(formatted);
+    setShowInputEditor(true);
+    setOutputLines([]);
+    // Trigger execution with resume context
+    setTimeout(() => {
+      handleExecute();
+    }, 0);
   };
 
   const handleCopyLog = () => {
@@ -338,15 +442,19 @@ export function PersonaRunner() {
           className={`rounded-xl border p-4 ${
             executionSummary.status === 'completed'
               ? 'border-emerald-500/20 bg-emerald-500/5'
-              : executionSummary.status === 'failed'
-                ? 'border-red-500/20 bg-red-500/5'
-                : 'border-amber-500/20 bg-amber-500/5'
+              : executionSummary.status === 'cancelled'
+                ? 'border-amber-500/20 bg-amber-500/5'
+                : executionSummary.status === 'failed'
+                  ? 'border-red-500/20 bg-red-500/5'
+                  : 'border-amber-500/20 bg-amber-500/5'
           }`}
         >
           <div className="flex items-center gap-5 flex-wrap">
             <div className="flex items-center gap-2">
               {executionSummary.status === 'completed' ? (
                 <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+              ) : executionSummary.status === 'cancelled' ? (
+                <Pause className="w-5 h-5 text-amber-400" />
               ) : executionSummary.status === 'failed' ? (
                 <XCircle className="w-5 h-5 text-red-400" />
               ) : (
@@ -377,6 +485,28 @@ export function PersonaRunner() {
               </div>
             )}
           </div>
+
+          {/* Cancelled-specific: last tool + resume */}
+          {executionSummary.status === 'cancelled' && (
+            <div className="mt-3 pt-3 border-t border-amber-500/15 space-y-3">
+              {executionSummary.last_tool && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground/50">
+                  <Wrench className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" />
+                  <span>Stopped while running</span>
+                  <code className="px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-300/80 font-mono text-[11px]">
+                    {executionSummary.last_tool}
+                  </code>
+                </div>
+              )}
+              <button
+                onClick={handleResume}
+                className="flex items-center gap-2 px-3.5 py-2 text-sm font-medium rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 hover:text-amber-200 transition-colors"
+              >
+                <RotateCw className="w-3.5 h-3.5" />
+                Resume from here
+              </button>
+            </div>
+          )}
         </motion.div>
       )}
 
@@ -397,6 +527,66 @@ export function PersonaRunner() {
 
             <TerminalSearchBar filter={filter} onChange={setFilter} />
 
+            {/* Phase breadcrumb strip */}
+            {phases.length > 0 && (
+              <div className="border-b border-border/20">
+                <button
+                  onClick={() => setShowPhases(!showPhases)}
+                  className="w-full flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-mono text-muted-foreground/40 hover:text-muted-foreground/60 transition-colors uppercase tracking-wider"
+                >
+                  {showPhases ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                  Phases
+                </button>
+                <AnimatePresence>
+                  {showPhases && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="flex items-center gap-1 px-3 pb-2 flex-wrap">
+                        {phases.map((phase, i) => {
+                          const isActive = i === phases.length - 1 && isExecuting;
+                          const meta = PHASE_META[phase.id];
+                          const PhaseIcon = meta?.icon ?? Zap;
+                          const duration = phase.endMs != null
+                            ? phase.endMs - phase.startMs
+                            : isActive
+                              ? elapsedMs - phase.startMs
+                              : 0;
+
+                          return (
+                            <div key={`${phase.id}-${i}`} className="flex items-center gap-1">
+                              {i > 0 && (
+                                <div className="w-3 h-px bg-primary/15 mx-0.5" />
+                              )}
+                              <div
+                                className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${
+                                  isActive
+                                    ? 'bg-primary/12 text-primary/80 border border-primary/20'
+                                    : 'bg-secondary/30 text-muted-foreground/50 border border-transparent'
+                                }`}
+                              >
+                                <PhaseIcon className={`w-3 h-3 flex-shrink-0 ${isActive ? 'animate-pulse' : ''}`} />
+                                <span>{phase.label}</span>
+                                {duration > 0 && (
+                                  <span className={`font-mono text-[10px] ${isActive ? 'text-primary/50' : 'text-muted-foreground/30'}`}>
+                                    {formatElapsed(duration)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+
             {/* Terminal body */}
             <div className="relative">
             <div
@@ -414,12 +604,15 @@ export function PersonaRunner() {
                   if (summary) {
                     const isSuccess = summary.status === 'completed';
                     const isFailed = summary.status === 'failed';
+                    const isCancelled = summary.status === 'cancelled';
                     return (
                       <div key={i} className={`border-t border-primary/15 pt-2 mt-2 transition-opacity ${isFiltering && !visible ? 'opacity-20' : ''}`}>
                         <div className="flex items-center gap-4 flex-wrap">
                           <div className="flex items-center gap-1.5">
                             {isSuccess ? (
                               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                            ) : isCancelled ? (
+                              <Pause className="w-3.5 h-3.5 text-amber-400" />
                             ) : isFailed ? (
                               <XCircle className="w-3.5 h-3.5 text-red-400" />
                             ) : (
@@ -439,6 +632,12 @@ export function PersonaRunner() {
                             <div className="flex items-center gap-1.5 text-muted-foreground/60">
                               <DollarSign className="w-3 h-3" />
                               <span>${summary.cost_usd.toFixed(4)}</span>
+                            </div>
+                          )}
+                          {isCancelled && summary.last_tool && (
+                            <div className="flex items-center gap-1.5 text-muted-foreground/50">
+                              <Wrench className="w-3 h-3 text-amber-400/60" />
+                              <span className="text-amber-300/60">{summary.last_tool}</span>
                             </div>
                           )}
                         </div>

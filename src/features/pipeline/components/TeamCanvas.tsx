@@ -16,6 +16,7 @@ import { AnimatePresence } from 'framer-motion';
 import { Users } from 'lucide-react';
 import { listen } from '@tauri-apps/api/event';
 import { usePersonaStore } from '@/stores/personaStore';
+import { ContentBox } from '@/features/shared/components/ContentLayout';
 import * as api from '@/api/tauriApi';
 import TeamList from '@/features/pipeline/components/TeamList';
 import PersonaNode from '@/features/pipeline/sub_canvas/PersonaNode';
@@ -622,7 +623,7 @@ export default function TeamCanvas() {
   }
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col w-full relative overflow-hidden">
+    <ContentBox minWidth={0}>
       <div className="relative z-10">
         <TeamToolbar
           teamName={selectedTeam?.name || 'Team'}
@@ -752,6 +753,6 @@ export default function TeamCanvas() {
           </div>
         )}
       </div>
-    </div>
+    </ContentBox>
   );
 }

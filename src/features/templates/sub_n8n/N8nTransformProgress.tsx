@@ -203,6 +203,10 @@ export function N8nTransformProgress({ phase, lines, runId, isRestoring, onRetry
                       transition={{ duration: 0.5, ease: 'easeOut' }}
                     />
                   </div>
+
+                  <p className="text-[11px] text-muted-foreground/50 mt-2">
+                    You can continue working — we'll notify you when the draft is ready.
+                  </p>
                 </div>
 
                 {/* Cancel button */}

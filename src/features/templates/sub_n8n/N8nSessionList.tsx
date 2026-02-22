@@ -168,10 +168,13 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
           const statusKey = interrupted ? 'interrupted' : session.status;
           const style = STATUS_STYLES[statusKey] ?? STATUS_STYLES.draft!;
           return (
-            <button
+            <div
               key={session.id}
+              role="button"
+              tabIndex={0}
               onClick={() => void handleLoad(session)}
-              className="w-full flex items-center gap-3 p-3 rounded-xl border border-primary/10 bg-secondary/20 hover:bg-secondary/40 transition-colors text-left group"
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); void handleLoad(session); } }}
+              className="w-full flex items-center gap-3 p-3 rounded-xl border border-primary/10 bg-secondary/20 hover:bg-secondary/40 transition-colors text-left group cursor-pointer"
             >
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground/70 truncate">
@@ -206,7 +209,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
                   <ChevronRight className="w-4 h-4 text-muted-foreground/30 group-hover:text-muted-foreground/50" />
                 )}
               </div>
-            </button>
+            </div>
           );
         })}
       </div>

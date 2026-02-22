@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Brain, Bot, Plus, Star, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
 import { MemoryRow } from '@/features/overview/sub_memories/MemoryCard';
 import { InlineAddMemoryForm } from '@/features/overview/sub_memories/CreateMemoryForm';
@@ -125,21 +126,13 @@ export default function MemoriesPage() {
   }, [filteredMemories, personaMap]);
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
-      {/* Header */}
-      <div className="px-4 md:px-6 py-5 border-b border-primary/10 bg-primary/5 flex-shrink-0">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
-              <Brain className="w-5 h-5 text-violet-400" />
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold text-foreground/90">Agent Memories</h1>
-              <p className="text-xs text-muted-foreground/50">
-                {memoriesTotal} memor{memoriesTotal !== 1 ? 'ies' : 'y'} stored by agents
-              </p>
-            </div>
-          </div>
+    <ContentBox>
+      <ContentHeader
+        icon={<Brain className="w-5 h-5 text-violet-400" />}
+        iconColor="violet"
+        title="Agent Memories"
+        subtitle={`${memoriesTotal} memor${memoriesTotal !== 1 ? 'ies' : 'y'} stored by agents`}
+        actions={
           <button
             onClick={() => setShowAddForm((v) => !v)}
             className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border transition-all ${
@@ -151,21 +144,23 @@ export default function MemoriesPage() {
             <Plus className={`w-3.5 h-3.5 transition-transform ${showAddForm ? 'rotate-45' : ''}`} />
             Add Memory
           </button>
-        </div>
-
+        }
+      >
         {/* Filter bar */}
-        <MemoryFilterBar
-          search={search}
-          onSearchChange={setSearch}
-          selectedPersonaId={selectedPersonaId}
-          onPersonaChange={setSelectedPersonaId}
-          selectedCategory={selectedCategory}
-          onCategoryChange={setSelectedCategory}
-          hasFilters={hasFilters}
-          onClearFilters={clearFilters}
-          personas={personas}
-        />
-      </div>
+        <div className="mt-4">
+          <MemoryFilterBar
+            search={search}
+            onSearchChange={setSearch}
+            selectedPersonaId={selectedPersonaId}
+            onPersonaChange={setSelectedPersonaId}
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+            hasFilters={hasFilters}
+            onClearFilters={clearFilters}
+            personas={personas}
+          />
+        </div>
+      </ContentHeader>
 
       {/* Inline Add Memory Form */}
       <AnimatePresence>
@@ -269,7 +264,7 @@ export default function MemoriesPage() {
       </div>
 
       {/* Table */}
-      <div className="flex-1 overflow-y-auto flex flex-col">
+      <ContentBody flex>
         <div className="px-4 md:px-6 py-2 text-[11px] font-mono text-muted-foreground/40 border-b border-primary/10 bg-secondary/10 flex-shrink-0">
           Showing {sortedMemories.length} of {memoriesTotal} memories
         </div>
@@ -339,8 +334,8 @@ export default function MemoriesPage() {
             </AnimatePresence>
           </>
         )}
-      </div>
+      </ContentBody>
 
-    </div>
+    </ContentBox>
   );
 }

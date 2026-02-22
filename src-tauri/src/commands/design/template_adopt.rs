@@ -10,14 +10,16 @@ use std::sync::Arc;
 
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::models::CreatePersonaInput;
+use crate::engine::parser::parse_stream_line;
 use crate::engine::prompt;
+use crate::engine::types::StreamLineType;
 use crate::error::AppError;
 use crate::AppState;
 
 use super::analysis::extract_display_text;
 use super::n8n_transform::{
-    extract_first_json_object, normalize_n8n_persona_draft, run_claude_prompt_text,
-    should_surface_n8n_output_line, N8nPersonaOutput,
+    extract_first_json_object, extract_questions_output, normalize_n8n_persona_draft,
+    parse_persona_output, should_surface_n8n_output_line, N8nPersonaOutput,
 };
 
 // ── Event payloads ──────────────────────────────────────────────
@@ -42,6 +44,7 @@ struct TemplateAdoptSnapshot {
     error: Option<String>,
     lines: Vec<String>,
     draft: Option<serde_json::Value>,
+    questions: Option<serde_json::Value>,
 }
 
 #[derive(Clone, Default)]
@@ -51,6 +54,8 @@ struct TemplateAdoptJobState {
     lines: Vec<String>,
     draft: Option<serde_json::Value>,
     cancel_token: Option<CancellationToken>,
+    claude_session_id: Option<String>,
+    questions: Option<serde_json::Value>,
 }
 
 static TEMPLATE_ADOPT_JOBS: OnceLock<Mutex<HashMap<String, TemplateAdoptJobState>>> =
@@ -121,6 +126,29 @@ fn set_adopt_draft(adopt_id: &str, draft: &N8nPersonaOutput) {
     }
 }
 
+fn set_adopt_questions(adopt_id: &str, questions: serde_json::Value) {
+    if let Ok(mut jobs) = lock_adopt_jobs() {
+        let entry = jobs
+            .entry(adopt_id.to_string())
+            .or_insert_with(TemplateAdoptJobState::default);
+        entry.questions = Some(questions);
+    }
+}
+
+fn set_adopt_claude_session(adopt_id: &str, session_id: String) {
+    if let Ok(mut jobs) = lock_adopt_jobs() {
+        let entry = jobs
+            .entry(adopt_id.to_string())
+            .or_insert_with(TemplateAdoptJobState::default);
+        entry.claude_session_id = Some(session_id);
+    }
+}
+
+fn get_adopt_claude_session(adopt_id: &str) -> Option<String> {
+    let jobs = lock_adopt_jobs().ok()?;
+    jobs.get(adopt_id)?.claude_session_id.clone()
+}
+
 fn get_adopt_snapshot_internal(adopt_id: &str) -> Option<TemplateAdoptSnapshot> {
     let jobs = lock_adopt_jobs().ok()?;
     jobs.get(adopt_id).map(|job| TemplateAdoptSnapshot {
@@ -133,6 +161,7 @@ fn get_adopt_snapshot_internal(adopt_id: &str) -> Option<TemplateAdoptSnapshot> 
         error: job.error.clone(),
         lines: job.lines.clone(),
         draft: job.draft.clone(),
+        questions: job.questions.clone(),
     })
 }
 
@@ -173,11 +202,17 @@ pub async fn start_template_adopt_background(
                 lines: Vec::new(),
                 draft: None,
                 cancel_token: Some(cancel_token.clone()),
+                claude_session_id: None,
+                questions: None,
             },
         );
     }
 
     set_adopt_status(&app, &adopt_id, "running", None);
+
+    // Determine if this is an adjustment re-run or initial transform
+    let is_adjustment = adjustment_request.as_ref().is_some_and(|a| !a.trim().is_empty())
+        || previous_draft_json.as_ref().is_some_and(|d| !d.trim().is_empty());
 
     let app_handle = app.clone();
     let adopt_id_for_task = adopt_id.clone();
@@ -185,41 +220,132 @@ pub async fn start_template_adopt_background(
     let template_name_clone = template_name.clone();
 
     tokio::spawn(async move {
+        if is_adjustment {
+            // ── Adjustment re-run: single-prompt path (no interactive questions) ──
+            let result = tokio::select! {
+                _ = token_for_task.cancelled() => {
+                    Err(AppError::Internal("Adoption cancelled by user".into()))
+                }
+                res = run_template_adopt_job(
+                    &app_handle,
+                    &adopt_id_for_task,
+                    &template_name,
+                    &design_result_json,
+                    adjustment_request.as_deref(),
+                    previous_draft_json.as_deref(),
+                    user_answers_json.as_deref(),
+                ) => res
+            };
+
+            handle_adopt_result(
+                result.map(|d| (d, false)),
+                &app_handle,
+                &adopt_id_for_task,
+                &template_name_clone,
+            );
+        } else {
+            // ── Initial transform: unified prompt (may produce questions or persona) ──
+            let result = tokio::select! {
+                _ = token_for_task.cancelled() => {
+                    Err(AppError::Internal("Adoption cancelled by user".into()))
+                }
+                res = run_unified_adopt_turn1(
+                    &app_handle,
+                    &adopt_id_for_task,
+                    &template_name,
+                    &design_result_json,
+                ) => res
+            };
+
+            match result {
+                Ok((Some(draft), _)) => {
+                    // Model skipped questions and produced persona directly
+                    handle_adopt_result(
+                        Ok((draft, false)),
+                        &app_handle,
+                        &adopt_id_for_task,
+                        &template_name_clone,
+                    );
+                }
+                Ok((None, true)) => {
+                    // Questions were produced and stored — status is awaiting_answers
+                    // Frontend will poll and pick up the questions
+                }
+                Ok((None, false)) => {
+                    // No questions and no persona — unusual, treat as failure
+                    handle_adopt_result(
+                        Err(AppError::Internal("No output from unified transform".into())),
+                        &app_handle,
+                        &adopt_id_for_task,
+                        &template_name_clone,
+                    );
+                }
+                Err(err) => {
+                    handle_adopt_result(
+                        Err(err),
+                        &app_handle,
+                        &adopt_id_for_task,
+                        &template_name_clone,
+                    );
+                }
+            }
+        }
+    });
+
+    Ok(json!({ "adopt_id": adopt_id }))
+}
+
+/// Turn 2: resume the Claude session with user answers.
+#[tauri::command]
+pub async fn continue_template_adopt(
+    app: tauri::AppHandle,
+    adopt_id: String,
+    user_answers_json: String,
+) -> Result<serde_json::Value, AppError> {
+    let claude_session_id = get_adopt_claude_session(&adopt_id)
+        .ok_or_else(|| AppError::NotFound("No Claude session found for this adoption".into()))?;
+
+    // Update job state
+    {
+        let mut jobs = lock_adopt_jobs()?;
+        if let Some(job) = jobs.get_mut(&adopt_id) {
+            job.status = "running".into();
+            job.error = None;
+        }
+    }
+    set_adopt_status(&app, &adopt_id, "running", None);
+
+    let cancel_token = CancellationToken::new();
+    {
+        let mut jobs = lock_adopt_jobs()?;
+        if let Some(job) = jobs.get_mut(&adopt_id) {
+            job.cancel_token = Some(cancel_token.clone());
+        }
+    }
+
+    let app_handle = app.clone();
+    let adopt_id_for_task = adopt_id.clone();
+    let token_for_task = cancel_token;
+
+    tokio::spawn(async move {
         let result = tokio::select! {
             _ = token_for_task.cancelled() => {
                 Err(AppError::Internal("Adoption cancelled by user".into()))
             }
-            res = run_template_adopt_job(
+            res = run_continue_adopt(
                 &app_handle,
                 &adopt_id_for_task,
-                &template_name,
-                &design_result_json,
-                adjustment_request.as_deref(),
-                previous_draft_json.as_deref(),
-                user_answers_json.as_deref(),
+                &claude_session_id,
+                &user_answers_json,
             ) => res
         };
 
-        match result {
-            Ok(draft) => {
-                set_adopt_draft(&adopt_id_for_task, &draft);
-                set_adopt_status(&app_handle, &adopt_id_for_task, "completed", None);
-                crate::notifications::notify_n8n_transform_completed(
-                    &app_handle,
-                    &template_name_clone,
-                    true,
-                );
-            }
-            Err(err) => {
-                let msg = err.to_string();
-                set_adopt_status(&app_handle, &adopt_id_for_task, "failed", Some(msg));
-                crate::notifications::notify_n8n_transform_completed(
-                    &app_handle,
-                    &template_name_clone,
-                    false,
-                );
-            }
-        }
+        handle_adopt_result(
+            result.map(|d| (d, false)),
+            &app_handle,
+            &adopt_id_for_task,
+            "adopted template",
+        );
     });
 
     Ok(json!({ "adopt_id": adopt_id }))
@@ -303,7 +429,7 @@ pub fn confirm_template_adopt_draft(
     Ok(json!({ "persona": created }))
 }
 
-// ── Question Generation ─────────────────────────────────────────
+// ── Question Generation (fallback for direct calls) ─────────────
 
 #[tauri::command]
 pub async fn generate_template_adopt_questions(
@@ -322,7 +448,7 @@ pub async fn generate_template_adopt_questions(
         &design_result_json
     };
 
-    let prompt = format!(
+    let prompt_text = format!(
         r##"Analyze this template design and generate 4-8 clarifying questions for the user
 before adopting it into a Personas agent.
 
@@ -395,7 +521,7 @@ Rules:
     cli_args.args.push("--model".to_string());
     cli_args.args.push("claude-haiku-4-5-20251001".to_string());
 
-    let (output, _session_id) = run_claude_prompt_text(prompt, &cli_args, None)
+    let (output, _session_id) = run_adopt_cli_prompt(&None, "", prompt_text, &cli_args)
         .await
         .map_err(AppError::Internal)?;
 
@@ -420,7 +546,266 @@ Rules:
     Ok(questions)
 }
 
-// ── Template adopt job ──────────────────────────────────────────
+// ── Helpers ─────────────────────────────────────────────────────
+
+/// Handle the result from either adjustment or unified transform.
+fn handle_adopt_result(
+    result: Result<(N8nPersonaOutput, bool), AppError>,
+    app: &tauri::AppHandle,
+    adopt_id: &str,
+    template_name: &str,
+) {
+    match result {
+        Ok((draft, _)) => {
+            set_adopt_draft(adopt_id, &draft);
+            set_adopt_status(app, adopt_id, "completed", None);
+            crate::notifications::notify_n8n_transform_completed(app, template_name, true);
+        }
+        Err(err) => {
+            let msg = err.to_string();
+            tracing::error!(adopt_id = %adopt_id, error = %msg, "template adoption failed");
+            set_adopt_status(app, adopt_id, "failed", Some(msg));
+            crate::notifications::notify_n8n_transform_completed(app, template_name, false);
+        }
+    }
+}
+
+// ── Unified prompt (Turn 1: may ask questions or generate persona) ──
+
+fn build_template_adopt_unified_prompt(
+    template_name: &str,
+    design_result_json: &str,
+) -> String {
+    let design_preview = if design_result_json.len() > 8000 {
+        &design_result_json[..8000]
+    } else {
+        design_result_json
+    };
+
+    format!(
+        r##"You are a senior Personas architect. You will analyze a template design and either ask
+clarifying questions OR generate a persona directly.
+
+## PHASE 1: Analyze the template
+
+Look at the design analysis below. Decide whether you need clarification from the user.
+
+If the template is complex (has external service integrations, multiple connectors,
+ambiguous configuration choices, or actions with external consequences), you MUST ask 4-8 questions.
+
+If the template is simple and self-explanatory (e.g., a simple manual-triggered agent with
+no external services), skip questions and go directly to PHASE 2.
+
+### When asking questions, output EXACTLY this format and then STOP:
+
+TRANSFORM_QUESTIONS
+[{{"id":"q1","question":"Your question here","type":"select","options":["Option A","Option B"],"default":"Option A","context":"Why this matters"}}]
+
+Question rules:
+- type must be one of: "select", "text", "boolean"
+- For boolean type, options should be ["Yes", "No"]
+- For select type, always include options array
+- For text type, options is optional
+- ALWAYS include at least one question about human-in-the-loop approval
+- ALWAYS include at least one question about memory/learning strategy
+- Order questions from most critical to strategic
+- Each question must have a unique id
+
+Question categories to cover:
+1. Credential mapping — which credentials for each service (only if the template references external services)
+2. Configuration parameters — template-specific settings to customize
+3. Human-in-the-Loop — for actions with external consequences, ask about manual approval
+4. Memory & Learning — what should the persona remember across runs
+5. Notification preferences — how to notify the user
+
+After outputting the TRANSFORM_QUESTIONS block, STOP. Do not output anything else.
+
+## PHASE 2: Generate persona JSON
+
+If you decided no questions are needed, or if the user has already answered your questions
+(they will be provided in a follow-up message), generate the full persona.
+
+The Personas platform capabilities:
+- Built-in LLM execution engine (no external LLM API tools needed)
+- Protocol messages: user_message, agent_memory, manual_review, emit_event
+- Templates include structured prompts with identity, instructions, toolGuidance, examples, errorHandling, customSections
+
+Persona Protocol System (use in system_prompt):
+
+1. User Messages: {{"user_message": {{"title": "string", "content": "string", "content_type": "text|markdown", "priority": "low|normal|high|critical"}}}}
+2. Agent Memory: {{"agent_memory": {{"title": "string", "content": "string", "category": "fact|preference|instruction|context|learned", "importance": 1-10, "tags": ["tag1"]}}}}
+3. Manual Review: {{"manual_review": {{"title": "string", "description": "string", "severity": "info|warning|error|critical", "context_data": "string", "suggested_actions": ["Approve", "Reject", "Edit"]}}}}
+4. Events: {{"emit_event": {{"type": "event_name", "data": {{}}}}}}
+
+Pattern Mapping:
+- External actions → manual_review before executing
+- Data processing → agent_memory to extract and store knowledge
+- Recurring tasks → check memories before acting, store new patterns
+- Notifications → user_message with appropriate priority
+- Error handling → user_message with priority "critical"
+
+Your job:
+1. Analyze the template's character, purpose, and operational requirements.
+2. Preserve the structured prompt architecture (identity, instructions, toolGuidance,
+   examples, errorHandling, customSections) — these are the core of the persona's behavior.
+3. Incorporate all suggested tools, triggers, and connector references into the design context.
+4. Use the full_prompt_markdown as the system_prompt foundation.
+5. Ensure the persona is self-contained and actionable.
+6. Embed protocol message instructions in the system_prompt and structured_prompt wherever
+   the template involves human interaction, knowledge persistence, or approval gates.
+7. Add a "Human-in-the-Loop" customSection when the template performs externally-visible actions.
+8. Add a "Memory Strategy" customSection when the template processes data that could inform future runs.
+
+Return ONLY valid JSON (no markdown fences, no commentary):
+{{
+  "persona": {{
+    "name": "string",
+    "description": "string (2-3 sentence summary)",
+    "system_prompt": "string — must include protocol message instructions",
+    "structured_prompt": {{
+      "identity": "string",
+      "instructions": "string — core logic with protocol messages woven in",
+      "toolGuidance": "string",
+      "examples": "string",
+      "errorHandling": "string",
+      "customSections": [{{"key": "string", "label": "string", "content": "string"}}]
+    }},
+    "icon": "string (lucide icon name)",
+    "color": "#hex",
+    "model_profile": null,
+    "max_budget_usd": null,
+    "max_turns": null,
+    "design_context": "string (brief summary of the template's capabilities and integrations)"
+  }}
+}}
+
+## Template Data
+
+Template name: {template_name}
+Design analysis (first 8000 chars): {design_preview}
+"##
+    )
+}
+
+/// Turn 1 of unified template adopt: sends unified prompt to Sonnet.
+/// Returns Ok((Some(draft), false)) if persona generated directly,
+/// Ok((None, true)) if questions were produced and stored,
+/// Ok((None, false)) if neither (error case).
+async fn run_unified_adopt_turn1(
+    app: &tauri::AppHandle,
+    adopt_id: &str,
+    template_name: &str,
+    design_result_json: &str,
+) -> Result<(Option<N8nPersonaOutput>, bool), AppError> {
+    tracing::info!(adopt_id = %adopt_id, "Starting unified adopt Turn 1");
+
+    let prompt_text = build_template_adopt_unified_prompt(
+        template_name,
+        design_result_json,
+    );
+
+    emit_adopt_line(
+        app,
+        adopt_id,
+        "[Milestone] Analyzing template and preparing transformation...",
+    );
+
+    let mut cli_args = prompt::build_default_cli_args();
+    cli_args.args.push("--model".to_string());
+    cli_args.args.push("claude-sonnet-4-6".to_string());
+
+    let (output_text, captured_session_id) =
+        run_adopt_cli_prompt(&Some((app, adopt_id)), adopt_id, prompt_text, &cli_args)
+            .await
+            .map_err(AppError::Internal)?;
+
+    // Store session ID for possible Turn 2
+    if let Some(ref sid) = captured_session_id {
+        set_adopt_claude_session(adopt_id, sid.clone());
+    }
+
+    // Check if output contains questions
+    if let Some(questions) = extract_questions_output(&output_text) {
+        tracing::info!(adopt_id = %adopt_id, "Turn 1 produced questions");
+        set_adopt_questions(adopt_id, questions.clone());
+        set_adopt_status(app, adopt_id, "awaiting_answers", None);
+        emit_adopt_line(
+            app,
+            adopt_id,
+            "[Milestone] Questions generated. Awaiting user answers...",
+        );
+        return Ok((None, true));
+    }
+
+    // No questions — try to parse persona output directly
+    emit_adopt_line(
+        app,
+        adopt_id,
+        "[Milestone] Claude output received. Extracting persona JSON draft...",
+    );
+
+    let draft = parse_persona_output(&output_text, template_name)?;
+
+    emit_adopt_line(
+        app,
+        adopt_id,
+        "[Milestone] Draft ready for review.",
+    );
+
+    Ok((Some(draft), false))
+}
+
+/// Execute Turn 2 of the unified adopt: resume Claude session with user answers.
+async fn run_continue_adopt(
+    app: &tauri::AppHandle,
+    adopt_id: &str,
+    claude_session_id: &str,
+    user_answers_json: &str,
+) -> Result<N8nPersonaOutput, AppError> {
+    tracing::info!(adopt_id = %adopt_id, "Starting unified adopt Turn 2 (resume)");
+
+    emit_adopt_line(
+        app,
+        adopt_id,
+        "[Milestone] Resuming session with your answers. Generating persona draft...",
+    );
+
+    let prompt_text = format!(
+        r#"Here are the user's answers to your questions:
+
+{}
+
+Now proceed to PHASE 2. Generate the full persona JSON based on the template analysis and the user's answers above.
+Remember: return ONLY valid JSON with the persona object, no markdown fences."#,
+        user_answers_json
+    );
+
+    let mut cli_args = prompt::build_resume_cli_args(claude_session_id);
+    cli_args.args.push("--model".to_string());
+    cli_args.args.push("claude-sonnet-4-6".to_string());
+
+    let (output_text, _) = run_adopt_cli_prompt(&Some((app, adopt_id)), adopt_id, prompt_text, &cli_args)
+        .await
+        .map_err(AppError::Internal)?;
+
+    emit_adopt_line(
+        app,
+        adopt_id,
+        "[Milestone] Claude output received. Extracting persona JSON draft...",
+    );
+
+    let draft = parse_persona_output(&output_text, "adopted template")?;
+
+    emit_adopt_line(
+        app,
+        adopt_id,
+        "[Milestone] Draft ready for review. Confirm save is required to persist.",
+    );
+
+    Ok(draft)
+}
+
+// ── Direct transform job (used for adjustment re-runs) ──────────
 
 fn build_template_adopt_prompt(
     template_name: &str,
@@ -561,16 +946,10 @@ async fn run_template_adopt_job(
         "[Milestone] Claude CLI started. Generating persona draft from template...",
     );
 
-    // Wrap emit context to use adopt event names
-    let output_text =
-        run_claude_prompt_text_with_adopt_events(app, adopt_id, prompt_text, &cli_args)
+    let (output_text, _session_id) =
+        run_adopt_cli_prompt(&Some((app, adopt_id)), adopt_id, prompt_text, &cli_args)
             .await
             .map_err(AppError::Internal)?;
-
-    let parsed_json = extract_first_json_object(&output_text)
-        .ok_or_else(|| {
-            AppError::Internal("Claude did not return valid JSON persona output".into())
-        })?;
 
     emit_adopt_line(
         app,
@@ -578,19 +957,7 @@ async fn run_template_adopt_job(
         "[Milestone] Claude output received. Extracting persona JSON draft...",
     );
 
-    let parsed_value: serde_json::Value = serde_json::from_str(&parsed_json)?;
-
-    let persona_payload = parsed_value
-        .get("persona")
-        .cloned()
-        .unwrap_or(parsed_value);
-
-    let output: N8nPersonaOutput = serde_json::from_value(persona_payload).map_err(|e| {
-        AppError::Internal(format!(
-            "Failed to parse adopted persona output: {e}"
-        ))
-    })?;
-    let draft = normalize_n8n_persona_draft(output, template_name);
+    let draft = parse_persona_output(&output_text, template_name)?;
 
     emit_adopt_line(
         app,
@@ -601,13 +968,16 @@ async fn run_template_adopt_job(
     Ok(draft)
 }
 
-/// Like run_claude_prompt_text but emits lines using template-adopt events.
-async fn run_claude_prompt_text_with_adopt_events(
-    app: &tauri::AppHandle,
-    adopt_id: &str,
+// ── CLI prompt runner (with adopt-specific events and session capture) ──
+
+/// Runs a Claude CLI prompt and returns (text_output, captured_session_id).
+/// Emits lines to template-adopt-output events when emit_ctx is provided.
+async fn run_adopt_cli_prompt(
+    emit_ctx: &Option<(&tauri::AppHandle, &str)>,
+    _adopt_id: &str,
     prompt_text: String,
     cli_args: &crate::engine::types::CliArgs,
-) -> Result<String, String> {
+) -> Result<(String, Option<String>), String> {
     use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
     use tokio::process::Command;
 
@@ -664,12 +1034,25 @@ async fn run_claude_prompt_text_with_adopt_events(
     let mut reader = BufReader::new(stdout).lines();
     let mut text_output = String::new();
     let mut last_emitted_line: Option<String> = None;
+    let mut captured_session_id: Option<String> = None;
 
     let timeout_duration = std::time::Duration::from_secs(420);
     let stream_result = tokio::time::timeout(timeout_duration, async {
         while let Ok(Some(line)) = reader.next_line().await {
             if line.trim().is_empty() {
                 continue;
+            }
+
+            // Try to capture session_id from stream-json events
+            if captured_session_id.is_none() {
+                let (line_type, _) = parse_stream_line(&line);
+                match line_type {
+                    StreamLineType::SystemInit { session_id: Some(sid), .. }
+                    | StreamLineType::Result { session_id: Some(sid), .. } => {
+                        captured_session_id = Some(sid);
+                    }
+                    _ => {}
+                }
             }
 
             if let Some(text) = extract_display_text(&line) {
@@ -685,7 +1068,9 @@ async fn run_claude_prompt_text_with_adopt_events(
                     if last_emitted_line.as_deref() == Some(trimmed) {
                         continue;
                     }
-                    emit_adopt_line(app, adopt_id, trimmed.to_string());
+                    if let Some((app, adopt_id)) = emit_ctx {
+                        emit_adopt_line(app, adopt_id, trimmed.to_string());
+                    }
                     last_emitted_line = Some(trimmed.to_string());
                 }
             }
@@ -718,5 +1103,5 @@ async fn run_claude_prompt_text_with_adopt_events(
         return Err("Claude produced no output for template adoption".into());
     }
 
-    Ok(text_output)
+    Ok((text_output, captured_session_id))
 }

@@ -247,7 +247,7 @@ pub fn run() {
             commands::design::n8n_transform::clear_n8n_transform_snapshot,
             commands::design::n8n_transform::cancel_n8n_transform,
             commands::design::n8n_transform::confirm_n8n_persona_draft,
-            commands::design::n8n_transform::generate_n8n_transform_questions,
+            commands::design::n8n_transform::continue_n8n_transform,
             // Design — N8n Sessions
             commands::design::n8n_sessions::create_n8n_session,
             commands::design::n8n_sessions::get_n8n_session,
@@ -261,6 +261,7 @@ pub fn run() {
             commands::design::template_adopt::cancel_template_adopt,
             commands::design::template_adopt::confirm_template_adopt_draft,
             commands::design::template_adopt::generate_template_adopt_questions,
+            commands::design::template_adopt::continue_template_adopt,
             // Design — Reviews
             commands::design::reviews::list_design_reviews,
             commands::design::reviews::get_design_review,

@@ -106,6 +106,7 @@ export type AdoptAction =
   | { type: 'TRANSFORM_STARTED'; adoptId: string }
   | { type: 'TRANSFORM_LINES'; lines: string[] }
   | { type: 'TRANSFORM_PHASE'; phase: CliRunPhase }
+  | { type: 'AWAITING_ANSWERS'; questions: TransformQuestionResponse[] }
   | { type: 'TRANSFORM_COMPLETED'; draft: N8nPersonaDraft }
   | { type: 'TRANSFORM_FAILED'; error: string }
   | { type: 'TRANSFORM_CANCELLED' }
@@ -178,6 +179,21 @@ function adoptReducer(state: AdoptState, action: AdoptAction): AdoptState {
 
     case 'TRANSFORM_PHASE':
       return { ...state, transformPhase: action.phase };
+
+    case 'AWAITING_ANSWERS':
+      return {
+        ...state,
+        step: 'configure',
+        transforming: false,
+        transformPhase: 'idle',
+        questions: action.questions,
+        questionGenerating: false,
+        // Pre-fill default answers
+        userAnswers: action.questions.reduce<Record<string, string>>((acc, q) => {
+          if (q.default) acc[q.id] = q.default;
+          return acc;
+        }, {}),
+      };
 
     case 'TRANSFORM_COMPLETED':
       return {
