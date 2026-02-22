@@ -294,7 +294,7 @@ async fn generate_scenarios(
 ) -> Result<Vec<TestScenario>, String> {
     let coordinator_prompt = build_coordinator_prompt(persona, tools);
 
-    let mut cli_args = prompt::build_default_cli_args();
+    let mut cli_args = prompt::build_cli_args(None, None);
     // Limit to 1 turn — we just want the JSON output
     cli_args.args.push("--max-turns".to_string());
     cli_args.args.push("1".to_string());
@@ -439,51 +439,7 @@ async fn execute_scenario(
         auth_token: model.auth_token.clone(),
     };
 
-    let mut cli_args = prompt::build_default_cli_args();
-
-    // Apply model
-    if let Some(ref m) = model_profile.model {
-        if !m.is_empty() {
-            cli_args.args.push("--model".to_string());
-            cli_args.args.push(m.clone());
-        }
-    }
-
-    // Apply provider env vars
-    match model_profile.provider.as_deref() {
-        Some("ollama") => {
-            if let Some(ref base_url) = model_profile.base_url {
-                cli_args.env_overrides.push(("OLLAMA_BASE_URL".to_string(), base_url.clone()));
-            }
-            if let Some(ref auth_token) = model_profile.auth_token {
-                if !auth_token.is_empty() {
-                    cli_args.env_overrides.push(("OLLAMA_API_KEY".to_string(), auth_token.clone()));
-                }
-            }
-            cli_args.env_removals.push("ANTHROPIC_API_KEY".to_string());
-        }
-        Some("litellm") => {
-            if let Some(ref base_url) = model_profile.base_url {
-                cli_args.env_overrides.push(("ANTHROPIC_BASE_URL".to_string(), base_url.clone()));
-            }
-            if let Some(ref auth_token) = model_profile.auth_token {
-                if !auth_token.is_empty() {
-                    cli_args.env_overrides.push(("ANTHROPIC_AUTH_TOKEN".to_string(), auth_token.clone()));
-                }
-            }
-            cli_args.env_removals.push("ANTHROPIC_API_KEY".to_string());
-        }
-        Some("custom") => {
-            if let Some(ref base_url) = model_profile.base_url {
-                cli_args.env_overrides.push(("OPENAI_BASE_URL".to_string(), base_url.clone()));
-            }
-            if let Some(ref auth_token) = model_profile.auth_token {
-                cli_args.env_overrides.push(("OPENAI_API_KEY".to_string(), auth_token.clone()));
-            }
-            cli_args.env_removals.push("ANTHROPIC_API_KEY".to_string());
-        }
-        _ => {}
-    }
+    let mut cli_args = prompt::build_cli_args(None, Some(&model_profile));
 
     // Limit turns for sandbox testing
     cli_args.args.push("--max-turns".to_string());

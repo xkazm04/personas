@@ -19,8 +19,8 @@ export interface FeasibilityResult {
 export const startDesignAnalysis = (instruction: string, personaId: string) =>
   invoke<DesignStartResult>("start_design_analysis", { instruction, personaId });
 
-export const refineDesign = (personaId: string, feedback: string) =>
-  invoke<DesignStartResult>("refine_design", { personaId, feedback });
+export const refineDesign = (personaId: string, feedback: string, currentResult?: string | null) =>
+  invoke<DesignStartResult>("refine_design", { personaId, feedback, currentResult: currentResult ?? null });
 
 export const testDesignFeasibility = (designResult: string) =>
   invoke<FeasibilityResult>("test_design_feasibility", { designResult });

@@ -125,6 +125,7 @@ pub fn update(
 
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     let conn = pool.get()?;
+    conn.execute("UPDATE personas SET group_id = NULL WHERE group_id = ?1", params![id])?;
     let rows = conn.execute("DELETE FROM persona_groups WHERE id = ?1", params![id])?;
     Ok(rows > 0)
 }

@@ -67,7 +67,17 @@ export const createExecutionSlice: StateCreator<PersonaStore, [], [], ExecutionS
   },
 
   appendExecutionOutput: (line) => {
-    set((state) => ({ executionOutput: [...state.executionOutput, line] }));
+    set((state) => {
+      const MAX_OUTPUT_LINES = 5_000;
+      const prev = state.executionOutput;
+      if (prev.length < MAX_OUTPUT_LINES) {
+        return { executionOutput: [...prev, line] };
+      }
+      // Drop oldest lines to stay within cap
+      const next = prev.slice(prev.length - MAX_OUTPUT_LINES + 1);
+      next.push(line);
+      return { executionOutput: next };
+    });
   },
 
   clearExecutionOutput: () => {

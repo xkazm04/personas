@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import { TerminalHeader } from '@/features/shared/components/TerminalHeader';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
+import { useCopyToClipboard } from '@/hooks/utility/useCopyToClipboard';
 
 interface CliOutputPanelProps {
   title?: string;
@@ -21,13 +21,9 @@ export default function CliOutputPanel({
   waitingText = 'Waiting for Claude CLI output…',
   maxHeightClassName = 'max-h-64',
 }: CliOutputPanelProps) {
-  const [copied, setCopied] = useState(false);
+  const { copied, copy: copyToClipboard } = useCopyToClipboard();
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(lines.join('\n'));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const handleCopy = () => copyToClipboard(lines.join('\n'));
 
   const isRunning = phase === 'running';
 

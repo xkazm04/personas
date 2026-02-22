@@ -1,4 +1,4 @@
-use rusqlite::{params, Row};
+use rusqlite::{named_params, params, Row};
 
 use crate::db::models::{CreateN8nSessionInput, N8nTransformSession, UpdateN8nSessionInput};
 use crate::db::DbPool;
@@ -75,61 +75,41 @@ pub fn update(
     let now = chrono::Utc::now().to_rfc3339();
     let conn = pool.get()?;
 
-    // Build SET clause dynamically to only update provided fields
-    let mut sets = vec!["updated_at = ?1".to_string()];
-    let mut param_idx = 2u32;
-    let mut values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
-
-    if let Some(ref v) = input.workflow_name {
-        sets.push(format!("workflow_name = ?{param_idx}"));
-        values.push(Box::new(v.clone()));
-        param_idx += 1;
-    }
-    if let Some(ref v) = input.status {
-        sets.push(format!("status = ?{param_idx}"));
-        values.push(Box::new(v.clone()));
-        param_idx += 1;
-    }
-    if let Some(ref v) = input.parser_result {
-        sets.push(format!("parser_result = ?{param_idx}"));
-        values.push(Box::new(v.clone()));
-        param_idx += 1;
-    }
-    if let Some(ref v) = input.draft_json {
-        sets.push(format!("draft_json = ?{param_idx}"));
-        values.push(Box::new(v.clone()));
-        param_idx += 1;
-    }
-    if let Some(ref v) = input.user_answers {
-        sets.push(format!("user_answers = ?{param_idx}"));
-        values.push(Box::new(v.clone()));
-        param_idx += 1;
-    }
-    if let Some(ref v) = input.step {
-        sets.push(format!("step = ?{param_idx}"));
-        values.push(Box::new(v.clone()));
-        param_idx += 1;
-    }
-    if let Some(ref v) = input.error {
-        sets.push(format!("error = ?{param_idx}"));
-        values.push(Box::new(v.clone()));
-        param_idx += 1;
-    }
-    if let Some(ref v) = input.persona_id {
-        sets.push(format!("persona_id = ?{param_idx}"));
-        values.push(Box::new(v.clone()));
-        param_idx += 1;
-    }
-
-    // id is the last param
-    let sql = format!(
-        "UPDATE n8n_transform_sessions SET {} WHERE id = ?{param_idx}",
-        sets.join(", ")
-    );
-    values.push(Box::new(id.to_string()));
-
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> = values.iter().map(|b| b.as_ref()).collect();
-    conn.execute(&sql, params_ref.as_slice())?;
+    // Static query: each column uses IIF(:flag, :value, existing) to conditionally update.
+    // This avoids dynamic SQL with manual parameter index tracking.
+    conn.execute(
+        "UPDATE n8n_transform_sessions SET
+            updated_at      = :now,
+            workflow_name    = IIF(:has_workflow_name,  :workflow_name,  workflow_name),
+            status           = IIF(:has_status,         :status,         status),
+            parser_result    = IIF(:has_parser_result,  :parser_result,  parser_result),
+            draft_json       = IIF(:has_draft_json,     :draft_json,     draft_json),
+            user_answers     = IIF(:has_user_answers,   :user_answers,   user_answers),
+            step             = IIF(:has_step,           :step,           step),
+            error            = IIF(:has_error,          :error,          error),
+            persona_id       = IIF(:has_persona_id,     :persona_id,     persona_id)
+         WHERE id = :id",
+        named_params! {
+            ":now":               now,
+            ":id":                id,
+            ":has_workflow_name":  input.workflow_name.is_some(),
+            ":workflow_name":     input.workflow_name.as_deref(),
+            ":has_status":        input.status.is_some(),
+            ":status":            input.status.as_deref(),
+            ":has_parser_result": input.parser_result.is_some(),
+            ":parser_result":     input.parser_result.as_ref().and_then(|v| v.as_deref()),
+            ":has_draft_json":    input.draft_json.is_some(),
+            ":draft_json":        input.draft_json.as_ref().and_then(|v| v.as_deref()),
+            ":has_user_answers":  input.user_answers.is_some(),
+            ":user_answers":      input.user_answers.as_ref().and_then(|v| v.as_deref()),
+            ":has_step":          input.step.is_some(),
+            ":step":              input.step.as_deref(),
+            ":has_error":         input.error.is_some(),
+            ":error":             input.error.as_ref().and_then(|v| v.as_deref()),
+            ":has_persona_id":    input.persona_id.is_some(),
+            ":persona_id":        input.persona_id.as_ref().and_then(|v| v.as_deref()),
+        },
+    )?;
 
     get(pool, id)
 }

@@ -21,11 +21,12 @@ import {
   FileWarning,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { systemHealthCheck, getAppSetting, setAppSetting, getCrashLogs, clearCrashLogs } from '@/api/tauriApi';
+import { systemHealthCheck, getCrashLogs, clearCrashLogs } from '@/api/tauriApi';
 import type { HealthCheckSection, HealthCheckItem, CrashLogEntry } from '@/api/tauriApi';
 import { useAuthStore } from '@/stores/authStore';
 import { useAutoInstaller, type InstallState } from '@/hooks/utility/useAutoInstaller';
 import { ExternalLink } from 'lucide-react';
+import { ConfigurationPopup, type ConfigField } from '@/features/agents/components/onboarding/ConfigurationPopup';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -161,209 +162,31 @@ function InstallButton({
   );
 }
 
-// ── Popups ──────────────────────────────────────────────────────────────────────
+// ── Popup field configs ──────────────────────────────────────────────────────
 
-function OllamaApiKeyPopup({
-  onClose,
-  onSaved,
-}: {
-  onClose: () => void;
-  onSaved: () => void;
-}) {
-  const [apiKey, setApiKey] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [loaded, setLoaded] = useState(false);
+const OLLAMA_FIELDS: ConfigField[] = [
+  { key: 'ollama_api_key', label: 'API Key', type: 'password', placeholder: 'Paste your key from ollama.com/settings', autoFocus: true },
+];
 
-  useEffect(() => {
-    getAppSetting('ollama_api_key')
-      .then((val) => {
-        if (val) setApiKey(val);
-        setLoaded(true);
-      })
-      .catch(() => setLoaded(true));
-  }, []);
+const OLLAMA_FOOTER = (
+  <>
+    Sign up free at{' '}
+    <a
+      href="https://ollama.com"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-emerald-400/70 hover:text-emerald-400 inline-flex items-center gap-0.5"
+    >
+      ollama.com <ExternalLink className="w-2.5 h-2.5" />
+    </a>
+    , then copy your API key from Settings. This key is stored locally and shared across all agents.
+  </>
+);
 
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      await setAppSetting('ollama_api_key', apiKey.trim());
-      onSaved();
-    } catch {
-      // keep popup open
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-background border border-primary/15 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
-      >
-        <div className="px-5 py-4 border-b border-primary/10">
-          <h3 className="text-sm font-semibold text-foreground/90 flex items-center gap-2">
-            <Key className="w-4 h-4 text-emerald-400" />
-            Ollama Cloud API Key
-          </h3>
-          <p className="text-xs text-muted-foreground/50 mt-1">
-            Optional — unlocks free cloud models (Qwen3 Coder, GLM-5, Kimi K2.5) for all agents.
-          </p>
-        </div>
-
-        <div className="px-5 py-4 space-y-3">
-          <div>
-            <label className="block text-xs font-medium text-foreground/60 mb-1.5">API Key</label>
-            <input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder={loaded ? 'Paste your key from ollama.com/settings' : 'Loading\u2026'}
-              disabled={!loaded}
-              autoFocus
-              className="w-full px-3 py-2 bg-secondary/40 border border-primary/15 rounded-lg text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all disabled:opacity-50"
-            />
-          </div>
-          <p className="text-[11px] text-muted-foreground/40 leading-relaxed">
-            Sign up free at{' '}
-            <a
-              href="https://ollama.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-emerald-400/70 hover:text-emerald-400 inline-flex items-center gap-0.5"
-            >
-              ollama.com <ExternalLink className="w-2.5 h-2.5" />
-            </a>
-            , then copy your API key from Settings. This key is stored locally and shared across all agents.
-          </p>
-        </div>
-
-        <div className="px-5 py-3 border-t border-primary/10 flex items-center justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg text-muted-foreground/60 hover:bg-secondary/60 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={!apiKey.trim() || saving}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {saving ? 'Saving\u2026' : 'Save Key'}
-          </button>
-        </div>
-      </motion.div>
-    </div>
-  );
-}
-
-function LiteLLMConfigPopup({
-  onClose,
-  onSaved,
-}: {
-  onClose: () => void;
-  onSaved: () => void;
-}) {
-  const [baseUrl, setBaseUrl] = useState('');
-  const [masterKey, setMasterKey] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    Promise.all([
-      getAppSetting('litellm_base_url'),
-      getAppSetting('litellm_master_key'),
-    ])
-      .then(([url, key]) => {
-        if (url) setBaseUrl(url);
-        if (key) setMasterKey(key);
-        setLoaded(true);
-      })
-      .catch(() => setLoaded(true));
-  }, []);
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      await setAppSetting('litellm_base_url', baseUrl.trim());
-      await setAppSetting('litellm_master_key', masterKey.trim());
-      onSaved();
-    } catch {
-      // keep popup open
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-background border border-primary/15 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
-      >
-        <div className="px-5 py-4 border-b border-primary/10">
-          <h3 className="text-sm font-semibold text-foreground/90 flex items-center gap-2">
-            <Key className="w-4 h-4 text-sky-400" />
-            LiteLLM Proxy Configuration
-          </h3>
-          <p className="text-xs text-muted-foreground/50 mt-1">
-            Optional — route agents through your LiteLLM proxy for model management and cost tracking.
-          </p>
-        </div>
-
-        <div className="px-5 py-4 space-y-3">
-          <div>
-            <label className="block text-xs font-medium text-foreground/60 mb-1.5">Proxy Base URL</label>
-            <input
-              type="text"
-              value={baseUrl}
-              onChange={(e) => setBaseUrl(e.target.value)}
-              placeholder={loaded ? 'http://localhost:4000' : 'Loading\u2026'}
-              disabled={!loaded}
-              autoFocus
-              className="w-full px-3 py-2 bg-secondary/40 border border-primary/15 rounded-lg text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-sky-500/40 transition-all disabled:opacity-50"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-foreground/60 mb-1.5">Master Key</label>
-            <input
-              type="password"
-              value={masterKey}
-              onChange={(e) => setMasterKey(e.target.value)}
-              placeholder={loaded ? 'sk-...' : 'Loading\u2026'}
-              disabled={!loaded}
-              className="w-full px-3 py-2 bg-secondary/40 border border-primary/15 rounded-lg text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-sky-500/40 transition-all disabled:opacity-50"
-            />
-          </div>
-          <p className="text-[11px] text-muted-foreground/40 leading-relaxed">
-            These settings are stored locally and shared across all agents configured to use the LiteLLM provider.
-          </p>
-        </div>
-
-        <div className="px-5 py-3 border-t border-primary/10 flex items-center justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg text-muted-foreground/60 hover:bg-secondary/60 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={!baseUrl.trim() || saving}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-sky-500/15 text-sky-300 border border-sky-500/25 hover:bg-sky-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {saving ? 'Saving\u2026' : 'Save Configuration'}
-          </button>
-        </div>
-      </motion.div>
-    </div>
-  );
-}
+const LITELLM_FIELDS: ConfigField[] = [
+  { key: 'litellm_base_url', label: 'Proxy Base URL', type: 'text', placeholder: 'http://localhost:4000', autoFocus: true },
+  { key: 'litellm_master_key', label: 'Master Key', type: 'password', placeholder: 'sk-...' },
+];
 
 // ── Crash Logs Section ───────────────────────────────────────────────────────
 
@@ -509,9 +332,9 @@ function CrashLogsSection() {
   );
 }
 
-// ── Main SystemChecksPanel ─────────────────────────────────────────────────────
+// ── Main SystemHealthPanel ─────────────────────────────────────────────────────
 
-export function SystemChecksPanel({ onNext }: { onNext?: () => void }) {
+export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
   const [sections, setSections] = useState<HealthCheckSection[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingPhase, setLoadingPhase] = useState(0);
@@ -836,7 +659,13 @@ export function SystemChecksPanel({ onNext }: { onNext?: () => void }) {
 
       <AnimatePresence>
         {showOllamaPopup && (
-          <OllamaApiKeyPopup
+          <ConfigurationPopup
+            title="Ollama Cloud API Key"
+            subtitle="Optional — unlocks free cloud models (Qwen3 Coder, GLM-5, Kimi K2.5) for all agents."
+            accent="emerald"
+            fields={OLLAMA_FIELDS}
+            saveLabel="Save Key"
+            footerText={OLLAMA_FOOTER}
             onClose={() => setShowOllamaPopup(false)}
             onSaved={() => {
               setShowOllamaPopup(false);
@@ -848,7 +677,13 @@ export function SystemChecksPanel({ onNext }: { onNext?: () => void }) {
 
       <AnimatePresence>
         {showLiteLLMPopup && (
-          <LiteLLMConfigPopup
+          <ConfigurationPopup
+            title="LiteLLM Proxy Configuration"
+            subtitle="Optional — route agents through your LiteLLM proxy for model management and cost tracking."
+            accent="sky"
+            fields={LITELLM_FIELDS}
+            saveLabel="Save Configuration"
+            footerText="These settings are stored locally and shared across all agents configured to use the LiteLLM provider."
             onClose={() => setShowLiteLLMPopup(false)}
             onSaved={() => {
               setShowLiteLLMPopup(false);

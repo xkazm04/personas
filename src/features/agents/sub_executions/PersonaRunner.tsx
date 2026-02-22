@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { usePersonaExecution } from '@/hooks/execution/usePersonaExecution';
+import { useCopyToClipboard } from '@/hooks/utility/useCopyToClipboard';
 import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, CheckCircle2, XCircle, Timer, DollarSign, ArrowDown, Pause, RotateCw, Wrench, Zap, Brain, Cpu, CheckCheck, AlertTriangle } from 'lucide-react';
 import { TerminalHeader } from '@/features/shared/components/TerminalHeader';
 import { TerminalSearchBar, useTerminalFilter } from '@/features/shared/components/TerminalSearchBar';
-import { classifyLine, TERMINAL_STYLE_MAP, parseSummaryLine } from '@/lib/utils/terminalColors';
+import { classifyLine, parseSummaryLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as api from '@/api/tauriApi';
 
@@ -63,14 +64,10 @@ export function PersonaRunner() {
   const { filter, setFilter, isLineVisible, isFiltering } = useTerminalFilter();
 
   const runnerRef = useRef<HTMLDivElement>(null);
-  const terminalBodyRef = useRef<HTMLDivElement>(null);
-  const shouldAutoScroll = useRef(true);
-  const lastSeenLineCount = useRef(0);
-  const [unseenCount, setUnseenCount] = useState(0);
   const [inputData, setInputData] = useState('{}');
   const [showInputEditor, setShowInputEditor] = useState(false);
   const [outputLines, setOutputLines] = useState<string[]>([]);
-  const [copied, setCopied] = useState(false);
+  const { copied, copy: copyToClipboard } = useCopyToClipboard();
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [typicalDurationMs, setTypicalDurationMs] = useState<number | null>(null);
   const [elapsedMs, setElapsedMs] = useState(0);
@@ -78,6 +75,12 @@ export function PersonaRunner() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const personaId = selectedPersona?.id || '';
+
+  // Terminal scroll & unseen line tracking
+  const terminalBodyRef = useRef<HTMLDivElement>(null);
+  const shouldAutoScroll = useRef(true);
+  const lastSeenLineCount = useRef(0);
+  const [unseenCount, setUnseenCount] = useState(0);
 
   // Phase tracking for breadcrumb strip
   const [phases, setPhases] = useState<PhaseEntry[]>([]);
@@ -318,11 +321,7 @@ export function PersonaRunner() {
     }, 0);
   };
 
-  const handleCopyLog = () => {
-    navigator.clipboard.writeText(outputLines.join('\n'));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const handleCopyLog = () => copyToClipboard(outputLines.join('\n'));
 
   return (
     <div ref={runnerRef} className="space-y-5">

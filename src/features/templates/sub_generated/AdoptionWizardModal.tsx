@@ -1,4 +1,6 @@
 import { useEffect, useRef, useCallback, useMemo, useState } from 'react';
+import { useBackgroundSnapshot } from '@/hooks/utility/useBackgroundSnapshot';
+import { usePersistedContext } from '@/hooks/utility/usePersistedContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -78,14 +80,8 @@ export default function AdoptionWizardModal({
   const setTemplateAdoptActive = usePersonaStore((s) => s.setTemplateAdoptActive);
   const { state, dispatch, goBack } = useAdoptReducer();
   const backdropRef = useRef<HTMLDivElement>(null);
-  const pollTimerRef = useRef<number | null>(null);
-  const hasRestoredRef = useRef(false);
+  const confirmingRef = useRef(false);
   const [isRestoring, setIsRestoring] = useState(false);
-
-  // Reset restoration guard on unmount so next open can restore
-  useEffect(() => {
-    return () => { hasRestoredRef.current = false; };
-  }, []);
 
   // ── CLI stream ──
 
@@ -99,35 +95,13 @@ export default function AdoptionWizardModal({
     outputEvent: 'template-adopt-output',
     statusEvent: 'template-adopt-status',
     idField: 'adopt_id',
-    lineField: 'line',
-    statusField: 'status',
-    errorField: 'error',
     onFailed: (message) => dispatch({ type: 'TRANSFORM_FAILED', error: message }),
   });
 
   // ── Restore persisted context on open ──
 
-  useEffect(() => {
-    if (!isOpen) return;
-    if (hasRestoredRef.current) return;
-    hasRestoredRef.current = true;
-
-    const raw = window.localStorage.getItem(ADOPT_CONTEXT_KEY);
-    if (!raw) return;
-
-    try {
-      const parsed = JSON.parse(raw) as PersistedAdoptContext;
-      if (!parsed?.adoptId) {
-        window.localStorage.removeItem(ADOPT_CONTEXT_KEY);
-        return;
-      }
-
-      // Discard stale contexts (older than 10 minutes)
-      if (parsed.savedAt && Date.now() - parsed.savedAt > ADOPT_CONTEXT_MAX_AGE_MS) {
-        window.localStorage.removeItem(ADOPT_CONTEXT_KEY);
-        return;
-      }
-
+  const handleRestoreContext = useCallback(
+    (parsed: PersistedAdoptContext) => {
       setIsRestoring(true);
       dispatch({
         type: 'RESTORE_CONTEXT',
@@ -135,12 +109,29 @@ export default function AdoptionWizardModal({
         templateName: parsed.templateName || '',
         designResultJson: parsed.designResultJson || '',
       });
-
       void startAdoptStream(parsed.adoptId);
-    } catch {
-      window.localStorage.removeItem(ADOPT_CONTEXT_KEY);
-    }
-  }, [isOpen, startAdoptStream, dispatch]);
+    },
+    [dispatch, startAdoptStream],
+  );
+
+  const validateAdoptContext = useCallback(
+    (parsed: PersistedAdoptContext) => parsed?.adoptId || null,
+    [],
+  );
+
+  const getAdoptSavedAt = useCallback(
+    (parsed: PersistedAdoptContext) => parsed.savedAt,
+    [],
+  );
+
+  usePersistedContext<PersistedAdoptContext>({
+    key: ADOPT_CONTEXT_KEY,
+    maxAge: ADOPT_CONTEXT_MAX_AGE_MS,
+    enabled: isOpen,
+    validate: validateAdoptContext,
+    getSavedAt: getAdoptSavedAt,
+    onRestore: handleRestoreContext,
+  });
 
   // ── Initialize when modal opens with a review (skip if restored) ──
 
@@ -163,122 +154,76 @@ export default function AdoptionWizardModal({
 
   // ── Poll for snapshot updates ──
 
-  const notFoundCountRef = useRef(0);
+  const handleSnapshotLines = useCallback(
+    (lines: string[]) => {
+      dispatch({ type: 'TRANSFORM_LINES', lines });
+      setStreamLines(lines);
+    },
+    [dispatch, setStreamLines],
+  );
 
-  useEffect(() => {
-    if (!state.backgroundAdoptId) return;
+  const handleSnapshotPhase = useCallback(
+    (phase: 'running' | 'completed' | 'failed') => {
+      dispatch({ type: 'TRANSFORM_PHASE', phase });
+      setStreamPhase(phase);
+    },
+    [dispatch, setStreamPhase],
+  );
 
-    notFoundCountRef.current = 0;
-
-    const syncSnapshot = async () => {
+  const handleSnapshotDraft = useCallback(
+    (draft: N8nPersonaDraft) => {
       try {
-        const snapshot = await getTemplateAdoptSnapshot(state.backgroundAdoptId!);
-        notFoundCountRef.current = 0;
-
-        const lines = Array.isArray(snapshot.lines) ? snapshot.lines : [];
-        dispatch({ type: 'TRANSFORM_LINES', lines });
-        setStreamLines(lines);
-
-        if (snapshot.status === 'running' || snapshot.status === 'completed' || snapshot.status === 'failed') {
-          dispatch({ type: 'TRANSFORM_PHASE', phase: snapshot.status });
-          setStreamPhase(snapshot.status);
-        }
-
-        // Handle awaiting_answers: questions produced by unified Turn 1
-        if (snapshot.status === 'awaiting_answers' && snapshot.questions) {
-          setIsRestoring(false);
-          const questions = Array.isArray(snapshot.questions) ? snapshot.questions : [];
-          if (questions.length > 0) {
-            dispatch({ type: 'AWAITING_ANSWERS', questions });
-          }
-          // Stop polling — user needs to answer questions
-          if (pollTimerRef.current !== null) {
-            window.clearInterval(pollTimerRef.current);
-            pollTimerRef.current = null;
-          }
-          return;
-        }
-
-        if (snapshot.draft) {
-          try {
-            const normalized = normalizeDraft(snapshot.draft as N8nPersonaDraft);
-            dispatch({ type: 'TRANSFORM_COMPLETED', draft: normalized });
-          } catch {
-            dispatch({ type: 'TRANSFORM_COMPLETED', draft: snapshot.draft as N8nPersonaDraft });
-          }
-          setIsRestoring(false);
-          setTemplateAdoptActive(false);
-        } else if (snapshot.status === 'completed') {
-          // Status completed but no draft
-          setIsRestoring(false);
-          setTemplateAdoptActive(false);
-          try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
-          dispatch({
-            type: 'TRANSFORM_FAILED',
-            error: 'Transform completed but no draft was generated. Please try again.',
-          });
-        }
-
-        if (snapshot.status === 'failed') {
-          setIsRestoring(false);
-          setTemplateAdoptActive(false);
-          try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
-          dispatch({
-            type: 'TRANSFORM_FAILED',
-            error: snapshot.error || 'Template adoption failed.',
-          });
-        }
-
-        // Stop polling once we reach a terminal state
-        if (snapshot.status === 'completed' || snapshot.status === 'failed') {
-          if (pollTimerRef.current !== null) {
-            window.clearInterval(pollTimerRef.current);
-            pollTimerRef.current = null;
-          }
-          return;
-        }
+        const normalized = normalizeDraft(draft);
+        dispatch({ type: 'TRANSFORM_COMPLETED', draft: normalized });
       } catch {
-        notFoundCountRef.current += 1;
-        if (notFoundCountRef.current >= 3) {
-          setIsRestoring(false);
-          setTemplateAdoptActive(false);
-          try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
-          dispatch({
-            type: 'TRANSFORM_FAILED',
-            error: 'Adoption session lost. The backend may have restarted. Please try again.',
-          });
-        }
+        dispatch({ type: 'TRANSFORM_COMPLETED', draft });
       }
-    };
+      setIsRestoring(false);
+      setTemplateAdoptActive(false);
+    },
+    [dispatch, setTemplateAdoptActive],
+  );
 
-    void syncSnapshot();
+  const handleSnapshotCompletedNoDraft = useCallback(() => {
+    setIsRestoring(false);
+    setTemplateAdoptActive(false);
+    try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
+    dispatch({
+      type: 'TRANSFORM_FAILED',
+      error: 'Transform completed but no draft was generated. Please try again.',
+    });
+  }, [dispatch, setTemplateAdoptActive]);
 
-    if (pollTimerRef.current !== null) {
-      window.clearInterval(pollTimerRef.current);
-      pollTimerRef.current = null;
-    }
+  const handleSnapshotFailed = useCallback(
+    (error: string) => {
+      setIsRestoring(false);
+      setTemplateAdoptActive(false);
+      try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
+      dispatch({ type: 'TRANSFORM_FAILED', error });
+    },
+    [dispatch, setTemplateAdoptActive],
+  );
 
-    pollTimerRef.current = window.setInterval(() => {
-      void syncSnapshot();
-    }, 1500);
+  const handleSnapshotSessionLost = useCallback(() => {
+    setIsRestoring(false);
+    setTemplateAdoptActive(false);
+    try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
+    dispatch({
+      type: 'TRANSFORM_FAILED',
+      error: 'Adoption session lost. The backend may have restarted. Please try again.',
+    });
+  }, [dispatch, setTemplateAdoptActive]);
 
-    return () => {
-      if (pollTimerRef.current !== null) {
-        window.clearInterval(pollTimerRef.current);
-        pollTimerRef.current = null;
-      }
-    };
-  }, [state.backgroundAdoptId, dispatch, setStreamLines, setStreamPhase, setTemplateAdoptActive]);
-
-  // Cleanup poll timer on unmount
-  useEffect(() => {
-    return () => {
-      if (pollTimerRef.current !== null) {
-        window.clearInterval(pollTimerRef.current);
-        pollTimerRef.current = null;
-      }
-    };
-  }, []);
+  useBackgroundSnapshot({
+    snapshotId: state.backgroundAdoptId,
+    getSnapshot: getTemplateAdoptSnapshot,
+    onLines: handleSnapshotLines,
+    onPhase: handleSnapshotPhase,
+    onDraft: handleSnapshotDraft,
+    onCompletedNoDraft: handleSnapshotCompletedNoDraft,
+    onFailed: handleSnapshotFailed,
+    onSessionLost: handleSnapshotSessionLost,
+  });
 
   // ── Derived data ──
 
@@ -354,9 +299,11 @@ export default function AdoptionWizardModal({
   }, [state, dispatch, startAdoptStream, resetAdoptStream, setTemplateAdoptActive]);
 
   const handleConfirmSave = useCallback(async () => {
+    if (confirmingRef.current) return;
     const payloadJson = state.draft ? stringifyDraft(state.draft) : state.draftJson.trim();
     if (!payloadJson || state.transforming || state.confirming || state.draftJsonError) return;
 
+    confirmingRef.current = true;
     dispatch({ type: 'CONFIRM_STARTED' });
 
     try {
@@ -389,6 +336,8 @@ export default function AdoptionWizardModal({
         type: 'CONFIRM_FAILED',
         error: err instanceof Error ? err.message : 'Failed to create persona.',
       });
+    } finally {
+      confirmingRef.current = false;
     }
   }, [state, dispatch, fetchPersonas, selectPersona, onPersonaCreated]);
 

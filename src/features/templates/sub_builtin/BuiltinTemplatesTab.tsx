@@ -59,12 +59,28 @@ export default function BuiltinTemplatesTab() {
   const handleCreate = async (template: BuiltinTemplate) => {
     setCreatingId(template.id);
     try {
+      const { payload } = template;
+
+      // Build design_context summarizing tools, triggers, and connectors
+      const contextParts: string[] = [];
+      if (payload.suggested_tools.length > 0) {
+        contextParts.push(`Tools: ${payload.suggested_tools.join(', ')}`);
+      }
+      if (payload.suggested_triggers.length > 0) {
+        contextParts.push(`Triggers: ${payload.suggested_triggers.map((t) => t.description || t.trigger_type).join(', ')}`);
+      }
+      if (payload.suggested_connectors && payload.suggested_connectors.length > 0) {
+        contextParts.push(`Connectors: ${payload.suggested_connectors.map((c) => c.name).join(', ')}`);
+      }
+
       const persona = await createPersona({
         name: template.name,
         description: template.description,
-        system_prompt: template.payload.full_prompt_markdown,
+        system_prompt: payload.full_prompt_markdown,
         icon: template.icon,
         color: template.color,
+        structured_prompt: JSON.stringify(payload.structured_prompt),
+        design_context: contextParts.length > 0 ? contextParts.join('. ') : undefined,
       });
       setCreatedId(template.id);
       setTimeout(() => {

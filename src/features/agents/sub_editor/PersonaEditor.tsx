@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, AlertCircle, FileText, Play, Settings, FlaskConical, X } from 'lucide-react';
+import { AlertTriangle, AlertCircle, FileText, Play, Settings, FlaskConical, Wand2, Cloud, LogIn, X } from 'lucide-react';
 import type { ModelProfile } from '@/lib/types/frontendTypes';
 import { usePersonaStore } from '@/stores/personaStore';
+import { useAuthStore } from '@/stores/authStore';
 import type { EditorTab } from '@/lib/types/types';
 import { PersonaPromptEditor } from '@/features/agents/sub_editor/PersonaPromptEditor';
 import { ExecutionList } from '@/features/agents/sub_executions/ExecutionList';
@@ -10,11 +11,13 @@ import { PersonaRunner } from '@/features/agents/sub_executions/PersonaRunner';
 import { AccessibleToggle } from '@/features/shared/components/AccessibleToggle';
 import { PersonaSettingsTab } from '@/features/agents/sub_editor/PersonaSettingsTab';
 import { PersonaTestsTab } from '@/features/agents/sub_tests/PersonaTestsTab';
+import { DesignTab } from '@/features/agents/sub_editor/DesignTab';
 import { type PersonaDraft, buildDraft } from '@/features/agents/sub_editor/PersonaDraft';
 import { OLLAMA_CLOUD_BASE_URL, getOllamaPreset } from '@/features/agents/sub_editor/model-config/OllamaCloudPresets';
 
 const tabDefs: Array<{ id: EditorTab; label: string; icon: typeof FileText }> = [
   { id: 'prompt', label: 'Prompt', icon: FileText },
+  { id: 'design', label: 'Design', icon: Wand2 },
   { id: 'executions', label: 'Executions', icon: Play },
   { id: 'settings', label: 'Settings', icon: Settings },
   { id: 'tests', label: 'Tests', icon: FlaskConical },
@@ -28,6 +31,12 @@ export default function PersonaEditor() {
   const deletePersona = usePersonaStore((s) => s.deletePersona);
   const credentials = usePersonaStore((s) => s.credentials);
   const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
+  const showDesignNudge = usePersonaStore((s) => s.showDesignNudge);
+  const setShowDesignNudge = usePersonaStore((s) => s.setShowDesignNudge);
+  const showCloudNudge = usePersonaStore((s) => s.showCloudNudge);
+  const setShowCloudNudge = usePersonaStore((s) => s.setShowCloudNudge);
+  const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [pendingPersonaId, setPendingPersonaId] = useState<string | null>(null);
@@ -53,6 +62,19 @@ export default function PersonaEditor() {
       prevPersonaIdRef.current = selectedPersona.id;
     }
   }, [selectedPersona?.id, pendingPersonaId]);
+
+  // Clear all editor state when the active persona is deleted (selectedPersona becomes null)
+  useEffect(() => {
+    if (!selectedPersona) {
+      setPendingPersonaId(null);
+      setShowDeleteConfirm(false);
+      dirtyRef.current = false;
+      prevPersonaIdRef.current = undefined;
+      const empty = buildDraft({ name: '', enabled: false });
+      setDraft(empty);
+      setBaseline(empty);
+    }
+  }, [selectedPersona]);
 
   // Patch helper -- merges partial updates into draft
   const patch = useCallback((updates: Partial<PersonaDraft>) => {
@@ -195,8 +217,16 @@ export default function PersonaEditor() {
   };
 
   const handleSaveAndSwitch = async () => {
-    if (settingsDirty) await handleSaveSettings();
-    if (modelDirty) await saveModelSettings();
+    try {
+      if (settingsDirty) await handleSaveSettings();
+      if (modelDirty) await saveModelSettings();
+    } catch {
+      // updatePersona already sets store.error — don't proceed with switch
+      return;
+    }
+    // Verify no silent failure (updatePersona catches internally)
+    if (usePersonaStore.getState().error) return;
+
     const target = pendingPersonaId;
     setPendingPersonaId(null);
     dirtyRef.current = false;
@@ -206,8 +236,12 @@ export default function PersonaEditor() {
   };
 
   const handleSaveAll = async () => {
-    if (settingsDirty) await handleSaveSettings();
-    if (modelDirty) await saveModelSettings();
+    try {
+      if (settingsDirty) await handleSaveSettings();
+      if (modelDirty) await saveModelSettings();
+    } catch {
+      // updatePersona already sets store.error for display
+    }
   };
 
   const changedSections: string[] = [];
@@ -223,6 +257,8 @@ export default function PersonaEditor() {
     switch (editorTab) {
       case 'prompt':
         return <PersonaPromptEditor />;
+      case 'design':
+        return <DesignTab />;
       case 'executions':
         return (
           <div className="space-y-6">
@@ -367,6 +403,12 @@ export default function PersonaEditor() {
                 <Icon className="w-4 h-4" />
                 {tab.label}
                 {tabDirty && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />}
+                {tab.id === 'design' && showDesignNudge && !isActive && (
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500" />
+                  </span>
+                )}
                 {isActive && (
                   <motion.div
                     layoutId="personaEditorTab"
@@ -379,6 +421,91 @@ export default function PersonaEditor() {
           })}
         </div>
       </div>
+
+      {/* Design wizard nudge */}
+      <AnimatePresence>
+        {showDesignNudge && editorTab !== 'design' && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="overflow-hidden"
+          >
+            <div className="mx-6 my-2 bg-violet-500/10 border border-violet-500/20 rounded-xl p-3 flex items-center gap-3">
+              <Wand2 className="w-4 h-4 text-violet-400 flex-shrink-0" />
+              <span className="text-sm text-violet-300/90 flex-1">
+                Customize this template with the AI Design Wizard
+              </span>
+              <button
+                onClick={() => {
+                  setEditorTab('design');
+                  setShowDesignNudge(false);
+                }}
+                className="px-3 py-1 rounded-lg text-xs font-medium bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30 transition-colors"
+              >
+                Try Design Wizard
+              </button>
+              <button
+                onClick={() => setShowDesignNudge(false)}
+                className="p-1 rounded hover:bg-secondary/60 text-muted-foreground/50 transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Cloud setup nudge */}
+      <AnimatePresence>
+        {showCloudNudge && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="overflow-hidden"
+          >
+            <div className="mx-6 my-2 bg-sky-500/10 border border-sky-500/20 rounded-xl p-3 flex items-center gap-3">
+              <Cloud className="w-4 h-4 text-sky-400 flex-shrink-0" />
+              <span className="text-sm text-sky-300/90 flex-1">
+                {isAuthenticated
+                  ? 'Connect a cloud orchestrator to run personas remotely'
+                  : 'Sign in to unlock cloud features and remote execution'}
+              </span>
+              {!isAuthenticated && (
+                <button
+                  onClick={() => {
+                    setSidebarSection('settings');
+                    setShowCloudNudge(false);
+                  }}
+                  className="px-3 py-1 rounded-lg text-xs font-medium bg-sky-500/20 text-sky-300 border border-sky-500/30 hover:bg-sky-500/30 transition-colors flex items-center gap-1.5"
+                >
+                  <LogIn className="w-3 h-3" />
+                  Sign In
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  setSidebarSection('cloud');
+                  setShowCloudNudge(false);
+                }}
+                className="px-3 py-1 rounded-lg text-xs font-medium bg-sky-500/20 text-sky-300 border border-sky-500/30 hover:bg-sky-500/30 transition-colors flex items-center gap-1.5"
+              >
+                <Cloud className="w-3 h-3" />
+                Set up Cloud
+              </button>
+              <button
+                onClick={() => setShowCloudNudge(false)}
+                className="p-1 rounded hover:bg-secondary/60 text-muted-foreground/50 transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Tab content */}
       <div className="flex-1 overflow-y-auto p-4">

@@ -93,6 +93,66 @@ pub struct CreateDesignReviewInput {
 }
 
 // ============================================================================
+// Import helper — serde-based alternative to manual JSON extraction
+// ============================================================================
+
+fn default_test_case_id() -> String { "unknown".into() }
+fn default_test_case_name() -> String { "Unnamed".into() }
+fn default_status() -> String { "passed".into() }
+fn default_test_run_id() -> String { "imported".into() }
+fn default_reviewed_at() -> String { chrono::Utc::now().to_rfc3339() }
+
+/// Typed input for `import_design_review`, replacing manual `.get()/.as_str()` chains.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ImportDesignReviewInput {
+    #[serde(default = "default_test_case_id")]
+    pub test_case_id: String,
+    #[serde(default = "default_test_case_name")]
+    pub test_case_name: String,
+    #[serde(default)]
+    pub instruction: String,
+    #[serde(default = "default_status")]
+    pub status: String,
+    pub structural_score: Option<i32>,
+    pub semantic_score: Option<i32>,
+    pub connectors_used: Option<String>,
+    pub trigger_types: Option<String>,
+    pub design_result: Option<String>,
+    pub structural_evaluation: Option<String>,
+    pub semantic_evaluation: Option<String>,
+    #[serde(default = "default_test_run_id")]
+    pub test_run_id: String,
+    pub had_references: Option<bool>,
+    pub use_case_flows: Option<String>,
+    #[serde(default = "default_reviewed_at")]
+    pub reviewed_at: String,
+}
+
+impl From<ImportDesignReviewInput> for CreateDesignReviewInput {
+    fn from(imp: ImportDesignReviewInput) -> Self {
+        Self {
+            test_case_id: imp.test_case_id,
+            test_case_name: imp.test_case_name,
+            instruction: imp.instruction,
+            status: imp.status,
+            structural_score: imp.structural_score,
+            semantic_score: imp.semantic_score,
+            connectors_used: imp.connectors_used,
+            trigger_types: imp.trigger_types,
+            design_result: imp.design_result,
+            structural_evaluation: imp.structural_evaluation,
+            semantic_evaluation: imp.semantic_evaluation,
+            test_run_id: imp.test_run_id,
+            had_references: imp.had_references,
+            suggested_adjustment: None,
+            adjustment_generation: None,
+            use_case_flows: imp.use_case_flows,
+            reviewed_at: imp.reviewed_at,
+        }
+    }
+}
+
+// ============================================================================
 // Design Patterns
 // ============================================================================
 

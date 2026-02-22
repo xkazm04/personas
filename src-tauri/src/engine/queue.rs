@@ -36,6 +36,19 @@ impl ConcurrencyTracker {
             .insert(execution_id.to_string());
     }
 
+    /// Atomically check capacity and register an execution.
+    ///
+    /// Returns `true` if the execution was registered (had capacity).
+    /// Returns `false` if at capacity (execution not registered).
+    /// This prevents TOCTOU races between `has_capacity` and `add_running`.
+    pub fn try_add_running(&mut self, persona_id: &str, execution_id: &str, max_concurrent: i32) -> bool {
+        if !self.has_capacity(persona_id, max_concurrent) {
+            return false;
+        }
+        self.add_running(persona_id, execution_id);
+        true
+    }
+
     /// Remove an execution from the running set.
     /// Cleans up the persona entry if no executions remain.
     pub fn remove_running(&mut self, persona_id: &str, execution_id: &str) {
@@ -148,5 +161,28 @@ mod tests {
         tracker.remove_running("persona-a", "exec-a1");
         assert!(tracker.has_capacity("persona-a", 1));
         assert!(!tracker.has_capacity("persona-b", 1));
+    }
+
+    #[test]
+    fn test_try_add_running_atomic() {
+        let mut tracker = ConcurrencyTracker::new();
+
+        // First add should succeed (0/1)
+        assert!(tracker.try_add_running("p1", "exec-1", 1));
+        assert_eq!(tracker.running_count("p1"), 1);
+
+        // Second add should fail (1/1 — at capacity)
+        assert!(!tracker.try_add_running("p1", "exec-2", 1));
+        assert_eq!(tracker.running_count("p1"), 1);
+
+        // After removing, should succeed again
+        tracker.remove_running("p1", "exec-1");
+        assert!(tracker.try_add_running("p1", "exec-3", 1));
+        assert_eq!(tracker.running_count("p1"), 1);
+
+        // Unlimited capacity (max_concurrent <= 0) always succeeds
+        assert!(tracker.try_add_running("p2", "exec-a", 0));
+        assert!(tracker.try_add_running("p2", "exec-b", 0));
+        assert!(tracker.try_add_running("p2", "exec-c", -1));
     }
 }

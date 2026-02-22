@@ -242,89 +242,93 @@ export const WIZARD_STEPS: WizardStep[] = [
 
 // ── Instruction Compiler ────────────────────────────────────────
 
-export function compileWizardInstruction(answers: WizardAnswers): string {
-  const parts: string[] = [];
+type InstructionEntry =
+  | { type: 'single'; map: Record<string, string>; fallback: string }
+  | { type: 'multi'; map: Record<string, string>; prefix: string };
 
-  // Mission
-  const mission = answers['mission_type'];
-  if (mission) {
-    const missionMap: Record<string, string> = {
+const ANSWER_TO_INSTRUCTION: Record<string, InstructionEntry> = {
+  mission_type: {
+    type: 'single',
+    fallback: 'Create an agent with this mission:',
+    map: {
       'Inbox / Feed Monitor': 'Create an agent that monitors incoming data streams, triages and categorizes items by importance, and surfaces what requires attention.',
       'Data Processor & Router': 'Create an agent that processes incoming data, extracts key information, transforms it as needed, and routes it to the appropriate downstream systems.',
       'Full Lifecycle Manager': 'Create a full lifecycle management agent that handles end-to-end processing: monitoring, extraction, action creation, follow-up tracking, and comprehensive reporting.',
       'Notification & Alert Hub': 'Create an agent that monitors conditions and thresholds, detects important events, and sends targeted alerts and notifications to the right people.',
-    };
-    parts.push(missionMap[mission as string] || `Create an agent with this mission: ${mission}`);
-  }
-
-  // Data scope
-  const scope = answers['data_scope'];
-  if (scope) {
-    const scopeMap: Record<string, string> = {
+    },
+  },
+  data_scope: {
+    type: 'single',
+    fallback: 'Data scope:',
+    map: {
       'All incoming data': 'It should process all incoming data without filtering.',
       'Specific sources (allowlist)': 'It should only process data from an explicitly configured allowlist of sources, senders, or domains. Include a configurable sender allowlist section in the prompt.',
       'Filter / label-based': 'It should only process data that matches specific filters, labels, or tags. Include configuration for filter rules.',
       'Custom rules': 'It should use custom rules to decide what to process, based on content analysis, keyword matching, or conditional logic.',
-    };
-    parts.push(scopeMap[scope as string] || `Data scope: ${scope}`);
-  }
-
-  // Data actions
-  const actions = answers['data_actions'];
-  if (Array.isArray(actions) && actions.length > 0) {
-    const actionDescriptions: Record<string, string> = {
+    },
+  },
+  data_actions: {
+    type: 'multi',
+    prefix: 'When processing data, the agent should:',
+    map: {
       'Create tasks in a project tool': 'create tasks in a project management tool with title, description, priority, and due date extracted from the source data',
       'Send notifications': 'send notifications and alerts via messaging channels when conditions are met',
       'Update spreadsheets or databases': 'update spreadsheets or databases with extracted data for tracking and analysis',
       'Draft responses for review': 'draft response templates for human review before sending',
-    };
-    const mapped = actions.map((a) => actionDescriptions[a] || a.toLowerCase());
-    parts.push(`When processing data, the agent should: ${mapped.join('; ')}.`);
-  }
-
-  // Autonomy
-  const autonomy = answers['autonomy_level'];
-  if (autonomy) {
-    const autonomyMap: Record<string, string> = {
+    },
+  },
+  autonomy_level: {
+    type: 'single',
+    fallback: 'Autonomy level:',
+    map: {
       'Read-only + report': 'The agent should be read-only — it can analyze and report findings but never modify or create anything externally.',
       'Read + organize': 'The agent can read, label, categorize, and organize data, but cannot send messages or create external records.',
       'Full access with approval gates': 'The agent should have full access to its connected services but must pause for human approval before sending outbound messages or taking any destructive actions.',
       'Full autonomous': 'The agent should operate fully autonomously without requiring approval for any actions.',
-    };
-    parts.push(autonomyMap[autonomy as string] || `Autonomy level: ${autonomy}`);
-  }
-
-  // Approval actions
-  const approvals = answers['approval_actions'];
-  if (Array.isArray(approvals) && approvals.length > 0) {
-    parts.push(`Specifically, require human approval for: ${approvals.join(', ').toLowerCase()}.`);
-  }
-
-  // Trigger
-  const trigger = answers['trigger_type'];
-  if (trigger) {
-    const triggerMap: Record<string, string> = {
+    },
+  },
+  approval_actions: {
+    type: 'multi',
+    prefix: 'Specifically, require human approval for:',
+    map: {},
+  },
+  trigger_type: {
+    type: 'single',
+    fallback: 'Trigger:',
+    map: {
       'Real-time (webhook / push)': 'Use a real-time webhook or push notification trigger for instant processing when new data arrives.',
       'Scheduled (cron)': 'Use a scheduled cron trigger to run at fixed intervals (suggest an appropriate schedule based on the use case).',
       'Polling interval': 'Use a polling trigger to check for new data at regular intervals.',
       'Manual only': 'Use a manual trigger — the agent only runs when explicitly invoked by the user.',
-    };
-    parts.push(triggerMap[trigger as string] || `Trigger: ${trigger}`);
-  }
-
-  // Reporting
-  const reporting = answers['reporting_style'];
-  if (reporting) {
-    const reportMap: Record<string, string> = {
+    },
+  },
+  reporting_style: {
+    type: 'single',
+    fallback: 'Reporting:',
+    map: {
       'Silent (log only)': 'The agent should operate silently, logging activity for review but not sending proactive notifications.',
       'Daily digest': 'The agent should generate a daily digest summarizing all activity: items processed, actions taken, items needing attention, and any errors.',
       'Per-run summary': 'The agent should send a brief summary notification after each processing run.',
       'Real-time notifications': 'The agent should send real-time notifications for every significant action taken.',
-    };
-    parts.push(reportMap[reporting as string] || `Reporting: ${reporting}`);
+    },
+  },
+};
+
+export function compileWizardInstruction(answers: WizardAnswers): string {
+  const parts: string[] = [];
+
+  for (const [key, entry] of Object.entries(ANSWER_TO_INSTRUCTION)) {
+    const value = answers[key];
+    if (!value) continue;
+
+    if (entry.type === 'single' && typeof value === 'string') {
+      parts.push(entry.map[value] || `${entry.fallback} ${value}`);
+    } else if (entry.type === 'multi' && Array.isArray(value) && value.length > 0) {
+      const mapped = value.map((v) => entry.map[v] || v.toLowerCase());
+      parts.push(`${entry.prefix} ${mapped.join('; ')}.`);
+    }
   }
 
-  // Additional context
   const additional = answers['additional_context'];
   if (additional && typeof additional === 'string' && additional.trim()) {
     parts.push(`\nAdditional context and requirements:\n${additional.trim()}`);

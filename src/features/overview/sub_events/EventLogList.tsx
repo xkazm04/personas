@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { Zap, ChevronDown, ChevronUp, RefreshCw, AlertCircle, CheckCircle2, Clock, Loader2 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { UuidLabel } from '@/features/shared/components/UuidLabel';
 import { motion, AnimatePresence } from 'framer-motion';
-import { listen } from '@tauri-apps/api/event';
+import { useEventBusListener } from '@/hooks/realtime/useEventBusListener';
 import { formatRelativeTime, EVENT_STATUS_COLORS, EVENT_TYPE_COLORS } from '@/lib/utils/formatters';
 import type { PersonaEvent } from '@/lib/types/types';
 
@@ -41,36 +41,18 @@ export default function EventLogList() {
   }, [fetchRecentEvents]);
 
   // Listen to Tauri event-bus for push updates
-  useEffect(() => {
-    let cancelled = false;
-    const setup = async () => {
-      const unlisten = await listen<PersonaEvent>('event-bus', (tauriEvent) => {
-        if (cancelled) return;
-        const evt = tauriEvent.payload;
-        usePersonaStore.setState((state) => {
-          const exists = state.recentEvents.some((e: PersonaEvent) => e.id === evt.id);
-          if (exists) return state;
-          const next = [evt, ...state.recentEvents].slice(0, 200);
-          return {
-            recentEvents: next,
-            pendingEventCount: next.filter((e: PersonaEvent) => e.status === 'pending').length,
-          };
-        });
-      });
-      // Store unlisten for cleanup
-      if (cancelled) {
-        unlisten();
-      } else {
-        cleanupRef = unlisten;
-      }
-    };
-    let cleanupRef: (() => void) | null = null;
-    setup();
-    return () => {
-      cancelled = true;
-      cleanupRef?.();
-    };
+  const handleBusEvent = useCallback((evt: PersonaEvent) => {
+    usePersonaStore.setState((state) => {
+      const exists = state.recentEvents.some((e: PersonaEvent) => e.id === evt.id);
+      if (exists) return state;
+      const next = [evt, ...state.recentEvents].slice(0, 200);
+      return {
+        recentEvents: next,
+        pendingEventCount: next.filter((e: PersonaEvent) => e.status === 'pending').length,
+      };
+    });
   }, []);
+  useEventBusListener(handleBusEvent);
 
   const filteredEvents = filter === 'all'
     ? recentEvents
