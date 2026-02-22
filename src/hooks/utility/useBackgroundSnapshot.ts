@@ -9,6 +9,7 @@ export interface SnapshotLike {
   error: string | null;
   lines: string[];
   draft: N8nPersonaDraft | null;
+  questions?: unknown[] | null;
 }
 
 export interface UseBackgroundSnapshotOptions {
@@ -28,6 +29,8 @@ export interface UseBackgroundSnapshotOptions {
   onFailed: (error: string) => void;
   /** Called when polling hits 3 consecutive fetch errors (session lost). */
   onSessionLost: () => void;
+  /** Called when the backend is awaiting user answers and questions are available. */
+  onQuestions?: (questions: unknown[]) => void;
   /** Polling interval in ms. Defaults to 1500. */
   interval?: number;
   /** Number of consecutive fetch failures before treating session as lost. Defaults to 3. */
@@ -50,16 +53,19 @@ export function useBackgroundSnapshot({
   onCompletedNoDraft,
   onFailed,
   onSessionLost,
+  onQuestions,
   interval = 1500,
   maxFailures = 3,
 }: UseBackgroundSnapshotOptions) {
   const pollTimerRef = useRef<number | null>(null);
   const notFoundCountRef = useRef(0);
+  const questionsDeliveredRef = useRef(false);
 
   useEffect(() => {
     if (!snapshotId) return;
 
     notFoundCountRef.current = 0;
+    questionsDeliveredRef.current = false;
 
     const syncSnapshot = async () => {
       try {
@@ -71,6 +77,21 @@ export function useBackgroundSnapshot({
 
         if (snapshot.status === 'running' || snapshot.status === 'completed' || snapshot.status === 'failed') {
           onPhase(snapshot.status);
+        }
+
+        // Handle awaiting_answers: forward questions and pause polling
+        if (snapshot.status === 'awaiting_answers' && onQuestions && !questionsDeliveredRef.current) {
+          const questions = Array.isArray(snapshot.questions) ? snapshot.questions : [];
+          if (questions.length > 0) {
+            questionsDeliveredRef.current = true;
+            onQuestions(questions);
+            // Stop polling — user needs to answer before we continue
+            if (pollTimerRef.current !== null) {
+              window.clearInterval(pollTimerRef.current);
+              pollTimerRef.current = null;
+            }
+            return;
+          }
         }
 
         if (snapshot.draft) {
@@ -116,7 +137,7 @@ export function useBackgroundSnapshot({
         pollTimerRef.current = null;
       }
     };
-  }, [snapshotId, getSnapshot, onLines, onPhase, onDraft, onCompletedNoDraft, onFailed, onSessionLost, interval, maxFailures]);
+  }, [snapshotId, getSnapshot, onLines, onPhase, onDraft, onCompletedNoDraft, onFailed, onSessionLost, onQuestions, interval, maxFailures]);
 
   // Cleanup poll timer on unmount
   useEffect(() => {

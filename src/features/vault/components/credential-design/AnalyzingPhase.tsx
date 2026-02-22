@@ -71,11 +71,11 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
     >
       {/* Time estimate + elapsed */}
       <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground/60">
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground/80">
           <Clock className="w-3 h-3" />
           <span>{formatElapsed(elapsed)} elapsed</span>
         </div>
-        <span className="text-xs text-muted-foreground/40">Typically 15–30 seconds</span>
+        <span className="text-sm text-muted-foreground/80">Typically 15–30 seconds</span>
       </div>
 
       {/* Progress bar */}
@@ -114,15 +114,15 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
             <div className="flex-1 min-w-0">
               <span className={`text-sm font-medium ${
                 stage.status === 'completed'
-                  ? 'text-muted-foreground/50'
+                  ? 'text-muted-foreground/90'
                   : stage.status === 'active'
                     ? 'text-foreground'
-                    : 'text-muted-foreground/30'
+                    : 'text-muted-foreground/80'
               }`}>
                 {stage.label}
               </span>
               {stage.status === 'active' && (
-                <span className="ml-2 text-xs text-muted-foreground/50">{stage.description}</span>
+                <span className="ml-2 text-sm text-muted-foreground/90">{stage.description}</span>
               )}
             </div>
           </motion.div>
@@ -131,7 +131,7 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
 
       {/* Latest output detail */}
       {latestLine && (
-        <div className="px-3 py-2 rounded-xl bg-secondary/30 border border-primary/10 text-xs text-muted-foreground/60 font-mono truncate">
+        <div className="px-3 py-2 rounded-xl bg-secondary/30 border border-primary/10 text-sm text-muted-foreground/80 font-mono truncate">
           {latestLine}
         </div>
       )}
@@ -139,7 +139,7 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
       <div className="flex justify-end">
         <button
           onClick={onCancel}
-          className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/70 rounded-xl text-sm transition-colors"
+          className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-xl text-sm transition-colors"
         >
           Cancel
         </button>

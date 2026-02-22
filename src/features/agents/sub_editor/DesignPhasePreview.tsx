@@ -89,8 +89,8 @@ export function DesignPhasePreview({
         <div className="px-3 py-2.5 rounded-xl bg-primary/5 border border-primary/10">
           <div className="flex items-start gap-2">
             <ArrowRight className="w-3.5 h-3.5 text-primary/60 mt-0.5 shrink-0" />
-            <p className="text-xs text-muted-foreground/70">
-              <span className="font-medium text-foreground/70">Will apply: </span>
+            <p className="text-sm text-muted-foreground/90">
+              <span className="font-medium text-foreground/90">Will apply: </span>
               {changeSummary.join(', ').toLowerCase()}
             </p>
           </div>
@@ -108,14 +108,14 @@ export function DesignPhasePreview({
         </button>
         <button
           onClick={onRefine}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm bg-secondary/50 text-foreground/70 hover:bg-secondary/70 transition-colors"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm bg-secondary/50 text-foreground/90 hover:bg-secondary/70 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           Refine
         </button>
         <button
           onClick={onDiscard}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm text-muted-foreground hover:text-foreground/60 transition-colors"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm text-muted-foreground hover:text-foreground/95 transition-colors"
         >
           Discard
         </button>

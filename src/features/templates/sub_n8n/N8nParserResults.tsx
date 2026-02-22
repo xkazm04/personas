@@ -103,10 +103,10 @@ export function N8nParserResults({
                 <p className="text-sm font-medium text-foreground/80">
                   Analyzing workflow and preparing transformation...
                 </p>
-                <p className="text-xs text-muted-foreground/50 mt-1.5">
+                <p className="text-sm text-muted-foreground/90 mt-1.5">
                   Usually takes about 1 minute
                 </p>
-                <p className="text-xs font-mono text-muted-foreground/40 mt-1">
+                <p className="text-sm font-mono text-muted-foreground/80 mt-1">
                   {Math.floor(elapsedSeconds / 60)}:{(elapsedSeconds % 60).toString().padStart(2, '0')}
                 </p>
               </div>
@@ -123,12 +123,12 @@ export function N8nParserResults({
           </div>
           <div>
             <h3 className="text-sm font-semibold text-foreground/90">{workflowName}</h3>
-            <p className="text-xs text-muted-foreground/50">{parsedResult.summary}</p>
+            <p className="text-sm text-muted-foreground/90">{parsedResult.summary}</p>
           </div>
         </div>
         <button
           onClick={onReset}
-          className="px-3 py-1.5 text-xs rounded-lg border border-primary/15 hover:bg-secondary/50 text-muted-foreground/60 transition-colors"
+          className="px-3 py-1.5 text-sm rounded-lg border border-primary/15 hover:bg-secondary/50 text-muted-foreground/80 transition-colors"
         >
           Import Another
         </button>
@@ -136,7 +136,7 @@ export function N8nParserResults({
 
       {/* Selection summary */}
       {hasSelection && (
-        <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-wider text-muted-foreground/45">
+        <div className="flex items-center gap-2 text-sm font-mono uppercase tracking-wider text-muted-foreground/45">
           <span className="px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/15">
             {toolCount} tools
           </span>
@@ -146,7 +146,7 @@ export function N8nParserResults({
           <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/15">
             {connectorCount} connectors
           </span>
-          <span className="text-muted-foreground/30 ml-1">selected for import</span>
+          <span className="text-muted-foreground/80 ml-1">selected for import</span>
         </div>
       )}
 
@@ -154,7 +154,7 @@ export function N8nParserResults({
       <div className="rounded-xl border border-primary/10 bg-secondary/20 divide-y divide-primary/10">
         {parsedResult.suggested_tools.length > 0 && (
           <div className="p-4">
-            <h4 className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-2.5 flex items-center gap-1">
+            <h4 className="text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider mb-2.5 flex items-center gap-1">
               <Wrench className="w-3 h-3" />
               Tools ({parsedResult.suggested_tools.length})
             </h4>
@@ -167,7 +167,7 @@ export function N8nParserResults({
                     className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-all duration-150 ${
                       isSelected
                         ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                        : 'bg-secondary/30 text-muted-foreground/30 border-primary/10 opacity-60'
+                        : 'bg-secondary/30 text-muted-foreground/80 border-primary/10 opacity-60'
                     } ${onToggleTool ? 'cursor-pointer hover:opacity-80' : ''}`}
                     onClick={() => onToggleTool?.(i)}
                   >
@@ -177,7 +177,7 @@ export function N8nParserResults({
                         onChange={() => onToggleTool?.(i)}
                       />
                     )}
-                    <span className="text-[10px] font-mono">{tool}</span>
+                    <span className="text-sm font-mono">{tool}</span>
                   </div>
                 );
               })}
@@ -188,7 +188,7 @@ export function N8nParserResults({
         {/* Triggers */}
         {parsedResult.suggested_triggers.length > 0 && (
           <div className="p-4">
-            <h4 className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-2.5 flex items-center gap-1">
+            <h4 className="text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider mb-2.5 flex items-center gap-1">
               <Zap className="w-3 h-3" />
               Triggers ({parsedResult.suggested_triggers.length})
             </h4>
@@ -211,14 +211,14 @@ export function N8nParserResults({
                         onChange={() => onToggleTrigger?.(i)}
                       />
                     )}
-                    <span className={`px-1.5 py-0.5 text-[10px] font-mono rounded border ${
+                    <span className={`px-1.5 py-0.5 text-sm font-mono rounded border ${
                       isSelected
                         ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                        : 'bg-secondary/30 text-muted-foreground/30 border-primary/10'
+                        : 'bg-secondary/30 text-muted-foreground/80 border-primary/10'
                     }`}>
                       {trigger.trigger_type}
                     </span>
-                    <span className={`text-xs truncate ${isSelected ? 'text-foreground/60' : 'text-muted-foreground/30'}`}>
+                    <span className={`text-sm truncate ${isSelected ? 'text-foreground/80' : 'text-muted-foreground/80'}`}>
                       {trigger.description}
                     </span>
                   </div>
@@ -231,7 +231,7 @@ export function N8nParserResults({
         {/* Connectors */}
         {parsedResult.suggested_connectors && parsedResult.suggested_connectors.length > 0 && (
           <div className="p-4">
-            <h4 className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-2.5 flex items-center gap-1">
+            <h4 className="text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider mb-2.5 flex items-center gap-1">
               <Link className="w-3 h-3" />
               Connectors ({parsedResult.suggested_connectors.length})
             </h4>
@@ -244,7 +244,7 @@ export function N8nParserResults({
                     className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-all duration-150 ${
                       isSelected
                         ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                        : 'bg-secondary/30 text-muted-foreground/30 border-primary/10 opacity-60'
+                        : 'bg-secondary/30 text-muted-foreground/80 border-primary/10 opacity-60'
                     } ${onToggleConnector ? 'cursor-pointer hover:opacity-80' : ''}`}
                     onClick={() => onToggleConnector?.(conn.name)}
                   >
@@ -254,7 +254,7 @@ export function N8nParserResults({
                         onChange={() => onToggleConnector?.(conn.name)}
                       />
                     )}
-                    <span className="text-[10px] font-medium">{conn.name}</span>
+                    <span className="text-sm font-medium">{conn.name}</span>
                   </div>
                 );
               })}

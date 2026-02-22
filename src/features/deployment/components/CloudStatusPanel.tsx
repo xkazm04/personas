@@ -14,7 +14,7 @@ export interface CloudStatusPanelProps {
 export function CloudStatusPanel({ status, isLoading, onRefresh }: CloudStatusPanelProps) {
   if (!status && isLoading) {
     return (
-      <div className="flex items-center justify-center py-12 text-muted-foreground/50">
+      <div className="flex items-center justify-center py-12 text-muted-foreground/90">
         <Loader2 className="w-5 h-5 animate-spin" />
       </div>
     );
@@ -22,7 +22,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh }: CloudStatusPa
 
   if (!status) {
     return (
-      <p className="text-sm text-muted-foreground/50 py-8 text-center">
+      <p className="text-sm text-muted-foreground/90 py-8 text-center">
         No status data available.
       </p>
     );
@@ -37,7 +37,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh }: CloudStatusPa
         <button
           onClick={onRefresh}
           disabled={isLoading}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-secondary/40 border border-primary/15 text-muted-foreground/60 hover:text-foreground/80 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md bg-secondary/40 border border-primary/15 text-muted-foreground/80 hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           Refresh
@@ -46,7 +46,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh }: CloudStatusPa
 
       {/* Worker counts */}
       <div>
-        <h3 className="text-xs font-medium text-muted-foreground/50 uppercase tracking-wider mb-3">
+        <h3 className="text-sm font-medium text-muted-foreground/90 uppercase tracking-wider mb-3">
           Workers
         </h3>
         <div className="flex flex-wrap gap-3">
@@ -58,7 +58,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh }: CloudStatusPa
 
       {/* Stats */}
       <div>
-        <h3 className="text-xs font-medium text-muted-foreground/50 uppercase tracking-wider mb-3">
+        <h3 className="text-sm font-medium text-muted-foreground/90 uppercase tracking-wider mb-3">
           Activity
         </h3>
         <div className="grid grid-cols-2 gap-3">
@@ -69,7 +69,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh }: CloudStatusPa
 
       {/* Claude token indicator */}
       <div>
-        <h3 className="text-xs font-medium text-muted-foreground/50 uppercase tracking-wider mb-3">
+        <h3 className="text-sm font-medium text-muted-foreground/90 uppercase tracking-wider mb-3">
           Claude Token
         </h3>
         <div className="flex items-center gap-2 p-3 rounded-lg bg-secondary/30 border border-primary/10">
@@ -108,7 +108,7 @@ function WorkerBadge({ label, count, color }: { label: string; count: number; co
   return (
     <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${colorMap[color]}`}>
       <span className="text-lg font-semibold">{count}</span>
-      <span className="text-xs opacity-70">{label}</span>
+      <span className="text-sm opacity-70">{label}</span>
     </div>
   );
 }
@@ -116,7 +116,7 @@ function WorkerBadge({ label, count, color }: { label: string; count: number; co
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
     <div className="p-3 rounded-lg bg-secondary/30 border border-primary/10">
-      <p className="text-xs text-muted-foreground/50">{label}</p>
+      <p className="text-sm text-muted-foreground/90">{label}</p>
       <p className="text-xl font-semibold text-foreground/80 mt-1">{value}</p>
     </div>
   );

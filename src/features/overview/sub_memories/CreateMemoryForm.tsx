@@ -35,7 +35,7 @@ function InteractiveImportanceDots({
           </button>
         ))}
       </div>
-      <span className="text-[10px] text-muted-foreground/50 tabular-nums min-w-[24px]">({display}/5)</span>
+      <span className="text-sm text-muted-foreground/90 tabular-nums min-w-[24px]">({display}/5)</span>
     </div>
   );
 }
@@ -104,7 +104,7 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
         {/* Row 1: Agent + Category side by side */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="text-[11px] font-mono uppercase text-muted-foreground/50 mb-1.5 block">Agent</label>
+            <label className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5 block">Agent</label>
             <select
               value={personaId}
               onChange={(e) => setPersonaId(e.target.value)}
@@ -117,7 +117,7 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
           </div>
 
           <div>
-            <label className="text-[11px] font-mono uppercase text-muted-foreground/50 mb-1.5 block">Category</label>
+            <label className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5 block">Category</label>
             <div className="flex items-center gap-1.5 flex-wrap">
               {ALL_MEMORY_CATEGORIES.map((cat) => {
                 const defaultColors = { label: cat, bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/20' };
@@ -128,10 +128,10 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
                     key={cat}
                     type="button"
                     onClick={() => setCategory(cat)}
-                    className={`px-2 py-1 text-[10px] font-mono uppercase rounded-md border transition-all ${
+                    className={`px-2 py-1 text-sm font-mono uppercase rounded-md border transition-all ${
                       isActive
                         ? `${colors.bg} ${colors.text} ${colors.border} ring-1 ring-offset-1 ring-offset-background ${colors.border.replace('border-', 'ring-')}`
-                        : 'bg-secondary/40 text-muted-foreground/40 border-primary/10 hover:text-muted-foreground/60 hover:border-primary/20'
+                        : 'bg-secondary/40 text-muted-foreground/80 border-primary/10 hover:text-muted-foreground hover:border-primary/20'
                     }`}
                   >
                     {colors.label}
@@ -144,44 +144,44 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
 
         {/* Row 2: Title */}
         <div>
-          <label className="text-[11px] font-mono uppercase text-muted-foreground/50 mb-1.5 block">Title</label>
+          <label className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5 block">Title</label>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Always use metric units"
-            className="w-full px-3 py-2 text-sm bg-background/60 border border-primary/15 rounded-lg outline-none focus:border-violet-500/40 text-foreground/80 placeholder:text-muted-foreground/30"
+            className="w-full px-3 py-2 text-sm bg-background/60 border border-primary/15 rounded-lg outline-none focus:border-violet-500/40 text-foreground/80 placeholder:text-muted-foreground/80"
             autoFocus
           />
         </div>
 
         {/* Row 3: Content */}
         <div>
-          <label className="text-[11px] font-mono uppercase text-muted-foreground/50 mb-1.5 block">Content</label>
+          <label className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5 block">Content</label>
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Describe what the agent should remember..."
             rows={3}
-            className="w-full px-3 py-2 text-sm bg-background/60 border border-primary/15 rounded-lg outline-none focus:border-violet-500/40 text-foreground/80 placeholder:text-muted-foreground/30 resize-none"
+            className="w-full px-3 py-2 text-sm bg-background/60 border border-primary/15 rounded-lg outline-none focus:border-violet-500/40 text-foreground/80 placeholder:text-muted-foreground/80 resize-none"
           />
         </div>
 
         {/* Row 4: Importance + Tags side by side */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="text-[11px] font-mono uppercase text-muted-foreground/50 mb-1.5 block">Importance</label>
+            <label className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5 block">Importance</label>
             <InteractiveImportanceDots value={importance} onChange={setImportance} />
           </div>
 
           <div>
-            <label className="text-[11px] font-mono uppercase text-muted-foreground/50 mb-1.5 block">
-              Tags <span className="normal-case text-muted-foreground/30">(comma-separated)</span>
+            <label className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5 block">
+              Tags <span className="normal-case text-muted-foreground/80">(comma-separated)</span>
             </label>
             <input
               value={tagsInput}
               onChange={(e) => setTagsInput(e.target.value)}
               placeholder="e.g. units, formatting, output"
-              className="w-full px-3 py-2 text-sm bg-background/60 border border-primary/15 rounded-lg outline-none focus:border-violet-500/40 text-foreground/80 placeholder:text-muted-foreground/30"
+              className="w-full px-3 py-2 text-sm bg-background/60 border border-primary/15 rounded-lg outline-none focus:border-violet-500/40 text-foreground/80 placeholder:text-muted-foreground/80"
             />
           </div>
         </div>
@@ -191,7 +191,7 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
           <button
             type="button"
             onClick={onClose}
-            className="px-3 py-1.5 text-sm text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+            className="px-3 py-1.5 text-sm text-muted-foreground/80 hover:text-foreground/95 transition-colors"
           >
             Cancel
           </button>

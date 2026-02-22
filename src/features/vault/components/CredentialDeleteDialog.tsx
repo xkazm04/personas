@@ -54,23 +54,23 @@ export function CredentialDeleteDialog({
                   </div>
                   <div>
                     <h3 className="text-sm font-semibold text-foreground/90">Delete Credential</h3>
-                    <p className="text-xs text-muted-foreground/50 mt-1">This action cannot be undone after the undo window expires.</p>
+                    <p className="text-sm text-muted-foreground/90 mt-1">This action cannot be undone after the undo window expires.</p>
                   </div>
                 </div>
 
                 <div className="bg-secondary/40 border border-primary/10 rounded-xl p-3 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-mono uppercase text-muted-foreground/40">Name</span>
+                    <span className="text-sm font-mono uppercase text-muted-foreground/80">Name</span>
                     <span className="text-sm text-foreground/80">{deleteConfirm.credential.name}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-mono uppercase text-muted-foreground/40">Type</span>
-                    <span className="text-xs font-mono text-muted-foreground/60">{deleteConfirm.credential.service_type}</span>
+                    <span className="text-sm font-mono uppercase text-muted-foreground/80">Type</span>
+                    <span className="text-sm font-mono text-muted-foreground/80">{deleteConfirm.credential.service_type}</span>
                   </div>
                   {deleteConfirm.eventCount > 0 && (
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-mono uppercase text-muted-foreground/40">Event triggers</span>
-                      <span className="text-xs font-medium text-amber-400">
+                      <span className="text-sm font-mono uppercase text-muted-foreground/80">Event triggers</span>
+                      <span className="text-sm font-medium text-amber-400">
                         {deleteConfirm.eventCount} will be removed
                       </span>
                     </div>
@@ -80,13 +80,13 @@ export function CredentialDeleteDialog({
                 <div className="flex items-center justify-end gap-2 pt-1">
                   <button
                     onClick={onCancelDelete}
-                    className="px-4 py-2 text-xs text-muted-foreground/60 hover:text-foreground/70 rounded-lg hover:bg-secondary/40 transition-colors"
+                    className="px-4 py-2 text-sm text-muted-foreground/80 hover:text-foreground/95 rounded-lg hover:bg-secondary/40 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={onConfirmDelete}
-                    className="px-4 py-2 text-xs font-medium rounded-lg bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors"
+                    className="px-4 py-2 text-sm font-medium rounded-lg bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors"
                   >
                     Delete
                   </button>
@@ -112,7 +112,7 @@ export function CredentialDeleteDialog({
               </span>
               <button
                 onClick={onUndo}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30 transition-colors"
               >
                 <Undo2 className="w-3.5 h-3.5" />
                 Undo

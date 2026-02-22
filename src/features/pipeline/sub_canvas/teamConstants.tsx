@@ -39,7 +39,7 @@ interface PersonaAvatarProps {
 }
 
 const sizeClasses = {
-  sm: { container: 'w-7 h-7', img: 'w-4 h-4', text: 'text-xs' },
+  sm: { container: 'w-7 h-7', img: 'w-4 h-4', text: 'text-sm' },
   md: { container: 'w-9 h-9', img: 'w-5 h-5', text: 'text-base' },
   lg: { container: 'w-10 h-10', img: 'w-5 h-5', text: 'text-base' },
 };

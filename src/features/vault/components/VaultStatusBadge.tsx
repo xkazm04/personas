@@ -46,7 +46,7 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
   const hasPlaintext = vault.plaintext > 0;
   const isKeychain = vault.key_source === 'keychain';
 
-  const badgeClass = `flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded-md border cursor-pointer transition-colors ${
+  const badgeClass = `flex items-center gap-1.5 text-sm px-2 py-0.5 rounded-md border cursor-pointer transition-colors ${
     hasPlaintext
       ? 'bg-amber-500/10 border-amber-500/20 text-amber-400 hover:bg-amber-500/15'
       : isKeychain
@@ -94,10 +94,10 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
 
           {/* Stats row */}
           <div className="flex gap-3 px-4 py-2.5 border-b border-primary/10 bg-secondary/20">
-            <span className="text-[11px] text-muted-foreground/60">{vault.total} credential{vault.total !== 1 ? 's' : ''}</span>
-            <span className="text-[11px] text-emerald-400/70">{vault.encrypted} encrypted</span>
+            <span className="text-sm text-muted-foreground/80">{vault.total} credential{vault.total !== 1 ? 's' : ''}</span>
+            <span className="text-sm text-emerald-400/70">{vault.encrypted} encrypted</span>
             {hasPlaintext && (
-              <span className="text-[11px] text-amber-400/70">{vault.plaintext} unencrypted</span>
+              <span className="text-sm text-amber-400/70">{vault.plaintext} unencrypted</span>
             )}
           </div>
 
@@ -128,7 +128,7 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
               <button
                 onClick={handleEncryptNow}
                 disabled={isMigrating}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-amber-500/15 border border-amber-500/25 text-amber-300 text-xs font-medium hover:bg-amber-500/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-amber-500/15 border border-amber-500/25 text-amber-300 text-sm font-medium hover:bg-amber-500/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isMigrating ? (
                   <><Loader2 className="w-3.5 h-3.5 animate-spin" />Encrypting...</>
@@ -141,7 +141,7 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
 
           {/* Migration result */}
           {migrationResult && (
-            <div className={`mx-4 mb-3 px-3 py-2 rounded-lg text-xs ${
+            <div className={`mx-4 mb-3 px-3 py-2 rounded-lg text-sm ${
               migrationResult.failed > 0
                 ? 'bg-red-500/10 border border-red-500/20 text-red-300'
                 : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300'
@@ -162,8 +162,8 @@ function ExplainerRow({ icon, title, detail }: { icon: React.ReactNode; title: s
     <div className="flex gap-2.5">
       <div className="mt-0.5 shrink-0">{icon}</div>
       <div>
-        <p className="text-xs font-medium text-foreground/80">{title}</p>
-        <p className="text-[11px] text-muted-foreground/50 leading-relaxed">{detail}</p>
+        <p className="text-sm font-medium text-foreground/80">{title}</p>
+        <p className="text-sm text-muted-foreground/90 leading-relaxed">{detail}</p>
       </div>
     </div>
   );

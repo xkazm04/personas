@@ -67,10 +67,10 @@ export function TemplatePromptPreview({
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-t-lg border border-b-0 transition-all whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-t-lg border border-b-0 transition-all whitespace-nowrap ${
                 isActive
                   ? 'bg-violet-500/10 border-violet-500/20 text-violet-300'
-                  : 'border-transparent text-muted-foreground/50 hover:text-muted-foreground/70 hover:bg-secondary/40'
+                  : 'border-transparent text-muted-foreground/90 hover:text-muted-foreground hover:bg-secondary/40'
               }`}
             >
               <TabIcon className="w-3.5 h-3.5" />
@@ -103,7 +103,7 @@ export function TemplatePromptPreview({
         <div className="border-t border-primary/10">
           <button
             onClick={() => setShowFullPrompt(!showFullPrompt)}
-            className="flex items-center gap-2 px-4 py-2.5 text-xs text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors w-full"
+            className="flex items-center gap-2 px-4 py-2.5 text-sm text-muted-foreground/90 hover:text-muted-foreground transition-colors w-full"
           >
             <Eye className="w-3.5 h-3.5" />
             {showFullPrompt ? 'Hide' : 'View'} Full Prompt

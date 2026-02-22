@@ -12,7 +12,7 @@ export function DesignPhaseApplying() {
       className="flex flex-col items-center justify-center py-12 gap-3"
     >
       <Loader2 className="w-6 h-6 text-primary animate-spin" />
-      <span className="text-sm text-muted-foreground/60">Applying changes...</span>
+      <span className="text-sm text-muted-foreground/80">Applying changes...</span>
     </motion.div>
   );
 }

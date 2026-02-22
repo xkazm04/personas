@@ -40,14 +40,14 @@ export function IdlePhase({
       exit={{ opacity: 0, y: -10 }}
       className="space-y-4"
     >
-      <div className="text-xs text-muted-foreground/80">
+      <div className="text-sm text-muted-foreground/80">
         Describe the tool and credential type. Claude will generate the exact fields you need, then you can save them securely.
       </div>
 
       <div className="flex flex-wrap gap-2">
         <button
           onClick={onToggleTemplates}
-          className="px-2.5 py-1 text-xs rounded-lg border border-primary/20 text-primary hover:bg-primary/10 transition-colors"
+          className="px-2.5 py-1 text-sm rounded-lg border border-primary/20 text-primary hover:bg-primary/10 transition-colors"
         >
           From Template
         </button>
@@ -56,7 +56,7 @@ export function IdlePhase({
           <button
             key={hint}
             onClick={() => onInstructionChange(hint)}
-            className="px-2.5 py-1 text-xs rounded-lg border border-primary/15 text-foreground/85 hover:bg-secondary/60 transition-colors"
+            className="px-2.5 py-1 text-sm rounded-lg border border-primary/15 text-foreground/85 hover:bg-secondary/60 transition-colors"
           >
             {hint}
           </button>
@@ -65,16 +65,16 @@ export function IdlePhase({
 
       {showTemplates && (
         <div className="p-3 rounded-xl border border-primary/15 bg-secondary/20 space-y-2">
-          <p className="text-xs text-muted-foreground/75">Saved local templates</p>
+          <p className="text-sm text-muted-foreground/75">Saved local templates</p>
           <input
             type="text"
             value={templateSearch}
             onChange={(e) => onTemplateSearchChange(e.target.value)}
             placeholder="Search templates"
-            className="w-full px-3 py-1.5 rounded-lg border border-primary/15 bg-background/40 text-xs text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full px-3 py-1.5 rounded-lg border border-primary/15 bg-background/40 text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           {templateConnectors.length === 0 ? (
-            <p className="text-xs text-muted-foreground/70">No templates yet. Save a successfully tested connector first.</p>
+            <p className="text-sm text-muted-foreground/90">No templates yet. Save a successfully tested connector first.</p>
           ) : (
             <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
               {templateConnectors.map((conn) => (
@@ -94,8 +94,8 @@ export function IdlePhase({
                         <Plug className="w-3.5 h-3.5" style={{ color: conn.color }} />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs text-foreground truncate">{conn.label}</p>
-                        <p className="text-[10px] text-muted-foreground/65 truncate">{conn.category}</p>
+                        <p className="text-sm text-foreground truncate">{conn.label}</p>
+                        <p className="text-sm text-muted-foreground/65 truncate">{conn.category}</p>
                       </div>
                     </div>
                     <button
@@ -103,7 +103,7 @@ export function IdlePhase({
                         e.stopPropagation();
                         onApplyTemplate(conn.name);
                       }}
-                      className="px-2 py-1 text-[11px] rounded-md border border-primary/20 bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
+                      className="px-2 py-1 text-sm rounded-md border border-primary/20 bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
                     >
                       Use
                     </button>
@@ -116,7 +116,7 @@ export function IdlePhase({
                         exit={{ height: 0, opacity: 0 }}
                         className="overflow-hidden border-t border-primary/10"
                       >
-                        <div className="px-2.5 py-2 text-[11px] text-muted-foreground/80">
+                        <div className="px-2.5 py-2 text-sm text-muted-foreground/80">
                           {(() => {
                             const meta = (conn.metadata ?? {}) as Record<string, unknown>;
                             if (typeof meta.summary === 'string' && meta.summary.trim()) {

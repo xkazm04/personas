@@ -46,7 +46,7 @@ const STATUS_COLOR = {
   ready: 'text-emerald-400',
   missing: 'text-amber-400',
   unhealthy: 'text-red-400',
-  unknown: 'text-muted-foreground/40',
+  unknown: 'text-muted-foreground/80',
 } as const;
 
 /**
@@ -60,7 +60,7 @@ export function ConnectorReadiness({ statuses, compact = true }: ConnectorReadin
   if (compact) {
     return (
       <span
-        className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full border ${config.bg} ${config.color}`}
+        className={`inline-flex items-center gap-1 px-2 py-1 text-sm rounded-full border ${config.bg} ${config.color}`}
         title={`${statuses.length} connector${statuses.length !== 1 ? 's' : ''}: ${config.label}`}
       >
         <StatusIcon className="w-3 h-3" />
@@ -73,7 +73,7 @@ export function ConnectorReadiness({ statuses, compact = true }: ConnectorReadin
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <StatusIcon className={`w-4 h-4 ${config.color}`} />
-        <span className="text-sm font-medium text-foreground/70">{config.label}</span>
+        <span className="text-sm font-medium text-foreground/90">{config.label}</span>
       </div>
       {statuses.map((status) => {
         const Icon = STATUS_ICON[status.health];
@@ -81,12 +81,12 @@ export function ConnectorReadiness({ statuses, compact = true }: ConnectorReadin
         return (
           <div key={status.connector_name} className="flex items-center gap-2 pl-6">
             <Icon className={`w-3.5 h-3.5 ${color}`} />
-            <span className="text-xs text-foreground/60">{status.connector_name}</span>
+            <span className="text-sm text-foreground/80">{status.connector_name}</span>
             {!status.has_credential && status.installed && (
-              <span className="text-[10px] text-amber-400/60">needs credential</span>
+              <span className="text-sm text-amber-400/60">needs credential</span>
             )}
             {!status.installed && (
-              <span className="text-[10px] text-amber-400/60">not installed</span>
+              <span className="text-sm text-amber-400/60">not installed</span>
             )}
           </div>
         );
@@ -106,15 +106,8 @@ export function deriveConnectorReadiness(
   return connectors.map((conn) => {
     const installed = installedConnectorNames.has(conn.name);
     const has_credential = credentialServiceTypes.has(conn.name);
-    let health: ConnectorReadinessStatus['health'] = 'unknown';
-
-    if (installed && has_credential) {
-      health = 'ready';
-    } else if (!installed) {
-      health = 'missing';
-    } else {
-      health = 'missing';
-    }
+    const health: ConnectorReadinessStatus['health'] =
+      installed && has_credential ? 'ready' : 'missing';
 
     return {
       connector_name: conn.name,

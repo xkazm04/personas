@@ -54,7 +54,7 @@ export function CredentialTemplateForm({
         </div>
         <div>
           <h4 className="font-medium text-foreground">New {selectedConnector.label} Credential</h4>
-          <p className="text-xs text-muted-foreground/40">
+          <p className="text-sm text-muted-foreground/80">
             {selectedConnector.healthcheck_config?.description || 'Configure credential fields'}
           </p>
         </div>

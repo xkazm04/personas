@@ -24,10 +24,10 @@ export function DayRangePicker({ value, onChange }: DayRangePickerProps) {
         <button
           key={opt.value}
           onClick={() => onChange(opt.value)}
-          className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+          className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
             value === opt.value
               ? 'bg-background text-foreground shadow-sm border border-primary/20'
-              : 'text-muted-foreground/60 hover:text-muted-foreground'
+              : 'text-muted-foreground/80 hover:text-muted-foreground'
           }`}
         >
           {opt.label}
@@ -52,7 +52,7 @@ export function PersonaSelect({ value, onChange, personas }: PersonaSelectProps)
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="bg-secondary/50 border border-primary/20 rounded-lg px-3 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 appearance-none cursor-pointer"
+      className="bg-secondary/50 border border-primary/20 rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 appearance-none cursor-pointer"
     >
       <option value="">All Personas</option>
       {personas.map((p) => (

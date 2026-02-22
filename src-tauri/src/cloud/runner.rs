@@ -118,7 +118,6 @@ pub async fn run_cloud_execution(
                 actual_lines = poll.output_lines,
                 "Cloud orchestrator returned fewer output lines than offset — possible state reset"
             );
-            offset = 0;
             poll.output.as_slice()
         } else {
             poll.output.get(offset as usize..).unwrap_or(&[])

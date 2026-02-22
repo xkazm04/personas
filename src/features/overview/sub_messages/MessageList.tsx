@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronRight, MessageSquare, CheckCheck, RefreshCw, Trash2, Send, AlertCircle, Clock, CheckCircle2, Loader2, ExternalLink, Check, X, Copy } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
+import { MarkdownRenderer } from '@/features/shared/components/MarkdownRenderer';
 import type { PersonaMessage } from '@/lib/types/types';
 import type { PersonaMessageDelivery } from '@/lib/bindings/PersonaMessageDelivery';
 import { getMessageDeliveries } from '@/api/tauriApi';
@@ -14,8 +15,8 @@ import { formatRelativeTime } from '@/lib/utils/formatters';
 
 const priorityConfig: Record<string, { color: string; bgColor: string; borderColor: string; label: string }> = {
   high: { color: 'text-red-400', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30', label: 'High' },
-  normal: { color: 'text-foreground/60', bgColor: 'bg-secondary/30', borderColor: 'border-primary/15', label: 'Normal' },
-  low: { color: 'text-muted-foreground/50', bgColor: 'bg-muted/20', borderColor: 'border-muted-foreground/20', label: 'Low' },
+  normal: { color: 'text-foreground/80', bgColor: 'bg-secondary/30', borderColor: 'border-primary/15', label: 'Normal' },
+  low: { color: 'text-muted-foreground/90', bgColor: 'bg-muted/20', borderColor: 'border-muted-foreground/20', label: 'Low' },
 };
 
 type FilterType = 'all' | 'unread' | 'high';
@@ -110,14 +111,14 @@ export default function MessageList() {
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="p-1.5 rounded-lg text-muted-foreground/40 hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors"
+              className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors"
               title="Refresh"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
             <button
               onClick={() => markAllMessagesAsRead()}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-blue-400/80 hover:text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15 transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-blue-400/80 hover:text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15 transition-all"
             >
               <CheckCheck className="w-3.5 h-3.5" />
               Mark All Read
@@ -134,22 +135,22 @@ export default function MessageList() {
             <button
               key={opt.id}
               onClick={() => setFilter(opt.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all border flex items-center gap-1.5 ${
                 filter === opt.id
                   ? 'bg-primary/15 text-primary border-primary/30'
-                  : 'bg-secondary/30 text-muted-foreground/60 border-primary/15 hover:text-muted-foreground hover:bg-secondary/50'
+                  : 'bg-secondary/30 text-muted-foreground/80 border-primary/15 hover:text-muted-foreground hover:bg-secondary/50'
               }`}
             >
               {opt.label}
               {count > 0 && (
-                <span className="text-[11px] bg-primary/20 text-primary rounded-full min-w-[18px] px-1 inline-flex items-center justify-center">
+                <span className="text-sm bg-primary/20 text-primary rounded-full min-w-[18px] px-1 inline-flex items-center justify-center">
                   {count}
                 </span>
               )}
             </button>
           );
         })}
-        <span className="ml-auto text-[11px] font-mono text-muted-foreground/40">
+        <span className="ml-auto text-sm font-mono text-muted-foreground/80">
           Showing {filteredMessages.length} of {messagesTotal}
         </span>
       </div>
@@ -162,24 +163,24 @@ export default function MessageList() {
               <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
                 <Loader2 className="w-5 h-5 text-primary/70 animate-spin" />
               </div>
-              <p className="text-sm text-muted-foreground/50">Loading messages...</p>
+              <p className="text-sm text-muted-foreground/90">Loading messages...</p>
             </div>
           </div>
         ) : filteredMessages.length === 0 ? (
           <div className="flex-1 flex items-center justify-center p-4 md:p-6">
             <div className="text-center">
               <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
-                <MessageSquare className="w-5 h-5 text-muted-foreground/30" />
+                <MessageSquare className="w-5 h-5 text-muted-foreground/80" />
               </div>
               {filter !== 'all' ? (
                 <>
-                  <p className="text-sm text-muted-foreground/50">No {filter === 'unread' ? 'unread' : 'high-priority'} messages</p>
-                  <p className="text-xs text-muted-foreground/30 mt-1">Try switching to "All" to see all messages</p>
+                  <p className="text-sm text-muted-foreground/90">No {filter === 'unread' ? 'unread' : 'high-priority'} messages</p>
+                  <p className="text-sm text-muted-foreground/80 mt-1">Try switching to "All" to see all messages</p>
                 </>
               ) : (
                 <>
-                  <p className="text-sm text-muted-foreground/50">No messages yet</p>
-                  <p className="text-xs text-muted-foreground/30 mt-1.5 max-w-sm mx-auto leading-relaxed">
+                  <p className="text-sm text-muted-foreground/90">No messages yet</p>
+                  <p className="text-sm text-muted-foreground/80 mt-1.5 max-w-sm mx-auto leading-relaxed">
                     Messages are created when agents run and communicate with each other.
                     Run an agent execution or set up a multi-agent pipeline to start seeing messages here.
                   </p>
@@ -188,7 +189,7 @@ export default function MessageList() {
                       const store = usePersonaStore.getState();
                       store.setSidebarSection('personas');
                     }}
-                    className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-primary bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors"
+                    className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-primary bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors"
                   >
                     <Send className="w-3.5 h-3.5" />
                     Go to Agents
@@ -218,7 +219,7 @@ export default function MessageList() {
             {remaining > 0 && (
               <button
                 onClick={handleLoadMore}
-                className="w-full py-2.5 text-sm text-muted-foreground/60 hover:text-muted-foreground bg-secondary/20 hover:bg-secondary/40 rounded-xl border border-primary/15 transition-all mt-2"
+                className="w-full py-2.5 text-sm text-muted-foreground/80 hover:text-muted-foreground bg-secondary/20 hover:bg-secondary/40 rounded-xl border border-primary/15 transition-all mt-2"
               >
                 Load More ({remaining} remaining)
               </button>
@@ -263,7 +264,7 @@ function MessageRow({
   onToggle: () => void;
   onDelete: () => void;
 }) {
-  const defaultPriority = { color: 'text-foreground/60', bgColor: 'bg-secondary/30', borderColor: 'border-primary/15', label: 'Normal' };
+  const defaultPriority = { color: 'text-foreground/80', bgColor: 'bg-secondary/30', borderColor: 'border-primary/15', label: 'Normal' };
   const priority = priorityConfig[message.priority] ?? defaultPriority;
 
   const [deliveries, setDeliveries] = useState<PersonaMessageDelivery[]>([]);
@@ -309,7 +310,7 @@ function MessageRow({
         onClick={onToggle}
         className="w-full hidden md:flex items-center gap-3 px-3 py-2.5 text-left"
       >
-        <div className="text-muted-foreground/40">
+        <div className="text-muted-foreground/80">
           {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
         </div>
         {!message.is_read && (
@@ -319,24 +320,24 @@ function MessageRow({
         )}
         <div className="flex items-center gap-2 min-w-[120px]">
           <div
-            className="w-6 h-6 rounded-md flex items-center justify-center text-xs border border-primary/15"
+            className="w-6 h-6 rounded-md flex items-center justify-center text-sm border border-primary/15"
             style={{ backgroundColor: (message.persona_color || '#6366f1') + '15' }}
           >
             {message.persona_icon || '?'}
           </div>
-          <span className="text-xs text-muted-foreground/60 truncate max-w-[80px]">
+          <span className="text-sm text-muted-foreground/80 truncate max-w-[80px]">
             {message.persona_name || 'Unknown'}
           </span>
         </div>
-        <span className={`flex-1 text-sm truncate ${message.is_read ? 'text-foreground/60' : 'text-foreground/90 font-medium'}`}>
+        <span className={`flex-1 text-sm truncate ${message.is_read ? 'text-foreground/80' : 'text-foreground/90 font-medium'}`}>
           {message.title || message.content.slice(0, 80)}
         </span>
         {message.priority !== 'normal' && (
-          <div className={`px-2 py-0.5 rounded-md text-[11px] font-medium border ${priority.bgColor} ${priority.color} ${priority.borderColor}`}>
+          <div className={`px-2 py-0.5 rounded-md text-sm font-medium border ${priority.bgColor} ${priority.color} ${priority.borderColor}`}>
             {priority.label}
           </div>
         )}
-        <span className="text-xs text-muted-foreground/40 min-w-[70px] text-right">
+        <span className="text-sm text-muted-foreground/80 min-w-[70px] text-right">
           {formatRelativeTime(message.created_at)}
         </span>
       </button>
@@ -348,7 +349,7 @@ function MessageRow({
       >
         {/* Line 1: persona + priority */}
         <div className="flex items-center gap-2">
-          <div className="text-muted-foreground/40">
+          <div className="text-muted-foreground/80">
             {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
           </div>
           {!message.is_read && (
@@ -357,27 +358,27 @@ function MessageRow({
             </div>
           )}
           <div
-            className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] border border-primary/15 flex-shrink-0"
+            className="w-5 h-5 rounded-md flex items-center justify-center text-sm border border-primary/15 flex-shrink-0"
             style={{ backgroundColor: (message.persona_color || '#6366f1') + '15' }}
           >
             {message.persona_icon || '?'}
           </div>
-          <span className="text-xs text-muted-foreground/60 truncate">
+          <span className="text-sm text-muted-foreground/80 truncate">
             {message.persona_name || 'Unknown'}
           </span>
           <div className="flex-1" />
           {message.priority !== 'normal' && (
-            <div className={`px-2 py-0.5 rounded-md text-[11px] font-medium border ${priority.bgColor} ${priority.color} ${priority.borderColor}`}>
+            <div className={`px-2 py-0.5 rounded-md text-sm font-medium border ${priority.bgColor} ${priority.color} ${priority.borderColor}`}>
               {priority.label}
             </div>
           )}
         </div>
         {/* Line 2: title */}
-        <span className={`text-sm truncate pl-6 ${message.is_read ? 'text-foreground/60' : 'text-foreground/90 font-medium'}`}>
+        <span className={`text-sm truncate pl-6 ${message.is_read ? 'text-foreground/80' : 'text-foreground/90 font-medium'}`}>
           {message.title || message.content.slice(0, 80)}
         </span>
         {/* Line 3: timestamp */}
-        <span className="text-xs text-muted-foreground/40 pl-6">
+        <span className="text-sm text-muted-foreground/80 pl-6">
           {formatRelativeTime(message.created_at)}
         </span>
       </button>
@@ -395,25 +396,29 @@ function MessageRow({
             <div className="px-3 pb-3 pt-1 border-t border-primary/15 space-y-3">
               {/* Content */}
               <div>
-                <div className="text-[11px] font-mono text-muted-foreground/50 uppercase mb-1.5">Content</div>
-                <div className={`text-sm leading-relaxed ${message.content_type === 'markdown' ? 'prose prose-sm prose-invert max-w-none' : 'text-foreground/70'}`}>
-                  {message.content}
-                </div>
+                <div className="text-sm font-mono text-muted-foreground/90 uppercase mb-1.5">Content</div>
+                {message.content_type === 'markdown' ? (
+                  <MarkdownRenderer content={message.content} className="text-sm" />
+                ) : (
+                  <div className="text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap">
+                    {message.content}
+                  </div>
+                )}
               </div>
 
               {/* Delivery Status */}
               <div>
-                <div className="text-[11px] font-mono text-muted-foreground/50 uppercase mb-1.5 flex items-center gap-1.5">
+                <div className="text-sm font-mono text-muted-foreground/90 uppercase mb-1.5 flex items-center gap-1.5">
                   <Send className="w-3 h-3" />
                   Delivery Status
                 </div>
                 {deliveriesLoading ? (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground/40 py-1">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground/80 py-1">
                     <Loader2 className="w-3 h-3 animate-spin" />
                     Loading...
                   </div>
                 ) : deliveries.length === 0 ? (
-                  <div className="text-xs text-muted-foreground/40 py-1">
+                  <div className="text-sm text-muted-foreground/80 py-1">
                     No delivery channels configured
                   </div>
                 ) : (
@@ -428,19 +433,19 @@ function MessageRow({
                           className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg border ${statusCfg.bgColor} ${statusCfg.borderColor}`}
                         >
                           <StatusIcon className={`w-3.5 h-3.5 flex-shrink-0 ${statusCfg.color}`} />
-                          <span className="text-xs font-medium text-foreground/70 min-w-[60px]">
+                          <span className="text-sm font-medium text-foreground/90 min-w-[60px]">
                             {channelLabels[d.channel_type] ?? d.channel_type}
                           </span>
-                          <span className={`text-xs font-medium ${statusCfg.color}`}>
+                          <span className={`text-sm font-medium ${statusCfg.color}`}>
                             {statusCfg.label}
                           </span>
                           {d.delivered_at && (
-                            <span className="text-[11px] text-muted-foreground/40 ml-auto">
+                            <span className="text-sm text-muted-foreground/80 ml-auto">
                               {formatRelativeTime(d.delivered_at)}
                             </span>
                           )}
                           {d.error_message && (
-                            <span className="text-[11px] text-red-400/80 ml-auto truncate max-w-[200px]" title={d.error_message}>
+                            <span className="text-sm text-red-400/80 ml-auto truncate max-w-[200px]" title={d.error_message}>
                               {d.error_message}
                             </span>
                           )}
@@ -467,7 +472,7 @@ function MessageRow({
                       className="p-1.5 hover:bg-secondary/60 rounded-lg transition-colors"
                       title="Cancel"
                     >
-                      <X className="w-4 h-4 text-muted-foreground/50" />
+                      <X className="w-4 h-4 text-muted-foreground/90" />
                     </button>
                   </div>
                 ) : (
@@ -478,7 +483,7 @@ function MessageRow({
                       if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
                       confirmTimerRef.current = setTimeout(() => setConfirmingDelete(false), 3000);
                     }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     Delete
@@ -487,7 +492,7 @@ function MessageRow({
               </div>
 
               {/* Metadata */}
-              <div className="flex items-center gap-4 text-[11px] text-muted-foreground/40">
+              <div className="flex items-center gap-4 text-sm text-muted-foreground/80">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -496,7 +501,7 @@ function MessageRow({
                       setTimeout(() => setCopiedId(false), 2000);
                     }).catch(() => {});
                   }}
-                  className="inline-flex items-center gap-1 hover:text-muted-foreground/70 transition-colors"
+                  className="inline-flex items-center gap-1 hover:text-muted-foreground transition-colors"
                   title={message.id}
                 >
                   ID: <span className="font-mono">{message.id.slice(0, 8)}</span>

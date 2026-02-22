@@ -56,7 +56,7 @@ describe("personaStore", () => {
       expect(state.isLoading).toBe(false);
       expect(state.isExecuting).toBe(false);
       expect(state.error).toBeNull();
-      expect(state.editorTab).toBe("prompt");
+      expect(state.editorTab).toBe("use-cases");
     });
   });
 
@@ -102,7 +102,7 @@ describe("personaStore", () => {
 
       const state = usePersonaStore.getState();
       expect(state.selectedPersonaId).toBe("p-1");
-      expect(state.editorTab).toBe("prompt");
+      expect(state.editorTab).toBe("use-cases");
     });
 
     it("clears selection when null", () => {

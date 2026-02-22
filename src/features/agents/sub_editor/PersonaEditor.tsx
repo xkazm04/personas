@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, AlertCircle, FileText, Play, Settings, FlaskConical, Wand2, Cloud, LogIn, X } from 'lucide-react';
+import { AlertTriangle, AlertCircle, ListChecks, FileText, Link, Play, Settings, FlaskConical, Wand2, Cloud, LogIn, X } from 'lucide-react';
 import type { ModelProfile } from '@/lib/types/frontendTypes';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useAuthStore } from '@/stores/authStore';
+import { ContentBox, ContentHeader } from '@/features/shared/components/ContentLayout';
 import type { EditorTab } from '@/lib/types/types';
 import { PersonaPromptEditor } from '@/features/agents/sub_editor/PersonaPromptEditor';
 import { ExecutionList } from '@/features/agents/sub_executions/ExecutionList';
@@ -11,12 +12,16 @@ import { PersonaRunner } from '@/features/agents/sub_executions/PersonaRunner';
 import { AccessibleToggle } from '@/features/shared/components/AccessibleToggle';
 import { PersonaSettingsTab } from '@/features/agents/sub_editor/PersonaSettingsTab';
 import { PersonaTestsTab } from '@/features/agents/sub_tests/PersonaTestsTab';
+import { PersonaUseCasesTab } from '@/features/agents/sub_editor/PersonaUseCasesTab';
+import { PersonaConnectorsTab } from '@/features/agents/sub_editor/PersonaConnectorsTab';
 import { DesignTab } from '@/features/agents/sub_editor/DesignTab';
 import { type PersonaDraft, buildDraft } from '@/features/agents/sub_editor/PersonaDraft';
 import { OLLAMA_CLOUD_BASE_URL, getOllamaPreset } from '@/features/agents/sub_editor/model-config/OllamaCloudPresets';
 
 const tabDefs: Array<{ id: EditorTab; label: string; icon: typeof FileText }> = [
+  { id: 'use-cases', label: 'Use Cases', icon: ListChecks },
   { id: 'prompt', label: 'Prompt', icon: FileText },
+  { id: 'connectors', label: 'Connectors', icon: Link },
   { id: 'design', label: 'Design', icon: Wand2 },
   { id: 'executions', label: 'Executions', icon: Play },
   { id: 'settings', label: 'Settings', icon: Settings },
@@ -103,6 +108,33 @@ export default function PersonaEditor() {
   // Keep dirtyRef in sync for the store subscription
   dirtyRef.current = isDirty;
 
+  // Debounced auto-save for settings fields
+  const saveSettingsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveModelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (!settingsDirty || !selectedPersona || pendingPersonaId) return;
+    if (saveSettingsTimeoutRef.current) clearTimeout(saveSettingsTimeoutRef.current);
+    saveSettingsTimeoutRef.current = setTimeout(async () => {
+      setIsSaving(true);
+      await handleSaveSettings();
+      setIsSaving(false);
+    }, 800);
+    return () => { if (saveSettingsTimeoutRef.current) clearTimeout(saveSettingsTimeoutRef.current); };
+  }, [draft.name, draft.description, draft.icon, draft.color, draft.maxConcurrent, draft.timeout, draft.enabled]);
+
+  useEffect(() => {
+    if (!modelDirty || !selectedPersona || pendingPersonaId) return;
+    if (saveModelTimeoutRef.current) clearTimeout(saveModelTimeoutRef.current);
+    saveModelTimeoutRef.current = setTimeout(async () => {
+      setIsSaving(true);
+      await saveModelSettings();
+      setIsSaving(false);
+    }, 800);
+    return () => { if (saveModelTimeoutRef.current) clearTimeout(saveModelTimeoutRef.current); };
+  }, [draft.selectedModel, draft.selectedProvider, draft.baseUrl, draft.authToken, draft.customModelName, draft.maxBudget, draft.maxTurns]);
+
   // Intercept persona switches when dirty
   useEffect(() => {
     const unsub = usePersonaStore.subscribe((state) => {
@@ -154,9 +186,11 @@ export default function PersonaEditor() {
 
   if (!selectedPersona) {
     return (
-      <div className="flex-1 min-h-0 w-full flex items-center justify-center text-muted-foreground/40">
-        No persona selected
-      </div>
+      <ContentBox>
+        <div className="flex-1 flex items-center justify-center text-muted-foreground/80">
+          No persona selected
+        </div>
+      </ContentBox>
     );
   }
 
@@ -235,15 +269,6 @@ export default function PersonaEditor() {
     }
   };
 
-  const handleSaveAll = async () => {
-    try {
-      if (settingsDirty) await handleSaveSettings();
-      if (modelDirty) await saveModelSettings();
-    } catch {
-      // updatePersona already sets store.error for display
-    }
-  };
-
   const changedSections: string[] = [];
   if (settingsDirty) changedSections.push('Settings');
   if (modelDirty) changedSections.push('Model');
@@ -255,8 +280,12 @@ export default function PersonaEditor() {
 
   const renderTabContent = () => {
     switch (editorTab) {
+      case 'use-cases':
+        return <PersonaUseCasesTab />;
       case 'prompt':
         return <PersonaPromptEditor />;
+      case 'connectors':
+        return <PersonaConnectorsTab />;
       case 'design':
         return <DesignTab />;
       case 'executions':
@@ -280,7 +309,7 @@ export default function PersonaEditor() {
             selectedPersonaId={selectedPersona.id}
             showDeleteConfirm={showDeleteConfirm}
             setShowDeleteConfirm={setShowDeleteConfirm}
-            onSaveAll={handleSaveAll}
+            isSaving={isSaving}
             onDelete={handleDelete}
           />
         );
@@ -291,28 +320,34 @@ export default function PersonaEditor() {
     }
   };
 
-  return (
-    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
-      {/* Header */}
-      <div className="border-b border-primary/10 bg-secondary/40 backdrop-blur-md px-6 py-3">
-        <div className="flex items-center gap-3">
-          {selectedPersona.icon ? (
-            selectedPersona.icon.startsWith('http') ? (
-              <img src={selectedPersona.icon} alt="" className="w-6 h-6" />
-            ) : (
-              <span className="text-2xl">{selectedPersona.icon}</span>
-            )
-          ) : null}
-          <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-semibold text-foreground">{selectedPersona.name}</h1>
-            {selectedPersona.description && (
-              <p className="text-xs text-muted-foreground/50 mt-0.5 truncate">{selectedPersona.description}</p>
-            )}
-          </div>
+  const personaIcon = selectedPersona.icon ? (
+    selectedPersona.icon.startsWith('http') ? (
+      <img src={selectedPersona.icon} alt="" className="w-6 h-6 rounded" />
+    ) : (
+      <span className="text-2xl leading-none">{selectedPersona.icon}</span>
+    )
+  ) : (
+    <div
+      className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold"
+      style={{
+        backgroundColor: `${selectedPersona.color || '#6B7280'}20`,
+        border: `1px solid ${selectedPersona.color || '#6B7280'}40`,
+        color: selectedPersona.color || '#6B7280',
+      }}
+    >
+      {selectedPersona.name.charAt(0).toUpperCase()}
+    </div>
+  );
 
-          {/* Enable/disable toggle */}
+  return (
+    <ContentBox>
+      <ContentHeader
+        icon={personaIcon}
+        title={selectedPersona.name}
+        subtitle={selectedPersona.description || undefined}
+        actions={
           <div className="relative flex items-center gap-2 flex-shrink-0">
-            <span className={`text-xs font-medium transition-colors ${selectedPersona.enabled ? 'text-emerald-400' : 'text-muted-foreground/40'}`}>
+            <span className={`text-sm font-medium transition-colors ${selectedPersona.enabled ? 'text-emerald-400' : 'text-muted-foreground/80'}`}>
               {selectedPersona.enabled ? 'Active' : 'Off'}
             </span>
             <AccessibleToggle
@@ -333,12 +368,12 @@ export default function PersonaEditor() {
                   exit={{ opacity: 0, y: 4, scale: 0.95 }}
                   className="absolute top-full right-0 mt-2 w-64 bg-background border border-amber-500/30 rounded-lg shadow-xl p-2.5 z-50"
                 >
-                  <p className="text-xs font-medium text-amber-400 mb-1.5 flex items-center gap-1.5">
+                  <p className="text-sm font-medium text-amber-400 mb-1.5 flex items-center gap-1.5">
                     <AlertCircle className="w-3.5 h-3.5" />
                     Cannot enable persona
                   </p>
                   {readiness.reasons.map((r, i) => (
-                    <p key={i} className="text-xs text-muted-foreground/60 pl-5">
+                    <p key={i} className="text-sm text-muted-foreground/80 pl-5">
                       {r}
                     </p>
                   ))}
@@ -346,8 +381,8 @@ export default function PersonaEditor() {
               )}
             </AnimatePresence>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* Unsaved changes banner */}
       <AnimatePresence>
@@ -364,19 +399,19 @@ export default function PersonaEditor() {
               <span className="text-sm text-amber-400/90 flex-1">You have unsaved changes</span>
               <button
                 onClick={handleSaveAndSwitch}
-                className="px-3 py-1 rounded-lg text-xs font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-colors"
+                className="px-3 py-1 rounded-lg text-sm font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-colors"
               >
                 Save & Switch
               </button>
               <button
                 onClick={handleDiscardAndSwitch}
-                className="px-3 py-1 rounded-lg text-xs font-medium bg-secondary/50 text-foreground/60 border border-primary/15 hover:bg-secondary/70 transition-colors"
+                className="px-3 py-1 rounded-lg text-sm font-medium bg-secondary/50 text-foreground/80 border border-primary/15 hover:bg-secondary/70 transition-colors"
               >
                 Discard
               </button>
               <button
                 onClick={() => setPendingPersonaId(null)}
-                className="p-1 rounded hover:bg-secondary/60 text-muted-foreground/50 transition-colors"
+                className="p-1 rounded hover:bg-secondary/60 text-muted-foreground/90 transition-colors"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -397,7 +432,7 @@ export default function PersonaEditor() {
                 key={tab.id}
                 onClick={() => setEditorTab(tab.id)}
                 className={`relative flex items-center gap-2 px-3 py-2.5 text-sm font-medium transition-colors whitespace-nowrap ${
-                  isActive ? 'text-primary' : 'text-muted-foreground/50 hover:text-foreground/70'
+                  isActive ? 'text-primary' : 'text-muted-foreground/90 hover:text-foreground/95'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -442,13 +477,13 @@ export default function PersonaEditor() {
                   setEditorTab('design');
                   setShowDesignNudge(false);
                 }}
-                className="px-3 py-1 rounded-lg text-xs font-medium bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30 transition-colors"
+                className="px-3 py-1 rounded-lg text-sm font-medium bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30 transition-colors"
               >
                 Try Design Wizard
               </button>
               <button
                 onClick={() => setShowDesignNudge(false)}
-                className="p-1 rounded hover:bg-secondary/60 text-muted-foreground/50 transition-colors"
+                className="p-1 rounded hover:bg-secondary/60 text-muted-foreground/90 transition-colors"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -480,7 +515,7 @@ export default function PersonaEditor() {
                     setSidebarSection('settings');
                     setShowCloudNudge(false);
                   }}
-                  className="px-3 py-1 rounded-lg text-xs font-medium bg-sky-500/20 text-sky-300 border border-sky-500/30 hover:bg-sky-500/30 transition-colors flex items-center gap-1.5"
+                  className="px-3 py-1 rounded-lg text-sm font-medium bg-sky-500/20 text-sky-300 border border-sky-500/30 hover:bg-sky-500/30 transition-colors flex items-center gap-1.5"
                 >
                   <LogIn className="w-3 h-3" />
                   Sign In
@@ -491,14 +526,14 @@ export default function PersonaEditor() {
                   setSidebarSection('cloud');
                   setShowCloudNudge(false);
                 }}
-                className="px-3 py-1 rounded-lg text-xs font-medium bg-sky-500/20 text-sky-300 border border-sky-500/30 hover:bg-sky-500/30 transition-colors flex items-center gap-1.5"
+                className="px-3 py-1 rounded-lg text-sm font-medium bg-sky-500/20 text-sky-300 border border-sky-500/30 hover:bg-sky-500/30 transition-colors flex items-center gap-1.5"
               >
                 <Cloud className="w-3 h-3" />
                 Set up Cloud
               </button>
               <button
                 onClick={() => setShowCloudNudge(false)}
-                className="p-1 rounded hover:bg-secondary/60 text-muted-foreground/50 transition-colors"
+                className="p-1 rounded hover:bg-secondary/60 text-muted-foreground/90 transition-colors"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -511,6 +546,6 @@ export default function PersonaEditor() {
       <div className="flex-1 overflow-y-auto p-4">
         {renderTabContent()}
       </div>
-    </div>
+    </ContentBox>
   );
 }

@@ -54,7 +54,7 @@ export function DesignInput({
   disabled = false,
   onSubmit,
 }: DesignInputProps) {
-  const [showReferences, setShowReferences] = useState(designContext.references.length > 0);
+  const [showReferences, setShowReferences] = useState((designContext?.references?.length ?? 0) > 0);
   const [showTypeSelector, setShowTypeSelector] = useState(false);
   const [pendingFile, setPendingFile] = useState<{ name: string; content: string } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -85,7 +85,7 @@ export function DesignInput({
       if (autoType !== 'other') {
         onDesignContextChange({
           ...designContext,
-          files: [...designContext.files, { name: file.name, content, type: autoType }],
+          files: [...(designContext?.files ?? []), { name: file.name, content, type: autoType }],
         });
       } else {
         setPendingFile({ name: file.name, content });
@@ -108,7 +108,7 @@ export function DesignInput({
     const newFile: DesignFile = { name: pendingFile.name, content: pendingFile.content, type };
     onDesignContextChange({
       ...designContext,
-      files: [...designContext.files, newFile],
+      files: [...(designContext?.files ?? []), newFile],
     });
     setPendingFile(null);
     setShowTypeSelector(false);
@@ -117,7 +117,7 @@ export function DesignInput({
   const handleRemoveFile = useCallback((index: number) => {
     onDesignContextChange({
       ...designContext,
-      files: designContext.files.filter((_, i) => i !== index),
+      files: (designContext?.files ?? []).filter((_, i) => i !== index),
     });
   }, [designContext, onDesignContextChange]);
 
@@ -207,7 +207,7 @@ export function DesignInput({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled}
-            className="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground/60 hover:text-foreground/70 hover:bg-secondary/50 transition-colors"
+            className="flex items-center gap-1.5 px-2 py-1 rounded-md text-sm text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/50 transition-colors"
             title="Attach file (API spec, schema, MCP config)"
           >
             <Paperclip className="w-3.5 h-3.5" />
@@ -225,10 +225,10 @@ export function DesignInput({
             type="button"
             onClick={() => setShowReferences(!showReferences)}
             disabled={disabled}
-            className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs transition-colors ${
+            className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-sm transition-colors ${
               showReferences
                 ? 'text-indigo-400 bg-indigo-500/10'
-                : 'text-muted-foreground/60 hover:text-foreground/70 hover:bg-secondary/50'
+                : 'text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/50'
             }`}
             title="Add reference URLs or connection strings"
           >
@@ -236,8 +236,8 @@ export function DesignInput({
             <span>References</span>
           </button>
 
-          {designContext.files.length > 0 && (
-            <span className="ml-auto text-xs text-muted-foreground/40">
+          {(designContext?.files?.length ?? 0) > 0 && (
+            <span className="ml-auto text-sm text-muted-foreground/80">
               {designContext.files.length} file{designContext.files.length !== 1 ? 's' : ''} attached
             </span>
           )}
@@ -247,8 +247,8 @@ export function DesignInput({
       {/* Type selector modal */}
       {showTypeSelector && pendingFile && (
         <div className="bg-secondary/60 backdrop-blur-sm border border-primary/15 rounded-xl p-3 space-y-2">
-          <p className="text-xs text-muted-foreground/60">
-            Classify <span className="font-medium text-foreground/70">{pendingFile.name}</span>:
+          <p className="text-sm text-muted-foreground/80">
+            Classify <span className="font-medium text-foreground/90">{pendingFile.name}</span>:
           </p>
           <div className="flex flex-wrap gap-1.5">
             {(Object.keys(FILE_TYPE_LABELS) as DesignFileType[]).map((type) => {
@@ -257,7 +257,7 @@ export function DesignInput({
                 <button
                   key={type}
                   onClick={() => handleTypeConfirm(type)}
-                  className="flex items-center gap-1.5 px-2.5 py-1 bg-background/50 border border-primary/15 rounded-lg text-xs text-foreground/70 hover:border-primary/30 hover:bg-primary/5 transition-all"
+                  className="flex items-center gap-1.5 px-2.5 py-1 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground/90 hover:border-primary/30 hover:bg-primary/5 transition-all"
                 >
                   <Icon className="w-3 h-3" />
                   {FILE_TYPE_LABELS[type]}
@@ -266,7 +266,7 @@ export function DesignInput({
             })}
             <button
               onClick={() => { setPendingFile(null); setShowTypeSelector(false); }}
-              className="px-2.5 py-1 text-xs text-muted-foreground/40 hover:text-muted-foreground/60 transition-colors"
+              className="px-2.5 py-1 text-sm text-muted-foreground/80 hover:text-muted-foreground transition-colors"
             >
               Cancel
             </button>
@@ -275,21 +275,21 @@ export function DesignInput({
       )}
 
       {/* Attached files row */}
-      {designContext.files.length > 0 && (
+      {(designContext?.files?.length ?? 0) > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {designContext.files.map((file, index) => {
             const Icon = FILE_TYPE_ICONS[file.type] || File;
             return (
               <div
                 key={`${file.name}-${index}`}
-                className="flex items-center gap-1.5 bg-secondary/50 border border-primary/10 rounded-full px-3 py-1 text-xs group"
+                className="flex items-center gap-1.5 bg-secondary/50 border border-primary/10 rounded-full px-3 py-1 text-sm group"
               >
-                <Icon className="w-3 h-3 text-muted-foreground/50" />
-                <span className="text-foreground/70 max-w-[120px] truncate">{file.name}</span>
-                <span className="text-muted-foreground/30">{FILE_TYPE_LABELS[file.type]}</span>
+                <Icon className="w-3 h-3 text-muted-foreground/90" />
+                <span className="text-foreground/90 max-w-[120px] truncate">{file.name}</span>
+                <span className="text-muted-foreground/80">{FILE_TYPE_LABELS[file.type]}</span>
                 <button
                   onClick={() => handleRemoveFile(index)}
-                  className="ml-0.5 text-muted-foreground/30 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                  className="ml-0.5 text-muted-foreground/80 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
                   title="Remove file"
                 >
                   <X className="w-3 h-3" />
@@ -303,14 +303,14 @@ export function DesignInput({
       {/* References textarea */}
       {showReferences && (
         <div className="space-y-1">
-          <label className="text-xs text-muted-foreground/50 px-1">References</label>
+          <label className="text-sm text-muted-foreground/90 px-1">References</label>
           <textarea
-            value={designContext.references.join('\n')}
+            value={(designContext?.references ?? []).join('\n')}
             onChange={(e) => handleReferencesChange(e.target.value)}
             disabled={disabled}
             placeholder="Paste URLs, connection strings, API keys, or any reference info (one per line)"
             rows={3}
-            className="w-full bg-background/50 border border-primary/15 rounded-xl px-3 py-2 text-xs text-foreground font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all placeholder-muted-foreground/30"
+            className="w-full bg-background/50 border border-primary/15 rounded-xl px-3 py-2 text-sm text-foreground font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all placeholder-muted-foreground/30"
           />
         </div>
       )}

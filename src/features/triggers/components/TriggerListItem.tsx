@@ -51,7 +51,7 @@ function ConfigSummary({ trigger }: { trigger: DbPersonaTrigger }) {
 
   if (parts.length === 0) return null;
   return (
-    <span className="text-[11px] text-muted-foreground/35 truncate">
+    <span className="text-sm text-muted-foreground/35 truncate">
       {parts.join(' · ')}
     </span>
   );
@@ -119,11 +119,11 @@ export function TriggerListItem({
             {trigger.enabled ? (
               <ToggleRight className="w-5 h-5 text-emerald-400" />
             ) : (
-              <ToggleLeft className="w-5 h-5 text-muted-foreground/40" />
+              <ToggleLeft className="w-5 h-5 text-muted-foreground/80" />
             )}
           </span>
 
-          <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/30 transition-transform duration-200 ${expanded ? 'rotate-0' : '-rotate-90'}`} />
+          <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/80 transition-transform duration-200 ${expanded ? 'rotate-0' : '-rotate-90'}`} />
         </span>
       </button>
 
@@ -145,7 +145,7 @@ export function TriggerListItem({
               {(trigger.config || trigger.trigger_type === 'webhook') && (() => {
                 const config = parseTriggerConfig(trigger.config);
                 return (Object.keys(config).length > 0 || trigger.trigger_type === 'webhook') ? (
-                  <div className="text-xs text-muted-foreground/50 space-y-1">
+                  <div className="text-sm text-muted-foreground/90 space-y-1">
                     {config.interval_seconds && (
                       <div>Interval: {formatInterval(Number(config.interval_seconds))}</div>
                     )}
@@ -165,7 +165,7 @@ export function TriggerListItem({
                             className="flex-1 min-w-0 px-2.5 py-1.5 bg-background/50 border border-primary/10 rounded-lg cursor-text select-all"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <span className="text-[11px] text-muted-foreground/70 font-mono break-all">
+                            <span className="text-sm text-muted-foreground/90 font-mono break-all">
                               {getWebhookUrl(trigger.id)}
                             </span>
                           </div>
@@ -174,7 +174,7 @@ export function TriggerListItem({
                             className={`flex-shrink-0 p-1.5 rounded-lg transition-all ${
                               copiedTriggerId === trigger.id
                                 ? 'bg-emerald-500/15 text-emerald-400'
-                                : 'hover:bg-secondary/60 text-muted-foreground/50 hover:text-muted-foreground/80'
+                                : 'hover:bg-secondary/60 text-muted-foreground/90 hover:text-muted-foreground'
                             }`}
                             title="Copy webhook URL"
                           >
@@ -186,7 +186,7 @@ export function TriggerListItem({
                           </button>
                         </div>
                         {config.hmac_secret && (
-                          <div className="text-xs text-muted-foreground/40">
+                          <div className="text-sm text-muted-foreground/80">
                             HMAC: {'--------'}{String(config.hmac_secret).slice(-4)}
                           </div>
                         )}
@@ -201,7 +201,7 @@ export function TriggerListItem({
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
-                  className={`px-2.5 py-1.5 rounded-lg text-[11px] font-mono ${
+                  className={`px-2.5 py-1.5 rounded-lg text-sm font-mono ${
                     testResult.success
                       ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/15'
                       : 'bg-red-500/10 text-red-400 border border-red-500/15'
@@ -215,10 +215,10 @@ export function TriggerListItem({
               {trigger.trigger_type === 'webhook' && (
                 <button
                   onClick={(e) => onCopyCurlCommand(trigger.id, e)}
-                  className={`inline-flex items-center gap-1.5 text-[11px] transition-colors ${
+                  className={`inline-flex items-center gap-1.5 text-sm transition-colors ${
                     copiedCurlId === trigger.id
                       ? 'text-emerald-400'
-                      : 'text-muted-foreground/40 hover:text-muted-foreground/70'
+                      : 'text-muted-foreground/80 hover:text-muted-foreground'
                   }`}
                 >
                   <Terminal className="w-3 h-3" />
@@ -231,7 +231,7 @@ export function TriggerListItem({
                 <button
                   onClick={() => onTestFire(trigger.id, trigger.persona_id)}
                   disabled={testingTriggerId === trigger.id}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] text-primary/70 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-primary/70 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors disabled:opacity-50"
                   title="Test fire this trigger"
                 >
                   {testingTriggerId === trigger.id ? (
@@ -258,13 +258,13 @@ export function TriggerListItem({
                       className="p-1.5 hover:bg-secondary/60 rounded-lg transition-colors"
                       title="Cancel"
                     >
-                      <X className="w-3.5 h-3.5 text-muted-foreground/50" />
+                      <X className="w-3.5 h-3.5 text-muted-foreground/90" />
                     </button>
                   </div>
                 ) : (
                   <button
                     onClick={() => onStartDeleteConfirm(trigger.id)}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] text-red-400/70 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-red-400/70 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                     title="Delete trigger"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -276,7 +276,7 @@ export function TriggerListItem({
               {/* Activity Log Toggle */}
               <button
                 onClick={() => onToggleActivityLog(trigger.id, trigger.persona_id)}
-                className="flex items-center gap-1.5 pt-1 border-t border-primary/5 text-[11px] text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors w-full"
+                className="flex items-center gap-1.5 pt-1 border-t border-primary/5 text-sm text-muted-foreground/80 hover:text-muted-foreground transition-colors w-full"
               >
                 {activityTriggerId === trigger.id ? (
                   <ChevronDown className="w-3 h-3" />
@@ -298,27 +298,27 @@ export function TriggerListItem({
                   >
                     <div className="space-y-1">
                       {activityLoading ? (
-                        <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground/30">
+                        <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground/80">
                           <Loader2 className="w-3 h-3 animate-spin" />
                           Loading...
                         </div>
                       ) : activityLog.length === 0 ? (
-                        <div className="py-2 text-xs text-muted-foreground/30">
+                        <div className="py-2 text-sm text-muted-foreground/80">
                           No runs recorded for this trigger yet
                         </div>
                       ) : (
                         activityLog.map((exec) => (
                           <div
                             key={exec.id}
-                            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-background/30 border border-primary/5 text-xs"
+                            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-background/30 border border-primary/5 text-sm"
                           >
-                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${EXECUTION_STATUS_COLORS[exec.status] ? badgeClass(EXECUTION_STATUS_COLORS[exec.status]!) : ''}`}>
+                            <span className={`px-1.5 py-0.5 rounded text-sm font-medium ${EXECUTION_STATUS_COLORS[exec.status] ? badgeClass(EXECUTION_STATUS_COLORS[exec.status]!) : ''}`}>
                               {exec.status}
                             </span>
-                            <span className="text-muted-foreground/50 font-mono">
+                            <span className="text-muted-foreground/90 font-mono">
                               {formatDuration(exec.duration_ms)}
                             </span>
-                            <span className="text-muted-foreground/30 ml-auto">
+                            <span className="text-muted-foreground/80 ml-auto">
                               {formatRelativeTime(exec.started_at)}
                             </span>
                           </div>

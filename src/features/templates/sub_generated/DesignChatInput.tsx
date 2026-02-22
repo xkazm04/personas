@@ -24,7 +24,7 @@ export function DesignChatInput({
   const isDisabled = disabled ?? !value.trim();
 
   const buttonStyles = isDisabled
-    ? 'bg-secondary/40 text-muted-foreground/30 cursor-not-allowed'
+    ? 'bg-secondary/40 text-muted-foreground/80 cursor-not-allowed'
     : variant === 'primary'
       ? 'bg-gradient-to-r from-primary to-accent text-foreground shadow-lg shadow-primary/20 hover:from-primary/90 hover:to-accent/90'
       : 'bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20';

@@ -63,7 +63,7 @@ export default function NotificationSettings() {
       return;
     }
     setting.save();
-  }, [setting.value]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [setting.value]); // intentionally not including setting.save
 
   const prefs = useMemo<NotificationPrefs>(() => {
     try {
@@ -105,7 +105,7 @@ export default function NotificationSettings() {
                 <div key={key} className="flex items-center justify-between px-4 py-3">
                   <div className="space-y-0.5">
                     <span className={`text-sm font-medium ${color}`}>{label}</span>
-                    <p className="text-xs text-muted-foreground/40">{description}</p>
+                    <p className="text-sm text-muted-foreground/80">{description}</p>
                   </div>
                   <button
                     onClick={() => toggle(key)}
@@ -124,7 +124,7 @@ export default function NotificationSettings() {
             </div>
           </div>
 
-          <p className="text-xs text-muted-foreground/30">
+          <p className="text-sm text-muted-foreground/80">
             Desktop notifications use the native OS notification system. In-app toasts appear for critical and high severity issues regardless of these settings.
           </p>
         </div>

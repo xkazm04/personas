@@ -37,7 +37,7 @@ export default function AuthButton() {
         title="Sign in with Google"
       >
         <Chrome
-          className={`w-5 h-5 transition-colors text-muted-foreground/50 group-hover:text-primary ${
+          className={`w-5 h-5 transition-colors text-muted-foreground/90 group-hover:text-primary ${
             isLoading ? "animate-pulse" : ""
           }`}
         />
@@ -87,12 +87,12 @@ export default function AuthButton() {
                 {user?.display_name ?? user?.email}
               </div>
               {user?.display_name && (
-                <div className="text-xs text-muted-foreground/50 truncate mt-0.5">
+                <div className="text-sm text-muted-foreground/90 truncate mt-0.5">
                   {user.email}
                 </div>
               )}
               {isOffline && (
-                <span className="inline-block mt-1.5 px-1.5 py-0.5 text-[9px] font-bold rounded-full
+                <span className="inline-block mt-1.5 px-1.5 py-0.5 text-sm font-bold rounded-full
                   bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase">
                   Offline
                 </span>
@@ -106,7 +106,7 @@ export default function AuthButton() {
                 setDropdownOpen(false);
               }}
               className="w-full flex items-center gap-3 px-3 py-2.5
-                hover:bg-primary/5 transition-colors text-sm text-foreground/70"
+                hover:bg-primary/5 transition-colors text-sm text-foreground/90"
             >
               <LogOut className="w-4 h-4" />
               Sign out

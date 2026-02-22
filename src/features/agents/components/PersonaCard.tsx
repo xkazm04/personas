@@ -55,8 +55,8 @@ export default function PersonaCard({ persona, isSelected, onClick }: PersonaCar
 
       {/* Name + status */}
       <div className="flex items-center gap-1.5">
-        <span className={`text-xs font-medium truncate flex-1 ${
-          isSelected ? 'text-foreground' : 'text-muted-foreground/70'
+        <span className={`text-sm font-medium truncate flex-1 ${
+          isSelected ? 'text-foreground' : 'text-muted-foreground/90'
         }`}>
           {persona.name}
         </span>
@@ -72,12 +72,12 @@ export default function PersonaCard({ persona, isSelected, onClick }: PersonaCar
       {(triggerCount != null && triggerCount > 0 || lastRun) && (
         <div className="flex items-center gap-2 mt-0.5">
           {triggerCount != null && triggerCount > 0 && (
-            <span className="text-[10px] font-mono text-muted-foreground/30">
+            <span className="text-sm font-mono text-muted-foreground/80">
               {triggerCount} trigger{triggerCount !== 1 ? 's' : ''}
             </span>
           )}
           {persona.enabled && lastRun && (
-            <span className="text-[10px] text-muted-foreground/30">
+            <span className="text-sm text-muted-foreground/80">
               {formatRelativeTime(lastRun)}
             </span>
           )}

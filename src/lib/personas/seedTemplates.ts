@@ -1,8 +1,12 @@
 /**
  * Seed Templates — converts built-in template JSON files into PersonaDesignReview
  * records for the Generated tab. Each template is inserted once (idempotent).
+ *
+ * Templates are auto-indexed from scripts/templates/ via templateIndex.ts.
+ * To regenerate after adding/removing templates:
+ *   node scripts/generate-template-index.mjs
  */
-import gmailMaestroTemplate from '../../../scripts/templates/google-workspace/gmail-maestro.json';
+import { allTemplates } from './templateIndex';
 
 const SEED_RUN_ID = 'seed-builtin-v1';
 
@@ -52,11 +56,7 @@ function templateToReviewInput(template: TemplateSource): SeedReviewInput {
 
 /** All seed templates that should be present in the Generated tab. */
 export function getSeedReviews(): SeedReviewInput[] {
-  const templates: TemplateSource[] = [
-    gmailMaestroTemplate as TemplateSource,
-  ];
-
-  return templates.map(templateToReviewInput);
+  return (allTemplates as TemplateSource[]).map(templateToReviewInput);
 }
 
 export { SEED_RUN_ID };

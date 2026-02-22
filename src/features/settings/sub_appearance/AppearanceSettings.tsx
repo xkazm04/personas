@@ -23,7 +23,7 @@ export default function AppearanceSettings() {
         <div className="space-y-6">
           {/* Dark themes */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
-            <h2 className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider">Dark</h2>
+            <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Dark</h2>
             <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-3">
               {darkThemes.map((t) => {
                 const active = themeId === t.id;
@@ -43,7 +43,7 @@ export default function AppearanceSettings() {
                     >
                       {active && <Check className="w-4 h-4 text-white drop-shadow-sm" />}
                     </div>
-                    <span className={`text-xs ${active ? 'text-foreground/90 font-medium' : 'text-muted-foreground/60'}`}>
+                    <span className={`text-sm ${active ? 'text-foreground/90 font-medium' : 'text-muted-foreground/80'}`}>
                       {t.label}
                     </span>
                   </button>
@@ -54,7 +54,7 @@ export default function AppearanceSettings() {
 
           {/* Light themes */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
-            <h2 className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider">Light</h2>
+            <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Light</h2>
             <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-3">
               {lightThemes.map((t) => {
                 const active = themeId === t.id;
@@ -74,7 +74,7 @@ export default function AppearanceSettings() {
                     >
                       {active && <Check className="w-4 h-4 text-white drop-shadow-sm" />}
                     </div>
-                    <span className={`text-xs ${active ? 'text-foreground/90 font-medium' : 'text-muted-foreground/60'}`}>
+                    <span className={`text-sm ${active ? 'text-foreground/90 font-medium' : 'text-muted-foreground/80'}`}>
                       {t.label}
                     </span>
                   </button>

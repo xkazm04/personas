@@ -38,7 +38,7 @@ export function usePersonaExecution() {
         (event) => {
           const currentExecId = usePersonaStore.getState().activeExecutionId;
           if (event.payload.execution_id === currentExecId) {
-            if (['completed', 'failed', 'cancelled'].includes(event.payload.status)) {
+            if (['completed', 'failed', 'cancelled', 'incomplete'].includes(event.payload.status)) {
               if (event.payload.error) {
                 appendOutput(`[ERROR] ${event.payload.error}`);
               }

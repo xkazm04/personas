@@ -40,10 +40,10 @@ export default function AccountSettings() {
                     {user.display_name ?? user.email}
                   </div>
                   {user.display_name && (
-                    <div className="text-sm text-muted-foreground/50 truncate">{user.email}</div>
+                    <div className="text-sm text-muted-foreground/90 truncate">{user.email}</div>
                   )}
                   {isOffline && (
-                    <span className="inline-block mt-1.5 px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase">
+                    <span className="inline-block mt-1.5 px-2 py-0.5 text-sm font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase">
                       Offline
                     </span>
                   )}
@@ -53,7 +53,7 @@ export default function AccountSettings() {
               <div className="border-t border-primary/10 pt-4">
                 <button
                   onClick={logout}
-                  className="flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-sm text-foreground/70
+                  className="flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-sm text-foreground/90
                     hover:bg-primary/5 border border-primary/10 hover:border-primary/20 transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
@@ -66,7 +66,7 @@ export default function AccountSettings() {
               <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
                 <Chrome className="w-7 h-7 text-primary/60" />
               </div>
-              <p className="text-sm text-muted-foreground/60 mb-4">Sign in to sync your data across devices</p>
+              <p className="text-sm text-muted-foreground/80 mb-4">Sign in to sync your data across devices</p>
               <button
                 onClick={loginWithGoogle}
                 disabled={isLoading}

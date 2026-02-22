@@ -30,6 +30,15 @@ pub fn get_metrics_snapshots(
 }
 
 #[tauri::command]
+pub fn get_live_metrics_timeseries(
+    state: State<'_, Arc<AppState>>,
+    days: Option<i64>,
+    persona_id: Option<String>,
+) -> Result<Vec<PersonaMetricsSnapshot>, AppError> {
+    repo::get_live_timeseries(&state.db, days, persona_id.as_deref())
+}
+
+#[tauri::command]
 pub fn get_prompt_versions(
     state: State<'_, Arc<AppState>>,
     persona_id: String,

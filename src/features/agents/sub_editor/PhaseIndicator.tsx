@@ -77,14 +77,14 @@ export function PhaseIndicator({ phase }: PhaseIndicatorProps) {
                 />
               </div>
               <span
-                className={`text-[10px] font-medium truncate transition-colors duration-300 ${
+                className={`text-sm font-medium truncate transition-colors duration-300 ${
                   isActive
                     ? phase === 'awaiting-input'
                       ? 'text-purple-300'
                       : 'text-foreground/80'
                     : isCompleted
                       ? 'text-emerald-400/70'
-                      : 'text-muted-foreground/30'
+                      : 'text-muted-foreground/80'
                 }`}
               >
                 {stage.label}

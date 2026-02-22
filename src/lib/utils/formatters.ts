@@ -32,12 +32,13 @@ export function badgeClass(colors: BadgeColors): string {
 }
 
 export const EXECUTION_STATUS_COLORS: Record<string, BadgeColors> = {
-  queued: { bg: 'bg-secondary/60', text: 'text-muted-foreground/60', border: 'border-primary/15' },
-  pending: { bg: 'bg-secondary/60', text: 'text-muted-foreground/60', border: 'border-primary/15' },
+  queued: { bg: 'bg-secondary/60', text: 'text-muted-foreground/80', border: 'border-primary/15' },
+  pending: { bg: 'bg-secondary/60', text: 'text-muted-foreground/80', border: 'border-primary/15' },
   running: { bg: 'bg-primary/15', text: 'text-primary', border: 'border-primary/30' },
   completed: { bg: 'bg-emerald-500/15', text: 'text-emerald-400', border: 'border-emerald-500/20' },
   failed: { bg: 'bg-red-500/15', text: 'text-red-400', border: 'border-red-500/20' },
   cancelled: { bg: 'bg-amber-500/15', text: 'text-amber-400', border: 'border-amber-500/20' },
+  incomplete: { bg: 'bg-orange-500/15', text: 'text-orange-400', border: 'border-orange-500/20' },
 };
 
 export const EVENT_STATUS_COLORS: Record<string, BadgeColors> = {
@@ -46,7 +47,7 @@ export const EVENT_STATUS_COLORS: Record<string, BadgeColors> = {
   completed: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
   processed: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
   failed: { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/20' },
-  skipped: { bg: 'bg-secondary/50', text: 'text-muted-foreground/50', border: 'border-primary/10' },
+  skipped: { bg: 'bg-secondary/50', text: 'text-muted-foreground/90', border: 'border-primary/10' },
 };
 
 export const SEVERITY_COLORS: Record<string, BadgeColors> = {

@@ -123,10 +123,8 @@ async fn execute_healthcheck_request(
     let mut has_auth_header = false;
     for (header_name, header_template) in &hc_config.headers {
         let header_value = resolve_template(header_template, &resolved_values);
-        if header_name.eq_ignore_ascii_case("authorization") {
-            if !header_value.contains("{{") {
-                has_auth_header = true;
-            }
+        if header_name.eq_ignore_ascii_case("authorization") && !header_value.contains("{{") {
+            has_auth_header = true;
         }
         request = request.header(header_name, header_value);
     }

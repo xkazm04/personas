@@ -36,44 +36,44 @@ export function TemplateQualitySection({ review }: { review: PersonaDesignReview
 
   return (
     <div>
-      <h4 className="text-xs font-medium text-muted-foreground/50 uppercase tracking-wide mb-2">
+      <h4 className="text-sm font-medium text-muted-foreground/90 uppercase tracking-wide mb-2">
         Quality Evaluation
       </h4>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Left: Structural checks */}
         <div>
-          <h5 className="text-xs font-medium text-muted-foreground/60 mb-2">Structural Checks</h5>
+          <h5 className="text-sm font-medium text-muted-foreground/80 mb-2">Structural Checks</h5>
           {structuralEval ? (
             <div className="space-y-1">
               {structuralEval.checks.map((check, i) => (
-                <div key={i} className="flex items-center gap-2 text-xs">
+                <div key={i} className="flex items-center gap-2 text-sm">
                   {check.passed ? (
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                   ) : (
                     <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
                   )}
-                  <span className={check.passed ? 'text-foreground/70' : 'text-red-300/80'}>
+                  <span className={check.passed ? 'text-foreground/90' : 'text-red-300/80'}>
                     <span className="font-medium">{check.name}</span>: {check.message}
                   </span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-xs text-muted-foreground/30">No structural data</p>
+            <p className="text-sm text-muted-foreground/80">No structural data</p>
           )}
         </div>
 
         {/* Right: Semantic dimensions */}
         <div>
-          <h5 className="text-xs font-medium text-muted-foreground/60 mb-2">Semantic Dimensions</h5>
+          <h5 className="text-sm font-medium text-muted-foreground/80 mb-2">Semantic Dimensions</h5>
           {semanticEval ? (
             <div className="space-y-3">
               {semanticEval.dimensions.map((dim, i) => (
-                <div key={i} className="text-xs">
+                <div key={i} className="text-sm">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-foreground/80 font-medium">{dim.name}</span>
                     <span
-                      className={`text-xs font-mono font-semibold px-1.5 py-0.5 rounded ${
+                      className={`text-sm font-mono font-semibold px-1.5 py-0.5 rounded ${
                         dim.score >= 80 ? 'text-emerald-400 bg-emerald-500/10' : dim.score >= 60 ? 'text-amber-400 bg-amber-500/10' : 'text-red-400 bg-red-500/10'
                       }`}
                     >
@@ -96,7 +96,7 @@ export function TemplateQualitySection({ review }: { review: PersonaDesignReview
                           ) : isBullet ? (
                             <span className="w-1 h-1 rounded-full bg-foreground/30 mt-1.5 flex-shrink-0" />
                           ) : null}
-                          <span className={`${isIssue ? 'text-amber-300/90' : isPositive ? 'text-emerald-300/90' : 'text-foreground/60'}`}>
+                          <span className={`${isIssue ? 'text-amber-300/90' : isPositive ? 'text-emerald-300/90' : 'text-foreground/80'}`}>
                             {text}
                           </span>
                         </div>
@@ -107,7 +107,7 @@ export function TemplateQualitySection({ review }: { review: PersonaDesignReview
               ))}
             </div>
           ) : (
-            <p className="text-xs text-muted-foreground/30">Semantic evaluation skipped</p>
+            <p className="text-sm text-muted-foreground/80">Semantic evaluation skipped</p>
           )}
         </div>
       </div>

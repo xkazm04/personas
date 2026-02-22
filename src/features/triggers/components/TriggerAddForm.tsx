@@ -49,7 +49,7 @@ function SchedulePreview({ intervalSeconds, triggerType }: { intervalSeconds: nu
       {/* Human-readable summary */}
       <div className="flex items-center gap-2 mb-2.5">
         <Clock className="w-3.5 h-3.5 text-primary/50 flex-shrink-0" />
-        <p className="text-xs text-foreground/70">
+        <p className="text-sm text-foreground/90">
           First {triggerType === 'polling' ? 'poll' : 'run'}:{' '}
           <span className="font-medium text-foreground/90">{formatRunTime(firstRun)}</span>
           , then every{' '}
@@ -65,7 +65,7 @@ function SchedulePreview({ intervalSeconds, triggerType }: { intervalSeconds: nu
         {/* "Now" marker */}
         <div className="absolute left-0 top-1/2 -translate-y-1/2 flex flex-col items-center">
           <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
-          <span className="text-[9px] text-muted-foreground/40 mt-1.5 absolute top-full whitespace-nowrap">now</span>
+          <span className="text-sm text-muted-foreground/80 mt-1.5 absolute top-full whitespace-nowrap">now</span>
         </div>
 
         {/* Run dots */}
@@ -81,8 +81,8 @@ function SchedulePreview({ intervalSeconds, triggerType }: { intervalSeconds: nu
               style={{ left: `${pct}%` }}
             >
               <div className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-primary' : 'bg-primary/40'} ring-2 ring-primary/10`} />
-              <span className={`text-[9px] mt-1.5 absolute top-full whitespace-nowrap ${
-                i === 0 ? 'text-primary/70 font-medium' : 'text-muted-foreground/30 opacity-0 group-hover:opacity-100 transition-opacity'
+              <span className={`text-sm mt-1.5 absolute top-full whitespace-nowrap ${
+                i === 0 ? 'text-primary/70 font-medium' : 'text-muted-foreground/80 opacity-0 group-hover:opacity-100 transition-opacity'
               }`}>
                 {formatRunTime(run)}
               </span>
@@ -208,11 +208,11 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
               >
                 <div className="flex items-center gap-2">
                   <Icon className={`w-4 h-4 ${colorClass}`} />
-                  <span className={`text-sm font-medium ${isSelected ? 'text-foreground/90' : 'text-foreground/70'}`}>
+                  <span className={`text-sm font-medium ${isSelected ? 'text-foreground/90' : 'text-foreground/90'}`}>
                     {option.label}
                   </span>
                 </div>
-                <span className="text-xs text-muted-foreground/50">
+                <span className="text-sm text-muted-foreground/90">
                   {option.description}
                 </span>
               </button>
@@ -239,10 +239,10 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
                 key={preset.value}
                 type="button"
                 onClick={() => { setInterval(preset.value); setCustomInterval(false); }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
                   !customInterval && interval === preset.value
                     ? 'bg-primary/15 text-primary border-primary/30'
-                    : 'bg-secondary/30 text-muted-foreground/60 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
+                    : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
                 }`}
               >
                 {preset.label}
@@ -251,10 +251,10 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
             <button
               type="button"
               onClick={() => setCustomInterval(true)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
                 customInterval
                   ? 'bg-primary/15 text-primary border-primary/30'
-                  : 'bg-secondary/30 text-muted-foreground/60 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
+                  : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
               }`}
             >
               Custom
@@ -278,13 +278,13 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
                 }`}
               />
               {validationError && (
-                <p className="text-xs text-red-400/80 mt-1">{validationError}</p>
+                <p className="text-sm text-red-400/80 mt-1">{validationError}</p>
               )}
               {!validationError && (() => {
                 const secs = parseInt(interval) || 0;
                 if (secs < 60) return null;
                 return (
-                  <p className="text-xs text-primary/60 mt-1">Every {formatInterval(secs)}</p>
+                  <p className="text-sm text-primary/60 mt-1">Every {formatInterval(secs)}</p>
                 );
               })()}
             </>
@@ -295,11 +295,11 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
             const runsPerDay = Math.floor(86400 / secs);
             return (
               <>
-                <p className="text-xs text-muted-foreground/50 mt-1.5">
+                <p className="text-sm text-muted-foreground/90 mt-1.5">
                   This persona will {triggerType === 'polling' ? 'poll' : 'run'} every{' '}
-                  <span className="text-foreground/60 font-medium">{formatInterval(secs)}</span>
+                  <span className="text-foreground/80 font-medium">{formatInterval(secs)}</span>
                   , starting from when you enable it.{' '}
-                  <span className="text-muted-foreground/40">
+                  <span className="text-muted-foreground/80">
                     Approximately {runsPerDay.toLocaleString()} run{runsPerDay !== 1 ? 's' : ''} per day.
                   </span>
                 </p>
@@ -328,7 +328,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
                   <option key={evt.id} value={evt.id}>{evt.name}</option>
                 ))}
               </select>
-              <p className="text-xs text-muted-foreground/40 mt-1">Link to a credential event instead of a custom endpoint</p>
+              <p className="text-sm text-muted-foreground/80 mt-1">Link to a credential event instead of a custom endpoint</p>
             </div>
           )}
           {!selectedEventId && (
@@ -361,12 +361,12 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
                   value={hmacSecret}
                   onChange={(e) => setHmacSecret(e.target.value)}
                   placeholder="Leave empty for no signature verification"
-                  className={`w-full px-3 py-2 pr-10 bg-background/50 border border-primary/15 rounded-xl text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all ${showHmacSecret ? 'font-mono text-xs' : ''}`}
+                  className={`w-full px-3 py-2 pr-10 bg-background/50 border border-primary/15 rounded-xl text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all ${showHmacSecret ? 'font-mono text-sm' : ''}`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowHmacSecret(!showHmacSecret)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted-foreground/90 hover:text-foreground/95 transition-colors"
                   title={showHmacSecret ? 'Hide secret' : 'Show secret'}
                 >
                   {showHmacSecret ? (
@@ -383,7 +383,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
                   className={`flex-shrink-0 p-2 rounded-xl border transition-all ${
                     copiedHmac
                       ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20'
-                      : 'bg-background/50 border-primary/15 text-muted-foreground/50 hover:text-foreground/70 hover:border-primary/30'
+                      : 'bg-background/50 border-primary/15 text-muted-foreground/90 hover:text-foreground/95 hover:border-primary/30'
                   }`}
                   title={copiedHmac ? 'Copied!' : 'Copy secret'}
                 >
@@ -395,10 +395,10 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
                 </button>
               )}
             </div>
-            <p className="text-xs text-muted-foreground/40 mt-1">If set, incoming webhooks must include x-hub-signature-256 header</p>
+            <p className="text-sm text-muted-foreground/80 mt-1">If set, incoming webhooks must include x-hub-signature-256 header</p>
           </div>
           <div className="p-3 bg-background/30 rounded-xl border border-primary/10">
-            <p className="text-xs text-muted-foreground/50">A unique webhook URL will be shown after creation with a copy button</p>
+            <p className="text-sm text-muted-foreground/90">A unique webhook URL will be shown after creation with a copy button</p>
           </div>
         </div>
       )}
@@ -406,13 +406,13 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
       <div className="flex justify-end gap-2 pt-2">
         <button
           onClick={onCancel}
-          className="px-3 py-1.5 bg-secondary/60 hover:bg-secondary text-foreground/70 rounded-xl text-xs transition-colors"
+          className="px-3 py-1.5 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-xl text-sm transition-colors"
         >
           Cancel
         </button>
         <button
           onClick={handleAddTrigger}
-          className="px-3 py-1.5 bg-primary hover:bg-primary/90 text-foreground rounded-xl text-xs font-medium transition-all shadow-lg shadow-primary/20"
+          className="px-3 py-1.5 bg-primary hover:bg-primary/90 text-foreground rounded-xl text-sm font-medium transition-all shadow-lg shadow-primary/20"
         >
           Create Trigger
         </button>

@@ -16,6 +16,8 @@ export interface UiSlice {
   templateAdoptActive: boolean;
   showDesignNudge: boolean;
   showCloudNudge: boolean;
+  isCreatingPersona: boolean;
+  autoStartDesignInstruction: string | null;
 
   // Actions
   setSidebarSection: (section: SidebarSection) => void;
@@ -29,13 +31,15 @@ export interface UiSlice {
   setTemplateAdoptActive: (active: boolean) => void;
   setShowDesignNudge: (show: boolean) => void;
   setShowCloudNudge: (show: boolean) => void;
+  setIsCreatingPersona: (creating: boolean) => void;
+  setAutoStartDesignInstruction: (instruction: string | null) => void;
 }
 
 export const createUiSlice: StateCreator<PersonaStore, [], [], UiSlice> = (set) => ({
   sidebarSection: "overview" as SidebarSection,
   credentialView: "credentials",
   templateTab: "builtin" as TemplateTab,
-  editorTab: "prompt" as EditorTab,
+  editorTab: "use-cases" as EditorTab,
   settingsTab: "account" as SettingsTab,
   rerunInputData: null,
   isLoading: false,
@@ -44,6 +48,8 @@ export const createUiSlice: StateCreator<PersonaStore, [], [], UiSlice> = (set) 
   templateAdoptActive: false,
   showDesignNudge: false,
   showCloudNudge: false,
+  isCreatingPersona: false,
+  autoStartDesignInstruction: null,
 
   setSidebarSection: (section) => set({ sidebarSection: section }),
   setCredentialView: (view) => set({ credentialView: view }),
@@ -56,4 +62,6 @@ export const createUiSlice: StateCreator<PersonaStore, [], [], UiSlice> = (set) 
   setTemplateAdoptActive: (active) => set({ templateAdoptActive: active }),
   setShowDesignNudge: (show) => set({ showDesignNudge: show }),
   setShowCloudNudge: (show) => set({ showCloudNudge: show }),
+  setIsCreatingPersona: (creating) => set({ isCreatingPersona: creating }),
+  setAutoStartDesignInstruction: (instruction) => set({ autoStartDesignInstruction: instruction }),
 });

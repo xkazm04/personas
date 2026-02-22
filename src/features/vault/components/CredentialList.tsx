@@ -139,7 +139,7 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
       ))}
 
       {filteredCredentials.length === 0 && credentials.length > 0 && (
-        <div className="text-center py-10 text-muted-foreground/40 text-sm">
+        <div className="text-center py-10 text-muted-foreground/80 text-sm">
           No credentials match your search
         </div>
       )}
@@ -153,10 +153,10 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
           {/* Heading */}
           <div className="text-center pt-6 pb-2">
             <div className="w-12 h-12 mx-auto rounded-2xl bg-secondary/60 border border-primary/15 flex items-center justify-center mb-3">
-              <Key className="w-6 h-6 text-muted-foreground/50" />
+              <Key className="w-6 h-6 text-muted-foreground/90" />
             </div>
-            <h3 className="text-sm font-medium text-foreground/70">Connect your first service</h3>
-            <p className="text-xs text-muted-foreground/40 mt-1">Choose how you want to add a credential</p>
+            <h3 className="text-sm font-medium text-foreground/90">Connect your first service</h3>
+            <p className="text-sm text-muted-foreground/80 mt-1">Choose how you want to add a credential</p>
           </div>
 
           {/* Two pathway cards */}
@@ -170,7 +170,7 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
                 <LayoutTemplate className="w-4.5 h-4.5 text-emerald-400" />
               </div>
               <p className="text-sm font-medium text-foreground/80 mb-1">Use a template</p>
-              <p className="text-[11px] text-muted-foreground/50 leading-relaxed">
+              <p className="text-sm text-muted-foreground/90 leading-relaxed">
                 Pick a known service like Slack, GitHub, or OpenAI. Pre-configured fields and healthchecks.
               </p>
               <div className="flex items-center gap-1.5 mt-3">
@@ -192,7 +192,7 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
                   </div>
                 ))}
                 {connectorDefinitions.length > 4 && (
-                  <span className="text-[10px] text-muted-foreground/40 ml-0.5">+{connectorDefinitions.length - 4}</span>
+                  <span className="text-sm text-muted-foreground/80 ml-0.5">+{connectorDefinitions.length - 4}</span>
                 )}
               </div>
             </button>
@@ -206,10 +206,10 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
                 <Sparkles className="w-4.5 h-4.5 text-violet-400" />
               </div>
               <p className="text-sm font-medium text-foreground/80 mb-1">AI-designed credential</p>
-              <p className="text-[11px] text-muted-foreground/50 leading-relaxed">
+              <p className="text-sm text-muted-foreground/90 leading-relaxed">
                 Describe any service and AI will configure the fields, auth type, and healthcheck for you.
               </p>
-              <span className="inline-flex items-center gap-1 mt-3 text-[10px] text-violet-400/60 group-hover:text-violet-400/80 transition-colors">
+              <span className="inline-flex items-center gap-1 mt-3 text-sm text-violet-400/60 group-hover:text-violet-400/80 transition-colors">
                 Works with any API <ArrowRight className="w-3 h-3" />
               </span>
             </button>
@@ -225,13 +225,13 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
 
             return (
               <div className="space-y-2">
-                <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/30 text-center">Quick start</p>
+                <p className="text-sm font-mono uppercase tracking-wider text-muted-foreground/80 text-center">Quick start</p>
                 <div className="flex items-center justify-center gap-2 flex-wrap">
                   {quickConnectors.map((connector) => (
                     <button
                       key={connector.id}
                       onClick={() => onQuickStart(connector)}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-primary/10 bg-secondary/20 hover:bg-secondary/50 hover:border-primary/20 transition-all text-xs"
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-primary/10 bg-secondary/20 hover:bg-secondary/50 hover:border-primary/20 transition-all text-sm"
                     >
                       <div
                         className="w-4.5 h-4.5 rounded flex items-center justify-center"
@@ -243,7 +243,7 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
                           <Plug className="w-2.5 h-2.5" style={{ color: connector.color }} />
                         )}
                       </div>
-                      <span className="text-foreground/60">{connector.label}</span>
+                      <span className="text-foreground/80">{connector.label}</span>
                     </button>
                   ))}
                 </div>

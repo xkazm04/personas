@@ -300,7 +300,7 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
             </div>
             <div>
               <h2 className="text-sm font-semibold text-foreground">Design Credential</h2>
-              <p className="text-xs text-muted-foreground/50">
+              <p className="text-sm text-muted-foreground/90">
                 {phase === 'idle' && 'Describe the service to connect'}
                 {phase === 'analyzing' && 'Analyzing your request...'}
                 {phase === 'preview' && 'Review and save'}
@@ -312,7 +312,7 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
           </div>
           <button
             onClick={handleClose}
-            className="p-2 rounded-lg hover:bg-secondary/60 text-muted-foreground/50 hover:text-foreground transition-colors"
+            className="p-2 rounded-lg hover:bg-secondary/60 text-muted-foreground/90 hover:text-foreground transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -384,7 +384,7 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
                 className="flex flex-col items-center justify-center py-12 gap-3"
               >
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                <p className="text-sm text-muted-foreground/50">Saving credential...</p>
+                <p className="text-sm text-muted-foreground/90">Saving credential...</p>
               </motion.div>
             )}
 

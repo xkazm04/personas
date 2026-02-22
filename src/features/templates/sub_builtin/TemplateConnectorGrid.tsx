@@ -45,7 +45,7 @@ function channelIcon(type: string) {
   }
 }
 
-const SECTION_LABEL = 'text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50 flex items-center gap-2';
+const SECTION_LABEL = 'text-sm font-semibold uppercase tracking-wider text-muted-foreground/90 flex items-center gap-2';
 
 // ============================================================================
 // Section 1: Connectors & Tools
@@ -98,7 +98,7 @@ function ConnectorsToolsSection({ designResult }: { designResult: DesignAnalysis
                   </div>
                 ) : (
                   <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Wrench className="w-3.5 h-3.5 text-muted-foreground/50" />
+                    <Wrench className="w-3.5 h-3.5 text-muted-foreground/90" />
                   </div>
                 )}
                 <span className="text-sm font-medium text-foreground/80 truncate flex-1">
@@ -110,7 +110,7 @@ function ConnectorsToolsSection({ designResult }: { designResult: DesignAnalysis
                   {row.tools.map((toolName) => (
                     <div key={toolName} className="flex items-center gap-2">
                       <Wrench className="w-3 h-3 text-primary/40 flex-shrink-0" />
-                      <span className="text-xs text-foreground/70 truncate">{toolName}</span>
+                      <span className="text-sm text-foreground/90 truncate">{toolName}</span>
                     </div>
                   ))}
                 </div>
@@ -138,19 +138,19 @@ function EventsTriggersSection({ designResult }: { designResult: DesignAnalysisR
       <div className={SECTION_LABEL}>
         <Zap className="w-4 h-4 text-amber-400" />
         Events & Triggers
-        <span className="text-[10px] font-normal text-muted-foreground/30 ml-1">What activates this persona</span>
+        <span className="text-sm font-normal text-muted-foreground/80 ml-1">What activates this persona</span>
       </div>
 
       <div className="bg-secondary/20 border border-primary/10 rounded-xl overflow-hidden divide-y divide-primary/[0.06]">
         {triggers.length > 0 && (
           <div className="p-3.5 space-y-2">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/40">Triggers</span>
+            <span className="text-sm font-mono uppercase tracking-wider text-muted-foreground/80">Triggers</span>
             {triggers.map((trigger, idx) => (
               <div key={idx} className="flex items-start gap-2.5 py-1">
                 <div className="flex-shrink-0 mt-0.5">{triggerIcon(trigger.trigger_type)}</div>
                 <div className="flex-1 min-w-0">
-                  <span className="text-sm text-foreground/70 capitalize block">{trigger.trigger_type}</span>
-                  <span className="text-xs text-muted-foreground/40 leading-snug block">{trigger.description}</span>
+                  <span className="text-sm text-foreground/90 capitalize block">{trigger.trigger_type}</span>
+                  <span className="text-sm text-muted-foreground/80 leading-snug block">{trigger.description}</span>
                 </div>
               </div>
             ))}
@@ -159,7 +159,7 @@ function EventsTriggersSection({ designResult }: { designResult: DesignAnalysisR
 
         {subscriptions.length > 0 && (
           <div className="p-3.5 space-y-2">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/40 flex items-center gap-1.5">
+            <span className="text-sm font-mono uppercase tracking-wider text-muted-foreground/80 flex items-center gap-1.5">
               <Zap className="w-3 h-3 text-purple-400" />
               Event Subscriptions
             </span>
@@ -167,8 +167,8 @@ function EventsTriggersSection({ designResult }: { designResult: DesignAnalysisR
               <div key={idx} className="flex items-start gap-2.5 py-1">
                 <Zap className="w-3.5 h-3.5 text-purple-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
-                  <span className="text-sm text-foreground/70 block">{sub.event_type}</span>
-                  <span className="text-xs text-muted-foreground/40 leading-snug block">{sub.description}</span>
+                  <span className="text-sm text-foreground/90 block">{sub.event_type}</span>
+                  <span className="text-sm text-muted-foreground/80 leading-snug block">{sub.description}</span>
                 </div>
               </div>
             ))}
@@ -193,7 +193,7 @@ function MessagesNotificationsSection({ designResult }: { designResult: DesignAn
       <div className={SECTION_LABEL}>
         <Bell className="w-4 h-4 text-blue-400" />
         Messages & Notifications
-        <span className="text-[10px] font-normal text-muted-foreground/30 ml-1">How this persona communicates</span>
+        <span className="text-sm font-normal text-muted-foreground/80 ml-1">How this persona communicates</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -205,9 +205,9 @@ function MessagesNotificationsSection({ designResult }: { designResult: DesignAn
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-sm font-medium text-foreground/80 capitalize block">{channel.type}</span>
-                <span className="text-xs text-muted-foreground/40 leading-snug block mt-0.5">{channel.description}</span>
+                <span className="text-sm text-muted-foreground/80 leading-snug block mt-0.5">{channel.description}</span>
                 {channel.required_connector && (
-                  <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 text-[10px] rounded-full bg-primary/8 text-muted-foreground/50 border border-primary/10">
+                  <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 text-sm rounded-full bg-primary/8 text-muted-foreground/90 border border-primary/10">
                     <Plug className="w-2.5 h-2.5" />
                     Requires {channel.required_connector}
                   </span>

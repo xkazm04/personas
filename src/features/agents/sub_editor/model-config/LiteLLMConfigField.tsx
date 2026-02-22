@@ -17,9 +17,9 @@ export function LiteLLMConfigField() {
 
   return (
     <div className="space-y-1.5 bg-sky-500/5 border border-sky-500/15 rounded-lg p-3">
-      <label className="block text-sm font-medium text-foreground/60 mb-1">
+      <label className="block text-sm font-medium text-foreground/80 mb-1">
         LiteLLM Proxy Settings
-        <span className="text-muted-foreground/40 font-normal ml-1">(global, shared across all agents)</span>
+        <span className="text-muted-foreground/80 font-normal ml-1">(global, shared across all agents)</span>
       </label>
       <div className="space-y-2">
         <input
@@ -45,7 +45,7 @@ export function LiteLLMConfigField() {
           />
         </div>
       </div>
-      <p className="text-xs text-muted-foreground/40">
+      <p className="text-sm text-muted-foreground/80">
         These global settings are used as defaults for all agents using the LiteLLM provider. Per-agent overrides above take precedence.
       </p>
     </div>

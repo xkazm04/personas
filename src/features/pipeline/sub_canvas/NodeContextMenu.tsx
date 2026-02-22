@@ -30,7 +30,7 @@ export default function NodeContextMenu({ x, y, memberName, currentRole, onChang
       className="fixed z-50 w-48 rounded-xl bg-background/95 backdrop-blur-md border border-primary/20 shadow-xl py-1 overflow-hidden"
       style={{ left: x, top: y }}
     >
-      <div className="px-3 py-1.5 text-[10px] font-mono uppercase text-muted-foreground/40 border-b border-primary/10">
+      <div className="px-3 py-1.5 text-sm font-mono uppercase text-muted-foreground/80 border-b border-primary/10">
         {memberName}
       </div>
 
@@ -40,13 +40,13 @@ export default function NodeContextMenu({ x, y, memberName, currentRole, onChang
           <button
             key={role.value}
             onClick={() => { onChangeRole(role.value); onClose(); }}
-            className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg transition-colors ${
-              currentRole === role.value ? 'bg-indigo-500/15 text-indigo-300' : 'text-foreground/70 hover:bg-secondary/60'
+            className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-sm rounded-lg transition-colors ${
+              currentRole === role.value ? 'bg-indigo-500/15 text-indigo-300' : 'text-foreground/90 hover:bg-secondary/60'
             }`}
           >
             <UserCog className="w-3 h-3" />
             <span className="capitalize">{role.label}</span>
-            {currentRole === role.value && <span className="ml-auto text-[9px] text-indigo-400">current</span>}
+            {currentRole === role.value && <span className="ml-auto text-sm text-indigo-400">current</span>}
           </button>
         ))}
       </div>
@@ -55,14 +55,14 @@ export default function NodeContextMenu({ x, y, memberName, currentRole, onChang
       <div className="px-1 py-1">
         <button
           onClick={() => { onConfigure(); onClose(); }}
-          className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-foreground/70 hover:bg-secondary/60 rounded-lg transition-colors"
+          className="w-full flex items-center gap-2 px-2.5 py-1.5 text-sm text-foreground/90 hover:bg-secondary/60 rounded-lg transition-colors"
         >
           <Settings className="w-3 h-3" />
           Configure
         </button>
         <button
           onClick={() => { onRemove(); onClose(); }}
-          className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+          className="w-full flex items-center gap-2 px-2.5 py-1.5 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
         >
           <Trash2 className="w-3 h-3" />
           Remove from Team

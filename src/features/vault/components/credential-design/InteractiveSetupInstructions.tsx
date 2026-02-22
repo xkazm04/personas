@@ -31,7 +31,7 @@ function parseSteps(markdown: string): { preamble: string; steps: string[] } {
 
   for (const line of lines) {
     // Match numbered list items: "1. ", "2. ", "1) ", etc.
-    const isNumberedItem = /^\s*\d+[\.\)]\s+/.test(line);
+    const isNumberedItem = /^\s*\d+[.)]\s+/.test(line);
 
     if (isNumberedItem) {
       if (currentStep) {
@@ -76,10 +76,10 @@ function CopyButton({ text, className }: { text: string; className?: string }) {
     <button
       onClick={handleCopy}
       title="Copy to clipboard"
-      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] transition-all ${
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-sm transition-all ${
         copied
           ? 'text-emerald-400 bg-emerald-500/10'
-          : 'text-muted-foreground/40 hover:text-foreground/60 hover:bg-secondary/60'
+          : 'text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/60'
       } ${className ?? ''}`}
     >
       {copied ? <Check className="w-2.5 h-2.5" /> : <Copy className="w-2.5 h-2.5" />}
@@ -99,7 +99,7 @@ function buildComponents(onOpenUrl: (url: string) => void): Components {
         return (
           <div className="relative group my-2">
             <code
-              className={`block p-3 bg-background/60 border border-primary/10 rounded-lg text-xs font-mono overflow-x-auto ${className || ''}`}
+              className={`block p-3 bg-background/60 border border-primary/10 rounded-lg text-sm font-mono overflow-x-auto ${className || ''}`}
               {...props}
             >
               {children}
@@ -115,7 +115,7 @@ function buildComponents(onOpenUrl: (url: string) => void): Components {
       return (
         <span className="inline-flex items-center gap-0.5">
           <code
-            className="px-1.5 py-0.5 bg-secondary/60 border border-primary/10 rounded text-xs font-mono text-amber-300"
+            className="px-1.5 py-0.5 bg-secondary/60 border border-primary/10 rounded text-sm font-mono text-amber-300"
             {...props}
           >
             {children}
@@ -145,13 +145,13 @@ function buildComponents(onOpenUrl: (url: string) => void): Components {
       );
     },
     p: ({ children }) => (
-      <p className="text-xs text-foreground/80 my-1 leading-relaxed">{children}</p>
+      <p className="text-sm text-foreground/80 my-1 leading-relaxed">{children}</p>
     ),
     ul: ({ children }) => (
-      <ul className="list-disc list-inside space-y-0.5 my-1 text-xs text-foreground/80">{children}</ul>
+      <ul className="list-disc list-inside space-y-0.5 my-1 text-sm text-foreground/80">{children}</ul>
     ),
     ol: ({ children }) => (
-      <ol className="list-decimal list-inside space-y-0.5 my-1 text-xs text-foreground/80">{children}</ol>
+      <ol className="list-decimal list-inside space-y-0.5 my-1 text-sm text-foreground/80">{children}</ol>
     ),
     li: ({ children }) => (
       <li className="text-foreground/80">{children}</li>
@@ -160,17 +160,17 @@ function buildComponents(onOpenUrl: (url: string) => void): Components {
       <h1 className="text-sm font-bold text-foreground mb-1.5 mt-2">{children}</h1>
     ),
     h2: ({ children }) => (
-      <h2 className="text-xs font-semibold text-foreground/90 mb-1 mt-2">{children}</h2>
+      <h2 className="text-sm font-semibold text-foreground/90 mb-1 mt-2">{children}</h2>
     ),
     h3: ({ children }) => (
-      <h3 className="text-xs font-semibold text-foreground/80 mb-1 mt-1.5">{children}</h3>
+      <h3 className="text-sm font-semibold text-foreground/80 mb-1 mt-1.5">{children}</h3>
     ),
     strong: ({ children }) => (
       <strong className="font-semibold text-foreground">{children}</strong>
     ),
     hr: () => <hr className="border-primary/10 my-2" />,
     blockquote: ({ children }) => (
-      <blockquote className="border-l-2 border-primary/20 pl-3 italic text-foreground/50 my-2 text-xs">
+      <blockquote className="border-l-2 border-primary/20 pl-3 italic text-foreground/90 my-2 text-sm">
         {children}
       </blockquote>
     ),
@@ -204,7 +204,7 @@ function StepCard({
   components: Components;
 }) {
   // Strip the leading number (e.g. "1. " or "2) ")
-  const content = stepMarkdown.replace(/^\s*\d+[\.\)]\s+/, '');
+  const content = stepMarkdown.replace(/^\s*\d+[.)]\s+/, '');
 
   return (
     <div
@@ -221,13 +221,13 @@ function StepCard({
         {isCompleted ? (
           <CheckCircle className="w-4 h-4 text-emerald-400" />
         ) : (
-          <Circle className="w-4 h-4 text-muted-foreground/30 hover:text-primary/50 transition-colors" />
+          <Circle className="w-4 h-4 text-muted-foreground/80 hover:text-primary/50 transition-colors" />
         )}
       </button>
 
       {/* Step content */}
       <div className={`flex-1 min-w-0 ${isCompleted ? 'opacity-50' : ''}`}>
-        <span className="text-[10px] font-bold text-muted-foreground/30 uppercase tracking-wider">
+        <span className="text-sm font-bold text-muted-foreground/80 uppercase tracking-wider">
           Step {stepIndex + 1}
         </span>
         <div className="prose-none">
@@ -283,19 +283,19 @@ export function InteractiveSetupInstructions({
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-secondary/30 transition-colors"
       >
-        <ListChecks className="w-3.5 h-3.5 text-foreground/50 shrink-0" />
-        <span className="text-xs text-foreground/85 font-medium flex-1">
+        <ListChecks className="w-3.5 h-3.5 text-foreground/90 shrink-0" />
+        <span className="text-sm text-foreground/85 font-medium flex-1">
           Setup instructions
         </span>
 
         {/* Progress badge */}
         {hasSteps && (
-          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
+          <span className={`text-sm font-medium px-1.5 py-0.5 rounded ${
             completedCount === totalSteps && totalSteps > 0
               ? 'bg-emerald-500/15 text-emerald-400'
               : completedCount > 0
                 ? 'bg-primary/10 text-primary/70'
-                : 'bg-secondary/50 text-muted-foreground/40'
+                : 'bg-secondary/50 text-muted-foreground/80'
           }`}>
             {completedCount}/{totalSteps}
           </span>
@@ -308,7 +308,7 @@ export function InteractiveSetupInstructions({
               e.stopPropagation();
               await handleOpenUrl(firstSetupUrl);
             }}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] text-foreground/50 hover:text-foreground/80 hover:bg-secondary/60 transition-colors"
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-sm text-foreground/90 hover:text-foreground/95 hover:bg-secondary/60 transition-colors"
             title="Open setup page in browser"
           >
             <ExternalLink className="w-2.5 h-2.5" />
@@ -320,7 +320,7 @@ export function InteractiveSetupInstructions({
           animate={{ rotate: isOpen ? 180 : 0 }}
           transition={{ duration: 0.15 }}
         >
-          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/30" />
+          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/80" />
         </motion.div>
       </button>
 
@@ -377,7 +377,7 @@ export function InteractiveSetupInstructions({
                   className="flex items-center gap-2 px-3 py-2 mt-1 rounded-lg bg-emerald-500/10 border border-emerald-500/15"
                 >
                   <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-[11px] text-emerald-300/80">
+                  <span className="text-sm text-emerald-300/80">
                     All steps complete — fill in the fields below and test your connection.
                   </span>
                 </motion.div>

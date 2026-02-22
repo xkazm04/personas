@@ -19,23 +19,23 @@ const components: Components = {
     <h3 className="text-sm font-semibold text-foreground/80 mb-2 mt-2">{children}</h3>
   ),
   p: ({ children }) => (
-    <p className="text-sm text-foreground/70 mb-3 leading-relaxed">{children}</p>
+    <p className="text-sm text-foreground/90 mb-3 leading-relaxed">{children}</p>
   ),
   ul: ({ children }) => (
-    <ul className="list-disc list-inside space-y-1 mb-3 text-sm text-foreground/70">{children}</ul>
+    <ul className="list-disc list-inside space-y-1 mb-3 text-sm text-foreground/90">{children}</ul>
   ),
   ol: ({ children }) => (
-    <ol className="list-decimal list-inside space-y-1 mb-3 text-sm text-foreground/70">{children}</ol>
+    <ol className="list-decimal list-inside space-y-1 mb-3 text-sm text-foreground/90">{children}</ol>
   ),
   li: ({ children }) => (
-    <li className="text-foreground/70">{children}</li>
+    <li className="text-foreground/90">{children}</li>
   ),
   code: ({ className, children, ...props }) => {
     const isBlock = className?.includes('language-');
     if (isBlock) {
       return (
         <code
-          className={`block p-4 bg-background/50 border border-border/30 rounded-xl text-xs font-mono overflow-x-auto ${className || ''}`}
+          className={`block p-4 bg-background/50 border border-border/30 rounded-xl text-sm font-mono overflow-x-auto ${className || ''}`}
           {...props}
         >
           {children}
@@ -44,7 +44,7 @@ const components: Components = {
     }
     return (
       <code
-        className="px-1.5 py-0.5 bg-secondary/60 border border-border/30 rounded text-xs font-mono text-primary/80"
+        className="px-1.5 py-0.5 bg-secondary/60 border border-border/30 rounded text-sm font-mono text-primary/80"
         {...props}
       >
         {children}
@@ -55,7 +55,7 @@ const components: Components = {
     <pre className="mb-3">{children}</pre>
   ),
   blockquote: ({ children }) => (
-    <blockquote className="border-l-2 border-primary/30 pl-4 italic text-foreground/50 my-3">
+    <blockquote className="border-l-2 border-primary/30 pl-4 italic text-foreground/90 my-3">
       {children}
     </blockquote>
   ),
@@ -63,12 +63,12 @@ const components: Components = {
     <table className="w-full text-sm mb-3">{children}</table>
   ),
   th: ({ children }) => (
-    <th className="text-left font-medium text-foreground/70 pb-2 border-b border-border/30">
+    <th className="text-left font-medium text-foreground/90 pb-2 border-b border-border/30">
       {children}
     </th>
   ),
   td: ({ children }) => (
-    <td className="py-1.5 text-foreground/60 border-b border-border/20">{children}</td>
+    <td className="py-1.5 text-foreground/80 border-b border-border/20">{children}</td>
   ),
   a: ({ href, children }) => (
     <a href={href} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
@@ -83,7 +83,7 @@ const components: Components = {
     <img src={src} alt={alt || ''} className="max-w-full h-auto rounded-lg my-2 border border-border/20" />
   ),
   em: ({ children }) => (
-    <em className="italic text-foreground/60">{children}</em>
+    <em className="italic text-foreground/80">{children}</em>
   ),
 };
 

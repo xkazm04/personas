@@ -101,13 +101,13 @@ export function ConfigurationPopup({
             <Key className={`w-4 h-4 ${styles.icon}`} />
             {title}
           </h3>
-          <p className="text-xs text-muted-foreground/50 mt-1">{subtitle}</p>
+          <p className="text-sm text-muted-foreground/90 mt-1">{subtitle}</p>
         </div>
 
         <div className="px-5 py-4 space-y-3">
           {fields.map((field) => (
             <div key={field.key}>
-              <label className="block text-xs font-medium text-foreground/60 mb-1.5">
+              <label className="block text-sm font-medium text-foreground/80 mb-1.5">
                 {field.label}
               </label>
               <input
@@ -124,7 +124,7 @@ export function ConfigurationPopup({
             </div>
           ))}
           {footerText && (
-            <p className="text-[11px] text-muted-foreground/40 leading-relaxed">
+            <p className="text-sm text-muted-foreground/80 leading-relaxed">
               {footerText}
             </p>
           )}
@@ -133,14 +133,14 @@ export function ConfigurationPopup({
         <div className="px-5 py-3 border-t border-primary/10 flex items-center justify-end gap-2">
           <button
             onClick={onClose}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg text-muted-foreground/60 hover:bg-secondary/60 transition-colors"
+            className="px-3 py-1.5 text-sm font-medium rounded-lg text-muted-foreground/80 hover:bg-secondary/60 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={!hasAnyValue || saving}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg ${styles.button} transition-colors disabled:opacity-40 disabled:cursor-not-allowed`}
+            className={`px-3 py-1.5 text-sm font-medium rounded-lg ${styles.button} transition-colors disabled:opacity-40 disabled:cursor-not-allowed`}
           >
             {saving ? 'Saving\u2026' : saveLabel}
           </button>

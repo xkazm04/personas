@@ -49,13 +49,13 @@ export function NegotiatorGuidingPhase({
       <div className="flex items-center justify-between px-4 py-3 bg-secondary/30 border border-primary/10 rounded-xl">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5 text-muted-foreground/50" />
-            <span className="text-xs text-muted-foreground/50">
+            <Clock className="w-3.5 h-3.5 text-muted-foreground/90" />
+            <span className="text-sm text-muted-foreground/90">
               ~{Math.ceil(plan.estimated_time_seconds / 60)} min
             </span>
           </div>
           <div className="h-3 w-px bg-primary/10" />
-          <span className="text-xs text-foreground/60 font-medium">
+          <span className="text-sm text-foreground/80 font-medium">
             {completedCount}/{totalSteps} steps
           </span>
         </div>
@@ -76,11 +76,11 @@ export function NegotiatorGuidingPhase({
         <div className="px-4 py-2.5 bg-amber-500/5 border border-amber-500/15 rounded-xl">
           <div className="flex items-center gap-2 mb-1.5">
             <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-            <span className="text-xs font-medium text-amber-300/80">Prerequisites</span>
+            <span className="text-sm font-medium text-amber-300/80">Prerequisites</span>
           </div>
           <ul className="space-y-0.5">
             {plan.prerequisites.map((prereq, i) => (
-              <li key={i} className="text-xs text-amber-200/60 pl-5">
+              <li key={i} className="text-sm text-amber-200/60 pl-5">
                 {prereq}
               </li>
             ))}
@@ -111,13 +111,13 @@ export function NegotiatorGuidingPhase({
       {/* Tips */}
       {plan.tips.length > 0 && (
         <details className="group rounded-xl border border-primary/10 bg-secondary/20 px-4 py-2.5">
-          <summary className="cursor-pointer text-xs text-foreground/60 hover:text-foreground transition-colors flex items-center gap-1.5">
+          <summary className="cursor-pointer text-sm text-foreground/80 hover:text-foreground transition-colors flex items-center gap-1.5">
             <Lightbulb className="w-3 h-3" />
             Tips & best practices
           </summary>
           <ul className="mt-2 space-y-1 pl-5">
             {plan.tips.map((tip, i) => (
-              <li key={i} className="text-xs text-muted-foreground/50">
+              <li key={i} className="text-sm text-muted-foreground/90">
                 {tip}
               </li>
             ))}
@@ -134,8 +134,8 @@ export function NegotiatorGuidingPhase({
         >
           <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
           <div>
-            <p className="text-xs text-emerald-300 font-medium">All steps completed</p>
-            <p className="text-xs text-emerald-200/60 mt-0.5">{plan.verification_hint}</p>
+            <p className="text-sm text-emerald-300 font-medium">All steps completed</p>
+            <p className="text-sm text-emerald-200/60 mt-0.5">{plan.verification_hint}</p>
           </div>
         </motion.div>
       )}
@@ -144,7 +144,7 @@ export function NegotiatorGuidingPhase({
       <div className="flex items-center justify-between pt-1">
         <button
           onClick={onCancel}
-          className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/70 rounded-xl text-sm transition-colors"
+          className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-xl text-sm transition-colors"
         >
           Cancel
         </button>

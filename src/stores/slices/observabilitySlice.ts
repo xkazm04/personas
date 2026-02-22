@@ -20,12 +20,11 @@ export const createObservabilitySlice: StateCreator<PersonaStore, [], [], Observ
 
   fetchObservabilityMetrics: async (days = 30, personaId?: string) => {
     try {
-      const startDate = new Date(Date.now() - days * 86400000).toISOString().split('T')[0];
-      const [summary, snapshots] = await Promise.all([
+      const [summary, timeSeries] = await Promise.all([
         api.getMetricsSummary(days),
-        api.getMetricsSnapshots(personaId, startDate),
+        api.getLiveMetricsTimeseries(days, personaId),
       ]);
-      set({ observabilityMetrics: { summary, timeSeries: snapshots } });
+      set({ observabilityMetrics: { summary, timeSeries } });
     } catch {
       // Silent fail
     }

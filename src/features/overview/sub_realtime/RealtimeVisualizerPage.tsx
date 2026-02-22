@@ -1,6 +1,7 @@
 import { AnimatePresence } from 'framer-motion';
+import { Activity } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { ContentBox } from '@/features/shared/components/ContentLayout';
+import { ContentBox, ContentHeader } from '@/features/shared/components/ContentLayout';
 import { useRealtimeEvents } from '@/hooks/realtime/useRealtimeEvents';
 import RealtimeStatsBar from '@/features/overview/sub_realtime/RealtimeStatsBar';
 import EventBusVisualization from '@/features/overview/sub_realtime/EventBusVisualization';
@@ -30,6 +31,13 @@ export default function RealtimeVisualizerPage() {
 
   return (
     <ContentBox>
+      <ContentHeader
+        icon={<Activity className="w-5 h-5" />}
+        iconColor="cyan"
+        title="Event Bus Monitor"
+        subtitle="Live visualization of event flows and persona interactions"
+      />
+
       {/* Stats bar */}
       <RealtimeStatsBar
         stats={stats}

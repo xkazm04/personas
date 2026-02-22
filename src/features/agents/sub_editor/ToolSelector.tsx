@@ -118,7 +118,7 @@ export function ToolSelector() {
 
   if (!selectedPersona) {
     return (
-      <div className="flex items-center justify-center py-8 text-muted-foreground/40">
+      <div className="flex items-center justify-center py-8 text-muted-foreground/80">
         No persona selected
       </div>
     );
@@ -169,7 +169,7 @@ export function ToolSelector() {
       {/* Search Input + View Toggle */}
       <div className="flex items-center gap-2">
         <div className="relative max-w-[280px] flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/90" />
           <input
             type="text"
             value={searchQuery}
@@ -184,7 +184,7 @@ export function ToolSelector() {
             className={`p-1.5 rounded-md transition-all ${
               viewMode === 'grid'
                 ? 'bg-primary/15 text-foreground/80'
-                : 'text-muted-foreground/40 hover:text-foreground/60'
+                : 'text-muted-foreground/80 hover:text-foreground/95'
             }`}
             title="Category view"
           >
@@ -195,7 +195,7 @@ export function ToolSelector() {
             className={`p-1.5 rounded-md transition-all ${
               viewMode === 'grouped'
                 ? 'bg-primary/15 text-foreground/80'
-                : 'text-muted-foreground/40 hover:text-foreground/60'
+                : 'text-muted-foreground/80 hover:text-foreground/95'
             }`}
             title="Connector view"
           >
@@ -210,17 +210,17 @@ export function ToolSelector() {
           <button
             key={category}
             onClick={() => { setSelectedCategory(category); setSearchQuery(''); }}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-sm font-medium transition-all ${
               selectedCategory === category
                 ? 'bg-primary text-foreground shadow-lg shadow-primary/20'
-                : 'bg-secondary/40 text-muted-foreground/60 hover:bg-secondary/60 hover:text-foreground/80 border border-primary/15'
+                : 'bg-secondary/40 text-muted-foreground/80 hover:bg-secondary/60 hover:text-foreground/95 border border-primary/15'
             }`}
           >
             {category}
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+            <span className={`text-sm px-1.5 py-0.5 rounded-full font-bold ${
               selectedCategory === category
                 ? 'bg-primary/20 text-foreground/80'
-                : 'bg-muted/30 text-muted-foreground/40'
+                : 'bg-muted/30 text-muted-foreground/80'
             }`}>
               {categoryCounts.get(category) ?? 0}
             </span>
@@ -231,27 +231,27 @@ export function ToolSelector() {
       {/* Assigned tools summary bar */}
       {assignedTools.length > 0 && (
         <div className="flex items-center gap-2 bg-primary/5 border border-primary/10 rounded-xl px-4 py-2">
-          <span className="text-xs text-muted-foreground/60 flex-shrink-0">
-            <span className="font-semibold text-foreground/70">{assignedTools.length}</span> of {toolDefinitions.length} tools assigned
+          <span className="text-sm text-muted-foreground/80 flex-shrink-0">
+            <span className="font-semibold text-foreground/90">{assignedTools.length}</span> of {toolDefinitions.length} tools assigned
           </span>
           <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-hidden ml-2">
             {assignedTools.slice(0, 5).map((tool) => (
               <span
                 key={tool.id}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] bg-primary/10 text-foreground/70 border border-primary/15 truncate max-w-[120px] flex-shrink-0"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-sm bg-primary/10 text-foreground/90 border border-primary/15 truncate max-w-[120px] flex-shrink-0"
               >
                 {tool.name}
               </span>
             ))}
             {assignedTools.length > 5 && (
-              <span className="text-[11px] text-muted-foreground/40 flex-shrink-0">
+              <span className="text-sm text-muted-foreground/80 flex-shrink-0">
                 +{assignedTools.length - 5} more
               </span>
             )}
           </div>
           <button
             onClick={handleClearAll}
-            className="flex-shrink-0 text-[11px] text-muted-foreground/50 hover:text-red-400 transition-colors flex items-center gap-1"
+            className="flex-shrink-0 text-sm text-muted-foreground/90 hover:text-red-400 transition-colors flex items-center gap-1"
           >
             <X className="w-3 h-3" />
             Clear all
@@ -319,12 +319,12 @@ export function ToolSelector() {
                           )
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground/50 mt-1.5 line-clamp-2">
+                      <p className="text-sm text-muted-foreground/90 mt-1.5 line-clamp-2">
                         {tool.description}
                       </p>
                       {missingCredential && (
                         <div className="mt-1.5 space-y-1">
-                          <p className="text-[11px] text-amber-400/80">
+                          <p className="text-sm text-amber-400/80">
                             Requires a <span className="font-medium">{credentialLabel(tool.requires_credential_type!)}</span> credential to connect
                           </p>
                           <button
@@ -333,7 +333,7 @@ export function ToolSelector() {
                               setSidebarSection('credentials');
                               setCredentialView('add-new');
                             }}
-                            className="inline-flex items-center gap-1 text-[11px] text-primary/80 hover:text-primary transition-colors group"
+                            className="inline-flex items-center gap-1 text-sm text-primary/80 hover:text-primary transition-colors group"
                           >
                             Add credential
                             <ArrowRight className="w-3 h-3 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
@@ -342,12 +342,12 @@ export function ToolSelector() {
                       )}
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
                         {tool.category && (
-                          <span className="inline-block px-2 py-0.5 rounded-md text-[11px] font-mono bg-background/50 text-muted-foreground/40 border border-primary/15">
+                          <span className="inline-block px-2 py-0.5 rounded-md text-sm font-mono bg-background/50 text-muted-foreground/80 border border-primary/15">
                             {tool.category}
                           </span>
                         )}
                         {(usageByTool.get(tool.name) ?? 0) > 0 && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] bg-primary/5 text-muted-foreground/50 border border-primary/10">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-sm bg-primary/5 text-muted-foreground/90 border border-primary/10">
                             <BarChart3 className="w-3 h-3" />
                             {(usageByTool.get(tool.name) ?? 0).toLocaleString()} calls
                           </span>
@@ -361,7 +361,7 @@ export function ToolSelector() {
           </div>
 
           {filteredTools.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground/40 text-sm">
+            <div className="text-center py-8 text-muted-foreground/80 text-sm">
               {isSearching ? `No tools matching "${searchQuery.trim()}"` : 'No tools found in this category'}
             </div>
           )}
@@ -402,7 +402,7 @@ export function ToolSelector() {
                               : 'bg-background/50 border-primary/15 cursor-pointer hover:border-primary/30'
                       }`}
                     >
-                      {(allAssigned || someAssigned) && <Check className={`w-3 h-3 ${allAssigned ? 'text-foreground' : 'text-foreground/60'}`} />}
+                      {(allAssigned || someAssigned) && <Check className={`w-3 h-3 ${allAssigned ? 'text-foreground' : 'text-foreground/80'}`} />}
                     </button>
 
                     {/* Connector icon + label */}
@@ -428,7 +428,7 @@ export function ToolSelector() {
                             setSidebarSection('credentials');
                             setCredentialView('add-new');
                           }}
-                          className="inline-flex items-center gap-1 text-[11px] text-amber-400/80 hover:text-amber-300 transition-colors"
+                          className="inline-flex items-center gap-1 text-sm text-amber-400/80 hover:text-amber-300 transition-colors"
                           title={`Needs ${label} credential`}
                         >
                           <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
@@ -438,7 +438,7 @@ export function ToolSelector() {
                     )}
 
                     {/* Count badge */}
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-secondary/50 border border-primary/10 text-muted-foreground/50">
+                    <span className="text-sm font-mono px-1.5 py-0.5 rounded-full bg-secondary/50 border border-primary/10 text-muted-foreground/90">
                       {assignedInGroup.length}/{tools.length}
                     </span>
                   </div>
@@ -483,11 +483,11 @@ export function ToolSelector() {
                           <div className="flex-1 min-w-0">
                             <span className="text-sm text-foreground/80">{tool.name}</span>
                             {tool.description && (
-                              <p className="text-[11px] text-muted-foreground/40 truncate">{tool.description}</p>
+                              <p className="text-sm text-muted-foreground/80 truncate">{tool.description}</p>
                             )}
                           </div>
                           {(usageByTool.get(tool.name) ?? 0) > 0 && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-primary/5 text-muted-foreground/40 border border-primary/8 flex-shrink-0">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-sm bg-primary/5 text-muted-foreground/80 border border-primary/8 flex-shrink-0">
                               <BarChart3 className="w-2.5 h-2.5" />
                               {(usageByTool.get(tool.name) ?? 0).toLocaleString()}
                             </span>
@@ -502,7 +502,7 @@ export function ToolSelector() {
           </div>
 
           {filteredTools.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground/40 text-sm">
+            <div className="text-center py-8 text-muted-foreground/80 text-sm">
               {isSearching ? `No tools matching "${searchQuery.trim()}"` : 'No tools available'}
             </div>
           )}
@@ -524,7 +524,7 @@ export function ToolSelector() {
             </span>
             <button
               onClick={handleUndo}
-              className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-primary/15 text-primary border border-primary/25 hover:bg-primary/25 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-lg bg-primary/15 text-primary border border-primary/25 hover:bg-primary/25 transition-colors"
             >
               <Undo2 className="w-3 h-3" />
               Undo

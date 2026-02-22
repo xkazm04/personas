@@ -21,10 +21,10 @@ export function EventsPage() {
         <div className="flex items-center gap-1 mt-4">
           <button
             onClick={() => setTab("triggers")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
               tab === "triggers"
                 ? "bg-primary/10 text-primary border border-primary/20"
-                : "text-muted-foreground/50 hover:text-muted-foreground/70 hover:bg-secondary/40"
+                : "text-muted-foreground/90 hover:text-muted-foreground hover:bg-secondary/40"
             }`}
           >
             <List className="w-3.5 h-3.5" />
@@ -32,10 +32,10 @@ export function EventsPage() {
           </button>
           <button
             onClick={() => setTab("chains")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
               tab === "chains"
                 ? "bg-purple-500/10 text-purple-400 border border-purple-500/20"
-                : "text-muted-foreground/50 hover:text-muted-foreground/70 hover:bg-secondary/40"
+                : "text-muted-foreground/90 hover:text-muted-foreground hover:bg-secondary/40"
             }`}
           >
             <Link className="w-3.5 h-3.5" />

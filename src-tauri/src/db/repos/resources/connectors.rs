@@ -274,9 +274,9 @@ mod tests {
         let by_cat = get_by_category(&pool, "messaging").unwrap();
         assert_eq!(by_cat.len(), 1);
 
-        // List all
+        // List all (includes the seeded builtin Google Workspace connector)
         let all = get_all(&pool).unwrap();
-        assert_eq!(all.len(), 1);
+        assert_eq!(all.len(), 2);
 
         // Update
         let updated = update(

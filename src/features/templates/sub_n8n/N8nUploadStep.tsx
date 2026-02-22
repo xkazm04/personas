@@ -73,11 +73,11 @@ export function N8nUploadStep({ fileInputRef, onFileSelect, onFileDrop }: N8nUpl
         <p className="text-sm font-medium text-foreground/80">
           {isDragging ? 'Drop your workflow file here' : 'Select your n8n workflow JSON'}
         </p>
-        <p className="text-xs text-muted-foreground/50 mt-1">
+        <p className="text-sm text-muted-foreground/90 mt-1">
           Click to browse or drag and drop your exported workflow
         </p>
       </div>
-      <div className="flex items-center gap-2 text-xs text-muted-foreground/40">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground/80">
         <FileJson className="w-4 h-4" />
         <span>Accepts .json files exported from n8n</span>
       </div>

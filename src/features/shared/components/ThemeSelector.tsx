@@ -33,7 +33,7 @@ export default function ThemeSelector() {
           hover:bg-primary/10 border border-transparent hover:border-primary/20"
         title="Theme"
       >
-        <Palette className="w-5 h-5 transition-colors text-muted-foreground/50 group-hover:text-foreground/70" />
+        <Palette className="w-5 h-5 transition-colors text-muted-foreground/90 group-hover:text-foreground/95" />
       </button>
 
       <AnimatePresence>
@@ -46,7 +46,7 @@ export default function ThemeSelector() {
             className="absolute bottom-full left-full ml-2 mb-0 w-56 rounded-xl
               bg-secondary border border-primary/15 shadow-xl z-50 p-3 overflow-hidden"
           >
-            <div className="text-[11px] font-mono text-muted-foreground/50 uppercase tracking-wider mb-2">
+            <div className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider mb-2">
               Dark
             </div>
             <div className="flex flex-wrap gap-2 mb-3">
@@ -69,7 +69,7 @@ export default function ThemeSelector() {
             </div>
 
             <div className="border-t border-primary/10 pt-2">
-              <div className="text-[11px] font-mono text-muted-foreground/50 uppercase tracking-wider mb-2">
+              <div className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider mb-2">
                 Light
               </div>
               <div className="flex flex-wrap gap-2">

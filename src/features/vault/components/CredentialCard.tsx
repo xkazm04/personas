@@ -152,7 +152,7 @@ export function CredentialCard({
                   {credential.name}
                 </h4>
                 <span
-                  className="text-[10px] px-1.5 py-0.5 rounded-md font-mono border shrink-0"
+                  className="text-sm px-1.5 py-0.5 rounded-md font-mono border shrink-0"
                   style={{
                     backgroundColor: connector ? `${connector.color}15` : undefined,
                     borderColor: connector ? `${connector.color}25` : undefined,
@@ -164,7 +164,7 @@ export function CredentialCard({
                 {isHealthchecking ? (
                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 flex-shrink-0">
                     <span className="w-2 h-2 rounded-full border border-amber-400 border-t-transparent animate-spin" />
-                    <span className="text-[10px] text-amber-400">Checking…</span>
+                    <span className="text-sm text-amber-400">Checking…</span>
                   </span>
                 ) : (
                   <span
@@ -186,7 +186,7 @@ export function CredentialCard({
                       }`}
                     />
                     <span
-                      className={`text-[10px] ${
+                      className={`text-sm ${
                         effectiveHealthcheckResult === null
                           ? 'text-amber-400'
                           : effectiveHealthcheckResult.success
@@ -205,18 +205,18 @@ export function CredentialCard({
                 {rotationStatus?.policy_enabled && rotationCountdown && (
                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 flex-shrink-0">
                     <RotateCw className="w-2.5 h-2.5 text-cyan-400/70" />
-                    <span className="text-[10px] text-cyan-400/70 font-mono">{rotationCountdown}</span>
+                    <span className="text-sm text-cyan-400/70 font-mono">{rotationCountdown}</span>
                   </span>
                 )}
                 {rotationStatus?.anomaly_detected && (
                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 flex-shrink-0">
                     <AlertTriangle className="w-2.5 h-2.5 text-amber-400" />
-                    <span className="text-[10px] text-amber-400">Anomaly</span>
+                    <span className="text-sm text-amber-400">Anomaly</span>
                   </span>
                 )}
               </div>
 
-              <div className="mt-1 text-[11px] text-muted-foreground/70">
+              <div className="mt-1 text-sm text-muted-foreground/90">
                 Created {formatTimestamp(credential.created_at, 'Never')} · Last used {formatTimestamp(credential.last_used_at, 'Never')}
                 {credential.healthcheck_last_tested_at && (
                   <> · Last tested {formatTimestamp(credential.healthcheck_last_tested_at, 'Never')}</>
@@ -236,9 +236,9 @@ export function CredentialCard({
               </button>
             </div>
             {isExpanded ? (
-              <ChevronDown className="w-4 h-4 text-muted-foreground/60" />
+              <ChevronDown className="w-4 h-4 text-muted-foreground/80" />
             ) : (
-              <ChevronRight className="w-4 h-4 text-muted-foreground/60" />
+              <ChevronRight className="w-4 h-4 text-muted-foreground/80" />
             )}
           </div>
         </div>
@@ -260,10 +260,10 @@ export function CredentialCard({
                 {connector && connector.services.length > 0 && (
                   <button
                     onClick={() => setExpandedSection('services')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                       expandedSection === 'services'
                         ? 'bg-primary/10 text-primary border border-primary/20'
-                        : 'text-muted-foreground/50 hover:text-foreground/70 hover:bg-secondary/60'
+                        : 'text-muted-foreground/90 hover:text-foreground/95 hover:bg-secondary/60'
                     }`}
                   >
                     <Wrench className="w-3 h-3" />
@@ -273,10 +273,10 @@ export function CredentialCard({
                 {connector && connector.events.length > 0 && (
                   <button
                     onClick={() => setExpandedSection('events')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                       expandedSection === 'events'
                         ? 'bg-primary/10 text-primary border border-primary/20'
-                        : 'text-muted-foreground/50 hover:text-foreground/70 hover:bg-secondary/60'
+                        : 'text-muted-foreground/90 hover:text-foreground/95 hover:bg-secondary/60'
                     }`}
                   >
                     <Zap className="w-3 h-3" />
@@ -285,10 +285,10 @@ export function CredentialCard({
                 )}
                 <button
                   onClick={() => setExpandedSection(expandedSection === 'intelligence' ? null : 'intelligence')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                     expandedSection === 'intelligence'
                       ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/25'
-                      : 'text-muted-foreground/50 hover:text-foreground/70 hover:bg-secondary/60'
+                      : 'text-muted-foreground/90 hover:text-foreground/95 hover:bg-secondary/60'
                   }`}
                 >
                   <BarChart3 className="w-3 h-3" />
@@ -299,10 +299,10 @@ export function CredentialCard({
                     setExpandedSection(expandedSection === 'rotation' ? null : 'rotation');
                     if (expandedSection !== 'rotation') fetchRotationStatus();
                   }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                     expandedSection === 'rotation'
                       ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/25'
-                      : 'text-muted-foreground/50 hover:text-foreground/70 hover:bg-secondary/60'
+                      : 'text-muted-foreground/90 hover:text-foreground/95 hover:bg-secondary/60'
                   }`}
                 >
                   <RotateCw className="w-3 h-3" />
@@ -317,12 +317,12 @@ export function CredentialCard({
               {connector && (
                 <div className="space-y-3">
                   {editError && (
-                    <div className="flex items-start gap-2.5 px-3 py-2.5 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-400">
+                    <div className="flex items-start gap-2.5 px-3 py-2.5 bg-red-500/10 border border-red-500/20 rounded-xl text-sm text-red-400">
                       <XCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
                       <span className="flex-1">{editError}</span>
                       <button
                         onClick={() => setEditError(null)}
-                        className="text-red-400/60 hover:text-red-400 text-[10px] font-medium shrink-0"
+                        className="text-red-400/60 hover:text-red-400 text-sm font-medium shrink-0"
                       >
                         Dismiss
                       </button>
@@ -372,14 +372,14 @@ export function CredentialCard({
                   ) : (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <p className="text-xs text-muted-foreground/40">
+                        <p className="text-sm text-muted-foreground/80">
                           {connector.healthcheck_config?.description || 'Credential configuration'}
                         </p>
                         <div className="flex gap-2">
                           <button
                             onClick={() => onHealthcheck(credential.id)}
                             disabled={isHealthchecking}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 rounded-lg text-sm font-medium transition-all disabled:opacity-50"
                           >
                             {isHealthchecking ? (
                               <div className="w-3 h-3 border border-emerald-400 border-t-transparent rounded-full animate-spin" />
@@ -390,7 +390,7 @@ export function CredentialCard({
                           </button>
                           <button
                             onClick={() => setEditingId(credential.id)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/70 rounded-lg text-xs font-medium transition-all"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/90 rounded-lg text-sm font-medium transition-all"
                           >
                             <Pencil className="w-3 h-3" />
                             Edit Fields
@@ -401,7 +401,7 @@ export function CredentialCard({
                       {(() => {
                         if (!effectiveHealthcheckResult) return null;
                         return (
-                          <div className={`flex items-start gap-2 px-3 py-2 rounded-xl text-xs ${
+                          <div className={`flex items-start gap-2 px-3 py-2 rounded-xl text-sm ${
                             effectiveHealthcheckResult.success
                               ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
                               : 'bg-red-500/10 border border-red-500/20 text-red-400'
@@ -415,8 +415,8 @@ export function CredentialCard({
                       {/* Show field names (not values - they're encrypted) */}
                       <div className="space-y-1">
                         {connector.fields.map((f) => (
-                          <div key={f.key} className="flex items-center gap-2 text-xs text-muted-foreground/40">
-                            <span className="font-mono text-muted-foreground/50">{f.key}</span>
+                          <div key={f.key} className="flex items-center gap-2 text-sm text-muted-foreground/80">
+                            <span className="font-mono text-muted-foreground/90">{f.key}</span>
                             <span className="text-muted-foreground/20">-</span>
                             <span>{f.label}</span>
                             {f.required && <span className="text-amber-400/60">(required)</span>}
@@ -430,7 +430,7 @@ export function CredentialCard({
 
               {/* Edit section fallback for no connector */}
               {!connector && (
-                <div className="text-xs text-muted-foreground/40 py-2">
+                <div className="text-sm text-muted-foreground/80 py-2">
                   No connector definition available for this credential type.
                 </div>
               )}
@@ -443,10 +443,10 @@ export function CredentialCard({
                       key={service.toolName}
                       className="flex items-center gap-3 p-3 bg-secondary/20 border border-primary/15 rounded-xl"
                     >
-                      <Wrench className="w-3.5 h-3.5 text-muted-foreground/40" />
+                      <Wrench className="w-3.5 h-3.5 text-muted-foreground/80" />
                       <div>
                         <span className="text-sm text-foreground/80">{service.label}</span>
-                        <span className="ml-2 text-xs font-mono text-muted-foreground/30">{service.toolName}</span>
+                        <span className="ml-2 text-sm font-mono text-muted-foreground/80">{service.toolName}</span>
                       </div>
                     </div>
                   ))}
@@ -471,7 +471,7 @@ export function CredentialCard({
                 <div className="space-y-3">
                   {/* Anomaly Warning */}
                   {rotationStatus?.anomaly_detected && (
-                    <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-400">
+                    <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-sm text-amber-400">
                       <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
                       <span>Anomaly detected: credential suddenly failing after previous success. Possible revocation.</span>
                     </div>
@@ -481,13 +481,13 @@ export function CredentialCard({
                   {rotationStatus?.has_policy ? (
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
-                        <ShieldCheck className={`w-4 h-4 ${rotationStatus.policy_enabled ? 'text-cyan-400' : 'text-muted-foreground/40'}`} />
-                        <div className="text-xs">
-                          <span className={rotationStatus.policy_enabled ? 'text-cyan-400 font-medium' : 'text-muted-foreground/50'}>
+                        <ShieldCheck className={`w-4 h-4 ${rotationStatus.policy_enabled ? 'text-cyan-400' : 'text-muted-foreground/80'}`} />
+                        <div className="text-sm">
+                          <span className={rotationStatus.policy_enabled ? 'text-cyan-400 font-medium' : 'text-muted-foreground/90'}>
                             {rotationStatus.policy_enabled ? 'Auto-rotation active' : 'Rotation paused'}
                           </span>
                           {rotationStatus.rotation_interval_days && (
-                            <span className="text-muted-foreground/40 ml-1.5">
+                            <span className="text-muted-foreground/80 ml-1.5">
                               every {rotationStatus.rotation_interval_days}d
                             </span>
                           )}
@@ -495,7 +495,7 @@ export function CredentialCard({
                       </div>
                       <div className="flex items-center gap-2">
                         {rotationCountdown && rotationStatus.policy_enabled && (
-                          <span className="flex items-center gap-1 text-[10px] text-muted-foreground/50 font-mono">
+                          <span className="flex items-center gap-1 text-sm text-muted-foreground/90 font-mono">
                             <Clock className="w-3 h-3" />
                             {rotationCountdown}
                           </span>
@@ -514,7 +514,7 @@ export function CredentialCard({
                             }
                           }}
                           disabled={isRotating}
-                          className="flex items-center gap-1 px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-400 rounded-lg text-[11px] font-medium transition-all disabled:opacity-50"
+                          className="flex items-center gap-1 px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-400 rounded-lg text-sm font-medium transition-all disabled:opacity-50"
                         >
                           <RotateCw className={`w-3 h-3 ${isRotating ? 'animate-spin' : ''}`} />
                           Rotate Now
@@ -540,7 +540,7 @@ export function CredentialCard({
                     </div>
                   ) : (
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-xs text-muted-foreground/40">No rotation policy configured.</p>
+                      <p className="text-sm text-muted-foreground/80">No rotation policy configured.</p>
                       <button
                         onClick={async () => {
                           try {
@@ -555,7 +555,7 @@ export function CredentialCard({
                             // silent
                           }
                         }}
-                        className="flex items-center gap-1 px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-400 rounded-lg text-[11px] font-medium transition-all"
+                        className="flex items-center gap-1 px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-400 rounded-lg text-sm font-medium transition-all"
                       >
                         <Plus className="w-3 h-3" />
                         Enable (90 days)
@@ -565,7 +565,7 @@ export function CredentialCard({
 
                   {/* Last Rotation Info */}
                   {rotationStatus?.last_rotated_at && (
-                    <div className="text-[11px] text-muted-foreground/40">
+                    <div className="text-sm text-muted-foreground/80">
                       Last rotated {formatRelativeTime(rotationStatus.last_rotated_at)}
                       {rotationStatus.last_status && (
                         <span className={`ml-1.5 ${
@@ -580,22 +580,22 @@ export function CredentialCard({
                   {/* Rotation History Timeline */}
                   {rotationStatus && rotationStatus.recent_history.length > 0 && (
                     <div className="space-y-1">
-                      <p className="text-[10px] text-muted-foreground/30 uppercase tracking-wider font-medium">History</p>
+                      <p className="text-sm text-muted-foreground/80 uppercase tracking-wider font-medium">History</p>
                       <div className="space-y-1 max-h-[160px] overflow-y-auto">
                         {rotationStatus.recent_history.map((entry) => (
-                          <div key={entry.id} className="flex items-start gap-2 text-[11px]">
+                          <div key={entry.id} className="flex items-start gap-2 text-sm">
                             <span className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${
                               entry.status === 'success' ? 'bg-emerald-400' :
                               entry.status === 'failed' ? 'bg-red-400' :
                               'bg-amber-400/60'
                             }`} />
                             <div className="flex-1 min-w-0">
-                              <span className="text-muted-foreground/50 font-mono">{entry.rotation_type}</span>
+                              <span className="text-muted-foreground/90 font-mono">{entry.rotation_type}</span>
                               {entry.detail && (
-                                <span className="text-muted-foreground/30 ml-1.5 truncate">{entry.detail}</span>
+                                <span className="text-muted-foreground/80 ml-1.5 truncate">{entry.detail}</span>
                               )}
                             </div>
-                            <span className="text-muted-foreground/25 shrink-0">
+                            <span className="text-muted-foreground/80 shrink-0">
                               {formatRelativeTime(entry.created_at)}
                             </span>
                           </div>

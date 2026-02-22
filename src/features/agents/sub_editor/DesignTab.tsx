@@ -15,8 +15,6 @@ import { DesignPhaseApplied } from '@/features/agents/sub_editor/DesignPhaseAppl
 import type { DesignContext } from '@/lib/types/frontendTypes';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 
-type DesignMode = 'guided' | 'manual';
-
 export function DesignTab() {
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
   const toolDefinitions = usePersonaStore((s) => s.toolDefinitions);
@@ -24,6 +22,8 @@ export function DesignTab() {
   const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
   const fetchConnectorDefinitions = usePersonaStore((s) => s.fetchConnectorDefinitions);
   const updatePersona = usePersonaStore((s) => s.updatePersona);
+  const autoStartDesignInstruction = usePersonaStore((s) => s.autoStartDesignInstruction);
+  const setAutoStartDesignInstruction = usePersonaStore((s) => s.setAutoStartDesignInstruction);
 
   // Fetch connector definitions on mount
   useEffect(() => {
@@ -49,12 +49,19 @@ export function DesignTab() {
   const [instruction, setInstruction] = useState('');
   const [designContext, setDesignContext] = useState<DesignContext>({ files: [], references: [] });
   const [refinementMessage, setRefinementMessage] = useState('');
-  const [designMode, setDesignMode] = useState<DesignMode>('guided');
   const [selectedTools, handleToolToggle, setSelectedTools] = useToggleSet<string>();
   const [selectedTriggerIndices, handleTriggerToggle, setSelectedTriggerIndices] = useToggleSet<number>();
   const [selectedChannelIndices, handleChannelToggle, setSelectedChannelIndices] = useToggleSet<number>();
   const [selectedSubscriptionIndices, handleSubscriptionToggle, setSelectedSubscriptionIndices] = useToggleSet<number>();
 
+  // Auto-start design analysis when coming from PersonaCreationWizard
+  useEffect(() => {
+    if (autoStartDesignInstruction && selectedPersona && phase === 'idle') {
+      setInstruction(autoStartDesignInstruction);
+      setAutoStartDesignInstruction(null);
+      startAnalysis(selectedPersona.id, autoStartDesignInstruction);
+    }
+  }, [autoStartDesignInstruction, selectedPersona, phase, setAutoStartDesignInstruction, startAnalysis]);
 
   // Parse saved design result from persona DB
   const savedDesignResult = useMemo<DesignAnalysisResult | null>(() => {
@@ -185,15 +192,9 @@ export function DesignTab() {
     setInstruction('');
   };
 
-  const handleWizardComplete = (compiledInstruction: string) => {
-    setInstruction(compiledInstruction);
-    if (!selectedPersona) return;
-    startAnalysis(selectedPersona.id, compiledInstruction);
-  };
-
   if (!selectedPersona) {
     return (
-      <div className="flex items-center justify-center py-8 text-muted-foreground/40">
+      <div className="flex items-center justify-center py-8 text-muted-foreground/80">
         No persona selected
       </div>
     );
@@ -215,12 +216,9 @@ export function DesignTab() {
             onInstructionChange={setInstruction}
             designContext={designContext}
             onDesignContextChange={setDesignContext}
-            designMode={designMode}
-            onDesignModeChange={setDesignMode}
             phase={phase}
             error={error}
             onStartAnalysis={handleStartAnalysis}
-            onWizardComplete={handleWizardComplete}
           />
         )}
 

@@ -81,25 +81,25 @@ export function DesignTestResults({ result }: DesignTestResultsProps) {
           <Icon className={`w-4 h-4 ${colors.color}`} />
           <span className={`text-sm font-medium ${colors.color}`}>{meta.label}</span>
         </div>
-        <span className="text-xs text-muted-foreground/50">Feasibility Assessment</span>
+        <span className="text-sm text-muted-foreground/90">Feasibility Assessment</span>
       </div>
 
       {/* Plain-language explanation */}
-      <p className="text-xs text-muted-foreground/60 leading-relaxed">
+      <p className="text-sm text-muted-foreground/80 leading-relaxed">
         {explanation}
       </p>
 
       {/* Confirmed capabilities */}
       {result.confirmed_capabilities.length > 0 && (
         <div className="space-y-1.5">
-          <h4 className="text-[11px] font-mono text-muted-foreground/50 uppercase tracking-wider">
+          <h4 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
             Confirmed Capabilities
           </h4>
           <div className="space-y-1">
             {result.confirmed_capabilities.map((cap, i) => (
               <div key={i} className="flex items-start gap-2 text-sm">
                 <CheckCircle className="w-3.5 h-3.5 text-emerald-400 mt-0.5 flex-shrink-0" />
-                <span className="text-foreground/70">{cap}</span>
+                <span className="text-foreground/90">{cap}</span>
               </div>
             ))}
           </div>
@@ -109,14 +109,14 @@ export function DesignTestResults({ result }: DesignTestResultsProps) {
       {/* Issues */}
       {result.issues.length > 0 && (
         <div className="space-y-1.5">
-          <h4 className="text-[11px] font-mono text-muted-foreground/50 uppercase tracking-wider">
+          <h4 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
             Issues
           </h4>
           <div className="space-y-1">
             {result.issues.map((issue, i) => (
               <div key={i} className="flex items-start gap-2 text-sm">
                 <AlertTriangle className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
-                <span className="text-foreground/70">{issue}</span>
+                <span className="text-foreground/90">{issue}</span>
               </div>
             ))}
           </div>
@@ -126,15 +126,15 @@ export function DesignTestResults({ result }: DesignTestResultsProps) {
       {/* Next steps (non-ready only) */}
       {nextSteps.length > 0 && (
         <div className="space-y-1.5">
-          <h4 className="text-[11px] font-mono text-muted-foreground/50 uppercase tracking-wider flex items-center gap-1.5">
+          <h4 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider flex items-center gap-1.5">
             <Lightbulb className="w-3 h-3" />
             Suggested Next Steps
           </h4>
           <div className="space-y-1">
             {nextSteps.map((step, i) => (
               <div key={i} className="flex items-start gap-2 text-sm">
-                <span className="text-muted-foreground/40 mt-0.5 flex-shrink-0 text-xs">{i + 1}.</span>
-                <span className="text-foreground/60">{step}</span>
+                <span className="text-muted-foreground/80 mt-0.5 flex-shrink-0 text-sm">{i + 1}.</span>
+                <span className="text-foreground/80">{step}</span>
               </div>
             ))}
           </div>

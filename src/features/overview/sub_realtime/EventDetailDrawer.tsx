@@ -57,20 +57,20 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">
             <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: typeColor }} />
-            <span className="text-xs font-mono font-medium" style={{ color: typeColor }}>
+            <span className="text-sm font-mono font-medium" style={{ color: typeColor }}>
               {event.event_type}
             </span>
           </div>
           <div className={`flex items-center gap-1 ${statusInfo.color}`}>
             <StatusIcon className={`w-3.5 h-3.5 ${event.status === 'processing' ? 'animate-spin' : ''}`} />
-            <span className="text-xs font-mono">{event.status}</span>
+            <span className="text-sm font-mono">{event.status}</span>
           </div>
-          <span className="text-[11px] text-muted-foreground/30">{formatRelativeTime(event.created_at)}</span>
+          <span className="text-sm text-muted-foreground/80">{formatRelativeTime(event.created_at)}</span>
         </div>
         <button
           onClick={onClose}
           title="Close event details"
-          className="p-1 rounded-md hover:bg-secondary/60 text-muted-foreground/40 hover:text-foreground/60 transition-colors"
+          className="p-1 rounded-md hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground/95 transition-colors"
         >
           <X className="w-4 h-4" />
         </button>
@@ -81,34 +81,34 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
         {/* Metadata grid */}
         <div className="grid grid-cols-2 gap-x-6 gap-y-2">
           <div>
-            <span className="text-[9px] font-mono uppercase text-muted-foreground/30">Event ID</span>
-            <p className="text-xs"><UuidLabel value={event.id} /></p>
+            <span className="text-sm font-mono uppercase text-muted-foreground/80">Event ID</span>
+            <p className="text-sm"><UuidLabel value={event.id} /></p>
           </div>
           <div>
-            <span className="text-[9px] font-mono uppercase text-muted-foreground/30">Source</span>
-            <p className="text-xs">
-              <span className="text-foreground/60">{event.source_type}</span>
-              {event.source_id && <span className="text-muted-foreground/30"> : </span>}
+            <span className="text-sm font-mono uppercase text-muted-foreground/80">Source</span>
+            <p className="text-sm">
+              <span className="text-foreground/80">{event.source_type}</span>
+              {event.source_id && <span className="text-muted-foreground/80"> : </span>}
               {event.source_id && <UuidLabel value={event.source_id} label={event.source_type || undefined} />}
             </p>
           </div>
           <div>
-            <span className="text-[9px] font-mono uppercase text-muted-foreground/30">Target</span>
-            <p className="text-xs">
+            <span className="text-sm font-mono uppercase text-muted-foreground/80">Target</span>
+            <p className="text-sm">
               {event.target_persona_id
                 ? <UuidLabel value={event.target_persona_id} label={getPersonaName(event.target_persona_id)} />
-                : <span className="text-foreground/40">(broadcast)</span>
+                : <span className="text-foreground/80">(broadcast)</span>
               }
             </p>
           </div>
           <div className="rounded-lg border border-primary/10 bg-secondary/20 px-2.5 py-2">
-            <span className="text-[11px] font-mono uppercase text-muted-foreground/35">Created</span>
-            <p className="text-xs font-mono text-foreground/60">{new Date(event.created_at).toLocaleTimeString()}</p>
+            <span className="text-sm font-mono uppercase text-muted-foreground/35">Created</span>
+            <p className="text-sm font-mono text-foreground/80">{new Date(event.created_at).toLocaleTimeString()}</p>
           </div>
           {event.processed_at && (
             <div className="rounded-lg border border-primary/10 bg-secondary/20 px-2.5 py-2">
-              <span className="text-[11px] font-mono uppercase text-muted-foreground/35">Processed</span>
-              <p className="text-xs font-mono text-foreground/60">{new Date(event.processed_at).toLocaleTimeString()}</p>
+              <span className="text-sm font-mono uppercase text-muted-foreground/35">Processed</span>
+              <p className="text-sm font-mono text-foreground/80">{new Date(event.processed_at).toLocaleTimeString()}</p>
             </div>
           )}
         </div>
@@ -116,16 +116,16 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
         {/* Error message */}
         {event.error_message && (
           <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/15">
-            <span className="text-[11px] font-mono uppercase text-red-400/60 block mb-1">Error</span>
-            <p className="text-xs text-red-300/80 font-mono">{event.error_message}</p>
+            <span className="text-sm font-mono uppercase text-red-400/60 block mb-1">Error</span>
+            <p className="text-sm text-red-300/80 font-mono">{event.error_message}</p>
           </div>
         )}
 
         {/* Payload */}
         {event.payload && (
           <div>
-            <span className="text-[11px] font-mono uppercase text-muted-foreground/35 block mb-1">Payload</span>
-            <pre className="p-3 rounded-lg bg-secondary/40 border border-primary/10 text-xs font-mono text-foreground/60 overflow-x-auto max-h-40 whitespace-pre-wrap">
+            <span className="text-sm font-mono uppercase text-muted-foreground/35 block mb-1">Payload</span>
+            <pre className="p-3 rounded-lg bg-secondary/40 border border-primary/10 text-sm font-mono text-foreground/80 overflow-x-auto max-h-40 whitespace-pre-wrap">
               {formatPayload(event.payload)}
             </pre>
           </div>

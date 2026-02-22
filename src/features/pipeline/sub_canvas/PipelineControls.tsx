@@ -104,7 +104,7 @@ export default function PipelineControls({
                   } ${ns.status === 'running' ? 'animate-pulse' : ''}`}
                 />
                 {hoveredDot === ns.member_id && (
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[10px] font-mono rounded bg-background border border-primary/20 text-foreground/80 whitespace-nowrap shadow-lg z-50 pointer-events-none">
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-sm font-mono rounded bg-background border border-primary/20 text-foreground/80 whitespace-nowrap shadow-lg z-50 pointer-events-none">
                     {agentNames[ns.member_id] || 'Agent'}
                     {' — '}
                     <span className={ns.status === 'failed' ? 'text-red-400' : ns.status === 'completed' ? 'text-emerald-400' : ns.status === 'running' ? 'text-blue-400' : ''}>{ns.status}</span>
@@ -120,7 +120,7 @@ export default function PipelineControls({
 
         {/* Progress text */}
         <span
-          className={`text-xs font-medium ${
+          className={`text-sm font-medium ${
             hasFailed
               ? 'text-red-400'
               : allCompleted
@@ -136,7 +136,7 @@ export default function PipelineControls({
 
         {/* Honest status: pipeline runs until completion */}
         {isRunning && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary/5 text-muted-foreground border border-primary/10">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-primary/5 text-muted-foreground border border-primary/10">
             <Info className="w-3 h-3" />
             Runs until completion
           </span>

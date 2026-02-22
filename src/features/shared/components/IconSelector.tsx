@@ -60,7 +60,7 @@ export function IconSelector({ value, onChange, connectors = [], size = 'md' }: 
         <button
           type="button"
           onClick={() => onChange('')}
-          className={`${s.btn} rounded-lg border border-dashed border-primary/20 flex items-center justify-center text-muted-foreground/40 hover:text-muted-foreground/60 hover:border-primary/30 transition-all`}
+          className={`${s.btn} rounded-lg border border-dashed border-primary/20 flex items-center justify-center text-muted-foreground/80 hover:text-muted-foreground hover:border-primary/30 transition-all`}
           title="Clear icon"
         >
           <X className="w-3.5 h-3.5" />

@@ -48,7 +48,7 @@ export function DesignQuestionPanel({
         <p className="text-sm text-foreground/80 leading-relaxed">{question.question}</p>
 
         {question.context && (
-          <p className="text-xs text-muted-foreground/50 italic border-l-2 border-purple-500/20 pl-3">
+          <p className="text-sm text-muted-foreground/90 italic border-l-2 border-purple-500/20 pl-3">
             {question.context}
           </p>
         )}
@@ -74,7 +74,7 @@ export function DesignQuestionPanel({
         {/* Divider */}
         <div className="flex items-center gap-3 pt-1">
           <div className="flex-1 h-px bg-primary/10" />
-          <span className="text-[10px] text-muted-foreground/30 uppercase tracking-wider">or type your answer</span>
+          <span className="text-sm text-muted-foreground/80 uppercase tracking-wider">or type your answer</span>
           <div className="flex-1 h-px bg-primary/10" />
         </div>
 
@@ -105,7 +105,7 @@ export function DesignQuestionPanel({
             disabled={!questionAnswer.trim()}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
               !questionAnswer.trim()
-                ? 'bg-secondary/40 text-muted-foreground/30 cursor-not-allowed'
+                ? 'bg-secondary/40 text-muted-foreground/80 cursor-not-allowed'
                 : 'bg-purple-500/15 text-purple-300 border border-purple-500/25 hover:bg-purple-500/25'
             }`}
           >
@@ -118,7 +118,7 @@ export function DesignQuestionPanel({
       {/* Cancel */}
       <button
         onClick={onCancelAnalysis}
-        className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground/50 hover:text-foreground/60 transition-colors"
+        className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground/90 hover:text-foreground/95 transition-colors"
       >
         Cancel Design
       </button>

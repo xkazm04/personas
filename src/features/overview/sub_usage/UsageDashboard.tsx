@@ -215,7 +215,7 @@ export function UsageDashboard() {
       {/* Content */}
       <ContentBody flex>
         {isLoading ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-4 text-muted-foreground/50">
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 text-muted-foreground/90">
             <Loader2 className="w-8 h-8 animate-spin text-primary/70" />
             <p className="text-sm">Loading usage analytics...</p>
           </div>
@@ -229,8 +229,8 @@ export function UsageDashboard() {
                 <Sparkles className="w-4 h-4 text-amber-400/60 absolute -top-1 -right-1" />
               </div>
               <div className="text-center space-y-2">
-                <h3 className="text-sm font-medium text-foreground/70">Your analytics dashboard</h3>
-                <p className="text-xs text-muted-foreground/50 leading-relaxed">
+                <h3 className="text-sm font-medium text-foreground/90">Your analytics dashboard</h3>
+                <p className="text-sm text-muted-foreground/90 leading-relaxed">
                   When your personas run and use tools, you'll see detailed charts showing
                   which tools are used most, usage trends over time, and per-persona breakdowns.
                 </p>
@@ -247,17 +247,17 @@ export function UsageDashboard() {
                       done ? 'bg-emerald-500/5 border-emerald-500/15' : 'bg-secondary/30 border-primary/10'
                     }`}
                   >
-                    <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                      done ? 'bg-emerald-500/20 text-emerald-400' : 'bg-primary/10 text-muted-foreground/40'
+                    <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-sm font-bold ${
+                      done ? 'bg-emerald-500/20 text-emerald-400' : 'bg-primary/10 text-muted-foreground/80'
                     }`}>{step}</span>
-                    <span className={`text-xs ${done ? 'text-emerald-400/80' : 'text-muted-foreground/50'}`}>{label}</span>
-                    {done && <span className="ml-auto text-[10px] text-emerald-400/60 font-medium">Done</span>}
+                    <span className={`text-sm ${done ? 'text-emerald-400/80' : 'text-muted-foreground/90'}`}>{label}</span>
+                    {done && <span className="ml-auto text-sm text-emerald-400/60 font-medium">Done</span>}
                   </div>
                 ))}
               </div>
               <button
                 onClick={() => setSidebarSection('personas')}
-                className="flex items-center gap-2 px-4 py-2 bg-primary/15 hover:bg-primary/25 text-primary border border-primary/20 rounded-xl text-xs font-medium transition-all group"
+                className="flex items-center gap-2 px-4 py-2 bg-primary/15 hover:bg-primary/25 text-primary border border-primary/20 rounded-xl text-sm font-medium transition-all group"
               >
                 {personas.length > 0 ? (
                   <><Play className="w-3.5 h-3.5" />Run a persona</>
@@ -275,8 +275,8 @@ export function UsageDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Tool Invocations (horizontal bar) */}
         <div className="lg:col-span-3 bg-secondary/30 border border-primary/10 rounded-xl p-4">
-          <h3 className="text-sm font-medium text-foreground/70 mb-1">Tool Invocations</h3>
-          {barInsight && <p className="text-[11px] text-muted-foreground/40 mb-3">{barInsight}</p>}
+          <h3 className="text-sm font-medium text-foreground/90 mb-1">Tool Invocations</h3>
+          {barInsight && <p className="text-sm text-muted-foreground/80 mb-3">{barInsight}</p>}
           {!barInsight && <div className="mb-3" />}
           <ResponsiveContainer width="100%" height={Math.max(200, barData.length * 40)}>
             <BarChart data={barData} layout="vertical" margin={{ left: 10, right: 20, top: 0, bottom: 0 }}>
@@ -298,8 +298,8 @@ export function UsageDashboard() {
 
         {/* Distribution (pie) */}
         <div className="lg:col-span-2 bg-secondary/30 border border-primary/10 rounded-xl p-4">
-          <h3 className="text-sm font-medium text-foreground/70 mb-1">Distribution</h3>
-          {pieInsight && <p className="text-[11px] text-muted-foreground/40 mb-3">{pieInsight}</p>}
+          <h3 className="text-sm font-medium text-foreground/90 mb-1">Distribution</h3>
+          {pieInsight && <p className="text-sm text-muted-foreground/80 mb-3">{pieInsight}</p>}
           {!pieInsight && <div className="mb-3" />}
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
@@ -322,7 +322,7 @@ export function UsageDashboard() {
               <text x="50%" y="46%" textAnchor="middle" dominantBaseline="central" className="fill-foreground text-lg font-bold">
                 {pieTotal.toLocaleString()}
               </text>
-              <text x="50%" y="58%" textAnchor="middle" dominantBaseline="central" className="fill-muted-foreground/50 text-[10px]">
+              <text x="50%" y="58%" textAnchor="middle" dominantBaseline="central" className="fill-muted-foreground/50 text-sm">
                 total
               </text>
               <Tooltip content={<ChartTooltip />} />
@@ -331,7 +331,7 @@ export function UsageDashboard() {
                 iconType="circle"
                 iconSize={8}
                 formatter={(value: string) => (
-                  <span className="text-xs text-foreground/50">{value}</span>
+                  <span className="text-sm text-foreground/90">{value}</span>
                 )}
               />
             </PieChart>
@@ -342,8 +342,8 @@ export function UsageDashboard() {
       {/* ── Usage Over Time (stacked area) ─────────────────────── */}
       {areaData.length > 0 && (
         <div className="bg-secondary/30 border border-primary/10 rounded-xl p-4">
-          <h3 className="text-sm font-medium text-foreground/70 mb-1">Usage Over Time</h3>
-          {areaInsight && <p className="text-[11px] text-muted-foreground/40 mb-3">{areaInsight}</p>}
+          <h3 className="text-sm font-medium text-foreground/90 mb-1">Usage Over Time</h3>
+          {areaInsight && <p className="text-sm text-muted-foreground/80 mb-3">{areaInsight}</p>}
           {!areaInsight && <div className="mb-3" />}
           <ResponsiveContainer width="100%" height={280}>
             <AreaChart data={areaData} margin={{ left: 0, right: 10, top: 0, bottom: 0 }}>
@@ -367,7 +367,7 @@ export function UsageDashboard() {
                 iconType="circle"
                 iconSize={8}
                 formatter={(value: string) => (
-                  <span className="text-xs text-foreground/50">{formatToolName(value)}</span>
+                  <span className="text-sm text-foreground/90">{formatToolName(value)}</span>
                 )}
               />
               {allToolNames.map((toolName, idx) => (
@@ -391,8 +391,8 @@ export function UsageDashboard() {
       {/* ── By Persona (horizontal bar) ───────────────────────── */}
       {personaBarData.length > 0 && (
         <div className="bg-secondary/30 border border-primary/10 rounded-xl p-4">
-          <h3 className="text-sm font-medium text-foreground/70 mb-1">By Persona</h3>
-          {personaInsight && <p className="text-[11px] text-muted-foreground/40 mb-3">{personaInsight}</p>}
+          <h3 className="text-sm font-medium text-foreground/90 mb-1">By Persona</h3>
+          {personaInsight && <p className="text-sm text-muted-foreground/80 mb-3">{personaInsight}</p>}
           {!personaInsight && <div className="mb-3" />}
           <ResponsiveContainer width="100%" height={Math.max(180, personaBarData.length * 44)}>
             <BarChart data={personaBarData} layout="vertical" margin={{ left: 10, right: 20, top: 0, bottom: 0 }}>

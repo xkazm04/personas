@@ -29,7 +29,7 @@ export function useHealthcheckState(): HealthcheckState {
   const [isHealthchecking, setIsHealthchecking] = useState(false);
   const [healthcheckResult, setHealthcheckResult] = useState<HealthcheckMessage | null>(null);
   const [testedHealthcheckConfig, setTestedHealthcheckConfig] = useState<Record<string, unknown> | null>(null);
-  const [_testedValues, setTestedValues] = useState<Record<string, string> | null>(null);
+  const [, setTestedValues] = useState<Record<string, string> | null>(null);
   const [lastSuccessfulTestAt, setLastSuccessfulTestAt] = useState<string | null>(null);
 
   const runHealthcheck = useCallback(async (

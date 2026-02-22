@@ -30,7 +30,7 @@ export function CloudConnectionForm({
           <Wifi className="w-5 h-5 text-emerald-400" />
           <div>
             <p className="text-sm font-medium text-emerald-400">Connected</p>
-            <p className="text-xs text-muted-foreground/60 mt-0.5">
+            <p className="text-sm text-muted-foreground/80 mt-0.5">
               Orchestrator: {config?.url}
             </p>
           </div>
@@ -49,24 +49,24 @@ export function CloudConnectionForm({
   return (
     <div className="space-y-5 max-w-md">
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-muted-foreground/60">Orchestrator URL</label>
+        <label className="text-sm font-medium text-muted-foreground/80">Orchestrator URL</label>
         <input
           type="text"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://your-orchestrator.example.com"
-          className="w-full px-3 py-2 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground/80 placeholder:text-muted-foreground/30 focus:outline-none focus:border-indigo-500/40 transition-colors"
+          className="w-full px-3 py-2 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground/80 placeholder:text-muted-foreground/80 focus:outline-none focus:border-indigo-500/40 transition-colors"
         />
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-muted-foreground/60">API Key</label>
+        <label className="text-sm font-medium text-muted-foreground/80">API Key</label>
         <input
           type="password"
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
           placeholder="Enter API key"
-          className="w-full px-3 py-2 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground/80 placeholder:text-muted-foreground/30 focus:outline-none focus:border-indigo-500/40 transition-colors"
+          className="w-full px-3 py-2 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground/80 placeholder:text-muted-foreground/80 focus:outline-none focus:border-indigo-500/40 transition-colors"
         />
       </div>
 

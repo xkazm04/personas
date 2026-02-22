@@ -39,6 +39,7 @@ export interface N8nPersonaDraft {
   max_budget_usd: number | null;
   max_turns: number | null;
   design_context: string | null;
+  notification_channels?: string | null;
 }
 
 export interface N8nTransformResult {
@@ -179,6 +180,8 @@ export const updateN8nSession = (
     step?: string;
     error?: string | null;
     personaId?: string | null;
+    transformId?: string | null;
+    questionsJson?: string | null;
   },
 ) =>
   invoke<import('@/lib/bindings/N8nTransformSession').N8nTransformSession>(

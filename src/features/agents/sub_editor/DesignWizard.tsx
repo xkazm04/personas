@@ -81,12 +81,12 @@ export function DesignWizard({ onComplete, onCancel }: DesignWizardProps) {
                   }
                 }}
                 disabled={i > stepIndex}
-                className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs transition-all ${
+                className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm transition-all ${
                   isActive
                     ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25'
                     : isComplete
                     ? 'text-emerald-400/70 hover:bg-secondary/50 cursor-pointer'
-                    : 'text-muted-foreground/30 cursor-default'
+                    : 'text-muted-foreground/80 cursor-default'
                 }`}
               >
                 {isComplete ? (
@@ -115,7 +115,7 @@ export function DesignWizard({ onComplete, onCancel }: DesignWizardProps) {
           {/* Step header */}
           <div className="mb-4">
             <h3 className="text-sm font-semibold text-foreground/85">{currentStep.title}</h3>
-            <p className="text-xs text-muted-foreground/50 mt-0.5">{currentStep.description}</p>
+            <p className="text-sm text-muted-foreground/90 mt-0.5">{currentStep.description}</p>
           </div>
 
           {/* Questions or review */}
@@ -129,22 +129,22 @@ export function DesignWizard({ onComplete, onCancel }: DesignWizardProps) {
                       key={item.label}
                       className="flex items-start gap-3 px-3 py-2 rounded-lg bg-secondary/30 border border-primary/5"
                     >
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/40 w-24 flex-shrink-0 mt-0.5">
+                      <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/80 w-24 flex-shrink-0 mt-0.5">
                         {item.label}
                       </span>
-                      <span className="text-sm text-foreground/70">{item.value}</span>
+                      <span className="text-sm text-foreground/90">{item.value}</span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground/40 text-center py-4">
+                <p className="text-sm text-muted-foreground/80 text-center py-4">
                   Go back and answer the questions to configure your agent.
                 </p>
               )}
 
               {/* Additional context textarea */}
               <div className="space-y-1.5">
-                <label className="text-xs text-muted-foreground/50">
+                <label className="text-sm text-muted-foreground/90">
                   Additional instructions or context (optional)
                 </label>
                 <textarea
@@ -173,7 +173,7 @@ export function DesignWizard({ onComplete, onCancel }: DesignWizardProps) {
             <button
               type="button"
               onClick={onCancel}
-              className="text-xs text-muted-foreground/40 hover:text-muted-foreground/60 transition-colors px-2 py-1"
+              className="text-sm text-muted-foreground/80 hover:text-muted-foreground transition-colors px-2 py-1"
             >
               Switch to manual
             </button>
@@ -181,7 +181,7 @@ export function DesignWizard({ onComplete, onCancel }: DesignWizardProps) {
             <button
               type="button"
               onClick={handleBack}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-muted-foreground/60 hover:text-foreground/70 hover:bg-secondary/50 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/50 transition-colors"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
               Back
@@ -196,10 +196,10 @@ export function DesignWizard({ onComplete, onCancel }: DesignWizardProps) {
           className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm transition-all ${
             isLastStep
               ? !canProceed() || summary.length === 0
-                ? 'bg-secondary/60 text-muted-foreground/40 cursor-not-allowed'
+                ? 'bg-secondary/60 text-muted-foreground/80 cursor-not-allowed'
                 : 'bg-gradient-to-r from-primary to-accent text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99]'
               : !canProceed()
-              ? 'bg-secondary/60 text-muted-foreground/40 cursor-not-allowed'
+              ? 'bg-secondary/60 text-muted-foreground/80 cursor-not-allowed'
               : 'bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25'
           }`}
         >

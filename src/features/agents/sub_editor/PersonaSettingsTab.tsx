@@ -1,11 +1,14 @@
-import { Trash2, Save, AlertTriangle } from 'lucide-react';
+import { Trash2, AlertTriangle, Loader2, Check } from 'lucide-react';
 import type { PersonaDraft } from '@/features/agents/sub_editor/PersonaDraft';
 import { ModelSelector } from '@/features/agents/sub_editor/model-config/ModelSelector';
+import type { CustomModelConfig } from '@/features/agents/sub_editor/model-config/ModelSelector';
 import { NotificationChannelSettings } from '@/features/agents/sub_editor/NotificationChannelSettings';
 import { EventSubscriptionSettings } from '@/features/agents/sub_editor/EventSubscriptionSettings';
 import { AccessibleToggle } from '@/features/shared/components/AccessibleToggle';
 import { IconSelector } from '@/features/shared/components/IconSelector';
+import { ColorPicker } from '@/features/shared/components/ColorPicker';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
+import type { ModelProvider } from '@/lib/types/frontendTypes';
 
 interface PersonaSettingsTabProps {
   draft: PersonaDraft;
@@ -19,7 +22,7 @@ interface PersonaSettingsTabProps {
   selectedPersonaId: string;
   showDeleteConfirm: boolean;
   setShowDeleteConfirm: (show: boolean) => void;
-  onSaveAll: () => Promise<void>;
+  isSaving: boolean;
   onDelete: () => Promise<void>;
 }
 
@@ -35,20 +38,20 @@ export function PersonaSettingsTab({
   selectedPersonaId,
   showDeleteConfirm,
   setShowDeleteConfirm,
-  onSaveAll,
+  isSaving,
   onDelete,
 }: PersonaSettingsTabProps) {
   return (
-    <div className="max-w-2xl space-y-4">
+    <div className="max-w-3xl space-y-4">
       {/* Identity */}
       <div className="space-y-3">
-        <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/70 tracking-wide">
+        <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
           <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
           Identity
         </h4>
         <div className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-3 space-y-3">
           <div>
-            <label className="block text-sm font-medium text-foreground/60 mb-1">Name</label>
+            <label className="block text-sm font-medium text-foreground/80 mb-1">Name</label>
             <input
               type="text"
               value={draft.name}
@@ -57,7 +60,7 @@ export function PersonaSettingsTab({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground/60 mb-1">Description</label>
+            <label className="block text-sm font-medium text-foreground/80 mb-1">Description</label>
             <textarea
               value={draft.description}
               onChange={(e) => patch({ description: e.target.value })}
@@ -66,7 +69,7 @@ export function PersonaSettingsTab({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground/60 mb-2">Icon</label>
+            <label className="block text-sm font-medium text-foreground/80 mb-2">Icon</label>
             <IconSelector
               value={draft.icon}
               onChange={(icon) => patch({ icon })}
@@ -75,33 +78,47 @@ export function PersonaSettingsTab({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground/60 mb-1">Color</label>
-            <div className="flex items-center gap-2">
-              <input
-                type="color"
-                value={draft.color}
-                onChange={(e) => patch({ color: e.target.value })}
-                className="w-8 h-8 rounded-lg cursor-pointer border border-primary/15 bg-transparent"
-              />
-              <span className="text-sm font-mono text-muted-foreground/40">{draft.color}</span>
-            </div>
+            <label className="block text-sm font-medium text-foreground/80 mb-2">Color</label>
+            <ColorPicker
+              value={draft.color}
+              onChange={(color) => patch({ color })}
+              size="sm"
+            />
           </div>
         </div>
       </div>
 
       {/* Model & Provider */}
-      <ModelSelector draft={draft} patch={patch} modelDirty={modelDirty} />
+      <ModelSelector
+        selectedModel={draft.selectedModel}
+        onSelectModel={(value) => patch({ selectedModel: value })}
+        customConfig={{
+          selectedProvider: draft.selectedProvider,
+          customModelName: draft.customModelName,
+          baseUrl: draft.baseUrl,
+          authToken: draft.authToken,
+          onProviderChange: (p: ModelProvider) => patch({ selectedProvider: p }),
+          onCustomModelNameChange: (n) => patch({ customModelName: n }),
+          onBaseUrlChange: (u) => patch({ baseUrl: u }),
+          onAuthTokenChange: (t) => patch({ authToken: t }),
+        } satisfies CustomModelConfig}
+        maxBudget={draft.maxBudget}
+        maxTurns={draft.maxTurns}
+        onMaxBudgetChange={(v) => patch({ maxBudget: v as number | '' })}
+        onMaxTurnsChange={(v) => patch({ maxTurns: v as number | '' })}
+        dirty={modelDirty}
+      />
 
       {/* Execution */}
       <div className="space-y-3">
-        <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/70 tracking-wide">
+        <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
           <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
           Execution
         </h4>
         <div className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-3 space-y-3">
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-foreground/60 mb-1">Max Concurrent</label>
+              <label className="block text-sm font-medium text-foreground/80 mb-1">Max Concurrent</label>
               <input
                 type="number"
                 value={draft.maxConcurrent}
@@ -112,7 +129,7 @@ export function PersonaSettingsTab({
               />
             </div>
             <div className="flex-1">
-              <label className="block text-sm font-medium text-foreground/60 mb-1">Timeout (sec)</label>
+              <label className="block text-sm font-medium text-foreground/80 mb-1">Timeout (sec)</label>
               <input
                 type="number"
                 value={Math.round(draft.timeout / 1000)}
@@ -125,7 +142,7 @@ export function PersonaSettingsTab({
           </div>
 
           <div className="flex items-center justify-between py-1">
-            <span className="text-sm font-medium text-foreground/60">Persona Enabled</span>
+            <span className="text-sm font-medium text-foreground/80">Persona Enabled</span>
             <AccessibleToggle
               checked={draft.enabled}
               onChange={() => patch({ enabled: !draft.enabled })}
@@ -138,7 +155,7 @@ export function PersonaSettingsTab({
 
       {/* Notification Channels */}
       <div className="space-y-3">
-        <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/70 tracking-wide">
+        <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
           <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
           Notifications
         </h4>
@@ -151,33 +168,31 @@ export function PersonaSettingsTab({
 
       {/* Event Subscriptions */}
       <div className="space-y-3">
-        <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/70 tracking-wide">
+        <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
           <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
           Event Subscriptions
         </h4>
         <EventSubscriptionSettings personaId={selectedPersonaId} />
       </div>
 
-      {/* Unified Save + Danger */}
+      {/* Save status + Danger */}
       <div className="flex items-center justify-between pt-2 border-t border-primary/10">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onSaveAll}
-            disabled={!isDirty}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium text-sm transition-all ${
-              isDirty
-                ? 'bg-gradient-to-r from-primary to-accent text-foreground shadow-lg shadow-primary/20 hover:from-primary/90 hover:to-accent/90'
-                : 'bg-secondary/40 text-muted-foreground/30 cursor-not-allowed'
-            }`}
-          >
-            <Save className="w-3.5 h-3.5" />
-            Save All
-            {isDirty && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />}
-          </button>
-          {isDirty && (
-            <span className="text-[11px] text-muted-foreground/40">
-              {changedSections.join(' + ')} changed
-            </span>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground/80">
+          {isSaving ? (
+            <>
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-primary/70" />
+              <span>Saving {changedSections.join(' + ').toLowerCase()}...</span>
+            </>
+          ) : isDirty ? (
+            <>
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground/50" />
+              <span>{changedSections.join(' + ')} changed</span>
+            </>
+          ) : (
+            <>
+              <Check className="w-3.5 h-3.5 text-emerald-400/70" />
+              <span className="text-muted-foreground/60">All changes saved</span>
+            </>
           )}
         </div>
 
@@ -203,7 +218,7 @@ export function PersonaSettingsTab({
             </button>
             <button
               onClick={() => setShowDeleteConfirm(false)}
-              className="px-3 py-1.5 bg-secondary/50 text-foreground/60 rounded-lg text-sm transition-colors hover:bg-secondary/70"
+              className="px-3 py-1.5 bg-secondary/50 text-foreground/80 rounded-lg text-sm transition-colors hover:bg-secondary/70"
             >
               Cancel
             </button>

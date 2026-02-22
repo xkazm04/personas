@@ -72,7 +72,7 @@ export type PersonaTriggerType = "manual" | "schedule" | "polling" | "webhook";
 
 // ── Execution Status ───────────────────────────────────────────────────
 
-export type PersonaExecutionStatus = "pending" | "running" | "completed" | "failed" | "cancelled";
+export type PersonaExecutionStatus = "pending" | "running" | "completed" | "failed" | "cancelled" | "incomplete";
 
 // ── Healing Issue Types ────────────────────────────────────────────────
 

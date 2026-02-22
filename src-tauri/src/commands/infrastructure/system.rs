@@ -218,11 +218,11 @@ pub async fn system_health_check(
     let litellm_url_configured = crate::db::repos::core::settings::get(&state.db, "litellm_base_url")
         .ok()
         .flatten()
-        .map_or(false, |u| !u.is_empty());
+        .is_some_and(|u| !u.is_empty());
     let litellm_key_configured = crate::db::repos::core::settings::get(&state.db, "litellm_master_key")
         .ok()
         .flatten()
-        .map_or(false, |k| !k.is_empty());
+        .is_some_and(|k| !k.is_empty());
     let litellm_configured = litellm_url_configured && litellm_key_configured;
 
     agent_items.push(HealthCheckItem {

@@ -4,7 +4,7 @@ import { listN8nSessions, deleteN8nSession, getN8nSession } from '@/api/design';
 import type { N8nTransformSession } from '@/lib/bindings/N8nTransformSession';
 import type { N8nPersonaDraft } from '@/api/design';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
-import type { N8nWizardStep } from './useN8nImportReducer';
+import type { N8nWizardStep, TransformQuestion } from './useN8nImportReducer';
 
 interface N8nSessionListProps {
   onLoadSession: (
@@ -14,6 +14,8 @@ interface N8nSessionListProps {
     rawWorkflowJson: string,
     parsedResult: DesignAnalysisResult | null,
     draft: N8nPersonaDraft | null,
+    questions: TransformQuestion[] | null,
+    transformId: string | null,
   ) => void;
 }
 
@@ -24,13 +26,14 @@ function isInterruptedSession(session: N8nTransformSession): boolean {
 }
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }> = {
-  draft:        { bg: 'bg-zinc-500/15', text: 'text-zinc-400', label: 'Draft' },
-  analyzing:    { bg: 'bg-blue-500/15', text: 'text-blue-400', label: 'Analyzing' },
-  transforming: { bg: 'bg-amber-500/15', text: 'text-amber-400', label: 'Transforming' },
-  editing:      { bg: 'bg-violet-500/15', text: 'text-violet-400', label: 'Editing' },
-  confirmed:    { bg: 'bg-emerald-500/15', text: 'text-emerald-400', label: 'Confirmed' },
-  failed:       { bg: 'bg-red-500/15', text: 'text-red-400', label: 'Failed' },
-  interrupted:  { bg: 'bg-amber-500/15', text: 'text-amber-400', label: 'Interrupted' },
+  draft:              { bg: 'bg-zinc-500/15', text: 'text-zinc-400', label: 'Draft' },
+  analyzing:          { bg: 'bg-blue-500/15', text: 'text-blue-400', label: 'Analyzing' },
+  transforming:       { bg: 'bg-amber-500/15', text: 'text-amber-400', label: 'Transforming' },
+  awaiting_answers:   { bg: 'bg-violet-500/15', text: 'text-violet-400', label: 'Needs Input' },
+  editing:            { bg: 'bg-violet-500/15', text: 'text-violet-400', label: 'Editing' },
+  confirmed:          { bg: 'bg-emerald-500/15', text: 'text-emerald-400', label: 'Confirmed' },
+  failed:             { bg: 'bg-red-500/15', text: 'text-red-400', label: 'Failed' },
+  interrupted:        { bg: 'bg-amber-500/15', text: 'text-amber-400', label: 'Interrupted' },
 };
 
 function formatRelativeTime(dateStr: string): string {
@@ -98,6 +101,15 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
         } catch { /* ignore */ }
       }
 
+      let questions: TransformQuestion[] | null = null;
+      if (full.questions_json) {
+        try {
+          questions = JSON.parse(full.questions_json) as TransformQuestion[];
+        } catch { /* ignore */ }
+      }
+
+      const transformId = full.transform_id ?? null;
+
       // Map DB step to wizard step
       const stepMap: Record<string, N8nWizardStep> = {
         upload: 'upload',
@@ -120,6 +132,9 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
         } else {
           targetStep = 'upload';
         }
+      } else if (full.status === 'awaiting_answers') {
+        // Session was waiting for user answers — go to transform step with questions
+        targetStep = 'transform';
       } else {
         targetStep = stepMap[full.step] ?? 'upload';
       }
@@ -131,6 +146,8 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
         full.raw_workflow_json,
         parsedResult,
         draft,
+        questions,
+        transformId,
       );
     } catch {
       // ignore
@@ -140,7 +157,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <RefreshCw className="w-4 h-4 text-muted-foreground/40 animate-spin" />
+        <RefreshCw className="w-4 h-4 text-muted-foreground/80 animate-spin" />
       </div>
     );
   }
@@ -154,10 +171,10 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-medium text-foreground/50 uppercase tracking-wider">
+        <h3 className="text-sm font-medium text-foreground/90 uppercase tracking-wider">
           Previous Imports
         </h3>
-        <span className="text-[10px] text-muted-foreground/40">
+        <span className="text-sm text-muted-foreground/80">
           {activeSessions.length} session{activeSessions.length !== 1 ? 's' : ''}
         </span>
       </div>
@@ -177,14 +194,14 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
               className="w-full flex items-center gap-3 p-3 rounded-xl border border-primary/10 bg-secondary/20 hover:bg-secondary/40 transition-colors text-left group cursor-pointer"
             >
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground/70 truncate">
+                <p className="text-sm font-medium text-foreground/90 truncate">
                   {session.workflow_name}
                 </p>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded-md ${style.bg} ${style.text}`}>
+                  <span className={`px-1.5 py-0.5 text-sm font-medium rounded-md ${style.bg} ${style.text}`}>
                     {style.label}
                   </span>
-                  <span className="text-[10px] text-muted-foreground/40 flex items-center gap-1">
+                  <span className="text-sm text-muted-foreground/80 flex items-center gap-1">
                     <Clock className="w-2.5 h-2.5" />
                     {formatRelativeTime(session.updated_at)}
                   </span>
@@ -195,18 +212,18 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
                 <button
                   onClick={(e) => void handleDelete(e, session.id)}
                   disabled={deletingId === session.id}
-                  className="p-1.5 rounded-lg text-muted-foreground/30 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100"
+                  className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100"
                   title="Delete session"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
                 {interrupted ? (
-                  <span className="flex items-center gap-1 text-[10px] text-amber-400 font-medium">
+                  <span className="flex items-center gap-1 text-sm text-amber-400 font-medium">
                     <RotateCcw className="w-3 h-3" />
                     Retry
                   </span>
                 ) : (
-                  <ChevronRight className="w-4 h-4 text-muted-foreground/30 group-hover:text-muted-foreground/50" />
+                  <ChevronRight className="w-4 h-4 text-muted-foreground/80 group-hover:text-muted-foreground" />
                 )}
               </div>
             </div>

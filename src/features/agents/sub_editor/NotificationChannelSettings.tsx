@@ -7,9 +7,14 @@ import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types'
 import { AccessibleToggle } from '@/features/shared/components/AccessibleToggle';
 
 interface NotificationChannelSettingsProps {
-  personaId: string;
+  /** Persona ID for persisted mode — omit for draft mode */
+  personaId?: string;
   credentials: CredentialMetadata[];
   connectorDefinitions: ConnectorDefinition[];
+  /** Draft mode: external channel state */
+  draftChannels?: NotificationChannel[];
+  /** Draft mode: callback on every change (no save button shown) */
+  onDraftChannelsChange?: (channels: NotificationChannel[]) => void;
 }
 
 const channelTypes: Array<{ type: NotificationChannelType; label: string; icon: typeof Hash; configFields: Array<{ key: string; label: string; placeholder: string }> }> = [
@@ -23,7 +28,7 @@ function channelIcon(type: string) {
     case 'slack': return <Hash className="w-4 h-4 text-purple-400" />;
     case 'telegram': return <Send className="w-4 h-4 text-blue-400" />;
     case 'email': return <Mail className="w-4 h-4 text-amber-400" />;
-    default: return <Bell className="w-4 h-4 text-muted-foreground/50" />;
+    default: return <Bell className="w-4 h-4 text-muted-foreground/90" />;
   }
 }
 
@@ -86,12 +91,12 @@ function CredentialPicker({
           <>
             {channelIcon(selected.service_type)}
             <span className="flex-1 text-left truncate">{selected.name}</span>
-            <span className="text-[10px] text-muted-foreground/40">{selected.service_type}</span>
+            <span className="text-sm text-muted-foreground/80">{selected.service_type}</span>
           </>
         ) : (
-          <span className="flex-1 text-left text-muted-foreground/40">Select credential...</span>
+          <span className="flex-1 text-left text-muted-foreground/80">Select credential...</span>
         )}
-        <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/40 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/80 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       <AnimatePresence>
@@ -111,9 +116,9 @@ function CredentialPicker({
               onClick={() => { onChange(''); setOpen(false); }}
               className={`flex items-center gap-3 w-full px-3 py-2 text-sm transition-colors ${
                 focusIndex === 0 ? 'bg-secondary/60' : 'hover:bg-secondary/50'
-              } ${!selectedId ? 'text-foreground/80' : 'text-muted-foreground/50'}`}
+              } ${!selectedId ? 'text-foreground/80' : 'text-muted-foreground/90'}`}
             >
-              <span className="text-muted-foreground/30">—</span>
+              <span className="text-muted-foreground/80">—</span>
               <span>None</span>
             </button>
             {creds.map((cred, i) => (
@@ -128,12 +133,12 @@ function CredentialPicker({
               >
                 {channelIcon(cred.service_type)}
                 <span className="flex-1 text-left truncate">{cred.name}</span>
-                <span className="text-[10px] text-muted-foreground/40">{cred.service_type}</span>
+                <span className="text-sm text-muted-foreground/80">{cred.service_type}</span>
                 {cred.id === selectedId && <Check className="w-3 h-3 text-emerald-400 flex-shrink-0" />}
               </button>
             ))}
             {creds.length === 0 && (
-              <div className="px-3 py-2 text-xs text-muted-foreground/40">No credentials available</div>
+              <div className="px-3 py-2 text-sm text-muted-foreground/80">No credentials available</div>
             )}
           </motion.div>
         )}
@@ -142,16 +147,32 @@ function CredentialPicker({
   );
 }
 
-export function NotificationChannelSettings({ personaId, credentials, connectorDefinitions }: NotificationChannelSettingsProps) {
+export function NotificationChannelSettings({ personaId, credentials, connectorDefinitions, draftChannels, onDraftChannelsChange }: NotificationChannelSettingsProps) {
+  const isDraftMode = draftChannels !== undefined && onDraftChannelsChange !== undefined;
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
   const updatePersona = usePersonaStore((s) => s.updatePersona);
 
-  const [channels, setChannels] = useState<NotificationChannel[]>([]);
+  const [channels, setChannelsInternal] = useState<NotificationChannel[]>([]);
   const [isDirty, setIsDirty] = useState(false);
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const addMenuRef = useRef<HTMLDivElement>(null);
+
+  // In draft mode, use external state; otherwise internal state
+  const effectiveChannels = isDraftMode ? draftChannels : channels;
+  const setChannels = isDraftMode
+    ? (updater: NotificationChannel[] | ((prev: NotificationChannel[]) => NotificationChannel[])) => {
+        const next = typeof updater === 'function' ? updater(draftChannels) : updater;
+        onDraftChannelsChange(next);
+      }
+    : (updater: NotificationChannel[] | ((prev: NotificationChannel[]) => NotificationChannel[])) => {
+        if (typeof updater === 'function') {
+          setChannelsInternal(updater);
+        } else {
+          setChannelsInternal(updater);
+        }
+      };
 
   // Close dropdown on click-outside or Escape key
   useEffect(() => {
@@ -177,20 +198,21 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
     };
   }, [showAddMenu]);
 
-  // Load channels from persona's notification_channels JSON string
+  // Load channels from persona's notification_channels JSON string (persisted mode only)
   const loadChannels = useCallback(() => {
+    if (isDraftMode) return; // draft mode uses external state
     if (!selectedPersona?.notification_channels) {
-      setChannels([]);
+      setChannelsInternal([]);
       return;
     }
     try {
       const parsed = JSON.parse(selectedPersona.notification_channels);
-      setChannels(Array.isArray(parsed) ? parsed : []);
+      setChannelsInternal(Array.isArray(parsed) ? parsed : []);
     } catch {
-      setChannels([]);
+      setChannelsInternal([]);
     }
     setIsDirty(false);
-  }, [selectedPersona?.notification_channels]);
+  }, [selectedPersona?.notification_channels, isDraftMode]);
 
   useEffect(() => {
     loadChannels();
@@ -202,30 +224,30 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
       config: {},
       enabled: true,
     };
-    setChannels([...channels, newChannel]);
-    setIsDirty(true);
+    setChannels([...effectiveChannels, newChannel]);
+    if (!isDraftMode) setIsDirty(true);
     setShowAddMenu(false);
   };
 
   const handleRemoveChannel = (index: number) => {
-    setChannels(channels.filter((_, i) => i !== index));
-    setIsDirty(true);
+    setChannels(effectiveChannels.filter((_, i) => i !== index));
+    if (!isDraftMode) setIsDirty(true);
   };
 
   const handleToggleEnabled = (index: number) => {
-    setChannels(channels.map((c, i) => i === index ? { ...c, enabled: !c.enabled } : c));
-    setIsDirty(true);
+    setChannels(effectiveChannels.map((c, i) => i === index ? { ...c, enabled: !c.enabled } : c));
+    if (!isDraftMode) setIsDirty(true);
   };
 
   const handleConfigChange = (index: number, key: string, value: string) => {
-    setChannels(channels.map((c, i) => i === index ? { ...c, config: { ...c.config, [key]: value } } : c));
-    setIsDirty(true);
+    setChannels(effectiveChannels.map((c, i) => i === index ? { ...c, config: { ...c.config, [key]: value } } : c));
+    if (!isDraftMode) setIsDirty(true);
     if (validationErrors.length > 0) setValidationErrors([]);
   };
 
   const handleCredentialChange = (index: number, credentialId: string) => {
-    setChannels(channels.map((c, i) => i === index ? { ...c, credential_id: credentialId || undefined } : c));
-    setIsDirty(true);
+    setChannels(effectiveChannels.map((c, i) => i === index ? { ...c, credential_id: credentialId || undefined } : c));
+    if (!isDraftMode) setIsDirty(true);
   };
 
   const validateChannels = (): string[] => {
@@ -244,6 +266,7 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
   };
 
   const handleSave = async () => {
+    if (isDraftMode || !personaId) return;
     const errors = validateChannels();
     setValidationErrors(errors);
     if (errors.length > 0) return;
@@ -251,7 +274,7 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
     setIsSaving(true);
     try {
       await updatePersona(personaId, {
-        notification_channels: JSON.stringify(channels),
+        notification_channels: JSON.stringify(effectiveChannels),
       });
       setIsDirty(false);
     } catch (error) {
@@ -269,12 +292,12 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
     return credentials.filter(c => c.service_type === connectorName);
   };
 
-  const existingTypes = new Set(channels.map(c => c.type));
+  const existingTypes = new Set(effectiveChannels.map(c => c.type));
 
   return (
     <div className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-2xl p-4">
       <div className="flex items-center justify-between mb-5">
-        <h3 className="text-sm font-mono text-muted-foreground/50 uppercase tracking-wider flex items-center gap-2">
+        <h3 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider flex items-center gap-2">
           <Bell className="w-4 h-4" />
           Notification Channels
         </h3>
@@ -285,14 +308,14 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
         <div className="flex items-center gap-3 p-2.5 bg-secondary/30 border border-primary/15 rounded-xl">
           <Bell className="w-4 h-4 text-emerald-400 flex-shrink-0" />
           <span className="text-sm font-medium text-foreground/80 flex-1">In-App Messages</span>
-          <span className="flex items-center gap-1 text-xs text-emerald-400/80">
+          <span className="flex items-center gap-1 text-sm text-emerald-400/80">
             <Check className="w-3 h-3" />
             Always active
           </span>
         </div>
 
         {/* External channels */}
-        {channels.map((channel, index) => {
+        {effectiveChannels.map((channel, index) => {
           const typeDef = channelTypes.find(t => t.type === channel.type);
           const matchingCreds = getMatchingCredentials(channel.type);
 
@@ -319,7 +342,7 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
                 {/* Delete */}
                 <button
                   onClick={() => handleRemoveChannel(index)}
-                  className="p-1 text-muted-foreground/40 hover:text-red-400 transition-colors"
+                  className="p-1 text-muted-foreground/80 hover:text-red-400 transition-colors"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -330,13 +353,13 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
                 const isEmpty = channel.enabled && validationErrors.length > 0 && !channel.config[field.key]?.trim();
                 return (
                 <div key={field.key}>
-                  <label className="block text-[11px] font-mono text-muted-foreground/40 uppercase mb-1">{field.label}</label>
+                  <label className="block text-sm font-mono text-muted-foreground/80 uppercase mb-1">{field.label}</label>
                   <input
                     type="text"
                     value={channel.config[field.key] || ''}
                     onChange={(e) => handleConfigChange(index, field.key, e.target.value)}
                     placeholder={field.placeholder}
-                    className={`w-full px-2.5 py-1.5 bg-background/50 border rounded-lg text-sm text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-1 focus:ring-primary/30 ${isEmpty ? 'border-red-500/50' : 'border-primary/15'}`}
+                    className={`w-full px-2.5 py-1.5 bg-background/50 border rounded-lg text-sm text-foreground placeholder:text-muted-foreground/80 focus:outline-none focus:ring-1 focus:ring-primary/30 ${isEmpty ? 'border-red-500/50' : 'border-primary/15'}`}
                   />
                 </div>
                 );
@@ -344,16 +367,16 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
 
               {/* Credential picker */}
               <div>
-                <label className="block text-[11px] font-mono text-muted-foreground/40 uppercase mb-1">Credential</label>
+                <label className="block text-sm font-mono text-muted-foreground/80 uppercase mb-1">Credential</label>
                 <CredentialPicker
                   credentials={matchingCreds}
                   selectedId={channel.credential_id}
                   onChange={(id) => handleCredentialChange(index, id)}
                 />
                 {channel.credential_id ? (
-                  <span className="text-[10px] text-emerald-400/70 mt-0.5 block">Connected</span>
+                  <span className="text-sm text-emerald-400/70 mt-0.5 block">Connected</span>
                 ) : (
-                  <span className="text-[10px] text-amber-400/70 mt-0.5 block">Credential needed</span>
+                  <span className="text-sm text-amber-400/70 mt-0.5 block">Credential needed</span>
                 )}
               </div>
             </div>
@@ -366,7 +389,7 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
             onClick={() => setShowAddMenu(!showAddMenu)}
             aria-expanded={showAddMenu}
             aria-haspopup="listbox"
-            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-primary/15 hover:border-primary/40 text-sm text-muted-foreground/60 hover:text-primary/80 transition-all w-full"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-primary/15 hover:border-primary/40 text-sm text-muted-foreground/80 hover:text-primary/80 transition-all w-full"
           >
             <Plus className="w-4 h-4" />
             Add Channel
@@ -396,13 +419,13 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
                         aria-selected={false}
                         className="flex items-center gap-3 w-full px-4 py-2.5 hover:bg-secondary/50 text-sm text-foreground/80 transition-colors"
                       >
-                        <Icon className="w-4 h-4 text-muted-foreground/50" />
+                        <Icon className="w-4 h-4 text-muted-foreground/90" />
                         {t.label}
                       </button>
                     );
                   })}
                 {channelTypes.filter(t => !existingTypes.has(t.type)).length === 0 && (
-                  <div className="px-4 py-2.5 text-xs text-muted-foreground/50">All channel types added</div>
+                  <div className="px-4 py-2.5 text-sm text-muted-foreground/90">All channel types added</div>
                 )}
               </motion.div>
             )}
@@ -413,13 +436,13 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
         {validationErrors.length > 0 && (
           <div className="space-y-1">
             {validationErrors.map((err, i) => (
-              <p key={i} className="text-xs text-red-400">{err}</p>
+              <p key={i} className="text-sm text-red-400">{err}</p>
             ))}
           </div>
         )}
 
-        {/* Save button */}
-        {isDirty && (
+        {/* Save button (persisted mode only) */}
+        {!isDraftMode && isDirty && (
           <button
             onClick={handleSave}
             disabled={isSaving}

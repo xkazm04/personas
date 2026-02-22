@@ -108,29 +108,29 @@ function NodePopover({ node, onClose }: NodePopoverProps) {
         >
           <TypeIcon className="w-3.5 h-3.5" style={{ color: typeMeta.color }} />
         </div>
-        <span className="text-xs font-mono uppercase tracking-wider text-muted-foreground/50">{typeMeta.label}</span>
+        <span className="text-sm font-mono uppercase tracking-wider text-muted-foreground/90">{typeMeta.label}</span>
         <button onClick={onClose} className="ml-auto w-5 h-5 rounded flex items-center justify-center hover:bg-secondary/60 transition-colors">
-          <X className="w-3 h-3 text-muted-foreground/40" />
+          <X className="w-3 h-3 text-muted-foreground/80" />
         </button>
       </div>
 
       <div className="text-sm font-medium text-foreground/90">{node.label}</div>
 
       {node.detail && (
-        <p className="text-xs text-muted-foreground/60 leading-relaxed">{node.detail}</p>
+        <p className="text-sm text-muted-foreground/80 leading-relaxed">{node.detail}</p>
       )}
 
       {node.error_message && (
         <div className="px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/15">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-red-400/60 mb-1">Error</div>
-          <p className="text-xs text-red-400/90 leading-relaxed">{node.error_message}</p>
+          <div className="text-sm font-mono uppercase tracking-wider text-red-400/60 mb-1">Error</div>
+          <p className="text-sm text-red-400/90 leading-relaxed">{node.error_message}</p>
         </div>
       )}
 
       {requestData && (
         <div>
-          <div className="text-[10px] font-mono uppercase tracking-wider text-blue-400/50 mb-1">Request</div>
-          <pre className="text-[11px] text-blue-300/70 bg-blue-500/5 border border-blue-500/10 rounded-lg px-3 py-2 max-h-28 overflow-auto whitespace-pre-wrap break-words font-mono leading-relaxed">
+          <div className="text-sm font-mono uppercase tracking-wider text-blue-400/50 mb-1">Request</div>
+          <pre className="text-sm text-blue-300/70 bg-blue-500/5 border border-blue-500/10 rounded-lg px-3 py-2 max-h-28 overflow-auto whitespace-pre-wrap break-words font-mono leading-relaxed">
             {typeof requestData === 'string' ? requestData : JSON.stringify(requestData, null, 2)}
           </pre>
         </div>
@@ -138,8 +138,8 @@ function NodePopover({ node, onClose }: NodePopoverProps) {
 
       {responseData && (
         <div>
-          <div className="text-[10px] font-mono uppercase tracking-wider text-emerald-400/50 mb-1">Response</div>
-          <pre className="text-[11px] text-emerald-300/70 bg-emerald-500/5 border border-emerald-500/10 rounded-lg px-3 py-2 max-h-28 overflow-auto whitespace-pre-wrap break-words font-mono leading-relaxed">
+          <div className="text-sm font-mono uppercase tracking-wider text-emerald-400/50 mb-1">Response</div>
+          <pre className="text-sm text-emerald-300/70 bg-emerald-500/5 border border-emerald-500/10 rounded-lg px-3 py-2 max-h-28 overflow-auto whitespace-pre-wrap break-words font-mono leading-relaxed">
             {typeof responseData === 'string' ? responseData : JSON.stringify(responseData, null, 2)}
           </pre>
         </div>
@@ -443,13 +443,13 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
               </div>
               <div>
                 <h2 className="text-base font-semibold text-foreground/90">{titleOverride || templateName}</h2>
-                <p className="text-xs text-muted-foreground/50">
+                <p className="text-sm text-muted-foreground/90">
                   {subtitleOverride || `${flows.length} use case flow${flows.length !== 1 ? 's' : ''}`}
                 </p>
               </div>
             </div>
             <button ref={closeButtonRef} onClick={onClose} className="w-8 h-8 rounded-lg bg-secondary/50 hover:bg-secondary flex items-center justify-center transition-colors" aria-label="Close dialog">
-              <X className="w-4 h-4 text-muted-foreground/60" />
+              <X className="w-4 h-4 text-muted-foreground/80" />
             </button>
           </div>
 
@@ -467,7 +467,7 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
                     index === activeFlowIndex
                       ? 'bg-violet-500/15 border border-violet-500/30 text-violet-300 shadow-[0_0_12px_rgba(139,92,246,0.1)]'
-                      : 'bg-secondary/40 border border-transparent text-muted-foreground/60 hover:bg-secondary/60 hover:text-muted-foreground/80'
+                      : 'bg-secondary/40 border border-transparent text-muted-foreground/80 hover:bg-secondary/60 hover:text-muted-foreground'
                   }`}
                 >
                   <span className={`w-2 h-2 rounded-full ${index === activeFlowIndex ? 'bg-violet-400' : 'bg-muted-foreground/30'}`} />
@@ -502,7 +502,7 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
                 }}
               />
             ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground/40">
+              <div className="flex items-center justify-center h-full text-muted-foreground/80">
                 No flow data available
               </div>
             )}
@@ -521,8 +521,8 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
           {/* Footer -- Flow Description */}
           {activeFlow && (
             <div className="px-6 py-3 border-t border-primary/10 bg-secondary/20">
-              <p className="text-sm text-muted-foreground/70">{activeFlow.description}</p>
-              <div className="flex items-center gap-4 mt-1.5 text-xs text-muted-foreground/40">
+              <p className="text-sm text-muted-foreground/90">{activeFlow.description}</p>
+              <div className="flex items-center gap-4 mt-1.5 text-sm text-muted-foreground/80">
                 <span>{activeFlow.nodes.length} nodes</span>
                 <span>{activeFlow.edges.length} edges</span>
                 <span>{activeFlow.nodes.filter(n => n.type === 'connector').length} connector(s)</span>

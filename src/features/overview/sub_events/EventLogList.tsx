@@ -84,7 +84,7 @@ export default function EventLogList() {
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="p-1.5 rounded-lg text-muted-foreground/40 hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors"
+            className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors"
             title="Refresh"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -98,21 +98,21 @@ export default function EventLogList() {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
               filter === f
                 ? 'bg-primary/15 text-primary border-primary/30'
-                : 'bg-secondary/30 text-muted-foreground/60 border-primary/15 hover:text-muted-foreground hover:bg-secondary/50'
+                : 'bg-secondary/30 text-muted-foreground/80 border-primary/15 hover:text-muted-foreground hover:bg-secondary/50'
             }`}
           >
             {f.charAt(0).toUpperCase() + f.slice(1)}
             {f === 'pending' && pendingEventCount > 0 && (
-              <span className="ml-1.5 px-1.5 py-0.5 text-[11px] rounded-full bg-amber-500/20 text-amber-400">
+              <span className="ml-1.5 px-1.5 py-0.5 text-sm rounded-full bg-amber-500/20 text-amber-400">
                 {pendingEventCount}
               </span>
             )}
           </button>
         ))}
-        <span className="ml-auto text-[11px] font-mono text-muted-foreground/40">
+        <span className="ml-auto text-sm font-mono text-muted-foreground/80">
           Showing {filteredEvents.length} of {recentEvents.length}
         </span>
       </div>
@@ -120,15 +120,15 @@ export default function EventLogList() {
       {/* Event List */}
       <ContentBody flex>
         {isLoading ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-6 text-muted-foreground/40">
+          <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-6 text-muted-foreground/80">
             <Loader2 className="w-8 h-8 mb-3 animate-spin text-primary/70" />
             <p className="text-sm">Loading events...</p>
           </div>
         ) : filteredEvents.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-6 text-muted-foreground/30">
+          <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-6 text-muted-foreground/80">
             <Zap className="w-10 h-10 mb-3" />
             <p className="text-sm">No events yet</p>
-            <p className="text-xs mt-1">Events from webhooks, executions, and persona actions will appear here</p>
+            <p className="text-sm mt-1">Events from webhooks, executions, and persona actions will appear here</p>
           </div>
         ) : (
           <div className="p-4 md:p-6 space-y-2">
@@ -163,31 +163,31 @@ export default function EventLogList() {
                     )}
 
                     {/* Event type */}
-                    <span className={`text-xs font-medium ${typeColor} flex-shrink-0`}>
+                    <span className={`text-sm font-medium ${typeColor} flex-shrink-0`}>
                       {event.event_type}
                     </span>
 
                     {/* Source -> Target */}
-                    <span className="text-xs text-muted-foreground/40 truncate flex-1">
+                    <span className="text-sm text-muted-foreground/80 truncate flex-1">
                       {event.source_type}
                       {event.target_persona_id ? ` -> ${getPersonaName(event.target_persona_id)}` : ''}
                     </span>
 
                     {/* Status badge */}
-                    <span className={`text-[11px] px-2 py-0.5 rounded-md font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border} flex-shrink-0`}>
+                    <span className={`text-sm px-2 py-0.5 rounded-md font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border} flex-shrink-0`}>
                       {event.status}
                     </span>
 
                     {/* Time */}
-                    <span className="text-[11px] text-muted-foreground/30 flex-shrink-0 w-16 text-right">
+                    <span className="text-sm text-muted-foreground/80 flex-shrink-0 w-16 text-right">
                       {formatRelativeTime(event.created_at)}
                     </span>
 
                     {/* Chevron */}
                     {isExpanded ? (
-                      <ChevronUp className="w-3.5 h-3.5 text-muted-foreground/30 flex-shrink-0" />
+                      <ChevronUp className="w-3.5 h-3.5 text-muted-foreground/80 flex-shrink-0" />
                     ) : (
-                      <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/30 flex-shrink-0" />
+                      <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/80 flex-shrink-0" />
                     )}
                   </button>
 
@@ -200,33 +200,33 @@ export default function EventLogList() {
                         exit={{ height: 0, opacity: 0 }}
                         className="border-t border-primary/15"
                       >
-                        <div className="p-3 space-y-2 text-xs">
+                        <div className="p-3 space-y-2 text-sm">
                           <div className="grid grid-cols-2 gap-2">
                             <div>
-                              <span className="text-muted-foreground/40">Event ID:</span>
-                              <span className="ml-2 text-xs"><UuidLabel value={event.id} /></span>
+                              <span className="text-muted-foreground/80">Event ID:</span>
+                              <span className="ml-2 text-sm"><UuidLabel value={event.id} /></span>
                             </div>
                             <div>
-                              <span className="text-muted-foreground/40">Project:</span>
-                              <span className="ml-2 text-xs"><UuidLabel value={event.project_id} /></span>
+                              <span className="text-muted-foreground/80">Project:</span>
+                              <span className="ml-2 text-sm"><UuidLabel value={event.project_id} /></span>
                             </div>
                             {event.source_id && (
                               <div>
-                                <span className="text-muted-foreground/40">Source:</span>
-                                <span className="ml-2 text-xs"><UuidLabel value={event.source_id} label={event.source_type || undefined} /></span>
+                                <span className="text-muted-foreground/80">Source:</span>
+                                <span className="ml-2 text-sm"><UuidLabel value={event.source_id} label={event.source_type || undefined} /></span>
                               </div>
                             )}
                             {event.processed_at && (
                               <div className="rounded-lg border border-primary/10 bg-background/30 px-2.5 py-2">
-                                <span className="text-[11px] font-mono text-muted-foreground/40">Processed</span>
-                                <span className="ml-2 text-foreground/60">{new Date(event.processed_at).toLocaleString()}</span>
+                                <span className="text-sm font-mono text-muted-foreground/80">Processed</span>
+                                <span className="ml-2 text-foreground/80">{new Date(event.processed_at).toLocaleString()}</span>
                               </div>
                             )}
                           </div>
                           {event.payload && (
                             <div>
-                              <span className="text-muted-foreground/40 block mb-1">Payload:</span>
-                              <pre className="bg-background/40 p-2 rounded-lg text-foreground/50 overflow-x-auto max-h-40 text-[11px]">
+                              <span className="text-muted-foreground/80 block mb-1">Payload:</span>
+                              <pre className="bg-background/40 p-2 rounded-lg text-foreground/90 overflow-x-auto max-h-40 text-sm">
                                 {(() => {
                                   try {
                                     return JSON.stringify(JSON.parse(event.payload), null, 2);
@@ -240,7 +240,7 @@ export default function EventLogList() {
                           {event.error_message && (
                             <div>
                               <span className="text-red-400/70 block mb-1">Error:</span>
-                              <pre className="bg-red-500/5 p-2 rounded-lg text-red-400/70 text-[11px]">
+                              <pre className="bg-red-500/5 p-2 rounded-lg text-red-400/70 text-sm">
                                 {event.error_message}
                               </pre>
                             </div>

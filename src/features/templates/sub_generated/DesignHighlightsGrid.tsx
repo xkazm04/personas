@@ -42,7 +42,7 @@ export function DesignHighlightsGrid({ highlights }: DesignHighlightsGridProps) 
             {/* Header */}
             <div className="flex items-center gap-2.5">
               <div className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-secondary/60 flex items-center justify-center flex-shrink-0">
-                <IconComponent className={`w-4 h-4 ${highlight.color || 'text-muted-foreground/60'}`} />
+                <IconComponent className={`w-4 h-4 ${highlight.color || 'text-muted-foreground/80'}`} />
               </div>
               <h4 className="text-sm font-medium text-foreground/80 leading-tight">
                 {highlight.category}
@@ -54,7 +54,7 @@ export function DesignHighlightsGrid({ highlights }: DesignHighlightsGridProps) 
               {highlight.items.map((item, itemIndex) => (
                 <li
                   key={itemIndex}
-                  className="flex items-start gap-2 text-sm text-muted-foreground/60 leading-relaxed"
+                  className="flex items-start gap-2 text-sm text-muted-foreground/80 leading-relaxed"
                 >
                   <span className={`mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${
                     highlight.color?.replace('text-', 'bg-') || 'bg-muted-foreground/30'

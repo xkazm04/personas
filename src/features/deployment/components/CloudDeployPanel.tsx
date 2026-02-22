@@ -101,12 +101,12 @@ export default function CloudDeployPanel() {
   // ---------- render helpers ----------
 
   const connectionBadge = isConnected ? (
-    <span className="flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded-md border bg-emerald-500/10 border-emerald-500/20 text-emerald-400">
+    <span className="flex items-center gap-1.5 text-sm px-2 py-0.5 rounded-md border bg-emerald-500/10 border-emerald-500/20 text-emerald-400">
       <Wifi className="w-3 h-3" />
       Connected
     </span>
   ) : (
-    <span className="flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded-md border bg-red-500/10 border-red-500/20 text-red-400">
+    <span className="flex items-center gap-1.5 text-sm px-2 py-0.5 rounded-md border bg-red-500/10 border-red-500/20 text-red-400">
       <WifiOff className="w-3 h-3" />
       Disconnected
     </span>
@@ -134,7 +134,7 @@ export default function CloudDeployPanel() {
                   px-5 py-2.5 text-sm font-medium transition-colors relative
                   ${active
                     ? 'text-foreground/90 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-indigo-500'
-                    : 'text-muted-foreground/50 hover:text-foreground/70'}
+                    : 'text-muted-foreground/90 hover:text-foreground/95'}
                   ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
                 `}
               >

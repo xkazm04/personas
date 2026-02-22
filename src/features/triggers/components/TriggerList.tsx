@@ -200,13 +200,13 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
       <div className="flex-1 overflow-y-auto flex flex-col">
         {Object.keys(groupedTriggers).length === 0 ? (
           <div className="flex-1 flex items-center justify-center p-6">
-            <div className="text-center text-muted-foreground/40 text-sm">
+            <div className="text-center text-muted-foreground/80 text-sm">
               No triggers configured yet
             </div>
           </div>
         ) : (
           <div className="p-6 space-y-6">
-            <h3 className="text-sm font-mono text-muted-foreground/50 uppercase tracking-wider">Event Triggers</h3>
+            <h3 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Event Triggers</h3>
 
             {Object.values(groupedTriggers).map(({ persona, triggers }) => (
               <div key={persona.id} className="space-y-2">
@@ -215,7 +215,7 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
                   {onNavigateToPersona && (
                     <button
                       onClick={() => onNavigateToPersona(persona.id)}
-                      className="text-xs text-primary hover:text-primary/80 flex items-center gap-1 transition-colors"
+                      className="text-sm text-primary hover:text-primary/80 flex items-center gap-1 transition-colors"
                     >
                       Configure
                       <ChevronRight className="w-3 h-3" />
@@ -250,24 +250,24 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
 
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className={`text-xs font-medium capitalize ${colorClass}`}>
+                              <span className={`text-sm font-medium capitalize ${colorClass}`}>
                                 {trigger.trigger_type}
                               </span>
-                              <span className={`text-[11px] px-1.5 py-0.5 rounded-md font-mono ${
+                              <span className={`text-sm px-1.5 py-0.5 rounded-md font-mono ${
                                 trigger.enabled
                                   ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
-                                  : 'bg-secondary/60 text-muted-foreground/40 border border-border/20'
+                                  : 'bg-secondary/60 text-muted-foreground/80 border border-border/20'
                               }`}>
                                 {trigger.enabled ? 'On' : 'Off'}
                               </span>
                               <HealthDot health={triggerHealthMap[trigger.id] ?? 'unknown'} />
                             </div>
 
-                            <div className="mt-1.5 text-xs text-muted-foreground/40 space-y-0.5">
+                            <div className="mt-1.5 text-sm text-muted-foreground/80 space-y-0.5">
                               <div>Last: {formatTimestamp(trigger.last_triggered_at, 'Never')}</div>
                               <div>Next: <TriggerCountdown trigger={trigger} /></div>
                               {trigger.trigger_type === 'webhook' && (
-                                <div className="font-mono text-[10px] text-muted-foreground/30 truncate mt-0.5">
+                                <div className="font-mono text-sm text-muted-foreground/80 truncate mt-0.5">
                                   localhost:9420/webhook/{trigger.id.slice(0, 8)}...
                                 </div>
                               )}

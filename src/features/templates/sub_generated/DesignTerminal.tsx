@@ -92,7 +92,7 @@ export function DesignTerminal({ lines, isRunning }: DesignTerminalProps) {
             transition={{ duration: 0.15 }}
             className="flex items-center gap-3 px-4 py-2 bg-blue-500/5 border-b border-blue-500/10"
           >
-            <span className="text-[10px] font-mono text-blue-400/60 shrink-0">
+            <span className="text-sm font-mono text-blue-400/60 shrink-0">
               Step {currentPhase.step} of {currentPhase.total}
             </span>
             <div className="flex-1 h-1 rounded-full bg-secondary/30 overflow-hidden">
@@ -103,7 +103,7 @@ export function DesignTerminal({ lines, isRunning }: DesignTerminalProps) {
                 transition={{ duration: 0.4, ease: 'easeOut' }}
               />
             </div>
-            <span className="text-[11px] text-blue-400/80 truncate">
+            <span className="text-sm text-blue-400/80 truncate">
               {currentPhase.label}
             </span>
           </motion.div>
@@ -117,11 +117,11 @@ export function DesignTerminal({ lines, isRunning }: DesignTerminalProps) {
       >
         <div className="flex items-center gap-2.5">
           {isCollapsed ? (
-            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50" />
+            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/90" />
           ) : (
-            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50" />
+            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/90" />
           )}
-          <span className="text-xs text-muted-foreground/50 font-mono">
+          <span className="text-sm text-muted-foreground/90 font-mono">
             {isRunning ? (
               <span className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
@@ -132,7 +132,7 @@ export function DesignTerminal({ lines, isRunning }: DesignTerminalProps) {
             )}
           </span>
         </div>
-        <span className="text-xs text-muted-foreground/30 font-mono">
+        <span className="text-sm text-muted-foreground/80 font-mono">
           {lines.length} lines
         </span>
       </button>
@@ -142,10 +142,10 @@ export function DesignTerminal({ lines, isRunning }: DesignTerminalProps) {
         <div
           ref={terminalRef}
           onScroll={handleScroll}
-          className="max-h-[200px] overflow-y-auto font-mono text-xs bg-background"
+          className="max-h-[200px] overflow-y-auto font-mono text-sm bg-background"
         >
           {lines.length === 0 ? (
-            <div className="p-4 text-muted-foreground/30 text-center text-xs">
+            <div className="p-4 text-muted-foreground/80 text-center text-sm">
               No output yet...
             </div>
           ) : (

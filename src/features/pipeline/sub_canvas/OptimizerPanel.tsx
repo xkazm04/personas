@@ -56,7 +56,7 @@ function ConfidenceBar({ value }: { value: number }) {
           }}
         />
       </div>
-      <span className="text-[9px] text-muted-foreground font-mono">{Math.round(value * 100)}%</span>
+      <span className="text-sm text-muted-foreground font-mono">{Math.round(value * 100)}%</span>
     </div>
   );
 }
@@ -108,10 +108,10 @@ export default function OptimizerPanel({
             <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
           )}
         </div>
-        <span className={`text-xs font-medium flex-1 ${hasSuggestions ? 'text-foreground/90' : 'text-muted-foreground'}`}>
+        <span className={`text-sm font-medium flex-1 ${hasSuggestions ? 'text-foreground/90' : 'text-muted-foreground'}`}>
           Topology Optimizer
           {hasSuggestions && (
-            <span className="ml-1.5 text-[10px] text-indigo-400">
+            <span className="ml-1.5 text-sm text-indigo-400">
               {suggestions.length} suggestion{suggestions.length !== 1 ? 's' : ''}
             </span>
           )}
@@ -139,13 +139,13 @@ export default function OptimizerPanel({
                 <div className="px-3 py-2 border-b border-primary/10 flex items-center gap-3">
                   <div className="flex items-center gap-1.5">
                     <BarChart3 className="w-3 h-3 text-muted-foreground" />
-                    <span className="text-[10px] text-muted-foreground font-mono">
+                    <span className="text-sm text-muted-foreground font-mono">
                       {analytics.total_runs} run{analytics.total_runs !== 1 ? 's' : ''}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <TrendingUp className="w-3 h-3 text-muted-foreground" />
-                    <span className="text-[10px] text-muted-foreground font-mono">
+                    <span className="text-sm text-muted-foreground font-mono">
                       {Math.round(analytics.success_rate * 100)}% success
                     </span>
                   </div>
@@ -165,23 +165,23 @@ export default function OptimizerPanel({
                 {loading && !analytics && (
                   <div className="px-3 py-6 text-center">
                     <div className="w-5 h-5 mx-auto mb-2 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
-                    <p className="text-[10px] text-muted-foreground">Analyzing pipeline history...</p>
+                    <p className="text-sm text-muted-foreground">Analyzing pipeline history...</p>
                   </div>
                 )}
 
                 {!loading && !hasData && (
                   <div className="px-3 py-6 text-center">
-                    <Sparkles className="w-5 h-5 mx-auto mb-2 text-muted-foreground/40" />
-                    <p className="text-xs text-muted-foreground/60">Run the pipeline at least twice</p>
-                    <p className="text-[10px] text-muted-foreground/40 mt-0.5">to generate optimization insights</p>
+                    <Sparkles className="w-5 h-5 mx-auto mb-2 text-muted-foreground/80" />
+                    <p className="text-sm text-muted-foreground/80">Run the pipeline at least twice</p>
+                    <p className="text-sm text-muted-foreground/80 mt-0.5">to generate optimization insights</p>
                   </div>
                 )}
 
                 {hasData && !hasSuggestions && (
                   <div className="px-3 py-6 text-center">
                     <Check className="w-5 h-5 mx-auto mb-2 text-emerald-400/60" />
-                    <p className="text-xs text-foreground/60">Topology looks good</p>
-                    <p className="text-[10px] text-muted-foreground/40 mt-0.5">No improvements detected</p>
+                    <p className="text-sm text-foreground/80">Topology looks good</p>
+                    <p className="text-sm text-muted-foreground/80 mt-0.5">No improvements detected</p>
                   </div>
                 )}
 
@@ -208,12 +208,12 @@ export default function OptimizerPanel({
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 mb-0.5">
-                            <span className="text-[11px] font-semibold text-foreground/90 truncate">
+                            <span className="text-sm font-semibold text-foreground/90 truncate">
                               {s.title}
                             </span>
                             <ImpactBadge impact={s.impact} />
                           </div>
-                          <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-2">
+                          <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
                             {s.description}
                           </p>
                           <div className="flex items-center justify-between mt-1.5">

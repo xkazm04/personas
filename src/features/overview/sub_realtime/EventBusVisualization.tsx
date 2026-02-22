@@ -277,14 +277,14 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
           }}
         >
           <div
-            className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-500 ${
+            className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-bold transition-all duration-500 ${
               activeNodeIds.has(node.id) ? 'border-purple-400/60 shadow-lg shadow-purple-500/20' : 'border-primary/20'
             }`}
             style={{ backgroundColor: (node.color ?? '#6366f1') + '20' }}
           >
             {node.icon && node.icon.length <= 2 ? node.icon : node.label[0]?.toUpperCase()}
           </div>
-          <span className="text-[10px] text-muted-foreground/50 mt-1 truncate max-w-[80px] text-center" title={node.label}>
+          <span className="text-sm text-muted-foreground/90 mt-1 truncate max-w-[80px] text-center" title={node.label}>
             {node.label}
           </span>
         </div>
@@ -302,14 +302,14 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
           }}
         >
           <div
-            className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-500 ${
+            className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-bold transition-all duration-500 ${
               activeNodeIds.has(node.id) ? 'border-purple-400/60 shadow-lg shadow-purple-500/20' : 'border-primary/20'
             }`}
             style={{ backgroundColor: (node.color ?? '#6366f1') + '20' }}
           >
             {node.icon && node.icon.length <= 2 ? node.icon : node.label[0]?.toUpperCase()}
           </div>
-          <span className="text-[10px] text-muted-foreground/50 mt-1 truncate max-w-[80px] text-center" title={node.label}>
+          <span className="text-sm text-muted-foreground/90 mt-1 truncate max-w-[80px] text-center" title={node.label}>
             {node.label}
           </span>
         </div>
@@ -332,14 +332,14 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
                   className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                   style={{ backgroundColor: EVENT_TYPE_HEX_COLORS[type] ?? '#818cf8' }}
                 />
-                <span className="text-[9px] font-mono text-muted-foreground/60">
+                <span className="text-sm font-mono text-muted-foreground/80">
                   {EVENT_TYPE_LABELS[type] ?? type.replace(/_/g, ' ')}
                 </span>
               </motion.div>
             ))}
           </AnimatePresence>
           {seenTypes.length > MAX_LEGEND_ITEMS && (
-            <div className="text-[9px] font-mono text-muted-foreground/40 pt-0.5">
+            <div className="text-sm font-mono text-muted-foreground/80 pt-0.5">
               +{seenTypes.length - MAX_LEGEND_ITEMS} more
             </div>
           )}
@@ -367,11 +367,11 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </motion.svg>
             </div>
-            <p className="text-sm text-muted-foreground/40 flex items-center justify-center gap-2">
+            <p className="text-sm text-muted-foreground/80 flex items-center justify-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
               Waiting for events...
             </p>
-            <p className="text-xs text-muted-foreground/25 mt-1">Click &quot;Test Flow&quot; to see it in action</p>
+            <p className="text-sm text-muted-foreground/80 mt-1">Click &quot;Test Flow&quot; to see it in action</p>
           </div>
         </motion.div>
       )}

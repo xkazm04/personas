@@ -158,7 +158,7 @@ export function N8nTransformProgress({ phase, lines, runId, isRestoring, onRetry
                   className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20"
                 >
                   <RotateCcw className="w-3.5 h-3.5 text-amber-400/70" />
-                  <span className="text-xs text-amber-400/80">Resuming previous transformation session...</span>
+                  <span className="text-sm text-amber-400/80">Resuming previous transformation session...</span>
                 </motion.div>
               )}
 
@@ -188,7 +188,7 @@ export function N8nTransformProgress({ phase, lines, runId, isRestoring, onRetry
                       {currentPhase?.label ?? 'Processing workflow...'}
                     </motion.p>
                   </AnimatePresence>
-                  <p className="text-xs text-muted-foreground/40 mt-0.5">
+                  <p className="text-sm text-muted-foreground/80 mt-0.5">
                     {currentPhase
                       ? `Step ${currentPhase.step} of ${currentPhase.total}`
                       : 'Initializing...'}
@@ -204,7 +204,7 @@ export function N8nTransformProgress({ phase, lines, runId, isRestoring, onRetry
                     />
                   </div>
 
-                  <p className="text-[11px] text-muted-foreground/50 mt-2">
+                  <p className="text-sm text-muted-foreground/90 mt-2">
                     You can continue working — we'll notify you when the draft is ready.
                   </p>
                 </div>
@@ -213,7 +213,7 @@ export function N8nTransformProgress({ phase, lines, runId, isRestoring, onRetry
                 {onCancel && (
                   <button
                     onClick={onCancel}
-                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-xl border border-red-500/20 text-red-400/70 hover:bg-red-500/10 hover:text-red-400 transition-colors flex-shrink-0"
+                    className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-xl border border-red-500/20 text-red-400/70 hover:bg-red-500/10 hover:text-red-400 transition-colors flex-shrink-0"
                     title="Cancel transformation"
                   >
                     <XCircle className="w-3.5 h-3.5" />
@@ -236,7 +236,7 @@ export function N8nTransformProgress({ phase, lines, runId, isRestoring, onRetry
               </motion.div>
               <div>
                 <p className="text-sm font-medium text-emerald-400">Draft generated successfully</p>
-                <p className="text-xs text-muted-foreground/40 mt-0.5">
+                <p className="text-sm text-muted-foreground/80 mt-0.5">
                   Your persona draft is ready for review and editing.
                 </p>
               </div>
@@ -250,14 +250,14 @@ export function N8nTransformProgress({ phase, lines, runId, isRestoring, onRetry
               </div>
               <div className="flex-1">
                 <p className="text-sm font-medium text-red-400">Transformation failed</p>
-                <p className="text-xs text-red-400/60 mt-0.5">
+                <p className="text-sm text-red-400/60 mt-0.5">
                   Check the output below for details.
                 </p>
               </div>
               {onRetry && (
                 <button
                   onClick={onRetry}
-                  className="flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-xl border border-violet-500/25 text-violet-300 hover:bg-violet-500/15 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border border-violet-500/25 text-violet-300 hover:bg-violet-500/15 transition-colors"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                   Retry
@@ -269,11 +269,11 @@ export function N8nTransformProgress({ phase, lines, runId, isRestoring, onRetry
           {phase === 'idle' && (
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-secondary/40 border border-primary/10 flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-muted-foreground/30" />
+                <Sparkles className="w-6 h-6 text-muted-foreground/80" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground/50">Waiting to start transformation...</p>
-                <p className="text-xs text-muted-foreground/30 mt-0.5">
+                <p className="text-sm text-muted-foreground/90">Waiting to start transformation...</p>
+                <p className="text-sm text-muted-foreground/80 mt-0.5">
                   Click "Generate Persona Draft" to begin.
                 </p>
               </div>
@@ -290,21 +290,21 @@ export function N8nTransformProgress({ phase, lines, runId, isRestoring, onRetry
             >
               <div className="flex items-center gap-2.5">
                 {showTerminal ? (
-                  <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/40" />
+                  <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/80" />
                 ) : (
-                  <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40" />
+                  <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/80" />
                 )}
-                <span className="text-[11px] text-muted-foreground/40 font-mono">
+                <span className="text-sm text-muted-foreground/80 font-mono">
                   {showTerminal ? 'Hide' : 'Show'} CLI output
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 {runId && (
-                  <span className="text-[10px] text-muted-foreground/25 font-mono">
+                  <span className="text-sm text-muted-foreground/80 font-mono">
                     {runId.slice(0, 8)}
                   </span>
                 )}
-                <span className="text-[10px] text-muted-foreground/30 font-mono">
+                <span className="text-sm text-muted-foreground/80 font-mono">
                   {lines.length} lines
                 </span>
               </div>
@@ -322,7 +322,7 @@ export function N8nTransformProgress({ phase, lines, runId, isRestoring, onRetry
                   <div
                     ref={terminalRef}
                     onScroll={handleTerminalScroll}
-                    className="max-h-[200px] overflow-y-auto font-mono text-xs bg-background"
+                    className="max-h-[200px] overflow-y-auto font-mono text-sm bg-background"
                   >
                     <div className="p-3">
                       {lines.map((line, index) => {

@@ -38,7 +38,8 @@ export function useCredentialOAuth({ onSuccess, onError }: UseCredentialOAuthOpt
 
       const nowIso = new Date().toISOString();
       const effectiveScopes = data.scope ?? pv.scopes?.trim() ?? '';
-      const { client_id: _clientId, client_secret: _clientSecret, ...safePendingValues } = pv;
+      const { client_id: _cid, client_secret: _csec, ...safePendingValues } = pv;
+      void _cid; void _csec;
 
       const credentialData = {
         ...safePendingValues,

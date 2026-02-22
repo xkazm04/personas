@@ -127,7 +127,7 @@ export function CredentialManager() {
 
       {credentialView === 'credentials' && (
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/90" />
           <input
             type="text"
             value={credentialSearch}
@@ -140,7 +140,7 @@ export function CredentialManager() {
 
       {credentialView === 'from-template' && template.templateMode === 'pick-type' && (
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/90" />
           <input
             type="text"
             value={template.templateSearch}
@@ -157,7 +157,7 @@ export function CredentialManager() {
           <span className="flex-1">{error}</span>
           <button
             onClick={() => setError(null)}
-            className="text-red-400/60 hover:text-red-400 text-xs font-medium shrink-0"
+            className="text-red-400/60 hover:text-red-400 text-sm font-medium shrink-0"
           >
             Dismiss
           </button>

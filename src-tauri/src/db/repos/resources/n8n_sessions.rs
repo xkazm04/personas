@@ -18,6 +18,8 @@ fn row_to_session(row: &Row) -> rusqlite::Result<N8nTransformSession> {
         step: row.get("step")?,
         error: row.get("error")?,
         persona_id: row.get("persona_id")?,
+        transform_id: row.get("transform_id")?,
+        questions_json: row.get("questions_json")?,
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -87,7 +89,9 @@ pub fn update(
             user_answers     = IIF(:has_user_answers,   :user_answers,   user_answers),
             step             = IIF(:has_step,           :step,           step),
             error            = IIF(:has_error,          :error,          error),
-            persona_id       = IIF(:has_persona_id,     :persona_id,     persona_id)
+            persona_id       = IIF(:has_persona_id,     :persona_id,     persona_id),
+            transform_id     = IIF(:has_transform_id,   :transform_id,   transform_id),
+            questions_json   = IIF(:has_questions_json,  :questions_json,  questions_json)
          WHERE id = :id",
         named_params! {
             ":now":               now,
@@ -108,6 +112,10 @@ pub fn update(
             ":error":             input.error.as_ref().and_then(|v| v.as_deref()),
             ":has_persona_id":    input.persona_id.is_some(),
             ":persona_id":        input.persona_id.as_ref().and_then(|v| v.as_deref()),
+            ":has_transform_id":  input.transform_id.is_some(),
+            ":transform_id":      input.transform_id.as_ref().and_then(|v| v.as_deref()),
+            ":has_questions_json": input.questions_json.is_some(),
+            ":questions_json":    input.questions_json.as_ref().and_then(|v| v.as_deref()),
         },
     )?;
 
@@ -115,6 +123,8 @@ pub fn update(
 }
 
 /// Mark sessions stuck in 'transforming'/'analyzing' as 'failed'.
+/// Sessions in 'awaiting_answers' are preserved — they have persisted questions
+/// and can resume without re-running the transform.
 /// Called at startup — their CLI processes died when the app last exited.
 pub fn recover_interrupted_sessions(pool: &DbPool) -> Result<u32, AppError> {
     let conn = pool.get()?;

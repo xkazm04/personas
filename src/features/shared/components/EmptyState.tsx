@@ -9,7 +9,7 @@ interface EmptyStateProps {
   iconColor?: string;
 }
 
-export default function EmptyState({ icon: Icon, title, description, action, iconColor = 'text-muted-foreground/60' }: EmptyStateProps) {
+export default function EmptyState({ icon: Icon, title, description, action, iconColor = 'text-muted-foreground/80' }: EmptyStateProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -19,8 +19,8 @@ export default function EmptyState({ icon: Icon, title, description, action, ico
       <div className="w-14 h-14 rounded-2xl bg-secondary/60 border border-primary/15 flex items-center justify-center mb-4">
         <Icon className={`w-7 h-7 ${iconColor}`} />
       </div>
-      <h3 className="text-sm font-medium text-foreground/70 mb-1">{title}</h3>
-      {description && <p className="text-xs text-muted-foreground/50 max-w-xs">{description}</p>}
+      <h3 className="text-sm font-medium text-foreground/90 mb-1">{title}</h3>
+      {description && <p className="text-sm text-muted-foreground/90 max-w-xs">{description}</p>}
       {action && (
         <button
           onClick={action.onClick}

@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Sparkles, RefreshCw, Check } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Sparkles, RefreshCw, Check, AlertCircle } from 'lucide-react';
 import type { N8nWizardStep, TransformSubPhase } from './useN8nImportReducer';
 
 interface N8nWizardFooterProps {
@@ -13,6 +13,8 @@ interface N8nWizardFooterProps {
   hasParseResult: boolean;
   transformSubPhase?: TransformSubPhase;
   analyzing?: boolean;
+  /** Number of connectors still needing credentials */
+  connectorsMissing?: number;
 }
 
 export function N8nWizardFooter({
@@ -27,6 +29,7 @@ export function N8nWizardFooter({
   hasParseResult,
   transformSubPhase,
   analyzing,
+  connectorsMissing = 0,
 }: N8nWizardFooterProps) {
   // No footer on upload step
   if (step === 'upload') return null;
@@ -89,28 +92,38 @@ export function N8nWizardFooter({
       <button
         onClick={onBack}
         disabled={!canGoBack}
-        className="flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-xl border border-primary/15 text-muted-foreground/60 hover:bg-secondary/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         Back
       </button>
 
-      {nextAction && (
-        <button
-          onClick={onNext}
-          disabled={nextAction.disabled}
-          className={`flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-xl border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-            nextAction.variant === 'emerald'
-              ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25 hover:bg-emerald-500/25'
-              : 'bg-violet-500/15 text-violet-300 border-violet-500/25 hover:bg-violet-500/25'
-          }`}
-        >
-          <nextAction.icon
-            className={`w-4 h-4 ${nextAction.spinning ? 'animate-spin' : ''}`}
-          />
-          {nextAction.label}
-        </button>
-      )}
+      <div className="flex items-center gap-3">
+        {/* Connector warning — shown on edit step when connectors are unmapped */}
+        {step === 'edit' && connectorsMissing > 0 && (
+          <span className="flex items-center gap-1.5 text-sm text-orange-400/80">
+            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+            {connectorsMissing} connector{connectorsMissing !== 1 ? 's' : ''} need credentials
+          </span>
+        )}
+
+        {nextAction && (
+          <button
+            onClick={onNext}
+            disabled={nextAction.disabled}
+            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-xl border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+              nextAction.variant === 'emerald'
+                ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25 hover:bg-emerald-500/25'
+                : 'bg-violet-500/15 text-violet-300 border-violet-500/25 hover:bg-violet-500/25'
+            }`}
+          >
+            <nextAction.icon
+              className={`w-4 h-4 ${nextAction.spinning ? 'animate-spin' : ''}`}
+            />
+            {nextAction.label}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

@@ -132,19 +132,19 @@ export default function BuiltinTemplatesTab() {
                         {template.name}
                       </h3>
                       {isExpanded ? (
-                        <ChevronUp className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
+                        <ChevronUp className="w-4 h-4 text-muted-foreground/80 flex-shrink-0" />
                       ) : (
-                        <ChevronDown className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
+                        <ChevronDown className="w-4 h-4 text-muted-foreground/80 flex-shrink-0" />
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground/50 mt-0.5 line-clamp-2">
+                    <p className="text-sm text-muted-foreground/90 mt-0.5 line-clamp-2">
                       {template.description}
                     </p>
                     <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                       {template.category.map((cat) => (
                         <span
                           key={cat}
-                          className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-primary/8 text-muted-foreground/60 border border-primary/10"
+                          className="px-2 py-0.5 text-sm font-medium rounded-full bg-primary/8 text-muted-foreground/80 border border-primary/10"
                         >
                           {cat}
                         </span>
@@ -167,10 +167,10 @@ export default function BuiltinTemplatesTab() {
                     <div className="px-4 pb-4 border-t border-primary/10 pt-3 space-y-3">
                       {/* Identity */}
                       <div>
-                        <h4 className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
+                        <h4 className="text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider mb-1">
                           Identity
                         </h4>
-                        <p className="text-xs text-foreground/70 leading-relaxed">
+                        <p className="text-sm text-foreground/90 leading-relaxed">
                           {template.payload.structured_prompt.identity}
                         </p>
                       </div>
@@ -178,7 +178,7 @@ export default function BuiltinTemplatesTab() {
                       {/* Tools */}
                       {template.payload.suggested_tools.length > 0 && (
                         <div>
-                          <h4 className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1 flex items-center gap-1">
+                          <h4 className="text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider mb-1 flex items-center gap-1">
                             <Wrench className="w-3 h-3" />
                             Tools
                           </h4>
@@ -186,7 +186,7 @@ export default function BuiltinTemplatesTab() {
                             {template.payload.suggested_tools.map((tool) => (
                               <span
                                 key={tool}
-                                className="px-2 py-0.5 text-[10px] font-mono rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                                className="px-2 py-0.5 text-sm font-mono rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20"
                               >
                                 {tool}
                               </span>
@@ -198,7 +198,7 @@ export default function BuiltinTemplatesTab() {
                       {/* Triggers */}
                       {template.payload.suggested_triggers.length > 0 && (
                         <div>
-                          <h4 className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1 flex items-center gap-1">
+                          <h4 className="text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider mb-1 flex items-center gap-1">
                             <Zap className="w-3 h-3" />
                             Triggers
                           </h4>
@@ -206,9 +206,9 @@ export default function BuiltinTemplatesTab() {
                             {template.payload.suggested_triggers.map((trigger, i) => (
                               <div
                                 key={i}
-                                className="flex items-center gap-2 text-xs text-foreground/60"
+                                className="flex items-center gap-2 text-sm text-foreground/80"
                               >
-                                <span className="px-1.5 py-0.5 text-[10px] font-mono rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                <span className="px-1.5 py-0.5 text-sm font-mono rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
                                   {trigger.trigger_type}
                                 </span>
                                 <span className="truncate">{trigger.description}</span>

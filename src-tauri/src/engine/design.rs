@@ -378,10 +378,11 @@ You MUST output your result as a single JSON code block. The JSON must conform t
 
 ```json
 {
+  "service_flow": ["Service1", "Service2", "Service3"],
   "structured_prompt": {
     "identity": "Who this persona is and its core purpose",
     "instructions": "Step-by-step instructions for the persona",
-    "toolGuidance": "How and when to use each tool",
+    "toolGuidance": "How and when to use each tool, with API endpoint examples",
     "examples": "Example interactions or scenarios",
     "errorHandling": "How to handle errors and edge cases",
     "customSections": [
@@ -408,10 +409,23 @@ You MUST output your result as a single JSON code block. The JSON must conform t
   ],
   "suggested_connectors": [
     {
-      "name": "connector_name",
-      "setup_instructions": "How to configure this connector",
+      "name": "connector_slug",
+      "label": "Human Readable Name",
+      "auth_type": "oauth2|pat|api_key|bot_token|service_account|api_token",
+      "credential_fields": [
+        {
+          "key": "field_key",
+          "label": "Human Label",
+          "type": "text|password",
+          "placeholder": "example value",
+          "helpText": "Where to find this credential",
+          "required": true
+        }
+      ],
+      "setup_instructions": "Step-by-step setup guide for this specific service",
       "related_tools": ["tool_name"],
-      "related_triggers": [0]
+      "related_triggers": [0],
+      "api_base_url": "https://api.service.com"
     }
   ],
   "suggested_notification_channels": [
@@ -433,10 +447,13 @@ You MUST output your result as a single JSON code block. The JSON must conform t
 
 Important rules:
 1. `suggested_tools` must only reference tools from the Available Tools list above
-2. `suggested_connectors` should reference connectors from the Available Connectors list when possible
-3. `suggested_triggers[].related_triggers` are zero-based indices into the `suggested_triggers` array
-4. `full_prompt_markdown` must be the complete, ready-to-use system prompt in markdown format
-5. Output ONLY the JSON block — no additional text before or after
+2. Each external service MUST have its own named connector (e.g., "slack", "github", "stripe") — never use "http_generic"
+3. Each connector MUST include `credential_fields` with at least one field
+4. Each connector MUST include `auth_type` matching its authentication method
+5. `file_read`/`file_write` are LOCAL filesystem only — for cloud storage use `http_request` with the appropriate connector
+6. `service_flow` must list the external services in data-pipeline order
+7. `full_prompt_markdown` must be the complete, ready-to-use system prompt in markdown format
+8. Output ONLY the JSON block — no additional text before or after
 
 ## Clarification Questions
 

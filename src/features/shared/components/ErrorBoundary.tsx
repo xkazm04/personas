@@ -118,7 +118,7 @@ function ErrorFallback({
               <p className="text-sm font-semibold text-red-400">
                 {name ? `${name} crashed` : 'Something went wrong'}
               </p>
-              <p className="text-xs text-red-400/60 mt-0.5">
+              <p className="text-sm text-red-400/60 mt-0.5">
                 {error?.message || 'An unexpected error occurred'}
               </p>
             </div>
@@ -128,14 +128,14 @@ function ErrorFallback({
           <div className="flex items-center gap-2 mb-3">
             <button
               onClick={onReset}
-              className="flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 hover:bg-red-500/20 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 hover:bg-red-500/20 transition-colors"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               Try Again
             </button>
             <button
               onClick={handleCopy}
-              className="flex items-center gap-2 px-3 py-2 text-xs rounded-xl border border-primary/15 text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors"
+              className="flex items-center gap-2 px-3 py-2 text-sm rounded-xl border border-primary/15 text-muted-foreground/90 hover:text-muted-foreground transition-colors"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
               {copied ? 'Copied' : 'Copy Error'}
@@ -145,7 +145,7 @@ function ErrorFallback({
           {/* Details toggle */}
           <button
             onClick={() => setShowDetails(!showDetails)}
-            className="flex items-center gap-1.5 text-[11px] text-muted-foreground/40 hover:text-muted-foreground/60 transition-colors"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground/80 hover:text-muted-foreground transition-colors"
           >
             {showDetails ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
             Technical details
@@ -153,7 +153,7 @@ function ErrorFallback({
 
           {showDetails && (
             <div className="mt-2 p-3 rounded-lg bg-background/60 border border-primary/10 overflow-hidden">
-              <pre className="text-[10px] text-muted-foreground/50 whitespace-pre-wrap break-all max-h-48 overflow-y-auto font-mono leading-relaxed">
+              <pre className="text-sm text-muted-foreground/90 whitespace-pre-wrap break-all max-h-48 overflow-y-auto font-mono leading-relaxed">
                 {error?.stack || 'No stack trace available'}
                 {errorInfo && (
                   <>

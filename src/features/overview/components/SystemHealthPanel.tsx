@@ -26,6 +26,7 @@ import type { HealthCheckSection, HealthCheckItem, CrashLogEntry } from '@/api/t
 import { useAuthStore } from '@/stores/authStore';
 import { useAutoInstaller, type InstallState } from '@/hooks/utility/useAutoInstaller';
 import { ExternalLink } from 'lucide-react';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { ConfigurationPopup, type ConfigField } from '@/features/agents/components/onboarding/ConfigurationPopup';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -97,7 +98,7 @@ function InstallButton({
       <div className="mt-2 space-y-1.5">
         <div className="flex items-center gap-2">
           <Loader2 className="w-3 h-3 animate-spin text-violet-400" />
-          <span className="text-[11px] text-violet-300">
+          <span className="text-sm text-violet-300">
             {installState.phase === 'downloading' ? 'Downloading...' : 'Installing...'}
           </span>
         </div>
@@ -108,7 +109,7 @@ function InstallButton({
           />
         </div>
         {installState.outputLines.length > 0 && (
-          <p className="text-[10px] text-muted-foreground/30 truncate">
+          <p className="text-sm text-muted-foreground/80 truncate">
             {installState.outputLines[installState.outputLines.length - 1]}
           </p>
         )}
@@ -118,7 +119,7 @@ function InstallButton({
 
   if (installState.phase === 'completed') {
     return (
-      <div className="mt-2 flex items-center gap-1.5 text-[11px] text-emerald-400">
+      <div className="mt-2 flex items-center gap-1.5 text-sm text-emerald-400">
         <CheckCircle2 className="w-3 h-3" />
         Installed successfully
       </div>
@@ -128,21 +129,21 @@ function InstallButton({
   if (installState.phase === 'failed') {
     return (
       <div className="mt-2 space-y-1.5">
-        <div className="flex items-center gap-1.5 text-[11px] text-red-400">
+        <div className="flex items-center gap-1.5 text-sm text-red-400">
           <XCircle className="w-3 h-3" />
           {installState.error || 'Installation failed'}
         </div>
         {installState.manualCommand && (
           <div className="bg-primary/5 rounded-md px-2 py-1.5">
-            <p className="text-[10px] text-muted-foreground/40 mb-1">Try running manually:</p>
-            <code className="text-[10px] text-foreground/60 font-mono select-all">
+            <p className="text-sm text-muted-foreground/80 mb-1">Try running manually:</p>
+            <code className="text-sm text-foreground/80 font-mono select-all">
               {installState.manualCommand}
             </code>
           </div>
         )}
         <button
           onClick={onInstall}
-          className="inline-flex items-center gap-1.5 px-2 py-1 text-[11px] font-medium rounded-md border border-primary/20 text-foreground/70 hover:bg-secondary/60 transition-colors"
+          className="inline-flex items-center gap-1.5 px-2 py-1 text-sm font-medium rounded-md border border-primary/20 text-foreground/90 hover:bg-secondary/60 transition-colors"
         >
           Retry
           <RefreshCw className="w-3 h-3" />
@@ -154,7 +155,7 @@ function InstallButton({
   return (
     <button
       onClick={onInstall}
-      className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-md bg-violet-500/10 text-violet-300 border border-violet-500/20 hover:bg-violet-500/20 transition-colors"
+      className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-md bg-violet-500/10 text-violet-300 border border-violet-500/20 hover:bg-violet-500/20 transition-colors"
     >
       <Download className="w-3 h-3" />
       {label}
@@ -240,11 +241,11 @@ function CrashLogsSection() {
         <div className="w-6 h-6 rounded-md flex items-center justify-center bg-red-500/10">
           <FileWarning className="w-3.5 h-3.5 text-red-300" />
         </div>
-        <span className="text-xs font-medium text-foreground/60 uppercase tracking-wider">
+        <span className="text-sm font-medium text-foreground/80 uppercase tracking-wider">
           Crash Logs
         </span>
         {totalCount > 0 && (
-          <span className="ml-1 px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-red-500/15 text-red-400">
+          <span className="ml-1 px-1.5 py-0.5 text-sm font-medium rounded-full bg-red-500/15 text-red-400">
             {totalCount}
           </span>
         )}
@@ -256,13 +257,13 @@ function CrashLogsSection() {
                 void handleClear();
               }}
               disabled={clearing}
-              className="flex items-center gap-1 px-2 py-1 text-[10px] rounded-md text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
+              className="flex items-center gap-1 px-2 py-1 text-sm rounded-md text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
             >
               <Trash2 className="w-3 h-3" />
               Clear
             </button>
           )}
-          {expanded ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/40" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40" />}
+          {expanded ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/80" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/80" />}
         </div>
       </button>
 
@@ -277,7 +278,7 @@ function CrashLogsSection() {
           >
             <div className="border-t border-primary/5 px-4 py-3 space-y-2 max-h-80 overflow-y-auto">
               {totalCount === 0 && (
-                <p className="text-xs text-muted-foreground/40 py-2">No crash logs recorded.</p>
+                <p className="text-sm text-muted-foreground/80 py-2">No crash logs recorded.</p>
               )}
 
               {backendLogs.map((log) => (
@@ -287,12 +288,12 @@ function CrashLogsSection() {
                     className="w-full flex items-center gap-2 px-3 py-2 hover:bg-secondary/30 transition-colors"
                   >
                     <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
-                    <span className="text-[11px] text-foreground/70 font-mono truncate">{log.filename}</span>
-                    <span className="ml-auto text-[10px] text-red-400/60 font-medium">Rust panic</span>
+                    <span className="text-sm text-foreground/90 font-mono truncate">{log.filename}</span>
+                    <span className="ml-auto text-sm text-red-400/60 font-medium">Rust panic</span>
                   </button>
                   {selectedLog === log.filename && (
                     <div className="border-t border-primary/5 px-3 py-2">
-                      <pre className="text-[10px] text-muted-foreground/50 whitespace-pre-wrap break-all max-h-48 overflow-y-auto font-mono leading-relaxed">
+                      <pre className="text-sm text-muted-foreground/90 whitespace-pre-wrap break-all max-h-48 overflow-y-auto font-mono leading-relaxed">
                         {log.content}
                       </pre>
                     </div>
@@ -307,16 +308,16 @@ function CrashLogsSection() {
                     className="w-full flex items-center gap-2 px-3 py-2 hover:bg-secondary/30 transition-colors"
                   >
                     <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-                    <span className="text-[11px] text-foreground/70 truncate">{log.message}</span>
-                    <span className="ml-auto text-[10px] text-amber-400/60 font-medium flex-shrink-0">{log.component}</span>
+                    <span className="text-sm text-foreground/90 truncate">{log.message}</span>
+                    <span className="ml-auto text-sm text-amber-400/60 font-medium flex-shrink-0">{log.component}</span>
                   </button>
                   {selectedLog === `fe-${i}` && (
                     <div className="border-t border-primary/5 px-3 py-2 space-y-1">
-                      <p className="text-[10px] text-muted-foreground/40">
+                      <p className="text-sm text-muted-foreground/80">
                         {log.timestamp}
                       </p>
                       {log.stack && (
-                        <pre className="text-[10px] text-muted-foreground/50 whitespace-pre-wrap break-all max-h-48 overflow-y-auto font-mono leading-relaxed">
+                        <pre className="text-sm text-muted-foreground/90 whitespace-pre-wrap break-all max-h-48 overflow-y-auto font-mono leading-relaxed">
                           {log.stack}
                         </pre>
                       )}
@@ -452,23 +453,30 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
     claudeState.phase === 'installing';
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 40 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -40 }}
-      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      className="flex flex-col gap-5 w-full max-w-6xl h-full min-h-0 px-4 sm:px-6 py-4"
-    >
-      <div>
-        <h2 className="text-lg font-semibold text-foreground/90">System Checks</h2>
-        <p className="text-xs text-muted-foreground/50 mt-1">
-          Verifying your environment is ready.
-        </p>
-      </div>
+    <ContentBox>
+      <ContentHeader
+        icon={<Monitor className="w-5 h-5 text-cyan-400" />}
+        iconColor="cyan"
+        title="System Checks"
+        subtitle="Verifying your environment is ready"
+        actions={
+          !loading ? (
+            <button
+              onClick={runChecks}
+              className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
+              title="Re-run checks"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
+          ) : undefined
+        }
+      />
 
+      <ContentBody centered>
+        <div className="space-y-5">
       {loading ? (
         <div className="flex-1 min-h-0 flex flex-col gap-3">
-          <div className="flex items-center gap-2 px-1 text-sm text-muted-foreground/40 min-h-6">
+          <div className="flex items-center gap-2 px-1 text-sm text-muted-foreground/80 min-h-6">
             <Loader2 className="w-4 h-4 animate-spin" />
             <AnimatePresence mode="wait">
               <motion.span
@@ -549,7 +557,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
                   <div className={`w-6 h-6 rounded-md flex items-center justify-center ${sectionStyle.badge}`}>
                     <SectionIcon className={`w-3.5 h-3.5 ${sectionStyle.icon}`} />
                   </div>
-                  <span className="text-xs font-medium text-foreground/60 uppercase tracking-wider">
+                  <span className="text-sm font-medium text-foreground/80 uppercase tracking-wider">
                     {section.label}
                   </span>
                   <div className="ml-auto">
@@ -564,7 +572,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-foreground/80">{check.label}</p>
                         {check.detail && (
-                          <p className="text-xs text-muted-foreground/40 break-words line-clamp-2">{check.detail}</p>
+                          <p className="text-sm text-muted-foreground/80 break-words line-clamp-2">{check.detail}</p>
                         )}
 
                         {check.id === 'node' && check.installable && !ipcError && (
@@ -586,7 +594,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
                         {check.id === 'ollama_api_key' && !ipcError && (
                           <button
                             onClick={() => setShowOllamaPopup(true)}
-                            className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+                            className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
                           >
                             <Key className="w-3 h-3" />
                             {check.status === 'ok' ? 'Edit Key' : 'Configure'}
@@ -595,7 +603,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
                         {check.id === 'litellm_proxy' && !ipcError && (
                           <button
                             onClick={() => setShowLiteLLMPopup(true)}
-                            className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-md bg-sky-500/10 text-sky-300 border border-sky-500/20 hover:bg-sky-500/20 transition-colors"
+                            className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-md bg-sky-500/10 text-sky-300 border border-sky-500/20 hover:bg-sky-500/20 transition-colors"
                           >
                             <Key className="w-3 h-3" />
                             {check.status === 'ok' ? 'Edit Config' : 'Configure'}
@@ -609,7 +617,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
                     <div className="px-4 py-2.5">
                       <button
                         onClick={handleSignIn}
-                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 transition-colors"
+                        className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 transition-colors"
                       >
                         <Chrome className="w-3.5 h-3.5" />
                         Sign in with Google
@@ -624,10 +632,10 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
         </div>
       )}
 
-      <CrashLogsSection />
+      {import.meta.env.DEV && <CrashLogsSection />}
 
       {hasIssues && !loading && (
-        <p className="text-xs text-amber-400/80">
+        <p className="text-sm text-amber-400/80">
           {ipcError
             ? 'The application bridge is not responding. Try restarting the app. You can still continue to explore the interface.'
             : 'Some checks reported issues. You can still continue, but some features may not work correctly.'}
@@ -692,6 +700,8 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
           />
         )}
       </AnimatePresence>
-    </motion.div>
+        </div>
+      </ContentBody>
+    </ContentBox>
   );
 }

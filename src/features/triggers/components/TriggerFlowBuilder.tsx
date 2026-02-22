@@ -179,15 +179,15 @@ export function TriggerFlowBuilder() {
       <div className="flex items-center justify-between p-4 border-b border-border/30">
         <div className="flex items-center gap-3">
           <Link className="w-4 h-4 text-purple-400" />
-          <h3 className="text-sm font-mono text-muted-foreground/50 uppercase tracking-wider">
+          <h3 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
             Trigger Flow
           </h3>
         </div>
         <div className="flex items-center gap-3">
           {/* Webhook Status */}
-          <div className="flex items-center gap-1.5 text-xs">
+          <div className="flex items-center gap-1.5 text-sm">
             <Server className="w-3.5 h-3.5" />
-            <span className="text-muted-foreground/50">Webhook:</span>
+            <span className="text-muted-foreground/90">Webhook:</span>
             {webhookStatus?.listening ? (
               <span className="text-emerald-400 font-mono">
                 :{webhookStatus.port}
@@ -198,7 +198,7 @@ export function TriggerFlowBuilder() {
           </div>
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-purple-500/15 text-purple-400 border border-purple-500/20 rounded-lg hover:bg-purple-500/25 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-purple-500/15 text-purple-400 border border-purple-500/20 rounded-lg hover:bg-purple-500/25 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             Add Chain
@@ -259,7 +259,7 @@ export function TriggerFlowBuilder() {
                   >
                     <div className="flex items-center justify-center">
                       <span
-                        className={`text-[10px] px-1.5 py-0.5 rounded-md bg-background/80 border border-border/30 ${color}`}
+                        className={`text-sm px-1.5 py-0.5 rounded-md bg-background/80 border border-border/30 ${color}`}
                       >
                         {edge.conditionType}
                       </span>
@@ -287,7 +287,7 @@ export function TriggerFlowBuilder() {
                         : "rgb(113 113 122)",
                     }}
                   />
-                  <span className="text-xs font-medium text-foreground/80 truncate">
+                  <span className="text-sm font-medium text-foreground/80 truncate">
                     {node.name}
                   </span>
                 </div>
@@ -308,30 +308,30 @@ export function TriggerFlowBuilder() {
                   key={chain.trigger_id}
                   className="flex items-center gap-3 p-3 bg-secondary/30 border border-border/20 rounded-xl"
                 >
-                  <span className="text-xs font-medium text-foreground/70 truncate max-w-[120px]">
+                  <span className="text-sm font-medium text-foreground/90 truncate max-w-[120px]">
                     {chain.source_persona_name}
                   </span>
-                  <ChevronRight className="w-3 h-3 text-muted-foreground/30 flex-shrink-0" />
+                  <ChevronRight className="w-3 h-3 text-muted-foreground/80 flex-shrink-0" />
                   <CondIcon className={`w-3.5 h-3.5 flex-shrink-0 ${condColor}`} />
-                  <span className={`text-[10px] ${condColor}`}>
+                  <span className={`text-sm ${condColor}`}>
                     {chain.condition_type}
                   </span>
-                  <ChevronRight className="w-3 h-3 text-muted-foreground/30 flex-shrink-0" />
-                  <span className="text-xs font-medium text-foreground/70 truncate max-w-[120px]">
+                  <ChevronRight className="w-3 h-3 text-muted-foreground/80 flex-shrink-0" />
+                  <span className="text-sm font-medium text-foreground/90 truncate max-w-[120px]">
                     {chain.target_persona_name}
                   </span>
                   <span
-                    className={`ml-auto text-[10px] px-1.5 py-0.5 rounded-md font-mono ${
+                    className={`ml-auto text-sm px-1.5 py-0.5 rounded-md font-mono ${
                       chain.enabled
                         ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20"
-                        : "bg-secondary/60 text-muted-foreground/40 border border-border/20"
+                        : "bg-secondary/60 text-muted-foreground/80 border border-border/20"
                     }`}
                   >
                     {chain.enabled ? "On" : "Off"}
                   </span>
                   <button
                     onClick={() => handleDeleteChain(chain)}
-                    className="p-1 text-muted-foreground/30 hover:text-red-400 transition-colors"
+                    className="p-1 text-muted-foreground/80 hover:text-red-400 transition-colors"
                     title="Delete chain"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -345,16 +345,16 @@ export function TriggerFlowBuilder() {
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center space-y-3">
             <Link className="w-8 h-8 text-muted-foreground/20 mx-auto" />
-            <p className="text-sm text-muted-foreground/40">
+            <p className="text-sm text-muted-foreground/80">
               No trigger chains configured
             </p>
-            <p className="text-xs text-muted-foreground/25 max-w-[280px]">
+            <p className="text-sm text-muted-foreground/80 max-w-[280px]">
               Chain triggers let one agent&apos;s completion automatically trigger
               another agent, with optional conditions.
             </p>
             <button
               onClick={() => setShowAddModal(true)}
-              className="mt-2 px-4 py-2 text-xs font-medium bg-purple-500/15 text-purple-400 border border-purple-500/20 rounded-lg hover:bg-purple-500/25 transition-colors"
+              className="mt-2 px-4 py-2 text-sm font-medium bg-purple-500/15 text-purple-400 border border-purple-500/20 rounded-lg hover:bg-purple-500/25 transition-colors"
             >
               <Plus className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5" />
               Create First Chain
@@ -386,7 +386,7 @@ export function TriggerFlowBuilder() {
 
               {/* Source Agent */}
               <div className="space-y-1.5">
-                <label className="text-xs text-muted-foreground/50">
+                <label className="text-sm text-muted-foreground/90">
                   When this agent completes:
                 </label>
                 <select
@@ -405,7 +405,7 @@ export function TriggerFlowBuilder() {
 
               {/* Condition */}
               <div className="space-y-1.5">
-                <label className="text-xs text-muted-foreground/50">
+                <label className="text-sm text-muted-foreground/90">
                   Condition:
                 </label>
                 <div className="grid grid-cols-4 gap-2">
@@ -417,14 +417,14 @@ export function TriggerFlowBuilder() {
                         <button
                           key={cond}
                           onClick={() => setSelectedCondition(cond)}
-                          className={`flex flex-col items-center gap-1 p-2 rounded-lg border text-xs transition-colors ${
+                          className={`flex flex-col items-center gap-1 p-2 rounded-lg border text-sm transition-colors ${
                             selectedCondition === cond
                               ? "border-purple-500/40 bg-purple-500/10"
                               : "border-border/20 bg-secondary/20 hover:border-border/40"
                           }`}
                         >
                           <Icon className={`w-3.5 h-3.5 ${color}`} />
-                          <span className="capitalize text-muted-foreground/60">
+                          <span className="capitalize text-muted-foreground/80">
                             {cond}
                           </span>
                         </button>
@@ -436,7 +436,7 @@ export function TriggerFlowBuilder() {
 
               {/* Target Agent */}
               <div className="space-y-1.5">
-                <label className="text-xs text-muted-foreground/50">
+                <label className="text-sm text-muted-foreground/90">
                   Trigger this agent:
                 </label>
                 <select
@@ -459,7 +459,7 @@ export function TriggerFlowBuilder() {
               <div className="flex gap-2 pt-2">
                 <button
                   onClick={() => setShowAddModal(false)}
-                  className="flex-1 px-4 py-2 text-xs font-medium bg-secondary/40 text-muted-foreground/60 border border-border/20 rounded-lg hover:bg-secondary/60 transition-colors"
+                  className="flex-1 px-4 py-2 text-sm font-medium bg-secondary/40 text-muted-foreground/80 border border-border/20 rounded-lg hover:bg-secondary/60 transition-colors"
                 >
                   Cancel
                 </button>
@@ -470,7 +470,7 @@ export function TriggerFlowBuilder() {
                     !selectedTarget ||
                     selectedSource === selectedTarget
                   }
-                  className="flex-1 px-4 py-2 text-xs font-medium bg-purple-500/15 text-purple-400 border border-purple-500/20 rounded-lg hover:bg-purple-500/25 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="flex-1 px-4 py-2 text-sm font-medium bg-purple-500/15 text-purple-400 border border-purple-500/20 rounded-lg hover:bg-purple-500/25 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
                   Create Chain
                 </button>

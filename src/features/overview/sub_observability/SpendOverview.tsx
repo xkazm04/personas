@@ -71,17 +71,17 @@ export function SummaryCard({ icon: Icon, label, numericValue, format, color, tr
         <div className={`w-8 h-8 rounded-lg border flex items-center justify-center ${cls}`}>
           <Icon className="w-4 h-4" />
         </div>
-        <span className="text-xs text-muted-foreground/60">{label}</span>
+        <span className="text-sm text-muted-foreground/80">{label}</span>
       </div>
       <div className="text-xl font-bold text-foreground">{format(animated)}</div>
       {sparklineData && sparklineData.length >= 2 && (
         <Sparkline data={sparklineData} color={SPARKLINE_HEX[color] || '#3b82f6'} />
       )}
       {trendDisplay && (
-        <div className={`flex items-center gap-1 mt-1.5 text-[11px] ${trendDisplay.trendColor}`}>
+        <div className={`flex items-center gap-1 mt-1.5 text-sm ${trendDisplay.trendColor}`}>
           <trendDisplay.TIcon className="w-3 h-3" />
           <span>{trendDisplay.label}</span>
-          <span className="text-muted-foreground/30 ml-0.5">vs prev</span>
+          <span className="text-muted-foreground/80 ml-0.5">vs prev</span>
         </div>
       )}
     </div>

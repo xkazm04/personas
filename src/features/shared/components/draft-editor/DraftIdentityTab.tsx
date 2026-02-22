@@ -30,10 +30,10 @@ export function DraftIdentityTab({ draft, disabled, updateDraft }: DraftIdentity
             <button
               key={tab.id}
               onClick={() => setSubtab(tab.id)}
-              className={`w-full flex items-center gap-2 px-2.5 py-2 text-xs font-medium rounded-lg transition-colors text-left ${
+              className={`w-full flex items-center gap-2 px-2.5 py-2 text-sm font-medium rounded-lg transition-colors text-left ${
                 active
                   ? 'bg-primary/10 text-foreground/80 border border-primary/20'
-                  : 'text-muted-foreground/50 hover:text-muted-foreground/70 hover:bg-secondary/30 border border-transparent'
+                  : 'text-muted-foreground/90 hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'
               }`}
             >
               <tab.Icon className="w-3.5 h-3.5 flex-shrink-0" />
@@ -48,7 +48,7 @@ export function DraftIdentityTab({ draft, disabled, updateDraft }: DraftIdentity
         {subtab === 'overview' && (
           <div className="space-y-4 h-full overflow-y-auto pr-1">
             <div>
-              <label className="block text-xs font-medium text-foreground/80 mb-1.5">Name</label>
+              <label className="block text-sm font-medium text-foreground/80 mb-1.5">Name</label>
               <input
                 type="text"
                 value={draft.name ?? ''}
@@ -60,7 +60,7 @@ export function DraftIdentityTab({ draft, disabled, updateDraft }: DraftIdentity
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-foreground/80 mb-1.5">Description</label>
+              <label className="block text-sm font-medium text-foreground/80 mb-1.5">Description</label>
               <textarea
                 value={draft.description ?? ''}
                 onChange={(e) =>
