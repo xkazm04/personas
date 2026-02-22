@@ -13,15 +13,15 @@ type StageKey = (typeof STAGES)[number]['key'];
 
 /** Map the 7 internal DesignPhase values to 5 visible stage keys */
 function phaseToStageIndex(phase: DesignPhase): number {
-  const map: Record<DesignPhase, StageKey> = {
+  const map = {
     idle: 'input',
     analyzing: 'analyzing',
     'awaiting-input': 'question',
-    refining: 'analyzing',
+    refining: 'analyzing', // refining reuses the analyzing visual stage (same spinner treatment)
     preview: 'review',
     applying: 'applied',
     applied: 'applied',
-  };
+  } satisfies Record<DesignPhase, StageKey>;
   const key = map[phase];
   return STAGES.findIndex((s) => s.key === key);
 }

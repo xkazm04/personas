@@ -5,7 +5,6 @@ pub mod credential_design;
 pub mod credential_negotiator;
 pub mod cron;
 pub mod crypto;
-pub mod delivery;
 pub mod design;
 pub mod healing;
 pub mod healthcheck;
@@ -32,7 +31,7 @@ use tokio::sync::Mutex;
 
 use tauri::Emitter;
 
-use crate::db::models::{Persona, PersonaToolDefinition, UpdateExecutionStatus};
+use crate::db::models::{ConnectorDefinition, Persona, PersonaToolDefinition, UpdateExecutionStatus};
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::healing as healing_repo;
@@ -40,9 +39,57 @@ use crate::db::repos::resources::tools as tool_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
 
-use self::types::HealingEventPayload;
+use self::types::{ExecutionResult, HealingEventPayload};
 
 use self::queue::ConcurrencyTracker;
+
+/// Try to write an execution status update to the DB. On failure, log at error
+/// level, retry once after 1 second, and if still failing emit a healing event
+/// so the user knows their execution result was lost.
+pub(crate) fn persist_status_update(
+    pool: &DbPool,
+    app: Option<&AppHandle>,
+    exec_id: &str,
+    update: UpdateExecutionStatus,
+) {
+    if let Err(e) = exec_repo::update_status(pool, exec_id, update.clone()) {
+        tracing::error!(
+            execution_id = %exec_id,
+            error = %e,
+            "DB status update failed, retrying in 1s",
+        );
+
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
+        if let Err(e2) = exec_repo::update_status(pool, exec_id, update) {
+            tracing::error!(
+                execution_id = %exec_id,
+                error = %e2,
+                "DB status update failed on retry — execution result lost",
+            );
+
+            if let Some(app) = app {
+                let _ = app.emit(
+                    "healing-event",
+                    HealingEventPayload {
+                        issue_id: String::new(),
+                        persona_id: String::new(),
+                        execution_id: exec_id.into(),
+                        title: "Execution result lost: DB write failed".into(),
+                        action: "issue_created".into(),
+                        auto_fixed: false,
+                        severity: "critical".into(),
+                        suggested_fix: Some(format!(
+                            "Status update for execution {} could not be saved: {}",
+                            exec_id, e2,
+                        )),
+                        persona_name: String::new(),
+                    },
+                );
+            }
+        }
+    }
+}
 
 /// Maximum consecutive failures before the circuit breaker trips.
 const CIRCUIT_BREAKER_THRESHOLD: u32 = 5;
@@ -88,8 +135,9 @@ impl ExecutionEngine {
             Ok(stale) => {
                 let count = stale.len();
                 for exec in &stale {
-                    let _ = exec_repo::update_status(
+                    persist_status_update(
                         pool,
+                        None,
                         &exec.id,
                         UpdateExecutionStatus {
                             status: "failed".into(),
@@ -128,10 +176,15 @@ impl ExecutionEngine {
         tools: Vec<PersonaToolDefinition>,
         input_data: Option<serde_json::Value>,
     ) -> Result<(), AppError> {
-        // Register in tracker
+        // Atomically check capacity and register in tracker
         {
             let mut tracker = self.tracker.lock().await;
-            tracker.add_running(&persona.id, &execution_id);
+            if !tracker.try_add_running(&persona.id, &execution_id, persona.max_concurrent) {
+                return Err(AppError::Validation(format!(
+                    "Persona '{}' has reached max concurrent executions ({})",
+                    persona.name, persona.max_concurrent
+                )));
+            }
         }
 
         // Create cancellation flag for this execution
@@ -170,317 +223,25 @@ impl ExecutionEngine {
                 input_data,
                 log_dir,
                 child_pids.clone(),
+                cancelled.clone(),
             )
             .await;
 
             // Only write final status if not cancelled.
             // If cancelled, cancel_execution already wrote status=cancelled to DB.
             if !cancelled.load(Ordering::Acquire) {
-                let status = if result.success { "completed" } else { "failed" };
-                let _ = exec_repo::update_status(
+                handle_execution_result(
                     &pool_clone,
+                    &app_for_healing,
                     &exec_id,
-                    UpdateExecutionStatus {
-                        status: status.into(),
-                        output_data: result.output.clone(),
-                        error_message: result.error.clone(),
-                        duration_ms: Some(result.duration_ms as i64),
-                        log_file_path: result.log_file_path.clone(),
-                        execution_flows: result.execution_flows.clone(),
-                        input_tokens: Some(result.input_tokens as i64),
-                        output_tokens: Some(result.output_tokens as i64),
-                        cost_usd: Some(result.cost_usd),
-                        tool_steps: result.tool_steps.clone(),
-                    },
-                );
-
-                // --- OS Notification: execution completed ---
-                {
-                    let persona_for_notify =
-                        crate::db::repos::core::personas::get_by_id(&pool_clone, &persona_id).ok();
-                    let notif_channels = persona_for_notify
-                        .as_ref()
-                        .and_then(|p| p.notification_channels.as_deref());
-                    let p_name = persona_for_notify
-                        .as_ref()
-                        .map(|p| p.name.as_str())
-                        .unwrap_or("Agent");
-
-                    crate::notifications::notify_execution_completed(
-                        &app_for_healing,
-                        p_name,
-                        status,
-                        result.duration_ms,
-                        notif_channels,
-                    );
-                }
-
-                // --- Budget enforcement ---
-                if result.success {
-                    let monthly_spend = exec_repo::get_monthly_spend(&pool_clone, &persona_id).unwrap_or(0.0);
-                    let persona_data = crate::db::repos::core::personas::get_by_id(&pool_clone, &persona_id).ok();
-
-                    if let Some(ref p) = persona_data {
-                        if let Some(budget) = p.max_budget_usd {
-                            if budget > 0.0 && monthly_spend >= budget {
-                                // Create alert message
-                                let alert_content = format!(
-                                    "Budget alert: {} has spent ${:.4} this month (budget: ${:.2}). Agent may be automatically paused.",
-                                    p.name, monthly_spend, budget
-                                );
-                                let _ = crate::db::repos::communication::messages::create(
-                                    &pool_clone,
-                                    crate::db::models::CreateMessageInput {
-                                        persona_id: persona_id.clone(),
-                                        execution_id: Some(exec_id.clone()),
-                                        title: Some("Budget Exceeded".into()),
-                                        content: alert_content,
-                                        content_type: Some("budget_alert".into()),
-                                        priority: Some("critical".into()),
-                                        metadata: None,
-                                    },
-                                );
-
-                                tracing::warn!(
-                                    persona_id = %persona_id,
-                                    monthly_spend = monthly_spend,
-                                    budget = budget,
-                                    "Budget exceeded for persona"
-                                );
-                            }
-                        }
-                    }
-                }
-
-                // --- Chain triggers: evaluate after every completion ---
-                chain::evaluate_chain_triggers(
-                    &pool_clone,
                     &persona_id,
-                    status,
-                    result.output.as_deref(),
-                    &exec_id,
+                    persona_timeout_ms,
+                    &result,
+                    tracker.clone(),
+                    child_pids.clone(),
+                    cancelled_flags.clone(),
+                    log_dir_for_retry.clone(),
                 );
-
-                // --- Healing check: analyse failed executions ---
-                if !result.success {
-                    let consecutive = exec_repo::get_recent_failures(
-                        &pool_clone, &persona_id, 5,
-                    )
-                    .unwrap_or_default()
-                    .len() as u32;
-
-                    let timeout_ms = if persona_timeout_ms > 0 {
-                        persona_timeout_ms as u64
-                    } else {
-                        600_000
-                    };
-
-                    let error_str = result.error.as_deref().unwrap_or("");
-                    let timed_out = error_str.contains("timed out");
-
-                    let category = healing::classify_error(
-                        error_str,
-                        timed_out,
-                        result.session_limit_reached,
-                    );
-
-                    // Check fleet-wide knowledge base for recommended delay
-                    let kb_delay = resolve_service_knowledge_delay(
-                        &pool_clone, &persona_id, &category,
-                    );
-
-                    let diagnosis = healing::diagnose(
-                        &category, error_str, timeout_ms, consecutive,
-                    );
-
-                    // Record to knowledge base for fleet-wide learning
-                    record_failure_to_knowledge_base(
-                        &pool_clone, &persona_id, &category, &diagnosis,
-                    );
-
-                    // Determine current retry count from the execution chain
-                    let current_retry_count = exec_repo::get_by_id(&pool_clone, &exec_id)
-                        .map(|e| e.retry_count)
-                        .unwrap_or(0);
-
-                    if let Ok(issue) = healing_repo::create(
-                        &pool_clone,
-                        &persona_id,
-                        &diagnosis.title,
-                        &diagnosis.description,
-                        Some(&diagnosis.severity),
-                        Some(&diagnosis.db_category),
-                        Some(&exec_id),
-                        diagnosis.suggested_fix.as_deref(),
-                    ) {
-                        let auto_fixed =
-                            healing::is_auto_fixable(&category)
-                            && consecutive < 3
-                            && current_retry_count < MAX_RETRY_COUNT;
-
-                        // Fetch persona info for notifications
-                        let persona_for_heal =
-                            persona_repo::get_by_id(&pool_clone, &persona_id)
-                                .ok();
-                        let heal_channels = persona_for_heal
-                            .as_ref()
-                            .and_then(|p| p.notification_channels.as_deref());
-                        let heal_name = persona_for_heal
-                            .as_ref()
-                            .map(|p| p.name.clone())
-                            .unwrap_or_else(|| "Agent".into());
-
-                        // --- Circuit breaker: disable persona after too many failures ---
-                        if consecutive >= CIRCUIT_BREAKER_THRESHOLD {
-                            tracing::warn!(
-                                persona_id = %persona_id,
-                                consecutive = consecutive,
-                                "Circuit breaker tripped: disabling persona after {} consecutive failures",
-                                consecutive,
-                            );
-                            let _ = crate::db::repos::core::personas::update(
-                                &pool_clone,
-                                &persona_id,
-                                crate::db::models::UpdatePersonaInput {
-                                    enabled: Some(false),
-                                    ..Default::default()
-                                },
-                            );
-                            let cb_fix = "Review recent failures and fix the underlying issue, then re-enable the persona.";
-                            let _ = healing_repo::create(
-                                &pool_clone,
-                                &persona_id,
-                                "Circuit breaker tripped",
-                                &format!(
-                                    "Persona disabled after {} consecutive failures. Re-enable manually after investigating the root cause.",
-                                    consecutive,
-                                ),
-                                Some("critical"),
-                                Some("config"),
-                                Some(&exec_id),
-                                Some(cb_fix),
-                            );
-                            let _ = app_for_healing.emit(
-                                "healing-event",
-                                HealingEventPayload {
-                                    issue_id: issue.id.clone(),
-                                    persona_id: persona_id.clone(),
-                                    execution_id: exec_id.clone(),
-                                    title: "Circuit breaker tripped".into(),
-                                    action: "circuit_breaker".into(),
-                                    auto_fixed: false,
-                                    severity: "critical".into(),
-                                    suggested_fix: Some(cb_fix.into()),
-                                    persona_name: heal_name.clone(),
-                                },
-                            );
-                        }
-
-                        if auto_fixed {
-                            let _ = healing_repo::mark_auto_fixed(
-                                &pool_clone, &issue.id,
-                            );
-                        }
-
-                        // Notify healing issue (with severity and suggested fix)
-                        crate::notifications::notify_healing_issue(
-                            &app_for_healing,
-                            &heal_name,
-                            &diagnosis.title,
-                            &diagnosis.severity,
-                            diagnosis.suggested_fix.as_deref(),
-                            heal_channels,
-                        );
-
-                        let _ = app_for_healing.emit(
-                            "healing-event",
-                            HealingEventPayload {
-                                issue_id: issue.id,
-                                persona_id: persona_id.clone(),
-                                execution_id: exec_id.clone(),
-                                title: diagnosis.title.clone(),
-                                action: if auto_fixed {
-                                    "auto_retry".into()
-                                } else {
-                                    "issue_created".into()
-                                },
-                                auto_fixed,
-                                severity: diagnosis.severity.clone(),
-                                suggested_fix: diagnosis.suggested_fix.clone(),
-                                persona_name: heal_name,
-                            },
-                        );
-
-                        // === ACTUAL RETRY EXECUTION ===
-                        if auto_fixed && consecutive < CIRCUIT_BREAKER_THRESHOLD {
-                            let next_retry_count = current_retry_count + 1;
-                            let original_exec_id = exec_repo::get_by_id(&pool_clone, &exec_id)
-                                .ok()
-                                .and_then(|e| e.retry_of_execution_id)
-                                .unwrap_or_else(|| exec_id.clone());
-
-                            match &diagnosis.action {
-                                healing::HealingAction::RetryWithBackoff {
-                                    delay_secs,
-                                } => {
-                                    // Use knowledge base delay if available and higher
-                                    let effective_delay = kb_delay
-                                        .map(|kb| std::cmp::max(kb, *delay_secs))
-                                        .unwrap_or(*delay_secs);
-
-                                    tracing::info!(
-                                        persona_id = %persona_id,
-                                        delay_secs = effective_delay,
-                                        retry_count = next_retry_count,
-                                        "Healing: spawning delayed retry after {}s backoff",
-                                        effective_delay,
-                                    );
-                                    spawn_delayed_retry(
-                                        effective_delay,
-                                        None, // no timeout override
-                                        pool_clone.clone(),
-                                        app_for_healing.clone(),
-                                        persona_id.clone(),
-                                        original_exec_id,
-                                        next_retry_count,
-                                        tracker.clone(),
-                                        child_pids.clone(),
-                                        cancelled_flags.clone(),
-                                        log_dir_for_retry.clone(),
-                                    );
-                                }
-                                healing::HealingAction::RetryWithTimeout {
-                                    new_timeout_ms,
-                                } => {
-                                    tracing::info!(
-                                        persona_id = %persona_id,
-                                        new_timeout_ms = new_timeout_ms,
-                                        retry_count = next_retry_count,
-                                        "Healing: spawning retry with increased timeout {}ms",
-                                        new_timeout_ms,
-                                    );
-                                    spawn_delayed_retry(
-                                        5, // short delay before timeout retry
-                                        Some(*new_timeout_ms),
-                                        pool_clone.clone(),
-                                        app_for_healing.clone(),
-                                        persona_id.clone(),
-                                        original_exec_id,
-                                        next_retry_count,
-                                        tracker.clone(),
-                                        child_pids.clone(),
-                                        cancelled_flags.clone(),
-                                        log_dir_for_retry.clone(),
-                                    );
-                                }
-                                _ => {}
-                            }
-                        }
-                    }
-                }
-
-                // Refresh system tray to update recent executions list
-                crate::tray::refresh_tray(&app_for_healing);
             }
 
             // Clean up tracker and task handle (always, regardless of cancellation)
@@ -516,8 +277,9 @@ impl ExecutionEngine {
         }
 
         // 2. Write cancelled status to DB (we are the sole writer now)
-        let _ = exec_repo::update_status(
+        persist_status_update(
             pool,
+            None,
             execution_id,
             UpdateExecutionStatus {
                 status: "cancelled".into(),
@@ -589,8 +351,9 @@ impl ExecutionEngine {
         }
 
         // 2. Write cancelled status to DB
-        let _ = exec_repo::update_status(
+        persist_status_update(
             pool,
+            None,
             execution_id,
             UpdateExecutionStatus {
                 status: "cancelled".into(),
@@ -624,7 +387,7 @@ impl ExecutionEngine {
 }
 
 /// Kill an OS process by PID. Cross-platform.
-fn kill_process(pid: u32) {
+pub(crate) fn kill_process(pid: u32) {
     #[cfg(windows)]
     {
         #[allow(unused_imports)]
@@ -641,6 +404,382 @@ fn kill_process(pid: u32) {
         let _ = std::process::Command::new("kill")
             .args(["-9", &pid.to_string()])
             .output();
+    }
+}
+
+// =============================================================================
+// Extracted sub-functions for start_execution post-processing
+// =============================================================================
+
+/// Handle the result of a completed execution: write status, notify, enforce
+/// budget, evaluate chain triggers, and run healing/retry if needed.
+#[allow(clippy::too_many_arguments)]
+fn handle_execution_result(
+    pool: &DbPool,
+    app: &AppHandle,
+    exec_id: &str,
+    persona_id: &str,
+    persona_timeout_ms: i32,
+    result: &ExecutionResult,
+    tracker: Arc<Mutex<ConcurrencyTracker>>,
+    child_pids: Arc<Mutex<HashMap<String, u32>>>,
+    cancelled_flags: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
+    log_dir: PathBuf,
+) {
+    let status = if result.success { "completed" } else { "failed" };
+
+    // Write final status to DB
+    persist_status_update(
+        pool,
+        Some(app),
+        exec_id,
+        UpdateExecutionStatus {
+            status: status.into(),
+            output_data: result.output.clone(),
+            error_message: result.error.clone(),
+            duration_ms: Some(result.duration_ms as i64),
+            log_file_path: result.log_file_path.clone(),
+            execution_flows: result.execution_flows.clone(),
+            input_tokens: Some(result.input_tokens as i64),
+            output_tokens: Some(result.output_tokens as i64),
+            cost_usd: Some(result.cost_usd),
+            tool_steps: result.tool_steps.clone(),
+        },
+    );
+
+    // OS Notification
+    notify_execution(app, pool, persona_id, status, result.duration_ms);
+
+    // Budget enforcement (only on success)
+    if result.success {
+        check_budget_enforcement(pool, persona_id, exec_id);
+    }
+
+    // Chain triggers
+    chain::evaluate_chain_triggers(
+        pool,
+        persona_id,
+        status,
+        result.output.as_deref(),
+        exec_id,
+    );
+
+    // Healing check for failed executions
+    if !result.success {
+        evaluate_healing_and_retry(
+            pool,
+            app,
+            exec_id,
+            persona_id,
+            persona_timeout_ms,
+            result,
+            tracker,
+            child_pids,
+            cancelled_flags,
+            log_dir,
+        );
+    }
+
+    // Refresh system tray
+    crate::tray::refresh_tray(app);
+}
+
+/// Send an OS notification for execution completion.
+fn notify_execution(
+    app: &AppHandle,
+    pool: &DbPool,
+    persona_id: &str,
+    status: &str,
+    duration_ms: u64,
+) {
+    let persona = persona_repo::get_by_id(pool, persona_id).ok();
+    let channels = persona.as_ref().and_then(|p| p.notification_channels.as_deref());
+    let name = persona.as_ref().map(|p| p.name.as_str()).unwrap_or("Agent");
+    crate::notifications::notify_execution_completed(app, name, status, duration_ms, channels);
+}
+
+/// Check if the persona has exceeded its monthly budget and create an alert.
+fn check_budget_enforcement(pool: &DbPool, persona_id: &str, exec_id: &str) {
+    let monthly_spend = exec_repo::get_monthly_spend(pool, persona_id).unwrap_or(0.0);
+    let persona = persona_repo::get_by_id(pool, persona_id).ok();
+
+    if let Some(ref p) = persona {
+        if let Some(budget) = p.max_budget_usd {
+            if budget > 0.0 && monthly_spend >= budget {
+                let alert_content = format!(
+                    "Budget alert: {} has spent ${:.4} this month (budget: ${:.2}). Agent may be automatically paused.",
+                    p.name, monthly_spend, budget
+                );
+                let _ = crate::db::repos::communication::messages::create(
+                    pool,
+                    crate::db::models::CreateMessageInput {
+                        persona_id: persona_id.into(),
+                        execution_id: Some(exec_id.into()),
+                        title: Some("Budget Exceeded".into()),
+                        content: alert_content,
+                        content_type: Some("budget_alert".into()),
+                        priority: Some("critical".into()),
+                        metadata: None,
+                    },
+                );
+                tracing::warn!(
+                    persona_id = %persona_id,
+                    monthly_spend = monthly_spend,
+                    budget = budget,
+                    "Budget exceeded for persona"
+                );
+            }
+        }
+    }
+}
+
+/// Evaluate a failed execution for healing opportunities and spawn retries.
+#[allow(clippy::too_many_arguments)]
+fn evaluate_healing_and_retry(
+    pool: &DbPool,
+    app: &AppHandle,
+    exec_id: &str,
+    persona_id: &str,
+    persona_timeout_ms: i32,
+    result: &ExecutionResult,
+    tracker: Arc<Mutex<ConcurrencyTracker>>,
+    child_pids: Arc<Mutex<HashMap<String, u32>>>,
+    cancelled_flags: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
+    log_dir: PathBuf,
+) {
+    let consecutive = exec_repo::get_recent_failures(pool, persona_id, 5)
+        .unwrap_or_default()
+        .len() as u32;
+
+    let timeout_ms = if persona_timeout_ms > 0 {
+        persona_timeout_ms as u64
+    } else {
+        600_000
+    };
+
+    let error_str = result.error.as_deref().unwrap_or("");
+    let timed_out = error_str.contains("timed out");
+
+    let category = healing::classify_error(error_str, timed_out, result.session_limit_reached);
+
+    let kb_delay = resolve_service_knowledge_delay(pool, persona_id, &category);
+
+    let diagnosis = healing::diagnose(&category, error_str, timeout_ms, consecutive);
+
+    record_failure_to_knowledge_base(pool, persona_id, &category, &diagnosis);
+
+    let current_retry_count = exec_repo::get_by_id(pool, exec_id)
+        .map(|e| e.retry_count)
+        .unwrap_or(0);
+
+    let issue = match healing_repo::create(
+        pool,
+        persona_id,
+        &diagnosis.title,
+        &diagnosis.description,
+        Some(&diagnosis.severity),
+        Some(&diagnosis.db_category),
+        Some(exec_id),
+        diagnosis.suggested_fix.as_deref(),
+    ) {
+        Ok(issue) => issue,
+        Err(_) => return,
+    };
+
+    let auto_fixed = healing::is_auto_fixable(&category)
+        && consecutive < 3
+        && current_retry_count < MAX_RETRY_COUNT;
+
+    // Fetch persona info for notifications
+    let persona_for_heal = persona_repo::get_by_id(pool, persona_id).ok();
+    let heal_channels = persona_for_heal
+        .as_ref()
+        .and_then(|p| p.notification_channels.as_deref());
+    let heal_name = persona_for_heal
+        .as_ref()
+        .map(|p| p.name.clone())
+        .unwrap_or_else(|| "Agent".into());
+
+    // Circuit breaker check
+    if consecutive >= CIRCUIT_BREAKER_THRESHOLD {
+        check_circuit_breaker(pool, app, exec_id, persona_id, consecutive, &issue.id, &heal_name);
+    }
+
+    if auto_fixed {
+        let _ = healing_repo::mark_auto_fixed(pool, &issue.id);
+    }
+
+    // Notify healing issue
+    crate::notifications::notify_healing_issue(
+        app,
+        &heal_name,
+        &diagnosis.title,
+        &diagnosis.severity,
+        diagnosis.suggested_fix.as_deref(),
+        heal_channels,
+    );
+
+    let _ = app.emit(
+        "healing-event",
+        HealingEventPayload {
+            issue_id: issue.id,
+            persona_id: persona_id.into(),
+            execution_id: exec_id.into(),
+            title: diagnosis.title.clone(),
+            action: if auto_fixed {
+                "auto_retry".into()
+            } else {
+                "issue_created".into()
+            },
+            auto_fixed,
+            severity: diagnosis.severity.clone(),
+            suggested_fix: diagnosis.suggested_fix.clone(),
+            persona_name: heal_name,
+        },
+    );
+
+    // Spawn retry if auto-fixable and under circuit breaker threshold
+    if auto_fixed && consecutive < CIRCUIT_BREAKER_THRESHOLD {
+        spawn_healing_retry(
+            pool,
+            app,
+            exec_id,
+            persona_id,
+            current_retry_count,
+            kb_delay,
+            &diagnosis,
+            tracker,
+            child_pids,
+            cancelled_flags,
+            log_dir,
+        );
+    }
+}
+
+/// Disable persona after too many consecutive failures (circuit breaker).
+fn check_circuit_breaker(
+    pool: &DbPool,
+    app: &AppHandle,
+    exec_id: &str,
+    persona_id: &str,
+    consecutive: u32,
+    issue_id: &str,
+    persona_name: &str,
+) {
+    tracing::warn!(
+        persona_id = %persona_id,
+        consecutive = consecutive,
+        "Circuit breaker tripped: disabling persona after {} consecutive failures",
+        consecutive,
+    );
+    let _ = crate::db::repos::core::personas::update(
+        pool,
+        persona_id,
+        crate::db::models::UpdatePersonaInput {
+            enabled: Some(false),
+            ..Default::default()
+        },
+    );
+    let cb_fix = "Review recent failures and fix the underlying issue, then re-enable the persona.";
+    let _ = healing_repo::create(
+        pool,
+        persona_id,
+        "Circuit breaker tripped",
+        &format!(
+            "Persona disabled after {} consecutive failures. Re-enable manually after investigating the root cause.",
+            consecutive,
+        ),
+        Some("critical"),
+        Some("config"),
+        Some(exec_id),
+        Some(cb_fix),
+    );
+    let _ = app.emit(
+        "healing-event",
+        HealingEventPayload {
+            issue_id: issue_id.into(),
+            persona_id: persona_id.into(),
+            execution_id: exec_id.into(),
+            title: "Circuit breaker tripped".into(),
+            action: "circuit_breaker".into(),
+            auto_fixed: false,
+            severity: "critical".into(),
+            suggested_fix: Some(cb_fix.into()),
+            persona_name: persona_name.into(),
+        },
+    );
+}
+
+/// Spawn a retry execution based on the healing diagnosis action.
+#[allow(clippy::too_many_arguments)]
+fn spawn_healing_retry(
+    pool: &DbPool,
+    app: &AppHandle,
+    exec_id: &str,
+    persona_id: &str,
+    current_retry_count: i64,
+    kb_delay: Option<u64>,
+    diagnosis: &healing::HealingDiagnosis,
+    tracker: Arc<Mutex<ConcurrencyTracker>>,
+    child_pids: Arc<Mutex<HashMap<String, u32>>>,
+    cancelled_flags: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
+    log_dir: PathBuf,
+) {
+    let next_retry_count = current_retry_count + 1;
+    let original_exec_id = exec_repo::get_by_id(pool, exec_id)
+        .ok()
+        .and_then(|e| e.retry_of_execution_id)
+        .unwrap_or_else(|| exec_id.into());
+
+    match &diagnosis.action {
+        healing::HealingAction::RetryWithBackoff { delay_secs } => {
+            let effective_delay = kb_delay
+                .map(|kb| std::cmp::max(kb, *delay_secs))
+                .unwrap_or(*delay_secs);
+            tracing::info!(
+                persona_id = %persona_id,
+                delay_secs = effective_delay,
+                retry_count = next_retry_count,
+                "Healing: spawning delayed retry after {}s backoff",
+                effective_delay,
+            );
+            spawn_delayed_retry(
+                effective_delay,
+                None,
+                pool.clone(),
+                app.clone(),
+                persona_id.into(),
+                original_exec_id,
+                next_retry_count,
+                tracker,
+                child_pids,
+                cancelled_flags,
+                log_dir,
+            );
+        }
+        healing::HealingAction::RetryWithTimeout { new_timeout_ms } => {
+            tracing::info!(
+                persona_id = %persona_id,
+                new_timeout_ms = new_timeout_ms,
+                retry_count = next_retry_count,
+                "Healing: spawning retry with increased timeout {}ms",
+                new_timeout_ms,
+            );
+            spawn_delayed_retry(
+                5,
+                Some(*new_timeout_ms),
+                pool.clone(),
+                app.clone(),
+                persona_id.into(),
+                original_exec_id,
+                next_retry_count,
+                tracker,
+                child_pids,
+                cancelled_flags,
+                log_dir,
+            );
+        }
+        _ => {}
     }
 }
 
@@ -709,20 +848,7 @@ fn spawn_delayed_retry(
             persona.timeout_ms = override_ms as i32;
         }
 
-        // 5. Check concurrency capacity
-        let has_cap = tracker
-            .lock()
-            .await
-            .has_capacity(&persona.id, persona.max_concurrent);
-        if !has_cap {
-            tracing::warn!(
-                persona_id = %persona_id,
-                "Healing retry: no capacity, skipping retry",
-            );
-            return;
-        }
-
-        // 6. Create retry execution record with lineage
+        // 5. Create retry execution record with lineage
         let exec = match exec_repo::create_retry(
             &pool,
             &persona_id,
@@ -741,18 +867,28 @@ fn spawn_delayed_retry(
 
         let exec_id = exec.id.clone();
 
+        // 6. Atomically check capacity and register in tracker
+        {
+            let mut t = tracker.lock().await;
+            if !t.try_add_running(&persona_id, &exec_id, persona.max_concurrent) {
+                tracing::warn!(
+                    persona_id = %persona_id,
+                    "Healing retry: no capacity, skipping retry",
+                );
+                return;
+            }
+        }
+
         // 7. Update to running
-        let _ = exec_repo::update_status(
+        persist_status_update(
             &pool,
+            Some(&app),
             &exec_id,
             UpdateExecutionStatus {
                 status: "running".into(),
                 ..Default::default()
             },
         );
-
-        // 8. Register in tracker
-        tracker.lock().await.add_running(&persona_id, &exec_id);
 
         // 9. Get tools for persona
         let tools = tool_repo::get_tools_for_persona(&pool, &persona_id)
@@ -782,14 +918,16 @@ fn spawn_delayed_retry(
             None, // retry uses no additional input
             log_dir,
             child_pids.clone(),
+            cancelled.clone(),
         )
         .await;
 
         // 12. Write final status (if not cancelled)
         if !cancelled.load(Ordering::Acquire) {
             let status = if result.success { "completed" } else { "failed" };
-            let _ = exec_repo::update_status(
+            persist_status_update(
                 &pool,
+                Some(&app),
                 &exec_id,
                 UpdateExecutionStatus {
                     status: status.into(),
@@ -866,6 +1004,34 @@ fn spawn_delayed_retry(
     });
 }
 
+/// Find connector names whose `services` JSON lists at least one of the given tools.
+///
+/// Iterates tools × connectors, parsing each connector's `services` JSON array
+/// and checking if any entry's `toolName` matches a tool name.
+fn find_matching_connector_names(
+    tools: &[PersonaToolDefinition],
+    connectors: &[ConnectorDefinition],
+) -> Vec<String> {
+    let mut names = Vec::new();
+    let mut seen = std::collections::HashSet::new();
+    for tool in tools {
+        for connector in connectors {
+            let services: Vec<serde_json::Value> =
+                serde_json::from_str(&connector.services).unwrap_or_default();
+            let tool_listed = services.iter().any(|s| {
+                s.get("toolName")
+                    .and_then(|v| v.as_str())
+                    .map(|name| name == tool.name)
+                    .unwrap_or(false)
+            });
+            if tool_listed && seen.insert(connector.name.clone()) {
+                names.push(connector.name.clone());
+            }
+        }
+    }
+    names
+}
+
 /// Resolve a service-level recommended delay from the knowledge base.
 ///
 /// Looks up connectors associated with the persona's tools to determine
@@ -882,27 +1048,14 @@ fn resolve_service_knowledge_delay(
         _ => return None,
     };
 
-    // Get tools for this persona to find associated service types
     let tools = tool_repo::get_tools_for_persona(pool, persona_id).ok()?;
     let connectors = crate::db::repos::resources::connectors::get_all(pool).ok()?;
 
-    for tool in &tools {
-        for connector in &connectors {
-            let services: Vec<serde_json::Value> =
-                serde_json::from_str(&connector.services).unwrap_or_default();
-            let tool_listed = services.iter().any(|s| {
-                s.get("toolName")
-                    .and_then(|v| v.as_str())
-                    .map(|name| name == tool.name)
-                    .unwrap_or(false)
-            });
-            if tool_listed {
-                if let Ok(Some(delay)) =
-                    healing_repo::get_recommended_delay(pool, &connector.name, pattern_key)
-                {
-                    return Some(delay);
-                }
-            }
+    for service_name in find_matching_connector_names(&tools, &connectors) {
+        if let Ok(Some(delay)) =
+            healing_repo::get_recommended_delay(pool, &service_name, pattern_key)
+        {
+            return Some(delay);
         }
     }
 
@@ -928,7 +1081,6 @@ fn record_failure_to_knowledge_base(
         healing::HealingAction::CreateIssue => return,
     };
 
-    // Find service types for this persona's tools
     let tools = match tool_repo::get_tools_for_persona(pool, persona_id) {
         Ok(t) => t,
         Err(_) => return,
@@ -938,26 +1090,13 @@ fn record_failure_to_knowledge_base(
         Err(_) => return,
     };
 
-    let mut recorded_services = std::collections::HashSet::new();
-    for tool in &tools {
-        for connector in &connectors {
-            let services: Vec<serde_json::Value> =
-                serde_json::from_str(&connector.services).unwrap_or_default();
-            let tool_listed = services.iter().any(|s| {
-                s.get("toolName")
-                    .and_then(|v| v.as_str())
-                    .map(|name| name == tool.name)
-                    .unwrap_or(false)
-            });
-            if tool_listed && recorded_services.insert(connector.name.clone()) {
-                let _ = healing_repo::upsert_knowledge(
-                    pool,
-                    &connector.name,
-                    pattern_key,
-                    &diagnosis.description,
-                    recommended_delay,
-                );
-            }
-        }
+    for service_name in find_matching_connector_names(&tools, &connectors) {
+        let _ = healing_repo::upsert_knowledge(
+            pool,
+            &service_name,
+            pattern_key,
+            &diagnosis.description,
+            recommended_delay,
+        );
     }
 }

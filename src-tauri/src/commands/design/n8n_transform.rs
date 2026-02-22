@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, OnceLock};
+use std::time::Instant;
 
 use serde::Deserialize;
 use serde::Serialize;
@@ -45,7 +46,9 @@ struct N8nTransformSnapshot {
     questions: Option<serde_json::Value>,
 }
 
-#[derive(Clone, Default)]
+const JOB_TTL_SECS: u64 = 30 * 60; // 30 minutes
+
+#[derive(Clone)]
 struct N8nTransformJobState {
     status: String,
     error: Option<String>,
@@ -54,6 +57,22 @@ struct N8nTransformJobState {
     cancel_token: Option<CancellationToken>,
     claude_session_id: Option<String>,
     questions: Option<serde_json::Value>,
+    created_at: Instant,
+}
+
+impl Default for N8nTransformJobState {
+    fn default() -> Self {
+        Self {
+            status: String::new(),
+            error: None,
+            lines: Vec::new(),
+            draft: None,
+            cancel_token: None,
+            claude_session_id: None,
+            questions: None,
+            created_at: Instant::now(),
+        }
+    }
 }
 
 static N8N_TRANSFORM_JOBS: OnceLock<Mutex<HashMap<String, N8nTransformJobState>>> = OnceLock::new();
@@ -66,6 +85,13 @@ fn lock_jobs() -> Result<std::sync::MutexGuard<'static, HashMap<String, N8nTrans
     n8n_transform_jobs()
         .lock()
         .map_err(|_| AppError::Internal("n8n transform job lock poisoned".into()))
+}
+
+/// Remove non-running job entries older than `JOB_TTL_SECS`.
+/// Called on each new job insert to prevent unbounded memory growth.
+fn evict_stale_n8n_jobs(jobs: &mut HashMap<String, N8nTransformJobState>) {
+    let cutoff = std::time::Duration::from_secs(JOB_TTL_SECS);
+    jobs.retain(|_, job| job.status == "running" || job.created_at.elapsed() < cutoff);
 }
 
 fn set_n8n_transform_status(
@@ -287,6 +313,7 @@ pub async fn start_n8n_transform_background(
 
     {
         let mut jobs = lock_jobs()?;
+        evict_stale_n8n_jobs(&mut jobs);
         if let Some(existing) = jobs.get(&transform_id) {
             if existing.status == "running" {
                 return Err(AppError::Validation("Transform is already running".into()));
@@ -300,6 +327,9 @@ pub async fn start_n8n_transform_background(
                 lines: Vec::new(),
                 draft: None,
                 cancel_token: Some(cancel_token.clone()),
+                claude_session_id: None,
+                questions: None,
+                created_at: Instant::now(),
             },
         );
     }
@@ -681,7 +711,7 @@ Rules:
         },
     );
 
-    let mut cli_args = crate::engine::prompt::build_default_cli_args();
+    let mut cli_args = crate::engine::prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());
     cli_args.args.push("claude-haiku-4-5-20251001".to_string());
     // Limit question generation to a single turn and tight budget
@@ -1141,7 +1171,7 @@ async fn run_n8n_transform_job(
         "[Milestone] Static workflow parsing complete. Preparing Claude transformation prompt...",
     );
 
-    let mut cli_args = prompt::build_default_cli_args();
+    let mut cli_args = prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());
     cli_args.args.push("claude-sonnet-4-6".to_string());
 
@@ -1211,7 +1241,14 @@ pub(super) async fn run_claude_prompt_text_with_timeout(
     emit_ctx: Option<(&tauri::AppHandle, &str)>,
     timeout_secs: u64,
 ) -> Result<(String, Option<String>), String> {
-    run_claude_prompt_text_inner(prompt_text, cli_args, emit_ctx, timeout_secs).await
+    let on_line: Option<Box<dyn Fn(&str) + Send + Sync>> = emit_ctx.map(|(app, id)| {
+        let app = app.clone();
+        let id = id.to_string();
+        Box::new(move |line: &str| {
+            emit_n8n_transform_line(&app, &id, line.to_string());
+        }) as Box<dyn Fn(&str) + Send + Sync>
+    });
+    run_claude_prompt_text_inner(prompt_text, cli_args, on_line.as_deref(), timeout_secs).await
 }
 
 /// Returns (text_output, captured_claude_session_id).
@@ -1220,13 +1257,25 @@ pub(super) async fn run_claude_prompt_text(
     cli_args: &crate::engine::types::CliArgs,
     emit_ctx: Option<(&tauri::AppHandle, &str)>,
 ) -> Result<(String, Option<String>), String> {
-    run_claude_prompt_text_inner(prompt_text, cli_args, emit_ctx, 420).await
+    let on_line: Option<Box<dyn Fn(&str) + Send + Sync>> = emit_ctx.map(|(app, id)| {
+        let app = app.clone();
+        let id = id.to_string();
+        Box::new(move |line: &str| {
+            emit_n8n_transform_line(&app, &id, line.to_string());
+        }) as Box<dyn Fn(&str) + Send + Sync>
+    });
+    run_claude_prompt_text_inner(prompt_text, cli_args, on_line.as_deref(), 420).await
 }
 
-async fn run_claude_prompt_text_inner(
+/// Core Claude CLI process spawning with stdout streaming, timeout, and line emission.
+///
+/// The `on_line` callback is invoked for each surfaceable output line (after dedup
+/// and filtering). Callers provide their own emission logic (e.g. template-adopt
+/// events or n8n-transform events).
+pub(super) async fn run_claude_prompt_text_inner(
     prompt_text: String,
     cli_args: &crate::engine::types::CliArgs,
-    emit_ctx: Option<(&tauri::AppHandle, &str)>,
+    on_line: Option<&(dyn Fn(&str) + Send + Sync)>,
     timeout_secs: u64,
 ) -> Result<(String, Option<String>), String> {
     let mut cmd = Command::new(&cli_args.command);
@@ -1315,8 +1364,8 @@ async fn run_claude_prompt_text_inner(
                     if last_emitted_line.as_deref() == Some(trimmed) {
                         continue;
                     }
-                    if let Some((app, transform_id)) = emit_ctx {
-                        emit_n8n_transform_line(app, transform_id, trimmed.to_string());
+                    if let Some(emit) = on_line {
+                        emit(trimmed);
                     }
                     last_emitted_line = Some(trimmed.to_string());
                 }
@@ -1347,7 +1396,7 @@ async fn run_claude_prompt_text_inner(
     }
 
     if text_output.trim().is_empty() {
-        return Err("Claude produced no output for n8n transformation".into());
+        return Err("Claude produced no output".into());
     }
 
     Ok((text_output, captured_session_id))

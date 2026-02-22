@@ -14,6 +14,8 @@ export interface UiSlice {
   error: string | null;
   n8nTransformActive: boolean;
   templateAdoptActive: boolean;
+  showDesignNudge: boolean;
+  showCloudNudge: boolean;
 
   // Actions
   setSidebarSection: (section: SidebarSection) => void;
@@ -25,6 +27,8 @@ export interface UiSlice {
   setError: (error: string | null) => void;
   setN8nTransformActive: (active: boolean) => void;
   setTemplateAdoptActive: (active: boolean) => void;
+  setShowDesignNudge: (show: boolean) => void;
+  setShowCloudNudge: (show: boolean) => void;
 }
 
 export const createUiSlice: StateCreator<PersonaStore, [], [], UiSlice> = (set) => ({
@@ -38,6 +42,8 @@ export const createUiSlice: StateCreator<PersonaStore, [], [], UiSlice> = (set) 
   error: null,
   n8nTransformActive: false,
   templateAdoptActive: false,
+  showDesignNudge: false,
+  showCloudNudge: false,
 
   setSidebarSection: (section) => set({ sidebarSection: section }),
   setCredentialView: (view) => set({ credentialView: view }),
@@ -48,4 +54,6 @@ export const createUiSlice: StateCreator<PersonaStore, [], [], UiSlice> = (set) 
   setError: (error) => set({ error }),
   setN8nTransformActive: (active) => set({ n8nTransformActive: active }),
   setTemplateAdoptActive: (active) => set({ templateAdoptActive: active }),
+  setShowDesignNudge: (show) => set({ showDesignNudge: show }),
+  setShowCloudNudge: (show) => set({ showCloudNudge: show }),
 });

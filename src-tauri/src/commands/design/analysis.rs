@@ -8,6 +8,7 @@ use tokio::process::Command;
 
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::resources::{connectors as connector_repo, tools as tool_repo};
+use crate::engine;
 use crate::engine::design;
 use crate::engine::prompt;
 use crate::error::AppError;
@@ -48,6 +49,7 @@ fn spawn_design_run(
     let persona_id_owned = persona_id.to_string();
     let design_id_clone = design_id.clone();
     let active_design_id = state.active_design_id.clone();
+    let active_child_pid = state.active_design_child_pid.clone();
 
     {
         let mut guard = state.active_design_id.lock().unwrap();
@@ -65,6 +67,7 @@ fn spawn_design_run(
             tool_names,
             connector_names,
             active_design_id,
+            active_child_pid,
         })
         .await;
     });
@@ -93,7 +96,7 @@ pub async fn start_design_analysis(
     );
 
     let model_profile = prompt::parse_model_profile(persona.model_profile.as_deref());
-    let cli_args = prompt::build_cli_args(&persona, &model_profile);
+    let cli_args = prompt::build_cli_args(Some(&persona), model_profile.as_ref());
     let tool_names = tools.iter().map(|t| t.name.clone()).collect();
     let connector_names = connectors.iter().map(|c| c.name.clone()).collect();
 
@@ -106,12 +109,15 @@ pub async fn refine_design(
     app: tauri::AppHandle,
     persona_id: String,
     feedback: String,
+    current_result: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
 
-    let last_result = persona.last_design_result.clone().ok_or_else(|| {
-        AppError::Validation("No existing design to refine".into())
-    })?;
+    // Prefer the caller-supplied result (from preview state) over the DB value,
+    // which may be stale if the user hasn't applied the latest design yet.
+    let last_result = current_result
+        .or_else(|| persona.last_design_result.clone())
+        .ok_or_else(|| AppError::Validation("No existing design to refine".into()))?;
 
     let refinement_prompt = design::build_refinement_prompt(
         &last_result,
@@ -120,7 +126,7 @@ pub async fn refine_design(
     );
 
     let model_profile = prompt::parse_model_profile(persona.model_profile.as_deref());
-    let cli_args = prompt::build_cli_args(&persona, &model_profile);
+    let cli_args = prompt::build_cli_args(Some(&persona), model_profile.as_ref());
     let tools = tool_repo::get_all_definitions(&state.db)?;
     let connectors = connector_repo::get_all(&state.db)?;
     let tool_names = tools.iter().map(|t| t.name.clone()).collect();
@@ -150,6 +156,14 @@ pub fn cancel_design_analysis(
 ) -> Result<(), AppError> {
     let mut guard = state.active_design_id.lock().unwrap();
     *guard = None;
+
+    // Kill the CLI child process to stop API credit consumption immediately.
+    let pid = state.active_design_child_pid.lock().unwrap().take();
+    if let Some(pid) = pid {
+        tracing::info!(pid = pid, "Killing design analysis CLI child process");
+        engine::kill_process(pid);
+    }
+
     Ok(())
 }
 
@@ -165,6 +179,7 @@ struct DesignRunParams {
     tool_names: Vec<String>,
     connector_names: Vec<String>,
     active_design_id: Arc<Mutex<Option<String>>>,
+    active_child_pid: Arc<Mutex<Option<u32>>>,
 }
 
 async fn run_design_analysis(params: DesignRunParams) {
@@ -178,6 +193,7 @@ async fn run_design_analysis(params: DesignRunParams) {
         tool_names,
         connector_names,
         active_design_id,
+        active_child_pid,
     } = params;
     // Emit analyzing status
     let _ = app.emit(
@@ -235,6 +251,11 @@ async fn run_design_analysis(params: DesignRunParams) {
         }
     };
 
+    // Register child PID so cancel can kill it
+    if let Some(pid) = child.id() {
+        *active_child_pid.lock().unwrap() = Some(pid);
+    }
+
     // Write prompt to stdin
     if let Some(mut stdin) = child.stdin.take() {
         let prompt_bytes = prompt_text.into_bytes();
@@ -272,8 +293,9 @@ async fn run_design_analysis(params: DesignRunParams) {
     })
     .await;
 
-    // Wait for process
+    // Wait for process and clear the PID (process has exited)
     let _ = child.wait().await;
+    *active_child_pid.lock().unwrap() = None;
 
     if stream_result.is_err() {
         let _ = child.kill().await;

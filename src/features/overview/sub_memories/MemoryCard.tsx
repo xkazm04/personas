@@ -3,10 +3,10 @@ import { Trash2, Bot, Tag, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { DbPersonaMemory } from '@/lib/types/types';
 import { formatRelativeTime, MEMORY_CATEGORY_COLORS } from '@/lib/utils/formatters';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 
 function parseTags(tagsJson: string | null): string[] {
-  if (!tagsJson) return [];
-  try { return JSON.parse(tagsJson); } catch { return []; }
+  return parseJsonOrDefault<string[]>(tagsJson, []);
 }
 
 // ── Importance dots ──────────────────────────────────────────────

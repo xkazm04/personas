@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronRight, Check, X, ClipboardCheck, CheckSquare, Square, AlertTriangle } from 'lucide-react';
+import { ChevronDown, ChevronRight, Check, X, ClipboardCheck, CheckSquare, Square, AlertTriangle, ExternalLink } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/types/frontendTypes';
@@ -88,6 +88,7 @@ export default function ManualReviewList() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmAction, setConfirmAction] = useState<ManualReviewStatus | null>(null);
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+  const [bulkError, setBulkError] = useState<string | null>(null);
 
   // Always fetch all reviews so we can compute counts client-side
   useEffect(() => {
@@ -119,6 +120,7 @@ export default function ManualReviewList() {
   useEffect(() => {
     setSelectedIds(new Set());
     setConfirmAction(null);
+    setBulkError(null);
   }, [filter]);
 
   const toggleSelect = useCallback((id: string) => {
@@ -141,17 +143,35 @@ export default function ManualReviewList() {
 
   const handleBulkAction = useCallback(async (status: ManualReviewStatus) => {
     setIsBulkProcessing(true);
+    setBulkError(null);
     try {
-      const promises = Array.from(selectedIds).map((id) =>
-        updateManualReview(id, { status })
+      const ids = Array.from(selectedIds);
+      const results = await Promise.allSettled(
+        ids.map((id) => updateManualReview(id, { status }))
       );
-      await Promise.all(promises);
-      setSelectedIds(new Set());
-      setConfirmAction(null);
+
+      const failedIds = new Set<string>();
+      results.forEach((result, i) => {
+        if (result.status === 'rejected') failedIds.add(ids[i]!);
+      });
+
+      if (failedIds.size === 0) {
+        setSelectedIds(new Set());
+        setConfirmAction(null);
+      } else {
+        // Keep failed IDs selected so the user can retry
+        setSelectedIds(failedIds);
+        setConfirmAction(null);
+        const failedReviews = manualReviews.filter((r) => failedIds.has(r.id));
+        const names = failedReviews.map((r) => r.content.slice(0, 40)).join(', ');
+        setBulkError(
+          `${failedIds.size} of ${ids.length} review${ids.length !== 1 ? 's' : ''} failed: ${names}`
+        );
+      }
     } finally {
       setIsBulkProcessing(false);
     }
-  }, [selectedIds, updateManualReview]);
+  }, [selectedIds, updateManualReview, manualReviews]);
 
   const activeSelectionCount = useMemo(
     () => Array.from(selectedIds).filter((id) => selectablePendingIds.has(id)).length,
@@ -249,6 +269,18 @@ export default function ManualReviewList() {
             transition={{ duration: 0.2 }}
             className="flex-shrink-0 border-t border-primary/15 bg-secondary/40 backdrop-blur-sm px-4 py-3"
           >
+            {bulkError && (
+              <div className="flex items-center gap-2 mb-2 px-2 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400">
+                <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                <span className="flex-1 truncate">{bulkError}</span>
+                <button
+                  onClick={() => setBulkError(null)}
+                  className="text-red-400/60 hover:text-red-400 transition-colors flex-shrink-0"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
             {confirmAction ? (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm">
@@ -472,7 +504,19 @@ function ReviewRow({
               {/* Metadata */}
               <div className="flex items-center gap-4 text-[11px] text-muted-foreground/40">
                 <span>ID: <span className="font-mono">{review.id}</span></span>
-                <span>Execution: <span className="font-mono">{review.execution_id}</span></span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const store = usePersonaStore.getState();
+                    store.selectPersona(review.persona_id);
+                    store.setEditorTab('executions');
+                  }}
+                  className="inline-flex items-center gap-1 text-blue-400/70 hover:text-blue-400 transition-colors"
+                  title={`View execution ${review.execution_id}`}
+                >
+                  View Execution
+                  <ExternalLink className="w-3 h-3" />
+                </button>
                 {review.resolved_at && (
                   <span>Resolved: {new Date(review.resolved_at).toLocaleString()}</span>
                 )}

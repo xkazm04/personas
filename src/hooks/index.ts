@@ -18,3 +18,5 @@ export * from "./utility/useAnimatedNumber";
 export * from "./utility/useAutoInstaller";
 export * from "./utility/useAutoUpdater";
 export * from "./utility/useToggleSet";
+export * from "./utility/useAppSetting";
+export * from "./utility/useCopyToClipboard";

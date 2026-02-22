@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
+use std::time::Instant;
 
 use serde::Serialize;
 use serde_json::json;
@@ -14,10 +15,9 @@ use crate::engine::prompt;
 use crate::error::AppError;
 use crate::AppState;
 
-use super::analysis::extract_display_text;
 use super::n8n_transform::{
     extract_first_json_object, normalize_n8n_persona_draft, run_claude_prompt_text,
-    should_surface_n8n_output_line, N8nPersonaOutput,
+    run_claude_prompt_text_inner, N8nPersonaOutput,
 };
 
 // ── Event payloads ──────────────────────────────────────────────
@@ -44,13 +44,29 @@ struct TemplateAdoptSnapshot {
     draft: Option<serde_json::Value>,
 }
 
-#[derive(Clone, Default)]
+const JOB_TTL_SECS: u64 = 30 * 60; // 30 minutes
+
+#[derive(Clone)]
 struct TemplateAdoptJobState {
     status: String,
     error: Option<String>,
     lines: Vec<String>,
     draft: Option<serde_json::Value>,
     cancel_token: Option<CancellationToken>,
+    created_at: Instant,
+}
+
+impl Default for TemplateAdoptJobState {
+    fn default() -> Self {
+        Self {
+            status: String::new(),
+            error: None,
+            lines: Vec::new(),
+            draft: None,
+            cancel_token: None,
+            created_at: Instant::now(),
+        }
+    }
 }
 
 static TEMPLATE_ADOPT_JOBS: OnceLock<Mutex<HashMap<String, TemplateAdoptJobState>>> =
@@ -64,6 +80,13 @@ fn lock_adopt_jobs() -> Result<std::sync::MutexGuard<'static, HashMap<String, Te
     adopt_jobs()
         .lock()
         .map_err(|_| AppError::Internal("template adopt job lock poisoned".into()))
+}
+
+/// Remove non-running job entries older than `JOB_TTL_SECS`.
+/// Called on each new job insert to prevent unbounded memory growth.
+fn evict_stale_adopt_jobs(jobs: &mut HashMap<String, TemplateAdoptJobState>) {
+    let cutoff = std::time::Duration::from_secs(JOB_TTL_SECS);
+    jobs.retain(|_, job| job.status == "running" || job.created_at.elapsed() < cutoff);
 }
 
 fn set_adopt_status(
@@ -158,6 +181,7 @@ pub async fn start_template_adopt_background(
 
     {
         let mut jobs = lock_adopt_jobs()?;
+        evict_stale_adopt_jobs(&mut jobs);
         if let Some(existing) = jobs.get(&adopt_id) {
             if existing.status == "running" {
                 return Err(AppError::Validation(
@@ -173,6 +197,7 @@ pub async fn start_template_adopt_background(
                 lines: Vec::new(),
                 draft: None,
                 cancel_token: Some(cancel_token.clone()),
+                created_at: Instant::now(),
             },
         );
     }
@@ -317,7 +342,7 @@ pub async fn generate_template_adopt_questions(
     }
 
     let design_preview = if design_result_json.len() > 8000 {
-        &design_result_json[..8000]
+        &design_result_json[..design_result_json.floor_char_boundary(8000)]
     } else {
         &design_result_json
     };
@@ -391,7 +416,7 @@ Rules:
 "##,
     );
 
-    let mut cli_args = crate::engine::prompt::build_default_cli_args();
+    let mut cli_args = crate::engine::prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());
     cli_args.args.push("claude-haiku-4-5-20251001".to_string());
 
@@ -551,7 +576,7 @@ async fn run_template_adopt_job(
         "[Milestone] Preparing Claude transformation prompt for template adoption...",
     );
 
-    let mut cli_args = prompt::build_default_cli_args();
+    let mut cli_args = prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());
     cli_args.args.push("claude-sonnet-4-6".to_string());
 
@@ -561,9 +586,13 @@ async fn run_template_adopt_job(
         "[Milestone] Claude CLI started. Generating persona draft from template...",
     );
 
-    // Wrap emit context to use adopt event names
-    let output_text =
-        run_claude_prompt_text_with_adopt_events(app, adopt_id, prompt_text, &cli_args)
+    let app_for_emit = app.clone();
+    let adopt_id_for_emit = adopt_id.to_string();
+    let on_line = move |line: &str| {
+        emit_adopt_line(&app_for_emit, &adopt_id_for_emit, line.to_string());
+    };
+    let (output_text, _session_id) =
+        run_claude_prompt_text_inner(prompt_text, &cli_args, Some(&on_line), 420)
             .await
             .map_err(AppError::Internal)?;
 
@@ -601,122 +630,3 @@ async fn run_template_adopt_job(
     Ok(draft)
 }
 
-/// Like run_claude_prompt_text but emits lines using template-adopt events.
-async fn run_claude_prompt_text_with_adopt_events(
-    app: &tauri::AppHandle,
-    adopt_id: &str,
-    prompt_text: String,
-    cli_args: &crate::engine::types::CliArgs,
-) -> Result<String, String> {
-    use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-    use tokio::process::Command;
-
-    let mut cmd = Command::new(&cli_args.command);
-    cmd.args(&cli_args.args)
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped());
-
-    #[cfg(windows)]
-    {
-        #[allow(unused_imports)]
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000);
-    }
-
-    for key in &cli_args.env_removals {
-        cmd.env_remove(key);
-    }
-    for (key, val) in &cli_args.env_overrides {
-        cmd.env(key, val);
-    }
-
-    let mut child = cmd.spawn().map_err(|e| {
-        if e.kind() == std::io::ErrorKind::NotFound {
-            "Claude CLI not found. Install from https://docs.anthropic.com/en/docs/claude-code"
-                .to_string()
-        } else {
-            format!("Failed to spawn Claude CLI: {}", e)
-        }
-    })?;
-
-    if let Some(mut stdin) = child.stdin.take() {
-        let _ = stdin.write_all(prompt_text.as_bytes()).await;
-        let _ = stdin.shutdown().await;
-    }
-
-    let stderr = child
-        .stderr
-        .take()
-        .ok_or_else(|| "Missing stderr pipe".to_string())?;
-    let stderr_task = tokio::spawn(async move {
-        let mut stderr_reader = BufReader::new(stderr);
-        let mut stderr_buf = String::new();
-        let _ =
-            tokio::io::AsyncReadExt::read_to_string(&mut stderr_reader, &mut stderr_buf).await;
-        stderr_buf
-    });
-
-    let stdout = child
-        .stdout
-        .take()
-        .ok_or_else(|| "Missing stdout pipe".to_string())?;
-    let mut reader = BufReader::new(stdout).lines();
-    let mut text_output = String::new();
-    let mut last_emitted_line: Option<String> = None;
-
-    let timeout_duration = std::time::Duration::from_secs(420);
-    let stream_result = tokio::time::timeout(timeout_duration, async {
-        while let Ok(Some(line)) = reader.next_line().await {
-            if line.trim().is_empty() {
-                continue;
-            }
-
-            if let Some(text) = extract_display_text(&line) {
-                let trimmed = text.trim();
-                if !trimmed.is_empty() {
-                    text_output.push_str(trimmed);
-                    text_output.push('\n');
-
-                    if !should_surface_n8n_output_line(trimmed) {
-                        continue;
-                    }
-
-                    if last_emitted_line.as_deref() == Some(trimmed) {
-                        continue;
-                    }
-                    emit_adopt_line(app, adopt_id, trimmed.to_string());
-                    last_emitted_line = Some(trimmed.to_string());
-                }
-            }
-        }
-    })
-    .await;
-
-    let exit_status = child
-        .wait()
-        .await
-        .map_err(|e| format!("Failed waiting for Claude CLI: {}", e))?;
-    let stderr_output = stderr_task.await.unwrap_or_default();
-
-    if stream_result.is_err() {
-        let _ = child.kill().await;
-        return Err("Claude template adoption timed out after 7 minutes".into());
-    }
-
-    if !exit_status.success() {
-        let msg = stderr_output
-            .trim()
-            .lines()
-            .last()
-            .unwrap_or("unknown error")
-            .to_string();
-        return Err(format!("Claude CLI exited with error: {}", msg));
-    }
-
-    if text_output.trim().is_empty() {
-        return Err("Claude produced no output for template adoption".into());
-    }
-
-    Ok(text_output)
-}

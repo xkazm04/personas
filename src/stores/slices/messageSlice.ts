@@ -28,21 +28,21 @@ export const createMessageSlice: StateCreator<PersonaStore, [], [], MessageSlice
     try {
       const PAGE_SIZE = 50;
       const offset = reset ? 0 : get().messages.length;
-      const [rawMessages, totalCount] = await Promise.all([
+      const [rawMessages, totalCount, unreadCount] = await Promise.all([
         api.listMessages(PAGE_SIZE, offset),
         reset ? api.getMessageCount() : Promise.resolve(get().messagesTotal),
+        api.getUnreadMessageCount(),
       ]);
       // Enrich with persona info
       const { personas } = get();
       const enriched: PersonaMessage[] = enrichWithPersona(rawMessages, personas);
-      const unread = enriched.filter((m) => !m.is_read).length;
       if (reset) {
-        set({ messages: enriched, messagesTotal: totalCount, unreadMessageCount: unread });
+        set({ messages: enriched, messagesTotal: totalCount, unreadMessageCount: unreadCount });
       } else {
         set((state) => ({
           messages: [...state.messages, ...enriched],
           messagesTotal: totalCount,
-          unreadMessageCount: unread,
+          unreadMessageCount: unreadCount,
         }));
       }
     } catch (err) {
@@ -51,6 +51,10 @@ export const createMessageSlice: StateCreator<PersonaStore, [], [], MessageSlice
   },
 
   markMessageAsRead: async (id) => {
+    // Guard: no-op if already read to prevent count drift
+    const msg = get().messages.find((m) => m.id === id);
+    if (!msg || msg.is_read) return;
+
     set((state) => ({
       messages: state.messages.map((m) =>
         m.id === id ? { ...m, is_read: true, read_at: new Date().toISOString() } : m,
@@ -60,7 +64,9 @@ export const createMessageSlice: StateCreator<PersonaStore, [], [], MessageSlice
     try {
       await api.markMessageRead(id);
     } catch {
+      // Recover with authoritative count from server
       get().fetchMessages();
+      get().fetchUnreadMessageCount();
     }
   },
 
