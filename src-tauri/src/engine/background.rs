@@ -240,8 +240,9 @@ async fn event_bus_loop(
                 };
 
                 // 8. Update to running
-                let _ = exec_repo::update_status(
+                super::persist_status_update(
                     &pool,
+                    Some(&app),
                     &exec.id,
                     UpdateExecutionStatus {
                         status: "running".into(),
@@ -438,7 +439,9 @@ fn emit_event_to_frontend(app: &AppHandle, event: &PersonaEvent, status: &str) {
         created_at: event.created_at.clone(),
     };
 
-    let _ = app.emit("event-bus", payload);
+    if let Err(e) = app.emit("event-bus", payload) {
+        tracing::warn!(event_id = %event.id, error = %e, "Failed to emit event-bus event to frontend");
+    }
 }
 
 #[cfg(test)]

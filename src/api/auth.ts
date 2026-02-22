@@ -4,20 +4,17 @@ import { invoke } from "@tauri-apps/api/core";
 // Auth
 // ============================================================================
 
+export interface AuthUser {
+  id: string;
+  email: string;
+  display_name: string | null;
+  avatar_url: string | null;
+}
+
 export interface AuthStateResponse {
   is_authenticated: boolean;
   is_offline: boolean;
-  user: {
-    id: string;
-    email: string;
-    display_name: string | null;
-    avatar_url: string | null;
-  } | null;
-  subscription: {
-    plan: string;
-    status: string;
-    current_period_end: string | null;
-  } | null;
+  user: AuthUser | null;
 }
 
 export const loginWithGoogle = () =>
@@ -28,6 +25,3 @@ export const getAuthState = () =>
 
 export const logoutUser = () =>
   invoke<void>("logout");
-
-export const refreshSession = () =>
-  invoke<AuthStateResponse>("refresh_session");

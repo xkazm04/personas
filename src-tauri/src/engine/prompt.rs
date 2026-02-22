@@ -1,4 +1,4 @@
-use super::types::{CliArgs, ModelProfile};
+use super::types::{providers, CliArgs, ModelProfile};
 use crate::db::models::{Persona, PersonaToolDefinition};
 
 /// Parse the model_profile JSON string into a ModelProfile struct.
@@ -173,18 +173,88 @@ pub fn assemble_prompt(
     prompt
 }
 
-/// Build default CLI arguments for spawning the Claude CLI process without persona-specific overrides.
-/// Used for credential design and other non-persona CLI invocations.
-pub fn build_default_cli_args() -> CliArgs {
-    let (command, mut args) = if cfg!(windows) {
+/// Platform-specific command and initial args for invoking the Claude CLI.
+fn base_cli_setup() -> (String, Vec<String>) {
+    if cfg!(windows) {
         (
             "cmd".to_string(),
             vec!["/C".to_string(), "claude.cmd".to_string()],
         )
     } else {
         ("claude".to_string(), vec![])
-    };
+    }
+}
 
+/// Apply provider-specific environment overrides and removals to a CliArgs.
+/// Reused by build_cli_args and test_runner.
+pub fn apply_provider_env(cli_args: &mut CliArgs, profile: &ModelProfile) {
+    match profile.provider.as_deref() {
+        Some(providers::OLLAMA) => {
+            if let Some(ref base_url) = profile.base_url {
+                cli_args
+                    .env_overrides
+                    .push(("OLLAMA_BASE_URL".to_string(), base_url.clone()));
+            }
+            if let Some(ref auth_token) = profile.auth_token {
+                if !auth_token.is_empty() {
+                    cli_args
+                        .env_overrides
+                        .push(("OLLAMA_API_KEY".to_string(), auth_token.clone()));
+                }
+            }
+            cli_args
+                .env_removals
+                .push("ANTHROPIC_API_KEY".to_string());
+        }
+        Some(providers::LITELLM) => {
+            if let Some(ref base_url) = profile.base_url {
+                cli_args
+                    .env_overrides
+                    .push(("ANTHROPIC_BASE_URL".to_string(), base_url.clone()));
+            }
+            if let Some(ref auth_token) = profile.auth_token {
+                if !auth_token.is_empty() {
+                    cli_args
+                        .env_overrides
+                        .push(("ANTHROPIC_AUTH_TOKEN".to_string(), auth_token.clone()));
+                }
+            }
+            cli_args
+                .env_removals
+                .push("ANTHROPIC_API_KEY".to_string());
+        }
+        Some(providers::CUSTOM) => {
+            if let Some(ref base_url) = profile.base_url {
+                cli_args
+                    .env_overrides
+                    .push(("OPENAI_BASE_URL".to_string(), base_url.clone()));
+            }
+            if let Some(ref auth_token) = profile.auth_token {
+                cli_args
+                    .env_overrides
+                    .push(("OPENAI_API_KEY".to_string(), auth_token.clone()));
+            }
+            cli_args
+                .env_removals
+                .push("ANTHROPIC_API_KEY".to_string());
+        }
+        _ => {
+            // Default provider (anthropic) — no special env needed
+        }
+    }
+}
+
+/// Build CLI arguments for spawning the Claude CLI process.
+///
+/// When called without a persona or model profile (both `None`), produces the
+/// same result as the former `build_default_cli_args()`.
+pub fn build_cli_args(
+    persona: Option<&Persona>,
+    model_profile: Option<&ModelProfile>,
+) -> CliArgs {
+    let (command, mut args) = base_cli_setup();
+
+    // Base flags: read prompt from stdin, stream-json output, verbose, skip permissions
     args.extend([
         "-p".to_string(),
         "-".to_string(),
@@ -194,26 +264,58 @@ pub fn build_default_cli_args() -> CliArgs {
         "--dangerously-skip-permissions".to_string(),
     ]);
 
-    CliArgs {
+    // Model override
+    if let Some(profile) = model_profile {
+        if let Some(ref model) = profile.model {
+            if !model.is_empty() {
+                args.push("--model".to_string());
+                args.push(model.clone());
+            }
+        }
+    }
+
+    // Persona-specific flags
+    if let Some(persona) = persona {
+        // Budget limit
+        if let Some(budget) = persona.max_budget_usd {
+            if budget > 0.0 {
+                args.push("--max-budget-usd".to_string());
+                args.push(format!("{}", budget));
+            }
+        }
+
+        // Max turns
+        if let Some(turns) = persona.max_turns {
+            if turns > 0 {
+                args.push("--max-turns".to_string());
+                args.push(format!("{}", turns));
+            }
+        }
+    }
+
+    let mut cli_args = CliArgs {
         command,
         args,
         env_overrides: Vec::new(),
-        env_removals: vec!["CLAUDECODE".to_string(), "CLAUDE_CODE".to_string()],
+        env_removals: Vec::new(),
         cwd: None,
+    };
+
+    // Provider env
+    if let Some(profile) = model_profile {
+        apply_provider_env(&mut cli_args, profile);
     }
+
+    cli_args.env_removals.push("CLAUDECODE".to_string());
+    cli_args.env_removals.push("CLAUDE_CODE".to_string());
+
+    cli_args
 }
 
 /// Build CLI arguments to resume an existing Claude session.
 /// Uses `--resume <id>` instead of `-p -` to continue a prior conversation.
 pub fn build_resume_cli_args(claude_session_id: &str) -> CliArgs {
-    let (command, mut args) = if cfg!(windows) {
-        (
-            "cmd".to_string(),
-            vec!["/C".to_string(), "claude.cmd".to_string()],
-        )
-    } else {
-        ("claude".to_string(), vec![])
-    };
+    let (command, mut args) = base_cli_setup();
 
     args.extend([
         "--resume".to_string(),
@@ -231,109 +333,6 @@ pub fn build_resume_cli_args(claude_session_id: &str) -> CliArgs {
         args,
         env_overrides: Vec::new(),
         env_removals: vec!["CLAUDECODE".to_string(), "CLAUDE_CODE".to_string()],
-        cwd: None,
-    }
-}
-
-/// Build CLI arguments for spawning the Claude CLI process.
-pub fn build_cli_args(persona: &Persona, model_profile: &Option<ModelProfile>) -> CliArgs {
-    let (command, mut args) = if cfg!(windows) {
-        (
-            "cmd".to_string(),
-            vec!["/C".to_string(), "claude.cmd".to_string()],
-        )
-    } else {
-        ("claude".to_string(), vec![])
-    };
-
-    // Base flags: read prompt from stdin, stream-json output, verbose, skip permissions
-    args.extend([
-        "-p".to_string(),
-        "-".to_string(),
-        "--output-format".to_string(),
-        "stream-json".to_string(),
-        "--verbose".to_string(),
-        "--dangerously-skip-permissions".to_string(),
-    ]);
-
-    // Model override
-    if let Some(ref profile) = model_profile {
-        if let Some(ref model) = profile.model {
-            if !model.is_empty() {
-                args.push("--model".to_string());
-                args.push(model.clone());
-            }
-        }
-    }
-
-    // Budget limit
-    if let Some(budget) = persona.max_budget_usd {
-        if budget > 0.0 {
-            args.push("--max-budget-usd".to_string());
-            args.push(format!("{}", budget));
-        }
-    }
-
-    // Max turns
-    if let Some(turns) = persona.max_turns {
-        if turns > 0 {
-            args.push("--max-turns".to_string());
-            args.push(format!("{}", turns));
-        }
-    }
-
-    // Environment overrides and removals based on provider
-    let mut env_overrides: Vec<(String, String)> = Vec::new();
-    let mut env_removals: Vec<String> = Vec::new();
-
-    if let Some(ref profile) = model_profile {
-        match profile.provider.as_deref() {
-            Some("ollama") => {
-                if let Some(ref base_url) = profile.base_url {
-                    env_overrides.push(("OLLAMA_BASE_URL".to_string(), base_url.clone()));
-                }
-                if let Some(ref auth_token) = profile.auth_token {
-                    if !auth_token.is_empty() {
-                        env_overrides.push(("OLLAMA_API_KEY".to_string(), auth_token.clone()));
-                    }
-                }
-                env_removals.push("ANTHROPIC_API_KEY".to_string());
-            }
-            Some("litellm") => {
-                if let Some(ref base_url) = profile.base_url {
-                    env_overrides.push(("ANTHROPIC_BASE_URL".to_string(), base_url.clone()));
-                }
-                if let Some(ref auth_token) = profile.auth_token {
-                    if !auth_token.is_empty() {
-                        env_overrides
-                            .push(("ANTHROPIC_AUTH_TOKEN".to_string(), auth_token.clone()));
-                    }
-                }
-                env_removals.push("ANTHROPIC_API_KEY".to_string());
-            }
-            Some("custom") => {
-                if let Some(ref base_url) = profile.base_url {
-                    env_overrides.push(("OPENAI_BASE_URL".to_string(), base_url.clone()));
-                }
-                if let Some(ref auth_token) = profile.auth_token {
-                    env_overrides.push(("OPENAI_API_KEY".to_string(), auth_token.clone()));
-                }
-                env_removals.push("ANTHROPIC_API_KEY".to_string());
-            }
-            _ => {
-                // Default provider (anthropic) - no special env needed
-            }
-        }
-    }
-
-    env_removals.push("CLAUDECODE".to_string());
-    env_removals.push("CLAUDE_CODE".to_string());
-
-    CliArgs {
-        command,
-        args,
-        env_overrides,
-        env_removals,
         cwd: None,
     }
 }
@@ -585,7 +584,7 @@ mod tests {
     #[test]
     fn test_cli_args_base_flags() {
         let persona = test_persona();
-        let args = build_cli_args(&persona, &None);
+        let args = build_cli_args(Some(&persona), None);
 
         // Check base flags are present
         assert!(args.args.contains(&"-p".to_string()));
@@ -609,12 +608,11 @@ mod tests {
 
     #[test]
     fn test_cli_args_with_model() {
-        let persona = test_persona();
-        let profile = Some(ModelProfile {
+        let profile = ModelProfile {
             model: Some("claude-sonnet-4-20250514".into()),
             ..Default::default()
-        });
-        let args = build_cli_args(&persona, &profile);
+        };
+        let args = build_cli_args(None, Some(&profile));
 
         assert!(args.args.contains(&"--model".to_string()));
         assert!(args.args.contains(&"claude-sonnet-4-20250514".to_string()));
@@ -625,7 +623,7 @@ mod tests {
         let mut persona = test_persona();
         persona.max_budget_usd = Some(1.5);
 
-        let args = build_cli_args(&persona, &None);
+        let args = build_cli_args(Some(&persona), None);
 
         assert!(args.args.contains(&"--max-budget-usd".to_string()));
         assert!(args.args.contains(&"1.5".to_string()));
@@ -636,10 +634,22 @@ mod tests {
         let mut persona = test_persona();
         persona.max_turns = Some(10);
 
-        let args = build_cli_args(&persona, &None);
+        let args = build_cli_args(Some(&persona), None);
 
         assert!(args.args.contains(&"--max-turns".to_string()));
         assert!(args.args.contains(&"10".to_string()));
+    }
+
+    #[test]
+    fn test_cli_args_default_no_persona() {
+        let args = build_cli_args(None, None);
+
+        // Should produce same base flags as with persona
+        assert!(args.args.contains(&"-p".to_string()));
+        assert!(args.args.contains(&"--verbose".to_string()));
+        // No persona-specific flags
+        assert!(!args.args.contains(&"--max-budget-usd".to_string()));
+        assert!(!args.args.contains(&"--max-turns".to_string()));
     }
 
     #[test]

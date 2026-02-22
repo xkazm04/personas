@@ -229,7 +229,13 @@ async fn refresh_access_token(
         .json(&serde_json::json!({ "refresh_token": refresh_token }))
         .send()
         .await
-        .map_err(|e| AppError::Auth(format!("Token refresh failed: {}", e)))?;
+        .map_err(|e| {
+            if e.is_connect() || e.is_timeout() || e.is_request() {
+                AppError::NetworkOffline(format!("Token refresh failed: {}", e))
+            } else {
+                AppError::Auth(format!("Token refresh failed: {}", e))
+            }
+        })?;
 
     if !resp.status().is_success() {
         let status = resp.status();
@@ -342,12 +348,7 @@ pub async fn refresh_session(
         }
         Err(e) => {
             // If it's a network error, go offline with cached profile
-            let err_str = e.to_string();
-            if err_str.contains("Failed to fetch")
-                || err_str.contains("Token refresh failed")
-                || err_str.contains("dns error")
-                || err_str.contains("connect error")
-            {
+            if matches!(e, AppError::NetworkOffline(_)) {
                 let cached_user = load_cached_user();
                 if cached_user.is_some() {
                     let response = {
@@ -466,12 +467,8 @@ pub async fn try_restore_session(app: &AppHandle, state: &Arc<AppState>) {
             tracing::info!("Session restored successfully");
         }
         Err(e) => {
-            let err_str = e.to_string();
             // Network error -> offline mode with cached profile
-            if err_str.contains("Token refresh failed")
-                || err_str.contains("dns error")
-                || err_str.contains("connect error")
-            {
+            if matches!(&e, AppError::NetworkOffline(_)) {
                 if let Some(cached_user) = load_cached_user() {
                     let response = {
                         let mut auth = state.auth.lock().await;
@@ -485,7 +482,7 @@ pub async fn try_restore_session(app: &AppHandle, state: &Arc<AppState>) {
                 }
             }
             // Token invalid or no cached profile -> clear and stay unauthenticated
-            tracing::warn!("Session restore failed: {}, clearing tokens", err_str);
+            tracing::warn!("Session restore failed: {}, clearing tokens", e);
             clear_tokens();
         }
     }

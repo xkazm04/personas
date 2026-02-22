@@ -32,6 +32,9 @@ pub enum AppError {
     #[error("Authentication error: {0}")]
     Auth(String),
 
+    #[error("Network offline: {0}")]
+    NetworkOffline(String),
+
     #[error("Cloud error: {0}")]
     Cloud(String),
 
@@ -61,6 +64,7 @@ impl Serialize for AppError {
                 AppError::Execution(_) => "execution",
                 AppError::ProcessSpawn(_) => "process_spawn",
                 AppError::Auth(_) => "auth",
+                AppError::NetworkOffline(_) => "network_offline",
                 AppError::Cloud(_) => "cloud",
                 AppError::Internal(_) => "internal",
             },

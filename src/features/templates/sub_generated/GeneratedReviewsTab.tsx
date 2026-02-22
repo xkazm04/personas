@@ -16,7 +16,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/ConnectorMeta';
-import { ReviewExpandedDetail } from '@/features/overview/sub_manual-review/ReviewExpandedDetail';
+import { ReviewExpandedDetail } from './ReviewExpandedDetail';
 import { usePersonaStore } from '@/stores/personaStore';
 import { deriveConnectorReadiness } from './ConnectorReadiness';
 import { ADOPT_CONTEXT_KEY } from './useAdoptReducer';

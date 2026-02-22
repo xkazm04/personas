@@ -9,9 +9,6 @@ import { devtools, persist } from "zustand/middleware";
 import { listen } from "@tauri-apps/api/event";
 import type { PersonaStore } from "./storeTypes";
 
-// Re-export shared types for consumers
-export { type ActiveDesignSession } from "./storeTypes";
-
 // Slice creators
 import { createPersonaSlice } from "./slices/personaSlice";
 import { createToolSlice } from "./slices/toolSlice";
@@ -26,7 +23,6 @@ import { createHealingSlice } from "./slices/healingSlice";
 import { createTeamSlice } from "./slices/teamSlice";
 import { createGroupSlice } from "./slices/groupSlice";
 import { createMemorySlice } from "./slices/memorySlice";
-import { createDesignSlice } from "./slices/designSlice";
 import { createUiSlice } from "./slices/uiSlice";
 import { createTestSlice } from "./slices/testSlice";
 import { createCloudSlice } from "./slices/cloudSlice";
@@ -50,7 +46,6 @@ export const usePersonaStore = create<PersonaStore>()(
         ...createTeamSlice(...a),
         ...createGroupSlice(...a),
         ...createMemorySlice(...a),
-        ...createDesignSlice(...a),
         ...createUiSlice(...a),
         ...createTestSlice(...a),
         ...createCloudSlice(...a),

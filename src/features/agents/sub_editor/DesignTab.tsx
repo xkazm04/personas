@@ -3,15 +3,17 @@ import { usePersonaStore } from '@/stores/personaStore';
 import { useDesignAnalysis } from '@/hooks/design/useDesignAnalysis';
 import { useToggleSet } from '@/hooks/utility/useToggleSet';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
-import { DesignTerminal } from '@/features/templates/sub_generated/DesignTerminal';
-import { DesignResultPreview } from '@/features/templates/sub_generated/DesignResultPreview';
-import { Send, X, Check, RefreshCw, Loader2, Pencil, ArrowRight, Wrench, Zap, Bell } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { DesignChatInput } from '@/features/templates/sub_generated/DesignChatInput';
+import { AnimatePresence } from 'framer-motion';
 import { PhaseIndicator } from '@/features/agents/sub_editor/PhaseIndicator';
 import { DesignPhasePanel } from '@/features/agents/sub_editor/DesignPhasePanel';
 import { DesignQuestionPanel } from '@/features/agents/sub_editor/DesignQuestionPanel';
+import { DesignPhaseAnalyzing } from '@/features/agents/sub_editor/DesignPhaseAnalyzing';
+import { DesignPhaseRefining } from '@/features/agents/sub_editor/DesignPhaseRefining';
+import { DesignPhasePreview } from '@/features/agents/sub_editor/DesignPhasePreview';
+import { DesignPhaseApplying } from '@/features/agents/sub_editor/DesignPhaseApplying';
+import { DesignPhaseApplied } from '@/features/agents/sub_editor/DesignPhaseApplied';
 import type { DesignContext } from '@/lib/types/frontendTypes';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 
 type DesignMode = 'guided' | 'manual';
 
@@ -56,33 +58,20 @@ export function DesignTab() {
 
   // Parse saved design result from persona DB
   const savedDesignResult = useMemo<DesignAnalysisResult | null>(() => {
-    if (!selectedPersona?.last_design_result) return null;
-    try {
-      const parsed = JSON.parse(selectedPersona.last_design_result) as DesignAnalysisResult;
-      const GOOGLE_CONNECTORS = new Set(['gmail', 'google_calendar', 'google_drive']);
-      parsed.suggested_connectors?.forEach((c) => {
-        if (!c.oauth_type && GOOGLE_CONNECTORS.has(c.name)) {
-          c.oauth_type = 'google';
-        }
-      });
-      return parsed;
-    } catch {
-      return null;
-    }
+    const parsed = parseJsonOrDefault<DesignAnalysisResult | null>(selectedPersona?.last_design_result, null);
+    if (!parsed) return null;
+    const GOOGLE_CONNECTORS = new Set(['gmail', 'google_calendar', 'google_drive']);
+    parsed.suggested_connectors?.forEach((c) => {
+      if (!c.oauth_type && GOOGLE_CONNECTORS.has(c.name)) {
+        c.oauth_type = 'google';
+      }
+    });
+    return parsed;
   }, [selectedPersona?.last_design_result]);
 
   // Initialize design context from persona DB
   useEffect(() => {
-    if (selectedPersona?.design_context) {
-      try {
-        const saved = JSON.parse(selectedPersona.design_context) as DesignContext;
-        setDesignContext(saved);
-      } catch {
-        setDesignContext({ files: [], references: [] });
-      }
-    } else {
-      setDesignContext({ files: [], references: [] });
-    }
+    setDesignContext(parseJsonOrDefault<DesignContext>(selectedPersona?.design_context, { files: [], references: [] }));
   }, [selectedPersona?.id]);
 
   // Initialize selections when result arrives
@@ -214,7 +203,6 @@ export function DesignTab() {
     <div className="space-y-4">
       <PhaseIndicator phase={phase} />
       <AnimatePresence mode="wait">
-        {/* Phase: idle */}
         {phase === 'idle' && (
           <DesignPhasePanel
             savedDesignResult={savedDesignResult}
@@ -236,68 +224,23 @@ export function DesignTab() {
           />
         )}
 
-        {/* Phase: analyzing */}
         {phase === 'analyzing' && (
-          <motion.div
-            key="analyzing"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.15 }}
-            className="space-y-3"
-          >
-            {savedDesignResult && (
-              <div className="flex items-center gap-2 px-1 text-xs text-muted-foreground/50">
-                <Pencil className="w-3 h-3 shrink-0" />
-                <span>Updating design...</span>
-              </div>
-            )}
-            <div className="bg-secondary/30 rounded-xl px-4 py-3 text-sm text-foreground/70 border border-primary/15">
-              {instruction}
-            </div>
-
-            <DesignTerminal lines={outputLines} isRunning={true} />
-
-            <button
-              onClick={cancelAnalysis}
-              className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
-            >
-              <X className="w-3.5 h-3.5" />
-              Cancel
-            </button>
-          </motion.div>
+          <DesignPhaseAnalyzing
+            instruction={instruction}
+            outputLines={outputLines}
+            savedDesignResult={savedDesignResult}
+            onCancel={cancelAnalysis}
+          />
         )}
 
-        {/* Phase: refining */}
         {phase === 'refining' && (
-          <motion.div
-            key="refining"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.15 }}
-            className="space-y-3"
-          >
-            {result && (
-              <div className="bg-secondary/30 rounded-xl px-4 py-3 border border-primary/15">
-                <p className="text-sm text-muted-foreground/50 mb-1">Current design</p>
-                <p className="text-sm text-foreground/70">{result.summary}</p>
-              </div>
-            )}
-
-            <DesignTerminal lines={outputLines} isRunning={true} />
-
-            <button
-              onClick={cancelAnalysis}
-              className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
-            >
-              <X className="w-3.5 h-3.5" />
-              Cancel
-            </button>
-          </motion.div>
+          <DesignPhaseRefining
+            outputLines={outputLines}
+            result={result}
+            onCancel={cancelAnalysis}
+          />
         )}
 
-        {/* Phase: awaiting-input */}
         {phase === 'awaiting-input' && question && (
           <DesignQuestionPanel
             outputLines={outputLines}
@@ -307,159 +250,36 @@ export function DesignTab() {
           />
         )}
 
-        {/* Phase: preview */}
         {phase === 'preview' && result && (
-          <motion.div
-            key="preview"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.15 }}
-            className="space-y-4"
-          >
-            <DesignResultPreview
-              result={result}
-              allToolDefs={toolDefinitions}
-              currentToolNames={currentToolNames}
-              credentials={credentials}
-              connectorDefinitions={connectorDefinitions}
-              selectedTools={selectedTools}
-              selectedTriggerIndices={selectedTriggerIndices}
-              selectedChannelIndices={selectedChannelIndices}
-              suggestedSubscriptions={result.suggested_event_subscriptions}
-              selectedSubscriptionIndices={selectedSubscriptionIndices}
-              onToolToggle={handleToolToggle}
-              onTriggerToggle={handleTriggerToggle}
-              onChannelToggle={handleChannelToggle}
-              onSubscriptionToggle={handleSubscriptionToggle}
-              onConnectorClick={() => {}}
-              feasibility={result.feasibility}
-            />
-
-            {error && (
-              <p className="text-sm text-red-400 px-1">{error}</p>
-            )}
-
-            {/* Change summary */}
-            {changeSummary.length > 0 && (
-              <div className="px-3 py-2.5 rounded-xl bg-primary/5 border border-primary/10">
-                <div className="flex items-start gap-2">
-                  <ArrowRight className="w-3.5 h-3.5 text-primary/60 mt-0.5 shrink-0" />
-                  <p className="text-xs text-muted-foreground/70">
-                    <span className="font-medium text-foreground/70">Will apply: </span>
-                    {changeSummary.join(', ').toLowerCase()}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Action buttons */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleApply}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm bg-gradient-to-r from-primary to-accent text-foreground hover:from-primary/90 hover:to-accent/90 shadow-lg shadow-primary/20 transition-all hover:scale-[1.01] active:scale-[0.99]"
-              >
-                <Check className="w-3.5 h-3.5" />
-                Apply Changes
-              </button>
-              <button
-                onClick={handleRefine}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm bg-secondary/50 text-foreground/70 hover:bg-secondary/70 transition-colors"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                Refine
-              </button>
-              <button
-                onClick={handleDiscard}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm text-muted-foreground hover:text-foreground/60 transition-colors"
-              >
-                Discard
-              </button>
-            </div>
-
-            {/* Refinement chat input */}
-            <DesignChatInput
-              value={refinementMessage}
-              onChange={setRefinementMessage}
-              onSubmit={handleSendRefinement}
-              placeholder="Describe what to change..."
-              buttonLabel="Send"
-              buttonIcon={Send}
-              variant="secondary"
-            />
-          </motion.div>
+          <DesignPhasePreview
+            result={result}
+            error={error}
+            toolDefinitions={toolDefinitions}
+            currentToolNames={currentToolNames}
+            credentials={credentials}
+            connectorDefinitions={connectorDefinitions}
+            selectedTools={selectedTools}
+            selectedTriggerIndices={selectedTriggerIndices}
+            selectedChannelIndices={selectedChannelIndices}
+            selectedSubscriptionIndices={selectedSubscriptionIndices}
+            onToolToggle={handleToolToggle}
+            onTriggerToggle={handleTriggerToggle}
+            onChannelToggle={handleChannelToggle}
+            onSubscriptionToggle={handleSubscriptionToggle}
+            changeSummary={changeSummary}
+            refinementMessage={refinementMessage}
+            onRefinementMessageChange={setRefinementMessage}
+            onApply={handleApply}
+            onRefine={handleRefine}
+            onDiscard={handleDiscard}
+            onSendRefinement={handleSendRefinement}
+          />
         )}
 
-        {/* Phase: applying */}
-        {phase === 'applying' && (
-          <motion.div
-            key="applying"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.15 }}
-            className="flex flex-col items-center justify-center py-12 gap-3"
-          >
-            <Loader2 className="w-6 h-6 text-primary animate-spin" />
-            <span className="text-sm text-muted-foreground/60">Applying changes...</span>
-          </motion.div>
-        )}
+        {phase === 'applying' && <DesignPhaseApplying />}
 
-        {/* Phase: applied */}
         {phase === 'applied' && (
-          <motion.div
-            key="applied"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.15 }}
-            className="flex flex-col items-center justify-center py-12 gap-3"
-          >
-            <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-              <Check className="w-5 h-5 text-emerald-400" />
-            </div>
-            <span className="text-sm text-emerald-400 font-medium">
-              Design applied successfully!
-            </span>
-
-            {result && (
-              <div className="mt-2 w-full max-w-sm space-y-2">
-                <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground/60">
-                  {(result.suggested_tools?.length ?? 0) > 0 && (
-                    <span className="inline-flex items-center gap-1.5">
-                      <Wrench className="w-3 h-3" />
-                      {result.suggested_tools.length} tool{result.suggested_tools.length !== 1 ? 's' : ''}
-                    </span>
-                  )}
-                  {(result.suggested_triggers?.length ?? 0) > 0 && (
-                    <span className="inline-flex items-center gap-1.5">
-                      <Zap className="w-3 h-3" />
-                      {result.suggested_triggers.length} trigger{result.suggested_triggers.length !== 1 ? 's' : ''}
-                    </span>
-                  )}
-                  {(result.suggested_notification_channels?.length ?? 0) > 0 && (
-                    <span className="inline-flex items-center gap-1.5">
-                      <Bell className="w-3 h-3" />
-                      {result.suggested_notification_channels!.length} channel{result.suggested_notification_channels!.length !== 1 ? 's' : ''}
-                    </span>
-                  )}
-                </div>
-                {result.summary && (
-                  <p className="text-xs text-muted-foreground/40 text-center line-clamp-2">
-                    {result.summary}
-                  </p>
-                )}
-              </div>
-            )}
-
-            <button
-              onClick={handleReset}
-              className="mt-2 flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-secondary/50 text-foreground/70 hover:bg-secondary/70 transition-colors"
-            >
-              <Check className="w-3.5 h-3.5" />
-              Done
-            </button>
-          </motion.div>
+          <DesignPhaseApplied result={result} onReset={handleReset} />
         )}
       </AnimatePresence>
     </div>

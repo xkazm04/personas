@@ -4,7 +4,7 @@ use serde::Serialize;
 use serde_json::json;
 use tauri::{Emitter, State};
 
-use crate::db::models::{CreateDesignReviewInput, CreatePersonaInput, PersonaDesignReview, PersonaManualReview};
+use crate::db::models::{CreateDesignReviewInput, CreatePersonaInput, ImportDesignReviewInput, PersonaDesignReview, PersonaManualReview};
 use crate::db::repos::communication::{manual_reviews as manual_repo, reviews as repo};
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::resources::{connectors as connector_repo, tools as tool_repo};
@@ -174,29 +174,42 @@ pub fn list_manual_reviews(
 ) -> Result<Vec<PersonaManualReview>, AppError> {
     match persona_id {
         Some(pid) => manual_repo::get_by_persona(&state.db, &pid, status.as_deref()),
-        None => {
-            // Aggregate across all personas
-            let personas = persona_repo::get_all(&state.db)?;
-            let mut all = Vec::new();
-            for p in &personas {
-                let reviews = manual_repo::get_by_persona(&state.db, &p.id, status.as_deref())?;
-                all.extend(reviews);
-            }
-            all.sort_by(|a, b| b.created_at.cmp(&a.created_at));
-            Ok(all)
-        }
+        None => manual_repo::get_all(&state.db, status.as_deref()),
     }
+}
+
+#[derive(Clone, Serialize)]
+struct ManualReviewResolvedEvent {
+    review_id: String,
+    execution_id: String,
+    persona_id: String,
+    status: String,
 }
 
 #[tauri::command]
 pub fn update_manual_review_status(
     state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
     id: String,
     status: String,
     reviewer_notes: Option<String>,
 ) -> Result<PersonaManualReview, AppError> {
     manual_repo::update_status(&state.db, &id, &status, reviewer_notes)?;
-    manual_repo::get_by_id(&state.db, &id)
+    let review = manual_repo::get_by_id(&state.db, &id)?;
+
+    if matches!(review.status.as_str(), "approved" | "rejected" | "resolved") {
+        let _ = app.emit(
+            "manual-review-resolved",
+            ManualReviewResolvedEvent {
+                review_id: review.id.clone(),
+                execution_id: review.execution_id.clone(),
+                persona_id: review.persona_id.clone(),
+                status: review.status.clone(),
+            },
+        );
+    }
+
+    Ok(review)
 }
 
 #[tauri::command]
@@ -212,78 +225,9 @@ pub fn import_design_review(
     state: State<'_, Arc<AppState>>,
     input: serde_json::Value,
 ) -> Result<PersonaDesignReview, AppError> {
-    let now = chrono::Utc::now().to_rfc3339();
-
-    let review_input = CreateDesignReviewInput {
-        test_case_id: input
-            .get("test_case_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("unknown")
-            .to_string(),
-        test_case_name: input
-            .get("test_case_name")
-            .and_then(|v| v.as_str())
-            .unwrap_or("Unnamed")
-            .to_string(),
-        instruction: input
-            .get("instruction")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string(),
-        status: input
-            .get("status")
-            .and_then(|v| v.as_str())
-            .unwrap_or("passed")
-            .to_string(),
-        structural_score: input
-            .get("structural_score")
-            .and_then(|v| v.as_i64())
-            .map(|v| v as i32),
-        semantic_score: input
-            .get("semantic_score")
-            .and_then(|v| v.as_i64())
-            .map(|v| v as i32),
-        connectors_used: input
-            .get("connectors_used")
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string()),
-        trigger_types: input
-            .get("trigger_types")
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string()),
-        design_result: input
-            .get("design_result")
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string()),
-        structural_evaluation: input
-            .get("structural_evaluation")
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string()),
-        semantic_evaluation: input
-            .get("semantic_evaluation")
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string()),
-        test_run_id: input
-            .get("test_run_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("imported")
-            .to_string(),
-        had_references: input
-            .get("had_references")
-            .and_then(|v| v.as_bool()),
-        suggested_adjustment: None,
-        adjustment_generation: None,
-        use_case_flows: input
-            .get("use_case_flows")
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string()),
-        reviewed_at: input
-            .get("reviewed_at")
-            .and_then(|v| v.as_str())
-            .unwrap_or(&now)
-            .to_string(),
-    };
-
+    let import_input: ImportDesignReviewInput = serde_json::from_value(input)
+        .map_err(|e| AppError::Validation(format!("Invalid design review input: {e}")))?;
+    let review_input: CreateDesignReviewInput = import_input.into();
     repo::create_review(&state.db, &review_input)
 }
 

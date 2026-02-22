@@ -275,6 +275,7 @@ CREATE INDEX IF NOT EXISTS idx_pev_project ON persona_events(project_id);
 CREATE INDEX IF NOT EXISTS idx_pev_type    ON persona_events(event_type);
 CREATE INDEX IF NOT EXISTS idx_pev_target  ON persona_events(target_persona_id);
 CREATE INDEX IF NOT EXISTS idx_pev_created ON persona_events(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pev_status_created ON persona_events(status, created_at);
 
 -- ============================================================================
 -- Event Subscriptions

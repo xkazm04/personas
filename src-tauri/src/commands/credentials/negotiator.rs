@@ -285,7 +285,7 @@ async fn run_negotiation(params: NegotiationRunParams) {
 // ── CLI helpers ─────────────────────────────────────────────────
 
 fn build_negotiator_cli_args() -> crate::engine::types::CliArgs {
-    let mut cli_args = prompt::build_default_cli_args();
+    let mut cli_args = prompt::build_cli_args(None, None);
     if !cli_args.args.iter().any(|arg| arg == "--model") {
         cli_args.args.push("--model".to_string());
         cli_args.args.push(NEGOTIATOR_MODEL.to_string());

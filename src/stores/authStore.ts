@@ -2,30 +2,10 @@ import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import type { AuthUser, AuthStateResponse } from "@/api/auth";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-export interface AuthUser {
-  id: string;
-  email: string;
-  display_name: string | null;
-  avatar_url: string | null;
-}
-
-export interface AuthSubscription {
-  plan: string;
-  status: string;
-  current_period_end: string | null;
-}
-
-export interface AuthStateResponse {
-  is_authenticated: boolean;
-  is_offline: boolean;
-  user: AuthUser | null;
-  subscription: AuthSubscription | null;
-}
+// Re-export so existing consumers can still import from authStore
+export type { AuthUser, AuthStateResponse };
 
 // ---------------------------------------------------------------------------
 // Store
@@ -33,7 +13,6 @@ export interface AuthStateResponse {
 
 interface AuthState {
   user: AuthUser | null;
-  subscription: AuthSubscription | null;
   isAuthenticated: boolean;
   isOffline: boolean;
   isLoading: boolean;
@@ -42,7 +21,6 @@ interface AuthState {
   initialize: () => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
-  refreshSession: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -50,7 +28,6 @@ export const useAuthStore = create<AuthState>()(
     persist(
       (set) => ({
         user: null,
-        subscription: null,
         isAuthenticated: false,
         isOffline: false,
         isLoading: false,
@@ -62,7 +39,6 @@ export const useAuthStore = create<AuthState>()(
             const state = await invoke<AuthStateResponse>("get_auth_state");
             set({
               user: state.user,
-              subscription: state.subscription,
               isAuthenticated: state.is_authenticated,
               isOffline: state.is_offline,
               isLoading: false,
@@ -76,7 +52,17 @@ export const useAuthStore = create<AuthState>()(
           set({ isLoading: true, error: null });
           try {
             await invoke("login_with_google");
-            // Actual state update comes via "auth-state-changed" event
+            // Actual state update comes via "auth-state-changed" event.
+            // Set a timeout to recover from missed/failed OAuth callbacks.
+            setTimeout(() => {
+              const s = useAuthStore.getState();
+              if (s.isLoading && !s.isAuthenticated) {
+                set({
+                  isLoading: false,
+                  error: "Login timed out. Please try again.",
+                });
+              }
+            }, 120_000);
           } catch (err) {
             set({ isLoading: false, error: String(err) });
           }
@@ -87,24 +73,9 @@ export const useAuthStore = create<AuthState>()(
             await invoke("logout");
             set({
               user: null,
-              subscription: null,
               isAuthenticated: false,
               isOffline: false,
               error: null,
-            });
-          } catch (err) {
-            set({ error: String(err) });
-          }
-        },
-
-        refreshSession: async () => {
-          try {
-            const state = await invoke<AuthStateResponse>("refresh_session");
-            set({
-              user: state.user,
-              subscription: state.subscription,
-              isAuthenticated: state.is_authenticated,
-              isOffline: state.is_offline,
             });
           } catch (err) {
             set({ error: String(err) });
@@ -115,7 +86,6 @@ export const useAuthStore = create<AuthState>()(
         name: "auth-state",
         partialize: (state) => ({
           user: state.user,
-          isAuthenticated: state.isAuthenticated,
         }),
       },
     ),
@@ -136,7 +106,6 @@ export function initAuthListener() {
     const state = event.payload;
     useAuthStore.setState({
       user: state.user,
-      subscription: state.subscription,
       isAuthenticated: state.is_authenticated,
       isOffline: state.is_offline,
       isLoading: false,

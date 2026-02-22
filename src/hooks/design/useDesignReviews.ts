@@ -3,7 +3,7 @@ import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import * as api from '@/api/tauriApi';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { getSeedReviews, SEED_RUN_ID } from '@/lib/personas/seedTemplates';
-import { usePersonaStore } from '@/stores/personaStore';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 
 interface ReviewStatusPayload {
   run_id: string;
@@ -36,8 +36,6 @@ export function useDesignReviews() {
   const [runResult, setRunResult] = useState<TestRunResult | null>(null);
   const [runProgress, setRunProgress] = useState<RunProgress | null>(null);
   const [connectorFilter, setConnectorFilter] = useState<string[]>([]);
-  const [isAdopting, setIsAdopting] = useState(false);
-  const [adoptError, setAdoptError] = useState<string | null>(null);
   const unlistenRef = useRef<UnlistenFn | null>(null);
   const countersRef = useRef({ passed: 0, failed: 0, errored: 0 });
 
@@ -45,10 +43,8 @@ export function useDesignReviews() {
   const availableConnectors = useMemo(() => {
     const connectorSet = new Set<string>();
     for (const review of reviews) {
-      try {
-        const connectors: string[] = JSON.parse(review.connectors_used || '[]');
-        connectors.forEach((c) => connectorSet.add(c));
-      } catch { /* ignore */ }
+      const connectors = parseJsonOrDefault<string[]>(review.connectors_used, []);
+      connectors.forEach((c) => connectorSet.add(c));
     }
     return Array.from(connectorSet).sort();
   }, [reviews]);
@@ -191,22 +187,6 @@ export function useDesignReviews() {
     }
   }, []);
 
-  const adoptTemplate = useCallback(async (reviewId: string) => {
-    setIsAdopting(true);
-    setAdoptError(null);
-    try {
-      await api.adoptDesignReview(reviewId);
-      // Refresh persona list so the new persona appears in the sidebar
-      await usePersonaStore.getState().fetchPersonas();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to adopt template';
-      setAdoptError(msg);
-      throw err;
-    } finally {
-      setIsAdopting(false);
-    }
-  }, []);
-
   return {
     reviews,
     isLoading,
@@ -222,8 +202,5 @@ export function useDesignReviews() {
     startNewReview,
     cancelReview,
     deleteReview,
-    adoptTemplate,
-    isAdopting,
-    adoptError,
   };
 }

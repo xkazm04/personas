@@ -54,6 +54,8 @@ export function TemplatePickerStep({ onBack }: TemplatePickerStepProps) {
   const createPersona = usePersonaStore((s) => s.createPersona);
   const selectPersona = usePersonaStore((s) => s.selectPersona);
   const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
+  const setShowDesignNudge = usePersonaStore((s) => s.setShowDesignNudge);
+  const setShowCloudNudge = usePersonaStore((s) => s.setShowCloudNudge);
   const [creatingId, setCreatingId] = useState<string | null>(null);
 
   const handlePick = useCallback(
@@ -69,13 +71,15 @@ export function TemplatePickerStep({ onBack }: TemplatePickerStepProps) {
         });
         setSidebarSection('personas');
         selectPersona(persona.id);
+        setShowDesignNudge(true);
+        setShowCloudNudge(true);
       } catch (err) {
         console.error('Failed to create persona from template:', err);
       } finally {
         setCreatingId(null);
       }
     },
-    [createPersona, selectPersona, setSidebarSection],
+    [createPersona, selectPersona, setSidebarSection, setShowDesignNudge, setShowCloudNudge],
   );
 
   const handleSkip = () => {

@@ -1,8 +1,85 @@
 use rusqlite::{params, Row};
 
-use crate::db::models::{CreatePersonaInput, Persona, UpdatePersonaInput};
+use crate::db::models::{CreatePersonaInput, Persona, PersonaSummary, UpdatePersonaInput};
 use crate::db::DbPool;
 use crate::error::AppError;
+
+// ── Shared validation helpers ────────────────────────────────────────────────
+
+fn validate_name(name: &str) -> Result<(), AppError> {
+    if name.trim().is_empty() {
+        return Err(AppError::Validation("Name cannot be empty".into()));
+    }
+    Ok(())
+}
+
+fn validate_system_prompt(prompt: &str) -> Result<(), AppError> {
+    if prompt.trim().is_empty() {
+        return Err(AppError::Validation("System prompt cannot be empty".into()));
+    }
+    Ok(())
+}
+
+fn validate_max_concurrent(v: i32) -> Result<(), AppError> {
+    if v < 1 {
+        return Err(AppError::Validation("max_concurrent must be >= 1".into()));
+    }
+    Ok(())
+}
+
+fn validate_timeout_ms(v: i32) -> Result<(), AppError> {
+    if v < 1000 {
+        return Err(AppError::Validation("timeout_ms must be >= 1000".into()));
+    }
+    Ok(())
+}
+
+fn validate_max_budget_usd(v: f64) -> Result<(), AppError> {
+    if v < 0.0 {
+        return Err(AppError::Validation("max_budget_usd must be >= 0".into()));
+    }
+    Ok(())
+}
+
+fn validate_max_turns(v: i32) -> Result<(), AppError> {
+    if v < 1 {
+        return Err(AppError::Validation("max_turns must be >= 1".into()));
+    }
+    Ok(())
+}
+
+fn validate_notification_channels(channels_json: &str) -> Result<(), AppError> {
+    if let Ok(channels) = serde_json::from_str::<Vec<serde_json::Value>>(channels_json) {
+        for ch in &channels {
+            let enabled = ch.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
+            if !enabled {
+                continue;
+            }
+            let ch_type = ch.get("type").and_then(|v| v.as_str()).unwrap_or("");
+            let config = ch.get("config");
+            let get_field = |key: &str| -> bool {
+                config
+                    .and_then(|c| c.get(key))
+                    .and_then(|v| v.as_str())
+                    .map(|s| !s.trim().is_empty())
+                    .unwrap_or(false)
+            };
+            match ch_type {
+                "slack" if !get_field("channel") => {
+                    return Err(AppError::Validation("Slack channel name is required".into()));
+                }
+                "telegram" if !get_field("chat_id") => {
+                    return Err(AppError::Validation("Telegram chat ID is required".into()));
+                }
+                "email" if !get_field("to") => {
+                    return Err(AppError::Validation("Email 'to' address is required".into()));
+                }
+                _ => {}
+            }
+        }
+    }
+    Ok(())
+}
 
 fn row_to_persona(row: &Row) -> rusqlite::Result<Persona> {
     Ok(Persona {
@@ -53,32 +130,12 @@ pub fn get_enabled(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
 }
 
 pub fn create(pool: &DbPool, input: CreatePersonaInput) -> Result<Persona, AppError> {
-    if input.name.trim().is_empty() {
-        return Err(AppError::Validation("Name cannot be empty".into()));
-    }
-    if input.system_prompt.trim().is_empty() {
-        return Err(AppError::Validation("System prompt cannot be empty".into()));
-    }
-    if let Some(v) = input.max_concurrent {
-        if v < 1 {
-            return Err(AppError::Validation("max_concurrent must be >= 1".into()));
-        }
-    }
-    if let Some(v) = input.timeout_ms {
-        if v < 1000 {
-            return Err(AppError::Validation("timeout_ms must be >= 1000".into()));
-        }
-    }
-    if let Some(v) = input.max_budget_usd {
-        if v < 0.0 {
-            return Err(AppError::Validation("max_budget_usd must be >= 0".into()));
-        }
-    }
-    if let Some(v) = input.max_turns {
-        if v < 1 {
-            return Err(AppError::Validation("max_turns must be >= 1".into()));
-        }
-    }
+    validate_name(&input.name)?;
+    validate_system_prompt(&input.system_prompt)?;
+    if let Some(v) = input.max_concurrent { validate_max_concurrent(v)?; }
+    if let Some(v) = input.timeout_ms { validate_timeout_ms(v)?; }
+    if let Some(v) = input.max_budget_usd { validate_max_budget_usd(v)?; }
+    if let Some(v) = input.max_turns { validate_max_turns(v)?; }
 
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
@@ -111,67 +168,15 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
     // Verify exists
     get_by_id(pool, id)?;
 
-    // Validate name and system_prompt when provided
-    if let Some(ref name) = input.name {
-        if name.trim().is_empty() {
-            return Err(AppError::Validation("Name cannot be empty".into()));
-        }
-    }
-    if let Some(ref prompt) = input.system_prompt {
-        if prompt.trim().is_empty() {
-            return Err(AppError::Validation("System prompt cannot be empty".into()));
-        }
-    }
-    if let Some(v) = input.max_concurrent {
-        if v < 1 {
-            return Err(AppError::Validation("max_concurrent must be >= 1".into()));
-        }
-    }
-    if let Some(v) = input.timeout_ms {
-        if v < 1000 {
-            return Err(AppError::Validation("timeout_ms must be >= 1000".into()));
-        }
-    }
-    if let Some(Some(v)) = input.max_budget_usd {
-        if v < 0.0 {
-            return Err(AppError::Validation("max_budget_usd must be >= 0".into()));
-        }
-    }
-    if let Some(Some(v)) = input.max_turns {
-        if v < 1 {
-            return Err(AppError::Validation("max_turns must be >= 1".into()));
-        }
-    }
+    // Validate fields when provided
+    if let Some(ref name) = input.name { validate_name(name)?; }
+    if let Some(ref prompt) = input.system_prompt { validate_system_prompt(prompt)?; }
+    if let Some(v) = input.max_concurrent { validate_max_concurrent(v)?; }
+    if let Some(v) = input.timeout_ms { validate_timeout_ms(v)?; }
+    if let Some(Some(v)) = input.max_budget_usd { validate_max_budget_usd(v)?; }
+    if let Some(Some(v)) = input.max_turns { validate_max_turns(v)?; }
     if let Some(ref channels_json) = input.notification_channels {
-        if let Ok(channels) = serde_json::from_str::<Vec<serde_json::Value>>(channels_json) {
-            for ch in &channels {
-                let enabled = ch.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
-                if !enabled {
-                    continue;
-                }
-                let ch_type = ch.get("type").and_then(|v| v.as_str()).unwrap_or("");
-                let config = ch.get("config");
-                let get_field = |key: &str| -> bool {
-                    config
-                        .and_then(|c| c.get(key))
-                        .and_then(|v| v.as_str())
-                        .map(|s| !s.trim().is_empty())
-                        .unwrap_or(false)
-                };
-                match ch_type {
-                    "slack" if !get_field("channel") => {
-                        return Err(AppError::Validation("Slack channel name is required".into()));
-                    }
-                    "telegram" if !get_field("chat_id") => {
-                        return Err(AppError::Validation("Telegram chat ID is required".into()));
-                    }
-                    "email" if !get_field("to") => {
-                        return Err(AppError::Validation("Email 'to' address is required".into()));
-                    }
-                    _ => {}
-                }
-            }
-        }
+        validate_notification_channels(channels_json)?;
     }
 
     let now = chrono::Utc::now().to_rfc3339();
@@ -229,6 +234,38 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
     conn.execute(&sql, params_ref.as_slice())?;
 
     get_by_id(pool, id)
+}
+
+/// Batch-fetch sidebar summary data (enabled trigger count + last execution time)
+/// for all personas in a single query, eliminating the N+1 IPC pattern.
+pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT
+             p.id AS persona_id,
+             COALESCE(t.cnt, 0) AS enabled_trigger_count,
+             e.last_run_at
+         FROM personas p
+         LEFT JOIN (
+             SELECT persona_id, COUNT(*) AS cnt
+             FROM persona_triggers
+             WHERE enabled = 1
+             GROUP BY persona_id
+         ) t ON t.persona_id = p.id
+         LEFT JOIN (
+             SELECT persona_id, MAX(created_at) AS last_run_at
+             FROM persona_executions
+             GROUP BY persona_id
+         ) e ON e.persona_id = p.id",
+    )?;
+    let rows = stmt.query_map([], |row| {
+        Ok(PersonaSummary {
+            persona_id: row.get("persona_id")?,
+            enabled_trigger_count: row.get("enabled_trigger_count")?,
+            last_run_at: row.get("last_run_at")?,
+        })
+    })?;
+    Ok(rows.filter_map(|r| r.ok()).collect())
 }
 
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {

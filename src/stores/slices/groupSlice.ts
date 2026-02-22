@@ -2,6 +2,7 @@ import type { StateCreator } from "zustand";
 import type { PersonaStore } from "../storeTypes";
 import { errMsg } from "../storeTypes";
 import type { DbPersonaGroup } from "@/lib/types/types";
+import { buildUpdateInput } from "@/api/personas";
 import * as api from "@/api/tauriApi";
 
 export interface GroupSlice {
@@ -89,11 +90,7 @@ export const createGroupSlice: StateCreator<PersonaStore, [], [], GroupSlice> = 
 
   movePersonaToGroup: async (personaId, groupId) => {
     try {
-      await api.updatePersona(personaId, {
-        name: null, system_prompt: null, enabled: null,
-        max_concurrent: null, timeout_ms: null, notification_channels: null,
-        group_id: groupId,
-      } as import("@/lib/bindings/UpdatePersonaInput").UpdatePersonaInput);
+      await api.updatePersona(personaId, buildUpdateInput({ group_id: groupId }));
       set((state) => ({
         personas: state.personas.map((p) =>
           p.id === personaId ? { ...p, group_id: groupId } : p,

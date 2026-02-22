@@ -50,6 +50,15 @@ pub struct CreatePersonaInput {
     pub group_id: Option<String>,
 }
 
+/// Lightweight summary for sidebar badges: trigger count and last execution time.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct PersonaSummary {
+    pub persona_id: String,
+    pub enabled_trigger_count: i64,
+    pub last_run_at: Option<String>,
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct UpdatePersonaInput {
