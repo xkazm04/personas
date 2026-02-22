@@ -10,7 +10,7 @@ function formatUsd(value: number): string {
 }
 
 function budgetStatus(spend: number, budget: number | null): { label: string; color: string } {
-  if (!budget || budget <= 0) return { label: 'No limit', color: 'text-muted-foreground/50' };
+  if (!budget || budget <= 0) return { label: 'No limit', color: 'text-muted-foreground/90' };
   const ratio = spend / budget;
   if (ratio >= 1) return { label: 'Exceeded', color: 'text-red-400' };
   if (ratio >= 0.8) return { label: 'Warning', color: 'text-amber-400' };
@@ -18,7 +18,7 @@ function budgetStatus(spend: number, budget: number | null): { label: string; co
 }
 
 function budgetBadgeClass(spend: number, budget: number | null): string {
-  if (!budget || budget <= 0) return 'bg-secondary/60 text-muted-foreground/50 border-primary/15';
+  if (!budget || budget <= 0) return 'bg-secondary/60 text-muted-foreground/90 border-primary/15';
   const ratio = spend / budget;
   if (ratio >= 1) return 'bg-red-500/15 text-red-400 border-red-500/20';
   if (ratio >= 0.8) return 'bg-amber-500/15 text-amber-400 border-amber-500/20';
@@ -35,7 +35,7 @@ function progressBarColor(spend: number, budget: number | null): string {
 
 function budgetProgressDetail(spend: number, budget: number | null): { text: string; color: string } {
   if (!budget || budget <= 0) {
-    return { text: 'No budget limit set', color: 'text-muted-foreground/40' };
+    return { text: 'No budget limit set', color: 'text-muted-foreground/80' };
   }
 
   const ratio = (spend / budget) * 100;
@@ -140,7 +140,7 @@ export default function BudgetSettingsPage() {
           <button
             onClick={fetchSpend}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/25 px-2.5 py-1 text-xs text-red-200 hover:bg-red-500/10 disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/25 px-2.5 py-1 text-sm text-red-200 hover:bg-red-500/10 disabled:opacity-50 transition-colors"
           >
             {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
             Retry
@@ -155,32 +155,32 @@ export default function BudgetSettingsPage() {
             <TrendingUp className="w-5 h-5 text-primary/70" />
           </div>
           <div>
-            <div className="text-[11px] font-mono text-muted-foreground/40 uppercase tracking-wider">Total Monthly Spend</div>
+            <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider">Total Monthly Spend</div>
             <div className="text-2xl font-mono text-foreground/90">
               {loading ? '...' : formatUsd(totalSpend)}
             </div>
           </div>
         </div>
-        <p className="text-xs text-muted-foreground/40">
+        <p className="text-sm text-muted-foreground/80">
           Aggregated cost from all persona executions this calendar month.
         </p>
       </div>
 
       {/* Persona Budget List */}
       <div className="space-y-3">
-        <div className="text-[11px] font-mono text-muted-foreground/40 uppercase tracking-wider">
+        <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider">
           Persona Budgets ({personas.length})
         </div>
 
         {saveError && (
-          <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+          <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-300">
             <AlertTriangle className="w-3.5 h-3.5" />
             {saveError}
           </div>
         )}
 
         {loading && (
-          <div className="rounded-xl border border-primary/15 bg-secondary/30 p-4 text-sm text-muted-foreground/60">
+          <div className="rounded-xl border border-primary/15 bg-secondary/30 p-4 text-sm text-muted-foreground/80">
             Loading current monthly spend…
           </div>
         )}
@@ -188,9 +188,9 @@ export default function BudgetSettingsPage() {
         {personas.length === 0 && (
           <div className="text-center py-12">
             <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-muted-foreground/30" />
+              <DollarSign className="w-6 h-6 text-muted-foreground/80" />
             </div>
-            <p className="text-sm text-muted-foreground/50">No personas configured</p>
+            <p className="text-sm text-muted-foreground/90">No personas configured</p>
           </div>
         )}
 
@@ -218,15 +218,15 @@ export default function BudgetSettingsPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-foreground/90 truncate">{persona.name}</div>
-                  <div className="text-[11px] font-mono text-muted-foreground/40">
+                  <div className="text-sm font-mono text-muted-foreground/80">
                     Spend: {formatUsd(spend)}
                     {budget && budget > 0 ? ` / ${formatUsd(budget)}` : ''}
                   </div>
-                  <div className={`text-[11px] font-mono mt-0.5 ${progress.color}`}>
+                  <div className={`text-sm font-mono mt-0.5 ${progress.color}`}>
                     {progress.text}
                   </div>
                 </div>
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium border ${budgetBadgeClass(spend, budget)}`}>
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-sm font-medium border ${budgetBadgeClass(spend, budget)}`}>
                   {status.label === 'Warning' && <AlertTriangle className="w-3 h-3" />}
                   {status.label === 'Exceeded' && <AlertTriangle className="w-3 h-3" />}
                   {status.label}
@@ -245,7 +245,7 @@ export default function BudgetSettingsPage() {
 
               {/* Budget Input */}
               <div className="flex items-center gap-2">
-                <div className="text-[11px] font-mono text-muted-foreground/40 flex-shrink-0">
+                <div className="text-sm font-mono text-muted-foreground/80 flex-shrink-0">
                   <DollarSign className="w-3 h-3 inline" /> Budget:
                 </div>
                 <input
@@ -258,20 +258,20 @@ export default function BudgetSettingsPage() {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleBudgetSubmit(persona.id);
                   }}
-                  className="flex-1 px-2 py-1 rounded-lg bg-background/50 border border-primary/15 text-sm font-mono text-foreground/90 placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 transition-colors"
+                  className="flex-1 px-2 py-1 rounded-lg bg-background/50 border border-primary/15 text-sm font-mono text-foreground/90 placeholder:text-muted-foreground/80 focus:outline-none focus:border-primary/30 transition-colors"
                 />
                 {isEditing && (
                   <button
                     onClick={() => handleBudgetSubmit(persona.id)}
                     disabled={savingBudgetId === persona.id}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/15 border border-primary/25 text-xs font-medium text-primary hover:bg-primary/25 disabled:opacity-60 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/15 border border-primary/25 text-sm font-medium text-primary hover:bg-primary/25 disabled:opacity-60 transition-colors"
                   >
                     {savingBudgetId === persona.id && <Loader2 className="w-3 h-3 animate-spin" />}
                     {savingBudgetId === persona.id ? 'Saving...' : 'Save'}
                   </button>
                 )}
                 {!isEditing && savedBudgetId === persona.id && (
-                  <span className="px-2 py-1 text-[11px] rounded-lg border border-emerald-500/25 bg-emerald-500/10 text-emerald-300">
+                  <span className="px-2 py-1 text-sm rounded-lg border border-emerald-500/25 bg-emerald-500/10 text-emerald-300">
                     Saved
                   </span>
                 )}

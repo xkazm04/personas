@@ -404,7 +404,7 @@ fn find_parallelizable_nodes(
             .push(&c.target_member_id);
     }
 
-    for (_parent, children) in &children_of {
+    for children in children_of.values() {
         if children.len() < 2 {
             continue;
         }

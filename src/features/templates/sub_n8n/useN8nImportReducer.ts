@@ -60,7 +60,6 @@ export interface N8nImportState {
   // Configure (pre-transform questions) — now inline within transform step
   questions: TransformQuestion[] | null;
   userAnswers: Record<string, string>;
-  questionsSkipped: boolean;
 
   // Transform sub-phase tracking
   transformSubPhase: TransformSubPhase;
@@ -94,7 +93,6 @@ const INITIAL_STATE: N8nImportState = {
   selectedConnectorNames: new Set(),
   questions: null,
   userAnswers: {},
-  questionsSkipped: false,
   transformSubPhase: 'idle',
   transforming: false,
   backgroundTransformId: null,
@@ -118,7 +116,6 @@ export type N8nImportAction =
   | { type: 'SET_ADJUSTMENT'; text: string }
   | { type: 'QUESTIONS_GENERATED'; questions: TransformQuestion[] }
   | { type: 'QUESTIONS_FAILED'; error: string }
-  | { type: 'QUESTIONS_SKIPPED' }
   | { type: 'ANSWER_UPDATED'; questionId: string; answer: string }
   | { type: 'TRANSFORM_STARTED'; transformId: string; subPhase?: TransformSubPhase }
   | { type: 'TRANSFORM_LINES'; lines: string[] }
@@ -136,7 +133,7 @@ export type N8nImportAction =
   | { type: 'GO_TO_STEP'; step: N8nWizardStep }
   | { type: 'RESTORE_CONTEXT'; workflowName: string; rawWorkflowJson: string; parsedResult: DesignAnalysisResult | null; transformId: string }
   | { type: 'SESSION_CREATED'; sessionId: string }
-  | { type: 'SESSION_LOADED'; sessionId: string; step: N8nWizardStep; workflowName: string; rawWorkflowJson: string; parsedResult: DesignAnalysisResult | null; draft: N8nPersonaDraft | null }
+  | { type: 'SESSION_LOADED'; sessionId: string; step: N8nWizardStep; workflowName: string; rawWorkflowJson: string; parsedResult: DesignAnalysisResult | null; draft: N8nPersonaDraft | null; questions: TransformQuestion[] | null; transformId: string | null }
   | { type: 'RESET' };
 
 // ── Helpers ──
@@ -205,18 +202,8 @@ function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nIm
       return {
         ...state,
         transformSubPhase: 'answering',
-        questionsSkipped: true,
         questions: null,
         error: action.error || null,
-      };
-
-    case 'QUESTIONS_SKIPPED':
-      return {
-        ...state,
-        step: 'transform',
-        transformSubPhase: 'answering',
-        questionsSkipped: true,
-        questions: null,
       };
 
     case 'ANSWER_UPDATED':
@@ -332,8 +319,21 @@ function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nIm
       // Determine sub-phase based on loaded state
       let subPhase: TransformSubPhase = 'idle';
       if (action.step === 'transform') {
-        subPhase = action.draft ? 'completed' : 'answering';
+        if (action.draft) {
+          subPhase = 'completed';
+        } else if (action.questions && action.questions.length > 0) {
+          subPhase = 'answering';
+        } else {
+          subPhase = 'idle';
+        }
       }
+      // Pre-fill default answers from restored questions
+      const restoredAnswers = action.questions
+        ? action.questions.reduce<Record<string, string>>((acc, q) => {
+            if (q.default) acc[q.id] = q.default;
+            return acc;
+          }, {})
+        : {};
       return {
         ...INITIAL_STATE,
         sessionId: action.sessionId,
@@ -344,6 +344,9 @@ function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nIm
         draft: action.draft,
         draftJson: action.draft ? JSON.stringify(action.draft, null, 2) : '',
         transformSubPhase: subPhase,
+        questions: action.questions,
+        userAnswers: restoredAnswers,
+        backgroundTransformId: action.transformId,
         ...selections,
       };
     }

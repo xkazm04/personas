@@ -581,7 +581,7 @@ CREATE TABLE IF NOT EXISTS n8n_transform_sessions (
     id                TEXT PRIMARY KEY,
     workflow_name     TEXT NOT NULL,
     status            TEXT NOT NULL DEFAULT 'draft'
-                      CHECK(status IN ('draft','analyzing','transforming','editing','confirmed','failed')),
+                      CHECK(status IN ('draft','analyzing','transforming','awaiting_answers','editing','confirmed','failed')),
     raw_workflow_json TEXT NOT NULL,
     parser_result     TEXT,
     draft_json        TEXT,
@@ -589,6 +589,8 @@ CREATE TABLE IF NOT EXISTS n8n_transform_sessions (
     step              TEXT NOT NULL DEFAULT 'upload',
     error             TEXT,
     persona_id        TEXT,
+    transform_id      TEXT,
+    questions_json    TEXT,
     created_at        TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at        TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -713,6 +715,48 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
              ALTER TABLE persona_executions ADD COLUMN retry_count INTEGER DEFAULT 0;"
         )?;
         tracing::info!("Added retry lineage columns to persona_executions");
+    }
+
+    // Add transform_id and questions_json to n8n_transform_sessions (robustness fix)
+    let has_transform_id: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('n8n_transform_sessions') WHERE name = 'transform_id'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_transform_id {
+        // Recreate table to add new columns AND update CHECK constraint for 'awaiting_answers'.
+        // SQLite doesn't support ALTER CHECK, so we recreate.
+        conn.execute_batch(
+            "CREATE TABLE IF NOT EXISTS n8n_transform_sessions_new (
+                id                TEXT PRIMARY KEY,
+                workflow_name     TEXT NOT NULL,
+                status            TEXT NOT NULL DEFAULT 'draft'
+                                  CHECK(status IN ('draft','analyzing','transforming','awaiting_answers','editing','confirmed','failed')),
+                raw_workflow_json TEXT NOT NULL,
+                parser_result     TEXT,
+                draft_json        TEXT,
+                user_answers      TEXT,
+                step              TEXT NOT NULL DEFAULT 'upload',
+                error             TEXT,
+                persona_id        TEXT,
+                transform_id      TEXT,
+                questions_json    TEXT,
+                created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at        TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            INSERT INTO n8n_transform_sessions_new
+                (id, workflow_name, status, raw_workflow_json, parser_result, draft_json,
+                 user_answers, step, error, persona_id, created_at, updated_at)
+            SELECT id, workflow_name, status, raw_workflow_json, parser_result, draft_json,
+                   user_answers, step, error, persona_id, created_at, updated_at
+            FROM n8n_transform_sessions;
+            DROP TABLE n8n_transform_sessions;
+            ALTER TABLE n8n_transform_sessions_new RENAME TO n8n_transform_sessions;
+            CREATE INDEX IF NOT EXISTS idx_nts_status  ON n8n_transform_sessions(status);
+            CREATE INDEX IF NOT EXISTS idx_nts_created ON n8n_transform_sessions(created_at DESC);"
+        )?;
+        tracing::info!("Migrated n8n_transform_sessions: added transform_id, questions_json, awaiting_answers status");
     }
 
     // Recreate persona_triggers with 'chain' trigger type support.

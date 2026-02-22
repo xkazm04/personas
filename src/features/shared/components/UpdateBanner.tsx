@@ -36,7 +36,7 @@ export default function UpdateBanner() {
               <button
                 onClick={installUpdate}
                 disabled={isInstalling}
-                className="px-3 py-1 rounded-md bg-accent text-accent-foreground text-xs font-medium hover:bg-accent/90 disabled:opacity-50 transition-colors"
+                className="px-3 py-1 rounded-md bg-accent text-accent-foreground text-sm font-medium hover:bg-accent/90 disabled:opacity-50 transition-colors"
               >
                 {isInstalling ? "Installing..." : "Install & Restart"}
               </button>

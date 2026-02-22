@@ -95,7 +95,7 @@ describe("useDesignReviews", () => {
     });
 
     expect(result.current.isRunning).toBe(false);
-    expect(result.current.runLines).toEqual([]);
+    expect(result.current.runLines).toEqual(["[Cancelled by user]"]);
   });
 
   it("deleteReview removes review from list", async () => {

@@ -108,7 +108,7 @@ export default function GlobalExecutionList() {
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="p-1.5 rounded-lg text-muted-foreground/40 hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors"
+            className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors"
             title="Refresh"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -122,10 +122,10 @@ export default function GlobalExecutionList() {
           <button
             key={opt.id}
             onClick={() => setFilter(opt.id)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
               filter === opt.id
                 ? 'bg-primary/15 text-primary border-primary/30'
-                : 'bg-secondary/30 text-muted-foreground/60 border-primary/15 hover:text-muted-foreground hover:bg-secondary/50'
+                : 'bg-secondary/30 text-muted-foreground/80 border-primary/15 hover:text-muted-foreground hover:bg-secondary/50'
             }`}
           >
             {opt.id === 'running' && statusCounts.running > 0 && (
@@ -135,7 +135,7 @@ export default function GlobalExecutionList() {
             <span className="opacity-60">({statusCounts[opt.id]})</span>
           </button>
         ))}
-        <span className="ml-auto text-[11px] font-mono text-muted-foreground/40">
+        <span className="ml-auto text-sm font-mono text-muted-foreground/80">
           Showing {globalExecutions.length} of {globalExecutionsTotal}
         </span>
       </div>
@@ -148,17 +148,17 @@ export default function GlobalExecutionList() {
               <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
                 <Loader2 className="w-5 h-5 text-primary/70 animate-spin" />
               </div>
-              <p className="text-sm text-muted-foreground/50">Loading executions...</p>
+              <p className="text-sm text-muted-foreground/90">Loading executions...</p>
             </div>
           </div>
         ) : globalExecutions.length === 0 ? (
           <div className="flex-1 flex items-center justify-center p-4 md:p-6">
             <div className="text-center">
               <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
-                <Loader2 className="w-5 h-5 text-muted-foreground/30" />
+                <Loader2 className="w-5 h-5 text-muted-foreground/80" />
               </div>
-              <p className="text-sm text-muted-foreground/50">No executions yet</p>
-              <p className="text-xs text-muted-foreground/30 mt-1">Execution activity from personas will appear here</p>
+              <p className="text-sm text-muted-foreground/90">No executions yet</p>
+              <p className="text-sm text-muted-foreground/80 mt-1">Execution activity from personas will appear here</p>
             </div>
           </div>
         ) : (
@@ -179,7 +179,7 @@ export default function GlobalExecutionList() {
               <div className="pt-3 pb-2 text-center">
                 <button
                   onClick={handleLoadMore}
-                  className="px-4 py-2 text-xs font-medium text-muted-foreground/60 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 rounded-lg border border-primary/15 transition-all"
+                  className="px-4 py-2 text-sm font-medium text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 rounded-lg border border-primary/15 transition-all"
                 >
                   Load More ({globalExecutionsTotal - globalExecutionsOffset} remaining)
                 </button>

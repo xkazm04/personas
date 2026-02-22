@@ -156,7 +156,7 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
   },
 
   selectPersona: (id) => {
-    set({ selectedPersonaId: id, editorTab: "prompt", sidebarSection: id ? "personas" : get().sidebarSection });
+    set({ selectedPersonaId: id, editorTab: "use-cases", sidebarSection: id ? "personas" : get().sidebarSection, isCreatingPersona: false });
     if (id) get().fetchDetail(id);
     else set({ selectedPersona: null });
   },

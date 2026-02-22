@@ -249,6 +249,7 @@ fn str_array_field(v: &serde_json::Value, key: &str) -> Option<Vec<String>> {
 }
 
 /// Protocol message parsers keyed by their JSON wrapper field name.
+#[allow(clippy::type_complexity)]
 const PROTOCOL_KEYS: &[(&str, fn(&serde_json::Value) -> Option<ProtocolMessage>)] = &[
     ("user_message", parse_user_message),
     ("persona_action", parse_persona_action),
@@ -340,6 +341,29 @@ pub fn extract_execution_flows(text: &str) -> Option<String> {
             if serde_json::from_str::<serde_json::Value>(trimmed).is_ok() {
                 return Some(trimmed.to_string());
             }
+        }
+    }
+    None
+}
+
+/// Parse the outcome_assessment JSON from accumulated assistant text.
+///
+/// Returns `Some((accomplished, summary))` if found, `None` otherwise.
+pub fn parse_outcome_assessment(text: &str) -> Option<(bool, String)> {
+    for line in text.lines().rev() {
+        let trimmed = line.trim();
+        if trimmed.starts_with("{\"outcome_assessment\":")
+            || trimmed.starts_with("{\"outcome_assessment\" :")
+        {
+            let wrapper: serde_json::Value = serde_json::from_str(trimmed).ok()?;
+            let msg = wrapper.get("outcome_assessment")?;
+            let accomplished = msg.get("accomplished")?.as_bool()?;
+            let summary = msg
+                .get("summary")
+                .and_then(|s| s.as_str())
+                .unwrap_or("")
+                .to_string();
+            return Some((accomplished, summary));
         }
     }
     None
@@ -703,5 +727,31 @@ Finished."#;
         // Values unchanged
         assert_eq!(metrics.cost_usd, 0.05);
         assert_eq!(metrics.input_tokens, 2000);
+    }
+
+    #[test]
+    fn test_parse_outcome_assessment_accomplished() {
+        let text = "Doing work...\n{\"outcome_assessment\": {\"accomplished\": true, \"summary\": \"All tasks completed\"}}\nDone.";
+        let result = parse_outcome_assessment(text);
+        assert!(result.is_some());
+        let (accomplished, summary) = result.unwrap();
+        assert!(accomplished);
+        assert_eq!(summary, "All tasks completed");
+    }
+
+    #[test]
+    fn test_parse_outcome_assessment_not_accomplished() {
+        let text = "Trying...\n{\"outcome_assessment\": {\"accomplished\": false, \"summary\": \"API was unreachable\", \"blockers\": [\"connection refused\"]}}\n";
+        let result = parse_outcome_assessment(text);
+        assert!(result.is_some());
+        let (accomplished, summary) = result.unwrap();
+        assert!(!accomplished);
+        assert_eq!(summary, "API was unreachable");
+    }
+
+    #[test]
+    fn test_parse_outcome_assessment_absent() {
+        let text = "Just some output\nNo assessment here\nDone.";
+        assert!(parse_outcome_assessment(text).is_none());
     }
 }

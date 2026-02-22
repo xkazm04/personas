@@ -60,6 +60,22 @@ pub async fn execute_persona(
         )));
     }
 
+    // 2b. Check budget limit
+    if let Some(budget) = persona.max_budget_usd {
+        if budget > 0.0 {
+            let monthly_spend = crate::db::repos::execution::executions::get_monthly_spend(
+                &state.db,
+                &persona_id,
+            )?;
+            if monthly_spend >= budget {
+                return Err(AppError::Validation(format!(
+                    "Budget limit exceeded for '{}': ${:.2} spent this month, limit is ${:.2}",
+                    persona.name, monthly_spend, budget
+                )));
+            }
+        }
+    }
+
     // 3. Parse model from profile
     let model_used =
         crate::engine::prompt::parse_model_profile(persona.model_profile.as_deref())

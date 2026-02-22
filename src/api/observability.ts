@@ -24,6 +24,15 @@ export const getMetricsSnapshots = (
     endDate: endDate ?? null,
   });
 
+export const getLiveMetricsTimeseries = (
+  days?: number,
+  personaId?: string,
+) =>
+  invoke<PersonaMetricsSnapshot[]>("get_live_metrics_timeseries", {
+    days: days ?? null,
+    personaId: personaId ?? null,
+  });
+
 export const getPromptVersions = (personaId: string, limit?: number) =>
   invoke<PersonaPromptVersion[]>("get_prompt_versions", {
     personaId,

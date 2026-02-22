@@ -73,7 +73,7 @@ export function TerminalBody({
         className={`${maxHeightClass} overflow-y-auto text-sm bg-background font-mono`}
       >
         {lines.length === 0 ? (
-          <div className="p-6 text-muted-foreground/30 text-center">
+          <div className="p-6 text-muted-foreground/80 text-center">
             No output yet...
           </div>
         ) : (
@@ -104,13 +104,13 @@ export function TerminalBody({
                           </span>
                         </div>
                         {summary.duration_ms != null && (
-                          <div className="flex items-center gap-1.5 text-muted-foreground/60">
+                          <div className="flex items-center gap-1.5 text-muted-foreground/80">
                             <Timer className="w-3 h-3" />
                             <span>{(summary.duration_ms / 1000).toFixed(1)}s</span>
                           </div>
                         )}
                         {summary.cost_usd != null && (
-                          <div className="flex items-center gap-1.5 text-muted-foreground/60">
+                          <div className="flex items-center gap-1.5 text-muted-foreground/80">
                             <DollarSign className="w-3 h-3" />
                             <span>${summary.cost_usd.toFixed(4)}</span>
                           </div>
@@ -122,13 +122,13 @@ export function TerminalBody({
               }
 
               return (
-                <div key={i} className={`text-xs leading-5 whitespace-pre-wrap break-words ${TERMINAL_STYLE_MAP[style]} transition-opacity ${isFiltering && !visible ? 'opacity-20' : ''}`}>
+                <div key={i} className={`text-sm leading-5 whitespace-pre-wrap break-words ${TERMINAL_STYLE_MAP[style]} transition-opacity ${isFiltering && !visible ? 'opacity-20' : ''}`}>
                   {line}
                 </div>
               );
             })}
             {showCursor && isRunning && (
-              <div className="text-muted-foreground/30 animate-pulse">{'>'} _</div>
+              <div className="text-muted-foreground/80 animate-pulse">{'>'} _</div>
             )}
           </div>
         )}
@@ -144,7 +144,7 @@ export function TerminalBody({
               exit={{ opacity: 0, y: 8 }}
               transition={{ duration: 0.15 }}
               onClick={scrollToBottom}
-              className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/90 text-foreground text-[11px] font-medium shadow-lg shadow-primary/20 hover:bg-primary transition-colors backdrop-blur-sm"
+              className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/90 text-foreground text-sm font-medium shadow-lg shadow-primary/20 hover:bg-primary transition-colors backdrop-blur-sm"
             >
               <ArrowDown className="w-3 h-3" />
               {unseenCount} new line{unseenCount !== 1 ? 's' : ''} below

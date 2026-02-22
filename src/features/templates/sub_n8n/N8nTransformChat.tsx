@@ -1,40 +1,44 @@
 import { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, SkipForward, CheckCircle2, AlertTriangle, ChevronDown } from 'lucide-react';
+import { Sparkles, CheckCircle2, ChevronDown } from 'lucide-react';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import type { TransformQuestion, TransformSubPhase } from './useN8nImportReducer';
 import { N8nTransformProgress } from './N8nTransformProgress';
 
+// Theme subtone colors cycled across questions
+const QUESTION_TONES = [
+  { border: 'border-violet-500/15', bg: 'bg-violet-500/[0.04]', accent: 'text-violet-400', selectBg: 'bg-violet-500/15 text-violet-300 border-violet-500/25' },
+  { border: 'border-blue-500/15', bg: 'bg-blue-500/[0.04]', accent: 'text-blue-400', selectBg: 'bg-blue-500/15 text-blue-300 border-blue-500/25' },
+  { border: 'border-cyan-500/15', bg: 'bg-cyan-500/[0.04]', accent: 'text-cyan-400', selectBg: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/25' },
+  { border: 'border-emerald-500/15', bg: 'bg-emerald-500/[0.04]', accent: 'text-emerald-400', selectBg: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25' },
+  { border: 'border-amber-500/15', bg: 'bg-amber-500/[0.04]', accent: 'text-amber-400', selectBg: 'bg-amber-500/15 text-amber-300 border-amber-500/25' },
+  { border: 'border-rose-500/15', bg: 'bg-rose-500/[0.04]', accent: 'text-rose-400', selectBg: 'bg-rose-500/15 text-rose-300 border-rose-500/25' },
+] as const;
+
 interface N8nTransformChatProps {
   transformSubPhase: TransformSubPhase;
   questions: TransformQuestion[] | null;
-  questionsSkipped: boolean;
   userAnswers: Record<string, string>;
   onAnswerUpdated: (questionId: string, answer: string) => void;
-  onSkipQuestions: () => void;
   transformPhase: CliRunPhase;
   transformLines: string[];
   runId: string | null;
   isRestoring: boolean;
   onRetry: () => void;
   onCancel: () => void;
-  error: string | null;
 }
 
 export function N8nTransformChat({
   transformSubPhase,
   questions,
-  questionsSkipped,
   userAnswers,
   onAnswerUpdated,
-  onSkipQuestions,
   transformPhase,
   transformLines,
   runId,
   isRestoring,
   onRetry,
   onCancel,
-  error,
 }: N8nTransformChatProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -67,17 +71,10 @@ export function N8nTransformChat({
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium text-foreground/85">Analyzing workflow...</p>
-              <p className="text-xs text-muted-foreground/60 mt-0.5">The model will ask questions if needed, or generate directly</p>
+              <p className="text-sm text-muted-foreground/80 mt-0.5">The model will ask questions if needed, or generate directly</p>
             </div>
           </div>
 
-          <button
-            onClick={onSkipQuestions}
-            className="mt-4 flex items-center gap-2 text-xs text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors"
-          >
-            <SkipForward className="w-3.5 h-3.5" />
-            Skip to generation
-          </button>
         </motion.div>
       )}
 
@@ -100,7 +97,7 @@ export function N8nTransformChat({
                     <p className="text-sm font-medium text-foreground/85">
                       A few questions to customize your persona
                     </p>
-                    <p className="text-xs text-muted-foreground/60 mt-0.5">
+                    <p className="text-sm text-muted-foreground/80 mt-0.5">
                       Answer below, then click Generate
                     </p>
                   </div>
@@ -108,79 +105,82 @@ export function N8nTransformChat({
               </div>
 
               <div className="space-y-3">
-                {questions.map((q, i) => (
-                  <motion.div
-                    key={q.id}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    className="p-4 rounded-xl border border-primary/10 bg-secondary/30"
-                  >
-                    <label className="block text-xs font-medium text-foreground/85 mb-2">
-                      {q.question}
-                    </label>
+                {questions.map((q, i) => {
+                  const tone = QUESTION_TONES[i % QUESTION_TONES.length]!;
+                  return (
+                    <motion.div
+                      key={q.id}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      className={`p-4 rounded-xl border ${tone.border} ${tone.bg}`}
+                    >
+                      <label className={`block text-sm font-medium mb-2 ${tone.accent}`}>
+                        {q.question}
+                      </label>
 
-                    {q.context && (
-                      <p className="text-[10px] text-muted-foreground/60 mb-2 leading-relaxed">
-                        {q.context}
-                      </p>
-                    )}
+                      {q.context && (
+                        <p className="text-sm text-muted-foreground/70 mb-2 leading-relaxed">
+                          {q.context}
+                        </p>
+                      )}
 
-                    {q.type === 'select' && q.options && (
-                      <div className="relative">
-                        <select
+                      {q.type === 'select' && q.options && (
+                        <div className="relative">
+                          <select
+                            value={userAnswers[q.id] ?? q.default ?? ''}
+                            onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-primary/15 bg-background/80 text-foreground/85 appearance-none cursor-pointer focus:outline-none focus:border-primary/30 transition-colors [&>option]:bg-[#14141f] [&>option]:text-foreground/85"
+                          >
+                            <option value="">Select...</option>
+                            {q.options.map((opt) => (
+                              <option key={opt} value={opt}>
+                                {opt}
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground/80 pointer-events-none" />
+                        </div>
+                      )}
+
+                      {q.type === 'text' && (
+                        <input
+                          type="text"
                           value={userAnswers[q.id] ?? q.default ?? ''}
                           onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
-                          className="w-full px-3 py-2 text-xs rounded-lg border border-primary/10 bg-secondary/40 text-foreground/80 appearance-none cursor-pointer focus:outline-none focus:border-primary/30 transition-colors"
-                        >
-                          <option value="">Select...</option>
-                          {q.options.map((opt) => (
-                            <option key={opt} value={opt}>
-                              {opt}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground/40 pointer-events-none" />
-                      </div>
-                    )}
+                          placeholder={q.default ?? 'Type your answer...'}
+                          className="w-full px-3 py-2 text-sm rounded-lg border border-primary/15 bg-background/80 text-foreground/85 placeholder-muted-foreground/30 focus:outline-none focus:border-primary/30 transition-colors"
+                        />
+                      )}
 
-                    {q.type === 'text' && (
-                      <input
-                        type="text"
-                        value={userAnswers[q.id] ?? q.default ?? ''}
-                        onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
-                        placeholder={q.default ?? 'Type your answer...'}
-                        className="w-full px-3 py-2 text-xs rounded-lg border border-primary/10 bg-secondary/40 text-foreground/80 placeholder-muted-foreground/30 focus:outline-none focus:border-primary/30 transition-colors"
-                      />
-                    )}
-
-                    {q.type === 'boolean' && (
-                      <div className="flex gap-3">
-                        {(q.options ?? ['Yes', 'No']).map((opt) => {
-                          const isSelected = (userAnswers[q.id] ?? q.default ?? '') === opt;
-                          return (
-                            <button
-                              key={opt}
-                              onClick={() => onAnswerUpdated(q.id, opt)}
-                              className={`px-4 py-1.5 text-xs rounded-lg border transition-colors ${
-                                isSelected
-                                  ? 'bg-violet-500/15 text-violet-300 border-violet-500/25'
-                                  : 'text-muted-foreground/50 border-primary/10 hover:bg-secondary/30'
-                              }`}
-                            >
-                              {opt}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </motion.div>
-                ))}
+                      {q.type === 'boolean' && (
+                        <div className="flex gap-3">
+                          {(q.options ?? ['Yes', 'No']).map((opt) => {
+                            const isSelected = (userAnswers[q.id] ?? q.default ?? '') === opt;
+                            return (
+                              <button
+                                key={opt}
+                                onClick={() => onAnswerUpdated(q.id, opt)}
+                                className={`px-4 py-1.5 text-sm rounded-lg border transition-colors ${
+                                  isSelected
+                                    ? tone.selectBg
+                                    : 'text-muted-foreground/90 border-primary/10 hover:bg-secondary/30'
+                                }`}
+                              >
+                                {opt}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </motion.div>
+                  );
+                })}
               </div>
             </motion.div>
           )}
 
-          {/* Skipped or no questions */}
+          {/* No questions */}
           {(!questions || questions.length === 0) && (
             <motion.div
               initial={{ opacity: 0, y: 8 }}
@@ -189,33 +189,17 @@ export function N8nTransformChat({
             >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-secondary/40 border border-primary/10 flex items-center justify-center">
-                  {questionsSkipped ? (
-                    <SkipForward className="w-4 h-4 text-muted-foreground/50" />
-                  ) : (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400/70" />
-                  )}
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400/70" />
                 </div>
                 <div>
-                  <p className="text-sm text-foreground/70">
-                    {questionsSkipped
-                      ? 'Configuration skipped'
-                      : 'No configuration needed'}
+                  <p className="text-sm text-foreground/90">
+                    No configuration needed
                   </p>
-                  <p className="text-xs text-muted-foreground/60 mt-0.5">
+                  <p className="text-sm text-muted-foreground/80 mt-0.5">
                     Click Generate to create your persona draft with defaults.
                   </p>
                 </div>
               </div>
-
-              {/* Show inline error if question generation failed */}
-              {error && questionsSkipped && (
-                <div className="mt-3 flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-400/70 mt-0.5 flex-shrink-0" />
-                  <p className="text-[11px] text-amber-400/70 leading-relaxed">
-                    {error}
-                  </p>
-                </div>
-              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -231,7 +215,7 @@ export function N8nTransformChat({
               animate={{ opacity: 1, y: 0 }}
               className="rounded-xl border border-primary/10 bg-secondary/20 p-4"
             >
-              <p className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider mb-2">
+              <p className="text-sm font-medium text-muted-foreground/90 uppercase tracking-wider mb-2">
                 Your answers
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -241,7 +225,7 @@ export function N8nTransformChat({
                   return (
                     <span
                       key={q.id}
-                      className="inline-flex items-center gap-1 px-2 py-1 text-[10px] rounded-md bg-violet-500/10 text-violet-300/80 border border-violet-500/15"
+                      className="inline-flex items-center gap-1 px-2 py-1 text-sm rounded-md bg-violet-500/10 text-violet-300/80 border border-violet-500/15"
                     >
                       <CheckCircle2 className="w-2.5 h-2.5" />
                       {answer.length > 30 ? `${answer.slice(0, 30)}...` : answer}

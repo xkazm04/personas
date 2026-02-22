@@ -1,70 +1,31 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { User, BookOpen, Wrench, Code, AlertTriangle, Plus, X, Check, Save } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { User, BookOpen, Wrench, Code, AlertTriangle, Layers, Plus, X, Check, Save } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   migratePromptToStructured,
   parseStructuredPrompt,
   createEmptyStructuredPrompt,
 } from '@/lib/personas/promptMigration';
 import type { StructuredPrompt } from '@/lib/personas/promptMigration';
+import { SectionEditor } from '@/features/shared/components/draft-editor/SectionEditor';
 
-type SubTab = 'identity' | 'instructions' | 'toolGuidance' | 'examples' | 'errorHandling' | string;
+type SubTab = 'identity' | 'instructions' | 'toolGuidance' | 'examples' | 'errorHandling' | 'custom';
 
-interface TabDef {
+interface SidebarEntry {
   key: SubTab;
   label: string;
-  icon: React.ReactNode;
+  Icon: React.ComponentType<{ className?: string }>;
 }
 
-const STANDARD_TABS: TabDef[] = [
-  { key: 'identity', label: 'Identity', icon: <User className="w-3.5 h-3.5" /> },
-  { key: 'instructions', label: 'Instructions', icon: <BookOpen className="w-3.5 h-3.5" /> },
-  { key: 'toolGuidance', label: 'Tool Guidance', icon: <Wrench className="w-3.5 h-3.5" /> },
-  { key: 'examples', label: 'Examples', icon: <Code className="w-3.5 h-3.5" /> },
-  { key: 'errorHandling', label: 'Error Handling', icon: <AlertTriangle className="w-3.5 h-3.5" /> },
+const STANDARD_TABS: SidebarEntry[] = [
+  { key: 'identity', label: 'Identity', Icon: User },
+  { key: 'instructions', label: 'Instructions', Icon: BookOpen },
+  { key: 'toolGuidance', label: 'Tool Guidance', Icon: Wrench },
+  { key: 'examples', label: 'Examples', Icon: Code },
+  { key: 'errorHandling', label: 'Error Handling', Icon: AlertTriangle },
+  { key: 'custom', label: 'Custom', Icon: Layers },
 ];
-
-function PromptSection({
-  title,
-  icon,
-  value,
-  onChange,
-  placeholder,
-  codeStyle = false,
-}: {
-  title: string;
-  icon: React.ReactNode;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  codeStyle?: boolean;
-}) {
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <span className="text-muted-foreground/60">{icon}</span>
-        <h3 className="text-sm font-mono text-muted-foreground/50 uppercase tracking-wider">
-          {title}
-        </h3>
-      </div>
-      <div className="relative">
-        <textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className={`w-full min-h-[300px] px-4 py-3 bg-background/50 border border-border/50 rounded-2xl text-foreground text-sm resize-y focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all placeholder-muted-foreground/30 ${
-            codeStyle ? 'font-mono' : 'font-sans'
-          }`}
-          placeholder={placeholder}
-          spellCheck={!codeStyle}
-        />
-        <div className="absolute bottom-3 right-4 text-xs text-muted-foreground/30 font-mono pointer-events-none">
-          {value.length.toLocaleString()} chars
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export function PersonaPromptEditor() {
   const selectedPersona = usePersonaStore((state) => state.selectedPersona);
@@ -74,6 +35,7 @@ export function PersonaPromptEditor() {
   const [sp, setSp] = useState<StructuredPrompt>(createEmptyStructuredPrompt());
   const [isSaving, setIsSaving] = useState(false);
   const [showSaved, setShowSaved] = useState(false);
+  const [selectedCustomIndex, setSelectedCustomIndex] = useState(0);
 
   const personaIdRef = useRef<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -82,27 +44,9 @@ export function PersonaPromptEditor() {
   const lastSavedJsonRef = useRef<string | null>(null);
   const lastLoadedPromptRef = useRef<string | null>(null);
 
-  // Build dynamic tab list: standard tabs + one per custom section + add button
-  const allTabs = useMemo(() => {
-    const tabs: TabDef[] = [...STANDARD_TABS];
-    (sp.customSections ?? []).forEach((section, index) => {
-      const title = section?.title ?? '';
-      const label = title.length > 12
-        ? title.slice(0, 12) + '...'
-        : title;
-      tabs.push({
-        key: `custom_${index}`,
-        label: label || 'Untitled',
-        icon: <Code className="w-3.5 h-3.5" />,
-      });
-    });
-    return tabs;
-  }, [sp.customSections]);
-
   // Initialize structured prompt from persona data
   useEffect(() => {
     if (!selectedPersona) {
-      // Clear auto-save timer to prevent saving to a deleted persona
       if (saveTimerRef.current) {
         clearTimeout(saveTimerRef.current);
         saveTimerRef.current = null;
@@ -124,8 +68,6 @@ export function PersonaPromptEditor() {
 
     if (!isNewPersona && !isExternalUpdate) return;
 
-    // Clear pending auto-save timer on persona switch or external update
-    // to prevent saving stale data to the wrong persona
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current);
       saveTimerRef.current = null;
@@ -159,7 +101,6 @@ export function PersonaPromptEditor() {
     if (!pid) return;
 
     const jsonStr = JSON.stringify(spRef.current);
-
     if (jsonStr === lastSavedJsonRef.current) return;
 
     setIsSaving(true);
@@ -179,15 +120,12 @@ export function PersonaPromptEditor() {
     }
   }, [updatePersona]);
 
-  // Trigger debounced save when sp changes
   useEffect(() => {
     if (!personaIdRef.current) return;
 
     const jsonStr = JSON.stringify(sp);
     if (jsonStr === lastSavedJsonRef.current) return;
 
-    // Capture the persona ID at schedule time so we can verify it hasn't
-    // changed when the timer fires (defense-in-depth against race conditions)
     const scheduledForId = personaIdRef.current;
 
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
@@ -201,7 +139,6 @@ export function PersonaPromptEditor() {
     };
   }, [sp]);
 
-  // Update a field in the structured prompt
   const updateField = useCallback((field: keyof Omit<StructuredPrompt, 'customSections'>, value: string) => {
     setSp((prev) => ({ ...prev, [field]: value }));
   }, []);
@@ -212,8 +149,8 @@ export function PersonaPromptEditor() {
       const newSections = [...prev.customSections, { title: 'New Section', content: '' }];
       return { ...prev, customSections: newSections };
     });
-    const newIndex = (sp.customSections ?? []).length;
-    setActiveTab(`custom_${newIndex}`);
+    setSelectedCustomIndex((sp.customSections ?? []).length);
+    setActiveTab('custom');
   }, [sp.customSections.length]);
 
   const updateCustomSection = useCallback((index: number, field: 'title' | 'content', value: string) => {
@@ -230,62 +167,71 @@ export function PersonaPromptEditor() {
       ...prev,
       customSections: prev.customSections.filter((_, i) => i !== index),
     }));
-    setActiveTab('instructions');
-  }, []);
+    if (selectedCustomIndex >= (sp.customSections.length - 1)) {
+      setSelectedCustomIndex(Math.max(0, sp.customSections.length - 2));
+    }
+  }, [selectedCustomIndex, sp.customSections.length]);
+
+  // Build sidebar indicator state
+  const sectionFilled = useMemo(() => ({
+    identity: !!sp.identity?.trim(),
+    instructions: !!sp.instructions?.trim(),
+    toolGuidance: !!sp.toolGuidance?.trim(),
+    examples: !!sp.examples?.trim(),
+    errorHandling: !!sp.errorHandling?.trim(),
+    custom: sp.customSections.length > 0,
+  }), [sp]);
 
   if (!selectedPersona) {
     return (
-      <div className="flex items-center justify-center py-8 text-muted-foreground/40">
+      <div className="flex items-center justify-center py-8 text-muted-foreground/80">
         No persona selected
       </div>
     );
   }
 
-  // Parse custom section index from tab key
-  const customIndex = activeTab.startsWith('custom_')
-    ? parseInt(activeTab.replace('custom_', ''), 10)
-    : -1;
-  const customSection = customIndex >= 0 ? (sp.customSections ?? [])[customIndex] ?? null : null;
+  const isStandard = (tab: SubTab): tab is keyof Omit<StructuredPrompt, 'customSections'> =>
+    tab !== 'custom';
+
+  const currentCustom = sp.customSections[selectedCustomIndex];
 
   return (
-    <div className="space-y-4">
-      {/* Sub-tab bar */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1 p-1 bg-secondary/40 border border-primary/15 rounded-xl overflow-x-auto">
-          {allTabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all whitespace-nowrap ${
-                activeTab === tab.key
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground/60 hover:text-muted-foreground/80'
-              }`}
-            >
-              {tab.icon}
-              <span className="hidden sm:inline">{tab.label}</span>
-            </button>
-          ))}
-
-          {/* Add Section button at end of tab bar */}
-          <button
-            onClick={addCustomSection}
-            className="flex items-center gap-1 px-2 py-1.5 text-xs text-muted-foreground/40 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors whitespace-nowrap"
-            title="Add custom section"
-          >
-            <Plus className="w-3.5 h-3.5" />
-          </button>
+    <div className="flex h-full min-h-0 gap-3">
+      {/* Left sidebar navigation */}
+      <div className="w-36 flex-shrink-0 flex flex-col gap-1">
+        <div className="space-y-0.5 flex-1">
+          {STANDARD_TABS.map((tab) => {
+            const active = activeTab === tab.key;
+            const filled = sectionFilled[tab.key];
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`w-full flex items-center gap-2 px-2.5 py-2 text-sm font-medium rounded-lg transition-colors text-left ${
+                  active
+                    ? 'bg-primary/10 text-foreground/80 border border-primary/20'
+                    : 'text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'
+                }`}
+              >
+                <tab.Icon className="w-3.5 h-3.5 flex-shrink-0" />
+                <span className="truncate">{tab.label}</span>
+                {filled && (
+                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-400/60 flex-shrink-0" />
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Save status */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 px-1 py-1 flex-shrink-0">
           <AnimatePresence>
             {showSaved && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
-                className="flex items-center gap-1 text-xs text-emerald-400"
+                className="flex items-center gap-1 text-sm text-emerald-400"
               >
                 <Check className="w-3 h-3" />
                 Saved
@@ -293,7 +239,7 @@ export function PersonaPromptEditor() {
             )}
           </AnimatePresence>
           {isSaving && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground/50">
+            <div className="flex items-center gap-1 text-sm text-muted-foreground/90">
               <Save className="w-3 h-3 animate-pulse" />
               Saving...
             </div>
@@ -301,85 +247,89 @@ export function PersonaPromptEditor() {
         </div>
       </div>
 
-      {/* Tab content */}
-      <div>
-        {activeTab === 'identity' && (
-          <PromptSection
-            title="Identity"
-            icon={<User className="w-4 h-4" />}
-            value={sp.identity}
-            onChange={(v) => updateField('identity', v)}
-            placeholder="Who is this persona? What role does it play?"
+      {/* Right content area */}
+      <div className="flex-1 min-w-0 min-h-0">
+        {/* Standard prompt fields — sidebar + SectionEditor */}
+        {isStandard(activeTab) && (
+          <SectionEditor
+            value={sp[activeTab]}
+            onChange={(v) => updateField(activeTab, v)}
+            label={STANDARD_TABS.find((t) => t.key === activeTab)?.label ?? activeTab}
+            placeholder={`Enter ${STANDARD_TABS.find((t) => t.key === activeTab)?.label.toLowerCase()} content...`}
           />
         )}
 
-        {activeTab === 'instructions' && (
-          <PromptSection
-            title="Instructions"
-            icon={<BookOpen className="w-4 h-4" />}
-            value={sp.instructions}
-            onChange={(v) => updateField('instructions', v)}
-            placeholder="Core instructions and behavioral guidelines..."
-          />
-        )}
-
-        {activeTab === 'toolGuidance' && (
-          <PromptSection
-            title="Tool Guidance"
-            icon={<Wrench className="w-4 h-4" />}
-            value={sp.toolGuidance}
-            onChange={(v) => updateField('toolGuidance', v)}
-            placeholder="Guidelines for tool usage..."
-          />
-        )}
-
-        {activeTab === 'examples' && (
-          <PromptSection
-            title="Examples"
-            icon={<Code className="w-4 h-4" />}
-            value={sp.examples}
-            onChange={(v) => updateField('examples', v)}
-            placeholder="Example interactions or outputs..."
-            codeStyle
-          />
-        )}
-
-        {activeTab === 'errorHandling' && (
-          <PromptSection
-            title="Error Handling"
-            icon={<AlertTriangle className="w-4 h-4" />}
-            value={sp.errorHandling}
-            onChange={(v) => updateField('errorHandling', v)}
-            placeholder="How should errors be handled?"
-          />
-        )}
-
-        {/* Custom section tabs */}
-        {customSection && customIndex >= 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={customSection.title}
-                onChange={(e) => updateCustomSection(customIndex, 'title', e.target.value)}
-                className="flex-1 px-3 py-1.5 text-sm font-medium bg-transparent border border-primary/15 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40 text-foreground"
-                placeholder="Section title..."
-              />
+        {/* Custom sections */}
+        {activeTab === 'custom' && (
+          <div className="flex flex-col h-full min-h-0 gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span className="text-sm font-medium text-foreground/80">Custom Sections</span>
               <button
-                onClick={() => removeCustomSection(customIndex)}
-                className="p-1.5 text-muted-foreground/40 hover:text-red-400 transition-colors rounded-lg hover:bg-red-500/10"
-                title="Remove section"
+                onClick={addCustomSection}
+                className="px-2 py-1 text-sm rounded-lg border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 flex items-center gap-1 ml-auto"
               >
-                <X className="w-4 h-4" />
+                <Plus className="w-3 h-3" />
+                Add
               </button>
             </div>
-            <PromptSection
-              title={customSection.title}
-              icon={<Code className="w-4 h-4" />}
-              value={customSection.content}
-              onChange={(v) => updateCustomSection(customIndex, 'content', v)}
-              placeholder="Section content..."
-            />
+
+            {sp.customSections.length === 0 ? (
+              <div className="flex-1 flex items-center justify-center">
+                <p className="text-sm text-muted-foreground/80">No custom sections yet</p>
+              </div>
+            ) : (
+              <div className="flex flex-1 min-h-0 gap-2">
+                {/* Custom section list */}
+                <div className="w-36 flex-shrink-0 space-y-0.5 overflow-y-auto">
+                  {sp.customSections.map((section, index) => (
+                    <div
+                      key={index}
+                      className={`flex items-center gap-1 px-2 py-1.5 text-sm rounded-lg cursor-pointer transition-colors ${
+                        selectedCustomIndex === index
+                          ? 'bg-violet-500/10 text-foreground/80 border border-violet-500/20'
+                          : 'text-muted-foreground/90 hover:bg-secondary/30 border border-transparent'
+                      }`}
+                      onClick={() => setSelectedCustomIndex(index)}
+                    >
+                      <span className="truncate flex-1">
+                        {section.title || `Section ${index + 1}`}
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeCustomSection(index);
+                        }}
+                        className="p-0.5 text-muted-foreground/80 hover:text-red-400 flex-shrink-0"
+                        title="Remove section"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Custom section editor */}
+                {currentCustom && (
+                  <div className="flex-1 min-w-0 min-h-0 flex flex-col gap-2">
+                    <input
+                      type="text"
+                      value={currentCustom.title}
+                      onChange={(e) => updateCustomSection(selectedCustomIndex, 'title', e.target.value)}
+                      className="px-3 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 flex-shrink-0"
+                      placeholder="Section title..."
+                    />
+                    <div className="flex-1 min-h-0">
+                      <SectionEditor
+                        value={currentCustom.content}
+                        onChange={(v) => updateCustomSection(selectedCustomIndex, 'content', v)}
+                        label={currentCustom.title || 'Custom Section'}
+                        placeholder="Section content..."
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

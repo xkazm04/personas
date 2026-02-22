@@ -27,7 +27,7 @@ export interface MetricsChartsProps {
 
 export function MetricsCharts({ chartData, pieData }: MetricsChartsProps) {
   return (
-    <>
+    <div className="space-y-6">
       {/* Charts Row 1 */}
       <div className="grid grid-cols-2 gap-6">
         {/* Cost Over Time */}
@@ -65,7 +65,7 @@ export function MetricsCharts({ chartData, pieData }: MetricsChartsProps) {
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[240px] flex items-center justify-center text-sm text-muted-foreground/40">No execution data</div>
+            <div className="h-[240px] flex items-center justify-center text-sm text-muted-foreground/80">No execution data</div>
           )}
         </div>
       </div>
@@ -85,6 +85,6 @@ export function MetricsCharts({ chartData, pieData }: MetricsChartsProps) {
           </BarChart>
         </ResponsiveContainer>
       </div>
-    </>
+    </div>
   );
 }

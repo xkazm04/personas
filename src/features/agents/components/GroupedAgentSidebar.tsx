@@ -130,7 +130,7 @@ function DroppableGroup({
           {...listeners}
           {...attributes}
           onClick={(e) => e.stopPropagation()}
-          className="cursor-grab active:cursor-grabbing p-0.5 -ml-1 text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors"
+          className="cursor-grab active:cursor-grabbing p-0.5 -ml-1 text-muted-foreground/80 hover:text-muted-foreground transition-colors"
         >
           <GripVertical className="w-3 h-3" />
         </div>
@@ -142,23 +142,23 @@ function DroppableGroup({
               value={renameValue}
               onChange={(e) => setRenameValue(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleConfirmRename(); if (e.key === 'Escape') setIsRenaming(false); }}
-              className="flex-1 min-w-0 text-xs font-medium bg-transparent border-b border-primary/40 outline-none text-foreground/90 py-0.5"
+              className="flex-1 min-w-0 text-sm font-medium bg-transparent border-b border-primary/40 outline-none text-foreground/90 py-0.5"
             />
             <button onClick={handleConfirmRename} className="p-0.5 hover:bg-secondary/60 rounded">
               <Check className="w-3 h-3 text-emerald-400" />
             </button>
             <button onClick={() => setIsRenaming(false)} className="p-0.5 hover:bg-secondary/60 rounded">
-              <X className="w-3 h-3 text-muted-foreground/50" />
+              <X className="w-3 h-3 text-muted-foreground/90" />
             </button>
           </div>
         ) : (
-          <span className="text-xs font-medium text-foreground/70 truncate flex-1">{group.name}</span>
+          <span className="text-sm font-medium text-foreground/90 truncate flex-1">{group.name}</span>
         )}
-        <span className="text-[10px] font-mono text-muted-foreground/40">{personas.length}</span>
+        <span className="text-sm font-mono text-muted-foreground/80">{personas.length}</span>
         <div className="relative" ref={menuContainerRef} onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => setShowMenu(!showMenu)}
-            className="p-0.5 rounded hover:bg-secondary/60 text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors"
+            className="p-0.5 rounded hover:bg-secondary/60 text-muted-foreground/80 hover:text-muted-foreground transition-colors"
           >
             <MoreHorizontal className="w-3.5 h-3.5" />
           </button>
@@ -173,13 +173,13 @@ function DroppableGroup({
               >
                 <button
                   onClick={handleStartRename}
-                  className="w-full px-3 py-1.5 text-xs text-left hover:bg-secondary/60 flex items-center gap-2 text-foreground/70"
+                  className="w-full px-3 py-1.5 text-sm text-left hover:bg-secondary/60 flex items-center gap-2 text-foreground/90"
                 >
                   <Pencil className="w-3 h-3" /> Rename
                 </button>
                 <button
                   onClick={() => { onDelete(); setShowMenu(false); }}
-                  className="w-full px-3 py-1.5 text-xs text-left hover:bg-red-500/10 flex items-center gap-2 text-red-400"
+                  className="w-full px-3 py-1.5 text-sm text-left hover:bg-red-500/10 flex items-center gap-2 text-red-400"
                 >
                   <Trash2 className="w-3 h-3" /> Delete
                 </button>
@@ -188,9 +188,9 @@ function DroppableGroup({
           </AnimatePresence>
         </div>
         {isCollapsed ? (
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40 flex-shrink-0" />
+          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/80 flex-shrink-0" />
         ) : (
-          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/40 flex-shrink-0" />
+          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/80 flex-shrink-0" />
         )}
       </div>
 
@@ -206,7 +206,7 @@ function DroppableGroup({
           >
             <div className="px-1.5 pb-1.5">
               {personas.length === 0 && (
-                <div className="text-center py-3 text-[11px] text-muted-foreground/30">
+                <div className="text-center py-3 text-sm text-muted-foreground/80">
                   Drop agents here
                 </div>
               )}
@@ -355,7 +355,7 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
       >
         {ungrouped.length > 0 && (
           <div className="px-0.5 py-1">
-            <div className="text-[10px] font-mono text-muted-foreground/30 uppercase tracking-wider px-2 mb-1">
+            <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider px-2 mb-1">
               Ungrouped
             </div>
             {ungrouped.map((persona) => (
@@ -369,7 +369,7 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
           </div>
         )}
         {ungrouped.length === 0 && groups.length > 0 && activeId && (
-          <div className="text-center py-3 text-[11px] text-muted-foreground/30 border border-dashed border-primary/15 rounded-lg">
+          <div className="text-center py-3 text-sm text-muted-foreground/80 border border-dashed border-primary/15 rounded-lg">
             Drop here to ungroup
           </div>
         )}
@@ -393,12 +393,12 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
             ? 'bg-primary/15 border-primary/25'
             : 'bg-secondary/40 border-primary/15'
         }`}>
-          <LayoutGrid className={`w-3.5 h-3.5 ${selectedPersonaId === null ? 'text-primary' : 'text-muted-foreground/50'}`} />
+          <LayoutGrid className={`w-3.5 h-3.5 ${selectedPersonaId === null ? 'text-primary' : 'text-muted-foreground/90'}`} />
         </div>
-        <span className={`text-sm font-medium ${selectedPersonaId === null ? 'text-foreground/90' : 'text-muted-foreground/60'}`}>
+        <span className={`text-sm font-medium ${selectedPersonaId === null ? 'text-foreground/90' : 'text-muted-foreground/80'}`}>
           All Agents
         </span>
-        <span className="ml-auto text-[10px] font-mono text-muted-foreground/40">
+        <span className="ml-auto text-sm font-mono text-muted-foreground/80">
           {personas.length}
         </span>
       </button>
@@ -410,14 +410,14 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
           className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-dashed border-primary/30 hover:border-primary/50 bg-primary/5 hover:bg-primary/10 transition-all group"
         >
           <Plus className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform" />
-          <span className="text-xs font-medium text-primary/80 group-hover:text-primary">Agent</span>
+          <span className="text-sm font-medium text-primary/80 group-hover:text-primary">Agent</span>
         </button>
         <button
           onClick={() => { setShowNewGroup(true); setTimeout(() => newGroupInputRef.current?.focus(), 50); }}
           className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-dashed border-violet-500/30 hover:border-violet-500/50 bg-violet-500/5 hover:bg-violet-500/10 transition-all group"
         >
           <FolderPlus className="w-3.5 h-3.5 text-violet-400 group-hover:scale-110 transition-transform" />
-          <span className="text-xs font-medium text-violet-400/80 group-hover:text-violet-400">Group</span>
+          <span className="text-sm font-medium text-violet-400/80 group-hover:text-violet-400">Group</span>
         </button>
       </div>
 
@@ -437,13 +437,13 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
                 onChange={(e) => setNewGroupName(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleCreateGroup(); if (e.key === 'Escape') setShowNewGroup(false); }}
                 placeholder="Group name..."
-                className="flex-1 min-w-0 text-xs bg-transparent border-none outline-none text-foreground/90 placeholder:text-muted-foreground/30"
+                className="flex-1 min-w-0 text-sm bg-transparent border-none outline-none text-foreground/90 placeholder:text-muted-foreground/80"
               />
               <button onClick={handleCreateGroup} className="p-1 rounded hover:bg-violet-500/15">
                 <Check className="w-3.5 h-3.5 text-violet-400" />
               </button>
               <button onClick={() => setShowNewGroup(false)} className="p-1 rounded hover:bg-secondary/60">
-                <X className="w-3.5 h-3.5 text-muted-foreground/50" />
+                <X className="w-3.5 h-3.5 text-muted-foreground/90" />
               </button>
             </div>
           </motion.div>
@@ -485,7 +485,7 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
           {activeGroup && (
             <div className="opacity-80 pointer-events-none rounded-xl border border-primary/20 bg-secondary/40 px-3 py-2 flex items-center gap-2">
               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: activeGroup.color }} />
-              <span className="text-xs font-medium text-foreground/70">{activeGroup.name}</span>
+              <span className="text-sm font-medium text-foreground/90">{activeGroup.name}</span>
             </div>
           )}
         </DragOverlay>
@@ -493,7 +493,7 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
 
       {/* Empty state */}
       {personas.length === 0 && (
-        <div className="text-center py-10 text-sm text-muted-foreground/50">
+        <div className="text-center py-10 text-sm text-muted-foreground/90">
           No personas yet
         </div>
       )}

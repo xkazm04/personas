@@ -153,7 +153,7 @@ export default function PersonaHoverPreview({ personaId, triggerCount, anchorRef
             <div className="space-y-3">
               {/* Last Execution */}
               <div className="space-y-1">
-                <div className="text-[10px] font-mono text-muted-foreground/40 uppercase tracking-wider">Last Execution</div>
+                <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider">Last Execution</div>
                 {stats.last ? (
                   <div className="flex items-center gap-2">
                     {stats.last.status === 'completed' ? (
@@ -163,7 +163,7 @@ export default function PersonaHoverPreview({ personaId, triggerCount, anchorRef
                     ) : (
                       <Activity className="w-3.5 h-3.5 text-blue-400" />
                     )}
-                    <span className={`text-xs font-medium ${
+                    <span className={`text-sm font-medium ${
                       stats.last.status === 'completed' ? 'text-emerald-400/90' :
                       stats.last.status === 'failed' || stats.last.status === 'error' ? 'text-red-400/90' :
                       'text-blue-400/90'
@@ -171,31 +171,31 @@ export default function PersonaHoverPreview({ personaId, triggerCount, anchorRef
                       {stats.last.status}
                     </span>
                     {stats.last.duration_ms != null && (
-                      <span className="flex items-center gap-1 text-[10px] text-muted-foreground/40 ml-auto font-mono">
+                      <span className="flex items-center gap-1 text-sm text-muted-foreground/80 ml-auto font-mono">
                         <Timer className="w-3 h-3" />
                         {formatDuration(stats.last.duration_ms)}
                       </span>
                     )}
                   </div>
                 ) : (
-                  <span className="text-xs text-muted-foreground/30">No executions yet</span>
+                  <span className="text-sm text-muted-foreground/80">No executions yet</span>
                 )}
               </div>
 
               {/* Stats Row */}
               <div className="grid grid-cols-3 gap-2">
                 <div className="p-2 rounded-lg bg-secondary/40 border border-primary/8">
-                  <div className="text-[10px] text-muted-foreground/35 mb-0.5">Today</div>
+                  <div className="text-sm text-muted-foreground/35 mb-0.5">Today</div>
                   <div className="text-sm font-semibold text-foreground/80 font-mono">{stats.runsToday}</div>
                 </div>
                 <div className="p-2 rounded-lg bg-secondary/40 border border-primary/8">
-                  <div className="text-[10px] text-muted-foreground/35 mb-0.5 flex items-center gap-0.5">
+                  <div className="text-sm text-muted-foreground/35 mb-0.5 flex items-center gap-0.5">
                     <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400/50" /> OK
                   </div>
                   <div className="text-sm font-semibold text-emerald-400/80 font-mono">{stats.successCount}</div>
                 </div>
                 <div className="p-2 rounded-lg bg-secondary/40 border border-primary/8">
-                  <div className="text-[10px] text-muted-foreground/35 mb-0.5 flex items-center gap-0.5">
+                  <div className="text-sm text-muted-foreground/35 mb-0.5 flex items-center gap-0.5">
                     <XCircle className="w-2.5 h-2.5 text-red-400/50" /> Fail
                   </div>
                   <div className="text-sm font-semibold text-red-400/80 font-mono">{stats.failCount}</div>
@@ -205,12 +205,12 @@ export default function PersonaHoverPreview({ personaId, triggerCount, anchorRef
               {/* Trigger Summary + Sparkline Row */}
               <div className="flex items-center justify-between gap-2">
                 {triggerCount != null && triggerCount > 0 ? (
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground/50">
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground/90">
                     <Zap className="w-3 h-3 text-amber-400/60" />
                     <span>{triggerCount} trigger{triggerCount !== 1 ? 's' : ''} active</span>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground/30">
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground/80">
                     <Zap className="w-3 h-3" />
                     <span>No triggers</span>
                   </div>
@@ -219,7 +219,7 @@ export default function PersonaHoverPreview({ personaId, triggerCount, anchorRef
                 {/* 7-day sparkline */}
                 {stats.sparkline.some(v => v > 0) && (
                   <div className="flex items-center gap-1.5">
-                    <TrendingUp className="w-3 h-3 text-muted-foreground/30" />
+                    <TrendingUp className="w-3 h-3 text-muted-foreground/80" />
                     <Sparkline data={stats.sparkline} />
                   </div>
                 )}

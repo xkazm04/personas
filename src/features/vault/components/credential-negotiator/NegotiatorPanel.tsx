@@ -53,7 +53,7 @@ export function NegotiatorPanel({ designResult, onComplete, onClose }: Negotiato
             </div>
             <div>
               <h3 className="text-sm font-semibold text-foreground">AI Credential Negotiator</h3>
-              <p className="text-[11px] text-muted-foreground/50">
+              <p className="text-sm text-muted-foreground/90">
                 {negotiator.phase === 'idle' && 'Automated API key provisioning'}
                 {negotiator.phase === 'planning' && 'Generating provisioning plan...'}
                 {negotiator.phase === 'guiding' && `Provisioning ${designResult.connector.label}`}
@@ -64,7 +64,7 @@ export function NegotiatorPanel({ designResult, onComplete, onClose }: Negotiato
           </div>
           <button
             onClick={handleClose}
-            className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/40 hover:text-foreground transition-colors"
+            className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground transition-colors"
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -82,7 +82,7 @@ export function NegotiatorPanel({ designResult, onComplete, onClose }: Negotiato
                 exit={{ opacity: 0 }}
                 className="space-y-3"
               >
-                <p className="text-xs text-foreground/70">
+                <p className="text-sm text-foreground/90">
                   Let the AI guide you step-by-step through obtaining {designResult.connector.label} API credentials.
                   It will open the right pages, tell you exactly what to click, and auto-capture your keys.
                 </p>
@@ -94,7 +94,7 @@ export function NegotiatorPanel({ designResult, onComplete, onClose }: Negotiato
                     <Zap className="w-4 h-4" />
                     Start auto-provisioning
                   </button>
-                  <span className="text-[11px] text-muted-foreground/40">
+                  <span className="text-sm text-muted-foreground/80">
                     Takes ~{Math.ceil(60 / 60)}-2 minutes
                   </span>
                 </div>
@@ -139,7 +139,7 @@ export function NegotiatorPanel({ designResult, onComplete, onClose }: Negotiato
                   <Zap className="w-5 h-5 text-emerald-400" />
                 </div>
                 <p className="text-sm text-foreground font-medium">Credentials captured</p>
-                <p className="text-xs text-muted-foreground/50">
+                <p className="text-sm text-muted-foreground/90">
                   {Object.keys(negotiator.capturedValues).length} field(s) auto-filled from the provisioning flow.
                 </p>
                 <button
@@ -160,18 +160,18 @@ export function NegotiatorPanel({ designResult, onComplete, onClose }: Negotiato
                 className="space-y-3"
               >
                 <div className="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl">
-                  <p className="text-xs text-red-300">{negotiator.error}</p>
+                  <p className="text-sm text-red-300">{negotiator.error}</p>
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={handleStart}
-                    className="px-4 py-2 rounded-xl bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/70 text-sm transition-colors"
+                    className="px-4 py-2 rounded-xl bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/90 text-sm transition-colors"
                   >
                     Try again
                   </button>
                   <button
                     onClick={handleClose}
-                    className="px-4 py-2 rounded-xl text-muted-foreground/50 text-sm hover:text-foreground/70 transition-colors"
+                    className="px-4 py-2 rounded-xl text-muted-foreground/90 text-sm hover:text-foreground/95 transition-colors"
                   >
                     Close
                   </button>

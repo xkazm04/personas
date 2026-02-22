@@ -81,7 +81,7 @@ export function ContentHeader({
         <div className="flex-1 min-w-0">
           <h1 className="text-lg font-semibold text-foreground/90">{title}</h1>
           {subtitle && (
-            <p className="text-xs text-muted-foreground/50">{subtitle}</p>
+            <p className="text-sm text-muted-foreground/90">{subtitle}</p>
           )}
         </div>
         {actions}

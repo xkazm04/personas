@@ -66,7 +66,7 @@ function PassRateGauge({ percentage }: { percentage: number }) {
         />
       </svg>
       <span
-        className="absolute inset-0 flex items-center justify-center text-xs font-semibold"
+        className="absolute inset-0 flex items-center justify-center text-sm font-semibold"
         style={{ color }}
       >
         {percentage}%
@@ -118,12 +118,12 @@ function ConnectorDropdown({
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="px-3 py-2 text-xs rounded-xl border border-primary/15 hover:bg-secondary/50 text-muted-foreground/60 transition-colors flex items-center gap-1.5"
+        className="px-3 py-2 text-sm rounded-xl border border-primary/15 hover:bg-secondary/50 text-muted-foreground/80 transition-colors flex items-center gap-1.5"
       >
         <Filter className="w-3.5 h-3.5" />
         Filter by connector
         {connectorFilter.length > 0 && (
-          <span className="ml-1 px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300 text-[10px] font-medium">
+          <span className="ml-1 px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300 text-sm font-medium">
             {connectorFilter.length}
           </span>
         )}
@@ -147,7 +147,7 @@ function ConnectorDropdown({
                 >
                   <ConnectorIcon meta={meta} size="w-3.5 h-3.5" />
                 </div>
-                <span className="text-sm text-foreground/70 flex-1">{meta.label}</span>
+                <span className="text-sm text-foreground/90 flex-1">{meta.label}</span>
                 <div
                   className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
                     isSelected
@@ -167,14 +167,14 @@ function ConnectorDropdown({
                   setConnectorFilter([]);
                   setIsOpen(false);
                 }}
-                className="w-full px-3.5 py-2 text-left text-xs text-muted-foreground/50 hover:text-foreground/60 transition-colors"
+                className="w-full px-3.5 py-2 text-left text-sm text-muted-foreground/90 hover:text-foreground/95 transition-colors"
               >
                 Clear all
               </button>
             </div>
           )}
           {sorted.length === 0 && (
-            <div className="px-3.5 py-2 text-xs text-muted-foreground/30 italic">
+            <div className="px-3.5 py-2 text-sm text-muted-foreground/80 italic">
               No connectors available
             </div>
           )}
@@ -249,7 +249,7 @@ export default function DesignReviewsPage() {
     setShowRunner(true);
   };
 
-  const handleRunnerStart = (options?: { customInstructions?: string[]; testCases?: Array<{ id: string; name: string; instruction: string }> }) => {
+  const handleRunnerStart = (options?: { customInstructions?: string[]; testCases?: Array<{ id: string; name: string; instruction: string; tools?: string; trigger?: string; category?: string }> }) => {
     const testCases = options?.testCases
       ?? options?.customInstructions?.map((instruction, i) => ({
         id: `custom_${i}`,
@@ -306,7 +306,7 @@ export default function DesignReviewsPage() {
                 return (
                   <span
                     key={name}
-                    className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300"
+                    className="inline-flex items-center gap-1 px-2 py-1 text-sm rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300"
                   >
                     <ConnectorIcon meta={meta} size="w-3 h-3" />
                     {meta.label}

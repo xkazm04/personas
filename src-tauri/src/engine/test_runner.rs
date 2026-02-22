@@ -133,6 +133,7 @@ pub async fn run_test(
     let mut current = 0usize;
 
     // Track results for summary
+    #[allow(clippy::type_complexity)]
     let results_tracker: Arc<Mutex<Vec<(String, i32, i32, i32, f64, i64)>>> =
         Arc::new(Mutex::new(Vec::new()));
 
@@ -545,7 +546,7 @@ fn score_tool_accuracy(actual: &[String], expected: &Option<Vec<String>>) -> i32
     let extra = actual.len().saturating_sub(expected.len());
     let penalty = (extra as f64 * 5.0).min(20.0);
 
-    (recall - penalty).max(0.0).min(100.0) as i32
+    (recall - penalty).clamp(0.0, 100.0) as i32
 }
 
 fn score_output_quality(output: &str, expected_behavior: &str) -> i32 {
@@ -602,6 +603,7 @@ fn score_protocol_compliance(output: &str, expected_protocols: &Option<Vec<Strin
 
 // ── Summary builder ────────────────────────────────────────────
 
+#[allow(clippy::type_complexity)]
 async fn build_summary(
     results: &Arc<Mutex<Vec<(String, i32, i32, i32, f64, i64)>>>,
     models: &[TestModelConfig],

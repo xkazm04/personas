@@ -18,6 +18,8 @@ pub struct N8nTransformSession {
     pub step: String,
     pub error: Option<String>,
     pub persona_id: Option<String>,
+    pub transform_id: Option<String>,
+    pub questions_json: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -40,4 +42,6 @@ pub struct UpdateN8nSessionInput {
     pub step: Option<String>,
     pub error: Option<Option<String>>,
     pub persona_id: Option<Option<String>>,
+    pub transform_id: Option<Option<String>>,
+    pub questions_json: Option<Option<String>>,
 }

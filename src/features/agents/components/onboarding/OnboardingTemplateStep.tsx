@@ -136,7 +136,7 @@ export function TemplatePickerStep({ onBack }: TemplatePickerStepProps) {
     >
       <div>
         <h2 className="text-lg font-semibold text-foreground/90">Choose a Template</h2>
-        <p className="text-xs text-muted-foreground/50 mt-1">
+        <p className="text-sm text-muted-foreground/90 mt-1">
           Pick a template to create your first agent, or skip to start from scratch.
         </p>
       </div>
@@ -146,10 +146,10 @@ export function TemplatePickerStep({ onBack }: TemplatePickerStepProps) {
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm pb-3 flex gap-1.5 flex-wrap">
           <button
             onClick={() => setActiveFilter('all')}
-            className={`px-2.5 py-1 text-[11px] font-medium rounded-lg border transition-colors ${
+            className={`px-2.5 py-1 text-sm font-medium rounded-lg border transition-colors ${
               activeFilter === 'all'
                 ? 'bg-primary/10 border-primary/25 text-foreground/80'
-                : 'border-primary/8 text-muted-foreground/45 hover:text-muted-foreground/60 hover:border-primary/15'
+                : 'border-primary/8 text-muted-foreground/45 hover:text-muted-foreground hover:border-primary/15'
             }`}
           >
             All
@@ -158,10 +158,10 @@ export function TemplatePickerStep({ onBack }: TemplatePickerStepProps) {
             <button
               key={cat}
               onClick={() => setActiveFilter(cat)}
-              className={`px-2.5 py-1 text-[11px] font-medium rounded-lg border transition-colors ${
+              className={`px-2.5 py-1 text-sm font-medium rounded-lg border transition-colors ${
                 activeFilter === cat
                   ? 'bg-primary/10 border-primary/25 text-foreground/80'
-                  : 'border-primary/8 text-muted-foreground/45 hover:text-muted-foreground/60 hover:border-primary/15'
+                  : 'border-primary/8 text-muted-foreground/45 hover:text-muted-foreground hover:border-primary/15'
               }`}
             >
               {CATEGORY_LABELS[cat] ?? cat}
@@ -203,7 +203,7 @@ export function TemplatePickerStep({ onBack }: TemplatePickerStepProps) {
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground/85 truncate">{template.name}</p>
-                    <p className="text-[11px] text-muted-foreground/45 line-clamp-2 leading-relaxed mt-0.5">
+                    <p className="text-sm text-muted-foreground/45 line-clamp-2 leading-relaxed mt-0.5">
                       {template.description}
                     </p>
                   </div>
@@ -217,13 +217,13 @@ export function TemplatePickerStep({ onBack }: TemplatePickerStepProps) {
       <div className="flex items-center justify-between">
         <button
           onClick={onBack}
-          className="px-4 py-2.5 text-sm rounded-xl border border-primary/15 hover:bg-secondary/50 text-muted-foreground/60 transition-colors"
+          className="px-4 py-2.5 text-sm rounded-xl border border-primary/15 hover:bg-secondary/50 text-muted-foreground/80 transition-colors"
         >
           Back
         </button>
         <button
           onClick={handleSkip}
-          className="px-4 py-2.5 text-xs text-muted-foreground/40 hover:text-muted-foreground/60 transition-colors flex items-center gap-1.5"
+          className="px-4 py-2.5 text-sm text-muted-foreground/80 hover:text-muted-foreground transition-colors flex items-center gap-1.5"
         >
           <SkipForward className="w-3.5 h-3.5" />
           Skip for now

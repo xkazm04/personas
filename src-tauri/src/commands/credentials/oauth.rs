@@ -604,6 +604,7 @@ fn generate_pkce_pair() -> (String, String) {
 // ── Universal OAuth Sessions ─────────────────────────────────────
 
 #[derive(Clone, Serialize)]
+#[allow(dead_code)]
 struct OAuthSession {
     status: String,          // pending | success | error
     provider_id: String,
@@ -674,6 +675,7 @@ pub fn list_oauth_providers(
 /// - `oidc_issuer`: Optional OIDC issuer URL for auto-discovery (alternative to authorize_url/token_url)
 /// - `use_pkce`: Whether to use PKCE (auto-detected from provider, overridable)
 /// - `extra_params`: Optional extra query params for the authorization URL
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn start_oauth(
     _state: State<'_, Arc<AppState>>,
@@ -702,7 +704,7 @@ pub async fn start_oauth(
         } else if let Some(issuer) = oidc_issuer.as_deref().filter(|s| !s.is_empty()) {
             let discovery = discover_oidc(issuer)
                 .await
-                .map_err(|e| AppError::Internal(e))?;
+                .map_err(AppError::Internal)?;
             let pkce = use_pkce.unwrap_or_else(|| {
                 discovery.code_challenge_methods_supported.contains(&"S256".to_string())
             });
@@ -957,7 +959,7 @@ pub async fn refresh_oauth_token(
     } else if let Some(issuer) = oidc_issuer.filter(|s| !s.is_empty()) {
         let discovery = discover_oidc(&issuer)
             .await
-            .map_err(|e| AppError::Internal(e))?;
+            .map_err(AppError::Internal)?;
         discovery.token_endpoint
     } else {
         return Err(AppError::Validation(

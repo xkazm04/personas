@@ -19,7 +19,7 @@ interface ModelAggregate {
 }
 
 function scoreColor(score: number | null): string {
-  if (score === null) return 'text-muted-foreground/40';
+  if (score === null) return 'text-muted-foreground/80';
   if (score >= 80) return 'text-emerald-400';
   if (score >= 50) return 'text-amber-400';
   return 'text-red-400';
@@ -33,7 +33,7 @@ function statusBadge(status: string) {
   };
   const fallback = { bg: 'bg-amber-500/15', text: 'text-amber-400', border: 'border-amber-500/20' };
   const c = map[status] ?? fallback;
-  return `px-2 py-0.5 rounded-md text-[11px] font-medium border ${c.bg} ${c.text} ${c.border}`;
+  return `px-2 py-0.5 rounded-md text-sm font-medium border ${c.bg} ${c.text} ${c.border}`;
 }
 
 export function TestComparisonTable({ results }: Props) {
@@ -81,7 +81,7 @@ export function TestComparisonTable({ results }: Props) {
 
   if (results.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground/40 text-sm">
+      <div className="text-center py-8 text-muted-foreground/80 text-sm">
         No results to display
       </div>
     );
@@ -91,7 +91,9 @@ export function TestComparisonTable({ results }: Props) {
     <div className="space-y-6">
       {/* Model rankings */}
       <div className="space-y-2">
-        <h4 className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider">
+        <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
+          <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
+          <Trophy className="w-3.5 h-3.5" />
           Model Rankings
         </h4>
         <div className="grid gap-2">
@@ -104,32 +106,32 @@ export function TestComparisonTable({ results }: Props) {
                   : 'bg-background/30 border-primary/10'
               }`}
             >
-              <span className="text-lg font-bold text-muted-foreground/30 w-6 text-center">
+              <span className="text-lg font-bold text-muted-foreground/80 w-6 text-center">
                 {idx + 1}
               </span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-foreground">{agg.modelId}</span>
-                  <span className="text-[10px] text-muted-foreground/40">{agg.provider}</span>
+                  <span className="text-sm text-muted-foreground/80">{agg.provider}</span>
                   {agg.modelId === bestModelId && (
-                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-primary/15 text-primary border border-primary/20">
+                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-sm font-medium bg-primary/15 text-primary border border-primary/20">
                       <Trophy className="w-3 h-3" /> Best
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 text-xs">
+              <div className="flex items-center gap-4 text-sm">
                 <div className="flex items-center gap-1.5" title="Tool Accuracy">
-                  <Target className="w-3.5 h-3.5 text-muted-foreground/40" />
+                  <Target className="w-3.5 h-3.5 text-muted-foreground/80" />
                   <span className={scoreColor(agg.avgToolAccuracy)}>{agg.avgToolAccuracy}</span>
                 </div>
                 <div className="flex items-center gap-1.5" title="Output Quality">
-                  <FileText className="w-3.5 h-3.5 text-muted-foreground/40" />
+                  <FileText className="w-3.5 h-3.5 text-muted-foreground/80" />
                   <span className={scoreColor(agg.avgOutputQuality)}>{agg.avgOutputQuality}</span>
                 </div>
                 <div className="flex items-center gap-1.5" title="Protocol Compliance">
-                  <Shield className="w-3.5 h-3.5 text-muted-foreground/40" />
+                  <Shield className="w-3.5 h-3.5 text-muted-foreground/80" />
                   <span className={scoreColor(agg.avgProtocolCompliance)}>{agg.avgProtocolCompliance}</span>
                 </div>
                 <div className="w-px h-4 bg-primary/10" />
@@ -139,11 +141,11 @@ export function TestComparisonTable({ results }: Props) {
                   </span>
                 </div>
                 <div className="w-px h-4 bg-primary/10" />
-                <div className="flex items-center gap-1 text-muted-foreground/50" title="Total Cost">
+                <div className="flex items-center gap-1 text-muted-foreground/90" title="Total Cost">
                   <DollarSign className="w-3 h-3" />
                   <span>${agg.totalCost.toFixed(4)}</span>
                 </div>
-                <div className="flex items-center gap-1 text-muted-foreground/50" title="Avg Duration">
+                <div className="flex items-center gap-1 text-muted-foreground/90" title="Avg Duration">
                   <Clock className="w-3 h-3" />
                   <span>{(agg.avgDuration / 1000).toFixed(1)}s</span>
                 </div>
@@ -155,19 +157,20 @@ export function TestComparisonTable({ results }: Props) {
 
       {/* Detailed comparison matrix */}
       <div className="space-y-2">
-        <h4 className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider">
+        <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
+          <span className="w-6 h-[2px] bg-gradient-to-r from-primary/50 to-accent/50 rounded-full" />
           Scenario Breakdown
         </h4>
         <div className="overflow-x-auto border border-primary/10 rounded-xl">
-          <table className="w-full text-xs">
+          <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-primary/10 bg-secondary/30">
-                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground/60">Scenario</th>
+                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground/80">Scenario</th>
                 {models.map((mid) => (
                   <th
                     key={mid}
                     className={`text-center px-3 py-2.5 font-medium ${
-                      mid === bestModelId ? 'text-primary' : 'text-muted-foreground/60'
+                      mid === bestModelId ? 'text-primary' : 'text-muted-foreground/80'
                     }`}
                   >
                     {mid}
@@ -183,7 +186,7 @@ export function TestComparisonTable({ results }: Props) {
                   </td>
                   {models.map((mid) => {
                     const r = matrix[scenario]?.[mid];
-                    if (!r) return <td key={mid} className="px-3 py-2.5 text-center text-muted-foreground/30">—</td>;
+                    if (!r) return <td key={mid} className="px-3 py-2.5 text-center text-muted-foreground/80">—</td>;
                     const composite = Math.round(
                       (r.tool_accuracy_score ?? 0) * 0.4 +
                       (r.output_quality_score ?? 0) * 0.4 +
@@ -196,7 +199,7 @@ export function TestComparisonTable({ results }: Props) {
                           <span className={`text-sm font-bold ${scoreColor(composite)}`}>
                             {composite}
                           </span>
-                          <div className="flex items-center gap-2 text-[10px] text-muted-foreground/40">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground/80">
                             <span>${r.cost_usd.toFixed(4)}</span>
                             <span>{(r.duration_ms / 1000).toFixed(1)}s</span>
                           </div>

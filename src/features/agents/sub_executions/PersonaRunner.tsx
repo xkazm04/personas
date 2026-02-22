@@ -53,6 +53,7 @@ export function PersonaRunner() {
   const activeExecutionId = usePersonaStore((state) => state.activeExecutionId);
   const executionOutput = usePersonaStore((state) => state.executionOutput);
 
+  const executionPersonaId = usePersonaStore((state) => state.executionPersonaId);
   const rerunInputData = usePersonaStore((state) => state.rerunInputData);
   const setRerunInputData = usePersonaStore((state) => state.setRerunInputData);
 
@@ -75,6 +76,7 @@ export function PersonaRunner() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const personaId = selectedPersona?.id || '';
+  const isThisPersonasExecution = executionPersonaId === personaId && personaId !== '';
 
   // Terminal scroll & unseen line tracking
   const terminalBodyRef = useRef<HTMLDivElement>(null);
@@ -140,12 +142,14 @@ export function PersonaRunner() {
     };
   }, [isExecuting]);
 
-  // Sync store output to local lines
+  // Sync store output to local lines (only for this persona's execution)
   useEffect(() => {
-    if (executionOutput.length > 0) {
+    if (isThisPersonasExecution && executionOutput.length > 0) {
       setOutputLines(executionOutput);
+    } else if (!isThisPersonasExecution) {
+      setOutputLines([]);
     }
-  }, [executionOutput]);
+  }, [executionOutput, isThisPersonasExecution]);
 
   // Derive phases from new output lines
   useEffect(() => {
@@ -240,7 +244,7 @@ export function PersonaRunner() {
 
   if (!selectedPersona) {
     return (
-      <div className="flex items-center justify-center py-8 text-muted-foreground/40">
+      <div className="flex items-center justify-center py-8 text-muted-foreground/80">
         No persona selected
       </div>
     );
@@ -325,75 +329,82 @@ export function PersonaRunner() {
 
   return (
     <div ref={runnerRef} className="space-y-5">
-      <h3 className="text-sm font-mono text-muted-foreground/50 uppercase tracking-wider">Run Persona</h3>
+      <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
+        <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
+        <Play className="w-3.5 h-3.5" />
+        Run Persona
+      </h4>
 
-      {/* Input Data Section */}
-      <div className="space-y-2">
+      {/* Input & Execute Card */}
+      <div className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-4 space-y-4">
+        {/* Input Data Section */}
+        <div className="space-y-2">
+          <button
+            onClick={() => setShowInputEditor(!showInputEditor)}
+            className="flex items-center gap-2 text-sm text-foreground/90 hover:text-foreground transition-colors"
+          >
+            {showInputEditor ? (
+              <ChevronDown className="w-4 h-4" />
+            ) : (
+              <ChevronRight className="w-4 h-4" />
+            )}
+            Input Data (Optional)
+          </button>
+
+          <AnimatePresence>
+            {showInputEditor && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+              >
+                <textarea
+                  value={inputData}
+                  onChange={(e) => {
+                    setInputData(e.target.value);
+                    if (jsonError) setJsonError(null);
+                  }}
+                  placeholder='{"key": "value"}'
+                  className={`w-full h-32 px-4 py-3 bg-background/50 border rounded-xl text-foreground font-mono text-sm resize-y focus:outline-none focus:ring-2 transition-all placeholder-muted-foreground/30 ${
+                    jsonError
+                      ? 'border-red-500/30 ring-1 ring-red-500/30 focus:ring-red-500/40 focus:border-red-500/40'
+                      : 'border-primary/15 focus:ring-primary/40 focus:border-primary/40'
+                  }`}
+                  spellCheck={false}
+                />
+                {jsonError && (
+                  <p className="text-red-400/80 text-sm mt-1">{jsonError}</p>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Execute Button */}
         <button
-          onClick={() => setShowInputEditor(!showInputEditor)}
-          className="flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground transition-colors"
+          onClick={isExecuting ? handleStop : handleExecute}
+          className={`w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl font-medium text-sm transition-all ${
+            isExecuting
+              ? 'bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20'
+              : 'bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99]'
+          }`}
         >
-          {showInputEditor ? (
-            <ChevronDown className="w-4 h-4" />
+          {isExecuting ? (
+            <>
+              <Square className="w-5 h-5" />
+              Stop Execution
+            </>
           ) : (
-            <ChevronRight className="w-4 h-4" />
+            <>
+              {cloudConfig?.is_connected ? <Cloud className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+              {cloudConfig?.is_connected ? 'Execute on Cloud' : 'Execute Persona'}
+            </>
           )}
-          Input Data (Optional)
         </button>
-
-        <AnimatePresence>
-          {showInputEditor && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-            >
-              <textarea
-                value={inputData}
-                onChange={(e) => {
-                  setInputData(e.target.value);
-                  if (jsonError) setJsonError(null);
-                }}
-                placeholder='{"key": "value"}'
-                className={`w-full h-32 px-4 py-3 bg-background/50 border rounded-2xl text-foreground font-mono text-sm resize-y focus:outline-none focus:ring-2 transition-all placeholder-muted-foreground/30 ${
-                  jsonError
-                    ? 'border-red-500/30 ring-1 ring-red-500/30 focus:ring-red-500/40 focus:border-red-500/40'
-                    : 'border-border/50 focus:ring-primary/40 focus:border-primary/40'
-                }`}
-                spellCheck={false}
-              />
-              {jsonError && (
-                <p className="text-red-400/80 text-xs mt-1">{jsonError}</p>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
-      {/* Execute Button */}
-      <button
-        onClick={isExecuting ? handleStop : handleExecute}
-        className={`w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl font-medium text-sm transition-all ${
-          isExecuting
-            ? 'bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20'
-            : 'bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99]'
-        }`}
-      >
-        {isExecuting ? (
-          <>
-            <Square className="w-5 h-5" />
-            Stop Execution
-          </>
-        ) : (
-          <>
-            {cloudConfig?.is_connected ? <Cloud className="w-5 h-5" /> : <Play className="w-5 h-5" />}
-            {cloudConfig?.is_connected ? 'Execute on Cloud' : 'Execute Persona'}
-          </>
-        )}
-      </button>
-
       {/* Progress Indicator */}
-      {isExecuting && (
+      {isExecuting && isThisPersonasExecution && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
@@ -404,11 +415,11 @@ export function PersonaRunner() {
           <div className="flex-1 min-w-0">
             {typicalDurationMs ? (
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground/60">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground/80">
                     {formatElapsed(elapsedMs)} elapsed
                   </span>
-                  <span className="text-muted-foreground/40">
+                  <span className="text-muted-foreground/80">
                     {elapsedMs < typicalDurationMs
                       ? `Typically completes in ~${formatElapsed(typicalDurationMs)}`
                       : 'Taking longer than usual...'}
@@ -424,7 +435,7 @@ export function PersonaRunner() {
                 </div>
               </div>
             ) : (
-              <span className="text-xs text-muted-foreground/50">
+              <span className="text-sm text-muted-foreground/90">
                 {formatElapsed(elapsedMs)} elapsed
               </span>
             )}
@@ -433,7 +444,7 @@ export function PersonaRunner() {
       )}
 
       {/* Persistent Execution Summary Card */}
-      {!isExecuting && executionSummary && (
+      {!isExecuting && isThisPersonasExecution && executionSummary && (
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -441,17 +452,21 @@ export function PersonaRunner() {
           className={`rounded-xl border p-4 ${
             executionSummary.status === 'completed'
               ? 'border-emerald-500/20 bg-emerald-500/5'
-              : executionSummary.status === 'cancelled'
-                ? 'border-amber-500/20 bg-amber-500/5'
-                : executionSummary.status === 'failed'
-                  ? 'border-red-500/20 bg-red-500/5'
-                  : 'border-amber-500/20 bg-amber-500/5'
+              : executionSummary.status === 'incomplete'
+                ? 'border-orange-500/20 bg-orange-500/5'
+                : executionSummary.status === 'cancelled'
+                  ? 'border-amber-500/20 bg-amber-500/5'
+                  : executionSummary.status === 'failed'
+                    ? 'border-red-500/20 bg-red-500/5'
+                    : 'border-amber-500/20 bg-amber-500/5'
           }`}
         >
           <div className="flex items-center gap-5 flex-wrap">
             <div className="flex items-center gap-2">
               {executionSummary.status === 'completed' ? (
                 <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+              ) : executionSummary.status === 'incomplete' ? (
+                <AlertTriangle className="w-5 h-5 text-orange-400" />
               ) : executionSummary.status === 'cancelled' ? (
                 <Pause className="w-5 h-5 text-amber-400" />
               ) : executionSummary.status === 'failed' ? (
@@ -462,23 +477,25 @@ export function PersonaRunner() {
               <span className={`text-sm font-semibold capitalize ${
                 executionSummary.status === 'completed'
                   ? 'text-emerald-400'
-                  : executionSummary.status === 'failed'
-                    ? 'text-red-400'
-                    : 'text-amber-400'
+                  : executionSummary.status === 'incomplete'
+                    ? 'text-orange-400'
+                    : executionSummary.status === 'failed'
+                      ? 'text-red-400'
+                      : 'text-amber-400'
               }`}>
                 {executionSummary.status}
               </span>
             </div>
 
             {executionSummary.duration_ms != null && (
-              <div className="flex items-center gap-1.5 text-muted-foreground/60">
+              <div className="flex items-center gap-1.5 text-muted-foreground/80">
                 <Timer className="w-3.5 h-3.5" />
                 <span className="text-sm font-mono">{(executionSummary.duration_ms / 1000).toFixed(1)}s</span>
               </div>
             )}
 
             {executionSummary.cost_usd != null && (
-              <div className="flex items-center gap-1.5 text-muted-foreground/60">
+              <div className="flex items-center gap-1.5 text-muted-foreground/80">
                 <DollarSign className="w-3.5 h-3.5" />
                 <span className="text-sm font-mono">${executionSummary.cost_usd.toFixed(4)}</span>
               </div>
@@ -489,10 +506,10 @@ export function PersonaRunner() {
           {executionSummary.status === 'cancelled' && (
             <div className="mt-3 pt-3 border-t border-amber-500/15 space-y-3">
               {executionSummary.last_tool && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground/50">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground/90">
                   <Wrench className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" />
                   <span>Stopped while running</span>
-                  <code className="px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-300/80 font-mono text-[11px]">
+                  <code className="px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-300/80 font-mono text-sm">
                     {executionSummary.last_tool}
                   </code>
                 </div>
@@ -510,7 +527,7 @@ export function PersonaRunner() {
       )}
 
       {/* Terminal Output */}
-      {(isExecuting || outputLines.length > 0) && (
+      {isThisPersonasExecution && (isExecuting || outputLines.length > 0) && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -531,7 +548,7 @@ export function PersonaRunner() {
               <div className="border-b border-border/20">
                 <button
                   onClick={() => setShowPhases(!showPhases)}
-                  className="w-full flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-mono text-muted-foreground/40 hover:text-muted-foreground/60 transition-colors uppercase tracking-wider"
+                  className="w-full flex items-center gap-1.5 px-3 py-1.5 text-sm font-mono text-muted-foreground/80 hover:text-muted-foreground transition-colors uppercase tracking-wider"
                 >
                   {showPhases ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                   Phases
@@ -562,16 +579,16 @@ export function PersonaRunner() {
                                 <div className="w-3 h-px bg-primary/15 mx-0.5" />
                               )}
                               <div
-                                className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${
+                                className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-sm font-medium transition-colors ${
                                   isActive
                                     ? 'bg-primary/12 text-primary/80 border border-primary/20'
-                                    : 'bg-secondary/30 text-muted-foreground/50 border border-transparent'
+                                    : 'bg-secondary/30 text-muted-foreground/90 border border-transparent'
                                 }`}
                               >
                                 <PhaseIcon className={`w-3 h-3 flex-shrink-0 ${isActive ? 'animate-pulse' : ''}`} />
                                 <span>{phase.label}</span>
                                 {duration > 0 && (
-                                  <span className={`font-mono text-[10px] ${isActive ? 'text-primary/50' : 'text-muted-foreground/30'}`}>
+                                  <span className={`font-mono text-sm ${isActive ? 'text-primary/50' : 'text-muted-foreground/80'}`}>
                                     {formatElapsed(duration)}
                                   </span>
                                 )}
@@ -591,7 +608,7 @@ export function PersonaRunner() {
             <div
               ref={terminalBodyRef}
               onScroll={handleTerminalScroll}
-              className="p-4 max-h-[400px] overflow-y-auto font-mono text-xs space-y-0.5"
+              className="p-4 max-h-[400px] overflow-y-auto font-mono text-sm space-y-0.5"
             >
               {outputLines.map((line, i) => {
                 if (!line.trim()) return <div key={i} className="h-2" />;
@@ -604,12 +621,15 @@ export function PersonaRunner() {
                     const isSuccess = summary.status === 'completed';
                     const isFailed = summary.status === 'failed';
                     const isCancelled = summary.status === 'cancelled';
+                    const isIncomplete = summary.status === 'incomplete';
                     return (
                       <div key={i} className={`border-t border-primary/15 pt-2 mt-2 transition-opacity ${isFiltering && !visible ? 'opacity-20' : ''}`}>
                         <div className="flex items-center gap-4 flex-wrap">
                           <div className="flex items-center gap-1.5">
                             {isSuccess ? (
                               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                            ) : isIncomplete ? (
+                              <AlertTriangle className="w-3.5 h-3.5 text-orange-400" />
                             ) : isCancelled ? (
                               <Pause className="w-3.5 h-3.5 text-amber-400" />
                             ) : isFailed ? (
@@ -617,24 +637,24 @@ export function PersonaRunner() {
                             ) : (
                               <XCircle className="w-3.5 h-3.5 text-amber-400" />
                             )}
-                            <span className={`font-semibold capitalize ${isSuccess ? 'text-emerald-400/90' : isFailed ? 'text-red-400/90' : 'text-amber-400/90'}`}>
+                            <span className={`font-semibold capitalize ${isSuccess ? 'text-emerald-400/90' : isIncomplete ? 'text-orange-400/90' : isFailed ? 'text-red-400/90' : 'text-amber-400/90'}`}>
                               {summary.status}
                             </span>
                           </div>
                           {summary.duration_ms != null && (
-                            <div className="flex items-center gap-1.5 text-muted-foreground/60">
+                            <div className="flex items-center gap-1.5 text-muted-foreground/80">
                               <Timer className="w-3 h-3" />
                               <span>{(summary.duration_ms / 1000).toFixed(1)}s</span>
                             </div>
                           )}
                           {summary.cost_usd != null && (
-                            <div className="flex items-center gap-1.5 text-muted-foreground/60">
+                            <div className="flex items-center gap-1.5 text-muted-foreground/80">
                               <DollarSign className="w-3 h-3" />
                               <span>${summary.cost_usd.toFixed(4)}</span>
                             </div>
                           )}
                           {isCancelled && summary.last_tool && (
-                            <div className="flex items-center gap-1.5 text-muted-foreground/50">
+                            <div className="flex items-center gap-1.5 text-muted-foreground/90">
                               <Wrench className="w-3 h-3 text-amber-400/60" />
                               <span className="text-amber-300/60">{summary.last_tool}</span>
                             </div>
@@ -652,7 +672,7 @@ export function PersonaRunner() {
                 );
               })}
               {isExecuting && (
-                <div className="text-muted-foreground/30 animate-pulse">{'>'} _</div>
+                <div className="text-muted-foreground/80 animate-pulse">{'>'} _</div>
               )}
             </div>
 
@@ -665,7 +685,7 @@ export function PersonaRunner() {
                   exit={{ opacity: 0, y: 8 }}
                   transition={{ duration: 0.15 }}
                   onClick={scrollToBottom}
-                  className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/90 text-foreground text-[11px] font-medium shadow-lg shadow-primary/20 hover:bg-primary transition-colors backdrop-blur-sm"
+                  className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/90 text-foreground text-sm font-medium shadow-lg shadow-primary/20 hover:bg-primary transition-colors backdrop-blur-sm"
                 >
                   <ArrowDown className="w-3 h-3" />
                   {unseenCount} new line{unseenCount !== 1 ? 's' : ''} below

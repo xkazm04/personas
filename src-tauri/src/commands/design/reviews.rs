@@ -631,6 +631,7 @@ async fn run_cli_for_template(
 
 // ── Helper Functions ───────────────────────────────────────────
 
+#[allow(clippy::too_many_arguments)]
 fn emit_status(
     app: &tauri::AppHandle,
     run_id: &str,

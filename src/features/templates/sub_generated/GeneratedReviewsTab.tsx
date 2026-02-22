@@ -76,7 +76,7 @@ function RowActionMenu({ reviewId, onDelete }: { reviewId: string; onDelete: (id
         aria-haspopup="true"
         aria-expanded={open}
       >
-        <MoreVertical className="w-4 h-4 text-muted-foreground/50" />
+        <MoreVertical className="w-4 h-4 text-muted-foreground/90" />
       </button>
       {open && (
         <div className="absolute right-0 top-full mt-1 z-50 min-w-[150px] py-1 bg-background border border-primary/20 rounded-lg shadow-2xl backdrop-blur-sm">
@@ -164,7 +164,7 @@ export default function GeneratedReviewsTab({
 
   if (isLoading && reviews.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-muted-foreground/40 text-sm">
+      <div className="flex items-center justify-center h-full text-muted-foreground/80 text-sm">
         Loading templates...
       </div>
     );
@@ -172,10 +172,10 @@ export default function GeneratedReviewsTab({
 
   if (reviews.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-4 text-muted-foreground/40">
+      <div className="flex flex-col items-center justify-center h-full gap-4 text-muted-foreground/80">
         <FlaskConical className="w-12 h-12 opacity-30" />
         <p className="text-sm font-medium">No generated templates yet</p>
-        <p className="text-xs text-muted-foreground/30 text-center max-w-xs">
+        <p className="text-sm text-muted-foreground/80 text-center max-w-xs">
           Generate templates to build a library of reusable persona configurations
         </p>
         <button
@@ -221,8 +221,8 @@ export default function GeneratedReviewsTab({
               <Sparkles className="w-4 h-4 text-violet-400 animate-pulse" />
             </div>
             <div className="flex-1 min-w-0">
-              <span className="text-xs font-medium text-violet-300 block">Template adoption in progress</span>
-              <span className="text-[11px] text-muted-foreground/40">Click to view progress</span>
+              <span className="text-sm font-medium text-violet-300 block">Template adoption in progress</span>
+              <span className="text-sm text-muted-foreground/80">Click to view progress</span>
             </div>
             <div className="w-2 h-2 rounded-full bg-violet-400 animate-pulse flex-shrink-0" />
           </button>
@@ -232,13 +232,13 @@ export default function GeneratedReviewsTab({
       <table className="w-full">
         <thead className="sticky top-0 z-10">
           <tr className="bg-background border-b border-primary/10" style={{ backgroundColor: 'hsl(var(--background))' }}>
-            <th className="text-left text-xs font-medium text-muted-foreground/50 px-6 py-3 w-8 bg-secondary/80" />
-            <th className="text-left text-xs font-medium text-muted-foreground/50 px-4 py-3 bg-secondary/80">Template Name</th>
-            <th className="text-left text-xs font-medium text-muted-foreground/50 px-4 py-3 bg-secondary/80">Connectors</th>
-            <th className="text-center text-xs font-medium text-muted-foreground/50 px-4 py-3 bg-secondary/80">Quality</th>
-            <th className="text-center text-xs font-medium text-muted-foreground/50 px-4 py-3 bg-secondary/80">Status</th>
-            <th className="text-center text-xs font-medium text-muted-foreground/50 px-4 py-3 bg-secondary/80">Flows</th>
-            <th className="text-right text-xs font-medium text-muted-foreground/50 px-6 py-3 w-28 bg-secondary/80" />
+            <th className="text-left text-sm font-medium text-muted-foreground/90 px-6 py-3 w-8 bg-secondary/80" />
+            <th className="text-left text-sm font-medium text-muted-foreground/90 px-4 py-3 bg-secondary/80">Template Name</th>
+            <th className="text-left text-sm font-medium text-muted-foreground/90 px-4 py-3 bg-secondary/80">Connectors</th>
+            <th className="text-center text-sm font-medium text-muted-foreground/90 px-4 py-3 bg-secondary/80">Quality</th>
+            <th className="text-center text-sm font-medium text-muted-foreground/90 px-4 py-3 bg-secondary/80">Status</th>
+            <th className="text-center text-sm font-medium text-muted-foreground/90 px-4 py-3 bg-secondary/80">Flows</th>
+            <th className="text-right text-sm font-medium text-muted-foreground/90 px-6 py-3 w-28 bg-secondary/80" />
           </tr>
         </thead>
         <tbody>
@@ -274,9 +274,9 @@ export default function GeneratedReviewsTab({
                 >
                   <td className="px-6 py-3">
                     {isExpanded ? (
-                      <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/40" />
+                      <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/80" />
                     ) : (
-                      <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40" />
+                      <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/80" />
                     )}
                   </td>
                   <td className="px-4 py-3">
@@ -284,7 +284,7 @@ export default function GeneratedReviewsTab({
                       <span className="text-sm font-medium text-foreground/80 block">
                         {review.test_case_name}
                       </span>
-                      <span className="text-xs text-muted-foreground/40 block truncate max-w-[400px]">
+                      <span className="text-sm text-muted-foreground/80 block truncate max-w-[400px]">
                         {review.instruction.length > 80
                           ? review.instruction.slice(0, 80) + '...'
                           : review.instruction}
@@ -315,18 +315,18 @@ export default function GeneratedReviewsTab({
                   <td className="px-4 py-3 text-center">
                     {qualityScore !== null ? (
                       <span
-                        className={`inline-flex items-center px-2.5 py-1 text-xs font-mono font-semibold rounded-full border ${getQualityColor(qualityScore)}`}
+                        className={`inline-flex items-center px-2.5 py-1 text-sm font-mono font-semibold rounded-full border ${getQualityColor(qualityScore)}`}
                       >
                         {qualityScore}
                       </span>
                     ) : (
-                      <span className="text-xs text-muted-foreground/30">--</span>
+                      <span className="text-sm text-muted-foreground/80">--</span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <div className="flex items-center justify-center gap-1.5">
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full border ${statusBadge.color}`}
+                        className={`inline-flex items-center gap-1 px-2 py-1 text-sm rounded-full border ${statusBadge.color}`}
                       >
                         <StatusIcon className="w-3 h-3" />
                         {statusBadge.label}
@@ -345,13 +345,13 @@ export default function GeneratedReviewsTab({
                           e.stopPropagation();
                           onViewFlows(review);
                         }}
-                        className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-lg bg-violet-500/10 text-violet-300 border border-violet-500/20 hover:bg-violet-500/20 transition-colors"
+                        className="inline-flex items-center gap-1 px-2 py-1 text-sm rounded-lg bg-violet-500/10 text-violet-300 border border-violet-500/20 hover:bg-violet-500/20 transition-colors"
                       >
                         <Workflow className="w-3 h-3" />
                         {flows.length}
                       </button>
                     ) : (
-                      <span className="text-xs text-muted-foreground/30">--</span>
+                      <span className="text-sm text-muted-foreground/80">--</span>
                     )}
                   </td>
                   <td className="px-6 py-3 text-right">
@@ -361,7 +361,7 @@ export default function GeneratedReviewsTab({
                           e.stopPropagation();
                           handleAdoptClick(review);
                         }}
-                        className="px-3 py-1.5 text-xs rounded-lg bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors inline-flex items-center gap-1.5"
+                        className="px-3 py-1.5 text-sm rounded-lg bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors inline-flex items-center gap-1.5"
                       >
                         <Download className="w-3 h-3" />
                         Adopt

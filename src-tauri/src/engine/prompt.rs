@@ -147,6 +147,7 @@ pub fn assemble_prompt(
     prompt.push_str(PROTOCOL_AGENT_MEMORY);
     prompt.push_str(PROTOCOL_MANUAL_REVIEW);
     prompt.push_str(PROTOCOL_EXECUTION_FLOW);
+    prompt.push_str(PROTOCOL_OUTCOME_ASSESSMENT);
 
     // Input Data
     if let Some(data) = input_data {
@@ -415,6 +416,24 @@ Fields:
 
 "#;
 
+const PROTOCOL_OUTCOME_ASSESSMENT: &str = r#"### Outcome Assessment Protocol
+IMPORTANT: At the very end of your execution, you MUST output an outcome assessment as the last thing before finishing:
+```json
+{"outcome_assessment": {"accomplished": true, "summary": "Brief description of what was achieved"}}
+```
+Fields:
+- `accomplished` (required): true if the task was successfully completed from a business perspective, false if it could not be completed
+- `summary` (required): Brief description of the outcome
+- `blockers` (optional): List of reasons the task could not be completed (only when accomplished is false)
+
+You MUST always output this assessment. Set accomplished to false if:
+- Required data was not available or accessible
+- External services were unreachable or returned errors that prevented task completion
+- The task requirements could not be fulfilled with the available tools
+- You could not verify the task was completed correctly
+
+"#;
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -566,6 +585,7 @@ mod tests {
         assert!(prompt.contains("### Agent Memory Protocol"));
         assert!(prompt.contains("### Manual Review Protocol"));
         assert!(prompt.contains("### Execution Flow Protocol"));
+        assert!(prompt.contains("### Outcome Assessment Protocol"));
     }
 
     #[test]

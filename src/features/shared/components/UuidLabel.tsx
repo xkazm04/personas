@@ -21,7 +21,7 @@ export function UuidLabel({ value, label }: UuidLabelProps) {
   return (
     <span className="inline-flex items-center gap-1 group/uuid relative">
       <span
-        className={`${label ? '' : 'font-mono '}text-foreground/60 cursor-default`}
+        className={`${label ? '' : 'font-mono '}text-foreground/80 cursor-default`}
         title={value}
       >
         {display}
@@ -29,7 +29,7 @@ export function UuidLabel({ value, label }: UuidLabelProps) {
       </span>
       <button
         onClick={handleCopy}
-        className="opacity-0 group-hover/uuid:opacity-100 p-0.5 rounded hover:bg-secondary/60 transition-opacity text-muted-foreground/40 hover:text-foreground/60"
+        className="opacity-0 group-hover/uuid:opacity-100 p-0.5 rounded hover:bg-secondary/60 transition-opacity text-muted-foreground/80 hover:text-foreground/95"
         title="Copy full ID"
       >
         {copied ? (

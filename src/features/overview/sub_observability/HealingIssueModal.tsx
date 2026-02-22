@@ -156,31 +156,31 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
                   <h3 id="healing-issue-title" className="text-sm font-semibold text-foreground/90 mb-2">{issue.title}</h3>
                   <div className="flex items-center gap-2 flex-wrap">
                     {isCircuitBreaker ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono uppercase rounded-md border bg-red-500/15 text-red-400 border-red-500/25">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-md border bg-red-500/15 text-red-400 border-red-500/25">
                         <Zap className="w-3 h-3" />
                         circuit breaker
                       </span>
                     ) : isAutoFixed ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono uppercase rounded-md border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-md border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
                         <CheckCircle className="w-3 h-3" />
                         auto-fixed
                       </span>
                     ) : (
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono uppercase rounded-md border ${sev.bg} ${sev.text} ${sev.border}`}>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-md border ${sev.bg} ${sev.text} ${sev.border}`}>
                         <AlertTriangle className="w-3 h-3" />
                         {issue.severity}
                       </span>
                     )}
                     {isAutoFixed && issue.execution_id && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
                         <RefreshCw className="w-2.5 h-2.5" />
                         healed via retry
                       </span>
                     )}
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono uppercase rounded-md border ${cat.bg} ${cat.text} ${cat.border}`}>
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-md border ${cat.bg} ${cat.text} ${cat.border}`}>
                       {issue.category}
                     </span>
-                    <span className="text-[10px] text-muted-foreground/40">
+                    <span className="text-sm text-muted-foreground/80">
                       {new Date(issue.created_at).toLocaleDateString()}
                     </span>
                   </div>
@@ -188,7 +188,7 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
                 <button
                   ref={closeButtonRef}
                   onClick={onClose}
-                  className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/50 hover:text-foreground/80 transition-colors"
+                  className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/90 hover:text-foreground/95 transition-colors"
                   aria-label="Close"
                 >
                   <X className="w-4 h-4" />
@@ -202,14 +202,14 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
                     <Zap className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-red-300/90">Persona auto-disabled</p>
-                      <p className="text-xs text-red-300/60 mt-1">
+                      <p className="text-sm text-red-300/60 mt-1">
                         This persona was automatically disabled after 5 consecutive failures. Review the error pattern below and re-enable manually once the root cause is resolved.
                       </p>
                     </div>
                   </div>
                 )}
                 <div>
-                  <h4 className="text-xs font-mono uppercase text-muted-foreground/50 mb-2">Analysis</h4>
+                  <h4 className="text-sm font-mono uppercase text-muted-foreground/90 mb-2">Analysis</h4>
                   <div className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
                     {issue.description}
                   </div>
@@ -220,11 +220,11 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <Wrench className="w-3.5 h-3.5 text-emerald-400" />
-                        <h4 className="text-xs font-mono uppercase text-emerald-400/80">Suggested Fix</h4>
+                        <h4 className="text-sm font-mono uppercase text-emerald-400/80">Suggested Fix</h4>
                       </div>
                       <button
                         onClick={handleCopyFix}
-                        className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-emerald-400/70 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-md transition-colors"
+                        className="flex items-center gap-1 px-2 py-1 text-sm font-medium text-emerald-400/70 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-md transition-colors"
                       >
                         {copied ? <ClipboardCheck className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                         {copied ? 'Copied' : 'Copy Fix'}
@@ -237,7 +237,7 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
                 )}
 
                 {issue.execution_id && (
-                  <div className="text-[10px] font-mono text-muted-foreground/30">
+                  <div className="text-sm font-mono text-muted-foreground/80">
                     Execution: {issue.execution_id}
                   </div>
                 )}
@@ -247,12 +247,12 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
               {!isAutoFixed && (
                 <div className="px-4 pt-3 border-t border-primary/10 space-y-2">
                   {(issue.severity === 'high' || issue.severity === 'critical') && (
-                    <div className="flex items-center gap-1.5 text-[10px] text-amber-400/60">
+                    <div className="flex items-center gap-1.5 text-sm text-amber-400/60">
                       <AlertTriangle className="w-3 h-3 flex-shrink-0" />
                       This issue is marked as {issue.severity} severity
                     </div>
                   )}
-                  <p className="text-[11px] text-muted-foreground/40">
+                  <p className="text-sm text-muted-foreground/80">
                     Marking resolved means you have addressed this issue outside the healing system.
                   </p>
                 </div>
@@ -267,24 +267,24 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
                     >
                       <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
                     </motion.div>
-                    <span className="text-[11px] text-emerald-400/60">This issue was automatically resolved</span>
+                    <span className="text-sm text-emerald-400/60">This issue was automatically resolved</span>
                   </div>
                 )}
                 <button
                   onClick={onClose}
-                  className="px-4 py-2 text-xs font-medium text-muted-foreground/60 hover:text-foreground/80 rounded-lg hover:bg-secondary/60 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-muted-foreground/80 hover:text-foreground/95 rounded-lg hover:bg-secondary/60 transition-colors"
                 >
                   Close
                 </button>
                 {!isAutoFixed && (
                   <button
                     onClick={handleResolve}
-                    className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 rounded-lg hover:bg-emerald-500/20 transition-colors"
+                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 rounded-lg hover:bg-emerald-500/20 transition-colors"
                   >
                     <CheckCircle className="w-3.5 h-3.5" />
                     <span className="flex flex-col items-start leading-tight">
                       <span>Mark as Resolved</span>
-                      <span className="text-[9px] text-emerald-400/50">(manual fix applied)</span>
+                      <span className="text-sm text-emerald-400/50">(manual fix applied)</span>
                     </span>
                   </button>
                 )}

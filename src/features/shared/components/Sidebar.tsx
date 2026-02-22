@@ -5,7 +5,6 @@ import { getVersion } from '@tauri-apps/api/app';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { SidebarSection, OverviewTab, TemplateTab, SettingsTab } from '@/lib/types/types';
 import GroupedAgentSidebar from '@/features/agents/components/GroupedAgentSidebar';
-import CreatePersonaModal from '@/features/agents/components/CreatePersonaModal';
 
 const disabledSections = new Set<SidebarSection>(['team', 'cloud']);
 
@@ -46,7 +45,8 @@ export default function Sidebar() {
     return metadata?.template_enabled === true;
   }).length;
 
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const selectPersona = usePersonaStore((s) => s.selectPersona);
+  const setIsCreatingPersona = usePersonaStore((s) => s.setIsCreatingPersona);
   const [appVersion, setAppVersion] = useState('');
 
   useEffect(() => {
@@ -63,7 +63,9 @@ export default function Sidebar() {
   }, [fetchPendingReviewCount, fetchUnreadMessageCount, fetchRecentEvents]);
 
   const handleCreatePersona = () => {
-    setShowCreateModal(true);
+    selectPersona(null);
+    setIsCreatingPersona(true);
+    setSidebarSection('personas');
   };
 
   const overviewItems: Array<{ id: OverviewTab; icon: typeof Activity; label: string }> = [
@@ -101,23 +103,23 @@ export default function Sidebar() {
                     ? 'bg-primary/15 border-primary/25'
                     : 'bg-secondary/40 border-primary/15'
                 }`}>
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-primary' : 'text-muted-foreground/50'}`} />
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-primary' : 'text-muted-foreground/90'}`} />
                 </div>
-                <span className={`text-sm font-medium ${isActive ? 'text-foreground/90' : 'text-muted-foreground/60'}`}>
+                <span className={`text-sm font-medium ${isActive ? 'text-foreground/90' : 'text-muted-foreground/80'}`}>
                   {item.label}
                 </span>
                 {item.id === 'manual-review' && pendingReviewCount > 0 && (
-                  <span className="ml-auto px-1.5 py-0.5 text-[10px] font-bold leading-none rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                  <span className="ml-auto px-1.5 py-0.5 text-sm font-bold leading-none rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
                     {pendingReviewCount}
                   </span>
                 )}
                 {item.id === 'messages' && unreadMessageCount > 0 && (
-                  <span className="ml-auto px-1.5 py-0.5 text-[10px] font-bold leading-none rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                  <span className="ml-auto px-1.5 py-0.5 text-sm font-bold leading-none rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">
                     {unreadMessageCount}
                   </span>
                 )}
                 {item.id === 'events' && pendingEventCount > 0 && (
-                  <span className="ml-auto px-1.5 py-0.5 text-[10px] font-bold leading-none rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                  <span className="ml-auto px-1.5 py-0.5 text-sm font-bold leading-none rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30">
                     {pendingEventCount}
                   </span>
                 )}
@@ -138,8 +140,8 @@ export default function Sidebar() {
           <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
             <Zap className="w-6 h-6 text-amber-400/60" />
           </div>
-          <p className="text-sm text-muted-foreground/60">Event triggers</p>
-          <p className="text-xs text-muted-foreground/40 mt-1">Configure in persona settings</p>
+          <p className="text-sm text-muted-foreground/80">Event triggers</p>
+          <p className="text-sm text-muted-foreground/80 mt-1">Configure in persona settings</p>
         </div>
       );
     }
@@ -175,18 +177,18 @@ export default function Sidebar() {
                       ? 'bg-primary/15 border-primary/25'
                       : 'bg-secondary/40 border-primary/15'
                   }`}>
-                    <ItemIcon className={`w-3.5 h-3.5 ${active ? 'text-primary' : 'text-muted-foreground/60'}`} />
+                    <ItemIcon className={`w-3.5 h-3.5 ${active ? 'text-primary' : 'text-muted-foreground/80'}`} />
                   </div>
                   <span className={`text-sm ${active ? 'text-foreground/90' : 'text-muted-foreground/65'}`}>
                     {item.label}
                   </span>
                   {item.id === 'credentials' && (
-                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-secondary/50 border border-primary/10 text-muted-foreground/70">
+                    <span className="ml-auto text-sm px-1.5 py-0.5 rounded-full bg-secondary/50 border border-primary/10 text-muted-foreground/90">
                       {credentials.length}
                     </span>
                   )}
                   {item.id === 'from-template' && (
-                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-secondary/50 border border-primary/10 text-muted-foreground/70">
+                    <span className="ml-auto text-sm px-1.5 py-0.5 rounded-full bg-secondary/50 border border-primary/10 text-muted-foreground/90">
                       {templateCount}
                     </span>
                   )}
@@ -200,7 +202,7 @@ export default function Sidebar() {
               <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
                 <Key className="w-5 h-5 text-emerald-400/60" />
               </div>
-              <p className="text-xs text-muted-foreground/60">No credentials yet</p>
+              <p className="text-sm text-muted-foreground/80">No credentials yet</p>
             </div>
           )}
         </>
@@ -238,7 +240,7 @@ export default function Sidebar() {
                       ? 'bg-primary/15 border-primary/25'
                       : 'bg-secondary/40 border-primary/15'
                   }`}>
-                    <ItemIcon className={`w-3.5 h-3.5 ${active ? 'text-primary' : 'text-muted-foreground/60'}`} />
+                    <ItemIcon className={`w-3.5 h-3.5 ${active ? 'text-primary' : 'text-muted-foreground/80'}`} />
                   </div>
                   <span className={`text-sm ${active ? 'text-foreground/90' : 'text-muted-foreground/65'}`}>
                     {item.label}
@@ -257,8 +259,8 @@ export default function Sidebar() {
           <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
             <Users className="w-6 h-6 text-indigo-400/60" />
           </div>
-          <p className="text-sm text-muted-foreground/60">Multi-Agent Teams</p>
-          <p className="text-xs text-muted-foreground/40 mt-1">Design agent pipelines visually</p>
+          <p className="text-sm text-muted-foreground/80">Multi-Agent Teams</p>
+          <p className="text-sm text-muted-foreground/80 mt-1">Design agent pipelines visually</p>
         </div>
       );
     }
@@ -269,8 +271,8 @@ export default function Sidebar() {
           <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
             <Cloud className="w-6 h-6 text-indigo-400/60" />
           </div>
-          <p className="text-sm text-muted-foreground/60">Cloud Execution</p>
-          <p className="text-xs text-muted-foreground/40 mt-1">Run agents on remote workers</p>
+          <p className="text-sm text-muted-foreground/80">Cloud Execution</p>
+          <p className="text-sm text-muted-foreground/80 mt-1">Run agents on remote workers</p>
         </div>
       );
     }
@@ -303,7 +305,7 @@ export default function Sidebar() {
                       ? 'bg-primary/15 border-primary/25'
                       : 'bg-secondary/40 border-primary/15'
                   }`}>
-                    <ItemIcon className={`w-3.5 h-3.5 ${active ? 'text-primary' : 'text-muted-foreground/60'}`} />
+                    <ItemIcon className={`w-3.5 h-3.5 ${active ? 'text-primary' : 'text-muted-foreground/80'}`} />
                   </div>
                   <span className={`text-sm ${active ? 'text-foreground/90' : 'text-muted-foreground/65'}`}>
                     {item.label}
@@ -321,7 +323,6 @@ export default function Sidebar() {
 
   return (
     <div className="flex h-full">
-      <CreatePersonaModal open={showCreateModal} onClose={() => setShowCreateModal(false)} />
 
       {/* Level 1: Section icons */}
       <div className="w-[60px] bg-secondary/40 border-r border-primary/15 flex flex-col items-center py-4 gap-1.5">
@@ -349,16 +350,16 @@ export default function Sidebar() {
               )}
               <Icon className={`relative z-10 w-5 h-5 transition-colors ${
                 isDisabled
-                  ? 'text-muted-foreground/30'
-                  : isActive ? 'text-primary' : 'text-muted-foreground/50 group-hover:text-foreground/70'
+                  ? 'text-muted-foreground/80'
+                  : isActive ? 'text-primary' : 'text-muted-foreground/90 group-hover:text-foreground/95'
               }`} />
               {isDisabled && (
-                <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 z-20 px-1 py-px text-[7px] font-semibold uppercase tracking-wider leading-none rounded bg-muted-foreground/15 text-muted-foreground/40 whitespace-nowrap">
+                <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 z-20 px-1 py-px text-[7px] font-semibold uppercase tracking-wider leading-none rounded bg-muted-foreground/15 text-muted-foreground/80 whitespace-nowrap">
                   soon
                 </span>
               )}
               {section.id === 'overview' && pendingReviewCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 z-20 min-w-[16px] h-4 px-1 flex items-center justify-center text-[9px] font-bold leading-none rounded-full bg-amber-500 text-white shadow-sm shadow-amber-500/30">
+                <span className="absolute -top-0.5 -right-0.5 z-20 min-w-[16px] h-4 px-1 flex items-center justify-center text-sm font-bold leading-none rounded-full bg-amber-500 text-white shadow-sm shadow-amber-500/30">
                   {pendingReviewCount > 99 ? '99+' : pendingReviewCount}
                 </span>
               )}
@@ -375,7 +376,7 @@ export default function Sidebar() {
         <div className="flex-1" />
         {appVersion && (
           <div className="pb-2 pt-1">
-            <span className="text-[10px] font-mono text-muted-foreground/40 block text-center">
+            <span className="text-sm font-mono text-muted-foreground/80 block text-center">
               v{appVersion}
             </span>
           </div>
@@ -385,7 +386,7 @@ export default function Sidebar() {
       {/* Level 2: Item list */}
       <div className="w-[240px] bg-secondary/30 border-r border-primary/15 flex flex-col overflow-hidden">
         <div className="px-4 py-3 border-b border-primary/10 bg-primary/5">
-          <h2 className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider">
+          <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
             {sections.find((s) => s.id === sidebarSection)?.label || 'Overview'}
           </h2>
         </div>

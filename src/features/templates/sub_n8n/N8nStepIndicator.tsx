@@ -53,7 +53,7 @@ export function N8nStepIndicator({ currentStep, className = '' }: N8nStepIndicat
                   ) : (
                     <Icon
                       className={`w-3 h-3 ${
-                        isActive ? 'text-violet-300' : 'text-muted-foreground/30'
+                        isActive ? 'text-violet-300' : 'text-muted-foreground/80'
                       }`}
                     />
                   )}
@@ -62,12 +62,12 @@ export function N8nStepIndicator({ currentStep, className = '' }: N8nStepIndicat
 
               {/* Step label */}
               <span
-                className={`text-[10px] font-medium truncate transition-colors duration-300 ${
+                className={`text-sm font-medium truncate transition-colors duration-300 ${
                   isActive
                     ? 'text-violet-300'
                     : isCompleted
                       ? 'text-emerald-400/70'
-                      : 'text-muted-foreground/25'
+                      : 'text-muted-foreground/80'
                 }`}
               >
                 {meta.label}

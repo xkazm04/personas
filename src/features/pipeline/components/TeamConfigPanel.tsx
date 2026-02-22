@@ -46,10 +46,10 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">
-          <span className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider">Configure</span>
+          <span className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Configure</span>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg hover:bg-secondary/60 text-muted-foreground/50 hover:text-foreground/80 transition-colors"
+            className="p-1 rounded-lg hover:bg-secondary/60 text-muted-foreground/90 hover:text-foreground/95 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -62,13 +62,13 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
             <PersonaAvatar icon={personaIcon} color={personaColor} size="lg" />
             <div>
               <div className="text-sm font-semibold text-foreground/90">{personaName}</div>
-              <div className="text-[11px] text-muted-foreground/50">Member ID: {member.id?.slice(0, 8)}...</div>
+              <div className="text-sm text-muted-foreground/90">Member ID: {member.id?.slice(0, 8)}...</div>
             </div>
           </div>
 
           {/* Role Selector */}
           <div>
-            <label className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider mb-2 block">
+            <label className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider mb-2 block">
               Role
             </label>
             <div className="space-y-1.5">
@@ -82,10 +82,10 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
                       : 'bg-secondary/30 border-primary/10 hover:bg-secondary/50'
                   }`}
                 >
-                  <div className={`text-xs font-medium ${member.role === role.value ? 'text-indigo-300' : 'text-foreground/70'}`}>
+                  <div className={`text-sm font-medium ${member.role === role.value ? 'text-indigo-300' : 'text-foreground/90'}`}>
                     {role.label}
                   </div>
-                  <div className="text-[10px] text-muted-foreground/40 mt-0.5">{role.description}</div>
+                  <div className="text-sm text-muted-foreground/80 mt-0.5">{role.description}</div>
                 </button>
               ))}
             </div>
@@ -103,7 +103,7 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
                 exit={{ opacity: 0, y: -4 }}
                 className="space-y-2"
               >
-                <div className="flex items-center gap-2 text-xs text-amber-400/70">
+                <div className="flex items-center gap-2 text-sm text-amber-400/70">
                   <AlertTriangle className="w-3.5 h-3.5" />
                   Remove "{personaName}" from team?
                 </div>
@@ -113,13 +113,13 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
                       onRemove(member.id);
                       onClose();
                     }}
-                    className="flex-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors"
+                    className="flex-1 px-3 py-1.5 text-sm font-medium rounded-lg bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors"
                   >
                     Confirm
                   </button>
                   <button
                     onClick={() => setConfirmRemove(false)}
-                    className="flex-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-secondary/50 text-muted-foreground/60 hover:text-foreground/70 hover:bg-secondary/70 transition-colors"
+                    className="flex-1 px-3 py-1.5 text-sm font-medium rounded-lg bg-secondary/50 text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/70 transition-colors"
                   >
                     Cancel
                   </button>
@@ -132,7 +132,7 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
                 onClick={() => setConfirmRemove(true)}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-red-500/20 bg-red-500/5 text-red-400 hover:bg-red-500/15 text-xs font-medium transition-all"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-red-500/20 bg-red-500/5 text-red-400 hover:bg-red-500/15 text-sm font-medium transition-all"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 Remove from Team

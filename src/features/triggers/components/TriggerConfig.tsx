@@ -116,7 +116,7 @@ export function TriggerConfig() {
 
   if (!selectedPersona) {
     return (
-      <div className="flex items-center justify-center py-8 text-muted-foreground/40">
+      <div className="flex items-center justify-center py-8 text-muted-foreground/80">
         No persona selected
       </div>
     );
@@ -144,10 +144,10 @@ export function TriggerConfig() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-mono text-muted-foreground/50 uppercase tracking-wider">Triggers</h3>
+        <h3 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Triggers</h3>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="flex items-center gap-2 px-3 py-1.5 bg-primary hover:bg-primary/90 text-foreground rounded-xl text-xs font-medium transition-all shadow-lg shadow-primary/20"
+          className="flex items-center gap-2 px-3 py-1.5 bg-primary hover:bg-primary/90 text-foreground rounded-xl text-sm font-medium transition-all shadow-lg shadow-primary/20"
         >
           <Plus className="w-4 h-4" />
           Add Trigger
@@ -193,7 +193,7 @@ export function TriggerConfig() {
         ))}
 
         {triggers.length === 0 && (
-          <div className="text-center py-10 text-muted-foreground/40 text-sm">
+          <div className="text-center py-10 text-muted-foreground/80 text-sm">
             No triggers configured. Add one to automate this persona.
           </div>
         )}

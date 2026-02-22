@@ -485,6 +485,19 @@ pub async fn run_execution(
         None
     };
 
+    // Check outcome assessment: CLI exited 0 but task may not have been accomplished
+    let mut final_status = if success { "completed" } else { "failed" };
+    if success {
+        if let Some((accomplished, ref _summary)) =
+            parser::parse_outcome_assessment(&assistant_text)
+        {
+            if !accomplished {
+                final_status = "incomplete";
+                logger.log("[OUTCOME] Task not accomplished — marking as incomplete");
+            }
+        }
+    }
+
     let session_limit_reached = error
         .as_ref()
         .map(|e| e.contains("Session limit"))
@@ -495,7 +508,7 @@ pub async fn run_execution(
         "execution-status",
         ExecutionStatusEvent {
             execution_id: execution_id.clone(),
-            status: if success { "completed" } else { "failed" }.into(),
+            status: final_status.into(),
             error: error.clone(),
             duration_ms: Some(duration_ms),
             cost_usd: Some(metrics.cost_usd),

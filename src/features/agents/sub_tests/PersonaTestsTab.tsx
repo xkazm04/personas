@@ -52,7 +52,7 @@ function statusBadge(status: string) {
   };
   const fallback = { bg: 'bg-red-500/15', text: 'text-red-400', border: 'border-red-500/20' };
   const c = map[status] ?? fallback;
-  return `px-2 py-0.5 rounded-md text-[11px] font-medium border ${c.bg} ${c.text} ${c.border}`;
+  return `px-2 py-0.5 rounded-md text-sm font-medium border ${c.bg} ${c.text} ${c.border}`;
 }
 
 // ── Main component ────────────────────────────────────────────────────
@@ -152,23 +152,24 @@ export function PersonaTestsTab() {
   return (
     <div className="space-y-6">
       {/* Test Runner */}
-      <div className="border border-primary/15 rounded-2xl overflow-hidden backdrop-blur-sm">
-        <div className="px-5 py-4 bg-secondary/30 border-b border-primary/10">
-          <div className="flex items-center gap-2">
-            <FlaskConical className="w-4 h-4 text-primary" />
-            <h3 className="text-sm font-medium text-foreground">Sandbox Test Runner</h3>
-          </div>
-          <p className="text-xs text-muted-foreground/50 mt-1">
-            Test your persona across multiple LLM models with auto-generated scenarios
-          </p>
-        </div>
+      <div className="space-y-3">
+        <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
+          <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
+          <FlaskConical className="w-3.5 h-3.5" />
+          Sandbox Test Runner
+        </h4>
+        <p className="text-sm text-muted-foreground/80 -mt-1 ml-[38px]">
+          Test your persona across multiple LLM models with auto-generated scenarios
+        </p>
+      </div>
+      <div className="border border-primary/15 rounded-xl overflow-hidden backdrop-blur-sm bg-secondary/40">
 
         <div className="p-5 space-y-4">
           {/* Warnings */}
           {(!hasPrompt || !hasTools) && (
             <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
               <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
-              <div className="text-xs text-amber-400/90">
+              <div className="text-sm text-amber-400/90">
                 {!hasPrompt && <p>This persona has no prompt configured. Add a prompt first.</p>}
                 {!hasTools && <p>This persona has no tools assigned. Add tools for richer testing.</p>}
               </div>
@@ -177,20 +178,20 @@ export function PersonaTestsTab() {
 
           {/* Model selector */}
           <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground/60">Select Models to Compare</label>
+            <label className="text-sm font-medium text-muted-foreground/80">Select Models to Compare</label>
             <div className="space-y-2">
               <div className="space-y-1">
-                <span className="text-[10px] text-muted-foreground/40 uppercase tracking-wider">Anthropic</span>
+                <span className="text-sm text-muted-foreground/80 uppercase tracking-wider">Anthropic</span>
                 <div className="flex flex-wrap gap-2">
                   {ANTHROPIC_MODELS.map((m) => (
                     <button
                       key={m.id}
                       onClick={() => toggleModel(m.id)}
                       disabled={isTestRunning}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
                         selectedModels.has(m.id)
                           ? 'bg-primary/15 text-primary border-primary/30'
-                          : 'bg-background/30 text-muted-foreground/50 border-primary/10 hover:border-primary/20 hover:text-foreground/70'
+                          : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20 hover:text-foreground/95'
                       } ${isTestRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                     >
                       {m.label}
@@ -201,17 +202,17 @@ export function PersonaTestsTab() {
 
               {OLLAMA_MODELS.length > 0 && (
                 <div className="space-y-1">
-                  <span className="text-[10px] text-muted-foreground/40 uppercase tracking-wider">Ollama Cloud</span>
+                  <span className="text-sm text-muted-foreground/80 uppercase tracking-wider">Ollama Cloud</span>
                   <div className="flex flex-wrap gap-2">
                     {OLLAMA_MODELS.map((m) => (
                       <button
                         key={m.id}
                         onClick={() => toggleModel(m.id)}
                         disabled={isTestRunning}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
                           selectedModels.has(m.id)
                             ? 'bg-primary/15 text-primary border-primary/30'
-                            : 'bg-background/30 text-muted-foreground/50 border-primary/10 hover:border-primary/20 hover:text-foreground/70'
+                            : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20 hover:text-foreground/95'
                         } ${isTestRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                       >
                         {m.label}
@@ -265,7 +266,7 @@ export function PersonaTestsTab() {
                       </span>
                     </div>
                     {testRunProgress.total && (
-                      <span className="text-xs text-muted-foreground/50">
+                      <span className="text-sm text-muted-foreground/90">
                         {testRunProgress.current ?? 0} / {testRunProgress.total}
                       </span>
                     )}
@@ -282,7 +283,7 @@ export function PersonaTestsTab() {
                   )}
 
                   {testRunProgress.scores && (
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground/50">
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground/90">
                       <span>Tool: {testRunProgress.scores.tool_accuracy ?? '—'}</span>
                       <span>Output: {testRunProgress.scores.output_quality ?? '—'}</span>
                       <span>Protocol: {testRunProgress.scores.protocol_compliance ?? '—'}</span>
@@ -297,17 +298,19 @@ export function PersonaTestsTab() {
 
       {/* Results History */}
       <div className="space-y-3">
-        <h3 className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider px-1">
+        <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
+          <span className="w-6 h-[2px] bg-gradient-to-r from-primary/50 to-accent/50 rounded-full" />
+          <Clock className="w-3.5 h-3.5" />
           Test History
-        </h3>
+        </h4>
 
         {testRuns.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="w-14 h-14 rounded-2xl bg-secondary/60 border border-primary/15 flex items-center justify-center mx-auto mb-4">
-              <FlaskConical className="w-7 h-7 text-muted-foreground/40" />
+          <div className="text-center py-12 bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl">
+            <div className="w-14 h-14 rounded-2xl bg-primary/8 border border-primary/12 flex items-center justify-center mx-auto mb-4">
+              <FlaskConical className="w-7 h-7 text-primary/40" />
             </div>
-            <p className="text-sm text-muted-foreground/40">No test runs yet</p>
-            <p className="text-xs text-muted-foreground/30 mt-1">Select models above and run a test</p>
+            <p className="text-sm text-muted-foreground/80">No test runs yet</p>
+            <p className="text-sm text-muted-foreground/80 mt-1">Select models above and run a test</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -326,8 +329,8 @@ export function PersonaTestsTab() {
                     className="w-full flex items-center gap-3 px-4 py-3 bg-background/30 hover:bg-secondary/20 transition-colors text-left"
                   >
                     {isExpanded
-                      ? <ChevronDown className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
-                      : <ChevronRight className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />}
+                      ? <ChevronDown className="w-4 h-4 text-muted-foreground/80 flex-shrink-0" />
+                      : <ChevronRight className="w-4 h-4 text-muted-foreground/80 flex-shrink-0" />}
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -336,12 +339,12 @@ export function PersonaTestsTab() {
                         </span>
                         <span className={statusBadge(run.status)}>{run.status}</span>
                         {run.scenarios_count > 0 && (
-                          <span className="text-[10px] text-muted-foreground/40">
+                          <span className="text-sm text-muted-foreground/80">
                             {run.scenarios_count} scenario{run.scenarios_count !== 1 ? 's' : ''}
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-3 mt-0.5 text-[11px] text-muted-foreground/40">
+                      <div className="flex items-center gap-3 mt-0.5 text-sm text-muted-foreground/80">
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           {new Date(run.created_at).toLocaleString()}
@@ -360,7 +363,7 @@ export function PersonaTestsTab() {
                         e.stopPropagation();
                         handleDelete(run.id);
                       }}
-                      className="p-1.5 rounded-lg hover:bg-red-500/15 text-muted-foreground/30 hover:text-red-400 transition-colors"
+                      className="p-1.5 rounded-lg hover:bg-red-500/15 text-muted-foreground/80 hover:text-red-400 transition-colors"
                       title="Delete test run"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -380,7 +383,7 @@ export function PersonaTestsTab() {
                           {run.error && (
                             <div className="flex items-start gap-2 px-3 py-2.5 mb-4 rounded-xl bg-red-500/10 border border-red-500/20">
                               <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-                              <span className="text-xs text-red-400">{run.error}</span>
+                              <span className="text-sm text-red-400">{run.error}</span>
                             </div>
                           )}
                           <TestComparisonTable results={activeTestResults} />

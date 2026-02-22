@@ -16,7 +16,7 @@ export function WizardStepRenderer({ step, answers, onAnswer }: WizardStepRender
         return (
           <div key={question.id} className="space-y-3">
             <div>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-violet-400/70">
+              <span className="text-sm font-semibold uppercase tracking-wider text-violet-400/70">
                 {question.header}
               </span>
               <p className="text-sm font-medium text-foreground/80 mt-0.5">
@@ -68,12 +68,12 @@ export function WizardStepRenderer({ step, answers, onAnswer }: WizardStepRender
                     <div className="flex-1 min-w-0">
                       <span
                         className={`text-sm font-medium block ${
-                          isSelected ? 'text-foreground/90' : 'text-foreground/70'
+                          isSelected ? 'text-foreground/90' : 'text-foreground/90'
                         }`}
                       >
                         {option.label}
                       </span>
-                      <span className="text-xs text-muted-foreground/50 block mt-0.5 leading-relaxed">
+                      <span className="text-sm text-muted-foreground/90 block mt-0.5 leading-relaxed">
                         {option.description}
                       </span>
                     </div>

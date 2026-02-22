@@ -194,10 +194,10 @@ export default function ManualReviewList() {
           <button
             key={opt.id}
             onClick={() => setFilter(opt.id)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
               filter === opt.id
                 ? 'bg-primary/15 text-primary border-primary/30'
-                : 'bg-secondary/30 text-muted-foreground/60 border-primary/15 hover:text-muted-foreground hover:bg-secondary/50'
+                : 'bg-secondary/30 text-muted-foreground/80 border-primary/15 hover:text-muted-foreground hover:bg-secondary/50'
             }`}
           >
             {opt.label}
@@ -209,7 +209,7 @@ export default function ManualReviewList() {
         {selectablePendingIds.size > 0 && (
           <button
             onClick={toggleSelectAll}
-            className="ml-auto flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground/50 hover:text-muted-foreground/70 hover:bg-secondary/40 transition-colors"
+            className="ml-auto flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm text-muted-foreground/90 hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
           >
             {activeSelectionCount === selectablePendingIds.size ? (
               <CheckSquare className="w-3.5 h-3.5" />
@@ -227,10 +227,10 @@ export default function ManualReviewList() {
           <div className="flex-1 flex items-center justify-center p-4 md:p-6">
             <div className="text-center">
               <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
-                <ClipboardCheck className="w-5 h-5 text-muted-foreground/30" />
+                <ClipboardCheck className="w-5 h-5 text-muted-foreground/80" />
               </div>
-              <p className="text-sm text-muted-foreground/50">No review items yet</p>
-              <p className="text-xs text-muted-foreground/30 mt-1">Items that require approval will appear here</p>
+              <p className="text-sm text-muted-foreground/90">No review items yet</p>
+              <p className="text-sm text-muted-foreground/80 mt-1">Items that require approval will appear here</p>
             </div>
           </div>
         ) : (
@@ -263,7 +263,7 @@ export default function ManualReviewList() {
             className="flex-shrink-0 border-t border-primary/15 bg-secondary/40 backdrop-blur-sm px-4 py-3"
           >
             {bulkError && (
-              <div className="flex items-center gap-2 mb-2 px-2 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400">
+              <div className="flex items-center gap-2 mb-2 px-2 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400">
                 <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
                 <span className="flex-1 truncate">{bulkError}</span>
                 <button
@@ -287,14 +287,14 @@ export default function ManualReviewList() {
                   <button
                     onClick={() => setConfirmAction(null)}
                     disabled={isBulkProcessing}
-                    className="px-3 py-1.5 rounded-lg text-xs border border-primary/15 text-muted-foreground/60 hover:bg-secondary/50 transition-colors"
+                    className="px-3 py-1.5 rounded-lg text-sm border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={() => handleBulkAction(confirmAction)}
                     disabled={isBulkProcessing}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors flex items-center gap-1.5 ${
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors flex items-center gap-1.5 ${
                       confirmAction === 'approved'
                         ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25'
                         : 'bg-red-500/15 text-red-400 border-red-500/30 hover:bg-red-500/25'
@@ -306,26 +306,26 @@ export default function ManualReviewList() {
               </div>
             ) : (
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground/60">
-                  <span className="font-semibold text-foreground/70">{activeSelectionCount}</span> pending review{activeSelectionCount !== 1 ? 's' : ''} selected
+                <span className="text-sm text-muted-foreground/80">
+                  <span className="font-semibold text-foreground/90">{activeSelectionCount}</span> pending review{activeSelectionCount !== 1 ? 's' : ''} selected
                 </span>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setSelectedIds(new Set())}
-                    className="px-3 py-1.5 rounded-lg text-xs border border-primary/15 text-muted-foreground/60 hover:bg-secondary/50 transition-colors"
+                    className="px-3 py-1.5 rounded-lg text-sm border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 transition-colors"
                   >
                     Deselect
                   </button>
                   <button
                     onClick={() => setConfirmAction('approved')}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-lg text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors flex items-center gap-1.5"
                   >
                     <Check className="w-3.5 h-3.5" />
                     Approve All
                   </button>
                   <button
                     onClick={() => setConfirmAction('rejected')}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors flex items-center gap-1.5"
                   >
                     <X className="w-3.5 h-3.5" />
                     Reject All
@@ -384,7 +384,7 @@ function ReviewRow({
         {onSelect ? (
           <button
             onClick={(e) => { e.stopPropagation(); onSelect(); }}
-            className="text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors flex-shrink-0"
+            className="text-muted-foreground/80 hover:text-muted-foreground transition-colors flex-shrink-0"
           >
             {isSelected ? (
               <CheckSquare className="w-3.5 h-3.5 text-primary" />
@@ -397,7 +397,7 @@ function ReviewRow({
         )}
 
         {/* Expand icon */}
-        <button onClick={onToggle} className="text-muted-foreground/40 flex-shrink-0">
+        <button onClick={onToggle} className="text-muted-foreground/80 flex-shrink-0">
           {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
         </button>
 
@@ -409,12 +409,12 @@ function ReviewRow({
           {/* Persona icon + name */}
           <div className="flex items-center gap-2 min-w-[120px]">
             <div
-              className="w-6 h-6 rounded-md flex items-center justify-center text-xs border border-primary/15"
+              className="w-6 h-6 rounded-md flex items-center justify-center text-sm border border-primary/15"
               style={{ backgroundColor: (review.persona_color || '#6366f1') + '15' }}
             >
               {review.persona_icon || '?'}
             </div>
-            <span className="text-xs text-muted-foreground/60 truncate max-w-[80px]">
+            <span className="text-sm text-muted-foreground/80 truncate max-w-[80px]">
               {review.persona_name || 'Unknown'}
             </span>
           </div>
@@ -425,12 +425,12 @@ function ReviewRow({
           </span>
 
           {/* Status badge */}
-          <div className={`px-2 py-0.5 rounded-md text-[11px] font-medium border ${status.bgColor} ${status.color} ${status.borderColor}`}>
+          <div className={`px-2 py-0.5 rounded-md text-sm font-medium border ${status.bgColor} ${status.color} ${status.borderColor}`}>
             {statusLabel}
           </div>
 
           {/* Created */}
-          <span className="text-xs text-muted-foreground/40 min-w-[70px] text-right">
+          <span className="text-sm text-muted-foreground/80 min-w-[70px] text-right">
             {formatRelativeTime(review.created_at)}
           </span>
         </button>
@@ -449,19 +449,19 @@ function ReviewRow({
             <div className="px-4 pb-3 pt-1 border-t border-primary/15 space-y-3">
               {/* Content */}
               <div>
-                <div className="text-[11px] font-mono text-muted-foreground/50 uppercase mb-1.5">Content</div>
-                <p className="text-sm text-foreground/70 leading-relaxed whitespace-pre-wrap">{review.content}</p>
+                <div className="text-sm font-mono text-muted-foreground/90 uppercase mb-1.5">Content</div>
+                <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">{review.content}</p>
               </div>
 
               {/* Reviewer notes */}
               {review.status === 'pending' && (
                 <div>
-                  <div className="text-[11px] font-mono text-muted-foreground/50 uppercase mb-1.5">Reviewer Notes</div>
+                  <div className="text-sm font-mono text-muted-foreground/90 uppercase mb-1.5">Reviewer Notes</div>
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Add optional notes..."
-                    className="w-full h-20 text-sm bg-background/50 border border-primary/15 rounded-lg p-3 text-foreground/80 placeholder:text-muted-foreground/30 resize-none focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/30"
+                    className="w-full h-20 text-sm bg-background/50 border border-primary/15 rounded-lg p-3 text-foreground/80 placeholder:text-muted-foreground/80 resize-none focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/30"
                   />
                 </div>
               )}
@@ -471,14 +471,14 @@ function ReviewRow({
                 <div className="flex items-center gap-2 pt-1">
                   <button
                     onClick={() => handleAction('approved')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors"
                   >
                     <Check className="w-3.5 h-3.5" />
                     Approve
                   </button>
                   <button
                     onClick={() => handleAction('rejected')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors"
                   >
                     <X className="w-3.5 h-3.5" />
                     Reject
@@ -489,13 +489,13 @@ function ReviewRow({
               {/* Show reviewer notes for non-pending reviews */}
               {review.status !== 'pending' && review.reviewer_notes && (
                 <div>
-                  <div className="text-[11px] font-mono text-muted-foreground/50 uppercase mb-1.5">Reviewer Notes</div>
-                  <p className="text-sm text-foreground/60 italic">{review.reviewer_notes}</p>
+                  <div className="text-sm font-mono text-muted-foreground/90 uppercase mb-1.5">Reviewer Notes</div>
+                  <p className="text-sm text-foreground/80 italic">{review.reviewer_notes}</p>
                 </div>
               )}
 
               {/* Metadata */}
-              <div className="flex items-center gap-4 text-[11px] text-muted-foreground/40">
+              <div className="flex items-center gap-4 text-sm text-muted-foreground/80">
                 <span>ID: <span className="font-mono">{review.id}</span></span>
                 <button
                   onClick={(e) => {

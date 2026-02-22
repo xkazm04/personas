@@ -21,12 +21,12 @@ export function DesignPhaseAnalyzing({ instruction, outputLines, savedDesignResu
       className="space-y-3"
     >
       {savedDesignResult && (
-        <div className="flex items-center gap-2 px-1 text-xs text-muted-foreground/50">
+        <div className="flex items-center gap-2 px-1 text-sm text-muted-foreground/90">
           <Pencil className="w-3 h-3 shrink-0" />
           <span>Updating design...</span>
         </div>
       )}
-      <div className="bg-secondary/30 rounded-xl px-4 py-3 text-sm text-foreground/70 border border-primary/15">
+      <div className="bg-secondary/30 rounded-xl px-4 py-3 text-sm text-foreground/90 border border-primary/15">
         {instruction}
       </div>
 

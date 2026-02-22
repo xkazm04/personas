@@ -665,7 +665,7 @@ export default function TeamCanvas() {
           proOptions={{ hideAttribution: true }}
         >
           <Background gap={24} size={1} className="opacity-30" />
-          <Controls className="!bg-secondary/60 !border-primary/15 !rounded-xl !shadow-lg [&>button]:!bg-secondary/80 [&>button]:!border-primary/15 [&>button]:!text-foreground/60 [&>button:hover]:!bg-secondary [&>button:hover]:!text-foreground/90" />
+          <Controls className="!bg-secondary/60 !border-primary/15 !rounded-xl !shadow-lg [&>button]:!bg-secondary/80 [&>button]:!border-primary/15 [&>button]:!text-foreground/80 [&>button:hover]:!bg-secondary [&>button:hover]:!text-foreground/90" />
           <MiniMap
             className="!bg-secondary/40 !border-primary/15 !rounded-xl"
             maskColor="rgba(0,0,0,0.3)"
@@ -747,8 +747,8 @@ export default function TeamCanvas() {
               <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
                 <Users className="w-8 h-8 text-indigo-400/50" />
               </div>
-              <p className="text-sm font-medium text-foreground/60 mb-1">No agents in this team</p>
-              <p className="text-xs text-muted-foreground/40">Click &quot;Add Agent&quot; above to get started</p>
+              <p className="text-sm font-medium text-foreground/80 mb-1">No agents in this team</p>
+              <p className="text-sm text-muted-foreground/80">Click &quot;Add Agent&quot; above to get started</p>
             </div>
           </div>
         )}

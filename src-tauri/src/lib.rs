@@ -260,6 +260,7 @@ pub fn run() {
             commands::design::n8n_transform::cancel_n8n_transform,
             commands::design::n8n_transform::confirm_n8n_persona_draft,
             commands::design::n8n_transform::continue_n8n_transform,
+            commands::design::n8n_transform::generate_n8n_transform_questions,
             // Design — N8n Sessions
             commands::design::n8n_sessions::create_n8n_session,
             commands::design::n8n_sessions::get_n8n_session,
@@ -352,6 +353,7 @@ pub fn run() {
             // Communication — Observability
             commands::communication::observability::get_metrics_summary,
             commands::communication::observability::get_metrics_snapshots,
+            commands::communication::observability::get_live_metrics_timeseries,
             commands::communication::observability::get_prompt_versions,
             commands::communication::observability::get_all_monthly_spend,
             // Teams

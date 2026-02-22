@@ -81,10 +81,10 @@ export function ErrorPhase({ error, instruction, onRetry, onStartOver }: ErrorPh
           <p className="text-sm text-red-300">{friendly}</p>
           {friendly !== error && error && (
             <details className="mt-2">
-              <summary className="text-[11px] text-red-400/40 cursor-pointer hover:text-red-400/60 transition-colors">
+              <summary className="text-sm text-red-400/40 cursor-pointer hover:text-red-400/60 transition-colors">
                 Technical details
               </summary>
-              <p className="mt-1 text-[11px] text-red-400/30 font-mono break-all">
+              <p className="mt-1 text-sm text-red-400/30 font-mono break-all">
                 {error}
               </p>
             </details>
@@ -96,11 +96,11 @@ export function ErrorPhase({ error, instruction, onRetry, onStartOver }: ErrorPh
       <div className="px-4 py-3 bg-amber-500/5 border border-amber-500/15 rounded-xl space-y-2">
         <div className="flex items-center gap-2">
           <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
-          <span className="text-xs font-medium text-amber-300/80">How to fix this</span>
+          <span className="text-sm font-medium text-amber-300/80">How to fix this</span>
         </div>
         <ul className="space-y-1.5 pl-6">
           {tips.map((tip, i) => (
-            <li key={i} className="text-xs text-foreground/60 list-disc">{tip}</li>
+            <li key={i} className="text-sm text-foreground/80 list-disc">{tip}</li>
           ))}
         </ul>
       </div>
@@ -108,8 +108,8 @@ export function ErrorPhase({ error, instruction, onRetry, onStartOver }: ErrorPh
       {/* Show preserved instruction */}
       {hasInstruction && (
         <div className="px-4 py-2.5 bg-secondary/30 border border-primary/10 rounded-xl">
-          <p className="text-[11px] text-muted-foreground/40 mb-1">Your original request (preserved):</p>
-          <p className="text-xs text-foreground/70 italic">"{instruction}"</p>
+          <p className="text-sm text-muted-foreground/80 mb-1">Your original request (preserved):</p>
+          <p className="text-sm text-foreground/90 italic">"{instruction}"</p>
         </div>
       )}
 
@@ -117,7 +117,7 @@ export function ErrorPhase({ error, instruction, onRetry, onStartOver }: ErrorPh
       <div className="flex items-center justify-between">
         <button
           onClick={onStartOver}
-          className="flex items-center gap-1.5 px-3 py-2 text-muted-foreground/40 hover:text-foreground/60 text-xs transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 text-muted-foreground/80 hover:text-foreground/95 text-sm transition-colors"
         >
           <X className="w-3 h-3" />
           Start over

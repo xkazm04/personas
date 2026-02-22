@@ -48,15 +48,15 @@ export function CredentialPicker({ connectors, onPickType }: CredentialPickerPro
 
             <div className="flex-1 min-w-0">
               <p className="text-sm text-foreground truncate">{connector.label}</p>
-              <p className="text-[11px] text-muted-foreground/75 truncate">
+              <p className="text-sm text-muted-foreground/75 truncate">
                 {connector.category} · {connector.fields.length} fields
               </p>
             </div>
 
             {isExpanded ? (
-              <ChevronDown className="w-4 h-4 text-muted-foreground/60" />
+              <ChevronDown className="w-4 h-4 text-muted-foreground/80" />
             ) : (
-              <ChevronRight className="w-4 h-4 text-muted-foreground/60" />
+              <ChevronRight className="w-4 h-4 text-muted-foreground/80" />
             )}
           </div>
         </button>
@@ -71,11 +71,11 @@ export function CredentialPicker({ connectors, onPickType }: CredentialPickerPro
             >
               <div className="px-3 py-2.5 space-y-2">
                 {summary && (
-                  <p className="text-xs text-muted-foreground/80">{summary}</p>
+                  <p className="text-sm text-muted-foreground/80">{summary}</p>
                 )}
                 <button
                   onClick={() => onPickType(connector)}
-                  className="px-3 py-1.5 rounded-lg border border-primary/20 bg-primary/10 text-primary text-xs font-medium hover:bg-primary/15 transition-colors"
+                  className="px-3 py-1.5 rounded-lg border border-primary/20 bg-primary/10 text-primary text-sm font-medium hover:bg-primary/15 transition-colors"
                 >
                   Use Template
                 </button>
@@ -93,7 +93,7 @@ export function CredentialPicker({ connectors, onPickType }: CredentialPickerPro
 
       {recommendedConnectors.length > 0 && (
         <div className="space-y-2">
-          <p className="text-[11px] font-mono uppercase tracking-wider text-primary/70">Recommended</p>
+          <p className="text-sm font-mono uppercase tracking-wider text-primary/70">Recommended</p>
           {recommendedConnectors.map(renderConnector)}
         </div>
       )}
@@ -101,7 +101,7 @@ export function CredentialPicker({ connectors, onPickType }: CredentialPickerPro
       {recommendedConnectors.length > 0 && otherConnectors.length > 0 && (
         <div className="flex items-center gap-2 py-1">
           <div className="h-px bg-primary/15 flex-1" />
-          <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/45">All templates</span>
+          <span className="text-sm font-mono uppercase tracking-wider text-muted-foreground/45">All templates</span>
           <div className="h-px bg-primary/15 flex-1" />
         </div>
       )}
@@ -109,7 +109,7 @@ export function CredentialPicker({ connectors, onPickType }: CredentialPickerPro
       {otherConnectors.map(renderConnector)}
 
       {connectors.length === 0 && (
-        <div className="py-6 text-center text-sm text-muted-foreground/70 border border-dashed border-primary/15 rounded-lg">
+        <div className="py-6 text-center text-sm text-muted-foreground/90 border border-dashed border-primary/15 rounded-lg">
           No templates found
         </div>
       )}

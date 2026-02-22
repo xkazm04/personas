@@ -44,7 +44,7 @@ export default function PromptVersionHistory({ personaId }: PromptVersionHistory
 
   if (promptVersions.length === 0) {
     return (
-      <div className="text-center py-8 text-sm text-muted-foreground/40">
+      <div className="text-center py-8 text-sm text-muted-foreground/80">
         No prompt versions recorded yet
       </div>
     );
@@ -52,7 +52,7 @@ export default function PromptVersionHistory({ personaId }: PromptVersionHistory
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold text-foreground/70 flex items-center gap-2">
+      <h3 className="text-sm font-semibold text-foreground/90 flex items-center gap-2">
         <Clock className="w-4 h-4" />
         Prompt Version History
       </h3>
@@ -79,30 +79,30 @@ export default function PromptVersionHistory({ personaId }: PromptVersionHistory
                 <div className="bg-secondary/30 border border-primary/15 rounded-lg p-3">
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-primary/70">v{version.version_number}</span>
+                      <span className="text-sm font-mono text-primary/70">v{version.version_number}</span>
                       {isLatest && (
-                        <span className="px-1.5 py-0.5 text-[9px] font-medium rounded bg-primary/15 text-primary/70 border border-primary/20">
+                        <span className="px-1.5 py-0.5 text-sm font-medium rounded bg-primary/15 text-primary/70 border border-primary/20">
                           latest
                         </span>
                       )}
                     </div>
-                    <span className="text-[10px] text-muted-foreground/40">
+                    <span className="text-sm text-muted-foreground/80">
                       {new Date(version.created_at).toLocaleDateString()} {new Date(version.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
                   {version.change_summary && (
-                    <p className="text-xs text-muted-foreground/60 mb-2">{version.change_summary}</p>
+                    <p className="text-sm text-muted-foreground/80 mb-2">{version.change_summary}</p>
                   )}
                   {!version.change_summary && delta && (
-                    <p className="text-xs text-muted-foreground/40 mb-2 font-mono">{delta}</p>
+                    <p className="text-sm text-muted-foreground/80 mb-2 font-mono">{delta}</p>
                   )}
                   {version.system_prompt && (
                     <details className="group">
-                      <summary className="cursor-pointer text-[11px] text-muted-foreground/50 hover:text-foreground/60 flex items-center gap-1">
+                      <summary className="cursor-pointer text-sm text-muted-foreground/90 hover:text-foreground/95 flex items-center gap-1">
                         <FileText className="w-3 h-3" />
                         View prompt
                       </summary>
-                      <pre className="mt-2 p-2 bg-background/50 rounded text-[11px] text-muted-foreground/60 whitespace-pre-wrap max-h-32 overflow-y-auto">
+                      <pre className="mt-2 p-2 bg-background/50 rounded text-sm text-muted-foreground/80 whitespace-pre-wrap max-h-32 overflow-y-auto">
                         {version.system_prompt?.slice(0, 1000)}
                         {(version.system_prompt?.length || 0) > 1000 ? '...' : ''}
                       </pre>

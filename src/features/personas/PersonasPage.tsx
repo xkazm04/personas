@@ -12,10 +12,12 @@ import TeamCanvas from '@/features/pipeline/components/TeamCanvas';
 import CloudDeployPanel from '@/features/deployment/components/CloudDeployPanel';
 import SettingsPage from '@/features/settings/components/SettingsPage';
 import OnboardingWizard from '@/features/agents/components/OnboardingWizard';
+import { PersonaCreationWizard } from '@/features/agents/components/PersonaCreationWizard';
 
 export default function PersonasPage() {
   const sidebarSection = usePersonaStore((s) => s.sidebarSection);
   const selectedPersonaId = usePersonaStore((s) => s.selectedPersonaId);
+  const isCreatingPersona = usePersonaStore((s) => s.isCreatingPersona);
   const personas = usePersonaStore((s) => s.personas);
   const isLoading = usePersonaStore((s) => s.isLoading);
   const fetchPersonas = usePersonaStore((s) => s.fetchPersonas);
@@ -62,6 +64,7 @@ export default function PersonasPage() {
     if (sidebarSection === 'events') return <EventsPage />;
     if (sidebarSection === 'design-reviews') return <DesignReviewsPage />;
     if (sidebarSection === 'settings') return <SettingsPage />;
+    if (isCreatingPersona && sidebarSection === 'personas') return <PersonaCreationWizard />;
     if (selectedPersonaId) return <PersonaEditor />;
     return <PersonaOverviewPage />;
   };

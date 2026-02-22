@@ -12,12 +12,12 @@ export function classifyLine(line: string): TerminalLineStyle {
 }
 
 export const TERMINAL_STYLE_MAP: Record<TerminalLineStyle, string> = {
-  meta: 'text-muted-foreground/40',
+  meta: 'text-muted-foreground/80',
   tool: 'text-cyan-400/70',
   error: 'text-red-400/80',
   status: 'text-emerald-400/70 font-semibold',
   summary: '',
-  text: 'text-foreground/70',
+  text: 'text-foreground/90',
 };
 
 export interface ExecutionSummary {

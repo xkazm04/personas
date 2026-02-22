@@ -33,13 +33,13 @@ export function CloudOAuthPanel({
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-muted-foreground/60">Authorization Code</label>
+          <label className="text-sm font-medium text-muted-foreground/80">Authorization Code</label>
           <input
             type="text"
             value={oauthCode}
             onChange={(e) => setOauthCode(e.target.value)}
             placeholder="Paste the code here"
-            className="w-full px-3 py-2 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground/80 placeholder:text-muted-foreground/30 focus:outline-none focus:border-indigo-500/40 transition-colors"
+            className="w-full px-3 py-2 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground/80 placeholder:text-muted-foreground/80 focus:outline-none focus:border-indigo-500/40 transition-colors"
           />
         </div>
 
@@ -68,14 +68,14 @@ export function CloudOAuthPanel({
         {/* Scopes */}
         {oauthStatus.scopes && oauthStatus.scopes.length > 0 && (
           <div>
-            <h3 className="text-xs font-medium text-muted-foreground/50 uppercase tracking-wider mb-2">
+            <h3 className="text-sm font-medium text-muted-foreground/90 uppercase tracking-wider mb-2">
               Scopes
             </h3>
             <div className="flex flex-wrap gap-2">
               {oauthStatus.scopes.map((scope) => (
                 <span
                   key={scope}
-                  className="text-[11px] px-2 py-0.5 rounded-md bg-secondary/40 border border-primary/15 text-muted-foreground/60"
+                  className="text-sm px-2 py-0.5 rounded-md bg-secondary/40 border border-primary/15 text-muted-foreground/80"
                 >
                   {scope}
                 </span>
@@ -87,10 +87,10 @@ export function CloudOAuthPanel({
         {/* Expiry */}
         {oauthStatus.expiresAt && (
           <div>
-            <h3 className="text-xs font-medium text-muted-foreground/50 uppercase tracking-wider mb-2">
+            <h3 className="text-sm font-medium text-muted-foreground/90 uppercase tracking-wider mb-2">
               Expires
             </h3>
-            <p className="text-sm text-foreground/70">
+            <p className="text-sm text-foreground/90">
               {new Date(oauthStatus.expiresAt).toLocaleString()}
             </p>
           </div>
@@ -100,7 +100,7 @@ export function CloudOAuthPanel({
         <div className="flex gap-3">
           <button
             onClick={onRefreshOAuth}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-secondary/40 border border-primary/15 text-foreground/70 hover:text-foreground/90 hover:border-primary/25 transition-colors cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-secondary/40 border border-primary/15 text-foreground/90 hover:text-foreground/95 hover:border-primary/25 transition-colors cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             Refresh Token
@@ -121,8 +121,8 @@ export function CloudOAuthPanel({
   return (
     <div className="space-y-5 max-w-md">
       <div className="flex flex-col items-center text-center py-8">
-        <Shield className="w-10 h-10 text-muted-foreground/30 mb-4" />
-        <p className="text-sm text-muted-foreground/60 leading-relaxed">
+        <Shield className="w-10 h-10 text-muted-foreground/80 mb-4" />
+        <p className="text-sm text-muted-foreground/80 leading-relaxed">
           Connect your Anthropic account to enable OAuth-based authentication
           for cloud executions.
         </p>

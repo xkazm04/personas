@@ -26,7 +26,7 @@ export function DesignPhaseApplied({ result, onReset }: DesignPhaseAppliedProps)
 
       {result && (
         <div className="mt-2 w-full max-w-sm space-y-2">
-          <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground/60">
+          <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground/80">
             {(result.suggested_tools?.length ?? 0) > 0 && (
               <span className="inline-flex items-center gap-1.5">
                 <Wrench className="w-3 h-3" />
@@ -47,7 +47,7 @@ export function DesignPhaseApplied({ result, onReset }: DesignPhaseAppliedProps)
             )}
           </div>
           {result.summary && (
-            <p className="text-xs text-muted-foreground/40 text-center line-clamp-2">
+            <p className="text-sm text-muted-foreground/80 text-center line-clamp-2">
               {result.summary}
             </p>
           )}
@@ -56,7 +56,7 @@ export function DesignPhaseApplied({ result, onReset }: DesignPhaseAppliedProps)
 
       <button
         onClick={onReset}
-        className="mt-2 flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-secondary/50 text-foreground/70 hover:bg-secondary/70 transition-colors"
+        className="mt-2 flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-secondary/50 text-foreground/90 hover:bg-secondary/70 transition-colors"
       >
         <Check className="w-3.5 h-3.5" />
         Done

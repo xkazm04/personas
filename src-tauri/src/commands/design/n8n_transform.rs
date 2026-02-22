@@ -206,6 +206,7 @@ pub(super) struct N8nPersonaOutput {
     pub(super) max_budget_usd: Option<f64>,
     pub(super) max_turns: Option<i32>,
     pub(super) design_context: Option<String>,
+    pub(super) notification_channels: Option<String>,
     // Entity fields — populated by connector-aware transform
     pub(super) triggers: Option<Vec<N8nTriggerDraft>>,
     pub(super) tools: Option<Vec<N8nToolDraft>>,
@@ -237,6 +238,7 @@ pub(super) struct N8nConnectorRef {
 
 // ── Commands ────────────────────────────────────────────────────
 
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn transform_n8n_to_persona(
     app: tauri::AppHandle,
@@ -523,6 +525,20 @@ pub fn confirm_n8n_persona_draft(
     )?;
 
     let persona_id = &created.id;
+
+    // Save notification channels if provided
+    if let Some(ref channels) = draft.notification_channels {
+        if !channels.trim().is_empty() {
+            let _ = persona_repo::update(
+                &state.db,
+                persona_id,
+                crate::db::models::UpdatePersonaInput {
+                    notification_channels: Some(channels.clone()),
+                    ..Default::default()
+                },
+            );
+        }
+    }
 
     // Create triggers from draft
     let mut triggers_created = 0u32;
@@ -918,7 +934,7 @@ Return ONLY valid JSON (no markdown fences, no commentary), with this exact shap
     "model_profile": null,
     "max_budget_usd": null,
     "max_turns": null,
-    "design_context": "string",
+    "design_context": "JSON string — see design_context instructions below",
     "triggers": [{{
       "trigger_type": "schedule|polling|webhook|manual",
       "config": {{ }},
@@ -943,6 +959,9 @@ Note on triggers: Array may be empty if workflow has no trigger nodes.
 Note on tools: Only include tools for external API calls. Do NOT include LLM/AI tools.
 Note on required_connectors: List all external service credentials needed. Set has_credential=true only if the user's available credentials include a matching service.
 Note on customSections: ALWAYS include a "human_in_the_loop" section if the workflow performs externally-visible actions (sends emails, posts messages, modifies data). ALWAYS include a "memory_strategy" section if the workflow processes data that could inform future runs. These are critical for the persona to operate safely and improve over time.
+Note on design_context: The value MUST be a valid JSON string (escaped within the outer JSON) with this structure:
+{{"summary":"Brief 1-2 sentence overview of what this persona does","use_cases":[{{"id":"uc1","title":"Short use case title","description":"1-2 sentence description of what this use case does","category":"notification|data-sync|monitoring|automation|communication|reporting"}}]}}
+Generate 3-6 use_cases that describe the key capabilities of this persona based on the n8n workflow analysis. Each use case should represent a distinct scenario the persona can handle.
 
 Workflow name:
 {workflow_name}
@@ -1086,7 +1105,7 @@ Return ONLY valid JSON (no markdown fences, no commentary):
     "model_profile": null,
     "max_budget_usd": null,
     "max_turns": null,
-    "design_context": "string",
+    "design_context": "JSON string — a valid JSON string with keys: summary (string), use_cases (array of {{id, title, description, category}}). Generate 3-6 use_cases describing key capabilities.",
     "triggers": [{{"trigger_type": "schedule|polling|webhook|manual", "config": {{}}, "description": "string"}}],
     "tools": [{{"name": "tool_name_snake_case", "category": "email|http|database|file|messaging|other", "description": "string", "requires_credential_type": "connector_name_or_null", "input_schema": null}}],
     "required_connectors": [{{"name": "connector_name", "n8n_credential_type": "original_n8n_type", "has_credential": false}}]
@@ -1363,6 +1382,7 @@ Remember: return ONLY valid JSON with the persona object, no markdown fences."#,
     Ok(draft)
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn run_n8n_transform_job(
     app: &tauri::AppHandle,
     transform_id: &str,
@@ -1470,6 +1490,7 @@ pub(super) async fn run_claude_prompt_text_with_timeout(
     emit_ctx: Option<(&tauri::AppHandle, &str)>,
     timeout_secs: u64,
 ) -> Result<(String, Option<String>), String> {
+    #[allow(clippy::type_complexity)]
     let on_line: Option<Box<dyn Fn(&str) + Send + Sync>> = emit_ctx.map(|(app, id)| {
         let app = app.clone();
         let id = id.to_string();
@@ -1486,6 +1507,7 @@ pub(super) async fn run_claude_prompt_text(
     cli_args: &crate::engine::types::CliArgs,
     emit_ctx: Option<(&tauri::AppHandle, &str)>,
 ) -> Result<(String, Option<String>), String> {
+    #[allow(clippy::type_complexity)]
     let on_line: Option<Box<dyn Fn(&str) + Send + Sync>> = emit_ctx.map(|(app, id)| {
         let app = app.clone();
         let id = id.to_string();

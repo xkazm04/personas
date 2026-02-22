@@ -135,7 +135,7 @@ export default function MemoriesPage() {
         actions={
           <button
             onClick={() => setShowAddForm((v) => !v)}
-            className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border transition-all ${
               showAddForm
                 ? 'bg-violet-500/30 text-violet-200 border-violet-500/40'
                 : 'bg-violet-500/20 text-violet-300 border-violet-500/30 hover:bg-violet-500/30'
@@ -190,7 +190,7 @@ export default function MemoriesPage() {
                   {memoriesTotal}
                 </motion.span>
               </AnimatePresence>
-              <span className="text-[9px] text-muted-foreground/30 -mt-1">total memories</span>
+              <span className="text-sm text-muted-foreground/80 -mt-1">total memories</span>
             </div>
           </div>
 
@@ -211,7 +211,7 @@ export default function MemoriesPage() {
                 {memoryStats.segments.map((seg) => (
                   <div key={seg.category} className="flex items-center gap-1">
                     <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: seg.color }} />
-                    <span className="text-[9px] text-muted-foreground/40">{seg.label} {seg.count}</span>
+                    <span className="text-sm text-muted-foreground/80">{seg.label} {seg.count}</span>
                   </div>
                 ))}
               </div>
@@ -231,8 +231,8 @@ export default function MemoriesPage() {
                 <Bot className="w-3.5 h-3.5" style={{ color: memoryStats.topAgent.color }} />
               </div>
               <div className="flex flex-col">
-                <span className="text-xs font-medium text-foreground/70 truncate max-w-[80px]">{memoryStats.topAgent.name}</span>
-                <span className="text-[9px] text-muted-foreground/30 -mt-0.5">{memoryStats.topAgentCount} memories</span>
+                <span className="text-sm font-medium text-foreground/90 truncate max-w-[80px]">{memoryStats.topAgent.name}</span>
+                <span className="text-sm text-muted-foreground/80 -mt-0.5">{memoryStats.topAgentCount} memories</span>
               </div>
             </div>
           )}
@@ -256,7 +256,7 @@ export default function MemoriesPage() {
                     {memoryStats.avgImportance.toFixed(1)}
                   </motion.span>
                 </AnimatePresence>
-                <span className="text-[9px] text-muted-foreground/30 -mt-1">avg importance</span>
+                <span className="text-sm text-muted-foreground/80 -mt-1">avg importance</span>
               </div>
             </div>
           )}
@@ -265,18 +265,18 @@ export default function MemoriesPage() {
 
       {/* Table */}
       <ContentBody flex>
-        <div className="px-4 md:px-6 py-2 text-[11px] font-mono text-muted-foreground/40 border-b border-primary/10 bg-secondary/10 flex-shrink-0">
+        <div className="px-4 md:px-6 py-2 text-sm font-mono text-muted-foreground/80 border-b border-primary/10 bg-secondary/10 flex-shrink-0">
           Showing {sortedMemories.length} of {memoriesTotal} memories
         </div>
 
         {filteredMemories.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-4 text-muted-foreground/40">
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 text-muted-foreground/80">
             <div className="w-16 h-16 rounded-2xl bg-violet-500/10 border border-violet-500/15 flex items-center justify-center">
               <Brain className="w-8 h-8 text-violet-400/40" />
             </div>
             <div className="text-center">
               <p className="text-sm font-medium">No memories yet</p>
-              <p className="text-xs text-muted-foreground/30 mt-1 max-w-xs">
+              <p className="text-sm text-muted-foreground/80 mt-1 max-w-xs">
                 {hasFilters
                   ? 'No memories match your filters. Try adjusting your search.'
                   : 'When agents run, they can store valuable notes and learnings here.'}
@@ -287,12 +287,12 @@ export default function MemoriesPage() {
           <>
             {/* Table header (desktop only) */}
             <div className="hidden md:flex items-center gap-4 px-6 py-2 bg-secondary/30 border-b border-primary/10 sticky top-0 z-10">
-              <span className="w-[140px] text-[11px] font-mono uppercase text-muted-foreground/40 flex-shrink-0">Agent</span>
-              <span className="flex-1 text-[11px] font-mono uppercase text-muted-foreground/40">Title</span>
-              <span className="w-[70px] text-[11px] font-mono uppercase text-muted-foreground/40 flex-shrink-0">Category</span>
+              <span className="w-[140px] text-sm font-mono uppercase text-muted-foreground/80 flex-shrink-0">Agent</span>
+              <span className="flex-1 text-sm font-mono uppercase text-muted-foreground/80">Title</span>
+              <span className="w-[70px] text-sm font-mono uppercase text-muted-foreground/80 flex-shrink-0">Category</span>
               <button
                 onClick={() => toggleSort('importance')}
-                className={`w-[60px] flex items-center gap-0.5 text-[11px] font-mono uppercase flex-shrink-0 transition-colors ${sort.column === 'importance' ? 'text-foreground/70' : 'text-muted-foreground/40 hover:text-muted-foreground/60'}`}
+                className={`w-[60px] flex items-center gap-0.5 text-sm font-mono uppercase flex-shrink-0 transition-colors ${sort.column === 'importance' ? 'text-foreground/90' : 'text-muted-foreground/80 hover:text-muted-foreground'}`}
               >
                 Priority
                 {sort.column === 'importance' ? (
@@ -301,10 +301,10 @@ export default function MemoriesPage() {
                   <ChevronDown className="w-3 h-3 opacity-30" />
                 )}
               </button>
-              <span className="w-[120px] text-[11px] font-mono uppercase text-muted-foreground/40 flex-shrink-0">Tags</span>
+              <span className="w-[120px] text-sm font-mono uppercase text-muted-foreground/80 flex-shrink-0">Tags</span>
               <button
                 onClick={() => toggleSort('created_at')}
-                className={`w-[60px] flex items-center justify-end gap-0.5 text-[11px] font-mono uppercase flex-shrink-0 transition-colors ${sort.column === 'created_at' ? 'text-foreground/70' : 'text-muted-foreground/40 hover:text-muted-foreground/60'}`}
+                className={`w-[60px] flex items-center justify-end gap-0.5 text-sm font-mono uppercase flex-shrink-0 transition-colors ${sort.column === 'created_at' ? 'text-foreground/90' : 'text-muted-foreground/80 hover:text-muted-foreground'}`}
               >
                 Created
                 {sort.column === 'created_at' ? (

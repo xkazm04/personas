@@ -83,22 +83,22 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
   return (
     <div className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-2xl p-4">
       <div className="flex items-center justify-between mb-5">
-        <h3 className="text-sm font-mono text-muted-foreground/50 uppercase tracking-wider flex items-center gap-2">
+        <h3 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider flex items-center gap-2">
           <Radio className="w-4 h-4" />
           Event Subscriptions
         </h3>
-        <span className="text-[10px] text-muted-foreground/30">{subscriptions.length} active</span>
+        <span className="text-sm text-muted-foreground/80">{subscriptions.length} active</span>
       </div>
 
       <div className="space-y-3">
         {loading ? (
-          <div className="flex items-center justify-center py-4 text-muted-foreground/40">
+          <div className="flex items-center justify-center py-4 text-muted-foreground/80">
             <Loader2 className="w-4 h-4 animate-spin" />
           </div>
         ) : (
           <>
             {subscriptions.length === 0 && !showAddForm && (
-              <p className="text-xs text-muted-foreground/40 py-2">
+              <p className="text-sm text-muted-foreground/80 py-2">
                 No event subscriptions. Add one to trigger this persona on events.
               </p>
             )}
@@ -118,7 +118,7 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
                     {sub.event_type}
                   </span>
                   {sub.source_filter && (
-                    <span className="text-[10px] text-muted-foreground/40 block truncate">
+                    <span className="text-sm text-muted-foreground/80 block truncate">
                       filter: {sub.source_filter}
                     </span>
                   )}
@@ -131,7 +131,7 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
                 />
                 <button
                   onClick={() => handleDelete(sub.id)}
-                  className="p-1 text-muted-foreground/40 hover:text-red-400 transition-colors"
+                  className="p-1 text-muted-foreground/80 hover:text-red-400 transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -141,7 +141,7 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
             {showAddForm ? (
               <div className="border border-primary/15 rounded-xl p-2.5 space-y-2 bg-secondary/30">
                 <div>
-                  <label className="block text-[11px] font-mono text-muted-foreground/40 uppercase mb-1">
+                  <label className="block text-sm font-mono text-muted-foreground/80 uppercase mb-1">
                     Event Type
                   </label>
                   <select
@@ -158,7 +158,7 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-mono text-muted-foreground/40 uppercase mb-1">
+                  <label className="block text-sm font-mono text-muted-foreground/80 uppercase mb-1">
                     Source Filter <span className="normal-case">(optional)</span>
                   </label>
                   <input
@@ -166,7 +166,7 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
                     value={newSourceFilter}
                     onChange={(e) => setNewSourceFilter(e.target.value)}
                     placeholder="e.g. persona-id or glob pattern"
-                    className="w-full px-2.5 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    className="w-full px-2.5 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                   />
                 </div>
                 <div className="flex items-center gap-2 pt-1">
@@ -176,7 +176,7 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                       newEventType && !saving
                         ? 'bg-primary hover:bg-primary/90 text-foreground'
-                        : 'bg-secondary/40 text-muted-foreground/30 cursor-not-allowed'
+                        : 'bg-secondary/40 text-muted-foreground/80 cursor-not-allowed'
                     }`}
                   >
                     {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
@@ -184,7 +184,7 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
                   </button>
                   <button
                     onClick={() => { setShowAddForm(false); setNewEventType(''); setNewSourceFilter(''); }}
-                    className="px-3 py-1.5 text-sm text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+                    className="px-3 py-1.5 text-sm text-muted-foreground/80 hover:text-foreground/95 transition-colors"
                   >
                     Cancel
                   </button>
@@ -193,7 +193,7 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
             ) : (
               <button
                 onClick={() => setShowAddForm(true)}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-primary/15 hover:border-primary/40 text-sm text-muted-foreground/60 hover:text-primary/80 transition-all w-full"
+                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-primary/15 hover:border-primary/40 text-sm text-muted-foreground/80 hover:text-primary/80 transition-all w-full"
               >
                 <Plus className="w-4 h-4" />
                 Add Subscription

@@ -21,14 +21,14 @@ export function DonePhase({ connectorLabel, onClose, onViewCredential }: DonePha
       </div>
       <div className="text-center">
         <h3 className="text-sm font-semibold text-foreground">Credential Created</h3>
-        <p className="text-xs text-muted-foreground/50 mt-1">
+        <p className="text-sm text-muted-foreground/90 mt-1">
           {connectorLabel} credential has been securely saved.
         </p>
       </div>
       <div className="flex items-center gap-2 mt-2">
         <button
           onClick={onClose}
-          className="px-5 py-2 bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/70 rounded-xl text-sm font-medium transition-all"
+          className="px-5 py-2 bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/90 rounded-xl text-sm font-medium transition-all"
         >
           Done
         </button>

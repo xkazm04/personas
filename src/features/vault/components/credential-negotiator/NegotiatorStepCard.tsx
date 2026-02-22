@@ -123,12 +123,12 @@ export function NegotiatorStepCard({
       >
         {/* Step number / check */}
         <div
-          className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold border ${
+          className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-sm font-bold border ${
             isCompleted
               ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400'
               : isActive
                 ? 'bg-violet-500/20 border-violet-500/30 text-violet-400'
-                : 'bg-secondary/40 border-primary/15 text-muted-foreground/50'
+                : 'bg-secondary/40 border-primary/15 text-muted-foreground/90'
           }`}
         >
           {isCompleted ? <Check className="w-3.5 h-3.5" /> : stepIndex + 1}
@@ -137,21 +137,21 @@ export function NegotiatorStepCard({
         {/* Title + action badge */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className={`text-sm font-medium ${isActive ? 'text-foreground' : 'text-foreground/70'}`}>
+            <span className={`text-sm font-medium ${isActive ? 'text-foreground' : 'text-foreground/90'}`}>
               {step.title}
             </span>
-            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium border ${colorClasses}`}>
+            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-sm font-medium border ${colorClasses}`}>
               <Icon className="w-2.5 h-2.5" />
               {step.action_type.replace('_', ' ')}
             </span>
             {step.requires_human && (
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20">
+              <span className="px-1.5 py-0.5 rounded text-sm font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20">
                 manual
               </span>
             )}
           </div>
           {!isActive && (
-            <p className="text-xs text-muted-foreground/40 mt-0.5 truncate">
+            <p className="text-sm text-muted-foreground/80 mt-0.5 truncate">
               {step.description}
             </p>
           )}
@@ -159,9 +159,9 @@ export function NegotiatorStepCard({
 
         {/* Expand indicator */}
         {isActive ? (
-          <ChevronDown className="w-4 h-4 text-muted-foreground/40 shrink-0" />
+          <ChevronDown className="w-4 h-4 text-muted-foreground/80 shrink-0" />
         ) : (
-          <ChevronRight className="w-4 h-4 text-muted-foreground/30 shrink-0" />
+          <ChevronRight className="w-4 h-4 text-muted-foreground/80 shrink-0" />
         )}
       </button>
 
@@ -181,7 +181,7 @@ export function NegotiatorStepCard({
 
               {/* Visual hint */}
               {step.visual_hint && (
-                <div className="px-3 py-2 rounded-lg bg-secondary/40 border border-primary/10 text-xs text-foreground/70">
+                <div className="px-3 py-2 rounded-lg bg-secondary/40 border border-primary/10 text-sm text-foreground/90">
                   {step.visual_hint}
                 </div>
               )}
@@ -190,7 +190,7 @@ export function NegotiatorStepCard({
               {step.url && (
                 <button
                   onClick={handleOpenUrl}
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs hover:bg-violet-500/20 transition-colors"
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-violet-500/10 border border-violet-500/20 text-violet-300 text-sm hover:bg-violet-500/20 transition-colors"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   Open in browser
@@ -202,17 +202,17 @@ export function NegotiatorStepCard({
               {step.wait_for && (
                 <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
                   <Loader2 className="w-3.5 h-3.5 text-amber-400 mt-0.5 shrink-0 animate-spin" />
-                  <span className="text-xs text-amber-200/80">{step.wait_for}</span>
+                  <span className="text-sm text-amber-200/80">{step.wait_for}</span>
                 </div>
               )}
 
               {/* Capture fields */}
               {step.field_fills && Object.entries(step.field_fills).map(([fieldKey, hint]) => (
                 <div key={fieldKey} className="space-y-1.5">
-                  <label className="text-xs text-foreground/60 font-medium">
+                  <label className="text-sm text-foreground/80 font-medium">
                     Paste: {fieldKey.replace(/_/g, ' ')}
                   </label>
-                  <p className="text-[11px] text-muted-foreground/40">{hint}</p>
+                  <p className="text-sm text-muted-foreground/80">{hint}</p>
                   <div className="flex gap-2">
                     <input
                       type="password"
@@ -223,7 +223,7 @@ export function NegotiatorStepCard({
                     />
                     <button
                       onClick={() => handlePasteFromClipboard(fieldKey)}
-                      className="px-3 py-2 rounded-lg bg-secondary/60 border border-primary/15 text-muted-foreground/60 hover:text-foreground hover:bg-secondary transition-colors"
+                      className="px-3 py-2 rounded-lg bg-secondary/60 border border-primary/15 text-muted-foreground/80 hover:text-foreground hover:bg-secondary transition-colors"
                       title="Paste from clipboard"
                     >
                       <ClipboardPaste className="w-4 h-4" />
@@ -236,7 +236,7 @@ export function NegotiatorStepCard({
               <div className="pt-1">
                 <button
                   onClick={() => setShowHelp(!showHelp)}
-                  className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+                  className="inline-flex items-center gap-1.5 text-sm text-muted-foreground/90 hover:text-foreground/95 transition-colors"
                 >
                   <HelpCircle className="w-3 h-3" />
                   {showHelp ? 'Hide help' : 'Need help with this step?'}
@@ -257,19 +257,19 @@ export function NegotiatorStepCard({
                           onChange={(e) => setHelpQuestion(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && handleAskHelp()}
                           placeholder="Ask a question about this step..."
-                          className="flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-foreground text-xs placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-violet-500/40 transition-all"
+                          className="flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-foreground text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-violet-500/40 transition-all"
                         />
                         <button
                           onClick={handleAskHelp}
                           disabled={!helpQuestion.trim() || isLoadingHelp}
-                          className="px-3 py-1.5 rounded-lg bg-violet-500/20 border border-violet-500/30 text-violet-300 text-xs hover:bg-violet-500/30 transition-colors disabled:opacity-40"
+                          className="px-3 py-1.5 rounded-lg bg-violet-500/20 border border-violet-500/30 text-violet-300 text-sm hover:bg-violet-500/30 transition-colors disabled:opacity-40"
                         >
                           {isLoadingHelp ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Ask'}
                         </button>
                       </div>
 
                       {stepHelp && stepHelp.stepIndex === stepIndex && (
-                        <div className="px-3 py-2 rounded-lg bg-violet-500/10 border border-violet-500/20 text-xs text-foreground/80">
+                        <div className="px-3 py-2 rounded-lg bg-violet-500/10 border border-violet-500/20 text-sm text-foreground/80">
                           {stepHelp.answer}
                         </div>
                       )}
@@ -284,14 +284,14 @@ export function NegotiatorStepCard({
                   <button
                     onClick={onComplete}
                     disabled={step.field_fills ? !allFieldsCaptured : false}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 text-xs font-medium hover:bg-emerald-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 text-sm font-medium hover:bg-emerald-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <Check className="w-3.5 h-3.5" />
                     {step.field_fills ? 'Step complete — values captured' : 'Mark step complete'}
                   </button>
                 )}
                 {isCompleted && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-sm">
                     <Check className="w-3 h-3" />
                     Completed
                   </span>

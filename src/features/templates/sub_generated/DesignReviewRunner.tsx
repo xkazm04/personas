@@ -1,14 +1,79 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Play, Square, CheckCircle2, XCircle, AlertTriangle, Upload, Plus, Trash2, FileText, Beaker, Copy, Check, Clock } from 'lucide-react';
+import { X, Play, Square, CheckCircle2, XCircle, AlertTriangle, Upload, Plus, Trash2, FileText, Beaker, Copy, Check, Clock, List } from 'lucide-react';
 import type { RunProgress } from '@/hooks/design/useDesignReviews';
 
-type RunMode = 'predefined' | 'custom';
+type RunMode = 'predefined' | 'custom' | 'batch';
 
 export interface PredefinedTestCase {
   id: string;
   name: string;
   instruction: string;
+  tools?: string;
+  trigger?: string;
+  category?: string;
+}
+
+interface ParsedTemplate {
+  id: string;
+  name: string;
+  instruction: string;
+  tools: string;
+  trigger: string;
+  category: string;
+}
+
+function parseListMdFormat(text: string): ParsedTemplate[] {
+  const templates: ParsedTemplate[] = [];
+  const lines = text.split('\n');
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!.trim();
+
+    // Match: **N. Template Name**
+    const headerMatch = line.match(/^\*\*(\d+)\.\s+(.+?)\*\*$/);
+    if (!headerMatch) continue;
+
+    const num = headerMatch[1]!;
+    const name = headerMatch[2]!;
+
+    // Next line is the description
+    let description = '';
+    if (i + 1 < lines.length) {
+      const nextLine = lines[i + 1]!.trim();
+      // Skip if it's another header or metadata line or section divider
+      if (nextLine && !nextLine.startsWith('**') && !nextLine.startsWith('`Tools:') && nextLine !== '---') {
+        description = nextLine;
+        i++;
+      }
+    }
+
+    // Look for metadata line: `Tools: ...` · `Trigger: ...` · `Category: ...`
+    let tools = '';
+    let trigger = '';
+    let category = '';
+    if (i + 1 < lines.length) {
+      const metaLine = lines[i + 1]!.trim();
+      const toolsMatch = metaLine.match(/`Tools:\s*([^`]+)`/);
+      const triggerMatch = metaLine.match(/`Trigger:\s*([^`]+)`/);
+      const categoryMatch = metaLine.match(/`Category:\s*([^`]+)`/);
+      if (toolsMatch) tools = toolsMatch[1]!.trim();
+      if (triggerMatch) trigger = triggerMatch[1]!.trim();
+      if (categoryMatch) category = categoryMatch[1]!.trim();
+      if (toolsMatch || triggerMatch || categoryMatch) i++;
+    }
+
+    templates.push({
+      id: `template_${num}`,
+      name,
+      instruction: description,
+      tools,
+      trigger,
+      category,
+    });
+  }
+
+  return templates;
 }
 
 const PREDEFINED_TEST_CASES: PredefinedTestCase[] = [
@@ -58,6 +123,24 @@ interface DesignReviewRunnerProps {
   onCancel: () => void;
 }
 
+const CATEGORY_COLORS: Record<string, string> = {
+  Email: 'bg-blue-500/15 text-blue-300 border-blue-500/25',
+  Development: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25',
+  Content: 'bg-amber-500/15 text-amber-300 border-amber-500/25',
+  Research: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/25',
+  'Project Management': 'bg-purple-500/15 text-purple-300 border-purple-500/25',
+  Finance: 'bg-green-500/15 text-green-300 border-green-500/25',
+  DevOps: 'bg-orange-500/15 text-orange-300 border-orange-500/25',
+  HR: 'bg-pink-500/15 text-pink-300 border-pink-500/25',
+  Sales: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/25',
+  Support: 'bg-teal-500/15 text-teal-300 border-teal-500/25',
+  Legal: 'bg-red-500/15 text-red-300 border-red-500/25',
+  Productivity: 'bg-violet-500/15 text-violet-300 border-violet-500/25',
+  Marketing: 'bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/25',
+  Security: 'bg-rose-500/15 text-rose-300 border-rose-500/25',
+  Pipeline: 'bg-sky-500/15 text-sky-300 border-sky-500/25',
+};
+
 export default function DesignReviewRunner({
   isOpen,
   onClose,
@@ -77,6 +160,9 @@ export default function DesignReviewRunner({
   const [mode, setMode] = useState<RunMode>('predefined');
   const [customInstructions, setCustomInstructions] = useState<string[]>(['']);
   const [copied, setCopied] = useState(false);
+  const [batchTemplates, setBatchTemplates] = useState<ParsedTemplate[]>([]);
+  const [batchCategoryFilter, setBatchCategoryFilter] = useState<string | null>(null);
+  const batchFileInputRef = useRef<HTMLInputElement>(null);
 
   // Capture the trigger element on open, restore focus on close
   useEffect(() => {
@@ -184,18 +270,51 @@ export default function DesignReviewRunner({
     reader.onload = (ev) => {
       const text = ev.target?.result;
       if (typeof text !== 'string') return;
+
+      // Detect list.md format (numbered **N. Name** entries)
+      if (/\*\*\d+\.\s+/.test(text)) {
+        const templates = parseListMdFormat(text);
+        if (templates.length > 0) {
+          setBatchTemplates(templates);
+          setBatchCategoryFilter(null);
+          setMode('batch');
+          return;
+        }
+      }
+
+      // Fallback to bullet-point format
       const parsed = parseBulletPoints(text);
       if (parsed.length > 0) {
         setCustomInstructions(parsed);
+        setMode('custom');
       }
     };
     reader.readAsText(file);
     e.target.value = '';
   }, []);
 
+  const handleBatchFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    handleFileUpload(e);
+  }, [handleFileUpload]);
+
   const handleStart = () => {
     if (mode === 'predefined') {
       onStart({ testCases: PREDEFINED_TEST_CASES });
+    } else if (mode === 'batch') {
+      const filtered = batchCategoryFilter
+        ? batchTemplates.filter((t) => t.category === batchCategoryFilter)
+        : batchTemplates;
+      if (filtered.length === 0) return;
+      onStart({
+        testCases: filtered.map((t) => ({
+          id: t.id,
+          name: t.name,
+          instruction: t.instruction,
+          tools: t.tools,
+          trigger: t.trigger,
+          category: t.category,
+        })),
+      });
     } else {
       const validInstructions = customInstructions.filter((s) => s.trim().length > 0);
       if (validInstructions.length === 0) return;
@@ -211,9 +330,22 @@ export default function DesignReviewRunner({
     });
   }, [lines]);
 
+  const batchCategories = useMemo(() => {
+    const cats = new Set<string>();
+    for (const t of batchTemplates) {
+      if (t.category) cats.add(t.category);
+    }
+    return Array.from(cats).sort();
+  }, [batchTemplates]);
+
+  const filteredBatchTemplates = useMemo(() => {
+    if (!batchCategoryFilter) return batchTemplates;
+    return batchTemplates.filter((t) => t.category === batchCategoryFilter);
+  }, [batchTemplates, batchCategoryFilter]);
+
   const progressInfo = useMemo(() => {
     if (!runProgress) return null;
-    const { current, total, startedAt } = runProgress;
+    const { current, total, startedAt, currentTemplateName } = runProgress;
     const pct = Math.round((current / total) * 100);
     const elapsed = Date.now() - startedAt;
     const msPerTest = current > 0 ? elapsed / current : 0;
@@ -224,12 +356,16 @@ export default function DesignReviewRunner({
       eta = 'Estimating...';
     } else if (etaSeconds < 60) {
       eta = `~${etaSeconds}s remaining`;
-    } else {
+    } else if (etaSeconds < 3600) {
       const mins = Math.floor(etaSeconds / 60);
       const secs = etaSeconds % 60;
       eta = `~${mins}m ${secs}s remaining`;
+    } else {
+      const hrs = Math.floor(etaSeconds / 3600);
+      const mins = Math.floor((etaSeconds % 3600) / 60);
+      eta = `~${hrs}h ${mins}m remaining`;
     }
-    return { current, total, pct, eta };
+    return { current, total, pct, eta, currentTemplateName };
   }, [runProgress]);
 
   if (!isOpen) return null;
@@ -264,7 +400,7 @@ export default function DesignReviewRunner({
               </div>
               <div>
                 <h3 id="design-runner-title" className="text-sm font-semibold text-foreground/90">Run Design Review</h3>
-                <p className="text-xs text-muted-foreground/50">
+                <p className="text-sm text-muted-foreground/90">
                   {isRunning ? 'Running tests...' : result ? 'Review complete' : 'Configure and start a review run'}
                 </p>
               </div>
@@ -274,7 +410,7 @@ export default function DesignReviewRunner({
                 onClick={onClose}
                 className="w-8 h-8 rounded-lg hover:bg-secondary/50 flex items-center justify-center transition-colors"
               >
-                <X className="w-4 h-4 text-muted-foreground/50" />
+                <X className="w-4 h-4 text-muted-foreground/90" />
               </button>
             )}
           </div>
@@ -289,30 +425,41 @@ export default function DesignReviewRunner({
                   className={`px-4 py-2 text-sm rounded-xl border transition-all flex items-center gap-2 ${
                     mode === 'predefined'
                       ? 'bg-violet-500/15 border-violet-500/30 text-violet-300'
-                      : 'bg-secondary/30 border-primary/10 text-muted-foreground/50 hover:border-primary/20'
+                      : 'bg-secondary/30 border-primary/10 text-muted-foreground/90 hover:border-primary/20'
                   }`}
                 >
                   <Beaker className="w-3.5 h-3.5" />
-                  Predefined (5 cases)
+                  Predefined (5)
                 </button>
                 <button
                   onClick={() => setMode('custom')}
                   className={`px-4 py-2 text-sm rounded-xl border transition-all flex items-center gap-2 ${
                     mode === 'custom'
                       ? 'bg-violet-500/15 border-violet-500/30 text-violet-300'
-                      : 'bg-secondary/30 border-primary/10 text-muted-foreground/50 hover:border-primary/20'
+                      : 'bg-secondary/30 border-primary/10 text-muted-foreground/90 hover:border-primary/20'
                   }`}
                 >
                   <FileText className="w-3.5 h-3.5" />
                   Custom
                 </button>
+                <button
+                  onClick={() => setMode('batch')}
+                  className={`px-4 py-2 text-sm rounded-xl border transition-all flex items-center gap-2 ${
+                    mode === 'batch'
+                      ? 'bg-violet-500/15 border-violet-500/30 text-violet-300'
+                      : 'bg-secondary/30 border-primary/10 text-muted-foreground/90 hover:border-primary/20'
+                  }`}
+                >
+                  <List className="w-3.5 h-3.5" />
+                  Batch{batchTemplates.length > 0 ? ` (${batchTemplates.length})` : ''}
+                </button>
               </div>
 
               {/* Predefined mode content */}
               {mode === 'predefined' && (
-                <div className="text-xs text-muted-foreground/50 space-y-1">
+                <div className="text-sm text-muted-foreground/90 space-y-1">
                   <p>Runs {PREDEFINED_TEST_CASES.length} predefined use cases through the design engine:</p>
-                  <ul className="list-disc list-inside text-muted-foreground/40 space-y-0.5 ml-1">
+                  <ul className="list-disc list-inside text-muted-foreground/80 space-y-0.5 ml-1">
                     {PREDEFINED_TEST_CASES.map((tc) => (
                       <li key={tc.id}>{tc.name}</li>
                     ))}
@@ -324,7 +471,7 @@ export default function DesignReviewRunner({
               {mode === 'custom' && (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs text-muted-foreground/50">
+                    <p className="text-sm text-muted-foreground/90">
                       Enter use case instructions ({validCustomCount} valid)
                     </p>
                     <div className="flex items-center gap-2">
@@ -337,7 +484,7 @@ export default function DesignReviewRunner({
                       />
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="px-3 py-1.5 text-xs rounded-lg border border-primary/15 hover:bg-secondary/50 text-muted-foreground/50 transition-colors flex items-center gap-1.5"
+                        className="px-3 py-1.5 text-sm rounded-lg border border-primary/15 hover:bg-secondary/50 text-muted-foreground/90 transition-colors flex items-center gap-1.5"
                         title="Load from .txt or .md file (lines starting with '-')"
                       >
                         <Upload className="w-3 h-3" />
@@ -345,7 +492,7 @@ export default function DesignReviewRunner({
                       </button>
                       <button
                         onClick={addInstruction}
-                        className="px-3 py-1.5 text-xs rounded-lg border border-primary/15 hover:bg-secondary/50 text-muted-foreground/50 transition-colors flex items-center gap-1.5"
+                        className="px-3 py-1.5 text-sm rounded-lg border border-primary/15 hover:bg-secondary/50 text-muted-foreground/90 transition-colors flex items-center gap-1.5"
                       >
                         <Plus className="w-3 h-3" />
                         Add
@@ -356,7 +503,7 @@ export default function DesignReviewRunner({
                   <div className="max-h-[200px] overflow-y-auto space-y-2 pr-1">
                     {customInstructions.map((instruction, index) => (
                       <div key={index} className="flex items-start gap-2">
-                        <span className="text-xs text-muted-foreground/30 mt-2.5 w-5 text-right flex-shrink-0">
+                        <span className="text-sm text-muted-foreground/80 mt-2.5 w-5 text-right flex-shrink-0">
                           {index + 1}.
                         </span>
                         <textarea
@@ -364,12 +511,12 @@ export default function DesignReviewRunner({
                           onChange={(e) => updateInstruction(index, e.target.value)}
                           placeholder="Describe a persona use case to test..."
                           rows={2}
-                          className="flex-1 px-3 py-2 text-sm bg-secondary/30 border border-primary/10 rounded-lg text-foreground/80 placeholder:text-muted-foreground/30 resize-none focus:outline-none focus:border-violet-500/30 transition-colors"
+                          className="flex-1 px-3 py-2 text-sm bg-secondary/30 border border-primary/10 rounded-lg text-foreground/80 placeholder:text-muted-foreground/80 resize-none focus:outline-none focus:border-violet-500/30 transition-colors"
                         />
                         {customInstructions.length > 1 && (
                           <button
                             onClick={() => removeInstruction(index)}
-                            className="mt-2 p-1 rounded hover:bg-red-500/10 text-muted-foreground/30 hover:text-red-400 transition-colors flex-shrink-0"
+                            className="mt-2 p-1 rounded hover:bg-red-500/10 text-muted-foreground/80 hover:text-red-400 transition-colors flex-shrink-0"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -378,9 +525,114 @@ export default function DesignReviewRunner({
                     ))}
                   </div>
 
-                  <p className="text-[10px] text-muted-foreground/30">
+                  <p className="text-sm text-muted-foreground/80">
                     Tip: Upload a .txt or .md file with bullet points (lines starting with &apos;-&apos;) to load multiple cases at once
                   </p>
+                </div>
+              )}
+
+              {/* Batch mode content */}
+              {mode === 'batch' && (
+                <div className="space-y-3">
+                  {batchTemplates.length === 0 ? (
+                    <div className="space-y-3">
+                      <p className="text-sm text-muted-foreground/90">
+                        Upload a list.md file with numbered template entries to batch-generate templates via Claude CLI.
+                      </p>
+                      <div className="flex justify-center">
+                        <input
+                          ref={batchFileInputRef}
+                          type="file"
+                          accept=".md,.txt"
+                          onChange={handleBatchFileUpload}
+                          className="hidden"
+                        />
+                        <button
+                          onClick={() => batchFileInputRef.current?.click()}
+                          className="px-4 py-3 rounded-xl border-2 border-dashed border-primary/15 hover:border-violet-500/30 hover:bg-violet-500/5 text-muted-foreground/90 hover:text-violet-300 transition-all flex items-center gap-2"
+                        >
+                          <Upload className="w-4 h-4" />
+                          Upload list.md
+                        </button>
+                      </div>
+                      <p className="text-sm text-muted-foreground/80 text-center">
+                        Expected format: <code className="text-muted-foreground/80">**1. Template Name**</code> followed by description and metadata
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Category filter chips */}
+                      {batchCategories.length > 1 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          <button
+                            onClick={() => setBatchCategoryFilter(null)}
+                            className={`px-2.5 py-1 text-sm rounded-lg border transition-all ${
+                              batchCategoryFilter === null
+                                ? 'bg-violet-500/15 border-violet-500/30 text-violet-300'
+                                : 'bg-secondary/30 border-primary/10 text-muted-foreground/80 hover:border-primary/20'
+                            }`}
+                          >
+                            All ({batchTemplates.length})
+                          </button>
+                          {batchCategories.map((cat) => {
+                            const count = batchTemplates.filter((t) => t.category === cat).length;
+                            return (
+                              <button
+                                key={cat}
+                                onClick={() => setBatchCategoryFilter(batchCategoryFilter === cat ? null : cat)}
+                                className={`px-2.5 py-1 text-sm rounded-lg border transition-all ${
+                                  batchCategoryFilter === cat
+                                    ? 'bg-violet-500/15 border-violet-500/30 text-violet-300'
+                                    : 'bg-secondary/30 border-primary/10 text-muted-foreground/80 hover:border-primary/20'
+                                }`}
+                              >
+                                {cat} ({count})
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Template list */}
+                      <div className="max-h-[220px] overflow-y-auto space-y-1 pr-1">
+                        {filteredBatchTemplates.map((t) => {
+                          const catStyle = CATEGORY_COLORS[t.category] ?? 'bg-secondary/30 text-muted-foreground/90 border-primary/15';
+                          return (
+                            <div
+                              key={t.id}
+                              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/20 border border-primary/5 hover:border-primary/15 transition-colors"
+                            >
+                              <span className="text-sm text-muted-foreground/80 w-6 text-right flex-shrink-0">
+                                {t.id.replace('template_', '')}
+                              </span>
+                              <span className="text-sm text-foreground/90 flex-1 truncate">{t.name}</span>
+                              {t.category && (
+                                <span className={`px-2 py-0.5 text-sm rounded-md border flex-shrink-0 ${catStyle}`}>
+                                  {t.category}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground/80">
+                          {filteredBatchTemplates.length} template{filteredBatchTemplates.length !== 1 ? 's' : ''} will be generated via Claude CLI (~45s each)
+                        </p>
+                        <button
+                          onClick={() => {
+                            setBatchTemplates([]);
+                            setBatchCategoryFilter(null);
+                          }}
+                          className="px-2 py-1 text-sm rounded-md text-muted-foreground/80 hover:text-red-400 transition-colors"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -389,16 +641,21 @@ export default function DesignReviewRunner({
           {/* Progress Bar */}
           {isRunning && progressInfo && (
             <div className="px-5 py-3 border-b border-primary/10 bg-primary/5">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-1.5">
                 <span className="text-sm font-medium text-foreground/80">
-                  Test {progressInfo.current} of {progressInfo.total}
-                  <span className="text-muted-foreground/50 ml-1.5">— {progressInfo.pct}% complete</span>
+                  Template {progressInfo.current} of {progressInfo.total}
+                  <span className="text-muted-foreground/90 ml-1.5">— {progressInfo.pct}%</span>
                 </span>
-                <span className="flex items-center gap-1.5 text-xs text-muted-foreground/50">
+                <span className="flex items-center gap-1.5 text-sm text-muted-foreground/90">
                   <Clock className="w-3 h-3" />
                   {progressInfo.eta}
                 </span>
               </div>
+              {progressInfo.currentTemplateName && (
+                <p className="text-sm text-violet-400/70 mb-2 truncate">
+                  Generating: {progressInfo.currentTemplateName}
+                </p>
+              )}
               <div className="w-full h-2 rounded-full bg-secondary/50 border border-primary/10 overflow-hidden">
                 <motion.div
                   className="h-full rounded-full bg-violet-500/80"
@@ -415,10 +672,10 @@ export default function DesignReviewRunner({
             <div
               ref={terminalRef}
               onScroll={handleScroll}
-              className={`${hasStarted ? 'h-[400px]' : 'h-[100px]'} overflow-y-auto font-mono text-xs bg-background transition-all`}
+              className={`${hasStarted ? 'h-[400px]' : 'h-[100px]'} overflow-y-auto font-mono text-sm bg-background transition-all`}
             >
               {!hasStarted ? (
-                <div className="flex items-center justify-center h-full text-muted-foreground/30 text-xs">
+                <div className="flex items-center justify-center h-full text-muted-foreground/80 text-sm">
                   Output will appear here when the review starts
                 </div>
               ) : (
@@ -438,9 +695,11 @@ export default function DesignReviewRunner({
                           {(index + 1).toString().padStart(3, ' ')}
                         </span>
                         <span className={`break-all ${
-                          line.includes('PASS') ? 'text-emerald-400/80' :
-                          line.includes('FAIL') ? 'text-red-400/80' :
+                          line.includes('PASSED') ? 'text-emerald-400/80' :
+                          line.includes('FAILED') ? 'text-red-400/80' :
                           line.includes('ERROR') ? 'text-amber-400/80' :
+                          line.includes('Generating:') ? 'text-violet-400/60' :
+                          line.includes('Cancelled') ? 'text-orange-400/80' :
                           line.includes('[TestRunner]') ? 'text-violet-400/80' :
                           'text-blue-400/80'
                         }`}>{line}</span>
@@ -474,7 +733,7 @@ export default function DesignReviewRunner({
                   <AlertTriangle className="w-4 h-4" />
                   {result.errored} errors
                 </span>
-                <span className="ml-auto text-muted-foreground/50 text-xs">
+                <span className="ml-auto text-muted-foreground/90 text-sm">
                   {result.totalTests} total tests
                 </span>
               </div>
@@ -494,18 +753,25 @@ export default function DesignReviewRunner({
             ) : !hasStarted ? (
               <button
                 onClick={handleStart}
-                disabled={mode === 'custom' && validCustomCount === 0}
+                disabled={
+                  (mode === 'custom' && validCustomCount === 0) ||
+                  (mode === 'batch' && filteredBatchTemplates.length === 0)
+                }
                 className="px-4 py-2 text-sm rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
               >
                 <Play className="w-3.5 h-3.5" />
-                {mode === 'predefined' ? 'Start Review (5 cases)' : `Start Review (${validCustomCount} case${validCustomCount !== 1 ? 's' : ''})`}
+                {mode === 'predefined'
+                  ? 'Start Review (5 cases)'
+                  : mode === 'batch'
+                    ? `Start Batch (${filteredBatchTemplates.length} template${filteredBatchTemplates.length !== 1 ? 's' : ''})`
+                    : `Start Review (${validCustomCount} case${validCustomCount !== 1 ? 's' : ''})`}
               </button>
             ) : (
               <div className="flex items-center gap-2">
                 {lines.length > 0 && (
                   <button
                     onClick={handleCopyLog}
-                    className="px-4 py-2 text-sm rounded-xl bg-secondary/50 text-muted-foreground/70 border border-primary/15 hover:bg-secondary/80 hover:text-foreground/80 transition-colors flex items-center gap-2"
+                    className="px-4 py-2 text-sm rounded-xl bg-secondary/50 text-muted-foreground/90 border border-primary/15 hover:bg-secondary/80 hover:text-foreground/95 transition-colors flex items-center gap-2"
                   >
                     {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                     {copied ? 'Copied!' : 'Copy Log'}

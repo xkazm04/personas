@@ -34,6 +34,12 @@ import { N8nEditStep } from './N8nEditStep';
 import { N8nConfirmStep, type ConfirmResult } from './N8nConfirmStep';
 import { N8nSessionList } from './N8nSessionList';
 
+// Color presets — synced with ColorPicker.tsx
+const COLOR_PRESETS = [
+  '#8b5cf6', '#6366f1', '#3b82f6', '#06b6d4', '#10b981',
+  '#f59e0b', '#f97316', '#ef4444', '#ec4899', '#a855f7',
+];
+
 // ── Slide animation variants ──
 
 const slideVariants = {
@@ -64,6 +70,7 @@ export default function N8nImportTab() {
   const [isRestoring, setIsRestoring] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [confirmResult, setConfirmResult] = useState<ConfirmResult | null>(null);
+  const [connectorsMissing, setConnectorsMissing] = useState(0);
 
   // Keep sessionId ref in sync for use in closures
   sessionIdRef.current = state.sessionId;
@@ -151,7 +158,15 @@ export default function N8nImportTab() {
       } catch {
         completedDraft = draft;
       }
+      // Apply a random color from presets if the transform didn't set one
+      if (!completedDraft.color || completedDraft.color === '#8b5cf6') {
+        completedDraft = {
+          ...completedDraft,
+          color: COLOR_PRESETS[Math.floor(Math.random() * COLOR_PRESETS.length)] ?? '#8b5cf6',
+        };
+      }
       dispatch({ type: 'TRANSFORM_COMPLETED', draft: completedDraft });
+      void resetTransformStream();
       setIsRestoring(false);
       setN8nTransformActive(false);
 
@@ -204,6 +219,39 @@ export default function N8nImportTab() {
     });
   }, [dispatch, setN8nTransformActive]);
 
+  const handleSnapshotQuestions = useCallback(
+    (questions: unknown[]) => {
+      // Map raw snapshot questions to the typed TransformQuestion format
+      const mapped = questions
+        .filter((q): q is Record<string, unknown> => !!q && typeof q === 'object')
+        .map((q) => ({
+          id: String(q.id ?? ''),
+          question: String(q.question ?? ''),
+          type: (q.type === 'select' || q.type === 'text' || q.type === 'boolean' ? q.type : 'text') as 'select' | 'text' | 'boolean',
+          options: Array.isArray(q.options) ? q.options.map(String) : undefined,
+          default: typeof q.default === 'string' ? q.default : undefined,
+          context: typeof q.context === 'string' ? q.context : undefined,
+        }));
+
+      if (mapped.length > 0) {
+        dispatch({ type: 'QUESTIONS_GENERATED', questions: mapped });
+
+        // Persist questions to DB session
+        if (sessionIdRef.current) {
+          void updateN8nSession(sessionIdRef.current, {
+            status: 'awaiting_answers',
+            questionsJson: JSON.stringify(mapped),
+            transformId: state.backgroundTransformId ?? undefined,
+          }).catch(() => {});
+        }
+      } else {
+        // No questions — proceed to answering with defaults
+        dispatch({ type: 'QUESTIONS_FAILED', error: '' });
+      }
+    },
+    [dispatch, state.backgroundTransformId],
+  );
+
   useBackgroundSnapshot({
     snapshotId: state.backgroundTransformId,
     getSnapshot: getN8nTransformSnapshot,
@@ -213,6 +261,7 @@ export default function N8nImportTab() {
     onCompletedNoDraft: handleSnapshotCompletedNoDraft,
     onFailed: handleSnapshotFailed,
     onSessionLost: handleSnapshotSessionLost,
+    onQuestions: handleSnapshotQuestions,
   });
 
   // ── Handlers ──
@@ -343,9 +392,9 @@ export default function N8nImportTab() {
       setN8nTransformActive(true);
       setAnalyzing(false);
 
-      // Update session status
+      // Update session status and persist transform_id
       if (state.sessionId) {
-        void updateN8nSession(state.sessionId, { status: 'transforming', step: 'transform' }).catch(() => {});
+        void updateN8nSession(state.sessionId, { status: 'transforming', step: 'transform', transformId }).catch(() => {});
       }
 
       const previousDraftJson = state.draft ? stringifyDraft(state.draft) : state.draftJson.trim() || null;
@@ -546,7 +595,11 @@ export default function N8nImportTab() {
       );
 
       if (state.sessionId) {
-        void updateN8nSession(state.sessionId, { status: 'transforming', step: 'transform' }).catch(() => {});
+        void updateN8nSession(state.sessionId, {
+          status: 'transforming',
+          step: 'transform',
+          userAnswers: userAnswersJson,
+        }).catch(() => {});
       }
     } catch (err) {
       setN8nTransformActive(false);
@@ -603,11 +656,11 @@ export default function N8nImportTab() {
           <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
             <p className="text-sm text-red-400 font-medium">Import Error</p>
-            <p className="text-xs text-red-400/70 mt-0.5">{state.error}</p>
+            <p className="text-sm text-red-400/70 mt-0.5">{state.error}</p>
           </div>
           <button
             onClick={() => dispatch({ type: 'CLEAR_ERROR' })}
-            className="text-red-400/50 hover:text-red-400 text-xs"
+            className="text-red-400/50 hover:text-red-400 text-sm"
           >
             Dismiss
           </button>
@@ -636,7 +689,7 @@ export default function N8nImportTab() {
                 />
                 <div className="mt-6">
                   <N8nSessionList
-                    onLoadSession={(sessionId, step, workflowName, rawWorkflowJson, parsedResult, draft) => {
+                    onLoadSession={(sessionId, step, workflowName, rawWorkflowJson, parsedResult, draft, questions, transformId) => {
                       dispatch({
                         type: 'SESSION_LOADED',
                         sessionId,
@@ -645,6 +698,8 @@ export default function N8nImportTab() {
                         rawWorkflowJson,
                         parsedResult,
                         draft,
+                        questions,
+                        transformId,
                       });
                     }}
                   />
@@ -671,25 +726,16 @@ export default function N8nImportTab() {
               <N8nTransformChat
                 transformSubPhase={state.transformSubPhase}
                 questions={state.questions}
-                questionsSkipped={state.questionsSkipped}
                 userAnswers={state.userAnswers}
                 onAnswerUpdated={(questionId, answer) =>
                   dispatch({ type: 'ANSWER_UPDATED', questionId, answer })
                 }
-                onSkipQuestions={() => {
-                  // Cancel the current Turn 1 and go to answering without questions
-                  if (state.backgroundTransformId) {
-                    void cancelN8nTransform(state.backgroundTransformId).catch(() => {});
-                  }
-                  dispatch({ type: 'QUESTIONS_SKIPPED' });
-                }}
                 transformPhase={state.transformPhase}
                 transformLines={state.transformLines}
                 runId={currentTransformId}
                 isRestoring={isRestoring}
                 onRetry={() => void handleTransform()}
                 onCancel={() => void handleCancelTransform()}
-                error={state.error}
               />
             )}
 
@@ -711,6 +757,7 @@ export default function N8nImportTab() {
                 onAdjustmentChange={(text) => dispatch({ type: 'SET_ADJUSTMENT', text })}
                 onApplyAdjustment={() => void handleTransform()}
                 onGoToAnalyze={() => dispatch({ type: 'GO_TO_STEP', step: 'analyze' })}
+                onConnectorsMissingChange={setConnectorsMissing}
               />
             )}
 
@@ -743,6 +790,7 @@ export default function N8nImportTab() {
         hasParseResult={!!state.parsedResult}
         transformSubPhase={state.transformSubPhase}
         analyzing={analyzing}
+        connectorsMissing={connectorsMissing}
       />
     </div>
   );

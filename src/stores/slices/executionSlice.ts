@@ -8,6 +8,7 @@ export interface ExecutionSlice {
   // State
   executions: DbPersonaExecution[];
   activeExecutionId: string | null;
+  executionPersonaId: string | null;
   executionOutput: string[];
   isExecuting: boolean;
 
@@ -23,11 +24,12 @@ export interface ExecutionSlice {
 export const createExecutionSlice: StateCreator<PersonaStore, [], [], ExecutionSlice> = (set, get) => ({
   executions: [],
   activeExecutionId: null,
+  executionPersonaId: null,
   executionOutput: [],
   isExecuting: false,
 
   executePersona: async (personaId, inputData) => {
-    set({ isExecuting: true, executionOutput: [], error: null });
+    set({ isExecuting: true, executionOutput: [], error: null, executionPersonaId: personaId });
     try {
       const execution = await api.executePersona(
         personaId,
@@ -81,6 +83,6 @@ export const createExecutionSlice: StateCreator<PersonaStore, [], [], ExecutionS
   },
 
   clearExecutionOutput: () => {
-    set({ executionOutput: [], activeExecutionId: null, isExecuting: false });
+    set({ executionOutput: [], activeExecutionId: null, isExecuting: false, executionPersonaId: null });
   },
 });

@@ -430,26 +430,43 @@ pub fn confirm_template_adopt_draft(
         CreatePersonaInput {
             name: draft
                 .name
+                .as_ref()
                 .filter(|n| !n.trim().is_empty())
+                .cloned()
                 .unwrap_or_else(|| "Adopted Template".into()),
-            description: draft.description,
-            system_prompt: draft.system_prompt,
+            description: draft.description.clone(),
+            system_prompt: draft.system_prompt.clone(),
             structured_prompt: draft
                 .structured_prompt
-                .and_then(|v| serde_json::to_string(&v).ok()),
-            icon: draft.icon,
-            color: draft.color,
+                .as_ref()
+                .and_then(|v| serde_json::to_string(v).ok()),
+            icon: draft.icon.clone(),
+            color: draft.color.clone(),
             project_id: None,
             enabled: Some(true),
             max_concurrent: None,
             timeout_ms: None,
-            model_profile: draft.model_profile,
+            model_profile: draft.model_profile.clone(),
             max_budget_usd: draft.max_budget_usd,
             max_turns: draft.max_turns,
-            design_context: draft.design_context,
+            design_context: draft.design_context.clone(),
             group_id: None,
         },
     )?;
+
+    // Save notification channels if provided
+    if let Some(ref channels) = draft.notification_channels {
+        if !channels.trim().is_empty() {
+            let _ = persona_repo::update(
+                &state.db,
+                &created.id,
+                crate::db::models::UpdatePersonaInput {
+                    notification_channels: Some(channels.clone()),
+                    ..Default::default()
+                },
+            );
+        }
+    }
 
     Ok(json!({ "persona": created }))
 }
@@ -468,7 +485,11 @@ pub async fn generate_template_adopt_questions(
     }
 
     let design_preview = if design_result_json.len() > 8000 {
-        &design_result_json[..design_result_json.floor_char_boundary(8000)]
+        let mut end = 8000;
+        while !design_result_json.is_char_boundary(end) {
+            end -= 1;
+        }
+        &design_result_json[..end]
     } else {
         &design_result_json
     };
@@ -486,9 +507,23 @@ The Personas platform has these unique capabilities:
 
 Generate questions across these categories:
 
-## 1. Credential Mapping
-Which existing credentials or connectors should be used for each service?
-Only ask if the template references external services or connectors.
+## 1. Credential Mapping (IMPORTANT)
+For each connector listed in the template's suggested_connectors, ask which specific
+credentials the user wants to use. Templates now include detailed connector information
+with auth_type and credential_fields.
+
+For each connector that uses http_request (e.g., Slack, GitHub, Jira, Stripe, Notion):
+- Ask if the user has an existing API key/token for that service
+- Present the specific credential fields needed (from the connector's credential_fields)
+- Offer to help set up a new credential if they don't have one
+- Ask which specific instance/workspace/project to connect to
+
+Example: "This template uses the GitHub connector (Personal Access Token). Do you have
+a GitHub PAT configured, or should we set one up? Which repository should it monitor?"
+Example: "The Slack connector needs a Bot Token. Which Slack workspace should this
+persona post to? Do you have an existing Slack Bot Token?"
+Example: "This template connects to Notion (Integration Token). Which Notion workspace
+and databases should it access?"
 
 ## 2. Configuration Parameters
 Template-specific settings the user should customize

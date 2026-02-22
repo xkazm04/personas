@@ -10,9 +10,9 @@ export function OllamaApiKeyField() {
 
   return (
     <div className="space-y-1.5">
-      <label className="block text-sm font-medium text-foreground/60 mb-1">
+      <label className="block text-sm font-medium text-foreground/80 mb-1">
         Ollama API Key
-        <span className="text-muted-foreground/40 font-normal ml-1">(global, shared across all personas)</span>
+        <span className="text-muted-foreground/80 font-normal ml-1">(global, shared across all personas)</span>
       </label>
       <div className="flex gap-2">
         <input
@@ -29,7 +29,7 @@ export function OllamaApiKeyField() {
           label="Save Key"
         />
       </div>
-      <p className="text-xs text-muted-foreground/40">
+      <p className="text-sm text-muted-foreground/80">
         Sign up free at{' '}
         <a
           href="https://ollama.com"

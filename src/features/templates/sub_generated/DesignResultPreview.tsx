@@ -85,7 +85,7 @@ function channelIcon(type: string) {
   }
 }
 
-const SECTION_LABEL = 'text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50 flex items-center gap-2';
+const SECTION_LABEL = 'text-sm font-semibold uppercase tracking-wider text-muted-foreground/90 flex items-center gap-2';
 
 // ============================================================================
 // PromptTabsPreview — Tab-based structured prompt viewer
@@ -125,10 +125,10 @@ function PromptTabsPreview({ result }: { result: DesignAnalysisResult }) {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-t-lg border border-b-0 transition-all whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-t-lg border border-b-0 transition-all whitespace-nowrap ${
                 isActive
                   ? 'bg-violet-500/10 border-violet-500/20 text-violet-300'
-                  : 'border-transparent text-muted-foreground/50 hover:text-muted-foreground/70 hover:bg-secondary/40'
+                  : 'border-transparent text-muted-foreground/90 hover:text-muted-foreground hover:bg-secondary/40'
               }`}
             >
               <TabIcon className="w-3.5 h-3.5" />
@@ -161,7 +161,7 @@ function PromptTabsPreview({ result }: { result: DesignAnalysisResult }) {
         <div className="border-t border-primary/10">
           <button
             onClick={() => setShowFullPrompt(!showFullPrompt)}
-            className="flex items-center gap-2 px-4 py-2.5 text-xs text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors w-full"
+            className="flex items-center gap-2 px-4 py-2.5 text-sm text-muted-foreground/90 hover:text-muted-foreground transition-colors w-full"
           >
             <Eye className="w-3.5 h-3.5" />
             {showFullPrompt ? 'Hide' : 'View'} Full Prompt
@@ -267,11 +267,11 @@ function ConnectorsSection({
                   <img src={item.connDef.icon_url} alt={item.connDef.label} className="w-6 h-6 flex-shrink-0 rounded" />
                 ) : isGeneral ? (
                   <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center">
-                    <Wrench className="w-3.5 h-3.5 text-muted-foreground/50" />
+                    <Wrench className="w-3.5 h-3.5 text-muted-foreground/90" />
                   </div>
                 ) : (
                   <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center">
-                    <Plug className="w-3.5 h-3.5 text-muted-foreground/50" />
+                    <Plug className="w-3.5 h-3.5 text-muted-foreground/90" />
                   </div>
                 )}
                 <span className="text-sm font-medium text-foreground/80 flex-1 truncate">
@@ -291,7 +291,7 @@ function ConnectorsSection({
                 <button
                   type="button"
                   onClick={() => onConnectorClick(item.connector)}
-                  className="flex items-center gap-1.5 text-xs text-primary/60 hover:text-primary transition-colors"
+                  className="flex items-center gap-1.5 text-sm text-primary/60 hover:text-primary transition-colors"
                 >
                   {installed && hasCredential ? (
                     <CheckCircle2 className="w-3 h-3 text-emerald-400" />
@@ -321,7 +321,7 @@ function ConnectorsSection({
                           />
                         )}
                         <Wrench className="w-3 h-3 text-primary/40 flex-shrink-0" />
-                        <span className="text-xs text-foreground/70 truncate">
+                        <span className="text-sm text-foreground/90 truncate">
                           {toolDef?.name || toolName}
                         </span>
                       </div>
@@ -372,21 +372,21 @@ function EventsSection({
       <div className={SECTION_LABEL}>
         <Zap className="w-4 h-4 text-amber-400" />
         Events & Triggers
-        <span className="text-[10px] font-normal text-muted-foreground/30 ml-1">What activates this persona</span>
+        <span className="text-sm font-normal text-muted-foreground/80 ml-1">What activates this persona</span>
       </div>
 
       <div className="bg-secondary/20 border border-primary/10 rounded-xl overflow-hidden divide-y divide-primary/[0.06]">
         {/* Triggers */}
         {hasTriggers && (
           <div className="p-3.5 space-y-2">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/40">Triggers</span>
+            <span className="text-sm font-mono uppercase tracking-wider text-muted-foreground/80">Triggers</span>
             {readOnly && actualTriggers.length > 0 ? (
               actualTriggers.map((trigger) => {
                 const config = parseTriggerConfig(trigger.config);
                 return (
                   <div key={trigger.id} className="flex items-center gap-2.5 py-1">
                     <div className="flex-shrink-0">{triggerIcon(trigger.trigger_type as SuggestedTrigger['trigger_type'])}</div>
-                    <span className={`text-sm capitalize truncate flex-1 ${trigger.enabled ? 'text-foreground/70' : 'text-muted-foreground/40'}`}>
+                    <span className={`text-sm capitalize truncate flex-1 ${trigger.enabled ? 'text-foreground/90' : 'text-muted-foreground/80'}`}>
                       {trigger.trigger_type}
                       {config.interval_seconds ? ` (${config.interval_seconds}s)` : ''}
                     </span>
@@ -399,7 +399,7 @@ function EventsSection({
                         {trigger.enabled ? (
                           <ToggleRight className="w-5 h-5 text-emerald-400" />
                         ) : (
-                          <ToggleLeft className="w-5 h-5 text-muted-foreground/30" />
+                          <ToggleLeft className="w-5 h-5 text-muted-foreground/80" />
                         )}
                       </button>
                     )}
@@ -421,8 +421,8 @@ function EventsSection({
                     )}
                     <div className="flex-shrink-0 mt-0.5">{triggerIcon(trigger.trigger_type)}</div>
                     <div className="flex-1 min-w-0">
-                      <span className="text-sm text-foreground/70 capitalize block">{trigger.trigger_type}</span>
-                      <span className="text-xs text-muted-foreground/40 leading-snug block">{trigger.description}</span>
+                      <span className="text-sm text-foreground/90 capitalize block">{trigger.trigger_type}</span>
+                      <span className="text-sm text-muted-foreground/80 leading-snug block">{trigger.description}</span>
                     </div>
                   </div>
                 );
@@ -434,7 +434,7 @@ function EventsSection({
         {/* Event Subscriptions */}
         {hasSubscriptions && (
           <div className="p-3.5 space-y-2">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/40 flex items-center gap-1.5">
+            <span className="text-sm font-mono uppercase tracking-wider text-muted-foreground/80 flex items-center gap-1.5">
               <Zap className="w-3 h-3 text-purple-400" />
               Event Subscriptions
             </span>
@@ -453,8 +453,8 @@ function EventsSection({
                   )}
                   <Zap className="w-3.5 h-3.5 text-purple-400 flex-shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
-                    <span className="text-sm text-foreground/70 block">{sub.event_type}</span>
-                    <span className="text-xs text-muted-foreground/40 leading-snug block">{sub.description}</span>
+                    <span className="text-sm text-foreground/90 block">{sub.event_type}</span>
+                    <span className="text-sm text-muted-foreground/80 leading-snug block">{sub.description}</span>
                   </div>
                 </div>
               );
@@ -488,7 +488,7 @@ function MessagesSection({
       <div className={SECTION_LABEL}>
         <Bell className="w-4 h-4 text-blue-400" />
         Messages & Notifications
-        <span className="text-[10px] font-normal text-muted-foreground/30 ml-1">How this persona communicates</span>
+        <span className="text-sm font-normal text-muted-foreground/80 ml-1">How this persona communicates</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -511,9 +511,9 @@ function MessagesSection({
                 </div>
                 <div className="flex-1 min-w-0">
                   <span className="text-sm font-medium text-foreground/80 capitalize block">{channel.type}</span>
-                  <span className="text-xs text-muted-foreground/40 leading-snug block mt-0.5">{channel.description}</span>
+                  <span className="text-sm text-muted-foreground/80 leading-snug block mt-0.5">{channel.description}</span>
                   {channel.required_connector && (
-                    <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 text-[10px] rounded-full bg-primary/8 text-muted-foreground/50 border border-primary/10">
+                    <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 text-sm rounded-full bg-primary/8 text-muted-foreground/90 border border-primary/10">
                       <Plug className="w-2.5 h-2.5" />
                       Requires {channel.required_connector}
                     </span>

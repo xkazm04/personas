@@ -116,20 +116,20 @@ export function HealingToast() {
                   <ShieldAlert className={`w-4 h-4 mt-0.5 flex-shrink-0 ${styles.icon}`} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-foreground/90 truncate">
+                      <span className="text-sm font-medium text-foreground/90 truncate">
                         {toast.payload.title}
                       </span>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded border font-mono flex-shrink-0 ${styles.badge}`}>
+                      <span className={`text-sm px-1.5 py-0.5 rounded border font-mono flex-shrink-0 ${styles.badge}`}>
                         {toast.payload.severity}
                       </span>
                     </div>
-                    <span className="text-[11px] text-muted-foreground/50 mt-0.5 block">
+                    <span className="text-sm text-muted-foreground/90 mt-0.5 block">
                       {toast.payload.persona_name}
                     </span>
                   </div>
                   <button
                     onClick={() => dismiss(toast.id)}
-                    className="text-muted-foreground/30 hover:text-foreground/60 transition-colors flex-shrink-0"
+                    className="text-muted-foreground/80 hover:text-foreground/95 transition-colors flex-shrink-0"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -137,7 +137,7 @@ export function HealingToast() {
 
                 {/* Suggested fix */}
                 {toast.payload.suggested_fix && (
-                  <p className="text-[11px] text-muted-foreground/60 leading-relaxed line-clamp-2 pl-6.5">
+                  <p className="text-sm text-muted-foreground/80 leading-relaxed line-clamp-2 pl-6.5">
                     {toast.payload.suggested_fix}
                   </p>
                 )}
@@ -146,7 +146,7 @@ export function HealingToast() {
                 <div className="flex items-center gap-2 pl-6.5">
                   <button
                     onClick={() => handleResolve(toast.id)}
-                    className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25 transition-colors"
+                    className="flex items-center gap-1 px-2 py-1 text-sm font-medium rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25 transition-colors"
                   >
                     <CheckCircle2 className="w-3 h-3" />
                     Resolve

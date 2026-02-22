@@ -38,6 +38,16 @@ body {
   overflow: hidden;
 }
 
+/* ── Hide number input spinners ── */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
 /* ── Glass Morphism ── */
 .glass {
   background: rgba(255, 255, 255, 0.02);
@@ -210,3 +220,11 @@ body {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* ── JSON Syntax Highlighting (highlight.js tokens) ── */
+.json-highlight .hljs-attr { color: #c4b5fd; }
+.json-highlight .hljs-string { color: #86efac; }
+.json-highlight .hljs-number { color: #93c5fd; }
+.json-highlight .hljs-literal { color: #fca5a5; }
+.json-highlight .hljs-punctuation { color: #71717a; }
+.json-highlight .hljs-comment { color: #52525b; font-style: italic; }

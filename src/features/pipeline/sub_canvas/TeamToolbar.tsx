@@ -37,7 +37,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
       <div className="flex items-center gap-3">
         <button
           onClick={onBack}
-          className="p-1.5 rounded-lg hover:bg-primary/10 text-muted-foreground/60 hover:text-foreground/80 transition-all"
+          className="p-1.5 rounded-lg hover:bg-primary/10 text-muted-foreground/80 hover:text-foreground/95 transition-all"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
@@ -49,7 +49,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setShowDropdown(!showDropdown)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/25 text-indigo-300 hover:bg-indigo-500/20 text-xs font-medium transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/25 text-indigo-300 hover:bg-indigo-500/20 text-sm font-medium transition-all"
           >
             <Plus className="w-3.5 h-3.5" />
             Add Agent
@@ -60,7 +60,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
             <div className="absolute right-0 top-full mt-1 w-56 rounded-xl bg-background/95 backdrop-blur-md border border-primary/20 shadow-xl z-50 overflow-hidden">
               <div className="p-1.5 max-h-60 overflow-y-auto">
                 {availablePersonas.length === 0 ? (
-                  <div className="px-3 py-4 text-center text-xs text-muted-foreground/50">
+                  <div className="px-3 py-4 text-center text-sm text-muted-foreground/90">
                     All agents already added
                   </div>
                 ) : (
@@ -74,7 +74,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
                       className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-secondary/60 transition-colors"
                     >
                       <PersonaAvatar icon={p.icon} color={p.color} size="sm" />
-                      <span className="text-xs font-medium text-foreground/80 truncate">{p.name}</span>
+                      <span className="text-sm font-medium text-foreground/80 truncate">{p.name}</span>
                     </button>
                   ))
                 )}
@@ -86,7 +86,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
         {/* Auto Layout */}
         <button
           onClick={onAutoLayout}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary/60 border border-primary/15 text-muted-foreground/70 hover:text-foreground/80 hover:bg-secondary/80 text-xs font-medium transition-all"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary/60 border border-primary/15 text-muted-foreground/90 hover:text-foreground/95 hover:bg-secondary/80 text-sm font-medium transition-all"
         >
           <LayoutGrid className="w-3.5 h-3.5" />
           Layout
@@ -96,7 +96,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
         <button
           onClick={onSave}
           disabled={saveStatus === 'saving'}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${
             saveStatus === 'saved'
               ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-300/60'
               : saveStatus === 'saving'

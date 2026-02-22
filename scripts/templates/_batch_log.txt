@@ -1,0 +1,363 @@
+╔══════════════════════════════════════════════════╗
+║    Personas Template Batch Generator (v2)        ║
+╚══════════════════════════════════════════════════╝
+
+Parsed 95 (after skip-existing filter) templates
+Claude CLI: 2.1.50 (Claude Code)
+
+[1/95] Generating: Support Intelligence Use Case...
+[1/95] Support Intelligence Use Case: PASSED (111.7s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\support\support-intelligence-use-case.json
+         ETA: ~2h 54m
+[2/95] Generating: Sales Pipeline Autopilot...
+[2/95] Sales Pipeline Autopilot: PASSED (122.0s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\sales\sales-pipeline-autopilot.json
+         ETA: ~3h 1m
+[3/95] Generating: Weekly Planning Automator...
+[3/95] Weekly Planning Automator: PASSED (112.3s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\project-management\weekly-planning-automator.json
+         ETA: ~2h 56m
+[4/95] Generating: Customer Feedback Router...
+[4/95] Customer Feedback Router: PASSED (140.7s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\support\customer-feedback-router.json
+         ETA: ~3h 4m
+[5/95] Generating: Meeting Lifecycle Manager...
+[5/95] Meeting Lifecycle Manager: PASSED (124.5s) — structural: 100, semantic: 100, connectors: 2 (with creds)
+         → .\scripts\templates\productivity\meeting-lifecycle-manager.json
+         ETA: ~3h 3m
+[6/95] Generating: Lead Capture Pipeline...
+[6/95] Lead Capture Pipeline: PASSED (134.0s) — structural: 100, semantic: 100, connectors: 4 (with creds)
+         → .\scripts\templates\sales\lead-capture-pipeline.json
+         ETA: ~3h 4m
+[7/95] Generating: Error Response Coordinator...
+[7/95] Error Response Coordinator: PASSED (124.6s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\devops\error-response-coordinator.json
+         ETA: ~3h 2m
+[8/95] Generating: Documentation Freshness Guardian...
+[8/95] Documentation Freshness Guardian: PASSED (106.9s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\development\documentation-freshness-guardian.json
+         ETA: ~2h 57m
+[9/95] Generating: Incident Commander...
+[9/95] Incident Commander: PASSED (135.8s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\devops\incident-commander.json
+         ETA: ~2h 57m
+[10/95] Generating: Design Handoff Coordinator...
+[10/95] Design Handoff Coordinator: PASSED (105.4s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\development\design-handoff-coordinator.json
+         ETA: ~2h 52m
+[11/95] Generating: Appointment Orchestrator...
+[11/95] Appointment Orchestrator: PASSED (132.2s) — structural: 100, semantic: 100, connectors: 4 (with creds)
+         → .\scripts\templates\productivity\appointment-orchestrator.json
+         ETA: ~2h 51m
+[12/95] Generating: Infrastructure Health Use Case...
+[12/95] Infrastructure Health Use Case: PASSED (126.1s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\devops\infrastructure-health-use-case.json
+         ETA: ~2h 50m
+[13/95] Generating: Campaign Performance Analyst...
+[13/95] Campaign Performance Analyst: PASSED (116.5s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\marketing\campaign-performance-analyst.json
+         ETA: ~2h 47m
+[14/95] Generating: SMS Ops Manager...
+[14/95] SMS Ops Manager: PASSED (116.7s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\marketing\sms-ops-manager.json
+         ETA: ~2h 44m
+[15/95] Generating: Finance Controller...
+[15/95] Finance Controller: PASSED (121.2s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\finance\finance-controller.json
+         ETA: ~2h 42m
+[16/95] Generating: Analytics Content Distribution Use Case...
+[16/95] Analytics Content Distribution Use Case: PASSED (154.1s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\content\analytics-content-distribution-use-case.json
+         ETA: ~2h 43m
+[17/95] Generating: Deadline Synchronizer...
+[17/95] Deadline Synchronizer: PASSED (137.2s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\project-management\deadline-synchronizer.json
+         ETA: ~2h 42m
+[18/95] Generating: Recruiting Pipeline Use Case...
+[18/95] Recruiting Pipeline Use Case: PASSED (122.9s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\hr\recruiting-pipeline-use-case.json
+         ETA: ~2h 40m
+[19/95] Generating: Real-Time Database Watcher...
+[19/95] Real-Time Database Watcher: PASSED (129.5s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\development\real-time-database-watcher.json
+         ETA: ~2h 38m
+[20/95] Generating: Content Approval Workflow...
+[20/95] Content Approval Workflow: PASSED (104.5s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\content\content-approval-workflow.json
+         ETA: ~2h 34m
+[21/95] Generating: Deployment Guardian...
+[21/95] Deployment Guardian: PASSED (111.3s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\devops\deployment-guardian.json
+         ETA: ~2h 32m
+[22/95] Generating: Product Analytics Briefer...
+[22/95] Product Analytics Briefer: PASSED (102.7s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\research\product-analytics-briefer.json
+         ETA: ~2h 28m
+[23/95] Generating: Cross-Platform Task Synchronizer...
+[23/95] Cross-Platform Task Synchronizer: PASSED (110.8s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\productivity\cross-platform-task-synchronizer.json
+         ETA: ~2h 26m
+[24/95] Generating: Email Deliverability Monitor...
+[24/95] Email Deliverability Monitor: PASSED (132.3s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\email\email-deliverability-monitor.json
+         ETA: ~2h 24m
+[25/95] Generating: Database Health Sentinel...
+[25/95] Database Health Sentinel: PASSED (123.8s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\devops\database-health-sentinel.json
+         ETA: ~2h 22m
+[26/95] Generating: User Lifecycle Manager...
+[26/95] User Lifecycle Manager: PASSED (149.2s) — structural: 100, semantic: 100, connectors: 4 (with creds)
+         → .\scripts\templates\development\user-lifecycle-manager.json
+         ETA: ~2h 21m
+[27/95] Generating: Sprint Automation Use Case...
+[27/95] Sprint Automation Use Case: PASSED (128.4s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\development\sprint-automation-use-case.json
+         ETA: ~2h 20m
+[28/95] Generating: Build Intelligence Use Case...
+[28/95] Build Intelligence Use Case: PASSED (116.2s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\development\build-intelligence-use-case.json
+         ETA: ~2h 17m
+[29/95] Generating: Editorial Calendar Manager...
+[29/95] Editorial Calendar Manager: PASSED (118.3s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\legal\editorial-calendar-manager.json
+         ETA: ~2h 15m
+[30/95] Generating: Personal Finance Use Case...
+[30/95] Personal Finance Use Case: PASSED (117.7s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\finance\personal-finance-use-case.json
+         ETA: ~2h 13m
+[31/95] Generating: CMS Sync Use Case...
+[31/95] CMS Sync Use Case: PASSED (111.6s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\content\cms-sync-use-case.json
+         ETA: ~2h 10m
+[32/95] Generating: Support Escalation Engine...
+[32/95] Support Escalation Engine: PASSED (132.2s) — structural: 100, semantic: 100, connectors: 4 (with creds)
+         → .\scripts\templates\support\support-escalation-engine.json
+         ETA: ~2h 9m
+[33/95] Generating: Video Knowledge Base Builder...
+[33/95] Video Knowledge Base Builder: PASSED (112.9s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\content\video-knowledge-base-builder.json
+         ETA: ~2h 6m
+[34/95] Generating: CI/CD Pipeline Manager...
+[34/95] CI/CD Pipeline Manager: PASSED (132.9s) — structural: 100, semantic: 100, connectors: 4 (with creds)
+         → .\scripts\templates\development\ci-cd-pipeline-manager.json
+         ETA: ~2h 4m
+[35/95] Generating: Team Decision Logger...
+[35/95] Team Decision Logger: PASSED (135.0s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\productivity\team-decision-logger.json
+         ETA: ~2h 3m
+[36/95] Generating: Subscription Billing Use Case...
+[36/95] Subscription Billing Use Case: PASSED (126.9s) — structural: 100, semantic: 100, connectors: 4 (with creds)
+         → .\scripts\templates\finance\subscription-billing-use-case.json
+         ETA: ~2h 1m
+[37/95] Generating: Edge Security Monitor...
+[37/95] Edge Security Monitor: PASSED (128.5s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\security\edge-security-monitor.json
+         ETA: ~1h 59m
+[38/95] Generating: Contract Lifecycle Use Case...
+[38/95] Contract Lifecycle Use Case: PASSED (129.5s) — structural: 100, semantic: 100, connectors: 4 (with creds)
+         → .\scripts\templates\legal\contract-lifecycle-use-case.json
+         ETA: ~1h 57m
+[39/95] Generating: AI Cost & Usage Monitor...
+[39/95] AI Cost & Usage Monitor: PASSED (118.5s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\productivity\ai-cost-usage-monitor.json
+         ETA: ~1h 55m
+[40/95] Generating: Feature Flag & Experiment Analyst...
+[40/95] Feature Flag & Experiment Analyst: PASSED (112.5s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\development\feature-flag-experiment-analyst.json
+         ETA: ~1h 52m
+[41/95] Generating: Industry Intelligence Aggregator...
+[41/95] Industry Intelligence Aggregator: PASSED (149.0s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\research\industry-intelligence-aggregator.json
+         ETA: ~1h 51m
+[42/95] Generating: Router...
+[42/95] Router: PASSED (115.7s) — structural: 100, semantic: 100, connectors: 4 (with creds)
+         → .\scripts\templates\productivity\router.json
+         ETA: ~1h 49m
+[43/95] Generating: Sprint Documentation Use Case...
+[43/95] Sprint Documentation Use Case: PASSED (111.2s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\development\sprint-documentation-use-case.json
+         ETA: ~1h 46m
+[44/95] Generating: Search Quality Monitor...
+[44/95] Search Quality Monitor: PASSED (113.4s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\development\search-quality-monitor.json
+         ETA: ~1h 44m
+[45/95] Generating: Sheets Project Portfolio Manager...
+[45/95] Sheets Project Portfolio Manager: PASSED (129.4s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\project-management\sheets-project-portfolio-manager.json
+         ETA: ~1h 42m
+[46/95] Generating: Product Signal Detector...
+[46/95] Product Signal Detector: PASSED (126.2s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\research\product-signal-detector.json
+         ETA: ~1h 40m
+[47/95] Generating: Marketing Audience Sync Use Case...
+[47/95] Marketing Audience Sync Use Case: PASSED (126.7s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\marketing\marketing-audience-sync-use-case.json
+         ETA: ~1h 38m
+[48/95] Generating: Documentation Publisher...
+[48/95] Documentation Publisher: PASSED (146.4s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\development\documentation-publisher.json
+         ETA: ~1h 37m
+[49/95] Generating: Accounting Reconciliation Use Case...
+[49/95] Accounting Reconciliation Use Case: PASSED (122.5s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\finance\accounting-reconciliation-use-case.json
+         ETA: ~1h 34m
+[50/95] Generating: Personal Capture Bot...
+[50/95] Personal Capture Bot: PASSED (125.2s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\productivity\personal-capture-bot.json
+         ETA: ~1h 32m
+[51/95] Generating: Ad Campaign Optimizer...
+[51/95] Ad Campaign Optimizer: PASSED (131.9s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\marketing\ad-campaign-optimizer.json
+         ETA: ~1h 31m
+[52/95] Generating: Sheets Sales CRM Autopilot...
+[52/95] Sheets Sales CRM Autopilot: PASSED (122.4s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\sales\sheets-sales-crm-autopilot.json
+         ETA: ~1h 28m
+[53/95] Generating: Operational Playbook Executor...
+[53/95] Operational Playbook Executor: PASSED (117.4s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\productivity\operational-playbook-executor.json
+         ETA: ~1h 26m
+[54/95] Generating: CMS Index Sync Use Case...
+[54/95] CMS Index Sync Use Case: PASSED (135.9s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\content\cms-index-sync-use-case.json
+         ETA: ~1h 24m
+[55/95] Generating: Customer Event Intelligence...
+[55/95] Customer Event Intelligence: PASSED (117.6s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\research\customer-event-intelligence.json
+         ETA: ~1h 22m
+[56/95] Generating: Feature Flag Governance Use Case...
+[56/95] Feature Flag Governance Use Case: PASSED (126.8s) — structural: 100, semantic: 100, connectors: 4 (with creds)
+         → .\scripts\templates\development\feature-flag-governance-use-case.json
+         ETA: ~1h 20m
+[57/95] Generating: Status Page Manager...
+[57/95] Status Page Manager: PASSED (146.7s) — structural: 100, semantic: 100, connectors: 4 (with creds)
+         → .\scripts\templates\devops\status-page-manager.json
+         ETA: ~1h 18m
+[58/95] Generating: Time Tracking Analyst...
+[58/95] Time Tracking Analyst: PASSED (105.8s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\productivity\time-tracking-analyst.json
+         ETA: ~1h 16m
+[59/95] Generating: Blog Distribution Use Case...
+[59/95] Blog Distribution Use Case: PASSED (125.2s) — structural: 100, semantic: 100, connectors: 4 (with creds)
+         → .\scripts\templates\content\blog-distribution-use-case.json
+         ETA: ~1h 14m
+[60/95] Generating: Sheets Enterprise CRM Brain...
+[60/95] Sheets Enterprise CRM Brain: PASSED (163.2s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\sales\sheets-enterprise-crm-brain.json
+         ETA: ~1h 12m
+[61/95] Generating: Alert Consolidator...
+[61/95] Alert Consolidator: PASSED (131.0s) — structural: 100, semantic: 100, connectors: 4 (with creds)
+         → .\scripts\templates\devops\alert-consolidator.json
+         ETA: ~1h 10m
+[62/95] Generating: Community Engagement Use Case...
+[62/95] Community Engagement Use Case: PASSED (104.8s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\productivity\community-engagement-use-case.json
+         ETA: ~1h 8m
+[63/95] Generating: Transactional Email Monitor...
+[63/95] Transactional Email Monitor: PASSED (142.4s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\email\transactional-email-monitor.json
+         ETA: ~1h 6m
+[64/95] Generating: Report Auto-Compiler...
+[64/95] Report Auto-Compiler: PASSED (103.8s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\productivity\report-auto-compiler.json
+         ETA: ~1h 4m
+[65/95] Generating: Store Operations Use Case...
+[65/95] Store Operations Use Case: PASSED (118.0s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\sales\store-operations-use-case.json
+         ETA: ~1h 2m
+[66/95] Generating: Security Access Governance Use Case...
+[66/95] Security Access Governance Use Case: PASSED (129.8s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\security\security-access-governance-use-case.json
+         ETA: ~1h 0m
+[67/95] Generating: Multi-Tenant Client Portal Use Case...
+[67/95] Multi-Tenant Client Portal Use Case: PASSED (120.5s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\productivity\multi-tenant-client-portal-use-case.json
+         ETA: ~58m 5s
+[68/95] Generating: SRE Runbook Executor...
+[68/95] SRE Runbook Executor: PASSED (111.0s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\devops\sre-runbook-executor.json
+         ETA: ~55m 56s
+[69/95] Generating: Inbound Lead Concierge...
+[69/95] Inbound Lead Concierge: PASSED (128.3s) — structural: 100, semantic: 100, connectors: 4 (with creds)
+         → .\scripts\templates\sales\inbound-lead-concierge.json
+         ETA: ~53m 53s
+[70/95] Generating: Production Quality Gate...
+[70/95] Production Quality Gate: PASSED (134.1s) — structural: 100, semantic: 100, connectors: 4 (with creds)
+         → .\scripts\templates\development\production-quality-gate.json
+         ETA: ~51m 52s
+[71/95] Generating: Meeting Automation Suite...
+[71/95] Meeting Automation Suite: PASSED (133.0s) — structural: 100, semantic: 100, connectors: 4 (with creds)
+         → .\scripts\templates\productivity\meeting-automation-suite.json
+         ETA: ~49m 50s
+[72/95] Generating: Membership Site Manager...
+[72/95] Membership Site Manager: PASSED (122.7s) — structural: 100, semantic: 100, connectors: 4 (with creds)
+         → .\scripts\templates\finance\membership-site-manager.json
+         ETA: ~47m 45s
+[73/95] Generating: Infrastructure Change Manager...
+[73/95] Infrastructure Change Manager: PASSED (137.4s) — structural: 100, semantic: 100, connectors: 4 (with creds)
+         → .\scripts\templates\devops\infrastructure-change-manager.json
+         ETA: ~45m 45s
+[74/95] Generating: Survey Processor...
+[74/95] Survey Processor: PASSED (136.7s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\productivity\survey-processor.json
+         ETA: ~43m 43s
+[75/95] Generating: Knowledge Base Review Cycle Manager...
+[75/95] Knowledge Base Review Cycle Manager: PASSED (129.5s) — structural: 100, semantic: 100, connectors: 3 (with creds)
+         → .\scripts\templates\support\knowledge-base-review-cycle-manager.json
+         ETA: ~41m 40s
+[76/95] Generating: Payment Fraud Detector...
+[76/95] Payment Fraud Detector: PASSED (121.0s) — structural: 100, semantic: 100, connectors: 4 (with creds)
+         → .\scripts\templates\security\payment-fraud-detector.json
+         ETA: ~39m 34s
+[77/95] Generating: Security Vulnerability Pipeline...
+[77/95] Security Vulnerability Pipeline: PASSED (156.5s) — structural: 100, semantic: 100, connectors: 4 (with creds)
+         → .\scripts\templates\security\security-vulnerability-pipeline.json
+         ETA: ~37m 36s
+[78/95] Generating: Vendor Management Use Case...
+[78/95] Vendor Management Use Case: FAILED (4.2s) — Could not extract design JSON
+[79/95] Generating: App Performance Guardian...
+[79/95] App Performance Guardian: FAILED (3.0s) — Could not extract design JSON
+[80/95] Generating: Data Warehouse Health Use Case...
+[80/95] Data Warehouse Health Use Case: FAILED (3.3s) — Could not extract design JSON
+[81/95] Generating: Outbound Sales Intelligence Use Case...
+[81/95] Outbound Sales Intelligence Use Case: FAILED (3.1s) — Could not extract design JSON
+[82/95] Generating: Internal Tool Audit Use Case...
+[82/95] Internal Tool Audit Use Case: FAILED (3.1s) — Could not extract design JSON
+[83/95] Generating: Open Source Community Manager...
+[83/95] Open Source Community Manager: FAILED (2.9s) — Could not extract design JSON
+[84/95] Generating: Build Pipeline Intelligence Use Case...
+[84/95] Build Pipeline Intelligence Use Case: FAILED (3.0s) — Could not extract design JSON
+[85/95] Generating: Quarterly OKR Tracker...
+[85/95] Quarterly OKR Tracker: FAILED (3.7s) — Could not extract design JSON
+[86/95] Generating: Full-Stack Deploy Pipeline (4-Use Case Team)...
+[86/95] Full-Stack Deploy Pipeline (4-Use Case Team): FAILED (3.7s) — Could not extract design JSON
+[87/95] Generating: Customer Onboarding Pipeline (5-Use Case Team)...
+[87/95] Customer Onboarding Pipeline (5-Use Case Team): FAILED (3.8s) — Could not extract design JSON
+[88/95] Generating: Content Creation & Distribution Pipeline (4-Use Case Team)...
+[88/95] Content Creation & Distribution Pipeline (4-Use Case Team): FAILED (3.3s) — Could not extract design JSON
+[89/95] Generating: Incident Management Pipeline (4-Use Case Team)...
+[89/95] Incident Management Pipeline (4-Use Case Team): FAILED (3.0s) — Could not extract design JSON
+[90/95] Generating: Hiring Pipeline Automator (5-Use Case Team)...
+[90/95] Hiring Pipeline Automator (5-Use Case Team): FAILED (3.1s) — Could not extract design JSON
+[91/95] Generating: Multi-Region E-Commerce Fulfillment Pipeline (4-Use Case Team)...
+[91/95] Multi-Region E-Commerce Fulfillment Pipeline (4-Use Case Team): FAILED (3.0s) — Could not extract design JSON
+[92/95] Generating: Financial Close Pipeline (4-Use Case Team)...
+[92/95] Financial Close Pipeline (4-Use Case Team): FAILED (3.2s) — Could not extract design JSON
+[93/95] Generating: Competitive Intelligence Pipeline (3-Use Case Team)...
+[93/95] Competitive Intelligence Pipeline (3-Use Case Team): FAILED (3.7s) — Could not extract design JSON
+[94/95] Generating: Multi-Channel Support Triage Pipeline (5-Use Case Team)...
+[94/95] Multi-Channel Support Triage Pipeline (5-Use Case Team): FAILED (3.5s) — Could not extract design JSON
+[95/95] Generating: Full Business Operations Pipeline (6-Use Case Team)...
+[95/95] Full Business Operations Pipeline (6-Use Case Team): FAILED (3.1s) — Could not extract design JSON
+
+╔══════════════════════════════════════════════════╗
+║                    RESULTS                       ║
+╠══════════════════════════════════════════════════╣
+║  Total:      95                                  ║
+║  Passed:     77                                  ║
+║  Failed:     18                                  ║
+║  Errors:      0                                  ║
+║  Duration:   9708.9s                             ║
+╚══════════════════════════════════════════════════╝
+
+Tip: Re-run with --skip-existing to retry only failed templates

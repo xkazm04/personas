@@ -30,12 +30,12 @@ export function MemoryFilterBar({
     <div className="flex flex-wrap items-center gap-2">
       {/* Search */}
       <div className="relative flex-1 min-w-[180px] max-w-xs">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/80" />
         <input
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search memories..."
-          className="w-full pl-9 pr-3 py-2 text-xs bg-secondary/50 border border-primary/15 rounded-lg outline-none focus:border-primary/30 text-foreground/80 placeholder:text-muted-foreground/30"
+          className="w-full pl-9 pr-3 py-2 text-sm bg-secondary/50 border border-primary/15 rounded-lg outline-none focus:border-primary/30 text-foreground/80 placeholder:text-muted-foreground/80"
         />
       </div>
 
@@ -43,7 +43,7 @@ export function MemoryFilterBar({
       <select
         value={selectedPersonaId || ''}
         onChange={(e) => onPersonaChange(e.target.value || null)}
-        className="px-3 py-2 text-xs bg-secondary/50 border border-primary/15 rounded-lg outline-none text-foreground/70 appearance-none cursor-pointer min-w-[130px]"
+        className="px-3 py-2 text-sm bg-secondary/50 border border-primary/15 rounded-lg outline-none text-foreground/90 appearance-none cursor-pointer min-w-[130px]"
       >
         <option value="">All agents</option>
         {personas.map((p) => (
@@ -55,10 +55,10 @@ export function MemoryFilterBar({
       <div className="flex items-center gap-1.5 flex-wrap">
         <button
           onClick={() => onCategoryChange(null)}
-          className={`relative px-2.5 py-1.5 text-[11px] font-medium rounded-lg border transition-colors ${
+          className={`relative px-2.5 py-1.5 text-sm font-medium rounded-lg border transition-colors ${
             selectedCategory === null
               ? 'bg-foreground/10 text-foreground/80 border-foreground/20'
-              : 'bg-secondary/40 text-muted-foreground/50 border-primary/10 hover:text-muted-foreground/70'
+              : 'bg-secondary/40 text-muted-foreground/90 border-primary/10 hover:text-muted-foreground'
           }`}
         >
           {selectedCategory === null && (
@@ -78,10 +78,10 @@ export function MemoryFilterBar({
             <button
               key={cat}
               onClick={() => onCategoryChange(isActive ? null : cat)}
-              className={`relative flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium rounded-lg border transition-colors ${
+              className={`relative flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-medium rounded-lg border transition-colors ${
                 isActive
                   ? `${colors.bg} ${colors.text} ${colors.border}`
-                  : 'bg-secondary/40 text-muted-foreground/50 border-primary/10 hover:text-muted-foreground/70'
+                  : 'bg-secondary/40 text-muted-foreground/90 border-primary/10 hover:text-muted-foreground'
               }`}
             >
               {isActive && (
@@ -102,7 +102,7 @@ export function MemoryFilterBar({
       {hasFilters && (
         <button
           onClick={onClearFilters}
-          className="flex items-center gap-1 px-2.5 py-2 text-xs text-muted-foreground/50 hover:text-foreground/70 rounded-lg hover:bg-secondary/40 transition-colors"
+          className="flex items-center gap-1 px-2.5 py-2 text-sm text-muted-foreground/90 hover:text-foreground/95 rounded-lg hover:bg-secondary/40 transition-colors"
         >
           <X className="w-3 h-3" />
           Clear

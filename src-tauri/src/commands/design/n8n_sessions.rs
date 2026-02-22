@@ -41,6 +41,7 @@ pub async fn list_n8n_sessions(
     repo::list(&state.db)
 }
 
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn update_n8n_session(
     state: State<'_, Arc<AppState>>,
@@ -53,6 +54,8 @@ pub async fn update_n8n_session(
     step: Option<String>,
     error: Option<Option<String>>,
     persona_id: Option<Option<String>>,
+    transform_id: Option<Option<String>>,
+    questions_json: Option<Option<String>>,
 ) -> Result<N8nTransformSession, AppError> {
     repo::update(
         &state.db,
@@ -66,6 +69,8 @@ pub async fn update_n8n_session(
             step,
             error,
             persona_id,
+            transform_id,
+            questions_json,
         },
     )
 }

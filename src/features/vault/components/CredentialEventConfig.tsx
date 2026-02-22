@@ -94,7 +94,7 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
 
   if (eventTemplates.length === 0) {
     return (
-      <div className="text-xs text-muted-foreground/40 py-3">
+      <div className="text-sm text-muted-foreground/80 py-3">
         No event triggers available for this service type.
       </div>
     );
@@ -102,7 +102,7 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 py-3 text-muted-foreground/40 text-xs">
+      <div className="flex items-center gap-2 py-3 text-muted-foreground/80 text-sm">
         <Loader2 className="w-3 h-3 animate-spin" />
         Loading events...
       </div>
@@ -113,7 +113,7 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
     <div className="space-y-2">
       <div className="flex items-center gap-2 mb-3">
         <Zap className="w-3.5 h-3.5 text-amber-400/70" />
-        <span className="text-xs font-medium text-foreground/60 uppercase tracking-wider">Event Triggers</span>
+        <span className="text-sm font-medium text-foreground/80 uppercase tracking-wider">Event Triggers</span>
       </div>
 
       {eventTemplates.map((et) => {
@@ -136,9 +136,9 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-foreground/80">{et.name}</span>
-                  {isSaving && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground/40" />}
+                  {isSaving && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground/80" />}
                 </div>
-                <p className="text-xs text-muted-foreground/40 mt-0.5">{et.description}</p>
+                <p className="text-sm text-muted-foreground/80 mt-0.5">{et.description}</p>
               </div>
 
               {/* Toggle */}
@@ -165,12 +165,12 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
             {isEnabled && existing && (
               <div className="mt-3 pt-3 border-t border-border/10 space-y-2">
                 <div className="flex items-center gap-3">
-                  <Clock className="w-3.5 h-3.5 text-muted-foreground/40" />
-                  <label className="text-xs text-muted-foreground/50">Polling interval</label>
+                  <Clock className="w-3.5 h-3.5 text-muted-foreground/80" />
+                  <label className="text-sm text-muted-foreground/90">Polling interval</label>
                   <select
                     value={pollingInterval}
                     onChange={(e) => handleUpdatePollingInterval(existing.id, parseInt(e.target.value))}
-                    className="px-2 py-1 bg-background/50 border border-border/30 rounded-lg text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    className="px-2 py-1 bg-background/50 border border-border/30 rounded-lg text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
                   >
                     <option value={10}>10 seconds</option>
                     <option value={30}>30 seconds</option>
@@ -180,12 +180,12 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
                     <option value={600}>10 minutes</option>
                   </select>
                 </div>
-                <div className="text-[10px] text-muted-foreground/40">
+                <div className="text-sm text-muted-foreground/80">
                   Approx. {Math.round(86400 / pollingInterval).toLocaleString()} checks/day
                 </div>
 
                 {existing.last_polled_at && (
-                  <div className="text-[11px] text-muted-foreground/50">
+                  <div className="text-sm text-muted-foreground/90">
                     Last polled: {new Date(existing.last_polled_at).toLocaleString()}
                   </div>
                 )}

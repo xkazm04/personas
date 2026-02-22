@@ -37,11 +37,11 @@ export default function CliOutputPanel({
         label={runId ? runId.slice(0, 8) : undefined}
       />
 
-      <div className={`${maxHeightClassName} overflow-y-auto px-4 py-3 font-mono text-xs leading-5 space-y-0.5`}>
+      <div className={`${maxHeightClassName} overflow-y-auto px-4 py-3 font-mono text-sm leading-5 space-y-0.5`}>
         {phase === 'idle' && lines.length === 0 ? (
-          <div className="text-muted-foreground/30 text-center py-4">{idleText}</div>
+          <div className="text-muted-foreground/80 text-center py-4">{idleText}</div>
         ) : lines.length === 0 ? (
-          <div className="text-muted-foreground/30 text-center py-4">{waitingText}</div>
+          <div className="text-muted-foreground/80 text-center py-4">{waitingText}</div>
         ) : (
           lines.map((line, i) => {
             if (!line.trim()) return <div key={i} className="h-2" />;
@@ -54,7 +54,7 @@ export default function CliOutputPanel({
           })
         )}
         {isRunning && (
-          <div className="text-muted-foreground/30 animate-pulse">{'>'} _</div>
+          <div className="text-muted-foreground/80 animate-pulse">{'>'} _</div>
         )}
       </div>
     </div>

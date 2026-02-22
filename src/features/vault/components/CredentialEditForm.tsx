@@ -45,7 +45,7 @@ function HealthcheckResultDisplay({ success, message }: { success: boolean; mess
         <div className="flex-1 min-w-0 space-y-1">
           <p className="text-sm text-red-300">{translated.friendly}</p>
           {hasSuggestion && (
-            <p className="text-xs text-red-300/60">{translated.suggestion}</p>
+            <p className="text-sm text-red-300/60">{translated.suggestion}</p>
           )}
         </div>
       </div>
@@ -54,13 +54,13 @@ function HealthcheckResultDisplay({ success, message }: { success: boolean; mess
         <div className="border-t border-red-500/10">
           <button
             onClick={() => setShowDetails(!showDetails)}
-            className="w-full flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-red-400/40 hover:text-red-400/60 transition-colors"
+            className="w-full flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-400/40 hover:text-red-400/60 transition-colors"
           >
             <ChevronDown className={`w-3 h-3 transition-transform ${showDetails ? 'rotate-180' : ''}`} />
             Technical details
           </button>
           {showDetails && (
-            <p className="px-3 pb-2 text-[11px] text-red-400/30 font-mono break-all">
+            <p className="px-3 pb-2 text-sm text-red-400/30 font-mono break-all">
               {translated.raw}
             </p>
           )}
@@ -176,7 +176,7 @@ export function CredentialEditForm({
               <button
                 type="button"
                 onClick={() => togglePassword(field.key)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted-foreground/90 hover:text-foreground/95 transition-colors"
               >
                 {showPasswords[field.key] ? (
                   <EyeOff className="w-4 h-4" />
@@ -188,17 +188,17 @@ export function CredentialEditForm({
           </div>
 
           {errors[field.key] && (
-            <p className="mt-1 text-xs text-red-400">{errors[field.key]}</p>
+            <p className="mt-1 text-sm text-red-400">{errors[field.key]}</p>
           )}
           {field.helpText && !errors[field.key] && (
-            <p className="mt-1 text-xs text-muted-foreground/70">{field.helpText}</p>
+            <p className="mt-1 text-sm text-muted-foreground/90">{field.helpText}</p>
           )}
         </div>
       ))}
 
       {/* Encryption reassurance */}
       {vault && fields.some((f) => f.type === 'password') && (
-        <div className="flex items-center gap-1.5 text-[11px] text-emerald-400/70">
+        <div className="flex items-center gap-1.5 text-sm text-emerald-400/70">
           <Lock className="w-3 h-3" />
           <span>
             {vault.key_source === 'keychain'
@@ -221,10 +221,10 @@ export function CredentialEditForm({
             {oauthConsentLabel || 'Authorize with Google'}
           </button>
           {oauthConsentHint && (
-            <p className="mt-1.5 text-xs text-muted-foreground/75">{oauthConsentHint}</p>
+            <p className="mt-1.5 text-sm text-muted-foreground/75">{oauthConsentHint}</p>
           )}
           {oauthConsentSuccessBadge && (
-            <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 text-xs">
+            <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 text-sm">
               <CheckCircle className="w-3.5 h-3.5" />
               {oauthConsentSuccessBadge}
             </div>
@@ -266,7 +266,7 @@ export function CredentialEditForm({
                   <Info className="w-3.5 h-3.5" />
                 </button>
                 {showTestHint && (
-                  <div className="absolute left-8 top-1/2 -translate-y-1/2 w-72 px-3 py-2 rounded-lg bg-background border border-primary/20 shadow-xl text-xs text-foreground/85 z-20">
+                  <div className="absolute left-8 top-1/2 -translate-y-1/2 w-72 px-3 py-2 rounded-lg bg-background border border-primary/20 shadow-xl text-sm text-foreground/85 z-20">
                     {testHint}
                   </div>
                 )}
@@ -287,7 +287,7 @@ export function CredentialEditForm({
       <div className="flex justify-end gap-2 pt-2">
         <button
           onClick={onCancel}
-          className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/70 rounded-xl text-sm transition-colors"
+          className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-xl text-sm transition-colors"
         >
           Cancel
         </button>
@@ -302,7 +302,7 @@ export function CredentialEditForm({
       </div>
 
       {saveDisabled && saveDisabledReason && (
-        <p className="text-xs text-amber-300 text-right">{saveDisabledReason}</p>
+        <p className="text-sm text-amber-300 text-right">{saveDisabledReason}</p>
       )}
     </div>
   );

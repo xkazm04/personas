@@ -95,7 +95,7 @@ pub fn update_status(
     };
 
     let completed_at: Option<String> =
-        if input.status == "completed" || input.status == "failed" || input.status == "cancelled" {
+        if ["completed", "failed", "cancelled", "incomplete"].contains(&input.status.as_str()) {
             Some(now)
         } else {
             None

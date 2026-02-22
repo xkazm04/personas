@@ -214,6 +214,26 @@ export default function AdoptionWizardModal({
     });
   }, [dispatch, setTemplateAdoptActive]);
 
+  const handleSnapshotQuestions = useCallback(
+    (questions: unknown[]) => {
+      const mapped = questions
+        .filter((q): q is Record<string, unknown> => !!q && typeof q === 'object')
+        .map((q) => ({
+          id: String(q.id ?? ''),
+          question: String(q.question ?? ''),
+          type: (q.type === 'select' || q.type === 'text' || q.type === 'boolean' ? q.type : 'text') as 'select' | 'text' | 'boolean',
+          options: Array.isArray(q.options) ? q.options.map(String) : undefined,
+          default: typeof q.default === 'string' ? q.default : undefined,
+          context: typeof q.context === 'string' ? q.context : undefined,
+        }));
+
+      if (mapped.length > 0) {
+        dispatch({ type: 'QUESTIONS_GENERATED', questions: mapped });
+      }
+    },
+    [dispatch],
+  );
+
   useBackgroundSnapshot({
     snapshotId: state.backgroundAdoptId,
     getSnapshot: getTemplateAdoptSnapshot,
@@ -223,6 +243,7 @@ export default function AdoptionWizardModal({
     onCompletedNoDraft: handleSnapshotCompletedNoDraft,
     onFailed: handleSnapshotFailed,
     onSessionLost: handleSnapshotSessionLost,
+    onQuestions: handleSnapshotQuestions,
   });
 
   // ── Derived data ──
@@ -536,13 +557,13 @@ export default function AdoptionWizardModal({
             </div>
             <div>
               <h2 className="text-sm font-semibold text-foreground/90">Adopt Template</h2>
-              <p className="text-xs text-muted-foreground/50">{state.templateName}</p>
+              <p className="text-sm text-muted-foreground/90">{state.templateName}</p>
             </div>
           </div>
           <button
             onClick={handleClose}
             disabled={state.confirming}
-            className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/40 hover:text-foreground/60 disabled:opacity-30"
+            className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/80 hover:text-foreground/95 disabled:opacity-30"
             title={state.transforming ? 'Close (processing continues in background)' : 'Close'}
           >
             <X className="w-4 h-4" />
@@ -566,7 +587,7 @@ export default function AdoptionWizardModal({
               </div>
             ))}
           </div>
-          <p className="text-[11px] text-muted-foreground/40 mt-2">
+          <p className="text-sm text-muted-foreground/80 mt-2">
             Step {stepIndex + 1} of 5 — {ADOPT_STEP_META[state.step].label}
           </p>
         </div>
@@ -579,10 +600,10 @@ export default function AdoptionWizardModal({
             className="mx-6 mb-2 flex items-start gap-3 p-3 rounded-xl bg-red-500/10 border border-red-500/20"
           >
             <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-red-400/80 flex-1">{state.error}</p>
+            <p className="text-sm text-red-400/80 flex-1">{state.error}</p>
             <button
               onClick={() => dispatch({ type: 'CLEAR_ERROR' })}
-              className="text-red-400/50 hover:text-red-400 text-xs"
+              className="text-red-400/50 hover:text-red-400 text-sm"
             >
               Dismiss
             </button>
@@ -604,7 +625,7 @@ export default function AdoptionWizardModal({
               >
                 <div>
                   <h3 className="text-sm font-medium text-foreground/80 mb-1">Template Summary</h3>
-                  <p className="text-xs text-muted-foreground/50 leading-relaxed">
+                  <p className="text-sm text-muted-foreground/90 leading-relaxed">
                     {designResult.summary || review?.instruction}
                   </p>
                 </div>
@@ -612,25 +633,25 @@ export default function AdoptionWizardModal({
                 {/* Stat pills */}
                 <div className="flex flex-wrap gap-2">
                   {connectorCount > 0 && (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/15">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/15">
                       <Plug className="w-3.5 h-3.5" />
                       {connectorCount} Connector{connectorCount !== 1 ? 's' : ''}
                     </span>
                   )}
                   {toolCount > 0 && (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-primary/10 text-foreground/60 border border-primary/15">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-primary/10 text-foreground/80 border border-primary/15">
                       <Wrench className="w-3.5 h-3.5" />
                       {toolCount} Tool{toolCount !== 1 ? 's' : ''}
                     </span>
                   )}
                   {triggerCount > 0 && (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/15">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/15">
                       <Zap className="w-3.5 h-3.5" />
                       {triggerCount} Trigger{triggerCount !== 1 ? 's' : ''}
                     </span>
                   )}
                   {channelCount > 0 && (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/15">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/15">
                       <Bell className="w-3.5 h-3.5" />
                       {channelCount} Channel{channelCount !== 1 ? 's' : ''}
                     </span>
@@ -647,7 +668,7 @@ export default function AdoptionWizardModal({
                 {/* Info note */}
                 <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-violet-500/5 border border-violet-500/10">
                   <Sparkles className="w-4 h-4 text-violet-400/60 flex-shrink-0 mt-0.5" />
-                  <p className="text-[11px] text-violet-300/60 leading-relaxed">
+                  <p className="text-sm text-violet-300/60 leading-relaxed">
                     Claude will analyze this template and generate a persona draft tailored to its design.
                     You can review and customize the draft before creating the persona.
                   </p>
@@ -700,7 +721,7 @@ export default function AdoptionWizardModal({
                 {state.transforming && (
                   <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-blue-500/5 border border-blue-500/10">
                     <Sparkles className="w-4 h-4 text-blue-400/60 flex-shrink-0 mt-0.5" />
-                    <p className="text-[11px] text-blue-300/60 leading-relaxed">
+                    <p className="text-sm text-blue-300/60 leading-relaxed">
                       You can close this dialog — processing will continue in the background.
                       Re-open the wizard to check progress.
                     </p>
@@ -710,14 +731,14 @@ export default function AdoptionWizardModal({
                 {/* Adjustment request for re-runs */}
                 {state.draft && !state.transforming && (
                   <div className="space-y-2">
-                    <label className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
+                    <label className="text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider">
                       Request adjustments (optional)
                     </label>
                     <textarea
                       value={state.adjustmentRequest}
                       onChange={(e) => dispatch({ type: 'SET_ADJUSTMENT', text: e.target.value })}
                       placeholder="Example: Change the schedule to run at 9 AM, remove ClickUp integration, add Slack notifications"
-                      className="w-full h-20 p-3 rounded-xl border border-primary/15 bg-background/40 text-xs text-foreground/75 resize-y placeholder-muted-foreground/30"
+                      className="w-full h-20 p-3 rounded-xl border border-primary/15 bg-background/40 text-sm text-foreground/75 resize-y placeholder-muted-foreground/30"
                     />
                   </div>
                 )}
@@ -797,7 +818,7 @@ export default function AdoptionWizardModal({
               }
             }}
             disabled={state.confirming || state.created || (state.step === 'configure' && state.questionGenerating)}
-            className="flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-xl border border-primary/15 text-muted-foreground/60 hover:bg-secondary/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             {state.step === 'overview'
