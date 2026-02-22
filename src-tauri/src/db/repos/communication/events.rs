@@ -190,26 +190,6 @@ pub fn get_recent(
     }
 }
 
-pub fn count_pending(pool: &DbPool, project_id: Option<&str>) -> Result<i64, AppError> {
-    let conn = pool.get()?;
-
-    if let Some(pid) = project_id {
-        let count: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM persona_events WHERE status = 'pending' AND project_id = ?1",
-            params![pid],
-            |row| row.get(0),
-        )?;
-        Ok(count)
-    } else {
-        let count: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM persona_events WHERE status = 'pending'",
-            [],
-            |row| row.get(0),
-        )?;
-        Ok(count)
-    }
-}
-
 pub fn cleanup(pool: &DbPool, older_than_days: Option<i64>) -> Result<i64, AppError> {
     let days = older_than_days.unwrap_or(30);
     let conn = pool.get()?;
@@ -274,19 +254,6 @@ pub fn get_subscriptions_by_event_type(
     )?;
     let rows = stmt.query_map(params![event_type], row_to_subscription)?;
     Ok(collect_rows(rows, "get_subscriptions_by_event_type"))
-}
-
-pub fn get_enabled_subscriptions(
-    pool: &DbPool,
-) -> Result<Vec<PersonaEventSubscription>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM persona_event_subscriptions
-         WHERE enabled = 1
-         ORDER BY created_at DESC",
-    )?;
-    let rows = stmt.query_map([], row_to_subscription)?;
-    Ok(collect_rows(rows, "get_enabled_subscriptions"))
 }
 
 pub fn create_subscription(
@@ -573,30 +540,6 @@ mod tests {
     }
 
     #[test]
-    fn test_count_pending() {
-        let pool = init_test_db().unwrap();
-
-        assert_eq!(count_pending(&pool, None).unwrap(), 0);
-
-        publish(
-            &pool,
-            CreatePersonaEventInput {
-                event_type: "scan".into(),
-                source_type: "auto".into(),
-                project_id: Some("proj-c".into()),
-                source_id: None,
-                target_persona_id: None,
-                payload: None,
-            },
-        )
-        .unwrap();
-
-        assert_eq!(count_pending(&pool, None).unwrap(), 1);
-        assert_eq!(count_pending(&pool, Some("proj-c")).unwrap(), 1);
-        assert_eq!(count_pending(&pool, Some("proj-other")).unwrap(), 0);
-    }
-
-    #[test]
     fn test_cleanup() {
         let pool = init_test_db().unwrap();
 
@@ -744,38 +687,6 @@ mod tests {
         let subs = get_subscriptions_by_event_type(&pool, "deploy").unwrap();
         assert_eq!(subs.len(), 1);
         assert!(subs[0].enabled);
-    }
-
-    #[test]
-    fn test_get_enabled_subscriptions() {
-        let pool = init_test_db().unwrap();
-        let persona_id = create_test_persona(&pool);
-
-        create_subscription(
-            &pool,
-            CreateEventSubscriptionInput {
-                persona_id: persona_id.clone(),
-                event_type: "a".into(),
-                source_filter: None,
-                enabled: Some(true),
-            },
-        )
-        .unwrap();
-
-        create_subscription(
-            &pool,
-            CreateEventSubscriptionInput {
-                persona_id: persona_id.clone(),
-                event_type: "b".into(),
-                source_filter: None,
-                enabled: Some(false),
-            },
-        )
-        .unwrap();
-
-        let enabled = get_enabled_subscriptions(&pool).unwrap();
-        assert_eq!(enabled.len(), 1);
-        assert_eq!(enabled[0].event_type, "a");
     }
 
     #[test]

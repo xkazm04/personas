@@ -2,7 +2,6 @@ import { invoke } from "@tauri-apps/api/core";
 
 import type { PersonaDesignReview } from "@/lib/bindings/PersonaDesignReview";
 import type { PersonaManualReview } from "@/lib/bindings/PersonaManualReview";
-import type { Persona } from "@/lib/bindings/Persona";
 
 // ============================================================================
 // Design Reviews
@@ -26,6 +25,9 @@ export const startDesignReviewRun = (personaId: string, testCases: object[]) =>
     testCases,
   });
 
+export const cancelDesignReviewRun = (runId: string) =>
+  invoke<void>("cancel_design_review_run", { runId });
+
 export const importDesignReview = (input: {
   test_case_id: string;
   test_case_name: string;
@@ -39,9 +41,6 @@ export const importDesignReview = (input: {
   test_run_id: string;
   reviewed_at: string;
 }) => invoke<PersonaDesignReview>("import_design_review", { input });
-
-export const adoptDesignReview = (reviewId: string) =>
-  invoke<{ persona: Persona }>("adopt_design_review", { reviewId });
 
 // ============================================================================
 // Manual Reviews

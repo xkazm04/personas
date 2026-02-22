@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, OnceLock};
+use std::time::Instant;
 
 use serde::Deserialize;
 use serde::Serialize;
@@ -45,7 +46,9 @@ struct N8nTransformSnapshot {
     questions: Option<serde_json::Value>,
 }
 
-#[derive(Clone, Default)]
+const JOB_TTL_SECS: u64 = 30 * 60; // 30 minutes
+
+#[derive(Clone)]
 struct N8nTransformJobState {
     status: String,
     error: Option<String>,
@@ -54,6 +57,22 @@ struct N8nTransformJobState {
     cancel_token: Option<CancellationToken>,
     claude_session_id: Option<String>,
     questions: Option<serde_json::Value>,
+    created_at: Instant,
+}
+
+impl Default for N8nTransformJobState {
+    fn default() -> Self {
+        Self {
+            status: String::new(),
+            error: None,
+            lines: Vec::new(),
+            draft: None,
+            cancel_token: None,
+            claude_session_id: None,
+            questions: None,
+            created_at: Instant::now(),
+        }
+    }
 }
 
 static N8N_TRANSFORM_JOBS: OnceLock<Mutex<HashMap<String, N8nTransformJobState>>> = OnceLock::new();
@@ -66,6 +85,13 @@ fn lock_jobs() -> Result<std::sync::MutexGuard<'static, HashMap<String, N8nTrans
     n8n_transform_jobs()
         .lock()
         .map_err(|_| AppError::Internal("n8n transform job lock poisoned".into()))
+}
+
+/// Remove non-running job entries older than `JOB_TTL_SECS`.
+/// Called on each new job insert to prevent unbounded memory growth.
+fn evict_stale_n8n_jobs(jobs: &mut HashMap<String, N8nTransformJobState>) {
+    let cutoff = std::time::Duration::from_secs(JOB_TTL_SECS);
+    jobs.retain(|_, job| job.status == "running" || job.created_at.elapsed() < cutoff);
 }
 
 fn set_n8n_transform_status(
@@ -288,6 +314,7 @@ pub async fn start_n8n_transform_background(
 
     {
         let mut jobs = lock_jobs()?;
+        evict_stale_n8n_jobs(&mut jobs);
         if let Some(existing) = jobs.get(&transform_id) {
             if existing.status == "running" {
                 return Err(AppError::Validation("Transform is already running".into()));
@@ -303,6 +330,7 @@ pub async fn start_n8n_transform_background(
                 cancel_token: Some(cancel_token.clone()),
                 claude_session_id: None,
                 questions: None,
+                created_at: Instant::now(),
             },
         );
     }
@@ -583,6 +611,135 @@ pub fn confirm_n8n_persona_draft(
         "tools_created": tools_created,
         "connectors_needing_setup": connectors_needing_setup,
     }))
+}
+
+// ── Question Generation ─────────────────────────────────────────
+
+#[tauri::command]
+pub async fn generate_n8n_transform_questions(
+    workflow_name: String,
+    workflow_json: String,
+    parser_result_json: String,
+    connectors_json: Option<String>,
+    credentials_json: Option<String>,
+) -> Result<serde_json::Value, AppError> {
+    let connectors_section = connectors_json
+        .as_deref()
+        .filter(|c| !c.trim().is_empty() && c.trim() != "[]")
+        .map(|c| format!("User's available connectors: {c}"))
+        .unwrap_or_default();
+
+    let credentials_section = credentials_json
+        .as_deref()
+        .filter(|c| !c.trim().is_empty() && c.trim() != "[]")
+        .map(|c| format!("User's available credentials: {c}"))
+        .unwrap_or_default();
+
+    let prompt = format!(
+        r##"Analyze this n8n workflow and generate 4-8 clarifying questions for the user
+before transforming it into a Personas agent.
+
+The Personas platform has these unique capabilities that n8n does not:
+- A built-in LLM execution engine (no external LLM API tools needed)
+- Protocol messages that let the persona communicate with the user mid-execution
+- A memory system where the persona stores knowledge for future runs (self-improvement)
+- Manual review gates where the persona pauses for human approval before acting
+- Inter-persona events for multi-agent coordination
+
+Generate questions across these categories:
+
+## 1. Credential Mapping
+Which existing credentials should be used for each n8n service?
+Only ask if the user has relevant credentials available.
+
+## 2. Configuration Parameters
+Workflow-specific settings the user should customize
+(e.g., email filter rules, polling intervals, notification preferences).
+
+## 3. Architecture Decisions
+When n8n uses AI/LLM nodes, note that Personas has a built-in LLM engine.
+
+## 4. Human-in-the-Loop (IMPORTANT)
+For any workflow action that has external consequences (sending emails, posting messages,
+modifying databases, calling external APIs that change state), ask whether the user wants
+the persona to request manual approval before executing that action.
+Example: "Should the persona draft emails and wait for your approval before sending,
+or send automatically?"
+Example: "Should Slack messages be reviewed before posting?"
+
+## 5. Memory & Learning (IMPORTANT)
+For workflows that process data (emails, documents, API responses, logs), ask what
+information the user wants the persona to remember across runs for self-improvement.
+Example: "Should the persona remember key information from processed emails
+(sender patterns, important decisions, commitments)?"
+Example: "Should the persona learn and remember categorization rules it discovers?"
+
+## 6. Notification Preferences
+How should the persona notify the user about important events?
+Example: "Should you receive a summary message after each run, or only on errors?"
+
+{connectors_section}
+{credentials_section}
+
+Workflow name: {workflow_name}
+Parser result: {parser_result_json}
+Original n8n JSON (first 5000 chars): {workflow_preview}
+
+Return ONLY valid JSON (no markdown fences), with this exact shape:
+[{{
+  "id": "unique_id",
+  "question": "Which Google credential should be used for Gmail access?",
+  "type": "select",
+  "options": ["Option 1", "Option 2"],
+  "default": "Option 1",
+  "context": "The workflow uses gmailOAuth2 credential for 4 nodes"
+}}]
+
+Rules:
+- type must be one of: "select", "text", "boolean"
+- For boolean type, options should be ["Yes", "No"]
+- For select type, always include options array
+- For text type, options is optional
+- ALWAYS include at least one question about human-in-the-loop approval
+- ALWAYS include at least one question about memory/learning strategy
+- Order questions from most critical (credential/config) to strategic (memory/notifications)
+- Each question must have a unique id
+"##,
+        workflow_preview = if workflow_json.len() > 5000 {
+            &workflow_json[..5000]
+        } else {
+            &workflow_json
+        },
+    );
+
+    let mut cli_args = crate::engine::prompt::build_cli_args(None, None);
+    cli_args.args.push("--model".to_string());
+    cli_args.args.push("claude-haiku-4-5-20251001".to_string());
+    // Limit question generation to a single turn and tight budget
+    cli_args.args.push("--max-turns".to_string());
+    cli_args.args.push("1".to_string());
+
+    let (output, _session_id) = run_claude_prompt_text_with_timeout(prompt, &cli_args, None, 90)
+        .await
+        .map_err(AppError::Internal)?;
+
+    let json_str = extract_first_json_object(&output)
+        .or_else(|| {
+            // Try extracting array
+            let start = output.find('[')?;
+            let end = output.rfind(']')?;
+            if start < end {
+                let slice = &output[start..=end];
+                if serde_json::from_str::<serde_json::Value>(slice).is_ok() {
+                    return Some(slice.to_string());
+                }
+            }
+            None
+        })
+        .ok_or_else(|| AppError::Internal("No valid JSON in question generation output".into()))?;
+
+    let questions: serde_json::Value = serde_json::from_str(&json_str)?;
+    Ok(questions)
 }
 
 // ── N8n transform helpers ───────────────────────────────────────
@@ -1051,7 +1208,7 @@ async fn run_unified_transform_turn1(
         "[Milestone] Analyzing workflow and preparing transformation...",
     );
 
-    let mut cli_args = prompt::build_default_cli_args();
+    let mut cli_args = prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());
     cli_args.args.push("claude-sonnet-4-6".to_string());
 
@@ -1243,7 +1400,7 @@ async fn run_n8n_transform_job(
         "[Milestone] Static workflow parsing complete. Preparing Claude transformation prompt...",
     );
 
-    let mut cli_args = prompt::build_default_cli_args();
+    let mut cli_args = prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());
     cli_args.args.push("claude-sonnet-4-6".to_string());
 
@@ -1305,19 +1462,49 @@ pub(super) fn should_surface_n8n_output_line(line: &str) -> bool {
     true
 }
 
+/// Convenience wrapper with a custom timeout in seconds.
+/// Returns (text_output, captured_claude_session_id).
+pub(super) async fn run_claude_prompt_text_with_timeout(
+    prompt_text: String,
+    cli_args: &crate::engine::types::CliArgs,
+    emit_ctx: Option<(&tauri::AppHandle, &str)>,
+    timeout_secs: u64,
+) -> Result<(String, Option<String>), String> {
+    let on_line: Option<Box<dyn Fn(&str) + Send + Sync>> = emit_ctx.map(|(app, id)| {
+        let app = app.clone();
+        let id = id.to_string();
+        Box::new(move |line: &str| {
+            emit_n8n_transform_line(&app, &id, line.to_string());
+        }) as Box<dyn Fn(&str) + Send + Sync>
+    });
+    run_claude_prompt_text_inner(prompt_text, cli_args, on_line.as_deref(), timeout_secs).await
+}
+
 /// Returns (text_output, captured_claude_session_id).
 pub(super) async fn run_claude_prompt_text(
     prompt_text: String,
     cli_args: &crate::engine::types::CliArgs,
     emit_ctx: Option<(&tauri::AppHandle, &str)>,
 ) -> Result<(String, Option<String>), String> {
-    run_claude_prompt_text_inner(prompt_text, cli_args, emit_ctx, 420).await
+    let on_line: Option<Box<dyn Fn(&str) + Send + Sync>> = emit_ctx.map(|(app, id)| {
+        let app = app.clone();
+        let id = id.to_string();
+        Box::new(move |line: &str| {
+            emit_n8n_transform_line(&app, &id, line.to_string());
+        }) as Box<dyn Fn(&str) + Send + Sync>
+    });
+    run_claude_prompt_text_inner(prompt_text, cli_args, on_line.as_deref(), 420).await
 }
 
-async fn run_claude_prompt_text_inner(
+/// Core Claude CLI process spawning with stdout streaming, timeout, and line emission.
+///
+/// The `on_line` callback is invoked for each surfaceable output line (after dedup
+/// and filtering). Callers provide their own emission logic (e.g. template-adopt
+/// events or n8n-transform events).
+pub(super) async fn run_claude_prompt_text_inner(
     prompt_text: String,
     cli_args: &crate::engine::types::CliArgs,
-    emit_ctx: Option<(&tauri::AppHandle, &str)>,
+    on_line: Option<&(dyn Fn(&str) + Send + Sync)>,
     timeout_secs: u64,
 ) -> Result<(String, Option<String>), String> {
     let mut cmd = Command::new(&cli_args.command);
@@ -1400,8 +1587,8 @@ async fn run_claude_prompt_text_inner(
                     if last_emitted_line.as_deref() == Some(trimmed) {
                         continue;
                     }
-                    if let Some((app, transform_id)) = emit_ctx {
-                        emit_n8n_transform_line(app, transform_id, trimmed.to_string());
+                    if let Some(emit) = on_line {
+                        emit(trimmed);
                     }
                     last_emitted_line = Some(trimmed.to_string());
                 }
@@ -1432,7 +1619,7 @@ async fn run_claude_prompt_text_inner(
     }
 
     if text_output.trim().is_empty() {
-        return Err("Claude produced no output for n8n transformation".into());
+        return Err("Claude produced no output".into());
     }
 
     Ok((text_output, captured_session_id))

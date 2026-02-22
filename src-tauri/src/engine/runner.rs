@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -36,6 +37,7 @@ pub async fn run_execution(
     input_data: Option<serde_json::Value>,
     log_dir: PathBuf,
     child_pids: Arc<Mutex<HashMap<String, u32>>>,
+    cancelled: Arc<AtomicBool>,
 ) -> ExecutionResult {
     let start_time = std::time::Instant::now();
 
@@ -59,7 +61,7 @@ pub async fn run_execution(
 
     // Resolve global Ollama API key when provider is "ollama" and no per-persona auth token
     if let Some(ref mut profile) = model_profile {
-        if profile.provider.as_deref() == Some("ollama") {
+        if profile.provider.as_deref() == Some(super::types::providers::OLLAMA) {
             let needs_global_key = profile.auth_token.as_ref().map_or(true, |t| t.is_empty());
             if needs_global_key {
                 if let Ok(Some(global_key)) =
@@ -75,7 +77,7 @@ pub async fn run_execution(
 
     // Resolve global LiteLLM settings when provider is "litellm" and no per-persona values
     if let Some(ref mut profile) = model_profile {
-        if profile.provider.as_deref() == Some("litellm") {
+        if profile.provider.as_deref() == Some(super::types::providers::LITELLM) {
             let needs_global_url = profile.base_url.as_ref().map_or(true, |u| u.is_empty());
             if needs_global_url {
                 if let Ok(Some(global_url)) =
@@ -101,7 +103,7 @@ pub async fn run_execution(
     }
 
     // Build CLI args
-    let mut cli_args = prompt::build_cli_args(&persona, &model_profile);
+    let mut cli_args = prompt::build_cli_args(Some(&persona), model_profile.as_ref());
 
     // Inject decrypted service credentials as env vars
     let (cred_env, cred_hints) = resolve_credential_env_vars(&pool, &tools, &persona.id, &persona.name);
@@ -223,6 +225,36 @@ pub async fn run_execution(
         child_pids.lock().await.insert(execution_id.clone(), pid);
     }
 
+    // Check if cancellation was requested during spawn. If the user cancelled
+    // between task start and PID registration, the cancel_execution call couldn't
+    // kill the process (PID wasn't registered yet). Catch it here to avoid
+    // wasting API credits on an execution the user already cancelled.
+    if cancelled.load(Ordering::Acquire) {
+        logger.log("[CANCELLED] Execution cancelled during startup, killing process");
+        let _ = child.kill().await;
+        let _ = child.wait().await;
+        child_pids.lock().await.remove(&execution_id);
+        let _ = std::fs::remove_dir_all(&exec_dir);
+        logger.close();
+
+        let duration_ms = start_time.elapsed().as_millis() as u64;
+        let _ = app.emit(
+            "execution-output",
+            ExecutionOutputEvent {
+                execution_id: execution_id.clone(),
+                line: "[CANCELLED] Execution cancelled before startup completed".into(),
+            },
+        );
+
+        return ExecutionResult {
+            success: false,
+            error: Some("Cancelled during startup".into()),
+            log_file_path: Some(log_file_path),
+            duration_ms,
+            ..default_result()
+        };
+    }
+
     // Write prompt to stdin
     if let Some(mut stdin) = child.stdin.take() {
         let prompt_bytes = prompt_text.into_bytes();
@@ -242,11 +274,28 @@ pub async fn run_execution(
     let mut tool_steps: Vec<ToolCallStep> = Vec::new();
     let mut step_counter: u32 = 0;
 
-    // Read stderr in background
+    // Read stderr in background (capped at 100KB to prevent OOM)
     let stderr_handle = tokio::spawn(async move {
-        let mut buf = String::new();
-        let _ = tokio::io::AsyncReadExt::read_to_string(&mut stderr_reader, &mut buf).await;
-        buf
+        const MAX_STDERR_BYTES: usize = 100 * 1024;
+        let mut buf = vec![0u8; MAX_STDERR_BYTES];
+        let mut total = 0;
+        loop {
+            match tokio::io::AsyncReadExt::read(&mut stderr_reader, &mut buf[total..]).await {
+                Ok(0) => break,
+                Ok(n) => {
+                    total += n;
+                    if total >= MAX_STDERR_BYTES {
+                        break;
+                    }
+                }
+                Err(_) => break,
+            }
+        }
+        let mut s = String::from_utf8_lossy(&buf[..total]).into_owned();
+        if total >= MAX_STDERR_BYTES {
+            s.push_str("\n... [stderr truncated at 100KB]");
+        }
+        s
     });
 
     // Set up timeout

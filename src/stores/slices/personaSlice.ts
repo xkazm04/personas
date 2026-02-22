@@ -5,6 +5,8 @@ import type {
   DbPersona,
   PersonaWithDetails,
 } from "@/lib/types/types";
+import type { PartialPersonaUpdate } from "@/api/personas";
+import { buildUpdateInput } from "@/api/personas";
 import * as api from "@/api/tauriApi";
 
 export interface PersonaSlice {
@@ -20,11 +22,13 @@ export interface PersonaSlice {
   fetchPersonas: () => Promise<void>;
   fetchPersonaSummaries: () => Promise<void>;
   fetchDetail: (id: string) => Promise<void>;
-  createPersona: (input: { name: string; description?: string; system_prompt: string; icon?: string; color?: string }) => Promise<DbPersona>;
-  updatePersona: (id: string, input: Record<string, unknown>) => Promise<void>;
+  createPersona: (input: { name: string; description?: string; system_prompt: string; icon?: string; color?: string; structured_prompt?: string; design_context?: string }) => Promise<DbPersona>;
+  updatePersona: (id: string, input: PartialPersonaUpdate) => Promise<void>;
   deletePersona: (id: string) => Promise<void>;
   selectPersona: (id: string | null) => void;
 }
+
+let fetchDetailSeq = 0;
 
 export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice> = (set, get) => ({
   personas: [],
@@ -47,44 +51,37 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
   },
 
   fetchPersonaSummaries: async () => {
-    const { personas } = get();
-    const results = await Promise.all(
-      personas.map(async (p) => {
-        try {
-          const [triggers, execs] = await Promise.all([
-            api.listTriggers(p.id),
-            api.listExecutions(p.id, 5),
-          ]);
-          const enabledCount = triggers.filter((t) => t.enabled).length;
-          const lastRun = execs[0]?.created_at ?? null;
-          const healthStatuses = execs.map((e) => e.status);
-          return { id: p.id, triggerCount: enabledCount, lastRun, healthStatuses };
-        } catch {
-          return { id: p.id, triggerCount: 0, lastRun: null, healthStatuses: [] as string[] };
+    try {
+      const summaries = await api.getPersonaSummaries();
+      const triggerCounts: Record<string, number> = {};
+      const lastRun: Record<string, string | null> = {};
+      const healthMap: Record<string, string[]> = {};
+      for (const s of summaries) {
+        triggerCounts[s.persona_id] = s.enabled_trigger_count;
+        lastRun[s.persona_id] = s.last_run_at;
+        if ('health_statuses' in s && Array.isArray(s.health_statuses)) {
+          healthMap[s.persona_id] = s.health_statuses;
         }
-      }),
-    );
-    const triggerCounts: Record<string, number> = {};
-    const lastRun: Record<string, string | null> = {};
-    const healthMap: Record<string, string[]> = {};
-    for (const r of results) {
-      triggerCounts[r.id] = r.triggerCount;
-      lastRun[r.id] = r.lastRun;
-      healthMap[r.id] = r.healthStatuses;
+      }
+      set({ personaTriggerCounts: triggerCounts, personaLastRun: lastRun, personaHealthMap: healthMap });
+    } catch {
+      // Summaries are non-critical sidebar badges — silently ignore errors
     }
-    set({ personaTriggerCounts: triggerCounts, personaLastRun: lastRun, personaHealthMap: healthMap });
   },
 
   fetchDetail: async (id: string) => {
+    const seq = ++fetchDetailSeq;
     set({ isLoading: true, error: null });
     try {
       const persona = await api.getPersona(id);
+      if (seq !== fetchDetailSeq) return; // superseded by a newer request
       // Assemble PersonaWithDetails from multiple IPC calls
       const [allTools, triggers, subscriptions] = await Promise.all([
         api.listToolDefinitions(),
         api.listTriggers(id),
         api.listSubscriptions(id),
       ]);
+      if (seq !== fetchDetailSeq) return; // superseded by a newer request
       // Find tools assigned to this persona (cross-reference with persona_tools)
       // For now, use all tool definitions — actual assignment filtering can be refined
       const detail: PersonaWithDetails = {
@@ -95,6 +92,7 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
       };
       set({ selectedPersona: detail, selectedPersonaId: id, isLoading: false });
     } catch (err) {
+      if (seq !== fetchDetailSeq) return; // superseded by a newer request
       set({ error: errMsg(err, "Failed to fetch persona"), isLoading: false });
     }
   },
@@ -107,7 +105,7 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
         system_prompt: input.system_prompt,
         project_id: null,
         description: input.description ?? null,
-        structured_prompt: null,
+        structured_prompt: input.structured_prompt ?? null,
         icon: input.icon ?? null,
         color: input.color ?? null,
         enabled: null,
@@ -116,7 +114,7 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
         model_profile: null,
         max_budget_usd: null,
         max_turns: null,
-        design_context: null,
+        design_context: input.design_context ?? null,
         group_id: null,
       });
       set((state) => ({ personas: [persona, ...state.personas] }));
@@ -130,30 +128,7 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
   updatePersona: async (id, input) => {
     set({ error: null });
     try {
-      // Build update input with correct skip vs set-to-null semantics.
-      // - Option<T> fields (name, system_prompt, etc.): null = skip, value = set
-      // - Option<Option<T>> fields (description, icon, etc.): key absent = skip, null = clear, value = set
-      const updateInput: Record<string, unknown> = {
-        name: (input.name as string) ?? null,
-        system_prompt: (input.system_prompt as string) ?? null,
-        enabled: input.enabled !== undefined ? (input.enabled as boolean) : null,
-        max_concurrent: (input.max_concurrent as number) ?? null,
-        timeout_ms: (input.timeout_ms as number) ?? null,
-        notification_channels: (input.notification_channels as string) ?? null,
-      };
-      // Double-option fields: only include when explicitly provided to distinguish
-      // "skip" (key absent) from "set to null" (key present with null value).
-      if (input.description !== undefined) updateInput.description = input.description as string | null;
-      if (input.structured_prompt !== undefined) updateInput.structured_prompt = input.structured_prompt as string | null;
-      if (input.icon !== undefined) updateInput.icon = input.icon as string | null;
-      if (input.color !== undefined) updateInput.color = input.color as string | null;
-      if (input.last_design_result !== undefined) updateInput.last_design_result = input.last_design_result as string | null;
-      if (input.model_profile !== undefined) updateInput.model_profile = input.model_profile as string | null;
-      if (input.max_budget_usd !== undefined) updateInput.max_budget_usd = input.max_budget_usd as number | null;
-      if (input.max_turns !== undefined) updateInput.max_turns = input.max_turns as number | null;
-      if (input.design_context !== undefined) updateInput.design_context = input.design_context as string | null;
-      if (input.group_id !== undefined) updateInput.group_id = input.group_id as string | null;
-      const persona = await api.updatePersona(id, updateInput as import("@/lib/bindings/UpdatePersonaInput").UpdatePersonaInput);
+      const persona = await api.updatePersona(id, buildUpdateInput(input));
       set((state) => ({
         personas: state.personas.map((p) => (p.id === id ? persona : p)),
         selectedPersona:

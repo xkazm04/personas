@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Bell, ShieldAlert } from 'lucide-react';
-import * as api from '@/api/tauriApi';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
+import { useAppSetting } from '@/hooks/utility/useAppSetting';
 
 const SETTINGS_KEY = 'notification_prefs';
 
@@ -52,38 +52,36 @@ const SEVERITY_ROWS: Array<{
 ];
 
 export default function NotificationSettings() {
-  const [prefs, setPrefs] = useState<NotificationPrefs>(DEFAULT_PREFS);
-  const [loaded, setLoaded] = useState(false);
+  const setting = useAppSetting(SETTINGS_KEY, JSON.stringify(DEFAULT_PREFS));
+  const hasLoadedOnce = useRef(false);
 
+  // Auto-save whenever value changes (skip the initial load)
   useEffect(() => {
-    (async () => {
-      try {
-        const raw = await api.getAppSetting(SETTINGS_KEY);
-        if (raw) {
-          setPrefs({ ...DEFAULT_PREFS, ...JSON.parse(raw) });
-        }
-      } catch {
-        // Use defaults
-      }
-      setLoaded(true);
-    })();
-  }, []);
+    if (!setting.loaded) return;
+    if (!hasLoadedOnce.current) {
+      hasLoadedOnce.current = true;
+      return;
+    }
+    setting.save();
+  }, [setting.value]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const prefs = useMemo<NotificationPrefs>(() => {
+    try {
+      return { ...DEFAULT_PREFS, ...JSON.parse(setting.value) };
+    } catch {
+      return DEFAULT_PREFS;
+    }
+  }, [setting.value]);
 
   const toggle = useCallback(
-    async (key: keyof NotificationPrefs) => {
+    (key: keyof NotificationPrefs) => {
       const next = { ...prefs, [key]: !prefs[key] };
-      setPrefs(next);
-      try {
-        await api.setAppSetting(SETTINGS_KEY, JSON.stringify(next));
-      } catch {
-        // Revert on failure
-        setPrefs(prefs);
-      }
+      setting.setValue(JSON.stringify(next));
     },
-    [prefs],
+    [prefs, setting],
   );
 
-  if (!loaded) return null;
+  if (!setting.loaded) return null;
 
   return (
     <ContentBox>

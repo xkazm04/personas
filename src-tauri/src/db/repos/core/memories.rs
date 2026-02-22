@@ -4,6 +4,11 @@ use crate::db::models::{CreatePersonaMemoryInput, PersonaMemory};
 use crate::db::DbPool;
 use crate::error::AppError;
 
+/// Escape LIKE metacharacters (%, _) so they are matched literally.
+fn escape_like(input: &str) -> String {
+    input.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_")
+}
+
 fn row_to_memory(row: &Row) -> rusqlite::Result<PersonaMemory> {
     Ok(PersonaMemory {
         id: row.get("id")?,
@@ -49,9 +54,9 @@ pub fn get_all(
     if let Some(q) = search {
         let trimmed = q.trim();
         if !trimmed.is_empty() {
-            let pattern = format!("%{}%", trimmed);
+            let pattern = format!("%{}%", escape_like(trimmed));
             conditions.push(format!(
-                "(title LIKE ?{} OR content LIKE ?{})",
+                "(title LIKE ?{} ESCAPE '\\' OR content LIKE ?{} ESCAPE '\\')",
                 param_idx,
                 param_idx + 1
             ));
@@ -176,9 +181,9 @@ pub fn get_total_count(
     if let Some(q) = search {
         let trimmed = q.trim();
         if !trimmed.is_empty() {
-            let pattern = format!("%{}%", trimmed);
+            let pattern = format!("%{}%", escape_like(trimmed));
             conditions.push(format!(
-                "(title LIKE ?{} OR content LIKE ?{})",
+                "(title LIKE ?{} ESCAPE '\\' OR content LIKE ?{} ESCAPE '\\')",
                 param_idx,
                 param_idx + 1
             ));

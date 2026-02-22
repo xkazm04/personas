@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import * as api from '@/api/tauriApi';
 import { formatTimestamp, formatDuration, formatRelativeTime, EXECUTION_STATUS_COLORS, badgeClass } from '@/lib/utils/formatters';
 import { BUILTIN_TEMPLATES } from '@/lib/personas/builtinTemplates';
+import { useCopyToClipboard } from '@/hooks/utility/useCopyToClipboard';
 
 const TEMPLATE_SAMPLE_INPUT: Record<string, object> = {
   'gmail-maestro': { mode: 'process_inbox', max_emails: 5, labels: ['inbox', 'unread'] },
@@ -25,6 +26,7 @@ export function ExecutionList() {
   const setRerunInputData = usePersonaStore((state) => state.setRerunInputData);
   const [executions, setExecutions] = useState<PersonaExecution[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const { copied: hasCopied, copy: copyToClipboard } = useCopyToClipboard();
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const prevIsExecutingRef = useRef(isExecuting);
@@ -232,16 +234,14 @@ export function ExecutionList() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigator.clipboard.writeText(execution.id).then(() => {
-                                  setCopiedId(execution.id);
-                                  setTimeout(() => setCopiedId(null), 2000);
-                                }).catch(() => {});
+                                copyToClipboard(execution.id);
+                                setCopiedId(execution.id);
                               }}
                               className="flex items-center gap-1.5 mt-0.5 text-foreground/70 hover:text-foreground/90 transition-colors group"
                               title={execution.id}
                             >
                               <span className="font-mono text-xs">#{execution.id.slice(0, 8)}</span>
-                              {copiedId === execution.id ? (
+                              {hasCopied && copiedId === execution.id ? (
                                 <Check className="w-3 h-3 text-emerald-400" />
                               ) : (
                                 <Copy className="w-3 h-3 opacity-0 group-hover:opacity-60 transition-opacity" />

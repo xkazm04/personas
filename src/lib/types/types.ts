@@ -23,6 +23,7 @@ import type { PersonaTeam } from "@/lib/bindings/PersonaTeam";
 import type { PersonaTeamMember } from "@/lib/bindings/PersonaTeamMember";
 import type { PersonaDesignReview } from "@/lib/bindings/PersonaDesignReview";
 import type { ConnectorDefinition as RawConnectorDefinition } from "@/lib/bindings/ConnectorDefinition";
+import { parseJsonOrDefault } from "@/lib/utils/parseJson";
 
 // Alias re-exports for compatibility with source component code
 export type DbPersona = Persona;
@@ -92,14 +93,7 @@ export interface CredentialMetadata {
 
 /** Map a raw PersonaCredential to CredentialMetadata (strip encrypted fields) */
 export function toCredentialMetadata(c: PersonaCredential): CredentialMetadata {
-  let parsedMetadata: Record<string, unknown> | null = null;
-  if (c.metadata) {
-    try {
-      parsedMetadata = JSON.parse(c.metadata) as Record<string, unknown>;
-    } catch {
-      parsedMetadata = null;
-    }
-  }
+  const parsedMetadata = parseJsonOrDefault<Record<string, unknown> | null>(c.metadata, null);
 
   const lastSuccess = typeof parsedMetadata?.healthcheck_last_success === "boolean"
     ? parsedMetadata.healthcheck_last_success
@@ -197,7 +191,7 @@ export interface CredentialTemplateEvent {
 // ── Navigation Types ───────────────────────────────────────────────────
 
 export type SidebarSection = "overview" | "personas" | "events" | "credentials" | "design-reviews" | "team" | "cloud" | "settings";
-export type EditorTab = "prompt" | "executions" | "settings" | "tests";
+export type EditorTab = "prompt" | "executions" | "settings" | "tests" | "design";
 export type OverviewTab = "system-check" | "executions" | "manual-review" | "messages" | "usage" | "events" | "observability" | "realtime" | "memories" | "budget";
 export type TemplateTab = "builtin" | "n8n" | "generated";
 export type SettingsTab = "account" | "appearance" | "notifications";
@@ -263,6 +257,7 @@ export function enrichWithPersona<T extends { persona_id: string }>(
 
 export interface ManualReviewItem extends WithPersonaInfo {
   id: string;
+  persona_id: string;
   execution_id: string;
   review_type: string;
   content: string;

@@ -127,6 +127,13 @@ pub struct ModelProfile {
     pub auth_token: Option<String>,
 }
 
+/// Well-known provider identifiers used in ModelProfile.provider.
+pub mod providers {
+    pub const OLLAMA: &str = "ollama";
+    pub const LITELLM: &str = "litellm";
+    pub const CUSTOM: &str = "custom";
+}
+
 /// Event payload emitted to frontend
 #[derive(Debug, Clone, Serialize)]
 pub struct ExecutionOutputEvent {

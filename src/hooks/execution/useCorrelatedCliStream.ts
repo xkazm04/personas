@@ -6,20 +6,14 @@ export type CliRunPhase = 'idle' | 'running' | 'completed' | 'failed';
 interface UseCorrelatedCliStreamOptions {
   outputEvent: string;
   statusEvent: string;
-  idField?: string;
-  lineField?: string;
-  statusField?: string;
-  errorField?: string;
+  idField: string;
   onFailed?: (errorMessage: string) => void;
 }
 
 export function useCorrelatedCliStream({
   outputEvent,
   statusEvent,
-  idField = 'transform_id',
-  lineField = 'line',
-  statusField = 'status',
-  errorField = 'error',
+  idField,
   onFailed,
 }: UseCorrelatedCliStreamOptions) {
   const [runId, setRunId] = useState<string | null>(null);
@@ -52,7 +46,7 @@ export function useCorrelatedCliStream({
         const payload = event.payload ?? {};
         if (String(payload[idField] ?? '') !== nextRunId) return;
 
-        const line = payload[lineField];
+        const line = payload['line'];
         if (typeof line === 'string' && line.trim().length > 0) {
           setLines((prev) => {
             if (prev[prev.length - 1] === line) {
@@ -67,20 +61,20 @@ export function useCorrelatedCliStream({
         const payload = event.payload ?? {};
         if (String(payload[idField] ?? '') !== nextRunId) return;
 
-        const nextStatus = payload[statusField];
+        const nextStatus = payload['status'];
         if (nextStatus === 'running' || nextStatus === 'completed' || nextStatus === 'failed') {
           setPhase(nextStatus);
         }
 
         if (nextStatus === 'failed' && onFailedRef.current) {
-          const err = payload[errorField];
+          const err = payload['error'];
           onFailedRef.current(typeof err === 'string' ? err : 'CLI transformation failed.');
         }
       });
 
       unlistenersRef.current = [unlistenOutput, unlistenStatus];
     },
-    [cleanup, errorField, idField, lineField, outputEvent, statusEvent, statusField],
+    [cleanup, idField, outputEvent, statusEvent],
   );
 
   const reset = useCallback(async () => {

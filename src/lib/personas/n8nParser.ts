@@ -41,7 +41,7 @@ function extractServiceName(nodeType: string): string {
 }
 
 function isTriggerNode(node: N8nNode): boolean {
-  return /trigger/i.test(node.type) || /trigger/i.test(node.name);
+  return /trigger/i.test(node.type);
 }
 
 export function parseN8nWorkflow(json: unknown): DesignAnalysisResult {

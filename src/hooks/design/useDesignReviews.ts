@@ -3,7 +3,7 @@ import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import * as api from '@/api/tauriApi';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { getSeedReviews, SEED_RUN_ID } from '@/lib/personas/seedTemplates';
-import { usePersonaStore } from '@/stores/personaStore';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 
 interface ReviewStatusPayload {
   run_id: string;
@@ -11,6 +11,8 @@ interface ReviewStatusPayload {
   total: number;
   status: string;
   test_case_name: string;
+  error_message?: string;
+  elapsed_ms?: number;
 }
 
 interface TestRunResult {
@@ -25,6 +27,7 @@ export interface RunProgress {
   current: number;
   total: number;
   startedAt: number;
+  currentTemplateName: string;
 }
 
 export function useDesignReviews() {
@@ -36,19 +39,16 @@ export function useDesignReviews() {
   const [runResult, setRunResult] = useState<TestRunResult | null>(null);
   const [runProgress, setRunProgress] = useState<RunProgress | null>(null);
   const [connectorFilter, setConnectorFilter] = useState<string[]>([]);
-  const [isAdopting, setIsAdopting] = useState(false);
-  const [adoptError, setAdoptError] = useState<string | null>(null);
   const unlistenRef = useRef<UnlistenFn | null>(null);
   const countersRef = useRef({ passed: 0, failed: 0, errored: 0 });
+  const currentRunId = useRef<string | null>(null);
 
   // Derive unique connectors from review data
   const availableConnectors = useMemo(() => {
     const connectorSet = new Set<string>();
     for (const review of reviews) {
-      try {
-        const connectors: string[] = JSON.parse(review.connectors_used || '[]');
-        connectors.forEach((c) => connectorSet.add(c));
-      } catch { /* ignore */ }
+      const connectors = parseJsonOrDefault<string[]>(review.connectors_used, []);
+      connectors.forEach((c) => connectorSet.add(c));
     }
     return Array.from(connectorSet).sort();
   }, [reviews]);
@@ -126,11 +126,12 @@ export function useDesignReviews() {
         unlistenRef.current();
       }
       unlistenRef.current = await listen<ReviewStatusPayload>('design-review-status', (event) => {
-        const { status, test_case_name, test_case_index, total, run_id } = event.payload;
+        const { status, test_case_name, test_case_index, total, run_id, error_message, elapsed_ms } = event.payload;
 
-        if (status === 'completed' && test_case_index === total) {
+        if ((status === 'completed' || status === 'cancelled') && test_case_index === total) {
           setIsRunning(false);
           setRunProgress(null);
+          currentRunId.current = null;
           setRunResult({
             testRunId: run_id,
             totalTests: total,
@@ -141,36 +142,74 @@ export function useDesignReviews() {
             unlistenRef.current = null;
           }
           refresh();
+        } else if (status === 'generating') {
+          // Template is being generated — update progress with template name
+          setRunProgress((prev) => ({
+            current: test_case_index,
+            total,
+            startedAt: prev?.startedAt ?? Date.now(),
+            currentTemplateName: test_case_name,
+          }));
+          setRunLines((prev) => [
+            ...prev,
+            `[${test_case_index + 1}/${total}] Generating: ${test_case_name}...`,
+          ]);
+        } else if (status === 'cancelled') {
+          setRunLines((prev) => [...prev, `[Cancelled by user]`]);
+          setIsRunning(false);
+          setRunProgress(null);
+          currentRunId.current = null;
+          if (unlistenRef.current) {
+            unlistenRef.current();
+            unlistenRef.current = null;
+          }
+          refresh();
         } else {
+          // passed, failed, error
           if (status === 'passed') countersRef.current.passed++;
           else if (status === 'failed') countersRef.current.failed++;
-          else if (status === 'errored') countersRef.current.errored++;
+          else if (status === 'error') countersRef.current.errored++;
+
+          const elapsedStr = elapsed_ms ? ` (${(elapsed_ms / 1000).toFixed(1)}s)` : '';
+          const errorStr = error_message ? ` — ${error_message}` : '';
           setRunProgress((prev) => ({
             current: test_case_index + 1,
             total,
             startedAt: prev?.startedAt ?? Date.now(),
+            currentTemplateName: test_case_name,
           }));
           setRunLines((prev) => [
             ...prev,
-            `[${test_case_index + 1}/${total}] ${test_case_name}: ${status}`,
+            `[${test_case_index + 1}/${total}] ${test_case_name}: ${status.toUpperCase()}${elapsedStr}${errorStr}`,
           ]);
         }
       });
 
-      await api.startDesignReviewRun(personaId, testCases ?? []);
+      const result = await api.startDesignReviewRun(personaId, testCases ?? []);
+      currentRunId.current = result.run_id;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start review run');
       setIsRunning(false);
     }
   }, [refresh]);
 
-  const cancelReview = useCallback(() => {
+  const cancelReview = useCallback(async () => {
+    // Signal backend to stop processing
+    if (currentRunId.current) {
+      try {
+        await api.cancelDesignReviewRun(currentRunId.current);
+      } catch {
+        // Best effort cancellation
+      }
+    }
     if (unlistenRef.current) {
       unlistenRef.current();
       unlistenRef.current = null;
     }
     setIsRunning(false);
-    setRunLines([]);
+    setRunProgress(null);
+    currentRunId.current = null;
+    setRunLines((prev) => [...prev, '[Cancelled by user]']);
   }, []);
 
   useEffect(() => {
@@ -191,22 +230,6 @@ export function useDesignReviews() {
     }
   }, []);
 
-  const adoptTemplate = useCallback(async (reviewId: string) => {
-    setIsAdopting(true);
-    setAdoptError(null);
-    try {
-      await api.adoptDesignReview(reviewId);
-      // Refresh persona list so the new persona appears in the sidebar
-      await usePersonaStore.getState().fetchPersonas();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to adopt template';
-      setAdoptError(msg);
-      throw err;
-    } finally {
-      setIsAdopting(false);
-    }
-  }, []);
-
   return {
     reviews,
     isLoading,
@@ -222,8 +245,5 @@ export function useDesignReviews() {
     startNewReview,
     cancelReview,
     deleteReview,
-    adoptTemplate,
-    isAdopting,
-    adoptError,
   };
 }

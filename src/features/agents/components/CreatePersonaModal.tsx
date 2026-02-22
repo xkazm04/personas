@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { X, Bot, Sparkles, Terminal, Zap, Wrench } from 'lucide-react';
+import { X, Bot, Sparkles, Terminal, Zap, Wrench, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
-
-const EMOJI_PRESETS = ['\u{1F916}', '\u{1F9E0}', '\u{26A1}', '\u{1F527}', '\u{1F4E7}', '\u{1F4CA}', '\u{1F6E1}\u{FE0F}', '\u{1F50D}'];
+import { IconSelector } from '@/features/shared/components/IconSelector';
 
 const COLOR_PRESETS = [
   '#EA4335', '#4A154B', '#24292e', '#3B82F6',
@@ -18,12 +17,15 @@ interface CreatePersonaModalProps {
 export default function CreatePersonaModal({ open, onClose }: CreatePersonaModalProps) {
   const createPersona = usePersonaStore((s) => s.createPersona);
   const selectPersona = usePersonaStore((s) => s.selectPersona);
+  const movePersonaToGroup = usePersonaStore((s) => s.movePersonaToGroup);
   const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
+  const groups = usePersonaStore((s) => s.groups);
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [icon, setIcon] = useState('');
   const [color, setColor] = useState('#8b5cf6');
+  const [groupId, setGroupId] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
   if (!open) return null;
@@ -41,6 +43,9 @@ export default function CreatePersonaModal({ open, onClose }: CreatePersonaModal
         icon: icon || undefined,
         color,
       });
+      if (groupId) {
+        await movePersonaToGroup(p.id, groupId);
+      }
       selectPersona(p.id);
       onClose();
       // Reset form
@@ -48,6 +53,7 @@ export default function CreatePersonaModal({ open, onClose }: CreatePersonaModal
       setDescription('');
       setIcon('');
       setColor('#8b5cf6');
+      setGroupId('');
     } catch {
       /* handled in store */
     } finally {
@@ -82,64 +88,7 @@ export default function CreatePersonaModal({ open, onClose }: CreatePersonaModal
             {/* Icon Selection */}
             <div>
               <label className="block text-sm font-medium text-foreground/60 mb-2">Icon</label>
-
-              {/* Connector icons */}
-              {connectorDefinitions.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {connectorDefinitions
-                    .filter((c) => c.icon_url)
-                    .map((c) => {
-                      const isSelected = icon === c.icon_url;
-                      return (
-                        <button
-                          key={c.id}
-                          type="button"
-                          onClick={() => setIcon(c.icon_url!)}
-                          className={`w-10 h-10 rounded-lg border flex items-center justify-center transition-all ${
-                            isSelected
-                              ? 'border-primary ring-2 ring-primary/30 scale-110 bg-primary/10'
-                              : 'border-primary/15 bg-secondary/40 hover:bg-secondary/60 hover:border-primary/30'
-                          }`}
-                          title={c.label}
-                        >
-                          <img src={c.icon_url!} alt={c.label} className="w-5 h-5" />
-                        </button>
-                      );
-                    })}
-                </div>
-              )}
-
-              {/* Emoji presets */}
-              <div className="flex flex-wrap gap-2">
-                {EMOJI_PRESETS.map((emoji) => {
-                  const isSelected = icon === emoji;
-                  return (
-                    <button
-                      key={emoji}
-                      type="button"
-                      onClick={() => setIcon(emoji)}
-                      className={`w-10 h-10 rounded-lg border flex items-center justify-center text-lg transition-all ${
-                        isSelected
-                          ? 'border-primary ring-2 ring-primary/30 scale-110 bg-primary/10'
-                          : 'border-primary/15 bg-secondary/40 hover:bg-secondary/60 hover:border-primary/30'
-                      }`}
-                    >
-                      {emoji}
-                    </button>
-                  );
-                })}
-                {/* Clear selection */}
-                {icon && (
-                  <button
-                    type="button"
-                    onClick={() => setIcon('')}
-                    className="w-10 h-10 rounded-lg border border-dashed border-primary/20 flex items-center justify-center text-xs text-muted-foreground/40 hover:text-muted-foreground/60 hover:border-primary/30 transition-all"
-                    title="Clear icon"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
+              <IconSelector value={icon} onChange={setIcon} connectors={connectorDefinitions} size="md" />
             </div>
 
             {/* Name */}
@@ -169,6 +118,26 @@ export default function CreatePersonaModal({ open, onClose }: CreatePersonaModal
                 className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all resize-none"
               />
             </div>
+
+            {/* Group */}
+            {groups.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-foreground/60 mb-1">Group</label>
+                <div className="relative">
+                  <select
+                    value={groupId}
+                    onChange={(e) => setGroupId(e.target.value)}
+                    className="w-full appearance-none px-3 py-2 pr-8 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+                  >
+                    <option value="">No group</option>
+                    {groups.map((g) => (
+                      <option key={g.id} value={g.id}>{g.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40 pointer-events-none" />
+                </div>
+              </div>
+            )}
 
             {/* Color */}
             <div>

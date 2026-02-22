@@ -8,8 +8,6 @@ import {
   createEmptyStructuredPrompt,
 } from '@/lib/personas/promptMigration';
 import type { StructuredPrompt } from '@/lib/personas/promptMigration';
-import { PromptSectionTab } from '@/features/agents/sub_editor/PromptSectionTab';
-import type { DesignAnalysisResult, DesignHighlight } from '@/lib/types/designTypes';
 
 type SubTab = 'identity' | 'instructions' | 'toolGuidance' | 'examples' | 'errorHandling' | string;
 
@@ -26,6 +24,47 @@ const STANDARD_TABS: TabDef[] = [
   { key: 'examples', label: 'Examples', icon: <Code className="w-3.5 h-3.5" /> },
   { key: 'errorHandling', label: 'Error Handling', icon: <AlertTriangle className="w-3.5 h-3.5" /> },
 ];
+
+function PromptSection({
+  title,
+  icon,
+  value,
+  onChange,
+  placeholder,
+  codeStyle = false,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  codeStyle?: boolean;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <span className="text-muted-foreground/60">{icon}</span>
+        <h3 className="text-sm font-mono text-muted-foreground/50 uppercase tracking-wider">
+          {title}
+        </h3>
+      </div>
+      <div className="relative">
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={`w-full min-h-[300px] px-4 py-3 bg-background/50 border border-border/50 rounded-2xl text-foreground text-sm resize-y focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all placeholder-muted-foreground/30 ${
+            codeStyle ? 'font-mono' : 'font-sans'
+          }`}
+          placeholder={placeholder}
+          spellCheck={!codeStyle}
+        />
+        <div className="absolute bottom-3 right-4 text-xs text-muted-foreground/30 font-mono pointer-events-none">
+          {value.length.toLocaleString()} chars
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function PersonaPromptEditor() {
   const selectedPersona = usePersonaStore((state) => state.selectedPersona);
@@ -60,29 +99,18 @@ export function PersonaPromptEditor() {
     return tabs;
   }, [sp.customSections]);
 
-  const highlightsBySection = useMemo<Record<string, DesignHighlight[]>>(() => {
-    if (!selectedPersona?.last_design_result) return {};
-    try {
-      const parsed = JSON.parse(selectedPersona.last_design_result) as DesignAnalysisResult;
-      const highlights = parsed.design_highlights ?? [];
-      const grouped: Record<string, DesignHighlight[]> = {};
-      for (const h of highlights) {
-        const section = h.section || 'instructions';
-        if (!grouped[section]) grouped[section] = [];
-        grouped[section].push(h);
-      }
-      return grouped;
-    } catch {
-      return {};
-    }
-  }, [selectedPersona?.last_design_result]);
-
   // Initialize structured prompt from persona data
   useEffect(() => {
     if (!selectedPersona) {
+      // Clear auto-save timer to prevent saving to a deleted persona
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
       setSp(createEmptyStructuredPrompt());
       personaIdRef.current = null;
       lastLoadedPromptRef.current = null;
+      lastSavedJsonRef.current = null;
       return;
     }
 
@@ -96,13 +124,15 @@ export function PersonaPromptEditor() {
 
     if (!isNewPersona && !isExternalUpdate) return;
 
-    personaIdRef.current = selectedPersona.id;
-    lastLoadedPromptRef.current = currentPromptRaw;
-
-    if (isExternalUpdate && saveTimerRef.current) {
+    // Clear pending auto-save timer on persona switch or external update
+    // to prevent saving stale data to the wrong persona
+    if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current);
       saveTimerRef.current = null;
     }
+
+    personaIdRef.current = selectedPersona.id;
+    lastLoadedPromptRef.current = currentPromptRaw;
 
     const parsed = parseStructuredPrompt(currentPromptRaw);
     if (parsed) {
@@ -156,8 +186,13 @@ export function PersonaPromptEditor() {
     const jsonStr = JSON.stringify(sp);
     if (jsonStr === lastSavedJsonRef.current) return;
 
+    // Capture the persona ID at schedule time so we can verify it hasn't
+    // changed when the timer fires (defense-in-depth against race conditions)
+    const scheduledForId = personaIdRef.current;
+
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
+      if (personaIdRef.current !== scheduledForId) return;
       doSave();
     }, 1000);
 
@@ -269,63 +304,53 @@ export function PersonaPromptEditor() {
       {/* Tab content */}
       <div>
         {activeTab === 'identity' && (
-          <PromptSectionTab
+          <PromptSection
             title="Identity"
             icon={<User className="w-4 h-4" />}
             value={sp.identity}
             onChange={(v) => updateField('identity', v)}
             placeholder="Who is this persona? What role does it play?"
-            viewMode
-            highlights={highlightsBySection['identity']}
           />
         )}
 
         {activeTab === 'instructions' && (
-          <PromptSectionTab
+          <PromptSection
             title="Instructions"
             icon={<BookOpen className="w-4 h-4" />}
             value={sp.instructions}
             onChange={(v) => updateField('instructions', v)}
             placeholder="Core instructions and behavioral guidelines..."
-            viewMode
-            highlights={highlightsBySection['instructions']}
           />
         )}
 
         {activeTab === 'toolGuidance' && (
-          <PromptSectionTab
+          <PromptSection
             title="Tool Guidance"
             icon={<Wrench className="w-4 h-4" />}
             value={sp.toolGuidance}
             onChange={(v) => updateField('toolGuidance', v)}
             placeholder="Guidelines for tool usage..."
-            viewMode
-            highlights={highlightsBySection['toolGuidance']}
           />
         )}
 
         {activeTab === 'examples' && (
-          <PromptSectionTab
+          <PromptSection
             title="Examples"
             icon={<Code className="w-4 h-4" />}
             value={sp.examples}
             onChange={(v) => updateField('examples', v)}
             placeholder="Example interactions or outputs..."
             codeStyle
-            viewMode
-            highlights={highlightsBySection['examples']}
           />
         )}
 
         {activeTab === 'errorHandling' && (
-          <PromptSectionTab
+          <PromptSection
             title="Error Handling"
             icon={<AlertTriangle className="w-4 h-4" />}
             value={sp.errorHandling}
             onChange={(v) => updateField('errorHandling', v)}
             placeholder="How should errors be handled?"
-            viewMode
-            highlights={highlightsBySection['errorHandling']}
           />
         )}
 
@@ -348,14 +373,12 @@ export function PersonaPromptEditor() {
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <PromptSectionTab
+            <PromptSection
               title={customSection.title}
               icon={<Code className="w-4 h-4" />}
               value={customSection.content}
               onChange={(v) => updateCustomSection(customIndex, 'content', v)}
               placeholder="Section content..."
-              viewMode
-              highlights={highlightsBySection[customSection.title]}
             />
           </div>
         )}

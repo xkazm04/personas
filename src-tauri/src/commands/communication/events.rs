@@ -25,7 +25,9 @@ pub fn publish_event(
     input: CreatePersonaEventInput,
 ) -> Result<PersonaEvent, AppError> {
     let event = repo::publish(&state.db, input)?;
-    let _ = app.emit("event-bus", event.clone());
+    if let Err(e) = app.emit("event-bus", event.clone()) {
+        tracing::warn!(event_id = %event.id, error = %e, "Failed to emit event-bus event to frontend");
+    }
     Ok(event)
 }
 
@@ -78,6 +80,8 @@ pub fn test_event_flow(
         payload,
     };
     let event = repo::publish(&state.db, input)?;
-    let _ = app.emit("event-bus", event.clone());
+    if let Err(e) = app.emit("event-bus", event.clone()) {
+        tracing::warn!(event_id = %event.id, error = %e, "Failed to emit test event-bus event to frontend");
+    }
     Ok(event)
 }

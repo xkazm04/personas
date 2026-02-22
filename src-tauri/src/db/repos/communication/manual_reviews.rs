@@ -78,6 +78,30 @@ pub fn get_by_persona(
     }
 }
 
+pub fn get_all(
+    pool: &DbPool,
+    status: Option<&str>,
+) -> Result<Vec<PersonaManualReview>, AppError> {
+    let conn = pool.get()?;
+
+    if let Some(status_filter) = status {
+        let mut stmt = conn.prepare(
+            "SELECT * FROM persona_manual_reviews
+             WHERE status = ?1
+             ORDER BY created_at DESC",
+        )?;
+        let rows = stmt.query_map(params![status_filter], row_to_review)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    } else {
+        let mut stmt = conn.prepare(
+            "SELECT * FROM persona_manual_reviews
+             ORDER BY created_at DESC",
+        )?;
+        let rows = stmt.query_map([], row_to_review)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    }
+}
+
 pub fn get_by_execution(
     pool: &DbPool,
     execution_id: &str,
@@ -116,13 +140,19 @@ pub fn update_status(
     let now = chrono::Utc::now().to_rfc3339();
     let conn = pool.get()?;
 
+    let resolved_at = match status {
+        "approved" | "rejected" | "resolved" => Some(now.clone()),
+        _ => None,
+    };
+
     conn.execute(
         "UPDATE persona_manual_reviews
          SET status = ?1,
              reviewer_notes = COALESCE(?2, reviewer_notes),
-             updated_at = ?3
-         WHERE id = ?4",
-        params![status, reviewer_notes, now, id],
+             resolved_at = COALESCE(?3, resolved_at),
+             updated_at = ?4
+         WHERE id = ?5",
+        params![status, reviewer_notes, resolved_at, now, id],
     )?;
 
     Ok(())
@@ -240,6 +270,7 @@ mod tests {
         let updated = get_by_id(&pool, &review.id).unwrap();
         assert_eq!(updated.status, "resolved");
         assert_eq!(updated.reviewer_notes, Some("Looks good".into()));
+        assert!(updated.resolved_at.is_some(), "resolved_at should be set when status is resolved");
 
         // Pending count should now be 0
         let count_after = get_pending_count(&pool, Some(&persona_id)).unwrap();

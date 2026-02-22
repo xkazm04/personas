@@ -1,4 +1,6 @@
 import { useCallback, useRef, useEffect, useState } from 'react';
+import { useBackgroundSnapshot } from '@/hooks/utility/useBackgroundSnapshot';
+import { usePersistedContext } from '@/hooks/utility/usePersistedContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle } from 'lucide-react';
 import { parseN8nWorkflow } from '@/lib/personas/n8nParser';
@@ -56,10 +58,9 @@ export default function N8nImportTab() {
   const { state, dispatch, canGoBack, goBack } = useN8nImportReducer();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const pollTimerRef = useRef<number | null>(null);
   const prevStepRef = useRef(STEP_META[state.step].index);
-  const hasRestoredRef = useRef(false);
   const sessionIdRef = useRef<string | null>(null);
+  const confirmingRef = useRef(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [confirmResult, setConfirmResult] = useState<ConfirmResult | null>(null);
@@ -86,34 +87,13 @@ export default function N8nImportTab() {
     outputEvent: 'n8n-transform-output',
     statusEvent: 'n8n-transform-status',
     idField: 'transform_id',
-    lineField: 'line',
-    statusField: 'status',
-    errorField: 'error',
     onFailed: (message) => dispatch({ type: 'TRANSFORM_FAILED', error: message }),
   });
 
   // ── Restore persisted context on mount ──
 
-  useEffect(() => {
-    if (hasRestoredRef.current) return;
-    hasRestoredRef.current = true;
-
-    const raw = window.localStorage.getItem(N8N_TRANSFORM_CONTEXT_KEY);
-    if (!raw) return;
-
-    try {
-      const parsed = JSON.parse(raw) as PersistedTransformContext;
-      if (!parsed?.transformId) {
-        window.localStorage.removeItem(N8N_TRANSFORM_CONTEXT_KEY);
-        return;
-      }
-
-      // Discard stale contexts (older than 10 minutes)
-      if (parsed.savedAt && Date.now() - parsed.savedAt > TRANSFORM_CONTEXT_MAX_AGE_MS) {
-        window.localStorage.removeItem(N8N_TRANSFORM_CONTEXT_KEY);
-        return;
-      }
-
+  const handleRestoreContext = useCallback(
+    (parsed: PersistedTransformContext) => {
       setIsRestoring(true);
       dispatch({
         type: 'RESTORE_CONTEXT',
@@ -122,155 +102,118 @@ export default function N8nImportTab() {
         rawWorkflowJson: parsed.rawWorkflowJson || '',
         parsedResult: parsed.parsedResult || null,
       });
-
       void startTransformStream(parsed.transformId);
-    } catch {
-      window.localStorage.removeItem(N8N_TRANSFORM_CONTEXT_KEY);
-    }
-  }, [startTransformStream, dispatch]);
+    },
+    [dispatch, startTransformStream],
+  );
+
+  const validateTransformContext = useCallback(
+    (parsed: PersistedTransformContext) => parsed?.transformId || null,
+    [],
+  );
+
+  const getTransformSavedAt = useCallback(
+    (parsed: PersistedTransformContext) => parsed.savedAt,
+    [],
+  );
+
+  usePersistedContext<PersistedTransformContext>({
+    key: N8N_TRANSFORM_CONTEXT_KEY,
+    maxAge: TRANSFORM_CONTEXT_MAX_AGE_MS,
+    validate: validateTransformContext,
+    getSavedAt: getTransformSavedAt,
+    onRestore: handleRestoreContext,
+  });
 
   // ── Poll for snapshot updates ──
 
-  const notFoundCountRef = useRef(0);
+  const handleSnapshotLines = useCallback(
+    (lines: string[]) => {
+      dispatch({ type: 'TRANSFORM_LINES', lines });
+      setStreamLines(lines);
+    },
+    [dispatch, setStreamLines],
+  );
 
-  useEffect(() => {
-    if (!state.backgroundTransformId) return;
+  const handleSnapshotPhase = useCallback(
+    (phase: 'running' | 'completed' | 'failed') => {
+      dispatch({ type: 'TRANSFORM_PHASE', phase });
+      setStreamPhase(phase);
+    },
+    [dispatch, setStreamPhase],
+  );
 
-    notFoundCountRef.current = 0;
-
-    const syncSnapshot = async () => {
+  const handleSnapshotDraft = useCallback(
+    (draft: import('@/api/design').N8nPersonaDraft) => {
+      let completedDraft: import('@/api/design').N8nPersonaDraft;
       try {
-        const snapshot = await getN8nTransformSnapshot(state.backgroundTransformId!);
-        notFoundCountRef.current = 0;
-
-        const lines = Array.isArray(snapshot.lines) ? snapshot.lines : [];
-        dispatch({ type: 'TRANSFORM_LINES', lines });
-        setStreamLines(lines);
-
-        if (snapshot.status === 'running' || snapshot.status === 'completed' || snapshot.status === 'failed') {
-          dispatch({ type: 'TRANSFORM_PHASE', phase: snapshot.status });
-          setStreamPhase(snapshot.status);
-        }
-
-        // Handle awaiting_answers: questions are ready for user
-        if (snapshot.status === 'awaiting_answers') {
-          const questionsArray = Array.isArray(snapshot.questions) ? snapshot.questions : [];
-          if (questionsArray.length > 0) {
-            dispatch({ type: 'QUESTIONS_GENERATED', questions: questionsArray });
-          } else {
-            // Model decided no questions needed but didn't produce persona — treat as skip
-            dispatch({ type: 'QUESTIONS_SKIPPED' });
-          }
-          setN8nTransformActive(false);
-          // Stop polling — awaiting user input
-          if (pollTimerRef.current !== null) {
-            window.clearInterval(pollTimerRef.current);
-            pollTimerRef.current = null;
-          }
-          return;
-        }
-
-        if (snapshot.draft) {
-          let completedDraft: import('@/api/design').N8nPersonaDraft;
-          try {
-            completedDraft = normalizeDraft(snapshot.draft);
-          } catch {
-            completedDraft = snapshot.draft;
-          }
-          dispatch({ type: 'TRANSFORM_COMPLETED', draft: completedDraft });
-          setIsRestoring(false);
-          setN8nTransformActive(false);
-
-          // Persist draft to session
-          if (sessionIdRef.current) {
-            void updateN8nSession(sessionIdRef.current, {
-              status: 'editing',
-              step: 'edit',
-              draftJson: JSON.stringify(completedDraft),
-            }).catch(() => {});
-          }
-        } else if (snapshot.status === 'completed') {
-          // Status completed but no draft — draft serialization may have failed
-          setIsRestoring(false);
-          setN8nTransformActive(false);
-          try { window.localStorage.removeItem(N8N_TRANSFORM_CONTEXT_KEY); } catch { /* ignore */ }
-          dispatch({
-            type: 'TRANSFORM_FAILED',
-            error: 'Transform completed but no draft was generated. Please try again.',
-          });
-        }
-
-        if (snapshot.status === 'failed') {
-          setIsRestoring(false);
-          setN8nTransformActive(false);
-          try { window.localStorage.removeItem(N8N_TRANSFORM_CONTEXT_KEY); } catch { /* ignore */ }
-          // Update session status on failure
-          if (sessionIdRef.current) {
-            void updateN8nSession(sessionIdRef.current, {
-              status: 'failed',
-              error: snapshot.error ?? 'Transform failed',
-            }).catch(() => {});
-          }
-          if (snapshot.error) {
-            dispatch({ type: 'TRANSFORM_FAILED', error: snapshot.error });
-          }
-        }
-
-        // Stop polling once we reach a terminal state
-        if (snapshot.status === 'completed' || snapshot.status === 'failed') {
-          if (pollTimerRef.current !== null) {
-            window.clearInterval(pollTimerRef.current);
-            pollTimerRef.current = null;
-          }
-          return;
-        }
-
-        if (snapshot.status === 'running') return;
+        completedDraft = normalizeDraft(draft);
       } catch {
-        // Snapshot not found - backend may have restarted
-        notFoundCountRef.current += 1;
-        if (notFoundCountRef.current >= 3) {
-          // After 3 consecutive failures (~4.5s), treat as stale
-          setIsRestoring(false);
-          setN8nTransformActive(false);
-          try { window.localStorage.removeItem(N8N_TRANSFORM_CONTEXT_KEY); } catch { /* ignore */ }
-          dispatch({
-            type: 'TRANSFORM_FAILED',
-            error: 'Transform session lost. The backend may have restarted. Please try again.',
-          });
-        }
+        completedDraft = draft;
       }
-    };
+      dispatch({ type: 'TRANSFORM_COMPLETED', draft: completedDraft });
+      setIsRestoring(false);
+      setN8nTransformActive(false);
 
-    void syncSnapshot();
-
-    if (pollTimerRef.current !== null) {
-      window.clearInterval(pollTimerRef.current);
-      pollTimerRef.current = null;
-    }
-
-    const pollInterval = state.transformSubPhase === 'generating' ? 800 : 1500;
-    pollTimerRef.current = window.setInterval(() => {
-      void syncSnapshot();
-    }, pollInterval);
-
-    return () => {
-      if (pollTimerRef.current !== null) {
-        window.clearInterval(pollTimerRef.current);
-        pollTimerRef.current = null;
+      // Persist draft to session
+      if (sessionIdRef.current) {
+        void updateN8nSession(sessionIdRef.current, {
+          status: 'editing',
+          step: 'edit',
+          draftJson: JSON.stringify(completedDraft),
+        }).catch(() => {});
       }
-    };
-  }, [state.backgroundTransformId, dispatch, setStreamLines, setStreamPhase]);
+    },
+    [dispatch, setN8nTransformActive],
+  );
 
-  // Cleanup poll timer on unmount
-  useEffect(() => {
-    return () => {
-      if (pollTimerRef.current !== null) {
-        window.clearInterval(pollTimerRef.current);
-        pollTimerRef.current = null;
+  const handleSnapshotCompletedNoDraft = useCallback(() => {
+    setIsRestoring(false);
+    setN8nTransformActive(false);
+    try { window.localStorage.removeItem(N8N_TRANSFORM_CONTEXT_KEY); } catch { /* ignore */ }
+    dispatch({
+      type: 'TRANSFORM_FAILED',
+      error: 'Transform completed but no draft was generated. Please try again.',
+    });
+  }, [dispatch, setN8nTransformActive]);
+
+  const handleSnapshotFailed = useCallback(
+    (error: string) => {
+      setIsRestoring(false);
+      setN8nTransformActive(false);
+      try { window.localStorage.removeItem(N8N_TRANSFORM_CONTEXT_KEY); } catch { /* ignore */ }
+      // Update session status on failure
+      if (sessionIdRef.current) {
+        void updateN8nSession(sessionIdRef.current, {
+          status: 'failed',
+          error: error || 'Transform failed',
+        }).catch(() => {});
       }
-    };
-  }, []);
+      dispatch({ type: 'TRANSFORM_FAILED', error });
+    },
+    [dispatch, setN8nTransformActive],
+  );
+
+  const handleSnapshotSessionLost = useCallback(() => {
+    setIsRestoring(false);
+    setN8nTransformActive(false);
+    try { window.localStorage.removeItem(N8N_TRANSFORM_CONTEXT_KEY); } catch { /* ignore */ }
+    dispatch({
+      type: 'TRANSFORM_FAILED',
+      error: 'Transform session lost. The backend may have restarted. Please try again.',
+    });
+  }, [dispatch, setN8nTransformActive]);
+
+  useBackgroundSnapshot({
+    snapshotId: state.backgroundTransformId,
+    getSnapshot: getN8nTransformSnapshot,
+    onLines: handleSnapshotLines,
+    onPhase: handleSnapshotPhase,
+    onDraft: handleSnapshotDraft,
+    onCompletedNoDraft: handleSnapshotCompletedNoDraft,
+    onFailed: handleSnapshotFailed,
+    onSessionLost: handleSnapshotSessionLost,
+  });
 
   // ── Handlers ──
 
@@ -470,10 +413,12 @@ export default function N8nImportTab() {
   };
 
   const handleConfirmSave = async () => {
+    if (confirmingRef.current) return;
     try {
       const payloadJson = state.draft ? stringifyDraft(state.draft) : state.draftJson.trim();
       if (!payloadJson || state.transforming || state.confirming || state.draftJsonError) return;
 
+      confirmingRef.current = true;
       dispatch({ type: 'CONFIRM_STARTED' });
 
       let parsed: unknown;
@@ -524,6 +469,8 @@ export default function N8nImportTab() {
         type: 'CONFIRM_FAILED',
         error: err instanceof Error ? err.message : 'Failed to confirm and save persona.',
       });
+    } finally {
+      confirmingRef.current = false;
     }
   };
 

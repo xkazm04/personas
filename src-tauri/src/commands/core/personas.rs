@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use tauri::State;
 
-use crate::db::models::{CreatePersonaInput, Persona, UpdatePersonaInput};
+use crate::db::models::{CreatePersonaInput, Persona, PersonaSummary, UpdatePersonaInput};
 use crate::db::repos::core::personas as repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::error::AppError;
@@ -32,6 +32,13 @@ pub fn update_persona(
     input: UpdatePersonaInput,
 ) -> Result<Persona, AppError> {
     repo::update(&state.db, &id, input)
+}
+
+#[tauri::command]
+pub fn get_persona_summaries(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<PersonaSummary>, AppError> {
+    repo::get_summaries(&state.db)
 }
 
 #[tauri::command]

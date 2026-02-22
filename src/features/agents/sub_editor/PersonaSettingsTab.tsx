@@ -1,8 +1,10 @@
-import { Trash2, Save, AlertTriangle, X } from 'lucide-react';
+import { Trash2, Save, AlertTriangle } from 'lucide-react';
 import type { PersonaDraft } from '@/features/agents/sub_editor/PersonaDraft';
 import { ModelSelector } from '@/features/agents/sub_editor/model-config/ModelSelector';
 import { NotificationChannelSettings } from '@/features/agents/sub_editor/NotificationChannelSettings';
+import { EventSubscriptionSettings } from '@/features/agents/sub_editor/EventSubscriptionSettings';
 import { AccessibleToggle } from '@/features/shared/components/AccessibleToggle';
+import { IconSelector } from '@/features/shared/components/IconSelector';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
 
 interface PersonaSettingsTabProps {
@@ -65,55 +67,12 @@ export function PersonaSettingsTab({
           </div>
           <div>
             <label className="block text-sm font-medium text-foreground/60 mb-2">Icon</label>
-            <div className="flex flex-wrap gap-1.5">
-              {connectorDefinitions
-                .filter((c) => c.icon_url)
-                .map((c) => {
-                  const isSelected = draft.icon === c.icon_url;
-                  return (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => patch({ icon: c.icon_url! })}
-                      className={`w-9 h-9 rounded-lg border flex items-center justify-center transition-all ${
-                        isSelected
-                          ? 'border-primary ring-2 ring-primary/30 scale-110 bg-primary/10'
-                          : 'border-primary/15 bg-background/50 hover:bg-secondary/60 hover:border-primary/30'
-                      }`}
-                      title={c.label}
-                    >
-                      <img src={c.icon_url!} alt={c.label} className="w-4.5 h-4.5" />
-                    </button>
-                  );
-                })}
-              {['\u{1F916}', '\u{1F9E0}', '\u{26A1}', '\u{1F527}', '\u{1F4E7}', '\u{1F4CA}', '\u{1F6E1}\u{FE0F}', '\u{1F50D}'].map((emoji) => {
-                const isSelected = draft.icon === emoji;
-                return (
-                  <button
-                    key={emoji}
-                    type="button"
-                    onClick={() => patch({ icon: emoji })}
-                    className={`w-9 h-9 rounded-lg border flex items-center justify-center text-base transition-all ${
-                      isSelected
-                        ? 'border-primary ring-2 ring-primary/30 scale-110 bg-primary/10'
-                        : 'border-primary/15 bg-background/50 hover:bg-secondary/60 hover:border-primary/30'
-                    }`}
-                  >
-                    {emoji}
-                  </button>
-                );
-              })}
-              {draft.icon && (
-                <button
-                  type="button"
-                  onClick={() => patch({ icon: '' })}
-                  className="w-9 h-9 rounded-lg border border-dashed border-primary/20 flex items-center justify-center text-muted-foreground/40 hover:text-muted-foreground/60 hover:border-primary/30 transition-all"
-                  title="Clear icon"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
+            <IconSelector
+              value={draft.icon}
+              onChange={(icon) => patch({ icon })}
+              connectors={connectorDefinitions}
+              size="sm"
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-foreground/60 mb-1">Color</label>
@@ -188,6 +147,15 @@ export function PersonaSettingsTab({
           credentials={credentials}
           connectorDefinitions={connectorDefinitions}
         />
+      </div>
+
+      {/* Event Subscriptions */}
+      <div className="space-y-3">
+        <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/70 tracking-wide">
+          <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
+          Event Subscriptions
+        </h4>
+        <EventSubscriptionSettings personaId={selectedPersonaId} />
       </div>
 
       {/* Unified Save + Danger */}

@@ -1,6 +1,18 @@
 use std::collections::HashMap;
 use super::types::{ExecutionMetrics, ProtocolMessage, StreamLineType};
 
+const MAX_TOOL_INPUT_DISPLAY: usize = 500;
+const MAX_TOOL_RESULT_DISPLAY: usize = 200;
+
+/// Truncate a string to `max_len` characters, appending "..." if truncated.
+fn truncate_field(text: &str, max_len: usize) -> String {
+    if text.len() > max_len {
+        format!("{}...", &text[..max_len])
+    } else {
+        text.to_string()
+    }
+}
+
 /// Parse a single stdout JSON line from Claude CLI stream-json format.
 ///
 /// Returns a tuple of (StreamLineType, Option<display_string>).
@@ -80,11 +92,7 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
                                     .to_string();
                                 let input_json = block.get("input").cloned().unwrap_or(serde_json::Value::Null);
                                 let input_preview = serde_json::to_string(&input_json).unwrap_or_default();
-                                let input_preview_truncated = if input_preview.len() > 500 {
-                                    format!("{}...", &input_preview[..500])
-                                } else {
-                                    input_preview
-                                };
+                                let input_preview_truncated = truncate_field(&input_preview, MAX_TOOL_INPUT_DISPLAY);
                                 let display = format!("> Using tool: {}", name);
                                 if first_type.is_none() {
                                     first_type = Some(StreamLineType::AssistantToolUse {
@@ -132,11 +140,7 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
                     let block_type = block.get("type").and_then(|t| t.as_str()).unwrap_or("");
                     if block_type == "tool_result" {
                         let preview = extract_tool_result_preview(block);
-                        let truncated = if preview.len() > 200 {
-                            format!("{}...", &preview[..200])
-                        } else {
-                            preview.clone()
-                        };
+                        let truncated = truncate_field(&preview, MAX_TOOL_RESULT_DISPLAY);
                         let display = format!("  Tool result: {}", truncated);
                         return (
                             StreamLineType::ToolResult {
@@ -220,6 +224,89 @@ fn extract_tool_result_preview(block: &serde_json::Value) -> String {
     block.to_string()
 }
 
+/// Helper: extract an optional string field from a JSON value.
+fn str_field(v: &serde_json::Value, key: &str) -> Option<String> {
+    v.get(key).and_then(|f| f.as_str()).map(String::from)
+}
+
+/// Helper: extract a required string field, defaulting to "" if missing.
+fn str_field_or(v: &serde_json::Value, key: &str, default: &str) -> String {
+    v.get(key)
+        .and_then(|f| f.as_str())
+        .unwrap_or(default)
+        .to_string()
+}
+
+/// Helper: extract an optional string array field from a JSON value.
+fn str_array_field(v: &serde_json::Value, key: &str) -> Option<Vec<String>> {
+    v.get(key).and_then(|f| {
+        f.as_array().map(|arr| {
+            arr.iter()
+                .filter_map(|item| item.as_str().map(String::from))
+                .collect()
+        })
+    })
+}
+
+/// Protocol message parsers keyed by their JSON wrapper field name.
+const PROTOCOL_KEYS: &[(&str, fn(&serde_json::Value) -> Option<ProtocolMessage>)] = &[
+    ("user_message", parse_user_message),
+    ("persona_action", parse_persona_action),
+    ("emit_event", parse_emit_event),
+    ("agent_memory", parse_agent_memory),
+    ("manual_review", parse_manual_review),
+    ("execution_flow", parse_execution_flow),
+];
+
+fn parse_user_message(msg: &serde_json::Value) -> Option<ProtocolMessage> {
+    Some(ProtocolMessage::UserMessage {
+        title: str_field(msg, "title"),
+        content: str_field_or(msg, "content", ""),
+        content_type: str_field(msg, "content_type"),
+        priority: str_field(msg, "priority"),
+    })
+}
+
+fn parse_persona_action(msg: &serde_json::Value) -> Option<ProtocolMessage> {
+    Some(ProtocolMessage::PersonaAction {
+        target: str_field_or(msg, "target", ""),
+        action: str_field(msg, "action"),
+        input: msg.get("input").cloned(),
+    })
+}
+
+fn parse_emit_event(msg: &serde_json::Value) -> Option<ProtocolMessage> {
+    Some(ProtocolMessage::EmitEvent {
+        event_type: str_field_or(msg, "type", ""),
+        data: msg.get("data").cloned(),
+    })
+}
+
+fn parse_agent_memory(msg: &serde_json::Value) -> Option<ProtocolMessage> {
+    Some(ProtocolMessage::AgentMemory {
+        title: str_field_or(msg, "title", ""),
+        content: str_field_or(msg, "content", ""),
+        category: str_field(msg, "category"),
+        importance: msg.get("importance").and_then(|v| v.as_i64()).map(|n| n as i32),
+        tags: str_array_field(msg, "tags"),
+    })
+}
+
+fn parse_manual_review(msg: &serde_json::Value) -> Option<ProtocolMessage> {
+    Some(ProtocolMessage::ManualReview {
+        title: str_field_or(msg, "title", ""),
+        description: str_field(msg, "description"),
+        severity: str_field(msg, "severity"),
+        context_data: str_field(msg, "context_data"),
+        suggested_actions: str_array_field(msg, "suggested_actions"),
+    })
+}
+
+fn parse_execution_flow(msg: &serde_json::Value) -> Option<ProtocolMessage> {
+    let flows = msg.get("flows").cloned().unwrap_or(serde_json::Value::Null);
+    Some(ProtocolMessage::ExecutionFlow { flows })
+}
+
 /// Check if a trimmed line is a known protocol JSON message.
 ///
 /// Returns the parsed protocol message, or None if not a protocol message
@@ -230,123 +317,18 @@ pub fn extract_protocol_message(line: &str) -> Option<ProtocolMessage> {
         return None;
     }
 
-    if trimmed.starts_with("{\"user_message\":") || trimmed.starts_with("{\"user_message\" :") {
-        let wrapper: serde_json::Value = serde_json::from_str(trimmed).ok()?;
-        let msg = wrapper.get("user_message")?;
-        Some(ProtocolMessage::UserMessage {
-            title: msg.get("title").and_then(|v| v.as_str()).map(String::from),
-            content: msg
-                .get("content")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string(),
-            content_type: msg
-                .get("content_type")
-                .and_then(|v| v.as_str())
-                .map(String::from),
-            priority: msg
-                .get("priority")
-                .and_then(|v| v.as_str())
-                .map(String::from),
-        })
-    } else if trimmed.starts_with("{\"persona_action\":")
-        || trimmed.starts_with("{\"persona_action\" :")
-    {
-        let wrapper: serde_json::Value = serde_json::from_str(trimmed).ok()?;
-        let msg = wrapper.get("persona_action")?;
-        Some(ProtocolMessage::PersonaAction {
-            target: msg
-                .get("target")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string(),
-            action: msg
-                .get("action")
-                .and_then(|v| v.as_str())
-                .map(String::from),
-            input: msg.get("input").cloned(),
-        })
-    } else if trimmed.starts_with("{\"emit_event\":") || trimmed.starts_with("{\"emit_event\" :") {
-        let wrapper: serde_json::Value = serde_json::from_str(trimmed).ok()?;
-        let msg = wrapper.get("emit_event")?;
-        Some(ProtocolMessage::EmitEvent {
-            event_type: msg
-                .get("type")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string(),
-            data: msg.get("data").cloned(),
-        })
-    } else if trimmed.starts_with("{\"agent_memory\":")
-        || trimmed.starts_with("{\"agent_memory\" :")
-    {
-        let wrapper: serde_json::Value = serde_json::from_str(trimmed).ok()?;
-        let msg = wrapper.get("agent_memory")?;
-        Some(ProtocolMessage::AgentMemory {
-            title: msg
-                .get("title")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string(),
-            content: msg
-                .get("content")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string(),
-            category: msg
-                .get("category")
-                .and_then(|v| v.as_str())
-                .map(String::from),
-            importance: msg.get("importance").and_then(|v| v.as_i64()).map(|n| n as i32),
-            tags: msg.get("tags").and_then(|v| {
-                v.as_array().map(|arr| {
-                    arr.iter()
-                        .filter_map(|item| item.as_str().map(String::from))
-                        .collect()
-                })
-            }),
-        })
-    } else if trimmed.starts_with("{\"manual_review\":")
-        || trimmed.starts_with("{\"manual_review\" :")
-    {
-        let wrapper: serde_json::Value = serde_json::from_str(trimmed).ok()?;
-        let msg = wrapper.get("manual_review")?;
-        Some(ProtocolMessage::ManualReview {
-            title: msg
-                .get("title")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string(),
-            description: msg
-                .get("description")
-                .and_then(|v| v.as_str())
-                .map(String::from),
-            severity: msg
-                .get("severity")
-                .and_then(|v| v.as_str())
-                .map(String::from),
-            context_data: msg
-                .get("context_data")
-                .and_then(|v| v.as_str())
-                .map(String::from),
-            suggested_actions: msg.get("suggested_actions").and_then(|v| {
-                v.as_array().map(|arr| {
-                    arr.iter()
-                        .filter_map(|item| item.as_str().map(String::from))
-                        .collect()
-                })
-            }),
-        })
-    } else if trimmed.starts_with("{\"execution_flow\":")
-        || trimmed.starts_with("{\"execution_flow\" :")
-    {
-        let wrapper: serde_json::Value = serde_json::from_str(trimmed).ok()?;
-        let msg = wrapper.get("execution_flow")?;
-        let flows = msg.get("flows").cloned().unwrap_or(serde_json::Value::Null);
-        Some(ProtocolMessage::ExecutionFlow { flows })
-    } else {
-        None
+    for &(key, parser_fn) in PROTOCOL_KEYS {
+        // Fast prefix check: {"key": or {"key" :
+        if trimmed.starts_with(&format!("{{\"{}\":", key))
+            || trimmed.starts_with(&format!("{{\"{}\" :", key))
+        {
+            let wrapper: serde_json::Value = serde_json::from_str(trimmed).ok()?;
+            let msg = wrapper.get(key)?;
+            return parser_fn(msg);
+        }
     }
+
+    None
 }
 
 /// Scan accumulated assistant text for execution_flow JSON and return raw JSON string.

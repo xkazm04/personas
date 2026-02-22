@@ -9,7 +9,7 @@ export interface EventSlice {
   pendingEventCount: number;
 
   // Actions
-  fetchRecentEvents: (limit?: number, eventType?: string) => Promise<void>;
+  fetchRecentEvents: (limit?: number) => Promise<void>;
 }
 
 export const createEventSlice: StateCreator<PersonaStore, [], [], EventSlice> = (set) => ({

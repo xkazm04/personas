@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { testEventFlow } from '@/api/tauriApi';
+import { useEventBusListener } from '@/hooks/realtime/useEventBusListener';
+import type { PersonaEvent } from '@/lib/bindings/PersonaEvent';
 
 // ── Color Map (derived from canonical EVENT_TYPE_COLORS) ──────────
 import { EVENT_TYPE_COLORS } from '@/lib/utils/formatters';
@@ -94,21 +95,6 @@ function computeStats(events: RealtimeEvent[]): RealtimeStats {
   };
 }
 
-// ── Event payload from Rust ──────────────────────────────────────
-interface EventBusPayload {
-  id: string;
-  project_id: string;
-  event_type: string;
-  source_type: string;
-  source_id: string | null;
-  target_persona_id: string | null;
-  payload: string | null;
-  status: string;
-  error_message: string | null;
-  processed_at: string | null;
-  created_at: string;
-}
-
 // ── Hook ─────────────────────────────────────────────────────────
 export function useRealtimeEvents(): UseRealtimeEventsReturn {
   const [events, setEvents] = useState<RealtimeEvent[]>([]);
@@ -124,64 +110,64 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
   const stats = useMemo(() => computeStats(events), [events]);
 
   // Listen to Tauri 'event-bus' events from backend
+  const handleBusEvent = useCallback((raw: PersonaEvent) => {
+    if (isPausedRef.current) return;
+
+    const realtimeEvent: RealtimeEvent = {
+      ...raw,
+      _animationId: `${raw.id}-${Date.now()}`,
+      _phase: 'entering' as AnimationPhase,
+      _phaseStartedAt: Date.now(),
+    };
+
+    setEvents((prev) => {
+      const next = [realtimeEvent, ...prev];
+      return next.length > 200 ? next.slice(0, 200) : next;
+    });
+  }, []);
+  useEventBusListener(handleBusEvent);
+
+  // Mark connected once the hook has been set up
   useEffect(() => {
-    let unlisten: UnlistenFn | null = null;
-
-    const setup = async () => {
-      unlisten = await listen<EventBusPayload>('event-bus', (tauriEvent) => {
-        if (isPausedRef.current) return;
-
-        const raw = tauriEvent.payload;
-        const realtimeEvent: RealtimeEvent = {
-          ...raw,
-          _animationId: `${raw.id}-${Date.now()}`,
-          _phase: 'entering' as AnimationPhase,
-          _phaseStartedAt: Date.now(),
-        };
-
-        setEvents((prev) => {
-          const next = [realtimeEvent, ...prev];
-          return next.length > 200 ? next.slice(0, 200) : next;
-        });
-      });
-      setIsConnected(true);
-    };
-
-    setup();
-
-    return () => {
-      if (unlisten) unlisten();
-    };
+    setIsConnected(true);
   }, []);
 
   // Phase progression timer (entering -> on-bus -> delivering -> done)
   // Prunes events 2s after reaching 'done' to avoid unbounded accumulation.
+  // Returns the same array reference when nothing changed to avoid re-renders.
   useEffect(() => {
     const DONE_GRACE_MS = 2000;
     const timer = setInterval(() => {
       const now = Date.now();
       setEvents((prev) => {
-        const updated = prev.reduce<RealtimeEvent[]>((acc, e) => {
+        if (prev.length === 0) return prev;
+
+        let changed = false;
+        const updated: RealtimeEvent[] = [];
+        for (const e of prev) {
           if (e._phase === 'done') {
-            // Drop events that have been done for longer than the grace period
             if (now - e._phaseStartedAt < DONE_GRACE_MS) {
-              acc.push(e);
+              updated.push(e);
+            } else {
+              changed = true;
             }
-            return acc;
+            continue;
           }
           const elapsed = now - e._phaseStartedAt;
           if (e._phase === 'entering' && elapsed > 400) {
-            acc.push({ ...e, _phase: 'on-bus' as AnimationPhase, _phaseStartedAt: now });
+            updated.push({ ...e, _phase: 'on-bus', _phaseStartedAt: now });
+            changed = true;
           } else if (e._phase === 'on-bus' && elapsed > 800) {
-            acc.push({ ...e, _phase: 'delivering' as AnimationPhase, _phaseStartedAt: now });
+            updated.push({ ...e, _phase: 'delivering', _phaseStartedAt: now });
+            changed = true;
           } else if (e._phase === 'delivering' && elapsed > 600) {
-            acc.push({ ...e, _phase: 'done' as AnimationPhase, _phaseStartedAt: now });
+            updated.push({ ...e, _phase: 'done', _phaseStartedAt: now });
+            changed = true;
           } else {
-            acc.push(e);
+            updated.push(e);
           }
-          return acc;
-        }, []);
-        return updated;
+        }
+        return changed ? updated : prev;
       });
     }, 100);
     return () => clearInterval(timer);

@@ -22,6 +22,9 @@ pub struct AppState {
     /// Tracks the currently active design analysis ID.
     /// Set when analysis starts, cleared on cancel or completion.
     pub active_design_id: Arc<Mutex<Option<String>>>,
+    /// PID of the CLI child process for the active design analysis.
+    /// Used to kill the process when the user cancels.
+    pub active_design_child_pid: Arc<Mutex<Option<u32>>>,
     /// Tracks the currently active credential design ID.
     pub active_credential_design_id: Arc<Mutex<Option<String>>>,
     /// Authentication state (Supabase OAuth).
@@ -102,6 +105,13 @@ pub fn run() {
                 _ => {}
             }
 
+            // Purge old completed/failed events to prevent unbounded table growth
+            match db::repos::communication::events::cleanup(&pool, Some(7)) {
+                Ok(n) if n > 0 => tracing::info!("Startup: cleaned up {} old events", n),
+                Err(e) => tracing::warn!("Startup event cleanup failed: {}", e),
+                _ => {}
+            }
+
             let engine = Arc::new(engine::ExecutionEngine::new(log_dir));
             let scheduler = Arc::new(engine::background::SchedulerState::new());
             let auth = Arc::new(tokio::sync::Mutex::new(
@@ -120,6 +130,7 @@ pub fn run() {
                 engine: engine.clone(),
                 scheduler: scheduler.clone(),
                 active_design_id: Arc::new(Mutex::new(None)),
+                active_design_child_pid: Arc::new(Mutex::new(None)),
                 active_credential_design_id: Arc::new(Mutex::new(None)),
                 auth: auth.clone(),
                 cloud_client: Arc::new(tokio::sync::Mutex::new(cloud_client_opt)),
@@ -197,6 +208,7 @@ pub fn run() {
             commands::core::personas::create_persona,
             commands::core::personas::update_persona,
             commands::core::personas::delete_persona,
+            commands::core::personas::get_persona_summaries,
             // Core — Groups
             commands::core::groups::list_groups,
             commands::core::groups::create_group,
@@ -269,6 +281,7 @@ pub fn run() {
             commands::design::reviews::start_design_review_run,
             commands::design::reviews::import_design_review,
             commands::design::reviews::adopt_design_review,
+            commands::design::reviews::cancel_design_review_run,
             commands::design::reviews::list_manual_reviews,
             commands::design::reviews::update_manual_review_status,
             commands::design::reviews::get_pending_review_count,
