@@ -20,7 +20,7 @@ import {
   clearTemplateAdoptSnapshot,
   cancelTemplateAdopt,
   confirmTemplateAdoptDraft,
-  generateTemplateAdoptQuestions,
+  continueTemplateAdopt,
 } from '@/api/design';
 import type { N8nPersonaDraft } from '@/api/design';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
@@ -182,6 +182,21 @@ export default function AdoptionWizardModal({
         if (snapshot.status === 'running' || snapshot.status === 'completed' || snapshot.status === 'failed') {
           dispatch({ type: 'TRANSFORM_PHASE', phase: snapshot.status });
           setStreamPhase(snapshot.status);
+        }
+
+        // Handle awaiting_answers: questions produced by unified Turn 1
+        if (snapshot.status === 'awaiting_answers' && snapshot.questions) {
+          setIsRestoring(false);
+          const questions = Array.isArray(snapshot.questions) ? snapshot.questions : [];
+          if (questions.length > 0) {
+            dispatch({ type: 'AWAITING_ANSWERS', questions });
+          }
+          // Stop polling — user needs to answer questions
+          if (pollTimerRef.current !== null) {
+            window.clearInterval(pollTimerRef.current);
+            pollTimerRef.current = null;
+          }
+          return;
         }
 
         if (snapshot.draft) {
@@ -400,24 +415,28 @@ export default function AdoptionWizardModal({
     }
   }, [state.backgroundAdoptId, currentAdoptId, dispatch, resetAdoptStream, setTemplateAdoptActive]);
 
-  // ── Question generation ──
+  // ── Continue transform (Turn 2: submit user answers to resume session) ──
 
-  const handleGenerateQuestions = useCallback(async () => {
-    if (!state.designResultJson || state.questionGenerating) return;
-    dispatch({ type: 'QUESTIONS_GENERATING' });
+  const handleContinueTransform = useCallback(async () => {
+    const adoptId = state.backgroundAdoptId;
+    if (!adoptId || state.transforming || state.confirming) return;
+
+    const hasAnswers = Object.keys(state.userAnswers).length > 0;
+    const userAnswersJson = hasAnswers ? JSON.stringify(state.userAnswers) : '{}';
+
     try {
-      const questions = await generateTemplateAdoptQuestions(
-        state.templateName,
-        state.designResultJson,
-      );
-      dispatch({ type: 'QUESTIONS_GENERATED', questions: Array.isArray(questions) ? questions : [] });
+      dispatch({ type: 'TRANSFORM_STARTED', adoptId });
+      setTemplateAdoptActive(true);
+
+      await continueTemplateAdopt(adoptId, userAnswersJson);
     } catch (err) {
+      setTemplateAdoptActive(false);
       dispatch({
-        type: 'QUESTIONS_FAILED',
-        error: err instanceof Error ? err.message : 'Failed to generate questions.',
+        type: 'TRANSFORM_FAILED',
+        error: err instanceof Error ? err.message : 'Failed to continue template adoption.',
       });
     }
-  }, [state.designResultJson, state.templateName, state.questionGenerating, dispatch]);
+  }, [state.backgroundAdoptId, state.transforming, state.confirming, state.userAnswers, dispatch, setTemplateAdoptActive]);
 
   // Close = hide modal. Does NOT cancel background work.
   const handleClose = useCallback(() => {
@@ -462,17 +481,19 @@ export default function AdoptionWizardModal({
   // ── Next step handler ──
 
   const handleSkipQuestions = useCallback(() => {
-    // Skip configure and go straight to transform
-    void handleStartTransform();
-  }, [handleStartTransform]);
+    // Skip configure and continue with empty answers (Turn 2)
+    void handleContinueTransform();
+  }, [handleContinueTransform]);
 
   const handleNext = useCallback(() => {
     switch (state.step) {
       case 'overview':
-        void handleGenerateQuestions();
+        // Unified Turn 1: starts transform which may produce questions or persona
+        void handleStartTransform();
         break;
       case 'configure':
-        void handleStartTransform();
+        // Turn 2: submit user answers to resume the Claude session
+        void handleContinueTransform();
         break;
       case 'transform':
         if (state.draft) dispatch({ type: 'GO_TO_STEP', step: 'edit' });
@@ -484,7 +505,7 @@ export default function AdoptionWizardModal({
         void handleConfirmSave();
         break;
     }
-  }, [state.step, state.draft, dispatch, handleGenerateQuestions, handleStartTransform, handleConfirmSave]);
+  }, [state.step, state.draft, dispatch, handleStartTransform, handleContinueTransform, handleConfirmSave]);
 
   if (!isOpen) return null;
 
@@ -509,13 +530,13 @@ export default function AdoptionWizardModal({
         return {
           label: 'Customize with AI',
           icon: Sparkles,
-          disabled: state.transforming || state.questionGenerating,
+          disabled: state.transforming,
           variant: 'violet',
         };
       case 'configure':
         return state.questionGenerating
           ? { label: 'Analyzing...', icon: RefreshCw, disabled: true, variant: 'violet', spinning: true }
-          : { label: 'Start Transform', icon: ArrowRight, disabled: false, variant: 'violet' };
+          : { label: 'Continue with Answers', icon: ArrowRight, disabled: false, variant: 'violet' };
       case 'transform':
         return state.transforming
           ? { label: 'Generating...', icon: RefreshCw, disabled: true, variant: 'violet', spinning: true }

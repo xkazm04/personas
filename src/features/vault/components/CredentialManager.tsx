@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { Search, Key, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { CredentialList } from '@/features/vault/components/CredentialList';
 import { CredentialPicker } from '@/features/vault/components/CredentialPicker';
 import { CredentialDesignModal } from '@/features/vault/components/CredentialDesignModal';
@@ -113,24 +114,16 @@ export function CredentialManager() {
   }
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
-      {/* Header */}
-      <div className="px-4 md:px-6 py-4 border-b border-primary/10 bg-primary/5 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center">
-            <Key className="w-5 h-5 text-emerald-400" />
-          </div>
-          <div className="flex-1">
-            <h1 className="text-lg font-semibold text-foreground/90">Credentials</h1>
-            <p className="text-xs text-muted-foreground/50">{credentials.length} credential{credentials.length !== 1 ? 's' : ''} stored</p>
-          </div>
-          {vault && <VaultStatusBadge vault={vault} onVaultRefresh={setVault} />}
-        </div>
-      </div>
+    <ContentBox>
+      <ContentHeader
+        icon={<Key className="w-5 h-5 text-emerald-400" />}
+        iconColor="emerald"
+        title="Credentials"
+        subtitle={`${credentials.length} credential${credentials.length !== 1 ? 's' : ''} stored`}
+        actions={vault ? <VaultStatusBadge vault={vault} onVaultRefresh={setVault} /> : undefined}
+      />
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="min-h-full p-5 space-y-4">
+      <ContentBody>
 
       {credentialView === 'credentials' && (
         <div className="relative">
@@ -249,8 +242,7 @@ export function CredentialManager() {
         undoToast={undoDelete.undoToast}
         onUndo={undoDelete.undo}
       />
-        </div>
-      </div>
-    </div>
+      </ContentBody>
+    </ContentBox>
   );
 }

@@ -1,5 +1,6 @@
 import { AnimatePresence } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
+import { ContentBox } from '@/features/shared/components/ContentLayout';
 import { useRealtimeEvents } from '@/hooks/realtime/useRealtimeEvents';
 import RealtimeStatsBar from '@/features/overview/sub_realtime/RealtimeStatsBar';
 import EventBusVisualization from '@/features/overview/sub_realtime/EventBusVisualization';
@@ -28,7 +29,7 @@ export default function RealtimeVisualizerPage() {
   }));
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
+    <ContentBox>
       {/* Stats bar */}
       <RealtimeStatsBar
         stats={stats}
@@ -57,6 +58,6 @@ export default function RealtimeVisualizerPage() {
           )}
         </AnimatePresence>
       </div>
-    </div>
+    </ContentBox>
   );
 }

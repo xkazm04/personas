@@ -1,4 +1,5 @@
-import { FileJson, Wrench, Zap, Link, Check } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { FileJson, Wrench, Zap, Link, Check, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 
@@ -12,6 +13,7 @@ interface N8nParserResultsProps {
   onToggleTool?: (index: number) => void;
   onToggleTrigger?: (index: number) => void;
   onToggleConnector?: (name: string) => void;
+  isAnalyzing?: boolean;
 }
 
 function SelectionCheckbox({ checked, onChange }: { checked: boolean; onChange: () => void }) {
@@ -56,15 +58,63 @@ export function N8nParserResults({
   onToggleTool,
   onToggleTrigger,
   onToggleConnector,
+  isAnalyzing,
 }: N8nParserResultsProps) {
   const hasSelection = !!selectedToolIndices;
+
+  // Elapsed timer for analyzing overlay
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  useEffect(() => {
+    if (!isAnalyzing) {
+      setElapsedSeconds(0);
+      return;
+    }
+    const timer = setInterval(() => setElapsedSeconds((s) => s + 1), 1000);
+    return () => clearInterval(timer);
+  }, [isAnalyzing]);
 
   const toolCount = selectedToolIndices?.size ?? parsedResult.suggested_tools.length;
   const triggerCount = selectedTriggerIndices?.size ?? parsedResult.suggested_triggers.length;
   const connectorCount = selectedConnectorNames?.size ?? (parsedResult.suggested_connectors?.length ?? 0);
 
   return (
-    <div className="space-y-4">
+    <div className={`space-y-4 relative ${isAnalyzing ? 'min-h-[200px]' : ''}`}>
+      {/* Analyzing overlay */}
+      <AnimatePresence>
+        {isAnalyzing && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-[2px] rounded-xl"
+          >
+            <div className="flex flex-col items-center gap-4 p-6">
+              <div className="relative">
+                <motion.div
+                  className="absolute inset-0 w-14 h-14 rounded-xl bg-violet-500/20"
+                  animate={{ scale: [1, 1.4, 1], opacity: [0.4, 0, 0.4] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                <div className="w-14 h-14 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
+                  <Sparkles className="w-7 h-7 text-violet-400" />
+                </div>
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-medium text-foreground/80">
+                  Analyzing workflow and preparing transformation...
+                </p>
+                <p className="text-xs text-muted-foreground/50 mt-1.5">
+                  Usually takes about 1 minute
+                </p>
+                <p className="text-xs font-mono text-muted-foreground/40 mt-1">
+                  {Math.floor(elapsedSeconds / 60)}:{(elapsedSeconds % 60).toString().padStart(2, '0')}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

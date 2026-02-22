@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   SkipForward,
   Sparkles,
@@ -22,6 +22,37 @@ import type { LucideIcon } from 'lucide-react';
 import { BUILTIN_TEMPLATES } from '@/lib/personas/builtinTemplates';
 import type { BuiltinTemplate } from '@/lib/types/templateTypes';
 import { usePersonaStore } from '@/stores/personaStore';
+
+const CATEGORY_LABELS: Record<string, string> = {
+  all: 'All',
+  devops: 'DevOps',
+  quality: 'Quality',
+  productivity: 'Productivity',
+  communication: 'Communication',
+  security: 'Security',
+  data: 'Data',
+  documentation: 'Docs',
+  testing: 'Testing',
+  monitoring: 'Monitoring',
+  email: 'Email',
+  maintenance: 'Maintenance',
+  automation: 'Automation',
+  'project-management': 'PM',
+};
+
+function deriveCategories(): string[] {
+  const counts = new Map<string, number>();
+  for (const t of BUILTIN_TEMPLATES) {
+    for (const c of t.category) {
+      counts.set(c, (counts.get(c) ?? 0) + 1);
+    }
+  }
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([cat]) => cat);
+}
+
+const FILTER_CATEGORIES = deriveCategories();
 
 const ICON_MAP: Record<string, LucideIcon> = {
   code: Code,
@@ -55,6 +86,15 @@ export function TemplatePickerStep({ onBack }: TemplatePickerStepProps) {
   const selectPersona = usePersonaStore((s) => s.selectPersona);
   const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
   const [creatingId, setCreatingId] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<string>('all');
+
+  const filteredTemplates = useMemo(
+    () =>
+      activeFilter === 'all'
+        ? BUILTIN_TEMPLATES
+        : BUILTIN_TEMPLATES.filter((t) => t.category.includes(activeFilter)),
+    [activeFilter],
+  );
 
   const handlePick = useCallback(
     async (template: BuiltinTemplate) => {
@@ -97,43 +137,77 @@ export function TemplatePickerStep({ onBack }: TemplatePickerStepProps) {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-1">
-        {BUILTIN_TEMPLATES.map((template, index) => {
-          const Icon = getIcon(template.icon);
-          const isCreating = creatingId === template.id;
-
-          return (
-            <motion.button
-              key={template.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.04, duration: 0.25 }}
-              onClick={() => handlePick(template)}
-              disabled={creatingId !== null}
-              className="flex items-start gap-3 p-3 rounded-xl border border-primary/10 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/20 transition-colors text-left disabled:opacity-50"
+      <div className="max-h-[400px] overflow-y-auto pr-1">
+        {/* Sticky category filter chips */}
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm pb-3 flex gap-1.5 flex-wrap">
+          <button
+            onClick={() => setActiveFilter('all')}
+            className={`px-2.5 py-1 text-[11px] font-medium rounded-lg border transition-colors ${
+              activeFilter === 'all'
+                ? 'bg-primary/10 border-primary/25 text-foreground/80'
+                : 'border-primary/8 text-muted-foreground/45 hover:text-muted-foreground/60 hover:border-primary/15'
+            }`}
+          >
+            All
+          </button>
+          {FILTER_CATEGORIES.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setActiveFilter(cat)}
+              className={`px-2.5 py-1 text-[11px] font-medium rounded-lg border transition-colors ${
+                activeFilter === cat
+                  ? 'bg-primary/10 border-primary/25 text-foreground/80'
+                  : 'border-primary/8 text-muted-foreground/45 hover:text-muted-foreground/60 hover:border-primary/15'
+              }`}
             >
-              <div
-                className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 border"
-                style={{
-                  backgroundColor: `${template.color}18`,
-                  borderColor: `${template.color}30`,
-                }}
-              >
-                {isCreating ? (
-                  <Loader2 className="w-4 h-4 animate-spin" style={{ color: template.color }} />
-                ) : (
-                  <Icon className="w-4 h-4" style={{ color: template.color }} />
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground/85 truncate">{template.name}</p>
-                <p className="text-[11px] text-muted-foreground/45 line-clamp-2 leading-relaxed mt-0.5">
-                  {template.description}
-                </p>
-              </div>
-            </motion.button>
-          );
-        })}
+              {CATEGORY_LABELS[cat] ?? cat}
+            </button>
+          ))}
+        </div>
+
+        {/* Template grid with layout animation */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <AnimatePresence mode="popLayout">
+            {filteredTemplates.map((template) => {
+              const Icon = getIcon(template.icon);
+              const isCreating = creatingId === template.id;
+
+              return (
+                <motion.button
+                  key={template.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                  onClick={() => handlePick(template)}
+                  disabled={creatingId !== null}
+                  className="flex items-start gap-3 p-3 rounded-xl border border-primary/10 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/20 transition-colors text-left disabled:opacity-50"
+                >
+                  <div
+                    className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 border"
+                    style={{
+                      backgroundColor: `${template.color}18`,
+                      borderColor: `${template.color}30`,
+                    }}
+                  >
+                    {isCreating ? (
+                      <Loader2 className="w-4 h-4 animate-spin" style={{ color: template.color }} />
+                    ) : (
+                      <Icon className="w-4 h-4" style={{ color: template.color }} />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground/85 truncate">{template.name}</p>
+                    <p className="text-[11px] text-muted-foreground/45 line-clamp-2 leading-relaxed mt-0.5">
+                      {template.description}
+                    </p>
+                  </div>
+                </motion.button>
+              );
+            })}
+          </AnimatePresence>
+        </div>
       </div>
 
       <div className="flex items-center justify-between">

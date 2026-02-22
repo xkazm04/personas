@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { BarChart3, Play, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import {
   BarChart,
   Bar,
@@ -197,21 +198,13 @@ export function UsageDashboard() {
     toolUsageByPersona.length === 0;
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
-      {/* Header */}
-      <div className="px-4 md:px-6 py-5 border-b border-primary/10 bg-primary/5 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
-            <BarChart3 className="w-5 h-5 text-violet-400" />
-          </div>
-          <div className="flex-1">
-            <h1 className="text-lg font-semibold text-foreground/90">Usage Analytics</h1>
-            <p className="text-xs text-muted-foreground/50">
-              {toolUsageSummary.length} tool{toolUsageSummary.length !== 1 ? 's' : ''} &middot; {pieTotal.toLocaleString()} invocation{pieTotal !== 1 ? 's' : ''}
-            </p>
-          </div>
-        </div>
-      </div>
+    <ContentBox>
+      <ContentHeader
+        icon={<BarChart3 className="w-5 h-5 text-violet-400" />}
+        iconColor="violet"
+        title="Usage Analytics"
+        subtitle={<>{toolUsageSummary.length} tool{toolUsageSummary.length !== 1 ? 's' : ''} &middot; {pieTotal.toLocaleString()} invocation{pieTotal !== 1 ? 's' : ''}</>}
+      />
 
       {/* Filter bar */}
       <div className="px-4 md:px-6 py-3 border-b border-primary/10 flex items-center gap-4 flex-wrap flex-shrink-0">
@@ -220,7 +213,7 @@ export function UsageDashboard() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto flex flex-col">
+      <ContentBody flex>
         {isLoading ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-4 text-muted-foreground/50">
             <Loader2 className="w-8 h-8 animate-spin text-primary/70" />
@@ -425,7 +418,7 @@ export function UsageDashboard() {
       )}
           </div>
         )}
-      </div>
-    </div>
+      </ContentBody>
+    </ContentBox>
   );
 }

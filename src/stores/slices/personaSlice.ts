@@ -14,6 +14,7 @@ export interface PersonaSlice {
   selectedPersona: PersonaWithDetails | null;
   personaTriggerCounts: Record<string, number>;
   personaLastRun: Record<string, string | null>;
+  personaHealthMap: Record<string, string[]>;
 
   // Actions
   fetchPersonas: () => Promise<void>;
@@ -31,6 +32,7 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
   selectedPersona: null,
   personaTriggerCounts: {},
   personaLastRun: {},
+  personaHealthMap: {},
 
   fetchPersonas: async () => {
     set({ isLoading: true, error: null });
@@ -51,23 +53,26 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
         try {
           const [triggers, execs] = await Promise.all([
             api.listTriggers(p.id),
-            api.listExecutions(p.id, 1),
+            api.listExecutions(p.id, 5),
           ]);
           const enabledCount = triggers.filter((t) => t.enabled).length;
           const lastRun = execs[0]?.created_at ?? null;
-          return { id: p.id, triggerCount: enabledCount, lastRun };
+          const healthStatuses = execs.map((e) => e.status);
+          return { id: p.id, triggerCount: enabledCount, lastRun, healthStatuses };
         } catch {
-          return { id: p.id, triggerCount: 0, lastRun: null };
+          return { id: p.id, triggerCount: 0, lastRun: null, healthStatuses: [] as string[] };
         }
       }),
     );
     const triggerCounts: Record<string, number> = {};
     const lastRun: Record<string, string | null> = {};
+    const healthMap: Record<string, string[]> = {};
     for (const r of results) {
       triggerCounts[r.id] = r.triggerCount;
       lastRun[r.id] = r.lastRun;
+      healthMap[r.id] = r.healthStatuses;
     }
-    set({ personaTriggerCounts: triggerCounts, personaLastRun: lastRun });
+    set({ personaTriggerCounts: triggerCounts, personaLastRun: lastRun, personaHealthMap: healthMap });
   },
 
   fetchDetail: async (id: string) => {

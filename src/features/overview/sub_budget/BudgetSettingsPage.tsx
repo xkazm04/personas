@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { DollarSign, AlertTriangle, TrendingUp, Loader2, RefreshCw } from 'lucide-react';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import * as api from '@/api/tauriApi';
 
 function formatUsd(value: number): string {
@@ -120,23 +121,15 @@ export default function BudgetSettingsPage() {
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
-      {/* Header */}
-      <div className="px-4 md:px-6 py-5 border-b border-primary/10 bg-primary/5 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center">
-            <DollarSign className="w-5 h-5 text-emerald-400" />
-          </div>
-          <div className="flex-1">
-            <h1 className="text-lg font-semibold text-foreground/90">Budget & Cost</h1>
-            <p className="text-xs text-muted-foreground/50">Monitor spending and set monthly budget limits</p>
-          </div>
-        </div>
-      </div>
+    <ContentBox>
+      <ContentHeader
+        icon={<DollarSign className="w-5 h-5 text-emerald-400" />}
+        iconColor="emerald"
+        title="Budget & Cost"
+        subtitle="Monitor spending and set monthly budget limits"
+      />
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="min-h-full p-4 md:p-6 space-y-6">
+      <ContentBody>
 
       {fetchError && (
         <div className="flex items-center justify-between gap-3 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5">
@@ -287,8 +280,7 @@ export default function BudgetSettingsPage() {
           );
         })}
       </div>
-        </div>
-      </div>
-    </div>
+      </ContentBody>
+    </ContentBox>
   );
 }

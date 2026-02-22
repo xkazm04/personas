@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
-import { Wrench } from 'lucide-react';
+import { Wrench, Link } from 'lucide-react';
 import type { N8nPersonaDraft } from '@/api/design';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import { DraftEditStep, type DraftEditTab } from '@/features/shared/components/draft-editor';
 import { N8nToolsPreviewTab } from './edit/N8nToolsPreviewTab';
+import { N8nConnectorsTab } from './edit/N8nConnectorsTab';
 
 interface N8nEditStepProps {
   draft: N8nPersonaDraft;
@@ -42,7 +43,7 @@ export function N8nEditStep({
   onApplyAdjustment,
   onGoToAnalyze,
 }: N8nEditStepProps) {
-  // N8n-specific tools tab
+  // N8n-specific tabs: tools + connectors
   const additionalTabs: DraftEditTab[] = useMemo(() => [
     {
       id: 'tools',
@@ -50,6 +51,7 @@ export function N8nEditStep({
       Icon: Wrench,
       content: (
         <N8nToolsPreviewTab
+          draft={draft}
           parsedResult={parsedResult}
           selectedToolIndices={selectedToolIndices}
           selectedTriggerIndices={selectedTriggerIndices}
@@ -58,7 +60,15 @@ export function N8nEditStep({
         />
       ),
     },
-  ], [parsedResult, selectedToolIndices, selectedTriggerIndices, selectedConnectorNames, onGoToAnalyze]);
+    {
+      id: 'connectors',
+      label: 'Connectors',
+      Icon: Link,
+      content: (
+        <N8nConnectorsTab draft={draft} />
+      ),
+    },
+  ], [draft, parsedResult, selectedToolIndices, selectedTriggerIndices, selectedConnectorNames, onGoToAnalyze]);
 
   return (
     <DraftEditStep

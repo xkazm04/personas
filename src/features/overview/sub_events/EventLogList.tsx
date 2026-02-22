@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { Zap, ChevronDown, ChevronUp, RefreshCw, AlertCircle, CheckCircle2, Clock, Loader2 } from 'lucide-react';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { UuidLabel } from '@/features/shared/components/UuidLabel';
 import { motion, AnimatePresence } from 'framer-motion';
 import { listen } from '@tauri-apps/api/event';
@@ -91,19 +92,13 @@ export default function EventLogList() {
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
-      {/* Header */}
-      <div className="px-4 md:px-6 py-5 border-b border-primary/10 bg-primary/5 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
-            <Zap className="w-5 h-5 text-amber-400" />
-          </div>
-          <div className="flex-1">
-            <h1 className="text-lg font-semibold text-foreground/90">Events</h1>
-            <p className="text-xs text-muted-foreground/50">
-              {recentEvents.length} event{recentEvents.length !== 1 ? 's' : ''} recorded
-            </p>
-          </div>
+    <ContentBox>
+      <ContentHeader
+        icon={<Zap className="w-5 h-5 text-amber-400" />}
+        iconColor="amber"
+        title="Events"
+        subtitle={`${recentEvents.length} event${recentEvents.length !== 1 ? 's' : ''} recorded`}
+        actions={
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
@@ -112,8 +107,8 @@ export default function EventLogList() {
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Filter bar */}
       <div className="px-4 md:px-6 py-3 border-b border-primary/10 flex items-center gap-2 flex-shrink-0">
@@ -141,7 +136,7 @@ export default function EventLogList() {
       </div>
 
       {/* Event List */}
-      <div className="flex-1 overflow-y-auto flex flex-col">
+      <ContentBody flex>
         {isLoading ? (
           <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-6 text-muted-foreground/40">
             <Loader2 className="w-8 h-8 mb-3 animate-spin text-primary/70" />
@@ -278,7 +273,7 @@ export default function EventLogList() {
           </AnimatePresence>
           </div>
         )}
-      </div>
-    </div>
+      </ContentBody>
+    </ContentBox>
   );
 }

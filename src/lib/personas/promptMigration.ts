@@ -64,6 +64,17 @@ export function parseStructuredPrompt(json: string | null): StructuredPrompt | n
   try {
     const parsed = JSON.parse(json);
     if (parsed && typeof parsed.instructions === 'string') {
+      // Ensure customSections is always a valid array with proper shape
+      if (!Array.isArray(parsed.customSections)) {
+        parsed.customSections = [];
+      } else {
+        parsed.customSections = parsed.customSections
+          .filter((s: unknown) => s && typeof s === 'object')
+          .map((s: Record<string, unknown>) => ({
+            title: typeof s.title === 'string' ? s.title : '',
+            content: typeof s.content === 'string' ? s.content : '',
+          }));
+      }
       return parsed as StructuredPrompt;
     }
     return null;

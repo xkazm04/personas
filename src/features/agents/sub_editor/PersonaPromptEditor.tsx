@@ -46,10 +46,11 @@ export function PersonaPromptEditor() {
   // Build dynamic tab list: standard tabs + one per custom section + add button
   const allTabs = useMemo(() => {
     const tabs: TabDef[] = [...STANDARD_TABS];
-    sp.customSections.forEach((section, index) => {
-      const label = section.title.length > 12
-        ? section.title.slice(0, 12) + '...'
-        : section.title;
+    (sp.customSections ?? []).forEach((section, index) => {
+      const title = section?.title ?? '';
+      const label = title.length > 12
+        ? title.slice(0, 12) + '...'
+        : title;
       tabs.push({
         key: `custom_${index}`,
         label: label || 'Untitled',
@@ -176,7 +177,7 @@ export function PersonaPromptEditor() {
       const newSections = [...prev.customSections, { title: 'New Section', content: '' }];
       return { ...prev, customSections: newSections };
     });
-    const newIndex = sp.customSections.length;
+    const newIndex = (sp.customSections ?? []).length;
     setActiveTab(`custom_${newIndex}`);
   }, [sp.customSections.length]);
 
@@ -209,7 +210,7 @@ export function PersonaPromptEditor() {
   const customIndex = activeTab.startsWith('custom_')
     ? parseInt(activeTab.replace('custom_', ''), 10)
     : -1;
-  const customSection = customIndex >= 0 ? sp.customSections[customIndex] : null;
+  const customSection = customIndex >= 0 ? (sp.customSections ?? [])[customIndex] ?? null : null;
 
   return (
     <div className="space-y-4">

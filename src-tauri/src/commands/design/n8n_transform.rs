@@ -257,6 +257,7 @@ pub async fn transform_n8n_to_persona(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn start_n8n_transform_background(
     app: tauri::AppHandle,
@@ -300,6 +301,8 @@ pub async fn start_n8n_transform_background(
                 lines: Vec::new(),
                 draft: None,
                 cancel_token: Some(cancel_token.clone()),
+                claude_session_id: None,
+                questions: None,
             },
         );
     }
@@ -317,8 +320,8 @@ pub async fn start_n8n_transform_background(
     }
 
     // Determine if this is an adjustment re-run or initial transform
-    let is_adjustment = adjustment_request.as_ref().map_or(false, |a| !a.trim().is_empty())
-        || previous_draft_json.as_ref().map_or(false, |d| !d.trim().is_empty());
+    let is_adjustment = adjustment_request.as_ref().is_some_and(|a| !a.trim().is_empty())
+        || previous_draft_json.as_ref().is_some_and(|d| !d.trim().is_empty());
 
     let app_handle = app.clone();
     let transform_id_for_task = transform_id.clone();
@@ -582,137 +585,9 @@ pub fn confirm_n8n_persona_draft(
     }))
 }
 
-// ── Question Generation ─────────────────────────────────────────
-
-#[tauri::command]
-pub async fn generate_n8n_transform_questions(
-    workflow_name: String,
-    workflow_json: String,
-    parser_result_json: String,
-    connectors_json: Option<String>,
-    credentials_json: Option<String>,
-) -> Result<serde_json::Value, AppError> {
-    let connectors_section = connectors_json
-        .as_deref()
-        .filter(|c| !c.trim().is_empty() && c.trim() != "[]")
-        .map(|c| format!("User's available connectors: {c}"))
-        .unwrap_or_default();
-
-    let credentials_section = credentials_json
-        .as_deref()
-        .filter(|c| !c.trim().is_empty() && c.trim() != "[]")
-        .map(|c| format!("User's available credentials: {c}"))
-        .unwrap_or_default();
-
-    let prompt = format!(
-        r##"Analyze this n8n workflow and generate 4-8 clarifying questions for the user
-before transforming it into a Personas agent.
-
-The Personas platform has these unique capabilities that n8n does not:
-- A built-in LLM execution engine (no external LLM API tools needed)
-- Protocol messages that let the persona communicate with the user mid-execution
-- A memory system where the persona stores knowledge for future runs (self-improvement)
-- Manual review gates where the persona pauses for human approval before acting
-- Inter-persona events for multi-agent coordination
-
-Generate questions across these categories:
-
-## 1. Credential Mapping
-Which existing credentials should be used for each n8n service?
-Only ask if the user has relevant credentials available.
-
-## 2. Configuration Parameters
-Workflow-specific settings the user should customize
-(e.g., email filter rules, polling intervals, notification preferences).
-
-## 3. Architecture Decisions
-When n8n uses AI/LLM nodes, note that Personas has a built-in LLM engine.
-
-## 4. Human-in-the-Loop (IMPORTANT)
-For any workflow action that has external consequences (sending emails, posting messages,
-modifying databases, calling external APIs that change state), ask whether the user wants
-the persona to request manual approval before executing that action.
-Example: "Should the persona draft emails and wait for your approval before sending,
-or send automatically?"
-Example: "Should Slack messages be reviewed before posting?"
-
-## 5. Memory & Learning (IMPORTANT)
-For workflows that process data (emails, documents, API responses, logs), ask what
-information the user wants the persona to remember across runs for self-improvement.
-Example: "Should the persona remember key information from processed emails
-(sender patterns, important decisions, commitments)?"
-Example: "Should the persona learn and remember categorization rules it discovers?"
-
-## 6. Notification Preferences
-How should the persona notify the user about important events?
-Example: "Should you receive a summary message after each run, or only on errors?"
-
-{connectors_section}
-{credentials_section}
-
-Workflow name: {workflow_name}
-Parser result: {parser_result_json}
-Original n8n JSON (first 5000 chars): {workflow_preview}
-
-Return ONLY valid JSON (no markdown fences), with this exact shape:
-[{{
-  "id": "unique_id",
-  "question": "Which Google credential should be used for Gmail access?",
-  "type": "select",
-  "options": ["Option 1", "Option 2"],
-  "default": "Option 1",
-  "context": "The workflow uses gmailOAuth2 credential for 4 nodes"
-}}]
-
-Rules:
-- type must be one of: "select", "text", "boolean"
-- For boolean type, options should be ["Yes", "No"]
-- For select type, always include options array
-- For text type, options is optional
-- ALWAYS include at least one question about human-in-the-loop approval
-- ALWAYS include at least one question about memory/learning strategy
-- Order questions from most critical (credential/config) to strategic (memory/notifications)
-- Each question must have a unique id
-"##,
-        workflow_preview = if workflow_json.len() > 5000 {
-            &workflow_json[..5000]
-        } else {
-            &workflow_json
-        },
-    );
-
-    let mut cli_args = crate::engine::prompt::build_default_cli_args();
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push("claude-haiku-4-5-20251001".to_string());
-    // Limit question generation to a single turn and tight budget
-    cli_args.args.push("--max-turns".to_string());
-    cli_args.args.push("1".to_string());
-
-    let (output, _session_id) = run_claude_prompt_text_with_timeout(prompt, &cli_args, None, 90)
-        .await
-        .map_err(AppError::Internal)?;
-
-    let json_str = extract_first_json_object(&output)
-        .or_else(|| {
-            // Try extracting array
-            let start = output.find('[')?;
-            let end = output.rfind(']')?;
-            if start < end {
-                let slice = &output[start..=end];
-                if serde_json::from_str::<serde_json::Value>(slice).is_ok() {
-                    return Some(slice.to_string());
-                }
-            }
-            None
-        })
-        .ok_or_else(|| AppError::Internal("No valid JSON in question generation output".into()))?;
-
-    let questions: serde_json::Value = serde_json::from_str(&json_str)?;
-    Ok(questions)
-}
-
 // ── N8n transform helpers ───────────────────────────────────────
 
+#[allow(clippy::too_many_arguments)]
 fn build_n8n_transform_prompt(
     workflow_name: &str,
     workflow_json: &str,
@@ -1071,7 +946,7 @@ Original n8n JSON (first 5000 chars): {workflow_preview}
 }
 
 /// Extract questions JSON from unified prompt output. Looks for TRANSFORM_QUESTIONS marker.
-fn extract_questions_output(text: &str) -> Option<serde_json::Value> {
+pub(super) fn extract_questions_output(text: &str) -> Option<serde_json::Value> {
     let marker = "TRANSFORM_QUESTIONS";
     let marker_pos = text.find(marker)?;
     let after_marker = &text[marker_pos + marker.len()..];
@@ -1087,7 +962,7 @@ fn extract_questions_output(text: &str) -> Option<serde_json::Value> {
 }
 
 /// Parse persona output from Claude CLI text. Extracts JSON and deserializes.
-fn parse_persona_output(output_text: &str, workflow_name: &str) -> Result<N8nPersonaOutput, AppError> {
+pub(super) fn parse_persona_output(output_text: &str, workflow_name: &str) -> Result<N8nPersonaOutput, AppError> {
     let parsed_json = extract_first_json_object(output_text)
         .ok_or_else(|| AppError::Internal("Claude did not return valid JSON persona output".into()))?;
 
@@ -1102,6 +977,233 @@ fn parse_persona_output(output_text: &str, workflow_name: &str) -> Result<N8nPer
         .map_err(|e| AppError::Internal(format!("Failed to parse transformed persona output: {e}")))?;
 
     Ok(normalize_n8n_persona_draft(output, workflow_name))
+}
+
+/// Handle the result from either adjustment or unified transform.
+/// Second element in the Ok tuple is unused (reserved).
+fn handle_transform_result(
+    result: Result<(N8nPersonaOutput, bool), AppError>,
+    app: &tauri::AppHandle,
+    transform_id: &str,
+    workflow_name: &str,
+    session_id: Option<&str>,
+) {
+    match result {
+        Ok((draft, _)) => {
+            set_n8n_transform_draft(transform_id, &draft);
+            set_n8n_transform_status(app, transform_id, "completed", None);
+            crate::notifications::notify_n8n_transform_completed(app, workflow_name, true);
+            if let Some(sid) = session_id {
+                let state = app.state::<Arc<AppState>>();
+                let draft_str = serde_json::to_string(&draft).unwrap_or_default();
+                let _ = n8n_sessions::update(&state.db, sid, &UpdateN8nSessionInput {
+                    status: Some("editing".into()),
+                    step: Some("edit".into()),
+                    draft_json: Some(Some(draft_str)),
+                    error: Some(None),
+                    ..Default::default()
+                });
+            }
+        }
+        Err(err) => {
+            let msg = err.to_string();
+            tracing::error!(transform_id = %transform_id, error = %msg, "n8n transform failed");
+            set_n8n_transform_status(app, transform_id, "failed", Some(msg.clone()));
+            crate::notifications::notify_n8n_transform_completed(app, workflow_name, false);
+            if let Some(sid) = session_id {
+                let state = app.state::<Arc<AppState>>();
+                let _ = n8n_sessions::update(&state.db, sid, &UpdateN8nSessionInput {
+                    status: Some("failed".into()),
+                    error: Some(Some(msg)),
+                    ..Default::default()
+                });
+            }
+        }
+    }
+}
+
+/// Turn 1 of unified transform: sends unified prompt to Sonnet.
+/// Returns Ok((Some(draft), false)) if persona generated directly,
+/// Ok((None, true)) if questions were produced and stored,
+/// Ok((None, false)) if neither (error case).
+async fn run_unified_transform_turn1(
+    app: &tauri::AppHandle,
+    transform_id: &str,
+    workflow_name: &str,
+    workflow_json: &str,
+    parser_result_json: &str,
+    connectors_json: Option<&str>,
+    credentials_json: Option<&str>,
+) -> Result<(Option<N8nPersonaOutput>, bool), AppError> {
+    tracing::info!(transform_id = %transform_id, "Starting unified transform Turn 1");
+
+    let prompt_text = build_n8n_unified_prompt(
+        workflow_name,
+        workflow_json,
+        parser_result_json,
+        connectors_json,
+        credentials_json,
+    );
+
+    emit_n8n_transform_line(
+        app,
+        transform_id,
+        "[Milestone] Analyzing workflow and preparing transformation...",
+    );
+
+    let mut cli_args = prompt::build_default_cli_args();
+    cli_args.args.push("--model".to_string());
+    cli_args.args.push("claude-sonnet-4-6".to_string());
+
+    let (output_text, captured_session_id) =
+        run_claude_prompt_text(prompt_text, &cli_args, Some((app, transform_id)))
+            .await
+            .map_err(AppError::Internal)?;
+
+    // Store session ID for possible Turn 2
+    if let Some(ref sid) = captured_session_id {
+        set_n8n_transform_claude_session(transform_id, sid.clone());
+    }
+
+    // Check if output contains questions
+    if let Some(questions) = extract_questions_output(&output_text) {
+        tracing::info!(transform_id = %transform_id, "Turn 1 produced questions");
+        set_n8n_transform_questions(transform_id, questions.clone());
+        set_n8n_transform_status(app, transform_id, "awaiting_answers", None);
+        emit_n8n_transform_line(
+            app,
+            transform_id,
+            "[Milestone] Questions generated. Awaiting user answers...",
+        );
+        return Ok((None, true));
+    }
+
+    // No questions — try to parse persona output directly
+    emit_n8n_transform_line(
+        app,
+        transform_id,
+        "[Milestone] Claude output received. Extracting persona JSON draft...",
+    );
+
+    let draft = parse_persona_output(&output_text, workflow_name)?;
+
+    emit_n8n_transform_line(
+        app,
+        transform_id,
+        "[Milestone] Draft ready for review.",
+    );
+
+    Ok((Some(draft), false))
+}
+
+/// Turn 2: resume the Claude session with user answers.
+#[tauri::command]
+pub async fn continue_n8n_transform(
+    app: tauri::AppHandle,
+    transform_id: String,
+    user_answers_json: String,
+    session_id: Option<String>,
+) -> Result<serde_json::Value, AppError> {
+    let claude_session_id = get_n8n_transform_claude_session(&transform_id)
+        .ok_or_else(|| AppError::NotFound("No Claude session found for this transform".into()))?;
+
+    // Update job state
+    {
+        let mut jobs = lock_jobs()?;
+        if let Some(job) = jobs.get_mut(&transform_id) {
+            job.status = "running".into();
+            job.error = None;
+        }
+    }
+    set_n8n_transform_status(&app, &transform_id, "running", None);
+
+    let cancel_token = CancellationToken::new();
+    {
+        let mut jobs = lock_jobs()?;
+        if let Some(job) = jobs.get_mut(&transform_id) {
+            job.cancel_token = Some(cancel_token.clone());
+        }
+    }
+
+    let app_handle = app.clone();
+    let transform_id_for_task = transform_id.clone();
+    let token_for_task = cancel_token;
+    let session_id_for_task = session_id;
+
+    tokio::spawn(async move {
+        let result = tokio::select! {
+            _ = token_for_task.cancelled() => {
+                Err(AppError::Internal("Transform cancelled by user".into()))
+            }
+            res = run_continue_transform(
+                &app_handle,
+                &transform_id_for_task,
+                &claude_session_id,
+                &user_answers_json,
+            ) => res
+        };
+
+        // Re-use handle_transform_result for standard success/failure handling
+        handle_transform_result(
+            result.map(|d| (d, false)),
+            &app_handle,
+            &transform_id_for_task,
+            "n8n workflow", // workflow_name not available here, use generic
+            session_id_for_task.as_deref(),
+        );
+    });
+
+    Ok(json!({ "transform_id": transform_id }))
+}
+
+/// Execute Turn 2 of the unified transform: resume Claude session with user answers.
+async fn run_continue_transform(
+    app: &tauri::AppHandle,
+    transform_id: &str,
+    claude_session_id: &str,
+    user_answers_json: &str,
+) -> Result<N8nPersonaOutput, AppError> {
+    tracing::info!(transform_id = %transform_id, "Starting unified transform Turn 2 (resume)");
+
+    emit_n8n_transform_line(
+        app,
+        transform_id,
+        "[Milestone] Resuming session with your answers. Generating persona draft...",
+    );
+
+    let prompt_text = format!(
+        r#"Here are the user's answers to your questions:
+
+{}
+
+Now proceed to PHASE 2. Generate the full persona JSON based on the workflow analysis and the user's answers above.
+Remember: return ONLY valid JSON with the persona object, no markdown fences."#,
+        user_answers_json
+    );
+
+    let mut cli_args = prompt::build_resume_cli_args(claude_session_id);
+    cli_args.args.push("--model".to_string());
+    cli_args.args.push("claude-sonnet-4-6".to_string());
+
+    let (output_text, _) = run_claude_prompt_text(prompt_text, &cli_args, Some((app, transform_id)))
+        .await
+        .map_err(AppError::Internal)?;
+
+    emit_n8n_transform_line(
+        app,
+        transform_id,
+        "[Milestone] Claude output received. Extracting persona JSON draft...",
+    );
+
+    let draft = parse_persona_output(&output_text, "n8n workflow")?;
+
+    emit_n8n_transform_line(
+        app,
+        transform_id,
+        "[Milestone] Draft ready for review. Confirm save is required to persist.",
+    );
+
+    Ok(draft)
 }
 
 async fn run_n8n_transform_job(
@@ -1203,17 +1305,6 @@ pub(super) fn should_surface_n8n_output_line(line: &str) -> bool {
     true
 }
 
-/// Convenience wrapper with a custom timeout in seconds.
-/// Returns (text_output, captured_claude_session_id).
-pub(super) async fn run_claude_prompt_text_with_timeout(
-    prompt_text: String,
-    cli_args: &crate::engine::types::CliArgs,
-    emit_ctx: Option<(&tauri::AppHandle, &str)>,
-    timeout_secs: u64,
-) -> Result<(String, Option<String>), String> {
-    run_claude_prompt_text_inner(prompt_text, cli_args, emit_ctx, timeout_secs).await
-}
-
 /// Returns (text_output, captured_claude_session_id).
 pub(super) async fn run_claude_prompt_text(
     prompt_text: String,
@@ -1288,15 +1379,9 @@ async fn run_claude_prompt_text_inner(
             if captured_session_id.is_none() {
                 let (line_type, _) = parse_stream_line(&line);
                 match line_type {
-                    StreamLineType::SystemInit { session_id, .. } => {
-                        if let Some(sid) = session_id {
-                            captured_session_id = Some(sid);
-                        }
-                    }
-                    StreamLineType::Result { session_id, .. } => {
-                        if let Some(sid) = session_id {
-                            captured_session_id = Some(sid);
-                        }
+                    StreamLineType::SystemInit { session_id: Some(sid), .. }
+                    | StreamLineType::Result { session_id: Some(sid), .. } => {
+                        captured_session_id = Some(sid);
                     }
                     _ => {}
                 }

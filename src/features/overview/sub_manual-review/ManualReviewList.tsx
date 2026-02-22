@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronRight, Check, X, ClipboardCheck, CheckSquare, Square, AlertTriangle } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/types/frontendTypes';
 import { formatRelativeTime } from '@/lib/utils/formatters';
@@ -159,21 +160,13 @@ export default function ManualReviewList() {
   );
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
-      {/* Header */}
-      <div className="px-4 md:px-6 py-5 border-b border-primary/10 bg-primary/5 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
-            <ClipboardCheck className="w-5 h-5 text-amber-400" />
-          </div>
-          <div className="flex-1">
-            <h1 className="text-lg font-semibold text-foreground/90">Manual Reviews</h1>
-            <p className="text-xs text-muted-foreground/50">
-              {manualReviews.length} review{manualReviews.length !== 1 ? 's' : ''} recorded
-            </p>
-          </div>
-        </div>
-      </div>
+    <ContentBox>
+      <ContentHeader
+        icon={<ClipboardCheck className="w-5 h-5 text-amber-400" />}
+        iconColor="amber"
+        title="Manual Reviews"
+        subtitle={`${manualReviews.length} review${manualReviews.length !== 1 ? 's' : ''} recorded`}
+      />
 
       {/* Filter bar */}
       <div className="px-4 md:px-6 py-3 border-b border-primary/10 flex items-center gap-2 flex-shrink-0">
@@ -209,7 +202,7 @@ export default function ManualReviewList() {
       </div>
 
       {/* Review list */}
-      <div className="flex-1 overflow-y-auto flex flex-col">
+      <ContentBody flex>
         {filteredReviews.length === 0 ? (
           <div className="flex-1 flex items-center justify-center p-4 md:p-6">
             <div className="text-center">
@@ -237,7 +230,7 @@ export default function ManualReviewList() {
             </AnimatePresence>
           </div>
         )}
-      </div>
+      </ContentBody>
 
       {/* Sticky bulk action bar */}
       <AnimatePresence>
@@ -311,7 +304,7 @@ export default function ManualReviewList() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </ContentBox>
   );
 }
 

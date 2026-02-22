@@ -17,11 +17,12 @@ import { ErrorPhase } from '@/features/vault/components/credential-design/ErrorP
 interface CredentialDesignModalProps {
   open: boolean;
   embedded?: boolean;
+  initialInstruction?: string;
   onClose: () => void;
   onComplete: () => void;
 }
 
-export function CredentialDesignModal({ open, embedded = false, onClose, onComplete }: CredentialDesignModalProps) {
+export function CredentialDesignModal({ open, embedded = false, initialInstruction, onClose, onComplete }: CredentialDesignModalProps) {
   const { phase, outputLines, result, error, savedCredentialId, start, cancel, save, reset, loadTemplate } = useCredentialDesign();
   const oauth = useOAuthConsent();
   const universalOAuth = useUniversalOAuth();
@@ -66,6 +67,12 @@ export function CredentialDesignModal({ open, embedded = false, onClose, onCompl
       setNegotiatorValues({});
 
       fetchConnectorDefinitions();
+
+      // Auto-start design if pre-filled instruction provided
+      if (initialInstruction?.trim()) {
+        setInstruction(initialInstruction.trim());
+        start(initialInstruction.trim());
+      }
     }
   }, [open, reset, oauth.reset, universalOAuth.reset, healthcheck.reset, fetchConnectorDefinitions]);
 

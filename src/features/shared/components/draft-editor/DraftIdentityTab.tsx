@@ -48,7 +48,7 @@ export function DraftIdentityTab({ draft, disabled, updateDraft }: DraftIdentity
         {subtab === 'overview' && (
           <div className="space-y-4 h-full overflow-y-auto pr-1">
             <div>
-              <label className="block text-xs font-medium text-foreground/60 mb-1.5">Name</label>
+              <label className="block text-xs font-medium text-foreground/80 mb-1.5">Name</label>
               <input
                 type="text"
                 value={draft.name ?? ''}
@@ -60,7 +60,7 @@ export function DraftIdentityTab({ draft, disabled, updateDraft }: DraftIdentity
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-foreground/60 mb-1.5">Description</label>
+              <label className="block text-xs font-medium text-foreground/80 mb-1.5">Description</label>
               <textarea
                 value={draft.description ?? ''}
                 onChange={(e) =>

@@ -73,9 +73,9 @@ Readiness is derived client-side by comparing `suggested_connectors` against `co
 
 ---
 
-## Adoption Process (CLI-Driven)
+## Adoption Process (CLI-Driven, Unified Prompt Architecture)
 
-Adoption converts a template into a live Persona using **Claude Code CLI** for intelligent analysis and customization. This follows the same architecture as n8n workflow import (`sub_n8n`).
+Adoption converts a template into a live Persona using **Claude Code CLI** for intelligent analysis and customization. This follows the same unified prompt architecture as n8n workflow import (`sub_n8n`), where a single Claude Sonnet session decides whether to ask clarifying questions or generate a persona directly.
 
 ### Architecture Overview
 
@@ -84,12 +84,21 @@ User clicks "Adopt"
   → AdoptionWizardModal opens (overview step)
   → User clicks "Customize with AI"
   → Frontend generates UUID adoptId, calls startTemplateAdoptBackground()
-  → Rust backend spawns Claude CLI subprocess
-  → Claude analyzes the full DesignAnalysisResult
-  → CLI output streams via Tauri events (template-adopt-output / template-adopt-status)
-  → useCorrelatedCliStream hook captures lines in real-time
-  → On completion, backend parses JSON output into N8nPersonaDraft
-  → Frontend transitions to edit step
+  → Rust backend spawns Claude CLI with unified prompt (Turn 1)
+  → Claude analyzes the DesignAnalysisResult and decides:
+    ├─ Simple template → generates persona JSON directly
+    │   → Backend parses draft, sets status "completed"
+    │   → Frontend transitions to edit step
+    └─ Complex template → outputs TRANSFORM_QUESTIONS marker + JSON array
+        → Backend stores questions in snapshot, sets status "awaiting_answers"
+        → Backend captures Claude session ID for Turn 2
+        → Frontend polls snapshot → detects awaiting_answers → shows configure step
+        → User answers questions → clicks "Continue with Answers"
+        → Frontend calls continueTemplateAdopt(adoptId, userAnswersJson)
+        → Backend resumes same Claude session (Turn 2) with --resume <session_id>
+        → Claude generates persona JSON using answers + prior context
+        → Backend parses draft, sets status "completed"
+        → Frontend transitions to edit step
   → User reviews/edits the draft or requests AI adjustments
   → User confirms → confirmTemplateAdoptDraft() creates Persona
 ```
@@ -102,17 +111,43 @@ Clicking **Adopt** opens the `AdoptionWizardModal`. The overview step displays:
 - Connector readiness status (which integrations are ready vs. need setup)
 - Info note explaining that Claude will analyze and customize the template
 
-### Step 2: AI Transform
+### Step 2: AI Transform (Unified Prompt — Turn 1)
 
-The user clicks **Customize with AI** (with optional adjustment text). The backend:
+The user clicks **Customize with AI**. The backend:
 1. Spawns `claude -p - --output-format stream-json --verbose --model claude-sonnet-4-6` as a subprocess
-2. Sends a prompt built from the template's `DesignAnalysisResult` JSON, template name, and any user adjustment request
-3. Claude analyzes the template's character, purpose, structured prompt, connectors, triggers, and channels
-4. Produces a complete `N8nPersonaDraft` with name, description, system_prompt, structured_prompt, icon, color, and design_context
+2. Sends a **unified prompt** that instructs Claude to analyze the template and decide:
+   - If the template is complex (external services, multiple connectors, ambiguous choices) → ask 4-8 clarifying questions
+   - If the template is simple and self-explanatory → generate the persona directly
+3. Captures the Claude session ID from stream-json events for possible Turn 2
+
+**If questions are produced**: The output contains a `TRANSFORM_QUESTIONS` marker followed by a JSON array. The backend stores the questions in the snapshot and sets status to `awaiting_answers`. The frontend detects this via snapshot polling and transitions to the configure step.
+
+**If persona is produced directly**: Claude skips questions and generates the full persona JSON. The backend parses it and sets status to `completed`. The frontend transitions directly to the edit step.
+
+### Step 2b: Configure (Interactive Questions)
+
+When Turn 1 produces questions, the frontend shows the `ConfigureStep` component with questions across these categories:
+1. **Credential Mapping** — which credentials for each service referenced in the template
+2. **Configuration Parameters** — template-specific settings to customize
+3. **Human-in-the-Loop** — for actions with external consequences, whether to require manual approval
+4. **Memory & Learning** — what the persona should remember across runs for self-improvement
+5. **Notification Preferences** — how the persona should notify the user
+
+The user fills in answers and clicks **Continue with Answers**. The frontend calls `continueTemplateAdopt(adoptId, userAnswersJson)` which resumes the same Claude session (Turn 2) using `--resume <session_id>`. Claude receives the answers and generates the full persona JSON.
+
+Users can also **Skip** the questions to proceed with default/empty answers.
+
+### Step 2c: AI Transform (Turn 2 — Session Continuation)
+
+Turn 2 resumes the original Claude session using the captured session ID. The prompt provides the user's answers and instructs Claude to proceed to PHASE 2 (persona generation). Since the session retains context from Turn 1's analysis, the generated persona incorporates both the original template analysis and the user's specific preferences.
+
+### Adjustment Re-runs
+
+When a user requests adjustments to an existing draft (via the edit step's "Apply Adjustments" button), the backend uses the **direct transform prompt** (not the unified prompt). Adjustment re-runs skip question generation entirely and use a single-prompt path that includes the previous draft JSON and adjustment request text.
 
 During transform, the UI shows:
 - Streaming CLI output lines (via `N8nTransformProgress` component)
-- Phase indicator (running / completed / failed)
+- Phase indicator (running / completed / failed / awaiting_answers)
 - Cancel button to abort the CLI subprocess
 
 **Background processing**: The user can close the modal while the CLI is running — processing continues in the background. A banner in the Generated tab indicates an active adoption. Re-opening the wizard auto-restores the session from localStorage + backend snapshot polling.
@@ -154,13 +189,23 @@ Post-adoption, the user can further customize the persona, configure connectors,
 
 ### CLI Prompt Design
 
-The template adopt prompt instructs Claude to:
-1. Analyze the template's character, purpose, and operational requirements
-2. Preserve the structured prompt architecture (identity, instructions, toolGuidance, examples, errorHandling, customSections)
-3. Incorporate all suggested tools, triggers, and connector references into the prompt
-4. Ensure the persona is self-contained and actionable
-5. Apply any user adjustment requests to customize the template
-6. Return a valid JSON object with the `N8nPersonaDraft` shape
+Two prompt variants are used:
+
+**Unified Prompt** (`build_template_adopt_unified_prompt`) — Used for initial transforms. Instructs Claude to:
+1. Analyze the template's complexity and decide whether to ask questions or generate directly
+2. If complex: output `TRANSFORM_QUESTIONS` marker + JSON question array, then stop
+3. If simple: generate the full persona JSON directly
+4. Preserve the structured prompt architecture (identity, instructions, toolGuidance, examples, errorHandling, customSections)
+5. Embed protocol messages (user_message, agent_memory, manual_review) for human-in-the-loop and memory
+6. Add customSections for "Human-in-the-Loop" and "Memory Strategy" when appropriate
+
+**Direct Transform Prompt** (`build_template_adopt_prompt`) — Used for adjustment re-runs. Instructs Claude to:
+1. Refine the previous draft with the user's adjustment request and configuration answers
+2. Preserve the same structured prompt architecture
+3. Apply all protocol message instructions
+4. Return a valid JSON object with the `N8nPersonaDraft` shape
+
+**Session Continuation** (`continue_template_adopt`) — Turn 2 uses `--resume <session_id>` to continue the Claude session from Turn 1. The prompt provides the user's answers and asks Claude to proceed to PHASE 2 (persona generation). The session retains context from the original template analysis.
 
 ### Event Streaming
 
@@ -245,17 +290,20 @@ interface N8nPersonaDraft {
 
 ### TemplateAdoptSnapshot (Backend State)
 
-In-memory snapshot polled by the frontend for session recovery.
+In-memory snapshot polled by the frontend for session recovery and question delivery.
 
 ```typescript
 interface TemplateAdoptSnapshot {
   adopt_id: string;
-  status: 'idle' | 'running' | 'completed' | 'failed';
+  status: 'idle' | 'running' | 'completed' | 'failed' | 'awaiting_answers';
   error: string | null;
   lines: string[];
   draft: N8nPersonaDraft | null;
+  questions: TransformQuestionResponse[] | null;
 }
 ```
+
+The `awaiting_answers` status indicates that Turn 1 produced questions. The `questions` field contains the question array. The frontend polls this snapshot and transitions to the configure step when questions are detected.
 
 ### PersonaDesignReview (Database Record)
 
@@ -303,7 +351,7 @@ DesignReviewsPage
 │   ├── ReviewExpandedDetail
 │   ├── RowActionMenu
 │   └── AdoptionWizardModal (CLI-driven wizard)
-│       ├── useAdoptReducer (state machine: overview → transform → edit → confirm)
+│       ├── useAdoptReducer (state machine: overview → transform → [configure →] edit → confirm)
 │       ├── useCorrelatedCliStream (event streaming hook)
 │       ├── ConnectorReadiness (overview step)
 │       ├── N8nTransformProgress (shared streaming display)
@@ -347,14 +395,21 @@ User clicks "Generate"
 
 User clicks "Adopt"
   → AdoptionWizardModal opens (overview step)
-  → User clicks "Customize with AI" (optional adjustment text)
+  → User clicks "Customize with AI"
   → startTemplateAdoptBackground(adoptId, templateName, designResultJson) API call
-  → Rust spawns Claude CLI subprocess with template analysis prompt
+  → Rust spawns Claude CLI with unified prompt (Turn 1)
   → CLI output streamed via template-adopt-output Tauri events
   → useCorrelatedCliStream captures lines in real-time
+  → Backend captures session_id from stream-json events
+  → If questions produced:
+    → Backend stores questions in snapshot, sets status "awaiting_answers"
+    → Frontend polls → detects awaiting_answers → shows ConfigureStep
+    → User answers → clicks "Continue with Answers"
+    → continueTemplateAdopt(adoptId, userAnswersJson) API call
+    → Rust resumes Claude session (Turn 2) with --resume <session_id>
   → On completion: backend parses JSON → N8nPersonaDraft stored in snapshot
   → Frontend polls getTemplateAdoptSnapshot() → transitions to edit step
-  → User edits draft fields or requests AI adjustments (re-runs CLI)
+  → User edits draft fields or requests AI adjustments (re-runs CLI with direct prompt)
   → User confirms → confirmTemplateAdoptDraft(draftJson) API call
   → Backend creates Persona from draft
   → onPersonaCreated callback refreshes sidebar

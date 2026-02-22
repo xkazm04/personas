@@ -1,10 +1,23 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
-import { ChevronDown, ChevronRight, RotateCw, Copy, Check, RefreshCw } from 'lucide-react';
+import { ChevronDown, ChevronRight, RotateCw, Copy, Check, RefreshCw, Rocket, Play } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as api from '@/api/tauriApi';
 import { formatTimestamp, formatDuration, formatRelativeTime, EXECUTION_STATUS_COLORS, badgeClass } from '@/lib/utils/formatters';
+import { BUILTIN_TEMPLATES } from '@/lib/personas/builtinTemplates';
+
+const TEMPLATE_SAMPLE_INPUT: Record<string, object> = {
+  'gmail-maestro': { mode: 'process_inbox', max_emails: 5, labels: ['inbox', 'unread'] },
+  'code-reviewer': { repo: 'owner/repo', pr_number: 42 },
+  'slack-standup': { channel: '#team-standup', lookback_hours: 24 },
+  'security-auditor': { target_path: './src', scan_type: 'full' },
+  'doc-writer': { source_path: './src', output_format: 'markdown' },
+  'test-generator': { module_path: './src/utils/helpers.ts', framework: 'vitest' },
+  'dep-updater': { manifest: 'package.json', check_security: true },
+  'bug-triager': { issue_id: 'BUG-1234', source: 'github' },
+  'data-monitor': { pipeline: 'etl-daily', check_interval_min: 5 },
+};
 
 export function ExecutionList() {
   const selectedPersona = usePersonaStore((state) => state.selectedPersona);
@@ -17,6 +30,19 @@ export function ExecutionList() {
   const prevIsExecutingRef = useRef(isExecuting);
 
   const personaId = selectedPersona?.id || '';
+
+  const sampleInput = useMemo(() => {
+    if (!selectedPersona) return '{}';
+    const match = BUILTIN_TEMPLATES.find(
+      (t) => t.name === selectedPersona.name,
+    );
+    const data = match ? TEMPLATE_SAMPLE_INPUT[match.id] ?? {} : {};
+    return JSON.stringify(data, null, 2);
+  }, [selectedPersona]);
+
+  const handleTryIt = () => {
+    setRerunInputData(sampleInput === '{}' ? '{}' : sampleInput);
+  };
 
   const fetchExecutions = async () => {
     if (!personaId) return;
@@ -76,9 +102,29 @@ export function ExecutionList() {
       <h3 className="text-sm font-mono text-muted-foreground/50 uppercase tracking-wider">History</h3>
 
       {executions.length === 0 ? (
-        <div className="text-center py-10 text-muted-foreground/40 text-sm">
-          No execution history yet
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          className="flex flex-col items-center text-center py-12 px-6"
+        >
+          <div className="w-12 h-12 rounded-2xl bg-primary/8 border border-primary/12 flex items-center justify-center mb-4">
+            <Rocket className="w-5.5 h-5.5 text-primary/40" />
+          </div>
+          <p className="text-sm font-medium text-foreground/60">
+            Your agent is ready to go
+          </p>
+          <p className="text-xs text-muted-foreground/40 mt-1 max-w-[260px]">
+            Run it to see results here. Each execution will appear in this timeline.
+          </p>
+          <button
+            onClick={handleTryIt}
+            className="mt-5 flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-primary/10 text-primary/80 border border-primary/15 hover:bg-primary/20 hover:text-primary transition-colors"
+          >
+            <Play className="w-3.5 h-3.5" />
+            Try it now
+          </button>
+        </motion.div>
       ) : (
         <div className="overflow-hidden border border-primary/15 rounded-2xl backdrop-blur-sm">
           {/* Header (desktop only) */}
