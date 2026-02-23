@@ -1,6 +1,5 @@
 use std::sync::Mutex;
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::sync::OnceLock;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -21,6 +20,111 @@ use crate::AppState;
 
 const GOOGLE_OAUTH_SESSION_TTL_SECS: u64 = 10 * 60;
 const OAUTH_SESSION_TTL_SECS: u64 = 10 * 60;
+
+// ── Shared OAuth Callback Server ─────────────────────────────────
+
+/// Outcome returned by `run_oauth_callback_server` after accepting one callback.
+enum OAuthCallbackOutcome {
+    /// Token exchange succeeded.
+    Success(OAuthCallbackTokens),
+    /// An error occurred (OAuth error, missing code, parse failure, etc).
+    Error(String),
+    /// The TCP accept timed out.
+    Timeout,
+    /// The TCP accept itself failed.
+    AcceptFailed(String),
+}
+
+/// Token fields returned on a successful callback.
+struct OAuthCallbackTokens {
+    access_token: Option<String>,
+    refresh_token: Option<String>,
+    scope: Option<String>,
+    token_type: Option<String>,
+    expires_in: Option<u64>,
+    extra: Option<serde_json::Value>,
+}
+
+/// Accept one OAuth callback on `listener`, parse the code parameter, call
+/// `exchange` to convert the code into tokens, write an HTML response, and
+/// return the outcome.
+///
+/// The `exchange` closure receives `(code, redirect_uri)` and returns either
+/// `OAuthCallbackTokens` on success or an error string.
+async fn run_oauth_callback_server<F, Fut>(
+    listener: TcpListener,
+    timeout_secs: u64,
+    exchange: F,
+) -> OAuthCallbackOutcome
+where
+    F: FnOnce(String, String) -> Fut,
+    Fut: std::future::Future<Output = Result<OAuthCallbackTokens, String>>,
+{
+    let redirect_uri = format!(
+        "http://127.0.0.1:{}",
+        listener.local_addr().map(|a| a.port()).unwrap_or(0)
+    );
+
+    let accept_result = tokio::time::timeout(
+        std::time::Duration::from_secs(timeout_secs),
+        listener.accept(),
+    )
+    .await;
+
+    match accept_result {
+        Ok(Ok((mut socket, _addr))) => {
+            let mut buffer = [0_u8; 8192];
+            let read_n = socket.read(&mut buffer).await.unwrap_or(0);
+            let request_text = String::from_utf8_lossy(&buffer[..read_n]).to_string();
+            let first_line = request_text.lines().next().unwrap_or("");
+            let path_part = first_line.split_whitespace().nth(1).unwrap_or("/");
+
+            let parsed_url = Url::parse(&format!("http://127.0.0.1{}", path_part));
+
+            let outcome = match parsed_url {
+                Ok(url) => {
+                    let code = url.query_pairs().find_map(|(k, v)| (k == "code").then(|| v.into_owned()));
+                    let oauth_error = url.query_pairs().find_map(|(k, v)| (k == "error").then(|| v.into_owned()));
+                    let error_desc = url.query_pairs().find_map(|(k, v)| (k == "error_description").then(|| v.into_owned()));
+
+                    if let Some(err) = oauth_error {
+                        let msg = if let Some(desc) = error_desc {
+                            format!("OAuth error: {} {}", err, desc).trim().to_string()
+                        } else {
+                            format!("OAuth error: {}", err)
+                        };
+                        OAuthCallbackOutcome::Error(msg)
+                    } else if let Some(code_value) = code {
+                        match exchange(code_value, redirect_uri).await {
+                            Ok(tokens) => OAuthCallbackOutcome::Success(tokens),
+                            Err(e) => OAuthCallbackOutcome::Error(e),
+                        }
+                    } else {
+                        OAuthCallbackOutcome::Error("No authorization code returned".into())
+                    }
+                }
+                Err(e) => OAuthCallbackOutcome::Error(format!("Failed parsing callback URL: {}", e)),
+            };
+
+            let is_success = matches!(outcome, OAuthCallbackOutcome::Success(_));
+            let html = if is_success {
+                "<html><body style=\"font-family: sans-serif; padding: 24px;\"><h2>Authorization successful</h2><p>You can close this tab and return to Personas.</p></body></html>"
+            } else {
+                "<html><body style=\"font-family: sans-serif; padding: 24px;\"><h2>Authorization failed</h2><p>Please return to Personas and retry.</p></body></html>"
+            };
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                html.len(), html
+            );
+            let _ = socket.write_all(response.as_bytes()).await;
+            let _ = socket.shutdown().await;
+
+            outcome
+        }
+        Ok(Err(e)) => OAuthCallbackOutcome::AcceptFailed(format!("OAuth callback server failed: {}", e)),
+        Err(_) => OAuthCallbackOutcome::Timeout,
+    }
+}
 
 /// Identity scopes required in every Google OAuth request.
 const GOOGLE_IDENTITY_SCOPES: &[&str] = &[
@@ -138,108 +242,54 @@ pub async fn start_google_credential_oauth(
     let session_id_clone = session_id.clone();
     let client_id_clone = resolved_client_id.clone();
     let client_secret_clone = resolved_client_secret.clone();
-    let redirect_uri_clone = redirect_uri.clone();
 
     tokio::spawn(async move {
-        let accept_result = tokio::time::timeout(
-            std::time::Duration::from_secs(GOOGLE_OAUTH_SESSION_TTL_SECS),
-            listener.accept(),
+        let outcome = run_oauth_callback_server(
+            listener,
+            GOOGLE_OAUTH_SESSION_TTL_SECS,
+            |code_value, redir_uri| async move {
+                let tokens = exchange_google_oauth_code_for_tokens(
+                    &client_id_clone,
+                    &client_secret_clone,
+                    &code_value,
+                    &redir_uri,
+                )
+                .await?;
+                if tokens.refresh_token.is_none() {
+                    return Err("No refresh token returned by Google. Re-authorize with prompt=consent or revoke prior app access and retry.".into());
+                }
+                Ok(OAuthCallbackTokens {
+                    access_token: tokens.access_token,
+                    refresh_token: tokens.refresh_token,
+                    scope: tokens.scope,
+                    token_type: None,
+                    expires_in: None,
+                    extra: None,
+                })
+            },
         )
         .await;
 
-        match accept_result {
-            Ok(Ok((mut socket, _addr))) => {
-                let mut buffer = [0_u8; 8192];
-                let read_n = socket.read(&mut buffer).await.unwrap_or(0);
-                let request_text = String::from_utf8_lossy(&buffer[..read_n]).to_string();
-                let first_line = request_text.lines().next().unwrap_or("");
-                let path_part = first_line
-                    .split_whitespace()
-                    .nth(1)
-                    .unwrap_or("/");
-
-                let parsed_url = Url::parse(&format!("http://127.0.0.1{}", path_part));
-                let mut status = "error".to_string();
-                let mut refresh_token = None;
-                let mut access_token = None;
-                let mut scope = None;
-                let mut error = None;
-
-                match parsed_url {
-                    Ok(url) => {
-                        let code = url.query_pairs().find_map(|(k, v)| (k == "code").then(|| v.into_owned()));
-                        let oauth_error = url.query_pairs().find_map(|(k, v)| (k == "error").then(|| v.into_owned()));
-
-                        if let Some(err) = oauth_error {
-                            error = Some(format!("Google OAuth error: {}", err));
-                        } else if let Some(code_value) = code {
-                            match exchange_google_oauth_code_for_tokens(
-                                &client_id_clone,
-                                &client_secret_clone,
-                                &code_value,
-                                &redirect_uri_clone,
-                            )
-                            .await
-                            {
-                                Ok(tokens) => {
-                                    status = "success".into();
-                                    refresh_token = tokens.refresh_token;
-                                    access_token = tokens.access_token;
-                                    scope = tokens.scope;
-                                    if refresh_token.is_none() {
-                                        status = "error".into();
-                                        error = Some("No refresh token returned by Google. Re-authorize with prompt=consent or revoke prior app access and retry.".into());
-                                    }
-                                }
-                                Err(e) => {
-                                    error = Some(e);
-                                }
-                            }
-                        } else {
-                            error = Some("No authorization code was returned by Google".into());
-                        }
-                    }
-                    Err(e) => {
-                        error = Some(format!("Failed parsing callback URL: {}", e));
-                    }
+        let mut sessions = google_oauth_sessions().lock().unwrap();
+        if let Some(existing) = sessions.get_mut(&session_id_clone) {
+            match outcome {
+                OAuthCallbackOutcome::Success(tokens) => {
+                    existing.status = "success".into();
+                    existing.refresh_token = tokens.refresh_token;
+                    existing.access_token = tokens.access_token;
+                    existing.scope = tokens.scope;
                 }
-
-                {
-                    let mut sessions = google_oauth_sessions().lock().unwrap();
-                    if let Some(existing) = sessions.get_mut(&session_id_clone) {
-                        existing.status = status.clone();
-                        existing.refresh_token = refresh_token.clone();
-                        existing.access_token = access_token.clone();
-                        existing.scope = scope.clone();
-                        existing.error = error.clone();
-                    }
-                }
-
-                let html = if status == "success" {
-                    "<html><body style=\"font-family: sans-serif; padding: 24px;\"><h2>Authorization successful</h2><p>You can close this tab and return to Personas.</p></body></html>"
-                } else {
-                    "<html><body style=\"font-family: sans-serif; padding: 24px;\"><h2>Authorization failed</h2><p>Please return to Personas and retry.</p></body></html>"
-                };
-                let response = format!(
-                    "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
-                    html.len(),
-                    html
-                );
-                let _ = socket.write_all(response.as_bytes()).await;
-                let _ = socket.shutdown().await;
-            }
-            Ok(Err(e)) => {
-                let mut sessions = google_oauth_sessions().lock().unwrap();
-                if let Some(existing) = sessions.get_mut(&session_id_clone) {
+                OAuthCallbackOutcome::Error(e) => {
                     existing.status = "error".into();
-                    existing.error = Some(format!("OAuth callback server failed: {}", e));
+                    existing.error = Some(e);
                 }
-            }
-            Err(_) => {
-                let mut sessions = google_oauth_sessions().lock().unwrap();
-                if let Some(existing) = sessions.get_mut(&session_id_clone) {
+                OAuthCallbackOutcome::Timeout => {
                     existing.status = "error".into();
                     existing.error = Some("OAuth callback timed out".into());
+                }
+                OAuthCallbackOutcome::AcceptFailed(e) => {
+                    existing.status = "error".into();
+                    existing.error = Some(e);
                 }
             }
         }
@@ -259,15 +309,20 @@ pub fn get_google_credential_oauth_status(
     session_id: String,
 ) -> Result<serde_json::Value, AppError> {
     cleanup_google_oauth_sessions();
-    let sessions = google_oauth_sessions().lock().unwrap();
+    let mut sessions = google_oauth_sessions().lock().unwrap();
     if let Some(session) = sessions.get(&session_id) {
-        return Ok(json!({
+        let result = json!({
             "status": session.status,
             "refresh_token": session.refresh_token,
             "access_token": session.access_token,
             "scope": session.scope,
             "error": session.error,
-        }));
+        });
+        // Remove completed sessions immediately so tokens don't linger in memory
+        if session.status == "success" || session.status == "error" {
+            sessions.remove(&session_id);
+        }
+        return Ok(result);
     }
 
     Ok(json!({
@@ -324,71 +379,8 @@ fn resolve_google_oauth_client_credentials(
         return Ok((id, secret, "user_provided".into()));
     }
 
-    let env_client_id = option_env!("GCP_CLIENT_ID")
-        .map(|v| v.trim().to_string())
-        .filter(|v| !v.is_empty())
-        .or_else(|| env_var_first_nonempty(&["GCP_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_CLIENT_ID"]))
-        .or_else(|| dotenv_var_first_nonempty(&["GCP_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_CLIENT_ID"]));
-
-    let env_client_secret = option_env!("GCP_CLIENT_SECRET")
-        .map(|v| v.trim().to_string())
-        .filter(|v| !v.is_empty())
-        .or_else(|| env_var_first_nonempty(&["GCP_CLIENT_SECRET", "GOOGLE_OAUTH_CLIENT_SECRET", "GOOGLE_CLIENT_SECRET"]))
-        .or_else(|| dotenv_var_first_nonempty(&["GCP_CLIENT_SECRET", "GOOGLE_OAUTH_CLIENT_SECRET", "GOOGLE_CLIENT_SECRET"]));
-
-    match (env_client_id, env_client_secret) {
-        (Some(id), Some(secret)) => {
-            Ok((id, secret, "app_managed".into()))
-        }
-        _ => Err(AppError::Validation(
-            "Google OAuth client credentials are missing. Set GCP_CLIENT_ID and GCP_CLIENT_SECRET in app env/.env (or pass client credentials explicitly).".into(),
-        )),
-    }
-}
-
-fn env_var_first_nonempty(keys: &[&str]) -> Option<String> {
-    for key in keys {
-        if let Ok(value) = std::env::var(key) {
-            let trimmed = value.trim();
-            if !trimmed.is_empty() {
-                return Some(trimmed.to_string());
-            }
-        }
-    }
-    None
-}
-
-fn dotenv_var_first_nonempty(keys: &[&str]) -> Option<String> {
-    let candidates = [
-        PathBuf::from(".env"),
-        PathBuf::from("../.env"),
-        PathBuf::from("../../.env"),
-    ];
-
-    for path in candidates {
-        if let Ok(content) = std::fs::read_to_string(&path) {
-            let mut map = HashMap::<String, String>::new();
-            for line in content.lines() {
-                let trimmed = line.trim();
-                if trimmed.is_empty() || trimmed.starts_with('#') {
-                    continue;
-                }
-                if let Some((k, v)) = trimmed.split_once('=') {
-                    map.insert(k.trim().to_string(), v.trim().trim_matches('"').trim_matches('\'').to_string());
-                }
-            }
-
-            for key in keys {
-                if let Some(value) = map.get(*key) {
-                    if !value.trim().is_empty() {
-                        return Some(value.trim().to_string());
-                    }
-                }
-            }
-        }
-    }
-
-    None
+    let (id, secret) = crate::engine::google_oauth::resolve_google_oauth_env_credentials()?;
+    Ok((id, secret, "app_managed".into()))
 }
 
 struct GoogleTokenExchangeResult {
@@ -798,108 +790,57 @@ pub async fn start_oauth(
     let tok_url = resolved_token_url;
     let cid = client_id.clone();
     let csec = client_secret.clone();
-    let redir = redirect_uri.clone();
     let cv = code_verifier;
 
     tokio::spawn(async move {
-        let accept_result = tokio::time::timeout(
-            std::time::Duration::from_secs(OAUTH_SESSION_TTL_SECS),
-            listener.accept(),
+        let outcome = run_oauth_callback_server(
+            listener,
+            OAUTH_SESSION_TTL_SECS,
+            |code_value, redir_uri| async move {
+                let tokens = exchange_oauth_code(
+                    &tok_url,
+                    &cid,
+                    csec.as_deref(),
+                    &code_value,
+                    &redir_uri,
+                    cv.as_deref(),
+                )
+                .await?;
+                Ok(OAuthCallbackTokens {
+                    access_token: tokens.access_token,
+                    refresh_token: tokens.refresh_token,
+                    scope: tokens.scope,
+                    token_type: tokens.token_type,
+                    expires_in: tokens.expires_in,
+                    extra: tokens.extra,
+                })
+            },
         )
         .await;
 
-        match accept_result {
-            Ok(Ok((mut socket, _addr))) => {
-                let mut buffer = [0_u8; 8192];
-                let read_n = socket.read(&mut buffer).await.unwrap_or(0);
-                let request_text = String::from_utf8_lossy(&buffer[..read_n]).to_string();
-                let first_line = request_text.lines().next().unwrap_or("");
-                let path_part = first_line.split_whitespace().nth(1).unwrap_or("/");
-
-                let parsed_url = Url::parse(&format!("http://127.0.0.1{}", path_part));
-                let mut status = "error".to_string();
-                let mut access_token = None;
-                let mut refresh_token = None;
-                let mut scope = None;
-                let mut token_type = None;
-                let mut expires_in = None;
-                let mut extra = None;
-                let mut error = None;
-
-                match parsed_url {
-                    Ok(url) => {
-                        let code = url.query_pairs().find_map(|(k, v)| (k == "code").then(|| v.into_owned()));
-                        let oauth_error = url.query_pairs().find_map(|(k, v)| (k == "error").then(|| v.into_owned()));
-
-                        if let Some(err) = oauth_error {
-                            let desc = url.query_pairs()
-                                .find_map(|(k, v)| (k == "error_description").then(|| v.into_owned()))
-                                .unwrap_or_default();
-                            error = Some(format!("OAuth error: {} {}", err, desc).trim().to_string());
-                        } else if let Some(code_value) = code {
-                            match exchange_oauth_code(
-                                &tok_url, &cid, csec.as_deref(), &code_value, &redir, cv.as_deref(),
-                            ).await {
-                                Ok(tokens) => {
-                                    status = "success".into();
-                                    access_token = tokens.access_token;
-                                    refresh_token = tokens.refresh_token;
-                                    scope = tokens.scope;
-                                    token_type = tokens.token_type;
-                                    expires_in = tokens.expires_in;
-                                    extra = tokens.extra;
-                                }
-                                Err(e) => {
-                                    error = Some(e);
-                                }
-                            }
-                        } else {
-                            error = Some("No authorization code returned".into());
-                        }
-                    }
-                    Err(e) => {
-                        error = Some(format!("Failed parsing callback URL: {}", e));
-                    }
+        let mut sessions = oauth_sessions().lock().unwrap();
+        if let Some(s) = sessions.get_mut(&sid) {
+            match outcome {
+                OAuthCallbackOutcome::Success(tokens) => {
+                    s.status = "success".into();
+                    s.access_token = tokens.access_token;
+                    s.refresh_token = tokens.refresh_token;
+                    s.scope = tokens.scope;
+                    s.token_type = tokens.token_type;
+                    s.expires_in = tokens.expires_in;
+                    s.extra = tokens.extra;
                 }
-
-                {
-                    let mut sessions = oauth_sessions().lock().unwrap();
-                    if let Some(s) = sessions.get_mut(&sid) {
-                        s.status = status.clone();
-                        s.access_token = access_token;
-                        s.refresh_token = refresh_token;
-                        s.scope = scope;
-                        s.token_type = token_type;
-                        s.expires_in = expires_in;
-                        s.extra = extra;
-                        s.error = error;
-                    }
-                }
-
-                let html = if status == "success" {
-                    "<html><body style=\"font-family: sans-serif; padding: 24px;\"><h2>Authorization successful</h2><p>You can close this tab and return to Personas.</p></body></html>"
-                } else {
-                    "<html><body style=\"font-family: sans-serif; padding: 24px;\"><h2>Authorization failed</h2><p>Please return to Personas and retry.</p></body></html>"
-                };
-                let response = format!(
-                    "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
-                    html.len(), html
-                );
-                let _ = socket.write_all(response.as_bytes()).await;
-                let _ = socket.shutdown().await;
-            }
-            Ok(Err(e)) => {
-                let mut sessions = oauth_sessions().lock().unwrap();
-                if let Some(s) = sessions.get_mut(&sid) {
+                OAuthCallbackOutcome::Error(e) => {
                     s.status = "error".into();
-                    s.error = Some(format!("OAuth callback server failed: {}", e));
+                    s.error = Some(e);
                 }
-            }
-            Err(_) => {
-                let mut sessions = oauth_sessions().lock().unwrap();
-                if let Some(s) = sessions.get_mut(&sid) {
+                OAuthCallbackOutcome::Timeout => {
                     s.status = "error".into();
                     s.error = Some("OAuth callback timed out".into());
+                }
+                OAuthCallbackOutcome::AcceptFailed(e) => {
+                    s.status = "error".into();
+                    s.error = Some(e);
                 }
             }
         }
@@ -920,9 +861,9 @@ pub fn get_oauth_status(
     session_id: String,
 ) -> Result<serde_json::Value, AppError> {
     cleanup_oauth_sessions();
-    let sessions = oauth_sessions().lock().unwrap();
+    let mut sessions = oauth_sessions().lock().unwrap();
     if let Some(s) = sessions.get(&session_id) {
-        return Ok(json!({
+        let result = json!({
             "status": s.status,
             "provider_id": s.provider_id,
             "access_token": s.access_token,
@@ -932,7 +873,12 @@ pub fn get_oauth_status(
             "expires_in": s.expires_in,
             "extra": s.extra,
             "error": s.error,
-        }));
+        });
+        // Remove completed sessions immediately so tokens don't linger in memory
+        if s.status == "success" || s.status == "error" {
+            sessions.remove(&session_id);
+        }
+        return Ok(result);
     }
 
     Ok(json!({

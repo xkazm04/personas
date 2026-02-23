@@ -8,6 +8,7 @@ import { useHealthcheckState } from '@/features/vault/hooks/useHealthcheckState'
 import type { CredentialTemplateField } from '@/lib/types/types';
 import { usePersonaStore } from '@/stores/personaStore';
 import { extractFirstUrl } from '@/features/vault/components/credential-design/CredentialDesignHelpers';
+import { CredentialDesignProvider, type CredentialDesignContextValue } from '@/features/vault/components/credential-design/CredentialDesignContext';
 import { IdlePhase } from '@/features/vault/components/credential-design/IdlePhase';
 import { AnalyzingPhase } from '@/features/vault/components/credential-design/AnalyzingPhase';
 import { PreviewPhase } from '@/features/vault/components/credential-design/PreviewPhase';
@@ -219,6 +220,40 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
       ? Boolean(universalOAuth.initialValues.access_token)
       : (healthcheck.healthcheckResult?.success === true && healthcheck.testedHealthcheckConfig !== null);
 
+  const handleNegotiatorValues = (values: Record<string, string>) => {
+    setNegotiatorValues(values);
+    healthcheck.reset();
+  };
+
+  const designContext: CredentialDesignContextValue | null = result
+    ? {
+      result,
+      fields,
+      effectiveFields,
+      requiredCount,
+      optionalCount,
+      firstSetupUrl,
+      credentialName,
+      onCredentialNameChange: setCredentialName,
+      isGoogleOAuthFlow,
+      universalOAuthProvider,
+      oauthInitialValues: { ...oauth.initialValues, ...universalOAuth.initialValues, ...negotiatorValues },
+      isAuthorizingOAuth: oauth.isAuthorizing || universalOAuth.isAuthorizing,
+      oauthConsentCompletedAt: oauth.completedAt || universalOAuth.completedAt,
+      isHealthchecking: healthcheck.isHealthchecking,
+      healthcheckResult: healthcheck.healthcheckResult,
+      canSaveCredential,
+      lastSuccessfulTestAt: healthcheck.lastSuccessfulTestAt,
+      onSave: handleSave,
+      onOAuthConsent: handleOAuthConsent,
+      onHealthcheck: handleHealthcheck,
+      onValuesChanged: handleCredentialValuesChanged,
+      onReset: handleResetPreview,
+      onRefine: handleRefine,
+      onNegotiatorValues: handleNegotiatorValues,
+    }
+    : null;
+
   const templateConnectors = connectorDefinitions.filter((conn) => {
     const metadata = conn.metadata as Record<string, unknown> | null;
     if (!metadata) return false;
@@ -343,36 +378,9 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
             )}
 
             {phase === 'preview' && result && (
-              <PreviewPhase
-                result={result}
-                credentialName={credentialName}
-                onCredentialNameChange={setCredentialName}
-                fields={fields}
-                effectiveFields={effectiveFields}
-                requiredCount={requiredCount}
-                optionalCount={optionalCount}
-                firstSetupUrl={firstSetupUrl}
-                isGoogleOAuthFlow={isGoogleOAuthFlow}
-                oauthInitialValues={{ ...oauth.initialValues, ...universalOAuth.initialValues, ...negotiatorValues }}
-                isAuthorizingOAuth={oauth.isAuthorizing || universalOAuth.isAuthorizing}
-                oauthConsentCompletedAt={oauth.completedAt || universalOAuth.completedAt}
-                universalOAuthProvider={universalOAuthProvider}
-                isHealthchecking={healthcheck.isHealthchecking}
-                healthcheckResult={healthcheck.healthcheckResult}
-                canSaveCredential={canSaveCredential}
-                lastSuccessfulTestAt={healthcheck.lastSuccessfulTestAt}
-                onSave={handleSave}
-                onOAuthConsent={handleOAuthConsent}
-                onHealthcheck={handleHealthcheck}
-                onValuesChanged={handleCredentialValuesChanged}
-                onReset={handleResetPreview}
-                onRefine={handleRefine}
-                onNegotiatorValues={(values) => {
-                  setNegotiatorValues(values);
-                  // Reset healthcheck state since values changed
-                  healthcheck.reset();
-                }}
-              />
+              <CredentialDesignProvider value={designContext!}>
+                <PreviewPhase />
+              </CredentialDesignProvider>
             )}
 
             {phase === 'saving' && (

@@ -28,6 +28,9 @@ pub struct AppState {
     pub active_design_child_pid: Arc<Mutex<Option<u32>>>,
     /// Tracks the currently active credential design ID.
     pub active_credential_design_id: Arc<Mutex<Option<String>>>,
+    /// PID of the CLI child process for the active credential design/negotiation.
+    /// Used to kill the process when the user cancels.
+    pub active_credential_design_child_pid: Arc<Mutex<Option<u32>>>,
     /// Authentication state (Supabase OAuth).
     pub auth: Arc<tokio::sync::Mutex<commands::infrastructure::auth::AuthStateInner>>,
     /// Cloud orchestrator HTTP client (None when not connected).
@@ -148,6 +151,7 @@ pub fn run() {
                 active_design_id: Arc::new(Mutex::new(None)),
                 active_design_child_pid: Arc::new(Mutex::new(None)),
                 active_credential_design_id: Arc::new(Mutex::new(None)),
+                active_credential_design_child_pid: Arc::new(Mutex::new(None)),
                 auth: auth.clone(),
                 cloud_client: Arc::new(tokio::sync::Mutex::new(cloud_client_opt)),
                 cloud_exec_ids: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
@@ -275,7 +279,6 @@ pub fn run() {
             commands::design::analysis::test_design_feasibility,
             commands::design::analysis::cancel_design_analysis,
             // Design — N8n Transform
-            commands::design::n8n_transform::cli_runner::transform_n8n_to_persona,
             commands::design::n8n_transform::cli_runner::start_n8n_transform_background,
             commands::design::n8n_transform::job_state::get_n8n_transform_snapshot,
             commands::design::n8n_transform::job_state::clear_n8n_transform_snapshot,
@@ -323,6 +326,7 @@ pub fn run() {
             commands::credentials::crud::update_credential,
             commands::credentials::crud::delete_credential,
             commands::credentials::crud::list_credential_events,
+            commands::credentials::crud::list_all_credential_events,
             commands::credentials::crud::create_credential_event,
             commands::credentials::crud::update_credential_event,
             commands::credentials::crud::delete_credential_event,

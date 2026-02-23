@@ -6,6 +6,7 @@ pub mod credential_negotiator;
 pub mod cron;
 pub mod crypto;
 pub mod design;
+pub mod google_oauth;
 pub mod healing;
 pub mod healthcheck;
 pub mod logger;
@@ -227,9 +228,29 @@ impl ExecutionEngine {
             )
             .await;
 
-            // Only write final status if not cancelled.
-            // If cancelled, cancel_execution already wrote status=cancelled to DB.
-            if !cancelled.load(Ordering::Acquire) {
+            if cancelled.load(Ordering::Acquire) {
+                // Cancelled: write accumulated metrics to DB so cost/token
+                // tracking remains accurate. cancel_execution already wrote a
+                // bare status='cancelled'; this overwrites the zero-valued
+                // fields with whatever the runner collected before the process
+                // was killed (COALESCE in the SQL keeps existing non-NULL values).
+                persist_status_update(
+                    &pool_clone,
+                    Some(&app_for_healing),
+                    &exec_id,
+                    UpdateExecutionStatus {
+                        status: "cancelled".into(),
+                        error_message: Some("Cancelled by user".into()),
+                        duration_ms: Some(result.duration_ms as i64),
+                        log_file_path: result.log_file_path.clone(),
+                        input_tokens: Some(result.input_tokens as i64),
+                        output_tokens: Some(result.output_tokens as i64),
+                        cost_usd: Some(result.cost_usd),
+                        tool_steps: result.tool_steps.clone(),
+                        ..Default::default()
+                    },
+                );
+            } else {
                 handle_execution_result(
                     &pool_clone,
                     &app_for_healing,
@@ -261,22 +282,26 @@ impl ExecutionEngine {
 
     /// Cancel a running execution.
     ///
-    /// Sets the cancellation flag, writes cancelled status to DB, kills the
-    /// child process, cleans up the tracker, and aborts the tokio task.
-    /// The cancellation flag prevents the spawned task from overwriting
-    /// the cancelled status if it finishes between the kill and the abort.
+    /// Sets the cancellation flag, writes a bare cancelled status to DB as a
+    /// safety net, kills the child process, then gives the spawned task a brief
+    /// window to finish and write accumulated metrics (cost, tokens, duration)
+    /// before falling back to abort.
     pub async fn cancel_execution(
         &self,
         execution_id: &str,
         pool: &DbPool,
         persona_id: Option<&str>,
     ) -> bool {
-        // 1. Set cancellation flag FIRST — prevents spawned task from writing to DB
+        // 1. Set cancellation flag — tells the spawned task to write
+        //    status='cancelled' with metrics instead of completed/failed
         if let Some(flag) = self.cancelled_flags.lock().await.get(execution_id) {
             flag.store(true, Ordering::Release);
         }
 
-        // 2. Write cancelled status to DB (we are the sole writer now)
+        // 2. Write bare cancelled status to DB as a safety net.
+        //    The spawned task will overwrite this with metrics data if it
+        //    finishes in time. COALESCE in SQL means a later update with
+        //    real values will replace these defaults.
         persist_status_update(
             pool,
             None,
@@ -287,26 +312,50 @@ impl ExecutionEngine {
             },
         );
 
-        // 3. Kill the child OS process to stop API credit consumption
+        // 3. Kill the child OS process to stop API credit consumption.
+        //    Once killed, run_execution will return quickly with whatever
+        //    metrics were accumulated so far.
         if let Some(pid) = self.child_pids.lock().await.remove(execution_id) {
             tracing::info!(execution_id = %execution_id, pid = pid, "Killing child process");
             kill_process(pid);
         }
 
-        // 4. Clean up tracker immediately (guaranteed regardless of abort timing)
+        // 4. Give the spawned task up to 5 seconds to finish writing metrics.
+        //    The process is dead so the runner should return almost immediately;
+        //    this timeout is just a safety net for edge cases.
+        if let Some(handle) = self.tasks.lock().await.remove(execution_id) {
+            match tokio::time::timeout(
+                std::time::Duration::from_secs(5),
+                handle,
+            )
+            .await
+            {
+                Ok(_) => {
+                    // Task finished normally — metrics written to DB
+                }
+                Err(_) => {
+                    tracing::warn!(
+                        execution_id = %execution_id,
+                        "Cancel: task did not finish within grace period, aborting",
+                    );
+                    // Timeout expired — the task handle was consumed by the
+                    // timeout future so we can't abort it, but since the
+                    // child process is dead, the runner's stdout reader will
+                    // hit EOF soon and the task will complete on its own.
+                    // The bare cancelled status from step 2 is already in DB.
+                }
+            }
+        }
+
+        // 5. Clean up tracker
         if let Some(pid) = persona_id {
             self.tracker.lock().await.remove_running(pid, execution_id);
         }
 
-        // 5. Clean up the cancelled flag
+        // 6. Clean up the cancelled flag (may already be cleaned up by the task)
         self.cancelled_flags.lock().await.remove(execution_id);
 
-        // 6. Abort the tokio task
-        if let Some(handle) = self.tasks.lock().await.remove(execution_id) {
-            handle.abort();
-            return true;
-        }
-        false
+        true
     }
 
     // =========================================================================
@@ -1015,8 +1064,27 @@ fn spawn_delayed_retry(
         )
         .await;
 
-        // 12. Write final status (if not cancelled)
-        if !cancelled.load(Ordering::Acquire) {
+        // 12. Write final status
+        if cancelled.load(Ordering::Acquire) {
+            // Cancelled: preserve accumulated metrics so budget tracking
+            // accounts for API spend consumed before the kill signal.
+            persist_status_update(
+                &pool,
+                Some(&app),
+                &exec_id,
+                UpdateExecutionStatus {
+                    status: "cancelled".into(),
+                    error_message: Some("Cancelled by user".into()),
+                    duration_ms: Some(result.duration_ms as i64),
+                    log_file_path: result.log_file_path.clone(),
+                    input_tokens: Some(result.input_tokens as i64),
+                    output_tokens: Some(result.output_tokens as i64),
+                    cost_usd: Some(result.cost_usd),
+                    tool_steps: result.tool_steps.clone(),
+                    ..Default::default()
+                },
+            );
+        } else {
             let status = if result.success { "completed" } else { "failed" };
             persist_status_update(
                 &pool,

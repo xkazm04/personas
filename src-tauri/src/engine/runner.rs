@@ -60,47 +60,9 @@ pub async fn run_execution(
     // Parse model profile
     let mut model_profile = prompt::parse_model_profile(persona.model_profile.as_deref());
 
-    // Resolve global Ollama API key when provider is "ollama" and no per-persona auth token
+    // Resolve global provider settings (Ollama, LiteLLM) from app settings DB
     if let Some(ref mut profile) = model_profile {
-        if profile.provider.as_deref() == Some(super::types::providers::OLLAMA) {
-            let needs_global_key = profile.auth_token.as_ref().map_or(true, |t| t.is_empty());
-            if needs_global_key {
-                if let Ok(Some(global_key)) =
-                    crate::db::repos::core::settings::get(&pool, settings_keys::OLLAMA_API_KEY)
-                {
-                    if !global_key.is_empty() {
-                        profile.auth_token = Some(global_key);
-                    }
-                }
-            }
-        }
-    }
-
-    // Resolve global LiteLLM settings when provider is "litellm" and no per-persona values
-    if let Some(ref mut profile) = model_profile {
-        if profile.provider.as_deref() == Some(super::types::providers::LITELLM) {
-            let needs_global_url = profile.base_url.as_ref().map_or(true, |u| u.is_empty());
-            if needs_global_url {
-                if let Ok(Some(global_url)) =
-                    crate::db::repos::core::settings::get(&pool, settings_keys::LITELLM_BASE_URL)
-                {
-                    if !global_url.is_empty() {
-                        profile.base_url = Some(global_url);
-                    }
-                }
-            }
-
-            let needs_global_key = profile.auth_token.as_ref().map_or(true, |t| t.is_empty());
-            if needs_global_key {
-                if let Ok(Some(global_key)) =
-                    crate::db::repos::core::settings::get(&pool, settings_keys::LITELLM_MASTER_KEY)
-                {
-                    if !global_key.is_empty() {
-                        profile.auth_token = Some(global_key);
-                    }
-                }
-            }
-        }
+        resolve_global_provider_settings(&pool, profile);
     }
 
     // Build CLI args
@@ -397,17 +359,17 @@ pub async fn run_execution(
 
                     // Mid-stream protocol message detection
                     if let Some(protocol_msg) = parser::extract_protocol_message(text_line) {
-                        handle_protocol_message(
-                            &app,
-                            &pool_for_stream,
-                            &protocol_msg,
-                            &exec_id_for_stream,
-                            &persona_id_for_stream,
-                            &project_id_for_stream,
-                            &persona_name_for_stream,
-                            notif_channels_for_stream.as_deref(),
-                            &mut logger,
-                        );
+                        let mut proto_ctx = ProtocolMessageContext {
+                            app: &app,
+                            pool: &pool_for_stream,
+                            execution_id: &exec_id_for_stream,
+                            persona_id: &persona_id_for_stream,
+                            project_id: &project_id_for_stream,
+                            persona_name: &persona_name_for_stream,
+                            notification_channels: notif_channels_for_stream.as_deref(),
+                            logger: &mut logger,
+                        };
+                        handle_protocol_message(&mut proto_ctx, &protocol_msg);
                     }
                 }
             }
@@ -559,19 +521,20 @@ pub async fn run_execution(
     }
 }
 
+/// Context for protocol message handling, avoiding a long parameter list.
+struct ProtocolMessageContext<'a> {
+    app: &'a AppHandle,
+    pool: &'a DbPool,
+    execution_id: &'a str,
+    persona_id: &'a str,
+    project_id: &'a str,
+    persona_name: &'a str,
+    notification_channels: Option<&'a str>,
+    logger: &'a mut ExecutionLogger,
+}
+
 /// Handle a protocol message by writing to the appropriate DB table.
-#[allow(clippy::too_many_arguments)]
-fn handle_protocol_message(
-    app: &AppHandle,
-    pool: &DbPool,
-    msg: &ProtocolMessage,
-    execution_id: &str,
-    persona_id: &str,
-    project_id: &str,
-    persona_name: &str,
-    notification_channels: Option<&str>,
-    logger: &mut ExecutionLogger,
-) {
+fn handle_protocol_message(ctx: &mut ProtocolMessageContext<'_>, msg: &ProtocolMessage) {
     match msg {
         ProtocolMessage::UserMessage {
             title,
@@ -580,10 +543,10 @@ fn handle_protocol_message(
             priority,
         } => {
             match msg_repo::create(
-                pool,
+                ctx.pool,
                 CreateMessageInput {
-                    persona_id: persona_id.to_string(),
-                    execution_id: Some(execution_id.to_string()),
+                    persona_id: ctx.persona_id.to_string(),
+                    execution_id: Some(ctx.execution_id.to_string()),
                     title: title.clone(),
                     content: content.clone(),
                     content_type: content_type.clone(),
@@ -592,20 +555,20 @@ fn handle_protocol_message(
                 },
             ) {
                 Ok(m) => {
-                    logger.log(&format!(
+                    ctx.logger.log(&format!(
                         "[MESSAGE] Created: {} ({})",
                         m.title.as_deref().unwrap_or("untitled"),
                         m.id
                     ));
-                    let _ = app.emit("message-created", &m);
+                    let _ = ctx.app.emit("message-created", &m);
                     crate::notifications::notify_new_message(
-                        app,
-                        persona_name,
+                        ctx.app,
+                        ctx.persona_name,
                         m.title.as_deref().unwrap_or("New message"),
-                        notification_channels,
+                        ctx.notification_channels,
                     );
                 }
-                Err(e) => logger.log(&format!("[MESSAGE] Failed to create: {}", e)),
+                Err(e) => ctx.logger.log(&format!("[MESSAGE] Failed to create: {}", e)),
             }
         }
         ProtocolMessage::PersonaAction {
@@ -614,13 +577,13 @@ fn handle_protocol_message(
             input,
         } => {
             match event_repo::publish(
-                pool,
+                ctx.pool,
                 CreatePersonaEventInput {
                     event_type: "persona_action".to_string(),
                     source_type: "persona".to_string(),
-                    source_id: Some(persona_id.to_string()),
+                    source_id: Some(ctx.persona_id.to_string()),
                     target_persona_id: None, // Resolved by event bus in Phase 6
-                    project_id: Some(project_id.to_string()),
+                    project_id: Some(ctx.project_id.to_string()),
                     payload: Some(
                         serde_json::json!({
                             "target": target,
@@ -631,27 +594,27 @@ fn handle_protocol_message(
                     ),
                 },
             ) {
-                Ok(_) => logger.log(&format!(
+                Ok(_) => ctx.logger.log(&format!(
                     "[EVENT] Published persona_action targeting '{}'",
                     target
                 )),
-                Err(e) => logger.log(&format!("[EVENT] Failed to publish persona_action: {}", e)),
+                Err(e) => ctx.logger.log(&format!("[EVENT] Failed to publish persona_action: {}", e)),
             }
         }
         ProtocolMessage::EmitEvent { event_type, data } => {
             match event_repo::publish(
-                pool,
+                ctx.pool,
                 CreatePersonaEventInput {
                     event_type: event_type.clone(),
                     source_type: "persona".to_string(),
-                    source_id: Some(persona_id.to_string()),
+                    source_id: Some(ctx.persona_id.to_string()),
                     target_persona_id: None,
-                    project_id: Some(project_id.to_string()),
+                    project_id: Some(ctx.project_id.to_string()),
                     payload: data.as_ref().map(|d| d.to_string()),
                 },
             ) {
-                Ok(_) => logger.log(&format!("[EVENT] Published custom event: {}", event_type)),
-                Err(e) => logger.log(&format!("[EVENT] Failed to publish: {}", e)),
+                Ok(_) => ctx.logger.log(&format!("[EVENT] Published custom event: {}", event_type)),
+                Err(e) => ctx.logger.log(&format!("[EVENT] Failed to publish: {}", e)),
             }
         }
         ProtocolMessage::AgentMemory {
@@ -662,10 +625,10 @@ fn handle_protocol_message(
             tags,
         } => {
             match mem_repo::create(
-                pool,
+                ctx.pool,
                 CreatePersonaMemoryInput {
-                    persona_id: persona_id.to_string(),
-                    source_execution_id: Some(execution_id.to_string()),
+                    persona_id: ctx.persona_id.to_string(),
+                    source_execution_id: Some(ctx.execution_id.to_string()),
                     title: title.clone(),
                     content: content.clone(),
                     category: category.clone(),
@@ -673,8 +636,8 @@ fn handle_protocol_message(
                     tags: tags.as_ref().map(|t| serde_json::json!(t).to_string()),
                 },
             ) {
-                Ok(m) => logger.log(&format!("[MEMORY] Stored: {} ({})", title, m.id)),
-                Err(e) => logger.log(&format!("[MEMORY] Failed to store: {}", e)),
+                Ok(m) => ctx.logger.log(&format!("[MEMORY] Stored: {} ({})", title, m.id)),
+                Err(e) => ctx.logger.log(&format!("[MEMORY] Failed to store: {}", e)),
             }
         }
         ProtocolMessage::ManualReview {
@@ -685,10 +648,10 @@ fn handle_protocol_message(
             suggested_actions,
         } => {
             match review_repo::create(
-                pool,
+                ctx.pool,
                 CreateManualReviewInput {
-                    execution_id: execution_id.to_string(),
-                    persona_id: persona_id.to_string(),
+                    execution_id: ctx.execution_id.to_string(),
+                    persona_id: ctx.persona_id.to_string(),
                     title: title.clone(),
                     description: description.clone(),
                     severity: severity.clone(),
@@ -699,24 +662,51 @@ fn handle_protocol_message(
                 },
             ) {
                 Ok(r) => {
-                    logger.log(&format!(
+                    ctx.logger.log(&format!(
                         "[REVIEW] Created manual review: {} ({})",
                         title, r.id
                     ));
                     crate::notifications::notify_manual_review(
-                        app,
-                        persona_name,
+                        ctx.app,
+                        ctx.persona_name,
                         title,
-                        notification_channels,
+                        ctx.notification_channels,
                     );
                 }
-                Err(e) => logger.log(&format!("[REVIEW] Failed to create: {}", e)),
+                Err(e) => ctx.logger.log(&format!("[REVIEW] Failed to create: {}", e)),
             }
         }
         ProtocolMessage::ExecutionFlow { .. } => {
             // Execution flows are handled at the top level, not here
-            logger.log("[FLOW] Execution flow captured (will be stored on completion)");
+            ctx.logger.log("[FLOW] Execution flow captured (will be stored on completion)");
         }
+    }
+}
+
+/// Apply a global settings value to a profile field when the field is empty.
+fn apply_global_setting(pool: &DbPool, field: &mut Option<String>, settings_key: &str) {
+    let needs_global = field.as_ref().map_or(true, |v| v.is_empty());
+    if needs_global {
+        if let Ok(Some(value)) = crate::db::repos::core::settings::get(pool, settings_key) {
+            if !value.is_empty() {
+                *field = Some(value);
+            }
+        }
+    }
+}
+
+/// Resolve global provider settings (API keys, base URLs) from the app settings DB
+/// when the per-persona model profile doesn't specify them.
+fn resolve_global_provider_settings(pool: &DbPool, profile: &mut ModelProfile) {
+    match profile.provider.as_deref() {
+        Some(providers::OLLAMA) => {
+            apply_global_setting(pool, &mut profile.auth_token, settings_keys::OLLAMA_API_KEY);
+        }
+        Some(providers::LITELLM) => {
+            apply_global_setting(pool, &mut profile.base_url, settings_keys::LITELLM_BASE_URL);
+            apply_global_setting(pool, &mut profile.auth_token, settings_keys::LITELLM_MASTER_KEY);
+        }
+        _ => {}
     }
 }
 

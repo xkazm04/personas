@@ -24,53 +24,6 @@ use crate::commands::design::analysis::extract_display_text;
 
 #[allow(clippy::too_many_arguments)]
 #[tauri::command]
-pub async fn transform_n8n_to_persona(
-    app: tauri::AppHandle,
-    transform_id: String,
-    workflow_name: String,
-    workflow_json: String,
-    parser_result_json: String,
-    adjustment_request: Option<String>,
-    previous_draft_json: Option<String>,
-    connectors_json: Option<String>,
-    credentials_json: Option<String>,
-    user_answers_json: Option<String>,
-) -> Result<serde_json::Value, AppError> {
-    if workflow_json.trim().is_empty() {
-        return Err(AppError::Validation("Workflow JSON cannot be empty".into()));
-    }
-
-    set_n8n_transform_status(&app, &transform_id, "running", None);
-
-    match run_n8n_transform_job(
-        &app,
-        &transform_id,
-        &workflow_name,
-        &workflow_json,
-        &parser_result_json,
-        adjustment_request.as_deref(),
-        previous_draft_json.as_deref(),
-        connectors_json.as_deref(),
-        credentials_json.as_deref(),
-        user_answers_json.as_deref(),
-    )
-    .await
-    {
-        Ok(draft) => {
-            set_n8n_transform_draft(&transform_id, &draft);
-            set_n8n_transform_status(&app, &transform_id, "completed", None);
-            Ok(json!({ "draft": draft }))
-        }
-        Err(err) => {
-            let msg = err.to_string();
-            set_n8n_transform_status(&app, &transform_id, "failed", Some(msg.clone()));
-            Err(AppError::Internal(msg))
-        }
-    }
-}
-
-#[allow(clippy::too_many_arguments)]
-#[tauri::command]
 pub async fn start_n8n_transform_background(
     app: tauri::AppHandle,
     transform_id: String,
@@ -666,16 +619,17 @@ pub async fn run_claude_prompt_text_inner(
     })
     .await;
 
+    if stream_result.is_err() {
+        let _ = child.kill().await;
+        let _ = child.wait().await;
+        return Err(format!("Claude CLI timed out after {} seconds", timeout_secs));
+    }
+
     let exit_status = child
         .wait()
         .await
         .map_err(|e| format!("Failed waiting for Claude CLI: {}", e))?;
     let stderr_output = stderr_task.await.unwrap_or_default();
-
-    if stream_result.is_err() {
-        let _ = child.kill().await;
-        return Err(format!("Claude CLI timed out after {} seconds", timeout_secs));
-    }
 
     if !exit_status.success() {
         let msg = stderr_output

@@ -2,6 +2,7 @@
 export * from "./design/useDesignAnalysis";
 export * from "./design/useDesignReviews";
 export * from "./design/useTemplateGallery";
+export * from "./design/useTauriStream";
 export * from "./design/useCredentialDesign";
 export * from "./design/useOAuthConsent";
 export * from "./design/useCredentialNegotiator";

@@ -455,7 +455,15 @@ pub fn confirm_template_adopt_draft(
         },
     )?;
 
-    Ok(json!({ "persona": created }))
+    let (triggers_created, tools_created, connectors_needing_setup) =
+        super::n8n_transform::confirmation::create_persona_entities(&state.db, &created.id, &draft);
+
+    Ok(json!({
+        "persona": created,
+        "triggers_created": triggers_created,
+        "tools_created": tools_created,
+        "connectors_needing_setup": connectors_needing_setup,
+    }))
 }
 
 // ── Instant Adopt (no AI transform — creates persona directly from design) ──
@@ -487,7 +495,25 @@ pub fn instant_adopt_template(
         .map(|s| s.to_string())
         .or_else(|| Some(format!("Adopted from template: {}", template_name)));
 
-    let structured_prompt = design.get("structured_prompt").map(|v| v.to_string());
+    // Normalize structured_prompt: ensure customSections use "title" as the canonical heading field
+    let structured_prompt = design.get("structured_prompt").map(|v| {
+        let mut sp = v.clone();
+        if let Some(sections) = sp.get_mut("customSections").and_then(|v| v.as_array_mut()) {
+            for section in sections.iter_mut() {
+                if section.get("title").and_then(|v| v.as_str()).unwrap_or("").is_empty() {
+                    let heading = section.get("label").cloned()
+                        .or_else(|| section.get("name").cloned())
+                        .or_else(|| section.get("key").cloned());
+                    if let Some(heading_val) = heading {
+                        if let Some(obj) = section.as_object_mut() {
+                            obj.insert("title".into(), heading_val);
+                        }
+                    }
+                }
+            }
+        }
+        sp.to_string()
+    });
 
     // Extract optional persona metadata from design result
     let persona_meta = design.get("persona_meta");
@@ -701,7 +727,11 @@ fn build_template_adopt_unified_prompt(
     design_result_json: &str,
 ) -> String {
     let design_preview = if design_result_json.len() > 8000 {
-        &design_result_json[..8000]
+        let mut end = 8000;
+        while !design_result_json.is_char_boundary(end) {
+            end -= 1;
+        }
+        &design_result_json[..end]
     } else {
         design_result_json
     };
@@ -792,14 +822,18 @@ Return ONLY valid JSON (no markdown fences, no commentary):
       "toolGuidance": "string",
       "examples": "string",
       "errorHandling": "string",
-      "customSections": [{{"key": "string", "label": "string", "content": "string"}}]
+      "webSearch": "string — research guidance for web-enabled runs (empty string if not applicable)",
+      "customSections": [{{"title": "string", "content": "string"}}]
     }},
     "icon": "string (lucide icon name)",
     "color": "#hex",
     "model_profile": null,
     "max_budget_usd": null,
     "max_turns": null,
-    "design_context": "string (brief summary of the template's capabilities and integrations)"
+    "design_context": "string (brief summary of the template's capabilities and integrations)",
+    "triggers": [{{"trigger_type": "schedule|polling|webhook|manual", "config": {{}}, "description": "string"}}],
+    "tools": [{{"name": "tool_name_snake_case", "category": "email|http|database|file|messaging|other", "description": "string", "requires_credential_type": "connector_name_or_null", "input_schema": null, "implementation_guide": "Step-by-step API docs (REQUIRED for each tool)"}}],
+    "required_connectors": [{{"name": "connector_name", "n8n_credential_type": "service_type", "has_credential": false}}]
   }}
 }}
 
@@ -1023,14 +1057,18 @@ Return ONLY valid JSON (no markdown fences, no commentary), with this exact shap
       "toolGuidance": "string — how to use each tool, including when to request manual_review",
       "examples": "string — include examples of protocol message usage",
       "errorHandling": "string — include user_message notifications for critical errors",
-      "customSections": [{{ "key": "string", "label": "string", "content": "string" }}]
+      "webSearch": "string — research guidance for web-enabled runs (empty string if not applicable)",
+      "customSections": [{{ "title": "string", "content": "string" }}]
     }},
     "icon": "string (lucide icon name)",
     "color": "#hex",
     "model_profile": null,
     "max_budget_usd": null,
     "max_turns": null,
-    "design_context": "string (brief summary of the template's capabilities and integrations)"
+    "design_context": "string (brief summary of the template's capabilities and integrations)",
+    "triggers": [{{"trigger_type": "schedule|polling|webhook|manual", "config": {{}}, "description": "string"}}],
+    "tools": [{{"name": "tool_name_snake_case", "category": "email|http|database|file|messaging|other", "description": "string", "requires_credential_type": "connector_name_or_null", "input_schema": null, "implementation_guide": "Step-by-step API docs (REQUIRED for each tool)"}}],
+    "required_connectors": [{{"name": "connector_name", "n8n_credential_type": "service_type", "has_credential": false}}]
   }}
 }}
 

@@ -1,4 +1,4 @@
-use super::design::{extract_fenced_json, find_matching_brace};
+use super::design::{extract_fenced_json, extract_bare_json_with_key};
 
 // ============================================================================
 // Credential Negotiator Prompt Builder
@@ -89,25 +89,7 @@ pub fn extract_negotiation_result(output: &str) -> Option<serde_json::Value> {
     }
 
     // Strategy 2: Find bare JSON object containing "steps" key
-    let chars: Vec<char> = output.chars().collect();
-    let len = chars.len();
-    let mut i = 0;
-
-    while i < len {
-        if chars[i] == '{' {
-            if let Some(end) = find_matching_brace(&chars, i) {
-                let candidate: String = chars[i..=end].iter().collect();
-                if let Ok(val) = serde_json::from_str::<serde_json::Value>(&candidate) {
-                    if val.get("steps").is_some() {
-                        return Some(val);
-                    }
-                }
-            }
-        }
-        i += 1;
-    }
-
-    None
+    extract_bare_json_with_key(output, &["steps"])
 }
 
 /// Extract a step help response from Claude's output text.
@@ -118,24 +100,7 @@ pub fn extract_step_help_result(output: &str) -> Option<serde_json::Value> {
         }
     }
 
-    let chars: Vec<char> = output.chars().collect();
-    let len = chars.len();
-    let mut i = 0;
-    while i < len {
-        if chars[i] == '{' {
-            if let Some(end) = find_matching_brace(&chars, i) {
-                let candidate: String = chars[i..=end].iter().collect();
-                if let Ok(val) = serde_json::from_str::<serde_json::Value>(&candidate) {
-                    if val.get("answer").is_some() {
-                        return Some(val);
-                    }
-                }
-            }
-        }
-        i += 1;
-    }
-
-    None
+    extract_bare_json_with_key(output, &["answer"])
 }
 
 // ============================================================================

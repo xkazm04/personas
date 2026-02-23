@@ -16,6 +16,63 @@ const GROUP_COLORS = [
   '#F59E0B', '#10B981', '#06B6D4', '#6366F1', '#F97316',
 ];
 
+// ── Ungrouped Zone ────────────────────────────────────────────────
+interface UngroupedZoneProps {
+  ungrouped: DbPersona[];
+  groupsLength: number;
+  activeId: string | null;
+  selectedPersonaId: string | null;
+  selectPersona: (id: string | null) => void;
+  handleContextMenu: (e: React.MouseEvent, persona: DbPersona) => void;
+}
+
+function UngroupedZone({
+  ungrouped,
+  groupsLength,
+  activeId,
+  selectedPersonaId,
+  selectPersona,
+  handleContextMenu,
+}: UngroupedZoneProps) {
+  const { isOver, setNodeRef } = useDroppable({
+    id: 'ungrouped',
+    data: { type: 'ungrouped' },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`rounded-xl border transition-all ${
+        isOver && activeId
+          ? 'border-primary/30 bg-primary/5'
+          : 'border-transparent'
+      }`}
+    >
+      {ungrouped.length > 0 && (
+        <div className="px-0.5 py-1">
+          <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider px-2 mb-1">
+            Ungrouped
+          </div>
+          {ungrouped.map((persona) => (
+            <DraggablePersonaCard
+              key={persona.id}
+              persona={persona}
+              isSelected={selectedPersonaId === persona.id}
+              onClick={() => selectPersona(persona.id)}
+              onContextMenu={(e) => handleContextMenu(e, persona)}
+            />
+          ))}
+        </div>
+      )}
+      {ungrouped.length === 0 && groupsLength > 0 && activeId && (
+        <div className="text-center py-3 text-sm text-muted-foreground/80 border border-dashed border-primary/15 rounded-lg">
+          Drop here to ungroup
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main GroupedAgentSidebar ─────────────────────────────────────
 interface GroupedAgentSidebarProps {
   onCreatePersona: () => void;
@@ -135,47 +192,6 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
     setShowNewGroup(false);
   };
 
-  // Droppable for ungrouped section
-  const UngroupedZone = () => {
-    const { isOver, setNodeRef } = useDroppable({
-      id: 'ungrouped',
-      data: { type: 'ungrouped' },
-    });
-
-    return (
-      <div
-        ref={setNodeRef}
-        className={`rounded-xl border transition-all ${
-          isOver && activeId
-            ? 'border-primary/30 bg-primary/5'
-            : 'border-transparent'
-        }`}
-      >
-        {ungrouped.length > 0 && (
-          <div className="px-0.5 py-1">
-            <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider px-2 mb-1">
-              Ungrouped
-            </div>
-            {ungrouped.map((persona) => (
-              <DraggablePersonaCard
-                key={persona.id}
-                persona={persona}
-                isSelected={selectedPersonaId === persona.id}
-                onClick={() => selectPersona(persona.id)}
-                onContextMenu={(e) => handleContextMenu(e, persona)}
-              />
-            ))}
-          </div>
-        )}
-        {ungrouped.length === 0 && groups.length > 0 && activeId && (
-          <div className="text-center py-3 text-sm text-muted-foreground/80 border border-dashed border-primary/15 rounded-lg">
-            Drop here to ungroup
-          </div>
-        )}
-      </div>
-    );
-  };
-
   return (
     <>
       {/* All Agents overview button */}
@@ -273,7 +289,14 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
         ))}
 
         {/* Ungrouped */}
-        <UngroupedZone />
+        <UngroupedZone
+          ungrouped={ungrouped}
+          groupsLength={groups.length}
+          activeId={activeId}
+          selectedPersonaId={selectedPersonaId}
+          selectPersona={selectPersona}
+          handleContextMenu={handleContextMenu}
+        />
 
         {/* Drag overlay */}
         <DragOverlay>

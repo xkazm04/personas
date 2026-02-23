@@ -254,9 +254,12 @@ pub fn get_retry_chain(pool: &DbPool, execution_id: &str) -> Result<Vec<PersonaE
 
 pub fn get_monthly_spend(pool: &DbPool, persona_id: &str) -> Result<f64, AppError> {
     let conn = pool.get()?;
+    // Include completed, failed, incomplete, and cancelled executions in spend
+    // tracking. Cancelled executions may have consumed API credits before the
+    // process was killed, and those costs must count toward budget enforcement.
     let spend: f64 = conn.query_row(
         "SELECT COALESCE(SUM(cost_usd), 0.0) FROM persona_executions
-         WHERE persona_id = ?1 AND status = 'completed'
+         WHERE persona_id = ?1 AND status IN ('completed', 'failed', 'incomplete', 'cancelled')
          AND created_at >= datetime('now', 'start of month')",
         params![persona_id],
         |row| row.get(0),

@@ -2,64 +2,38 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plug, CheckCircle, Shield, ListChecks, KeyRound, CircleHelp, Bot, PenLine } from 'lucide-react';
 import { CredentialEditForm } from '@/features/vault/components/CredentialEditForm';
-import type { CredentialTemplateField } from '@/lib/types/types';
-import type { CredentialDesignResult } from '@/hooks/design/useCredentialDesign';
 import { NegotiatorPanel } from '@/features/vault/components/credential-negotiator/NegotiatorPanel';
 import { InteractiveSetupInstructions } from './InteractiveSetupInstructions';
+import { useCredentialDesignContext } from './CredentialDesignContext';
 
-interface PreviewPhaseProps {
-  result: CredentialDesignResult;
-  credentialName: string;
-  onCredentialNameChange: (name: string) => void;
-  fields: CredentialTemplateField[];
-  effectiveFields: CredentialTemplateField[];
-  requiredCount: number;
-  optionalCount: number;
-  firstSetupUrl: string | null;
-  isGoogleOAuthFlow: boolean;
-  universalOAuthProvider?: string | null;
-  oauthInitialValues: Record<string, string>;
-  isAuthorizingOAuth: boolean;
-  oauthConsentCompletedAt: string | null;
-  isHealthchecking: boolean;
-  healthcheckResult: { success: boolean; message: string } | null;
-  canSaveCredential: boolean;
-  lastSuccessfulTestAt: string | null;
-  onSave: (values: Record<string, string>) => void;
-  onOAuthConsent?: (values: Record<string, string>) => void;
-  onHealthcheck: (values: Record<string, string>) => void;
-  onValuesChanged: (key: string, value: string) => void;
-  onReset: () => void;
-  onRefine?: () => void;
-  onNegotiatorValues?: (capturedValues: Record<string, string>) => void;
-}
+export function PreviewPhase() {
+  const {
+    result,
+    credentialName,
+    onCredentialNameChange,
+    fields,
+    effectiveFields,
+    requiredCount,
+    optionalCount,
+    firstSetupUrl,
+    isGoogleOAuthFlow,
+    universalOAuthProvider,
+    oauthInitialValues,
+    isAuthorizingOAuth,
+    oauthConsentCompletedAt,
+    isHealthchecking,
+    healthcheckResult,
+    canSaveCredential,
+    lastSuccessfulTestAt,
+    onSave,
+    onOAuthConsent,
+    onHealthcheck,
+    onValuesChanged,
+    onReset,
+    onRefine,
+    onNegotiatorValues,
+  } = useCredentialDesignContext();
 
-export function PreviewPhase({
-  result,
-  credentialName,
-  onCredentialNameChange,
-  fields,
-  effectiveFields,
-  requiredCount,
-  optionalCount,
-  firstSetupUrl,
-  isGoogleOAuthFlow,
-  universalOAuthProvider,
-  oauthInitialValues,
-  isAuthorizingOAuth,
-  oauthConsentCompletedAt,
-  isHealthchecking,
-  healthcheckResult,
-  canSaveCredential,
-  lastSuccessfulTestAt,
-  onSave,
-  onOAuthConsent,
-  onHealthcheck,
-  onValuesChanged,
-  onReset,
-  onRefine,
-  onNegotiatorValues,
-}: PreviewPhaseProps) {
   const [showNegotiator, setShowNegotiator] = useState(false);
 
   const oauthProviderLabel = universalOAuthProvider

@@ -187,6 +187,15 @@ pub fn get_events_by_credential(
     rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
 }
 
+pub fn get_all_events(pool: &DbPool) -> Result<Vec<CredentialEvent>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT * FROM credential_events ORDER BY credential_id, created_at DESC",
+    )?;
+    let rows = stmt.query_map([], row_to_credential_event)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+}
+
 pub fn get_event_by_id(pool: &DbPool, id: &str) -> Result<CredentialEvent, AppError> {
     let conn = pool.get()?;
     conn.query_row(

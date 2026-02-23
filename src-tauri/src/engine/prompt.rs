@@ -113,8 +113,13 @@ pub fn assemble_prompt(
             // Custom Sections
             if let Some(sections) = sp.get("customSections").and_then(|v| v.as_array()) {
                 for section in sections {
+                    let heading = section.get("title")
+                        .or_else(|| section.get("label"))
+                        .or_else(|| section.get("name"))
+                        .or_else(|| section.get("key"))
+                        .and_then(|v| v.as_str());
                     if let (Some(name), Some(content)) = (
-                        section.get("name").and_then(|v| v.as_str()),
+                        heading,
                         section.get("content").and_then(|v| v.as_str()),
                     ) {
                         prompt.push_str(&format!("## {}\n", name));

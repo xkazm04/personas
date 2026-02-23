@@ -89,6 +89,13 @@ pub fn list_credential_events(
 }
 
 #[tauri::command]
+pub fn list_all_credential_events(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<CredentialEvent>, AppError> {
+    repo::get_all_events(&state.db)
+}
+
+#[tauri::command]
 pub fn create_credential_event(
     state: State<'_, Arc<AppState>>,
     input: CreateCredentialEventInput,

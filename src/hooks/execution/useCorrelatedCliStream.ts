@@ -8,6 +8,10 @@ interface UseCorrelatedCliStreamOptions {
   statusEvent: string;
   idField: string;
   onFailed?: (errorMessage: string) => void;
+  /** Called for every correlated output line (after dedup). */
+  onOutputLine?: (line: string) => void;
+  /** Called for every correlated status event with the raw payload. */
+  onStatusEvent?: (payload: Record<string, unknown>) => void;
 }
 
 export function useCorrelatedCliStream({
@@ -15,18 +19,24 @@ export function useCorrelatedCliStream({
   statusEvent,
   idField,
   onFailed,
+  onOutputLine,
+  onStatusEvent,
 }: UseCorrelatedCliStreamOptions) {
   const [runId, setRunId] = useState<string | null>(null);
   const [phase, setPhase] = useState<CliRunPhase>('idle');
   const [lines, setLines] = useState<string[]>([]);
   const unlistenersRef = useRef<UnlistenFn[]>([]);
 
-  // Use a ref for onFailed so that the `start` callback has a stable identity.
-  // Without this, any inline onFailed arrow function causes `start` to be
-  // recreated every render, which can trigger infinite update loops in effects
-  // that depend on `start`.
+  // Use refs for callbacks so that the `start` callback has a stable identity.
+  // Without this, any inline arrow function causes `start` to be recreated
+  // every render, which can trigger infinite update loops in effects that
+  // depend on `start`.
   const onFailedRef = useRef(onFailed);
   onFailedRef.current = onFailed;
+  const onOutputLineRef = useRef(onOutputLine);
+  onOutputLineRef.current = onOutputLine;
+  const onStatusEventRef = useRef(onStatusEvent);
+  onStatusEventRef.current = onStatusEvent;
 
   const cleanup = useCallback(async () => {
     for (const unlisten of unlistenersRef.current) {
@@ -54,6 +64,7 @@ export function useCorrelatedCliStream({
             }
             return [...prev, line];
           });
+          onOutputLineRef.current?.(line);
         }
       });
 
@@ -70,6 +81,8 @@ export function useCorrelatedCliStream({
           const err = payload['error'];
           onFailedRef.current(typeof err === 'string' ? err : 'CLI transformation failed.');
         }
+
+        onStatusEventRef.current?.(payload);
       });
 
       unlistenersRef.current = [unlistenOutput, unlistenStatus];

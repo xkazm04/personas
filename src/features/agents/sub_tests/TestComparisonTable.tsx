@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Trophy, DollarSign, Clock, Target, FileText, Shield } from 'lucide-react';
 import type { PersonaTestResult } from '@/lib/bindings/PersonaTestResult';
+import { statusBadge, compositeScore } from './testUtils';
 
 interface Props {
   results: PersonaTestResult[];
@@ -23,17 +24,6 @@ function scoreColor(score: number | null): string {
   if (score >= 80) return 'text-emerald-400';
   if (score >= 50) return 'text-amber-400';
   return 'text-red-400';
-}
-
-function statusBadge(status: string) {
-  const map: Record<string, { bg: string; text: string; border: string }> = {
-    passed: { bg: 'bg-emerald-500/15', text: 'text-emerald-400', border: 'border-emerald-500/20' },
-    failed: { bg: 'bg-red-500/15', text: 'text-red-400', border: 'border-red-500/20' },
-    error: { bg: 'bg-amber-500/15', text: 'text-amber-400', border: 'border-amber-500/20' },
-  };
-  const fallback = { bg: 'bg-amber-500/15', text: 'text-amber-400', border: 'border-amber-500/20' };
-  const c = map[status] ?? fallback;
-  return `px-2 py-0.5 rounded-md text-sm font-medium border ${c.bg} ${c.text} ${c.border}`;
 }
 
 export function TestComparisonTable({ results }: Props) {
@@ -65,7 +55,7 @@ export function TestComparisonTable({ results }: Props) {
         avgToolAccuracy: Math.round(avgTA),
         avgOutputQuality: Math.round(avgOQ),
         avgProtocolCompliance: Math.round(avgPC),
-        compositeScore: Math.round(avgTA * 0.4 + avgOQ * 0.4 + avgPC * 0.2),
+        compositeScore: compositeScore(avgTA, avgOQ, avgPC),
         totalCost: rows.reduce((s, r) => s + r.cost_usd, 0),
         avgDuration: Math.round(rows.reduce((s, r) => s + r.duration_ms, 0) / n),
         count: rows.length,
@@ -187,10 +177,10 @@ export function TestComparisonTable({ results }: Props) {
                   {models.map((mid) => {
                     const r = matrix[scenario]?.[mid];
                     if (!r) return <td key={mid} className="px-3 py-2.5 text-center text-muted-foreground/80">—</td>;
-                    const composite = Math.round(
-                      (r.tool_accuracy_score ?? 0) * 0.4 +
-                      (r.output_quality_score ?? 0) * 0.4 +
-                      (r.protocol_compliance ?? 0) * 0.2,
+                    const composite = compositeScore(
+                      r.tool_accuracy_score ?? 0,
+                      r.output_quality_score ?? 0,
+                      r.protocol_compliance ?? 0,
                     );
                     return (
                       <td key={mid} className="px-3 py-2.5">
