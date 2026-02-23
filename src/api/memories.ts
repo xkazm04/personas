@@ -32,5 +32,22 @@ export const getMemoryCount = (personaId?: string, category?: string, search?: s
     search: search ?? null,
   });
 
+export interface MemoryStats {
+  total: number;
+  avg_importance: number;
+  category_counts: Array<[string, number]>;
+  agent_counts: Array<[string, number]>;
+}
+
+export const getMemoryStats = (personaId?: string, category?: string, search?: string) =>
+  invoke<MemoryStats>("get_memory_stats", {
+    personaId: personaId ?? null,
+    category: category ?? null,
+    search: search ?? null,
+  });
+
+export const listMemoriesByExecution = (executionId: string) =>
+  invoke<PersonaMemory[]>("list_memories_by_execution", { executionId });
+
 export const deleteMemory = (id: string) =>
   invoke<boolean>("delete_memory", { id });

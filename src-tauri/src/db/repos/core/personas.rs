@@ -144,20 +144,24 @@ pub fn create(pool: &DbPool, input: CreatePersonaInput) -> Result<Persona, AppEr
     let max_concurrent = input.max_concurrent.unwrap_or(1);
     let timeout_ms = input.timeout_ms.unwrap_or(300_000);
 
+    if let Some(ref channels_json) = input.notification_channels {
+        validate_notification_channels(channels_json)?;
+    }
+
     let conn = pool.get()?;
     conn.execute(
         "INSERT INTO personas
          (id, project_id, name, description, system_prompt, structured_prompt,
           icon, color, enabled, max_concurrent, timeout_ms,
           model_profile, max_budget_usd, max_turns, design_context, group_id,
-          created_at, updated_at)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?17)",
+          notification_channels, created_at, updated_at)
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?18)",
         params![
             id, project_id, input.name, input.description, input.system_prompt,
             input.structured_prompt, input.icon, input.color, enabled,
             max_concurrent, timeout_ms, input.model_profile,
             input.max_budget_usd, input.max_turns, input.design_context,
-            input.group_id, now,
+            input.group_id, input.notification_channels, now,
         ],
     )?;
 
@@ -166,7 +170,24 @@ pub fn create(pool: &DbPool, input: CreatePersonaInput) -> Result<Persona, AppEr
 
 pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Persona, AppError> {
     // Verify exists
-    get_by_id(pool, id)?;
+    let existing = get_by_id(pool, id)?;
+
+    // Auto-version if structured_prompt is changing
+    if let Some(ref new_sp) = input.structured_prompt {
+        let changed = match (&existing.structured_prompt, new_sp.as_deref()) {
+            (None, None) => false,
+            (Some(old), Some(new)) => old != new,
+            _ => true,
+        };
+        if changed {
+            let _ = crate::db::repos::execution::metrics::create_prompt_version_if_changed(
+                pool,
+                id,
+                new_sp.clone(),
+                input.system_prompt.clone(),
+            );
+        }
+    }
 
     // Validate fields when provided
     if let Some(ref name) = input.name { validate_name(name)?; }
@@ -302,6 +323,7 @@ mod tests {
                 max_turns: None,
                 design_context: None,
                 group_id: None,
+                notification_channels: None,
             },
         )
         .unwrap();
@@ -374,6 +396,7 @@ mod tests {
                 max_turns: None,
                 design_context: None,
                 group_id: None,
+                notification_channels: None,
             },
         );
         assert!(result.is_err());
@@ -400,6 +423,7 @@ mod tests {
                 max_turns: None,
                 design_context: None,
                 group_id: None,
+                notification_channels: None,
             },
         )
         .unwrap();
@@ -460,6 +484,7 @@ mod tests {
                 max_turns: None,
                 design_context: None,
                 group_id: None,
+                notification_channels: None,
             },
         )
         .unwrap();
@@ -512,6 +537,7 @@ mod tests {
             icon: None, color: None, enabled: None, max_concurrent: None,
             timeout_ms: None, model_profile: None, max_budget_usd: None,
             max_turns: None, design_context: None, group_id: None,
+            notification_channels: None,
         };
 
         // max_concurrent < 1
@@ -555,6 +581,7 @@ mod tests {
                 icon: None, color: None, enabled: None, max_concurrent: None,
                 timeout_ms: None, model_profile: None, max_budget_usd: None,
                 max_turns: None, design_context: None, group_id: None,
+                notification_channels: None,
             },
         )
         .unwrap();

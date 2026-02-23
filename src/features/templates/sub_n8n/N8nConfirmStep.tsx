@@ -1,9 +1,12 @@
 import { motion } from 'framer-motion';
-import { CheckCircle2, Wrench, Zap, Link, ChevronDown, ChevronRight, RefreshCw, AlertTriangle, Bell, Brain, Activity } from 'lucide-react';
-import { useState } from 'react';
-import type { N8nPersonaDraft } from '@/api/design';
+import { CheckCircle2, Wrench, Zap, Link, ChevronDown, ChevronRight, RefreshCw, AlertTriangle, Brain, Activity, ShieldCheck } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import { MarkdownRenderer } from '@/features/shared/components/MarkdownRenderer';
+import { parseDesignContext } from '@/features/shared/components/UseCasesList';
+import { extractProtocolCapabilities, countByType } from './edit/protocolParser';
+import { usePersonaStore } from '@/stores/personaStore';
 
 export interface ConfirmResult {
   triggersCreated: number;
@@ -36,7 +39,7 @@ export function N8nConfirmStep({
 
   // Use draft entity fields if available, fall back to parser results
   const draftObj = draft as unknown as Record<string, unknown>;
-  const draftTools = Array.isArray(draftObj.tools) ? draftObj.tools as { name: string; category: string; description: string }[] : null;
+  const draftTools = Array.isArray(draftObj.tools) ? draftObj.tools as { name: string; category: string; description: string; requires_credential_type?: string }[] : null;
   const draftTriggers = Array.isArray(draftObj.triggers) ? draftObj.triggers as { trigger_type: string; description?: string }[] : null;
   const draftConnectors = Array.isArray(draftObj.required_connectors)
     ? draftObj.required_connectors as { name: string; n8n_credential_type: string; has_credential: boolean }[]
@@ -51,16 +54,40 @@ export function N8nConfirmStep({
   const toolCount = draftTools ? draftTools.length : selectedTools.length;
   const triggerCount = draftTriggers ? draftTriggers.length : selectedTriggers.length;
   const connectorCount = draftConnectors ? draftConnectors.length : selectedConnectors.length;
-  const connectorsNeedingSetup = draftConnectors?.filter((c) => !c.has_credential) ?? [];
+  const credentialLinks = parseDesignContext(draft.design_context).credential_links ?? {};
+  const connectorsNeedingSetup = draftConnectors?.filter(
+    (c) => !c.has_credential && !credentialLinks[c.name],
+  ) ?? [];
 
-  // Derived counts for additional cards
-  const notificationCount = draft.structured_prompt
-    ? Object.keys(draft.structured_prompt).filter((k) =>
-        k.toLowerCase().includes('error') || k.toLowerCase().includes('notification'),
-      ).length
-    : 0;
-  const memoryEnabled = (draft.design_context?.trim().length ?? 0) > 0 ? 1 : 0;
-  const eventCount = triggerCount;
+  // Protocol capability counts from prompt analysis
+  const capabilities = useMemo(
+    () => extractProtocolCapabilities(
+      draft.system_prompt,
+      draft.structured_prompt as Record<string, unknown> | null,
+    ),
+    [draft.system_prompt, draft.structured_prompt],
+  );
+  const capCounts = useMemo(() => countByType(capabilities), [capabilities]);
+  const reviewCount = capCounts.manual_review;
+  const memoryCount = capCounts.agent_memory;
+  const eventCount = capCounts.emit_event || triggerCount;
+
+  // Tool-credential validation
+  const credentials = usePersonaStore((s) => s.credentials);
+  const toolsNeedingCredentials = useMemo(() => {
+    if (!draftTools) return [];
+    return draftTools.filter((tool) => {
+      if (!tool.requires_credential_type) return false;
+      const credType = tool.requires_credential_type;
+      // Check if linked via credential_links
+      if (credentialLinks[credType]) return false;
+      // Check if any credential with matching service_type exists
+      const hasMatchingCred = credentials.some(
+        (c) => c.service_type === credType || c.name.toLowerCase().includes(credType.toLowerCase()),
+      );
+      return !hasMatchingCred;
+    });
+  }, [draftTools, credentialLinks, credentials]);
 
   return (
     <div className="space-y-4">
@@ -184,13 +211,13 @@ export function N8nConfirmStep({
               <p className="text-sm text-muted-foreground/55 uppercase tracking-wider">Connectors</p>
             </div>
             <div className="px-2 py-2.5 rounded-xl bg-rose-500/5 border border-rose-500/10 text-center">
-              <Bell className="w-3.5 h-3.5 text-rose-400/60 mx-auto mb-1" />
-              <p className="text-base font-semibold text-foreground/80">{notificationCount}</p>
-              <p className="text-sm text-muted-foreground/55 uppercase tracking-wider">Alerts</p>
+              <ShieldCheck className="w-3.5 h-3.5 text-rose-400/60 mx-auto mb-1" />
+              <p className="text-base font-semibold text-foreground/80">{reviewCount}</p>
+              <p className="text-sm text-muted-foreground/55 uppercase tracking-wider">Reviews</p>
             </div>
             <div className="px-2 py-2.5 rounded-xl bg-cyan-500/5 border border-cyan-500/10 text-center">
               <Brain className="w-3.5 h-3.5 text-cyan-400/60 mx-auto mb-1" />
-              <p className="text-base font-semibold text-foreground/80">{memoryEnabled}</p>
+              <p className="text-base font-semibold text-foreground/80">{memoryCount}</p>
               <p className="text-sm text-muted-foreground/55 uppercase tracking-wider">Memory</p>
             </div>
             <div className="px-2 py-2.5 rounded-xl bg-orange-500/5 border border-orange-500/10 text-center">
@@ -267,44 +294,26 @@ export function N8nConfirmStep({
             </div>
           )}
 
-          {/* Alert badges */}
-          {notificationCount > 0 && (
+          {/* Protocol capability badges */}
+          {capabilities.length > 0 && (
             <div className="flex flex-wrap gap-1 mb-2">
-              {Object.keys(draft.structured_prompt ?? {})
-                .filter((k) =>
-                  k.toLowerCase().includes('error') || k.toLowerCase().includes('notification'),
-                )
-                .map((key) => (
+              {capabilities.map((cap) => {
+                const styles: Record<string, string> = {
+                  manual_review: 'bg-rose-500/10 text-rose-400/60 border-rose-500/15',
+                  user_message: 'bg-amber-500/10 text-amber-400/60 border-amber-500/15',
+                  agent_memory: 'bg-cyan-500/10 text-cyan-400/60 border-cyan-500/15',
+                  emit_event: 'bg-violet-500/10 text-violet-400/60 border-violet-500/15',
+                };
+                return (
                   <span
-                    key={key}
-                    className="px-2 py-0.5 text-sm font-mono rounded bg-rose-500/10 text-rose-400/60 border border-rose-500/15"
+                    key={cap.type}
+                    className={`px-2 py-0.5 text-sm font-mono rounded border ${styles[cap.type] ?? ''}`}
+                    title={cap.context}
                   >
-                    {key.replace(/_/g, ' ')}
+                    {cap.label.toLowerCase()}
                   </span>
-                ))}
-            </div>
-          )}
-
-          {/* Memory badge */}
-          {memoryEnabled > 0 && (
-            <div className="flex flex-wrap gap-1 mb-2">
-              <span className="px-2 py-0.5 text-sm font-mono rounded bg-cyan-500/10 text-cyan-400/60 border border-cyan-500/15">
-                context memory
-              </span>
-            </div>
-          )}
-
-          {/* Event badges */}
-          {eventCount > 0 && (
-            <div className="flex flex-wrap gap-1 mb-2">
-              {(draftTriggers ?? selectedTriggers.map((t) => ({ trigger_type: t.trigger_type }))).map((t, i) => (
-                <span
-                  key={`event-${i}`}
-                  className="px-2 py-0.5 text-sm font-mono rounded bg-orange-500/10 text-orange-400/60 border border-orange-500/15"
-                >
-                  {t.trigger_type}
-                </span>
-              ))}
+                );
+              })}
             </div>
           )}
 
@@ -315,6 +324,21 @@ export function N8nConfirmStep({
               <div className="text-sm text-amber-400/60">
                 <p className="font-medium">Connectors needing setup:</p>
                 <p className="mt-0.5">{connectorsNeedingSetup.map((c) => c.name).join(', ')}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Tool-credential validation warning */}
+          {toolsNeedingCredentials.length > 0 && (
+            <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/5 border border-amber-500/15 mb-2">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-amber-400/60">
+                <p className="font-medium">
+                  {toolsNeedingCredentials.length} tool{toolsNeedingCredentials.length !== 1 ? 's' : ''} require credentials not yet configured:
+                </p>
+                <p className="mt-0.5 font-mono">
+                  {toolsNeedingCredentials.map((t) => `${t.name} (${t.requires_credential_type})`).join(', ')}
+                </p>
               </div>
             </div>
           )}

@@ -56,6 +56,7 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
       set({ credentials });
     } catch (err) {
       set({ error: errMsg(err, "Failed to fetch credentials") });
+      throw err;
     }
   },
 

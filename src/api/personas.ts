@@ -28,6 +28,26 @@ export const getPersonaSummaries = () =>
   invoke<PersonaSummary[]>("get_persona_summaries");
 
 // ============================================================================
+// Import / Export
+// ============================================================================
+
+/** Mirrors the Rust ImportResult struct from import_export.rs */
+export interface ImportResult {
+  persona_id: string;
+  /** Non-fatal errors from sub-resource creation (triggers, subscriptions, memories). */
+  warnings: string[];
+}
+
+/** Opens a save dialog and writes the persona bundle to disk. Returns false if cancelled. */
+export const exportPersona = (personaId: string) =>
+  invoke<boolean>("export_persona", { personaId });
+
+/** Opens a file picker and imports a persona bundle. Returns null if cancelled, or an
+ *  ImportResult where `warnings` lists any sub-resource creation failures. */
+export const importPersona = () =>
+  invoke<ImportResult | null>("import_persona");
+
+// ============================================================================
 // Typed partial update helper
 // ============================================================================
 

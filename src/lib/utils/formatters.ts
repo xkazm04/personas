@@ -5,10 +5,11 @@ export function formatTimestamp(timestamp: string | null, fallback = '-'): strin
   return new Date(timestamp).toLocaleString();
 }
 
-export function formatRelativeTime(dateStr: string | null): string {
-  if (!dateStr) return '-';
+export function formatRelativeTime(dateStr: string | null, fallback = '-'): string {
+  if (!dateStr) return fallback;
   const now = Date.now();
   const then = new Date(dateStr).getTime();
+  if (isNaN(then)) return fallback;
   const diffSeconds = Math.floor((now - then) / 1000);
   if (diffSeconds < 5) return 'just now';
   if (diffSeconds < 60) return `${diffSeconds}s ago`;
@@ -109,6 +110,33 @@ export function formatCountdown(seconds: number): string {
   if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`;
   if (m > 0) return s > 0 ? `${m}m ${s}s` : `${m}m`;
   return `${s}s`;
+}
+
+/**
+ * Format an elapsed millisecond count as a human-readable duration.
+ * - `compact` (default): "30s", "2m 30s", "1h 5m"
+ * - `clock`: "MM:SS" or "HH:MM:SS" with zero-padding
+ */
+export function formatElapsed(ms: number, format: 'compact' | 'clock' = 'compact'): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  if (format === 'clock') {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    const mm = String(minutes).padStart(2, '0');
+    const ss = String(seconds).padStart(2, '0');
+    if (hours > 0) {
+      return `${String(hours).padStart(2, '0')}:${mm}:${ss}`;
+    }
+    return `${mm}:${ss}`;
+  }
+  if (totalSeconds < 60) return `${totalSeconds}s`;
+  const mins = Math.floor(totalSeconds / 60);
+  const rem = totalSeconds % 60;
+  if (mins < 60) return rem > 0 ? `${mins}m ${rem}s` : `${mins}m`;
+  const hours = Math.floor(mins / 60);
+  const remMins = mins % 60;
+  return remMins > 0 ? `${hours}h ${remMins}m` : `${hours}h`;
 }
 
 export function formatDuration(ms: number | null): string {

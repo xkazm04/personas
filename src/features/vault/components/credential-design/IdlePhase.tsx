@@ -49,7 +49,7 @@ export function IdlePhase({
           onClick={onToggleTemplates}
           className="px-2.5 py-1 text-sm rounded-lg border border-primary/20 text-primary hover:bg-primary/10 transition-colors"
         >
-          From Template
+          From Catalog
         </button>
 
         {QUICK_SERVICE_HINTS.map((hint) => (
@@ -65,16 +65,16 @@ export function IdlePhase({
 
       {showTemplates && (
         <div className="p-3 rounded-xl border border-primary/15 bg-secondary/20 space-y-2">
-          <p className="text-sm text-muted-foreground/75">Saved local templates</p>
+          <p className="text-sm text-muted-foreground/75">Saved local catalog</p>
           <input
             type="text"
             value={templateSearch}
             onChange={(e) => onTemplateSearchChange(e.target.value)}
-            placeholder="Search templates"
+            placeholder="Search catalog"
             className="w-full px-3 py-1.5 rounded-lg border border-primary/15 bg-background/40 text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           {templateConnectors.length === 0 ? (
-            <p className="text-sm text-muted-foreground/90">No templates yet. Save a successfully tested connector first.</p>
+            <p className="text-sm text-muted-foreground/90">No catalog entries yet. Save a successfully tested connector first.</p>
           ) : (
             <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
               {templateConnectors.map((conn) => (

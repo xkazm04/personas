@@ -1,6 +1,7 @@
 import { Component, type ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, ChevronDown, ChevronRight, Copy, Check } from 'lucide-react';
 import { useState } from 'react';
+import { persistCrash } from '@/lib/utils/crashPersistence';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -39,20 +40,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     console.error('Component stack:', info);
 
     // Persist to localStorage for crash reporting
-    try {
-      const crashes = JSON.parse(localStorage.getItem('__personas_frontend_crashes') || '[]');
-      crashes.unshift({
-        timestamp: new Date().toISOString(),
-        component: this.props.name || 'unknown',
-        message: error.message,
-        stack: error.stack?.slice(0, 2000),
-        componentStack: info.slice(0, 1000),
-      });
-      // Keep only last 20 entries
-      localStorage.setItem('__personas_frontend_crashes', JSON.stringify(crashes.slice(0, 20)));
-    } catch {
-      // localStorage might be full
-    }
+    persistCrash(this.props.name || 'unknown', error, info);
   }
 
   handleReset = () => {

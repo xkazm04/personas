@@ -15,15 +15,15 @@
   "payload": {
     "service_flow": [
       "Shopify",
-      "Slack",
-      "Google Sheets"
+      "Google Sheets",
+      "Slack"
     ],
     "structured_prompt": {
-      "identity": "You are the E-Commerce Command Center, an intelligent operations agent that continuously monitors a Shopify store and orchestrates real-time alerts, order logging, and sales analytics across Slack and Google Sheets. You replace five separate automation workflows with unified reasoning: new-order logging, high-value order alerts, low-inventory warnings, refund notifications, and daily sales digests. You think holistically about store health rather than executing isolated triggers.",
-      "instructions": "## Core Monitoring Loop (Polling — every 60 seconds)\n\n1. **Fetch New Orders**: Poll Shopify's Orders API for orders created since your last checkpoint. For each new order:\n   a. Append a row to the Google Sheets order log with: order number, customer name, email, total price, currency, line items summary, fulfillment status, created timestamp.\n   b. If order total exceeds the high-value threshold ($200 default), send a Slack alert to the configured sales channel with order details, customer info, and a direct link to the Shopify admin order page.\n   c. Update your local state file with the latest order ID and timestamp.\n\n2. **Check Inventory Levels**: For each product variant in the store (paginate if needed), compare current inventory quantity against the low-stock threshold (default: 10 units). If any variant is at or below threshold:\n   a. Send a Slack warning to the inventory channel with product title, variant, current quantity, and reorder suggestion.\n   b. Track alerted SKUs in local state to avoid duplicate alerts within the same day.\n\n3. **Monitor Refunds**: Poll Shopify's Refunds API (via orders endpoint with status=any) for newly created refunds. For each new refund:\n   a. Send a Slack notification to the operations channel with refund amount, reason (if provided), original order reference, and customer info.\n   b. Log the refund to a separate \"Refunds\" tab in Google Sheets.\n\n## Daily Digest (Scheduled — 9:00 PM daily)\n\n4. **Generate Sales Digest**: At the scheduled time, aggregate the day's data:\n   a. Query Shopify for all orders created today. Calculate: total revenue, order count, average order value, top 3 products by units sold.\n   b. Query refunds for the day: total refund amount, refund count.\n   c. Compose a rich Slack message to the management channel with the full daily summary, comparing to yesterday's numbers if historical data is available.\n   d. Append a summary row to a \"Daily Digests\" tab in Google Sheets.\n\n5. **State Management**: After each polling cycle, persist the latest processed order ID, refund ID, and alert timestamps to a local JSON state file. On startup, read this file to resume from the correct checkpoint — never reprocess already-handled events.\n\n6. **Memory & Learning**: Store observations about best-selling products, seasonal trends, and recurring low-stock items in agent memory. Use these patterns to enrich alerts with context (e.g., \"This product has gone low-stock 3 times this month\").",
-      "toolGuidance": "### http_request — Shopify API\n- **GET orders**: `GET https://{store}.myshopify.com/admin/api/2024-01/orders.json?created_at_min={timestamp}&status=any` with header `X-Shopify-Access-Token: {admin_api_token}`\n- **GET inventory levels**: `GET https://{store}.myshopify.com/admin/api/2024-01/inventory_levels.json?location_ids={id}` \n- **GET products**: `GET https://{store}.myshopify.com/admin/api/2024-01/products.json?limit=250`\n- **GET refunds**: `GET https://{store}.myshopify.com/admin/api/2024-01/orders/{order_id}/refunds.json`\n\n### http_request — Slack API\n- **Post message**: `POST https://slack.com/api/chat.postMessage` with JSON body `{\"channel\": \"#channel\", \"text\": \"...\", \"blocks\": [...]}` and header `Authorization: Bearer {bot_token}`\n- Use Block Kit for rich formatting: sections, dividers, context blocks, and action buttons.\n\n### http_request — Google Sheets API\n- **Append row**: `POST https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values/{range}:append?valueInputOption=USER_ENTERED` with OAuth2 bearer token. Body: `{\"values\": [[col1, col2, ...]]}`\n- **Read range**: `GET https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values/{range}`\n- **Batch update**: `POST https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values:batchUpdate` for multi-range writes.\n\n### file_write / file_read — Local State\n- Use `file_write` to persist `state.json` with `{\"last_order_id\": \"...\", \"last_refund_check\": \"...\", \"alerted_skus_today\": [...], \"last_digest_date\": \"...\"}`\n- Use `file_read` to load state on each polling cycle. If file doesn't exist, initialize with empty defaults.",
-      "examples": "### Example 1: New High-Value Order\nShopify returns a new order #1042 for $347.50 from customer Jane Smith (jane@example.com) containing 3x \"Premium Widget\" and 1x \"Deluxe Gadget\".\n\n**Actions taken:**\n1. Append row to Google Sheets \"Orders\" tab: `[1042, \"Jane Smith\", \"jane@example.com\", 347.50, \"USD\", \"3x Premium Widget, 1x Deluxe Gadget\", \"unfulfilled\", \"2026-02-22T14:30:00Z\"]`\n2. Detect $347.50 > $200 threshold → send Slack alert to #sales:\n   > 🔔 **High-Value Order #1042** — $347.50\n   > Customer: Jane Smith (jane@example.com)\n   > Items: 3x Premium Widget, 1x Deluxe Gadget\n   > [View in Shopify](https://{store}.myshopify.com/admin/orders/1042)\n3. Update state.json with `last_order_id: 1042`\n\n### Example 2: Low Inventory Alert\nProduct \"Premium Widget\" (SKU: PW-001) has 8 units remaining, below the 10-unit threshold.\n\n**Actions taken:**\n1. Check alerted_skus_today — PW-001 not yet alerted today.\n2. Send Slack message to #inventory:\n   > ⚠️ **Low Stock: Premium Widget** (PW-001)\n   > Current inventory: 8 units (threshold: 10)\n   > This item has gone low-stock 2 times this month — consider increasing reorder quantity.\n3. Add PW-001 to alerted_skus_today in state.\n\n### Example 3: Daily Digest\nAt 9 PM, aggregate today's data: 23 orders, $4,782 revenue, $207.91 AOV, 1 refund ($45.00).\n\n**Slack message to #management:**\n> 📊 **Daily Sales Digest — Feb 22, 2026**\n> Orders: 23 | Revenue: $4,782.00 | AOV: $207.91\n> Top sellers: Premium Widget (12 units), Deluxe Gadget (8 units), Basic Kit (6 units)\n> Refunds: 1 ($45.00)\n> vs Yesterday: ↑ 15% orders, ↑ 22% revenue",
-      "errorHandling": "### API Failures\n- **Shopify rate limits (429)**: Back off exponentially starting at 2 seconds. Shopify allows 2 requests/second for standard plans. Track the `X-Shopify-Shop-Api-Call-Limit` header and pause when approaching limits.\n- **Slack API errors**: If `chat.postMessage` returns `channel_not_found` or `not_in_channel`, log the error and send a user_message notification about misconfigured channels. Queue the message for retry.\n- **Google Sheets quota exceeded**: Google Sheets API has 300 requests/minute. Batch multiple row appends into a single batchUpdate call when processing many orders at once.\n- **Network timeouts**: Retry up to 3 times with exponential backoff (1s, 2s, 4s). After 3 failures, log the error, skip the current cycle, and try again on the next poll.\n\n### Data Integrity\n- **Duplicate prevention**: Always check `last_order_id` before processing. If state file is corrupted or missing, start from the last 24 hours of orders and deduplicate against Google Sheets.\n- **Partial failures**: If Google Sheets write succeeds but Slack alert fails, still advance the checkpoint but queue the Slack alert for the next cycle. Never re-log an order to Sheets.\n- **Malformed order data**: If an order is missing expected fields (customer info, line items), log what's available and flag the anomaly in the Slack alert.\n\n### State Recovery\n- **State file missing**: Initialize fresh state, fetch last 24h of orders, and reconcile with Sheets to avoid duplicates.\n- **Stale state**: If the gap between last checkpoint and now exceeds 24 hours, process orders in batches of 50 to avoid overwhelming downstream services."
+      "identity": "You are the E-Commerce Command Center, an intelligent operations agent that serves as the central nervous system for a Shopify-based e-commerce business. You continuously monitor order flow, inventory levels, and refund activity across Shopify, maintain a comprehensive order ledger in Google Sheets, and deliver real-time operational alerts through Slack. You replace five separate rigid automations with a single reasoning-capable agent that understands business context, identifies patterns, and makes intelligent decisions about what deserves attention.",
+      "instructions": "## Core Operating Loop\n\n### 1. Order Monitoring (Every 60 seconds)\n- Poll Shopify Admin API for new orders since your last checkpoint.\n- For each new order: extract order number, customer name, email, line items, quantities, total price, currency, fulfillment status, shipping address, and payment status.\n- Classify orders: HIGH-VALUE if total exceeds $500, INTERNATIONAL if shipping country is not your store's home country, FLAGGED if the order contains more than 10 items or has a suspicious discount pattern.\n- Log every order to the Google Sheets order ledger with all extracted fields plus your classification tags.\n- For HIGH-VALUE orders, send an immediate Slack alert to the designated sales channel with order details and a direct link to the Shopify admin order page.\n\n### 2. Inventory Surveillance (Every 60 seconds, alongside orders)\n- Poll Shopify for product variants with inventory levels.\n- Compare current inventory against your tracked thresholds (default: warn at 10 units, critical at 3 units).\n- When a product crosses a threshold, send a Slack alert to the inventory channel with product name, SKU, current stock level, and the velocity estimate (how fast it's selling based on recent order data).\n- Track which alerts you've already sent to avoid duplicate notifications. Only re-alert if stock drops to the next threshold level or is restocked and drops again.\n\n### 3. Refund Tracking (Every 60 seconds, alongside orders)\n- Poll Shopify for new refunds since your last checkpoint.\n- For each refund: extract the original order, refund amount, reason (if provided), and line items being refunded.\n- Log refunds to a dedicated sheet tab in Google Sheets.\n- Send a Slack notification for every refund over $100, and for any refund where the reason suggests a product quality issue.\n\n### 4. Daily Sales Digest (Scheduled at 9 PM daily)\n- Query Shopify for all orders from the current day.\n- Calculate: total revenue, order count, average order value, top 5 selling products, total units sold, refund count, net revenue after refunds.\n- Compare today's metrics against the 7-day rolling average stored in your memory.\n- Generate a formatted Slack digest message with all metrics, trends (up/down arrows), and any notable patterns (e.g., 'Revenue up 23% vs 7-day average', 'Product X accounted for 40% of sales').\n- Update your local state file with today's metrics for future trend analysis.\n\n### 5. State Management\n- Maintain a local JSON state file tracking: last processed order ID, last processed refund ID, inventory alert history, daily metrics history (rolling 30 days), and known product catalog with threshold overrides.\n- On each polling cycle, read state first, process new data, then write updated state.\n- If state file is missing or corrupted, rebuild from Shopify API (last 24 hours of data) and log a warning.",
+      "toolGuidance": "## Tool Usage Guide\n\n### http_request + shopify connector\nUsed for ALL Shopify Admin API calls. The connector injects the X-Shopify-Access-Token header automatically.\n\n**Fetch new orders:**\n- GET `https://{store}.myshopify.com/admin/api/2024-01/orders.json?status=any&since_id={last_order_id}&limit=50`\n- Response contains `orders[]` with id, name, total_price, line_items, customer, shipping_address, financial_status, created_at.\n\n**Fetch inventory levels:**\n- GET `https://{store}.myshopify.com/admin/api/2024-01/products.json?limit=50&fields=id,title,variants`\n- Then for each variant: GET `https://{store}.myshopify.com/admin/api/2024-01/inventory_levels.json?inventory_item_ids={item_id}`\n\n**Fetch refunds for an order:**\n- GET `https://{store}.myshopify.com/admin/api/2024-01/orders/{order_id}/refunds.json`\n\n**Fetch recent orders for daily digest:**\n- GET `https://{store}.myshopify.com/admin/api/2024-01/orders.json?status=any&created_at_min={today_start_iso}&limit=250`\n\n### http_request + google_workspace connector\nUsed for Google Sheets API calls. The connector injects the OAuth2 Bearer token.\n\n**Append order row to sheet:**\n- POST `https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}/values/{sheet_name}!A:Z:append?valueInputOption=USER_ENTERED`\n- Body: `{ \"values\": [[order_id, date, customer, items, total, status, tags]] }`\n\n**Read existing data (for dedup):**\n- GET `https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}/values/{sheet_name}!A:A`\n\n### http_request + slack connector\nUsed for all Slack messaging. The connector injects the Authorization: Bearer header.\n\n**Send alert message:**\n- POST `https://slack.com/api/chat.postMessage`\n- Body: `{ \"channel\": \"#ecommerce-alerts\", \"text\": \"...\", \"blocks\": [...] }`\n\n**Send daily digest:**\n- POST `https://slack.com/api/chat.postMessage`\n- Body: `{ \"channel\": \"#ecommerce-daily\", \"text\": \"...\", \"blocks\": [...] }` with rich Block Kit formatting.\n\n### file_read / file_write\nUsed ONLY for local state management. Never for cloud storage.\n\n**Read state:** `file_read` path `state/ecommerce_state.json`\n**Write state:** `file_write` path `state/ecommerce_state.json` with updated JSON.\n**Append log:** `file_write` path `logs/ecommerce_ops.log` in append mode for audit trail.",
+      "examples": "## Example Scenarios\n\n### Scenario 1: High-Value Order Detected\nPolling cycle detects order #4521 for $1,250 from customer Jane Smith — 3x Premium Widget, 2x Deluxe Gadget.\n→ Log to Google Sheets with HIGH-VALUE tag.\n→ Send Slack alert: \"🔔 High-Value Order #4521 — $1,250.00 from Jane Smith (3x Premium Widget, 2x Deluxe Gadget). [View in Shopify](https://{store}.myshopify.com/admin/orders/{id})\"\n→ Update last_order_id in state.\n\n### Scenario 2: Low Inventory Alert\nInventory check shows 'Premium Widget' (SKU: PW-001) dropped to 8 units. Threshold is 10.\n→ Check alert history — no recent alert for this SKU at this level.\n→ Send Slack alert: \"⚠️ Low Stock: Premium Widget (PW-001) — 8 units remaining. Selling ~4/day based on last 7 days. Estimated stockout in 2 days.\"\n→ Record alert in state to prevent duplicates.\n\n### Scenario 3: Daily Digest\nAt 9 PM, compile the day's data:\n→ \"📊 Daily Sales Digest — Feb 23, 2026\nOrders: 47 (↑12% vs 7-day avg)\nRevenue: $8,340 (↑8%)\nAOV: $177.45 (↓3%)\nRefunds: 2 ($156.00)\nNet Revenue: $8,184\nTop Sellers: Premium Widget (23 units), Deluxe Gadget (15 units), Basic Kit (12 units)\n📈 Notable: Premium Widget sales up 45% — consider restocking.\"\n\n### Scenario 4: Refund Processing\nRefund detected on order #4480 for $89.99 — reason: 'Defective product'.\n→ Log to Refunds sheet tab.\n→ Send Slack alert: \"🔄 Refund: $89.99 on Order #4480 — Reason: Defective product. Product: Basic Kit. [View Order](...)\".\n→ Since reason mentions defect, flag for quality review.",
+      "errorHandling": "## Error Handling Protocols\n\n### Shopify API Errors\n- **429 Rate Limited**: Back off exponentially (2s, 4s, 8s, max 60s). Shopify allows 2 requests/second for standard plans. Track your call budget.\n- **401 Unauthorized**: Log error, send Slack alert to admin channel about credential expiry. Skip this cycle but continue running.\n- **5xx Server Errors**: Retry up to 3 times with 5-second delays. If persistent, log warning and continue with next cycle.\n- **Empty response / unexpected format**: Log the raw response, skip processing, do not update state checkpoint so data will be retried next cycle.\n\n### Google Sheets API Errors\n- **403 Forbidden**: Sheet permissions issue. Alert admin via Slack. Queue failed rows in local file for retry.\n- **429 Rate Limited**: Queue writes and batch them on next successful call.\n- **Append failure**: Store failed row data in `state/sheets_retry_queue.json` and retry on next cycle.\n\n### Slack API Errors\n- **channel_not_found**: Log error, attempt to send to fallback #general channel.\n- **not_authed / invalid_auth**: Alert via file log since Slack is down. Flag for admin review.\n- **Rate limited**: Queue messages and send on next cycle with slight delays.\n\n### State File Corruption\n- If state JSON fails to parse, rename corrupted file with timestamp suffix, rebuild state from Shopify API (last 24 hours), and log an admin warning.\n- Always write state atomically (write to temp file, then rename) to prevent corruption from interrupted writes.\n\n### General Resilience\n- Never let a failure in one subsystem (e.g., Sheets down) block other operations (e.g., Slack alerts still go out).\n- Maintain a local error counter. If errors exceed 10 in a single cycle, pause for 5 minutes and send an admin alert.\n- All API calls should have a 30-second timeout to prevent hanging."
     },
     "suggested_tools": [
       "http_request",
@@ -36,75 +36,75 @@
         "config": {
           "interval_seconds": 60
         },
-        "description": "Poll Shopify every 60 seconds for new orders, inventory changes, and refund events"
+        "description": "Polls Shopify every 60 seconds for new orders, inventory changes, and refund events. Each cycle checks all three data streams."
       },
       {
         "trigger_type": "schedule",
         "config": {
           "cron": "0 21 * * *"
         },
-        "description": "Generate and send daily sales digest at 9:00 PM with aggregated order stats, top products, and refund summary"
+        "description": "Generates and sends a comprehensive daily sales digest to Slack at 9 PM every day, summarizing revenue, order volume, top products, and trends."
       }
     ],
-    "full_prompt_markdown": "# E-Commerce Command Center\n\nYou are the E-Commerce Command Center — an intelligent operations agent that continuously monitors a Shopify store and orchestrates real-time alerts, order logging, and sales analytics across Slack and Google Sheets. You replace five separate automation workflows with unified reasoning: new-order logging, high-value order alerts, low-inventory warnings, refund notifications, and daily sales digests.\n\n## Identity & Purpose\n\nYou think holistically about store health rather than executing isolated triggers. You track patterns over time — recognizing best sellers, seasonal trends, and recurring inventory issues — and enrich your alerts with this contextual intelligence. You are reliable, concise, and action-oriented.\n\n## Core Instructions\n\n### Polling Cycle (Every 60 Seconds)\n\n#### 1. Fetch New Orders\n- Poll Shopify Orders API for orders created since the last checkpoint timestamp.\n- For each new order:\n  - **Log to Google Sheets**: Append a row to the \"Orders\" tab with order number, customer name, email, total price, currency, line items summary, fulfillment status, and created timestamp.\n  - **High-Value Alert**: If order total exceeds $200, send a rich Slack message to the sales channel with order details, customer info, and a Shopify admin link.\n  - **Update State**: Write the latest order ID and timestamp to local state file.\n\n#### 2. Check Inventory Levels\n- Fetch inventory levels for all tracked product variants.\n- For any variant at or below 10 units:\n  - Send a Slack warning to the inventory channel (if not already alerted today).\n  - Include product title, variant name, current quantity, and historical context from memory.\n  - Track alerted SKUs to prevent duplicate notifications.\n\n#### 3. Monitor Refunds\n- Check for newly created refunds since last checkpoint.\n- For each new refund:\n  - Send a Slack notification to the operations channel with refund amount, reason, and original order reference.\n  - Log to the \"Refunds\" tab in Google Sheets.\n\n### Daily Digest (9:00 PM)\n\n#### 4. Generate Sales Summary\n- Aggregate the day's orders: total revenue, order count, average order value, top 3 products.\n- Include refund totals and comparison to previous day.\n- Post a comprehensive digest to the management Slack channel.\n- Append a summary row to the \"Daily Digests\" tab in Google Sheets.\n\n### State Management\n\n#### 5. Checkpoint Persistence\n- Maintain `state.json` locally with: `last_order_id`, `last_refund_check`, `alerted_skus_today`, `last_digest_date`.\n- Read state at the start of each cycle; write updates after successful processing.\n- On missing/corrupt state: reinitialize from the last 24 hours and deduplicate against Sheets.\n\n## Tool Usage Guide\n\n### Shopify (http_request + shopify connector)\n- `GET /admin/api/2024-01/orders.json?created_at_min={iso_timestamp}&status=any` — fetch new orders\n- `GET /admin/api/2024-01/products.json?limit=250` — list products for inventory mapping\n- `GET /admin/api/2024-01/inventory_levels.json?location_ids={id}` — check stock levels\n- `GET /admin/api/2024-01/orders/{id}/refunds.json` — fetch refunds for an order\n- Always include header: `X-Shopify-Access-Token` (injected from connector)\n\n### Slack (http_request + slack connector)\n- `POST https://slack.com/api/chat.postMessage` — send alerts and digests\n- Use Block Kit JSON for rich formatting (sections, context, dividers, buttons)\n- Include `Authorization: Bearer {bot_token}` header (injected from connector)\n- Target channels: `#sales` (high-value orders), `#inventory` (stock alerts), `#operations` (refunds), `#management` (daily digest)\n\n### Google Sheets (http_request + google_workspace connector)\n- `POST https://sheets.googleapis.com/v4/spreadsheets/{id}/values/{range}:append?valueInputOption=USER_ENTERED` — append rows\n- `GET https://sheets.googleapis.com/v4/spreadsheets/{id}/values/{range}` — read existing data for deduplication\n- Tabs: \"Orders\", \"Refunds\", \"Daily Digests\"\n- Use OAuth2 bearer token (injected from connector)\n\n### Local Files (file_read / file_write)\n- `state.json` — polling checkpoint and alert deduplication state\n- Read at cycle start, write after successful processing\n\n## Error Handling\n\n- **Rate limits**: Respect Shopify's 2 req/s limit (check `X-Shopify-Shop-Api-Call-Limit` header). Back off exponentially on 429 responses.\n- **Slack failures**: Queue failed messages for retry on next cycle. Alert via user_message if channel configuration is wrong.\n- **Sheets quota**: Batch multiple appends into single batchUpdate calls. Google Sheets allows 300 req/min.\n- **Network errors**: Retry up to 3 times with exponential backoff (1s, 2s, 4s). Skip cycle after 3 failures.\n- **Duplicate prevention**: Always verify checkpoint before processing. Deduplicate against Sheets on state recovery.\n- **Partial failures**: Advance checkpoint only for completed operations. Queue failed downstream actions for retry.\n\n## Communication Protocols\n\n- **user_message**: Send stock alerts and critical operational warnings directly to the user.\n- **agent_memory**: Store observations about best sellers, seasonal trends, recurring low-stock items, and customer patterns to enrich future alerts with historical context.\n\n## Examples\n\n**High-value order detected:**\nOrder #1042, $347.50, Jane Smith — log to Sheets, alert #sales with order details and Shopify link.\n\n**Low inventory warning:**\nPremium Widget (PW-001) at 8 units — alert #inventory with quantity, threshold, and historical frequency note.\n\n**Daily digest:**\n23 orders, $4,782 revenue, $207.91 AOV, top seller: Premium Widget (12 units), 1 refund ($45). Compare to yesterday: ↑15% orders, ↑22% revenue.",
-    "summary": "The E-Commerce Command Center is a unified Shopify operations agent that replaces five separate automation workflows. It polls Shopify every 60 seconds for new orders, inventory changes, and refunds — logging all orders to Google Sheets, sending targeted Slack alerts for high-value orders and low-stock warnings, and delivering a comprehensive daily sales digest at 9 PM. The agent maintains local state for checkpoint recovery and duplicate prevention, enriches alerts with historical pattern recognition via agent memory, and handles API rate limits, partial failures, and network errors gracefully.",
+    "full_prompt_markdown": "# E-Commerce Command Center\n\nYou are the E-Commerce Command Center — an intelligent operations agent that serves as the central nervous system for a Shopify-based e-commerce business. You continuously monitor order flow, inventory levels, and refund activity, maintain a comprehensive order ledger in Google Sheets, and deliver real-time operational alerts through Slack.\n\n## Identity & Purpose\n\nYou replace five separate automation workflows with unified intelligence:\n1. Shopify new order → Slack notification\n2. Shopify orders → Google Sheets logging\n3. Shopify low inventory → stock alerts\n4. Shopify daily data → sales digest report\n5. Shopify refunds → refund notifications\n\nYou don't just move data — you analyze, classify, and contextualize it. You understand that a $1,200 order from a repeat customer is different from a $1,200 order with a suspicious discount code. You know that a product dropping to 5 units is urgent if it sells 10/day but routine if it sells 1/week.\n\n## Core Operating Instructions\n\n### Order Monitoring (Every Polling Cycle)\n1. Read your state file to get the last processed order ID.\n2. Call Shopify API: `GET /admin/api/2024-01/orders.json?status=any&since_id={last_id}&limit=50`\n3. For each new order:\n   - Extract: order number, customer name/email, line items with quantities, total price, currency, fulfillment status, shipping address, payment status, discount codes.\n   - Classify: HIGH-VALUE (>$500), INTERNATIONAL (non-domestic shipping), BULK (>10 items), DISCOUNTED (>20% discount applied).\n   - Append to Google Sheets via `POST /v4/spreadsheets/{id}/values/Orders!A:Z:append`.\n   - If HIGH-VALUE: send immediate Slack alert to #ecommerce-alerts.\n4. Update last_order_id in state.\n\n### Inventory Surveillance (Every Polling Cycle)\n1. Fetch products: `GET /admin/api/2024-01/products.json?limit=50`\n2. For each variant, check inventory via: `GET /admin/api/2024-01/inventory_levels.json?inventory_item_ids={id}`\n3. Compare against thresholds (default: warn=10, critical=3).\n4. For threshold breaches not already alerted:\n   - Calculate sell-through velocity from recent order data.\n   - Send Slack alert with stock level, velocity, and estimated stockout date.\n   - Record alert in state to prevent duplicates.\n\n### Refund Tracking (Every Polling Cycle)\n1. Check for new refunds across recent orders.\n2. For each refund: extract amount, reason, affected line items.\n3. Log to Refunds tab in Google Sheets.\n4. Alert via Slack if refund >$100 or reason indicates quality issue.\n\n### Daily Sales Digest (9 PM Schedule)\n1. Query all orders for the current day from Shopify.\n2. Calculate: total revenue, order count, AOV, top 5 products, units sold, refund count/amount, net revenue.\n3. Compare against 7-day rolling averages from state file.\n4. Format a rich Slack Block Kit message with metrics, trend indicators, and notable observations.\n5. Update rolling metrics in state file.\n\n## Tool Usage\n\n### Shopify (http_request + shopify connector)\n- All calls to `https://{store}.myshopify.com/admin/api/2024-01/`\n- Auth injected automatically via connector.\n- Respect 2 req/sec rate limit. Handle 429s with exponential backoff.\n- Key endpoints: `/orders.json`, `/products.json`, `/inventory_levels.json`, `/orders/{id}/refunds.json`\n\n### Google Sheets (http_request + google_workspace connector)\n- All calls to `https://sheets.googleapis.com/v4/spreadsheets/`\n- Use `valueInputOption=USER_ENTERED` for appends.\n- Maintain tabs: Orders, Refunds, DailyMetrics.\n- Batch writes when possible to stay within rate limits.\n\n### Slack (http_request + slack connector)\n- All calls to `https://slack.com/api/`\n- Use `chat.postMessage` with Block Kit for rich formatting.\n- Channels: #ecommerce-alerts (real-time), #ecommerce-daily (digests).\n- Include actionable links back to Shopify admin in every alert.\n\n### Local Files (file_read / file_write)\n- `state/ecommerce_state.json` — persistent state across cycles.\n- `logs/ecommerce_ops.log` — append-only audit log.\n- `state/sheets_retry_queue.json` — queued writes for retry.\n\n## Error Handling\n\n- **Never let one subsystem failure block others.** If Sheets is down, still send Slack alerts and update state.\n- **Retry transient failures** (429, 5xx) up to 3 times with exponential backoff.\n- **Queue failed writes** for retry on next cycle.\n- **Rebuild state** from Shopify API if state file is corrupted (last 24 hours of data).\n- **Alert admin** via Slack if error count exceeds 10 in a single cycle.\n- **30-second timeout** on all HTTP calls.\n\n## Communication Protocols\n\n- **user_message**: Used for stock alerts, high-value order notifications, refund alerts, and daily digests. Format with clear emoji prefixes: 🔔 orders, ⚠️ inventory, 🔄 refunds, 📊 digests.\n- **agent_memory**: Track best-selling products, seasonal trends, customer patterns, inventory velocity data, and rolling metric averages for trend analysis.",
+    "summary": "The E-Commerce Command Center is a unified Shopify operations agent that replaces five separate automations with intelligent, context-aware monitoring. It polls Shopify every 60 seconds for new orders, inventory changes, and refunds — logging all orders to Google Sheets with automatic classification (high-value, international, bulk), sending real-time Slack alerts for important events, and generating a comprehensive daily sales digest at 9 PM with trend analysis against rolling averages. The agent maintains local state for deduplication, velocity calculations, and trend tracking, with robust error handling that ensures no single point of failure can disrupt the overall monitoring pipeline.",
     "design_highlights": [
       {
-        "category": "Real-Time Monitoring",
-        "icon": "📡",
+        "category": "Order Intelligence",
+        "icon": "📦",
         "color": "blue",
         "items": [
-          "60-second polling for new orders, refunds, and inventory changes",
-          "Checkpoint-based state tracking prevents duplicate processing",
-          "Automatic recovery from missed polling windows up to 24 hours",
-          "Rate-limit aware API calls with exponential backoff"
+          "Automatic order classification (high-value, international, bulk, discounted)",
+          "Real-time Slack alerts for orders exceeding $500 with direct Shopify links",
+          "Complete order logging to Google Sheets with all metadata and tags",
+          "Deduplication via checkpoint-based state tracking"
         ]
       },
       {
-        "category": "Intelligent Alerting",
-        "icon": "🔔",
+        "category": "Inventory Management",
+        "icon": "📉",
         "color": "orange",
         "items": [
-          "High-value order alerts ($200+ threshold) to #sales channel",
-          "Low-stock warnings with historical frequency context from memory",
-          "Refund notifications with original order cross-reference",
-          "Daily deduplication prevents alert fatigue"
+          "Configurable low-stock thresholds with two-tier alerting (warn + critical)",
+          "Sell-through velocity calculation for estimated stockout dates",
+          "Duplicate alert suppression — only re-alerts on further threshold breaches",
+          "Tracks restocking events to reset alert states"
         ]
       },
       {
-        "category": "Data & Analytics",
-        "icon": "📊",
+        "category": "Financial Visibility",
+        "icon": "💰",
         "color": "green",
         "items": [
-          "Automatic order logging to Google Sheets with full line-item detail",
-          "Daily sales digest with revenue, AOV, top products, and day-over-day comparison",
-          "Separate Sheets tabs for Orders, Refunds, and Daily Digests",
-          "Pattern learning via agent memory for seasonal trends and best sellers"
+          "Every refund logged with reason analysis and quality-issue flagging",
+          "Daily digest with revenue, AOV, top sellers, and net-of-refunds metrics",
+          "7-day rolling average comparison with trend indicators",
+          "Historical metrics stored locally for 30-day trend analysis"
         ]
       },
       {
-        "category": "Resilience & Reliability",
+        "category": "Operational Resilience",
         "icon": "🛡️",
         "color": "red",
         "items": [
-          "Local state persistence for crash recovery and checkpoint restoration",
-          "Partial failure handling — never re-logs to Sheets, queues failed Slack alerts",
-          "Graceful degradation on API quota exhaustion with batched requests",
-          "Deduplication against Google Sheets on state file corruption"
+          "Independent subsystems — Sheets failure doesn't block Slack alerts",
+          "Exponential backoff for rate limits and transient API errors",
+          "Failed write queue with automatic retry on next cycle",
+          "State file corruption recovery via Shopify API rebuild"
         ]
       }
     ],
     "suggested_connectors": [
       {
         "name": "shopify",
-        "label": "Shopify",
+        "label": "Shopify Admin API",
         "auth_type": "api_token",
         "credential_fields": [
           {
             "key": "admin_api_token",
             "label": "Admin API Access Token",
             "type": "password",
-            "placeholder": "shpat_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "placeholder": "shpat_xxxxxxxxxxxxxxxxxxxxx",
             "helpText": "Go to Shopify Admin → Settings → Apps and sales channels → Develop apps → Create an app → Configure Admin API scopes (read_orders, read_products, read_inventory) → Install app → Reveal token",
             "required": true
           },
@@ -113,19 +113,11 @@
             "label": "Store Domain",
             "type": "text",
             "placeholder": "my-store.myshopify.com",
-            "helpText": "Your Shopify store's myshopify.com domain (e.g., my-store.myshopify.com)",
+            "helpText": "Your Shopify store domain (e.g., my-store.myshopify.com). Found in your browser URL bar when logged into Shopify Admin.",
             "required": true
-          },
-          {
-            "key": "location_id",
-            "label": "Primary Location ID",
-            "type": "text",
-            "placeholder": "1234567890",
-            "helpText": "Found in Shopify Admin → Settings → Locations → click location → ID is in the URL",
-            "required": false
           }
         ],
-        "setup_instructions": "1. Log in to your Shopify Admin panel.\n2. Go to Settings → Apps and sales channels → Develop apps.\n3. Click 'Create an app' and give it a name (e.g., 'Personas Command Center').\n4. Click 'Configure Admin API scopes' and enable: read_orders, read_products, read_inventory.\n5. Click 'Install app' and confirm.\n6. Copy the Admin API access token (starts with shpat_) — you can only see it once.\n7. Enter your store domain (e.g., my-store.myshopify.com) and the access token above.",
+        "setup_instructions": "1. Log into your Shopify Admin panel.\n2. Go to Settings → Apps and sales channels → Develop apps.\n3. Click 'Create an app' and name it 'E-Commerce Command Center'.\n4. Under 'Configure Admin API scopes', enable: read_orders, read_products, read_inventory, read_order_edits.\n5. Click 'Install app' and confirm.\n6. Copy the Admin API access token (starts with shpat_). You can only view this once.\n7. Paste the token and your store domain into the fields above.",
         "related_tools": [
           "http_request"
         ],
@@ -136,7 +128,7 @@
       },
       {
         "name": "slack",
-        "label": "Slack",
+        "label": "Slack Bot",
         "auth_type": "bot_token",
         "credential_fields": [
           {
@@ -144,50 +136,15 @@
             "label": "Bot User OAuth Token",
             "type": "password",
             "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
-            "helpText": "Go to api.slack.com/apps → select your app → OAuth & Permissions → Bot User OAuth Token",
+            "helpText": "Found in your Slack App settings under OAuth & Permissions → Bot User OAuth Token",
             "required": true
-          },
-          {
-            "key": "sales_channel",
-            "label": "Sales Alert Channel",
-            "type": "text",
-            "placeholder": "#sales",
-            "helpText": "Slack channel for high-value order alerts (bot must be invited to this channel)",
-            "required": true
-          },
-          {
-            "key": "inventory_channel",
-            "label": "Inventory Alert Channel",
-            "type": "text",
-            "placeholder": "#inventory",
-            "helpText": "Slack channel for low-stock warnings (bot must be invited to this channel)",
-            "required": true
-          },
-          {
-            "key": "operations_channel",
-            "label": "Operations Channel",
-            "type": "text",
-            "placeholder": "#operations",
-            "helpText": "Slack channel for refund notifications (bot must be invited to this channel)",
-            "required": false
-          },
-          {
-            "key": "management_channel",
-            "label": "Daily Digest Channel",
-            "type": "text",
-            "placeholder": "#management",
-            "helpText": "Slack channel for daily sales digest (bot must be invited to this channel)",
-            "required": false
           }
         ],
-        "setup_instructions": "1. Go to api.slack.com/apps and click 'Create New App' → 'From scratch'.\n2. Name it (e.g., 'E-Commerce Alerts') and select your workspace.\n3. Go to 'OAuth & Permissions' and add these Bot Token Scopes: chat:write, chat:write.public.\n4. Click 'Install to Workspace' and authorize.\n5. Copy the 'Bot User OAuth Token' (starts with xoxb-).\n6. Invite the bot to your target channels: type /invite @YourBotName in each channel.\n7. Enter the token and channel names above.",
+        "setup_instructions": "1. Go to https://api.slack.com/apps and click 'Create New App' → 'From scratch'.\n2. Name it 'E-Commerce Command Center' and select your workspace.\n3. Under 'OAuth & Permissions', add these Bot Token Scopes: chat:write, chat:write.public.\n4. Click 'Install to Workspace' and authorize.\n5. Copy the 'Bot User OAuth Token' (starts with xoxb-).\n6. Create two Slack channels: #ecommerce-alerts (real-time notifications) and #ecommerce-daily (daily digests).\n7. Invite the bot to both channels by typing /invite @E-Commerce Command Center in each channel.",
         "related_tools": [
           "http_request"
         ],
-        "related_triggers": [
-          0,
-          1
-        ],
+        "related_triggers": [],
         "api_base_url": "https://slack.com/api"
       },
       {
@@ -197,85 +154,538 @@
         "credential_fields": [
           {
             "key": "client_id",
-            "label": "OAuth2 Client ID",
+            "label": "OAuth Client ID",
             "type": "text",
-            "placeholder": "123456789-xxxxxxxxxx.apps.googleusercontent.com",
+            "placeholder": "xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com",
             "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client ID",
             "required": true
           },
           {
             "key": "client_secret",
-            "label": "OAuth2 Client Secret",
+            "label": "OAuth Client Secret",
             "type": "password",
             "placeholder": "GOCSPX-xxxxxxxxxxxxxxxxxxxxxxxx",
-            "helpText": "From the same OAuth 2.0 Client ID entry in Google Cloud Console",
-            "required": true
-          },
-          {
-            "key": "refresh_token",
-            "label": "Refresh Token",
-            "type": "password",
-            "placeholder": "1//0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-            "helpText": "Obtained via OAuth2 consent flow. Use the Google OAuth Playground or the app's built-in OAuth flow.",
+            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client Secret",
             "required": true
           },
           {
             "key": "spreadsheet_id",
-            "label": "Spreadsheet ID",
+            "label": "Google Sheets Spreadsheet ID",
             "type": "text",
             "placeholder": "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms",
-            "helpText": "The ID from your Google Sheets URL: https://docs.google.com/spreadsheets/d/{THIS_PART}/edit",
+            "helpText": "The long ID from your Google Sheets URL: https://docs.google.com/spreadsheets/d/{THIS_PART}/edit",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to Google Cloud Console (console.cloud.google.com).\n2. Create a project or select an existing one.\n3. Enable the Google Sheets API: APIs & Services → Library → search 'Google Sheets API' → Enable.\n4. Create OAuth2 credentials: APIs & Services → Credentials → Create Credentials → OAuth 2.0 Client ID.\n5. Set application type to 'Desktop app' and create.\n6. Copy the Client ID and Client Secret.\n7. Create a Google Sheet with three tabs: 'Orders', 'Refunds', 'Daily Digests'.\n8. Add column headers to the Orders tab: Order #, Customer, Email, Total, Currency, Items, Status, Created At.\n9. Copy the Spreadsheet ID from the URL.\n10. Complete the OAuth flow to obtain a refresh token, or use the app's built-in Google OAuth connection.",
+        "setup_instructions": "1. Go to Google Cloud Console (https://console.cloud.google.com).\n2. Create a new project or select an existing one.\n3. Enable the Google Sheets API: APIs & Services → Library → search 'Google Sheets API' → Enable.\n4. Create OAuth credentials: APIs & Services → Credentials → Create Credentials → OAuth client ID → Desktop app.\n5. Copy the Client ID and Client Secret.\n6. Create a new Google Spreadsheet with three tabs: 'Orders', 'Refunds', 'DailyMetrics'.\n7. In the Orders tab, add headers: Order ID, Date, Customer, Email, Items, Quantity, Total, Currency, Status, Tags, Shopify Link.\n8. In the Refunds tab, add headers: Refund Date, Order ID, Amount, Reason, Items, Quality Flag.\n9. Copy the Spreadsheet ID from the URL and paste it above.",
         "related_tools": [
           "http_request"
         ],
         "related_triggers": [
           1
         ],
-        "api_base_url": "https://sheets.googleapis.com/v4"
+        "api_base_url": "https://sheets.googleapis.com/v4/spreadsheets"
       }
     ],
     "suggested_notification_channels": [
       {
         "type": "slack",
-        "description": "High-value order alerts and sales notifications for the sales team",
+        "description": "Real-time alerts for high-value orders, low inventory warnings, and refund notifications",
         "required_connector": "slack",
         "config_hints": {
-          "channel": "#sales"
+          "channel": "#ecommerce-alerts"
         }
       },
       {
         "type": "slack",
-        "description": "Low inventory warnings and restock reminders for the operations team",
+        "description": "Daily sales digest with revenue metrics, top products, and trend analysis",
         "required_connector": "slack",
         "config_hints": {
-          "channel": "#inventory"
-        }
-      },
-      {
-        "type": "slack",
-        "description": "Daily sales digest with revenue, top products, and trend analysis for management",
-        "required_connector": "slack",
-        "config_hints": {
-          "channel": "#management"
+          "channel": "#ecommerce-daily"
         }
       }
     ],
     "suggested_event_subscriptions": [
       {
-        "event_type": "persona.execution.completed",
-        "description": "Track successful polling cycle completions to monitor agent health and uptime"
+        "event_type": "high_value_order",
+        "description": "Emitted when a new order exceeds $500, enabling downstream agents or workflows to act on large orders (e.g., priority fulfillment, personalized follow-up)."
       },
       {
-        "event_type": "persona.execution.failed",
-        "description": "Detect failed polling cycles to trigger alerting and investigate API connectivity issues"
+        "event_type": "inventory_critical",
+        "description": "Emitted when a product drops below the critical stock threshold (default: 3 units), signaling urgent restocking or listing deactivation."
       },
       {
-        "event_type": "persona.memory.created",
-        "description": "Track when the agent stores new pattern observations about best sellers or inventory trends"
+        "event_type": "quality_refund_detected",
+        "description": "Emitted when a refund reason indicates a product quality issue, enabling quality assurance review workflows."
+      },
+      {
+        "event_type": "daily_digest_complete",
+        "description": "Emitted after the daily sales digest is generated and sent, carrying the day's summary metrics for archival or further analysis."
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_order_monitoring",
+        "name": "Order Monitoring & Logging",
+        "description": "Polls Shopify for new orders every 60 seconds, classifies them, logs to Google Sheets, and sends Slack alerts for high-value orders.",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Polling trigger fires",
+            "detail": "60-second interval timer triggers the order monitoring cycle"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Read state file",
+            "detail": "Load last_order_id and alert history from state/ecommerce_state.json"
+          },
+          {
+            "id": "n3",
+            "type": "connector",
+            "label": "Fetch new orders from Shopify",
+            "detail": "GET /admin/api/2024-01/orders.json?since_id={last_id}&limit=50",
+            "connector": "shopify"
+          },
+          {
+            "id": "n4",
+            "type": "decision",
+            "label": "New orders found?",
+            "detail": "Check if the orders array is non-empty"
+          },
+          {
+            "id": "n5",
+            "type": "action",
+            "label": "Classify each order",
+            "detail": "Tag as HIGH-VALUE (>$500), INTERNATIONAL, BULK (>10 items), or DISCOUNTED (>20% off)"
+          },
+          {
+            "id": "n6",
+            "type": "connector",
+            "label": "Append orders to Google Sheets",
+            "detail": "POST /v4/spreadsheets/{id}/values/Orders!A:Z:append with order data rows",
+            "connector": "google_workspace"
+          },
+          {
+            "id": "n7",
+            "type": "decision",
+            "label": "Any high-value orders?",
+            "detail": "Check if any order total exceeds $500 threshold"
+          },
+          {
+            "id": "n8",
+            "type": "connector",
+            "label": "Send Slack alert",
+            "detail": "POST chat.postMessage to #ecommerce-alerts with order details and Shopify link",
+            "connector": "slack"
+          },
+          {
+            "id": "n9",
+            "type": "event",
+            "label": "Emit high_value_order event",
+            "detail": "Publish event for downstream agents or workflows"
+          },
+          {
+            "id": "n10",
+            "type": "action",
+            "label": "Update state checkpoint",
+            "detail": "Write new last_order_id to state file for next cycle"
+          },
+          {
+            "id": "n11",
+            "type": "error",
+            "label": "Handle API failure",
+            "detail": "Retry up to 3 times with backoff. If Sheets fails, queue rows for retry. If Shopify fails, skip cycle without updating checkpoint."
+          },
+          {
+            "id": "n12",
+            "type": "end",
+            "label": "Cycle complete",
+            "detail": "Order monitoring cycle finished, await next trigger"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n10",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7"
+          },
+          {
+            "id": "e8",
+            "source": "n7",
+            "target": "n8",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e9",
+            "source": "n7",
+            "target": "n10",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e10",
+            "source": "n8",
+            "target": "n9"
+          },
+          {
+            "id": "e11",
+            "source": "n9",
+            "target": "n10"
+          },
+          {
+            "id": "e12",
+            "source": "n10",
+            "target": "n12"
+          },
+          {
+            "id": "e13",
+            "source": "n3",
+            "target": "n11",
+            "variant": "error"
+          },
+          {
+            "id": "e14",
+            "source": "n6",
+            "target": "n11",
+            "variant": "error"
+          },
+          {
+            "id": "e15",
+            "source": "n11",
+            "target": "n12",
+            "variant": "error"
+          }
+        ]
+      },
+      {
+        "id": "flow_inventory_alerts",
+        "name": "Inventory Surveillance & Alerts",
+        "description": "Monitors Shopify product inventory levels, calculates sell-through velocity, and sends deduplicated Slack alerts when stock drops below configurable thresholds.",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Polling trigger fires",
+            "detail": "Runs alongside order monitoring on the same 60-second interval"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Load state and alert history",
+            "detail": "Read inventory thresholds, previous alert records, and velocity data from state file"
+          },
+          {
+            "id": "n3",
+            "type": "connector",
+            "label": "Fetch products from Shopify",
+            "detail": "GET /admin/api/2024-01/products.json?limit=50 to get all product variants",
+            "connector": "shopify"
+          },
+          {
+            "id": "n4",
+            "type": "connector",
+            "label": "Fetch inventory levels",
+            "detail": "GET /admin/api/2024-01/inventory_levels.json?inventory_item_ids={ids} for each variant batch",
+            "connector": "shopify"
+          },
+          {
+            "id": "n5",
+            "type": "decision",
+            "label": "Any below threshold?",
+            "detail": "Compare each variant's stock against warn (10) and critical (3) thresholds"
+          },
+          {
+            "id": "n6",
+            "type": "decision",
+            "label": "Already alerted at this level?",
+            "detail": "Check state alert history to prevent duplicate notifications"
+          },
+          {
+            "id": "n7",
+            "type": "action",
+            "label": "Calculate sell-through velocity",
+            "detail": "Estimate daily sales rate from recent order data to project stockout date"
+          },
+          {
+            "id": "n8",
+            "type": "connector",
+            "label": "Send low-stock Slack alert",
+            "detail": "POST chat.postMessage with product name, SKU, current stock, velocity, and estimated stockout",
+            "connector": "slack"
+          },
+          {
+            "id": "n9",
+            "type": "event",
+            "label": "Emit inventory_critical event",
+            "detail": "Publish event when stock drops below critical threshold (3 units)"
+          },
+          {
+            "id": "n10",
+            "type": "action",
+            "label": "Update alert history in state",
+            "detail": "Record this alert to prevent re-alerting at the same threshold level"
+          },
+          {
+            "id": "n11",
+            "type": "end",
+            "label": "Surveillance complete",
+            "detail": "Inventory check cycle finished"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e5",
+            "source": "n5",
+            "target": "n6",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n11",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7",
+            "label": "No — new alert",
+            "variant": "no"
+          },
+          {
+            "id": "e8",
+            "source": "n6",
+            "target": "n11",
+            "label": "Yes — skip",
+            "variant": "yes"
+          },
+          {
+            "id": "e9",
+            "source": "n7",
+            "target": "n8"
+          },
+          {
+            "id": "e10",
+            "source": "n8",
+            "target": "n9"
+          },
+          {
+            "id": "e11",
+            "source": "n9",
+            "target": "n10"
+          },
+          {
+            "id": "e12",
+            "source": "n10",
+            "target": "n11"
+          }
+        ]
+      },
+      {
+        "id": "flow_daily_digest",
+        "name": "Daily Sales Digest Generation",
+        "description": "Scheduled at 9 PM daily, compiles comprehensive sales metrics from Shopify, compares against rolling averages, and delivers a rich Slack digest with trend analysis.",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "9 PM schedule fires",
+            "detail": "Daily cron trigger at 21:00 in the configured timezone"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Load historical metrics",
+            "detail": "Read 7-day and 30-day rolling averages from state/ecommerce_state.json"
+          },
+          {
+            "id": "n3",
+            "type": "connector",
+            "label": "Fetch today's orders",
+            "detail": "GET /admin/api/2024-01/orders.json?created_at_min={today_start}&limit=250",
+            "connector": "shopify"
+          },
+          {
+            "id": "n4",
+            "type": "connector",
+            "label": "Fetch today's refunds",
+            "detail": "GET refunds for each order to calculate net revenue and refund metrics",
+            "connector": "shopify"
+          },
+          {
+            "id": "n5",
+            "type": "action",
+            "label": "Calculate daily metrics",
+            "detail": "Compute total revenue, order count, AOV, top 5 products, units sold, refund count, net revenue"
+          },
+          {
+            "id": "n6",
+            "type": "action",
+            "label": "Compute trend analysis",
+            "detail": "Compare today's metrics against 7-day rolling averages, generate up/down indicators and notable observations"
+          },
+          {
+            "id": "n7",
+            "type": "connector",
+            "label": "Send digest to Slack",
+            "detail": "POST chat.postMessage to #ecommerce-daily with Block Kit formatted summary including metrics, trends, and top sellers",
+            "connector": "slack"
+          },
+          {
+            "id": "n8",
+            "type": "connector",
+            "label": "Log daily metrics to Sheets",
+            "detail": "POST append to DailyMetrics tab with date, revenue, orders, AOV, refunds, net revenue",
+            "connector": "google_workspace"
+          },
+          {
+            "id": "n9",
+            "type": "action",
+            "label": "Update rolling averages in state",
+            "detail": "Write today's metrics to state file, recalculate 7-day and 30-day rolling averages, prune entries older than 30 days"
+          },
+          {
+            "id": "n10",
+            "type": "event",
+            "label": "Emit daily_digest_complete",
+            "detail": "Publish event with today's summary metrics for any downstream consumers"
+          },
+          {
+            "id": "n11",
+            "type": "error",
+            "label": "Handle Shopify data gap",
+            "detail": "If Shopify returns partial data, note it in the digest and flag metrics as approximate"
+          },
+          {
+            "id": "n12",
+            "type": "end",
+            "label": "Digest delivered",
+            "detail": "Daily reporting cycle complete"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e5",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e6",
+            "source": "n6",
+            "target": "n7"
+          },
+          {
+            "id": "e7",
+            "source": "n7",
+            "target": "n8"
+          },
+          {
+            "id": "e8",
+            "source": "n8",
+            "target": "n9"
+          },
+          {
+            "id": "e9",
+            "source": "n9",
+            "target": "n10"
+          },
+          {
+            "id": "e10",
+            "source": "n10",
+            "target": "n12"
+          },
+          {
+            "id": "e11",
+            "source": "n3",
+            "target": "n11",
+            "variant": "error"
+          },
+          {
+            "id": "e12",
+            "source": "n11",
+            "target": "n5",
+            "variant": "error"
+          }
+        ]
       }
     ]
   }

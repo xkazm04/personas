@@ -185,7 +185,12 @@ Personas access external services through the **Credential → Connector** syste
 
 1. **ConnectorDefinition**: Template for a service (e.g., Google Workspace). Defines required fields, healthcheck config, associated tool names.
 2. **PersonaCredential**: An instance with encrypted data (`AES-256-GCM`). The `service_type` links it to a connector.
-3. **At execution time**: The runner finds connectors whose `services` array references the persona's assigned tools, loads and decrypts matching credentials, and injects them as environment variables: `{CONNECTOR_NAME}_{FIELD_KEY}`.
+3. **At execution time**: The runner resolves credentials via a 3-tier fallback strategy:
+   - **Primary**: Match tool names against connector `services[].toolName` arrays
+   - **Fallback 1**: Match tool `requires_credential_type` against connector names (fuzzy prefix match)
+   - **Fallback 2**: Query credentials directly by `service_type` matching the tool's `requires_credential_type`
+
+   Matched credentials are decrypted and injected as environment variables: `{CONNECTOR_NAME}_{FIELD_KEY}`.
 
 Credentials are never passed as CLI arguments and never written to logs.
 
@@ -202,7 +207,10 @@ A Persona can store persistent knowledge via `PersonaMemory`:
 | `source_execution_id` | Which execution created it |
 | `tags` | JSON array of string tags |
 
-Memories are created mid-execution via the Agent Memory protocol.
+Memories are created mid-execution via the Agent Memory protocol. The memory system is designed to be **active** (consulted before decisions) and **progressive** (each execution builds on prior knowledge):
+- **Before acting**: The persona's prompt instructs it to check memories for relevant past experience
+- **After acting**: Store business outcomes, patterns, and optimizations discovered
+- **Over time**: Build domain expertise through accumulated business knowledge
 
 ### Groups
 
@@ -222,7 +230,7 @@ queued → running → completed | failed | cancelled
 
 1. **Queue**: A trigger fires or the user clicks Run. An execution record is created with status `queued`.
 2. **Prepare**: The runner loads the persona, its tools, and decrypts credentials. The prompt is assembled.
-3. **Spawn**: Claude CLI is launched as a child process with the prompt piped to stdin. CLI flags include `--output-format stream-json`, `--verbose`, `--dangerously-skip-permissions`, and optional `--model`, `--max-budget-usd`, `--max-turns`.
+3. **Spawn**: Claude CLI is launched as a child process with the prompt piped to stdin. CLI flags include `--output-format stream-json`, `--verbose` (required by `--print` mode), `--dangerously-skip-permissions`, and optional `--model`, `--max-budget-usd`, `--max-turns`. Non-JSON verbose lines are filtered out by the parser to prevent duplicate display. The working directory is a stable per-persona path (`{temp}/personas-workspace/{persona_id}`) that persists across executions, allowing Claude Code's memory system and workspace files to carry over between runs.
 4. **Stream**: stdout is read line by line. Each line is parsed for:
    - `AssistantText`: Natural language output
    - `AssistantToolUse`: Tool call with name and input
@@ -230,7 +238,7 @@ queued → running → completed | failed | cancelled
    - `Result` lines: Token counts, cost, session ID, model used
    - Protocol messages (see below)
 5. **Timeout**: If the process exceeds `timeout_ms`, it is killed.
-6. **Complete**: Exit code 0 → `completed`, non-zero → `failed`. Execution record is updated with output, metrics, tool steps, and execution flows.
+6. **Complete**: Exit code 0 → `completed`, non-zero → `failed`. If exit code is 0 but the agent's `outcome_assessment` indicates the task was not accomplished, status is set to `incomplete`. If no `outcome_assessment` is found, a heuristic checks for error indicators in the output — if errors are present without success indicators, status is also `incomplete`. Execution record is updated with output, metrics, tool steps, and execution flows.
 7. **Post-mortem**: Tool usage is recorded. Execution flows are extracted. If failed, the healing engine diagnoses the error.
 
 ### Execution Record (`PersonaExecution`)
@@ -239,7 +247,7 @@ queued → running → completed | failed | cancelled
 |-------|-------------|
 | `input_data` | JSON input provided to the persona |
 | `output_data` | Final result text |
-| `status` | `queued`, `running`, `completed`, `failed`, `cancelled` |
+| `status` | `queued`, `running`, `completed`, `incomplete`, `failed`, `cancelled` |
 | `input_tokens` / `output_tokens` | Token usage |
 | `cost_usd` | Computed execution cost |
 | `duration_ms` | Wall-clock time |

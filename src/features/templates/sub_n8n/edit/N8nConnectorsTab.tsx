@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link, CheckCircle2, AlertCircle, XCircle, Activity, Loader2, Plus, RefreshCw, ChevronDown, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { N8nPersonaDraft } from '@/api/design';
+import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import { usePersonaStore } from '@/stores/personaStore';
 import { translateHealthcheckMessage } from '@/features/vault/components/credential-design/CredentialDesignHelpers';
 import { CredentialDesignModal } from '@/features/vault/components/CredentialDesignModal';
+import { mergeCredentialLink } from '@/features/shared/components/UseCasesList';
 
 interface N8nConnectorsTabProps {
   draft: N8nPersonaDraft;
@@ -15,6 +16,8 @@ interface N8nConnectorsTabProps {
   manualLinks?: Record<string, { id: string; name: string }>;
   /** Called when a credential is manually linked to a connector */
   onLink?: (connectorName: string, credentialId: string, credentialName: string) => void;
+  /** Update the draft (persists credential links into design_context) */
+  updateDraft?: (updater: (current: N8nPersonaDraft) => N8nPersonaDraft) => void;
 }
 
 interface ConnectorStatus {
@@ -42,7 +45,7 @@ function getStatusKey(status: ConnectorStatus): keyof typeof STATUS_CONFIG {
   return status.result.success ? 'ready' : 'failed';
 }
 
-export function N8nConnectorsTab({ draft, onCredentialCreated, onMissingCountChange, manualLinks, onLink }: N8nConnectorsTabProps) {
+export function N8nConnectorsTab({ draft, onCredentialCreated, onMissingCountChange, manualLinks, onLink, updateDraft }: N8nConnectorsTabProps) {
   const credentials = usePersonaStore((s) => s.credentials);
   const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
   const fetchCredentials = usePersonaStore((s) => s.fetchCredentials);
@@ -91,7 +94,7 @@ export function N8nConnectorsTab({ draft, onCredentialCreated, onMissingCountCha
 
   // Fetch credentials and connector definitions on mount
   useEffect(() => {
-    void fetchCredentials();
+    void fetchCredentials().catch(() => {});
     void fetchConnectorDefinitions();
   }, [fetchCredentials, fetchConnectorDefinitions]);
 
@@ -155,6 +158,11 @@ export function N8nConnectorsTab({ draft, onCredentialCreated, onMissingCountCha
     setLinkingConnector(null);
     // Persist the link in parent state so it survives tab switches
     onLink?.(connectorName, credentialId, credentialName);
+    // Persist into draft design_context so it survives confirm & save
+    updateDraft?.((current) => ({
+      ...current,
+      design_context: mergeCredentialLink(current.design_context, connectorName, credentialId),
+    }));
     void testConnector(connectorName, credentialId);
   };
 
@@ -162,7 +170,7 @@ export function N8nConnectorsTab({ draft, onCredentialCreated, onMissingCountCha
     setDesignOpen(false);
     setDesignInstruction('');
     // Refresh store data so statuses update
-    void fetchCredentials();
+    void fetchCredentials().catch(() => {});
     void fetchConnectorDefinitions();
     onCredentialCreated?.();
   };

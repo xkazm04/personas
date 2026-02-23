@@ -2,6 +2,7 @@ use rusqlite::{params, Row};
 
 use crate::db::models::{CreateTriggerInput, PersonaTrigger, UpdateTriggerInput};
 use crate::db::DbPool;
+use crate::engine::scheduler;
 use crate::error::AppError;
 
 const VALID_TRIGGER_TYPES: &[&str] = &["schedule", "polling", "webhook", "manual", "chain"];
@@ -99,15 +100,29 @@ pub fn create(pool: &DbPool, input: CreateTriggerInput) -> Result<PersonaTrigger
     let now = chrono::Utc::now().to_rfc3339();
     let enabled = input.enabled.unwrap_or(true) as i32;
 
-    let conn = pool.get()?;
-    conn.execute(
-        "INSERT INTO persona_triggers
-         (id, persona_id, trigger_type, config, enabled, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6)",
-        params![id, input.persona_id, input.trigger_type, input.config, enabled, now],
-    )?;
+    {
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO persona_triggers
+             (id, persona_id, trigger_type, config, enabled, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6)",
+            params![id, input.persona_id, input.trigger_type, input.config, enabled, now],
+        )?;
+    }
 
-    get_by_id(pool, &id)
+    // Immediately compute and persist next_trigger_at so the scheduler loop picks
+    // up schedule/polling triggers without requiring a separate update.
+    let trigger = get_by_id(pool, &id)?;
+    if let Some(next_at) = scheduler::compute_next_trigger_at(&trigger, chrono::Utc::now()) {
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE persona_triggers SET next_trigger_at = ?1, updated_at = ?2 WHERE id = ?3",
+            params![next_at, chrono::Utc::now().to_rfc3339(), id],
+        )?;
+        return get_by_id(pool, &id);
+    }
+
+    Ok(trigger)
 }
 
 pub fn update(
@@ -172,6 +187,24 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     Ok(rows > 0)
 }
 
+/// Get enabled chain triggers whose source_persona_id matches the given value.
+/// Uses SQL-level filtering with json_extract to avoid loading all triggers.
+pub fn get_chain_triggers_for_source(
+    pool: &DbPool,
+    source_persona_id: &str,
+) -> Result<Vec<PersonaTrigger>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT * FROM persona_triggers
+         WHERE trigger_type = 'chain'
+           AND enabled = 1
+           AND json_extract(config, '$.source_persona_id') = ?1
+         ORDER BY created_at DESC",
+    )?;
+    let rows = stmt.query_map(params![source_persona_id], row_to_trigger)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+}
+
 pub fn get_due(pool: &DbPool, now: &str) -> Result<Vec<PersonaTrigger>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
@@ -182,6 +215,103 @@ pub fn get_due(pool: &DbPool, now: &str) -> Result<Vec<PersonaTrigger>, AppError
     let rows = stmt.query_map(params![now], row_to_trigger)?;
     let triggers = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
     Ok(triggers)
+}
+
+/// Returns a map of trigger_id -> health status ("healthy", "degraded", "failing", "unknown")
+/// by joining triggers with the 3 most recent executions per trigger in a single query.
+pub fn get_health_map(pool: &DbPool) -> Result<std::collections::HashMap<String, String>, AppError> {
+    let conn = pool.get()?;
+    // For each trigger, get the 3 most recent executions (ranked by created_at DESC).
+    // Then aggregate: count failures in top 3, check if top 2 are both non-completed.
+    let mut stmt = conn.prepare(
+        "WITH ranked AS (
+           SELECT
+             e.trigger_id,
+             e.status,
+             ROW_NUMBER() OVER (PARTITION BY e.trigger_id ORDER BY e.created_at DESC) AS rn
+           FROM persona_executions e
+           WHERE e.trigger_id IS NOT NULL
+         ),
+         top3 AS (
+           SELECT trigger_id, status, rn FROM ranked WHERE rn <= 3
+         ),
+         agg AS (
+           SELECT
+             trigger_id,
+             COUNT(*) AS total,
+             SUM(CASE WHEN status IN ('failed', 'error') THEN 1 ELSE 0 END) AS fail_count,
+             -- Check if the two most recent are both non-completed
+             SUM(CASE WHEN rn <= 2 AND status != 'completed' THEN 1 ELSE 0 END) AS top2_non_completed
+           FROM top3
+           GROUP BY trigger_id
+         )
+         SELECT trigger_id, total, fail_count, top2_non_completed FROM agg",
+    )?;
+
+    let mut health_map = std::collections::HashMap::new();
+    let rows = stmt.query_map([], |row| {
+        let trigger_id: String = row.get(0)?;
+        let total: i64 = row.get(1)?;
+        let fail_count: i64 = row.get(2)?;
+        let top2_non_completed: i64 = row.get(3)?;
+        Ok((trigger_id, total, fail_count, top2_non_completed))
+    })?;
+
+    for row in rows {
+        let (trigger_id, total, fail_count, top2_non_completed) = row.map_err(AppError::Database)?;
+        let health = if total == 0 {
+            "unknown"
+        } else if fail_count == 0 {
+            "healthy"
+        } else if total >= 2 && top2_non_completed >= 2 {
+            "failing"
+        } else {
+            "degraded"
+        };
+        health_map.insert(trigger_id, health.to_string());
+    }
+
+    Ok(health_map)
+}
+
+/// Single-query chain link resolution using SQL JOINs + json_extract.
+/// Returns (trigger_id, source_persona_id, source_name, target_persona_id, target_name, condition_type, enabled).
+pub fn get_chain_links(
+    pool: &DbPool,
+) -> Result<
+    Vec<(String, String, String, String, String, String, bool)>,
+    AppError,
+> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT
+           t.id,
+           COALESCE(json_extract(t.config, '$.source_persona_id'), '') AS source_persona_id,
+           COALESCE(sp.name, 'Unknown') AS source_persona_name,
+           t.persona_id AS target_persona_id,
+           COALESCE(tp.name, 'Unknown') AS target_persona_name,
+           COALESCE(json_extract(t.config, '$.condition.type'), 'any') AS condition_type,
+           t.enabled
+         FROM persona_triggers t
+         LEFT JOIN personas sp ON sp.id = json_extract(t.config, '$.source_persona_id')
+         LEFT JOIN personas tp ON tp.id = t.persona_id
+         WHERE t.trigger_type = 'chain'
+         ORDER BY t.created_at DESC",
+    )?;
+
+    let rows = stmt.query_map([], |row| {
+        Ok((
+            row.get::<_, String>(0)?,
+            row.get::<_, String>(1)?,
+            row.get::<_, String>(2)?,
+            row.get::<_, String>(3)?,
+            row.get::<_, String>(4)?,
+            row.get::<_, String>(5)?,
+            row.get::<_, i32>(6)? != 0,
+        ))
+    })?;
+
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
 }
 
 pub fn mark_triggered(
@@ -225,6 +355,7 @@ mod tests {
                 max_turns: None,
                 design_context: None,
                 group_id: None,
+                notification_channels: None,
             },
         )
         .unwrap()
@@ -395,6 +526,73 @@ mod tests {
             },
         );
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_create_schedule_trigger_initializes_next_trigger_at() {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool);
+
+        let trigger = create(
+            &pool,
+            CreateTriggerInput {
+                persona_id: persona.id.clone(),
+                trigger_type: "schedule".into(),
+                config: Some(r#"{"cron":"0 * * * *"}"#.into()),
+                enabled: Some(true),
+            },
+        )
+        .unwrap();
+
+        // next_trigger_at must be set so the scheduler loop picks it up
+        assert!(
+            trigger.next_trigger_at.is_some(),
+            "schedule trigger must have next_trigger_at initialized on create"
+        );
+    }
+
+    #[test]
+    fn test_create_polling_trigger_initializes_next_trigger_at() {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool);
+
+        let trigger = create(
+            &pool,
+            CreateTriggerInput {
+                persona_id: persona.id.clone(),
+                trigger_type: "polling".into(),
+                config: Some(r#"{"interval_seconds":300}"#.into()),
+                enabled: Some(true),
+            },
+        )
+        .unwrap();
+
+        assert!(
+            trigger.next_trigger_at.is_some(),
+            "polling trigger must have next_trigger_at initialized on create"
+        );
+    }
+
+    #[test]
+    fn test_create_manual_trigger_next_trigger_at_is_null() {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool);
+
+        let trigger = create(
+            &pool,
+            CreateTriggerInput {
+                persona_id: persona.id.clone(),
+                trigger_type: "manual".into(),
+                config: None,
+                enabled: Some(true),
+            },
+        )
+        .unwrap();
+
+        assert!(
+            trigger.next_trigger_at.is_none(),
+            "manual trigger should have no next_trigger_at"
+        );
     }
 
     #[test]

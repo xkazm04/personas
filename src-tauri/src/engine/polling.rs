@@ -1,3 +1,7 @@
+use std::collections::HashMap;
+use std::sync::{Mutex, OnceLock};
+use std::time::{Duration, Instant};
+
 use sha2::{Digest, Sha256};
 
 use crate::db::models::CreatePersonaEventInput;
@@ -6,6 +10,48 @@ use crate::db::repos::resources::triggers as trigger_repo;
 use crate::db::DbPool;
 use crate::engine::background::SchedulerState;
 use crate::engine::scheduler as sched_logic;
+
+// ---------------------------------------------------------------------------
+// Backoff tracking for failed mark_triggered calls
+// ---------------------------------------------------------------------------
+// When mark_triggered fails, next_trigger_at stays in the past and get_due
+// returns the trigger every cycle. This in-memory backoff prevents a storm.
+
+const INITIAL_BACKOFF_SECS: u64 = 30;
+const MAX_BACKOFF_SECS: u64 = 300;
+
+struct BackoffEntry {
+    until: Instant,
+    failures: u32,
+}
+
+fn backoff_map() -> &'static Mutex<HashMap<String, BackoffEntry>> {
+    static MAP: OnceLock<Mutex<HashMap<String, BackoffEntry>>> = OnceLock::new();
+    MAP.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn is_in_backoff(trigger_id: &str) -> bool {
+    let Ok(map) = backoff_map().lock() else { return false };
+    map.get(trigger_id)
+        .is_some_and(|e| Instant::now() < e.until)
+}
+
+fn record_mark_failure(trigger_id: &str) {
+    let Ok(mut map) = backoff_map().lock() else { return };
+    let entry = map
+        .entry(trigger_id.to_string())
+        .or_insert(BackoffEntry { until: Instant::now(), failures: 0 });
+    entry.failures += 1;
+    let exp = entry.failures.min(4) - 1;
+    let secs = (INITIAL_BACKOFF_SECS * 2u64.pow(exp)).min(MAX_BACKOFF_SECS);
+    entry.until = Instant::now() + Duration::from_secs(secs);
+}
+
+fn clear_backoff(trigger_id: &str) {
+    if let Ok(mut map) = backoff_map().lock() {
+        map.remove(trigger_id);
+    }
+}
 
 /// Run one polling cycle: fetch all enabled polling triggers that are due,
 /// GET their configured endpoints, compare content hashes, and fire events
@@ -32,6 +78,11 @@ pub async fn poll_due_triggers(
             continue; // Only process polling triggers in this loop
         }
 
+        // Skip triggers in backoff from prior mark_triggered failures
+        if is_in_backoff(&trigger.id) {
+            continue;
+        }
+
         let config: serde_json::Value = match trigger
             .config
             .as_deref()
@@ -47,7 +98,12 @@ pub async fn poll_due_triggers(
                 tracing::warn!(trigger_id = %trigger.id, "Polling trigger missing 'url' in config");
                 // Still mark triggered to advance next_trigger_at
                 let next = sched_logic::compute_next_trigger_at(&trigger, now);
-                let _ = trigger_repo::mark_triggered(pool, &trigger.id, next);
+                if let Err(e) = trigger_repo::mark_triggered(pool, &trigger.id, next) {
+                    tracing::error!(trigger_id = %trigger.id, "mark_triggered failed: {}", e);
+                    record_mark_failure(&trigger.id);
+                } else {
+                    clear_backoff(&trigger.id);
+                }
                 continue;
             }
         };
@@ -83,7 +139,12 @@ pub async fn poll_due_triggers(
                     "Polling HTTP request failed: {}", e
                 );
                 let next = sched_logic::compute_next_trigger_at(&trigger, now);
-                let _ = trigger_repo::mark_triggered(pool, &trigger.id, next);
+                if let Err(me) = trigger_repo::mark_triggered(pool, &trigger.id, next) {
+                    tracing::error!(trigger_id = %trigger.id, "mark_triggered failed: {}", me);
+                    record_mark_failure(&trigger.id);
+                } else {
+                    clear_backoff(&trigger.id);
+                }
                 continue;
             }
         };
@@ -97,7 +158,12 @@ pub async fn poll_due_triggers(
                     "Polling: failed to read response body: {}", e
                 );
                 let next = sched_logic::compute_next_trigger_at(&trigger, now);
-                let _ = trigger_repo::mark_triggered(pool, &trigger.id, next);
+                if let Err(me) = trigger_repo::mark_triggered(pool, &trigger.id, next) {
+                    tracing::error!(trigger_id = %trigger.id, "mark_triggered failed: {}", me);
+                    record_mark_failure(&trigger.id);
+                } else {
+                    clear_backoff(&trigger.id);
+                }
                 continue;
             }
         };
@@ -113,7 +179,7 @@ pub async fn poll_due_triggers(
         // Update the stored content_hash in the trigger config
         let mut updated_config = config.clone();
         updated_config["content_hash"] = serde_json::Value::String(current_hash.clone());
-        let _ = trigger_repo::update(
+        if let Err(e) = trigger_repo::update(
             pool,
             &trigger.id,
             crate::db::models::UpdateTriggerInput {
@@ -122,7 +188,9 @@ pub async fn poll_due_triggers(
                 enabled: None,
                 next_trigger_at: None,
             },
-        );
+        ) {
+            tracing::warn!(trigger_id = %trigger.id, "Failed to update content_hash: {}", e);
+        }
 
         if content_changed {
             // Build event payload
@@ -173,7 +241,12 @@ pub async fn poll_due_triggers(
 
         // Advance next_trigger_at
         let next = sched_logic::compute_next_trigger_at(&trigger, now);
-        let _ = trigger_repo::mark_triggered(pool, &trigger.id, next);
+        if let Err(e) = trigger_repo::mark_triggered(pool, &trigger.id, next) {
+            tracing::error!(trigger_id = %trigger.id, "mark_triggered failed: {}", e);
+            record_mark_failure(&trigger.id);
+        } else {
+            clear_backoff(&trigger.id);
+        }
     }
 }
 

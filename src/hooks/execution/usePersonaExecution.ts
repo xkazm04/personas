@@ -16,19 +16,27 @@ interface ExecutionStatusPayload {
 }
 
 export function usePersonaExecution() {
-  const appendOutput = usePersonaStore((s) => s.appendExecutionOutput);
-  const finishExecution = usePersonaStore((s) => s.finishExecution);
   const clearOutput = usePersonaStore((s) => s.clearExecutionOutput);
   const unlistenRef = useRef<UnlistenFn[]>([]);
 
   useEffect(() => {
     const setupListeners = async () => {
+      let droppedOutputCount = 0;
+      let droppedStatusCount = 0;
+
       const unlistenOutput = await listen<ExecutionOutputPayload>(
         'execution-output',
         (event) => {
-          const currentExecId = usePersonaStore.getState().activeExecutionId;
-          if (event.payload.execution_id === currentExecId) {
-            appendOutput(event.payload.line);
+          const store = usePersonaStore.getState();
+          if (event.payload.execution_id === store.activeExecutionId) {
+            store.appendExecutionOutput(event.payload.line);
+          } else {
+            droppedOutputCount++;
+            if (import.meta.env.DEV) {
+              console.warn(
+                `[usePersonaExecution] Dropped output line (${droppedOutputCount} total): event exec_id=${event.payload.execution_id}, active=${store.activeExecutionId}`
+              );
+            }
           }
         }
       );
@@ -36,19 +44,26 @@ export function usePersonaExecution() {
       const unlistenStatus = await listen<ExecutionStatusPayload>(
         'execution-status',
         (event) => {
-          const currentExecId = usePersonaStore.getState().activeExecutionId;
-          if (event.payload.execution_id === currentExecId) {
+          const store = usePersonaStore.getState();
+          if (event.payload.execution_id === store.activeExecutionId) {
             if (['completed', 'failed', 'cancelled', 'incomplete'].includes(event.payload.status)) {
               if (event.payload.error) {
-                appendOutput(`[ERROR] ${event.payload.error}`);
+                store.appendExecutionOutput(`[ERROR] ${event.payload.error}`);
               }
               const summary = JSON.stringify({
                 status: event.payload.status,
                 duration_ms: event.payload.duration_ms ?? null,
                 cost_usd: event.payload.cost_usd ?? null,
               });
-              appendOutput(`[SUMMARY]${summary}`);
-              finishExecution(event.payload.status);
+              store.appendExecutionOutput(`[SUMMARY]${summary}`);
+              store.finishExecution(event.payload.status);
+            }
+          } else {
+            droppedStatusCount++;
+            if (import.meta.env.DEV) {
+              console.warn(
+                `[usePersonaExecution] Dropped status event (${droppedStatusCount} total): event exec_id=${event.payload.execution_id} status=${event.payload.status}, active=${store.activeExecutionId}`
+              );
             }
           }
         }
@@ -63,7 +78,7 @@ export function usePersonaExecution() {
       unlistenRef.current.forEach((fn) => fn());
       unlistenRef.current = [];
     };
-  }, [appendOutput, finishExecution]);
+  }, []);
 
   const disconnect = useCallback(() => {
     unlistenRef.current.forEach((fn) => fn());

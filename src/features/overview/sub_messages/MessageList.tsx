@@ -1,10 +1,12 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronRight, MessageSquare, CheckCheck, RefreshCw, Trash2, Send, AlertCircle, Clock, CheckCircle2, Loader2, ExternalLink, Check, X, Copy } from 'lucide-react';
+import { listen } from '@tauri-apps/api/event';
 import { usePersonaStore } from '@/stores/personaStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { MarkdownRenderer } from '@/features/shared/components/MarkdownRenderer';
 import type { PersonaMessage } from '@/lib/types/types';
+import type { PersonaMessage as RawPersonaMessage } from '@/lib/bindings/PersonaMessage';
 import type { PersonaMessageDelivery } from '@/lib/bindings/PersonaMessageDelivery';
 import { getMessageDeliveries } from '@/api/tauriApi';
 import { formatRelativeTime } from '@/lib/utils/formatters';
@@ -34,7 +36,9 @@ const filterOptions: Array<{ id: FilterType; label: string }> = [
 export default function MessageList() {
   const messages = usePersonaStore((s) => s.messages);
   const messagesTotal = usePersonaStore((s) => s.messagesTotal);
+  const unreadMessageCount = usePersonaStore((s) => s.unreadMessageCount);
   const fetchMessages = usePersonaStore((s) => s.fetchMessages);
+  const fetchUnreadMessageCount = usePersonaStore((s) => s.fetchUnreadMessageCount);
   const markMessageAsRead = usePersonaStore((s) => s.markMessageAsRead);
   const markAllMessagesAsRead = usePersonaStore((s) => s.markAllMessagesAsRead);
   const deleteMessage = usePersonaStore((s) => s.deleteMessage);
@@ -44,7 +48,7 @@ export default function MessageList() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Fetch all messages (no server-side filtering available)
+  // Initial fetch
   useEffect(() => {
     let active = true;
     const loadInitial = async () => {
@@ -57,17 +61,34 @@ export default function MessageList() {
         }
       }
     };
-
     loadInitial();
-    const interval = setInterval(() => {
-      fetchMessages(true);
-    }, 10000);
-
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
+    return () => { active = false; };
   }, [fetchMessages]);
+
+  // Listen for real-time message-created events from Tauri backend
+  useEffect(() => {
+    const unlisten = listen<RawPersonaMessage>('message-created', (event) => {
+      const raw = event.payload;
+      const personas = usePersonaStore.getState().personas;
+      const p = personas.find((persona) => persona.id === raw.persona_id);
+      const enriched: PersonaMessage = {
+        ...raw,
+        persona_name: p?.name,
+        persona_icon: p?.icon ?? undefined,
+        persona_color: p?.color ?? undefined,
+      };
+      usePersonaStore.setState((state) => {
+        const exists = state.messages.some((m) => m.id === enriched.id);
+        if (exists) return state;
+        return {
+          messages: [enriched, ...state.messages],
+          messagesTotal: state.messagesTotal + 1,
+        };
+      });
+      fetchUnreadMessageCount();
+    });
+    return () => { unlisten.then((fn) => fn()); };
+  }, [fetchUnreadMessageCount]);
 
   // Client-side filtering
   const filteredMessages = useMemo(() => {
@@ -95,9 +116,9 @@ export default function MessageList() {
 
   const badgeCounts: Record<FilterType, number> = useMemo(() => ({
     all: 0,
-    unread: messages.filter((m) => !m.is_read).length,
+    unread: unreadMessageCount,
     high: messages.filter((m) => m.priority === 'high').length,
-  }), [messages]);
+  }), [messages, unreadMessageCount]);
 
   return (
     <ContentBox>

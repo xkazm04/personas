@@ -29,21 +29,11 @@ pub struct CloudWorkerCounts {
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
-pub struct CloudOAuthState {
-    pub connected: bool,
-    pub scopes: Option<Vec<String>>,
-    pub expires_at: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
-#[serde(rename_all = "camelCase")]
 pub struct CloudStatusResponse {
     pub worker_counts: CloudWorkerCounts,
     pub queue_length: u32,
     pub active_executions: u32,
     pub has_claude_token: bool,
-    pub oauth: Option<CloudOAuthState>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

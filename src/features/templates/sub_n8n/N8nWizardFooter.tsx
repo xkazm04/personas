@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Sparkles, RefreshCw, Check, AlertCircle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Sparkles, RefreshCw, Check, AlertCircle, FlaskConical, CheckCircle2, Wand2 } from 'lucide-react';
 import type { N8nWizardStep, TransformSubPhase } from './useN8nImportReducer';
 
 interface N8nWizardFooterProps {
@@ -15,6 +15,12 @@ interface N8nWizardFooterProps {
   analyzing?: boolean;
   /** Number of connectors still needing credentials */
   connectorsMissing?: number;
+  /** Draft validation status */
+  testStatus?: 'idle' | 'running' | 'passed' | 'failed';
+  testError?: string | null;
+  onTest?: () => void;
+  /** Called to trigger re-generation with the pre-filled adjustment request */
+  onApplyAdjustment?: () => void;
 }
 
 export function N8nWizardFooter({
@@ -30,6 +36,10 @@ export function N8nWizardFooter({
   transformSubPhase,
   analyzing,
   connectorsMissing = 0,
+  testStatus = 'idle',
+  testError,
+  onTest,
+  onApplyAdjustment,
 }: N8nWizardFooterProps) {
   // No footer on upload step
   if (step === 'upload') return null;
@@ -70,7 +80,7 @@ export function N8nWizardFooter({
         return {
           label: 'Review & Confirm',
           icon: ArrowRight,
-          disabled: !hasDraft || transforming,
+          disabled: !hasDraft || transforming || testStatus !== 'passed',
           variant: 'violet',
         };
       case 'confirm':
@@ -105,6 +115,49 @@ export function N8nWizardFooter({
             <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
             {connectorsMissing} connector{connectorsMissing !== 1 ? 's' : ''} need credentials
           </span>
+        )}
+
+        {/* Test error message */}
+        {step === 'edit' && testStatus === 'failed' && testError && (
+          <span className="text-sm text-red-400/80 max-w-[400px] line-clamp-2 leading-tight" title={testError}>
+            {testError}
+          </span>
+        )}
+
+        {/* Test Persona button — shown on edit step */}
+        {step === 'edit' && onTest && (
+          <button
+            onClick={onTest}
+            disabled={testStatus === 'running' || !hasDraft}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+              testStatus === 'passed'
+                ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25'
+                : testStatus === 'failed'
+                  ? 'bg-red-500/10 text-red-300 border-red-500/25 hover:bg-red-500/20'
+                  : 'bg-blue-500/10 text-blue-300 border-blue-500/25 hover:bg-blue-500/20'
+            }`}
+          >
+            {testStatus === 'running' ? (
+              <><RefreshCw className="w-4 h-4 animate-spin" /> Testing...</>
+            ) : testStatus === 'passed' ? (
+              <><CheckCircle2 className="w-4 h-4 text-emerald-400" /> Test Passed</>
+            ) : testStatus === 'failed' ? (
+              <><AlertCircle className="w-4 h-4 text-red-400" /> Retest</>
+            ) : (
+              <><FlaskConical className="w-4 h-4" /> Test Persona</>
+            )}
+          </button>
+        )}
+
+        {/* Fix & Regenerate — shown on edit step when test failed */}
+        {step === 'edit' && testStatus === 'failed' && onApplyAdjustment && (
+          <button
+            onClick={onApplyAdjustment}
+            className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border bg-amber-500/10 text-amber-300 border-amber-500/25 hover:bg-amber-500/20 transition-colors"
+          >
+            <Wand2 className="w-4 h-4" />
+            Fix & Regenerate
+          </button>
         )}
 
         {nextAction && (

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Send, MessageCircleQuestion } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { DesignTerminal } from '@/features/templates/sub_generated/DesignTerminal';
+import { TransformProgress } from '@/features/shared/components/TransformProgress';
 
 export interface DesignQuestion {
   question: string;
@@ -34,7 +34,7 @@ export function DesignQuestionPanel({
       className="space-y-4"
     >
       {/* Terminal output so far */}
-      <DesignTerminal lines={outputLines} isRunning={false} />
+      <TransformProgress mode="analysis" lines={outputLines} isRunning={false} />
 
       {/* Question card */}
       <div className="bg-gradient-to-br from-purple-500/10 via-primary/5 to-transparent border border-purple-500/20 rounded-xl p-5 space-y-4">

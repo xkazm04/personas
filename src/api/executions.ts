@@ -28,3 +28,6 @@ export const executePersona = (
     triggerId: triggerId ?? null,
     inputData: inputData ?? null,
   });
+
+export const getExecutionLog = (id: string) =>
+  invoke<string | null>("get_execution_log", { id });

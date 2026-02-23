@@ -372,7 +372,7 @@ pub fn check_feasibility(
 // Output Schema Constant
 // ============================================================================
 
-const DESIGN_OUTPUT_SCHEMA: &str = r##"## Required Output Format
+pub const DESIGN_OUTPUT_SCHEMA: &str = r##"## Required Output Format
 
 You MUST output your result as a single JSON code block. The JSON must conform to this exact schema:
 
@@ -441,6 +441,33 @@ You MUST output your result as a single JSON code block. The JSON must conform t
       "event_type": "event_name",
       "description": "When and why to listen for this event"
     }
+  ],
+  "use_case_flows": [
+    {
+      "id": "flow_1",
+      "name": "Primary Workflow",
+      "description": "Description of this workflow path",
+      "nodes": [
+        { "id": "n1", "type": "start", "label": "Trigger fires" },
+        { "id": "n2", "type": "connector", "label": "Read from Service", "detail": "API call details", "connector": "connector_slug" },
+        { "id": "n3", "type": "decision", "label": "Condition check?", "detail": "What is being evaluated" },
+        { "id": "n4", "type": "action", "label": "Process data", "detail": "What processing occurs" },
+        { "id": "n5", "type": "connector", "label": "Write to Service", "connector": "another_connector" },
+        { "id": "n6", "type": "event", "label": "Emit notification" },
+        { "id": "n7", "type": "error", "label": "Handle failure", "error_message": "What went wrong" },
+        { "id": "n8", "type": "end", "label": "Complete" }
+      ],
+      "edges": [
+        { "id": "e1", "source": "n1", "target": "n2" },
+        { "id": "e2", "source": "n2", "target": "n3" },
+        { "id": "e3", "source": "n3", "target": "n4", "label": "Yes", "variant": "yes" },
+        { "id": "e4", "source": "n3", "target": "n7", "label": "No", "variant": "no" },
+        { "id": "e5", "source": "n4", "target": "n5" },
+        { "id": "e6", "source": "n5", "target": "n6" },
+        { "id": "e7", "source": "n6", "target": "n8" },
+        { "id": "e8", "source": "n7", "target": "n8", "variant": "error" }
+      ]
+    }
   ]
 }
 ```
@@ -454,6 +481,10 @@ Important rules:
 6. `service_flow` must list the external services in data-pipeline order
 7. `full_prompt_markdown` must be the complete, ready-to-use system prompt in markdown format
 8. Output ONLY the JSON block — no additional text before or after
+9. `use_case_flows` MUST contain 1-3 flow diagrams documenting the persona's primary workflows
+10. Each flow MUST have "start" and "end" nodes, with 5-10 nodes total showing the workflow
+11. Flow node types: "start", "end", "action", "decision", "connector" (set `connector` to slug), "event", "error"
+12. Flow edges use `variant`: "yes"/"no" for decision branches, "error" for error paths
 
 ## Clarification Questions
 
@@ -520,6 +551,7 @@ mod tests {
             input_schema: None,
             output_schema: None,
             requires_credential_type: Some("gmail".into()),
+            implementation_guide: None,
             is_builtin: true,
             created_at: "2026-01-01T00:00:00Z".into(),
             updated_at: "2026-01-01T00:00:00Z".into(),

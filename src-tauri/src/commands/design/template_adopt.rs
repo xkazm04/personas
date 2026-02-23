@@ -451,24 +451,88 @@ pub fn confirm_template_adopt_draft(
             max_turns: draft.max_turns,
             design_context: draft.design_context.clone(),
             group_id: None,
+            notification_channels: draft.notification_channels.clone(),
         },
     )?;
 
-    // Save notification channels if provided
-    if let Some(ref channels) = draft.notification_channels {
-        if !channels.trim().is_empty() {
-            let _ = persona_repo::update(
-                &state.db,
-                &created.id,
-                crate::db::models::UpdatePersonaInput {
-                    notification_channels: Some(channels.clone()),
-                    ..Default::default()
-                },
-            );
-        }
+    Ok(json!({ "persona": created }))
+}
+
+// ── Instant Adopt (no AI transform — creates persona directly from design) ──
+
+#[tauri::command]
+pub fn instant_adopt_template(
+    state: State<'_, Arc<AppState>>,
+    template_name: String,
+    design_result_json: String,
+) -> Result<serde_json::Value, AppError> {
+    if design_result_json.trim().is_empty() {
+        return Err(AppError::Validation(
+            "Design result JSON cannot be empty".into(),
+        ));
     }
 
-    Ok(json!({ "persona": created }))
+    let design: serde_json::Value = serde_json::from_str(&design_result_json)
+        .map_err(|e| AppError::Validation(format!("Invalid design result JSON: {e}")))?;
+
+    let full_prompt = design
+        .get("full_prompt_markdown")
+        .and_then(|v| v.as_str())
+        .unwrap_or("You are a helpful AI assistant.")
+        .to_string();
+
+    let summary = design
+        .get("summary")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .or_else(|| Some(format!("Adopted from template: {}", template_name)));
+
+    let structured_prompt = design.get("structured_prompt").map(|v| v.to_string());
+
+    // Extract optional persona metadata from design result
+    let persona_meta = design.get("persona_meta");
+    let icon = persona_meta
+        .and_then(|m| m.get("icon"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let color = persona_meta
+        .and_then(|m| m.get("color"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let model_profile = persona_meta
+        .and_then(|m| m.get("model_profile"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let persona_name = persona_meta
+        .and_then(|m| m.get("name"))
+        .and_then(|v| v.as_str())
+        .filter(|n| !n.trim().is_empty())
+        .map(|s| s.to_string())
+        .unwrap_or(template_name);
+
+    let persona = persona_repo::create(
+        &state.db,
+        CreatePersonaInput {
+            name: persona_name,
+            system_prompt: full_prompt,
+            project_id: None,
+            description: summary,
+            structured_prompt,
+            icon,
+            color,
+            enabled: Some(true),
+            max_concurrent: None,
+            timeout_ms: None,
+            model_profile,
+            max_budget_usd: None,
+            max_turns: None,
+            design_context: Some(design_result_json),
+            group_id: None,
+            notification_channels: None,
+        },
+    )?;
+
+    Ok(json!({ "persona": persona }))
 }
 
 // ── Question Generation (fallback for direct calls) ─────────────
@@ -982,6 +1046,442 @@ Design Analysis Result JSON:
 "##
     )
 }
+
+// ══════════════════════════════════════════════════════════════════
+// Template Generation (create new templates from user description)
+// ══════════════════════════════════════════════════════════════════
+
+#[derive(Clone, Serialize)]
+struct TemplateGenOutputEvent {
+    gen_id: String,
+    line: String,
+}
+
+#[derive(Clone, Serialize)]
+struct TemplateGenStatusEvent {
+    gen_id: String,
+    status: String,
+    error: Option<String>,
+}
+
+#[derive(Clone, Serialize)]
+struct TemplateGenSnapshot {
+    gen_id: String,
+    status: String,
+    error: Option<String>,
+    lines: Vec<String>,
+    result_json: Option<String>,
+}
+
+#[derive(Clone)]
+struct TemplateGenJobState {
+    status: String,
+    error: Option<String>,
+    lines: Vec<String>,
+    result_json: Option<String>,
+    cancel_token: Option<CancellationToken>,
+    created_at: Instant,
+}
+
+impl Default for TemplateGenJobState {
+    fn default() -> Self {
+        Self {
+            status: String::new(),
+            error: None,
+            lines: Vec::new(),
+            result_json: None,
+            cancel_token: None,
+            created_at: Instant::now(),
+        }
+    }
+}
+
+static TEMPLATE_GEN_JOBS: OnceLock<Mutex<HashMap<String, TemplateGenJobState>>> = OnceLock::new();
+
+fn gen_jobs() -> &'static Mutex<HashMap<String, TemplateGenJobState>> {
+    TEMPLATE_GEN_JOBS.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn lock_gen_jobs(
+) -> Result<std::sync::MutexGuard<'static, HashMap<String, TemplateGenJobState>>, AppError> {
+    gen_jobs()
+        .lock()
+        .map_err(|_| AppError::Internal("template gen job lock poisoned".into()))
+}
+
+fn evict_stale_gen_jobs(jobs: &mut HashMap<String, TemplateGenJobState>) {
+    let cutoff = std::time::Duration::from_secs(JOB_TTL_SECS);
+    jobs.retain(|_, job| job.status == "running" || job.created_at.elapsed() < cutoff);
+}
+
+fn set_gen_status(app: &tauri::AppHandle, gen_id: &str, status: &str, error: Option<String>) {
+    if let Ok(mut jobs) = lock_gen_jobs() {
+        let entry = jobs
+            .entry(gen_id.to_string())
+            .or_insert_with(TemplateGenJobState::default);
+        entry.status = status.to_string();
+        entry.error = error.clone();
+    }
+    let _ = app.emit(
+        "template-generate-status",
+        TemplateGenStatusEvent {
+            gen_id: gen_id.to_string(),
+            status: status.to_string(),
+            error,
+        },
+    );
+}
+
+fn emit_gen_line(app: &tauri::AppHandle, gen_id: &str, line: impl Into<String>) {
+    let line = line.into();
+    if let Ok(mut jobs) = lock_gen_jobs() {
+        let entry = jobs
+            .entry(gen_id.to_string())
+            .or_insert_with(TemplateGenJobState::default);
+        if entry.lines.len() < 500 {
+            entry.lines.push(line.clone());
+        }
+    }
+    let _ = app.emit(
+        "template-generate-output",
+        TemplateGenOutputEvent {
+            gen_id: gen_id.to_string(),
+            line,
+        },
+    );
+}
+
+fn set_gen_result(gen_id: &str, result_json: String) {
+    if let Ok(mut jobs) = lock_gen_jobs() {
+        let entry = jobs
+            .entry(gen_id.to_string())
+            .or_insert_with(TemplateGenJobState::default);
+        entry.result_json = Some(result_json);
+    }
+}
+
+#[tauri::command]
+pub async fn generate_template_background(
+    app: tauri::AppHandle,
+    gen_id: String,
+    template_name: String,
+    description: String,
+) -> Result<serde_json::Value, AppError> {
+    if description.trim().is_empty() {
+        return Err(AppError::Validation(
+            "Template description cannot be empty".into(),
+        ));
+    }
+
+    let cancel_token = CancellationToken::new();
+
+    {
+        let mut jobs = lock_gen_jobs()?;
+        evict_stale_gen_jobs(&mut jobs);
+        if let Some(existing) = jobs.get(&gen_id) {
+            if existing.status == "running" {
+                return Err(AppError::Validation(
+                    "Template generation is already running".into(),
+                ));
+            }
+        }
+        jobs.insert(
+            gen_id.clone(),
+            TemplateGenJobState {
+                status: "running".into(),
+                error: None,
+                lines: Vec::new(),
+                result_json: None,
+                cancel_token: Some(cancel_token.clone()),
+                created_at: Instant::now(),
+            },
+        );
+    }
+
+    set_gen_status(&app, &gen_id, "running", None);
+
+    let app_handle = app.clone();
+    let gen_id_for_task = gen_id.clone();
+    let token_for_task = cancel_token;
+
+    tokio::spawn(async move {
+        let result = tokio::select! {
+            _ = token_for_task.cancelled() => {
+                Err(AppError::Internal("Template generation cancelled by user".into()))
+            }
+            res = run_template_generate_job(
+                &app_handle,
+                &gen_id_for_task,
+                &template_name,
+                &description,
+            ) => res
+        };
+
+        match result {
+            Ok(result_json) => {
+                set_gen_result(&gen_id_for_task, result_json);
+                set_gen_status(&app_handle, &gen_id_for_task, "completed", None);
+            }
+            Err(err) => {
+                let msg = err.to_string();
+                tracing::error!(gen_id = %gen_id_for_task, error = %msg, "template generation failed");
+                set_gen_status(&app_handle, &gen_id_for_task, "failed", Some(msg));
+            }
+        }
+    });
+
+    Ok(json!({ "gen_id": gen_id }))
+}
+
+#[tauri::command]
+pub fn get_template_generate_snapshot(gen_id: String) -> Result<serde_json::Value, AppError> {
+    let jobs = lock_gen_jobs()?;
+    let snapshot = jobs
+        .get(&gen_id)
+        .map(|job| TemplateGenSnapshot {
+            gen_id: gen_id.clone(),
+            status: if job.status.is_empty() {
+                "idle".to_string()
+            } else {
+                job.status.clone()
+            },
+            error: job.error.clone(),
+            lines: job.lines.clone(),
+            result_json: job.result_json.clone(),
+        })
+        .ok_or_else(|| AppError::NotFound("Template generation not found".into()))?;
+    Ok(serde_json::to_value(snapshot).unwrap_or_else(|_| json!({})))
+}
+
+#[tauri::command]
+pub fn clear_template_generate_snapshot(gen_id: String) -> Result<(), AppError> {
+    let mut jobs = lock_gen_jobs()?;
+    jobs.remove(&gen_id);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn cancel_template_generate(app: tauri::AppHandle, gen_id: String) -> Result<(), AppError> {
+    let token = {
+        let jobs = lock_gen_jobs()?;
+        jobs.get(&gen_id)
+            .and_then(|job| job.cancel_token.clone())
+    };
+
+    if let Some(token) = token {
+        token.cancel();
+    }
+
+    set_gen_status(
+        &app,
+        &gen_id,
+        "failed",
+        Some("Cancelled by user".into()),
+    );
+    Ok(())
+}
+
+#[tauri::command]
+pub fn save_custom_template(
+    state: State<'_, Arc<AppState>>,
+    template_name: String,
+    instruction: String,
+    design_result_json: String,
+) -> Result<serde_json::Value, AppError> {
+    if design_result_json.trim().is_empty() {
+        return Err(AppError::Validation(
+            "Design result JSON cannot be empty".into(),
+        ));
+    }
+
+    // Extract connectors_used from the design result if available
+    let connectors_used: Option<String> = serde_json::from_str::<serde_json::Value>(&design_result_json)
+        .ok()
+        .and_then(|design| {
+            design.get("suggested_connectors").and_then(|conns| {
+                let names: Vec<String> = conns
+                    .as_array()?
+                    .iter()
+                    .filter_map(|c| c.get("name").and_then(|n| n.as_str()).map(|s| s.to_string()))
+                    .collect();
+                if names.is_empty() {
+                    None
+                } else {
+                    Some(names.join(","))
+                }
+            })
+        });
+
+    let now = chrono::Utc::now().to_rfc3339();
+    let test_case_id = uuid::Uuid::new_v4().to_string();
+
+    use crate::db::models::CreateDesignReviewInput;
+    use crate::db::repos::communication::reviews as review_repo;
+
+    let review = review_repo::create_review(
+        &state.db,
+        &CreateDesignReviewInput {
+            test_case_id,
+            test_case_name: template_name,
+            instruction,
+            status: "passed".into(),
+            structural_score: None,
+            semantic_score: None,
+            connectors_used,
+            trigger_types: None,
+            design_result: Some(design_result_json),
+            structural_evaluation: None,
+            semantic_evaluation: None,
+            test_run_id: "custom-template".into(),
+            had_references: None,
+            suggested_adjustment: None,
+            adjustment_generation: None,
+            use_case_flows: None,
+            reviewed_at: now,
+        },
+    )?;
+
+    Ok(json!({ "review": review }))
+}
+
+/// Run the template generation job — prompts Claude to generate a DesignAnalysisResult.
+async fn run_template_generate_job(
+    app: &tauri::AppHandle,
+    gen_id: &str,
+    template_name: &str,
+    description: &str,
+) -> Result<String, AppError> {
+    tracing::info!(gen_id = %gen_id, "Starting template generation");
+
+    emit_gen_line(app, gen_id, "[Milestone] Preparing template generation prompt...");
+
+    let prompt_text = format!(
+        r##"You are a senior Personas architect. Generate a complete template design (DesignAnalysisResult)
+from the user's description below.
+
+## What You Must Generate
+
+Create a JSON object with this exact structure (DesignAnalysisResult):
+
+{{
+  "structured_prompt": {{
+    "identity": "Who this persona is and what role it plays",
+    "instructions": "Step-by-step instructions for how to operate — include protocol message patterns",
+    "toolGuidance": "How to use each tool and when to request manual_review",
+    "examples": "Example interactions showing protocol message usage",
+    "errorHandling": "How to handle errors with user_message notifications",
+    "customSections": [
+      {{"key": "unique_key", "label": "Section Label", "content": "Section content"}}
+    ]
+  }},
+  "full_prompt_markdown": "Complete system prompt in markdown format — comprehensive and self-contained",
+  "summary": "2-3 sentence description of the persona's purpose",
+  "suggested_tools": [
+    {{"name": "tool_name", "description": "What it does", "category": "http_request|system|utility"}}
+  ],
+  "suggested_triggers": [
+    {{"type": "cron|webhook|event|manual", "config": "trigger configuration"}}
+  ],
+  "suggested_connectors": [
+    {{
+      "name": "ConnectorName",
+      "auth_type": "api_key|oauth2|basic",
+      "credential_fields": ["field1", "field2"],
+      "purpose": "What this connector enables"
+    }}
+  ],
+  "adoption_requirements": [
+    {{
+      "key": "variable_key",
+      "label": "Human Readable Label",
+      "description": "What this variable controls",
+      "type": "text|select|url|cron",
+      "required": true,
+      "default_value": "optional default",
+      "options": ["only for select type"],
+      "source": "user_input"
+    }}
+  ],
+  "feasibility": {{
+    "score": 85,
+    "notes": "Assessment of how feasible this template is"
+  }},
+  "persona_meta": {{
+    "name": "{template_name}",
+    "icon": "lucide-icon-name",
+    "color": "#hex-color",
+    "model_profile": null
+  }}
+}}
+
+## Persona Protocol System
+
+The Personas platform supports these protocol messages in system prompts:
+
+1. User Messages: {{"user_message": {{"title": "string", "content": "string", "content_type": "text|markdown", "priority": "low|normal|high|critical"}}}}
+2. Agent Memory: {{"agent_memory": {{"title": "string", "content": "string", "category": "fact|preference|instruction|context|learned", "importance": 1-10, "tags": ["tag1"]}}}}
+3. Manual Review: {{"manual_review": {{"title": "string", "description": "string", "severity": "info|warning|error|critical", "context_data": "string", "suggested_actions": ["Approve", "Reject", "Edit"]}}}}
+4. Events: {{"emit_event": {{"type": "event_name", "data": {{}}}}}}
+
+## Variable Placeholders
+
+For any user-specific values (email addresses, API endpoints, usernames, intervals, thresholds, etc.),
+use {{{{variable_key}}}} placeholder syntax in the prompts and include a corresponding entry in
+adoption_requirements. This lets users customize templates without AI transformation.
+
+## Guidelines
+
+- The full_prompt_markdown should be comprehensive (500+ words) and production-ready
+- Include at least 2-3 adoption_requirements for meaningful template variables
+- Suggest appropriate tools based on the description
+- Include protocol messages in the instructions and examples
+- Add a "Human-in-the-Loop" customSection for any external actions
+- Add a "Memory Strategy" customSection for knowledge-building scenarios
+- Pick appropriate lucide icon and a distinctive color
+
+## User Request
+
+Template name: {template_name}
+Description: {description}
+
+Return ONLY valid JSON (no markdown fences, no commentary).
+"##
+    );
+
+    emit_gen_line(app, gen_id, "[Milestone] Starting Claude generation...");
+
+    let mut cli_args = prompt::build_cli_args(None, None);
+    cli_args.args.push("--model".to_string());
+    cli_args.args.push("claude-sonnet-4-6".to_string());
+
+    let app_for_emit = app.clone();
+    let gen_id_for_emit = gen_id.to_string();
+    let on_line = move |line: &str| {
+        emit_gen_line(&app_for_emit, &gen_id_for_emit, line.to_string());
+    };
+
+    let (output_text, _session_id) =
+        run_claude_prompt_text_inner(prompt_text, &cli_args, Some(&on_line), 420)
+            .await
+            .map_err(AppError::Internal)?;
+
+    emit_gen_line(app, gen_id, "[Milestone] Claude output received. Extracting design JSON...");
+
+    // Extract JSON from output
+    let json_str = extract_first_json_object(&output_text).ok_or_else(|| {
+        AppError::Internal("No valid JSON found in template generation output".into())
+    })?;
+
+    // Validate it's valid JSON
+    let _: serde_json::Value = serde_json::from_str(&json_str)
+        .map_err(|e| AppError::Internal(format!("Invalid JSON in generation output: {e}")))?;
+
+    emit_gen_line(app, gen_id, "[Milestone] Template design generated successfully.");
+
+    Ok(json_str)
+}
+
+// ── Direct transform job (used for adjustment re-runs) ──────────
 
 async fn run_template_adopt_job(
     app: &tauri::AppHandle,

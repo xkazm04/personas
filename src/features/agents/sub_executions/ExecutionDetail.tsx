@@ -1,11 +1,19 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import type { DbPersonaExecution } from '@/lib/types/types';
-import { ChevronDown, ChevronRight, Clock, Calendar, FileText, AlertCircle, Search, ListTree, Lightbulb, RotateCw, RefreshCw, Key, Zap, Settings, ArrowRight, Shield } from 'lucide-react';
+import { ChevronDown, ChevronRight, Clock, Calendar, FileText, AlertCircle, Search, ListTree, Lightbulb, RotateCw, RefreshCw, Key, Zap, Settings, ArrowRight, Shield, Loader2, Brain } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { formatTimestamp, formatDuration, EXECUTION_STATUS_COLORS, badgeClass } from '@/lib/utils/formatters';
+import { formatTimestamp, formatDuration, EXECUTION_STATUS_COLORS, badgeClass, MEMORY_CATEGORY_COLORS } from '@/lib/utils/formatters';
 import { ExecutionInspector } from '@/features/agents/sub_executions/ExecutionInspector';
 import { usePersonaStore } from '@/stores/personaStore';
+import { getExecutionLog } from '@/api/executions';
+import { listMemoriesByExecution } from '@/api/memories';
+import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
 import type { LucideIcon } from 'lucide-react';
+import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
+import hljs from 'highlight.js/lib/core';
+import jsonLang from 'highlight.js/lib/languages/json';
+
+hljs.registerLanguage('json', jsonLang);
 
 interface ErrorAction {
   label: string;
@@ -39,6 +47,33 @@ function getErrorExplanation(errorMessage: string): { summary: string; guidance:
   return null;
 }
 
+function HighlightedJsonBlock({ raw }: { raw: string | null }) {
+  const html = useMemo(() => {
+    if (!raw) return null;
+    try {
+      const pretty = JSON.stringify(JSON.parse(raw), null, 2);
+      return hljs.highlight(pretty, { language: 'json' }).value;
+    } catch {
+      return null;
+    }
+  }, [raw]);
+
+  if (!html) {
+    return (
+      <pre className="p-4 bg-background/50 border border-border/30 rounded-xl text-sm text-foreground/90 overflow-x-auto font-mono">
+        {raw ?? ''}
+      </pre>
+    );
+  }
+
+  return (
+    <pre
+      className="json-highlight p-4 bg-background/50 border border-border/30 rounded-xl text-sm overflow-x-auto font-mono"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+}
+
 interface ExecutionDetailProps {
   execution: DbPersonaExecution;
 }
@@ -68,6 +103,45 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
   }, [execution.persona_id, setSidebarSection, setEditorTab, selectPersona]);
   const [showInputData, setShowInputData] = useState(false);
   const [showOutputData, setShowOutputData] = useState(false);
+  const [showLog, setShowLog] = useState(false);
+  const [logContent, setLogContent] = useState<string | null>(null);
+  const [logLoading, setLogLoading] = useState(false);
+  const [logError, setLogError] = useState<string | null>(null);
+
+  const [executionMemories, setExecutionMemories] = useState<PersonaMemory[]>([]);
+  const [showMemories, setShowMemories] = useState(false);
+  const [memoriesLoaded, setMemoriesLoaded] = useState(false);
+
+  useEffect(() => {
+    // Fetch memories created by this execution (only for completed/finished)
+    if (execution.status === 'completed' || execution.status === 'failed' || execution.status === 'incomplete') {
+      listMemoriesByExecution(execution.id)
+        .then((memories) => {
+          setExecutionMemories(memories);
+          setMemoriesLoaded(true);
+        })
+        .catch(() => setMemoriesLoaded(true));
+    }
+  }, [execution.id, execution.status]);
+
+  const handleToggleLog = useCallback(async () => {
+    if (showLog) {
+      setShowLog(false);
+      return;
+    }
+    setShowLog(true);
+    if (logContent !== null) return; // already fetched
+    setLogLoading(true);
+    setLogError(null);
+    try {
+      const content = await getExecutionLog(execution.id);
+      setLogContent(content ?? 'Log file is empty or was not found.');
+    } catch (err) {
+      setLogError(err instanceof Error ? err.message : 'Failed to load log');
+    } finally {
+      setLogLoading(false);
+    }
+  }, [showLog, logContent, execution.id]);
 
   const hasToolSteps = (() => {
     if (!execution.tool_steps) return false;
@@ -79,15 +153,6 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
     }
   })();
 
-  const formatJson = (data: string | null) => {
-    if (!data) return '';
-    try {
-      const parsed = JSON.parse(data);
-      return JSON.stringify(parsed, null, 2);
-    } catch {
-      return data;
-    }
-  };
 
   const hasInputData = (() => {
     if (!execution.input_data) return false;
@@ -269,9 +334,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
                   >
-                    <pre className="p-4 bg-background/50 border border-border/30 rounded-xl text-sm text-foreground/90 overflow-x-auto font-mono">
-                      {formatJson(execution.input_data)}
-                    </pre>
+                    <HighlightedJsonBlock raw={execution.input_data} />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -300,9 +363,55 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
                   >
-                    <pre className="p-4 bg-background/50 border border-border/30 rounded-xl text-sm text-foreground/90 overflow-x-auto font-mono">
-                      {formatJson(execution.output_data)}
-                    </pre>
+                    <HighlightedJsonBlock raw={execution.output_data} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {/* Memories Created */}
+          {memoriesLoaded && executionMemories.length > 0 && (
+            <div>
+              <button
+                onClick={() => setShowMemories(!showMemories)}
+                className="flex items-center gap-2 text-sm text-foreground/90 hover:text-foreground transition-colors mb-2"
+              >
+                {showMemories ? (
+                  <ChevronDown className="w-4 h-4" />
+                ) : (
+                  <ChevronRight className="w-4 h-4" />
+                )}
+                <Brain className="w-4 h-4 text-violet-400" />
+                Memories Created ({executionMemories.length})
+              </button>
+
+              <AnimatePresence>
+                {showMemories && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-1.5"
+                  >
+                    {executionMemories.map((mem) => {
+                      const defaultCat = { label: 'Fact', bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/20' };
+                      const cat = MEMORY_CATEGORY_COLORS[mem.category] ?? defaultCat;
+                      return (
+                        <div
+                          key={mem.id}
+                          className="p-3 bg-violet-500/5 border border-violet-500/15 rounded-xl"
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`inline-flex px-1.5 py-0.5 text-sm font-mono uppercase rounded border ${cat.bg} ${cat.text} ${cat.border}`}>
+                              {cat.label}
+                            </span>
+                            <span className="text-sm font-medium text-foreground/90">{mem.title}</span>
+                          </div>
+                          <p className="text-sm text-foreground/70 line-clamp-2">{mem.content}</p>
+                        </div>
+                      );
+                    })}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -311,9 +420,54 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
 
           {/* Log File */}
           {execution.log_file_path && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground/80">
-              <FileText className="w-4 h-4" />
-              <span className="font-mono">{execution.log_file_path}</span>
+            <div>
+              <button
+                onClick={handleToggleLog}
+                className="flex items-center gap-2 text-sm text-foreground/90 hover:text-foreground transition-colors mb-2"
+              >
+                {showLog ? (
+                  <ChevronDown className="w-4 h-4" />
+                ) : (
+                  <ChevronRight className="w-4 h-4" />
+                )}
+                <FileText className="w-4 h-4" />
+                Execution Log
+              </button>
+
+              <AnimatePresence>
+                {showLog && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                  >
+                    {logLoading && (
+                      <div className="flex items-center gap-2 p-4 bg-background/50 border border-border/30 rounded-xl text-sm text-muted-foreground/80">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Loading log...
+                      </div>
+                    )}
+                    {logError && (
+                      <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-sm text-red-300/80 font-mono">
+                        {logError}
+                      </div>
+                    )}
+                    {logContent !== null && !logLoading && (
+                      <div className="p-4 bg-background/50 border border-border/30 rounded-xl text-sm overflow-x-auto font-mono max-h-96 overflow-y-auto whitespace-pre-wrap break-words">
+                        {logContent.split('\n').map((line, i) => {
+                          const style = classifyLine(line);
+                          const cls = TERMINAL_STYLE_MAP[style];
+                          return (
+                            <div key={i} className={cls || 'text-foreground/90'}>
+                              {line}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
         </>

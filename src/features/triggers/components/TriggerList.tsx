@@ -3,23 +3,12 @@ import { usePersonaStore } from '@/stores/personaStore';
 import { ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import * as api from '@/api/tauriApi';
+import { getTriggerHealthMap } from '@/api/triggers';
 import type { PersonaTrigger } from '@/lib/types/types';
-import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, parseTriggerConfig } from '@/lib/utils/triggerConstants';
 import { formatTimestamp, formatCountdown } from '@/lib/utils/formatters';
 
 type TriggerHealth = 'healthy' | 'degraded' | 'failing' | 'unknown';
-
-function deriveTriggerHealth(executions: PersonaExecution[]): TriggerHealth {
-  if (executions.length === 0) return 'unknown';
-  // Take the last 3 executions (most recent first)
-  const recent = executions.slice(0, 3);
-  const failures = recent.filter((e) => e.status === 'failed' || e.status === 'error');
-  if (failures.length === 0) return 'healthy';
-  // 2+ consecutive failures from the top = failing
-  if (recent.length >= 2 && recent[0]!.status !== 'completed' && recent[1]!.status !== 'completed') return 'failing';
-  return 'degraded';
-}
 
 const HEALTH_STYLES: Record<TriggerHealth, string> = {
   healthy: 'bg-emerald-400 animate-[health-pulse_2s_ease-in-out_infinite]',
@@ -128,7 +117,11 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
 
     const fetchAllTriggers = async () => {
       try {
-        const triggers = await api.listAllTriggers();
+        // Single IPC call for triggers + single IPC call for health (replaces N+1)
+        const [triggers, healthMap] = await Promise.all([
+          api.listAllTriggers(),
+          getTriggerHealthMap(),
+        ]);
         if (stale) return;
 
         const triggersMap: Record<string, PersonaTrigger[]> = {};
@@ -137,31 +130,7 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
           arr.push(trigger);
         }
         setAllTriggers(triggersMap);
-
-        // Fetch recent executions per persona to derive trigger health
-        const personaIds = [...new Set(triggers.map((t) => t.persona_id))];
-        const healthMap: Record<string, TriggerHealth> = {};
-        await Promise.all(
-          personaIds.map(async (pid) => {
-            try {
-              const execs = await api.listExecutions(pid, 20);
-              // Group executions by trigger_id, most recent first
-              const byTrigger: Record<string, PersonaExecution[]> = {};
-              for (const exec of execs) {
-                if (exec.trigger_id) {
-                  const arr = byTrigger[exec.trigger_id] ?? (byTrigger[exec.trigger_id] = []);
-                  arr.push(exec);
-                }
-              }
-              for (const [tid, texecs] of Object.entries(byTrigger)) {
-                healthMap[tid] = deriveTriggerHealth(texecs);
-              }
-            } catch {
-              // Silent — health remains unknown
-            }
-          }),
-        );
-        if (!stale) setTriggerHealthMap(healthMap);
+        setTriggerHealthMap(healthMap as Record<string, TriggerHealth>);
       } catch (error) {
         console.error('Failed to fetch triggers:', error);
         if (!stale) {

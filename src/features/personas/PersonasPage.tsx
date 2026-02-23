@@ -13,14 +13,16 @@ import CloudDeployPanel from '@/features/deployment/components/CloudDeployPanel'
 import GitLabPanel from '@/features/gitlab/components/GitLabPanel';
 import SettingsPage from '@/features/settings/components/SettingsPage';
 import OnboardingWizard from '@/features/agents/components/OnboardingWizard';
-import { PersonaCreationWizard } from '@/features/agents/components/PersonaCreationWizard';
 
 export default function PersonasPage() {
   const sidebarSection = usePersonaStore((s) => s.sidebarSection);
+  const cloudTab = usePersonaStore((s) => s.cloudTab);
   const selectedPersonaId = usePersonaStore((s) => s.selectedPersonaId);
   const isCreatingPersona = usePersonaStore((s) => s.isCreatingPersona);
   const personas = usePersonaStore((s) => s.personas);
   const isLoading = usePersonaStore((s) => s.isLoading);
+  const error = usePersonaStore((s) => s.error);
+  const setError = usePersonaStore((s) => s.setError);
   const fetchPersonas = usePersonaStore((s) => s.fetchPersonas);
   const fetchToolDefinitions = usePersonaStore((s) => s.fetchToolDefinitions);
   const fetchCredentials = usePersonaStore((s) => s.fetchCredentials);
@@ -29,15 +31,31 @@ export default function PersonasPage() {
 
   const fetchDetail = usePersonaStore((s) => s.fetchDetail);
 
-  const [hasCheckedOnboarding, setHasCheckedOnboarding] = useState(false);
+  // True only after fetchPersonas has settled (success or fail).
+  // Prevents showing OnboardingWizard before the first load completes.
+  const [personasFetched, setPersonasFetched] = useState(false);
 
   useEffect(() => {
-    fetchPersonas();
-    fetchToolDefinitions();
-    fetchCredentials();
-    fetchPendingReviewCount();
-    fetchGroups();
-  }, [fetchPersonas, fetchToolDefinitions, fetchCredentials, fetchPendingReviewCount, fetchGroups]);
+    // Run all startup fetches in parallel and collect failures.
+    // Using Promise.allSettled prevents any single call's error from overwriting
+    // the others — the final store.error is the aggregate of all failures.
+    const STARTUP_LABELS = ['personas', 'tools', 'credentials'] as const;
+    Promise.allSettled([
+      fetchPersonas(),
+      fetchToolDefinitions(),
+      fetchCredentials(),
+      fetchPendingReviewCount(),
+      fetchGroups(),
+    ]).then((results) => {
+      setPersonasFetched(true);
+      const failed = (results.slice(0, 3) as PromiseSettledResult<void>[])
+        .map((r, i) => (r.status === 'rejected' ? STARTUP_LABELS[i] : null))
+        .filter((l): l is NonNullable<typeof l> => l !== null);
+      if (failed.length > 0) {
+        setError(`Startup failed — ${failed.join(', ')} could not be loaded`);
+      }
+    });
+  }, [fetchPersonas, fetchToolDefinitions, fetchCredentials, fetchPendingReviewCount, fetchGroups, setError]);
 
   // Hydrate persisted persona selection on app restart
   useEffect(() => {
@@ -46,27 +64,27 @@ export default function PersonasPage() {
     }
   }, []);
 
-  // Wait for initial fetch to complete before checking onboarding
-  useEffect(() => {
-    const timer = setTimeout(() => setHasCheckedOnboarding(true), 500);
-    return () => clearTimeout(timer);
-  }, []);
-
   const renderContent = () => {
-    // Show onboarding wizard when no personas exist and we're on the personas section
-    if (hasCheckedOnboarding && !isLoading && personas.length === 0 && sidebarSection === 'personas') {
-      return <OnboardingWizard />;
+    // Show unified wizard when no personas exist OR when explicitly creating
+    if (sidebarSection === 'personas') {
+      if (personasFetched && !isLoading && !error && personas.length === 0) {
+        return <OnboardingWizard />;
+      }
+      if (isCreatingPersona) {
+        return <OnboardingWizard canCancel />;
+      }
     }
 
     if (sidebarSection === 'team') return <TeamCanvas />;
-    if (sidebarSection === 'cloud') return <CloudDeployPanel />;
-    if (sidebarSection === 'gitlab') return <GitLabPanel />;
+    if (sidebarSection === 'cloud') {
+      if (cloudTab === 'gitlab') return <GitLabPanel />;
+      return <CloudDeployPanel />;
+    }
     if (sidebarSection === 'overview') return <OverviewPage />;
     if (sidebarSection === 'credentials') return <CredentialManager />;
     if (sidebarSection === 'events') return <EventsPage />;
     if (sidebarSection === 'design-reviews') return <DesignReviewsPage />;
     if (sidebarSection === 'settings') return <SettingsPage />;
-    if (isCreatingPersona && sidebarSection === 'personas') return <PersonaCreationWizard />;
     if (selectedPersonaId) return <PersonaEditor />;
     return <PersonaOverviewPage />;
   };

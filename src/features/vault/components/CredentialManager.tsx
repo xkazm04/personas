@@ -145,7 +145,7 @@ export function CredentialManager() {
             type="text"
             value={template.templateSearch}
             onChange={(e) => template.setTemplateSearch(e.target.value)}
-            placeholder="Search templates by label, type, or category"
+            placeholder="Search catalog by label, type, or category"
             className="w-full pl-9 pr-3 py-2 rounded-lg border border-primary/15 bg-secondary/25 text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
@@ -226,7 +226,7 @@ export function CredentialManager() {
               embedded
               onClose={() => setCredentialView('credentials')}
               onComplete={() => {
-                fetchCredentials();
+                void fetchCredentials().catch(() => {});
                 fetchConnectorDefinitions();
                 setCredentialView('credentials');
               }}

@@ -20,7 +20,7 @@ Pre-packaged JSON files in `scripts/templates/` that ship with the application. 
 
 ### 2. n8n Import Templates
 
-n8n workflow JSON files transformed into persona configurations via `src-tauri/src/commands/design/n8n_transform.rs`. n8n nodes map to persona tools; connections map to triggers.
+n8n workflow JSON files transformed into persona configurations via `src-tauri/src/commands/design/n8n_transform.rs`. n8n nodes map to persona tools; connections map to triggers. The import wizard includes a mandatory **test validation step** — the user must pass a quick CLI test (1-turn execution) before proceeding to confirm. Test output is displayed in a rich terminal matching the Executions view. Credential connectors can be linked in the Connectors tab.
 
 **Tab**: n8n Import
 
@@ -344,7 +344,7 @@ DesignReviewsPage
 │   ├── N8nUploadStep
 │   ├── N8nParserResults / N8nConfigureStep
 │   ├── N8nTransformProgress (shared streaming display)
-│   ├── N8nEditStep (wraps DraftEditStep + adds Tools tab)
+│   ├── N8nEditStep (wraps DraftEditStep + adds Tools, Connectors, Test Output tabs)
 │   └── N8nConfirmStep
 ├── GeneratedReviewsTab
 │   ├── ConnectorReadiness (per-row readiness indicator)
@@ -433,7 +433,7 @@ User clicks "Adopt"
 | `src/features/shared/components/draft-editor/DraftSettingsTab.tsx` | **Shared** appearance, limits, model settings |
 | `src/features/shared/components/draft-editor/DraftJsonTab.tsx` | **Shared** raw JSON editor with validation |
 | `src/features/shared/components/draft-editor/SectionEditor.tsx` | **Shared** edit/preview markdown toggle |
-| `src/features/templates/sub_n8n/N8nEditStep.tsx` | Thin wrapper: DraftEditStep + n8n Tools tab |
+| `src/features/templates/sub_n8n/N8nEditStep.tsx` | Thin wrapper: DraftEditStep + n8n Tools/Connectors/Test tabs |
 | `src/features/templates/sub_n8n/N8nConfirmStep.tsx` | n8n-specific confirm with tool/trigger/connector selection |
 | `src/features/templates/sub_n8n/n8nTypes.ts` | Draft normalization utilities (shared by both flows) |
 | `src-tauri/src/commands/design/template_adopt.rs` | Rust backend: CLI spawn, event streaming, snapshot, confirmation |

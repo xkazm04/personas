@@ -1,21 +1,15 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useElapsedTimer } from '@/hooks';
 import { usePersonaStore } from '@/stores/personaStore';
 import { usePersonaExecution } from '@/hooks/execution/usePersonaExecution';
-import { useCopyToClipboard } from '@/hooks/utility/useCopyToClipboard';
-import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, CheckCircle2, XCircle, Timer, DollarSign, ArrowDown, Pause, RotateCw, Wrench, Zap, Brain, Cpu, CheckCheck, AlertTriangle } from 'lucide-react';
-import { TerminalHeader } from '@/features/shared/components/TerminalHeader';
-import { TerminalSearchBar, useTerminalFilter } from '@/features/shared/components/TerminalSearchBar';
-import { classifyLine, parseSummaryLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
+import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, CheckCircle2, XCircle, Timer, DollarSign, Pause, RotateCw, Wrench, Zap, Brain, Cpu, CheckCheck, AlertTriangle } from 'lucide-react';
+import { classifyLine, parseSummaryLine } from '@/lib/utils/terminalColors';
+import { formatElapsed } from '@/lib/utils/formatters';
 import { motion, AnimatePresence } from 'framer-motion';
+import { JsonEditor } from '@/features/shared/components/JsonEditor';
+import { ExecutionTerminal } from '@/features/agents/sub_executions/ExecutionTerminal';
 import * as api from '@/api/tauriApi';
 
-function formatElapsed(ms: number): string {
-  const secs = Math.floor(ms / 1000);
-  if (secs < 60) return `${secs}s`;
-  const mins = Math.floor(secs / 60);
-  const rem = secs % 60;
-  return `${mins}m ${rem}s`;
-}
 
 interface PhaseEntry {
   id: string;
@@ -33,16 +27,50 @@ const PHASE_META: Record<string, { label: string; icon: typeof Zap }> = {
   error: { label: 'Error', icon: AlertTriangle },
 };
 
+interface StatusPresentation {
+  Icon: typeof CheckCircle2;
+  textClass: string;
+  bgClass: string;
+  borderClass: string;
+}
+
+const STATUS_PRESENTATION: Record<string, StatusPresentation> = {
+  completed: { Icon: CheckCircle2, textClass: 'text-emerald-400', bgClass: 'bg-emerald-500/5', borderClass: 'border-emerald-500/20' },
+  incomplete: { Icon: AlertTriangle, textClass: 'text-orange-400', bgClass: 'bg-orange-500/5', borderClass: 'border-orange-500/20' },
+  cancelled: { Icon: Pause, textClass: 'text-amber-400', bgClass: 'bg-amber-500/5', borderClass: 'border-amber-500/20' },
+  failed: { Icon: XCircle, textClass: 'text-red-400', bgClass: 'bg-red-500/5', borderClass: 'border-red-500/20' },
+};
+
+const DEFAULT_STATUS_PRESENTATION: StatusPresentation = {
+  Icon: XCircle,
+  textClass: 'text-amber-400',
+  bgClass: 'bg-amber-500/5',
+  borderClass: 'border-amber-500/20',
+};
+
+function StatusIcon({ status, className }: { status: string; className?: string }) {
+  const { Icon, textClass } = STATUS_PRESENTATION[status] ?? DEFAULT_STATUS_PRESENTATION;
+  return <Icon className={`${textClass} ${className ?? ''}`} />;
+}
+
 function detectPhaseFromLine(line: string, hasSeenTools: boolean): string | null {
   if (!line.trim()) return null;
-  if (line.startsWith('Execution started') || line.startsWith('Cloud execution started') || line.startsWith('Session started')) return 'initializing';
-  if (line.startsWith('> Using tool:') || line.startsWith('  Tool result:')) return 'calling_tools';
-  if (line.startsWith('[ERROR]') || line.startsWith('[TIMEOUT]') || line.startsWith('[WARN]')) return 'error';
-  if (line.startsWith('[SUMMARY]') || line.startsWith('Completed in') || line.startsWith('Cost: $') || line.startsWith('Process exited')) return 'finalizing';
-  if (line.startsWith('=== Execution cancelled ===')) return 'finalizing';
+
+  // Use classifyLine as single source of truth for prefix matching
   const style = classifyLine(line);
-  if (style === 'text') return hasSeenTools ? 'responding' : 'thinking';
-  return null;
+  switch (style) {
+    case 'error':  return 'error';
+    case 'tool':   return 'calling_tools';
+    case 'summary': return 'finalizing';
+    case 'meta':   return 'finalizing';
+    case 'status':
+      // 'status' covers both initialization and finalization lines
+      return line.startsWith('Session started') ? 'initializing' : 'finalizing';
+    case 'text':
+      // Lines classifyLine doesn't distinguish but are execution-start markers
+      if (line.startsWith('Execution started') || line.startsWith('Cloud execution started')) return 'initializing';
+      return hasSeenTools ? 'responding' : 'thinking';
+  }
 }
 
 export function PersonaRunner() {
@@ -62,33 +90,29 @@ export function PersonaRunner() {
 
   const { disconnect } = usePersonaExecution();
 
-  const { filter, setFilter, isLineVisible, isFiltering } = useTerminalFilter();
-
   const runnerRef = useRef<HTMLDivElement>(null);
   const [inputData, setInputData] = useState('{}');
   const [showInputEditor, setShowInputEditor] = useState(false);
   const [outputLines, setOutputLines] = useState<string[]>([]);
-  const { copied, copy: copyToClipboard } = useCopyToClipboard();
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [typicalDurationMs, setTypicalDurationMs] = useState<number | null>(null);
-  const [elapsedMs, setElapsedMs] = useState(0);
-  const startTimeRef = useRef<number | null>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const elapsedMs = useElapsedTimer(isExecuting, 500);
 
   const personaId = selectedPersona?.id || '';
   const isThisPersonasExecution = executionPersonaId === personaId && personaId !== '';
-
-  // Terminal scroll & unseen line tracking
-  const terminalBodyRef = useRef<HTMLDivElement>(null);
-  const shouldAutoScroll = useRef(true);
-  const lastSeenLineCount = useRef(0);
-  const [unseenCount, setUnseenCount] = useState(0);
 
   // Phase tracking for breadcrumb strip
   const [phases, setPhases] = useState<PhaseEntry[]>([]);
   const [showPhases, setShowPhases] = useState(true);
   const phaseLineCount = useRef(0);
   const hasSeenToolsRef = useRef(false);
+
+  // Resizable + fullscreen terminal state
+  const [terminalHeight, setTerminalHeight] = useState(400);
+  const [isTerminalFullscreen, setIsTerminalFullscreen] = useState(false);
+  const isDraggingTerminal = useRef(false);
+  const dragStartY = useRef(0);
+  const dragStartHeight = useRef(0);
 
   // Extract summary from terminal output for the persistent card
   const executionSummary = useMemo(() => {
@@ -119,28 +143,6 @@ export function PersonaRunner() {
       setTypicalDurationMs(null);
     }
   }, []);
-
-  // Start/stop elapsed timer when execution state changes
-  useEffect(() => {
-    if (isExecuting) {
-      startTimeRef.current = Date.now();
-      setElapsedMs(0);
-      timerRef.current = setInterval(() => {
-        if (startTimeRef.current) {
-          setElapsedMs(Date.now() - startTimeRef.current);
-        }
-      }, 500);
-    } else {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-      startTimeRef.current = null;
-    }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isExecuting]);
 
   // Sync store output to local lines (only for this persona's execution)
   useEffect(() => {
@@ -187,37 +189,40 @@ export function PersonaRunner() {
     }
   }, [isExecuting]);
 
-  // Auto-scroll terminal and track unseen lines
+  // Drag-to-resize handler for terminal bottom edge
+  const handleTerminalResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isDraggingTerminal.current = true;
+    dragStartY.current = e.clientY;
+    dragStartHeight.current = terminalHeight;
+
+    const onMove = (moveEvent: MouseEvent) => {
+      if (!isDraggingTerminal.current) return;
+      const delta = moveEvent.clientY - dragStartY.current;
+      setTerminalHeight(Math.max(120, Math.min(900, dragStartHeight.current + delta)));
+    };
+
+    const onUp = () => {
+      isDraggingTerminal.current = false;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }, [terminalHeight]);
+
+  const toggleTerminalFullscreen = useCallback(() => setIsTerminalFullscreen(prev => !prev), []);
+
+  // Escape key exits fullscreen
   useEffect(() => {
-    if (terminalBodyRef.current && shouldAutoScroll.current) {
-      terminalBodyRef.current.scrollTop = terminalBodyRef.current.scrollHeight;
-      lastSeenLineCount.current = outputLines.length;
-      setUnseenCount(0);
-    } else if (!shouldAutoScroll.current && outputLines.length > lastSeenLineCount.current) {
-      setUnseenCount(outputLines.length - lastSeenLineCount.current);
-    }
-  }, [outputLines.length]);
-
-  const handleTerminalScroll = useCallback(() => {
-    if (terminalBodyRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = terminalBodyRef.current;
-      const atBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 10;
-      shouldAutoScroll.current = atBottom;
-      if (atBottom) {
-        lastSeenLineCount.current = outputLines.length;
-        setUnseenCount(0);
-      }
-    }
-  }, [outputLines.length]);
-
-  const scrollToBottom = useCallback(() => {
-    if (terminalBodyRef.current) {
-      terminalBodyRef.current.scrollTo({ top: terminalBodyRef.current.scrollHeight, behavior: 'smooth' });
-      shouldAutoScroll.current = true;
-      lastSeenLineCount.current = outputLines.length;
-      setUnseenCount(0);
-    }
-  }, [outputLines.length]);
+    if (!isTerminalFullscreen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsTerminalFullscreen(false);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isTerminalFullscreen]);
 
   // Clean up on unmount
   useEffect(() => {
@@ -325,7 +330,9 @@ export function PersonaRunner() {
     }, 0);
   };
 
-  const handleCopyLog = () => copyToClipboard(outputLines.join('\n'));
+  const summaryPresentation = executionSummary
+    ? (STATUS_PRESENTATION[executionSummary.status] ?? DEFAULT_STATUS_PRESENTATION)
+    : DEFAULT_STATUS_PRESENTATION;
 
   return (
     <div ref={runnerRef} className="space-y-5">
@@ -358,19 +365,13 @@ export function PersonaRunner() {
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
               >
-                <textarea
+                <JsonEditor
                   value={inputData}
-                  onChange={(e) => {
-                    setInputData(e.target.value);
+                  onChange={(v) => {
+                    setInputData(v);
                     if (jsonError) setJsonError(null);
                   }}
                   placeholder='{"key": "value"}'
-                  className={`w-full h-32 px-4 py-3 bg-background/50 border rounded-xl text-foreground font-mono text-sm resize-y focus:outline-none focus:ring-2 transition-all placeholder-muted-foreground/30 ${
-                    jsonError
-                      ? 'border-red-500/30 ring-1 ring-red-500/30 focus:ring-red-500/40 focus:border-red-500/40'
-                      : 'border-primary/15 focus:ring-primary/40 focus:border-primary/40'
-                  }`}
-                  spellCheck={false}
                 />
                 {jsonError && (
                   <p className="text-red-400/80 text-sm mt-1">{jsonError}</p>
@@ -449,40 +450,12 @@ export function PersonaRunner() {
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-          className={`rounded-xl border p-4 ${
-            executionSummary.status === 'completed'
-              ? 'border-emerald-500/20 bg-emerald-500/5'
-              : executionSummary.status === 'incomplete'
-                ? 'border-orange-500/20 bg-orange-500/5'
-                : executionSummary.status === 'cancelled'
-                  ? 'border-amber-500/20 bg-amber-500/5'
-                  : executionSummary.status === 'failed'
-                    ? 'border-red-500/20 bg-red-500/5'
-                    : 'border-amber-500/20 bg-amber-500/5'
-          }`}
+          className={`rounded-xl border p-4 ${summaryPresentation.borderClass} ${summaryPresentation.bgClass}`}
         >
           <div className="flex items-center gap-5 flex-wrap">
             <div className="flex items-center gap-2">
-              {executionSummary.status === 'completed' ? (
-                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-              ) : executionSummary.status === 'incomplete' ? (
-                <AlertTriangle className="w-5 h-5 text-orange-400" />
-              ) : executionSummary.status === 'cancelled' ? (
-                <Pause className="w-5 h-5 text-amber-400" />
-              ) : executionSummary.status === 'failed' ? (
-                <XCircle className="w-5 h-5 text-red-400" />
-              ) : (
-                <XCircle className="w-5 h-5 text-amber-400" />
-              )}
-              <span className={`text-sm font-semibold capitalize ${
-                executionSummary.status === 'completed'
-                  ? 'text-emerald-400'
-                  : executionSummary.status === 'incomplete'
-                    ? 'text-orange-400'
-                    : executionSummary.status === 'failed'
-                      ? 'text-red-400'
-                      : 'text-amber-400'
-              }`}>
+              <StatusIcon status={executionSummary.status} className="w-5 h-5" />
+              <span className={`text-sm font-semibold capitalize ${summaryPresentation.textClass}`}>
                 {executionSummary.status}
               </span>
             </div>
@@ -532,18 +505,17 @@ export function PersonaRunner() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className="relative border border-border/30 rounded-2xl overflow-hidden bg-background shadow-[0_0_30px_rgba(0,0,0,0.3)]">
-            <TerminalHeader
-              isRunning={isExecuting}
-              lineCount={outputLines.length}
-              onCopy={handleCopyLog}
-              copied={copied}
-              label={activeExecutionId ? `exec:${activeExecutionId.slice(0, 8)}` : undefined}
-            />
-
-            <TerminalSearchBar filter={filter} onChange={setFilter} />
-
-            {/* Phase breadcrumb strip */}
+          <ExecutionTerminal
+            lines={outputLines}
+            isRunning={isExecuting}
+            onStop={handleStop}
+            label={activeExecutionId ? `exec:${activeExecutionId.slice(0, 8)}` : undefined}
+            isFullscreen={isTerminalFullscreen}
+            onToggleFullscreen={toggleTerminalFullscreen}
+            terminalHeight={terminalHeight}
+            onResizeStart={handleTerminalResizeStart}
+          >
+            {/* Proportional phase timeline */}
             {phases.length > 0 && (
               <div className="border-b border-border/20">
                 <button
@@ -562,138 +534,68 @@ export function PersonaRunner() {
                       transition={{ duration: 0.15 }}
                       className="overflow-hidden"
                     >
-                      <div className="flex items-center gap-1 px-3 pb-2 flex-wrap">
-                        {phases.map((phase, i) => {
-                          const isActive = i === phases.length - 1 && isExecuting;
-                          const meta = PHASE_META[phase.id];
-                          const PhaseIcon = meta?.icon ?? Zap;
-                          const duration = phase.endMs != null
-                            ? phase.endMs - phase.startMs
-                            : isActive
-                              ? elapsedMs - phase.startMs
-                              : 0;
+                      <div className="px-3 pb-2.5">
+                        {(() => {
+                          const durations = phases.map((p, j) => {
+                            const active = j === phases.length - 1 && isExecuting;
+                            return p.endMs != null ? p.endMs - p.startMs : active ? elapsedMs - p.startMs : 0;
+                          });
+                          const totalDur = durations.reduce((s, d) => s + d, 0);
+                          const minGrow = totalDur > 0 ? totalDur * 0.06 : 1;
 
                           return (
-                            <div key={`${phase.id}-${i}`} className="flex items-center gap-1">
-                              {i > 0 && (
-                                <div className="w-3 h-px bg-primary/15 mx-0.5" />
-                              )}
-                              <div
-                                className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-sm font-medium transition-colors ${
-                                  isActive
-                                    ? 'bg-primary/12 text-primary/80 border border-primary/20'
-                                    : 'bg-secondary/30 text-muted-foreground/90 border border-transparent'
-                                }`}
-                              >
-                                <PhaseIcon className={`w-3 h-3 flex-shrink-0 ${isActive ? 'animate-pulse' : ''}`} />
-                                <span>{phase.label}</span>
-                                {duration > 0 && (
-                                  <span className={`font-mono text-sm ${isActive ? 'text-primary/50' : 'text-muted-foreground/80'}`}>
-                                    {formatElapsed(duration)}
-                                  </span>
-                                )}
-                              </div>
+                            <div className="flex w-full h-7 rounded-lg overflow-hidden gap-px">
+                              {phases.map((phase, i) => {
+                                const isActive = i === phases.length - 1 && isExecuting;
+                                const meta = PHASE_META[phase.id];
+                                const PhaseIcon = meta?.icon ?? Zap;
+                                const duration = durations[i]!;
+
+                                return (
+                                  <motion.div
+                                    key={`${phase.id}-${i}`}
+                                    layout
+                                    className={`relative flex items-center justify-center gap-1.5 px-2 overflow-hidden transition-colors ${
+                                      isActive
+                                        ? 'bg-primary/20 text-primary/90'
+                                        : phase.id === 'error'
+                                          ? 'bg-red-500/15 text-red-400/80'
+                                          : 'bg-secondary/40 text-muted-foreground/80'
+                                    }`}
+                                    style={{ flexGrow: Math.max(duration, minGrow) }}
+                                    title={`${phase.label}: ${formatElapsed(duration)}`}
+                                  >
+                                    {isActive && (
+                                      <motion.div
+                                        className="absolute inset-0 pointer-events-none"
+                                        style={{
+                                          background: 'linear-gradient(90deg, transparent, hsl(var(--primary) / 0.12), transparent)',
+                                          width: '60%',
+                                        }}
+                                        animate={{ left: ['-60%', '100%'] }}
+                                        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                                      />
+                                    )}
+                                    <PhaseIcon className="w-3 h-3 flex-shrink-0 relative z-[1]" />
+                                    <span className="truncate text-xs font-medium relative z-[1]">{phase.label}</span>
+                                    {duration > 0 && (
+                                      <span className="font-mono text-[11px] opacity-60 relative z-[1] flex-shrink-0">
+                                        {formatElapsed(duration)}
+                                      </span>
+                                    )}
+                                  </motion.div>
+                                );
+                              })}
                             </div>
                           );
-                        })}
+                        })()}
                       </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
             )}
-
-            {/* Terminal body */}
-            <div className="relative">
-            <div
-              ref={terminalBodyRef}
-              onScroll={handleTerminalScroll}
-              className="p-4 max-h-[400px] overflow-y-auto font-mono text-sm space-y-0.5"
-            >
-              {outputLines.map((line, i) => {
-                if (!line.trim()) return <div key={i} className="h-2" />;
-                const style = classifyLine(line);
-                const visible = isLineVisible(line, style);
-
-                if (style === 'summary') {
-                  const summary = parseSummaryLine(line);
-                  if (summary) {
-                    const isSuccess = summary.status === 'completed';
-                    const isFailed = summary.status === 'failed';
-                    const isCancelled = summary.status === 'cancelled';
-                    const isIncomplete = summary.status === 'incomplete';
-                    return (
-                      <div key={i} className={`border-t border-primary/15 pt-2 mt-2 transition-opacity ${isFiltering && !visible ? 'opacity-20' : ''}`}>
-                        <div className="flex items-center gap-4 flex-wrap">
-                          <div className="flex items-center gap-1.5">
-                            {isSuccess ? (
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                            ) : isIncomplete ? (
-                              <AlertTriangle className="w-3.5 h-3.5 text-orange-400" />
-                            ) : isCancelled ? (
-                              <Pause className="w-3.5 h-3.5 text-amber-400" />
-                            ) : isFailed ? (
-                              <XCircle className="w-3.5 h-3.5 text-red-400" />
-                            ) : (
-                              <XCircle className="w-3.5 h-3.5 text-amber-400" />
-                            )}
-                            <span className={`font-semibold capitalize ${isSuccess ? 'text-emerald-400/90' : isIncomplete ? 'text-orange-400/90' : isFailed ? 'text-red-400/90' : 'text-amber-400/90'}`}>
-                              {summary.status}
-                            </span>
-                          </div>
-                          {summary.duration_ms != null && (
-                            <div className="flex items-center gap-1.5 text-muted-foreground/80">
-                              <Timer className="w-3 h-3" />
-                              <span>{(summary.duration_ms / 1000).toFixed(1)}s</span>
-                            </div>
-                          )}
-                          {summary.cost_usd != null && (
-                            <div className="flex items-center gap-1.5 text-muted-foreground/80">
-                              <DollarSign className="w-3 h-3" />
-                              <span>${summary.cost_usd.toFixed(4)}</span>
-                            </div>
-                          )}
-                          {isCancelled && summary.last_tool && (
-                            <div className="flex items-center gap-1.5 text-muted-foreground/90">
-                              <Wrench className="w-3 h-3 text-amber-400/60" />
-                              <span className="text-amber-300/60">{summary.last_tool}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  }
-                }
-
-                return (
-                  <div key={i} className={`leading-5 whitespace-pre-wrap break-all ${TERMINAL_STYLE_MAP[style]} transition-opacity ${isFiltering && !visible ? 'opacity-20' : ''}`}>
-                    {line}
-                  </div>
-                );
-              })}
-              {isExecuting && (
-                <div className="text-muted-foreground/80 animate-pulse">{'>'} _</div>
-              )}
-            </div>
-
-            {/* Jump-to-bottom FAB */}
-            <AnimatePresence>
-              {unseenCount > 0 && (
-                <motion.button
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 8 }}
-                  transition={{ duration: 0.15 }}
-                  onClick={scrollToBottom}
-                  className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/90 text-foreground text-sm font-medium shadow-lg shadow-primary/20 hover:bg-primary transition-colors backdrop-blur-sm"
-                >
-                  <ArrowDown className="w-3 h-3" />
-                  {unseenCount} new line{unseenCount !== 1 ? 's' : ''} below
-                </motion.button>
-              )}
-            </AnimatePresence>
-            </div>
-          </div>
+          </ExecutionTerminal>
         </motion.div>
       )}
     </div>

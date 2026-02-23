@@ -1,7 +1,13 @@
+use std::collections::HashSet;
+
 use crate::db::models::CreatePersonaEventInput;
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::resources::triggers as trigger_repo;
 use crate::db::DbPool;
+
+/// Maximum chain depth before we refuse to fire further chain triggers.
+/// Prevents infinite cascades from A->B->A or longer cycles.
+const MAX_CHAIN_DEPTH: u32 = 8;
 
 /// Evaluate chain triggers after an execution completes.
 ///
@@ -18,26 +24,36 @@ use crate::db::DbPool;
 ///   "payload_forward": true               // Forward source output as payload
 /// }
 /// ```
+///
+/// `chain_depth` tracks how many chain hops have occurred so far. The initial
+/// caller passes 0. `visited_personas` tracks which persona IDs have already
+/// appeared in this chain to detect cycles.
 pub fn evaluate_chain_triggers(
     pool: &DbPool,
     source_persona_id: &str,
     execution_status: &str,
     execution_output: Option<&str>,
     execution_id: &str,
+    chain_depth: u32,
+    visited_personas: &HashSet<String>,
 ) {
-    // Get all chain triggers
-    let all_triggers = match trigger_repo::get_all(pool) {
+    if chain_depth >= MAX_CHAIN_DEPTH {
+        tracing::warn!(
+            source_persona_id = %source_persona_id,
+            chain_depth,
+            "Chain trigger depth limit reached ({}), refusing to fire further triggers",
+            MAX_CHAIN_DEPTH,
+        );
+        return;
+    }
+    // Get only enabled chain triggers matching this source persona (filtered at SQL level)
+    let chain_triggers = match trigger_repo::get_chain_triggers_for_source(pool, source_persona_id) {
         Ok(t) => t,
         Err(e) => {
             tracing::error!("Chain trigger evaluation failed: {}", e);
             return;
         }
     };
-
-    let chain_triggers: Vec<_> = all_triggers
-        .into_iter()
-        .filter(|t| t.trigger_type == "chain" && t.enabled)
-        .collect();
 
     if chain_triggers.is_empty() {
         return;
@@ -53,13 +69,16 @@ pub fn evaluate_chain_triggers(
             None => continue,
         };
 
-        // Check source_persona_id matches
-        let source_id = config
-            .get("source_persona_id")
-            .and_then(|s| s.as_str())
-            .unwrap_or("");
-
-        if source_id != source_persona_id {
+        // Cycle detection: skip if target persona was already visited in this chain
+        if visited_personas.contains(&trigger.persona_id) {
+            tracing::warn!(
+                trigger_id = %trigger.id,
+                source_persona_id = %source_persona_id,
+                target_persona_id = %trigger.persona_id,
+                chain_depth,
+                "Chain trigger cycle detected: {} already visited, skipping",
+                trigger.persona_id,
+            );
             continue;
         }
 
@@ -72,6 +91,11 @@ pub fn evaluate_chain_triggers(
             );
             continue;
         }
+
+        // Build visited set for downstream, adding the target persona
+        let next_depth = chain_depth + 1;
+        let mut next_visited: Vec<&str> = visited_personas.iter().map(|s| s.as_str()).collect();
+        next_visited.push(&trigger.persona_id);
 
         // Build payload
         let payload = if config
@@ -86,6 +110,8 @@ pub fn evaluate_chain_triggers(
                     "source_status": execution_status,
                     "source_output": serde_json::from_str::<serde_json::Value>(o)
                         .unwrap_or(serde_json::Value::String(o.to_string())),
+                    "_chain_depth": next_depth,
+                    "_chain_visited": next_visited,
                 })
                 .to_string()
             })
@@ -95,6 +121,8 @@ pub fn evaluate_chain_triggers(
                     "source_persona_id": source_persona_id,
                     "source_execution_id": execution_id,
                     "source_status": execution_status,
+                    "_chain_depth": next_depth,
+                    "_chain_visited": next_visited,
                 })
                 .to_string(),
             )
@@ -140,6 +168,34 @@ pub fn evaluate_chain_triggers(
             }
         }
     }
+}
+
+/// Extract chain depth and visited set from a chain trigger payload.
+///
+/// When a chain trigger fires, it embeds `_chain_depth` and `_chain_visited`
+/// in the event payload. This function extracts them so the next execution
+/// can propagate cycle-detection state.
+pub fn extract_chain_metadata(payload: Option<&str>) -> (u32, HashSet<String>) {
+    let Some(payload) = payload else {
+        return (0, HashSet::new());
+    };
+    let Ok(val) = serde_json::from_str::<serde_json::Value>(payload) else {
+        return (0, HashSet::new());
+    };
+    let depth = val
+        .get("_chain_depth")
+        .and_then(|d| d.as_u64())
+        .unwrap_or(0) as u32;
+    let visited = val
+        .get("_chain_visited")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|s| s.as_str().map(String::from))
+                .collect()
+        })
+        .unwrap_or_default();
+    (depth, visited)
 }
 
 /// Evaluate a conditional predicate against execution results.
@@ -318,5 +374,43 @@ mod tests {
     fn test_simple_jsonpath_missing() {
         let data = json!({"a": 1});
         assert_eq!(evaluate_simple_jsonpath(&data, "$.b"), None);
+    }
+
+    #[test]
+    fn test_extract_chain_metadata_none() {
+        let (depth, visited) = extract_chain_metadata(None);
+        assert_eq!(depth, 0);
+        assert!(visited.is_empty());
+    }
+
+    #[test]
+    fn test_extract_chain_metadata_no_fields() {
+        let payload = r#"{"source_persona_id": "abc"}"#;
+        let (depth, visited) = extract_chain_metadata(Some(payload));
+        assert_eq!(depth, 0);
+        assert!(visited.is_empty());
+    }
+
+    #[test]
+    fn test_extract_chain_metadata_with_fields() {
+        let payload = json!({
+            "source_persona_id": "abc",
+            "_chain_depth": 3,
+            "_chain_visited": ["persona-a", "persona-b", "persona-c"]
+        })
+        .to_string();
+        let (depth, visited) = extract_chain_metadata(Some(&payload));
+        assert_eq!(depth, 3);
+        assert_eq!(visited.len(), 3);
+        assert!(visited.contains("persona-a"));
+        assert!(visited.contains("persona-b"));
+        assert!(visited.contains("persona-c"));
+    }
+
+    #[test]
+    fn test_extract_chain_metadata_invalid_json() {
+        let (depth, visited) = extract_chain_metadata(Some("not json"));
+        assert_eq!(depth, 0);
+        assert!(visited.is_empty());
     }
 }

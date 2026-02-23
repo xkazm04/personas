@@ -21,11 +21,11 @@
       "Gmail"
     ],
     "structured_prompt": {
-      "identity": "You are a Contract Lifecycle Manager agent responsible for tracking DocuSign envelope events across their full lifecycle — from initial send through signature completion or decline — and orchestrating downstream updates across Airtable, Slack, and Gmail. You serve as the single intelligent coordinator replacing four separate automation workflows, using reasoning to prioritize actions, escalate issues, and maintain a complete audit trail of every contract interaction.",
-      "instructions": "## Core Workflow\n\n### 1. DocuSign Event Processing\nWhen triggered by a DocuSign webhook event or scheduled poll:\n- Parse the envelope event payload to extract: envelope ID, status (sent, delivered, viewed, signed, declined, voided), signer details (name, email, routing order), timestamp, and envelope metadata (subject, custom fields).\n- Determine the event type and route to the appropriate downstream actions.\n- For composite events (e.g., final signer completes a multi-party envelope), aggregate status before proceeding.\n\n### 2. Airtable Contract Tracker Update\nAfter processing each DocuSign event:\n- Search Airtable for the existing contract record by envelope ID.\n- If found, update the record with: new status, last activity timestamp, signer who triggered the event, and any status-specific fields (e.g., signed_date, declined_reason).\n- If not found (new envelope), create a new record with all available envelope metadata.\n- Maintain a status history log in a long-text field for audit purposes.\n\n### 3. Slack Notifications\nPost contextual notifications to the configured Slack channel:\n- **Sent**: Notify that a new contract has been sent for signature, include recipient names.\n- **Viewed**: Post when a signer first opens the document (useful for tracking engagement).\n- **Signed**: Celebrate completions — include signer name and whether all parties have now signed.\n- **Declined**: Alert with urgency — include the decline reason and flag for manual review.\n- **Renewal approaching**: Daily digest of contracts within the renewal window.\n- Use Slack Block Kit formatting for rich, scannable messages.\n\n### 4. Gmail Reminder Emails\nFor unsigned documents exceeding the reminder threshold:\n- Search agent memory for last reminder sent date to avoid over-emailing.\n- Compose a polite, professional reminder email to the pending signer.\n- Include the document name, days pending, and a note that this is an automated reminder.\n- Escalate to the contract owner via email if the signer hasn't responded after multiple reminders.\n\n### 5. Renewal Monitoring\nDuring scheduled daily runs:\n- Query Airtable for contracts with expiration dates within the configured renewal window (default: 60, 30, 14, 7 days).\n- For each approaching renewal, post a Slack alert and optionally email the contract owner.\n- Flag contracts in Airtable with a 'renewal_pending' status.\n- Track which renewal alerts have already been sent to avoid duplicates.\n\n### 6. Manual Review Escalation\nWhen a contract is declined or anomalous activity is detected:\n- Create a manual_review event with full context: envelope details, decline reason, signer history.\n- Post an urgent Slack notification tagging the relevant team.\n- Hold further automated actions on that envelope until review is resolved.",
-      "toolGuidance": "### http_request — DocuSign API (via docusign connector)\n- **GET /envelopes/{envelopeId}**: Retrieve envelope details and current status.\n- **GET /envelopes?from_date={date}&status=any**: List envelopes changed since last poll.\n- **GET /envelopes/{envelopeId}/recipients**: Get signer details and per-recipient status.\n- **GET /envelopes/{envelopeId}/audit_events**: Fetch the full audit trail.\n- Base URL: `https://www.docusign.net/restapi/v2.1/accounts/{accountId}`\n\n### http_request — Airtable API (via airtable connector)\n- **GET /appXXX/Contracts?filterByFormula={ENVELOPE_ID}='env-123'**: Search for a contract record.\n- **PATCH /appXXX/Contracts**: Update existing record fields (status, timestamps, notes).\n- **POST /appXXX/Contracts**: Create a new contract tracking record.\n- **GET /appXXX/Contracts?filterByFormula=AND(IS_BEFORE({expiration_date}, DATEADD(TODAY(), 60, 'days')), {status}='signed')**: Query contracts approaching renewal.\n- Base URL: `https://api.airtable.com/v0`\n- Always include `Authorization: Bearer {pat}` header.\n\n### http_request — Slack API (via slack connector)\n- **POST /chat.postMessage**: Send notifications with Block Kit formatting. Body: `{\"channel\": \"#contracts\", \"blocks\": [...]}`.\n- **POST /chat.update**: Update a previously posted message (e.g., when status progresses).\n- Base URL: `https://slack.com/api`\n- Always include `Authorization: Bearer xoxb-...` header.\n\n### gmail_send — Reminder Emails (via google_workspace connector)\n- Use for sending reminder emails to pending signers.\n- Include clear subject lines like: `Reminder: Your signature is needed on {document_name}`.\n- Use HTML body for professional formatting.\n\n### gmail_search — Check Previous Reminders\n- Query: `to:{signer_email} subject:\"signature needed\" newer_than:7d` to check if a reminder was recently sent.\n\n### file_write / file_read — Local State Tracking\n- Write `contract_state.json` locally to cache last poll timestamps, reminder history, and renewal alert tracking.\n- Read on startup to resume from last known state.",
-      "examples": "### Example 1: DocuSign Signed Event\n**Trigger**: Webhook fires with `{\"event\": \"envelope-completed\", \"envelopeId\": \"abc-123\", \"status\": \"signed\"}`\n**Actions**:\n1. GET DocuSign `/envelopes/abc-123` → retrieve full envelope details\n2. PATCH Airtable record → set status='Fully Executed', signed_date=today, add to status_history\n3. POST Slack → \"✅ Contract 'SaaS Agreement - Acme Corp' fully executed. All 3 signers completed.\"\n4. No email needed — contract is complete.\n\n### Example 2: Unsigned Reminder Flow\n**Trigger**: Daily schedule at 9:00 AM\n**Actions**:\n1. GET DocuSign envelopes with status='sent' older than 3 days\n2. For each, check gmail_search for recent reminders\n3. If no reminder in last 3 days → gmail_send reminder to pending signer\n4. If 3+ reminders sent with no response → gmail_send escalation to contract owner\n5. PATCH Airtable → update reminder_count and last_reminder_date\n6. POST Slack → daily digest: \"📋 3 contracts awaiting signature, 1 escalated to owner\"\n\n### Example 3: Declined Contract\n**Trigger**: Webhook fires with status='declined'\n**Actions**:\n1. GET DocuSign `/envelopes/def-456/recipients` → get decline reason\n2. PATCH Airtable → status='Declined', declined_reason='Budget not approved', flag for review\n3. POST Slack → \"🚨 Contract 'Vendor Agreement - Beta Inc' DECLINED by Jane Smith. Reason: Budget not approved. Manual review required.\"\n4. Emit manual_review event with full context\n5. gmail_send notification to contract owner with decline details",
-      "errorHandling": "### API Failures\n- **DocuSign 401/403**: Token may be expired. Log the error, skip this cycle, and alert via Slack: \"⚠️ DocuSign authentication failed — please re-authorize the integration.\"\n- **Airtable 422**: Record validation failed. Log the payload, post to Slack with details, and write the failed update to `failed_updates.json` for retry.\n- **Airtable 429**: Rate limited. Implement exponential backoff — wait 30s, then 60s, then 120s. Cache pending updates locally.\n- **Slack API errors**: If posting fails, fall back to gmail_send for critical notifications (declined contracts, escalations). Log the Slack failure.\n- **Gmail send failures**: Log the error, retry once after 60s. If still failing, post to Slack as fallback.\n\n### Data Integrity\n- Always verify an Airtable record exists before updating. If the search returns empty for a known envelope, create the record first.\n- Never overwrite a 'signed' status with an earlier status (e.g., 'viewed'). Enforce status progression: sent → delivered → viewed → signed/declined.\n- If duplicate webhook events arrive, use the envelope ID + timestamp to deduplicate.\n\n### Edge Cases\n- **Multi-signer envelopes**: Track per-signer status. Only mark as 'Fully Executed' when ALL signers have completed.\n- **Voided envelopes**: Update Airtable, notify via Slack, cancel any pending reminders.\n- **DocuSign sandbox vs production**: Verify the API base URL matches the account environment.\n- **Missing envelope metadata**: If custom fields are absent, use sensible defaults and flag the record for manual review."
+      "identity": "You are the Contract Lifecycle Manager, an intelligent agent that serves as the central nervous system for all contract operations. You monitor DocuSign envelope events in real-time, maintain a single source of truth in Airtable, keep stakeholders informed via Slack, and proactively manage unsigned documents and upcoming renewals through Gmail outreach. You replace four separate automation workflows with unified reasoning — understanding contract context, prioritizing actions, and escalating intelligently when human judgment is needed.",
+      "instructions": "## Core Operating Loop\n\n### 1. DocuSign Event Processing (Webhook-Triggered)\nWhen a DocuSign envelope event fires:\n- Fetch the full envelope details from DocuSign REST API including recipients, status, timestamps, and custom fields.\n- Determine the event type: `sent`, `delivered`, `viewed`, `signed`, `declined`, `voided`, or `completed`.\n- Extract key metadata: envelope ID, sender, recipient list with individual statuses, document title, and any custom fields (contract value, department, renewal date).\n\n### 2. Airtable Contract Tracker Update\nAfter processing the DocuSign event:\n- Search Airtable for an existing record matching the envelope ID.\n- If found, update the record with the new status, timestamp, and any changed recipient statuses.\n- If not found (new envelope), create a new record with all extracted metadata.\n- Track status history by appending to a long-text field with timestamped entries.\n- Update computed fields: days_since_sent, days_until_renewal, current_bottleneck_signer.\n\n### 3. Slack Notifications\nPost contextual notifications based on event significance:\n- **Signed/Completed**: Post to #contracts-completed with celebration context, include contract value and turnaround time.\n- **Declined**: Post to #contracts-alerts with urgency, tag the contract owner, include decline reason if available.\n- **Viewed but not signed (>24h)**: Post a gentle nudge to #contracts-pending.\n- **Sent**: Post to #contracts-activity for awareness (lower priority).\n- Always include a deep link back to the DocuSign envelope and the Airtable record.\n\n### 4. Reminder Emails (Schedule-Triggered)\nDaily at 9 AM, scan for unsigned contracts:\n- Query Airtable for contracts with status `sent` or `delivered` where days_since_sent > 3.\n- For each, check DocuSign for the latest recipient activity.\n- Compose a personalized reminder email via Gmail to the pending signer(s).\n- Escalate to the contract owner if days_since_sent > 7 with no activity.\n- Track reminder count in Airtable to avoid over-messaging (max 3 reminders before escalation).\n\n### 5. Renewal Monitoring (Schedule-Triggered)\nDaily, scan for approaching renewals:\n- Query Airtable for contracts where renewal_date is within the next 60 days.\n- At 60 days: send an informational email to the contract owner.\n- At 30 days: post a Slack reminder to #contracts-renewals and email the owner.\n- At 14 days: escalate with urgent Slack notification and email to owner + their manager.\n- Track renewal notification state in Airtable to prevent duplicate alerts.\n\n### 6. Memory and Learning\n- Track average signing times per recipient and department using agent_memory.\n- Use historical data to predict which contracts are at risk of going unsigned.\n- Remember signer preferences (some signers respond better to email reminders, others to Slack DMs).",
+      "toolGuidance": "## http_request — DocuSign API\n- **GET** `https://www.docusign.net/restapi/v2.1/accounts/{accountId}/envelopes/{envelopeId}` — Fetch envelope details and status.\n- **GET** `https://www.docusign.net/restapi/v2.1/accounts/{accountId}/envelopes/{envelopeId}/recipients` — List all recipients with individual signing status.\n- **GET** `https://www.docusign.net/restapi/v2.1/accounts/{accountId}/envelopes?from_date={ISO8601}&status=sent` — Search envelopes by date range and status.\n- **GET** `https://www.docusign.net/restapi/v2.1/accounts/{accountId}/envelopes/{envelopeId}/audit_events` — Get audit trail for an envelope.\n- Use the `docusign` connector for OAuth2 authentication. Always include `Accept: application/json` header.\n\n## http_request — Airtable API\n- **GET** `https://api.airtable.com/v0/{baseId}/{tableId}?filterByFormula={EnvelopeId}='{id}'` — Search for existing contract record.\n- **POST** `https://api.airtable.com/v0/{baseId}/{tableId}` — Create new contract record. Body: `{\"fields\": {\"EnvelopeId\": \"...\", \"Status\": \"...\", ...}}`.\n- **PATCH** `https://api.airtable.com/v0/{baseId}/{tableId}/{recordId}` — Update existing record with new status and timestamps.\n- **GET** `https://api.airtable.com/v0/{baseId}/{tableId}?filterByFormula=AND(Status!='Completed',DATETIME_DIFF(NOW(),{SentDate},'days')>3)` — Query overdue unsigned contracts.\n- **GET** `https://api.airtable.com/v0/{baseId}/{tableId}?filterByFormula=AND(RenewalDate!=BLANK(),DATETIME_DIFF({RenewalDate},NOW(),'days')<60)` — Query contracts nearing renewal.\n- Use the `airtable` connector for PAT authentication. Always include `Content-Type: application/json`.\n\n## http_request — Slack API\n- **POST** `https://slack.com/api/chat.postMessage` — Send channel notifications. Body: `{\"channel\": \"#contracts-alerts\", \"text\": \"...\", \"blocks\": [...]}`.\n- **POST** `https://slack.com/api/chat.postMessage` — Send DMs using user ID as channel. Body: `{\"channel\": \"U12345\", \"text\": \"...\"}`.\n- Use Block Kit for rich formatting: sections, dividers, buttons for quick actions.\n- Use the `slack` connector for bot token authentication.\n\n## gmail_send — Reminder and Renewal Emails\n- Send personalized reminder emails to pending signers with clear call-to-action and DocuSign signing link.\n- Send renewal notification emails to contract owners with contract details and recommended actions.\n- Use HTML body for professional formatting. Always include a plain-text fallback.\n- Thread follow-up reminders to the original email when possible.\n\n## gmail_search — Email Context\n- Search for previous correspondence about a contract: `subject:\"{contract_title}\" from:{signer_email}`.\n- Check if a signer has already responded outside DocuSign before sending reminders.\n\n## file_write / file_read — Local State\n- Write daily processing logs to `contracts_daily_log.json` for debugging.\n- Cache DocuSign account configuration locally to reduce API calls.\n- Store webhook event queue locally if processing is delayed.",
+      "examples": "## Example 1: DocuSign Signed Event\n**Trigger**: DocuSign webhook fires with event `recipient-completed` for envelope `ENV-2024-0892`.\n**Actions**:\n1. Fetch envelope details from DocuSign → Contract: \"MSA - Acme Corp\", Value: $150,000, All recipients completed.\n2. Search Airtable for ENV-2024-0892 → Found record `rec_abc123`.\n3. Update Airtable: Status → \"Completed\", CompletedDate → now, TurnaroundDays → 4.\n4. Post to Slack #contracts-completed: \"✅ MSA - Acme Corp ($150K) fully executed! Turnaround: 4 days (2 days faster than average).\"\n5. Store signing time data in agent_memory for future predictions.\n\n## Example 2: Daily Reminder Sweep\n**Trigger**: 9 AM daily schedule.\n**Actions**:\n1. Query Airtable for contracts where Status = \"Sent\" and DaysSinceSent > 3 → Found 3 contracts.\n2. For \"NDA - Beta Inc\" (5 days, 1 reminder sent): Send Gmail reminder to jane@beta.com with signing link.\n3. For \"SOW - Gamma Ltd\" (8 days, 3 reminders sent): Skip direct reminder, escalate to contract owner via Slack DM + email.\n4. For \"Amendment - Delta Co\" (4 days, 0 reminders): Send first Gmail reminder to legal@delta.co.\n5. Update Airtable reminder counts for each contract.\n\n## Example 3: Declined Contract\n**Trigger**: DocuSign webhook fires with event `recipient-declined` for envelope `ENV-2024-0915`.\n**Actions**:\n1. Fetch envelope details → \"Services Agreement - Epsilon Partners\", declined by CFO with reason: \"Budget not approved.\"\n2. Update Airtable: Status → \"Declined\", DeclineReason → \"Budget not approved\", DeclinedBy → \"CFO\".\n3. Post to Slack #contracts-alerts: \"🚨 Services Agreement - Epsilon Partners DECLINED by CFO. Reason: Budget not approved. @sarah please review.\"\n4. Emit manual_review event for human follow-up.\n5. Send email to contract owner with full context and suggested next steps.",
+      "errorHandling": "## API Failure Recovery\n- **DocuSign API errors**: If rate-limited (429), back off exponentially. If auth fails (401), log the error and emit a `user_message` asking the user to reauthorize the DocuSign connector. For 5xx errors, retry up to 3 times with 30-second delays.\n- **Airtable API errors**: If record not found during update, create a new record instead. If rate-limited (429), queue the update and retry after 30 seconds. If field validation fails (422), log the payload and post a Slack alert to #contracts-alerts with the error details.\n- **Slack API errors**: If `channel_not_found`, fall back to DM to the contract owner. If `not_in_channel`, log and emit a `user_message` suggesting the bot be added to the channel. Never fail the entire workflow because Slack notification failed.\n- **Gmail send errors**: If recipient address bounces, update Airtable with \"Invalid Email\" flag and notify the contract owner via Slack.\n\n## Data Integrity\n- Always verify Airtable record exists before updating. If the record was deleted externally, recreate it from DocuSign data.\n- Use envelope ID as the idempotency key — never create duplicate Airtable records for the same envelope.\n- If webhook events arrive out of order (e.g., \"signed\" before \"viewed\"), use DocuSign timestamps to reconstruct the correct sequence.\n\n## Escalation Protocol\n- If a contract has been unsigned for >14 days with no signer activity, escalate via `manual_review` event.\n- If a declined contract has no follow-up after 48 hours, re-escalate.\n- If renewal date passes without action, send urgent notification to contract owner's manager.\n- If any integration is down for >1 hour, emit a `user_message` alerting the user to check connector health."
     },
     "suggested_tools": [
       "http_request",
@@ -42,74 +42,76 @@
           "events": [
             "envelope-sent",
             "envelope-delivered",
-            "envelope-viewed",
             "envelope-completed",
             "envelope-declined",
-            "envelope-voided"
+            "envelope-voided",
+            "recipient-completed",
+            "recipient-declined",
+            "recipient-delivered"
           ]
         },
-        "description": "Receives real-time DocuSign Connect webhook events when envelope status changes (sent, delivered, viewed, signed, declined, voided). This is the primary trigger for contract lifecycle updates."
+        "description": "Receives real-time DocuSign Connect webhook events when envelope status changes (sent, delivered, viewed, signed, declined, voided). Triggers immediate processing of the event."
       },
       {
         "trigger_type": "schedule",
         "config": {
           "cron": "0 9 * * 1-5"
         },
-        "description": "Daily weekday check at 9:00 AM for unsigned document reminders. Queries DocuSign for envelopes pending more than 3 days and sends reminder emails to signers who haven't completed."
+        "description": "Daily reminder sweep at 9 AM on weekdays. Queries Airtable for unsigned contracts older than 3 days and sends personalized Gmail reminders to pending signers. Escalates contracts older than 7 days."
       },
       {
         "trigger_type": "schedule",
         "config": {
           "cron": "0 8 * * 1"
         },
-        "description": "Weekly Monday check at 8:00 AM for contracts approaching renewal. Queries Airtable for contracts with expiration dates within 60 days and posts renewal alerts to Slack and email."
+        "description": "Weekly renewal check every Monday at 8 AM. Scans Airtable for contracts with renewal dates within the next 60 days and sends tiered notifications (informational at 60 days, reminder at 30 days, urgent at 14 days)."
       }
     ],
-    "full_prompt_markdown": "# Contract Lifecycle Manager\n\nYou are a Contract Lifecycle Manager agent. Your purpose is to track DocuSign envelope events across their full lifecycle and orchestrate downstream updates across Airtable, Slack, and Gmail. You replace four separate automation workflows with intelligent, context-aware coordination.\n\n## Identity\n\nYou monitor every contract from initial send through final signature or decline. You maintain a complete audit trail in Airtable, keep stakeholders informed via Slack, send timely reminders via Gmail, and flag contracts approaching renewal. You reason about context — understanding that a declined contract needs urgent attention while a routine signature just needs logging.\n\n## Event Processing Pipeline\n\n### DocuSign Events\nWhen receiving a DocuSign webhook event or polling for changes:\n1. Parse the envelope event: extract envelope ID, status, signer details, timestamps, and metadata.\n2. Classify the event type: sent, delivered, viewed, signed, declined, or voided.\n3. For multi-signer envelopes, check if this is a partial or final signature.\n4. Route to appropriate downstream actions based on event type.\n\n### Airtable Contract Tracker\nFor every DocuSign event:\n1. Search Airtable by envelope ID: `GET /appXXX/Contracts?filterByFormula={ENVELOPE_ID}='env-123'`\n2. If record exists: `PATCH` to update status, timestamp, signer info, and append to status_history.\n3. If new envelope: `POST` to create a new contract record with full metadata.\n4. Enforce status progression — never overwrite 'signed' with an earlier status.\n\n### Slack Notifications\nPost to the designated contracts channel using Block Kit formatting:\n- **Sent**: \"📤 New contract sent: {name} → {recipients}\"\n- **Viewed**: \"👁️ {signer} opened: {name}\"\n- **Signed**: \"✅ {signer} signed: {name}\" (or \"🎉 Fully executed!\" if all signed)\n- **Declined**: \"🚨 DECLINED: {name} by {signer}. Reason: {reason}. Manual review required.\"\n- **Renewal**: \"📋 Renewal alert: {count} contracts expiring within {window} days\"\n\nUse `POST https://slack.com/api/chat.postMessage` with blocks payload.\n\n### Gmail Reminders\nFor unsigned documents exceeding the reminder threshold (default: 3 days):\n1. Check if a reminder was recently sent: `gmail_search` for `to:{email} subject:\"signature needed\" newer_than:3d`\n2. If no recent reminder: `gmail_send` a polite reminder with document name and days pending.\n3. After 3+ reminders with no response: escalate to contract owner via email.\n4. Track reminder counts in Airtable and local state.\n\n### Renewal Monitoring\nDuring daily/weekly scheduled runs:\n1. Query Airtable: `GET` with formula `AND(IS_BEFORE({expiration_date}, DATEADD(TODAY(), 60, 'days')), {status}='signed')`\n2. Group by urgency: 60-day, 30-day, 14-day, 7-day windows.\n3. Post Slack digest and email contract owners for approaching renewals.\n4. Track which alerts have been sent to avoid duplicates.\n\n## Tool Usage\n\n### DocuSign (http_request + docusign connector)\n- `GET /envelopes/{id}` — envelope details\n- `GET /envelopes?from_date={date}&status=any` — changed envelopes\n- `GET /envelopes/{id}/recipients` — signer status\n- `GET /envelopes/{id}/audit_events` — audit trail\n- Base: `https://www.docusign.net/restapi/v2.1/accounts/{accountId}`\n\n### Airtable (http_request + airtable connector)\n- `GET /appXXX/TableName?filterByFormula=...` — search records\n- `POST /appXXX/TableName` — create record\n- `PATCH /appXXX/TableName` — update record\n- Base: `https://api.airtable.com/v0`\n\n### Slack (http_request + slack connector)\n- `POST /chat.postMessage` — send notification\n- `POST /chat.update` — update existing message\n- Base: `https://slack.com/api`\n\n### Gmail (native tools + google_workspace connector)\n- `gmail_send` — send reminders and escalation emails\n- `gmail_search` — check for recently sent reminders\n\n### Local State (file_read / file_write)\n- `contract_state.json` — last poll timestamp, reminder history, renewal alert tracking\n\n## Error Handling\n\n- **Auth failures (401/403)**: Log error, alert via Slack, skip cycle.\n- **Rate limits (429)**: Exponential backoff — 30s, 60s, 120s. Cache pending updates locally.\n- **Validation errors (422)**: Log payload, alert via Slack, write to `failed_updates.json`.\n- **Duplicate events**: Deduplicate by envelope ID + timestamp.\n- **Status regression**: Never overwrite a later status with an earlier one.\n- **Multi-signer logic**: Only mark 'Fully Executed' when ALL required signers complete.\n- **Declined contracts**: Always create manual_review event and post urgent Slack alert.\n\n## Communication Protocols\n\n- **user_message**: For important status updates that need stakeholder attention.\n- **agent_memory**: Store signer response time patterns, common decline reasons, and optimal reminder timing.\n- **manual_review**: Escalate declined contracts, anomalous activity, and contracts stalled beyond escalation threshold.\n\n## Behavioral Guidelines\n\n1. Always update Airtable before sending notifications — data integrity first.\n2. Be concise in Slack messages but include all actionable context.\n3. Keep reminder emails professional and non-aggressive.\n4. Batch renewal alerts into digests rather than individual messages.\n5. Log every action taken for audit purposes.\n6. When in doubt about a contract status, query DocuSign for the authoritative state.",
-    "summary": "This Contract Lifecycle Manager agent replaces four separate DocuSign automation workflows with a single intelligent coordinator. It monitors DocuSign envelope events in real-time via webhooks, maintains a comprehensive contract tracker in Airtable, posts contextual Slack notifications for every status change, sends smart reminder emails to unsigned signers with escalation logic, and proactively flags contracts approaching renewal. The agent reasons about multi-signer workflows, enforces status progression integrity, deduplicates events, and escalates declined contracts for manual review.",
+    "full_prompt_markdown": "# Contract Lifecycle Manager\n\nYou are the Contract Lifecycle Manager — an intelligent agent that serves as the central nervous system for all contract operations. You monitor DocuSign envelope events in real-time, maintain a single source of truth in Airtable, keep stakeholders informed via Slack, and proactively manage unsigned documents and upcoming renewals through Gmail outreach.\n\n## Identity & Purpose\n\nYou replace four separate rigid automation workflows with unified reasoning:\n1. DocuSign → Airtable sync\n2. DocuSign → Slack notifications\n3. DocuSign → Gmail reminder emails\n4. DocuSign → Renewal alerts\n\nYou understand contract context, prioritize actions by business impact, and escalate intelligently when human judgment is needed. You learn from patterns — tracking signer behavior, department response times, and contract velocity.\n\n## Core Workflows\n\n### Workflow 1: DocuSign Event Processing\nWhen a DocuSign webhook event fires:\n1. Fetch the full envelope details from the DocuSign REST API, including recipients, status, timestamps, custom fields, and audit events.\n2. Classify the event: `sent`, `delivered`, `viewed`, `signed`, `declined`, `voided`, or `completed`.\n3. Extract key metadata: envelope ID, sender, recipient list with individual statuses, document title, contract value, department, and renewal date.\n4. Proceed to Airtable update, then Slack notification, then any email actions.\n\n### Workflow 2: Airtable Contract Tracker\nAfter processing each DocuSign event:\n1. Search Airtable for an existing record matching the envelope ID using `filterByFormula`.\n2. If found: PATCH the record with the new status, timestamp, signer progress, and append a timestamped entry to the status history field.\n3. If not found: POST a new record with all extracted metadata from DocuSign.\n4. Maintain computed fields: `days_since_sent`, `days_until_renewal`, `current_bottleneck_signer`, `reminder_count`.\n\n### Workflow 3: Slack Notifications\nPost contextual, prioritized notifications:\n- **Completed contracts** → `#contracts-completed`: Include contract title, value, turnaround time, and comparison to average.\n- **Declined contracts** → `#contracts-alerts`: Tag the contract owner, include decline reason, suggest next steps.\n- **Stale contracts (viewed >24h, unsigned)** → `#contracts-pending`: Gentle nudge with context.\n- **New envelopes sent** → `#contracts-activity`: Informational, low priority.\n- Always include deep links to DocuSign and Airtable.\n- Use Slack Block Kit for rich formatting.\n\n### Workflow 4: Reminder Emails\nDaily at 9 AM on weekdays:\n1. Query Airtable for contracts with status `sent` or `delivered` where `days_since_sent > 3`.\n2. Check DocuSign for latest recipient activity on each contract.\n3. Compose personalized Gmail reminders to pending signers with the DocuSign signing link.\n4. Escalation ladder:\n   - Days 3-6: Polite reminder to signer (max 3 reminders).\n   - Days 7-13: Escalate to contract owner via Slack DM + email.\n   - Days 14+: Escalate via `manual_review` for human intervention.\n5. Update `reminder_count` in Airtable after each send.\n\n### Workflow 5: Renewal Monitoring\nWeekly on Monday at 8 AM:\n1. Query Airtable for contracts with `renewal_date` within 60 days.\n2. Tiered notification schedule:\n   - **60 days**: Informational email to contract owner.\n   - **30 days**: Slack reminder to `#contracts-renewals` + email to owner.\n   - **14 days**: Urgent Slack notification + email to owner and their manager.\n3. Track notification state in Airtable to prevent duplicates.\n4. If renewal date passes without action, send critical alert.\n\n## Tool Usage\n\n### DocuSign (http_request + docusign connector)\n- `GET /accounts/{accountId}/envelopes/{envelopeId}` — Envelope details\n- `GET /accounts/{accountId}/envelopes/{envelopeId}/recipients` — Recipient statuses\n- `GET /accounts/{accountId}/envelopes?from_date={date}&status={status}` — Search envelopes\n- `GET /accounts/{accountId}/envelopes/{envelopeId}/audit_events` — Audit trail\n\n### Airtable (http_request + airtable connector)\n- `GET /v0/{baseId}/{tableId}?filterByFormula=...` — Search/query records\n- `POST /v0/{baseId}/{tableId}` — Create records\n- `PATCH /v0/{baseId}/{tableId}/{recordId}` — Update records\n\n### Slack (http_request + slack connector)\n- `POST /api/chat.postMessage` — Send channel messages and DMs\n- Use Block Kit for rich formatting with sections, dividers, and action buttons.\n\n### Gmail (gmail_send, gmail_search)\n- `gmail_send` — Compose and send reminder/renewal emails with HTML formatting.\n- `gmail_search` — Check for existing correspondence before sending reminders.\n\n### Local Files (file_read, file_write)\n- Write daily processing logs to `contracts_daily_log.json`.\n- Cache configuration data locally to reduce API calls.\n\n## Communication Protocols\n- **user_message**: Alert the user when connector auth fails, critical errors occur, or unusual patterns are detected.\n- **agent_memory**: Store signer response time averages, department signing velocity, and signer communication preferences.\n- **manual_review**: Escalate declined contracts, contracts unsigned >14 days, and overdue renewals for human review.\n\n## Error Handling\n- Retry transient API failures (429, 5xx) with exponential backoff up to 3 attempts.\n- Use envelope ID as idempotency key — never create duplicate Airtable records.\n- If webhook events arrive out of order, use DocuSign timestamps to reconstruct the correct sequence.\n- If Slack notification fails, never fail the entire workflow — fall back to DM or log the failure.\n- If Gmail send bounces, flag the recipient in Airtable and notify the contract owner.\n\n## Behavioral Guidelines\n- Prioritize declined and stale contracts over routine status updates.\n- Be concise in Slack messages but thorough in emails.\n- Personalize reminder emails — reference the specific document, signer name, and how long it has been pending.\n- Never send more than 3 direct reminders to a signer before escalating.\n- Always provide actionable next steps in escalation messages.\n- Learn from historical data: if a department consistently signs within 2 days, adjust reminder thresholds accordingly.",
+    "summary": "The Contract Lifecycle Manager is an intelligent agent that unifies four separate contract automation workflows into a single reasoning-capable system. It monitors DocuSign envelope events via webhooks, maintains a synchronized contract tracker in Airtable, delivers contextual Slack notifications based on event significance, sends personalized Gmail reminders for unsigned documents with a smart escalation ladder, and proactively flags contracts approaching renewal with tiered 60/30/14-day alerts. The agent learns signer behavior patterns over time and escalates to human review when contracts are declined or critically overdue.",
     "design_highlights": [
       {
-        "category": "Event Processing",
-        "icon": "📡",
+        "category": "Real-Time Event Processing",
+        "icon": "⚡",
         "color": "blue",
         "items": [
-          "Real-time DocuSign webhook processing for instant status updates",
-          "Handles all envelope lifecycle events: sent, viewed, signed, declined, voided",
-          "Multi-signer awareness — tracks per-recipient status across routing orders",
-          "Event deduplication by envelope ID and timestamp"
+          "Webhook-driven DocuSign event capture for instant response",
+          "Intelligent event classification (sent, viewed, signed, declined, voided)",
+          "Out-of-order event reconciliation using DocuSign timestamps",
+          "Idempotent processing prevents duplicate records"
         ]
       },
       {
-        "category": "Contract Tracking",
-        "icon": "📊",
-        "color": "green",
-        "items": [
-          "Automatic Airtable record creation and updates on every status change",
-          "Status progression enforcement prevents data regression",
-          "Complete audit trail with timestamped status history log",
-          "Renewal window monitoring at 60, 30, 14, and 7-day thresholds"
-        ]
-      },
-      {
-        "category": "Smart Notifications",
-        "icon": "🔔",
-        "color": "purple",
-        "items": [
-          "Context-aware Slack notifications with Block Kit rich formatting",
-          "Urgency-based routing — declined contracts get immediate alerts",
-          "Daily and weekly digest batching for renewals and pending signatures",
-          "Fallback to email when Slack delivery fails"
-        ]
-      },
-      {
-        "category": "Reminder & Escalation",
-        "icon": "⏰",
+        "category": "Smart Escalation Engine",
+        "icon": "📈",
         "color": "orange",
         "items": [
-          "Intelligent reminder scheduling — checks for recent reminders before sending",
-          "Graduated escalation: signer reminders → owner notification → manual review",
-          "Tracks reminder counts and response patterns in agent memory",
-          "Professional email templates with document context and days pending"
+          "3-tier reminder ladder: polite → owner escalation → manual review",
+          "Tiered renewal alerts at 60, 30, and 14 days before expiry",
+          "Automatic declined contract escalation with context",
+          "Configurable thresholds that adapt to department signing patterns"
+        ]
+      },
+      {
+        "category": "Unified Data Hub",
+        "icon": "🗄️",
+        "color": "green",
+        "items": [
+          "Single Airtable source of truth replacing fragmented spreadsheets",
+          "Full status history with timestamped audit trail",
+          "Computed fields: days pending, bottleneck signer, reminder count",
+          "Bidirectional deep links between DocuSign envelopes and Airtable records"
+        ]
+      },
+      {
+        "category": "Contextual Communication",
+        "icon": "💬",
+        "color": "purple",
+        "items": [
+          "Priority-routed Slack notifications to purpose-specific channels",
+          "Personalized Gmail reminders with signer name and document context",
+          "Rich Slack Block Kit formatting with actionable deep links",
+          "Agent memory tracks signer response patterns for smarter outreach"
         ]
       }
     ],
@@ -124,14 +126,14 @@
             "label": "Integration Key (Client ID)",
             "type": "text",
             "placeholder": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-            "helpText": "Found in DocuSign Admin → Settings → Integrations → API and Keys → Add App/Integration Key",
+            "helpText": "Found in DocuSign Admin → Settings → Integrations → API and Keys → Integration Key",
             "required": true
           },
           {
             "key": "client_secret",
-            "label": "Secret Key",
+            "label": "Client Secret",
             "type": "password",
-            "placeholder": "Your DocuSign secret key",
+            "placeholder": "Your DocuSign client secret",
             "helpText": "Generated alongside the Integration Key in DocuSign Admin → API and Keys",
             "required": true
           },
@@ -144,7 +146,7 @@
             "required": true
           }
         ],
-        "setup_instructions": "1. Log in to DocuSign Admin (admin.docusign.com).\n2. Go to Settings → Integrations → API and Keys.\n3. Click 'Add App/Integration Key' and note the Integration Key (Client ID).\n4. Add a Secret Key and save it securely.\n5. Set the redirect URI to your Personas callback URL.\n6. Under 'Additional settings', enable the required scopes: signature, impersonation.\n7. Copy your Account ID from Settings → Account Information.\n8. To enable webhooks: Go to Connect → Add Configuration, set the URL to your Personas webhook endpoint, and select envelope events (Sent, Delivered, Completed, Declined, Voided).\n9. For production, submit your integration for Go-Live review.",
+        "setup_instructions": "1. Log in to DocuSign Admin (admin.docusign.com).\n2. Go to Settings → Integrations → API and Keys.\n3. Click 'Add App / Integration Key' to create a new integration.\n4. Copy the Integration Key (Client ID) and generate a Client Secret.\n5. Add the OAuth redirect URI provided by Personas to the integration's settings.\n6. Copy your Account ID from Settings → Account Information.\n7. Enable DocuSign Connect: Go to Settings → Connect and create a new configuration.\n8. Set the webhook URL to the Personas webhook endpoint.\n9. Select envelope events: Sent, Delivered, Completed, Declined, Voided.\n10. Enable 'Include Documents' and 'Include Recipients' in the payload settings.",
         "related_tools": [
           "http_request"
         ],
@@ -159,11 +161,11 @@
         "auth_type": "pat",
         "credential_fields": [
           {
-            "key": "personal_access_token",
+            "key": "access_token",
             "label": "Personal Access Token",
             "type": "password",
-            "placeholder": "patXXXXXXXXXXXXXX.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-            "helpText": "Create at airtable.com/create/tokens. Grant scopes: data.records:read, data.records:write, schema.bases:read",
+            "placeholder": "pat1234567890.abcdefghijklmnop",
+            "helpText": "Create at airtable.com/create/tokens. Grant read/write scopes for data.records and schema.bases.",
             "required": true
           },
           {
@@ -171,19 +173,19 @@
             "label": "Base ID",
             "type": "text",
             "placeholder": "appXXXXXXXXXXXXXX",
-            "helpText": "Found in your Airtable base URL: airtable.com/{baseId}/... or via the API docs page",
+            "helpText": "Found in the Airtable API docs page (airtable.com/developers/web/api/introduction) or in the base URL when viewing the base.",
             "required": true
           },
           {
-            "key": "table_name",
-            "label": "Contracts Table Name",
+            "key": "table_id",
+            "label": "Contracts Table ID or Name",
             "type": "text",
-            "placeholder": "Contracts",
-            "helpText": "The name of the table tracking contracts. Create one with fields: Envelope_ID, Status, Contract_Name, Signers, Expiration_Date, etc.",
+            "placeholder": "tblXXXXXXXXXXXXXX or Contracts",
+            "helpText": "The table ID or name where contract records are stored. Found in the table URL or API docs.",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to airtable.com/create/tokens to create a Personal Access Token.\n2. Grant scopes: data.records:read, data.records:write, schema.bases:read.\n3. Select the specific base containing your contract tracker.\n4. Create a Contracts table with these recommended fields: Envelope_ID (Single line text), Contract_Name (Single line text), Status (Single select: Sent/Delivered/Viewed/Signed/Declined/Voided/Renewal Pending), Signers (Long text), Signed_Date (Date), Expiration_Date (Date), Declined_Reason (Long text), Reminder_Count (Number), Last_Reminder_Date (Date), Status_History (Long text), Created_At (Created time).\n5. Copy the Base ID from the URL bar when viewing your base.\n6. Enter the table name exactly as it appears in Airtable.",
+        "setup_instructions": "1. Go to airtable.com/create/tokens to create a Personal Access Token.\n2. Grant the following scopes: data.records:read, data.records:write, schema.bases:read.\n3. Add the specific base that contains your contract tracker to the token's access list.\n4. Create a base (or use existing) with a 'Contracts' table containing these fields:\n   - EnvelopeId (Single line text) — Primary key from DocuSign\n   - ContractTitle (Single line text)\n   - Status (Single select: Sent, Delivered, Viewed, Signed, Completed, Declined, Voided)\n   - SenderName (Single line text)\n   - SenderEmail (Email)\n   - Recipients (Long text — JSON array of recipient details)\n   - ContractValue (Currency)\n   - Department (Single select)\n   - SentDate (Date)\n   - CompletedDate (Date)\n   - RenewalDate (Date)\n   - StatusHistory (Long text — timestamped log)\n   - ReminderCount (Number)\n   - DeclineReason (Single line text)\n   - OwnerEmail (Email)\n5. Copy the Base ID from the API documentation page or the base URL.\n6. Copy the Table ID or use the table name 'Contracts'.",
         "related_tools": [
           "http_request"
         ],
@@ -200,19 +202,11 @@
             "label": "Bot User OAuth Token",
             "type": "password",
             "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
-            "helpText": "Found in your Slack App settings → OAuth & Permissions → Bot User OAuth Token. Requires chat:write scope.",
-            "required": true
-          },
-          {
-            "key": "channel_id",
-            "label": "Default Channel ID",
-            "type": "text",
-            "placeholder": "C0XXXXXXXXX",
-            "helpText": "Right-click the target channel in Slack → View channel details → Copy the Channel ID at the bottom",
+            "helpText": "Found in your Slack App settings → OAuth & Permissions → Bot User OAuth Token",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to api.slack.com/apps and create a new app (or use an existing one).\n2. Under 'OAuth & Permissions', add the following Bot Token Scopes: chat:write, chat:write.public (if posting to channels the bot hasn't joined).\n3. Install the app to your workspace.\n4. Copy the 'Bot User OAuth Token' (starts with xoxb-).\n5. Invite the bot to your contracts notification channel: /invite @YourBotName in the channel.\n6. Get the Channel ID: right-click the channel → View channel details → scroll to the bottom for the ID.\n7. Recommended: create a dedicated #contracts or #contract-lifecycle channel.",
+        "setup_instructions": "1. Go to api.slack.com/apps and create a new Slack App (or use existing).\n2. Navigate to OAuth & Permissions.\n3. Add the following Bot Token Scopes:\n   - chat:write (send messages)\n   - chat:write.public (post to channels the bot hasn't joined)\n   - users:read (look up user IDs for DMs)\n   - users:read.email (match users by email for contract owner tagging)\n4. Install the app to your workspace.\n5. Copy the Bot User OAuth Token (starts with xoxb-).\n6. Create the following channels and invite the bot:\n   - #contracts-completed — Signed/completed contract celebrations\n   - #contracts-alerts — Declined contracts and urgent issues\n   - #contracts-pending — Stale unsigned contract nudges\n   - #contracts-activity — New envelope activity feed\n   - #contracts-renewals — Upcoming renewal notifications",
         "related_tools": [
           "http_request"
         ],
@@ -221,27 +215,27 @@
       },
       {
         "name": "google_workspace",
-        "label": "Google Workspace",
+        "label": "Google Workspace (Gmail)",
         "auth_type": "oauth2",
         "credential_fields": [
           {
             "key": "client_id",
-            "label": "OAuth Client ID",
+            "label": "OAuth2 Client ID",
             "type": "text",
-            "placeholder": "xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com",
+            "placeholder": "123456789-abcdefg.apps.googleusercontent.com",
             "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs",
             "required": true
           },
           {
             "key": "client_secret",
-            "label": "OAuth Client Secret",
+            "label": "OAuth2 Client Secret",
             "type": "password",
             "placeholder": "GOCSPX-xxxxxxxxxxxxxxxxxxxxxxxx",
-            "helpText": "Generated alongside the OAuth Client ID in Google Cloud Console",
+            "helpText": "Generated alongside the Client ID in Google Cloud Console",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to console.cloud.google.com and select or create a project.\n2. Navigate to APIs & Services → Library.\n3. Enable the Gmail API.\n4. Go to APIs & Services → Credentials → Create Credentials → OAuth 2.0 Client ID.\n5. Set application type to 'Web application'.\n6. Add your Personas callback URL as an authorized redirect URI.\n7. Copy the Client ID and Client Secret.\n8. Configure the OAuth consent screen with the required scopes: gmail.send, gmail.readonly.\n9. For production, submit for Google verification if serving external users.",
+        "setup_instructions": "1. Go to console.cloud.google.com and select or create a project.\n2. Enable the Gmail API under APIs & Services → Library.\n3. Go to APIs & Services → Credentials.\n4. Click 'Create Credentials' → 'OAuth 2.0 Client ID'.\n5. Select 'Web application' as the application type.\n6. Add the Personas OAuth redirect URI to Authorized redirect URIs.\n7. Copy the Client ID and Client Secret.\n8. Configure the OAuth consent screen with the gmail.send and gmail.readonly scopes.\n9. If using a Google Workspace account, an admin may need to approve the app for domain-wide access.",
         "related_tools": [
           "gmail_send",
           "gmail_search"
@@ -253,44 +247,603 @@
     "suggested_notification_channels": [
       {
         "type": "slack",
-        "description": "Primary notification channel for all contract lifecycle events — status changes, reminders, renewal alerts, and escalations. Posts rich Block Kit formatted messages with contextual action buttons.",
+        "description": "Primary notification channel for real-time contract status updates, declined contract alerts, and renewal reminders. Routes messages to purpose-specific channels based on event type.",
         "required_connector": "slack",
         "config_hints": {
-          "channel": "#contract-lifecycle",
-          "username": "Contract Bot",
-          "icon_emoji": ":page_facing_up:"
+          "channels": {
+            "completed": "#contracts-completed",
+            "alerts": "#contracts-alerts",
+            "pending": "#contracts-pending",
+            "activity": "#contracts-activity",
+            "renewals": "#contracts-renewals"
+          }
         }
       },
       {
         "type": "email",
-        "description": "Used for direct signer reminders, contract owner escalations, and renewal notifications. Ensures stakeholders receive critical updates even if they're not actively monitoring Slack.",
+        "description": "Gmail-based outreach for signer reminders, contract owner escalations, and renewal notifications. Personalized emails with document context and signing links.",
         "required_connector": "google_workspace",
         "config_hints": {
-          "from_label": "Contract Lifecycle Manager",
-          "reply_to": "contracts@yourcompany.com"
+          "from_alias": "Contract Manager",
+          "signature": "— Contract Lifecycle Manager (Automated)"
         }
       }
     ],
     "suggested_event_subscriptions": [
       {
         "event_type": "docusign.envelope.status_changed",
-        "description": "Listen for all DocuSign envelope status transitions (sent, delivered, viewed, signed, declined, voided). This is the primary event driving the entire contract lifecycle pipeline."
+        "description": "Listen for any DocuSign envelope status change event delivered via webhook. Triggers the full processing pipeline: fetch details → update Airtable → post Slack notification → evaluate email actions."
       },
       {
         "event_type": "contract.reminder.due",
-        "description": "Internal event emitted when a contract has been unsigned past the reminder threshold. Triggers the Gmail reminder workflow and updates reminder tracking state."
+        "description": "Internal event emitted by the daily 9 AM schedule when unsigned contracts exceed the 3-day threshold. Triggers personalized reminder email composition and Airtable reminder count update."
       },
       {
         "event_type": "contract.renewal.approaching",
-        "description": "Internal event emitted during scheduled renewal scans when a signed contract's expiration date falls within the monitoring window (60/30/14/7 days)."
+        "description": "Internal event emitted by the weekly Monday schedule when contracts have renewal dates within 60 days. Triggers tiered notification flow (60/30/14 day alerts) via Slack and email."
       },
       {
         "event_type": "contract.declined",
-        "description": "Specialized event for declined contracts that triggers manual review creation, urgent Slack notifications, and contract owner email alerts."
+        "description": "Emitted when a DocuSign recipient declines a contract. Triggers urgent Slack alert, Airtable update, and manual_review escalation for human follow-up."
       },
       {
-        "event_type": "manual_review.resolved",
-        "description": "Listen for resolution of manual reviews on declined or flagged contracts. Resumes automated processing based on the review outcome (re-send, void, or close)."
+        "event_type": "connector.auth.failed",
+        "description": "Listen for authentication failures on any connector (DocuSign OAuth expired, Airtable PAT revoked, etc.). Triggers user_message alert to reauthorize the affected integration."
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_1",
+        "name": "DocuSign Event Processing Pipeline",
+        "description": "Handles real-time DocuSign webhook events — fetches envelope details, updates Airtable contract tracker, and posts contextual Slack notifications based on event type.",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "DocuSign Webhook Fires",
+            "detail": "DocuSign Connect sends envelope status change event to webhook endpoint"
+          },
+          {
+            "id": "n2",
+            "type": "connector",
+            "label": "Fetch Envelope Details",
+            "detail": "GET /accounts/{accountId}/envelopes/{envelopeId} to retrieve full envelope metadata, recipients, and custom fields",
+            "connector": "docusign"
+          },
+          {
+            "id": "n3",
+            "type": "action",
+            "label": "Classify Event Type",
+            "detail": "Determine event category: sent, delivered, viewed, signed, declined, voided, or completed"
+          },
+          {
+            "id": "n4",
+            "type": "connector",
+            "label": "Search Airtable for Record",
+            "detail": "GET /v0/{baseId}/{tableId}?filterByFormula={EnvelopeId}='{id}' to find existing contract record",
+            "connector": "airtable"
+          },
+          {
+            "id": "n5",
+            "type": "decision",
+            "label": "Record Exists?",
+            "detail": "Check if Airtable already has a record for this envelope ID"
+          },
+          {
+            "id": "n6",
+            "type": "connector",
+            "label": "Update Airtable Record",
+            "detail": "PATCH /v0/{baseId}/{tableId}/{recordId} with new status, timestamp, and status history entry",
+            "connector": "airtable"
+          },
+          {
+            "id": "n7",
+            "type": "connector",
+            "label": "Create Airtable Record",
+            "detail": "POST /v0/{baseId}/{tableId} with full envelope metadata as a new contract record",
+            "connector": "airtable"
+          },
+          {
+            "id": "n8",
+            "type": "decision",
+            "label": "Is Declined?",
+            "detail": "Check if the event is a recipient decline requiring urgent escalation"
+          },
+          {
+            "id": "n9",
+            "type": "connector",
+            "label": "Post Slack Alert",
+            "detail": "POST chat.postMessage to #contracts-alerts with decline reason, contract owner tag, and suggested actions",
+            "connector": "slack"
+          },
+          {
+            "id": "n10",
+            "type": "event",
+            "label": "Emit manual_review",
+            "detail": "Escalate declined contract for human follow-up with full context"
+          },
+          {
+            "id": "n11",
+            "type": "connector",
+            "label": "Post Slack Notification",
+            "detail": "POST chat.postMessage to appropriate channel based on event type (completed → #contracts-completed, sent → #contracts-activity)",
+            "connector": "slack"
+          },
+          {
+            "id": "n12",
+            "type": "action",
+            "label": "Store Memory",
+            "detail": "Record signer response time and department patterns in agent_memory for future predictions"
+          },
+          {
+            "id": "n13",
+            "type": "error",
+            "label": "API Error Handler",
+            "detail": "Retry on 429/5xx with exponential backoff. Log permanent failures and emit user_message alert.",
+            "error_message": "DocuSign or Airtable API call failed after 3 retries"
+          },
+          {
+            "id": "n14",
+            "type": "end",
+            "label": "Event Processed",
+            "detail": "Envelope event fully processed: Airtable updated, Slack notified, memory stored"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e5",
+            "source": "n5",
+            "target": "n6",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n7",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n8"
+          },
+          {
+            "id": "e8",
+            "source": "n7",
+            "target": "n8"
+          },
+          {
+            "id": "e9",
+            "source": "n8",
+            "target": "n9",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e10",
+            "source": "n8",
+            "target": "n11",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e11",
+            "source": "n9",
+            "target": "n10"
+          },
+          {
+            "id": "e12",
+            "source": "n10",
+            "target": "n12"
+          },
+          {
+            "id": "e13",
+            "source": "n11",
+            "target": "n12"
+          },
+          {
+            "id": "e14",
+            "source": "n12",
+            "target": "n14"
+          },
+          {
+            "id": "e15",
+            "source": "n2",
+            "target": "n13",
+            "variant": "error"
+          },
+          {
+            "id": "e16",
+            "source": "n4",
+            "target": "n13",
+            "variant": "error"
+          },
+          {
+            "id": "e17",
+            "source": "n13",
+            "target": "n14",
+            "variant": "error"
+          }
+        ]
+      },
+      {
+        "id": "flow_2",
+        "name": "Daily Unsigned Contract Reminder Sweep",
+        "description": "Runs daily at 9 AM on weekdays to find unsigned contracts, send personalized Gmail reminders to pending signers, and escalate overdue contracts to contract owners.",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "9 AM Weekday Schedule",
+            "detail": "Cron trigger fires at 0 9 * * 1-5 to begin daily reminder sweep"
+          },
+          {
+            "id": "n2",
+            "type": "connector",
+            "label": "Query Overdue Contracts",
+            "detail": "GET Airtable records where Status in (Sent, Delivered) AND days_since_sent > 3",
+            "connector": "airtable"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Any Overdue Found?",
+            "detail": "Check if the query returned any contracts needing reminders"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Iterate Contracts",
+            "detail": "Process each overdue contract: check reminder count, days pending, and last signer activity"
+          },
+          {
+            "id": "n5",
+            "type": "connector",
+            "label": "Check Signer Activity",
+            "detail": "GET /accounts/{accountId}/envelopes/{envelopeId}/recipients to verify latest recipient status from DocuSign",
+            "connector": "docusign"
+          },
+          {
+            "id": "n6",
+            "type": "decision",
+            "label": "Reminder Count < 3?",
+            "detail": "Check if this contract has received fewer than 3 direct signer reminders"
+          },
+          {
+            "id": "n7",
+            "type": "action",
+            "label": "Compose Reminder Email",
+            "detail": "Build personalized HTML email with signer name, document title, days pending, and DocuSign signing link"
+          },
+          {
+            "id": "n8",
+            "type": "connector",
+            "label": "Send Gmail Reminder",
+            "detail": "Send personalized reminder email to pending signer via gmail_send with HTML body and signing link",
+            "connector": "google_workspace"
+          },
+          {
+            "id": "n9",
+            "type": "connector",
+            "label": "Update Reminder Count",
+            "detail": "PATCH Airtable record to increment reminder_count and log reminder timestamp",
+            "connector": "airtable"
+          },
+          {
+            "id": "n10",
+            "type": "connector",
+            "label": "Escalate to Owner (Slack)",
+            "detail": "POST chat.postMessage as DM to contract owner with contract details and recommended action",
+            "connector": "slack"
+          },
+          {
+            "id": "n11",
+            "type": "connector",
+            "label": "Escalate to Owner (Email)",
+            "detail": "Send escalation email to contract owner via gmail_send with full contract context",
+            "connector": "google_workspace"
+          },
+          {
+            "id": "n12",
+            "type": "action",
+            "label": "Log Daily Summary",
+            "detail": "Write processing results to contracts_daily_log.json: contracts checked, reminders sent, escalations triggered"
+          },
+          {
+            "id": "n13",
+            "type": "error",
+            "label": "Email Bounce Handler",
+            "detail": "If Gmail send fails with invalid recipient, flag the signer email in Airtable and notify contract owner",
+            "error_message": "Gmail send failed — recipient address may be invalid"
+          },
+          {
+            "id": "n14",
+            "type": "end",
+            "label": "Sweep Complete",
+            "detail": "Daily reminder sweep finished. All overdue contracts processed."
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n12",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e8",
+            "source": "n6",
+            "target": "n10",
+            "label": "No (escalate)",
+            "variant": "no"
+          },
+          {
+            "id": "e9",
+            "source": "n7",
+            "target": "n8"
+          },
+          {
+            "id": "e10",
+            "source": "n8",
+            "target": "n9"
+          },
+          {
+            "id": "e11",
+            "source": "n9",
+            "target": "n12"
+          },
+          {
+            "id": "e12",
+            "source": "n10",
+            "target": "n11"
+          },
+          {
+            "id": "e13",
+            "source": "n11",
+            "target": "n9"
+          },
+          {
+            "id": "e14",
+            "source": "n8",
+            "target": "n13",
+            "variant": "error"
+          },
+          {
+            "id": "e15",
+            "source": "n13",
+            "target": "n9",
+            "variant": "error"
+          },
+          {
+            "id": "e16",
+            "source": "n12",
+            "target": "n14"
+          }
+        ]
+      },
+      {
+        "id": "flow_3",
+        "name": "Contract Renewal Monitoring",
+        "description": "Weekly Monday check that scans for contracts approaching renewal and sends tiered notifications at 60, 30, and 14 day thresholds via Slack and email.",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Monday 8 AM Schedule",
+            "detail": "Cron trigger fires at 0 8 * * 1 for weekly renewal check"
+          },
+          {
+            "id": "n2",
+            "type": "connector",
+            "label": "Query Upcoming Renewals",
+            "detail": "GET Airtable records where renewal_date is within 60 days of today using DATETIME_DIFF formula",
+            "connector": "airtable"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Any Renewals Found?",
+            "detail": "Check if any contracts have renewal dates within 60 days"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Calculate Days to Renewal",
+            "detail": "For each contract, compute days_until_renewal and determine notification tier (60/30/14 days)"
+          },
+          {
+            "id": "n5",
+            "type": "decision",
+            "label": "Notification Tier?",
+            "detail": "Route to appropriate notification intensity based on days remaining: 60 (info), 30 (reminder), 14 (urgent)"
+          },
+          {
+            "id": "n6",
+            "type": "connector",
+            "label": "Send Info Email (60d)",
+            "detail": "Send informational email to contract owner via gmail_send: 'Contract X renews in ~60 days'",
+            "connector": "google_workspace"
+          },
+          {
+            "id": "n7",
+            "type": "connector",
+            "label": "Post Slack Reminder (30d)",
+            "detail": "POST chat.postMessage to #contracts-renewals with contract details and 30-day warning",
+            "connector": "slack"
+          },
+          {
+            "id": "n8",
+            "type": "connector",
+            "label": "Send Reminder Email (30d)",
+            "detail": "Send renewal reminder email to contract owner with action items and renewal options",
+            "connector": "google_workspace"
+          },
+          {
+            "id": "n9",
+            "type": "connector",
+            "label": "Post Urgent Slack Alert (14d)",
+            "detail": "POST chat.postMessage to #contracts-renewals with urgent formatting, tag owner and manager",
+            "connector": "slack"
+          },
+          {
+            "id": "n10",
+            "type": "connector",
+            "label": "Send Urgent Email (14d)",
+            "detail": "Send urgent renewal email to contract owner AND their manager via gmail_send",
+            "connector": "google_workspace"
+          },
+          {
+            "id": "n11",
+            "type": "connector",
+            "label": "Update Notification State",
+            "detail": "PATCH Airtable record to log renewal notification sent and prevent duplicate alerts",
+            "connector": "airtable"
+          },
+          {
+            "id": "n12",
+            "type": "end",
+            "label": "Renewal Check Complete",
+            "detail": "All upcoming renewals evaluated and appropriate notifications dispatched"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n12",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6",
+            "label": "60 days",
+            "variant": "yes"
+          },
+          {
+            "id": "e7",
+            "source": "n5",
+            "target": "n7",
+            "label": "30 days",
+            "variant": "no"
+          },
+          {
+            "id": "e8",
+            "source": "n6",
+            "target": "n11"
+          },
+          {
+            "id": "e9",
+            "source": "n7",
+            "target": "n8"
+          },
+          {
+            "id": "e10",
+            "source": "n8",
+            "target": "n11"
+          },
+          {
+            "id": "e11",
+            "source": "n5",
+            "target": "n9",
+            "label": "14 days"
+          },
+          {
+            "id": "e12",
+            "source": "n9",
+            "target": "n10"
+          },
+          {
+            "id": "e13",
+            "source": "n10",
+            "target": "n11"
+          },
+          {
+            "id": "e14",
+            "source": "n11",
+            "target": "n12"
+          }
+        ]
       }
     ]
   }

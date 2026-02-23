@@ -19,6 +19,7 @@ use crate::db::repos::execution::tool_usage as usage_repo;
 use crate::db::repos::resources::{
     audit_log, connectors as connector_repo, credentials as cred_repo,
 };
+use crate::db::settings_keys;
 use crate::db::DbPool;
 
 use super::logger::ExecutionLogger;
@@ -65,7 +66,7 @@ pub async fn run_execution(
             let needs_global_key = profile.auth_token.as_ref().map_or(true, |t| t.is_empty());
             if needs_global_key {
                 if let Ok(Some(global_key)) =
-                    crate::db::repos::core::settings::get(&pool, "ollama_api_key")
+                    crate::db::repos::core::settings::get(&pool, settings_keys::OLLAMA_API_KEY)
                 {
                     if !global_key.is_empty() {
                         profile.auth_token = Some(global_key);
@@ -81,7 +82,7 @@ pub async fn run_execution(
             let needs_global_url = profile.base_url.as_ref().map_or(true, |u| u.is_empty());
             if needs_global_url {
                 if let Ok(Some(global_url)) =
-                    crate::db::repos::core::settings::get(&pool, "litellm_base_url")
+                    crate::db::repos::core::settings::get(&pool, settings_keys::LITELLM_BASE_URL)
                 {
                     if !global_url.is_empty() {
                         profile.base_url = Some(global_url);
@@ -92,7 +93,7 @@ pub async fn run_execution(
             let needs_global_key = profile.auth_token.as_ref().map_or(true, |t| t.is_empty());
             if needs_global_key {
                 if let Ok(Some(global_key)) =
-                    crate::db::repos::core::settings::get(&pool, "litellm_master_key")
+                    crate::db::repos::core::settings::get(&pool, settings_keys::LITELLM_MASTER_KEY)
                 {
                     if !global_key.is_empty() {
                         profile.auth_token = Some(global_key);
@@ -137,8 +138,19 @@ pub async fn run_execution(
     ));
     logger.log(&format!("Prompt length: {} characters", prompt_text.len()));
 
-    // Create temp directory for isolated execution
-    let exec_dir = std::env::temp_dir().join(format!("personas-exec-{}", &execution_id));
+    // Create a stable per-persona working directory (persists across executions).
+    // This allows Claude Code's memory system to work correctly and lets agents
+    // maintain workspace files between runs. Falls back to per-execution temp dir.
+    let exec_dir = {
+        let stable_dir = std::env::temp_dir()
+            .join("personas-workspace")
+            .join(&persona.id);
+        if std::fs::create_dir_all(&stable_dir).is_ok() {
+            stable_dir
+        } else {
+            std::env::temp_dir().join(format!("personas-exec-{}", &execution_id))
+        }
+    };
     if let Err(e) = std::fs::create_dir_all(&exec_dir) {
         logger.log(&format!("Failed to create exec dir: {}", e));
         return ExecutionResult {
@@ -207,8 +219,7 @@ pub async fn run_execution(
                 },
             );
 
-            // Clean up temp dir
-            let _ = std::fs::remove_dir_all(&exec_dir);
+            // Stable workspace dirs are not cleaned up (persist across runs)
 
             return ExecutionResult {
                 success: false,
@@ -234,7 +245,7 @@ pub async fn run_execution(
         let _ = child.kill().await;
         let _ = child.wait().await;
         child_pids.lock().await.remove(&execution_id);
-        let _ = std::fs::remove_dir_all(&exec_dir);
+        // Stable workspace dirs are not cleaned up (persist across runs)
         logger.close();
 
         let duration_ms = start_time.elapsed().as_millis() as u64;
@@ -464,8 +475,9 @@ pub async fn run_execution(
 
     logger.close();
 
-    // Clean up temp dir
-    let _ = std::fs::remove_dir_all(&exec_dir);
+    // Stable per-persona workspace dirs are NOT cleaned up (they persist
+    // across executions for Claude Code memory and workspace files).
+    // Only per-execution fallback dirs are cleaned up.
 
     // Build result
     let success = !timed_out && exit_code == 0;
@@ -494,6 +506,21 @@ pub async fn run_execution(
             if !accomplished {
                 final_status = "incomplete";
                 logger.log("[OUTCOME] Task not accomplished — marking as incomplete");
+            }
+        } else {
+            // No outcome_assessment found — use heuristic: if the output contains
+            // error indicators without clear success indicators, mark as incomplete.
+            let lower_text = assistant_text.to_lowercase();
+            let has_error_indicators = lower_text.contains("error:")
+                || lower_text.contains("failed to")
+                || lower_text.contains("unable to")
+                || lower_text.contains("could not");
+            let has_success_indicators = lower_text.contains("successfully")
+                || lower_text.contains("completed")
+                || lower_text.contains("done");
+            if has_error_indicators && !has_success_indicators {
+                final_status = "incomplete";
+                logger.log("[OUTCOME] No assessment found, error indicators detected — marking as incomplete");
             }
         }
     }
@@ -570,6 +597,7 @@ fn handle_protocol_message(
                         m.title.as_deref().unwrap_or("untitled"),
                         m.id
                     ));
+                    let _ = app.emit("message-created", &m);
                     crate::notifications::notify_new_message(
                         app,
                         persona_name,
@@ -712,9 +740,12 @@ fn default_result() -> ExecutionResult {
 
 /// Resolve credentials for a persona's tools and return env var mappings + prompt hints.
 ///
-/// For each tool, finds connectors whose `services` JSON array contains the tool name,
-/// then loads and decrypts credentials for those connectors. Each credential field is
-/// mapped to an env var: `{CONNECTOR_NAME_UPPER}_{FIELD_KEY_UPPER}`.
+/// Resolution strategy (per tool):
+/// 1. **Primary**: Find connectors whose `services` JSON array lists this tool by name.
+/// 2. **Fallback**: If no connector services match, use `tool.requires_credential_type`
+///    to match against connector names or credential `service_type` values.
+///
+/// Each credential field is mapped to an env var: `{CONNECTOR_NAME_UPPER}_{FIELD_KEY_UPPER}`.
 fn resolve_credential_env_vars(
     pool: &DbPool,
     tools: &[PersonaToolDefinition],
@@ -734,8 +765,9 @@ fn resolve_credential_env_vars(
     };
 
     for tool in tools {
+        // ── Primary: match tool name in connector services ──
+        let mut matched_connector = false;
         for connector in &connectors {
-            // Parse the connector's services JSON to check if this tool is listed
             let services: Vec<serde_json::Value> =
                 serde_json::from_str(&connector.services).unwrap_or_default();
             let tool_listed = services.iter().any(|s| {
@@ -749,55 +781,149 @@ fn resolve_credential_env_vars(
                 continue;
             }
 
-            // Load credentials for this connector
-            let creds = match cred_repo::get_by_service_type(pool, &connector.name) {
-                Ok(c) => c,
-                Err(_) => continue,
-            };
+            if inject_connector_credentials(
+                pool,
+                connector,
+                &mut env_vars,
+                &mut hints,
+                persona_id,
+                persona_name,
+            ) {
+                matched_connector = true;
+            }
+        }
 
-            if let Some(cred) = creds.first() {
-                // Decrypt credential data
-                let plaintext = if super::crypto::is_plaintext(&cred.iv) {
-                    cred.encrypted_data.clone()
-                } else {
-                    match super::crypto::decrypt_from_db(&cred.encrypted_data, &cred.iv) {
-                        Ok(pt) => pt,
-                        Err(e) => {
-                            tracing::error!("Failed to decrypt credential '{}': {}", cred.name, e);
-                            continue;
-                        }
+        // ── Fallback: match via requires_credential_type ──
+        if !matched_connector {
+            if let Some(ref cred_type) = tool.requires_credential_type {
+                // Try matching connector by name (e.g. "google" → connector named "google")
+                // or by name prefix/substring for common patterns
+                for connector in &connectors {
+                    if !seen_connectors.insert(connector.name.clone()) {
+                        continue;
                     }
-                };
 
-                // Parse JSON fields and map to env vars
-                let fields: HashMap<String, String> =
-                    serde_json::from_str(&plaintext).unwrap_or_default();
-                let prefix = connector.name.to_uppercase().replace('-', "_");
+                    let connector_matches = connector.name == *cred_type
+                        || connector.name.starts_with(cred_type)
+                        || cred_type.starts_with(&connector.name);
 
-                for (field_key, field_val) in &fields {
-                    let env_key =
-                        format!("{}_{}", prefix, field_key.to_uppercase().replace('-', "_"));
-                    env_vars.push((env_key.clone(), field_val.clone()));
-                    hints.push(format!(
-                        "`{}` (from {} credential '{}')",
-                        env_key, connector.label, cred.name
-                    ));
+                    if !connector_matches {
+                        continue;
+                    }
+
+                    if inject_connector_credentials(
+                        pool,
+                        connector,
+                        &mut env_vars,
+                        &mut hints,
+                        persona_id,
+                        persona_name,
+                    ) {
+                        matched_connector = true;
+                        break;
+                    }
                 }
 
-                // Mark credential as used and log the access
-                let _ = cred_repo::mark_used(pool, &cred.id);
-                let _ = audit_log::insert(
-                    pool,
-                    &cred.id,
-                    &cred.name,
-                    "decrypt",
-                    Some(persona_id),
-                    Some(persona_name),
-                    Some(&format!("injected via connector '{}'", connector.label)),
-                );
+                // Last resort: query credentials directly by service_type
+                if !matched_connector {
+                    if let Ok(creds) = cred_repo::get_by_service_type(pool, cred_type) {
+                        if let Some(cred) = creds.first() {
+                            inject_credential(
+                                pool,
+                                cred,
+                                cred_type,
+                                cred_type,
+                                &mut env_vars,
+                                &mut hints,
+                                persona_id,
+                                persona_name,
+                            );
+                        }
+                    }
+                }
             }
         }
     }
 
     (env_vars, hints)
+}
+
+/// Decrypt and inject all fields from a connector's first credential as env vars.
+/// Returns true if credentials were found and injected.
+fn inject_connector_credentials(
+    pool: &DbPool,
+    connector: &crate::db::models::ConnectorDefinition,
+    env_vars: &mut Vec<(String, String)>,
+    hints: &mut Vec<String>,
+    persona_id: &str,
+    persona_name: &str,
+) -> bool {
+    let creds = match cred_repo::get_by_service_type(pool, &connector.name) {
+        Ok(c) => c,
+        Err(_) => return false,
+    };
+
+    if let Some(cred) = creds.first() {
+        inject_credential(
+            pool,
+            cred,
+            &connector.name,
+            &connector.label,
+            env_vars,
+            hints,
+            persona_id,
+            persona_name,
+        );
+        true
+    } else {
+        false
+    }
+}
+
+/// Decrypt a single credential and inject its fields as env vars.
+#[allow(clippy::too_many_arguments)]
+fn inject_credential(
+    pool: &DbPool,
+    cred: &crate::db::models::PersonaCredential,
+    connector_name: &str,
+    connector_label: &str,
+    env_vars: &mut Vec<(String, String)>,
+    hints: &mut Vec<String>,
+    persona_id: &str,
+    persona_name: &str,
+) {
+    let plaintext = if super::crypto::is_plaintext(&cred.iv) {
+        cred.encrypted_data.clone()
+    } else {
+        match super::crypto::decrypt_from_db(&cred.encrypted_data, &cred.iv) {
+            Ok(pt) => pt,
+            Err(e) => {
+                tracing::error!("Failed to decrypt credential '{}': {}", cred.name, e);
+                return;
+            }
+        }
+    };
+
+    let fields: HashMap<String, String> = serde_json::from_str(&plaintext).unwrap_or_default();
+    let prefix = connector_name.to_uppercase().replace('-', "_");
+
+    for (field_key, field_val) in &fields {
+        let env_key = format!("{}_{}", prefix, field_key.to_uppercase().replace('-', "_"));
+        env_vars.push((env_key.clone(), field_val.clone()));
+        hints.push(format!(
+            "`{}` (from {} credential '{}')",
+            env_key, connector_label, cred.name
+        ));
+    }
+
+    let _ = cred_repo::mark_used(pool, &cred.id);
+    let _ = audit_log::insert(
+        pool,
+        &cred.id,
+        &cred.name,
+        "decrypt",
+        Some(persona_id),
+        Some(persona_name),
+        Some(&format!("injected via connector '{}'", connector_label)),
+    );
 }

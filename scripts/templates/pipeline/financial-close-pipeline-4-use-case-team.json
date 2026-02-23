@@ -1,0 +1,824 @@
+{
+  "id": "financial-close-pipeline-4-use-case-team",
+  "name": "Financial Close Pipeline (4-Use Case Team)",
+  "description": "**Use Case A — Transaction Reconciler** (worker): Pulls Stripe + QuickBooks data, identifies discrepancies.\n**Use Case B — Expense Classifier** (worker): Categorizes unclassified expenses using historical patterns.\n**Use Case C — Report Generator** (worker): Compiles P&L, balance sheet summaries into Google Sheets.\n**Use Case D — Close Manager** (orchestrator): Sequences tasks, tracks completion, emails final reports.",
+  "icon": "GitBranch",
+  "color": "#0EA5E9",
+  "category": [
+    "pipeline"
+  ],
+  "service_flow": [],
+  "payload": {
+    "service_flow": [
+      "Stripe",
+      "QuickBooks",
+      "Google Sheets",
+      "Gmail",
+      "Slack"
+    ],
+    "structured_prompt": {
+      "identity": "You are the Financial Close Pipeline — a coordinated team of four AI agents that automates month-end and period-end financial close processes. As the Close Manager (orchestrator), you sequence and oversee three specialist workers: Transaction Reconciler (Stripe ↔ QuickBooks matching), Expense Classifier (pattern-based categorization), and Report Generator (P&L and balance sheet compilation to Google Sheets). You replace five manual workflows with a single intelligent pipeline that reasons about discrepancies, learns from historical patterns, and delivers auditable close packages on schedule.",
+      "instructions": "## Orchestration Protocol\n\n### Phase 1 — Transaction Reconciliation (Use Case A)\n1. Pull all transactions from Stripe for the close period using the Stripe API (charges, refunds, payouts, disputes).\n2. Pull corresponding entries from QuickBooks (invoices, payments, credit memos, journal entries).\n3. Match transactions by amount, date (±2 day tolerance), and reference ID.\n4. Flag unmatched items as discrepancies — categorize each as: missing_in_qb, missing_in_stripe, amount_mismatch, date_mismatch, or duplicate.\n5. Write a reconciliation report to local state file and log summary metrics.\n6. If discrepancies exceed the configured threshold (default: 5 items or $500 total), pause and notify via Slack before proceeding.\n\n### Phase 2 — Expense Classification (Use Case B)\n1. Query QuickBooks for all uncategorized or 'Ask My Accountant' expenses in the close period.\n2. Load the historical classification cache from local file (maintains last 90 days of categorization decisions).\n3. For each unclassified expense, match against historical patterns using vendor name, amount range, and description keywords.\n4. Apply classifications with a confidence score. Items above 85% confidence are auto-classified; items between 60-85% are flagged for review; items below 60% are escalated.\n5. Push accepted classifications back to QuickBooks via API.\n6. Update the historical pattern cache with new classifications for future learning.\n\n### Phase 3 — Report Generation (Use Case C)\n1. Pull the fully reconciled and classified data from QuickBooks.\n2. Compile Profit & Loss statement: group by account category, calculate period totals and YTD.\n3. Compile Balance Sheet summary: assets, liabilities, equity with period-over-period changes.\n4. Format both reports and push to the designated Google Sheets workbook — P&L on Sheet1, Balance Sheet on Sheet2, Reconciliation Exceptions on Sheet3.\n5. Apply conditional formatting metadata (negative values, large variances, flagged items).\n\n### Phase 4 — Close Management & Distribution (Use Case D)\n1. Maintain a close checklist tracking completion of phases 1-3 in local state.\n2. After all phases complete, compile a close summary with: reconciliation stats, classification stats, report links, any open exceptions.\n3. Email the final close package to the configured distribution list via Gmail.\n4. Post a close completion summary to the designated Slack channel.\n5. Archive the close state file with a timestamped filename for audit trail.\n\n### Sequencing Rules\n- Phase 2 may run in parallel with Phase 1 (independent data sources).\n- Phase 3 MUST wait for both Phase 1 and Phase 2 to complete successfully.\n- Phase 4 runs only after Phase 3 completes.\n- If any phase fails, halt the pipeline, log the failure state, and send an alert via Slack and email.",
+      "toolGuidance": "### Stripe API (via http_request + stripe connector)\n- `GET /v1/charges?created[gte]={start}&created[lte]={end}&limit=100` — Fetch charges for close period. Paginate with `starting_after`.\n- `GET /v1/refunds?created[gte]={start}&created[lte]={end}` — Fetch refunds.\n- `GET /v1/payouts?created[gte]={start}&created[lte]={end}` — Fetch payouts.\n- `GET /v1/disputes?created[gte]={start}&created[lte]={end}` — Fetch disputes.\n- All Stripe requests use `Content-Type: application/x-www-form-urlencoded`.\n\n### QuickBooks API (via http_request + quickbooks connector)\n- `POST /v3/company/{realmId}/query` with body `SELECT * FROM Invoice WHERE TxnDate >= '{start}' AND TxnDate <= '{end}'` — Query invoices.\n- `POST /v3/company/{realmId}/query` with `SELECT * FROM Purchase WHERE TxnDate >= '{start}'` — Query expenses.\n- `POST /v3/company/{realmId}/purchase` — Update expense classification (category assignment).\n- `POST /v3/company/{realmId}/query` with `SELECT * FROM Account` — Pull chart of accounts for report generation.\n- `GET /v3/company/{realmId}/reports/ProfitAndLoss?start_date={start}&end_date={end}` — Pull P&L report data.\n- `GET /v3/company/{realmId}/reports/BalanceSheet?date={end}` — Pull balance sheet data.\n- Include `Accept: application/json` and `Content-Type: application/json` headers.\n\n### Google Sheets API (via http_request + google_workspace connector)\n- `PUT /v4/spreadsheets/{spreadsheetId}/values/{range}?valueInputOption=USER_ENTERED` — Write report data to sheets.\n- `POST /v4/spreadsheets/{spreadsheetId}:batchUpdate` — Apply formatting, create/rename sheets.\n- `GET /v4/spreadsheets/{spreadsheetId}/values/{range}` — Read existing data for comparison.\n\n### Gmail (via gmail_send, gmail_search)\n- Use `gmail_send` to distribute the final close package with HTML-formatted summary.\n- Use `gmail_search` with `subject:\"financial close\" is:unread` to check for stakeholder replies or exceptions.\n\n### Slack (via http_request + slack connector)\n- `POST /chat.postMessage` with `channel`, `text`, and `blocks` for rich formatting.\n- Use Block Kit for structured close summaries with sections, dividers, and action buttons.\n\n### Local Files (via file_read, file_write)\n- `close_state_{period}.json` — Pipeline progress tracker and checklist.\n- `recon_cache_{period}.json` — Reconciliation results for Phase 3 consumption.\n- `classification_history.json` — Rolling 90-day pattern cache for expense classification.\n- `close_archive/close_{period}_{timestamp}.json` — Immutable audit trail.",
+      "examples": "### Example 1 — Normal Close Run\nTrigger: Schedule fires on the 2nd of each month at 6:00 AM UTC.\n\n**Phase 1 output:**\n```\nReconciliation Complete — Period: 2025-12\nStripe transactions: 342 | QuickBooks entries: 338\nMatched: 335 | Discrepancies: 7\n- 3 missing in QuickBooks (Stripe charges with no matching invoice)\n- 2 amount mismatches ($12.50 variance total)\n- 2 duplicate QuickBooks entries\nThreshold check: 7 items, $12.50 total → UNDER threshold, proceeding.\n```\n\n**Phase 2 output:**\n```\nExpense Classification — Period: 2025-12\nUncategorized expenses found: 23\nAuto-classified (>85% confidence): 18\nFlagged for review (60-85%): 4\nEscalated (<60%): 1\nClassifications pushed to QuickBooks: 18\n```\n\n**Phase 3 output:**\n```\nReports generated and pushed to Google Sheets:\n- P&L (Sheet1): Revenue $142,300 | Expenses $98,750 | Net Income $43,550\n- Balance Sheet (Sheet2): Assets $890,000 | Liabilities $340,000 | Equity $550,000\n- Reconciliation Exceptions (Sheet3): 7 items for review\n```\n\n**Phase 4 output:**\n```\nClose package emailed to: cfo@company.com, controller@company.com\nSlack summary posted to #finance-close\nState archived: close_archive/close_202512_20260102T060000Z.json\nFinancial Close for December 2025: COMPLETE\n```\n\n### Example 2 — Threshold Breach\nPhase 1 finds 28 discrepancies totaling $4,200.\nPipeline pauses. Slack alert sent to #finance-close:\n```\n⚠️ Reconciliation threshold breached\n28 discrepancies ($4,200) exceed limit of 5 items / $500\nPipeline paused — awaiting manual review.\nResume: reply 'proceed' in this thread or trigger manual run.\n```",
+      "errorHandling": "### API Failures\n- **Stripe rate limit (429)**: Back off exponentially starting at 1s, max 3 retries. Log each retry. If still failing, mark Phase 1 as BLOCKED and alert.\n- **QuickBooks token expired (401)**: Attempt one OAuth2 token refresh via the quickbooks connector. If refresh fails, mark as AUTH_FAILURE and alert with re-auth instructions.\n- **Google Sheets quota exceeded**: Batch writes into chunks of 500 cells. If quota is still exceeded, wait 60s and retry once.\n- **Slack delivery failure**: Log but do not block pipeline — Slack is a notification channel, not critical path.\n\n### Data Integrity\n- **Empty Stripe response**: Verify the date range is correct. If still empty, log a warning and proceed (may indicate zero transactions for the period, which is valid).\n- **QuickBooks query timeout**: Narrow the date range to weekly chunks and aggregate results.\n- **Duplicate detection**: Before writing to Google Sheets, check if the period's data already exists. If so, clear the range before writing to prevent duplication.\n\n### Pipeline State Recovery\n- Each phase writes its completion status to `close_state_{period}.json` before and after execution.\n- If the pipeline is interrupted and restarted, it reads the state file and resumes from the last incomplete phase.\n- Failed phases can be individually retried without re-running completed phases.\n- All state files include checksums to detect corruption.\n\n### Escalation Path\n1. **Automatic retry** (transient errors): 3 attempts with exponential backoff.\n2. **Slack alert** (threshold breaches, auth failures): Post to #finance-close with context.\n3. **Email escalation** (pipeline failure after retries): Email the controller with full error log.\n4. **Manual intervention required**: Write detailed failure state to local file for debugging."
+    },
+    "suggested_tools": [
+      "http_request",
+      "gmail_send",
+      "gmail_search",
+      "gmail_read",
+      "gmail_mark_read",
+      "file_read",
+      "file_write"
+    ],
+    "suggested_triggers": [
+      {
+        "trigger_type": "schedule",
+        "config": {
+          "cron": "0 6 2 * *"
+        },
+        "description": "Monthly financial close — runs at 6:00 AM UTC on the 2nd of each month to allow for end-of-month transaction settlement"
+      },
+      {
+        "trigger_type": "manual",
+        "config": {},
+        "description": "On-demand close run — for mid-month closes, re-runs after threshold breaches, or ad-hoc period closes"
+      },
+      {
+        "trigger_type": "schedule",
+        "config": {
+          "cron": "0 8 * * 1"
+        },
+        "description": "Weekly reconciliation check — lightweight Monday morning scan for transaction drift between Stripe and QuickBooks"
+      }
+    ],
+    "full_prompt_markdown": "# Financial Close Pipeline — Orchestrator System Prompt\n\nYou are the **Close Manager**, the orchestrator of a four-agent Financial Close Pipeline. You coordinate three specialist workers to automate month-end financial close processes.\n\n## Your Team\n\n| Agent | Role | Responsibility |\n|-------|------|---------------|\n| **Transaction Reconciler** | Worker | Matches Stripe charges/refunds/payouts against QuickBooks invoices/payments. Flags discrepancies. |\n| **Expense Classifier** | Worker | Categorizes unclassified QuickBooks expenses using historical pattern matching with confidence scoring. |\n| **Report Generator** | Worker | Compiles reconciled data into P&L and Balance Sheet reports, pushes to Google Sheets. |\n| **Close Manager (You)** | Orchestrator | Sequences phases, tracks completion, enforces thresholds, distributes final close package. |\n\n## Execution Phases\n\n### Phase 1 — Transaction Reconciliation\n1. Fetch all Stripe transactions for the close period:\n   - `GET /v1/charges?created[gte]={epoch_start}&created[lte]={epoch_end}&limit=100`\n   - `GET /v1/refunds?created[gte]={epoch_start}&created[lte]={epoch_end}`\n   - `GET /v1/payouts?created[gte]={epoch_start}&created[lte]={epoch_end}`\n   - Paginate using `starting_after` parameter until `has_more` is false.\n2. Fetch corresponding QuickBooks entries:\n   - `POST /v3/company/{realmId}/query` → `SELECT * FROM Invoice WHERE TxnDate >= '{start}' AND TxnDate <= '{end}'`\n   - `POST /v3/company/{realmId}/query` → `SELECT * FROM Payment WHERE TxnDate >= '{start}' AND TxnDate <= '{end}'`\n3. Match transactions by: amount (exact), date (±2 day tolerance), reference/memo field.\n4. Categorize unmatched items: `missing_in_qb`, `missing_in_stripe`, `amount_mismatch`, `date_mismatch`, `duplicate`.\n5. Write results to `recon_cache_{period}.json` via file_write.\n6. **Threshold check**: If discrepancies exceed 5 items OR $500 total, pause and alert via Slack.\n\n### Phase 2 — Expense Classification (may run parallel to Phase 1)\n1. Query uncategorized expenses: `POST /v3/company/{realmId}/query` → `SELECT * FROM Purchase WHERE AccountRef IS NULL AND TxnDate >= '{start}'`\n2. Load `classification_history.json` via file_read.\n3. For each expense, compute confidence score based on vendor match, amount range, and keyword overlap.\n4. Apply classifications:\n   - **≥85% confidence**: Auto-classify, push to QuickBooks via `POST /v3/company/{realmId}/purchase`.\n   - **60-85%**: Flag for human review, include in close summary.\n   - **<60%**: Escalate with full context.\n5. Update `classification_history.json` via file_write.\n\n### Phase 3 — Report Generation (requires Phase 1 + 2 complete)\n1. Pull finalized data from QuickBooks:\n   - `GET /v3/company/{realmId}/reports/ProfitAndLoss?start_date={start}&end_date={end}&accounting_method=Accrual`\n   - `GET /v3/company/{realmId}/reports/BalanceSheet?date={end}`\n2. Read reconciliation results from `recon_cache_{period}.json`.\n3. Format into structured arrays and push to Google Sheets:\n   - `PUT /v4/spreadsheets/{id}/values/P%26L!A1?valueInputOption=USER_ENTERED` — P&L data.\n   - `PUT /v4/spreadsheets/{id}/values/Balance%20Sheet!A1?valueInputOption=USER_ENTERED` — Balance sheet.\n   - `PUT /v4/spreadsheets/{id}/values/Exceptions!A1?valueInputOption=USER_ENTERED` — Reconciliation exceptions.\n4. Apply formatting: `POST /v4/spreadsheets/{id}:batchUpdate` with conditional formatting rules.\n\n### Phase 4 — Close Management & Distribution\n1. Verify all phases completed successfully by reading `close_state_{period}.json`.\n2. Compile close summary including: reconciliation stats, classification stats, report links, open items.\n3. Email close package via gmail_send:\n   - To: configured distribution list (CFO, Controller, Finance team)\n   - Subject: `Financial Close Complete — {Month} {Year}`\n   - Body: HTML-formatted summary with links to Google Sheets.\n4. Post to Slack #finance-close via `POST https://slack.com/api/chat.postMessage` with Block Kit formatting.\n5. Archive state: copy `close_state_{period}.json` to `close_archive/` with timestamp.\n\n## State Management\n\nMaintain pipeline state in `close_state_{period}.json`:\n```json\n{\n  \"period\": \"2025-12\",\n  \"started_at\": \"2026-01-02T06:00:00Z\",\n  \"phases\": {\n    \"reconciliation\": { \"status\": \"complete\", \"completed_at\": \"...\", \"stats\": {} },\n    \"classification\": { \"status\": \"complete\", \"completed_at\": \"...\", \"stats\": {} },\n    \"reporting\": { \"status\": \"in_progress\", \"started_at\": \"...\" },\n    \"distribution\": { \"status\": \"pending\" }\n  },\n  \"discrepancies\": [],\n  \"escalations\": []\n}\n```\n\n## Error Handling\n\n- **API 429 (rate limit)**: Exponential backoff — 1s, 2s, 4s, max 3 retries.\n- **API 401 (auth expired)**: Attempt token refresh. If it fails, alert and halt.\n- **API 500 (server error)**: Retry once after 30s. If persistent, log and alert.\n- **Threshold breach**: Pause pipeline, send Slack alert with details, await manual override.\n- **Pipeline crash**: On restart, read state file and resume from last incomplete phase.\n\n## Communication Style\n\n- Close summaries use clear financial terminology.\n- Discrepancy reports include transaction IDs, amounts, and suggested resolution.\n- Slack messages use Block Kit with sections, dividers, and context blocks.\n- Email reports use clean HTML tables with conditional highlighting for variances.\n\n## Constraints\n\n- Never modify QuickBooks data without logging the change.\n- Never auto-classify expenses below 85% confidence.\n- Always preserve an audit trail in local archive files.\n- Treat all financial amounts as decimals with 2-place precision.\n- All timestamps in UTC / ISO 8601 format.",
+    "summary": "The Financial Close Pipeline is a four-agent team that automates month-end financial close by coordinating transaction reconciliation (Stripe ↔ QuickBooks matching), intelligent expense classification with historical pattern learning, automated P&L and balance sheet report generation to Google Sheets, and close package distribution via Gmail and Slack. The Close Manager orchestrator sequences these phases with threshold-based guardrails, state-based recovery, and a full audit trail, replacing five manual workflows with a single scheduled pipeline that runs on the 2nd of each month.",
+    "design_highlights": [
+      {
+        "category": "Multi-Agent Coordination",
+        "icon": "🔄",
+        "color": "blue",
+        "items": [
+          "4-agent pipeline with orchestrator/worker architecture",
+          "Phase-gated execution with dependency tracking",
+          "Parallel execution where phases are independent",
+          "State-based crash recovery resumes from last checkpoint"
+        ]
+      },
+      {
+        "category": "Financial Intelligence",
+        "icon": "📊",
+        "color": "green",
+        "items": [
+          "Confidence-scored expense classification with 3-tier thresholds",
+          "Historical pattern cache learns from 90 days of categorization decisions",
+          "Transaction matching with configurable tolerance windows",
+          "Threshold-based guardrails pause pipeline for anomalies"
+        ]
+      },
+      {
+        "category": "Integration Depth",
+        "icon": "🔗",
+        "color": "purple",
+        "items": [
+          "Stripe API with full pagination for charges, refunds, payouts, disputes",
+          "QuickBooks query language for targeted data extraction",
+          "Google Sheets API with batch updates and conditional formatting",
+          "Gmail HTML distribution with structured close packages"
+        ]
+      },
+      {
+        "category": "Auditability & Compliance",
+        "icon": "🛡️",
+        "color": "orange",
+        "items": [
+          "Immutable close archives with timestamped state snapshots",
+          "Every QuickBooks modification logged with before/after values",
+          "Discrepancy categorization with full transaction context",
+          "Escalation path from auto-retry to Slack alert to email escalation"
+        ]
+      }
+    ],
+    "suggested_connectors": [
+      {
+        "name": "stripe",
+        "label": "Stripe",
+        "auth_type": "api_key",
+        "credential_fields": [
+          {
+            "key": "api_key",
+            "label": "Secret Key",
+            "type": "password",
+            "placeholder": "sk_live_...",
+            "helpText": "From Stripe Dashboard → Developers → API keys → Secret key. Use the live key for production.",
+            "required": true
+          }
+        ],
+        "setup_instructions": "1. Log into Stripe Dashboard at https://dashboard.stripe.com\n2. Navigate to Developers → API keys\n3. Copy your Secret key (starts with sk_live_ for production or sk_test_ for testing)\n4. Paste it into the Secret Key field above\n5. Ensure your Stripe account has read access to Charges, Refunds, Payouts, and Disputes",
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": [
+          0,
+          2
+        ],
+        "api_base_url": "https://api.stripe.com/v1"
+      },
+      {
+        "name": "quickbooks",
+        "label": "QuickBooks Online",
+        "auth_type": "oauth2",
+        "credential_fields": [
+          {
+            "key": "client_id",
+            "label": "Client ID",
+            "type": "text",
+            "placeholder": "ABc123...",
+            "helpText": "From Intuit Developer Portal → Your App → Keys & credentials → Client ID",
+            "required": true
+          },
+          {
+            "key": "client_secret",
+            "label": "Client Secret",
+            "type": "password",
+            "placeholder": "xyz789...",
+            "helpText": "From Intuit Developer Portal → Your App → Keys & credentials → Client Secret",
+            "required": true
+          },
+          {
+            "key": "realm_id",
+            "label": "Company ID (Realm ID)",
+            "type": "text",
+            "placeholder": "1234567890",
+            "helpText": "Found in the QuickBooks URL when logged in: https://app.qbo.intuit.com/app/homepage?companyId=XXXXXXXXXX",
+            "required": true
+          },
+          {
+            "key": "refresh_token",
+            "label": "Refresh Token",
+            "type": "password",
+            "placeholder": "AB11...",
+            "helpText": "Generated during OAuth2 authorization flow. The platform will refresh access tokens automatically.",
+            "required": true
+          }
+        ],
+        "setup_instructions": "1. Go to https://developer.intuit.com and sign in\n2. Create a new app (or select existing) under My Apps\n3. Under Keys & credentials, copy the Client ID and Client Secret\n4. Set the redirect URI to match your platform's OAuth callback URL\n5. Complete the OAuth2 authorization flow to obtain a refresh token\n6. Find your Realm ID (Company ID) from the QuickBooks Online URL\n7. Enter all credentials above — the platform handles token refresh automatically",
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": [
+          0,
+          2
+        ],
+        "api_base_url": "https://quickbooks.api.intuit.com/v3"
+      },
+      {
+        "name": "google_workspace",
+        "label": "Google Workspace (Gmail + Sheets)",
+        "auth_type": "oauth2",
+        "credential_fields": [
+          {
+            "key": "client_id",
+            "label": "Client ID",
+            "type": "text",
+            "placeholder": "123456789-abc.apps.googleusercontent.com",
+            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client ID",
+            "required": true
+          },
+          {
+            "key": "client_secret",
+            "label": "Client Secret",
+            "type": "password",
+            "placeholder": "GOCSPX-...",
+            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client Secret",
+            "required": true
+          },
+          {
+            "key": "refresh_token",
+            "label": "Refresh Token",
+            "type": "password",
+            "placeholder": "1//0abc...",
+            "helpText": "Generated during OAuth2 consent flow. Enable Gmail API and Google Sheets API in your project first.",
+            "required": true
+          },
+          {
+            "key": "spreadsheet_id",
+            "label": "Target Spreadsheet ID",
+            "type": "text",
+            "placeholder": "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms",
+            "helpText": "The ID from your Google Sheets URL: https://docs.google.com/spreadsheets/d/{THIS_PART}/edit",
+            "required": true
+          }
+        ],
+        "setup_instructions": "1. Go to Google Cloud Console (https://console.cloud.google.com)\n2. Create a project or select an existing one\n3. Enable the Gmail API and Google Sheets API under APIs & Services → Library\n4. Create OAuth 2.0 credentials under APIs & Services → Credentials\n5. Set up the OAuth consent screen with required scopes: gmail.send, gmail.readonly, spreadsheets\n6. Complete the authorization flow to obtain a refresh token\n7. Create (or identify) the target Google Sheets workbook for financial reports\n8. Copy the Spreadsheet ID from the URL and enter it above",
+        "related_tools": [
+          "http_request",
+          "gmail_send",
+          "gmail_search",
+          "gmail_read",
+          "gmail_mark_read"
+        ],
+        "related_triggers": [
+          0
+        ],
+        "api_base_url": "https://www.googleapis.com"
+      },
+      {
+        "name": "slack",
+        "label": "Slack",
+        "auth_type": "bot_token",
+        "credential_fields": [
+          {
+            "key": "bot_token",
+            "label": "Bot User OAuth Token",
+            "type": "password",
+            "placeholder": "xoxb-...",
+            "helpText": "From Slack App settings → OAuth & Permissions → Bot User OAuth Token",
+            "required": true
+          },
+          {
+            "key": "default_channel",
+            "label": "Default Channel",
+            "type": "text",
+            "placeholder": "#finance-close",
+            "helpText": "The Slack channel where close updates and alerts will be posted. The bot must be invited to this channel.",
+            "required": true
+          }
+        ],
+        "setup_instructions": "1. Go to https://api.slack.com/apps and create a new Slack App\n2. Under OAuth & Permissions, add these Bot Token Scopes: chat:write, chat:write.public\n3. Install the app to your workspace\n4. Copy the Bot User OAuth Token (starts with xoxb-)\n5. Invite the bot to your #finance-close channel: /invite @YourBotName\n6. Enter the token and default channel above",
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": [
+          0
+        ],
+        "api_base_url": "https://slack.com/api"
+      }
+    ],
+    "suggested_notification_channels": [
+      {
+        "type": "slack",
+        "description": "Primary operational channel for close progress updates, threshold alerts, and completion summaries",
+        "required_connector": "slack",
+        "config_hints": {
+          "channel": "#finance-close"
+        }
+      },
+      {
+        "type": "email",
+        "description": "Final close package distribution to finance leadership — CFO, Controller, and Finance team",
+        "required_connector": "google_workspace",
+        "config_hints": {
+          "to": "finance-team@company.com",
+          "subject_prefix": "Financial Close"
+        }
+      },
+      {
+        "type": "slack",
+        "description": "Escalation channel for pipeline failures and auth issues requiring immediate attention",
+        "required_connector": "slack",
+        "config_hints": {
+          "channel": "#finance-alerts"
+        }
+      }
+    ],
+    "suggested_event_subscriptions": [
+      {
+        "event_type": "phase_complete",
+        "description": "Emitted when any pipeline phase finishes — used by the orchestrator to trigger the next phase in sequence"
+      },
+      {
+        "event_type": "threshold_breach",
+        "description": "Emitted when reconciliation discrepancies exceed configured limits — triggers pipeline pause and Slack alert"
+      },
+      {
+        "event_type": "classification_escalation",
+        "description": "Emitted when an expense has confidence below 60% — queued for human review and included in close summary"
+      },
+      {
+        "event_type": "pipeline_error",
+        "description": "Emitted on unrecoverable API failure after retry exhaustion — triggers email escalation to controller"
+      },
+      {
+        "event_type": "close_complete",
+        "description": "Emitted when all four phases finish successfully — triggers distribution and archival"
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_recon",
+        "name": "Transaction Reconciliation",
+        "description": "Fetches Stripe and QuickBooks transaction data for the close period, matches entries, identifies discrepancies, and enforces threshold guardrails before proceeding.",
+        "nodes": [
+          {
+            "id": "r1",
+            "type": "start",
+            "label": "Close trigger fires",
+            "detail": "Monthly schedule (2nd of month 6AM UTC) or manual trigger"
+          },
+          {
+            "id": "r2",
+            "type": "action",
+            "label": "Determine close period",
+            "detail": "Calculate start/end dates for the previous month, convert to epoch timestamps for Stripe"
+          },
+          {
+            "id": "r3",
+            "type": "connector",
+            "label": "Fetch Stripe transactions",
+            "detail": "GET /v1/charges, /v1/refunds, /v1/payouts with date filters. Paginate until has_more=false.",
+            "connector": "stripe"
+          },
+          {
+            "id": "r4",
+            "type": "connector",
+            "label": "Fetch QuickBooks entries",
+            "detail": "POST /v3/company/{realmId}/query — SELECT invoices, payments, credit memos for the period",
+            "connector": "quickbooks"
+          },
+          {
+            "id": "r5",
+            "type": "action",
+            "label": "Match transactions",
+            "detail": "Join on amount (exact), date (±2 day tolerance), and reference ID. Build matched/unmatched sets."
+          },
+          {
+            "id": "r6",
+            "type": "action",
+            "label": "Categorize discrepancies",
+            "detail": "Classify each unmatched item: missing_in_qb, missing_in_stripe, amount_mismatch, date_mismatch, duplicate"
+          },
+          {
+            "id": "r7",
+            "type": "decision",
+            "label": "Threshold exceeded?",
+            "detail": "Check if discrepancies > 5 items OR > $500 total value"
+          },
+          {
+            "id": "r8",
+            "type": "connector",
+            "label": "Alert Slack — threshold breach",
+            "detail": "POST /chat.postMessage with discrepancy details and 'proceed/pause' prompt",
+            "connector": "slack"
+          },
+          {
+            "id": "r9",
+            "type": "action",
+            "label": "Write reconciliation cache",
+            "detail": "file_write recon_cache_{period}.json with matched items, discrepancies, and stats"
+          },
+          {
+            "id": "r10",
+            "type": "event",
+            "label": "Emit phase_complete",
+            "detail": "Signal reconciliation done so orchestrator can gate Phase 3"
+          },
+          {
+            "id": "r11",
+            "type": "end",
+            "label": "Reconciliation complete"
+          }
+        ],
+        "edges": [
+          {
+            "id": "re1",
+            "source": "r1",
+            "target": "r2"
+          },
+          {
+            "id": "re2",
+            "source": "r2",
+            "target": "r3"
+          },
+          {
+            "id": "re3",
+            "source": "r2",
+            "target": "r4"
+          },
+          {
+            "id": "re4",
+            "source": "r3",
+            "target": "r5"
+          },
+          {
+            "id": "re5",
+            "source": "r4",
+            "target": "r5"
+          },
+          {
+            "id": "re6",
+            "source": "r5",
+            "target": "r6"
+          },
+          {
+            "id": "re7",
+            "source": "r6",
+            "target": "r7"
+          },
+          {
+            "id": "re8",
+            "source": "r7",
+            "target": "r8",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "re9",
+            "source": "r7",
+            "target": "r9",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "re10",
+            "source": "r8",
+            "target": "r9"
+          },
+          {
+            "id": "re11",
+            "source": "r9",
+            "target": "r10"
+          },
+          {
+            "id": "re12",
+            "source": "r10",
+            "target": "r11"
+          }
+        ]
+      },
+      {
+        "id": "flow_classify",
+        "name": "Expense Classification",
+        "description": "Retrieves uncategorized expenses from QuickBooks, applies historical pattern matching with confidence scoring, auto-classifies high-confidence items, and flags uncertain ones for review.",
+        "nodes": [
+          {
+            "id": "c1",
+            "type": "start",
+            "label": "Classification phase begins",
+            "detail": "Triggered in parallel with reconciliation phase"
+          },
+          {
+            "id": "c2",
+            "type": "connector",
+            "label": "Query uncategorized expenses",
+            "detail": "POST /v3/company/{realmId}/query — SELECT purchases with NULL AccountRef in close period",
+            "connector": "quickbooks"
+          },
+          {
+            "id": "c3",
+            "type": "action",
+            "label": "Load classification history",
+            "detail": "file_read classification_history.json — rolling 90-day cache of vendor→category mappings"
+          },
+          {
+            "id": "c4",
+            "type": "action",
+            "label": "Score each expense",
+            "detail": "For each item: match vendor name, amount range, description keywords against history. Compute confidence 0-100%."
+          },
+          {
+            "id": "c5",
+            "type": "decision",
+            "label": "Confidence ≥ 85%?",
+            "detail": "High confidence items are auto-classified without human review"
+          },
+          {
+            "id": "c6",
+            "type": "connector",
+            "label": "Push classification to QB",
+            "detail": "POST /v3/company/{realmId}/purchase — update AccountRef with matched category",
+            "connector": "quickbooks"
+          },
+          {
+            "id": "c7",
+            "type": "decision",
+            "label": "Confidence ≥ 60%?",
+            "detail": "Medium confidence items are flagged for human review in the close summary"
+          },
+          {
+            "id": "c8",
+            "type": "action",
+            "label": "Flag for review",
+            "detail": "Add to review queue with suggested category, confidence score, and reasoning"
+          },
+          {
+            "id": "c9",
+            "type": "event",
+            "label": "Emit classification_escalation",
+            "detail": "Low confidence (<60%) items escalated with full vendor/amount/description context"
+          },
+          {
+            "id": "c10",
+            "type": "action",
+            "label": "Update history cache",
+            "detail": "file_write classification_history.json — add new classifications, prune entries older than 90 days"
+          },
+          {
+            "id": "c11",
+            "type": "event",
+            "label": "Emit phase_complete",
+            "detail": "Signal classification done with stats: auto-classified, flagged, escalated counts"
+          },
+          {
+            "id": "c12",
+            "type": "end",
+            "label": "Classification complete"
+          }
+        ],
+        "edges": [
+          {
+            "id": "ce1",
+            "source": "c1",
+            "target": "c2"
+          },
+          {
+            "id": "ce2",
+            "source": "c2",
+            "target": "c3"
+          },
+          {
+            "id": "ce3",
+            "source": "c3",
+            "target": "c4"
+          },
+          {
+            "id": "ce4",
+            "source": "c4",
+            "target": "c5"
+          },
+          {
+            "id": "ce5",
+            "source": "c5",
+            "target": "c6",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "ce6",
+            "source": "c5",
+            "target": "c7",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "ce7",
+            "source": "c6",
+            "target": "c10"
+          },
+          {
+            "id": "ce8",
+            "source": "c7",
+            "target": "c8",
+            "label": "Yes (60-84%)",
+            "variant": "yes"
+          },
+          {
+            "id": "ce9",
+            "source": "c7",
+            "target": "c9",
+            "label": "No (<60%)",
+            "variant": "no"
+          },
+          {
+            "id": "ce10",
+            "source": "c8",
+            "target": "c10"
+          },
+          {
+            "id": "ce11",
+            "source": "c9",
+            "target": "c10"
+          },
+          {
+            "id": "ce12",
+            "source": "c10",
+            "target": "c11"
+          },
+          {
+            "id": "ce13",
+            "source": "c11",
+            "target": "c12"
+          }
+        ]
+      },
+      {
+        "id": "flow_report_distribute",
+        "name": "Report Generation & Close Distribution",
+        "description": "Waits for reconciliation and classification to complete, pulls finalized financial data from QuickBooks, compiles P&L and Balance Sheet into Google Sheets, then distributes the close package via email and Slack.",
+        "nodes": [
+          {
+            "id": "d1",
+            "type": "start",
+            "label": "Phase 1 + 2 complete",
+            "detail": "Orchestrator confirms both reconciliation and classification phases finished successfully"
+          },
+          {
+            "id": "d2",
+            "type": "connector",
+            "label": "Pull P&L from QuickBooks",
+            "detail": "GET /v3/company/{realmId}/reports/ProfitAndLoss?start_date={start}&end_date={end}&accounting_method=Accrual",
+            "connector": "quickbooks"
+          },
+          {
+            "id": "d3",
+            "type": "connector",
+            "label": "Pull Balance Sheet from QB",
+            "detail": "GET /v3/company/{realmId}/reports/BalanceSheet?date={end}",
+            "connector": "quickbooks"
+          },
+          {
+            "id": "d4",
+            "type": "action",
+            "label": "Read reconciliation cache",
+            "detail": "file_read recon_cache_{period}.json for exception data to include in Sheet3"
+          },
+          {
+            "id": "d5",
+            "type": "action",
+            "label": "Format report data",
+            "detail": "Structure P&L rows (revenue, COGS, gross profit, OpEx, net income), Balance Sheet rows (assets, liabilities, equity), exceptions table"
+          },
+          {
+            "id": "d6",
+            "type": "connector",
+            "label": "Write to Google Sheets",
+            "detail": "PUT /v4/spreadsheets/{id}/values/ — three ranges: P&L!A1, Balance Sheet!A1, Exceptions!A1 with valueInputOption=USER_ENTERED",
+            "connector": "google_workspace"
+          },
+          {
+            "id": "d7",
+            "type": "connector",
+            "label": "Apply sheet formatting",
+            "detail": "POST /v4/spreadsheets/{id}:batchUpdate — bold headers, currency formatting, red for negative values, yellow for large variances",
+            "connector": "google_workspace"
+          },
+          {
+            "id": "d8",
+            "type": "decision",
+            "label": "All reports written?",
+            "detail": "Verify all three sheets updated successfully with expected row counts"
+          },
+          {
+            "id": "d9",
+            "type": "error",
+            "label": "Sheets write failure",
+            "detail": "Log error, retry once. If persistent, send partial close with error note."
+          },
+          {
+            "id": "d10",
+            "type": "action",
+            "label": "Compile close summary",
+            "detail": "Aggregate stats: recon matches/discrepancies, classification auto/flagged/escalated, report links"
+          },
+          {
+            "id": "d11",
+            "type": "connector",
+            "label": "Email close package",
+            "detail": "gmail_send to distribution list with HTML summary table, Google Sheets link, and exception highlights",
+            "connector": "google_workspace"
+          },
+          {
+            "id": "d12",
+            "type": "connector",
+            "label": "Post Slack summary",
+            "detail": "POST /chat.postMessage with Block Kit: header, stats sections, Sheets link button, exception count",
+            "connector": "slack"
+          },
+          {
+            "id": "d13",
+            "type": "action",
+            "label": "Archive close state",
+            "detail": "file_write close_archive/close_{period}_{timestamp}.json — immutable audit record of full pipeline run"
+          },
+          {
+            "id": "d14",
+            "type": "event",
+            "label": "Emit close_complete",
+            "detail": "Final event marking the entire pipeline as successfully completed"
+          },
+          {
+            "id": "d15",
+            "type": "end",
+            "label": "Financial close complete"
+          }
+        ],
+        "edges": [
+          {
+            "id": "de1",
+            "source": "d1",
+            "target": "d2"
+          },
+          {
+            "id": "de2",
+            "source": "d1",
+            "target": "d3"
+          },
+          {
+            "id": "de3",
+            "source": "d2",
+            "target": "d5"
+          },
+          {
+            "id": "de4",
+            "source": "d3",
+            "target": "d5"
+          },
+          {
+            "id": "de5",
+            "source": "d1",
+            "target": "d4"
+          },
+          {
+            "id": "de6",
+            "source": "d4",
+            "target": "d5"
+          },
+          {
+            "id": "de7",
+            "source": "d5",
+            "target": "d6"
+          },
+          {
+            "id": "de8",
+            "source": "d6",
+            "target": "d7"
+          },
+          {
+            "id": "de9",
+            "source": "d7",
+            "target": "d8"
+          },
+          {
+            "id": "de10",
+            "source": "d8",
+            "target": "d10",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "de11",
+            "source": "d8",
+            "target": "d9",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "de12",
+            "source": "d9",
+            "target": "d10",
+            "variant": "error"
+          },
+          {
+            "id": "de13",
+            "source": "d10",
+            "target": "d11"
+          },
+          {
+            "id": "de14",
+            "source": "d10",
+            "target": "d12"
+          },
+          {
+            "id": "de15",
+            "source": "d11",
+            "target": "d13"
+          },
+          {
+            "id": "de16",
+            "source": "d12",
+            "target": "d13"
+          },
+          {
+            "id": "de17",
+            "source": "d13",
+            "target": "d14"
+          },
+          {
+            "id": "de18",
+            "source": "d14",
+            "target": "d15"
+          }
+        ]
+      }
+    ],
+    "customSections": [
+      {
+        "key": "team_structure",
+        "label": "Pipeline Team Structure",
+        "content": "## Agent Roster\n\n| Agent | Role | Phase | Dependencies | Key APIs |\n|-------|------|-------|-------------|----------|\n| Transaction Reconciler | Worker | 1 | None | Stripe, QuickBooks |\n| Expense Classifier | Worker | 2 | None (parallel with Phase 1) | QuickBooks |\n| Report Generator | Worker | 3 | Phase 1 + Phase 2 | QuickBooks, Google Sheets |\n| Close Manager | Orchestrator | 4 | Phase 3 | Gmail, Slack |\n\n## Execution DAG\n```\n[Trigger] → [Phase 1: Reconcile] ──┐\n         → [Phase 2: Classify]  ───┤\n                                    └→ [Phase 3: Reports] → [Phase 4: Distribute & Archive]\n```\n\n## Inter-Agent Communication\n- Agents communicate via local state files (JSON) and the event bus.\n- Phase 1 writes `recon_cache_{period}.json` consumed by Phase 3.\n- Phase 2 writes `classification_history.json` (persistent) and phase stats to `close_state_{period}.json`.\n- The orchestrator (Phase 4) reads the consolidated state file to compile the final summary."
+      },
+      {
+        "key": "data_contracts",
+        "label": "Data Contracts Between Phases",
+        "content": "### recon_cache_{period}.json\n```json\n{\n  \"period\": \"2025-12\",\n  \"stripe_count\": 342,\n  \"qb_count\": 338,\n  \"matched\": 335,\n  \"discrepancies\": [\n    { \"type\": \"missing_in_qb\", \"stripe_id\": \"ch_xxx\", \"amount\": 49.99, \"date\": \"2025-12-15\" }\n  ],\n  \"total_discrepancy_value\": 12.50\n}\n```\n\n### classification_history.json (rolling 90 days)\n```json\n{\n  \"patterns\": [\n    { \"vendor\": \"AWS\", \"category\": \"Cloud Infrastructure\", \"amount_range\": [100, 5000], \"confidence\": 0.95, \"last_seen\": \"2025-12-01\" }\n  ]\n}\n```\n\n### close_state_{period}.json\n```json\n{\n  \"period\": \"2025-12\",\n  \"phases\": {\n    \"reconciliation\": { \"status\": \"complete\", \"stats\": { \"matched\": 335, \"discrepancies\": 7 } },\n    \"classification\": { \"status\": \"complete\", \"stats\": { \"auto\": 18, \"flagged\": 4, \"escalated\": 1 } },\n    \"reporting\": { \"status\": \"complete\", \"sheets_url\": \"https://docs.google.com/...\" },\n    \"distribution\": { \"status\": \"complete\", \"emailed_to\": [\"cfo@company.com\"], \"slack_ts\": \"1234567890.123456\" }\n  }\n}\n```"
+      },
+      {
+        "key": "configuration",
+        "label": "Configurable Parameters",
+        "content": "| Parameter | Default | Description |\n|-----------|---------|-------------|\n| `close_day` | 2 | Day of month to run the close pipeline |\n| `close_hour_utc` | 6 | Hour (UTC) to trigger the pipeline |\n| `recon_threshold_items` | 5 | Max discrepancies before pausing |\n| `recon_threshold_amount` | 500.00 | Max discrepancy $ value before pausing |\n| `date_match_tolerance_days` | 2 | Days of tolerance for transaction date matching |\n| `auto_classify_confidence` | 0.85 | Minimum confidence for auto-classification |\n| `review_confidence_floor` | 0.60 | Below this → escalate; above → flag for review |\n| `history_retention_days` | 90 | Days of classification history to retain |\n| `distribution_list` | (configured) | Email recipients for close package |\n| `slack_channel` | #finance-close | Slack channel for updates and alerts |\n| `accounting_method` | Accrual | Accrual or Cash for QuickBooks reports |"
+      }
+    ]
+  }
+}

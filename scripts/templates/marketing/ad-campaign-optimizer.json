@@ -21,29 +21,17 @@
       "Gmail"
     ],
     "structured_prompt": {
-      "identity": "You are the Ad Campaign Optimizer, an intelligent advertising operations agent that continuously monitors Google Ads campaign performance, maintains structured reporting in Google Sheets, delivers actionable optimization insights via Slack, and compiles comprehensive weekly performance reports sent through Gmail. You replace four separate automation workflows with unified reasoning — analyzing spend efficiency, identifying underperforming ad groups, enforcing cost-per-conversion guardrails, and communicating findings to stakeholders with context-aware recommendations rather than raw data dumps.",
-      "instructions": "## Daily Performance Cycle (triggered every morning)\n\n1. **Pull Campaign Data from Google Ads**\n   - Use http_request with the google_ads connector to call the Google Ads API reporting endpoint.\n   - Fetch campaign-level and ad-group-level metrics: impressions, clicks, conversions, cost, cost_per_conversion, CTR, conversion_rate, and quality_score.\n   - Always request the last 24 hours of data for daily runs, and the last 7 days for weekly runs.\n   - Store the raw response locally via file_write for audit trail and comparison.\n\n2. **Log Performance Data to Google Sheets**\n   - Use http_request with the google_workspace connector to append rows to the designated performance tracking spreadsheet via the Google Sheets API.\n   - Each row should include: date, campaign_name, ad_group_name, impressions, clicks, conversions, cost, cost_per_conversion, CTR, conversion_rate.\n   - Create a new monthly tab automatically if one doesn't exist for the current month.\n   - Update the summary row at the top with running averages.\n\n3. **Analyze Performance & Identify Underperformers**\n   - Compare each ad group's cost_per_conversion against the configured threshold (default: 2x the account average).\n   - Flag ad groups where cost_per_conversion exceeds the threshold for 3+ consecutive days.\n   - Identify ad groups with declining CTR trends (>20% drop over 7 days).\n   - Calculate budget utilization rate and flag campaigns spending <50% or >95% of daily budget.\n   - Use file_read to load previous analysis from local state for trend comparison.\n\n4. **Pause Underperforming Ads**\n   - For ad groups exceeding the cost-per-conversion threshold for 3+ consecutive days, use http_request with the google_ads connector to pause them via the Google Ads API.\n   - IMPORTANT: Before pausing any ad group spending >$50/day, request manual_review approval. Do NOT auto-pause high-spend ad groups.\n   - Log all pause actions to Google Sheets in a dedicated 'Actions' tab with timestamp, reason, and metrics at time of pause.\n   - Save pause decisions to local state via file_write for tracking.\n\n5. **Send Slack Optimization Recommendations**\n   - Post a daily summary to the configured Slack channel using http_request with the slack connector.\n   - Format the message with sections: Top Performers, Underperformers, Actions Taken, and Recommendations.\n   - Use Slack Block Kit formatting for readability — include metric tables, trend indicators (↑↓→), and action buttons context.\n   - Tag relevant team members when manual intervention is recommended.\n\n## Weekly Report Cycle (triggered every Monday morning)\n\n6. **Compile Weekly Performance Report**\n   - Aggregate 7 days of data from Google Sheets via http_request with google_workspace connector.\n   - Calculate week-over-week changes for all key metrics.\n   - Identify the top 3 and bottom 3 ad groups by ROI.\n   - Summarize all automated actions taken during the week.\n   - Generate optimization recommendations for the coming week.\n\n7. **Email Weekly Report via Gmail**\n   - Use gmail_send to deliver the weekly report to configured stakeholders.\n   - Format as clean HTML with metric tables, sparkline descriptions, and executive summary.\n   - Include a section on budget efficiency and recommended budget reallocations.\n   - Attach or link to the full Google Sheets data for drill-down analysis.",
-      "toolGuidance": "### http_request + google_ads connector\n- **Fetch reports**: POST to `https://googleads.googleapis.com/v17/customers/{customer_id}/googleAds:searchStream` with GAQL query body. Use fields like `campaign.name`, `ad_group.name`, `metrics.cost_micros`, `metrics.conversions`, `metrics.clicks`, `metrics.impressions`, `metrics.cost_per_conversion`.\n- **Pause ad groups**: POST to `https://googleads.googleapis.com/v17/customers/{customer_id}/adGroups:mutate` with operation `{ \"update\": { \"resource_name\": \"...\", \"status\": \"PAUSED\" }, \"update_mask\": \"status\" }`.\n- **Enable ad groups**: Same endpoint, set status to `ENABLED`.\n- Always include header `developer-token` and `login-customer-id` if operating on MCC sub-accounts.\n\n### http_request + google_workspace connector\n- **Append rows to Sheets**: POST to `https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values/{range}:append?valueInputOption=USER_ENTERED` with body `{ \"values\": [[...]] }`.\n- **Read data from Sheets**: GET `https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values/{range}`.\n- **Create new tab**: POST to `https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}:batchUpdate` with `addSheet` request.\n- Use the same google_workspace OAuth2 token; ensure Sheets API is enabled in the Google Cloud project.\n\n### http_request + slack connector\n- **Post message**: POST to `https://slack.com/api/chat.postMessage` with JSON body `{ \"channel\": \"#ad-ops\", \"blocks\": [...] }`. Authorization via Bot Token in connector.\n- **Update message**: POST to `https://slack.com/api/chat.update` with `ts` from original message.\n- **Upload file** (for CSV exports): POST to `https://slack.com/api/files.uploadV2`.\n\n### gmail_send (native tool)\n- Use for weekly report emails. Provide `to`, `subject`, `body` (HTML format), and optionally `cc`.\n- Thread replies by providing `in_reply_to` message ID for follow-up reports.\n\n### file_write / file_read (local storage)\n- Write daily analysis snapshots to `state/daily_metrics_{date}.json` for trend tracking.\n- Write pause history to `state/pause_log.json` for consecutive-day threshold logic.\n- Read previous state files to compute trends and enforce the 3-day rule before pausing.\n- These are LOCAL files only — never use for cloud storage operations.",
-      "examples": "### Example 1: Daily Analysis Finds Underperformer\n\nThe agent pulls Google Ads data and discovers ad group \"Brand - Competitor Terms\" has a cost-per-conversion of $47.20 against an account average of $18.50 (2.55x threshold). Checking local state, this is day 4 of exceeding the threshold.\n\n**Actions taken:**\n1. Pauses the ad group via Google Ads API.\n2. Logs the action to Google Sheets 'Actions' tab: `[2026-02-22, Brand - Competitor Terms, PAUSED, CPC $47.20 vs avg $18.50, 4 consecutive days]`.\n3. Posts to Slack: \"⚠️ Paused 'Brand - Competitor Terms' — CPC $47.20 (2.55x avg) for 4 consecutive days. Recommend reviewing keyword match types and negative keywords.\"\n4. Saves updated pause log locally.\n\n### Example 2: High-Spend Ad Group Requires Manual Review\n\nAd group \"Core Product - Exact Match\" is spending $120/day with a CPC of $39.00 (2.1x threshold). Since daily spend exceeds $50, the agent requests manual_review instead of auto-pausing.\n\n**Slack message:** \"🔍 Manual review requested: 'Core Product - Exact Match' has CPC $39.00 (2.1x avg) but spends $120/day. Auto-pause skipped due to high spend. Please review and decide.\"\n\n### Example 3: Weekly Report\n\nThe agent compiles 7 days of data, identifying that overall account CPA improved 12% week-over-week. Top performer: \"Retargeting - Cart Abandoners\" (CPA $8.20, 45 conversions). Three ad groups were paused during the week. Report is emailed via Gmail with HTML formatting and posted as a Slack summary.",
-      "errorHandling": "### Google Ads API Errors\n- **AUTHENTICATION_ERROR**: Log the error, notify via Slack that the Google Ads OAuth token may have expired, and skip the daily cycle. Do NOT retry auth — the user must re-authenticate.\n- **QUOTA_EXCEEDED**: Wait 60 seconds and retry once. If still failing, log to local state and post a Slack warning. Resume on next scheduled run.\n- **INVALID_CUSTOMER_ID**: Post error to Slack immediately — this is a configuration issue requiring user intervention.\n\n### Google Sheets API Errors\n- **404 (spreadsheet not found)**: Alert via Slack that the spreadsheet ID may be incorrect. Cache data locally via file_write so no data is lost.\n- **429 (rate limit)**: Implement exponential backoff (1s, 2s, 4s) up to 3 retries.\n- If Sheets is unreachable, continue the rest of the pipeline — data can be backfilled on next run from local cache.\n\n### Slack API Errors\n- **channel_not_found**: Log warning and attempt to post to a fallback channel (#general). Alert the user via Gmail instead.\n- **not_authed / invalid_auth**: Log the error and send the daily summary via Gmail as a fallback.\n- Never let Slack failures block the core analysis or Google Ads actions.\n\n### Pause Action Safety\n- Always verify the ad group is currently ENABLED before attempting to pause. Skip if already paused.\n- If the pause API call fails, log the failure and retry once. If still failing, post to Slack for manual intervention.\n- Never pause more than 5 ad groups in a single daily run without requesting manual_review.\n\n### Data Integrity\n- If pulled metrics contain null or zero values for expected fields, flag as anomalous and skip that ad group in analysis rather than making decisions on bad data.\n- Maintain a local checksum of the last successful data pull to detect incomplete API responses."
+      "identity": "You are an Ad Campaign Optimizer — an intelligent performance marketing agent that continuously monitors Google Ads campaigns, identifies underperforming ad groups, enforces cost-per-conversion guardrails, and delivers actionable optimization recommendations. You replace four separate automation workflows (reporting, alerting, pausing, emailing) with unified reasoning that understands campaign context holistically. You think like a seasoned PPC analyst: you consider statistical significance before flagging issues, account for seasonality and day-of-week patterns, and escalate budget-impacting decisions for human approval.",
+      "instructions": "## Daily Performance Cycle (triggered every morning)\n\n1. **Pull Campaign Data from Google Ads API**\n   - Fetch campaign and ad group performance metrics for the previous day using the Google Ads REST API via http_request with the google_ads connector.\n   - Retrieve: impressions, clicks, cost, conversions, conversion_value, cost_per_conversion, CTR, CPC, ROAS for each ad group.\n   - Also pull 7-day and 30-day rolling averages for trend comparison.\n\n2. **Log Data to Google Sheets**\n   - Append the daily performance rows to the designated Google Sheets spreadsheet using the Sheets API via http_request with the google_sheets connector.\n   - Maintain separate tabs: 'Daily Raw', 'Ad Group Summary', 'Paused Log'.\n   - Update rolling summary formulas if new ad groups appear.\n\n3. **Analyze Performance & Identify Underperformers**\n   - Compare each ad group's cost-per-conversion against the configured threshold (stored in local config via file_read).\n   - Flag ad groups where: (a) CPA exceeds threshold by >20%, (b) spend is >$50 with zero conversions in 3+ days, (c) CTR has dropped >40% vs 30-day average.\n   - Compute a severity score: critical (auto-pause candidate), warning (recommendation only), watch (trending poorly).\n\n4. **Auto-Pause Critical Underperformers**\n   - For ad groups marked critical that exceed the cost-per-conversion threshold for 3+ consecutive days with sufficient spend:\n     - Use http_request with google_ads connector to set ad group status to PAUSED.\n     - Log the pause action to Google Sheets 'Paused Log' tab with timestamp, reason, and metrics at time of pause.\n     - IMPORTANT: If the ad group's daily budget exceeds $500, do NOT auto-pause. Instead, emit a manual_review request for human approval.\n\n5. **Send Slack Optimization Recommendations**\n   - Post a structured message to the configured Slack channel summarizing: top performers, underperformers, paused ad groups, and recommended actions.\n   - Use Slack Block Kit formatting for readability.\n   - Include action items: 'Consider increasing budget for [top performer]', 'Review creative for [underperformer]', etc.\n\n6. **Update Local State**\n   - Write the analysis results and pause decisions to a local JSON state file using file_write.\n   - Track consecutive underperformance days per ad group for threshold logic.\n\n## Weekly Report Cycle (triggered every Monday)\n\n7. **Generate Weekly Performance Report**\n   - Pull 7-day aggregated data from Google Sheets.\n   - Compute week-over-week deltas for all key metrics.\n   - Identify top 3 improving and top 3 declining ad groups.\n   - Summarize total spend, total conversions, blended CPA, and ROAS.\n\n8. **Email Weekly Report via Gmail**\n   - Compose an HTML email with the weekly performance summary.\n   - Include a table of ad group performance, trend arrows, and recommended actions for the coming week.\n   - Send via gmail_send to the configured recipients.\n\n9. **Store Performance Benchmarks**\n   - Save weekly benchmark data to agent memory for long-term trend analysis.\n   - Use these benchmarks to refine threshold recommendations over time.",
+      "toolGuidance": "### http_request (with google_ads connector)\n- **GET campaign metrics**: `GET https://googleads.googleapis.com/v17/customers/{customer_id}/googleAds:searchStream` with GAQL query in the request body.\n- **Pause ad group**: `POST https://googleads.googleapis.com/v17/customers/{customer_id}/adGroups:mutate` with status update payload.\n- Always include `developer-token` header and OAuth2 bearer token (injected by connector).\n\n### http_request (with google_sheets connector)\n- **Append rows**: `POST https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}/values/{range}:append?valueInputOption=USER_ENTERED`\n- **Read range**: `GET https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}/values/{range}`\n- **Update cells**: `PUT https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}/values/{range}?valueInputOption=USER_ENTERED`\n\n### http_request (with slack connector)\n- **Post message**: `POST https://slack.com/api/chat.postMessage` with `channel`, `text`, and `blocks` fields.\n- **Update message**: `POST https://slack.com/api/chat.update` for editing previously posted summaries.\n- Include `Authorization: Bearer {bot_token}` header (injected by connector).\n\n### gmail_send\n- Use for weekly performance report emails. Compose HTML body with embedded tables and styling.\n- Set appropriate subject line with date range: 'Ad Performance Report: {start_date} – {end_date}'.\n\n### file_read / file_write\n- **Config file**: `config.json` — stores CPA thresholds, recipient lists, spreadsheet IDs, Slack channel.\n- **State file**: `state.json` — tracks consecutive underperformance days, last pause timestamps, weekly benchmarks.\n- These are LOCAL files only. Never use for cloud storage operations.",
+      "examples": "### Example 1: Daily Analysis with Auto-Pause\nTrigger fires at 7:00 AM. Agent pulls yesterday's Google Ads data and finds:\n- Ad Group 'Summer Sale - Display' has $180 spend, 0 conversions for 4 consecutive days → CRITICAL: auto-pause, log to Sheets, notify Slack.\n- Ad Group 'Brand Keywords' has CPA of $45 vs threshold of $35, but only 2 days → WARNING: recommend review in Slack, do not pause yet.\n- Ad Group 'Retargeting - Cart Abandoners' has CPA of $12 vs threshold of $35, ROAS 8.2x → TOP PERFORMER: recommend budget increase.\n\nSlack message posted:\n```\n📊 Daily Ad Performance Summary — Jan 15, 2026\n🔴 PAUSED: Summer Sale - Display ($180 spent, 0 conv, 4 days)\n🟡 WARNING: Brand Keywords (CPA $45 vs $35 threshold, 2 days)\n🟢 TOP: Retargeting - Cart Abandoners (CPA $12, ROAS 8.2x)\n→ Recommend: Increase retargeting budget by 20%\n```\n\n### Example 2: Weekly Report Email\nEvery Monday, agent compiles the week's data:\nSubject: 'Ad Performance Report: Jan 6–12, 2026'\nBody includes: total spend $4,230 (+8% WoW), 142 conversions (-3% WoW), blended CPA $29.79, 2 ad groups paused during the week, recommendations for the coming week.\n\n### Example 3: High-Budget Escalation\nAd Group 'Enterprise Demo Campaigns' (daily budget $800) exceeds CPA threshold. Agent does NOT auto-pause. Instead emits manual_review event:\n'Enterprise Demo Campaigns has CPA of $95 vs $50 threshold for 5 days. Daily budget is $800 — requires human approval to pause. Total at-risk spend: $475/day.'",
+      "errorHandling": "### Google Ads API Errors\n- **401 Unauthorized**: OAuth token may be expired. Log the error, skip the daily cycle, and post a Slack alert: 'Google Ads authentication failed — please re-authorize the connector.'\n- **429 Rate Limited**: Back off for 60 seconds, then retry once. If still failing, log partial data and note the gap in Sheets.\n- **GAQL Query Errors**: Log the malformed query for debugging. Fall back to a simpler query (campaign-level only) and note reduced granularity.\n\n### Google Sheets API Errors\n- **404 Spreadsheet Not Found**: Alert via Slack that the configured spreadsheet ID is invalid. Write data to local file as fallback.\n- **403 Permission Denied**: Post Slack message requesting Sheets access be granted to the service account.\n- **Quota Exceeded**: Batch remaining writes into a single request. If still failing, queue writes locally and retry next cycle.\n\n### Slack API Errors\n- **channel_not_found**: Log error and attempt to send to a fallback DM to the configured admin user.\n- **not_authed / invalid_auth**: Skip Slack notification, proceed with other steps, log the auth failure.\n\n### Gmail Send Errors\n- **Failed to send**: Retry once after 30 seconds. If still failing, write the report to a local HTML file and post a Slack message with the failure notice.\n\n### Data Integrity\n- If Google Ads returns zero campaigns, verify the customer ID is correct before logging empty data. This likely indicates a config error, not actual zero activity.\n- If metrics seem anomalous (e.g., CPA jumped 10x overnight), flag as potential data anomaly in Slack rather than auto-pausing — request human verification.\n- Always validate numeric fields before calculations to avoid division-by-zero errors (e.g., CTR when impressions = 0)."
     },
-    "customSections": [
-      {
-        "key": "thresholds_and_rules",
-        "label": "Thresholds & Business Rules",
-        "content": "- **Cost-per-conversion threshold**: 2x the rolling 14-day account average CPA. Configurable.\n- **Consecutive days before pause**: 3 days exceeding threshold.\n- **High-spend protection**: Ad groups spending >$50/day require manual_review before pausing.\n- **Max auto-pauses per day**: 5. Beyond this, request manual_review.\n- **Budget utilization alerts**: Flag campaigns <50% or >95% of daily budget.\n- **CTR decline alert**: >20% drop over 7-day rolling window."
-      },
-      {
-        "key": "data_retention",
-        "label": "Data Retention & State Management",
-        "content": "- Daily metric snapshots stored locally for 30 days in `state/daily_metrics_{YYYY-MM-DD}.json`.\n- Pause action log maintained in `state/pause_log.json` with full history.\n- Google Sheets serves as the permanent record — local files are working state only.\n- Monthly Sheets tabs are auto-created and never deleted by the agent."
-      }
-    ],
     "suggested_tools": [
       "http_request",
       "gmail_send",
-      "file_write",
-      "file_read"
+      "file_read",
+      "file_write"
     ],
     "suggested_triggers": [
       {
@@ -51,61 +39,61 @@
         "config": {
           "cron": "0 7 * * *"
         },
-        "description": "Daily performance analysis — pulls Google Ads data, logs to Sheets, identifies underperformers, pauses threshold-exceeding ad groups, and posts Slack summary every morning at 7 AM"
+        "description": "Daily morning trigger at 7:00 AM to pull previous day's Google Ads performance data, log to Sheets, analyze for underperformers, auto-pause critical ad groups, and send Slack recommendations."
       },
       {
         "trigger_type": "schedule",
         "config": {
           "cron": "0 8 * * 1"
         },
-        "description": "Weekly performance report — compiles 7-day metrics, generates week-over-week analysis, and emails comprehensive HTML report via Gmail every Monday at 8 AM"
+        "description": "Weekly trigger every Monday at 8:00 AM to compile the full weekly performance report and email it via Gmail to stakeholders."
       }
     ],
-    "full_prompt_markdown": "# Ad Campaign Optimizer\n\nYou are the Ad Campaign Optimizer — an intelligent advertising operations agent that monitors Google Ads performance, maintains structured reporting, delivers actionable insights, and enforces spend guardrails.\n\n## Identity & Purpose\n\nYou replace four separate automation workflows with unified reasoning:\n1. Google Ads → Google Sheets performance logging\n2. Google Ads → Slack performance alerts and recommendations\n3. Google Ads → automatic pause of underperforming ad groups\n4. Google Ads → Gmail weekly performance report\n\nYou analyze spend efficiency with context, not just rules. You understand that a high CPA might be acceptable for high-value conversions, and that pausing an ad group has downstream effects on campaign learning. You communicate findings with actionable recommendations, not raw data dumps.\n\n## Daily Performance Cycle\n\n### Step 1: Pull Campaign Data\nFetch campaign and ad-group level metrics from Google Ads API:\n- Metrics: impressions, clicks, conversions, cost, cost_per_conversion, CTR, conversion_rate, quality_score\n- Time range: last 24 hours for daily runs, last 7 days for weekly runs\n- Endpoint: POST `https://googleads.googleapis.com/v17/customers/{customer_id}/googleAds:searchStream`\n- Store raw response locally via file_write for audit trail\n\n### Step 2: Log to Google Sheets\nAppend performance rows to the tracking spreadsheet via Sheets API:\n- Endpoint: POST `https://sheets.googleapis.com/v4/spreadsheets/{id}/values/{range}:append`\n- Create monthly tabs automatically if needed\n- Update summary rows with running averages\n\n### Step 3: Analyze & Identify Underperformers\n- Compare each ad group's CPA against threshold (default: 2x rolling 14-day account average)\n- Flag ad groups exceeding threshold for 3+ consecutive days\n- Detect CTR decline trends (>20% drop over 7 days)\n- Check budget utilization (<50% or >95% flags)\n- Load previous analysis from local state for trend comparison\n\n### Step 4: Pause Underperformers\n- Pause ad groups exceeding CPA threshold for 3+ consecutive days\n- Endpoint: POST `https://googleads.googleapis.com/v17/customers/{customer_id}/adGroups:mutate`\n- **CRITICAL**: Request manual_review for ad groups spending >$50/day — do NOT auto-pause\n- **CRITICAL**: Request manual_review if >5 ad groups would be paused in one day\n- Log all actions to Sheets 'Actions' tab\n\n### Step 5: Send Slack Summary\nPost daily summary to configured Slack channel:\n- Endpoint: POST `https://slack.com/api/chat.postMessage`\n- Sections: Top Performers, Underperformers, Actions Taken, Recommendations\n- Use Block Kit formatting with trend indicators (↑↓→)\n- Tag team members when manual intervention needed\n\n## Weekly Report Cycle (Monday mornings)\n\n### Step 6: Compile Weekly Report\n- Aggregate 7 days from Sheets via Sheets API\n- Calculate week-over-week changes\n- Identify top 3 and bottom 3 ad groups by ROI\n- Summarize automated actions taken\n- Generate recommendations for coming week\n\n### Step 7: Email Report\n- Use gmail_send with HTML formatting\n- Include metric tables, trend summaries, executive overview\n- Section on budget efficiency and recommended reallocations\n\n## Tool Usage\n\n### Google Ads (http_request + google_ads connector)\n- Reports: POST `googleads.googleapis.com/v17/customers/{id}/googleAds:searchStream` with GAQL\n- Mutations: POST `googleads.googleapis.com/v17/customers/{id}/adGroups:mutate`\n- Include `developer-token` and `login-customer-id` headers for MCC accounts\n\n### Google Sheets (http_request + google_workspace connector)\n- Append: POST `sheets.googleapis.com/v4/spreadsheets/{id}/values/{range}:append`\n- Read: GET `sheets.googleapis.com/v4/spreadsheets/{id}/values/{range}`\n- Batch update: POST `sheets.googleapis.com/v4/spreadsheets/{id}:batchUpdate`\n\n### Slack (http_request + slack connector)\n- Post: POST `slack.com/api/chat.postMessage` with `{ channel, blocks }`\n- Update: POST `slack.com/api/chat.update` with `{ channel, ts, blocks }`\n\n### Gmail (gmail_send native tool)\n- Weekly reports with HTML body, subject, recipients\n\n### Local State (file_write / file_read)\n- `state/daily_metrics_{date}.json` — daily snapshots for trend analysis\n- `state/pause_log.json` — pause history for consecutive-day tracking\n- Local only — Google Sheets is the permanent record\n\n## Thresholds & Business Rules\n\n| Rule | Default | Notes |\n|------|---------|-------|\n| CPA threshold | 2x 14-day avg | Triggers review after 3 consecutive days |\n| Auto-pause limit | 5/day | Beyond this → manual_review |\n| High-spend protection | >$50/day | Requires manual_review before pause |\n| Budget utilization alert | <50% or >95% | Flagged in daily summary |\n| CTR decline alert | >20% over 7 days | Included in recommendations |\n\n## Error Handling\n\n- **Auth failures**: Notify via Slack, skip cycle, never retry auth automatically\n- **API rate limits**: Exponential backoff (1s, 2s, 4s), max 3 retries\n- **Sheets unavailable**: Cache locally, backfill on next run\n- **Slack failures**: Fall back to Gmail notification\n- **Bad data**: Skip anomalous ad groups (null/zero metrics) rather than act on incomplete data\n- **Pause failures**: Retry once, then escalate to Slack for manual action\n\n## Communication Style\n\nWhen posting to Slack or emailing reports:\n- Lead with the most actionable insight\n- Use concrete numbers, not vague assessments\n- Include trend context (\"CPA rose 15% from $12.30 to $14.15 over 5 days\")\n- Separate automated actions taken from recommendations requiring human decision\n- Keep daily Slack posts concise; save detail for weekly email reports",
-    "summary": "The Ad Campaign Optimizer is a unified advertising operations agent that replaces four separate Google Ads automation workflows. It performs daily campaign performance analysis by pulling metrics from the Google Ads API, logging them to Google Sheets for structured tracking, identifying underperforming ad groups using configurable CPA thresholds, and automatically pausing chronic underperformers while respecting high-spend safety guardrails that require human approval. Daily Slack summaries provide actionable optimization recommendations with trend context, and weekly Gmail reports compile comprehensive performance analysis with week-over-week comparisons and budget reallocation suggestions. The agent maintains local state for trend tracking and enforces business rules like a 3-consecutive-day threshold before pausing and a 5-pause-per-day safety limit.",
+    "full_prompt_markdown": "# Ad Campaign Optimizer\n\nYou are an Ad Campaign Optimizer — an intelligent performance marketing agent that continuously monitors Google Ads campaigns, identifies underperforming ad groups, enforces cost-per-conversion guardrails, and delivers actionable optimization recommendations across Google Sheets, Slack, and Gmail.\n\n## Identity & Purpose\n\nYou replace four separate automation workflows with unified campaign intelligence:\n1. Google Ads → Google Sheets daily reporting\n2. Google Ads → Slack performance alerts\n3. Google Ads → auto-pause underperformers\n4. Google Ads → weekly email report\n\nYou think like a seasoned PPC analyst: you consider statistical significance before flagging issues, account for seasonality and day-of-week patterns, and escalate budget-impacting decisions for human approval.\n\n## Daily Performance Cycle\n\n### Step 1: Pull Campaign Data\nFetch ad group performance from Google Ads API via `http_request` with the `google_ads` connector:\n- **Endpoint**: `POST https://googleads.googleapis.com/v17/customers/{customer_id}/googleAds:searchStream`\n- **Metrics**: impressions, clicks, cost_micros, conversions, conversions_value, cost_per_conversion, ctr, average_cpc\n- Pull both yesterday's data and 7-day / 30-day rolling averages for trend comparison.\n\n### Step 2: Log to Google Sheets\nAppend daily rows via `http_request` with the `google_sheets` connector:\n- **Endpoint**: `POST https://sheets.googleapis.com/v4/spreadsheets/{id}/values/{range}:append`\n- Maintain tabs: **Daily Raw**, **Ad Group Summary**, **Paused Log**\n\n### Step 3: Analyze & Score\nFor each ad group, compute a severity score:\n- **Critical** (auto-pause candidate): CPA > threshold × 1.2 for 3+ consecutive days OR spend > $50 with 0 conversions for 3+ days\n- **Warning**: CPA > threshold but < 3 days, or CTR dropped > 40% vs 30-day avg\n- **Watch**: Trending poorly but not yet actionable\n\n### Step 4: Auto-Pause Critical Underperformers\nFor critical ad groups:\n- **Endpoint**: `POST https://googleads.googleapis.com/v17/customers/{customer_id}/adGroups:mutate` — set status to PAUSED\n- Log to Sheets 'Paused Log' tab with timestamp and reason\n- **GUARDRAIL**: If ad group daily budget > $500, do NOT auto-pause. Emit `manual_review` for human approval instead.\n\n### Step 5: Slack Recommendations\nPost to configured channel via `http_request` with `slack` connector:\n- **Endpoint**: `POST https://slack.com/api/chat.postMessage`\n- Use Block Kit formatting with sections for: Top Performers, Underperformers, Paused Today, Action Items\n\n### Step 6: Update Local State\nUse `file_write` to persist `state.json` tracking consecutive underperformance days, pause history, and benchmarks.\n\n## Weekly Report Cycle (Monday)\n\n### Step 7: Compile Weekly Data\nRead 7-day data from Google Sheets. Compute WoW deltas for spend, conversions, CPA, ROAS.\n\n### Step 8: Email Report\nUse `gmail_send` to deliver HTML report to stakeholders:\n- Subject: `Ad Performance Report: {start} – {end}`\n- Body: metric summary table, top/bottom performers, paused ad groups, recommendations\n\n### Step 9: Store Benchmarks\nSave weekly benchmarks to agent memory for long-term trend analysis and threshold refinement.\n\n## Tool Reference\n\n| Tool | Connector | Use Case |\n|------|-----------|----------|\n| `http_request` | `google_ads` | Pull metrics, pause ad groups |\n| `http_request` | `google_sheets` | Log data, read summaries |\n| `http_request` | `slack` | Post alerts and recommendations |\n| `gmail_send` | `google_workspace` | Send weekly email reports |\n| `file_read` | — | Read local config and state |\n| `file_write` | — | Persist state and benchmarks |\n\n## Error Handling\n\n- **Auth failures** (401/403): Skip affected step, alert via Slack, continue remaining steps\n- **Rate limits** (429): Back off 60s, retry once, then degrade gracefully\n- **Missing spreadsheet**: Fall back to local file, alert admin\n- **Anomalous data** (10x CPA spike): Flag for human review, do not auto-pause\n- **Zero campaigns returned**: Verify customer ID before logging — likely config error\n\n## Communication Protocols\n\n- **user_message**: Slack alerts for daily summaries, pause notifications, and anomalies\n- **agent_memory**: Store performance benchmarks, threshold history, and seasonal patterns\n- **manual_review**: Required for pausing high-budget (>$500/day) ad groups and budget increase recommendations\n\n## Configuration\n\nRead from local `config.json`:\n```json\n{\n  \"google_ads_customer_id\": \"123-456-7890\",\n  \"cpa_threshold\": 35.00,\n  \"spreadsheet_id\": \"abc123...\",\n  \"slack_channel\": \"#ad-performance\",\n  \"report_recipients\": [\"marketing@company.com\"],\n  \"high_budget_threshold\": 500,\n  \"consecutive_days_to_pause\": 3\n}\n```",
+    "summary": "The Ad Campaign Optimizer is a unified performance marketing agent that replaces four separate Google Ads automation workflows. It runs a daily cycle pulling campaign metrics from the Google Ads API, logging performance data to Google Sheets, analyzing ad groups against configurable CPA thresholds with severity scoring (critical/warning/watch), auto-pausing chronic underperformers while escalating high-budget decisions for human review, and posting structured Slack recommendations with Block Kit formatting. Weekly, it compiles a comprehensive HTML performance report emailed to stakeholders via Gmail, including week-over-week trend analysis and actionable recommendations. The agent maintains local state to track consecutive underperformance days and stores long-term benchmarks in agent memory for seasonal pattern recognition.",
     "design_highlights": [
       {
-        "category": "Performance Monitoring",
+        "category": "Performance Intelligence",
         "icon": "📊",
         "color": "blue",
         "items": [
-          "Pulls campaign and ad-group metrics daily from Google Ads API",
-          "Tracks cost-per-conversion, CTR, conversion rate, and quality score",
-          "Detects declining CTR trends over 7-day rolling windows",
-          "Monitors budget utilization rates for over- and under-spending"
+          "Multi-metric severity scoring (CPA, CTR, conversion rate)",
+          "7-day and 30-day rolling average trend comparison",
+          "Week-over-week delta analysis for all KPIs",
+          "Anomaly detection flags for unusual metric spikes"
         ]
       },
       {
-        "category": "Automated Optimization",
-        "icon": "⚡",
-        "color": "amber",
-        "items": [
-          "Auto-pauses ad groups exceeding CPA threshold for 3+ consecutive days",
-          "High-spend protection requires manual approval for >$50/day ad groups",
-          "Safety limit of 5 auto-pauses per day before escalation",
-          "All actions logged to Google Sheets with full audit trail"
-        ]
-      },
-      {
-        "category": "Reporting & Communication",
-        "icon": "📬",
-        "color": "green",
-        "items": [
-          "Daily Slack summaries with Block Kit formatting and trend indicators",
-          "Weekly HTML email reports with week-over-week metric comparisons",
-          "Structured Google Sheets logging with auto-created monthly tabs",
-          "Actionable recommendations with concrete numbers, not vague assessments"
-        ]
-      },
-      {
-        "category": "Safety & Reliability",
+        "category": "Automated Guardrails",
         "icon": "🛡️",
         "color": "red",
         "items": [
-          "Manual review gates for high-impact decisions and budget changes",
-          "Graceful degradation — Slack failures fall back to Gmail",
-          "Local state caching prevents data loss during API outages",
-          "Anomalous data detection skips bad metrics instead of acting on them"
+          "Auto-pause ad groups exceeding CPA threshold for 3+ consecutive days",
+          "High-budget safeguard requiring human approval for >$500/day ad groups",
+          "Configurable thresholds via local config file",
+          "Consecutive-day tracking prevents premature pausing"
+        ]
+      },
+      {
+        "category": "Multi-Channel Reporting",
+        "icon": "📬",
+        "color": "green",
+        "items": [
+          "Daily Slack summaries with Block Kit formatting",
+          "Weekly HTML email reports via Gmail",
+          "Google Sheets data logging with organized tab structure",
+          "Pause action audit trail in dedicated Sheets tab"
+        ]
+      },
+      {
+        "category": "Resilient Operations",
+        "icon": "🔄",
+        "color": "orange",
+        "items": [
+          "Graceful degradation on API failures with fallback channels",
+          "Local state persistence for cross-session continuity",
+          "Rate limit handling with backoff and retry logic",
+          "Data validation guards against division-by-zero and anomalies"
         ]
       }
     ],
@@ -128,15 +116,23 @@
             "label": "OAuth Client Secret",
             "type": "password",
             "placeholder": "GOCSPX-...",
-            "helpText": "From the same OAuth 2.0 Client ID in Google Cloud Console",
+            "helpText": "From the same OAuth 2.0 Client ID entry in Google Cloud Console",
+            "required": true
+          },
+          {
+            "key": "refresh_token",
+            "label": "Refresh Token",
+            "type": "password",
+            "placeholder": "1//0abc...",
+            "helpText": "Obtained via OAuth2 flow with scope: https://www.googleapis.com/auth/adwords",
             "required": true
           },
           {
             "key": "developer_token",
             "label": "Developer Token",
             "type": "password",
-            "placeholder": "AbCdEf123456",
-            "helpText": "From Google Ads API Center → Setup → API Access. Requires approved Google Ads API access.",
+            "placeholder": "aBcDeFgHiJkLmNoP",
+            "helpText": "From Google Ads API Center → API Access → Developer Token",
             "required": true
           },
           {
@@ -144,19 +140,11 @@
             "label": "Customer ID",
             "type": "text",
             "placeholder": "123-456-7890",
-            "helpText": "Your Google Ads account ID (or MCC ID). Found at top of Google Ads dashboard.",
+            "helpText": "Your Google Ads account ID (found at top of Google Ads dashboard)",
             "required": true
-          },
-          {
-            "key": "login_customer_id",
-            "label": "Login Customer ID (MCC)",
-            "type": "text",
-            "placeholder": "987-654-3210",
-            "helpText": "Required only if accessing accounts through a Manager (MCC) account. Use the MCC account ID.",
-            "required": false
           }
         ],
-        "setup_instructions": "1. Go to Google Cloud Console (console.cloud.google.com).\n2. Create or select a project, then enable the 'Google Ads API'.\n3. Go to APIs & Services → Credentials → Create OAuth 2.0 Client ID (Desktop app type).\n4. Copy the Client ID and Client Secret.\n5. In your Google Ads account, go to Tools & Settings → Setup → API Access to get your Developer Token.\n6. If using an MCC account, note the MCC Customer ID for the login_customer_id field.\n7. The OAuth flow will prompt you to authorize access to your Google Ads account.",
+        "setup_instructions": "1. Go to Google Cloud Console (console.cloud.google.com)\n2. Enable the Google Ads API for your project\n3. Create OAuth 2.0 credentials (Web Application type)\n4. Add authorized redirect URI for the OAuth flow\n5. Use the Google Ads API OAuth2 flow to obtain a refresh token with 'adwords' scope\n6. Get your Developer Token from Google Ads → Tools & Settings → API Center\n7. Note your Google Ads Customer ID from the top-right of the Ads dashboard",
         "related_tools": [
           "http_request"
         ],
@@ -167,8 +155,8 @@
         "api_base_url": "https://googleads.googleapis.com"
       },
       {
-        "name": "google_workspace",
-        "label": "Google Workspace (Sheets + Gmail)",
+        "name": "google_sheets",
+        "label": "Google Sheets",
         "auth_type": "oauth2",
         "credential_fields": [
           {
@@ -176,7 +164,7 @@
             "label": "OAuth Client ID",
             "type": "text",
             "placeholder": "123456789.apps.googleusercontent.com",
-            "helpText": "From Google Cloud Console → APIs & Services → Credentials. Can reuse the same project as Google Ads.",
+            "helpText": "From Google Cloud Console → APIs & Services → Credentials (can reuse the same OAuth client as Google Ads)",
             "required": true
           },
           {
@@ -184,28 +172,35 @@
             "label": "OAuth Client Secret",
             "type": "password",
             "placeholder": "GOCSPX-...",
-            "helpText": "From the same OAuth 2.0 Client ID in Google Cloud Console",
+            "helpText": "Client secret from the same OAuth 2.0 credential",
+            "required": true
+          },
+          {
+            "key": "refresh_token",
+            "label": "Refresh Token",
+            "type": "password",
+            "placeholder": "1//0abc...",
+            "helpText": "Obtained via OAuth2 flow with scope: https://www.googleapis.com/auth/spreadsheets",
             "required": true
           },
           {
             "key": "spreadsheet_id",
-            "label": "Performance Tracking Spreadsheet ID",
+            "label": "Spreadsheet ID",
             "type": "text",
             "placeholder": "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms",
-            "helpText": "From the Google Sheets URL: docs.google.com/spreadsheets/d/{THIS_PART}/edit",
+            "helpText": "Found in the Google Sheets URL: docs.google.com/spreadsheets/d/{THIS_ID}/edit",
             "required": true
           }
         ],
-        "setup_instructions": "1. In Google Cloud Console, enable both 'Google Sheets API' and 'Gmail API' for your project.\n2. Use the same OAuth 2.0 Client ID created for Google Ads, or create a new one.\n3. Ensure the OAuth consent screen includes scopes: `spreadsheets`, `gmail.send`.\n4. Create a Google Sheet for performance tracking and copy its ID from the URL.\n5. The OAuth flow will prompt access to both Sheets and Gmail.",
+        "setup_instructions": "1. In Google Cloud Console, enable the Google Sheets API\n2. Use the same OAuth 2.0 client credentials (or create new ones)\n3. Run the OAuth2 flow with scope 'https://www.googleapis.com/auth/spreadsheets'\n4. Create a new Google Sheet with three tabs: 'Daily Raw', 'Ad Group Summary', 'Paused Log'\n5. Copy the Spreadsheet ID from the URL\n6. Share the sheet with the service account email if using service account auth",
         "related_tools": [
-          "http_request",
-          "gmail_send"
+          "http_request"
         ],
         "related_triggers": [
           0,
           1
         ],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://sheets.googleapis.com"
       },
       {
         "name": "slack",
@@ -216,20 +211,20 @@
             "key": "bot_token",
             "label": "Bot User OAuth Token",
             "type": "password",
-            "placeholder": "xoxb-1234567890-abcdefghij",
-            "helpText": "From Slack App dashboard → OAuth & Permissions → Bot User OAuth Token. Starts with xoxb-.",
+            "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
+            "helpText": "From Slack App → OAuth & Permissions → Bot User OAuth Token. Requires chat:write scope.",
             "required": true
           },
           {
-            "key": "default_channel",
-            "label": "Default Channel",
+            "key": "channel_id",
+            "label": "Default Channel ID",
             "type": "text",
-            "placeholder": "#ad-ops",
-            "helpText": "The Slack channel where daily summaries and alerts will be posted. Bot must be invited to this channel.",
+            "placeholder": "C01ABC23DEF",
+            "helpText": "Right-click channel → View channel details → copy Channel ID at bottom",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to api.slack.com/apps and create a new Slack App (or use an existing one).\n2. Under OAuth & Permissions, add these Bot Token Scopes: `chat:write`, `chat:write.public`, `files:write`.\n3. Install the app to your workspace.\n4. Copy the 'Bot User OAuth Token' (starts with xoxb-).\n5. Invite the bot to your target channel: type `/invite @YourBotName` in the channel.\n6. Enter the channel name (e.g., #ad-ops) as the default channel.",
+        "setup_instructions": "1. Go to api.slack.com/apps and create a new Slack App\n2. Under OAuth & Permissions, add Bot Token Scopes: chat:write, chat:write.public\n3. Install the app to your workspace\n4. Copy the Bot User OAuth Token (starts with xoxb-)\n5. Invite the bot to the target channel: /invite @YourBotName\n6. Get the Channel ID from channel details (right-click channel name → View channel details)",
         "related_tools": [
           "http_request"
         ],
@@ -237,20 +232,59 @@
           0
         ],
         "api_base_url": "https://slack.com/api"
+      },
+      {
+        "name": "google_workspace",
+        "label": "Google Workspace (Gmail)",
+        "auth_type": "oauth2",
+        "credential_fields": [
+          {
+            "key": "client_id",
+            "label": "OAuth Client ID",
+            "type": "text",
+            "placeholder": "123456789.apps.googleusercontent.com",
+            "helpText": "From Google Cloud Console → APIs & Services → Credentials",
+            "required": true
+          },
+          {
+            "key": "client_secret",
+            "label": "OAuth Client Secret",
+            "type": "password",
+            "placeholder": "GOCSPX-...",
+            "helpText": "Client secret paired with the OAuth Client ID",
+            "required": true
+          },
+          {
+            "key": "refresh_token",
+            "label": "Refresh Token",
+            "type": "password",
+            "placeholder": "1//0abc...",
+            "helpText": "Obtained via OAuth2 flow with scope: https://www.googleapis.com/auth/gmail.send",
+            "required": true
+          }
+        ],
+        "setup_instructions": "1. In Google Cloud Console, enable the Gmail API\n2. Use existing OAuth 2.0 credentials or create new ones\n3. Run the OAuth2 flow with scope 'https://www.googleapis.com/auth/gmail.send'\n4. The refresh token grants permission to send emails from the authenticated Google account\n5. Ensure the sending email address matches the authenticated account",
+        "related_tools": [
+          "gmail_send"
+        ],
+        "related_triggers": [
+          1
+        ],
+        "api_base_url": "https://www.googleapis.com"
       }
     ],
     "suggested_notification_channels": [
       {
         "type": "slack",
-        "description": "Daily performance summaries, underperformer alerts, pause action notifications, and optimization recommendations",
+        "description": "Daily performance summaries, pause notifications, anomaly alerts, and optimization recommendations posted to the ad performance channel",
         "required_connector": "slack",
         "config_hints": {
-          "channel": "#ad-ops"
+          "channel": "#ad-performance"
         }
       },
       {
         "type": "email",
-        "description": "Weekly comprehensive performance reports with HTML formatting and week-over-week analysis. Also used as fallback when Slack is unavailable.",
+        "description": "Weekly HTML performance report emailed to marketing stakeholders every Monday morning",
         "required_connector": "google_workspace",
         "config_hints": {
           "recipients": "marketing-team@company.com"
@@ -260,15 +294,491 @@
     "suggested_event_subscriptions": [
       {
         "event_type": "manual_review_completed",
-        "description": "Listen for manual review decisions on high-spend ad group pause requests. When approved, execute the pause action. When rejected, update local state to reset the consecutive-day counter."
+        "description": "Listen for human approval or rejection of high-budget ad group pause requests. When approved, execute the pause; when rejected, reset the consecutive-day counter and continue monitoring."
       },
       {
-        "event_type": "credential_health_changed",
-        "description": "Monitor connector health to detect OAuth token expirations for Google Ads or Google Workspace. Notify via available channels when re-authentication is needed."
+        "event_type": "connector_auth_refresh",
+        "description": "Listen for OAuth token refresh events from Google connectors. If a refresh fails, immediately alert via Slack and skip dependent steps to avoid cascading errors."
       },
       {
-        "event_type": "execution_completed",
-        "description": "Track completion of daily and weekly cycles for observability. Log execution duration and success/failure status for reliability monitoring."
+        "event_type": "config_updated",
+        "description": "Listen for changes to CPA thresholds, recipient lists, or channel settings so the agent picks up new configuration without requiring a restart."
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_daily",
+        "name": "Daily Performance Analysis & Auto-Pause",
+        "description": "Morning cycle that pulls Google Ads data, logs to Sheets, scores ad groups, auto-pauses critical underperformers (with budget guardrails), and sends Slack recommendations.",
+        "nodes": [
+          {
+            "id": "d1",
+            "type": "start",
+            "label": "Daily schedule fires",
+            "detail": "Cron trigger at 7:00 AM daily"
+          },
+          {
+            "id": "d2",
+            "type": "action",
+            "label": "Load config & state",
+            "detail": "Read config.json for thresholds and state.json for consecutive-day tracking via file_read"
+          },
+          {
+            "id": "d3",
+            "type": "connector",
+            "label": "Pull Google Ads metrics",
+            "detail": "POST to Google Ads searchStream API with GAQL query for yesterday's ad group metrics",
+            "connector": "google_ads"
+          },
+          {
+            "id": "d4",
+            "type": "decision",
+            "label": "API response OK?",
+            "detail": "Check for 200 status and valid campaign data returned"
+          },
+          {
+            "id": "d5",
+            "type": "error",
+            "label": "Handle API failure",
+            "error_message": "Google Ads API returned error — log failure, alert Slack, skip daily cycle"
+          },
+          {
+            "id": "d6",
+            "type": "connector",
+            "label": "Log data to Sheets",
+            "detail": "Append daily performance rows to 'Daily Raw' tab via Sheets API",
+            "connector": "google_sheets"
+          },
+          {
+            "id": "d7",
+            "type": "action",
+            "label": "Score ad groups",
+            "detail": "Compare each ad group CPA vs threshold, compute severity: critical / warning / watch. Update consecutive-day counters."
+          },
+          {
+            "id": "d8",
+            "type": "decision",
+            "label": "Critical underperformers?",
+            "detail": "Any ad groups with critical severity (CPA > threshold × 1.2 for 3+ days)?"
+          },
+          {
+            "id": "d9",
+            "type": "decision",
+            "label": "Budget > $500/day?",
+            "detail": "Check if critical ad group's daily budget exceeds the high-budget threshold"
+          },
+          {
+            "id": "d10",
+            "type": "connector",
+            "label": "Auto-pause ad group",
+            "detail": "POST adGroups:mutate to set status=PAUSED for the critical ad group",
+            "connector": "google_ads"
+          },
+          {
+            "id": "d11",
+            "type": "connector",
+            "label": "Log pause to Sheets",
+            "detail": "Append pause record to 'Paused Log' tab with timestamp, reason, metrics",
+            "connector": "google_sheets"
+          },
+          {
+            "id": "d12",
+            "type": "event",
+            "label": "Request manual review",
+            "detail": "Emit manual_review event for high-budget ad group pause — requires human approval"
+          },
+          {
+            "id": "d13",
+            "type": "connector",
+            "label": "Post Slack summary",
+            "detail": "POST chat.postMessage with Block Kit blocks: top performers, warnings, paused groups, action items",
+            "connector": "slack"
+          },
+          {
+            "id": "d14",
+            "type": "action",
+            "label": "Persist state",
+            "detail": "Write updated state.json with consecutive-day counters and today's analysis results via file_write"
+          },
+          {
+            "id": "d15",
+            "type": "end",
+            "label": "Daily cycle complete"
+          }
+        ],
+        "edges": [
+          {
+            "id": "de1",
+            "source": "d1",
+            "target": "d2"
+          },
+          {
+            "id": "de2",
+            "source": "d2",
+            "target": "d3"
+          },
+          {
+            "id": "de3",
+            "source": "d3",
+            "target": "d4"
+          },
+          {
+            "id": "de4",
+            "source": "d4",
+            "target": "d6",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "de5",
+            "source": "d4",
+            "target": "d5",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "de6",
+            "source": "d5",
+            "target": "d15",
+            "variant": "error"
+          },
+          {
+            "id": "de7",
+            "source": "d6",
+            "target": "d7"
+          },
+          {
+            "id": "de8",
+            "source": "d7",
+            "target": "d8"
+          },
+          {
+            "id": "de9",
+            "source": "d8",
+            "target": "d9",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "de10",
+            "source": "d8",
+            "target": "d13",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "de11",
+            "source": "d9",
+            "target": "d12",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "de12",
+            "source": "d9",
+            "target": "d10",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "de13",
+            "source": "d10",
+            "target": "d11"
+          },
+          {
+            "id": "de14",
+            "source": "d11",
+            "target": "d13"
+          },
+          {
+            "id": "de15",
+            "source": "d12",
+            "target": "d13"
+          },
+          {
+            "id": "de16",
+            "source": "d13",
+            "target": "d14"
+          },
+          {
+            "id": "de17",
+            "source": "d14",
+            "target": "d15"
+          }
+        ]
+      },
+      {
+        "id": "flow_weekly",
+        "name": "Weekly Performance Report",
+        "description": "Monday morning workflow that compiles 7-day performance data, computes week-over-week trends, and emails an HTML report to stakeholders.",
+        "nodes": [
+          {
+            "id": "w1",
+            "type": "start",
+            "label": "Weekly schedule fires",
+            "detail": "Cron trigger at 8:00 AM every Monday"
+          },
+          {
+            "id": "w2",
+            "type": "connector",
+            "label": "Read weekly data from Sheets",
+            "detail": "GET spreadsheet values for the past 7 days from 'Daily Raw' and 'Paused Log' tabs",
+            "connector": "google_sheets"
+          },
+          {
+            "id": "w3",
+            "type": "decision",
+            "label": "Sufficient data?",
+            "detail": "Check that at least 5 of 7 days have data logged (handles partial weeks or API outages)"
+          },
+          {
+            "id": "w4",
+            "type": "error",
+            "label": "Insufficient data alert",
+            "error_message": "Less than 5 days of data available — send partial report with data gap warning"
+          },
+          {
+            "id": "w5",
+            "type": "action",
+            "label": "Compute WoW metrics",
+            "detail": "Calculate week-over-week deltas for spend, conversions, CPA, ROAS. Identify top 3 improving and declining ad groups."
+          },
+          {
+            "id": "w6",
+            "type": "action",
+            "label": "Compose HTML report",
+            "detail": "Build HTML email body with metric summary table, trend arrows, ad group rankings, pause log, and recommendations"
+          },
+          {
+            "id": "w7",
+            "type": "connector",
+            "label": "Send email via Gmail",
+            "detail": "gmail_send with HTML body, subject line including date range, to configured recipients",
+            "connector": "google_workspace"
+          },
+          {
+            "id": "w8",
+            "type": "decision",
+            "label": "Email sent OK?",
+            "detail": "Verify Gmail API returned success"
+          },
+          {
+            "id": "w9",
+            "type": "error",
+            "label": "Email send failed",
+            "error_message": "Gmail send failed — save report as local HTML, notify via Slack"
+          },
+          {
+            "id": "w10",
+            "type": "action",
+            "label": "Store weekly benchmarks",
+            "detail": "Save aggregated weekly metrics to agent memory for long-term trend tracking and threshold refinement"
+          },
+          {
+            "id": "w11",
+            "type": "connector",
+            "label": "Post Slack confirmation",
+            "detail": "Post message confirming weekly report was sent, with key metric highlights",
+            "connector": "slack"
+          },
+          {
+            "id": "w12",
+            "type": "end",
+            "label": "Weekly report complete"
+          }
+        ],
+        "edges": [
+          {
+            "id": "we1",
+            "source": "w1",
+            "target": "w2"
+          },
+          {
+            "id": "we2",
+            "source": "w2",
+            "target": "w3"
+          },
+          {
+            "id": "we3",
+            "source": "w3",
+            "target": "w5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "we4",
+            "source": "w3",
+            "target": "w4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "we5",
+            "source": "w4",
+            "target": "w5",
+            "variant": "error"
+          },
+          {
+            "id": "we6",
+            "source": "w5",
+            "target": "w6"
+          },
+          {
+            "id": "we7",
+            "source": "w6",
+            "target": "w7"
+          },
+          {
+            "id": "we8",
+            "source": "w7",
+            "target": "w8"
+          },
+          {
+            "id": "we9",
+            "source": "w8",
+            "target": "w10",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "we10",
+            "source": "w8",
+            "target": "w9",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "we11",
+            "source": "w9",
+            "target": "w12",
+            "variant": "error"
+          },
+          {
+            "id": "we12",
+            "source": "w10",
+            "target": "w11"
+          },
+          {
+            "id": "we13",
+            "source": "w11",
+            "target": "w12"
+          }
+        ]
+      },
+      {
+        "id": "flow_escalation",
+        "name": "High-Budget Pause Escalation",
+        "description": "Handles the manual review flow when a high-budget ad group is flagged for pausing, routing through human approval before executing the action.",
+        "nodes": [
+          {
+            "id": "e1",
+            "type": "start",
+            "label": "Manual review requested",
+            "detail": "Triggered when daily cycle identifies a high-budget (>$500/day) critical ad group"
+          },
+          {
+            "id": "e2",
+            "type": "connector",
+            "label": "Post escalation to Slack",
+            "detail": "POST chat.postMessage with detailed metrics, spend at risk, and approval request",
+            "connector": "slack"
+          },
+          {
+            "id": "e3",
+            "type": "event",
+            "label": "Await review response",
+            "detail": "Listen for manual_review_completed event with approve/reject decision"
+          },
+          {
+            "id": "e4",
+            "type": "decision",
+            "label": "Approved?",
+            "detail": "Check if the human reviewer approved or rejected the pause request"
+          },
+          {
+            "id": "e5",
+            "type": "connector",
+            "label": "Pause ad group",
+            "detail": "POST adGroups:mutate to set status=PAUSED",
+            "connector": "google_ads"
+          },
+          {
+            "id": "e6",
+            "type": "connector",
+            "label": "Log approved pause",
+            "detail": "Append to 'Paused Log' tab with 'human-approved' flag",
+            "connector": "google_sheets"
+          },
+          {
+            "id": "e7",
+            "type": "action",
+            "label": "Reset counters",
+            "detail": "If rejected, reset consecutive-day counter for this ad group and add reviewer note to state"
+          },
+          {
+            "id": "e8",
+            "type": "connector",
+            "label": "Confirm action in Slack",
+            "detail": "Post confirmation of pause execution or rejection acknowledgment",
+            "connector": "slack"
+          },
+          {
+            "id": "e9",
+            "type": "end",
+            "label": "Escalation resolved"
+          }
+        ],
+        "edges": [
+          {
+            "id": "ee1",
+            "source": "e1",
+            "target": "e2"
+          },
+          {
+            "id": "ee2",
+            "source": "e2",
+            "target": "e3"
+          },
+          {
+            "id": "ee3",
+            "source": "e3",
+            "target": "e4"
+          },
+          {
+            "id": "ee4",
+            "source": "e4",
+            "target": "e5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "ee5",
+            "source": "e4",
+            "target": "e7",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "ee6",
+            "source": "e5",
+            "target": "e6"
+          },
+          {
+            "id": "ee7",
+            "source": "e6",
+            "target": "e8"
+          },
+          {
+            "id": "ee8",
+            "source": "e7",
+            "target": "e8"
+          },
+          {
+            "id": "ee9",
+            "source": "e8",
+            "target": "e9"
+          }
+        ]
       }
     ]
   }

@@ -12,7 +12,6 @@ mod connector;
 mod group;
 mod memory;
 mod healing;
-mod budget;
 mod tool_usage;
 mod test_run;
 mod n8n_session;

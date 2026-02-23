@@ -64,6 +64,14 @@ struct PersonaExportBundle {
     memories: Vec<MemoryExportData>,
 }
 
+/// Result of a persona import, including the new persona ID and any warnings
+/// from sub-entity creation failures (triggers, subscriptions, memories).
+#[derive(Debug, Serialize)]
+pub struct ImportResult {
+    pub persona_id: String,
+    pub warnings: Vec<String>,
+}
+
 // ============================================================================
 // Commands
 // ============================================================================
@@ -132,18 +140,24 @@ pub async fn export_persona(
         .map_err(|e| AppError::Internal(e.to_string()))?;
 
     let file_name = format!("{}.persona.json", persona.name.replace(' ', "_"));
-    let save_path = app
-        .dialog()
-        .file()
-        .set_file_name(&file_name)
-        .add_filter("Persona Bundle", &["json"])
-        .blocking_save_file();
+    let app_clone = app.clone();
+    let save_path = tokio::task::spawn_blocking(move || {
+        app_clone
+            .dialog()
+            .file()
+            .set_file_name(&file_name)
+            .add_filter("Persona Bundle", &["json"])
+            .blocking_save_file()
+    })
+    .await
+    .map_err(|e| AppError::Internal(format!("Dialog task failed: {e}")))?;
 
     if let Some(file_path) = save_path {
         let path = file_path
             .into_path()
             .map_err(|e| AppError::Internal(format!("Invalid file path: {e}")))?;
-        std::fs::write(&path, json)
+        tokio::fs::write(&path, json)
+            .await
             .map_err(|e| AppError::Internal(format!("Failed to write file: {e}")))?;
         return Ok(true);
     }
@@ -155,12 +169,17 @@ pub async fn export_persona(
 pub async fn import_persona(
     state: State<'_, Arc<AppState>>,
     app: AppHandle,
-) -> Result<Option<String>, AppError> {
-    let file_path = app
-        .dialog()
-        .file()
-        .add_filter("Persona Bundle", &["json"])
-        .blocking_pick_file();
+) -> Result<Option<ImportResult>, AppError> {
+    let app_clone = app.clone();
+    let file_path = tokio::task::spawn_blocking(move || {
+        app_clone
+            .dialog()
+            .file()
+            .add_filter("Persona Bundle", &["json"])
+            .blocking_pick_file()
+    })
+    .await
+    .map_err(|e| AppError::Internal(format!("Dialog task failed: {e}")))?;
 
     let Some(file_path) = file_path else {
         return Ok(None);
@@ -170,7 +189,8 @@ pub async fn import_persona(
         .into_path()
         .map_err(|e| AppError::Internal(format!("Invalid file path: {e}")))?;
 
-    let content = std::fs::read_to_string(&path)
+    let content = tokio::fs::read_to_string(&path)
+        .await
         .map_err(|e| AppError::Internal(format!("Failed to read file: {e}")))?;
 
     let bundle: PersonaExportBundle = serde_json::from_str(&content)
@@ -205,39 +225,15 @@ pub async fn import_persona(
             max_turns: p.max_turns,
             design_context: p.design_context.clone(),
             group_id: None,
+            notification_channels: p.notification_channels.clone(),
         },
     )?;
     let new_id = new_persona.id.clone();
-
-    // Set notification_channels via update if present
-    if p.notification_channels.is_some() {
-        let _ = persona_repo::update(
-            pool,
-            &new_id,
-            crate::db::models::UpdatePersonaInput {
-                notification_channels: p.notification_channels.clone(),
-                name: None,
-                description: None,
-                system_prompt: None,
-                structured_prompt: None,
-                icon: None,
-                color: None,
-                enabled: None,
-                max_concurrent: None,
-                timeout_ms: None,
-                last_design_result: None,
-                model_profile: None,
-                max_budget_usd: None,
-                max_turns: None,
-                design_context: None,
-                group_id: None,
-            },
-        );
-    }
+    let mut warnings: Vec<String> = Vec::new();
 
     // Re-create triggers
-    for t in &bundle.triggers {
-        let _ = trigger_repo::create(
+    for (i, t) in bundle.triggers.iter().enumerate() {
+        if let Err(e) = trigger_repo::create(
             pool,
             crate::db::models::CreateTriggerInput {
                 persona_id: new_id.clone(),
@@ -245,12 +241,14 @@ pub async fn import_persona(
                 config: t.config.clone(),
                 enabled: Some(t.enabled),
             },
-        );
+        ) {
+            warnings.push(format!("Trigger {} ({}): {}", i + 1, t.trigger_type, e));
+        }
     }
 
     // Re-create subscriptions
-    for s in &bundle.subscriptions {
-        let _ = event_repo::create_subscription(
+    for (i, s) in bundle.subscriptions.iter().enumerate() {
+        if let Err(e) = event_repo::create_subscription(
             pool,
             crate::db::models::CreateEventSubscriptionInput {
                 persona_id: new_id.clone(),
@@ -258,12 +256,14 @@ pub async fn import_persona(
                 source_filter: s.source_filter.clone(),
                 enabled: Some(s.enabled),
             },
-        );
+        ) {
+            warnings.push(format!("Subscription {} ({}): {}", i + 1, s.event_type, e));
+        }
     }
 
     // Re-create memories
-    for m in &bundle.memories {
-        let _ = memory_repo::create(
+    for (i, m) in bundle.memories.iter().enumerate() {
+        if let Err(e) = memory_repo::create(
             pool,
             crate::db::models::CreatePersonaMemoryInput {
                 persona_id: new_id.clone(),
@@ -274,8 +274,13 @@ pub async fn import_persona(
                 importance: Some(m.importance),
                 tags: m.tags.clone(),
             },
-        );
+        ) {
+            warnings.push(format!("Memory {} ({}): {}", i + 1, m.title, e));
+        }
     }
 
-    Ok(Some(new_id))
+    Ok(Some(ImportResult {
+        persona_id: new_id,
+        warnings,
+    }))
 }

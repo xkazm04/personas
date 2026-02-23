@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
-import { Square, Copy, Check } from 'lucide-react';
+import { useElapsedTimer } from '@/hooks';
+import { formatElapsed } from '@/lib/utils/formatters';
+import { Square, Copy, Check, Maximize2, Minimize2 } from 'lucide-react';
 
 interface TerminalHeaderProps {
   isRunning: boolean;
@@ -9,38 +10,15 @@ interface TerminalHeaderProps {
   onStop?: () => void;
   /** Optional label shown next to the traffic lights (e.g. execution ID) */
   label?: string;
+  /** Callback to toggle fullscreen mode */
+  onToggleFullscreen?: () => void;
+  /** Whether the terminal is currently in fullscreen mode */
+  isFullscreen?: boolean;
 }
 
-function formatElapsed(ms: number): string {
-  const totalSeconds = Math.floor(ms / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
 
-  const mm = String(minutes).padStart(2, '0');
-  const ss = String(seconds).padStart(2, '0');
-
-  if (hours > 0) {
-    const hh = String(hours).padStart(2, '0');
-    return `${hh}:${mm}:${ss}`;
-  }
-  return `${mm}:${ss}`;
-}
-
-export function TerminalHeader({ isRunning, lineCount, onCopy, copied, onStop, label }: TerminalHeaderProps) {
-  const [elapsed, setElapsed] = useState(0);
-  const startTimeRef = useRef(0);
-
-  useEffect(() => {
-    if (isRunning) {
-      startTimeRef.current = Date.now();
-      setElapsed(0);
-      const id = setInterval(() => {
-        setElapsed(Date.now() - startTimeRef.current);
-      }, 1000);
-      return () => clearInterval(id);
-    }
-  }, [isRunning]);
+export function TerminalHeader({ isRunning, lineCount, onCopy, copied, onStop, label, onToggleFullscreen, isFullscreen }: TerminalHeaderProps) {
+  const elapsed = useElapsedTimer(isRunning, 1000);
 
   return (
     <div className="flex items-center justify-between px-4 py-2.5 bg-secondary/40 border-b border-border/20">
@@ -55,7 +33,7 @@ export function TerminalHeader({ isRunning, lineCount, onCopy, copied, onStop, l
             <span className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               Running
-              <span className="text-muted-foreground/80">{formatElapsed(elapsed)}</span>
+              <span className="text-muted-foreground/80">{formatElapsed(elapsed, 'clock')}</span>
               <span className="text-muted-foreground/80">({lineCount} lines)</span>
             </span>
           ) : (
@@ -68,6 +46,15 @@ export function TerminalHeader({ isRunning, lineCount, onCopy, copied, onStop, l
       </div>
 
       <div className="flex items-center gap-2">
+        {onToggleFullscreen && (
+          <button
+            onClick={onToggleFullscreen}
+            className="flex items-center px-2 py-1 text-muted-foreground/70 hover:text-foreground/90 transition-colors"
+            title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+          >
+            {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+          </button>
+        )}
         {!isRunning && lineCount > 0 && (
           <button
             onClick={onCopy}

@@ -37,6 +37,24 @@ pub fn get_memory_count(
 }
 
 #[tauri::command]
+pub fn get_memory_stats(
+    state: State<'_, Arc<AppState>>,
+    persona_id: Option<String>,
+    category: Option<String>,
+    search: Option<String>,
+) -> Result<repo::MemoryStats, AppError> {
+    repo::get_stats(&state.db, persona_id.as_deref(), category.as_deref(), search.as_deref())
+}
+
+#[tauri::command]
+pub fn list_memories_by_execution(
+    state: State<'_, Arc<AppState>>,
+    execution_id: String,
+) -> Result<Vec<PersonaMemory>, AppError> {
+    repo::get_by_execution(&state.db, &execution_id)
+}
+
+#[tauri::command]
 pub fn delete_memory(
     state: State<'_, Arc<AppState>>,
     id: String,

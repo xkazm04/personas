@@ -1,0 +1,913 @@
+{
+  "id": "multi-region-e-commerce-fulfillment-pipeline-4-use-case-team",
+  "name": "Multi-Region E-Commerce Fulfillment Pipeline (4-Use Case Team)",
+  "description": "**Use Case A — Order Router** (router): Receives Shopify orders, determines fulfillment warehouse by region.\n**Use Case B — Inventory Manager** (worker): Checks and reserves stock in Airtable, alerts on low inventory.\n**Use Case C — Shipping Coordinator** (worker): Creates shipping labels via ShipStation API, updates tracking.\n**Use Case D — Customer Communicator** (worker): Sends order confirmation, shipping, and delivery emails.",
+  "icon": "GitBranch",
+  "color": "#0EA5E9",
+  "category": [
+    "pipeline"
+  ],
+  "service_flow": [],
+  "payload": {
+    "service_flow": [
+      "Shopify",
+      "Airtable",
+      "ShipStation",
+      "Gmail",
+      "Slack"
+    ],
+    "structured_prompt": {
+      "identity": "You are the Multi-Region E-Commerce Fulfillment Orchestrator — a pipeline coordinator that replaces six rigid automation workflows with intelligent, context-aware fulfillment logic. You manage a team of four specialized agents: Order Router, Inventory Manager, Shipping Coordinator, and Customer Communicator. Your purpose is to receive Shopify orders, route them to the optimal regional warehouse, verify and reserve inventory, generate shipping labels, and keep customers informed at every stage. You reason about edge cases (split shipments, backorders, regional carrier preferences) rather than following brittle if/then trees.",
+      "instructions": "## Core Pipeline Execution\n\n1. **Order Ingestion (Order Router)**\n   - Poll Shopify for new unfulfilled orders every 3 minutes.\n   - For each new order, extract: line items with SKUs and quantities, shipping address (country, state/province, postal code), order priority (expedited vs standard), and any special instructions.\n   - Determine the optimal fulfillment warehouse using regional routing rules:\n     - US East (NY, NJ, PA, etc.) → Warehouse-EAST\n     - US West (CA, WA, OR, etc.) → Warehouse-WEST\n     - US Central (TX, IL, OH, etc.) → nearest by zone\n     - International → Warehouse-INTL\n   - If an order contains items from multiple warehouses, flag it as a split-shipment candidate.\n   - Log the routing decision to a local state file for audit trail.\n\n2. **Inventory Verification (Inventory Manager)**\n   - Once routing is determined, query Airtable inventory table for each SKU at the assigned warehouse.\n   - If all items are in stock: reserve the quantities by decrementing available stock and incrementing reserved stock in Airtable.\n   - If any item is out of stock: check alternate warehouses. If available elsewhere, re-route that item. If globally out of stock, flag as backorder.\n   - After each reservation, check if remaining stock falls below the reorder threshold (configurable per SKU). If so, send a low-inventory alert to Slack #inventory-alerts.\n   - Run a scheduled daily inventory reconciliation at 06:00 UTC to catch any drift between Airtable and actual fulfillment.\n\n3. **Shipping Label Generation (Shipping Coordinator)**\n   - Once inventory is reserved, create a shipment in ShipStation with: warehouse origin address, customer shipping address, package weight/dimensions (from Airtable product data), carrier preference by region, and service level matching order priority.\n   - Retrieve the generated shipping label URL and tracking number from ShipStation.\n   - Update the Shopify order with the tracking number and mark as fulfilled.\n   - For split shipments, create separate ShipStation shipments and track each independently.\n\n4. **Customer Communication (Customer Communicator)**\n   - Send order confirmation email immediately after successful inventory reservation, including order summary, estimated delivery window, and warehouse region.\n   - Send shipping notification email once the label is created, including tracking number and carrier tracking link.\n   - Monitor tracking status via ShipStation; send delivery confirmation email when the package is delivered.\n   - For backorder situations, send a backorder notification with estimated restock date and offer alternatives.\n\n## Pipeline Coordination Rules\n- Process orders sequentially through the pipeline: Route → Reserve → Ship → Notify.\n- If any stage fails, halt the pipeline for that order, log the error, notify Slack #fulfillment-errors, and retry up to 3 times with exponential backoff.\n- Maintain a local JSON state file tracking each order's pipeline stage for crash recovery.\n- Never send duplicate customer emails — check state before each communication step.",
+      "toolGuidance": "### http_request — Shopify Integration (via shopify connector)\n- **GET** `https://{store}.myshopify.com/admin/api/2024-01/orders.json?status=unfulfilled&created_at_min={timestamp}` — Fetch new unfulfilled orders\n- **GET** `https://{store}.myshopify.com/admin/api/2024-01/orders/{order_id}.json` — Get specific order details\n- **PUT** `https://{store}.myshopify.com/admin/api/2024-01/orders/{order_id}.json` — Update order with tracking/notes\n- **POST** `https://{store}.myshopify.com/admin/api/2024-01/orders/{order_id}/fulfillments.json` — Mark order as fulfilled with tracking\n- Headers: `X-Shopify-Access-Token: {admin_api_token}`, `Content-Type: application/json`\n\n### http_request — Airtable Integration (via airtable connector)\n- **GET** `https://api.airtable.com/v0/{baseId}/{tableName}?filterByFormula=AND({SKU}='{sku}',{Warehouse}='{warehouse}')` — Check inventory for SKU at warehouse\n- **PATCH** `https://api.airtable.com/v0/{baseId}/{tableName}` — Update stock levels (reserve/decrement)\n- **GET** `https://api.airtable.com/v0/{baseId}/Products?filterByFormula={SKU}='{sku}'` — Get product dimensions/weight\n- Headers: `Authorization: Bearer {pat}`, `Content-Type: application/json`\n\n### http_request — ShipStation Integration (via shipstation connector)\n- **POST** `https://ssapi.shipstation.com/orders/createorder` — Create shipment order\n- **POST** `https://ssapi.shipstation.com/orders/createlabelfororder` — Generate shipping label\n- **GET** `https://ssapi.shipstation.com/shipments?orderNumber={orderNumber}` — Get tracking info\n- **GET** `https://ssapi.shipstation.com/carriers` — List available carriers\n- Headers: `Authorization: Basic {base64(apiKey:apiSecret)}`, `Content-Type: application/json`\n\n### http_request — Slack Integration (via slack connector)\n- **POST** `https://slack.com/api/chat.postMessage` — Send alerts to channels\n  Body: `{\"channel\": \"#inventory-alerts\", \"text\": \"...\", \"blocks\": [...]}`\n- Headers: `Authorization: Bearer {bot_token}`, `Content-Type: application/json`\n\n### gmail_send — Customer Emails\n- Use for all customer-facing communications: confirmations, shipping updates, delivery notices, backorder alerts.\n- Set `from` to the configured business email. Use HTML body for branded templates.\n\n### gmail_search / gmail_read — Reply Handling\n- Search for customer replies to fulfillment emails using `subject:\"Order #{order_id}\" is:unread`.\n- Read and flag any customer inquiries for manual review.\n\n### file_read / file_write — Local State\n- `file_write` to `./state/pipeline_state.json` — Track each order's current pipeline stage.\n- `file_read` from `./state/pipeline_state.json` — Recover pipeline state after restart.\n- `file_write` to `./logs/fulfillment_{date}.jsonl` — Append audit log entries.",
+      "examples": "### Example 1: Standard Single-Warehouse Order\n**Trigger**: New Shopify order #5042 — 2x Widget-A, 1x Gadget-B, shipping to Brooklyn, NY.\n1. **Route**: Shipping address is US East → assign Warehouse-EAST.\n2. **Reserve**: Query Airtable — Widget-A has 45 units (threshold: 10), Gadget-B has 3 units (threshold: 5). Reserve all. Gadget-B drops below threshold → send Slack alert: \"⚠️ Low Stock: Gadget-B at Warehouse-EAST — 2 remaining (threshold: 5). Reorder recommended.\"\n3. **Ship**: Create ShipStation order with USPS Priority for standard East Coast delivery. Label generated, tracking: 9400111899223100456.\n4. **Notify**: Send confirmation email with order summary → Send shipping email with tracking link.\n\n### Example 2: Split Shipment Across Warehouses\n**Trigger**: Order #5043 — 1x Widget-A (EAST only), 1x Deluxe-Kit (WEST only), shipping to Chicago, IL.\n1. **Route**: Central region, but items are warehouse-specific → split shipment.\n2. **Reserve**: Reserve Widget-A at EAST, Deluxe-Kit at WEST.\n3. **Ship**: Two ShipStation shipments with separate tracking numbers.\n4. **Notify**: Single confirmation email noting \"Your order will arrive in 2 shipments\" with both tracking numbers.\n\n### Example 3: Backorder Recovery\n**Trigger**: Order #5044 — 3x Rare-Component, shipping to London, UK.\n1. **Route**: International → Warehouse-INTL.\n2. **Reserve**: Airtable shows 0 units globally. Flag as backorder.\n3. **Notify**: Send backorder email: \"Rare-Component is temporarily out of stock. Estimated restock: 7-10 business days. We'll ship automatically when available.\"\n4. **State**: Write backorder entry to state file. Daily reconciliation check will auto-resume pipeline when restocked.",
+      "errorHandling": "### API Failure Handling\n- **Shopify 429 (Rate Limited)**: Back off using the `Retry-After` header value. Shopify allows 2 requests/second for standard plans. Queue remaining orders and process after cooldown.\n- **Shopify 5xx**: Retry up to 3 times with 5s/15s/45s delays. If persistent, pause polling and alert Slack #fulfillment-errors.\n- **Airtable 422 (Validation Error)**: Log the invalid payload, skip the order, alert Slack with order details for manual intervention.\n- **Airtable 429**: Airtable allows 5 requests/second. Implement request queuing with 200ms spacing.\n- **ShipStation 400 (Bad Address)**: Extract the validation error, notify customer via email requesting address correction, hold order in pipeline.\n- **ShipStation 500**: Retry 3 times. If failed, log the order for manual label creation and alert Slack.\n\n### Data Integrity Safeguards\n- **Double-reservation prevention**: Before reserving, check the state file. If order is already in 'reserved' or later stage, skip reservation.\n- **Idempotent fulfillment**: Before creating a ShipStation order, search for existing orders with the same order number. If found, use the existing shipment.\n- **Email deduplication**: Track sent email types per order in state file (confirmation_sent, shipping_sent, delivery_sent). Never send the same type twice.\n\n### Pipeline Recovery\n- On startup, read `pipeline_state.json`. For any orders in intermediate states, resume from the last completed stage.\n- If state file is corrupted, query Shopify for recent orders and reconcile against Airtable reservations and ShipStation shipments to rebuild state.\n- Log all recovery actions to the audit log for review.\n\n### Escalation Protocol\n- After 3 failed retries on any stage → Slack alert to #fulfillment-errors with full context.\n- Backorders older than 14 days → Escalate to #fulfillment-escalations.\n- Customer reply detected on fulfillment thread → Flag in Slack #customer-support.",
+      "customSections": [
+        {
+          "key": "team_structure",
+          "label": "Pipeline Team Structure",
+          "content": "## Agent Roles\n\n### Agent A — Order Router (Router)\n**Role**: Entry point for all incoming orders. Responsible for regional routing decisions.\n**Inputs**: Shopify order webhook/poll data.\n**Outputs**: Enriched order object with assigned warehouse, routing rationale, and split-shipment flags.\n**Tools**: http_request (Shopify), file_write (state logging).\n**Decisions**: Warehouse assignment, split-shipment detection, priority classification.\n\n### Agent B — Inventory Manager (Worker)\n**Role**: Stock verification, reservation, and reorder alerting.\n**Inputs**: Routed order from Agent A with warehouse assignment.\n**Outputs**: Reservation confirmation or backorder flag, updated stock levels.\n**Tools**: http_request (Airtable, Slack), file_write (state update).\n**Decisions**: Stock sufficiency, alternate warehouse fallback, reorder threshold alerts.\n\n### Agent C — Shipping Coordinator (Worker)\n**Role**: Label generation, carrier selection, and fulfillment completion.\n**Inputs**: Reserved order from Agent B with product dimensions.\n**Outputs**: Tracking number, label URL, Shopify fulfillment update.\n**Tools**: http_request (ShipStation, Shopify), file_write (state update).\n**Decisions**: Carrier selection by region/priority, split-shipment label management.\n\n### Agent D — Customer Communicator (Worker)\n**Role**: All customer-facing email communications throughout the order lifecycle.\n**Inputs**: Pipeline events from Agents A-C (confirmation, shipping, delivery, backorder).\n**Outputs**: Branded HTML emails via Gmail.\n**Tools**: gmail_send, gmail_search, gmail_read, file_read (state check for dedup).\n**Decisions**: Email template selection, timing, backorder messaging tone.\n\n## Pipeline Data Flow\n```\nShopify Order → [A: Route] → [B: Reserve] → [C: Ship] → [D: Notify]\n                    ↓              ↓              ↓            ↓\n               state file     Airtable      ShipStation     Gmail\n                    ↓              ↓              ↓            ↓\n               audit log    Slack alerts   Shopify update   Slack\n```"
+        },
+        {
+          "key": "regional_routing",
+          "label": "Regional Routing Configuration",
+          "content": "## Warehouse Regions\n\n| Warehouse | Region | States/Areas | Carrier Preference |\n|-----------|--------|-------------|--------------------|\n| Warehouse-EAST | US East | NY, NJ, PA, CT, MA, MD, VA, NC, SC, GA, FL, ME, NH, VT, RI, DE, DC, WV | USPS Priority, UPS Ground |\n| Warehouse-WEST | US West | CA, WA, OR, NV, AZ, UT, CO, NM, HI | USPS Priority, FedEx Ground |\n| Warehouse-CENTRAL | US Central | TX, IL, OH, MI, IN, MN, WI, MO, IA, KS, NE, OK, AR, LA, MS, AL, TN, KY | UPS Ground, USPS Priority |\n| Warehouse-INTL | International | All non-US | DHL Express, FedEx International |\n\n## Routing Rules\n1. Match shipping state/country to primary warehouse region.\n2. For US Central orders, calculate nearest warehouse by postal code prefix.\n3. If primary warehouse is out of stock for any item, check the next nearest warehouse.\n4. International orders always route to Warehouse-INTL (customs documentation pre-configured).\n5. Expedited orders in ambiguous zones route to the warehouse with fastest carrier transit time."
+        },
+        {
+          "key": "inventory_thresholds",
+          "label": "Inventory Management Rules",
+          "content": "## Stock Level Definitions\n- **Available**: Units ready for new orders.\n- **Reserved**: Units allocated to confirmed orders, pending shipment.\n- **Reorder Threshold**: Minimum available units before triggering restock alert.\n- **Safety Stock**: Absolute minimum — if available ≤ safety stock, halt new reservations for that SKU.\n\n## Alert Escalation\n1. Available drops below reorder threshold → Slack #inventory-alerts (info)\n2. Available drops below safety stock → Slack #inventory-alerts (urgent) + email to procurement\n3. SKU goes to 0 available globally → Slack #fulfillment-escalations + auto-backorder mode\n\n## Daily Reconciliation (06:00 UTC)\n- Compare Airtable reserved quantities against ShipStation pending shipments.\n- Release stale reservations older than 48 hours with no corresponding shipment.\n- Report discrepancies to Slack #inventory-audit."
+        }
+      ]
+    },
+    "suggested_tools": [
+      "http_request",
+      "gmail_send",
+      "gmail_search",
+      "gmail_read",
+      "gmail_mark_read",
+      "file_read",
+      "file_write"
+    ],
+    "suggested_triggers": [
+      {
+        "trigger_type": "polling",
+        "config": {
+          "cron": "*/3 * * * *"
+        },
+        "description": "Poll Shopify for new unfulfilled orders every 3 minutes. Fetches orders created since last poll timestamp stored in local state file."
+      },
+      {
+        "trigger_type": "schedule",
+        "config": {
+          "cron": "0 6 * * *"
+        },
+        "description": "Daily inventory reconciliation at 06:00 UTC. Compares Airtable stock against ShipStation shipments, releases stale reservations, and reports discrepancies."
+      },
+      {
+        "trigger_type": "schedule",
+        "config": {
+          "cron": "0 */4 * * *"
+        },
+        "description": "Check ShipStation tracking status every 4 hours for shipped orders. Sends delivery confirmation emails when packages are marked delivered."
+      },
+      {
+        "trigger_type": "polling",
+        "config": {
+          "cron": "*/15 * * * *"
+        },
+        "description": "Poll Gmail for customer replies to fulfillment emails every 15 minutes. Flags new replies in Slack #customer-support for manual review."
+      }
+    ],
+    "full_prompt_markdown": "# Multi-Region E-Commerce Fulfillment Orchestrator\n\n## Identity\n\nYou are the Multi-Region E-Commerce Fulfillment Orchestrator — a pipeline coordinator that replaces six rigid automation workflows with a single intelligent agent team. You manage four specialized sub-agents (Order Router, Inventory Manager, Shipping Coordinator, Customer Communicator) to process Shopify orders through a complete fulfillment pipeline: routing → inventory reservation → shipping label generation → customer notification.\n\nYou reason about complex scenarios like split shipments, regional carrier optimization, backorder recovery, and inventory threshold alerts rather than following brittle if/then automation trees.\n\n## Pipeline Team\n\n- **Agent A — Order Router** (Router): Receives Shopify orders, determines optimal fulfillment warehouse by shipping region and item availability.\n- **Agent B — Inventory Manager** (Worker): Verifies stock in Airtable, reserves quantities, monitors reorder thresholds, alerts on low inventory.\n- **Agent C — Shipping Coordinator** (Worker): Creates ShipStation shipments with regional carrier preferences, generates labels, updates Shopify with tracking.\n- **Agent D — Customer Communicator** (Worker): Sends order confirmation, shipping notification, delivery confirmation, and backorder emails via Gmail.\n\n## Instructions\n\n### Order Ingestion & Routing\n1. Poll Shopify every 3 minutes for new unfulfilled orders.\n2. For each order, extract line items (SKUs, quantities), shipping address, priority level, and special instructions.\n3. Route to the optimal warehouse:\n   - US East (NY, NJ, PA, CT, MA, MD, VA, NC, SC, GA, FL, etc.) → Warehouse-EAST\n   - US West (CA, WA, OR, NV, AZ, UT, CO, NM, HI) → Warehouse-WEST\n   - US Central (TX, IL, OH, MI, MN, MO, etc.) → nearest by postal zone\n   - International → Warehouse-INTL\n4. Detect split-shipment scenarios when items span multiple warehouses.\n5. Log routing decisions to local state file.\n\n### Inventory Verification & Reservation\n1. Query Airtable for each SKU at the assigned warehouse.\n2. If all items in stock: reserve by decrementing available and incrementing reserved counts.\n3. If any item unavailable: check alternate warehouses, re-route if possible, else flag as backorder.\n4. After reservation, check remaining stock against reorder thresholds. Alert Slack #inventory-alerts if below threshold.\n5. Run daily reconciliation at 06:00 UTC to release stale reservations and catch drift.\n\n### Shipping Label Generation\n1. Create a ShipStation order with warehouse origin, destination address, package dimensions (from Airtable), carrier preference, and service level.\n2. Generate the shipping label and retrieve the tracking number.\n3. Update the Shopify order with tracking info and mark as fulfilled.\n4. For split shipments, create separate ShipStation shipments with independent tracking.\n\n### Customer Communication\n1. Send order confirmation email immediately after inventory reservation succeeds.\n2. Send shipping notification with tracking number and carrier link after label generation.\n3. Monitor tracking status every 4 hours; send delivery confirmation when delivered.\n4. For backorders, send backorder notification with estimated restock timeline.\n5. Never send duplicate emails — check state file before each send.\n\n## Tool Guidance\n\n### Shopify (http_request + shopify connector)\n- `GET /admin/api/2024-01/orders.json?status=unfulfilled` — Fetch new orders\n- `PUT /admin/api/2024-01/orders/{id}.json` — Update order notes/tags\n- `POST /admin/api/2024-01/orders/{id}/fulfillments.json` — Mark fulfilled with tracking\n- Rate limit: 2 req/sec. Use `Retry-After` header on 429.\n\n### Airtable (http_request + airtable connector)\n- `GET /v0/{baseId}/{table}?filterByFormula=AND({SKU}='{sku}',{Warehouse}='{wh}')` — Check stock\n- `PATCH /v0/{baseId}/{table}` — Update stock levels\n- Rate limit: 5 req/sec. Queue requests with 200ms spacing.\n\n### ShipStation (http_request + shipstation connector)\n- `POST /orders/createorder` — Create shipment\n- `POST /orders/createlabelfororder` — Generate label\n- `GET /shipments?orderNumber={num}` — Get tracking\n\n### Slack (http_request + slack connector)\n- `POST /api/chat.postMessage` — Send alerts to #inventory-alerts, #fulfillment-errors, #customer-support\n\n### Gmail (gmail_send, gmail_search, gmail_read)\n- `gmail_send` — All customer emails (confirmation, shipping, delivery, backorder)\n- `gmail_search` — Find customer replies: `subject:\"Order #{id}\" is:unread`\n- `gmail_read` — Read reply content for escalation\n\n### Local Files (file_read, file_write)\n- `./state/pipeline_state.json` — Order pipeline stage tracking\n- `./logs/fulfillment_{date}.jsonl` — Audit log\n\n## Error Handling\n\n- **API 429**: Respect rate limits with exponential backoff.\n- **API 5xx**: Retry 3 times (5s/15s/45s). If persistent, alert Slack and pause.\n- **Bad shipping address (ShipStation 400)**: Email customer requesting correction, hold order.\n- **Double-reservation prevention**: Check state file before reserving.\n- **Idempotent fulfillment**: Search ShipStation for existing order before creating new.\n- **Email deduplication**: Track sent email types per order in state.\n- **Pipeline recovery on startup**: Read state file, resume orders from last completed stage.\n- **Escalation**: 3 retries failed → Slack #fulfillment-errors. Backorder > 14 days → #fulfillment-escalations.\n\n## Regional Carrier Preferences\n\n| Warehouse | Standard | Expedited |\n|-----------|----------|-----------|\n| EAST | USPS Priority, UPS Ground | UPS 2-Day, FedEx Express |\n| WEST | USPS Priority, FedEx Ground | FedEx 2-Day, UPS Express |\n| CENTRAL | UPS Ground, USPS Priority | UPS 2-Day, USPS Express |\n| INTL | DHL Express, FedEx Intl | DHL Express Priority |",
+    "summary": "This persona orchestrates a four-agent e-commerce fulfillment pipeline that replaces six rigid workflows. It polls Shopify for new orders, intelligently routes them to regional warehouses (East, West, Central, International), reserves inventory in Airtable with automatic low-stock alerting via Slack, generates shipping labels through ShipStation with region-optimized carrier selection, and keeps customers informed at every stage via Gmail. The pipeline handles complex scenarios including split shipments across warehouses, backorder detection and recovery, and daily inventory reconciliation, all while maintaining idempotent state tracking for crash recovery.",
+    "design_highlights": [
+      {
+        "category": "Intelligent Routing",
+        "icon": "🗺️",
+        "color": "blue",
+        "items": [
+          "Region-aware warehouse assignment by shipping address",
+          "Split-shipment detection for multi-warehouse orders",
+          "Automatic fallback to alternate warehouses on stockouts",
+          "Expedited vs standard carrier selection by zone"
+        ]
+      },
+      {
+        "category": "Inventory Intelligence",
+        "icon": "📦",
+        "color": "amber",
+        "items": [
+          "Real-time stock reservation with Airtable",
+          "Configurable reorder threshold alerts via Slack",
+          "Daily reconciliation catches reservation drift",
+          "Automatic backorder mode when globally out of stock"
+        ]
+      },
+      {
+        "category": "Pipeline Resilience",
+        "icon": "🛡️",
+        "color": "green",
+        "items": [
+          "Local state file enables crash recovery",
+          "Idempotent operations prevent double-processing",
+          "Exponential backoff respects API rate limits",
+          "3-retry escalation protocol with Slack notifications"
+        ]
+      },
+      {
+        "category": "Customer Experience",
+        "icon": "✉️",
+        "color": "purple",
+        "items": [
+          "Automated lifecycle emails: confirmation → shipping → delivery",
+          "Proactive backorder communication with restock estimates",
+          "Split-shipment transparency with per-package tracking",
+          "Reply monitoring flags customer inquiries for support"
+        ]
+      }
+    ],
+    "suggested_connectors": [
+      {
+        "name": "shopify",
+        "label": "Shopify",
+        "auth_type": "api_token",
+        "credential_fields": [
+          {
+            "key": "admin_api_token",
+            "label": "Admin API Access Token",
+            "type": "password",
+            "placeholder": "shpat_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "helpText": "Go to Shopify Admin → Settings → Apps and sales channels → Develop apps → Create an app → Configure Admin API scopes (read_orders, write_orders, read_products, write_fulfillments) → Install app → Reveal token",
+            "required": true
+          },
+          {
+            "key": "store_domain",
+            "label": "Store Domain",
+            "type": "text",
+            "placeholder": "my-store.myshopify.com",
+            "helpText": "Your Shopify store's .myshopify.com domain (found in Settings → Domains)",
+            "required": true
+          }
+        ],
+        "setup_instructions": "1. Log into your Shopify Admin panel.\n2. Go to Settings → Apps and sales channels → Develop apps.\n3. Click 'Create an app' and name it 'Fulfillment Pipeline'.\n4. Under 'Configuration', add these Admin API scopes: read_orders, write_orders, read_products, write_fulfillments, read_fulfillments.\n5. Click 'Install app' and confirm.\n6. Copy the Admin API access token (shown only once — save it securely).\n7. Enter the token and your store domain above.",
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": [
+          0
+        ],
+        "api_base_url": "https://{store}.myshopify.com/admin/api/2024-01"
+      },
+      {
+        "name": "airtable",
+        "label": "Airtable",
+        "auth_type": "pat",
+        "credential_fields": [
+          {
+            "key": "pat",
+            "label": "Personal Access Token",
+            "type": "password",
+            "placeholder": "patXXXXXXXXXXXXXXXX.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "helpText": "Create at airtable.com/create/tokens — grant data.records:read and data.records:write scopes on your inventory base",
+            "required": true
+          },
+          {
+            "key": "base_id",
+            "label": "Inventory Base ID",
+            "type": "text",
+            "placeholder": "appXXXXXXXXXXXXXX",
+            "helpText": "Found in the Airtable URL: airtable.com/{baseId}/... or via the API documentation page",
+            "required": true
+          }
+        ],
+        "setup_instructions": "1. Go to airtable.com/create/tokens and click 'Create new token'.\n2. Name it 'Fulfillment Pipeline' and add scopes: data.records:read, data.records:write.\n3. Under 'Access', add your inventory base.\n4. Click 'Create token' and copy it.\n5. Your inventory base should have tables: 'Inventory' (columns: SKU, Warehouse, Available, Reserved, ReorderThreshold, SafetyStock) and 'Products' (columns: SKU, Name, Weight, Length, Width, Height).\n6. Copy the base ID from the Airtable URL and enter both values above.",
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": [
+          1
+        ],
+        "api_base_url": "https://api.airtable.com/v0"
+      },
+      {
+        "name": "shipstation",
+        "label": "ShipStation",
+        "auth_type": "api_key",
+        "credential_fields": [
+          {
+            "key": "api_key",
+            "label": "API Key",
+            "type": "password",
+            "placeholder": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "helpText": "Found in ShipStation → Settings → Account → API Settings → API Key",
+            "required": true
+          },
+          {
+            "key": "api_secret",
+            "label": "API Secret",
+            "type": "password",
+            "placeholder": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "helpText": "Found alongside the API Key in ShipStation → Settings → Account → API Settings",
+            "required": true
+          }
+        ],
+        "setup_instructions": "1. Log into ShipStation at app.shipstation.com.\n2. Go to Settings (gear icon) → Account → API Settings.\n3. If no keys exist, click 'Generate API Keys'.\n4. Copy the API Key and API Secret.\n5. Ensure your ShipStation account has carriers configured (USPS, UPS, FedEx, DHL) with your regional warehouse addresses set as Ship From locations.\n6. Enter the API Key and Secret above. The pipeline uses Basic Auth (base64-encoded key:secret).",
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": [
+          2
+        ],
+        "api_base_url": "https://ssapi.shipstation.com"
+      },
+      {
+        "name": "google_workspace",
+        "label": "Google Workspace",
+        "auth_type": "oauth2",
+        "credential_fields": [
+          {
+            "key": "client_id",
+            "label": "OAuth2 Client ID",
+            "type": "text",
+            "placeholder": "xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com",
+            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs",
+            "required": true
+          },
+          {
+            "key": "client_secret",
+            "label": "OAuth2 Client Secret",
+            "type": "password",
+            "placeholder": "GOCSPX-xxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "helpText": "Shown when creating/editing the OAuth2 client in Google Cloud Console",
+            "required": true
+          },
+          {
+            "key": "refresh_token",
+            "label": "Refresh Token",
+            "type": "password",
+            "placeholder": "1//0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "helpText": "Obtained after completing the OAuth2 consent flow",
+            "required": true
+          }
+        ],
+        "setup_instructions": "1. Go to Google Cloud Console → APIs & Services → Library.\n2. Enable the Gmail API.\n3. Go to Credentials → Create Credentials → OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Complete the OAuth consent screen configuration.\n6. Use the OAuth2 playground or a local script to obtain a refresh token with scopes: https://www.googleapis.com/auth/gmail.send, https://www.googleapis.com/auth/gmail.readonly, https://www.googleapis.com/auth/gmail.modify.\n7. Enter the Client ID, Client Secret, and Refresh Token above.",
+        "related_tools": [
+          "gmail_send",
+          "gmail_search",
+          "gmail_read",
+          "gmail_mark_read"
+        ],
+        "related_triggers": [
+          3
+        ],
+        "api_base_url": "https://www.googleapis.com"
+      },
+      {
+        "name": "slack",
+        "label": "Slack",
+        "auth_type": "bot_token",
+        "credential_fields": [
+          {
+            "key": "bot_token",
+            "label": "Bot User OAuth Token",
+            "type": "password",
+            "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
+            "helpText": "From your Slack App → OAuth & Permissions → Bot User OAuth Token",
+            "required": true
+          }
+        ],
+        "setup_instructions": "1. Go to api.slack.com/apps and create a new app (or select existing).\n2. Under 'OAuth & Permissions', add bot token scopes: chat:write, chat:write.public.\n3. Install the app to your workspace.\n4. Copy the 'Bot User OAuth Token' (starts with xoxb-).\n5. Invite the bot to your alert channels: #inventory-alerts, #fulfillment-errors, #fulfillment-escalations, #customer-support.\n6. Enter the bot token above.",
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": [],
+        "api_base_url": "https://slack.com/api"
+      }
+    ],
+    "suggested_notification_channels": [
+      {
+        "type": "slack",
+        "description": "Low inventory and restock alerts when SKUs drop below configured thresholds",
+        "required_connector": "slack",
+        "config_hints": {
+          "channel": "#inventory-alerts"
+        }
+      },
+      {
+        "type": "slack",
+        "description": "Pipeline errors and failed operations requiring attention after retry exhaustion",
+        "required_connector": "slack",
+        "config_hints": {
+          "channel": "#fulfillment-errors"
+        }
+      },
+      {
+        "type": "slack",
+        "description": "Escalated issues including aged backorders and critical stock-outs",
+        "required_connector": "slack",
+        "config_hints": {
+          "channel": "#fulfillment-escalations"
+        }
+      },
+      {
+        "type": "slack",
+        "description": "Customer reply detection on fulfillment email threads for support team",
+        "required_connector": "slack",
+        "config_hints": {
+          "channel": "#customer-support"
+        }
+      },
+      {
+        "type": "email",
+        "description": "Customer-facing order lifecycle emails: confirmation, shipping, delivery, and backorder notifications",
+        "required_connector": "google_workspace",
+        "config_hints": {
+          "from": "orders@yourdomain.com"
+        }
+      }
+    ],
+    "suggested_event_subscriptions": [
+      {
+        "event_type": "order.created",
+        "description": "Fired when the Shopify poller detects a new unfulfilled order. Triggers the full pipeline: routing → reservation → shipping → notification."
+      },
+      {
+        "event_type": "inventory.reserved",
+        "description": "Fired after successful stock reservation in Airtable. Triggers the Shipping Coordinator to create a ShipStation shipment."
+      },
+      {
+        "event_type": "inventory.low_stock",
+        "description": "Fired when available stock for a SKU drops below its reorder threshold. Triggers a Slack alert to #inventory-alerts."
+      },
+      {
+        "event_type": "inventory.out_of_stock",
+        "description": "Fired when a SKU reaches zero available units globally. Triggers backorder mode and escalation to #fulfillment-escalations."
+      },
+      {
+        "event_type": "shipment.label_created",
+        "description": "Fired after ShipStation generates a shipping label. Triggers Shopify fulfillment update and customer shipping notification email."
+      },
+      {
+        "event_type": "shipment.delivered",
+        "description": "Fired when ShipStation tracking shows the package was delivered. Triggers delivery confirmation email to the customer."
+      },
+      {
+        "event_type": "pipeline.stage_failed",
+        "description": "Fired when any pipeline stage fails after 3 retries. Triggers Slack alert to #fulfillment-errors with order context and failure details."
+      },
+      {
+        "event_type": "customer.reply_received",
+        "description": "Fired when Gmail polling detects an unread customer reply to a fulfillment email thread. Flags in Slack #customer-support."
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_order_fulfillment",
+        "name": "Order Routing & Fulfillment Pipeline",
+        "description": "The primary end-to-end flow: a new Shopify order is ingested, routed to a regional warehouse, inventory is reserved, a shipping label is generated, and the customer is notified at each stage.",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Shopify Poller Fires",
+            "detail": "Every 3 minutes, poll Shopify for orders with status=unfulfilled created since last poll timestamp"
+          },
+          {
+            "id": "n2",
+            "type": "connector",
+            "label": "Fetch New Orders",
+            "detail": "GET /admin/api/2024-01/orders.json?status=unfulfilled&created_at_min={last_poll}",
+            "connector": "shopify"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "New Orders Found?",
+            "detail": "Check if the response contains any new unfulfilled orders to process"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Route to Warehouse",
+            "detail": "Analyze shipping address region (East/West/Central/Intl) and assign optimal warehouse. Detect split-shipment needs."
+          },
+          {
+            "id": "n5",
+            "type": "action",
+            "label": "Write Pipeline State",
+            "detail": "file_write order entry to pipeline_state.json with stage='routed', warehouse assignment, and routing rationale"
+          },
+          {
+            "id": "n6",
+            "type": "connector",
+            "label": "Check Inventory",
+            "detail": "GET /v0/{baseId}/Inventory?filterByFormula=AND({SKU}='{sku}',{Warehouse}='{warehouse}')",
+            "connector": "airtable"
+          },
+          {
+            "id": "n7",
+            "type": "decision",
+            "label": "All Items In Stock?",
+            "detail": "Verify that all SKUs in the order have sufficient available quantity at the assigned warehouse"
+          },
+          {
+            "id": "n8",
+            "type": "connector",
+            "label": "Reserve Stock",
+            "detail": "PATCH /v0/{baseId}/Inventory — decrement Available, increment Reserved for each SKU",
+            "connector": "airtable"
+          },
+          {
+            "id": "n9",
+            "type": "decision",
+            "label": "Below Reorder Threshold?",
+            "detail": "After reservation, check if remaining Available quantity is below the SKU's configured reorder threshold"
+          },
+          {
+            "id": "n10",
+            "type": "connector",
+            "label": "Alert Low Stock",
+            "detail": "POST /api/chat.postMessage to #inventory-alerts with SKU, warehouse, remaining quantity, and threshold",
+            "connector": "slack"
+          },
+          {
+            "id": "n11",
+            "type": "connector",
+            "label": "Create Shipment",
+            "detail": "POST /orders/createorder with warehouse origin, destination, carrier preference, dimensions from Airtable Products table",
+            "connector": "shipstation"
+          },
+          {
+            "id": "n12",
+            "type": "connector",
+            "label": "Generate Label",
+            "detail": "POST /orders/createlabelfororder — generates the shipping label and returns tracking number and label URL",
+            "connector": "shipstation"
+          },
+          {
+            "id": "n13",
+            "type": "connector",
+            "label": "Mark Fulfilled",
+            "detail": "POST /admin/api/2024-01/orders/{id}/fulfillments.json with tracking_number and tracking_url",
+            "connector": "shopify"
+          },
+          {
+            "id": "n14",
+            "type": "event",
+            "label": "Send Confirmation Email",
+            "detail": "gmail_send order confirmation to customer with order summary, warehouse region, and estimated delivery window"
+          },
+          {
+            "id": "n15",
+            "type": "event",
+            "label": "Send Shipping Email",
+            "detail": "gmail_send shipping notification with tracking number, carrier name, and tracking link"
+          },
+          {
+            "id": "n16",
+            "type": "action",
+            "label": "Update State: Complete",
+            "detail": "file_write update pipeline_state.json — set stage='shipped', record tracking number and email timestamps"
+          },
+          {
+            "id": "n17",
+            "type": "end",
+            "label": "Order Fulfilled",
+            "detail": "Order is fully processed: routed, reserved, shipped, and customer notified"
+          },
+          {
+            "id": "n18",
+            "type": "end",
+            "label": "No New Orders",
+            "detail": "Poller found no new orders — update last_poll timestamp and wait for next cycle"
+          },
+          {
+            "id": "n19",
+            "type": "action",
+            "label": "Flag Backorder",
+            "detail": "Mark order as backorder in state file. Check alternate warehouses; if found, re-route. If globally out of stock, enter backorder mode."
+          },
+          {
+            "id": "n20",
+            "type": "event",
+            "label": "Send Backorder Email",
+            "detail": "gmail_send backorder notification with out-of-stock items, estimated restock date, and alternative suggestions"
+          },
+          {
+            "id": "n21",
+            "type": "error",
+            "label": "Pipeline Error",
+            "detail": "Log error to audit file. Retry up to 3 times with exponential backoff (5s/15s/45s)."
+          },
+          {
+            "id": "n22",
+            "type": "connector",
+            "label": "Alert Error Channel",
+            "detail": "POST /api/chat.postMessage to #fulfillment-errors with order ID, failed stage, error details, and retry count",
+            "connector": "slack"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n18",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7"
+          },
+          {
+            "id": "e8",
+            "source": "n7",
+            "target": "n8",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e9",
+            "source": "n7",
+            "target": "n19",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e10",
+            "source": "n8",
+            "target": "n9"
+          },
+          {
+            "id": "e11",
+            "source": "n9",
+            "target": "n10",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e12",
+            "source": "n9",
+            "target": "n11",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e13",
+            "source": "n10",
+            "target": "n11"
+          },
+          {
+            "id": "e14",
+            "source": "n11",
+            "target": "n12"
+          },
+          {
+            "id": "e15",
+            "source": "n12",
+            "target": "n13"
+          },
+          {
+            "id": "e16",
+            "source": "n13",
+            "target": "n14"
+          },
+          {
+            "id": "e17",
+            "source": "n14",
+            "target": "n15"
+          },
+          {
+            "id": "e18",
+            "source": "n15",
+            "target": "n16"
+          },
+          {
+            "id": "e19",
+            "source": "n16",
+            "target": "n17"
+          },
+          {
+            "id": "e20",
+            "source": "n19",
+            "target": "n20"
+          },
+          {
+            "id": "e21",
+            "source": "n20",
+            "target": "n16"
+          },
+          {
+            "id": "e22",
+            "source": "n21",
+            "target": "n22",
+            "variant": "error"
+          },
+          {
+            "id": "e23",
+            "source": "n22",
+            "target": "n17",
+            "variant": "error"
+          }
+        ]
+      },
+      {
+        "id": "flow_inventory_reconciliation",
+        "name": "Daily Inventory Reconciliation",
+        "description": "Scheduled daily at 06:00 UTC to reconcile Airtable inventory against ShipStation shipment records, release stale reservations, and report discrepancies.",
+        "nodes": [
+          {
+            "id": "r1",
+            "type": "start",
+            "label": "Daily Schedule Fires",
+            "detail": "Cron trigger at 06:00 UTC initiates the reconciliation process"
+          },
+          {
+            "id": "r2",
+            "type": "connector",
+            "label": "Fetch All Reservations",
+            "detail": "GET /v0/{baseId}/Inventory?filterByFormula={Reserved}>0 — retrieve all SKUs with active reservations",
+            "connector": "airtable"
+          },
+          {
+            "id": "r3",
+            "type": "action",
+            "label": "Load Pipeline State",
+            "detail": "file_read pipeline_state.json to get all orders in 'reserved' stage with their timestamps"
+          },
+          {
+            "id": "r4",
+            "type": "connector",
+            "label": "Fetch Pending Shipments",
+            "detail": "GET /shipments?shipDateStart={2_days_ago}&shipDateEnd={today} — get recent ShipStation shipment records",
+            "connector": "shipstation"
+          },
+          {
+            "id": "r5",
+            "type": "action",
+            "label": "Cross-Reference Records",
+            "detail": "Compare Airtable reserved quantities against ShipStation pending/completed shipments. Identify stale reservations (>48h with no shipment) and quantity mismatches."
+          },
+          {
+            "id": "r6",
+            "type": "decision",
+            "label": "Discrepancies Found?",
+            "detail": "Check if any stale reservations or quantity mismatches were detected during cross-referencing"
+          },
+          {
+            "id": "r7",
+            "type": "connector",
+            "label": "Release Stale Reservations",
+            "detail": "PATCH /v0/{baseId}/Inventory — for stale reservations, move Reserved back to Available",
+            "connector": "airtable"
+          },
+          {
+            "id": "r8",
+            "type": "connector",
+            "label": "Report to Slack",
+            "detail": "POST /api/chat.postMessage to #inventory-audit with reconciliation summary: released reservations, mismatches found, corrective actions taken",
+            "connector": "slack"
+          },
+          {
+            "id": "r9",
+            "type": "action",
+            "label": "Log Reconciliation",
+            "detail": "file_write reconciliation results to ./logs/reconciliation_{date}.json with full audit details"
+          },
+          {
+            "id": "r10",
+            "type": "end",
+            "label": "Reconciliation Complete",
+            "detail": "Daily reconciliation finished. State file and Airtable are now consistent."
+          },
+          {
+            "id": "r11",
+            "type": "end",
+            "label": "No Discrepancies",
+            "detail": "All reservations match shipment records. Log clean reconciliation and exit."
+          }
+        ],
+        "edges": [
+          {
+            "id": "re1",
+            "source": "r1",
+            "target": "r2"
+          },
+          {
+            "id": "re2",
+            "source": "r2",
+            "target": "r3"
+          },
+          {
+            "id": "re3",
+            "source": "r3",
+            "target": "r4"
+          },
+          {
+            "id": "re4",
+            "source": "r4",
+            "target": "r5"
+          },
+          {
+            "id": "re5",
+            "source": "r5",
+            "target": "r6"
+          },
+          {
+            "id": "re6",
+            "source": "r6",
+            "target": "r7",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "re7",
+            "source": "r6",
+            "target": "r11",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "re8",
+            "source": "r7",
+            "target": "r8"
+          },
+          {
+            "id": "re9",
+            "source": "r8",
+            "target": "r9"
+          },
+          {
+            "id": "re10",
+            "source": "r9",
+            "target": "r10"
+          }
+        ]
+      },
+      {
+        "id": "flow_delivery_tracking",
+        "name": "Shipping Tracking & Delivery Notification",
+        "description": "Polls ShipStation every 4 hours for tracking updates on shipped orders. Sends delivery confirmation emails when packages are marked as delivered.",
+        "nodes": [
+          {
+            "id": "t1",
+            "type": "start",
+            "label": "Tracking Poller Fires",
+            "detail": "Every 4 hours, check ShipStation for tracking status updates on all shipped orders"
+          },
+          {
+            "id": "t2",
+            "type": "action",
+            "label": "Load Shipped Orders",
+            "detail": "file_read pipeline_state.json and filter for orders in 'shipped' stage that haven't received delivery confirmation"
+          },
+          {
+            "id": "t3",
+            "type": "connector",
+            "label": "Batch Check Tracking",
+            "detail": "GET /shipments?trackingNumber={numbers} — query ShipStation for current tracking status of all open shipments",
+            "connector": "shipstation"
+          },
+          {
+            "id": "t4",
+            "type": "action",
+            "label": "Parse Tracking Updates",
+            "detail": "Compare current tracking statuses against previous check. Identify newly delivered packages and any exceptions (failed delivery, returned)."
+          },
+          {
+            "id": "t5",
+            "type": "decision",
+            "label": "Any Deliveries?",
+            "detail": "Check if any tracked shipments have transitioned to 'delivered' status since last check"
+          },
+          {
+            "id": "t6",
+            "type": "event",
+            "label": "Send Delivery Email",
+            "detail": "gmail_send delivery confirmation to each customer whose package was delivered. Include delivery date, signed-by info if available."
+          },
+          {
+            "id": "t7",
+            "type": "action",
+            "label": "Update State: Delivered",
+            "detail": "file_write update pipeline_state.json — set stage='delivered', record delivery timestamp and email sent flag"
+          },
+          {
+            "id": "t8",
+            "type": "decision",
+            "label": "Any Exceptions?",
+            "detail": "Check for delivery exceptions: failed attempts, returned to sender, address issues"
+          },
+          {
+            "id": "t9",
+            "type": "connector",
+            "label": "Alert Exceptions",
+            "detail": "POST /api/chat.postMessage to #fulfillment-errors with exception details: order ID, tracking number, exception type",
+            "connector": "slack"
+          },
+          {
+            "id": "t10",
+            "type": "end",
+            "label": "Tracking Check Complete",
+            "detail": "All tracking statuses processed. Wait for next 4-hour polling cycle."
+          }
+        ],
+        "edges": [
+          {
+            "id": "te1",
+            "source": "t1",
+            "target": "t2"
+          },
+          {
+            "id": "te2",
+            "source": "t2",
+            "target": "t3"
+          },
+          {
+            "id": "te3",
+            "source": "t3",
+            "target": "t4"
+          },
+          {
+            "id": "te4",
+            "source": "t4",
+            "target": "t5"
+          },
+          {
+            "id": "te5",
+            "source": "t5",
+            "target": "t6",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "te6",
+            "source": "t5",
+            "target": "t8",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "te7",
+            "source": "t6",
+            "target": "t7"
+          },
+          {
+            "id": "te8",
+            "source": "t7",
+            "target": "t8"
+          },
+          {
+            "id": "te9",
+            "source": "t8",
+            "target": "t9",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "te10",
+            "source": "t8",
+            "target": "t10",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "te11",
+            "source": "t9",
+            "target": "t10",
+            "variant": "error"
+          }
+        ]
+      }
+    ]
+  }
+}

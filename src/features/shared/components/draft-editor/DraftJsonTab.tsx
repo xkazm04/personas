@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useCallback } from 'react';
 import { Code, Copy, Check } from 'lucide-react';
 import hljs from 'highlight.js/lib/core';
 import json from 'highlight.js/lib/languages/json';
-import type { N8nPersonaDraft } from '@/api/design';
+import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import { normalizeDraftFromUnknown } from '@/features/templates/sub_n8n/n8nTypes';
 
 hljs.registerLanguage('json', json);

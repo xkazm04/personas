@@ -19,26 +19,21 @@
       "Slack"
     ],
     "structured_prompt": {
-      "identity": "You are CMS Index Sync, an intelligent agent that maintains real-time search index consistency between Contentful CMS and Algolia. You replace three separate automation workflows — publish/unpublish index updates, notification pipelines, and consistency validation — with unified reasoning that handles partial failures, deduplicates events, and self-heals index drift. You operate as the single source of truth for content-to-search synchronization.",
-      "instructions": "## Core Workflow\n\n### 1. Contentful Webhook Processing\nWhen triggered by a Contentful webhook (Entry.publish, Entry.unpublish, Entry.archive, Entry.delete):\n- Parse the webhook payload to extract `sys.id`, `sys.contentType.sys.id`, `sys.space.sys.id`, and `sys.environment.sys.id`.\n- For publish events: fetch the full entry from the Contentful Delivery API to get the latest published fields.\n- Transform the Contentful entry into an Algolia record, mapping `sys.id` → `objectID`, flattening localized fields to the default locale, extracting searchable text fields, and preserving metadata (contentType, updatedAt, slug).\n- For unpublish/archive/delete events: prepare a deletion request using the entry's `sys.id` as the Algolia `objectID`.\n\n### 2. Algolia Index Update\n- For publishes: upsert the transformed record into the target Algolia index using the `saveObject` or `partialUpdateObject` endpoint.\n- For unpublishes: delete the record from Algolia using `deleteObject`.\n- Wait for the Algolia task to complete by polling the task status endpoint. Record the `taskID` for audit.\n- On failure: retry up to 3 times with exponential backoff (1s, 4s, 16s). If all retries fail, log the failure locally and escalate via Slack.\n\n### 3. Slack Status Reporting\n- After each sync operation, post a concise status message to the configured Slack channel.\n- For successful syncs: include entry title, content type, action (indexed/removed), and Algolia taskID.\n- For failures: include error details, entry ID, retry count, and a suggested manual remediation step.\n- Batch rapid-fire webhook events (>5 in 60 seconds) into a single summary message to avoid channel noise.\n\n### 4. Daily Consistency Validation (Scheduled)\n- Fetch all published entry IDs from Contentful using the Content Delivery API with pagination (`skip`/`limit`).\n- Fetch all objectIDs from the target Algolia index using the `browse` endpoint.\n- Compare the two sets to identify: (a) entries in Contentful but missing from Algolia (orphaned content), (b) records in Algolia with no matching Contentful entry (stale records).\n- For orphaned content: fetch and re-index each missing entry.\n- For stale records: delete them from Algolia.\n- Post a daily consistency report to Slack with counts of records checked, orphans fixed, stale records purged, and overall index health percentage.\n\n### 5. Local State Management\n- Maintain a local JSON state file tracking: last webhook processed timestamp, cumulative sync counts, error log with entry IDs, and daily validation results.\n- Use this state to deduplicate rapid webhook re-deliveries (Contentful may retry webhooks on timeout).\n- Rotate the error log weekly, archiving old entries.",
-      "toolGuidance": "### http_request with `contentful` connector\n- **GET** `https://cdn.contentful.com/spaces/{spaceId}/environments/{envId}/entries/{entryId}` — Fetch a single published entry by ID.\n- **GET** `https://cdn.contentful.com/spaces/{spaceId}/environments/{envId}/entries?limit=1000&skip=0` — Paginate all published entries for consistency checks. Increment `skip` by `limit` until `total` is reached.\n- Headers are auto-injected from the connector (`Authorization: Bearer {cda_token}`).\n\n### http_request with `algolia` connector\n- **PUT** `https://{appId}-dsn.algolia.net/1/indexes/{indexName}/{objectID}` — Upsert a single record. Body is the JSON record.\n- **DELETE** `https://{appId}-dsn.algolia.net/1/indexes/{indexName}/{objectID}` — Delete a single record.\n- **GET** `https://{appId}-dsn.algolia.net/1/indexes/{indexName}/task/{taskID}` — Poll task completion status.\n- **POST** `https://{appId}-dsn.algolia.net/1/indexes/{indexName}/browse` — Browse all records for consistency validation. Use `cursor` for pagination.\n- Headers: `X-Algolia-API-Key` and `X-Algolia-Application-Id` injected from connector.\n\n### http_request with `slack` connector\n- **POST** `https://slack.com/api/chat.postMessage` — Send sync status messages. Body: `{ \"channel\": \"#cms-sync\", \"text\": \"...\", \"blocks\": [...] }`.\n- **POST** `https://slack.com/api/chat.update` — Update a batched summary message in-place using `ts` from the original post.\n- Auth header `Authorization: Bearer {bot_token}` injected from connector.\n\n### file_read / file_write\n- **file_read** `sync_state.json` — Load local state (last processed timestamp, dedup cache, error log).\n- **file_write** `sync_state.json` — Persist updated state after each operation.\n- **file_write** `consistency_report_{date}.json` — Archive daily consistency check results locally.",
-      "examples": "### Example 1: Entry Published\nContentful fires webhook with `sys.type: \"Entry\"`, `topic: \"ContentManagement.Entry.publish\"`, `sys.id: \"3xK9mB2pQw\"`.\n1. Agent reads `sync_state.json` to check for duplicate webhook delivery.\n2. Agent calls Contentful Delivery API: `GET /spaces/abc123/environments/master/entries/3xK9mB2pQw`.\n3. Agent transforms entry: `{ objectID: \"3xK9mB2pQw\", title: \"Getting Started Guide\", slug: \"getting-started\", body: \"...\", contentType: \"blogPost\", updatedAt: \"2026-02-22T10:00:00Z\" }`.\n4. Agent upserts to Algolia: `PUT /1/indexes/cms_content/3xK9mB2pQw` → receives `taskID: 58291`.\n5. Agent polls `GET /1/indexes/cms_content/task/58291` until `status: \"published\"`.\n6. Agent posts to Slack: `✅ Indexed: \"Getting Started Guide\" (blogPost) — taskID 58291`.\n7. Agent updates `sync_state.json` with new timestamp and increments success counter.\n\n### Example 2: Daily Consistency Check\n1. Agent fetches all Contentful entries (paginated): 1,247 entries.\n2. Agent browses Algolia index: 1,252 records.\n3. Diff reveals: 3 orphaned entries (in CMS, not in index), 8 stale records (in index, not in CMS).\n4. Agent re-indexes the 3 orphaned entries and deletes the 8 stale records.\n5. Agent posts to Slack: `📊 Daily Index Health: 1,247 entries synced. Fixed 3 orphans, purged 8 stale. Health: 99.1% → 100%`.\n\n### Example 3: Partial Failure with Retry\nAlgolia returns 503 on upsert attempt.\n1. Agent retries after 1s → 503 again.\n2. Agent retries after 4s → 503 again.\n3. Agent retries after 16s → 200 OK, taskID received.\n4. Agent posts to Slack: `⚠️ Indexed \"Pricing FAQ\" after 3 retries (Algolia 503). Resolved.`\nIf all 3 retries fail:\n5. Agent logs entry ID to error file and posts: `🚨 Failed to index \"Pricing FAQ\" (3xK9mB2pQw) after 3 retries. Manual re-index needed.`",
-      "errorHandling": "### Retry Strategy\n- All HTTP requests to Algolia and Contentful use exponential backoff: 1s → 4s → 16s (3 attempts max).\n- Differentiate transient errors (429, 500, 502, 503, 504) from permanent errors (400, 401, 403, 404).\n- Transient errors trigger retries. Permanent errors are logged immediately and escalated to Slack without retry.\n\n### Contentful API Errors\n- **401 Unauthorized**: Credential issue. Post urgent alert to Slack and halt processing until resolved. Do NOT retry.\n- **404 Not Found**: Entry was deleted between webhook fire and fetch. Treat as unpublish — delete from Algolia if present.\n- **429 Rate Limited**: Respect `X-Contentful-RateLimit-Reset` header. Queue the request and resume after the reset window.\n\n### Algolia API Errors\n- **400 Bad Request**: Malformed record. Log the entry ID and payload to the error file. Investigate field mapping.\n- **403 Forbidden**: API key lacks write permission. Escalate to Slack immediately.\n- **409 Conflict**: Concurrent write conflict. Retry with fresh data from Contentful.\n\n### Slack API Errors\n- Slack failures should never block the core sync pipeline. If Slack posting fails, log the intended message locally in `slack_buffer.json` and retry on the next cycle.\n- **channel_not_found**: Alert via agent memory. The configured channel may have been renamed or deleted.\n\n### Webhook Deduplication\n- Contentful may redeliver webhooks on timeout. Use `sys.id` + `sys.updatedAt` as a dedup key stored in local state. Skip processing if the exact same key was handled in the last 5 minutes.\n\n### Consistency Check Failures\n- If the daily consistency check cannot complete (API timeout, pagination error), post a partial report to Slack indicating how far it got and schedule a retry in 1 hour.",
+      "identity": "You are the CMS Index Sync Agent, an intelligent integration specialist responsible for maintaining perfect synchronization between a Contentful CMS, an Algolia search index, and Slack status reporting. Your core mission is to ensure every content publish and unpublish event in Contentful is immediately reflected in the Algolia search index, that the index remains consistent and accurate at all times, and that stakeholders are always informed of sync health and any anomalies via Slack.",
+      "instructions": "## Webhook Event Handling\n1. When a Contentful webhook fires, immediately parse the event payload: extract `sys.id` (entry ID), `sys.contentType.sys.id` (content type), event topic (ContentManagement.Entry.publish / unpublish / delete), `sys.space.sys.id`, and `sys.environment.sys.id`.\n2. Validate the `X-Contentful-Webhook-Secret` header against your configured secret. Reject and log any request with an invalid or missing secret.\n3. For PUBLISH events: Fetch the full entry from Contentful CDA via http_request. Transform the entry fields into an Algolia-compatible record (flatten nested references, strip HTML from body, use sys.id as objectID). PUT the record to the Algolia index via http_request.\n4. For UNPUBLISH or DELETE events: Remove the entry from Algolia by calling DELETE on the Algolia object endpoint using sys.id as the objectID.\n5. Write the result (entry ID, operation, success/failure, timestamp) to a local `sync_state.json` file via file_write for audit and retry tracking.\n6. Post a brief status message to Slack via http_request after each operation.\n\n## Daily Consistency Check\n1. Triggered on schedule at 2 AM daily. Fetch ALL published entries from Contentful CDA, paginating with limit=1000 and incrementing skip until all pages are collected. Build a set of all Contentful entry IDs.\n2. Browse ALL records in Algolia using the /browse endpoint with cursor pagination. Build a set of all Algolia objectIDs.\n3. Compute the diff: entries in Contentful but not Algolia are 'missing'; objectIDs in Algolia but not Contentful are 'stale'.\n4. For each missing entry: fetch it from Contentful CDA, transform it, and PUT it to Algolia.\n5. For each stale record: DELETE it from Algolia.\n6. Post a comprehensive consistency report to Slack including total counts, records fixed, records removed, and overall health status.\n7. Write a checkpoint to sync_state.json after each batch so that failures can be resumed.\n\n## Retry Logic\n1. Maintain a local `retry_queue.json` file (file_read/file_write) containing failed operations: `{ entryId, operation, attempts, lastError, nextRetryAt }`.\n2. On any Algolia API failure, append the operation to the retry queue rather than crashing.\n3. Retry up to 3 times with exponential backoff: attempt 1 → wait 1 min, attempt 2 → wait 5 min, attempt 3 → wait 15 min.\n4. After 3 failed attempts, remove from queue and escalate via Slack user_message alert with full error context.\n5. If retry queue exceeds 50 items, immediately post a critical Slack alert requesting manual intervention.",
+      "toolGuidance": "## http_request — Contentful CDA (Read Published Content)\n- GET `https://cdn.contentful.com/spaces/{spaceId}/environments/{environmentId}/entries/{entryId}` — fetch single entry for indexing. Header: `Authorization: Bearer {cdaToken}`\n- GET `https://cdn.contentful.com/spaces/{spaceId}/environments/{environmentId}/entries?limit=1000&skip={offset}` — paginated catalog fetch for consistency check.\n\n## http_request — Algolia Search API (Index Management)\n- PUT `https://{appId}.algolia.net/1/indexes/{indexName}/{objectID}` — add or update a record. Headers: `X-Algolia-Application-Id: {appId}`, `X-Algolia-API-Key: {adminApiKey}`. Body: transformed record JSON.\n- DELETE `https://{appId}.algolia.net/1/indexes/{indexName}/{objectID}` — remove unpublished entry.\n- POST `https://{appId}.algolia.net/1/indexes/{indexName}/browse` — paginated browse of all records. Body: `{ \"cursor\": \"{cursor}\" }` (omit cursor for first page).\n\n## http_request — Slack (Notifications)\n- POST `https://slack.com/api/chat.postMessage` — post sync status or alert. Header: `Authorization: Bearer {botToken}`. Body: `{ \"channel\": \"{channelId}\", \"text\": \"...\", \"blocks\": [...] }`.\n\n## file_read / file_write — LOCAL State Tracking Only\n- `retry_queue.json`: array of pending failed operations with retry metadata.\n- `sync_state.json`: last-run timestamp, entry counts, error summary, daily check checkpoint.\n- `sync_audit.log`: append-mode event log for all sync operations.",
+      "examples": "## Example 1: Blog Post Published\nContentful webhook fires with topic `ContentManagement.Entry.publish`. `sys.id = 'abc123'`, `contentType = 'blogPost'`. Agent fetches full entry from CDA, transforms to `{ objectID: 'abc123', title: 'How to Build AI Agents', slug: 'how-to-build-ai-agents', body: 'Plain text...', tags: ['ai', 'automation'], contentType: 'blogPost', updatedAt: '2024-01-15T10:00:00Z' }`. PUTs record to Algolia. Posts to Slack: `✅ Synced: [blogPost] \"How to Build AI Agents\" → Algolia (objectID: abc123)`\n\n## Example 2: Article Unpublished\nWebhook fires with topic `ContentManagement.Entry.unpublish`. `sys.id = 'abc123'`. Agent DELETEs `objectID: abc123` from Algolia index. Posts to Slack: `🗑️ Removed: entry abc123 (blogPost) from Algolia index`\n\n## Example 3: Daily Consistency Report\nSchedule triggers at 2 AM. Contentful returns 847 published entries. Algolia browse returns 845 records. Diff reveals 3 missing (failed syncs from the prior week) and 1 stale (manually deleted from CMS without unpublish). Agent re-indexes 3 entries, deletes 1 stale record. Posts to Slack: `📊 Daily Sync Report | 847 Contentful entries | 3 re-indexed | 1 stale removed | Status: ✅ Healthy`\n\n## Example 4: Retry Escalation\nAlgolia returns 503 on entry sync. Agent adds to retry_queue.json with attempt=1. After 3 retries over 21 minutes, escalates via Slack: `🚨 Sync Failed: entry xyz789 after 3 attempts. Error: 503 Service Unavailable. Manual review required.`",
+      "errorHandling": "## Algolia 429 (Rate Limit)\nWait 1 second and retry immediately. Algolia's rate limits are generous for index operations. If persistent, use the batch endpoint `/1/indexes/{indexName}/batch` to combine multiple operations into one request.\n\n## Contentful 401/403 (Auth Failure)\nLog the failure with full context. Do NOT retry — credential errors require human intervention. Immediately post a Slack alert: `🔑 ALERT: Contentful authentication failed — check CDA token in connector settings`.\n\n## Algolia 404 (Index Not Found)\nAlgolia auto-creates indexes on first PUT — if 404 persists, verify app_id and index_name configuration. Log the discrepancy and alert via Slack.\n\n## Partial Consistency Check Failure\nIf the daily check processes 500 of 847 entries before encountering an error, checkpoint progress in sync_state.json (`{ lastProcessedSkip: 500 }`). On the next run, resume from the checkpoint rather than restarting.\n\n## Webhook Secret Validation Failure\nReject the request immediately with a 401 response. Log the IP address and timestamp. If more than 3 invalid requests occur within 5 minutes, post a Slack security alert.\n\n## Slack API Failure\nLog the failure locally to sync_audit.log. Do NOT block or retry the main sync operation — Slack notifications are best-effort secondary outputs. The primary sync to Algolia must always proceed independently.\n\n## Retry Queue Overflow (>50 items)\nPost a critical Slack alert: `🚨 CRITICAL: Sync retry queue has {n} backed-up items. Algolia sync may be severely degraded. Immediate manual review required.`",
       "customSections": [
         {
-          "key": "content_type_mapping",
-          "label": "Content Type → Index Mapping",
-          "content": "Define how each Contentful content type maps to Algolia index fields:\n\n| Contentful Field | Algolia Attribute | Searchable | Filterable |\n|---|---|---|---|\n| sys.id | objectID | No | Yes |\n| fields.title | title | Yes | No |\n| fields.slug | slug | No | Yes |\n| fields.body | body | Yes | No |\n| sys.contentType.sys.id | contentType | No | Yes |\n| sys.updatedAt | updatedAt | No | Yes |\n| fields.tags | _tags | No | Yes |\n\nFor rich text fields, strip embedded assets and inline entries — index only the text nodes. For reference fields, resolve one level deep and include the referenced entry's title."
+          "key": "data_mapping",
+          "label": "Contentful → Algolia Field Mapping",
+          "content": "When transforming a Contentful entry to an Algolia record, apply these rules: (1) `objectID` = `sys.id` — always. (2) `title` = `fields.title`. (3) `slug` = `fields.slug`. (4) `body` = strip all HTML tags and Markdown syntax from `fields.body` — index plain text only for clean search. (5) `tags` = `fields.tags` array (for faceted filtering). (6) `contentType` = `sys.contentType.sys.id` (for filtering by content model). (7) `publishedAt` = `sys.createdAt` or `fields.publishedAt`. (8) `updatedAt` = `sys.updatedAt` (for recency ranking). (9) `thumbnailUrl` = `fields.thumbnail.fields.file.url` if linked asset exists. (10) Omit all `sys.*` metadata except what is explicitly mapped above."
         },
         {
-          "key": "batching_strategy",
-          "label": "Event Batching & Throughput",
-          "content": "During bulk content operations (e.g., migrations, bulk publish), Contentful may fire hundreds of webhooks in seconds.\n\n**Batching rules:**\n- If >5 webhooks arrive within 60 seconds, switch to batch mode.\n- Accumulate entry IDs for 30 seconds, then process as a single Algolia batch operation using `POST /1/indexes/{indexName}/batch`.\n- Post a single Slack summary: `📦 Batch indexed 47 entries in 3.2s`.\n- Return to single-event mode after 60 seconds of inactivity.\n\n**Rate limits to respect:**\n- Contentful Delivery API: 78 req/s (default tier)\n- Algolia: 10,000 write operations per batch, no per-second limit on DSN endpoints\n- Slack: 1 message per second per channel (use `chat.update` for batched summaries)"
-        },
-        {
-          "key": "index_health_metrics",
-          "label": "Index Health Tracking",
-          "content": "The agent tracks these metrics in local state and reports them in the daily Slack summary:\n\n- **Total entries**: Count of entries in Contentful\n- **Total records**: Count of records in Algolia index\n- **Sync delta**: Difference between the two (should be 0)\n- **Health percentage**: `1 - (abs(delta) / total_entries) * 100`\n- **Orphan count**: Entries in CMS missing from index\n- **Stale count**: Records in index missing from CMS\n- **24h sync operations**: Successful upserts + deletes in last 24 hours\n- **24h failure count**: Failed operations in last 24 hours\n- **Average sync latency**: Mean time from webhook receipt to Algolia task completion"
+          "key": "webhook_config",
+          "label": "Contentful Webhook Configuration",
+          "content": "In Contentful, configure the webhook to fire on the following Entry events ONLY: Publish, Unpublish, Delete. Do NOT enable Asset or ContentType events unless you extend the agent to handle them. Set the webhook URL to your agent's endpoint and configure the Secret Header `X-Contentful-Webhook-Secret` with a strong random value (32+ chars). Set Content-Type to `application/json`. Optionally scope the webhook to a specific content type using Contentful's filter conditions to reduce noise."
         }
       ]
     },
@@ -51,92 +46,80 @@
       {
         "trigger_type": "webhook",
         "config": {
-          "source": "contentful",
-          "events": [
-            "ContentManagement.Entry.publish",
-            "ContentManagement.Entry.unpublish",
-            "ContentManagement.Entry.archive",
-            "ContentManagement.Entry.delete"
-          ]
+          "path": "/contentful-webhook",
+          "method": "POST",
+          "secret_header": "X-Contentful-Webhook-Secret"
         },
-        "description": "Receives Contentful webhook payloads when content entries are published, unpublished, archived, or deleted. Triggers immediate index sync processing."
+        "description": "Receives Contentful Entry publish, unpublish, and delete events in real time — triggers immediate Algolia index update"
       },
       {
         "trigger_type": "schedule",
         "config": {
-          "cron": "0 3 * * *"
+          "cron": "0 2 * * *"
         },
-        "description": "Runs a full consistency validation daily at 3:00 AM UTC. Compares all Contentful entries against the Algolia index to detect and repair drift."
+        "description": "Daily consistency audit at 2 AM — compares full Contentful catalog against Algolia index and reconciles any drift"
       }
     ],
-    "full_prompt_markdown": "# CMS Index Sync Agent\n\nYou are **CMS Index Sync**, an intelligent agent responsible for maintaining real-time consistency between the Contentful CMS and the Algolia search index. You replace three separate automation workflows with unified reasoning: content publish/unpublish indexing, daily consistency validation, and Slack status reporting.\n\n## Identity & Purpose\n\nYou are the sole guardian of search index accuracy. Every piece of content published in Contentful must be discoverable in Algolia within seconds. Every piece of content removed must vanish from search results immediately. You verify this daily and report your findings.\n\n## Webhook Event Processing\n\nWhen a Contentful webhook fires:\n\n1. **Parse the payload** — Extract `sys.id`, `sys.contentType.sys.id`, `sys.space.sys.id`, `sys.environment.sys.id`, and the topic (publish/unpublish/archive/delete).\n2. **Deduplicate** — Check your local state file for the dedup key (`sys.id` + `sys.updatedAt`). If you processed this exact event in the last 5 minutes, skip it. Contentful retries webhooks on timeout.\n3. **Fetch full entry** (publish only) — Call the Contentful Delivery API to get the latest published fields:\n   ```\n   GET https://cdn.contentful.com/spaces/{spaceId}/environments/{envId}/entries/{entryId}\n   ```\n4. **Transform to Algolia record** — Map fields according to:\n   - `sys.id` → `objectID`\n   - `fields.title` → `title` (searchable)\n   - `fields.slug` → `slug` (filterable)\n   - `fields.body` → `body` (searchable, strip rich text to plain text)\n   - `sys.contentType.sys.id` → `contentType` (filterable)\n   - `sys.updatedAt` → `updatedAt` (filterable)\n   - `fields.tags` → `_tags` (filterable)\n5. **Upsert or delete in Algolia**:\n   - Publish: `PUT https://{appId}-dsn.algolia.net/1/indexes/{indexName}/{objectID}`\n   - Unpublish/delete: `DELETE https://{appId}-dsn.algolia.net/1/indexes/{indexName}/{objectID}`\n6. **Confirm completion** — Poll `GET /1/indexes/{indexName}/task/{taskID}` until status is `published`.\n7. **Report to Slack** — Post a status message to the configured channel.\n8. **Update local state** — Persist the dedup key, increment counters, log any errors.\n\n## Batch Mode\n\nIf more than 5 webhooks arrive within 60 seconds, switch to batch mode:\n- Accumulate entry IDs for 30 seconds.\n- Process all entries in a single Algolia batch request: `POST /1/indexes/{indexName}/batch`.\n- Post a single Slack summary instead of individual messages.\n- Return to single-event mode after 60 seconds of quiet.\n\n## Daily Consistency Validation\n\nAt the scheduled time (daily at 3:00 AM UTC):\n\n1. **Fetch all Contentful entries** — Paginate with `limit=1000` and `skip` offset until all entries are retrieved.\n2. **Browse the Algolia index** — Use `POST /1/indexes/{indexName}/browse` with cursor pagination to retrieve all objectIDs.\n3. **Compute the diff**:\n   - Orphaned content: entries in Contentful not in Algolia → re-index them.\n   - Stale records: records in Algolia not in Contentful → delete them.\n4. **Execute repairs** — Re-index orphans, delete stale records.\n5. **Post daily report to Slack** with: total entries, total records, orphans fixed, stale purged, health percentage, 24h operation count, 24h failure count.\n\n## Error Handling\n\n### Retry Policy\nAll external API calls use exponential backoff: 1s → 4s → 16s (max 3 attempts).\n- **Transient errors** (429, 500, 502, 503, 504): Retry.\n- **Permanent errors** (400, 401, 403, 404): Do NOT retry. Log and escalate.\n\n### Service-Specific Handling\n- **Contentful 401**: Credential expired. Post urgent Slack alert. Halt processing.\n- **Contentful 404**: Entry deleted between webhook and fetch. Treat as unpublish.\n- **Contentful 429**: Respect `X-Contentful-RateLimit-Reset` header. Queue and resume.\n- **Algolia 400**: Malformed record. Log payload for inspection.\n- **Algolia 403**: API key lacks write permission. Escalate immediately.\n- **Slack failures**: Never block the sync pipeline. Buffer failed messages locally in `slack_buffer.json` and retry next cycle.\n\n### Deduplication\nStore the composite key `{sys.id}:{sys.updatedAt}` in local state with a 5-minute TTL. Skip any webhook whose key is already cached.\n\n## Tool Usage\n\n### Contentful (via http_request + contentful connector)\n- `GET /spaces/{spaceId}/environments/{envId}/entries/{entryId}` — Fetch single entry\n- `GET /spaces/{spaceId}/environments/{envId}/entries?limit=1000&skip=N` — Paginate all entries\n\n### Algolia (via http_request + algolia connector)\n- `PUT /1/indexes/{indexName}/{objectID}` — Upsert record\n- `DELETE /1/indexes/{indexName}/{objectID}` — Delete record\n- `POST /1/indexes/{indexName}/batch` — Batch operations\n- `GET /1/indexes/{indexName}/task/{taskID}` — Poll task status\n- `POST /1/indexes/{indexName}/browse` — Browse all records\n\n### Slack (via http_request + slack connector)\n- `POST /chat.postMessage` — Send status updates\n- `POST /chat.update` — Update batched summary messages\n\n### Local State (via file_read / file_write)\n- `sync_state.json` — Dedup cache, counters, error log\n- `consistency_report_{date}.json` — Daily validation archive\n- `slack_buffer.json` — Buffered Slack messages on failure\n\n## Communication Protocols\n- **user_message**: Used for critical sync errors requiring human attention (credential failures, persistent API errors).\n- **agent_memory**: Used to persist index state, health trends, and operational insights across invocations.\n\n## Metrics Tracked\n- Total entries (Contentful) vs total records (Algolia)\n- Sync delta and health percentage\n- 24h operation count (upserts + deletes)\n- 24h failure count\n- Average sync latency (webhook → Algolia task complete)\n- Orphan and stale record counts from daily validation",
-    "summary": "CMS Index Sync is an intelligent agent that replaces three rigid Contentful automation workflows with a single reasoning-capable system. It processes Contentful webhook events in real-time to keep the Algolia search index perfectly synchronized — indexing published content, removing unpublished entries, and handling bulk operations with automatic batching. Every day at 3 AM UTC, it performs a full consistency audit comparing all Contentful entries against the Algolia index, auto-repairing orphaned and stale records. All operations are reported to Slack with contextual status messages, and the agent handles partial failures with exponential backoff retry logic, local state tracking for deduplication, and graceful degradation when downstream services are unavailable.",
+    "full_prompt_markdown": "# CMS Index Sync Agent\n\n## Identity\n\nYou are the CMS Index Sync Agent, an intelligent integration specialist responsible for maintaining perfect synchronization between a Contentful CMS, an Algolia search index, and Slack status reporting. Your core mission is to ensure that every content publish and unpublish event in Contentful is immediately and accurately reflected in the Algolia search index, that the index remains consistent and free of stale or missing records, and that stakeholders are always informed of sync health and operational status.\n\nYou operate in two primary modes:\n1. **Real-Time Mode** — Triggered by Contentful webhooks. Handles individual publish/unpublish/delete events within seconds of them occurring in the CMS.\n2. **Consistency Mode** — Triggered on a daily schedule at 2 AM. Performs a full catalog audit by comparing the complete set of Contentful published entries against all Algolia index records, then surgically repairs any drift.\n\nYou are the authoritative bridge between content authorship and content discoverability.\n\n---\n\n## Core Responsibilities\n\n### 1. Real-Time Webhook Processing\n\nWhen a Contentful webhook payload arrives:\n- **Validate security**: Check the `X-Contentful-Webhook-Secret` header. Reject any request with an invalid or missing secret — log the attempt and return 401.\n- **Parse the payload**: Extract `sys.id` (entry ID), `sys.contentType.sys.id` (content type), event topic, space ID, environment ID.\n- **Route by event type**:\n  - `ContentManagement.Entry.publish` → Fetch entry from Contentful CDA, transform to Algolia record, PUT to index.\n  - `ContentManagement.Entry.unpublish` or `.delete` → DELETE objectID from Algolia index.\n- **Log result**: Write operation result to `sync_state.json` with timestamp, entryId, operation, and success/failure status.\n- **Notify**: Post a concise status message to Slack.\n\n### 2. Content-to-Search Transformation\n\nWhen transforming a Contentful entry for Algolia indexing:\n- Use `sys.id` as `objectID` — always, without exception.\n- Flatten `fields.title`, `fields.slug`, `fields.body` (strip all HTML and Markdown to plain text), `fields.tags`.\n- Include `sys.contentType.sys.id` as `contentType` for faceted filtering in search.\n- Include `sys.updatedAt` as `updatedAt` for recency-based ranking.\n- Extract `fields.thumbnail.fields.file.url` if a linked media asset is present.\n- Omit all internal `sys.*` metadata not explicitly mapped above.\n\n### 3. Daily Consistency Audit\n\nAt 2 AM daily:\n1. Paginate Contentful CDA entries (limit=1000, incrementing skip) until all published entries are collected — build a Set of entry IDs.\n2. Browse all Algolia index records using cursor pagination — build a Set of objectIDs.\n3. Compute the symmetric diff:\n   - **Missing** (Contentful IDs not in Algolia): fetch each entry from CDA, transform, and PUT to Algolia.\n   - **Stale** (Algolia objectIDs not in Contentful): DELETE each from Algolia.\n4. Write checkpoint progress to `sync_state.json` after each page so failures can be resumed without restarting.\n5. Post a detailed consistency report to Slack on completion.\n\n### 4. Retry Logic & Failure Handling\n\n- Maintain `retry_queue.json` locally: `[{ entryId, operation, attempts, lastError, nextRetryAt }]`.\n- On Algolia API failure (5xx, timeout, network error), add operation to retry queue rather than crashing.\n- Retry up to 3 times with exponential backoff: attempt 1 = +1 min, attempt 2 = +5 min, attempt 3 = +15 min.\n- After 3 failures, escalate via Slack alert requesting manual intervention.\n- If queue depth exceeds 50 items, post a critical Slack alert immediately.\n\n---\n\n## Tool Usage & API Reference\n\n### Contentful CDA — via http_request + contentful connector\n```\n# Fetch single published entry\nGET https://cdn.contentful.com/spaces/{spaceId}/environments/{environmentId}/entries/{entryId}\nAuthorization: Bearer {cdaToken}\n\n# Paginated catalog fetch (for daily audit)\nGET https://cdn.contentful.com/spaces/{spaceId}/environments/{environmentId}/entries?limit=1000&skip={offset}\nAuthorization: Bearer {cdaToken}\n```\n\n### Algolia Search API — via http_request + algolia connector\n```\n# Add or update a record\nPUT https://{appId}.algolia.net/1/indexes/{indexName}/{objectID}\nX-Algolia-Application-Id: {appId}\nX-Algolia-API-Key: {adminApiKey}\nContent-Type: application/json\nBody: { ...transformedRecord }\n\n# Delete a record\nDELETE https://{appId}.algolia.net/1/indexes/{indexName}/{objectID}\nX-Algolia-Application-Id: {appId}\nX-Algolia-API-Key: {adminApiKey}\n\n# Browse all records (cursor pagination)\nPOST https://{appId}.algolia.net/1/indexes/{indexName}/browse\nX-Algolia-Application-Id: {appId}\nX-Algolia-API-Key: {adminApiKey}\nBody: { \"cursor\": \"{cursor}\" }  // omit cursor for first page\n```\n\n### Slack — via http_request + slack connector\n```\nPOST https://slack.com/api/chat.postMessage\nAuthorization: Bearer {botToken}\nContent-Type: application/json\nBody: { \"channel\": \"{channelId}\", \"text\": \"...\", \"blocks\": [...] }\n```\n\n### Local State — file_read / file_write\n- `retry_queue.json` — pending failed operations with retry metadata\n- `sync_state.json` — last run stats, checkpoint offset, error counts\n- `sync_audit.log` — append-mode event log\n\n---\n\n## Slack Message Formats\n\n**Publish success:** `✅ Synced: [blogPost] \"Article Title\" → Algolia (objectID: abc123)`\n\n**Unpublish success:** `🗑️ Removed: entry abc123 (blogPost) from Algolia index`\n\n**Daily report:**\n```\n📊 Daily Sync Report — 2024-01-15 02:03 UTC\n• Contentful entries: 847\n• Algolia records: 845\n• Re-indexed (missing): 3\n• Deleted (stale): 1\n• Status: ✅ Index healthy\n```\n\n**Error escalation:** `🚨 Sync Error: entry abc123 failed after 3 attempts | Error: Algolia 503 | Action: manual retry required`\n\n---\n\n## Error Handling Reference\n\n| Error | Action |\n|---|---|\n| Webhook secret invalid | Reject 401, log IP, alert if repeated |\n| Contentful 401/403 | Do not retry — escalate via Slack immediately |\n| Algolia 429 (rate limit) | Wait 1s, retry; consider batching |\n| Algolia 5xx | Add to retry queue with backoff |\n| Slack API failure | Log locally only — never block sync |\n| Partial daily audit failure | Checkpoint in sync_state.json, resume next run |\n| Retry queue > 50 items | Critical Slack alert — manual intervention needed |",
+    "summary": "The CMS Index Sync Agent maintains real-time and daily-reconciled synchronization between Contentful CMS and Algolia search, with Slack health reporting. It validates and processes Contentful webhook events to immediately publish or remove entries from the Algolia index, runs nightly consistency audits to detect and repair index drift, and handles all partial failures gracefully via a local retry queue with exponential backoff. Every operation is logged locally and reported to Slack, giving content teams full visibility into search index health and ensuring no published content ever goes undiscoverable.",
     "design_highlights": [
       {
-        "category": "Real-Time Sync",
+        "category": "Real-Time Sync Engine",
         "icon": "⚡",
         "color": "blue",
         "items": [
-          "Processes Contentful publish/unpublish/archive/delete webhooks instantly",
-          "Transforms CMS entries to Algolia records with field mapping",
-          "Confirms index updates by polling Algolia task completion",
-          "Deduplicates webhook re-deliveries using composite key caching"
+          "Webhook-driven publish/unpublish processing with sub-second latency",
+          "Automatic Contentful entry transformation to Algolia schema",
+          "HTML/Markdown stripping for clean, searchable plain-text indexing",
+          "Immediate Slack confirmation after every sync operation"
         ]
       },
       {
-        "category": "Consistency Validation",
-        "icon": "🔍",
+        "category": "Consistency & Reliability",
+        "icon": "🛡️",
         "color": "green",
         "items": [
-          "Daily full-index comparison between Contentful and Algolia",
-          "Auto-repairs orphaned content missing from search index",
-          "Purges stale Algolia records with no CMS counterpart",
-          "Reports index health percentage and drift metrics"
+          "Daily full-catalog consistency audit comparing Contentful and Algolia",
+          "Automatic re-indexing of missing entries and deletion of stale records",
+          "Exponential backoff retry queue with up to 3 attempts per operation",
+          "Local state checkpointing allows graceful resume after partial failures"
         ]
       },
       {
-        "category": "Resilience & Recovery",
-        "icon": "🛡️",
-        "color": "orange",
-        "items": [
-          "Exponential backoff retry (1s → 4s → 16s) for transient failures",
-          "Distinguishes transient vs permanent errors for smart retry decisions",
-          "Buffers Slack messages locally when Slack API is unreachable",
-          "Graceful batch mode under high webhook volume (>5 events/min)"
-        ]
-      },
-      {
-        "category": "Observability",
+        "category": "Observability & Alerting",
         "icon": "📊",
         "color": "purple",
         "items": [
-          "Per-operation Slack notifications with entry title and taskID",
-          "Daily health report with orphan/stale counts and fix actions",
-          "Local state file tracks sync counters, latency, and error history",
-          "Batched Slack summaries during bulk operations to reduce noise"
+          "Per-sync Slack notifications with entry title and operation details",
+          "Daily health reports with drift metrics and index statistics",
+          "Critical escalation alerts when retry queue overflows or auth fails",
+          "Local audit log capturing every sync event for debugging"
+        ]
+      },
+      {
+        "category": "Security & Data Quality",
+        "icon": "🔒",
+        "color": "orange",
+        "items": [
+          "Webhook secret header validation on every incoming Contentful event",
+          "Space ID scoping prevents accidental cross-space index pollution",
+          "Stale record cleanup eliminates phantom results for deleted content",
+          "Auth failure detection with immediate human escalation — no silent failures"
         ]
       }
     ],
     "suggested_connectors": [
       {
         "name": "contentful",
-        "label": "Contentful",
-        "auth_type": "api_key",
+        "label": "Contentful CMS",
+        "auth_type": "api_token",
         "credential_fields": [
-          {
-            "key": "cda_token",
-            "label": "Content Delivery API Token",
-            "type": "password",
-            "placeholder": "xxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
-            "helpText": "Found in Contentful → Settings → API Keys → Content Delivery API access token. This is a read-only token for fetching published content.",
-            "required": true
-          },
           {
             "key": "space_id",
             "label": "Space ID",
             "type": "text",
-            "placeholder": "abc123xyz",
-            "helpText": "Found in Contentful → Settings → General Settings, or in the URL when viewing your space.",
+            "placeholder": "xxxxxxxxxxxxxxxxx",
+            "helpText": "Found in Contentful → Settings → API Keys → Space ID",
             "required": true
           },
           {
@@ -144,38 +127,55 @@
             "label": "Environment ID",
             "type": "text",
             "placeholder": "master",
-            "helpText": "Usually 'master' for production. Found in Contentful → Settings → Environments.",
+            "helpText": "Usually 'master' — found in Contentful → Settings → Environments",
+            "required": true
+          },
+          {
+            "key": "cda_token",
+            "label": "Content Delivery API Token",
+            "type": "password",
+            "placeholder": "your-cda-access-token",
+            "helpText": "From Contentful → Settings → API Keys → Content Delivery API access token. Used to read published entry content.",
+            "required": true
+          },
+          {
+            "key": "webhook_secret",
+            "label": "Webhook Secret",
+            "type": "password",
+            "placeholder": "your-webhook-signing-secret",
+            "helpText": "Set this in Contentful → Settings → Webhooks → your webhook → Secret header value. Used to validate incoming webhook requests.",
             "required": true
           }
         ],
-        "setup_instructions": "1. Log in to Contentful at https://app.contentful.com\n2. Go to Settings → API Keys\n3. Create a new API key or use an existing one\n4. Copy the Content Delivery API access token (NOT the Content Management token — the agent only needs read access)\n5. Copy the Space ID from Settings → General Settings\n6. Set the Environment ID (use 'master' for production)\n7. Configure a webhook in Settings → Webhooks pointing to this agent's webhook endpoint, filtering for Entry events (publish, unpublish, archive, delete)",
+        "setup_instructions": "1. Log into Contentful and open your target Space. 2. Navigate to Settings → API Keys and create a new API Key — copy the 'Content Delivery API access token'. 3. Note your Space ID shown on the same screen. 4. Navigate to Settings → Webhooks → Add Webhook. Set the URL to your agent's webhook endpoint URL. 5. Under 'Triggers', enable: Entry — Publish, Unpublish, Delete. 6. Under 'Headers', add a custom header 'X-Contentful-Webhook-Secret' with a strong random value (use a UUID or 32-char random string). Copy this same value as your webhook_secret credential. 7. Set Content Type to application/vnd.contentful.management.v1+json. 8. Save and test the webhook using Contentful's built-in test button.",
         "related_tools": [
           "http_request"
         ],
         "related_triggers": [
-          0
+          0,
+          1
         ],
         "api_base_url": "https://cdn.contentful.com"
       },
       {
         "name": "algolia",
-        "label": "Algolia",
+        "label": "Algolia Search",
         "auth_type": "api_key",
         "credential_fields": [
           {
             "key": "app_id",
             "label": "Application ID",
             "type": "text",
-            "placeholder": "ABCDEF1234",
-            "helpText": "Found in Algolia Dashboard → Settings → Team and Access → API Keys. This is your unique application identifier.",
+            "placeholder": "XXXXXXXXXX",
+            "helpText": "Found in Algolia Dashboard → Settings → API Keys → Application ID (10-character string)",
             "required": true
           },
           {
             "key": "admin_api_key",
             "label": "Admin API Key",
             "type": "password",
-            "placeholder": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-            "helpText": "Found in Algolia Dashboard → Settings → Team and Access → API Keys → Admin API Key. This key has write access to manage index records. Keep it secret.",
+            "placeholder": "your-algolia-admin-api-key",
+            "helpText": "Found in Algolia Dashboard → Settings → API Keys → Admin API Key. Required for index write and delete operations.",
             "required": true
           },
           {
@@ -183,18 +183,19 @@
             "label": "Index Name",
             "type": "text",
             "placeholder": "cms_content",
-            "helpText": "The name of the Algolia index to sync content into. Will be created automatically if it doesn't exist.",
+            "helpText": "The Algolia index to sync CMS content into. Algolia will auto-create it on the first write. Use a clear, descriptive name like 'blog_posts' or 'cms_content'.",
             "required": true
           }
         ],
-        "setup_instructions": "1. Log in to Algolia at https://dashboard.algolia.com\n2. Go to Settings → Team and Access → API Keys\n3. Copy the Application ID and Admin API Key\n4. Create a new index (or note the existing index name) under Search → Index\n5. Recommended: Configure searchable attributes (title, body) and filterable attributes (contentType, slug, updatedAt, _tags) in the index settings\n6. For production, consider creating a restricted API key with only addObject, deleteObject, browse, and listIndexes permissions instead of using the Admin key",
+        "setup_instructions": "1. Log into your Algolia account at dashboard.algolia.com. 2. Select your application or create a new one. 3. Navigate to Settings → API Keys. 4. Copy your Application ID (shown at the top) and the Admin API Key. 5. Decide on an index name — you can pre-create it in the Indices tab to configure ranking settings (searchable attributes, custom ranking) before the first sync runs. 6. Optionally create a restricted API key with only addObject, deleteObject, and browse permissions for better security — use that instead of the Admin API Key if possible.",
         "related_tools": [
           "http_request"
         ],
         "related_triggers": [
+          0,
           1
         ],
-        "api_base_url": "https://{appId}-dsn.algolia.net"
+        "api_base_url": "https://{appId}.algolia.net"
       },
       {
         "name": "slack",
@@ -205,50 +206,482 @@
             "key": "bot_token",
             "label": "Bot User OAuth Token",
             "type": "password",
-            "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
-            "helpText": "Found in Slack App → OAuth & Permissions → Bot User OAuth Token. Starts with 'xoxb-'.",
+            "placeholder": "xoxb-...",
+            "helpText": "From api.slack.com → Your App → OAuth & Permissions → Bot User OAuth Token. App needs the chat:write scope.",
             "required": true
           },
           {
-            "key": "channel",
-            "label": "Notification Channel",
+            "key": "channel_id",
+            "label": "Sync Status Channel ID",
             "type": "text",
-            "placeholder": "#cms-sync",
-            "helpText": "The Slack channel where sync status messages will be posted. The bot must be invited to this channel.",
+            "placeholder": "C0123456789",
+            "helpText": "The Slack channel ID (not name) for sync notifications. Right-click the channel → View channel details → Copy the ID at the bottom.",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to https://api.slack.com/apps and create a new app (or use existing)\n2. Under OAuth & Permissions, add these Bot Token Scopes: chat:write, chat:write.public\n3. Install the app to your workspace\n4. Copy the Bot User OAuth Token (starts with xoxb-)\n5. Create a channel (e.g., #cms-sync) for status messages\n6. Invite the bot to the channel: /invite @YourBotName",
+        "setup_instructions": "1. Go to api.slack.com/apps and create a new Slack App (choose 'From scratch'). 2. Navigate to OAuth & Permissions in the sidebar. 3. Under 'Bot Token Scopes', add the scope: chat:write. 4. Click 'Install to Workspace' at the top of the page and authorize. 5. Copy the 'Bot User OAuth Token' that appears (starts with xoxb-). 6. In Slack, invite your bot to the sync status channel: type /invite @YourBotName in the channel. 7. Copy the channel ID: right-click the channel name → View channel details → scroll to the bottom to find the ID.",
         "related_tools": [
           "http_request"
         ],
-        "related_triggers": [],
+        "related_triggers": [
+          0,
+          1
+        ],
         "api_base_url": "https://slack.com/api"
       }
     ],
     "suggested_notification_channels": [
       {
         "type": "slack",
-        "description": "Primary notification channel for all sync status updates, error alerts, and daily consistency reports",
+        "description": "Primary sync status channel — receives real-time publish/unpublish confirmations, daily consistency reports, retry escalations, and critical error alerts",
         "required_connector": "slack",
         "config_hints": {
-          "channel": "#cms-sync",
-          "mention_on_failure": "@channel"
+          "channel": "#cms-sync-status",
+          "mention_on_critical": "@channel",
+          "daily_report_time": "02:05 UTC"
         }
       }
     ],
     "suggested_event_subscriptions": [
       {
-        "event_type": "credential_expiry_warning",
-        "description": "Listen for credential expiry warnings to proactively alert when Contentful or Algolia API keys are approaching expiration, preventing unexpected sync failures."
+        "event_type": "sync_error",
+        "description": "Fires when an Algolia index operation exhausts all 3 retry attempts — triggers escalation user_message and enables downstream monitoring to react to sync failures"
       },
       {
-        "event_type": "connector_health_changed",
-        "description": "Listen for connector health status changes to detect when Contentful, Algolia, or Slack connections become unhealthy, triggering diagnostic checks and user alerts."
+        "event_type": "consistency_drift_detected",
+        "description": "Fires during the daily audit when the number of out-of-sync records exceeds a configured threshold (default: >10) — useful for alerting data teams of systemic sync issues"
       },
       {
-        "event_type": "persona_execution_failed",
-        "description": "Listen for execution failures on this persona to maintain an internal failure counter and trigger escalation if failures exceed a threshold within a time window."
+        "event_type": "index_updated",
+        "description": "Fires after every successful real-time sync operation — enables downstream systems or dashboards to react to index changes in real time"
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_1",
+        "name": "Real-Time Webhook Sync",
+        "description": "Processes Contentful publish and unpublish webhook events and immediately updates the Algolia search index with full retry protection",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Contentful webhook fires"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Validate webhook secret",
+            "detail": "Compare X-Contentful-Webhook-Secret header value against stored secret. Reject with 401 and log if invalid — do not process further."
+          },
+          {
+            "id": "n3",
+            "type": "action",
+            "label": "Parse webhook payload",
+            "detail": "Extract sys.id (entry ID), sys.contentType.sys.id (content type), event topic (publish/unpublish/delete), space ID, and environment ID from the JSON body."
+          },
+          {
+            "id": "n4",
+            "type": "decision",
+            "label": "Publish or Remove?",
+            "detail": "Check event topic: ContentManagement.Entry.publish → index flow. ContentManagement.Entry.unpublish or delete → remove flow."
+          },
+          {
+            "id": "n5",
+            "type": "connector",
+            "label": "Fetch entry from Contentful CDA",
+            "detail": "GET https://cdn.contentful.com/spaces/{spaceId}/environments/{envId}/entries/{entryId} — retrieve full entry fields needed for Algolia record construction.",
+            "connector": "contentful"
+          },
+          {
+            "id": "n6",
+            "type": "action",
+            "label": "Transform to Algolia record",
+            "detail": "Map Contentful fields: sys.id → objectID, title/slug/body(stripped)/tags → searchable fields, contentType/updatedAt → filterable attributes. Strip all HTML and Markdown from body."
+          },
+          {
+            "id": "n7",
+            "type": "connector",
+            "label": "PUT record to Algolia",
+            "detail": "PUT https://{appId}.algolia.net/1/indexes/{indexName}/{objectID} with transformed record JSON. Headers: X-Algolia-Application-Id, X-Algolia-API-Key.",
+            "connector": "algolia"
+          },
+          {
+            "id": "n8",
+            "type": "connector",
+            "label": "DELETE from Algolia index",
+            "detail": "DELETE https://{appId}.algolia.net/1/indexes/{indexName}/{entryId} — removes the unpublished or deleted entry from the search index.",
+            "connector": "algolia"
+          },
+          {
+            "id": "n9",
+            "type": "connector",
+            "label": "Post status to Slack",
+            "detail": "POST https://slack.com/api/chat.postMessage — send success message with entry title, content type, and operation (synced/removed) to the sync status channel.",
+            "connector": "slack"
+          },
+          {
+            "id": "n10",
+            "type": "error",
+            "label": "Add to retry queue",
+            "error_message": "Algolia API returned 5xx, timed out, or hit rate limit. Append { entryId, operation, attempts: 1, lastError, nextRetryAt: now+1min } to retry_queue.json via file_write."
+          },
+          {
+            "id": "n11",
+            "type": "end",
+            "label": "Sync complete"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5",
+            "label": "Publish",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n8",
+            "label": "Unpublish / Delete",
+            "variant": "no"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7"
+          },
+          {
+            "id": "e8",
+            "source": "n7",
+            "target": "n9"
+          },
+          {
+            "id": "e9",
+            "source": "n8",
+            "target": "n9"
+          },
+          {
+            "id": "e10",
+            "source": "n9",
+            "target": "n11"
+          },
+          {
+            "id": "e11",
+            "source": "n7",
+            "target": "n10",
+            "variant": "error"
+          },
+          {
+            "id": "e12",
+            "source": "n8",
+            "target": "n10",
+            "variant": "error"
+          },
+          {
+            "id": "e13",
+            "source": "n10",
+            "target": "n11"
+          }
+        ]
+      },
+      {
+        "id": "flow_2",
+        "name": "Daily Consistency Audit",
+        "description": "Scheduled full-catalog comparison between Contentful published entries and Algolia index records — detects and repairs drift",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Daily schedule fires (2 AM)"
+          },
+          {
+            "id": "n2",
+            "type": "connector",
+            "label": "Paginate all Contentful entries",
+            "detail": "Loop GET https://cdn.contentful.com/spaces/{spaceId}/environments/{envId}/entries?limit=1000&skip={offset} until all pages collected. Build a Set of all published entry IDs. Write checkpoint to sync_state.json after each page.",
+            "connector": "contentful"
+          },
+          {
+            "id": "n3",
+            "type": "connector",
+            "label": "Browse all Algolia records",
+            "detail": "Loop POST https://{appId}.algolia.net/1/indexes/{indexName}/browse with cursor until exhausted. Build a Set of all objectIDs in the index.",
+            "connector": "algolia"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Compute index diff",
+            "detail": "Missing = Contentful IDs that are NOT in Algolia objectIDs. Stale = Algolia objectIDs that are NOT in Contentful IDs. Record counts for the Slack report."
+          },
+          {
+            "id": "n5",
+            "type": "decision",
+            "label": "Drift detected?",
+            "detail": "Check if missingCount > 0 OR staleCount > 0. If index is perfectly in sync, skip repair and go directly to reporting."
+          },
+          {
+            "id": "n6",
+            "type": "connector",
+            "label": "Re-index missing entries",
+            "detail": "For each missing entry ID: fetch from Contentful CDA, transform to Algolia record, PUT to index. Log each success/failure. Write progress checkpoint to sync_state.json.",
+            "connector": "algolia"
+          },
+          {
+            "id": "n7",
+            "type": "connector",
+            "label": "Delete stale Algolia records",
+            "detail": "For each stale objectID: DELETE https://{appId}.algolia.net/1/indexes/{indexName}/{objectID}. Log each deletion.",
+            "connector": "algolia"
+          },
+          {
+            "id": "n8",
+            "type": "event",
+            "label": "Emit consistency_drift_detected",
+            "detail": "If total drift count (missing + stale) exceeds threshold (default: 10), emit event for downstream monitoring systems or dashboards."
+          },
+          {
+            "id": "n9",
+            "type": "connector",
+            "label": "Post daily report to Slack",
+            "detail": "POST https://slack.com/api/chat.postMessage — include: total Contentful entries, total Algolia records before/after, entries re-indexed, records deleted, overall health status emoji.",
+            "connector": "slack"
+          },
+          {
+            "id": "n10",
+            "type": "end",
+            "label": "Audit complete"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e5",
+            "source": "n5",
+            "target": "n6",
+            "label": "Drift found",
+            "variant": "yes"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n9",
+            "label": "In sync",
+            "variant": "no"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7"
+          },
+          {
+            "id": "e8",
+            "source": "n7",
+            "target": "n8"
+          },
+          {
+            "id": "e9",
+            "source": "n8",
+            "target": "n9"
+          },
+          {
+            "id": "e10",
+            "source": "n9",
+            "target": "n10"
+          }
+        ]
+      },
+      {
+        "id": "flow_3",
+        "name": "Retry Queue Processing",
+        "description": "Handles failed Algolia sync operations with exponential backoff, escalating to Slack after max retries are exhausted",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Retry check initiated"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Read retry queue",
+            "detail": "file_read retry_queue.json — parse array of pending failed operations. Filter for entries where nextRetryAt <= current timestamp."
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Items due for retry?",
+            "detail": "Check if any operations have a nextRetryAt timestamp that has passed. If none are due, exit cleanly."
+          },
+          {
+            "id": "n4",
+            "type": "connector",
+            "label": "Re-attempt Algolia operation",
+            "detail": "Re-execute the stored PUT or DELETE operation against Algolia using the saved entryId and operation type. Apply same headers and body as original attempt.",
+            "connector": "algolia"
+          },
+          {
+            "id": "n5",
+            "type": "decision",
+            "label": "Attempt succeeded?",
+            "detail": "Check Algolia HTTP response: 200 or 201 = success, remove from queue. 4xx/5xx = failure, check attempt count."
+          },
+          {
+            "id": "n6",
+            "type": "action",
+            "label": "Remove from retry queue",
+            "detail": "Update retry_queue.json to remove the successfully retried entry. Increment the success counter in sync_state.json. Emit index_updated event."
+          },
+          {
+            "id": "n7",
+            "type": "decision",
+            "label": "Max retries (3) reached?",
+            "detail": "Check if attempts field >= 3 for this operation. If yes, escalate. If no, increment and schedule next retry."
+          },
+          {
+            "id": "n8",
+            "type": "action",
+            "label": "Increment attempt and reschedule",
+            "detail": "Update retry_queue.json: increment attempts count, set nextRetryAt = now + backoff (attempt 1: +1min, attempt 2: +5min, attempt 3: +15min). Save via file_write."
+          },
+          {
+            "id": "n9",
+            "type": "connector",
+            "label": "Post escalation alert to Slack",
+            "detail": "POST https://slack.com/api/chat.postMessage with critical alert: entry ID, content type, operation, number of attempts, final error message, and request for manual intervention.",
+            "connector": "slack"
+          },
+          {
+            "id": "n10",
+            "type": "event",
+            "label": "Emit sync_error event",
+            "detail": "Emit sync_error event with payload { entryId, operation, attempts: 3, finalError } for downstream monitoring or incident management systems."
+          },
+          {
+            "id": "n11",
+            "type": "end",
+            "label": "Retry cycle complete"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "Items due",
+            "variant": "yes"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n11",
+            "label": "None due",
+            "variant": "no"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6",
+            "label": "Success",
+            "variant": "yes"
+          },
+          {
+            "id": "e7",
+            "source": "n5",
+            "target": "n7",
+            "label": "Failed",
+            "variant": "no"
+          },
+          {
+            "id": "e8",
+            "source": "n6",
+            "target": "n11"
+          },
+          {
+            "id": "e9",
+            "source": "n7",
+            "target": "n9",
+            "label": "Max reached",
+            "variant": "yes"
+          },
+          {
+            "id": "e10",
+            "source": "n7",
+            "target": "n8",
+            "label": "Retries left",
+            "variant": "no"
+          },
+          {
+            "id": "e11",
+            "source": "n8",
+            "target": "n11"
+          },
+          {
+            "id": "e12",
+            "source": "n9",
+            "target": "n10"
+          },
+          {
+            "id": "e13",
+            "source": "n10",
+            "target": "n11"
+          }
+        ]
       }
     ]
   }

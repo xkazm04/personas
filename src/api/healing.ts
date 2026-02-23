@@ -2,7 +2,6 @@ import { invoke } from "@tauri-apps/api/core";
 
 import type { PersonaExecution } from "@/lib/bindings/PersonaExecution";
 import type { PersonaHealingIssue } from "@/lib/bindings/PersonaHealingIssue";
-import type { HealingKnowledge } from "@/lib/bindings/HealingKnowledge";
 
 // ============================================================================
 // Healing
@@ -25,6 +24,7 @@ export interface HealingAnalysisResult {
   failures_analyzed: number;
   issues_created: number;
   auto_fixed: number;
+  auto_retried: number;
 }
 
 export const runHealingAnalysis = (personaId: string) =>
@@ -36,12 +36,3 @@ export const runHealingAnalysis = (personaId: string) =>
 
 export const getRetryChain = (executionId: string) =>
   invoke<PersonaExecution[]>("get_retry_chain", { executionId });
-
-// ============================================================================
-// Healing Knowledge Base
-// ============================================================================
-
-export const listHealingKnowledge = (serviceType?: string) =>
-  invoke<HealingKnowledge[]>("list_healing_knowledge", {
-    serviceType: serviceType ?? null,
-  });

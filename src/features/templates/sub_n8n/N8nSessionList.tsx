@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Clock, Trash2, ChevronRight, RefreshCw, RotateCcw } from 'lucide-react';
-import { listN8nSessions, deleteN8nSession, getN8nSession } from '@/api/design';
+import { listN8nSessions, deleteN8nSession, getN8nSession } from '@/api/n8nTransform';
 import type { N8nTransformSession } from '@/lib/bindings/N8nTransformSession';
-import type { N8nPersonaDraft } from '@/api/design';
+import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import type { N8nWizardStep, TransformQuestion } from './useN8nImportReducer';
 
@@ -16,6 +16,7 @@ interface N8nSessionListProps {
     draft: N8nPersonaDraft | null,
     questions: TransformQuestion[] | null,
     transformId: string | null,
+    userAnswers: Record<string, string> | null,
   ) => void;
 }
 
@@ -108,6 +109,13 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
         } catch { /* ignore */ }
       }
 
+      let userAnswers: Record<string, string> | null = null;
+      if (full.user_answers) {
+        try {
+          userAnswers = JSON.parse(full.user_answers) as Record<string, string>;
+        } catch { /* ignore */ }
+      }
+
       const transformId = full.transform_id ?? null;
 
       // Map DB step to wizard step
@@ -148,6 +156,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
         draft,
         questions,
         transformId,
+        userAnswers,
       );
     } catch {
       // ignore

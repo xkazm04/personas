@@ -77,7 +77,7 @@ export function CredentialPicker({ connectors, onPickType }: CredentialPickerPro
                   onClick={() => onPickType(connector)}
                   className="px-3 py-1.5 rounded-lg border border-primary/20 bg-primary/10 text-primary text-sm font-medium hover:bg-primary/15 transition-colors"
                 >
-                  Use Template
+                  Use Connector
                 </button>
               </div>
             </motion.div>
@@ -89,7 +89,7 @@ export function CredentialPicker({ connectors, onPickType }: CredentialPickerPro
 
   return (
     <div className="space-y-2">
-      <p className="text-sm text-foreground/85">Select a template</p>
+      <p className="text-sm text-foreground/85">Select from catalog</p>
 
       {recommendedConnectors.length > 0 && (
         <div className="space-y-2">
@@ -101,7 +101,7 @@ export function CredentialPicker({ connectors, onPickType }: CredentialPickerPro
       {recommendedConnectors.length > 0 && otherConnectors.length > 0 && (
         <div className="flex items-center gap-2 py-1">
           <div className="h-px bg-primary/15 flex-1" />
-          <span className="text-sm font-mono uppercase tracking-wider text-muted-foreground/45">All templates</span>
+          <span className="text-sm font-mono uppercase tracking-wider text-muted-foreground/45">All connectors</span>
           <div className="h-px bg-primary/15 flex-1" />
         </div>
       )}
@@ -110,7 +110,7 @@ export function CredentialPicker({ connectors, onPickType }: CredentialPickerPro
 
       {connectors.length === 0 && (
         <div className="py-6 text-center text-sm text-muted-foreground/90 border border-dashed border-primary/15 rounded-lg">
-          No templates found
+          No connectors found
         </div>
       )}
     </div>

@@ -63,25 +63,30 @@ export const createMessageSlice: StateCreator<PersonaStore, [], [], MessageSlice
     }));
     try {
       await api.markMessageRead(id);
-    } catch {
-      // Recover with authoritative count from server
-      get().fetchMessages();
-      get().fetchUnreadMessageCount();
+    } catch (err) {
+      console.warn("[messageSlice] markMessageAsRead failed, recovering state:", err);
+      // Atomically restore messages list and unread count from server
+      await get().fetchMessages();
     }
   },
 
   markAllMessagesAsRead: async (personaId?) => {
     try {
       await api.markAllMessagesRead(personaId);
-      set((state) => ({
-        messages: state.messages.map((m) => {
+      set((state) => {
+        const updatedMessages = state.messages.map((m) => {
           if (!personaId || m.persona_id === personaId) {
             return { ...m, is_read: true, read_at: new Date().toISOString() };
           }
           return m;
-        }),
-        unreadMessageCount: 0,
-      }));
+        });
+        // Recompute from the in-memory list; preserves unread from other personas
+        // when a personaId filter is used. When marking all (no personaId), this is 0.
+        const unreadMessageCount = updatedMessages.filter((m) => !m.is_read).length;
+        return { messages: updatedMessages, unreadMessageCount };
+      });
+      // Fetch authoritative count in case the loaded list is a partial page
+      await get().fetchUnreadMessageCount();
     } catch (err) {
       set({ error: errMsg(err, "Failed to mark all as read") });
     }
@@ -103,8 +108,8 @@ export const createMessageSlice: StateCreator<PersonaStore, [], [], MessageSlice
     try {
       const unread = await api.getUnreadMessageCount();
       set({ unreadMessageCount: unread });
-    } catch {
-      // Silent fail
+    } catch (err) {
+      console.warn("[messageSlice] fetchUnreadMessageCount failed:", err);
     }
   },
 });

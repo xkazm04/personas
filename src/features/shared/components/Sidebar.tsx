@@ -1,12 +1,12 @@
 import { motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
-import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Eye, Users, Radio, Brain, DollarSign, Cloud, Plus, LayoutTemplate, Monitor, Blocks, Upload, List, Settings, Chrome, Palette, Bell, GitBranch } from 'lucide-react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Eye, Users, Radio, Brain, DollarSign, Cloud, Plus, LayoutTemplate, Monitor, Blocks, Upload, List, Settings, Chrome, Palette, Bell, GitBranch, type LucideIcon } from 'lucide-react';
 import { getVersion } from '@tauri-apps/api/app';
 import { usePersonaStore } from '@/stores/personaStore';
-import type { SidebarSection, OverviewTab, TemplateTab, SettingsTab } from '@/lib/types/types';
+import type { SidebarSection, OverviewTab, TemplateTab, CloudTab, SettingsTab } from '@/lib/types/types';
 import GroupedAgentSidebar from '@/features/agents/components/GroupedAgentSidebar';
 
-const disabledSections = new Set<SidebarSection>(['team', 'cloud']);
+const disabledSections = new Set<SidebarSection>(['team']);
 
 const sections: Array<{ id: SidebarSection; icon: typeof Bot; label: string }> = [
   { id: 'overview', icon: BarChart3, label: 'Overview' },
@@ -19,6 +19,87 @@ const sections: Array<{ id: SidebarSection; icon: typeof Bot; label: string }> =
   { id: 'gitlab', icon: GitBranch, label: 'GitLab' },
   { id: 'settings', icon: Settings, label: 'Settings' },
 ];
+
+// ---------------------------------------------------------------------------
+// SidebarSubNav — data-driven sub-navigation
+// ---------------------------------------------------------------------------
+
+interface SubNavItem {
+  id: string;
+  icon: LucideIcon;
+  label: string;
+}
+
+interface SubNavBadge {
+  count: number;
+  /** Tailwind classes for the badge pill (bg, text, border) */
+  className: string;
+}
+
+function SidebarSubNav({
+  items,
+  activeId,
+  onSelect,
+  badges = {},
+  variant = 'compact',
+  children,
+}: {
+  items: SubNavItem[];
+  activeId: string;
+  onSelect: (id: string) => void;
+  badges?: Record<string, SubNavBadge>;
+  variant?: 'overview' | 'compact';
+  children?: ReactNode;
+}) {
+  const isOverview = variant === 'overview';
+  const boxSize = isOverview ? 'w-8 h-8' : 'w-7 h-7';
+  const iconSize = isOverview ? 'w-4 h-4' : 'w-3.5 h-3.5';
+
+  return (
+    <>
+      {items.map((item) => {
+        const Icon = item.icon;
+        const isActive = activeId === item.id;
+        const badge = badges[item.id];
+
+        return (
+          <button
+            key={item.id}
+            onClick={() => onSelect(item.id)}
+            className={`w-full flex items-center ${isOverview ? 'gap-3 px-3 py-2.5' : 'gap-2.5 p-2.5'} mb-1 rounded-xl border transition-all text-left ${
+              isActive
+                ? 'bg-primary/10 border-primary/20'
+                : isOverview
+                  ? 'hover:bg-secondary/50 border-transparent'
+                  : 'bg-secondary/30 border-primary/10 hover:bg-secondary/50'
+            }`}
+          >
+            <div className={`${boxSize} rounded-lg flex items-center justify-center border transition-colors ${
+              isActive
+                ? 'bg-primary/15 border-primary/25'
+                : 'bg-secondary/40 border-primary/15'
+            }`}>
+              <Icon className={`${iconSize} ${isActive ? 'text-primary' : 'text-muted-foreground/90'}`} />
+            </div>
+            <span className={`text-sm ${isActive ? 'font-medium text-foreground/90' : isOverview ? 'font-medium text-muted-foreground/80' : 'text-muted-foreground/65'}`}>
+              {item.label}
+            </span>
+            {badge && badge.count > 0 && (
+              <span className={`ml-auto px-1.5 py-0.5 text-sm font-bold leading-none rounded-full ${badge.className}`}>
+                {badge.count}
+              </span>
+            )}
+          </button>
+        );
+      })}
+      {children}
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sidebar
+// ---------------------------------------------------------------------------
 
 export default function Sidebar() {
   const sidebarSection = usePersonaStore((s) => s.sidebarSection);
@@ -38,6 +119,8 @@ export default function Sidebar() {
   const pendingEventCount = usePersonaStore((s) => s.pendingEventCount);
   const fetchRecentEvents = usePersonaStore((s) => s.fetchRecentEvents);
   const n8nTransformActive = usePersonaStore((s) => s.n8nTransformActive);
+  const cloudTab = usePersonaStore((s) => s.cloudTab);
+  const setCloudTab = usePersonaStore((s) => s.setCloudTab);
   const settingsTab = usePersonaStore((s) => s.settingsTab);
   const setSettingsTab = usePersonaStore((s) => s.setSettingsTab);
 
@@ -82,256 +165,127 @@ export default function Sidebar() {
     { id: 'budget', icon: DollarSign, label: 'Budget' },
   ];
 
+  // Badge maps (only computed for sections that use them)
+  const overviewBadges: Record<string, SubNavBadge> = {};
+  if (pendingReviewCount > 0) overviewBadges['manual-review'] = { count: pendingReviewCount, className: 'bg-amber-500/20 text-amber-400 border border-amber-500/30' };
+  if (unreadMessageCount > 0) overviewBadges['messages'] = { count: unreadMessageCount, className: 'bg-blue-500/20 text-blue-400 border border-blue-500/30' };
+  if (pendingEventCount > 0) overviewBadges['events'] = { count: pendingEventCount, className: 'bg-purple-500/20 text-purple-400 border border-purple-500/30' };
+
+  const credentialBadges: Record<string, SubNavBadge> = {
+    credentials: { count: credentials.length, className: 'bg-secondary/50 border border-primary/10 text-muted-foreground/90 font-normal' },
+    'from-template': { count: templateCount, className: 'bg-secondary/50 border border-primary/10 text-muted-foreground/90 font-normal' },
+  };
+
+  const credentialItems: SubNavItem[] = [
+    { id: 'credentials', label: 'Credentials', icon: Key },
+    { id: 'from-template', label: 'Add from catalog', icon: LayoutTemplate },
+    { id: 'add-new', label: 'Add new', icon: Plus },
+  ];
+
+  const templateItems: SubNavItem[] = [
+    { id: 'builtin', label: 'Built-in Templates', icon: Blocks },
+    { id: 'n8n', label: 'n8n Import', icon: Upload },
+    { id: 'generated', label: 'Generated', icon: List },
+  ];
+
+  const cloudItems: SubNavItem[] = [
+    { id: 'cloud', label: 'Cloud Execution', icon: Cloud },
+    { id: 'gitlab', label: 'GitLab', icon: GitBranch },
+  ];
+
+  const settingsItems: SubNavItem[] = [
+    { id: 'account', label: 'Account', icon: Chrome },
+    { id: 'appearance', label: 'Appearance', icon: Palette },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
+  ];
+
   const renderLevel2 = () => {
-    if (sidebarSection === 'overview') {
-      return (
-        <>
-          {overviewItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = overviewTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setOverviewTab(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 mb-1 rounded-xl transition-all ${
-                  isActive
-                    ? 'bg-primary/10 border border-primary/20'
-                    : 'hover:bg-secondary/50 border border-transparent'
-                }`}
-              >
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-colors ${
-                  isActive
-                    ? 'bg-primary/15 border-primary/25'
-                    : 'bg-secondary/40 border-primary/15'
-                }`}>
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-primary' : 'text-muted-foreground/90'}`} />
-                </div>
-                <span className={`text-sm font-medium ${isActive ? 'text-foreground/90' : 'text-muted-foreground/80'}`}>
-                  {item.label}
-                </span>
-                {item.id === 'manual-review' && pendingReviewCount > 0 && (
-                  <span className="ml-auto px-1.5 py-0.5 text-sm font-bold leading-none rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                    {pendingReviewCount}
-                  </span>
-                )}
-                {item.id === 'messages' && unreadMessageCount > 0 && (
-                  <span className="ml-auto px-1.5 py-0.5 text-sm font-bold leading-none rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                    {unreadMessageCount}
-                  </span>
-                )}
-                {item.id === 'events' && pendingEventCount > 0 && (
-                  <span className="ml-auto px-1.5 py-0.5 text-sm font-bold leading-none rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30">
-                    {pendingEventCount}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </>
-      );
-    }
+    switch (sidebarSection) {
+      case 'overview':
+        return (
+          <SidebarSubNav
+            items={overviewItems}
+            activeId={overviewTab}
+            onSelect={(id) => setOverviewTab(id as OverviewTab)}
+            badges={overviewBadges}
+            variant="overview"
+          />
+        );
 
-    if (sidebarSection === 'personas') {
-      return <GroupedAgentSidebar onCreatePersona={handleCreatePersona} />;
-    }
+      case 'personas':
+        return <GroupedAgentSidebar onCreatePersona={handleCreatePersona} />;
 
-    if (sidebarSection === 'events') {
-      return (
-        <div className="text-center py-12">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-            <Zap className="w-6 h-6 text-amber-400/60" />
-          </div>
-          <p className="text-sm text-muted-foreground/80">Event triggers</p>
-          <p className="text-sm text-muted-foreground/80 mt-1">Configure in persona settings</p>
-        </div>
-      );
-    }
-
-    if (sidebarSection === 'credentials') {
-      const items = [
-        { id: 'credentials', label: 'Credentials', icon: Key },
-        { id: 'from-template', label: 'Add from template', icon: LayoutTemplate },
-        { id: 'add-new', label: 'Add new', icon: Plus },
-      ] as const;
-
-      return (
-        <>
-          {items.map((item) => {
-            const active = credentialView === item.id;
-            const ItemIcon = item.icon;
-            return (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setSidebarSection('credentials');
-                  setCredentialView(item.id);
-                }}
-                className={`w-full mb-1 p-2.5 rounded-xl border transition-all text-left ${
-                  active
-                    ? 'bg-primary/10 border-primary/20'
-                    : 'bg-secondary/30 border-primary/10 hover:bg-secondary/50'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className={`w-7 h-7 rounded-lg border flex items-center justify-center ${
-                    active
-                      ? 'bg-primary/15 border-primary/25'
-                      : 'bg-secondary/40 border-primary/15'
-                  }`}>
-                    <ItemIcon className={`w-3.5 h-3.5 ${active ? 'text-primary' : 'text-muted-foreground/80'}`} />
-                  </div>
-                  <span className={`text-sm ${active ? 'text-foreground/90' : 'text-muted-foreground/65'}`}>
-                    {item.label}
-                  </span>
-                  {item.id === 'credentials' && (
-                    <span className="ml-auto text-sm px-1.5 py-0.5 rounded-full bg-secondary/50 border border-primary/10 text-muted-foreground/90">
-                      {credentials.length}
-                    </span>
-                  )}
-                  {item.id === 'from-template' && (
-                    <span className="ml-auto text-sm px-1.5 py-0.5 rounded-full bg-secondary/50 border border-primary/10 text-muted-foreground/90">
-                      {templateCount}
-                    </span>
-                  )}
-                </div>
-              </button>
-            );
-          })}
-
-          {credentials.length === 0 && credentialView === 'credentials' && (
-            <div className="text-center py-8">
-              <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                <Key className="w-5 h-5 text-emerald-400/60" />
-              </div>
-              <p className="text-sm text-muted-foreground/80">No credentials yet</p>
+      case 'events':
+        return (
+          <div className="text-center py-12">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+              <Zap className="w-6 h-6 text-amber-400/60" />
             </div>
-          )}
-        </>
-      );
-    }
+            <p className="text-sm text-muted-foreground/80">Event triggers</p>
+            <p className="text-sm text-muted-foreground/80 mt-1">Configure in persona settings</p>
+          </div>
+        );
 
-    if (sidebarSection === 'design-reviews') {
-      const templateItems: Array<{ id: TemplateTab; label: string; icon: typeof Blocks }> = [
-        { id: 'builtin', label: 'Built-in Templates', icon: Blocks },
-        { id: 'n8n', label: 'n8n Import', icon: Upload },
-        { id: 'generated', label: 'Generated', icon: List },
-      ];
-
-      return (
-        <>
-          {templateItems.map((item) => {
-            const active = templateTab === item.id;
-            const ItemIcon = item.icon;
-            return (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setSidebarSection('design-reviews');
-                  setTemplateTab(item.id);
-                }}
-                className={`w-full mb-1 p-2.5 rounded-xl border transition-all text-left ${
-                  active
-                    ? 'bg-primary/10 border-primary/20'
-                    : 'bg-secondary/30 border-primary/10 hover:bg-secondary/50'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className={`w-7 h-7 rounded-lg border flex items-center justify-center ${
-                    active
-                      ? 'bg-primary/15 border-primary/25'
-                      : 'bg-secondary/40 border-primary/15'
-                  }`}>
-                    <ItemIcon className={`w-3.5 h-3.5 ${active ? 'text-primary' : 'text-muted-foreground/80'}`} />
-                  </div>
-                  <span className={`text-sm ${active ? 'text-foreground/90' : 'text-muted-foreground/65'}`}>
-                    {item.label}
-                  </span>
+      case 'credentials':
+        return (
+          <SidebarSubNav
+            items={credentialItems}
+            activeId={credentialView}
+            onSelect={(id) => setCredentialView(id as typeof credentialView)}
+            badges={credentialBadges}
+          >
+            {credentials.length === 0 && credentialView === 'credentials' && (
+              <div className="text-center py-8">
+                <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                  <Key className="w-5 h-5 text-emerald-400/60" />
                 </div>
-              </button>
-            );
-          })}
-        </>
-      );
-    }
+                <p className="text-sm text-muted-foreground/80">No credentials yet</p>
+              </div>
+            )}
+          </SidebarSubNav>
+        );
 
-    if (sidebarSection === 'team') {
-      return (
-        <div className="text-center py-12">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-            <Users className="w-6 h-6 text-indigo-400/60" />
+      case 'design-reviews':
+        return (
+          <SidebarSubNav
+            items={templateItems}
+            activeId={templateTab}
+            onSelect={(id) => setTemplateTab(id as TemplateTab)}
+          />
+        );
+
+      case 'team':
+        return (
+          <div className="text-center py-12">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+              <Users className="w-6 h-6 text-indigo-400/60" />
+            </div>
+            <p className="text-sm text-muted-foreground/80">Multi-Agent Teams</p>
+            <p className="text-sm text-muted-foreground/80 mt-1">Design agent pipelines visually</p>
           </div>
-          <p className="text-sm text-muted-foreground/80">Multi-Agent Teams</p>
-          <p className="text-sm text-muted-foreground/80 mt-1">Design agent pipelines visually</p>
-        </div>
-      );
+        );
+
+      case 'cloud':
+        return (
+          <SidebarSubNav
+            items={cloudItems}
+            activeId={cloudTab}
+            onSelect={(id) => setCloudTab(id as CloudTab)}
+          />
+        );
+
+      case 'settings':
+        return (
+          <SidebarSubNav
+            items={settingsItems}
+            activeId={settingsTab}
+            onSelect={(id) => setSettingsTab(id as SettingsTab)}
+          />
+        );
+
+      default:
+        return null;
     }
-
-    if (sidebarSection === 'cloud') {
-      return (
-        <div className="text-center py-12">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-            <Cloud className="w-6 h-6 text-indigo-400/60" />
-          </div>
-          <p className="text-sm text-muted-foreground/80">Cloud Execution</p>
-          <p className="text-sm text-muted-foreground/80 mt-1">Run agents on remote workers</p>
-        </div>
-      );
-    }
-
-    if (sidebarSection === 'gitlab') {
-      return (
-        <div className="text-center py-12">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
-            <GitBranch className="w-6 h-6 text-orange-400/60" />
-          </div>
-          <p className="text-sm text-muted-foreground/80">GitLab Integration</p>
-          <p className="text-sm text-muted-foreground/80 mt-1">Deploy personas as Duo Agents</p>
-        </div>
-      );
-    }
-
-    if (sidebarSection === 'settings') {
-      const settingsItems: Array<{ id: SettingsTab; label: string; icon: typeof Chrome }> = [
-        { id: 'account', label: 'Account', icon: Chrome },
-        { id: 'appearance', label: 'Appearance', icon: Palette },
-        { id: 'notifications', label: 'Notifications', icon: Bell },
-      ];
-
-      return (
-        <>
-          {settingsItems.map((item) => {
-            const active = settingsTab === item.id;
-            const ItemIcon = item.icon;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setSettingsTab(item.id)}
-                className={`w-full mb-1 p-2.5 rounded-xl border transition-all text-left ${
-                  active
-                    ? 'bg-primary/10 border-primary/20'
-                    : 'bg-secondary/30 border-primary/10 hover:bg-secondary/50'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className={`w-7 h-7 rounded-lg border flex items-center justify-center ${
-                    active
-                      ? 'bg-primary/15 border-primary/25'
-                      : 'bg-secondary/40 border-primary/15'
-                  }`}>
-                    <ItemIcon className={`w-3.5 h-3.5 ${active ? 'text-primary' : 'text-muted-foreground/80'}`} />
-                  </div>
-                  <span className={`text-sm ${active ? 'text-foreground/90' : 'text-muted-foreground/65'}`}>
-                    {item.label}
-                  </span>
-                </div>
-              </button>
-            );
-          })}
-        </>
-      );
-    }
-
-    return null;
   };
 
   return (

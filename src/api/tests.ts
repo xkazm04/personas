@@ -28,3 +28,23 @@ export const deleteTestRun = (id: string) =>
 
 export const cancelTestRun = (id: string) =>
   invoke<void>("cancel_test_run", { id });
+
+// ── Draft Validation ────────────────────────────────────────────
+
+export interface ToolIssue {
+  tool_name: string;
+  issue: string;
+}
+
+export interface DraftValidationResult {
+  passed: boolean;
+  error: string | null;
+  output_preview: string | null;
+  tool_issues: ToolIssue[];
+}
+
+export const validateN8nDraft = (draftJson: string): Promise<DraftValidationResult> =>
+  invoke<DraftValidationResult>("validate_n8n_draft", { draftJson });
+
+export const testN8nDraft = (testId: string, draftJson: string): Promise<void> =>
+  invoke<void>("test_n8n_draft", { testId, draftJson });

@@ -14,6 +14,8 @@ import {
   createN8nSession,
   updateN8nSession,
 } from '@/api/tauriApi';
+import { deleteN8nSession } from '@/api/n8nTransform';
+import { testN8nDraft } from '@/api/tests';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useCorrelatedCliStream } from '@/hooks/execution/useCorrelatedCliStream';
 import {
@@ -97,6 +99,41 @@ export default function N8nImportTab() {
     onFailed: (message) => dispatch({ type: 'TRANSFORM_FAILED', error: message }),
   });
 
+  // ── CLI stream for draft test ──
+
+  const {
+    start: startTestStream,
+    reset: resetTestStream,
+    lines: testStreamLines,
+    phase: testStreamPhase,
+  } = useCorrelatedCliStream({
+    outputEvent: 'n8n-test-output',
+    statusEvent: 'n8n-test-status',
+    idField: 'test_id',
+    onFailed: (message) => {
+      dispatch({ type: 'TEST_FAILED', error: message });
+      // Pre-fill adjustment request with error for easy re-generation
+      if (message) {
+        dispatch({
+          type: 'SET_ADJUSTMENT',
+          text: `Fix: The test execution failed with: ${message.slice(0, 200)}. Please adjust the persona to fix this issue.`,
+        });
+      }
+    },
+  });
+
+  // Sync test stream into reducer
+  useEffect(() => {
+    dispatch({ type: 'TEST_LINES', lines: testStreamLines });
+  }, [testStreamLines, dispatch]);
+
+  useEffect(() => {
+    dispatch({ type: 'TEST_PHASE', phase: testStreamPhase });
+    if (testStreamPhase === 'completed') {
+      dispatch({ type: 'TEST_PASSED' });
+    }
+  }, [testStreamPhase, dispatch]);
+
   // ── Restore persisted context on mount ──
 
   const handleRestoreContext = useCallback(
@@ -151,8 +188,8 @@ export default function N8nImportTab() {
   );
 
   const handleSnapshotDraft = useCallback(
-    (draft: import('@/api/design').N8nPersonaDraft) => {
-      let completedDraft: import('@/api/design').N8nPersonaDraft;
+    (draft: import('@/api/n8nTransform').N8nPersonaDraft) => {
+      let completedDraft: import('@/api/n8nTransform').N8nPersonaDraft;
       try {
         completedDraft = normalizeDraft(draft);
       } catch {
@@ -484,7 +521,9 @@ export default function N8nImportTab() {
         return;
       }
 
-      const response = await confirmN8nPersonaDraft(stringifyDraft(normalized));
+      // Send the original payloadJson (not stringifyDraft(normalized)) to preserve entity arrays
+      // (triggers, tools, required_connectors) that normalizeDraftFromUnknown does not copy.
+      const response = await confirmN8nPersonaDraft(payloadJson);
       await fetchPersonas();
       selectPersona(response.persona.id);
 
@@ -500,13 +539,9 @@ export default function N8nImportTab() {
 
       dispatch({ type: 'CONFIRM_COMPLETED' });
 
-      // Mark session as confirmed
+      // Delete completed session from DB (no longer needed)
       if (state.sessionId) {
-        void updateN8nSession(state.sessionId, {
-          status: 'confirmed',
-          step: 'confirm',
-          personaId: response.persona.id,
-        }).catch(() => {});
+        void deleteN8nSession(state.sessionId).catch(() => {});
       }
 
       if (state.backgroundTransformId) {
@@ -520,6 +555,18 @@ export default function N8nImportTab() {
       });
     } finally {
       confirmingRef.current = false;
+    }
+  };
+
+  const handleTestDraft = async () => {
+    if (!state.draft || state.testStatus === 'running') return;
+    const testId = crypto.randomUUID();
+    dispatch({ type: 'TEST_STREAM_STARTED', testId });
+    try {
+      await startTestStream(testId);
+      await testN8nDraft(testId, stringifyDraft(state.draft));
+    } catch (err) {
+      dispatch({ type: 'TEST_FAILED', error: err instanceof Error ? err.message : 'Test failed' });
     }
   };
 
@@ -555,6 +602,7 @@ export default function N8nImportTab() {
       }
       try { window.localStorage.removeItem(N8N_TRANSFORM_CONTEXT_KEY); } catch { /* ignore */ }
       void resetTransformStream();
+      void resetTestStream();
       setIsRestoring(false);
       setN8nTransformActive(false);
       dispatch({ type: 'RESET' });
@@ -567,7 +615,7 @@ export default function N8nImportTab() {
   };
 
   const updateDraft = useCallback(
-    (updater: (current: import('@/api/design').N8nPersonaDraft) => import('@/api/design').N8nPersonaDraft) => {
+    (updater: (current: import('@/api/n8nTransform').N8nPersonaDraft) => import('@/api/n8nTransform').N8nPersonaDraft) => {
       if (!state.draft) return;
       dispatch({ type: 'DRAFT_UPDATED', draft: updater(state.draft) });
     },
@@ -689,7 +737,7 @@ export default function N8nImportTab() {
                 />
                 <div className="mt-6">
                   <N8nSessionList
-                    onLoadSession={(sessionId, step, workflowName, rawWorkflowJson, parsedResult, draft, questions, transformId) => {
+                    onLoadSession={(sessionId, step, workflowName, rawWorkflowJson, parsedResult, draft, questions, transformId, userAnswers) => {
                       dispatch({
                         type: 'SESSION_LOADED',
                         sessionId,
@@ -700,6 +748,7 @@ export default function N8nImportTab() {
                         draft,
                         questions,
                         transformId,
+                        userAnswers,
                       });
                     }}
                   />
@@ -758,6 +807,9 @@ export default function N8nImportTab() {
                 onApplyAdjustment={() => void handleTransform()}
                 onGoToAnalyze={() => dispatch({ type: 'GO_TO_STEP', step: 'analyze' })}
                 onConnectorsMissingChange={setConnectorsMissing}
+                testPhase={state.testPhase}
+                testLines={state.testLines}
+                testRunId={state.testRunId}
               />
             )}
 
@@ -791,6 +843,10 @@ export default function N8nImportTab() {
         transformSubPhase={state.transformSubPhase}
         analyzing={analyzing}
         connectorsMissing={connectorsMissing}
+        testStatus={state.testStatus}
+        testError={state.testError}
+        onTest={() => void handleTestDraft()}
+        onApplyAdjustment={() => void handleTransform()}
       />
     </div>
   );

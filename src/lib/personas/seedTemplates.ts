@@ -1,25 +1,13 @@
 /**
- * Seed Templates — converts built-in template JSON files into PersonaDesignReview
+ * Seed Templates — converts BUILTIN_TEMPLATES into PersonaDesignReview
  * records for the Generated tab. Each template is inserted once (idempotent).
  *
- * Templates are auto-indexed from scripts/templates/ via templateIndex.ts.
- * To regenerate after adding/removing templates:
- *   node scripts/generate-template-index.mjs
+ * Source of truth: builtinTemplates.ts (curated template set).
  */
-import { allTemplates } from './templateIndex';
+import { BUILTIN_TEMPLATES } from './builtinTemplates';
+import type { BuiltinTemplate } from '@/lib/types/templateTypes';
 
 const SEED_RUN_ID = 'seed-builtin-v1';
-
-interface TemplateSource {
-  id: string;
-  name: string;
-  description: string;
-  payload: {
-    suggested_connectors?: Array<{ name: string }>;
-    suggested_triggers?: Array<{ trigger_type: string }>;
-    [key: string]: unknown;
-  };
-}
 
 export interface SeedReviewInput {
   test_case_id: string;
@@ -31,13 +19,23 @@ export interface SeedReviewInput {
   connectors_used: string | null;
   trigger_types: string | null;
   design_result: string | null;
+  use_case_flows: string | null;
   test_run_id: string;
   reviewed_at: string;
 }
 
-function templateToReviewInput(template: TemplateSource): SeedReviewInput {
-  const connectors = template.payload.suggested_connectors?.map((c) => c.name) ?? [];
-  const triggers = template.payload.suggested_triggers?.map((t) => t.trigger_type) ?? [];
+function templateToReviewInput(template: BuiltinTemplate): SeedReviewInput {
+  const payload = template.payload as unknown as Record<string, unknown>;
+  const connectors = Array.isArray(payload.suggested_connectors)
+    ? (payload.suggested_connectors as Array<{ name: string }>).map((c) => c.name)
+    : [];
+  const triggers = Array.isArray(payload.suggested_triggers)
+    ? (payload.suggested_triggers as Array<{ trigger_type: string }>).map((t) => t.trigger_type)
+    : [];
+
+  const flows = Array.isArray(payload.use_case_flows)
+    ? payload.use_case_flows
+    : null;
 
   return {
     test_case_id: template.id,
@@ -48,7 +46,8 @@ function templateToReviewInput(template: TemplateSource): SeedReviewInput {
     semantic_score: 100,
     connectors_used: JSON.stringify(connectors),
     trigger_types: JSON.stringify(triggers),
-    design_result: JSON.stringify(template.payload),
+    design_result: JSON.stringify(payload),
+    use_case_flows: flows ? JSON.stringify(flows) : null,
     test_run_id: SEED_RUN_ID,
     reviewed_at: new Date().toISOString(),
   };
@@ -56,7 +55,7 @@ function templateToReviewInput(template: TemplateSource): SeedReviewInput {
 
 /** All seed templates that should be present in the Generated tab. */
 export function getSeedReviews(): SeedReviewInput[] {
-  return (allTemplates as TemplateSource[]).map(templateToReviewInput);
+  return BUILTIN_TEMPLATES.map(templateToReviewInput);
 }
 
 export { SEED_RUN_ID };

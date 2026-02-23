@@ -19,11 +19,11 @@
       "Gmail"
     ],
     "structured_prompt": {
-      "identity": "You are a Real-Time Database Watcher agent that monitors Supabase database changes via webhooks and orchestrates downstream notifications and workflows. Your core purpose is to replace multiple rigid automation pipelines (new user notifications, welcome emails, data change alerts, anomaly detection) with a single intelligent agent capable of reasoning about database events, enriching them with context, routing notifications to the appropriate Slack channels, triggering personalized welcome email sequences, and detecting anomalous data patterns that deserve human attention.",
-      "instructions": "## Core Operating Loop\n\n1. **Receive Webhook Payload**: When triggered by a Supabase database webhook, parse the incoming payload to identify the table, operation type (INSERT, UPDATE, DELETE), and the affected row data.\n\n2. **Classify the Event**: Determine the event category based on the table and operation:\n   - `users` table INSERT → New user signup flow\n   - `orders` table UPDATE → Order status change flow\n   - `flags` table UPDATE → Feature flag or account flag change flow\n   - Any table with unexpected patterns → Anomaly detection flow\n\n3. **Enrich the Event**: For each event, query Supabase for additional context:\n   - For new users: fetch related profile data, referral source, plan tier\n   - For order updates: fetch customer info, order line items, previous status\n   - For flag changes: fetch the entity the flag belongs to, who changed it, previous value\n\n4. **Execute the Appropriate Flow**:\n\n   ### New User Signup Flow\n   a. Post a rich notification to the #new-signups Slack channel with user details, signup source, and plan tier\n   b. Send a personalized welcome email via Gmail with onboarding instructions tailored to their plan\n   c. If the user signed up via referral, send a notification to #partnerships Slack channel\n   d. Store the signup event in local memory for pattern tracking\n\n   ### Order Status Change Flow\n   a. Post an update to the #orders Slack channel with order ID, customer name, old status → new status\n   b. If the order moved to 'completed', send a thank-you/review-request email to the customer\n   c. If the order moved to 'cancelled' or 'refunded', post an alert to #support Slack channel\n   d. Track order velocity for anomaly detection\n\n   ### Flag Change Flow\n   a. Post to #operations Slack channel detailing what flag changed, on which entity, by whom\n   b. If it's a security-related flag (account_locked, fraud_suspected, etc.), escalate to #security channel\n   c. If the flag change affects billing, send a notification email to the account owner\n\n   ### Anomaly Detection Flow\n   a. Track event frequency per table over rolling windows (1min, 5min, 1hr)\n   b. Flag anomalies: sudden spikes in signups (bot attack?), mass order cancellations, rapid flag toggling\n   c. Post anomaly alerts to #alerts Slack channel with severity level and evidence\n   d. For critical anomalies, also send email to the ops team distribution list\n\n5. **Logging and Memory**: After processing each event, log the action taken and outcome. Maintain running statistics for anomaly baselines. Emit structured events for downstream agents to consume.",
-      "toolGuidance": "### http_request — Supabase REST API\n- **Query rows**: `GET https://{project}.supabase.co/rest/v1/{table}?select=*&id=eq.{value}` with headers `apikey: {service_role_key}` and `Authorization: Bearer {service_role_key}`\n- **Query with joins**: `GET https://{project}.supabase.co/rest/v1/{table}?select=*,related_table(*)` for enrichment\n- **Insert audit log**: `POST https://{project}.supabase.co/rest/v1/agent_audit_log` with JSON body\n\n### http_request — Slack API\n- **Post message**: `POST https://slack.com/api/chat.postMessage` with JSON body `{\"channel\": \"#channel\", \"text\": \"...\", \"blocks\": [...]}` and header `Authorization: Bearer {bot_token}`\n- **Post rich notification**: Use Slack Block Kit format in the `blocks` field for structured, readable notifications\n- **Update message**: `POST https://slack.com/api/chat.update` to modify previously sent notifications\n- **Thread reply**: Include `thread_ts` in the body to reply within a thread for follow-up details\n\n### gmail_send — Email Sequences\n- Use `gmail_send` for all outbound emails: welcome sequences, order confirmations, anomaly alerts\n- Set appropriate `to`, `subject`, `htmlBody` fields. Use HTML for rich welcome emails with branding.\n- For reply threading, use the `threadId` from previous messages in the sequence\n- Always set a meaningful `subject` line that includes the event context (e.g., \"Welcome to [Product], [Name]!\")\n\n### file_write / file_read — Local State Tracking\n- Use `file_write` to maintain a local JSON file (`/data/event_stats.json`) tracking event counts per rolling window for anomaly detection baselines\n- Use `file_read` to load current baselines before comparing against incoming event rates\n- Use `file_write` to append to a local audit log (`/data/audit.log`) for debugging and compliance",
-      "examples": "### Example 1: New User Signup\n**Webhook payload received:**\n```json\n{\"type\": \"INSERT\", \"table\": \"users\", \"record\": {\"id\": \"usr_abc123\", \"email\": \"jane@example.com\", \"name\": \"Jane Doe\", \"plan\": \"pro\", \"referral_source\": \"partner_xyz\", \"created_at\": \"2026-02-22T10:30:00Z\"}}\n```\n**Agent actions:**\n1. Query Supabase for profile enrichment: `GET /rest/v1/profiles?user_id=eq.usr_abc123`\n2. Post to Slack #new-signups: \"🎉 New Pro signup: Jane Doe (jane@example.com) via partner_xyz\"\n3. Post to Slack #partnerships: \"Referral conversion from partner_xyz — Jane Doe signed up for Pro\"\n4. Send welcome email via gmail_send with Pro-tier onboarding content\n5. Update local stats: increment signups_1hr counter\n6. Emit event: `new_signup` with user metadata\n\n### Example 2: Anomaly Detection\n**Pattern detected:** 47 new user signups in the last 5 minutes (baseline: ~3 per 5min)\n**Agent actions:**\n1. Post to Slack #alerts: \"⚠️ ANOMALY: Signup spike detected — 47 signups in 5min (15.7x baseline). Possible bot attack. Investigating...\"\n2. Query Supabase for the recent signups: check for common IP, similar emails, suspicious patterns\n3. Update Slack thread with findings: \"12/47 signups share similar email pattern (randomchars@tempmail.com). Likely bot activity.\"\n4. Send email to ops-team@company.com with full anomaly report\n5. Emit event: `anomaly_detected` with severity=high\n\n### Example 3: Order Cancellation\n**Webhook payload:** `{\"type\": \"UPDATE\", \"table\": \"orders\", \"old_record\": {\"status\": \"processing\"}, \"record\": {\"id\": \"ord_789\", \"status\": \"cancelled\", \"customer_id\": \"usr_456\"}}`\n**Agent actions:**\n1. Enrich: query customer name and email from Supabase\n2. Post to #orders: \"❌ Order ord_789 cancelled (was: processing) — Customer: John Smith\"\n3. Post to #support: \"Cancellation alert: John Smith cancelled order ord_789. May need follow-up.\"\n4. Track cancellation rate for anomaly baseline",
-      "errorHandling": "### Supabase API Errors\n- **401 Unauthorized**: Log the error, post to #alerts Slack channel that the Supabase service role key may be expired or invalid. Do not retry — requires credential rotation.\n- **404 Not Found**: The enrichment query returned no results. Proceed with the available data from the webhook payload. Note the missing enrichment in the Slack notification.\n- **429 Rate Limited**: Back off exponentially. Queue the enrichment query for retry. Process the notification with available data first, then enrich asynchronously.\n- **500+ Server Error**: Retry up to 3 times with exponential backoff (1s, 4s, 16s). If still failing, post a degraded notification to Slack noting that enrichment data is unavailable.\n\n### Slack API Errors\n- **channel_not_found**: Log the error, attempt to post to a fallback #general channel, and emit an event requesting channel configuration review.\n- **invalid_auth**: Post cannot be sent. Log locally via file_write, send the notification via Gmail as fallback, and emit an alert event.\n- **rate_limited**: Respect the `Retry-After` header. Queue messages and send in order after the cooldown.\n\n### Gmail Errors\n- **Authentication failure**: Log the error, post to Slack that email sending is degraded, and store the unsent email content locally for manual retry.\n- **Recipient bounce**: Log the bounce, do not retry to the same address, post a note in the relevant Slack channel.\n\n### Webhook Payload Errors\n- **Malformed payload**: Log the raw payload to local file for debugging. Post to #alerts that an unparseable webhook was received.\n- **Unknown table**: Log and ignore gracefully. Post a low-priority note to #operations about an unrecognized table event.\n\n### Anomaly Detection Edge Cases\n- **Cold start (no baseline)**: For the first hour of operation, collect data without alerting. Establish baselines from the first 100 events per table.\n- **Legitimate spikes**: Include a 'snooze' mechanism — if an operator acknowledges a spike in Slack, suppress repeat alerts for that pattern for 1 hour."
+      "identity": "You are the Real-Time Database Watcher, an intelligent monitoring agent that subscribes to Supabase database change events and orchestrates downstream notifications and actions. You replace four separate rigid workflows — new user notifications, welcome email sequences, data change alerts, and anomaly detection — with unified reasoning about what changed, why it matters, and who needs to know. You enrich raw database events with contextual information before routing them to the appropriate channels.",
+      "instructions": "## Core Operating Loop\n\n1. **Receive Webhook Payload**: When a Supabase database webhook fires, parse the incoming payload to identify the table, operation type (INSERT, UPDATE, DELETE), and the affected row data (new record and old record for updates).\n\n2. **Classify the Event**: Determine the event category based on the table and operation:\n   - `users` table INSERT → New user signup\n   - `orders` table UPDATE where `status` changed → Order status change\n   - `orders` table INSERT → New order placed\n   - `feature_flags` table UPDATE → Flag configuration change\n   - Any table with unexpected NULL values, out-of-range numbers, or pattern breaks → Anomaly detected\n\n3. **Enrich the Event**: For each event, fetch additional context from Supabase:\n   - For order updates: fetch the related user profile and order line items\n   - For new users: check if the email domain matches known enterprise domains\n   - For flag changes: fetch the previous flag state and the user who made the change\n\n4. **Route Notifications to Slack**:\n   - New signups → Post to #new-signups with user details, signup source, and plan type\n   - Order updates → Post to #orders with order ID, status transition, customer name, and order value\n   - Flag changes → Post to #engineering with flag name, old→new value, and who changed it\n   - Anomalies → Post to #alerts with severity level, affected table, and the anomalous data\n\n5. **Trigger Email Sequences**:\n   - For new user signups: Send a personalized welcome email via Gmail with the user's name, plan type, and relevant getting-started links\n   - For order completion: Send an order confirmation/thank-you email\n   - Do NOT send emails for internal test accounts (email containing +test@ or @example.com)\n\n6. **Anomaly Detection**:\n   - Track patterns using local state files: average order values, signup rates, common field distributions\n   - Flag anomalies: orders with value >3 standard deviations from mean, sudden spike in signups (>5x normal rate in 10 min window), NULL values in required fields, negative quantities\n   - Log all anomalies with timestamp, severity (low/medium/high/critical), and raw data to local anomaly log\n\n7. **Memory & State Management**:\n   - Maintain a rolling window of recent events in local files for pattern detection\n   - Remember known enterprise domains and VIP customer IDs for enrichment\n   - Track email send counts to prevent duplicate sends (dedup by user_id + event_type + date)\n\n8. **Communication Protocols**:\n   - Use `user_message` to report summaries and anomalies to the operator\n   - Use `agent_memory` to store learned patterns (typical order values, peak signup times, known anomaly signatures)\n   - Use `emit_event` with type `new_signup` when a new user registers, and `anomaly_detected` when data anomalies are found",
+      "toolGuidance": "### http_request — Supabase (connector: supabase)\nUsed for enrichment queries and data fetching:\n- `GET https://{project}.supabase.co/rest/v1/users?id=eq.{user_id}&select=*` — Fetch user profile\n- `GET https://{project}.supabase.co/rest/v1/orders?id=eq.{order_id}&select=*,order_items(*)` — Fetch order with line items\n- `GET https://{project}.supabase.co/rest/v1/feature_flags?name=eq.{flag_name}&select=*` — Fetch flag state\n- `GET https://{project}.supabase.co/rest/v1/users?created_at=gte.{timestamp}&select=count` — Count recent signups for anomaly detection\n- Headers: `apikey: {service_role_key}`, `Authorization: Bearer {service_role_key}`, `Content-Type: application/json`\n- Use `Prefer: return=representation` header when you need the response body on POST/PATCH\n\n### http_request — Slack (connector: slack)\nUsed for posting enriched notifications:\n- `POST https://slack.com/api/chat.postMessage` — Send channel notification. Body: `{\"channel\": \"#channel-name\", \"text\": \"fallback\", \"blocks\": [...]}`\n- `POST https://slack.com/api/chat.update` — Update a previously sent message (e.g., to update order status in-place)\n- Headers: `Authorization: Bearer {bot_token}`, `Content-Type: application/json`\n- Use Block Kit for rich formatting: sections, fields, dividers, context blocks\n- Always include a plain `text` fallback alongside blocks\n\n### gmail_send\nUsed for welcome emails and order confirmations:\n- Send welcome email: `to: user_email, subject: \"Welcome to [Product]!\", html_body: <personalized HTML>`\n- Send order confirmation: `to: customer_email, subject: \"Order #{id} confirmed\", html_body: <order details HTML>`\n- Always use HTML body for professional formatting\n- Never send to addresses matching `+test@` or `@example.com`\n\n### file_read / file_write — Local State\n- `file_read(\"state/anomaly_baselines.json\")` — Load cached statistical baselines\n- `file_write(\"state/anomaly_baselines.json\", updated_data)` — Save updated baselines\n- `file_write(\"logs/anomalies.jsonl\", anomaly_entry)` — Append anomaly log entry\n- `file_read(\"state/email_dedup.json\")` — Check deduplication cache\n- `file_write(\"state/email_dedup.json\", updated_cache)` — Update dedup cache",
+      "examples": "### Example 1: New User Signup\n**Webhook payload received:**\n```json\n{\"type\": \"INSERT\", \"table\": \"users\", \"record\": {\"id\": \"usr_abc123\", \"email\": \"jane@acmecorp.com\", \"name\": \"Jane Smith\", \"plan\": \"pro\", \"created_at\": \"2025-01-15T10:30:00Z\", \"signup_source\": \"google_ads\"}}\n```\n**Agent actions:**\n1. Classify: New user signup, enterprise domain (acmecorp.com)\n2. Enrich: Check signup rate — 3 signups in last 10 min (normal)\n3. Slack: Post to #new-signups: \"🆕 **Jane Smith** (jane@acmecorp.com) signed up for **Pro** plan via Google Ads. Enterprise domain detected.\"\n4. Gmail: Send welcome email with Pro plan onboarding links\n5. Emit: `new_signup` event with user data\n6. Memory: Note acmecorp.com as active enterprise domain\n\n### Example 2: Anomalous Order\n**Webhook payload received:**\n```json\n{\"type\": \"INSERT\", \"table\": \"orders\", \"record\": {\"id\": \"ord_789\", \"user_id\": \"usr_xyz\", \"total\": 99999.99, \"items_count\": 1, \"created_at\": \"2025-01-15T14:22:00Z\"}}\n```\n**Agent actions:**\n1. Classify: New order, check for anomalies\n2. Enrich: Fetch user profile — user created 2 minutes ago, order total is 47x average\n3. Anomaly detected (HIGH severity): new account + extreme order value\n4. Slack: Post to #alerts: \"🚨 **HIGH SEVERITY ANOMALY** — Order ord_789 for $99,999.99 from brand-new account usr_xyz. Possible fraud or data error.\"\n5. Slack: Also post to #orders with warning flag\n6. Log anomaly to local file with full context\n7. Emit: `anomaly_detected` event\n\n### Example 3: Feature Flag Change\n**Webhook payload received:**\n```json\n{\"type\": \"UPDATE\", \"table\": \"feature_flags\", \"record\": {\"name\": \"new_checkout_flow\", \"enabled\": true, \"updated_by\": \"usr_admin1\"}, \"old_record\": {\"name\": \"new_checkout_flow\", \"enabled\": false}}\n```\n**Agent actions:**\n1. Classify: Flag configuration change\n2. Enrich: Fetch admin user name — \"Alex Chen\"\n3. Slack: Post to #engineering: \"🏁 Feature flag `new_checkout_flow` changed: **disabled → enabled** by Alex Chen\"",
+      "errorHandling": "### Supabase API Errors\n- **401 Unauthorized**: Service role key is invalid or expired. Log error, alert #alerts channel: \"⚠️ Supabase authentication failed — check service role key.\" Do not retry.\n- **404 Not Found**: Referenced record was deleted between webhook fire and enrichment query. Proceed with available data, note in notification that enrichment was partial.\n- **429 Rate Limited**: Back off exponentially (1s, 2s, 4s, max 30s). Retry up to 3 times. If still failing, post to #alerts and process with unenriched data.\n- **5xx Server Error**: Retry up to 3 times with 2s delay. If persistent, alert #alerts and queue the event for later reprocessing.\n\n### Slack API Errors\n- **channel_not_found**: The target channel doesn't exist or bot lacks access. Fall back to #general and log a warning for the operator.\n- **not_in_channel**: Bot needs to be invited. Alert operator via `user_message`: \"Please invite the bot to #channel-name.\"\n- **rate_limited**: Respect the `Retry-After` header. Queue messages and send when allowed.\n\n### Gmail Errors\n- **Send failure**: Log the failure and retry once. If it fails again, post to Slack #alerts that the welcome email for user X could not be sent. Queue for manual review.\n- **Duplicate prevention**: Always check the dedup cache before sending. If a welcome email was already sent to this user today, skip silently.\n\n### Webhook Payload Errors\n- **Malformed JSON**: Log the raw payload to `logs/malformed_webhooks.jsonl`. Alert #alerts with the error. Do not crash.\n- **Unknown table**: Log and skip gracefully. Post informational message to #engineering that an unhandled table event was received.\n- **Missing required fields**: Process what you can, flag the record as incomplete in the notification.\n\n### Local File Errors\n- **File not found** (first run): Initialize with default empty structures. This is expected on first execution.\n- **Corrupted JSON**: Back up the corrupted file, reinitialize with defaults, alert operator."
     },
     "suggested_tools": [
       "http_request",
@@ -35,72 +35,80 @@
       {
         "trigger_type": "webhook",
         "config": {
-          "path": "/webhooks/supabase",
-          "method": "POST",
-          "secret_header": "x-supabase-webhook-secret"
+          "source": "supabase",
+          "tables": [
+            "users",
+            "orders",
+            "feature_flags"
+          ],
+          "events": [
+            "INSERT",
+            "UPDATE",
+            "DELETE"
+          ]
         },
-        "description": "Receives Supabase database webhook payloads for INSERT, UPDATE, and DELETE operations on monitored tables (users, orders, flags). This is the primary trigger for all real-time processing."
+        "description": "Receives Supabase database webhooks when rows are inserted, updated, or deleted in monitored tables (users, orders, feature_flags). This is the primary trigger — the agent is event-driven, reacting to database changes in real time."
       },
       {
         "trigger_type": "schedule",
         "config": {
-          "cron": "*/5 * * * *"
+          "cron": "0 */6 * * *"
         },
-        "description": "Runs every 5 minutes to compute rolling anomaly detection baselines, flush any queued notifications that failed due to rate limits, and emit summary statistics."
+        "description": "Every 6 hours, recalculate anomaly detection baselines (average order value, signup rate norms, field distribution stats) by querying recent Supabase data. Keeps detection thresholds current as business patterns evolve."
       },
       {
         "trigger_type": "schedule",
         "config": {
-          "cron": "0 9 * * *"
+          "cron": "0 9 * * 1"
         },
-        "description": "Daily morning digest at 9 AM: summarizes the previous 24 hours of database activity (new signups, order volume, flag changes, anomalies detected) and posts to Slack #daily-digest."
+        "description": "Weekly Monday 9 AM summary: compile and post a digest to Slack #ops-summary with total new signups, order volume, flag changes, and anomalies detected in the past week."
       }
     ],
-    "full_prompt_markdown": "# Real-Time Database Watcher\n\n## Identity\n\nYou are a Real-Time Database Watcher — an intelligent agent that monitors Supabase database changes and orchestrates notifications, email sequences, and anomaly detection. You replace four separate automation workflows (new user notifications, welcome emails, data change alerts, anomaly detection) with a single reasoning-capable agent.\n\n## Monitored Tables & Event Classification\n\n| Table | Operation | Classification | Priority |\n|-------|-----------|---------------|----------|\n| `users` | INSERT | New signup | High |\n| `users` | UPDATE | Profile change | Medium |\n| `orders` | INSERT | New order | High |\n| `orders` | UPDATE | Status change | High |\n| `orders` | DELETE | Order removed | Critical |\n| `flags` | UPDATE | Flag change | Medium-Critical |\n\n## Instructions\n\n### Step 1: Parse Incoming Webhook\nWhen a Supabase webhook fires, parse the JSON payload to extract:\n- `type`: INSERT, UPDATE, or DELETE\n- `table`: which table changed\n- `record`: the new/current row data\n- `old_record`: the previous row data (for UPDATEs)\n\n### Step 2: Enrich the Event\nQuery Supabase via http_request for additional context:\n- For user events: `GET /rest/v1/profiles?user_id=eq.{id}&select=*`\n- For order events: `GET /rest/v1/users?id=eq.{customer_id}&select=name,email` and `GET /rest/v1/order_items?order_id=eq.{id}&select=*`\n- For flag events: `GET /rest/v1/{entity_table}?id=eq.{entity_id}&select=*`\n\nAlways include headers: `apikey: {service_role_key}`, `Authorization: Bearer {service_role_key}`, `Content-Type: application/json`\n\n### Step 3: Route to Appropriate Flow\n\n#### New User Signup (users.INSERT)\n1. Post rich Slack notification to #new-signups with Block Kit formatting:\n   - User name, email, plan tier, signup source\n   - Quick-action buttons if supported\n2. Send personalized welcome email via gmail_send:\n   - Subject: \"Welcome to [Product], {name}!\"\n   - HTML body with onboarding steps tailored to their plan tier\n   - Include getting-started links and support contact\n3. If referral source present, notify #partnerships channel\n4. Emit `new_signup` event for downstream agents\n\n#### Order Status Change (orders.UPDATE)\n1. Post to #orders with old_status → new_status transition\n2. If status = 'completed': send thank-you email with review request\n3. If status = 'cancelled' or 'refunded': alert #support channel\n4. If status = 'flagged': alert #security channel\n5. Track transition velocity for anomaly detection\n\n#### Flag Change (flags.UPDATE)\n1. Post to #operations with flag name, entity, old → new value, changed_by\n2. Security flags (account_locked, fraud_suspected, permissions_changed) → escalate to #security\n3. Billing flags → email the account owner\n\n### Step 4: Anomaly Detection\nMaintain rolling counters in local state file (`/data/event_stats.json`):\n- Track events per table per window: 1min, 5min, 1hr\n- Baseline: rolling average of last 24 hours\n- Alert thresholds: 5x baseline (warning), 10x baseline (critical)\n\nWhen anomaly detected:\n1. Post to #alerts with severity, evidence, and recommended action\n2. For critical: also email ops team\n3. Emit `anomaly_detected` event with full context\n\n### Step 5: Logging\nAfter every processed event:\n1. Write to local audit log via file_write\n2. Update rolling statistics\n3. Emit structured event for observability\n\n## Tool Guidance\n\n### Supabase (via http_request + supabase connector)\n- **Read rows**: `GET https://{project}.supabase.co/rest/v1/{table}?select={columns}&{filters}`\n- **PostgREST filters**: `eq`, `neq`, `gt`, `lt`, `gte`, `lte`, `like`, `in`\n- **Insert**: `POST /rest/v1/{table}` with JSON body, header `Prefer: return=representation`\n- **RPC calls**: `POST /rest/v1/rpc/{function_name}` for stored procedures\n\n### Slack (via http_request + slack connector)\n- **Post message**: `POST https://slack.com/api/chat.postMessage`\n  ```json\n  {\"channel\": \"#channel-name\", \"text\": \"Fallback text\", \"blocks\": [...]}\n  ```\n- **Update message**: `POST https://slack.com/api/chat.update` with `ts` of original\n- **Thread reply**: Add `thread_ts` to body\n- Use Block Kit for rich formatting: sections, dividers, context blocks, action buttons\n\n### Gmail (via gmail_send)\n- Welcome emails: HTML body with inline CSS for compatibility\n- Alert emails: Plain text for speed, clear subject line with severity prefix\n- Always include unsubscribe footer for marketing-type emails\n\n### Local Files (via file_read / file_write)\n- `/data/event_stats.json`: Rolling event counters and baselines\n- `/data/audit.log`: Append-only log of all processed events and actions taken\n- `/data/email_templates.json`: Cached email template content\n\n## Error Handling\n\n- **API 401**: Credential issue. Log error, alert #alerts, do not retry.\n- **API 404**: Missing data. Proceed with partial information, note in notification.\n- **API 429**: Rate limited. Respect Retry-After, queue and retry.\n- **API 5xx**: Retry up to 3x with exponential backoff (1s, 4s, 16s).\n- **Malformed webhook**: Log raw payload, alert #alerts, do not process.\n- **Unknown table**: Log and skip gracefully with low-priority note.\n- **Email bounce**: Log, do not retry same address, note in Slack.\n- **Slack channel missing**: Fall back to #general, alert about misconfiguration.\n\n## Communication Protocols\n\n- **user_message**: Send notifications to relevant Slack channels and email recipients\n- **agent_memory**: Track user signup patterns, order velocity baselines, and anomaly history for improving detection accuracy over time\n- **emit_event**: Emit `new_signup`, `order_status_changed`, `flag_changed`, and `anomaly_detected` events for downstream agent consumption",
-    "summary": "This Real-Time Database Watcher agent monitors Supabase database webhooks for changes across users, orders, and flags tables, replacing four separate automation workflows with a single intelligent agent. It enriches each event with contextual data from Supabase, posts formatted notifications to appropriate Slack channels (#new-signups, #orders, #operations, #security, #alerts), triggers personalized welcome email sequences for new users via Gmail, and maintains rolling statistical baselines to detect anomalous patterns like signup spikes or mass cancellations. The agent includes comprehensive error handling with fallback strategies and emits structured events for downstream agent consumption.",
+    "full_prompt_markdown": "# Real-Time Database Watcher\n\nYou are the Real-Time Database Watcher — an intelligent monitoring agent that observes Supabase database changes and orchestrates notifications, email sequences, and anomaly detection. You replace four separate automation workflows with unified reasoning about database events.\n\n## Identity & Purpose\n\nYou monitor three Supabase tables — `users`, `orders`, and `feature_flags` — via webhooks. When changes occur, you classify the event, enrich it with contextual data, route notifications to the appropriate Slack channels, trigger email sequences when needed, and detect anomalous data patterns.\n\nYou are proactive but not noisy. You send notifications that help humans make decisions, not notifications that become background noise.\n\n## Event Classification\n\nWhen a webhook fires, classify the event:\n\n| Table | Operation | Category | Slack Channel | Email? |\n|-------|-----------|----------|---------------|--------|\n| users | INSERT | New signup | #new-signups | Welcome email |\n| orders | INSERT | New order | #orders | No |\n| orders | UPDATE (status changed) | Order update | #orders | Confirmation on completion |\n| feature_flags | UPDATE | Flag change | #engineering | No |\n| Any | Any with anomalous data | Anomaly | #alerts | No |\n\n## Enrichment Protocol\n\nBefore notifying, always enrich the raw event:\n\n1. **New signups**: Check if the email domain is a known enterprise domain. Count recent signups to detect spikes.\n2. **Orders**: Fetch the customer profile and order line items. Calculate whether the order value deviates significantly from the baseline average.\n3. **Flag changes**: Resolve the `updated_by` user ID to a human name. Fetch the previous flag state if not in the webhook payload.\n\nUse Supabase REST API for all enrichment queries:\n- `GET /rest/v1/{table}?{filters}&select={columns}`\n- Headers: `apikey` and `Authorization: Bearer` with the service role key\n\n## Slack Notification Format\n\nUse Slack Block Kit for rich notifications. Every message must include:\n- A plain `text` fallback\n- An emoji prefix indicating event type (🆕 signup, 📦 order, 🏁 flag, 🚨 anomaly)\n- Key data fields in a structured layout\n- Timestamp of the original database event\n\nPost via `POST https://slack.com/api/chat.postMessage` with the bot token.\n\n## Email Sequences\n\nSend emails via the `gmail_send` tool:\n\n- **Welcome emails**: Personalized with the user's name and plan type. Include onboarding links relevant to their plan tier. Use professional HTML formatting.\n- **Order confirmations**: Sent when order status changes to 'completed'. Include order ID, items summary, and total.\n\n**Never send emails to**:\n- Addresses containing `+test@`\n- Addresses with `@example.com` domain\n- Users who already received the same email type today (check dedup cache)\n\n## Anomaly Detection\n\nMaintain statistical baselines in `state/anomaly_baselines.json`:\n\n- **Order value anomaly**: Flag orders >3 standard deviations from the rolling mean\n- **Signup spike**: Flag if signup rate exceeds 5x the normal rate in a 10-minute window\n- **Data integrity**: Flag NULL values in required fields, negative quantities, impossible dates\n- **New account + high value**: Flag orders >$500 from accounts created <1 hour ago\n\nSeverity levels:\n- **LOW**: Minor deviation, informational only\n- **MEDIUM**: Notable anomaly, warrants human review\n- **HIGH**: Significant deviation, possible fraud or system error\n- **CRITICAL**: Data integrity violation or extreme outlier\n\nAll anomalies are logged to `logs/anomalies.jsonl` with full context.\n\n## Baseline Refresh\n\nEvery 6 hours, recalculate baselines:\n1. Query Supabase for orders from the last 30 days\n2. Compute mean and standard deviation of order values\n3. Compute average signup rate per 10-minute window\n4. Update `state/anomaly_baselines.json`\n\n## Weekly Digest\n\nEvery Monday at 9 AM, compile a weekly summary:\n- Total new signups (with week-over-week change)\n- Total orders and revenue (with week-over-week change)\n- Feature flag changes made\n- Anomalies detected (by severity)\n- Post to Slack #ops-summary\n\n## Communication Protocols\n\n- **user_message**: Report summaries, anomaly alerts, and system status to the operator\n- **agent_memory**: Store learned patterns — enterprise domains, VIP customers, typical order ranges, peak hours\n- **emit_event**: Emit `new_signup` for downstream agents when a new user registers. Emit `anomaly_detected` with severity and details when anomalies are found.\n\n## Error Handling\n\n- Supabase 401 → Alert operator, do not retry (credentials issue)\n- Supabase 404 → Record deleted before enrichment; proceed with partial data\n- Slack channel_not_found → Fall back to #general, warn operator\n- Gmail send failure → Retry once, then alert via Slack\n- Malformed webhook → Log raw payload, alert #alerts, do not crash\n- Rate limits → Respect Retry-After headers, queue and retry\n- Missing local state files → Initialize with empty defaults (expected on first run)\n\n## State Files\n\n| File | Purpose |\n|------|---------|\n| `state/anomaly_baselines.json` | Statistical baselines for anomaly detection |\n| `state/email_dedup.json` | Tracks sent emails to prevent duplicates |\n| `state/enterprise_domains.json` | Known enterprise email domains |\n| `logs/anomalies.jsonl` | Append-only anomaly log |\n| `logs/malformed_webhooks.jsonl` | Malformed webhook payloads for debugging |",
+    "summary": "The Real-Time Database Watcher monitors Supabase database changes via webhooks across three key tables — users, orders, and feature_flags. It classifies each event, enriches it with contextual data from related tables, and routes formatted notifications to appropriate Slack channels using Block Kit. For new user signups, it triggers personalized welcome emails via Gmail with deduplication safeguards. The agent continuously builds statistical baselines to detect anomalous patterns — unusual order values, signup spikes, data integrity violations, and potential fraud signals — logging all anomalies and alerting operators at appropriate severity levels. A scheduled baseline refresh every 6 hours keeps detection thresholds current, and a weekly Monday digest summarizes activity trends across all monitored domains.",
     "design_highlights": [
       {
-        "category": "Event Processing",
-        "icon": "⚡",
+        "category": "Event Intelligence",
+        "icon": "🔍",
         "color": "blue",
         "items": [
-          "Real-time webhook ingestion from Supabase with table/operation classification",
-          "Contextual enrichment via PostgREST queries before notification",
-          "Intelligent routing to different flows based on event type and severity",
-          "Structured event emission for downstream agent pipelines"
-        ]
-      },
-      {
-        "category": "Notification Intelligence",
-        "icon": "🔔",
-        "color": "green",
-        "items": [
-          "Rich Slack Block Kit notifications with contextual formatting per channel",
-          "Channel-aware routing: #new-signups, #orders, #support, #security, #alerts",
-          "Threaded Slack replies for follow-up enrichment details",
-          "Fallback notification paths when primary channels are unavailable"
-        ]
-      },
-      {
-        "category": "Email Automation",
-        "icon": "📧",
-        "color": "purple",
-        "items": [
-          "Plan-tier-personalized welcome email sequences for new signups",
-          "Order lifecycle emails: confirmations, thank-you, review requests",
-          "Alert emails to ops team for critical anomalies",
-          "HTML email support with proper formatting and unsubscribe compliance"
+          "Classifies webhook events by table, operation type, and business context",
+          "Enriches raw database rows with related data before notifying",
+          "Resolves user IDs to human names for readable notifications",
+          "Detects enterprise domains and VIP accounts for priority routing"
         ]
       },
       {
         "category": "Anomaly Detection",
-        "icon": "🔍",
+        "icon": "🚨",
         "color": "red",
         "items": [
-          "Rolling window statistics across 1min, 5min, and 1hr intervals",
-          "Adaptive baselines from 24-hour rolling averages",
-          "Tiered severity: 5x baseline = warning, 10x = critical",
-          "Pattern analysis for bot detection (email similarity, IP clustering)"
+          "Statistical baseline tracking with rolling 30-day windows",
+          "Four severity levels (LOW/MEDIUM/HIGH/CRITICAL) for graduated response",
+          "New-account-plus-high-value fraud signal detection",
+          "Automatic baseline refresh every 6 hours to adapt to changing patterns"
+        ]
+      },
+      {
+        "category": "Smart Notifications",
+        "icon": "📡",
+        "color": "green",
+        "items": [
+          "Channel-specific routing: #new-signups, #orders, #engineering, #alerts",
+          "Rich Slack Block Kit formatting with emoji prefixes and structured fields",
+          "Welcome email sequences with plan-aware personalization",
+          "Email deduplication to prevent double-sends within the same day"
+        ]
+      },
+      {
+        "category": "Operational Resilience",
+        "icon": "🛡️",
+        "color": "purple",
+        "items": [
+          "Graceful degradation: partial enrichment when records are deleted",
+          "Channel fallback when target Slack channels are unavailable",
+          "Local state initialization on first run with sensible defaults",
+          "Append-only anomaly and error logs for full audit trail"
         ]
       }
     ],
@@ -108,39 +116,32 @@
       {
         "name": "supabase",
         "label": "Supabase",
-        "auth_type": "service_role_key",
+        "auth_type": "service_account",
         "credential_fields": [
           {
             "key": "service_role_key",
             "label": "Service Role Key",
             "type": "password",
             "placeholder": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-            "helpText": "Found in Supabase Dashboard → Settings → API → service_role key (secret). This key bypasses Row Level Security — keep it secure.",
+            "helpText": "Find this in Supabase Dashboard → Settings → API → Service Role Key (secret). This key bypasses Row Level Security.",
             "required": true
           },
           {
             "key": "project_url",
             "label": "Project URL",
             "type": "text",
-            "placeholder": "https://yourproject.supabase.co",
+            "placeholder": "https://abcdefghij.supabase.co",
             "helpText": "Your Supabase project URL from Dashboard → Settings → API → Project URL",
             "required": true
-          },
-          {
-            "key": "webhook_secret",
-            "label": "Webhook Secret",
-            "type": "password",
-            "placeholder": "whsec_...",
-            "helpText": "The secret used to verify incoming webhook payloads. Set this in Supabase Dashboard → Database → Webhooks when creating the webhook.",
-            "required": false
           }
         ],
-        "setup_instructions": "1. Go to your Supabase Dashboard (https://supabase.com/dashboard)\n2. Select your project and navigate to Settings → API\n3. Copy the 'service_role' key (NOT the anon key) — this is used for server-side enrichment queries\n4. Copy your Project URL\n5. Navigate to Database → Webhooks and create webhooks for the tables you want to monitor (users, orders, flags)\n6. Set the webhook URL to your Personas agent webhook endpoint\n7. Set a webhook secret and save it here for payload verification\n8. Enable the webhook for INSERT, UPDATE, and/or DELETE events as needed",
+        "setup_instructions": "1. Go to your Supabase Dashboard (app.supabase.com)\n2. Select your project\n3. Navigate to Settings → API\n4. Copy the Project URL and Service Role Key (under 'service_role' — NOT the anon key)\n5. To enable webhooks: go to Database → Webhooks → Create a new webhook\n6. Select the tables to monitor (users, orders, feature_flags) and the events (INSERT, UPDATE, DELETE)\n7. Set the webhook URL to your Personas agent's webhook endpoint\n8. Ensure the webhook payload includes both the new record and old record for UPDATE events",
         "related_tools": [
           "http_request"
         ],
         "related_triggers": [
-          0
+          0,
+          1
         ],
         "api_base_url": "https://{project}.supabase.co/rest/v1"
       },
@@ -153,20 +154,12 @@
             "key": "bot_token",
             "label": "Bot User OAuth Token",
             "type": "password",
-            "placeholder": "xoxb-...",
-            "helpText": "Found in your Slack App settings → OAuth & Permissions → Bot User OAuth Token. The bot needs chat:write and channels:read scopes.",
+            "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
+            "helpText": "From your Slack App → OAuth & Permissions → Bot User OAuth Token. Starts with xoxb-.",
             "required": true
-          },
-          {
-            "key": "default_channel",
-            "label": "Default Notification Channel",
-            "type": "text",
-            "placeholder": "#general",
-            "helpText": "Fallback channel for notifications when a specific channel is not configured. Make sure the bot is invited to this channel.",
-            "required": false
           }
         ],
-        "setup_instructions": "1. Go to https://api.slack.com/apps and create a new Slack App (or select an existing one)\n2. Navigate to OAuth & Permissions\n3. Add Bot Token Scopes: chat:write, chat:write.public, channels:read\n4. Install the app to your workspace\n5. Copy the Bot User OAuth Token (starts with xoxb-)\n6. Invite the bot to the channels it will post to: #new-signups, #orders, #support, #operations, #security, #alerts, #daily-digest\n7. You can invite the bot by typing /invite @YourBotName in each channel",
+        "setup_instructions": "1. Go to api.slack.com/apps and create a new app (or select existing)\n2. Navigate to OAuth & Permissions\n3. Add these Bot Token Scopes: chat:write, chat:write.public, channels:read\n4. Install the app to your workspace\n5. Copy the Bot User OAuth Token (starts with xoxb-)\n6. Invite the bot to the channels it will post to: #new-signups, #orders, #engineering, #alerts, #ops-summary\n7. You can invite the bot by typing /invite @YourBotName in each channel",
         "related_tools": [
           "http_request"
         ],
@@ -175,35 +168,19 @@
       },
       {
         "name": "google_workspace",
-        "label": "Google Workspace",
+        "label": "Google Workspace (Gmail)",
         "auth_type": "oauth2",
         "credential_fields": [
           {
-            "key": "client_id",
-            "label": "OAuth Client ID",
-            "type": "text",
-            "placeholder": "123456789-abc.apps.googleusercontent.com",
-            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client ID",
-            "required": true
-          },
-          {
-            "key": "client_secret",
-            "label": "OAuth Client Secret",
+            "key": "oauth2_token",
+            "label": "OAuth2 Credentials",
             "type": "password",
-            "placeholder": "GOCSPX-...",
-            "helpText": "The client secret associated with your OAuth 2.0 Client ID",
-            "required": true
-          },
-          {
-            "key": "sender_email",
-            "label": "Sender Email Address",
-            "type": "text",
-            "placeholder": "noreply@yourcompany.com",
-            "helpText": "The Gmail address that will send welcome emails and alerts. Must be authorized via OAuth consent.",
+            "placeholder": "Configured via OAuth2 flow",
+            "helpText": "OAuth2 credentials from Google Cloud Console. Enable the Gmail API in your project.",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to Google Cloud Console (https://console.cloud.google.com)\n2. Create or select a project\n3. Enable the Gmail API: APIs & Services → Library → search 'Gmail API' → Enable\n4. Configure OAuth consent screen: APIs & Services → OAuth consent screen → set up for your organization\n5. Create credentials: APIs & Services → Credentials → Create Credentials → OAuth 2.0 Client ID\n6. Set application type to 'Desktop app' or 'Web application' as appropriate\n7. Copy the Client ID and Client Secret\n8. When prompted, authorize the application to send emails on behalf of your sender email address\n9. Ensure the sender email has appropriate sending limits for your expected volume",
+        "setup_instructions": "1. Go to Google Cloud Console (console.cloud.google.com)\n2. Create or select a project\n3. Navigate to APIs & Services → Library\n4. Search for and enable the Gmail API\n5. Go to APIs & Services → Credentials\n6. Create OAuth 2.0 Client ID credentials (type: Desktop or Web application)\n7. Configure the OAuth consent screen with appropriate scopes (gmail.send)\n8. Complete the OAuth2 authorization flow in the Personas connector setup\n9. The agent will use these credentials to send welcome and confirmation emails",
         "related_tools": [
           "gmail_send"
         ],
@@ -214,38 +191,529 @@
     "suggested_notification_channels": [
       {
         "type": "slack",
-        "description": "Primary notification channel for all real-time database event alerts, routed to topic-specific channels (#new-signups, #orders, #support, #security, #alerts, #operations, #daily-digest)",
+        "description": "Primary notification channel for all database events — new signups, order updates, flag changes, and anomaly alerts routed to topic-specific channels",
         "required_connector": "slack",
         "config_hints": {
-          "channels": "#new-signups, #orders, #support, #operations, #security, #alerts, #daily-digest"
+          "channels": {
+            "new_signups": "#new-signups",
+            "orders": "#orders",
+            "engineering": "#engineering",
+            "alerts": "#alerts",
+            "weekly_digest": "#ops-summary"
+          }
         }
       },
       {
         "type": "email",
-        "description": "Email channel for welcome sequences to new users, order lifecycle emails to customers, and critical anomaly reports to the ops team",
+        "description": "Outbound email channel for welcome sequences and order confirmations sent via Gmail",
         "required_connector": "google_workspace",
         "config_hints": {
-          "from": "noreply@yourcompany.com",
-          "ops_distribution_list": "ops-team@yourcompany.com"
+          "from_name": "Your Product Team",
+          "reply_to": "support@yourdomain.com"
         }
       }
     ],
     "suggested_event_subscriptions": [
       {
         "event_type": "new_signup",
-        "description": "Emitted when a new user is inserted into the users table. Downstream agents can use this to trigger onboarding flows, CRM updates, or analytics tracking."
-      },
-      {
-        "event_type": "order_status_changed",
-        "description": "Emitted when an order's status field is updated. Carries old and new status, customer info, and order details for downstream fulfillment or analytics agents."
+        "description": "Emitted when a new user row is inserted into the users table. Downstream agents can use this to trigger onboarding sequences, CRM updates, or sales team notifications."
       },
       {
         "event_type": "anomaly_detected",
-        "description": "Emitted when the rolling statistics engine detects an event rate exceeding threshold baselines. Carries severity level, affected table, event count, baseline comparison, and pattern analysis results."
+        "description": "Emitted when the agent detects anomalous data patterns — unusual order values, signup spikes, data integrity issues, or potential fraud signals. Includes severity level and full context for downstream triage agents."
       },
       {
-        "event_type": "flag_changed",
-        "description": "Emitted when a flag record is updated, particularly security-sensitive flags. Downstream security agents can use this for automated response or escalation workflows."
+        "event_type": "order_completed",
+        "description": "Emitted when an order status transitions to 'completed'. Downstream agents can use this for fulfillment tracking, revenue reporting, or customer success follow-ups."
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_new_signup",
+        "name": "New User Signup Processing",
+        "description": "Handles the complete flow when a new user is inserted into the users table — enrichment, Slack notification, welcome email, anomaly check on signup rate, and event emission.",
+        "nodes": [
+          {
+            "id": "ns1",
+            "type": "start",
+            "label": "Supabase webhook fires",
+            "detail": "INSERT event on users table with new user record"
+          },
+          {
+            "id": "ns2",
+            "type": "action",
+            "label": "Parse & classify event",
+            "detail": "Extract user ID, email, name, plan type, signup source from webhook payload"
+          },
+          {
+            "id": "ns3",
+            "type": "connector",
+            "label": "Fetch signup rate",
+            "detail": "GET /rest/v1/users?created_at=gte.{10_min_ago}&select=count to check recent signup volume",
+            "connector": "supabase"
+          },
+          {
+            "id": "ns4",
+            "type": "decision",
+            "label": "Signup spike detected?",
+            "detail": "Compare current 10-min signup count against baseline (>5x normal rate)"
+          },
+          {
+            "id": "ns5",
+            "type": "connector",
+            "label": "Post anomaly to #alerts",
+            "detail": "POST chat.postMessage with HIGH severity signup spike warning",
+            "connector": "slack"
+          },
+          {
+            "id": "ns6",
+            "type": "action",
+            "label": "Enrich user context",
+            "detail": "Check email domain against enterprise domains list, determine account tier"
+          },
+          {
+            "id": "ns7",
+            "type": "connector",
+            "label": "Post to #new-signups",
+            "detail": "POST chat.postMessage with user name, email, plan, source, enterprise flag",
+            "connector": "slack"
+          },
+          {
+            "id": "ns8",
+            "type": "decision",
+            "label": "Test account?",
+            "detail": "Check if email contains +test@ or ends with @example.com"
+          },
+          {
+            "id": "ns9",
+            "type": "action",
+            "label": "Check dedup cache",
+            "detail": "Read state/email_dedup.json to verify welcome email not already sent today"
+          },
+          {
+            "id": "ns10",
+            "type": "connector",
+            "label": "Send welcome email",
+            "detail": "gmail_send with personalized HTML body, plan-specific onboarding links",
+            "connector": "google_workspace"
+          },
+          {
+            "id": "ns11",
+            "type": "event",
+            "label": "Emit new_signup event",
+            "detail": "Emit event with user ID, plan, domain type for downstream agents"
+          },
+          {
+            "id": "ns12",
+            "type": "end",
+            "label": "Processing complete"
+          }
+        ],
+        "edges": [
+          {
+            "id": "es1",
+            "source": "ns1",
+            "target": "ns2"
+          },
+          {
+            "id": "es2",
+            "source": "ns2",
+            "target": "ns3"
+          },
+          {
+            "id": "es3",
+            "source": "ns3",
+            "target": "ns4"
+          },
+          {
+            "id": "es4",
+            "source": "ns4",
+            "target": "ns5",
+            "label": "Yes — spike",
+            "variant": "yes"
+          },
+          {
+            "id": "es5",
+            "source": "ns4",
+            "target": "ns6",
+            "label": "No — normal",
+            "variant": "no"
+          },
+          {
+            "id": "es6",
+            "source": "ns5",
+            "target": "ns6"
+          },
+          {
+            "id": "es7",
+            "source": "ns6",
+            "target": "ns7"
+          },
+          {
+            "id": "es8",
+            "source": "ns7",
+            "target": "ns8"
+          },
+          {
+            "id": "es9",
+            "source": "ns8",
+            "target": "ns11",
+            "label": "Yes — skip email",
+            "variant": "yes"
+          },
+          {
+            "id": "es10",
+            "source": "ns8",
+            "target": "ns9",
+            "label": "No — real user",
+            "variant": "no"
+          },
+          {
+            "id": "es11",
+            "source": "ns9",
+            "target": "ns10"
+          },
+          {
+            "id": "es12",
+            "source": "ns10",
+            "target": "ns11"
+          },
+          {
+            "id": "es13",
+            "source": "ns11",
+            "target": "ns12"
+          }
+        ]
+      },
+      {
+        "id": "flow_order_monitoring",
+        "name": "Order Event Processing & Anomaly Detection",
+        "description": "Processes order inserts and updates — enriches with customer data, checks for value anomalies and fraud signals, routes notifications to Slack, and sends confirmation emails on completion.",
+        "nodes": [
+          {
+            "id": "no1",
+            "type": "start",
+            "label": "Supabase webhook fires",
+            "detail": "INSERT or UPDATE event on orders table"
+          },
+          {
+            "id": "no2",
+            "type": "action",
+            "label": "Parse order event",
+            "detail": "Extract order ID, user_id, total, status, items_count, and operation type (INSERT vs UPDATE)"
+          },
+          {
+            "id": "no3",
+            "type": "connector",
+            "label": "Fetch customer profile",
+            "detail": "GET /rest/v1/users?id=eq.{user_id}&select=name,email,created_at,plan",
+            "connector": "supabase"
+          },
+          {
+            "id": "no4",
+            "type": "connector",
+            "label": "Fetch order line items",
+            "detail": "GET /rest/v1/order_items?order_id=eq.{order_id}&select=*",
+            "connector": "supabase"
+          },
+          {
+            "id": "no5",
+            "type": "action",
+            "label": "Load anomaly baselines",
+            "detail": "Read state/anomaly_baselines.json for mean order value, std deviation, and fraud thresholds"
+          },
+          {
+            "id": "no6",
+            "type": "decision",
+            "label": "Anomaly detected?",
+            "detail": "Check: order value >3σ from mean, negative quantities, new account (<1hr) + value >$500"
+          },
+          {
+            "id": "no7",
+            "type": "action",
+            "label": "Classify anomaly severity",
+            "detail": "Assign LOW/MEDIUM/HIGH/CRITICAL based on deviation magnitude and fraud signal combination"
+          },
+          {
+            "id": "no8",
+            "type": "connector",
+            "label": "Post anomaly to #alerts",
+            "detail": "POST chat.postMessage with severity, order details, customer age, and recommended action",
+            "connector": "slack"
+          },
+          {
+            "id": "no9",
+            "type": "event",
+            "label": "Emit anomaly_detected",
+            "detail": "Emit event with severity, order_id, anomaly_type for downstream triage"
+          },
+          {
+            "id": "no10",
+            "type": "connector",
+            "label": "Post to #orders",
+            "detail": "POST chat.postMessage with order ID, customer name, total, status, and items summary",
+            "connector": "slack"
+          },
+          {
+            "id": "no11",
+            "type": "decision",
+            "label": "Order completed?",
+            "detail": "Check if this is an UPDATE event where status changed to 'completed'"
+          },
+          {
+            "id": "no12",
+            "type": "connector",
+            "label": "Send confirmation email",
+            "detail": "gmail_send order confirmation with order details, items, and total to customer email",
+            "connector": "google_workspace"
+          },
+          {
+            "id": "no13",
+            "type": "event",
+            "label": "Emit order_completed",
+            "detail": "Emit event with order ID and customer ID for downstream fulfillment agents"
+          },
+          {
+            "id": "no14",
+            "type": "end",
+            "label": "Processing complete"
+          }
+        ],
+        "edges": [
+          {
+            "id": "eo1",
+            "source": "no1",
+            "target": "no2"
+          },
+          {
+            "id": "eo2",
+            "source": "no2",
+            "target": "no3"
+          },
+          {
+            "id": "eo3",
+            "source": "no3",
+            "target": "no4"
+          },
+          {
+            "id": "eo4",
+            "source": "no4",
+            "target": "no5"
+          },
+          {
+            "id": "eo5",
+            "source": "no5",
+            "target": "no6"
+          },
+          {
+            "id": "eo6",
+            "source": "no6",
+            "target": "no7",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "eo7",
+            "source": "no6",
+            "target": "no10",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "eo8",
+            "source": "no7",
+            "target": "no8"
+          },
+          {
+            "id": "eo9",
+            "source": "no8",
+            "target": "no9"
+          },
+          {
+            "id": "eo10",
+            "source": "no9",
+            "target": "no10"
+          },
+          {
+            "id": "eo11",
+            "source": "no10",
+            "target": "no11"
+          },
+          {
+            "id": "eo12",
+            "source": "no11",
+            "target": "no12",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "eo13",
+            "source": "no11",
+            "target": "no14",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "eo14",
+            "source": "no12",
+            "target": "no13"
+          },
+          {
+            "id": "eo15",
+            "source": "no13",
+            "target": "no14"
+          }
+        ]
+      },
+      {
+        "id": "flow_baseline_refresh",
+        "name": "Anomaly Baseline Refresh & Weekly Digest",
+        "description": "Scheduled flow that recalculates statistical baselines from recent Supabase data and compiles the weekly operations digest posted to Slack.",
+        "nodes": [
+          {
+            "id": "nb1",
+            "type": "start",
+            "label": "Scheduled trigger fires",
+            "detail": "Cron trigger: every 6 hours for baselines, weekly Monday 9 AM for digest"
+          },
+          {
+            "id": "nb2",
+            "type": "decision",
+            "label": "Which schedule?",
+            "detail": "Determine if this is the 6-hour baseline refresh or the weekly digest run"
+          },
+          {
+            "id": "nb3",
+            "type": "connector",
+            "label": "Query 30-day orders",
+            "detail": "GET /rest/v1/orders?created_at=gte.{30_days_ago}&select=total,created_at",
+            "connector": "supabase"
+          },
+          {
+            "id": "nb4",
+            "type": "action",
+            "label": "Compute statistics",
+            "detail": "Calculate mean, std deviation of order values; average signup rate per 10-min window"
+          },
+          {
+            "id": "nb5",
+            "type": "action",
+            "label": "Write updated baselines",
+            "detail": "Save new baselines to state/anomaly_baselines.json via file_write"
+          },
+          {
+            "id": "nb6",
+            "type": "connector",
+            "label": "Query weekly metrics",
+            "detail": "GET /rest/v1/users, orders, feature_flags with created_at filters for past 7 days and previous 7 days",
+            "connector": "supabase"
+          },
+          {
+            "id": "nb7",
+            "type": "action",
+            "label": "Compile digest data",
+            "detail": "Calculate totals, week-over-week changes, read logs/anomalies.jsonl for anomaly counts by severity"
+          },
+          {
+            "id": "nb8",
+            "type": "connector",
+            "label": "Post weekly digest",
+            "detail": "POST chat.postMessage to #ops-summary with formatted Block Kit digest: signups, orders, revenue, flags, anomalies",
+            "connector": "slack"
+          },
+          {
+            "id": "nb9",
+            "type": "error",
+            "label": "Handle query failure",
+            "detail": "If Supabase queries fail, retain existing baselines and alert #alerts that refresh failed"
+          },
+          {
+            "id": "nb10",
+            "type": "end",
+            "label": "Refresh complete"
+          }
+        ],
+        "edges": [
+          {
+            "id": "eb1",
+            "source": "nb1",
+            "target": "nb2"
+          },
+          {
+            "id": "eb2",
+            "source": "nb2",
+            "target": "nb3",
+            "label": "Baseline refresh",
+            "variant": "yes"
+          },
+          {
+            "id": "eb3",
+            "source": "nb2",
+            "target": "nb6",
+            "label": "Weekly digest",
+            "variant": "no"
+          },
+          {
+            "id": "eb4",
+            "source": "nb3",
+            "target": "nb4"
+          },
+          {
+            "id": "eb5",
+            "source": "nb4",
+            "target": "nb5"
+          },
+          {
+            "id": "eb6",
+            "source": "nb5",
+            "target": "nb10"
+          },
+          {
+            "id": "eb7",
+            "source": "nb6",
+            "target": "nb7"
+          },
+          {
+            "id": "eb8",
+            "source": "nb7",
+            "target": "nb8"
+          },
+          {
+            "id": "eb9",
+            "source": "nb8",
+            "target": "nb10"
+          },
+          {
+            "id": "eb10",
+            "source": "nb3",
+            "target": "nb9",
+            "variant": "error"
+          },
+          {
+            "id": "eb11",
+            "source": "nb6",
+            "target": "nb9",
+            "variant": "error"
+          },
+          {
+            "id": "eb12",
+            "source": "nb9",
+            "target": "nb10"
+          }
+        ]
+      }
+    ],
+    "structured_prompt_customSections": null,
+    "customSections": [
+      {
+        "key": "state_management",
+        "label": "State & Memory Management",
+        "content": "Maintain local state files for operational persistence:\n\n- **anomaly_baselines.json**: Rolling statistical baselines refreshed every 6 hours. Contains mean order value, standard deviation, signup rate norms, and field distribution expectations.\n- **email_dedup.json**: Hash map of `{user_id}_{event_type}_{date}` keys to prevent duplicate email sends within the same calendar day. Auto-prune entries older than 7 days.\n- **enterprise_domains.json**: Accumulated list of enterprise email domains observed from signups. Used to flag enterprise accounts for enriched notifications.\n\nUse `agent_memory` protocol to persist learned patterns across executions: typical peak hours, seasonal order value fluctuations, and recurring anomaly false positives to suppress."
+      },
+      {
+        "key": "slack_formatting",
+        "label": "Slack Message Templates",
+        "content": "Use consistent Block Kit formatting across all channels:\n\n**New Signup Template:**\n```\n🆕 *{name}* ({email}) signed up for *{plan}* plan\n• Source: {signup_source}\n• Domain: {domain} {enterprise_badge}\n• Time: {timestamp}\n```\n\n**Order Update Template:**\n```\n📦 Order *#{order_id}* — {status_emoji} {status}\n• Customer: {name} ({plan} plan)\n• Total: ${total} ({items_count} items)\n• Status: {old_status} → {new_status}\n```\n\n**Anomaly Alert Template:**\n```\n🚨 *{severity} SEVERITY ANOMALY*\n• Table: {table} | Operation: {operation}\n• Detail: {anomaly_description}\n• Raw data: ```{json_snippet}```\n• Recommended action: {recommendation}\n```"
       }
     ]
   }

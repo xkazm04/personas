@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, AlertCircle, ListChecks, FileText, Link, Play, Settings, FlaskConical, Wand2, Cloud, LogIn, X } from 'lucide-react';
+import { AlertTriangle, AlertCircle, ListChecks, FileText, Link, Play, Settings, FlaskConical, Wand2, Cloud, LogIn, X, GitBranch } from 'lucide-react';
 import type { ModelProfile } from '@/lib/types/frontendTypes';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useAuthStore } from '@/stores/authStore';
 import { ContentBox, ContentHeader } from '@/features/shared/components/ContentLayout';
 import type { EditorTab } from '@/lib/types/types';
 import { PersonaPromptEditor } from '@/features/agents/sub_editor/PersonaPromptEditor';
+import { PromptLabTab } from '@/features/agents/sub_editor/PromptLabTab';
 import { ExecutionList } from '@/features/agents/sub_executions/ExecutionList';
 import { PersonaRunner } from '@/features/agents/sub_executions/PersonaRunner';
 import { AccessibleToggle } from '@/features/shared/components/AccessibleToggle';
@@ -15,12 +16,15 @@ import { PersonaTestsTab } from '@/features/agents/sub_tests/PersonaTestsTab';
 import { PersonaUseCasesTab } from '@/features/agents/sub_editor/PersonaUseCasesTab';
 import { PersonaConnectorsTab } from '@/features/agents/sub_editor/PersonaConnectorsTab';
 import { DesignTab } from '@/features/agents/sub_editor/DesignTab';
-import { type PersonaDraft, buildDraft } from '@/features/agents/sub_editor/PersonaDraft';
+import { type PersonaDraft, buildDraft, draftChanged, SETTINGS_KEYS, MODEL_KEYS } from '@/features/agents/sub_editor/PersonaDraft';
 import { OLLAMA_CLOUD_BASE_URL, getOllamaPreset } from '@/features/agents/sub_editor/model-config/OllamaCloudPresets';
+import { EditorDirtyProvider, useEditorDirty, useEditorDirtyState } from '@/features/agents/sub_editor/EditorDirtyContext';
+import { useDebouncedSave } from '@/hooks';
 
 const tabDefs: Array<{ id: EditorTab; label: string; icon: typeof FileText }> = [
   { id: 'use-cases', label: 'Use Cases', icon: ListChecks },
   { id: 'prompt', label: 'Prompt', icon: FileText },
+  { id: 'prompt-lab', label: 'Prompt Lab', icon: GitBranch },
   { id: 'connectors', label: 'Connectors', icon: Link },
   { id: 'design', label: 'Design', icon: Wand2 },
   { id: 'executions', label: 'Executions', icon: Play },
@@ -29,6 +33,14 @@ const tabDefs: Array<{ id: EditorTab; label: string; icon: typeof FileText }> = 
 ];
 
 export default function PersonaEditor() {
+  return (
+    <EditorDirtyProvider>
+      <PersonaEditorInner />
+    </EditorDirtyProvider>
+  );
+}
+
+function PersonaEditorInner() {
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
   const editorTab = usePersonaStore((s) => s.editorTab);
   const setEditorTab = usePersonaStore((s) => s.setEditorTab);
@@ -45,6 +57,7 @@ export default function PersonaEditor() {
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [pendingPersonaId, setPendingPersonaId] = useState<string | null>(null);
+  const [connectorsMissing, setConnectorsMissing] = useState(0);
 
   // Single draft object replaces 11 useState variables
   const [draft, setDraft] = useState<PersonaDraft>(() =>
@@ -86,56 +99,90 @@ export default function PersonaEditor() {
     setDraft((prev) => ({ ...prev, ...updates }));
   }, []);
 
-  // Dirty detection by comparing draft vs baseline
-  const settingsDirty = draft.name !== baseline.name
-    || draft.description !== baseline.description
-    || draft.icon !== baseline.icon
-    || draft.color !== baseline.color
-    || draft.maxConcurrent !== baseline.maxConcurrent
-    || draft.timeout !== baseline.timeout
-    || draft.enabled !== baseline.enabled;
+  // Dirty detection: key-driven comparison so new PersonaDraft fields are safe by default
+  const settingsDirty = draftChanged(draft, baseline, SETTINGS_KEYS);
+  const modelDirty = draftChanged(draft, baseline, MODEL_KEYS);
 
-  const modelDirty = draft.selectedModel !== baseline.selectedModel
-    || draft.selectedProvider !== baseline.selectedProvider
-    || draft.baseUrl !== baseline.baseUrl
-    || draft.authToken !== baseline.authToken
-    || draft.customModelName !== baseline.customModelName
-    || draft.maxBudget !== baseline.maxBudget
-    || draft.maxTurns !== baseline.maxTurns;
+  const localDirty = settingsDirty || modelDirty;
 
-  const isDirty = settingsDirty || modelDirty;
+  // Register settings/model dirty state with the unified context
+  useEditorDirty('settings', settingsDirty);
+  useEditorDirty('model', modelDirty);
+
+  // Aggregate dirty state from all editor tabs (prompt, notifications, etc.)
+  const { isDirty: anyTabDirty, dirtyTabs: allDirtyTabs, saveAll: saveAllTabs, clearAll: clearAllDirty } = useEditorDirtyState();
+
+  // Combined: local settings/model OR any child tab
+  const isDirty = localDirty || anyTabDirty;
 
   // Keep dirtyRef in sync for the store subscription
   dirtyRef.current = isDirty;
 
-  // Debounced auto-save for settings fields
-  const saveSettingsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const saveModelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
+  // Save functions defined here so they can be passed to useDebouncedSave below
+  const handleSaveSettings = async () => {
+    if (!selectedPersona) return;
+    await updatePersona(selectedPersona.id, {
+      name: draft.name,
+      description: draft.description || null,
+      icon: draft.icon || null,
+      color: draft.color || null,
+      max_concurrent: draft.maxConcurrent,
+      timeout_ms: draft.timeout,
+      enabled: draft.enabled,
+    });
+    setBaseline((prev) => ({ ...prev, name: draft.name, description: draft.description, icon: draft.icon, color: draft.color, maxConcurrent: draft.maxConcurrent, timeout: draft.timeout, enabled: draft.enabled }));
+  };
 
-  useEffect(() => {
-    if (!settingsDirty || !selectedPersona || pendingPersonaId) return;
-    if (saveSettingsTimeoutRef.current) clearTimeout(saveSettingsTimeoutRef.current);
-    saveSettingsTimeoutRef.current = setTimeout(async () => {
-      setIsSaving(true);
-      await handleSaveSettings();
-      setIsSaving(false);
-    }, 800);
-    return () => { if (saveSettingsTimeoutRef.current) clearTimeout(saveSettingsTimeoutRef.current); };
-  }, [draft.name, draft.description, draft.icon, draft.color, draft.maxConcurrent, draft.timeout, draft.enabled]);
+  const saveModelSettings = async () => {
+    if (!selectedPersona) return;
 
-  useEffect(() => {
-    if (!modelDirty || !selectedPersona || pendingPersonaId) return;
-    if (saveModelTimeoutRef.current) clearTimeout(saveModelTimeoutRef.current);
-    saveModelTimeoutRef.current = setTimeout(async () => {
-      setIsSaving(true);
-      await saveModelSettings();
-      setIsSaving(false);
-    }, 800);
-    return () => { if (saveModelTimeoutRef.current) clearTimeout(saveModelTimeoutRef.current); };
-  }, [draft.selectedModel, draft.selectedProvider, draft.baseUrl, draft.authToken, draft.customModelName, draft.maxBudget, draft.maxTurns]);
+    let profile: string | null = null;
+    const ollamaPreset = getOllamaPreset(draft.selectedModel);
 
-  // Intercept persona switches when dirty
+    if (ollamaPreset) {
+      profile = JSON.stringify({
+        model: ollamaPreset.modelId,
+        provider: 'ollama',
+        base_url: OLLAMA_CLOUD_BASE_URL,
+      } satisfies ModelProfile);
+    } else if (draft.selectedModel === 'custom') {
+      profile = JSON.stringify({
+        model: draft.customModelName || undefined,
+        provider: draft.selectedProvider,
+        base_url: draft.baseUrl || undefined,
+        auth_token: draft.authToken || undefined,
+      } satisfies ModelProfile);
+    } else if (draft.selectedModel !== '') {
+      profile = JSON.stringify({
+        model: draft.selectedModel,
+        provider: 'anthropic',
+      } satisfies ModelProfile);
+    }
+
+    await updatePersona(selectedPersona.id, {
+      model_profile: profile,
+      max_budget_usd: draft.maxBudget === '' ? null : draft.maxBudget,
+      max_turns: draft.maxTurns === '' ? null : draft.maxTurns,
+    });
+    setBaseline((prev) => ({ ...prev, selectedModel: draft.selectedModel, selectedProvider: draft.selectedProvider, baseUrl: draft.baseUrl, authToken: draft.authToken, customModelName: draft.customModelName, maxBudget: draft.maxBudget, maxTurns: draft.maxTurns }));
+  };
+
+  // Debounced auto-save for settings and model fields
+  const isSavingSettings = useDebouncedSave(
+    handleSaveSettings,
+    settingsDirty && !!selectedPersona && !pendingPersonaId,
+    [draft.name, draft.description, draft.icon, draft.color, draft.maxConcurrent, draft.timeout, draft.enabled],
+    800,
+  );
+  const isSavingModel = useDebouncedSave(
+    saveModelSettings,
+    modelDirty && !!selectedPersona && !pendingPersonaId,
+    [draft.selectedModel, draft.selectedProvider, draft.baseUrl, draft.authToken, draft.customModelName, draft.maxBudget, draft.maxTurns],
+    800,
+  );
+  const isSaving = isSavingSettings || isSavingModel;
+
+  // Intercept persona switches when any tab is dirty
   useEffect(() => {
     const unsub = usePersonaStore.subscribe((state) => {
       const newId = state.selectedPersonaId;
@@ -194,57 +241,11 @@ export default function PersonaEditor() {
     );
   }
 
-  const handleSaveSettings = async () => {
-    await updatePersona(selectedPersona.id, {
-      name: draft.name,
-      description: draft.description || null,
-      icon: draft.icon || null,
-      color: draft.color || null,
-      max_concurrent: draft.maxConcurrent,
-      timeout_ms: draft.timeout,
-      enabled: draft.enabled,
-    });
-    setBaseline((prev) => ({ ...prev, name: draft.name, description: draft.description, icon: draft.icon, color: draft.color, maxConcurrent: draft.maxConcurrent, timeout: draft.timeout, enabled: draft.enabled }));
-  };
-
-  const saveModelSettings = async () => {
-    if (!selectedPersona) return;
-
-    let profile: string | null = null;
-    const ollamaPreset = getOllamaPreset(draft.selectedModel);
-
-    if (ollamaPreset) {
-      profile = JSON.stringify({
-        model: ollamaPreset.modelId,
-        provider: 'ollama',
-        base_url: OLLAMA_CLOUD_BASE_URL,
-      } satisfies ModelProfile);
-    } else if (draft.selectedModel === 'custom') {
-      profile = JSON.stringify({
-        model: draft.customModelName || undefined,
-        provider: draft.selectedProvider,
-        base_url: draft.baseUrl || undefined,
-        auth_token: draft.authToken || undefined,
-      } satisfies ModelProfile);
-    } else if (draft.selectedModel !== '') {
-      profile = JSON.stringify({
-        model: draft.selectedModel,
-        provider: 'anthropic',
-      } satisfies ModelProfile);
-    }
-
-    await updatePersona(selectedPersona.id, {
-      model_profile: profile,
-      max_budget_usd: draft.maxBudget === '' ? null : draft.maxBudget,
-      max_turns: draft.maxTurns === '' ? null : draft.maxTurns,
-    });
-    setBaseline((prev) => ({ ...prev, selectedModel: draft.selectedModel, selectedProvider: draft.selectedProvider, baseUrl: draft.baseUrl, authToken: draft.authToken, customModelName: draft.customModelName, maxBudget: draft.maxBudget, maxTurns: draft.maxTurns }));
-  };
-
   const handleDiscardAndSwitch = () => {
     const target = pendingPersonaId;
     setPendingPersonaId(null);
     dirtyRef.current = false;
+    clearAllDirty();
     if (target !== null) {
       usePersonaStore.getState().selectPersona(target);
     }
@@ -254,6 +255,8 @@ export default function PersonaEditor() {
     try {
       if (settingsDirty) await handleSaveSettings();
       if (modelDirty) await saveModelSettings();
+      // Save all child tabs (prompt, notifications, etc.)
+      await saveAllTabs();
     } catch {
       // updatePersona already sets store.error — don't proceed with switch
       return;
@@ -264,14 +267,16 @@ export default function PersonaEditor() {
     const target = pendingPersonaId;
     setPendingPersonaId(null);
     dirtyRef.current = false;
+    clearAllDirty();
     if (target !== null) {
       usePersonaStore.getState().selectPersona(target);
     }
   };
 
-  const changedSections: string[] = [];
-  if (settingsDirty) changedSections.push('Settings');
-  if (modelDirty) changedSections.push('Model');
+  // Collect all dirty section names for the banner
+  const changedSections: string[] = [...allDirtyTabs.map((t) => t.charAt(0).toUpperCase() + t.slice(1))];
+  if (!changedSections.includes('Settings') && settingsDirty) changedSections.push('Settings');
+  if (!changedSections.includes('Model') && modelDirty) changedSections.push('Model');
 
   const handleDelete = async () => {
     await deletePersona(selectedPersona.id);
@@ -284,8 +289,10 @@ export default function PersonaEditor() {
         return <PersonaUseCasesTab />;
       case 'prompt':
         return <PersonaPromptEditor />;
+      case 'prompt-lab':
+        return <PromptLabTab />;
       case 'connectors':
-        return <PersonaConnectorsTab />;
+        return <PersonaConnectorsTab onMissingCountChange={setConnectorsMissing} />;
       case 'design':
         return <DesignTab />;
       case 'executions':
@@ -396,7 +403,9 @@ export default function PersonaEditor() {
           >
             <div className="mx-6 my-2 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-center gap-3">
               <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
-              <span className="text-sm text-amber-400/90 flex-1">You have unsaved changes</span>
+              <span className="text-sm text-amber-400/90 flex-1">
+                Unsaved changes{changedSections.length > 0 ? `: ${changedSections.join(', ')}` : ''}
+              </span>
               <button
                 onClick={handleSaveAndSwitch}
                 className="px-3 py-1 rounded-lg text-sm font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-colors"
@@ -426,7 +435,9 @@ export default function PersonaEditor() {
           {tabDefs.map((tab) => {
             const Icon = tab.icon;
             const isActive = editorTab === tab.id;
-            const tabDirty = tab.id === 'settings' && isDirty;
+            const tabDirty = (tab.id === 'settings' && localDirty)
+              || (tab.id === 'prompt' && allDirtyTabs.includes('prompt'))
+              || (tab.id === 'settings' && allDirtyTabs.includes('notifications'));
             return (
               <button
                 key={tab.id}
@@ -438,6 +449,9 @@ export default function PersonaEditor() {
                 <Icon className="w-4 h-4" />
                 {tab.label}
                 {tabDirty && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />}
+                {tab.id === 'connectors' && connectorsMissing > 0 && (
+                  <span className="w-2 h-2 rounded-full bg-orange-400 flex-shrink-0" />
+                )}
                 {tab.id === 'design' && showDesignNudge && !isActive && (
                   <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />

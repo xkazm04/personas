@@ -1,18 +1,29 @@
+/** Price per 1M tokens (input / output). Keyed by model family prefix. */
 export const MODEL_PRICING: Record<string, { input: number; output: number }> = {
   'claude-opus-4': { input: 15, output: 75 },
   'claude-sonnet-4': { input: 3, output: 15 },
+  'claude-haiku-4': { input: 0.25, output: 1.25 },
   'claude-haiku-3.5': { input: 0.25, output: 1.25 },
   'claude-sonnet-3.5': { input: 3, output: 15 },
   'claude-opus-3': { input: 15, output: 75 },
 };
 
-/** Estimate cost from token counts. Price per 1M tokens. */
+/** Estimate cost from token counts. Price per 1M tokens.
+ *  Resolution order: exact match → longest prefix match → sonnet-4 fallback.
+ *  Prefix matching handles versioned IDs like claude-sonnet-4-6 or claude-haiku-4-5-20251001
+ *  without requiring an explicit entry for every release.
+ */
 export function estimateCost(
   model: string,
   inputTokens: number,
   outputTokens: number,
 ): { inputCost: number; outputCost: number; totalCost: number } {
-  const pricing = MODEL_PRICING[model] ?? MODEL_PRICING['claude-sonnet-4']!;
+  const pricing =
+    MODEL_PRICING[model] ??
+    Object.entries(MODEL_PRICING)
+      .filter(([key]) => model.startsWith(key))
+      .sort((a, b) => b[0].length - a[0].length)[0]?.[1] ??
+    MODEL_PRICING['claude-sonnet-4']!;
   const inputCost = (inputTokens / 1_000_000) * pricing.input;
   const outputCost = (outputTokens / 1_000_000) * pricing.output;
   return { inputCost, outputCost, totalCost: inputCost + outputCost };

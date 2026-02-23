@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Trash2, ToggleLeft, ToggleRight, Zap, X, Check, Copy, CheckCircle2, Play, Loader2, Terminal, ChevronDown, ChevronRight, History } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import * as api from '@/api/tauriApi';
 import type { DbPersonaTrigger } from '@/lib/types/types';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, parseTriggerConfig } from '@/lib/utils/triggerConstants';
@@ -9,23 +10,8 @@ import { formatInterval, formatDuration, formatRelativeTime, EXECUTION_STATUS_CO
 export interface TriggerListItemProps {
   trigger: DbPersonaTrigger;
   credentialEventsList: { id: string; name: string }[];
-  confirmingDeleteId: string | null;
-  copiedTriggerId: string | null;
-  testingTriggerId: string | null;
-  testResult: { triggerId: string; success: boolean; message: string } | null;
-  copiedCurlId: string | null;
-  activityTriggerId: string | null;
-  activityLog: PersonaExecution[];
-  activityLoading: boolean;
   onToggleEnabled: (triggerId: string, currentEnabled: boolean) => void;
-  onStartDeleteConfirm: (triggerId: string) => void;
-  onConfirmDelete: (triggerId: string) => void;
-  onCancelDelete: () => void;
-  onTestFire: (triggerId: string, triggerPersonaId: string) => void;
-  onCopyWebhookUrl: (triggerId: string, e: React.MouseEvent) => void;
-  onCopyCurlCommand: (triggerId: string, e: React.MouseEvent) => void;
-  onToggleActivityLog: (triggerId: string, personaId: string) => void;
-  getWebhookUrl: (triggerId: string) => string;
+  onDelete: (triggerId: string) => void;
 }
 
 /** Brief config summary shown in collapsed state */
@@ -57,28 +43,124 @@ function ConfigSummary({ trigger }: { trigger: DbPersonaTrigger }) {
   );
 }
 
+function getWebhookUrl(triggerId: string) {
+  return `http://localhost:9420/webhook/${triggerId}`;
+}
+
+function getCurlCommand(triggerId: string) {
+  const url = getWebhookUrl(triggerId);
+  return `curl -X POST ${url} \\\n  -H "Content-Type: application/json" \\\n  -d '{"test": true}'`;
+}
+
 export function TriggerListItem({
   trigger,
   credentialEventsList,
-  confirmingDeleteId,
-  copiedTriggerId,
-  testingTriggerId,
-  testResult,
-  copiedCurlId,
-  activityTriggerId,
-  activityLog,
-  activityLoading,
   onToggleEnabled,
-  onStartDeleteConfirm,
-  onConfirmDelete,
-  onCancelDelete,
-  onTestFire,
-  onCopyWebhookUrl,
-  onCopyCurlCommand,
-  onToggleActivityLog,
-  getWebhookUrl,
+  onDelete,
 }: TriggerListItemProps) {
   const [expanded, setExpanded] = useState(false);
+
+  // -- Interaction state (previously in parent) --
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
+  const [copiedCurl, setCopiedCurl] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [activityOpen, setActivityOpen] = useState(false);
+  const [activityLog, setActivityLog] = useState<PersonaExecution[]>([]);
+  const [activityLoading, setActivityLoading] = useState(false);
+
+  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+    };
+  }, []);
+
+  const startDeleteConfirm = useCallback(() => {
+    setConfirmingDelete(true);
+    if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+    confirmTimerRef.current = setTimeout(() => setConfirmingDelete(false), 3000);
+  }, []);
+
+  const confirmDelete = useCallback(() => {
+    if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+    setConfirmingDelete(false);
+    onDelete(trigger.id);
+  }, [onDelete, trigger.id]);
+
+  const cancelDelete = useCallback(() => {
+    if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+    setConfirmingDelete(false);
+  }, []);
+
+  const copyWebhookUrl = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(getWebhookUrl(trigger.id));
+      setCopiedUrl(true);
+      setTimeout(() => setCopiedUrl(false), 2000);
+    } catch {
+      // Fallback for clipboard API failures
+    }
+  }, [trigger.id]);
+
+  const copyCurlCommand = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(getCurlCommand(trigger.id));
+      setCopiedCurl(true);
+      setTimeout(() => setCopiedCurl(false), 2000);
+    } catch {
+      // Fallback for clipboard API failures
+    }
+  }, [trigger.id]);
+
+  const handleTestFire = useCallback(async () => {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const validation = await api.validateTrigger(trigger.id);
+      if (!validation.valid) {
+        const failedChecks = validation.checks
+          .filter((c) => !c.passed)
+          .map((c) => `${c.label}: ${c.message}`)
+          .join('; ');
+        setTestResult({ success: false, message: `Validation failed — ${failedChecks}` });
+        setTesting(false);
+        setTimeout(() => setTestResult(null), 8000);
+        return;
+      }
+      const execution = await api.executePersona(trigger.persona_id, trigger.id);
+      setTestResult({ success: true, message: `Config OK. Execution ${execution.id.slice(0, 8)} started` });
+    } catch (err) {
+      setTestResult({ success: false, message: err instanceof Error ? err.message : 'Failed to fire trigger' });
+    } finally {
+      setTesting(false);
+      setTimeout(() => setTestResult(null), 8000);
+    }
+  }, [trigger.id, trigger.persona_id]);
+
+  const toggleActivityLog = useCallback(async () => {
+    if (activityOpen) {
+      setActivityOpen(false);
+      return;
+    }
+    setActivityOpen(true);
+    setActivityLoading(true);
+    try {
+      const execs = await api.listExecutions(trigger.persona_id, 50);
+      const filtered = execs
+        .filter((e) => e.trigger_id === trigger.id)
+        .slice(0, 10);
+      setActivityLog(filtered);
+    } catch {
+      setActivityLog([]);
+    } finally {
+      setActivityLoading(false);
+    }
+  }, [activityOpen, trigger.id, trigger.persona_id]);
 
   const meta = TRIGGER_TYPE_META[trigger.trigger_type] || DEFAULT_TRIGGER_META;
   const Icon = meta.Icon;
@@ -170,24 +252,24 @@ export function TriggerListItem({
                             </span>
                           </div>
                           <button
-                            onClick={(e) => onCopyWebhookUrl(trigger.id, e)}
+                            onClick={copyWebhookUrl}
                             className={`flex-shrink-0 p-1.5 rounded-lg transition-all ${
-                              copiedTriggerId === trigger.id
+                              copiedUrl
                                 ? 'bg-emerald-500/15 text-emerald-400'
                                 : 'hover:bg-secondary/60 text-muted-foreground/90 hover:text-muted-foreground'
                             }`}
                             title="Copy webhook URL"
                           >
-                            {copiedTriggerId === trigger.id ? (
+                            {copiedUrl ? (
                               <CheckCircle2 className="w-3.5 h-3.5" />
                             ) : (
                               <Copy className="w-3.5 h-3.5" />
                             )}
                           </button>
                         </div>
-                        {config.hmac_secret && (
+                        {config.webhook_secret && (
                           <div className="text-sm text-muted-foreground/80">
-                            HMAC: {'--------'}{String(config.hmac_secret).slice(-4)}
+                            HMAC: {'--------'}{String(config.webhook_secret).slice(-4)}
                           </div>
                         )}
                       </div>
@@ -197,7 +279,7 @@ export function TriggerListItem({
               })()}
 
               {/* Test Result */}
-              {testResult && testResult.triggerId === trigger.id && (
+              {testResult && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
@@ -214,47 +296,47 @@ export function TriggerListItem({
               {/* Curl command for webhooks */}
               {trigger.trigger_type === 'webhook' && (
                 <button
-                  onClick={(e) => onCopyCurlCommand(trigger.id, e)}
+                  onClick={copyCurlCommand}
                   className={`inline-flex items-center gap-1.5 text-sm transition-colors ${
-                    copiedCurlId === trigger.id
+                    copiedCurl
                       ? 'text-emerald-400'
                       : 'text-muted-foreground/80 hover:text-muted-foreground'
                   }`}
                 >
                   <Terminal className="w-3 h-3" />
-                  {copiedCurlId === trigger.id ? 'Copied!' : 'Copy sample curl'}
+                  {copiedCurl ? 'Copied!' : 'Copy sample curl'}
                 </button>
               )}
 
               {/* Actions row */}
               <div className="flex items-center gap-1.5 pt-1">
                 <button
-                  onClick={() => onTestFire(trigger.id, trigger.persona_id)}
-                  disabled={testingTriggerId === trigger.id}
+                  onClick={handleTestFire}
+                  disabled={testing}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-primary/70 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors disabled:opacity-50"
-                  title="Test fire this trigger"
+                  title="Validate trigger config, then fire"
                 >
-                  {testingTriggerId === trigger.id ? (
+                  {testing ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   ) : (
                     <Play className="w-3.5 h-3.5" />
                   )}
-                  Test fire
+                  {testing ? 'Validating...' : 'Test fire'}
                 </button>
 
                 <div className="flex-1" />
 
-                {confirmingDeleteId === trigger.id ? (
+                {confirmingDelete ? (
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={() => onConfirmDelete(trigger.id)}
+                      onClick={confirmDelete}
                       className="p-1.5 bg-red-500/15 hover:bg-red-500/25 rounded-lg transition-colors"
                       title="Confirm delete"
                     >
                       <Check className="w-3.5 h-3.5 text-red-400" />
                     </button>
                     <button
-                      onClick={onCancelDelete}
+                      onClick={cancelDelete}
                       className="p-1.5 hover:bg-secondary/60 rounded-lg transition-colors"
                       title="Cancel"
                     >
@@ -263,7 +345,7 @@ export function TriggerListItem({
                   </div>
                 ) : (
                   <button
-                    onClick={() => onStartDeleteConfirm(trigger.id)}
+                    onClick={startDeleteConfirm}
                     className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-red-400/70 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                     title="Delete trigger"
                   >
@@ -275,10 +357,10 @@ export function TriggerListItem({
 
               {/* Activity Log Toggle */}
               <button
-                onClick={() => onToggleActivityLog(trigger.id, trigger.persona_id)}
+                onClick={toggleActivityLog}
                 className="flex items-center gap-1.5 pt-1 border-t border-primary/5 text-sm text-muted-foreground/80 hover:text-muted-foreground transition-colors w-full"
               >
-                {activityTriggerId === trigger.id ? (
+                {activityOpen ? (
                   <ChevronDown className="w-3 h-3" />
                 ) : (
                   <ChevronRight className="w-3 h-3" />
@@ -289,7 +371,7 @@ export function TriggerListItem({
 
               {/* Activity Log Content */}
               <AnimatePresence>
-                {activityTriggerId === trigger.id && (
+                {activityOpen && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}

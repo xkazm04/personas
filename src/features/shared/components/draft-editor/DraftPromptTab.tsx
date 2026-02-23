@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BookOpen, User, Wrench, Code, AlertTriangle, Layers, Plus, X } from 'lucide-react';
-import type { N8nPersonaDraft } from '@/api/design';
+import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import {
   type EditableStructuredPrompt,
   toEditableStructuredPrompt,

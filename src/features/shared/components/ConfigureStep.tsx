@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Loader2, Settings2, SkipForward } from 'lucide-react';
-import type { TransformQuestionResponse } from '@/api/design';
+import type { TransformQuestionResponse } from '@/api/n8nTransform';
 
 interface ConfigureStepProps {
   questions: TransformQuestionResponse[] | null;

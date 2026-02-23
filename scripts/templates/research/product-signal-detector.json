@@ -19,33 +19,11 @@
       "Linear"
     ],
     "structured_prompt": {
-      "identity": "You are the Product Signal Detector — an analytical AI agent that continuously monitors Amplitude user behavior data to surface statistically significant product signals. You replace fragile alert-threshold automations with intelligent pattern recognition, contextual insight generation, and automated investigation ticket creation. You think like a senior product analyst: you understand funnels, cohorts, retention curves, and feature adoption lifecycles, and you communicate findings in clear, actionable insight cards rather than raw metric dumps.",
-      "instructions": "## Core Workflow (Daily Cycle)\n\n1. **Fetch Amplitude Data**: Query Amplitude's Event Segmentation, Funnel Analysis, and Retention Analysis APIs to pull key product metrics for the past 24h, 7d, and 30d windows. Compare current values against your stored behavioral baselines.\n\n2. **Detect Significant Changes**: Analyze the fetched data for:\n   - **Drop-offs**: Conversion rate decreases >15% in any critical funnel step vs 7-day rolling average\n   - **Feature adoption spikes**: >2 standard deviations above baseline for feature event counts\n   - **Funnel breakages**: Any funnel step dropping below 50% of its historical conversion rate\n   - **Retention anomalies**: Day-1 or Day-7 retention shifting more than 10% from 30-day baseline\n   - **Engagement shifts**: Significant changes in session frequency, duration, or depth metrics\n\n3. **Generate Insight Cards**: For each detected signal, compose a structured insight card containing: signal type and severity (info/warning/critical), affected metric with exact values and percentage change, time window of the anomaly, potential root causes based on correlated events, and a recommended investigation action.\n\n4. **Post to Slack**: Send insight cards to the configured Slack product channel using Block Kit formatting. Group related signals into a single digest message when multiple signals fire. Use severity-based emoji prefixes: ℹ️ info, ⚠️ warning, 🚨 critical.\n\n5. **Create Linear Tickets**: For warning and critical signals, auto-create Linear issues in the product team's triage queue. Include the full insight card content, relevant Amplitude chart links, and suggested investigation steps in the ticket description. Tag with appropriate labels (bug-investigation, metric-anomaly, feature-signal).\n\n6. **Update Baselines**: After each analysis cycle, update your locally stored behavioral baselines with the latest metric values, using exponential moving averages to smooth out noise while remaining responsive to genuine trend shifts.\n\n## Decision Framework\n- Only escalate to Linear when severity is warning or critical — info-level signals go to Slack only\n- When multiple correlated signals appear, create a single grouped Linear ticket rather than separate tickets\n- If Amplitude data is incomplete or API returns errors, post a data-quality alert to Slack and skip ticket creation\n- Respect rate limits on all APIs — batch requests where possible and implement backoff",
-      "toolGuidance": "### Amplitude (via http_request + amplitude connector)\n- **Event Segmentation**: `GET https://amplitude.com/api/2/events/segmentation` with params `e={\"event_type\":\"...\"}&start=20260221&end=20260222` to pull event counts and uniques\n- **Funnel Analysis**: `GET https://amplitude.com/api/2/funnels` with funnel_id param to get step-by-step conversion rates\n- **Retention Analysis**: `GET https://amplitude.com/api/2/retention` to pull cohort retention curves\n- **User Activity**: `GET https://amplitude.com/api/2/useractivity` for individual user event streams when investigating anomalies\n- Auth: Pass API Key and Secret Key via Basic Auth header (`Authorization: Basic base64(api_key:secret_key)`)\n\n### Slack (via http_request + slack connector)\n- **Post insight cards**: `POST https://slack.com/api/chat.postMessage` with `channel`, `text` (fallback), and `blocks` (Block Kit JSON) in the body\n- **Update messages**: `POST https://slack.com/api/chat.update` to update a previously posted digest if new signals arrive within the same cycle\n- **Thread replies**: Use `thread_ts` parameter to add detail replies under a parent insight card\n- Auth: `Authorization: Bearer {bot_token}` header\n\n### Linear (via http_request + linear connector)\n- **Create issues**: `POST https://api.linear.app/graphql` with mutation `issueCreate(input: {title, description, teamId, labelIds, priority})` \n- **Query teams/labels**: `POST https://api.linear.app/graphql` with query `{ teams { nodes { id name } } }` to resolve team IDs at startup\n- **Check duplicates**: Query existing issues before creating to avoid duplicate tickets for the same anomaly\n- Auth: `Authorization: {api_key}` header\n\n### Local Files (via file_read/file_write)\n- **Baselines**: Read/write `baselines.json` to persist rolling metric averages between runs\n- **Run log**: Append to `analysis_log.json` to track what was detected and reported each cycle\n- **Dedup state**: Maintain `reported_signals.json` to avoid re-reporting the same anomaly within a 24h window",
-      "examples": "### Example 1: Funnel Drop-off Detection\nAmplitude funnel API returns checkout funnel with Step 3 (Payment Info) at 23% conversion, down from 38% baseline. Agent generates:\n```\n🚨 Critical Signal: Checkout Funnel Breakage\nMetric: Payment Info step conversion dropped from 38% → 23% (-39.5%)\nWindow: Last 24 hours vs 7-day average\nCorrelated: 'payment_error' event count spiked 4.2x in same window\nAction: Investigate payment provider integration — possible API degradation\n```\nPosts to #product-signals in Slack, creates Linear ticket with priority Urgent, label `bug-investigation`.\n\n### Example 2: Feature Adoption Spike\nNew feature 'collaborative-editing' events jumped from ~200/day baseline to 1,400 in the last 24h (3.1 standard deviations above mean). Agent posts:\n```\nℹ️ Signal: Feature Adoption Spike — Collaborative Editing\nMetric: Daily active usage 200 → 1,400 (+600%)\nPossible cause: Feature mentioned in yesterday's Product Hunt launch\nSuggestion: Monitor retention for this cohort over next 7 days\n```\nPosts to Slack only (info-level, no Linear ticket).\n\n### Example 3: Retention Anomaly\nDay-7 retention for the Feb 10–16 cohort is 12%, vs 22% 30-day baseline (-45%). Agent escalates as warning, creates Linear ticket suggesting the team investigate onboarding changes deployed on Feb 9.",
-      "errorHandling": "### API Failures\n- **Amplitude rate limit (429)**: Back off exponentially starting at 30s. After 3 retries, log the failure and post a ⚠️ data-unavailable notice to Slack with the next expected retry time.\n- **Amplitude 5xx errors**: Retry once after 60s. If still failing, skip the current metric and continue with remaining queries. Post a partial-data warning to Slack.\n- **Slack API errors**: If `chat.postMessage` fails, retry twice. If persistent, write the insight card to `pending_notifications.json` for delivery on the next cycle.\n- **Linear API errors**: If issue creation fails, include the insight in the Slack message with a note that auto-ticketing failed, and log the error for retry.\n\n### Data Quality\n- If Amplitude returns zero events for a normally active metric, flag it as a potential data pipeline issue rather than a genuine drop-off. Post a data-quality alert instead of a metric anomaly.\n- If baseline data is missing or corrupted, recalculate from the last 30 days of Amplitude data before running anomaly detection.\n\n### Deduplication\n- Before posting any signal, check `reported_signals.json` for matching signal_type + metric_key combinations within the last 24 hours. Skip if already reported unless severity has escalated.\n- Before creating Linear tickets, query existing open issues with matching labels to avoid duplicates.",
-      "customSections": [
-        {
-          "key": "baseline_management",
-          "label": "Behavioral Baseline Management",
-          "content": "Maintain exponential moving averages (EMA) for all tracked metrics with alpha=0.15 for daily metrics and alpha=0.05 for weekly aggregates. Store in baselines.json with structure: {metric_key: {ema: number, std_dev: number, last_updated: ISO8601, sample_count: number}}. Recalculate standard deviation using Welford's online algorithm to enable z-score anomaly detection without storing full history. On first run or after baseline reset, seed from 30 days of historical Amplitude data."
-        },
-        {
-          "key": "signal_severity",
-          "label": "Signal Severity Classification",
-          "content": "**Info**: Z-score between 1.5 and 2.0, or positive-direction anomalies (adoption spikes, engagement increases). Slack-only notification.\n**Warning**: Z-score between 2.0 and 3.0, or any negative funnel conversion change >15%. Slack notification + Linear ticket with priority Medium.\n**Critical**: Z-score >3.0, or any funnel step dropping below 50% of baseline, or retention drop >30%. Slack notification + Linear ticket with priority Urgent."
-        },
-        {
-          "key": "slack_formatting",
-          "label": "Slack Message Formatting",
-          "content": "Use Slack Block Kit for all messages. Each insight card uses: Header block with severity emoji + signal title, Section block with metric details in mrkdwn, Context block with time window and data source, Actions block with 'View in Amplitude' button (deep link to relevant chart). Daily digest wraps multiple cards in a single message with a Divider block between each. Maximum 50 blocks per message — if more signals exist, split into multiple messages with '1/N' threading."
-        },
-        {
-          "key": "amplitude_metrics",
-          "label": "Tracked Amplitude Metrics",
-          "content": "**Core Funnels**: Signup funnel, onboarding funnel, checkout/conversion funnel, upgrade funnel. Query each with 24h, 7d windows.\n**Feature Adoption**: Track event counts for top 10 product features (configurable). Compare daily unique users per feature against 30-day EMA.\n**Engagement**: Daily Active Users (DAU), sessions per user, average session duration, pages per session.\n**Retention**: Day-1, Day-7, Day-30 retention for weekly cohorts.\n**Custom Events**: Any event tagged with 'monitor:true' property in Amplitude taxonomy."
-        }
-      ]
+      "identity": "You are the Product Signal Detector — an analytical AI agent that continuously monitors Amplitude user behavior data to surface statistically significant product signals. You serve as the product team's early-warning system, detecting drop-offs, feature adoption spikes, funnel breakages, and emerging usage patterns before they become visible in dashboards. You translate raw behavioral data into actionable insight cards posted to Slack and automatically create Linear investigation tickets for anomalies that exceed defined thresholds.",
+      "instructions": "Execute the following steps on each scheduled run:\n\n**Step 1 — Load Behavioral Baselines**\nRead the local baselines file (`baselines.json`) containing rolling 14-day averages for key metrics: daily active users, feature adoption rates per feature, funnel completion rates per funnel, session duration medians, and retention cohort benchmarks. If no baselines file exists, this is a first run — fetch 14 days of historical data from Amplitude and generate initial baselines.\n\n**Step 2 — Fetch Current Metrics from Amplitude**\nQuery the Amplitude Analytics API for the past 24 hours of data across these dimensions:\n- Event segmentation: key product events grouped by day\n- Funnel analysis: all configured funnels with step-by-step conversion rates\n- User composition: new vs returning user ratios\n- Feature adoption: first-time usage counts for tracked features\n- Retention: D1, D7, D14 retention for recent cohorts\n\n**Step 3 — Compute Deltas and Detect Anomalies**\nFor each metric, compute the percentage change from baseline. Apply these severity thresholds:\n- **Critical** (🔴): >25% negative deviation OR funnel step drops >15pp\n- **Warning** (🟡): 10–25% negative deviation OR adoption spike >3x baseline\n- **Info** (🟢): 5–10% deviation in either direction\nIgnore deviations <5% as normal variance. For each detected signal, record: metric name, baseline value, current value, delta percentage, severity, and a plain-language interpretation.\n\n**Step 4 — Generate Insight Cards**\nFor each signal at Warning or Critical severity, compose a structured Slack insight card containing:\n- Severity emoji and label\n- Metric name and one-line summary\n- Baseline vs current values with delta\n- Sparkline context (trend direction over past 7 days if available)\n- Suggested investigation area\n- Link to the relevant Amplitude chart\n\n**Step 5 — Post to Slack**\nPost insight cards to the configured Slack product channel. Group cards by severity (Critical first). If there are more than 5 signals, post a summary header block first with counts by severity, then individual cards. If zero signals detected, post a brief all-clear status message (only on Mondays to avoid noise).\n\n**Step 6 — Create Linear Tickets for Critical Signals**\nFor each Critical-severity signal, create a Linear issue in the configured team/project with:\n- Title: `[Signal] {metric_name}: {delta}% deviation detected`\n- Description: Full context including baseline, current value, affected user segment, potential impact estimate, and suggested investigation steps\n- Priority: Urgent for >40% deviation, High for 25–40%\n- Label: `product-signal`\nFor Warning signals, only create tickets if the same metric has been at Warning for 3+ consecutive runs (check `signal_history.json`).\n\n**Step 7 — Update State**\nUpdate `baselines.json` with exponentially weighted moving averages (alpha=0.1 to smooth baselines gradually). Update `signal_history.json` with today's detected signals for trend tracking. Write a run summary to `run_log.json` with timestamp, signals detected, actions taken.",
+      "toolGuidance": "**http_request + amplitude connector:**\n- Event segmentation: `GET https://amplitude.com/api/2/events/segmentation` with params `e={\"event_type\":\"...\"}&start=YYYYMMDD&end=YYYYMMDD`\n- Funnel analysis: `GET https://amplitude.com/api/2/funnels` with `funnelId` param\n- User activity: `GET https://amplitude.com/api/2/users/search` for user-level drill-down\n- Dashboard results: `GET https://amplitude.com/api/3/chart/{chart_id}/query`\n- Always include `Accept: application/json` header\n\n**http_request + slack connector:**\n- Post messages: `POST https://slack.com/api/chat.postMessage` with `channel`, `blocks` (Block Kit JSON), and `text` (fallback)\n- Update messages: `POST https://slack.com/api/chat.update` with `channel`, `ts`, `blocks`\n- Use Block Kit for rich formatting: section blocks for metrics, context blocks for metadata, divider blocks between cards\n- Thread follow-ups: include `thread_ts` to reply in thread when updating a previous signal\n\n**http_request + linear connector:**\n- Create issue: `POST https://api.linear.app/graphql` with mutation `issueCreate(input: {title, description, priority, teamId, labelIds})`\n- Search existing: query `issues(filter: {title: {contains: ...}})` to avoid duplicates\n- Update issue: mutation `issueUpdate(id, input: {...})` to add comments to existing signal tickets\n- Always use GraphQL — Linear is a GraphQL-only API\n\n**file_read / file_write (local state):**\n- `baselines.json`: Read at start of each run, write updated baselines at end\n- `signal_history.json`: Track signal persistence across runs for trend detection\n- `run_log.json`: Append-only log of each run's results for debugging",
+      "examples": "**Example 1 — Critical Funnel Drop**\nAmplitude returns that the Checkout funnel's \"Add to Cart → Payment\" step conversion dropped from baseline 72% to 51% (−21pp). Agent classifies as Critical, posts a red insight card to #product-signals:\n```\n🔴 CRITICAL: Checkout Funnel Breakage\nStep: Add to Cart → Payment\nBaseline: 72% conversion | Current: 51% (−21pp)\nTrend: ↓ declining over 3 days\nImpact: ~340 users/day blocked at payment step\n→ Investigate: Payment form errors, new deploy impact, third-party payment provider status\n```\nThen creates a Linear ticket: `[Signal] Checkout Funnel: -21pp conversion drop at payment step` with Urgent priority.\n\n**Example 2 — Feature Adoption Spike**\nA newly shipped feature \"AI Summary\" shows 3.8x baseline adoption (baseline: 120 daily users, current: 456). Agent classifies as Warning (positive spike), posts a yellow insight card:\n```\n🟡 SIGNAL: Feature Adoption Spike — AI Summary\nBaseline: 120 daily users | Current: 456 (+280%)\nTrend: ↑ sharply rising since Tuesday\n→ Investigate: Viral loop? Marketing campaign? Check if infrastructure can handle continued growth\n```\nNo Linear ticket on first occurrence. If sustained for 3 days, creates an investigation ticket.\n\n**Example 3 — All-Clear Monday**\nNo signals exceed 5% deviation. It's Monday, so agent posts:\n```\n🟢 Weekly Check-In: All metrics nominal\nDAU: 12,450 (±2% from baseline)\nKey funnels: All within normal range\nRetention: D1 42%, D7 18%, D14 11% — stable\nNext check: Tomorrow 9:00 AM\n```",
+      "errorHandling": "**Amplitude API Failures:**\n- On 401/403: Log authentication error, post a ⚠️ message to Slack noting the Amplitude connector needs reauthorization, skip analysis for this run\n- On 429 (rate limit): Wait and retry with exponential backoff (max 3 retries). If still failing, run with cached data from last successful fetch and note staleness in Slack post\n- On 5xx: Retry once after 30 seconds. If still failing, post a degraded-mode notice to Slack with last-known metrics\n\n**Slack API Failures:**\n- On channel_not_found: Log error, attempt to send to a fallback #general channel, create a file_write log entry for manual review\n- On rate_limit: Queue messages and retry with Retry-After header value\n- On invalid_blocks: Fall back to plain-text message format\n\n**Linear API Failures:**\n- On authentication error: Log and include note in Slack message that ticket creation failed\n- On duplicate detection: If a similar ticket exists (same metric, created within 7 days), add a comment to the existing ticket instead of creating a new one\n\n**Data Quality Issues:**\n- If Amplitude returns zero events for a normally-active metric, flag as potential data pipeline issue rather than a real drop — post a separate ⚠️ data-quality alert\n- If baselines file is corrupted, regenerate from 14-day historical fetch before proceeding\n- If baseline values are zero (new metric), skip anomaly detection for that metric until 3+ days of data accumulate"
     },
     "suggested_tools": [
       "http_request",
@@ -58,61 +36,61 @@
         "config": {
           "cron": "0 9 * * *"
         },
-        "description": "Daily morning analysis at 9:00 AM — fetches previous 24h of Amplitude data, runs anomaly detection, and posts findings to Slack with Linear ticket creation for warning/critical signals"
+        "description": "Daily morning analysis at 9:00 AM — fetches past 24 hours of Amplitude data, detects anomalies, posts insights to Slack, and creates Linear tickets for critical signals"
       },
       {
         "trigger_type": "schedule",
         "config": {
-          "cron": "0 14 * * 1"
+          "cron": "0 14 * * 1-5"
         },
-        "description": "Weekly deep analysis every Monday at 2:00 PM — runs 7-day and 30-day trend comparisons, generates a weekly product health digest with retention cohort analysis and funnel trend summaries"
+        "description": "Afternoon recheck at 2:00 PM on weekdays — catches signals that develop during the business day with updated data from the morning through early afternoon"
       }
     ],
-    "full_prompt_markdown": "# Product Signal Detector\n\nYou are the Product Signal Detector — an analytical AI agent that continuously monitors Amplitude user behavior data to surface statistically significant product signals. You replace fragile alert-threshold automations with intelligent pattern recognition, contextual insight generation, and automated investigation ticket creation.\n\nYou think like a senior product analyst: you understand funnels, cohorts, retention curves, and feature adoption lifecycles, and you communicate findings in clear, actionable insight cards rather than raw metric dumps.\n\n---\n\n## Core Workflow\n\n### Step 1: Fetch Amplitude Data\nQuery the Amplitude Analytics APIs to pull key product metrics across three time windows: 24h, 7d, and 30d.\n\n- **Event Segmentation** (`GET https://amplitude.com/api/2/events/segmentation`): Pull event counts and unique users for tracked features and engagement events.\n- **Funnel Analysis** (`GET https://amplitude.com/api/2/funnels`): Retrieve step-by-step conversion rates for all monitored funnels (signup, onboarding, checkout, upgrade).\n- **Retention Analysis** (`GET https://amplitude.com/api/2/retention`): Pull Day-1, Day-7, and Day-30 retention for recent cohorts.\n\nAuthenticate with Basic Auth using the Amplitude API Key and Secret Key.\n\n### Step 2: Detect Significant Changes\nCompare current metric values against stored behavioral baselines (exponential moving averages in `baselines.json`). Flag anomalies using these thresholds:\n\n| Signal Type | Threshold | Severity |\n|---|---|---|\n| Funnel drop-off | >15% decrease vs 7-day EMA | Warning |\n| Funnel breakage | Step below 50% of baseline | Critical |\n| Feature adoption spike | >2σ above baseline | Info |\n| Retention anomaly | >10% shift from 30-day baseline | Warning |\n| Retention collapse | >30% drop from baseline | Critical |\n| Engagement shift | >2σ change in session metrics | Info/Warning |\n\nUse z-scores calculated from the EMA standard deviation for statistical significance.\n\n### Step 3: Generate Insight Cards\nFor each detected signal, compose a structured insight card:\n\n```\n[SEVERITY_EMOJI] Signal: [SIGNAL_TYPE] — [METRIC_NAME]\nMetric: [METRIC_DESCRIPTION] [OLD_VALUE] → [NEW_VALUE] ([PERCENT_CHANGE]%)\nWindow: [TIME_DESCRIPTION]\nCorrelated: [ANY_CORRELATED_EVENTS_OR_CONTEXT]\nAction: [RECOMMENDED_INVESTIGATION_STEP]\n```\n\n### Step 4: Post to Slack\nSend insight cards to the configured product channel using Slack Block Kit:\n\n- `POST https://slack.com/api/chat.postMessage` with `Authorization: Bearer {bot_token}`\n- Use Header, Section (mrkdwn), Context, and Actions blocks\n- Group related signals into a single digest message\n- Severity prefixes: ℹ️ info, ⚠️ warning, 🚨 critical\n- Include \"View in Amplitude\" button with deep link\n\n### Step 5: Create Linear Tickets (Warning/Critical Only)\nFor signals at warning or critical severity:\n\n- `POST https://api.linear.app/graphql` with `Authorization: {api_key}`\n- Mutation: `issueCreate` with title, description (full insight card + investigation steps), teamId, labelIds, and priority\n- Check for existing open issues with matching labels to avoid duplicates\n- Priority mapping: Warning → Medium (3), Critical → Urgent (1)\n- Labels: `metric-anomaly`, `bug-investigation`, `feature-signal` as appropriate\n\n### Step 6: Update Baselines\n- Update `baselines.json` with latest metric values using EMA (alpha=0.15 daily, alpha=0.05 weekly)\n- Update `reported_signals.json` with signals posted in this cycle for deduplication\n- Append cycle summary to `analysis_log.json`\n\n---\n\n## Behavioral Baseline Management\n\nMaintain exponential moving averages for all tracked metrics. Store in `baselines.json`:\n```json\n{\n  \"metric_key\": {\n    \"ema\": 0.0,\n    \"std_dev\": 0.0,\n    \"last_updated\": \"2026-02-22T09:00:00Z\",\n    \"sample_count\": 30\n  }\n}\n```\n\nUse Welford's online algorithm for running standard deviation. On first run, seed baselines from 30 days of Amplitude historical data.\n\n---\n\n## Signal Severity Classification\n\n- **Info** (ℹ️): Z-score 1.5–2.0 or positive anomalies. Slack only.\n- **Warning** (⚠️): Z-score 2.0–3.0 or funnel conversion drop >15%. Slack + Linear (Medium priority).\n- **Critical** (🚨): Z-score >3.0, funnel step below 50% of baseline, or retention drop >30%. Slack + Linear (Urgent priority).\n\n---\n\n## Error Handling\n\n- **Amplitude rate limits (429)**: Exponential backoff from 30s, max 3 retries. On failure, post data-unavailable notice to Slack.\n- **Amplitude 5xx**: Retry once at 60s. Skip metric on failure, post partial-data warning.\n- **Zero-event anomaly**: If a normally active metric returns zero events, flag as potential data pipeline issue — not a genuine drop-off.\n- **Slack failures**: Retry twice. On persistent failure, buffer to `pending_notifications.json` for next cycle.\n- **Linear failures**: Log error, include note in Slack message that auto-ticketing failed.\n- **Missing baselines**: Recalculate from 30 days of historical Amplitude data before running detection.\n\n---\n\n## Deduplication Rules\n\n- Check `reported_signals.json` before posting. Skip if same signal_type + metric_key reported within 24h, unless severity has escalated.\n- Query Linear for existing open issues with matching labels before creating new tickets.\n\n---\n\n## Tracked Metrics\n\n**Core Funnels**: Signup, onboarding, checkout/conversion, upgrade — 24h and 7d windows.\n**Feature Adoption**: Top 10 product features by daily unique users vs 30-day EMA.\n**Engagement**: DAU, sessions/user, avg session duration, pages/session.\n**Retention**: Day-1, Day-7, Day-30 for weekly cohorts.\n**Custom**: Any Amplitude event tagged `monitor:true`.\n\n---\n\n## Slack Formatting\n\nUse Block Kit for all messages. Structure: Header → Section (mrkdwn details) → Context (time + source) → Actions (Amplitude link). Separate multiple cards with Divider blocks. Max 50 blocks per message; split and thread if exceeded.",
-    "summary": "The Product Signal Detector is an intelligent analytical agent that replaces rigid Amplitude alert rules with adaptive anomaly detection. It fetches user behavior data daily from Amplitude's analytics APIs, compares metrics against self-maintaining behavioral baselines using exponential moving averages and z-score analysis, and surfaces statistically significant product signals — including funnel drop-offs, feature adoption spikes, retention anomalies, and engagement shifts. Findings are formatted as rich insight cards posted to Slack using Block Kit, with warning and critical signals automatically escalated to Linear investigation tickets. The agent handles deduplication, correlated signal grouping, and graceful error recovery across all three services.",
+    "full_prompt_markdown": "# Product Signal Detector\n\nYou are the **Product Signal Detector** — an analytical AI agent that monitors Amplitude user behavior data to detect statistically significant product signals. You serve as the product team's early-warning system, catching drop-offs, feature adoption spikes, funnel breakages, and usage pattern shifts before they appear in dashboards.\n\n## Core Mission\n\nTranslate raw behavioral data from Amplitude into actionable intelligence delivered via Slack insight cards, with automatic Linear ticket creation for anomalies requiring investigation.\n\n## Execution Protocol\n\n### Step 1: Load Behavioral Baselines\n\nRead `baselines.json` from local storage. This file contains 14-day exponentially weighted moving averages for:\n- Daily active users (DAU) and weekly active users (WAU)\n- Feature adoption rates per tracked feature\n- Funnel step-by-step conversion rates\n- Session duration medians\n- D1, D7, D14 retention benchmarks\n\nIf no baselines file exists (first run), fetch 14 days of historical data from Amplitude and generate initial baselines.\n\n### Step 2: Fetch Current Metrics from Amplitude\n\nQuery the Amplitude Analytics API (`https://amplitude.com/api/2/`) for the past 24 hours:\n\n| Endpoint | Purpose |\n|---|---|\n| `GET /events/segmentation` | Key product events by day |\n| `GET /funnels` | Funnel conversion rates per step |\n| `GET /retention` | Cohort retention curves |\n| `GET /composition` | New vs returning user mix |\n\nInclude appropriate date ranges and event filters. Handle pagination if result sets are large.\n\n### Step 3: Detect Anomalies\n\nFor each metric, compute percentage change from baseline and classify:\n\n| Severity | Threshold | Action |\n|---|---|---|\n| 🔴 **Critical** | >25% negative deviation OR funnel drop >15pp | Slack card + Linear ticket (Urgent) |\n| 🟡 **Warning** | 10–25% deviation OR adoption spike >3x | Slack card, Linear ticket only if persistent 3+ days |\n| 🟢 **Info** | 5–10% deviation | Include in summary, no individual card |\n| — | <5% deviation | Normal variance, ignore |\n\nSpecial case: If a metric returns **zero events** when baseline is >0, flag as potential **data pipeline issue** rather than a product signal.\n\n### Step 4: Compose Insight Cards\n\nFor each Warning+ signal, build a Slack Block Kit message:\n\n```\n{severity_emoji} {SEVERITY}: {Metric Name}\n{One-line plain-language summary}\n\nBaseline: {value} | Current: {value} ({delta}%)\nTrend: {direction_arrow} {trend_description}\nImpact: {estimated_user_impact}\n→ Investigate: {suggested_areas}\n```\n\n### Step 5: Post to Slack\n\nUse `POST https://slack.com/api/chat.postMessage` with Block Kit formatting.\n\n- Group by severity (Critical first)\n- If >5 signals, lead with a summary header\n- If 0 signals: post all-clear only on Mondays\n- Thread related signals together when they affect the same product area\n\n### Step 6: Create Linear Investigation Tickets\n\nFor Critical signals, use the Linear GraphQL API (`POST https://api.linear.app/graphql`):\n\n```graphql\nmutation {\n  issueCreate(input: {\n    title: \"[Signal] {metric}: {delta}% deviation\"\n    description: \"{full_context}\"\n    priority: {1_for_urgent_2_for_high}\n    teamId: \"{configured_team_id}\"\n    labelIds: [\"{product-signal_label_id}\"]\n  }) { success issue { id url } }\n}\n```\n\nBefore creating, search for existing open tickets on the same metric to avoid duplicates. If found, add a comment instead.\n\n### Step 7: Update Local State\n\n- **baselines.json**: Update with EWMA (alpha=0.1) to gradually adapt\n- **signal_history.json**: Record today's signals for persistence tracking\n- **run_log.json**: Append run summary with timestamp and actions taken\n\n## Error Handling\n\n- **Amplitude 401/403**: Post auth warning to Slack, skip analysis\n- **Amplitude 429**: Exponential backoff, max 3 retries; fall back to cached data\n- **Slack failures**: Fall back to plain text; log for manual review\n- **Linear failures**: Note in Slack post that ticket creation failed\n- **Zero-event anomaly**: Flag as data pipeline issue, not product signal\n- **Corrupted baselines**: Regenerate from 14-day historical fetch\n\n## Communication Style\n\n- Be precise with numbers — always show baseline vs current with delta\n- Use plain language for interpretations — the audience is product managers, not data scientists\n- Prioritize actionability — every insight should suggest what to investigate\n- Keep noise low — only surface signals that matter",
+    "summary": "The Product Signal Detector monitors Amplitude user behavior data on a daily schedule, computing deviations from rolling 14-day baselines to detect critical product signals including funnel breakages, feature adoption spikes, retention shifts, and DAU anomalies. It posts rich Block Kit insight cards to a Slack product channel grouped by severity, and automatically creates Linear investigation tickets for critical anomalies while tracking signal persistence across runs to escalate sustained warnings.",
     "design_highlights": [
       {
         "category": "Anomaly Detection",
         "icon": "📊",
         "color": "blue",
         "items": [
-          "Z-score based statistical anomaly detection with configurable thresholds",
-          "Exponential moving average baselines that adapt to genuine trend shifts",
-          "Multi-window analysis across 24h, 7d, and 30d time horizons",
-          "Correlated signal detection linking related metric changes"
+          "Rolling 14-day EWMA baselines that adapt gradually to real trends",
+          "Three-tier severity classification (Critical / Warning / Info)",
+          "Funnel step-level breakage detection with per-step conversion tracking",
+          "Zero-event detection to distinguish data pipeline issues from real drops"
         ]
       },
       {
-        "category": "Product Intelligence",
-        "icon": "🔍",
-        "color": "purple",
-        "items": [
-          "Funnel conversion monitoring with step-level breakage detection",
-          "Feature adoption tracking with spike and decline identification",
-          "Cohort retention analysis with Day-1, Day-7, Day-30 curves",
-          "Engagement depth metrics including session frequency and duration"
-        ]
-      },
-      {
-        "category": "Automated Escalation",
-        "icon": "🎯",
+        "category": "Intelligent Alerting",
+        "icon": "🔔",
         "color": "orange",
         "items": [
-          "Three-tier severity classification (info → warning → critical)",
-          "Slack insight cards with Block Kit rich formatting and deep links",
-          "Auto-created Linear investigation tickets for warning/critical signals",
-          "Intelligent deduplication preventing alert fatigue across cycles"
+          "Rich Slack Block Kit insight cards with baseline context and trend arrows",
+          "Severity-grouped posting with summary headers for busy days",
+          "Monday-only all-clear messages to minimize noise on quiet days",
+          "Threaded follow-ups for related signals in the same product area"
         ]
       },
       {
-        "category": "Reliability",
-        "icon": "🛡️",
+        "category": "Automated Triage",
+        "icon": "🎫",
         "color": "green",
         "items": [
-          "Graceful degradation with partial-data analysis on API failures",
-          "Exponential backoff with retry logic for all external services",
-          "Local state persistence for baselines, dedup, and pending notifications",
-          "Data pipeline anomaly detection distinguishing real drops from ingestion issues"
+          "Auto-creates Linear tickets for critical signals with full investigation context",
+          "Duplicate detection — comments on existing tickets instead of creating new ones",
+          "Persistence tracking — Warning signals only escalate to tickets after 3+ consecutive days",
+          "Dynamic priority assignment based on deviation magnitude"
+        ]
+      },
+      {
+        "category": "Resilience & State",
+        "icon": "🛡️",
+        "color": "red",
+        "items": [
+          "Local baseline and signal history files for stateful analysis across runs",
+          "Graceful degradation with cached data when Amplitude is rate-limited",
+          "Automatic baseline regeneration if state files become corrupted",
+          "Comprehensive run logging for debugging and audit trails"
         ]
       }
     ],
@@ -125,21 +103,21 @@
           {
             "key": "api_key",
             "label": "API Key",
-            "type": "text",
-            "placeholder": "a1b2c3d4e5f6...",
-            "helpText": "Found in Amplitude → Settings → Projects → [Your Project] → General → API Key",
+            "type": "password",
+            "placeholder": "your-amplitude-api-key",
+            "helpText": "Found in Amplitude → Settings → Projects → select project → General → API Key",
             "required": true
           },
           {
             "key": "secret_key",
             "label": "Secret Key",
             "type": "password",
-            "placeholder": "s1e2c3r4e5t6...",
-            "helpText": "Found in Amplitude → Settings → Projects → [Your Project] → General → Secret Key",
+            "placeholder": "your-amplitude-secret-key",
+            "helpText": "Found in Amplitude → Settings → Projects → select project → General → Secret Key. Required for the Export/Dashboard APIs.",
             "required": true
           }
         ],
-        "setup_instructions": "1. Log in to Amplitude at https://app.amplitude.com\n2. Navigate to Settings → Projects → select your project\n3. Under the General tab, find the API Key and Secret Key\n4. Copy both values into the fields above\n5. Ensure the project contains the events and funnels you want to monitor\n6. Note: The API Key and Secret Key are used together for Basic Auth (base64 encoded as api_key:secret_key)",
+        "setup_instructions": "1. Log in to Amplitude at https://analytics.amplitude.com\n2. Navigate to Settings → Projects → select your project\n3. Under the General tab, copy the API Key and Secret Key\n4. The API Key and Secret Key are used together for HTTP Basic Auth (API Key as username, Secret Key as password)\n5. Ensure the project contains the events and funnels you want the agent to monitor\n6. Note your Amplitude project's Organization ID if using the v3 API endpoints",
         "related_tools": [
           "http_request"
         ],
@@ -158,27 +136,24 @@
             "key": "bot_token",
             "label": "Bot User OAuth Token",
             "type": "password",
-            "placeholder": "xoxb-...",
-            "helpText": "Found in Slack App → OAuth & Permissions → Bot User OAuth Token. Requires chat:write scope.",
+            "placeholder": "xoxb-your-bot-token",
+            "helpText": "From your Slack App → OAuth & Permissions → Bot User OAuth Token. Requires chat:write and chat:write.public scopes.",
             "required": true
           },
           {
             "key": "channel_id",
             "label": "Product Channel ID",
             "type": "text",
-            "placeholder": "C01ABCDEF23",
-            "helpText": "Right-click the target Slack channel → View channel details → copy the Channel ID at the bottom",
+            "placeholder": "C0123456789",
+            "helpText": "The Slack channel ID for product signal alerts. Right-click channel name → View channel details → scroll to bottom for Channel ID.",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to https://api.slack.com/apps and create a new app (or select existing)\n2. Navigate to OAuth & Permissions\n3. Add Bot Token Scopes: chat:write, chat:write.public\n4. Install the app to your workspace\n5. Copy the Bot User OAuth Token (starts with xoxb-)\n6. Invite the bot to your product signals channel: /invite @YourBotName\n7. Get the channel ID by right-clicking the channel → View channel details → copy ID from the bottom",
+        "setup_instructions": "1. Go to https://api.slack.com/apps and create a new app (or select existing)\n2. Under OAuth & Permissions, add these Bot Token Scopes: chat:write, chat:write.public\n3. Install the app to your workspace\n4. Copy the Bot User OAuth Token (starts with xoxb-)\n5. Create or identify the product channel where signals should be posted (e.g., #product-signals)\n6. Invite the bot to the channel: /invite @YourBotName\n7. Copy the Channel ID from the channel details panel",
         "related_tools": [
           "http_request"
         ],
-        "related_triggers": [
-          0,
-          1
-        ],
+        "related_triggers": [],
         "api_base_url": "https://slack.com/api"
       },
       {
@@ -190,34 +165,31 @@
             "key": "api_key",
             "label": "Personal API Key",
             "type": "password",
-            "placeholder": "lin_api_...",
-            "helpText": "Found in Linear → Settings → API → Personal API keys → Create key",
+            "placeholder": "lin_api_xxxxxxxxxxxx",
+            "helpText": "From Linear → Settings → API → Personal API keys → Create key. The key needs permission to create and update issues.",
             "required": true
           },
           {
             "key": "team_id",
             "label": "Team ID",
             "type": "text",
-            "placeholder": "abc123def456",
-            "helpText": "Query Linear GraphQL API with { teams { nodes { id name } } } or find in team settings URL",
+            "placeholder": "your-team-uuid",
+            "helpText": "The Linear team ID where investigation tickets should be created. Find it via the Linear API: query { teams { nodes { id name } } }",
             "required": true
           }
         ],
-        "setup_instructions": "1. Log in to Linear at https://linear.app\n2. Go to Settings → API → Personal API keys\n3. Click 'Create key', give it a descriptive label like 'Product Signal Detector'\n4. Copy the generated API key (starts with lin_api_)\n5. To find your Team ID: go to Settings → Teams → click your team → the ID is in the URL, or query the GraphQL API\n6. Ensure the API key owner has permission to create issues in the target team\n7. Create labels in Linear: 'metric-anomaly', 'bug-investigation', 'feature-signal' for signal categorization",
+        "setup_instructions": "1. Log in to Linear at https://linear.app\n2. Go to Settings → API → Personal API keys\n3. Click 'Create key', give it a descriptive name like 'Product Signal Detector'\n4. Copy the generated API key (starts with lin_api_)\n5. To find your Team ID, run this GraphQL query against https://api.linear.app/graphql with your API key:\n   query { teams { nodes { id name } } }\n6. Optionally create a 'product-signal' label in your team for auto-tagging: Settings → Labels → Create label",
         "related_tools": [
           "http_request"
         ],
-        "related_triggers": [
-          0,
-          1
-        ],
+        "related_triggers": [],
         "api_base_url": "https://api.linear.app/graphql"
       }
     ],
     "suggested_notification_channels": [
       {
         "type": "slack",
-        "description": "Primary channel for all product signal insight cards — receives daily digests and real-time critical alerts",
+        "description": "Primary channel for posting product signal insight cards, severity-grouped alerts, and weekly all-clear summaries",
         "required_connector": "slack",
         "config_hints": {
           "channel": "#product-signals"
@@ -227,11 +199,477 @@
     "suggested_event_subscriptions": [
       {
         "event_type": "agent_memory",
-        "description": "Listens for baseline update events to maintain behavioral metric baselines across analysis cycles and enable trend-aware anomaly detection"
+        "description": "Persist behavioral baselines and signal history across runs so the agent can track trends and detect persistent warnings that should escalate to Linear tickets"
       },
       {
         "event_type": "user_message",
-        "description": "Allows product team members to send ad-hoc analysis requests (e.g., 'analyze signup funnel for last 3 days') outside the scheduled daily run"
+        "description": "Allow product team members to request ad-hoc signal checks or adjust detection thresholds by messaging the agent directly"
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_daily_signal_detection",
+        "name": "Daily Signal Detection & Alerting",
+        "description": "The primary daily workflow: fetch Amplitude data, compute deviations from baselines, classify anomalies by severity, post insight cards to Slack, and create Linear tickets for critical signals.",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Daily 9 AM schedule fires",
+            "detail": "Cron trigger activates the daily analysis run"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Load baselines from local state",
+            "detail": "Read baselines.json and signal_history.json via file_read for rolling 14-day averages and past signal records"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Baselines exist?",
+            "detail": "Check if baselines.json contains valid data or if this is a first/recovery run"
+          },
+          {
+            "id": "n4",
+            "type": "connector",
+            "label": "Fetch 14-day historical data",
+            "detail": "GET /api/2/events/segmentation and /api/2/funnels for past 14 days to build initial baselines",
+            "connector": "amplitude"
+          },
+          {
+            "id": "n5",
+            "type": "connector",
+            "label": "Fetch last 24h metrics",
+            "detail": "GET /api/2/events/segmentation, /api/2/funnels, /api/2/retention for past 24 hours of user behavior data",
+            "connector": "amplitude"
+          },
+          {
+            "id": "n6",
+            "type": "action",
+            "label": "Compute deltas & classify severity",
+            "detail": "Calculate percentage deviations from baselines. Classify each metric as Critical (>25% drop or >15pp funnel drop), Warning (10-25% deviation or >3x spike), Info (5-10%), or normal (<5%)"
+          },
+          {
+            "id": "n7",
+            "type": "decision",
+            "label": "Any Warning+ signals?",
+            "detail": "Check if any metrics exceeded the 10% deviation threshold in either direction"
+          },
+          {
+            "id": "n8",
+            "type": "action",
+            "label": "Compose Block Kit insight cards",
+            "detail": "Build Slack Block Kit JSON for each Warning+ signal with severity emoji, metric values, delta, trend arrow, and investigation suggestions"
+          },
+          {
+            "id": "n9",
+            "type": "connector",
+            "label": "Post insight cards to Slack",
+            "detail": "POST /chat.postMessage with Block Kit blocks to #product-signals channel, grouped by severity (Critical first)",
+            "connector": "slack"
+          },
+          {
+            "id": "n10",
+            "type": "decision",
+            "label": "Any Critical signals?",
+            "detail": "Check if any signals hit Critical severity (>25% negative deviation or >15pp funnel drop)"
+          },
+          {
+            "id": "n11",
+            "type": "connector",
+            "label": "Search for duplicate Linear tickets",
+            "detail": "GraphQL query to search for open issues with matching metric names created within the past 7 days",
+            "connector": "linear"
+          },
+          {
+            "id": "n12",
+            "type": "decision",
+            "label": "Duplicate ticket exists?",
+            "detail": "Check if an existing open Linear issue already tracks this same signal"
+          },
+          {
+            "id": "n13",
+            "type": "connector",
+            "label": "Create new Linear investigation ticket",
+            "detail": "GraphQL mutation issueCreate with title, full context description, priority based on deviation magnitude, and product-signal label",
+            "connector": "linear"
+          },
+          {
+            "id": "n14",
+            "type": "connector",
+            "label": "Add comment to existing ticket",
+            "detail": "GraphQL mutation commentCreate to append updated signal data to the existing investigation ticket",
+            "connector": "linear"
+          },
+          {
+            "id": "n15",
+            "type": "action",
+            "label": "Update local state files",
+            "detail": "Write updated EWMA baselines to baselines.json, append signals to signal_history.json, log run summary to run_log.json"
+          },
+          {
+            "id": "n16",
+            "type": "end",
+            "label": "Daily analysis complete",
+            "detail": "Run finished — state persisted for next execution"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No baselines",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Baselines loaded",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7"
+          },
+          {
+            "id": "e8",
+            "source": "n7",
+            "target": "n8",
+            "label": "Signals found",
+            "variant": "yes"
+          },
+          {
+            "id": "e9",
+            "source": "n7",
+            "target": "n15",
+            "label": "All clear",
+            "variant": "no"
+          },
+          {
+            "id": "e10",
+            "source": "n8",
+            "target": "n9"
+          },
+          {
+            "id": "e11",
+            "source": "n9",
+            "target": "n10"
+          },
+          {
+            "id": "e12",
+            "source": "n10",
+            "target": "n11",
+            "label": "Critical found",
+            "variant": "yes"
+          },
+          {
+            "id": "e13",
+            "source": "n10",
+            "target": "n15",
+            "label": "No critical",
+            "variant": "no"
+          },
+          {
+            "id": "e14",
+            "source": "n11",
+            "target": "n12"
+          },
+          {
+            "id": "e15",
+            "source": "n12",
+            "target": "n14",
+            "label": "Duplicate exists",
+            "variant": "yes"
+          },
+          {
+            "id": "e16",
+            "source": "n12",
+            "target": "n13",
+            "label": "No duplicate",
+            "variant": "no"
+          },
+          {
+            "id": "e17",
+            "source": "n13",
+            "target": "n15"
+          },
+          {
+            "id": "e18",
+            "source": "n14",
+            "target": "n15"
+          },
+          {
+            "id": "e19",
+            "source": "n15",
+            "target": "n16"
+          }
+        ]
+      },
+      {
+        "id": "flow_persistent_warning_escalation",
+        "name": "Persistent Warning Escalation",
+        "description": "Handles Warning-level signals that persist across multiple consecutive runs — escalates to Linear tickets after 3+ days to catch slow-developing product issues.",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Warning signal detected",
+            "detail": "A metric hits Warning severity (10-25% deviation) during daily analysis"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Load signal history",
+            "detail": "Read signal_history.json to check how many consecutive days this metric has been at Warning level"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Persistent 3+ days?",
+            "detail": "Check if the same metric has been flagged at Warning or above for 3 or more consecutive daily runs"
+          },
+          {
+            "id": "n4",
+            "type": "connector",
+            "label": "Post escalation notice to Slack",
+            "detail": "POST /chat.postMessage with an escalation card noting the signal has persisted for N days and is being promoted to investigation",
+            "connector": "slack"
+          },
+          {
+            "id": "n5",
+            "type": "connector",
+            "label": "Create Linear investigation ticket",
+            "detail": "GraphQL mutation issueCreate with High priority, description noting the multi-day persistence pattern and accumulated deviation data",
+            "connector": "linear"
+          },
+          {
+            "id": "n6",
+            "type": "action",
+            "label": "Record escalation in history",
+            "detail": "Mark the signal as escalated in signal_history.json to prevent duplicate escalations on subsequent runs"
+          },
+          {
+            "id": "n7",
+            "type": "action",
+            "label": "Track for continued monitoring",
+            "detail": "Keep the signal in the history for trend observation but do not re-escalate unless severity increases to Critical"
+          },
+          {
+            "id": "n8",
+            "type": "end",
+            "label": "Escalation complete",
+            "detail": "Warning signal handled — either escalated to Linear or noted for continued monitoring"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "Yes — escalate",
+            "variant": "yes"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n7",
+            "label": "Not yet — keep watching",
+            "variant": "no"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n8"
+          },
+          {
+            "id": "e8",
+            "source": "n7",
+            "target": "n8"
+          }
+        ]
+      },
+      {
+        "id": "flow_error_recovery",
+        "name": "API Failure & Data Quality Recovery",
+        "description": "Handles failures when Amplitude, Slack, or Linear APIs are unavailable — ensures graceful degradation with cached data and appropriate notifications.",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "API call fails",
+            "detail": "An http_request to Amplitude, Slack, or Linear returns an error status (401, 403, 429, 5xx)"
+          },
+          {
+            "id": "n2",
+            "type": "decision",
+            "label": "Which service failed?",
+            "detail": "Determine which API returned the error to apply the correct recovery strategy"
+          },
+          {
+            "id": "n3",
+            "type": "action",
+            "label": "Retry with backoff",
+            "detail": "For rate limits (429) or server errors (5xx), retry with exponential backoff: 5s, 15s, 45s — max 3 attempts"
+          },
+          {
+            "id": "n4",
+            "type": "decision",
+            "label": "Retry succeeded?",
+            "detail": "Check if any retry attempt returned a successful response"
+          },
+          {
+            "id": "n5",
+            "type": "action",
+            "label": "Fall back to cached data",
+            "detail": "Use the most recent successful Amplitude data from run_log.json with a staleness warning attached to any output"
+          },
+          {
+            "id": "n6",
+            "type": "connector",
+            "label": "Post degraded-mode notice to Slack",
+            "detail": "POST /chat.postMessage with a warning that analysis is running on stale data due to Amplitude API issues",
+            "connector": "slack"
+          },
+          {
+            "id": "n7",
+            "type": "error",
+            "label": "Slack unavailable",
+            "detail": "Both Slack posting and retry failed — write alerts to local error_log.json for manual review"
+          },
+          {
+            "id": "n8",
+            "type": "action",
+            "label": "Log failure to local files",
+            "detail": "Write detailed error information to run_log.json including timestamp, HTTP status, response body, and attempted retries"
+          },
+          {
+            "id": "n9",
+            "type": "action",
+            "label": "Flag data quality issue",
+            "detail": "When Amplitude returns zero events for a normally-active metric, mark it as a potential data pipeline issue rather than a product signal"
+          },
+          {
+            "id": "n10",
+            "type": "end",
+            "label": "Recovery handled",
+            "detail": "Error recovery complete — analysis continued in degraded mode or logged for manual intervention"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3",
+            "label": "Amplitude 429/5xx"
+          },
+          {
+            "id": "e3",
+            "source": "n2",
+            "target": "n9",
+            "label": "Zero events returned"
+          },
+          {
+            "id": "e4",
+            "source": "n2",
+            "target": "n7",
+            "label": "Slack failed",
+            "variant": "error"
+          },
+          {
+            "id": "e5",
+            "source": "n3",
+            "target": "n4"
+          },
+          {
+            "id": "e6",
+            "source": "n4",
+            "target": "n10",
+            "label": "Retry worked",
+            "variant": "yes"
+          },
+          {
+            "id": "e7",
+            "source": "n4",
+            "target": "n5",
+            "label": "All retries failed",
+            "variant": "no"
+          },
+          {
+            "id": "e8",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e9",
+            "source": "n6",
+            "target": "n8"
+          },
+          {
+            "id": "e10",
+            "source": "n7",
+            "target": "n8",
+            "variant": "error"
+          },
+          {
+            "id": "e11",
+            "source": "n8",
+            "target": "n10"
+          },
+          {
+            "id": "e12",
+            "source": "n9",
+            "target": "n6"
+          }
+        ]
       }
     ]
   }

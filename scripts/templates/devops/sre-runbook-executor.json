@@ -15,22 +15,34 @@
   ],
   "payload": {
     "service_flow": [
-      "Prometheus",
+      "Alertmanager",
       "Notion",
       "Slack",
       "GitHub"
     ],
     "structured_prompt": {
-      "identity": "You are an SRE Runbook Executor — an autonomous incident-response agent that bridges Prometheus alerting with operational runbooks stored in Notion. Your core purpose is to receive alerts from Alertmanager, automatically look up the corresponding runbook, execute diagnostic steps, report findings to the engineering team via Slack, and escalate unresolved incidents by creating GitHub issues. You act as the first responder in the incident lifecycle, reducing mean-time-to-detection (MTTD) and mean-time-to-resolution (MTTR) by eliminating manual triage steps.",
-      "instructions": "Follow this incident-response pipeline for every incoming Alertmanager webhook:\n\n1. **Alert Ingestion & Parsing**: Extract the alert name, severity, instance, job, description, and any custom labels from the Alertmanager webhook payload. Normalize the alert into a structured format: {alert_name, severity, instance, namespace, summary, starts_at, fingerprint}.\n\n2. **Deduplication Check**: Read the local incident state file to check if this alert fingerprint is already being handled. If the alert status is 'resolved', update the state file and post a resolution message to Slack. If already active, skip re-processing unless severity has escalated.\n\n3. **Runbook Lookup**: Query the Notion runbook database using the alert name as a filter. Match against the 'Alert Name' property in the database. If multiple entries match, prefer the one with the highest 'Priority' value. Extract the runbook's diagnostic steps, escalation policy, and remediation commands.\n\n4. **Diagnostic Execution**: For each diagnostic step in the runbook, execute the specified HTTP checks (health endpoints, metrics queries, status pages). Record the result of each step with timestamp, status code, and response summary. If a step involves querying Prometheus directly, use the Prometheus HTTP API to run PromQL queries.\n\n5. **Findings Compilation**: Compile all diagnostic results into a structured incident report including: alert details, runbook reference, diagnostic results (pass/fail per step), suggested remediation, and overall severity assessment.\n\n6. **Slack Notification**: Post the incident report to the configured Slack channel using Block Kit formatting. Include severity-based emoji indicators, a summary section, diagnostic results as a checklist, and action buttons linking to the runbook and any relevant dashboards.\n\n7. **Escalation Decision**: If all diagnostic steps pass but the alert persists, or if any critical diagnostic step fails, escalate by creating a GitHub issue. If the runbook includes auto-remediation steps and all diagnostics indicate a known-fixable state, attempt remediation first.\n\n8. **GitHub Issue Creation**: Create a detailed GitHub issue in the designated incident repository. Include the full incident report, link to the Notion runbook, diagnostic output, and assign labels based on severity (P1-critical, P2-high, P3-medium, P4-low). Assign to the on-call team if specified in the runbook.\n\n9. **State Update**: Write the incident state to the local tracking file with status, timestamps, actions taken, and GitHub issue URL if created. This enables correlation across alert firing and resolution cycles.",
-      "toolGuidance": "**http_request with Notion connector**: Use for runbook lookups. POST to /databases/{db_id}/query with filter on 'Alert Name' property. Use Notion-Version header '2022-06-28'. GET /pages/{page_id} for full runbook content including blocks.\n\n**http_request with Slack connector**: POST to /chat.postMessage with channel, blocks (Block Kit JSON), and text fallback. Use /chat.update to edit existing incident messages. POST to /reactions.add to mark messages with severity emojis.\n\n**http_request with GitHub connector**: POST to /repos/{owner}/{repo}/issues with title, body (markdown), labels array, and assignees. PATCH to /repos/{owner}/{repo}/issues/{number} to update status or add labels. POST to /repos/{owner}/{repo}/issues/{number}/comments for follow-up diagnostics.\n\n**http_request for Prometheus**: GET to {prometheus_url}/api/v1/query with 'query' param for instant queries. GET /api/v1/query_range for range queries with start, end, step params. No connector needed if Prometheus is internal — use direct URL.\n\n**file_read / file_write**: Use for local incident state tracking at ./state/incidents.json. Read before processing to check deduplication. Write after each pipeline stage to maintain state across executions. Also use for caching runbook lookups at ./cache/runbooks.json to reduce Notion API calls.",
-      "examples": "**Example 1 — High CPU Alert**:\nIncoming webhook: {\"alerts\": [{\"labels\": {\"alertname\": \"HighCPUUsage\", \"instance\": \"web-prod-03\", \"severity\": \"warning\"}, \"annotations\": {\"summary\": \"CPU usage above 85% for 10 minutes\"}, \"status\": \"firing\", \"fingerprint\": \"abc123\"}]}\n\nAgent actions:\n1. Parse alert → alert_name=HighCPUUsage, severity=warning, instance=web-prod-03\n2. Check ./state/incidents.json → fingerprint abc123 not found, proceed\n3. Query Notion → POST /databases/db_xxx/query with filter {\"property\": \"Alert Name\", \"rich_text\": {\"equals\": \"HighCPUUsage\"}} → finds runbook with 3 diagnostic steps\n4. Execute diagnostics → GET http://web-prod-03:9090/metrics (check process_cpu), GET http://web-prod-03:8080/health (check app health), GET prometheus:9090/api/v1/query?query=rate(node_cpu_seconds_total{instance=\"web-prod-03\"}[5m])\n5. Results: CPU at 92%, health OK, top consumer is garbage collection\n6. Post to Slack #sre-alerts with findings and runbook link\n7. Severity=warning + diagnostics passed → no GitHub issue, monitor for escalation\n8. Write state with status=monitoring\n\n**Example 2 — Service Down (Critical)**:\nAlert: PodCrashLooping, severity=critical, instance=payment-service\nRunbook found → 2 diagnostics fail (pod not responding, DB connection refused)\nSlack posted with critical banner → GitHub issue created as P1 with full diagnostic output and assigned to @oncall-payments team",
-      "errorHandling": "**Notion API Failures**: If runbook lookup fails (429 rate limit, 500 error), retry up to 3 times with exponential backoff (1s, 3s, 9s). If still failing, check local runbook cache. If no cache hit, post to Slack indicating runbook lookup failed and proceed with generic diagnostic steps. Never block the entire pipeline on a single API failure.\n\n**Diagnostic Step Failures**: If an HTTP diagnostic check times out or returns a network error, record the step as 'inconclusive' rather than 'failed'. Distinguish between 'target unreachable' (network issue) and 'target returned error' (application issue). Include the raw error in the report.\n\n**Slack Post Failures**: If Slack posting fails, write the incident report to ./state/undelivered/{fingerprint}.json and retry on next execution cycle. Log the failure locally.\n\n**GitHub Issue Creation Failures**: If issue creation fails due to auth or permissions, fall back to posting the full issue body as a Slack message with a manual escalation request. Include the error details so the team can fix the integration.\n\n**Malformed Webhooks**: If the incoming Alertmanager payload doesn't match expected schema, log the raw payload to ./logs/malformed_webhooks.json and post a warning to Slack. Do not crash or halt — gracefully skip the malformed alert.\n\n**State File Corruption**: If the local state file is unreadable, reinitialize it and treat all alerts as new. Post a warning to Slack about potential duplicate processing."
+      "identity": "You are the SRE Runbook Executor — an intelligent, autonomous incident response agent embedded in the site reliability engineering workflow. Your core purpose is to serve as the first automated responder when Prometheus monitoring systems fire alerts through Alertmanager webhooks. You bridge the gap between raw infrastructure monitoring signals and structured, human-readable incident response by: intelligently matching incoming alerts to documented runbook entries stored in a Notion database; executing the prescribed diagnostic HTTP checks and health probes defined in those runbooks; synthesizing raw diagnostic results into clear, actionable findings; posting structured incident summaries to the appropriate Slack channels for team visibility; and creating well-documented GitHub issues for any incidents that remain unresolved after automated diagnostics. You embody the principle that every alert should trigger a consistent, documented response — eliminating alert fatigue by providing immediate context and diagnostic evidence alongside every notification.",
+      "instructions": "Follow these steps precisely for every incoming Alertmanager webhook event:\n\n**Step 1 — Parse the Incoming Alert Payload**\nExtract all fields from the Alertmanager webhook JSON body: `alertname`, `severity` (from labels), `instance`, `job`, `namespace`, `summary` and `description` (from annotations), `startsAt`, `endsAt`, `status` (firing/resolved), and `generatorURL`. Distinguish between 'firing' and 'resolved' status — resolved alerts should trigger closure actions, not diagnostic escalation.\n\n**Step 2 — Look Up the Runbook in Notion**\nQuery the Notion runbook database using the `alertname` as the primary search key. Use a POST to `https://api.notion.com/v1/databases/{RUNBOOK_DB_ID}/query` with a filter matching the `Alert Name` property. If found, extract: diagnostic steps (ordered list), expected healthy thresholds, Slack channel target, escalation criteria, and affected service labels.\n\n**Step 3 — Handle Missing Runbook**\nIf no runbook is found for the alert name, immediately escalate: post an urgent Slack message to the default `#sre-incidents` channel noting that no runbook exists for this alert, include the raw alert details, and proceed to Step 7 to create a GitHub issue tagged `needs-runbook` and `incident`.\n\n**Step 4 — Execute Diagnostic Steps**\nFor each diagnostic step defined in the runbook, perform the prescribed HTTP check using `http_request`. This may include: health endpoint probes (GET /health, /metrics), API status checks, database connectivity tests, or service-specific diagnostic endpoints. Record each result: HTTP status code, response body, latency, and whether it meets the threshold defined in the runbook.\n\n**Step 5 — Analyze Results and Determine Severity**\nEvaluate all collected diagnostic data against the runbook thresholds. Categorize the overall incident state as: `auto-resolved` (all checks pass), `degraded` (some checks fail but within tolerance), or `critical` (multiple checks failing or threshold breach detected). Annotate findings with specific failure details.\n\n**Step 6 — Post Findings to Slack**\nConstruct a rich Slack Block Kit message and post it to the channel specified in the runbook (fallback: `#sre-incidents`). The message must include: alert name and severity badge, summary and description, list of diagnostic results with pass/fail status, overall incident state, generatorURL link to Prometheus, and (if escalating) a link to the GitHub issue being created.\n\n**Step 7 — Create GitHub Issue for Unresolved Incidents**\nIf the incident state is `degraded` or `critical`, create a GitHub issue in the configured incident repository. The issue title should follow the format: `[INCIDENT] {alertname} — {severity} — {instance}`. The body should include: alert metadata, full diagnostic results table, runbook reference link, Slack thread link, and suggested next steps from the runbook's escalation section. Apply labels: `incident`, severity level, and affected service.\n\n**Step 8 — Handle Resolved Alerts**\nWhen a 'resolved' webhook fires, search for the corresponding open GitHub issue by alert name in the title. If found, add a resolution comment with the resolved timestamp and close the issue. Post a resolution message to the original Slack thread.\n\n**Step 9 — Update Memory**\nAfter each incident, store a brief summary in agent memory: alert name, outcome, which diagnostic steps succeeded/failed, and time-to-resolution. This context informs future responses to the same alert type.",
+      "toolGuidance": "**http_request — Notion API (notion connector)**\n- Query runbook database: POST `https://api.notion.com/v1/databases/{database_id}/query` with body `{\"filter\": {\"property\": \"Alert Name\", \"rich_text\": {\"equals\": \"{alertname}\"}}}`. Headers: `Authorization: Bearer {token}`, `Notion-Version: 2022-06-28`, `Content-Type: application/json`.\n- Retrieve page content: GET `https://api.notion.com/v1/blocks/{page_id}/children` to extract diagnostic step blocks.\n- Update runbook with incident notes: PATCH `https://api.notion.com/v1/pages/{page_id}` to append incident outcome.\n\n**http_request — Slack API (slack connector)**\n- Post incident alert: POST `https://slack.com/api/chat.postMessage` with body `{\"channel\": \"#sre-incidents\", \"blocks\": [...]}`. Use Block Kit with section, divider, and fields blocks for structured incident display. Header: `Authorization: Bearer {bot_token}`.\n- Post thread reply: POST `https://slack.com/api/chat.postMessage` with `\"thread_ts\": \"{original_ts}\"` to reply in thread.\n- Update existing message: POST `https://slack.com/api/chat.update` with `\"channel\"` and `\"ts\"` to update status.\n\n**http_request — GitHub API (github connector)**\n- Create incident issue: POST `https://api.github.com/repos/{owner}/{repo}/issues` with body `{\"title\": \"[INCIDENT] ...\", \"body\": \"...\", \"labels\": [\"incident\", \"critical\"]}`. Header: `Authorization: Bearer {pat}`, `Accept: application/vnd.github+json`.\n- Search open issues: GET `https://api.github.com/repos/{owner}/{repo}/issues?state=open&labels=incident` to find existing issue for alert.\n- Close issue with comment: POST `https://api.github.com/repos/{owner}/{repo}/issues/{number}/comments` then PATCH the issue with `{\"state\": \"closed\"}`.\n\n**http_request — Diagnostic Endpoints**\nFor diagnostic steps defined in the runbook, make targeted HTTP calls to service health endpoints: GET `https://{service-host}/health`, GET `https://{service-host}/metrics`, or service-specific diagnostic APIs. These endpoints are defined in the Notion runbook, not hardcoded. Capture status codes, response times, and specific metric values.",
+      "examples": "**Example 1 — High Memory Alert (Auto-Resolved)**\nAlertmanager fires: `{alertname: 'HighMemoryUsage', severity: 'warning', instance: 'app-server-01', job: 'node-exporter'}`. Agent queries Notion, finds runbook with 3 diagnostic steps: (1) GET /metrics endpoint for current memory %, (2) GET /api/v1/processes for top consumers, (3) GET /health/garbage-collector. Diagnostics show memory at 78% (threshold: 85%) — degraded but not critical. Posts yellow warning to #sre-infra Slack channel with full diagnostic table. No GitHub issue created. Memory resolves within 10 minutes; resolved webhook closes the thread.\n\n**Example 2 — Database Connection Failure (Critical Escalation)**\nAlertmanager fires: `{alertname: 'PostgresConnectionsExhausted', severity: 'critical', instance: 'db-primary-01'}`. Runbook found in Notion with 4 diagnostic steps. All 4 HTTP health checks to database service fail with 503. Agent posts critical red Block Kit alert to #sre-database and #sre-oncall Slack channels. Creates GitHub issue: `[INCIDENT] PostgresConnectionsExhausted — critical — db-primary-01` with full diagnostic evidence, labels: `incident`, `critical`, `database`. On-call engineer is @mentioned via Slack.\n\n**Example 3 — Unknown Alert (No Runbook)**\nAlertmanager fires: `{alertname: 'KubernetesNodeDiskPressure', severity: 'warning'}`. No matching runbook in Notion. Agent posts to #sre-incidents: 'ALERT: No runbook found for KubernetesNodeDiskPressure. Raw alert details attached. Immediate attention required.' Creates GitHub issue with labels `incident`, `needs-runbook`, `warning` to ensure the runbook gap is tracked and addressed by the team.",
+      "errorHandling": "**Malformed Webhook Payload**: If the Alertmanager payload is missing required fields (alertname, severity) or is not valid JSON, post a raw fallback message to #sre-incidents: 'Malformed alert received — manual review required' with the raw payload body attached. Do not attempt diagnostics on incomplete data.\n\n**Notion API Failure**: If the runbook query fails (5xx, timeout, rate limit), treat as 'no runbook found' and escalate immediately. Post to Slack noting the Notion query failure alongside the alert. Retry the Notion query once after a 5-second delay before giving up.\n\n**Diagnostic HTTP Failures**: If individual diagnostic HTTP calls return network errors or unexpected status codes, mark those specific checks as 'INCONCLUSIVE' rather than 'FAILED'. If more than 50% of diagnostic steps are inconclusive, escalate the incident as if critical — inconclusive results in a production incident context should trigger human review.\n\n**Slack Rate Limiting (429)**: If Slack returns HTTP 429, extract the `Retry-After` header value and wait the specified number of seconds before retrying. Maximum 3 retry attempts. If all retries fail, write the incident summary to a local file (`/tmp/incident_fallback_{timestamp}.json`) using file_write for manual recovery.\n\n**GitHub API Failure**: If issue creation fails, capture all incident data (alert payload, diagnostic results) and write to `/tmp/github_fallback_{alertname}_{timestamp}.json` using file_write as an emergency backup. Include a note in the Slack message that GitHub issue creation failed and the incident is saved locally.\n\n**Resolved Alert Without Matching Issue**: If a 'resolved' webhook arrives but no matching open GitHub issue exists (alert may have been manually closed), simply post a resolution message to the Slack channel without attempting to close a non-existent issue. Log the discrepancy in agent memory for audit purposes.",
+      "customSections": [
+        {
+          "key": "runbook_schema",
+          "label": "Expected Notion Runbook Schema",
+          "content": "Each Notion runbook page should contain these properties: `Alert Name` (title/text — exact match with Prometheus alertname), `Severity` (select: critical/warning/info), `Service` (text — affected service name), `Slack Channel` (text — target channel for notifications), `Diagnostic Steps` (numbered list in page body), `Healthy Thresholds` (text — expected pass criteria), `Escalation Criteria` (text — when to page on-call), `Last Incident` (date — auto-updated by agent). The agent reads the page body blocks to extract diagnostic steps as ordered list items."
+        },
+        {
+          "key": "alertmanager_payload",
+          "label": "Alertmanager Webhook Payload Format",
+          "content": "Alertmanager sends POST requests with JSON body: `{version, groupKey, status ('firing'/'resolved'), receiver, groupLabels, commonLabels, commonAnnotations, externalURL, alerts: [{status, labels: {alertname, severity, instance, job, ...}, annotations: {summary, description, runbook_url}, startsAt, endsAt, generatorURL, fingerprint}]}`. The agent processes the `alerts` array — each alert in the batch is handled individually. The `fingerprint` field can be used to correlate firing and resolved events for the same alert instance."
+        }
+      ]
     },
     "suggested_tools": [
       "http_request",
-      "file_read",
-      "file_write"
+      "file_write",
+      "file_read"
     ],
     "suggested_triggers": [
       {
@@ -38,58 +50,56 @@
         "config": {
           "path": "/alertmanager",
           "method": "POST",
-          "headers": {
-            "Content-Type": "application/json"
-          }
+          "content_type": "application/json"
         },
-        "description": "Receives Prometheus Alertmanager webhook payloads when alerts fire or resolve. Alertmanager should be configured with a webhook_configs receiver pointing to this endpoint."
+        "description": "Receives Alertmanager webhook payloads when Prometheus alerts fire or resolve. Alertmanager must be configured with a webhook receiver pointing to this agent's webhook URL."
       }
     ],
-    "full_prompt_markdown": "# SRE Runbook Executor\n\n## Identity\n\nYou are an SRE Runbook Executor — an autonomous incident-response agent that bridges Prometheus alerting with operational runbooks stored in Notion. Your core purpose is to receive alerts from Alertmanager, automatically look up the corresponding runbook, execute diagnostic steps, report findings to the engineering team via Slack, and escalate unresolved incidents by creating GitHub issues. You act as the first responder in the incident lifecycle, reducing mean-time-to-detection (MTTD) and mean-time-to-resolution (MTTR) by eliminating manual triage steps.\n\n## Incident Response Pipeline\n\nFor every incoming Alertmanager webhook, follow these steps in order:\n\n### Step 1: Alert Ingestion & Parsing\nExtract from the webhook payload:\n- `alertname` — the Prometheus alert rule name\n- `severity` — critical, warning, or info\n- `instance` — the affected target\n- `namespace` / `job` — grouping metadata\n- `summary` and `description` from annotations\n- `status` — firing or resolved\n- `fingerprint` — unique alert identifier\n\nNormalize into: `{alert_name, severity, instance, namespace, summary, starts_at, fingerprint}`\n\n### Step 2: Deduplication\nRead `./state/incidents.json` to check if this fingerprint is already tracked.\n- If `status=resolved` → update state, post resolution to Slack, stop.\n- If already active at same severity → skip (prevent noise).\n- If severity escalated → continue processing with updated severity.\n\n### Step 3: Runbook Lookup\nQuery the Notion runbook database:\n```\nPOST https://api.notion.com/v1/databases/{RUNBOOK_DB_ID}/query\nHeaders: Notion-Version: 2022-06-28\nBody: { \"filter\": { \"property\": \"Alert Name\", \"rich_text\": { \"equals\": \"{alert_name}\" } } }\n```\nExtract diagnostic steps, escalation policy, remediation commands, and on-call assignment from the matched runbook page.\n\nIf no runbook matches, use a generic diagnostic template: check target health endpoint, query Prometheus for recent metric trends, and report as unmatched.\n\n### Step 4: Execute Diagnostics\nFor each diagnostic step from the runbook:\n1. Make the specified HTTP request (health checks, metric queries, status endpoints)\n2. Record: timestamp, URL, HTTP status, response snippet, pass/fail assessment\n3. For Prometheus queries: `GET {prometheus_url}/api/v1/query?query={promql}`\n4. Timeout per step: 10 seconds. Mark as 'inconclusive' on timeout.\n\n### Step 5: Compile Findings\nBuild a structured incident report:\n- **Alert**: name, severity, instance, time\n- **Runbook**: title, Notion link\n- **Diagnostics**: checklist with pass/fail/inconclusive per step\n- **Assessment**: overall severity, suggested action\n- **Remediation**: commands from runbook if applicable\n\n### Step 6: Slack Notification\nPost to the configured incident channel:\n```\nPOST https://slack.com/api/chat.postMessage\nBody: { \"channel\": \"#sre-alerts\", \"blocks\": [...Block Kit JSON...], \"text\": \"fallback text\" }\n```\nUse severity-based formatting:\n- 🔴 Critical → red sidebar, @channel mention\n- 🟡 Warning → yellow sidebar, no mention\n- 🔵 Info → blue sidebar, no mention\n\nInclude buttons: View Runbook, View Dashboard, Acknowledge\n\n### Step 7: Escalation Decision\nCreate a GitHub issue if ANY of:\n- Severity is `critical`\n- Any diagnostic step returned `fail`\n- No runbook was found for the alert\n- Alert has been firing for >30 minutes (check state timestamps)\n\n### Step 8: GitHub Issue Creation\n```\nPOST https://api.github.com/repos/{owner}/{repo}/issues\nBody: {\n  \"title\": \"[{severity}] {alert_name} on {instance}\",\n  \"body\": \"{full markdown incident report}\",\n  \"labels\": [\"incident\", \"{severity-label}\"],\n  \"assignees\": [\"{oncall-from-runbook}\"]\n}\n```\nSeverity labels: P1-critical, P2-high, P3-medium, P4-low\n\n### Step 9: State Tracking\nWrite to `./state/incidents.json`:\n```json\n{\n  \"fingerprint\": \"abc123\",\n  \"alert_name\": \"HighCPUUsage\",\n  \"status\": \"escalated\",\n  \"started_at\": \"2024-01-15T10:30:00Z\",\n  \"last_updated\": \"2024-01-15T10:31:00Z\",\n  \"slack_ts\": \"1705312200.000100\",\n  \"github_issue\": \"https://github.com/org/repo/issues/42\",\n  \"diagnostics_summary\": \"2/3 passed\"\n}\n```\n\n## Tool Usage Guide\n\n### Notion (via http_request + notion connector)\n- **Database query**: `POST /databases/{db_id}/query` — filter by alert name\n- **Page retrieval**: `GET /pages/{page_id}` — full runbook content\n- **Block children**: `GET /blocks/{block_id}/children` — get page content blocks\n- Always include `Notion-Version: 2022-06-28` header\n\n### Slack (via http_request + slack connector)\n- **Post message**: `POST /chat.postMessage` — incident reports\n- **Update message**: `POST /chat.update` — update with resolution\n- **Add reaction**: `POST /reactions.add` — severity indicators\n- **Thread reply**: `POST /chat.postMessage` with `thread_ts` — diagnostic updates\n\n### GitHub (via http_request + github connector)\n- **Create issue**: `POST /repos/{owner}/{repo}/issues`\n- **Update issue**: `PATCH /repos/{owner}/{repo}/issues/{number}`\n- **Add comment**: `POST /repos/{owner}/{repo}/issues/{number}/comments`\n- **Add labels**: `POST /repos/{owner}/{repo}/issues/{number}/labels`\n\n### Local State (via file_read / file_write)\n- `./state/incidents.json` — active incident tracking\n- `./cache/runbooks.json` — cached runbook lookups (TTL: 1 hour)\n- `./logs/malformed_webhooks.json` — malformed payload log\n- `./state/undelivered/` — failed Slack messages for retry\n\n## Error Handling\n\n- **API rate limits (429)**: Exponential backoff — 1s, 3s, 9s, max 3 retries\n- **Network failures**: Record as 'inconclusive', continue pipeline\n- **Missing runbook**: Use generic diagnostics, flag as unmatched in Slack\n- **Slack failures**: Queue to local file, retry next cycle\n- **GitHub failures**: Fall back to Slack message with manual escalation request\n- **Malformed webhooks**: Log raw payload, post warning, skip gracefully\n- **State corruption**: Reinitialize state file, warn about potential duplicates\n\n## Severity Mapping\n\n| Prometheus Severity | Slack Format | GitHub Label | Auto-Escalate |\n|---|---|---|---|\n| critical | 🔴 Red + @channel | P1-critical | Always |\n| warning | 🟡 Yellow | P2-high | On diagnostic failure |\n| info | 🔵 Blue | P3-medium | Never (monitor only) |",
-    "summary": "The SRE Runbook Executor is an autonomous incident-response agent that receives Prometheus Alertmanager webhooks, looks up matching runbooks in a Notion database, executes the diagnostic steps defined in each runbook via HTTP checks and PromQL queries, posts structured findings to Slack with severity-based formatting, and creates GitHub issues for incidents that require human escalation. It maintains local state for deduplication and incident correlation across alert firing and resolution cycles, and includes robust error handling with retry logic, fallback paths, and graceful degradation when any integration point is unavailable.",
+    "full_prompt_markdown": "# SRE Runbook Executor — System Prompt\n\n## Identity\n\nYou are the **SRE Runbook Executor**, an autonomous incident response agent operating within a site reliability engineering pipeline. You are the first automated responder to Prometheus alerts, designed to eliminate the delay between alert firing and initial diagnostic action.\n\nYour mission: transform raw Prometheus alert signals into structured, evidence-backed incident reports — complete with automated diagnostics, team notifications, and tracked GitHub issues — without requiring human intervention for first-response triage.\n\nYou embody SRE best practices: every alert triggers a consistent, documented, reproducible response. You reduce alert fatigue by providing immediate diagnostic context alongside every notification, so on-call engineers receive actionable intelligence rather than raw noise.\n\n---\n\n## Trigger Context\n\nYou are invoked by an Alertmanager webhook. The incoming payload is a JSON object with this structure:\n\n```json\n{\n  \"version\": \"4\",\n  \"status\": \"firing\",\n  \"receiver\": \"sre-runbook-executor\",\n  \"alerts\": [\n    {\n      \"status\": \"firing\",\n      \"labels\": {\n        \"alertname\": \"HighCPUUsage\",\n        \"severity\": \"critical\",\n        \"instance\": \"app-server-01:9100\",\n        \"job\": \"node-exporter\"\n      },\n      \"annotations\": {\n        \"summary\": \"CPU usage above 90% for 5 minutes\",\n        \"description\": \"Instance app-server-01 CPU usage is at 94.2%\"\n      },\n      \"startsAt\": \"2024-01-15T10:30:00Z\",\n      \"generatorURL\": \"http://prometheus:9090/graph?...\",\n      \"fingerprint\": \"abc123def456\"\n    }\n  ]\n}\n```\n\nProcess each alert in the `alerts` array independently.\n\n---\n\n## Step-by-Step Response Protocol\n\n### 1. Parse and Classify the Alert\n\nExtract from each alert object:\n- `alertname` — primary identifier for runbook lookup\n- `severity` — critical / warning / info\n- `instance` + `job` — affected infrastructure component\n- `summary` + `description` — human-readable context\n- `status` — firing or resolved (resolved alerts follow the resolution path)\n- `startsAt` — incident start time\n- `generatorURL` — direct link to Prometheus expression\n- `fingerprint` — unique ID for correlating firing/resolved pairs\n\n### 2. Look Up the Runbook in Notion\n\nQuery the Notion runbook database:\n\n```\nPOST https://api.notion.com/v1/databases/{NOTION_RUNBOOK_DB_ID}/query\nHeaders: Authorization: Bearer {notion_token}, Notion-Version: 2022-06-28\nBody: {\n  \"filter\": {\n    \"property\": \"Alert Name\",\n    \"rich_text\": { \"equals\": \"{alertname}\" }\n  }\n}\n```\n\nIf a matching runbook page is found, retrieve its content blocks:\n```\nGET https://api.notion.com/v1/blocks/{page_id}/children\n```\n\nExtract from the runbook:\n- **Diagnostic Steps**: ordered list of HTTP checks to perform\n- **Healthy Thresholds**: expected pass criteria for each check\n- **Slack Channel**: target channel for this alert type\n- **Escalation Criteria**: conditions that require human escalation\n\n### 3. Handle Missing Runbook (Immediate Escalation)\n\nIf no runbook matches:\n1. Post urgent Slack message to `#sre-incidents` noting the missing runbook\n2. Include full raw alert details in the message\n3. Skip to Step 7 — create GitHub issue with labels `incident` + `needs-runbook`\n4. Add a note to agent memory: `{alertname}: no runbook — needs creation`\n\n### 4. Execute Diagnostic Steps\n\nFor each diagnostic step in the runbook, execute the prescribed HTTP check:\n\n```\nGET https://{service-host}/{diagnostic-endpoint}\n```\n\nRecord for each check:\n- HTTP status code\n- Response time (ms)\n- Key metric values from response body\n- Pass/Fail against runbook threshold\n\nIf a diagnostic HTTP call fails with a network error or unexpected status, mark it as **INCONCLUSIVE** (not FAILED) and continue.\n\n### 5. Determine Incident State\n\nBased on diagnostic results:\n- **AUTO-RESOLVED**: All checks pass thresholds → notify Slack, no GitHub issue\n- **DEGRADED**: Some checks fail but within tolerance → yellow Slack alert, no GitHub issue unless runbook specifies\n- **CRITICAL**: Multiple checks fail OR threshold breach detected OR >50% INCONCLUSIVE → red Slack alert + GitHub issue creation\n\n### 6. Post Findings to Slack\n\nSend a rich Block Kit message to the runbook's designated Slack channel (fallback: `#sre-incidents`):\n\n```\nPOST https://slack.com/api/chat.postMessage\nHeaders: Authorization: Bearer {bot_token}\nBody: {\n  \"channel\": \"#{channel}\",\n  \"blocks\": [\n    { \"type\": \"header\", \"text\": { \"type\": \"plain_text\", \"text\": \"🔴 CRITICAL: {alertname}\" }},\n    { \"type\": \"section\", \"fields\": [\n      { \"type\": \"mrkdwn\", \"text\": \"*Instance:* {instance}\" },\n      { \"type\": \"mrkdwn\", \"text\": \"*Severity:* {severity}\" },\n      { \"type\": \"mrkdwn\", \"text\": \"*Started:* {startsAt}\" },\n      { \"type\": \"mrkdwn\", \"text\": \"*State:* {incident_state}\" }\n    ]},\n    { \"type\": \"section\", \"text\": { \"type\": \"mrkdwn\", \"text\": \"{diagnostic_results_table}\" }},\n    { \"type\": \"actions\", \"elements\": [\n      { \"type\": \"button\", \"text\": { \"type\": \"plain_text\", \"text\": \"View in Prometheus\" }, \"url\": \"{generatorURL}\" },\n      { \"type\": \"button\", \"text\": { \"type\": \"plain_text\", \"text\": \"GitHub Issue\" }, \"url\": \"{github_issue_url}\" }\n    ]}\n  ]\n}\n```\n\nCapture the response `ts` (timestamp) for threading follow-up messages.\n\n### 7. Create GitHub Issue for Unresolved Incidents\n\nFor DEGRADED or CRITICAL incidents:\n\n```\nPOST https://api.github.com/repos/{owner}/{repo}/issues\nHeaders: Authorization: Bearer {github_pat}, Accept: application/vnd.github+json\nBody: {\n  \"title\": \"[INCIDENT] {alertname} — {severity} — {instance}\",\n  \"body\": \"## Alert Details\\n\\n| Field | Value |\\n|-------|-------|\\n| Alert | {alertname} |\\n| Severity | {severity} |\\n| Instance | {instance} |\\n| Started | {startsAt} |\\n| Generator | [{generatorURL}]({generatorURL}) |\\n\\n## Summary\\n{description}\\n\\n## Diagnostic Results\\n{full_diagnostic_table}\\n\\n## Runbook Reference\\nNotion: [{runbook_title}]({notion_page_url})\\n\\n## Suggested Next Steps\\n{escalation_criteria_from_runbook}\",\n  \"labels\": [\"incident\", \"{severity}\", \"{affected_service}\"]\n}\n```\n\n### 8. Resolution Path\n\nWhen a `status: resolved` webhook arrives:\n1. Search GitHub for open issue: `GET https://api.github.com/repos/{owner}/{repo}/issues?state=open&labels=incident` — find by `[INCIDENT] {alertname}` in title\n2. Post resolution comment to the issue with resolved timestamp\n3. Close the issue: `PATCH https://api.github.com/repos/{owner}/{repo}/issues/{number}` with `{\"state\": \"closed\"}`\n4. Reply to the original Slack thread with a ✅ resolved notification\n\n### 9. Update Notion Runbook\n\nAfter each incident, update the Notion runbook page's `Last Incident` date property and append an incident outcome note to the page body:\n\n```\nPATCH https://api.notion.com/v1/pages/{page_id}\nBody: { \"properties\": { \"Last Incident\": { \"date\": { \"start\": \"{today}\" }}}}\n```\n\n---\n\n## Error Handling\n\n- **Malformed payload**: Post raw alert to #sre-incidents with 'Manual review required'\n- **Notion query failure**: Treat as no runbook, escalate immediately, retry once after 5s\n- **Diagnostic HTTP errors**: Mark checks INCONCLUSIVE, escalate if >50% inconclusive\n- **Slack rate limit (429)**: Retry up to 3 times with Retry-After header delay\n- **GitHub failure**: Write fallback JSON to `/tmp/github_fallback_{alertname}_{timestamp}.json` using file_write\n- **Resolved alert, no matching issue**: Post resolution to Slack only, log discrepancy\n\n---\n\n## Configuration Variables\n\nSet these in your environment/connectors before deploying:\n- `NOTION_RUNBOOK_DB_ID`: The Notion database ID containing your runbook entries\n- `GITHUB_OWNER` / `GITHUB_REPO`: Target repository for incident issues\n- `DEFAULT_SLACK_CHANNEL`: Fallback channel if runbook doesn't specify one (e.g., `#sre-incidents`)\n- `ONCALL_SLACK_USER`: Slack user ID to @mention for critical incidents",
+    "summary": "The SRE Runbook Executor is an autonomous incident response agent that activates on every Prometheus/Alertmanager webhook event. It queries a Notion runbook database to find alert-specific diagnostic instructions, executes prescribed HTTP health checks against affected services, analyzes results against documented thresholds, and posts structured Block Kit findings to targeted Slack channels. For unresolved incidents classified as degraded or critical, it automatically creates detailed GitHub issues with full diagnostic evidence, runbook references, and suggested escalation steps. On alert resolution, it closes the corresponding GitHub issue and posts a thread update to Slack — completing the full incident lifecycle without human intervention for first-response triage.",
     "design_highlights": [
       {
-        "category": "Incident Response",
-        "icon": "🚨",
-        "color": "red",
-        "items": [
-          "Automated alert parsing from Alertmanager webhooks",
-          "Fingerprint-based deduplication prevents alert storms",
-          "Severity-aware escalation with configurable thresholds",
-          "Resolution tracking closes the full incident lifecycle"
-        ]
-      },
-      {
-        "category": "Runbook Automation",
-        "icon": "📖",
+        "category": "Intelligent Alert Routing",
+        "icon": "🎯",
         "color": "blue",
         "items": [
-          "Notion database as single source of truth for runbooks",
-          "Alert-to-runbook matching by alert name property",
-          "Structured diagnostic step execution with pass/fail tracking",
-          "Cached runbook lookups to reduce API calls"
+          "Matches each Prometheus alertname to a specific Notion runbook entry",
+          "Falls back to generic escalation when no runbook exists, and flags the gap",
+          "Handles both 'firing' and 'resolved' alert status for full lifecycle tracking",
+          "Supports batch alert processing — handles multiple alerts per webhook payload"
         ]
       },
       {
-        "category": "Observability & Reporting",
-        "icon": "📊",
-        "color": "green",
-        "items": [
-          "Slack Block Kit formatted incident reports",
-          "Severity-based visual indicators and channel mentions",
-          "Threaded diagnostic updates for ongoing incidents",
-          "GitHub issues with full diagnostic context and auto-assignment"
-        ]
-      },
-      {
-        "category": "Resilience & Error Handling",
-        "icon": "🛡️",
+        "category": "Automated Diagnostics",
+        "icon": "🔬",
         "color": "purple",
         "items": [
-          "Exponential backoff retry for all external API calls",
-          "Graceful fallback paths when integrations are unavailable",
-          "Local state persistence for crash recovery",
-          "Malformed webhook logging without pipeline interruption"
+          "Executes runbook-defined HTTP diagnostic steps against live service endpoints",
+          "Records status codes, response times, and metric values for each check",
+          "Classifies results as PASS, FAIL, or INCONCLUSIVE with threshold comparison",
+          "Escalates automatically when >50% of diagnostic steps are inconclusive"
+        ]
+      },
+      {
+        "category": "Structured Incident Documentation",
+        "icon": "📋",
+        "color": "green",
+        "items": [
+          "Creates GitHub issues with full diagnostic evidence tables and runbook links",
+          "Posts rich Slack Block Kit messages with severity badges and action buttons",
+          "Auto-closes GitHub issues and threads Slack replies on alert resolution",
+          "Updates Notion runbook 'Last Incident' date for operational history tracking"
+        ]
+      },
+      {
+        "category": "Resilient Error Handling",
+        "icon": "🛡️",
+        "color": "orange",
+        "items": [
+          "Retries Slack API calls with Retry-After header respect on rate limiting",
+          "Writes GitHub issue fallback data to local filesystem if API fails",
+          "Treats network diagnostic failures as INCONCLUSIVE rather than false positives",
+          "Never drops alerts — malformed payloads still trigger fallback Slack notifications"
         ]
       }
     ],
@@ -103,16 +113,18 @@
             "key": "bot_token",
             "label": "Bot User OAuth Token",
             "type": "password",
-            "placeholder": "xoxb-1234567890-abcdefghij",
-            "helpText": "Go to api.slack.com/apps → your app → OAuth & Permissions → Bot User OAuth Token. Required scopes: chat:write, chat:update, reactions:write, channels:read.",
+            "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
+            "helpText": "Go to api.slack.com/apps → select your app → OAuth & Permissions → Bot User OAuth Token. Your app needs chat:write, chat:write.public, and channels:read scopes.",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to api.slack.com/apps and create a new app (or select existing).\n2. Under 'OAuth & Permissions', add these Bot Token Scopes: chat:write, chat:update, reactions:write, channels:read.\n3. Install the app to your workspace.\n4. Copy the 'Bot User OAuth Token' (starts with xoxb-).\n5. Invite the bot to your incident channel: /invite @your-bot-name in #sre-alerts.\n6. Paste the token above.",
+        "setup_instructions": "1. Go to api.slack.com/apps and click 'Create New App' → 'From scratch'.\n2. Name your app (e.g., 'SRE Runbook Executor') and select your workspace.\n3. Under 'OAuth & Permissions', scroll to 'Bot Token Scopes' and add: chat:write, chat:write.public, channels:read.\n4. Click 'Install to Workspace' and authorize.\n5. Copy the 'Bot User OAuth Token' (starts with xoxb-) and paste it here.\n6. Invite the bot to your target channels: /invite @SRE-Runbook-Executor in #sre-incidents and any runbook-specific channels.",
         "related_tools": [
           "http_request"
         ],
-        "related_triggers": [],
+        "related_triggers": [
+          0
+        ],
         "api_base_url": "https://slack.com/api"
       },
       {
@@ -124,8 +136,8 @@
             "key": "token",
             "label": "Personal Access Token",
             "type": "password",
-            "placeholder": "github_pat_xxxxxxxxxxxx",
-            "helpText": "Go to GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Required permissions: Issues (read/write) on the target incident repository.",
+            "placeholder": "github_pat_xxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "helpText": "Go to GitHub Settings → Developer settings → Personal access tokens → Fine-grained tokens. Grant Read and Write access to Issues on your incident tracking repository.",
             "required": true
           },
           {
@@ -133,23 +145,25 @@
             "label": "Repository Owner",
             "type": "text",
             "placeholder": "my-org",
-            "helpText": "The GitHub organization or username that owns the incident repository.",
+            "helpText": "The GitHub organization or username that owns the incident tracking repository.",
             "required": true
           },
           {
             "key": "repo",
-            "label": "Incident Repository",
+            "label": "Repository Name",
             "type": "text",
             "placeholder": "incidents",
-            "helpText": "The repository name where incident issues will be created.",
+            "helpText": "The name of the GitHub repository where incident issues will be created (e.g., 'incidents', 'sre-ops').",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens.\n2. Click 'Generate new token'.\n3. Set repository access to 'Only select repositories' and choose your incident repo.\n4. Under Permissions → Repository permissions, set Issues to 'Read and write'.\n5. Generate the token and copy it (starts with github_pat_).\n6. Enter the token, repository owner, and repository name above.",
+        "setup_instructions": "1. Go to github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens.\n2. Click 'Generate new token'. Set an expiration (recommend 1 year).\n3. Under 'Repository access', select 'Only select repositories' and choose your incident tracking repo.\n4. Under 'Permissions → Repository permissions', set Issues to 'Read and write'.\n5. Click 'Generate token' and copy the value immediately (it won't be shown again).\n6. Paste the token here along with your organization/username and repository name.",
         "related_tools": [
           "http_request"
         ],
-        "related_triggers": [],
+        "related_triggers": [
+          0
+        ],
         "api_base_url": "https://api.github.com"
       },
       {
@@ -161,51 +175,467 @@
             "key": "token",
             "label": "Internal Integration Token",
             "type": "password",
-            "placeholder": "ntn_xxxxxxxxxxxx",
-            "helpText": "Go to notion.so/my-integrations → create or select integration → copy the Internal Integration Token (starts with ntn_).",
+            "placeholder": "secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "helpText": "Go to notion.so/my-integrations → Create new integration → select your workspace → copy the 'Internal Integration Token' (starts with 'secret_').",
             "required": true
           },
           {
             "key": "runbook_database_id",
             "label": "Runbook Database ID",
             "type": "text",
-            "placeholder": "a1b2c3d4e5f6...",
-            "helpText": "Open your runbook database in Notion → copy the 32-character ID from the URL: notion.so/{workspace}/{DATABASE_ID}?v=...",
+            "placeholder": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "helpText": "Open your Notion runbook database → click Share → Copy link. The 32-character ID appears in the URL between the last slash and the question mark.",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to notion.so/my-integrations and create a new integration.\n2. Give it a name like 'SRE Runbook Bot' and select your workspace.\n3. Copy the Internal Integration Token (starts with ntn_).\n4. Open your runbook database in Notion.\n5. Click '...' menu → 'Connections' → add your integration.\n6. The database must have an 'Alert Name' text property that matches Prometheus alert names.\n7. Recommended additional properties: Priority (number), Diagnostic Steps (rich text), Escalation Policy (select), On-Call Team (text).\n8. Copy the database ID from the URL and enter both values above.",
+        "setup_instructions": "1. Go to notion.so/my-integrations and click '+ New integration'.\n2. Name it 'SRE Runbook Executor', select your workspace, set type to 'Internal'.\n3. Under Capabilities, enable 'Read content' and 'Update content'.\n4. Click Save and copy the 'Internal Integration Token'.\n5. Open your Notion runbook database. Click the '...' menu → Connections → find and connect your integration.\n6. Copy the database ID from the URL (the 32-character alphanumeric string).\n7. Ensure your runbook database has these properties: 'Alert Name' (title), 'Severity' (select), 'Slack Channel' (text), 'Last Incident' (date). Diagnostic steps are written as numbered lists in the page body.",
         "related_tools": [
           "http_request"
         ],
-        "related_triggers": [],
+        "related_triggers": [
+          0
+        ],
         "api_base_url": "https://api.notion.com/v1"
       }
     ],
     "suggested_notification_channels": [
       {
         "type": "slack",
-        "description": "Primary incident notification channel for posting alert diagnostics, status updates, and resolution messages to the SRE team.",
+        "description": "Primary incident alerting channel — receives structured Block Kit incident reports with diagnostic results and action buttons for every firing alert",
         "required_connector": "slack",
         "config_hints": {
-          "channel": "#sre-alerts",
-          "mention_on_critical": "@channel",
-          "thread_updates": true
+          "channel": "#sre-incidents",
+          "message_format": "Block Kit with severity header, diagnostic table, and Prometheus/GitHub links",
+          "thread_replies": true
+        }
+      },
+      {
+        "type": "slack",
+        "description": "Critical escalation channel for P0/P1 incidents requiring immediate on-call response — receives alerts when diagnostic checks fail critically",
+        "required_connector": "slack",
+        "config_hints": {
+          "channel": "#sre-oncall",
+          "trigger_condition": "severity === 'critical' && incident_state === 'CRITICAL'",
+          "mention": "@oncall-engineer"
         }
       }
     ],
     "suggested_event_subscriptions": [
       {
-        "event_type": "execution_started",
-        "description": "Track when the runbook executor begins processing an alert to monitor pipeline health and execution frequency."
+        "event_type": "persona_error",
+        "description": "Subscribe to agent execution errors so the team is notified if the runbook executor itself fails to process an alert — ensuring no alert is silently dropped"
       },
       {
-        "event_type": "execution_completed",
-        "description": "Track completed executions to measure success rates, diagnostic pass/fail ratios, and escalation frequency."
+        "event_type": "execution_complete",
+        "description": "Subscribe to execution completion events to track mean-time-to-respond metrics and log incident response outcomes to the observability dashboard"
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_1",
+        "name": "Alert Firing — Runbook Found & Diagnostics Executed",
+        "description": "The primary happy path: an Alertmanager webhook fires, the runbook is found in Notion, diagnostics are executed, findings are posted to Slack, and a GitHub issue is created if the incident is unresolved.",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Alertmanager webhook fires",
+            "detail": "POST request received with Alertmanager JSON payload containing one or more firing alerts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Parse alert payload",
+            "detail": "Extract alertname, severity, instance, job, summary, description, startsAt, generatorURL, and fingerprint from each alert in the alerts[] array"
+          },
+          {
+            "id": "n3",
+            "type": "connector",
+            "label": "Query Notion runbook DB",
+            "detail": "POST /databases/{id}/query with filter matching Alert Name property to the alertname. Also fetch page body blocks to extract diagnostic steps.",
+            "connector": "notion"
+          },
+          {
+            "id": "n4",
+            "type": "decision",
+            "label": "Runbook found?",
+            "detail": "Check if Notion query returned at least one matching runbook page for this alertname"
+          },
+          {
+            "id": "n5",
+            "type": "action",
+            "label": "Extract diagnostic steps",
+            "detail": "Parse numbered list blocks from Notion page body to get ordered diagnostic HTTP checks, thresholds, Slack channel target, and escalation criteria"
+          },
+          {
+            "id": "n6",
+            "type": "connector",
+            "label": "Execute HTTP diagnostic checks",
+            "detail": "For each diagnostic step in the runbook, make HTTP GET/POST requests to service health endpoints. Record status codes, response times, and metric values.",
+            "connector": "notion"
+          },
+          {
+            "id": "n7",
+            "type": "decision",
+            "label": "All diagnostics pass?",
+            "detail": "Evaluate collected results against runbook thresholds. Classify as AUTO-RESOLVED (all pass), DEGRADED (partial failure), or CRITICAL (major failure or >50% inconclusive)"
+          },
+          {
+            "id": "n8",
+            "type": "connector",
+            "label": "Post findings to Slack",
+            "detail": "POST https://slack.com/api/chat.postMessage with Block Kit message containing severity badge, instance info, full diagnostic results table, and action buttons linking to Prometheus and GitHub",
+            "connector": "slack"
+          },
+          {
+            "id": "n9",
+            "type": "connector",
+            "label": "Create GitHub incident issue",
+            "detail": "POST https://api.github.com/repos/{owner}/{repo}/issues with title '[INCIDENT] {alertname} — {severity}', full diagnostic table in body, and labels: incident, severity level, affected service",
+            "connector": "github"
+          },
+          {
+            "id": "n10",
+            "type": "connector",
+            "label": "Update Notion runbook",
+            "detail": "PATCH https://api.notion.com/v1/pages/{page_id} to update Last Incident date property and append incident outcome summary to page body",
+            "connector": "notion"
+          },
+          {
+            "id": "n11",
+            "type": "event",
+            "label": "Emit incident_created event",
+            "detail": "Publish execution event with incident metadata: alertname, severity, incident_state, github_issue_url, slack_message_ts for observability tracking"
+          },
+          {
+            "id": "n12",
+            "type": "end",
+            "label": "Incident documented and team notified",
+            "detail": "All response actions complete. On-call team has Slack notification with diagnostics and GitHub issue for tracking."
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5",
+            "label": "Runbook found",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e6",
+            "source": "n6",
+            "target": "n7"
+          },
+          {
+            "id": "e7",
+            "source": "n7",
+            "target": "n8",
+            "label": "All pass (auto-resolved)",
+            "variant": "yes"
+          },
+          {
+            "id": "e8",
+            "source": "n7",
+            "target": "n9",
+            "label": "Degraded or critical",
+            "variant": "no"
+          },
+          {
+            "id": "e9",
+            "source": "n8",
+            "target": "n10"
+          },
+          {
+            "id": "e10",
+            "source": "n9",
+            "target": "n8"
+          },
+          {
+            "id": "e11",
+            "source": "n10",
+            "target": "n11"
+          },
+          {
+            "id": "e12",
+            "source": "n11",
+            "target": "n12"
+          }
+        ]
       },
       {
-        "event_type": "execution_failed",
-        "description": "Alert on pipeline failures so the team knows when the runbook executor itself needs attention — prevents silent failures."
+        "id": "flow_2",
+        "name": "No Runbook Found — Immediate Escalation",
+        "description": "When an alert fires for which no Notion runbook entry exists, the agent escalates immediately to the on-call team and creates a GitHub issue flagged for runbook creation.",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Alertmanager webhook fires",
+            "detail": "POST received with alert payload. alertname does not match any existing Notion runbook entry."
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Parse alert payload",
+            "detail": "Extract all available alert metadata from the webhook payload for inclusion in escalation messages"
+          },
+          {
+            "id": "n3",
+            "type": "connector",
+            "label": "Query Notion runbook DB",
+            "detail": "POST /databases/{id}/query — returns empty results array, confirming no matching runbook exists for this alertname",
+            "connector": "notion"
+          },
+          {
+            "id": "n4",
+            "type": "decision",
+            "label": "Runbook found?",
+            "detail": "Notion query returned zero results — no runbook exists for this alert type"
+          },
+          {
+            "id": "n5",
+            "type": "connector",
+            "label": "Post urgent Slack escalation",
+            "detail": "POST https://slack.com/api/chat.postMessage to #sre-incidents with red CRITICAL header, full raw alert details, and message: 'No runbook found — immediate attention required. Runbook creation needed.'",
+            "connector": "slack"
+          },
+          {
+            "id": "n6",
+            "type": "connector",
+            "label": "Create GitHub issue with needs-runbook label",
+            "detail": "POST https://api.github.com/repos/{owner}/{repo}/issues with labels: ['incident', 'needs-runbook', severity]. Body includes full alert payload and note that automated diagnostics were skipped due to missing runbook.",
+            "connector": "github"
+          },
+          {
+            "id": "n7",
+            "type": "action",
+            "label": "Log to agent memory",
+            "detail": "Store in agent memory: alertname, timestamp, and note 'No runbook — needs creation'. This ensures repeated no-runbook alerts are tracked for prioritization."
+          },
+          {
+            "id": "n8",
+            "type": "event",
+            "label": "Emit runbook_missing event",
+            "detail": "Publish event indicating a runbook gap was detected for this alertname — can trigger secondary workflows to notify the team to create the runbook"
+          },
+          {
+            "id": "n9",
+            "type": "end",
+            "label": "Escalated without diagnostics",
+            "detail": "Team notified via Slack and GitHub. Runbook creation tracked as action item."
+          },
+          {
+            "id": "n10",
+            "type": "error",
+            "label": "Notion query failed",
+            "error_message": "Notion API returned 5xx or timed out — treating as no-runbook and escalating"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5",
+            "label": "No runbook",
+            "variant": "no"
+          },
+          {
+            "id": "e5",
+            "source": "n3",
+            "target": "n10",
+            "label": "API error",
+            "variant": "error"
+          },
+          {
+            "id": "e6",
+            "source": "n10",
+            "target": "n5",
+            "variant": "error"
+          },
+          {
+            "id": "e7",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e8",
+            "source": "n6",
+            "target": "n7"
+          },
+          {
+            "id": "e9",
+            "source": "n7",
+            "target": "n8"
+          },
+          {
+            "id": "e10",
+            "source": "n8",
+            "target": "n9"
+          }
+        ]
+      },
+      {
+        "id": "flow_3",
+        "name": "Alert Resolved — Incident Closure",
+        "description": "When Alertmanager sends a resolved status webhook, the agent finds the corresponding GitHub issue, closes it with a resolution comment, and updates the Slack thread.",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Resolved webhook received",
+            "detail": "Alertmanager sends POST with status: 'resolved' and the same alertname, instance, and fingerprint as the original firing alert"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Parse resolved alert payload",
+            "detail": "Extract alertname, instance, fingerprint, endsAt timestamp. Confirm status is 'resolved' — not 'firing'."
+          },
+          {
+            "id": "n3",
+            "type": "connector",
+            "label": "Search GitHub for open incident issue",
+            "detail": "GET https://api.github.com/repos/{owner}/{repo}/issues?state=open&labels=incident — search response titles for '[INCIDENT] {alertname}' matching this instance",
+            "connector": "github"
+          },
+          {
+            "id": "n4",
+            "type": "decision",
+            "label": "Matching issue found?",
+            "detail": "Check if any open GitHub issue title contains the alertname from the resolved alert"
+          },
+          {
+            "id": "n5",
+            "type": "connector",
+            "label": "Post resolution comment to GitHub",
+            "detail": "POST https://api.github.com/repos/{owner}/{repo}/issues/{number}/comments with body: '✅ Alert resolved at {endsAt}. Duration: {duration}. Auto-closed by SRE Runbook Executor.'",
+            "connector": "github"
+          },
+          {
+            "id": "n6",
+            "type": "connector",
+            "label": "Close GitHub issue",
+            "detail": "PATCH https://api.github.com/repos/{owner}/{repo}/issues/{number} with body {\"state\": \"closed\", \"state_reason\": \"completed\"}",
+            "connector": "github"
+          },
+          {
+            "id": "n7",
+            "type": "connector",
+            "label": "Post Slack resolution message",
+            "detail": "POST https://slack.com/api/chat.postMessage with thread_ts from original incident message. Content: '✅ RESOLVED: {alertname} on {instance}. Duration: {duration}. Issue #{number} closed.'",
+            "connector": "slack"
+          },
+          {
+            "id": "n8",
+            "type": "action",
+            "label": "No matching issue — log discrepancy",
+            "detail": "No open GitHub issue found for this alertname. Log in agent memory: 'Resolved alert received with no matching open issue — may have been manually closed.' Post brief Slack note to #sre-incidents."
+          },
+          {
+            "id": "n9",
+            "type": "event",
+            "label": "Emit incident_resolved event",
+            "detail": "Publish event with alertname, resolution timestamp, total duration, and GitHub issue number for MTTR metrics tracking"
+          },
+          {
+            "id": "n10",
+            "type": "end",
+            "label": "Incident fully closed",
+            "detail": "GitHub issue closed, Slack thread updated with resolution. Full incident lifecycle documented."
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5",
+            "label": "Issue found",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n8",
+            "label": "No issue found",
+            "variant": "no"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7"
+          },
+          {
+            "id": "e8",
+            "source": "n7",
+            "target": "n9"
+          },
+          {
+            "id": "e9",
+            "source": "n8",
+            "target": "n9"
+          },
+          {
+            "id": "e10",
+            "source": "n9",
+            "target": "n10"
+          }
+        ]
       }
     ]
   }

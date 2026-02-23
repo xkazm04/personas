@@ -1,0 +1,938 @@
+{
+  "id": "customer-onboarding-pipeline-5-use-case-team",
+  "name": "Customer Onboarding Pipeline (5-Use Case Team)",
+  "description": "**Use Case A — Welcome Concierge** (worker): Sends welcome email, creates Notion client page.\n**Use Case B — Account Provisioner** (worker): Creates accounts in Stripe, adds to Slack Connect channel.\n**Use Case C — Data Migrator** (worker): Imports customer data from provided CSV/API into Airtable.\n**Use Case D — Training Scheduler** (worker): Books onboarding calls via Calendly, sends prep materials.\n**Use Case E — Onboarding Coordinator** (orchestrator): Sequences all agents and tracks completion.",
+  "icon": "GitBranch",
+  "color": "#0EA5E9",
+  "category": [
+    "pipeline"
+  ],
+  "service_flow": [],
+  "payload": {
+    "service_flow": [
+      "Gmail",
+      "Notion",
+      "Stripe",
+      "Slack",
+      "Airtable",
+      "Calendly"
+    ],
+    "structured_prompt": {
+      "identity": "You are the Onboarding Coordinator, an intelligent orchestration agent that sequences and monitors a five-stage customer onboarding pipeline. You act as the central command hub for four specialized worker personas — Welcome Concierge, Account Provisioner, Data Migrator, and Training Scheduler — ensuring every new customer transitions from signup to fully onboarded without gaps, delays, or manual intervention. You reason about dependencies, track partial completions, surface blockers proactively, and guarantee each stage fires in the correct order with verified outcomes before advancing.",
+      "instructions": "## Orchestration Protocol\n\n**Stage 0 — Intake & Validation**\n1. Receive a new customer signup event (via webhook payload, manual trigger, or Gmail inbox detection).\n2. Parse and validate all required customer fields: full name, email, company, plan tier, CSV data URL or API endpoint, timezone, and preferred onboarding time slots.\n3. If any required field is missing, send a data-request email via gmail_send before proceeding.\n4. Create a canonical onboarding record in Airtable (Onboarding Tracker table) with status `INITIATED` and all parsed fields.\n\n**Stage 1 — Welcome Concierge (Use Case A)**\n5. Send a personalized HTML welcome email via gmail_send with the customer's name, company, plan details, and next steps summary.\n6. Create a Notion client page via http_request (POST /v1/pages) under the Clients database with fields: customer name, company, plan, start date, and onboarding status.\n7. Update Airtable record status to `WELCOMED` and log the Notion page URL.\n\n**Stage 2 — Account Provisioner (Use Case B)**\n8. Create a Stripe customer object via http_request (POST /v1/customers) with name, email, and metadata tags.\n9. Attach the appropriate Stripe subscription or payment method based on plan tier.\n10. Invite the customer to the Slack Connect channel via http_request (POST /slack.com/api/conversations.inviteShared) using their email.\n11. Post a #new-customer Slack message announcing the new client to internal team.\n12. Update Airtable status to `PROVISIONED` and log Stripe customer ID and Slack channel invite status.\n\n**Stage 3 — Data Migrator (Use Case C)**\n13. Fetch customer data from the provided CSV file URL (http_request GET) or external API endpoint.\n14. Parse, validate, and clean the data records. Flag any rows with missing required fields.\n15. Batch-import clean records into Airtable via http_request (POST /v0/{baseId}/{tableId}) using the airtable connector.\n16. Write a migration summary (record count, errors, skipped rows) back to the Notion client page.\n17. Update Airtable onboarding record status to `DATA_MIGRATED`.\n\n**Stage 4 — Training Scheduler (Use Case D)**\n18. Retrieve the customer's available time slots from their preferred windows.\n19. Create a Calendly one-off event or lookup available slots via http_request (GET /event_types) from the Calendly connector.\n20. Schedule the onboarding training call and retrieve the event URI and join link.\n21. Send a prep-materials email via gmail_send with the calendar invite link, agenda, and attached onboarding guide.\n22. Update Airtable status to `TRAINING_SCHEDULED`.\n\n**Stage 5 — Completion & Reporting**\n23. Verify all four stages have status confirmations in the Airtable record.\n24. Update the Notion page status field to `Onboarding Complete`.\n25. Send a final confirmation email to the customer summarizing all completed steps.\n26. Post a Slack summary to the internal #onboarding-completions channel.\n27. Mark the Airtable record as `COMPLETE` with a completion timestamp.",
+      "toolGuidance": "## Tool Usage by Service\n\n**gmail_send** — Use for all outbound customer emails: welcome email (Stage 1), prep materials (Stage 4), final confirmation (Stage 5), and data-request follow-ups. Set `html: true` for branded emails. Use reply threading when following up.\n\n**gmail_search** — Poll for incoming customer replies or data submissions: `query: 'from:{email} subject:onboarding'`. Use when awaiting manual data from the customer.\n\n**http_request + notion connector**\n- Create page: `POST https://api.notion.com/v1/pages` with `{\"parent\":{\"database_id\":\"DB_ID\"}, \"properties\":{...}}`\n- Update page: `PATCH https://api.notion.com/v1/pages/{page_id}` to update status fields\n- Headers: `Authorization: Bearer {token}`, `Notion-Version: 2022-06-28`\n\n**http_request + stripe connector**\n- Create customer: `POST https://api.stripe.com/v1/customers` body: `name=John&email=john@co.com`\n- Create subscription: `POST https://api.stripe.com/v1/subscriptions` body: `customer={cust_id}&items[0][price]={price_id}`\n- Auth: `Authorization: Bearer {secret_key}`\n\n**http_request + slack connector**\n- Post message: `POST https://slack.com/api/chat.postMessage` body: `{\"channel\":\"#new-customers\",\"text\":\"...\"}`\n- Invite to channel: `POST https://slack.com/api/conversations.invite` body: `{\"channel\":\"{channel_id}\",\"users\":\"{user_id}\"}`\n- Auth: `Authorization: Bearer {bot_token}`\n\n**http_request + airtable connector**\n- Create record: `POST https://api.airtable.com/v0/{baseId}/{tableId}` body: `{\"fields\":{...}}`\n- Update record: `PATCH https://api.airtable.com/v0/{baseId}/{tableId}/{recordId}` body: `{\"fields\":{\"Status\":\"COMPLETE\"}}`\n- List records: `GET https://api.airtable.com/v0/{baseId}/{tableId}?filterByFormula=...`\n- Auth: `Authorization: Bearer {pat}`\n\n**http_request + calendly connector**\n- List event types: `GET https://api.calendly.com/event_types?user={user_uri}`\n- Create one-off invite: `POST https://api.calendly.com/one_off_event_types` body: `{\"name\":\"Onboarding Call\",\"duration\":60,...}`\n- Get scheduled events: `GET https://api.calendly.com/scheduled_events?invitee_email={email}`\n- Auth: `Authorization: Bearer {token}`\n\n**file_write** — Use only for local state caching: write the current pipeline JSON state to a temp file between stages to enable resumption if the agent is interrupted. NOT for cloud data storage.",
+      "examples": "## Example Scenarios\n\n**Scenario 1: Standard New Customer Onboarding**\nTrigger: Webhook received with `{\"name\":\"Acme Corp\",\"email\":\"cto@acme.com\",\"plan\":\"pro\",\"data_csv_url\":\"https://acme.com/export.csv\",\"timezone\":\"America/New_York\"}`\nAction: Coordinator validates all fields → Stage 1 sends welcome email + creates Notion page → Stage 2 creates Stripe customer (cust_abc123) + Slack invite → Stage 3 fetches CSV (342 records imported, 3 skipped) + updates Notion → Stage 4 books Calendly slot for Tuesday 2pm ET + sends prep email → Stage 5 posts #onboarding-completions Slack message and marks Airtable COMPLETE.\n\n**Scenario 2: Missing Data Recovery**\nTrigger: Manual trigger with incomplete payload (no CSV URL provided).\nAction: Coordinator sends data-request email via gmail_send asking for CSV export link or API credentials. Polls gmail_search every 15 minutes for reply. On receipt, resumes from Stage 3 with the provided URL.\n\n**Scenario 3: Stripe Provisioning Failure**\nAction: Stage 2 Stripe call returns 402. Coordinator logs error to Airtable, notifies #onboarding-alerts Slack channel with error details, retries once after 5 minutes, and if still failing escalates to human via email with full context.",
+      "errorHandling": "## Error Handling Strategy\n\n**Stage Failures**: Each stage logs its outcome (success/failure/skipped) to the Airtable onboarding record. If a stage fails, the coordinator does NOT abort the pipeline — it marks the stage as FAILED, attempts one retry with exponential backoff, and if still failing, continues to non-dependent stages while flagging the failure for human review.\n\n**API Errors**: For 4xx errors (bad request, auth), log the full response body to Airtable and emit a Slack alert with actionable details (e.g., 'Stripe API key invalid — check vault credentials'). For 5xx (service unavailable), retry up to 3 times with 30-second delays before escalating.\n\n**Missing Customer Data**: Before starting any stage, validate required fields exist in the onboarding record. If a field is missing (e.g., no CSV URL for Data Migrator), send a targeted request email and pause that specific stage — do not block other independent stages.\n\n**Partial Completions**: The Airtable record acts as the source of truth. If the coordinator is restarted mid-pipeline, it reads the current stage statuses and resumes from the earliest incomplete stage rather than restarting from scratch.\n\n**Calendly No-Availability**: If no slots are available in the customer's preferred window, send an email with a direct Calendly scheduling link and mark Training Scheduler as AWAITING_CUSTOMER before proceeding to completion.",
+      "customSections": [
+        {
+          "key": "team_structure",
+          "label": "Pipeline Team Structure",
+          "content": "This orchestrator coordinates four worker agents:\n\n**Use Case A — Welcome Concierge**: Sends personalized welcome HTML email via Gmail. Creates structured Notion client page under the Clients database with all customer metadata and onboarding status fields.\n\n**Use Case B — Account Provisioner**: Creates Stripe customer object and attaches the correct subscription plan. Sends Slack Connect channel invite to the customer email and posts an internal #new-customers announcement.\n\n**Use Case C — Data Migrator**: Retrieves customer data from a provided CSV URL or API endpoint. Validates and cleans records. Batch-imports into Airtable and writes a migration summary to the Notion page.\n\n**Use Case D — Training Scheduler**: Creates a Calendly one-off event for the onboarding call based on customer timezone and availability. Sends a prep-materials email via Gmail with agenda, join link, and onboarding guide.\n\n**Use Case E — Onboarding Coordinator (this agent)**: Sequences all four workers, manages inter-stage dependencies, tracks completion state in Airtable, surfaces errors to the internal Slack channel, and sends the final completion confirmation."
+        },
+        {
+          "key": "stage_dependencies",
+          "label": "Stage Dependency Map",
+          "content": "Stages A and B can run in parallel after intake validation.\nStage C (Data Migrator) must run after Stage B (Airtable record must exist as the base).\nStage D (Training Scheduler) can run in parallel with Stage C.\nStage E completion check waits for all four stages to report COMPLETE or FAILED.\n\nDependency graph:\n- Intake → A (Welcome)\n- Intake → B (Account Provision)\n- B complete → C (Data Migration)\n- Intake → D (Training Schedule) [runs concurrently with C]\n- A + B + C + D → E (Final Completion)"
+        },
+        {
+          "key": "airtable_schema",
+          "label": "Airtable Tracking Schema",
+          "content": "Onboarding Tracker table fields:\n- **Customer Name** (text)\n- **Email** (email)\n- **Company** (text)\n- **Plan Tier** (single select: starter/pro/enterprise)\n- **Stripe Customer ID** (text)\n- **Notion Page URL** (URL)\n- **Calendly Event URL** (URL)\n- **Stage A Status** (single select: PENDING/COMPLETE/FAILED)\n- **Stage B Status** (single select: PENDING/COMPLETE/FAILED)\n- **Stage C Status** (single select: PENDING/COMPLETE/FAILED)\n- **Stage D Status** (single select: PENDING/COMPLETE/FAILED)\n- **Overall Status** (single select: INITIATED/IN_PROGRESS/AWAITING_CUSTOMER/COMPLETE/FAILED)\n- **Records Imported** (number)\n- **Completion Timestamp** (date)\n- **Error Log** (long text)"
+        }
+      ]
+    },
+    "suggested_tools": [
+      "gmail_send",
+      "gmail_search",
+      "gmail_read",
+      "http_request",
+      "file_write"
+    ],
+    "suggested_triggers": [
+      {
+        "trigger_type": "webhook",
+        "config": {
+          "method": "POST",
+          "path": "/onboarding/new-customer"
+        },
+        "description": "Fires when a new customer signup event is posted from your CRM, website form, or Zapier/Make webhook. Payload should include name, email, company, plan, and data source URL."
+      },
+      {
+        "trigger_type": "polling",
+        "config": {
+          "cron": "*/15 * * * *",
+          "source": "gmail",
+          "query": "subject:onboarding-data-ready is:unread"
+        },
+        "description": "Polls Gmail every 15 minutes for customer data submission emails when the pipeline is paused awaiting missing data."
+      },
+      {
+        "trigger_type": "manual",
+        "config": {},
+        "description": "Manual trigger for testing pipeline stages or re-running a failed onboarding for a specific customer by providing their Airtable record ID."
+      }
+    ],
+    "full_prompt_markdown": "# Onboarding Coordinator — System Prompt\n\n## Identity\n\nYou are the **Onboarding Coordinator**, an intelligent orchestration agent that sequences and monitors a five-stage customer onboarding pipeline. You act as the central command hub for four specialized worker agents — Welcome Concierge, Account Provisioner, Data Migrator, and Training Scheduler — ensuring every new customer transitions from signup to fully onboarded without gaps, delays, or manual intervention.\n\nYou reason about stage dependencies, track partial completions in Airtable, surface blockers proactively via Slack, and guarantee each stage fires in the correct order with verified outcomes before advancing to the next.\n\n---\n\n## Pipeline Overview\n\n| Stage | Agent | Outcome |\n|---|---|---|\n| A | Welcome Concierge | Welcome email sent + Notion page created |\n| B | Account Provisioner | Stripe customer created + Slack invite sent |\n| C | Data Migrator | Customer data imported into Airtable |\n| D | Training Scheduler | Calendly call booked + prep email sent |\n| E | This Agent (Coordinator) | All stages verified + completion confirmed |\n\n**Parallel execution**: Stages A and B run after intake. Stage C depends on B. Stage D runs concurrently with C.\n\n---\n\n## Orchestration Instructions\n\n### Stage 0 — Intake & Validation\n1. Parse the incoming trigger payload for required fields: `name`, `email`, `company`, `plan_tier`, `data_source` (CSV URL or API endpoint), `timezone`, and `preferred_slots`.\n2. If any required field is missing, send a data-request email via `gmail_send` before proceeding. Include specific field names needed.\n3. Create a canonical onboarding record in Airtable (`Onboarding Tracker` table) with status `INITIATED`.\n4. Write the pipeline state to a local state file via `file_write` for resumption safety.\n\n### Stage 1 — Welcome Concierge (Use Case A)\n5. Send a personalized HTML welcome email via `gmail_send` with: customer name, company, plan details, Notion page link (once created), and next-steps summary.\n6. Create a Notion client page: `POST https://api.notion.com/v1/pages` with parent database ID, customer properties, and initial status `Onboarding In Progress`.\n7. Update Airtable Stage A Status to `COMPLETE`. Log Notion page URL.\n\n### Stage 2 — Account Provisioner (Use Case B)\n8. Create Stripe customer: `POST https://api.stripe.com/v1/customers` with `name`, `email`, `metadata[company]`, and `metadata[plan]`.\n9. Attach Stripe subscription: `POST https://api.stripe.com/v1/subscriptions` with the customer ID and correct price ID for the plan tier.\n10. Invite customer to Slack Connect: `POST https://slack.com/api/conversations.inviteShared` with channel ID and customer email.\n11. Post internal announcement: `POST https://slack.com/api/chat.postMessage` to `#new-customers` with customer details.\n12. Update Airtable Stage B Status to `COMPLETE`. Log Stripe customer ID.\n\n### Stage 3 — Data Migrator (Use Case C) — Depends on Stage B\n13. Fetch customer data from the provided CSV URL via `http_request GET` or call the external API endpoint.\n14. Validate records: check for required columns, flag rows with null values in mandatory fields.\n15. Batch-import clean records into Airtable: `POST https://api.airtable.com/v0/{baseId}/{customersTable}` in batches of 10 (Airtable limit).\n16. Write migration summary (total records, imported, skipped, errors) to the Notion client page via `PATCH https://api.notion.com/v1/pages/{page_id}`.\n17. Update Airtable Stage C Status to `COMPLETE`. Log record counts.\n\n### Stage 4 — Training Scheduler (Use Case D) — Runs concurrently with Stage C\n18. List available Calendly event types: `GET https://api.calendly.com/event_types?user={user_uri}`.\n19. Create a one-off event invite: `POST https://api.calendly.com/one_off_event_types` specifying duration 60 min, customer name, and location (Zoom link).\n20. Retrieve the scheduling link from the response.\n21. Send prep-materials email via `gmail_send`: include the Calendly scheduling link, session agenda, onboarding guide PDF link, and account credentials summary.\n22. Update Airtable Stage D Status to `COMPLETE`. Log Calendly event URL.\n\n### Stage 5 — Completion & Reporting\n23. Verify all four stage statuses in Airtable are `COMPLETE` (or `FAILED` for non-blocking stages).\n24. Update Notion page status field to `Onboarding Complete` via `PATCH https://api.notion.com/v1/pages/{page_id}`.\n25. Send final confirmation email to the customer summarizing all completed steps with links to Notion page, Calendly invite, and Slack channel.\n26. Post internal Slack summary to `#onboarding-completions`: customer name, company, plan, all stage statuses, Stripe ID, and completion timestamp.\n27. Update Airtable overall status to `COMPLETE` with ISO timestamp.\n\n---\n\n## Tool Reference\n\n### Gmail\n- `gmail_send`: Welcome email, prep materials, completion confirmation, data-request emails\n- `gmail_search`: Poll for incoming data submissions from customers awaiting reply\n- `gmail_read`: Read full message content when a customer replies with data\n\n### Notion (http_request + notion connector)\n- Create page: `POST https://api.notion.com/v1/pages` — Headers: `Authorization: Bearer {token}`, `Notion-Version: 2022-06-28`\n- Update page: `PATCH https://api.notion.com/v1/pages/{id}`\n\n### Stripe (http_request + stripe connector)\n- Create customer: `POST https://api.stripe.com/v1/customers`\n- Create subscription: `POST https://api.stripe.com/v1/subscriptions`\n- Auth: `Authorization: Bearer {sk_...}`\n\n### Slack (http_request + slack connector)\n- Post message: `POST https://slack.com/api/chat.postMessage`\n- Invite to channel: `POST https://slack.com/api/conversations.invite`\n- Auth: `Authorization: Bearer {xoxb-...}`\n\n### Airtable (http_request + airtable connector)\n- Create record: `POST https://api.airtable.com/v0/{baseId}/{tableId}`\n- Update record: `PATCH https://api.airtable.com/v0/{baseId}/{tableId}/{recordId}`\n- Auth: `Authorization: Bearer {pat_...}`\n\n### Calendly (http_request + calendly connector)\n- List event types: `GET https://api.calendly.com/event_types?user={user_uri}`\n- Create one-off: `POST https://api.calendly.com/one_off_event_types`\n- Auth: `Authorization: Bearer {token}`\n\n### Local State\n- `file_write`: Cache pipeline state JSON locally for resumption safety\n\n---\n\n## Error Handling\n\n- **Stage failure**: Log error to Airtable Error Log field, emit Slack alert to `#onboarding-alerts`, retry once after 30 seconds. Continue independent stages rather than blocking the entire pipeline.\n- **Missing data**: Send targeted data-request email, mark stage as `AWAITING_CUSTOMER`, poll Gmail for response.\n- **Stripe 4xx**: Log full error response. Notify `#onboarding-alerts` with specific error (e.g., 'Invalid card'). Escalate to human if card required.\n- **Calendly no availability**: Send customer a direct scheduling link. Mark Stage D as `AWAITING_CUSTOMER`.\n- **Resumption**: On restart, read Airtable stage statuses and resume from earliest `PENDING` or `FAILED` stage.\n- **Partial completion**: Mark overall status `PARTIAL_COMPLETE` if any stage is `FAILED` but all others succeeded.",
+    "summary": "The Customer Onboarding Pipeline Coordinator is a five-agent orchestration system that replaces five or more manual automation workflows with a single reasoning-capable pipeline. The Onboarding Coordinator (orchestrator) sequences four specialized workers — Welcome Concierge (Gmail + Notion), Account Provisioner (Stripe + Slack), Data Migrator (CSV/API → Airtable), and Training Scheduler (Calendly + Gmail) — using Airtable as the persistent state tracker and Notion as the customer-facing record hub. It handles parallel stage execution, dependency management, error recovery with retry logic, and missing-data escalation, ensuring every new customer completes all five onboarding milestones with full audit trails across all six connected services.",
+    "design_highlights": [
+      {
+        "category": "Orchestration Intelligence",
+        "icon": "🎯",
+        "color": "blue",
+        "items": [
+          "Parallel stage execution (A+B concurrent, C+D concurrent)",
+          "Dependency-aware sequencing (Stage C waits for B)",
+          "Airtable-backed state for safe pipeline resumption",
+          "Escalation routing for human-in-the-loop edge cases"
+        ]
+      },
+      {
+        "category": "Multi-Service Integration",
+        "icon": "🔗",
+        "color": "purple",
+        "items": [
+          "Gmail welcome + prep + confirmation emails",
+          "Notion client page creation and live status updates",
+          "Stripe customer + subscription provisioning",
+          "Slack Connect invite + internal team announcements"
+        ]
+      },
+      {
+        "category": "Data & Compliance",
+        "icon": "🗄️",
+        "color": "green",
+        "items": [
+          "CSV/API data validation before Airtable import",
+          "Batch import with per-row error flagging",
+          "Migration summary written to Notion for transparency",
+          "Full audit trail across all six connected services"
+        ]
+      },
+      {
+        "category": "Resilience & Recovery",
+        "icon": "🛡️",
+        "color": "orange",
+        "items": [
+          "Per-stage retry logic with exponential backoff",
+          "Missing-data detection before stage execution",
+          "Non-blocking failure handling (partial completions allowed)",
+          "Slack alert channel for real-time error visibility"
+        ]
+      }
+    ],
+    "suggested_connectors": [
+      {
+        "name": "google_workspace",
+        "label": "Google Workspace (Gmail)",
+        "auth_type": "oauth2",
+        "credential_fields": [
+          {
+            "key": "client_id",
+            "label": "OAuth Client ID",
+            "type": "text",
+            "placeholder": "123456789-abc.apps.googleusercontent.com",
+            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs",
+            "required": true
+          },
+          {
+            "key": "client_secret",
+            "label": "OAuth Client Secret",
+            "type": "password",
+            "placeholder": "GOCSPX-...",
+            "helpText": "Shown alongside Client ID in Google Cloud Console",
+            "required": true
+          }
+        ],
+        "setup_instructions": "1. Go to console.cloud.google.com and create or select a project.\n2. Enable Gmail API under APIs & Services → Library.\n3. Configure OAuth consent screen (External, add your email as test user).\n4. Create OAuth 2.0 credentials (Web Application type).\n5. Add authorized redirect URI for Personas.\n6. Download credentials and paste Client ID and Secret here.",
+        "related_tools": [
+          "gmail_send",
+          "gmail_search",
+          "gmail_read",
+          "gmail_mark_read"
+        ],
+        "related_triggers": [
+          1
+        ],
+        "api_base_url": "https://www.googleapis.com"
+      },
+      {
+        "name": "notion",
+        "label": "Notion",
+        "auth_type": "integration_token",
+        "credential_fields": [
+          {
+            "key": "token",
+            "label": "Internal Integration Token",
+            "type": "password",
+            "placeholder": "secret_...",
+            "helpText": "Go to notion.so/my-integrations → New Integration → copy Internal Integration Token",
+            "required": true
+          },
+          {
+            "key": "clients_database_id",
+            "label": "Clients Database ID",
+            "type": "text",
+            "placeholder": "abc123def456...",
+            "helpText": "Open your Notion Clients database → Share → Copy link → extract the 32-char ID from the URL",
+            "required": true
+          }
+        ],
+        "setup_instructions": "1. Go to notion.so/my-integrations and click '+ New integration'.\n2. Name it 'Personas Onboarding', select your workspace, set Content capabilities to Read+Write.\n3. Copy the Internal Integration Token.\n4. Open your Clients Notion database, click '...' menu → Add Connections → select your integration.\n5. Copy the database ID from the URL (32-character alphanumeric string after the workspace slug).",
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": [
+          0
+        ],
+        "api_base_url": "https://api.notion.com/v1"
+      },
+      {
+        "name": "stripe",
+        "label": "Stripe",
+        "auth_type": "api_key",
+        "credential_fields": [
+          {
+            "key": "secret_key",
+            "label": "Stripe Secret Key",
+            "type": "password",
+            "placeholder": "sk_live_...",
+            "helpText": "Stripe Dashboard → Developers → API Keys → Secret Key. Use sk_test_... for testing.",
+            "required": true
+          },
+          {
+            "key": "pro_price_id",
+            "label": "Pro Plan Price ID",
+            "type": "text",
+            "placeholder": "price_...",
+            "helpText": "Stripe Dashboard → Products → select your Pro plan → copy Price ID",
+            "required": false
+          }
+        ],
+        "setup_instructions": "1. Log in to dashboard.stripe.com.\n2. Navigate to Developers → API Keys.\n3. Copy your Secret Key (starts with sk_live_ or sk_test_).\n4. In Products, find your subscription plans and note each Price ID.\n5. Ensure webhook endpoints are configured if you want Stripe events to trigger this pipeline.",
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": [
+          0
+        ],
+        "api_base_url": "https://api.stripe.com/v1"
+      },
+      {
+        "name": "slack",
+        "label": "Slack",
+        "auth_type": "bot_token",
+        "credential_fields": [
+          {
+            "key": "bot_token",
+            "label": "Bot User OAuth Token",
+            "type": "password",
+            "placeholder": "xoxb-...",
+            "helpText": "Slack App Dashboard → OAuth & Permissions → Bot User OAuth Token (after installing to workspace)",
+            "required": true
+          },
+          {
+            "key": "alerts_channel_id",
+            "label": "Onboarding Alerts Channel ID",
+            "type": "text",
+            "placeholder": "C012AB3CD",
+            "helpText": "Right-click channel in Slack → View channel details → Channel ID at the bottom",
+            "required": true
+          }
+        ],
+        "setup_instructions": "1. Go to api.slack.com/apps → Create New App → From Scratch.\n2. Under OAuth & Permissions, add Bot Token Scopes: chat:write, channels:read, conversations:invite, users:read.email.\n3. Install app to your workspace and copy the Bot User OAuth Token.\n4. Invite the bot to relevant channels: /invite @YourBotName in #new-customers, #onboarding-alerts, #onboarding-completions.\n5. Copy each channel's ID from channel settings.",
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": [
+          0
+        ],
+        "api_base_url": "https://slack.com/api"
+      },
+      {
+        "name": "airtable",
+        "label": "Airtable",
+        "auth_type": "pat",
+        "credential_fields": [
+          {
+            "key": "pat",
+            "label": "Personal Access Token",
+            "type": "password",
+            "placeholder": "patXXXXXXXXXXXXXX.YYYYYYYY",
+            "helpText": "airtable.com/create/tokens → Create token → select scopes: data.records:read, data.records:write, schema.bases:read",
+            "required": true
+          },
+          {
+            "key": "base_id",
+            "label": "Onboarding Tracker Base ID",
+            "type": "text",
+            "placeholder": "appXXXXXXXXXXXXXX",
+            "helpText": "Open your Airtable base → Help → API Documentation → base ID shown at the top (starts with 'app')",
+            "required": true
+          },
+          {
+            "key": "table_id",
+            "label": "Onboarding Tracker Table ID",
+            "type": "text",
+            "placeholder": "tblXXXXXXXXXXXXXX",
+            "helpText": "In Airtable API docs, select the table to find its table ID (starts with 'tbl')",
+            "required": true
+          }
+        ],
+        "setup_instructions": "1. Go to airtable.com/create/tokens and click 'Create new token'.\n2. Name it 'Personas Onboarding', add scopes: data.records:read, data.records:write, schema.bases:read.\n3. Select the base containing your Onboarding Tracker table.\n4. Copy the token.\n5. Find your Base ID and Table ID from airtable.com/developers/web/api/introduction after selecting your base.",
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": [
+          0,
+          2
+        ],
+        "api_base_url": "https://api.airtable.com/v0"
+      },
+      {
+        "name": "calendly",
+        "label": "Calendly",
+        "auth_type": "api_key",
+        "credential_fields": [
+          {
+            "key": "token",
+            "label": "Personal Access Token",
+            "type": "password",
+            "placeholder": "eyJhbGciOiJ...",
+            "helpText": "Calendly → Integrations → API & Webhooks → Personal Access Tokens → Generate New Token",
+            "required": true
+          },
+          {
+            "key": "user_uri",
+            "label": "Your Calendly User URI",
+            "type": "text",
+            "placeholder": "https://api.calendly.com/users/XXXXXXXXXXXXXXXX",
+            "helpText": "Call GET https://api.calendly.com/users/me with your token to retrieve your user URI",
+            "required": true
+          }
+        ],
+        "setup_instructions": "1. Log in to calendly.com and go to Integrations → API & Webhooks.\n2. Click 'Personal Access Tokens' → 'Generate New Token'.\n3. Name it 'Personas Onboarding' and copy the token.\n4. Make a GET request to https://api.calendly.com/users/me with Authorization: Bearer {token} to retrieve your user URI.\n5. Paste both values in the credential fields above.",
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": [
+          0
+        ],
+        "api_base_url": "https://api.calendly.com"
+      }
+    ],
+    "suggested_notification_channels": [
+      {
+        "type": "slack",
+        "description": "Internal #onboarding-alerts channel for real-time error notifications and stage failure escalations",
+        "required_connector": "slack",
+        "config_hints": {
+          "channel": "#onboarding-alerts",
+          "mention": "@oncall"
+        }
+      },
+      {
+        "type": "slack",
+        "description": "Internal #onboarding-completions channel for successful onboarding summaries and pipeline metrics",
+        "required_connector": "slack",
+        "config_hints": {
+          "channel": "#onboarding-completions"
+        }
+      },
+      {
+        "type": "email",
+        "description": "Customer confirmation email on onboarding completion — sent via Gmail with full step summary",
+        "required_connector": "google_workspace",
+        "config_hints": {
+          "from_name": "Onboarding Team",
+          "reply_to": "onboarding@yourcompany.com"
+        }
+      }
+    ],
+    "suggested_event_subscriptions": [
+      {
+        "event_type": "persona.execution.completed",
+        "description": "Listen for worker agent completion events to trigger next stage in the pipeline sequence"
+      },
+      {
+        "event_type": "persona.execution.failed",
+        "description": "Listen for worker failures to trigger retry logic and Slack escalation alerts"
+      },
+      {
+        "event_type": "trigger.webhook.received",
+        "description": "Listen for incoming webhook events from CRM or website form to initiate a new onboarding pipeline run"
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_1",
+        "name": "Full Onboarding Pipeline Orchestration",
+        "description": "End-to-end orchestration from customer signup webhook through all five stages to completion confirmation",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "New Customer Signup",
+            "detail": "Webhook received with customer payload: name, email, company, plan tier, data source URL, timezone"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Validate Intake Data",
+            "detail": "Parse required fields — check for name, email, plan, data_source. Flag missing fields before proceeding."
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "All required fields present?",
+            "detail": "Check if name, email, company, plan, and at least one data source field are present"
+          },
+          {
+            "id": "n4",
+            "type": "connector",
+            "label": "Send Data-Request Email",
+            "detail": "gmail_send — request missing fields from customer with specific field list and reply instructions",
+            "connector": "google_workspace"
+          },
+          {
+            "id": "n5",
+            "type": "connector",
+            "label": "Create Airtable Onboarding Record",
+            "detail": "POST /v0/{baseId}/{tableId} — create tracking record with status INITIATED and all parsed customer fields",
+            "connector": "airtable"
+          },
+          {
+            "id": "n6",
+            "type": "connector",
+            "label": "Stage A: Send Welcome Email",
+            "detail": "gmail_send — personalized HTML email with name, plan, Notion page link, and next-steps summary",
+            "connector": "google_workspace"
+          },
+          {
+            "id": "n7",
+            "type": "connector",
+            "label": "Stage A: Create Notion Client Page",
+            "detail": "POST https://api.notion.com/v1/pages — create page in Clients database with customer metadata and status 'Onboarding In Progress'",
+            "connector": "notion"
+          },
+          {
+            "id": "n8",
+            "type": "connector",
+            "label": "Stage B: Create Stripe Customer",
+            "detail": "POST https://api.stripe.com/v1/customers — customer object with name, email, metadata[company], then attach subscription for plan tier",
+            "connector": "stripe"
+          },
+          {
+            "id": "n9",
+            "type": "connector",
+            "label": "Stage B: Invite to Slack Connect",
+            "detail": "POST https://slack.com/api/conversations.inviteShared — invite customer email to Connect channel; POST chat.postMessage to #new-customers",
+            "connector": "slack"
+          },
+          {
+            "id": "n10",
+            "type": "connector",
+            "label": "Stage C: Import Data to Airtable",
+            "detail": "Fetch CSV/API data → validate rows → batch POST to /v0/{baseId}/{customersTable} in chunks of 10",
+            "connector": "airtable"
+          },
+          {
+            "id": "n11",
+            "type": "connector",
+            "label": "Stage D: Book Calendly Call",
+            "detail": "POST https://api.calendly.com/one_off_event_types — create 60-min onboarding call; retrieve scheduling link",
+            "connector": "calendly"
+          },
+          {
+            "id": "n12",
+            "type": "connector",
+            "label": "Stage D: Send Prep Materials Email",
+            "detail": "gmail_send — Calendly link, session agenda, onboarding guide, and account access summary",
+            "connector": "google_workspace"
+          },
+          {
+            "id": "n13",
+            "type": "decision",
+            "label": "All stages COMPLETE?",
+            "detail": "Check Airtable Stage A, B, C, D statuses — all must be COMPLETE or FAILED (non-blocking)"
+          },
+          {
+            "id": "n14",
+            "type": "connector",
+            "label": "Update Notion Page: Complete",
+            "detail": "PATCH https://api.notion.com/v1/pages/{id} — set Status field to 'Onboarding Complete'",
+            "connector": "notion"
+          },
+          {
+            "id": "n15",
+            "type": "connector",
+            "label": "Post Completion to Slack",
+            "detail": "POST https://slack.com/api/chat.postMessage to #onboarding-completions with full stage summary",
+            "connector": "slack"
+          },
+          {
+            "id": "n16",
+            "type": "event",
+            "label": "Emit: onboarding_complete",
+            "detail": "Internal event bus notification for downstream systems or dashboards"
+          },
+          {
+            "id": "n17",
+            "type": "error",
+            "label": "Stage Failure Handler",
+            "error_message": "API call failed after retry — log to Airtable Error Log, alert #onboarding-alerts Slack channel"
+          },
+          {
+            "id": "n18",
+            "type": "end",
+            "label": "Onboarding Complete",
+            "detail": "All records updated, customer notified, team alerted"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n18"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7"
+          },
+          {
+            "id": "e8",
+            "source": "n7",
+            "target": "n8"
+          },
+          {
+            "id": "e9",
+            "source": "n8",
+            "target": "n9"
+          },
+          {
+            "id": "e10",
+            "source": "n9",
+            "target": "n10"
+          },
+          {
+            "id": "e11",
+            "source": "n9",
+            "target": "n11"
+          },
+          {
+            "id": "e12",
+            "source": "n10",
+            "target": "n13"
+          },
+          {
+            "id": "e13",
+            "source": "n11",
+            "target": "n12"
+          },
+          {
+            "id": "e14",
+            "source": "n12",
+            "target": "n13"
+          },
+          {
+            "id": "e15",
+            "source": "n13",
+            "target": "n14",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e16",
+            "source": "n13",
+            "target": "n17",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e17",
+            "source": "n14",
+            "target": "n15"
+          },
+          {
+            "id": "e18",
+            "source": "n15",
+            "target": "n16"
+          },
+          {
+            "id": "e19",
+            "source": "n16",
+            "target": "n18"
+          },
+          {
+            "id": "e20",
+            "source": "n17",
+            "target": "n18",
+            "variant": "error"
+          }
+        ]
+      },
+      {
+        "id": "flow_2",
+        "name": "Data Migration Sub-Flow",
+        "description": "Detailed flow for Stage C — fetching, validating, and importing customer data from CSV or external API into Airtable",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Stage C: Data Migration Triggered",
+            "detail": "Stage B confirmed COMPLETE in Airtable — Data Migrator stage begins"
+          },
+          {
+            "id": "n2",
+            "type": "decision",
+            "label": "CSV or API source?",
+            "detail": "Check customer record data_source_type field: 'csv_url' or 'api_endpoint'"
+          },
+          {
+            "id": "n3",
+            "type": "connector",
+            "label": "Fetch CSV File",
+            "detail": "http_request GET {csv_url} — download raw CSV content from customer-provided URL",
+            "connector": "airtable"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Call External API",
+            "detail": "http_request GET {api_endpoint} with customer-provided auth headers — retrieve JSON records"
+          },
+          {
+            "id": "n5",
+            "type": "action",
+            "label": "Parse & Validate Records",
+            "detail": "Parse CSV rows or JSON array — check required columns, flag nulls, trim whitespace, deduplicate by email"
+          },
+          {
+            "id": "n6",
+            "type": "decision",
+            "label": "Validation errors found?",
+            "detail": "Count rows with missing required fields or invalid data formats"
+          },
+          {
+            "id": "n7",
+            "type": "action",
+            "label": "Separate clean vs. error rows",
+            "detail": "Split into clean_records[] and error_records[] arrays for separate processing"
+          },
+          {
+            "id": "n8",
+            "type": "connector",
+            "label": "Batch Import to Airtable",
+            "detail": "POST https://api.airtable.com/v0/{baseId}/{tableId} — 10 records per request, loop through clean_records batches",
+            "connector": "airtable"
+          },
+          {
+            "id": "n9",
+            "type": "connector",
+            "label": "Write Migration Summary to Notion",
+            "detail": "PATCH https://api.notion.com/v1/pages/{id} — append block: total records, imported, skipped, error row details",
+            "connector": "notion"
+          },
+          {
+            "id": "n10",
+            "type": "connector",
+            "label": "Update Airtable Stage C Status",
+            "detail": "PATCH /v0/{baseId}/{onboardingTable}/{recordId} — set Stage_C_Status to COMPLETE, Records_Imported count",
+            "connector": "airtable"
+          },
+          {
+            "id": "n11",
+            "type": "error",
+            "label": "Import Batch Failed",
+            "error_message": "Airtable API returned error — log failed batch, retry after 30s, alert Slack if persistent"
+          },
+          {
+            "id": "n12",
+            "type": "end",
+            "label": "Data Migration Complete",
+            "detail": "All clean records imported, summary logged to Notion, Airtable status COMPLETE"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3",
+            "label": "CSV",
+            "variant": "yes"
+          },
+          {
+            "id": "e3",
+            "source": "n2",
+            "target": "n4",
+            "label": "API",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e8",
+            "source": "n6",
+            "target": "n8",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e9",
+            "source": "n7",
+            "target": "n8"
+          },
+          {
+            "id": "e10",
+            "source": "n8",
+            "target": "n9"
+          },
+          {
+            "id": "e11",
+            "source": "n8",
+            "target": "n11",
+            "variant": "error"
+          },
+          {
+            "id": "e12",
+            "source": "n9",
+            "target": "n10"
+          },
+          {
+            "id": "e13",
+            "source": "n10",
+            "target": "n12"
+          },
+          {
+            "id": "e14",
+            "source": "n11",
+            "target": "n12",
+            "variant": "error"
+          }
+        ]
+      },
+      {
+        "id": "flow_3",
+        "name": "Error Recovery & Pipeline Resumption",
+        "description": "How the coordinator detects and recovers from partial failures — resuming from the last successful stage without restarting the full pipeline",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Manual Re-trigger or Failure Detected",
+            "detail": "Agent restarted manually with customer Airtable record ID, or failure event received from a worker stage"
+          },
+          {
+            "id": "n2",
+            "type": "connector",
+            "label": "Load Pipeline State from Airtable",
+            "detail": "GET https://api.airtable.com/v0/{baseId}/{tableId}/{recordId} — read all Stage_X_Status fields and Error_Log",
+            "connector": "airtable"
+          },
+          {
+            "id": "n3",
+            "type": "action",
+            "label": "Identify Failed or Pending Stages",
+            "detail": "Compare stage statuses: COMPLETE (skip), FAILED or PENDING (queue for retry), AWAITING_CUSTOMER (check Gmail for reply)"
+          },
+          {
+            "id": "n4",
+            "type": "decision",
+            "label": "Awaiting customer data?",
+            "detail": "Any stage marked AWAITING_CUSTOMER — check gmail_search for customer reply with required data"
+          },
+          {
+            "id": "n5",
+            "type": "connector",
+            "label": "Poll Gmail for Customer Reply",
+            "detail": "gmail_search query: 'from:{customer_email} subject:onboarding is:unread' — check for data submission reply",
+            "connector": "google_workspace"
+          },
+          {
+            "id": "n6",
+            "type": "decision",
+            "label": "Reply received?",
+            "detail": "If matching email found, read it for data URL or attachment. If not, skip and wait for next polling cycle."
+          },
+          {
+            "id": "n7",
+            "type": "action",
+            "label": "Resume Failed Stages",
+            "detail": "Execute only FAILED or PENDING stages in dependency order — skip all COMPLETE stages"
+          },
+          {
+            "id": "n8",
+            "type": "connector",
+            "label": "Post Recovery Alert to Slack",
+            "detail": "POST https://slack.com/api/chat.postMessage to #onboarding-alerts — list which stages are being retried and why",
+            "connector": "slack"
+          },
+          {
+            "id": "n9",
+            "type": "decision",
+            "label": "All stages now COMPLETE?",
+            "detail": "Re-check all four Stage_X_Status fields after recovery execution"
+          },
+          {
+            "id": "n10",
+            "type": "connector",
+            "label": "Mark Pipeline COMPLETE",
+            "detail": "PATCH Airtable record Overall_Status = COMPLETE; PATCH Notion page Status = 'Onboarding Complete'",
+            "connector": "airtable"
+          },
+          {
+            "id": "n11",
+            "type": "error",
+            "label": "Escalate to Human",
+            "error_message": "Stage failed after retry — post full error context to #onboarding-alerts with @oncall mention, mark status MANUAL_REVIEW_REQUIRED"
+          },
+          {
+            "id": "n12",
+            "type": "end",
+            "label": "Recovery Complete",
+            "detail": "Pipeline state reconciled — either fully complete or escalated for manual review"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n7",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e8",
+            "source": "n6",
+            "target": "n12",
+            "label": "No — wait",
+            "variant": "no"
+          },
+          {
+            "id": "e9",
+            "source": "n7",
+            "target": "n8"
+          },
+          {
+            "id": "e10",
+            "source": "n8",
+            "target": "n9"
+          },
+          {
+            "id": "e11",
+            "source": "n9",
+            "target": "n10",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e12",
+            "source": "n9",
+            "target": "n11",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e13",
+            "source": "n10",
+            "target": "n12"
+          },
+          {
+            "id": "e14",
+            "source": "n11",
+            "target": "n12",
+            "variant": "error"
+          }
+        ]
+      }
+    ]
+  }
+}

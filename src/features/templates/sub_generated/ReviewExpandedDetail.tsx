@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Lightbulb, RotateCcw, Download, Workflow } from 'lucide-react';
-import { TemplatePromptPreview } from '@/features/templates/sub_builtin/TemplatePromptPreview';
-import { TemplateConnectorGrid } from '@/features/templates/sub_builtin/TemplateConnectorGrid';
-import { TemplateQualitySection } from '@/features/templates/sub_builtin/TemplateQualitySection';
+import { PromptTabsPreview } from '@/features/shared/components/PromptTabsPreview';
+import { DesignConnectorGrid } from '@/features/shared/components/DesignConnectorGrid';
+
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
@@ -59,10 +59,10 @@ export function ReviewExpandedDetail({
       )}
 
       {/* 2. Prompt Preview */}
-      <TemplatePromptPreview designResult={designResult} />
+      <PromptTabsPreview designResult={designResult} />
 
       {/* 3. Connector Grid */}
-      <TemplateConnectorGrid designResult={designResult} />
+      <DesignConnectorGrid designResult={designResult} />
 
       {/* 3.5. Use Case Flows Preview */}
       {flows.length > 0 && onViewDiagram && (
@@ -96,10 +96,7 @@ export function ReviewExpandedDetail({
         </div>
       )}
 
-      {/* 4. Quality Section */}
-      <TemplateQualitySection review={review} />
-
-      {/* 5. Adjustment Section */}
+      {/* 4. Adjustment Section */}
       {adjustment && (
         <div className="bg-amber-500/5 border border-amber-500/15 rounded-xl px-4 py-3 space-y-2">
           <div className="flex items-center justify-between">

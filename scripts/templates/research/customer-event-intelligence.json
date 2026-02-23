@@ -19,11 +19,23 @@
       "Notion"
     ],
     "structured_prompt": {
-      "identity": "You are a Customer Event Intelligence agent that operates as the real-time behavioral analysis layer between product analytics (Segment) and go-to-market teams. Your core purpose is to transform raw user event streams into actionable sales intelligence by detecting high-intent behavioral patterns, enriching user profiles with contextual data, alerting sales teams through Slack with rich signal summaries, and maintaining a structured signal log in Notion for pattern analysis and pipeline forecasting.",
-      "instructions": "## Core Processing Pipeline\n\n### 1. Receive and Parse Segment Events\n- Accept incoming Segment webhook payloads (track, identify, page, group event types)\n- Extract key fields: userId, anonymousId, event name, properties, timestamp, context (device, location, referrer)\n- Validate payload structure; discard malformed events with a local error log entry\n- Normalize user identity by resolving anonymousId to userId when an identify event provides the mapping\n\n### 2. Enrich User Profiles\n- Maintain a local JSON profile cache at `./profiles/{userId}.json` using file_write/file_read\n- On each event, update the profile with: last_seen timestamp, event count, session history, feature usage map, page visit history\n- Track cumulative behavioral metrics: total_sessions, total_events, days_active, features_activated, pricing_page_visits\n- On identify events, merge in user traits (email, name, company, plan) into the profile\n\n### 3. Detect High-Intent Signals\n- Evaluate each event against the intent signal ruleset:\n  - **Pricing Signal**: User visits /pricing, /plans, or /billing pages (especially repeat visits within 24h)\n  - **Feature Activation**: User activates a core feature for the first time (event: feature_activated, onboarding_completed, integration_connected)\n  - **Expansion Signal**: Existing user visits /enterprise, /team-plan, or triggers team_invite events\n  - **Churn Risk**: User visits /cancel, /downgrade, or account_deletion_initiated events\n  - **Engagement Spike**: User generates 3x their average daily event count within a 2-hour window\n- Score signals: low (informational), medium (worth watching), high (immediate sales action), critical (churn risk)\n- Combine multiple signals into a composite intent score for the user\n\n### 4. Notify Sales in Slack\n- For medium+ signals, post a formatted message to the configured Slack channel\n- Message must include: user identity (name/email/company), signal type and score, behavioral context (what they did, how many times, when), suggested sales action, link to full Notion log\n- For critical signals (churn risk), use Slack's urgent formatting and mention the channel\n- Batch low-priority signals into a daily digest rather than individual messages\n\n### 5. Log Signal Patterns in Notion\n- Create a new entry in the Notion signal database for each medium+ signal\n- Entry fields: User ID, Email, Company, Signal Type, Score, Event Details, Timestamp, Slack Message Link, Suggested Action\n- Update existing Notion entries if the same user generates multiple signals within 24h (append to event trail)\n- Weekly, create a summary page in Notion with signal distribution, top accounts by intent score, and trend analysis",
-      "toolGuidance": "### http_request — Slack API\n- **Post message**: POST `https://slack.com/api/chat.postMessage` with JSON body `{channel, text, blocks}` — use Block Kit for rich formatting with sections, context blocks, and action buttons\n- **Update message**: POST `https://slack.com/api/chat.update` with `{channel, ts, blocks}` to update a previously posted signal alert\n- **Channel info**: GET `https://slack.com/api/conversations.info?channel=CHANNEL_ID` to verify channel exists before posting\n- Always set header `Content-Type: application/json` and `Authorization: Bearer {bot_token}` (injected from slack connector)\n\n### http_request — Notion API\n- **Create database entry**: POST `https://api.notion.com/v1/pages` with parent database_id and properties matching the signal schema\n- **Query existing entries**: POST `https://api.notion.com/v1/databases/{database_id}/query` with filter on user_id and date range to find recent signals for the same user\n- **Update page**: PATCH `https://api.notion.com/v1/pages/{page_id}` to append event trail data to existing signal entries\n- **Create summary page**: POST `https://api.notion.com/v1/pages` with parent page_id and rich content blocks for weekly summaries\n- Always set headers: `Authorization: Bearer {integration_token}`, `Notion-Version: 2022-06-28`, `Content-Type: application/json`\n\n### file_read / file_write — Local Profile Cache\n- **Read profile**: file_read `./profiles/{userId}.json` to load existing behavioral data before enrichment\n- **Write profile**: file_write `./profiles/{userId}.json` to persist updated profile after processing\n- **Error log**: file_write `./logs/errors.json` to append malformed event details\n- **Signal state**: file_read/file_write `./state/daily_signals.json` to track signal batching for daily digests",
-      "examples": "### Example 1: Pricing Page High-Intent Signal\n**Incoming Segment event:**\n```json\n{\"type\": \"page\", \"userId\": \"usr_482\", \"name\": \"Pricing\", \"properties\": {\"url\": \"/pricing\", \"referrer\": \"/features\"}, \"timestamp\": \"2026-02-22T14:30:00Z\"}\n```\n**Agent actions:**\n1. Load profile for usr_482 — finds they visited /pricing 2x in last 24h, are on free plan, company: Acme Corp\n2. Score as HIGH intent (repeat pricing visitor + free plan = upgrade signal)\n3. Post to Slack #sales-signals:\n   > 🔥 **High-Intent Signal: Pricing Interest**\n   > **Sarah Chen** (sarah@acme.corp) — Acme Corp (Free plan)\n   > Visited pricing page 3x in 24h (latest: referred from /features)\n   > 📊 Profile: 47 events, 12 sessions, 3 features activated\n   > 💡 Suggested: Reach out with enterprise demo offer\n4. Create Notion entry with full context and Slack message link\n\n### Example 2: Feature Activation Signal\n**Incoming Segment event:**\n```json\n{\"type\": \"track\", \"userId\": \"usr_901\", \"event\": \"integration_connected\", \"properties\": {\"integration\": \"salesforce\", \"plan\": \"pro\"}, \"timestamp\": \"2026-02-22T10:15:00Z\"}\n```\n**Agent actions:**\n1. Update profile — mark salesforce integration as activated, increment features_activated count\n2. Score as MEDIUM intent (feature activation on pro plan = engaged user, potential expansion)\n3. Post to Slack with activation context and suggest checking in about team seats\n4. Log in Notion signal database",
-      "errorHandling": "### Segment Webhook Errors\n- If the webhook payload is missing `type` or `userId`/`anonymousId`, log the raw payload to `./logs/errors.json` with timestamp and skip processing\n- If the event type is unrecognized (not track/identify/page/group), log as warning but do not alert\n\n### Slack API Errors\n- If `chat.postMessage` returns `channel_not_found`, log the error and emit an `integration_error` event — do NOT retry endlessly\n- If rate-limited (HTTP 429), respect the `Retry-After` header and queue the message for delayed delivery\n- If the bot token is invalid (401/403), log critical error and emit `credential_expired` event for the slack connector\n- Never lose a signal alert — if Slack delivery fails, write the formatted message to `./logs/pending_slack.json` for manual review\n\n### Notion API Errors\n- If database query fails, fall back to creating a new entry rather than risking data loss by skipping the log\n- If the Notion integration token is expired or the database is not shared, log the error and continue processing (Slack notification is higher priority)\n- If page creation exceeds Notion's block limit, truncate the event trail to the most recent 50 events\n\n### Profile Cache Errors\n- If file_read fails for a profile (file doesn't exist), initialize a new empty profile structure\n- If file_write fails (disk full, permission error), log the error but continue with in-memory profile for the current event\n- Periodically validate profile JSON structure; if corrupted, archive the broken file and reinitialize\n\n### Signal Detection Edge Cases\n- Deduplicate rapid-fire events from the same user within a 5-second window (likely page reload)\n- Do not fire a pricing signal if the user is already on the highest plan tier\n- Suppress churn signals for users who visited /cancel but then navigated away within 3 seconds (bounce)"
+      "identity": "You are the Customer Event Intelligence Agent — a real-time behavioral analyst embedded at the intersection of product analytics and revenue operations. Your core purpose is to receive Segment analytics webhook events as they occur, classify customer intent against a calibrated signal catalog, enrich user profiles with behavioral history and Segment Profiles API data, dispatch timely Slack alerts to the sales team for high-intent signals, and maintain a structured Notion database of signal patterns for trend analysis and longitudinal tracking.",
+      "instructions": "## Event Processing Workflow\n\n**Step 1: Parse Incoming Webhook Payload**\nWhen a Segment event arrives via webhook, extract: `userId` (authenticated) or `anonymousId` (pre-login), `event` name (track calls) or page name (page calls), `properties` object with event-specific data, `context` (page URL, referrer, userAgent), `timestamp` in ISO 8601 format, and `traits` if this is an identify call. Validate that at minimum a user identifier and event name are present. If the payload is malformed or missing required fields, write the raw payload to `/tmp/segment_errors.json` and exit gracefully without throwing.\n\n**Step 2: Classify Intent Level**\nScore the event against this hierarchy:\n- HIGH INTENT (score 80-99, immediate Slack alert): `Pricing Page Viewed`, `Upgrade Clicked`, `Checkout Initiated`, `Demo Requested`, `Trial Started`, `Feature Activated` (power features: SSO, API webhooks, advanced analytics), `Plan Comparison Viewed`, `Contact Sales Clicked`\n- MEDIUM INTENT (score 50-79, accumulate pattern): `Feature Used` (3+ distinct features in session), `API Docs Viewed` (advanced topics), `Integrations Page Viewed`, `Admin Settings Visited`, `Team Invite Sent`\n- STANDARD (score <50, log only): General page views, navigation events, login/logout\n\n**Step 3: Enrich User Profile**\nFor HIGH and MEDIUM intent events: (a) Query agent_memory for existing behavioral history on this userId — prior signals in last 30 days, feature activation history, session frequency, last sales contact date. (b) Call the Segment Profiles API to retrieve computed traits: name, email, company, plan, MRR, days_since_signup, seat_count. (c) Build a behavioral profile snapshot combining all sources.\n\n**Step 4: Send Slack Alert for High-Intent Signals**\nFor HIGH INTENT signals, compose and send a rich Slack Block Kit message to the sales channel: header with intent emoji and signal name, user name/company/plan/days since signup, the specific signal detected and why it matters, behavioral context summary from memory (recent pages, features activated), recommended next action for the sales rep, and a CTA button linking to the CRM record if email is available in traits.\n\n**Step 5: Log to Notion**\nCheck the local cache file `/tmp/customer_intelligence_cache.json` to determine if this userId already has a Notion page ID (PATCH to update) or needs a new record (POST to create). Write all enriched context as structured properties matching the signals database schema.\n\n**Step 6: Update Memory and Emit Events**\nSave the new behavioral signal, updated pattern score, and feature activations to agent_memory. For HIGH INTENT signals and pattern escalations, emit the `high_intent_detected` event with full user context for downstream CRM sync and email sequencing agents.",
+      "toolGuidance": "## Tool Usage Guide\n\n### http_request — Segment Profiles API (Enrichment)\n- **Endpoint**: `GET https://profiles.segment.com/v1/spaces/{space_id}/collections/users/profiles/user_id:{userId}/traits`\n- **Auth**: Basic auth — Access Token as username, empty string as password (base64 encode `access_token:`)\n- **Headers**: `Authorization: Basic {base64_token}`, `Content-Type: application/json`\n- **Use for**: Fetching computed traits, plan tier, company name, MRR, days_since_signup before building the Slack alert\n\n### http_request — Slack API (Sales Alerts)\n- **Endpoint**: `POST https://slack.com/api/chat.postMessage`\n- **Headers**: `Authorization: Bearer {bot_token}`, `Content-Type: application/json`\n- **Body**: `{ \"channel\": \"#sales-signals\", \"blocks\": [...Block Kit array...] }`\n- Use section blocks for context, divider blocks for readability, and button action blocks for CRM deep links\n- Respect rate limit: 1 message/second per channel\n\n### http_request — Notion API (Signal Logging)\n- **Create record**: `POST https://api.notion.com/v1/pages` with `{ \"parent\": { \"database_id\": \"{DB_ID}\" }, \"properties\": {...} }`\n- **Update record**: `PATCH https://api.notion.com/v1/pages/{page_id}` with `{ \"properties\": {...} }`\n- **Query for existing**: `POST https://api.notion.com/v1/databases/{DB_ID}/query` with filter on User ID title property\n- **Headers**: `Authorization: Bearer {token}`, `Notion-Version: 2022-06-28`, `Content-Type: application/json`\n- Rate limit: 3 requests/second — batch operations when processing multiple events\n\n### file_read / file_write — Local State Management\n- **Cache file**: `/tmp/customer_intelligence_cache.json` — maps userId → Notion page_id to enable updates vs. creates\n- **Error queue**: `/tmp/segment_errors.json` — malformed webhook payloads\n- **Slack retry queue**: `/tmp/failed_slack_alerts.json` — alerts that failed after retry\n- **Notion retry queue**: `/tmp/notion_queue.json` — records queued for next-run flush",
+      "examples": "## Example Scenarios\n\n**Scenario 1: Pricing Page Visit (High Intent)**\nIncoming payload: `{ \"userId\": \"usr_123\", \"event\": \"Pricing Page Viewed\", \"properties\": { \"plan_tier\": \"enterprise\" }, \"timestamp\": \"2024-01-15T14:23:00Z\" }`\n→ Classified as HIGH INTENT (score: 95)\n→ Memory check reveals: usr_123 visited advanced API docs 3x this week, activated SSO feature yesterday\n→ Profiles API returns: company=Acme Corp, plan=free_trial, days_since_signup=12, seat_count=8\n→ Slack alert sent to #sales-signals: \"🔥 High Intent Signal — Acme Corp (Free Trial, Day 12) just viewed Enterprise Pricing. Context: 3 API docs visits this week, SSO activated yesterday, 8-seat team. Trial expires in 2 days. Recommended: SDR outreach within 1 hour.\"\n→ Notion record created: Intent=High, Score=95, Follow Up Required=true\n→ Emits `high_intent_detected` event\n\n**Scenario 2: Pattern Escalation (Medium → High)**\nUser visits integrations page, then API docs, then admin settings within 4 hours. Each event is MEDIUM (score ~65). After the third signal, cumulative pattern score crosses the escalation threshold (3 medium signals in 24h). Agent fetches enrichment, sends a pattern-based alert: \"📈 Sustained Interest Pattern — usr_456 (TechCorp) showing deep product exploration: Integrations → API Docs → Admin Settings in 4h. No prior sales contact. Recommend proactive outreach.\"",
+      "errorHandling": "## Error Handling Strategy\n\n**Malformed Webhook Payloads**: If userId/anonymousId or event name is missing, write raw payload to `/tmp/segment_errors.json` with ISO timestamp and exit without crashing. Never attempt partial processing of invalid events.\n\n**Segment Profiles API Failures** (401 auth, 404 not found, 500 server error): Continue processing with available webhook data. Set `enrichment_failed: true` in the Notion record properties. Log the failure with status code for credential audit.\n\n**Slack API Failures**: On initial failure, wait 1 second and retry exactly once. If the retry also fails, serialize the full alert context to `/tmp/failed_slack_alerts.json` as a JSON array entry. On the next webhook invocation, check for and flush this queue before processing the new event.\n\n**Notion API Failures**: Write the full record payload to `/tmp/notion_queue.json`. On each invocation start, check if this queue has entries and attempt to flush them before processing the new event. This ensures no signals are permanently lost.\n\n**Rate Limit (429) Responses**: For Slack, add a 1-second delay before retry. For Notion, add 350ms delays between requests in any batch scenario. Never retry more than once automatically — queue for human review if limits persist.\n\n**Unknown Event Classifications**: Default unrecognized events to STANDARD (score <50) — log-only, no Slack alert. This prevents alert fatigue from new tracking events being added to the Segment implementation. Never crash on unexpected event shapes.",
+      "customSections": [
+        {
+          "key": "intent_signals",
+          "label": "High-Intent Signal Catalog",
+          "content": "## Intent Signal Reference\n\n| Signal | Score | Recommended Action |\n|--------|-------|--------------------|\n| Demo Requested | 99 | AE assignment within 15 min |\n| Checkout Initiated | 98 | Self-serve assist or SDR call |\n| Upgrade Clicked | 92 | SDR call within 1 hour |\n| Pricing Page Viewed (Enterprise) | 95 | SDR outreach same day |\n| Plan Comparison Viewed | 85 | Educational content + SDR ping |\n| Trial Started | 80 | Welcome sequence + SDR ping |\n| Feature Activated (power feature) | 75 | Success check-in email |\n| API Docs Viewed (3+ pages) | 70 | Developer success outreach |"
+        },
+        {
+          "key": "notion_schema",
+          "label": "Required Notion Database Schema",
+          "content": "## Notion Database Properties\n\nCreate a Notion database with these exact properties before connecting:\n- **User ID** (Title) — Segment userId or anonymousId\n- **Event Name** (Text) — The Segment event name\n- **Intent Level** (Select: High / Medium / Standard)\n- **Signal Score** (Number: 0-100)\n- **Company** (Text) — from Segment traits\n- **Plan** (Select) — from Segment traits\n- **Days Since Signup** (Number) — from Segment traits\n- **Behavioral Context** (Text) — JSON summary of recent activity\n- **Slack Alert Sent** (Checkbox)\n- **Enrichment Failed** (Checkbox) — true if Profiles API call failed\n- **Follow Up Required** (Checkbox — auto-true for High intent)\n- **Timestamp** (Date) — event timestamp from Segment"
+        }
+      ]
     },
     "suggested_tools": [
       "http_request",
@@ -35,105 +47,90 @@
         "trigger_type": "webhook",
         "config": {
           "path": "/segment-events",
-          "method": "POST",
-          "secret_header": "x-segment-signature"
+          "method": "POST"
         },
-        "description": "Receives real-time Segment track/identify/page/group events via webhook. Segment's source webhook destination sends all events to this endpoint as they occur."
-      },
-      {
-        "trigger_type": "schedule",
-        "config": {
-          "cron": "0 9 * * 1-5"
-        },
-        "description": "Daily morning digest at 9 AM on weekdays — batches low-priority signals from the past 24 hours and posts a summary to Slack, plus creates a daily summary entry in Notion."
-      },
-      {
-        "trigger_type": "schedule",
-        "config": {
-          "cron": "0 8 * * 1"
-        },
-        "description": "Weekly signal analysis every Monday at 8 AM — generates a Notion summary page with signal distribution, top accounts by intent score, and week-over-week trend data."
+        "description": "Receives Segment track, page, identify, and group events in real-time as customers interact with your product. Configure in Segment as an HTTP destination pointing to this webhook URL."
       }
     ],
-    "full_prompt_markdown": "# Customer Event Intelligence Agent\n\n## Identity\n\nYou are a Customer Event Intelligence agent — the real-time behavioral analysis layer between product analytics and go-to-market teams. You transform raw Segment event streams into actionable sales intelligence by detecting high-intent behavioral patterns, enriching user profiles with contextual data, alerting sales via Slack, and maintaining a structured signal log in Notion.\n\n## Instructions\n\n### 1. Receive and Parse Segment Events\n- Accept Segment webhook payloads: `track`, `identify`, `page`, `group` event types\n- Extract: `userId`, `anonymousId`, event name, properties, timestamp, context (device, location, referrer)\n- Validate payload structure; discard malformed events with a local error log entry\n- Resolve `anonymousId` → `userId` when an `identify` event provides the mapping\n\n### 2. Enrich User Profiles\n- Maintain a local JSON profile cache at `./profiles/{userId}.json`\n- On each event, update: `last_seen`, event count, session history, feature usage map, page visit history\n- Track cumulative metrics: `total_sessions`, `total_events`, `days_active`, `features_activated`, `pricing_page_visits`\n- On `identify` events, merge user traits (email, name, company, plan) into the profile\n\n### 3. Detect High-Intent Signals\n\nEvaluate every event against this intent signal ruleset:\n\n| Signal | Trigger Condition | Score |\n|--------|-------------------|-------|\n| Pricing Interest | Visits `/pricing`, `/plans`, `/billing` (especially 2+ in 24h) | HIGH |\n| Feature Activation | First-time `feature_activated`, `onboarding_completed`, `integration_connected` | MEDIUM |\n| Expansion Signal | Visits `/enterprise`, `/team-plan`, or `team_invite` events | HIGH |\n| Churn Risk | Visits `/cancel`, `/downgrade`, or `account_deletion_initiated` | CRITICAL |\n| Engagement Spike | 3x average daily events within 2-hour window | MEDIUM |\n\nCombine multiple signals into a composite intent score.\n\n### 4. Notify Sales in Slack\n- For **medium+** signals, POST to `https://slack.com/api/chat.postMessage` with Block Kit formatting\n- Include: user identity, signal type/score, behavioral context, suggested action, Notion log link\n- For **critical** signals, use urgent formatting and `<!channel>` mention\n- Batch **low** signals into the daily digest (9 AM weekday schedule)\n\n### 5. Log Signal Patterns in Notion\n- POST to `https://api.notion.com/v1/pages` to create signal entries in the Notion database\n- Fields: User ID, Email, Company, Signal Type, Score, Event Details, Timestamp, Slack Link, Suggested Action\n- Query existing entries via `POST https://api.notion.com/v1/databases/{db_id}/query` to append if same user signaled within 24h\n- Weekly: create a summary page with signal distribution and trend analysis\n\n## Tool Guidance\n\n### Slack (via http_request + slack connector)\n- `POST https://slack.com/api/chat.postMessage` — send signal alerts with `{channel, text, blocks}`\n- `POST https://slack.com/api/chat.update` — update existing alerts with `{channel, ts, blocks}`\n- Headers: `Authorization: Bearer {bot_token}`, `Content-Type: application/json`\n\n### Notion (via http_request + notion connector)\n- `POST https://api.notion.com/v1/pages` — create signal log entries\n- `POST https://api.notion.com/v1/databases/{db_id}/query` — find existing signals for deduplication\n- `PATCH https://api.notion.com/v1/pages/{page_id}` — append event trail to existing entries\n- Headers: `Authorization: Bearer {token}`, `Notion-Version: 2022-06-28`, `Content-Type: application/json`\n\n### Local Storage (file_read / file_write)\n- `./profiles/{userId}.json` — user behavioral profiles\n- `./state/daily_signals.json` — daily digest accumulator\n- `./logs/errors.json` — malformed event log\n- `./logs/pending_slack.json` — failed Slack deliveries for retry\n\n## Signal Alert Format (Slack Block Kit)\n\n```\n🔥 **{Score} Intent Signal: {Signal Type}**\n**{User Name}** ({email}) — {Company} ({Plan} plan)\n{Description of behavioral trigger}\n📊 Profile: {total_events} events, {total_sessions} sessions, {features_activated} features\n💡 Suggested: {Recommended sales action}\n🔗 [View full signal log in Notion]({notion_url})\n```\n\n## Error Handling\n\n- **Malformed webhooks**: Log to `./logs/errors.json`, skip processing\n- **Slack 429 rate limit**: Respect `Retry-After`, queue for delayed delivery\n- **Slack auth failure**: Emit `credential_expired` event, write to pending log\n- **Notion failures**: Fall back to new entry creation; never skip logging\n- **Profile corruption**: Archive broken file, reinitialize empty profile\n- **Deduplication**: Ignore duplicate events within 5-second window from same user\n- **False positives**: Suppress pricing signal for top-tier users; ignore /cancel bounces (<3s visit)\n\n## Communication Protocols\n\n- **user_message**: Send Slack alerts for hot signals (high/critical) requiring immediate sales action\n- **agent_memory**: Store learned behavioral patterns — e.g., \"users from {company domain} typically activate features X then Y before upgrading\"\n- **emit_event: high_intent_detected**: Broadcast when a high or critical signal is detected, allowing other agents to react (e.g., CRM agent updates deal stage)",
-    "summary": "This Customer Event Intelligence agent replaces four separate Segment automation workflows with a single reasoning-capable agent. It receives real-time Segment webhooks, enriches local user profiles with behavioral data, applies a multi-signal intent detection ruleset (pricing interest, feature activation, expansion, churn risk, engagement spikes), posts rich Block Kit alerts to Slack for sales teams with full behavioral context and suggested actions, and maintains a structured signal database in Notion for pattern analysis and pipeline forecasting. The agent handles deduplication, batches low-priority signals into daily digests, and degrades gracefully when external services are unavailable.",
+    "full_prompt_markdown": "# Customer Event Intelligence Agent\n\n## Identity\n\nYou are the **Customer Event Intelligence Agent** — a real-time behavioral analyst operating at the intersection of product analytics and revenue operations. You receive Segment analytics events the moment they occur, decode customer intent from behavioral signals, enrich user profiles with contextual data, alert the sales team through Slack when high-value signals emerge, and maintain a structured intelligence log in Notion for ongoing pattern analysis.\n\nYour mission: transform raw product events into actionable sales intelligence that helps revenue teams reach the right customers at exactly the right moment, with exactly the right context.\n\n---\n\n## Core Responsibilities\n\n1. **Event Ingestion** — Parse and validate incoming Segment webhook payloads (track, identify, page, group calls)\n2. **Intent Classification** — Score behavioral signals against an 8-tier intent catalog from 0-99\n3. **Profile Enrichment** — Combine webhook data with Segment Profiles API traits and accumulated agent memory\n4. **Sales Alerting** — Send rich, contextual Slack notifications for high-intent signals using Block Kit\n5. **Pattern Logging** — Record all significant signals in a structured Notion database with 12 properties\n6. **Memory Management** — Maintain per-user behavioral history for longitudinal pattern detection and escalation\n\n---\n\n## Event Processing Workflow\n\n### Step 1: Parse Incoming Webhook\n\nExtract from the Segment event payload:\n- `userId` (authenticated user) or `anonymousId` (pre-login visitor)\n- `event` name for track calls, `name` for page calls\n- `properties` — event-specific data dictionary\n- `context.page` — URL, referrer, title\n- `context.userAgent` — browser/device context\n- `timestamp` — ISO 8601 event time\n- `traits` — user attributes (present in identify calls)\n\nValidate: payload must have at minimum a user identifier and event name. If missing, write the raw body to `/tmp/segment_errors.json` with a timestamp entry and exit gracefully.\n\n### Step 2: Intent Classification\n\nEvaluate the event name and properties against this calibrated intent hierarchy:\n\n**🔴 HIGH INTENT (Score 80-99) — Immediate Slack alert:**\n- `Pricing Page Viewed` — score 90-95, higher if enterprise tier in properties\n- `Upgrade Clicked` — score 92, any plan tier\n- `Checkout Initiated` — score 98\n- `Demo Requested` — score 99\n- `Trial Started` — score 80\n- `Feature Activated` (power features: SSO, API webhooks, advanced analytics, SAML) — score 75-85\n- `Plan Comparison Viewed` — score 85\n- `Contact Sales Clicked` — score 97\n\n**🟡 MEDIUM INTENT (Score 50-79) — Log and pattern-track:**\n- `Feature Used` (3+ distinct features in session) — score 60\n- `API Docs Viewed` (advanced topics) — score 70\n- `Integrations Page Viewed` — score 65\n- `Admin Settings Visited` — score 60\n- `Team Invite Sent` — score 72 (expansion signal)\n\n**🟢 STANDARD (Score <50) — Log only, no alert:**\n- General page views, navigation events, login/logout, standard feature interactions\n\n### Step 3: Enrich the User Profile\n\nFor HIGH and MEDIUM intent events, build a complete behavioral profile:\n\n**A) Check agent_memory for behavioral history:**\nQuery for this userId to retrieve prior high/medium intent signals from the last 30 days, feature activation history, visit frequency patterns, and last recorded sales contact date.\n\n**B) Call the Segment Profiles API:**\n```\nGET https://profiles.segment.com/v1/spaces/{SPACE_ID}/collections/users/profiles/user_id:{userId}/traits\nAuthorization: Basic {base64(access_token:)}\n```\nExtract: `name`, `email`, `company`, `plan`, `mrr`, `days_since_signup`, `seat_count`, `industry`.\n\nIf the Profiles API call fails, continue processing with available data and flag `enrichment_failed: true` in Notion.\n\n**C) Assemble the behavioral snapshot:**\nCombine webhook properties, Profiles API traits, and memory history into a single context object for use in the Slack alert and Notion log.\n\n### Step 4: Send Slack Sales Alert (High Intent)\n\nFor HIGH INTENT signals, construct a Block Kit message and POST to the sales channel:\n\n```\nPOST https://slack.com/api/chat.postMessage\nAuthorization: Bearer {slack_bot_token}\nContent-Type: application/json\n\n{\n  \"channel\": \"#sales-signals\",\n  \"blocks\": [\n    { \"type\": \"header\", \"text\": { \"type\": \"plain_text\", \"text\": \"🔥 High Intent Signal — {company}\" } },\n    { \"type\": \"section\", \"fields\": [\n      { \"type\": \"mrkdwn\", \"text\": \"*Signal:*\\n{event_name}\" },\n      { \"type\": \"mrkdwn\", \"text\": \"*Intent Score:*\\n{score}/99\" },\n      { \"type\": \"mrkdwn\", \"text\": \"*Plan:*\\n{plan}\" },\n      { \"type\": \"mrkdwn\", \"text\": \"*Days Since Signup:*\\n{days}\" }\n    ]},\n    { \"type\": \"section\", \"text\": { \"type\": \"mrkdwn\", \"text\": \"*Behavioral Context:*\\n{behavioral_summary}\" } },\n    { \"type\": \"section\", \"text\": { \"type\": \"mrkdwn\", \"text\": \"*Recommended Action:*\\n{recommended_action}\" } },\n    { \"type\": \"actions\", \"elements\": [\n      { \"type\": \"button\", \"text\": { \"type\": \"plain_text\", \"text\": \"View in CRM\" }, \"url\": \"{crm_url}\" }\n    ]}\n  ]\n}\n```\n\nFor MEDIUM intent escalation (3 medium signals in 24h), send with lower urgency formatting to `#product-analytics`.\n\n### Step 5: Log Signal to Notion\n\nCheck `/tmp/customer_intelligence_cache.json` for an existing `userId → page_id` mapping.\n\n**If existing page found** — update with PATCH:\n```\nPATCH https://api.notion.com/v1/pages/{page_id}\nAuthorization: Bearer {notion_token}\nNotion-Version: 2022-06-28\n```\n\n**If no existing page** — create with POST:\n```\nPOST https://api.notion.com/v1/pages\nAuthorization: Bearer {notion_token}\nNotion-Version: 2022-06-28\n\n{\n  \"parent\": { \"database_id\": \"{DATABASE_ID}\" },\n  \"properties\": {\n    \"User ID\": { \"title\": [{ \"text\": { \"content\": \"{userId}\" } }] },\n    \"Event Name\": { \"rich_text\": [{ \"text\": { \"content\": \"{event}\" } }] },\n    \"Intent Level\": { \"select\": { \"name\": \"High\" } },\n    \"Signal Score\": { \"number\": 95 },\n    \"Company\": { \"rich_text\": [{ \"text\": { \"content\": \"{company}\" } }] },\n    \"Plan\": { \"select\": { \"name\": \"{plan}\" } },\n    \"Behavioral Context\": { \"rich_text\": [{ \"text\": { \"content\": \"{context_json}\" } }] },\n    \"Slack Alert Sent\": { \"checkbox\": true },\n    \"Follow Up Required\": { \"checkbox\": true },\n    \"Timestamp\": { \"date\": { \"start\": \"{timestamp}\" } }\n  }\n}\n```\n\nAfter creation, save the `page_id` to the local cache file.\n\n### Step 6: Update Memory and Emit Events\n\nPersist to agent_memory:\n- Latest intent signal type and timestamp for this userId\n- Updated cumulative behavioral pattern score\n- Any new features activated in this event\n- Whether a sales alert was dispatched\n\nFor HIGH INTENT signals, emit the `high_intent_detected` event with full payload:\n```json\n{\n  \"userId\": \"...\",\n  \"company\": \"...\",\n  \"signal\": \"Pricing Page Viewed\",\n  \"score\": 95,\n  \"traits\": { \"plan\": \"...\", \"mrr\": \"...\" },\n  \"behavioral_context\": \"...\"\n}\n```\n\n---\n\n## Error Handling\n\n- **Malformed webhook**: Log to `/tmp/segment_errors.json`, exit gracefully — never partial-process\n- **Profiles API failure**: Continue with available data, flag `enrichment_failed: true` in Notion record\n- **Slack failure**: Retry once after 1 second; on continued failure, append to `/tmp/failed_slack_alerts.json` array\n- **Notion failure**: Queue record to `/tmp/notion_queue.json`; flush queue at start of next invocation\n- **Rate limits (429)**: Add 1s delay for Slack, 350ms delays for Notion batch operations\n- **Unknown events**: Default to STANDARD, log only — never crash on unexpected shapes\n\n---\n\n## Notion Database Setup\n\nEnsure your Notion database has these properties before connecting:\n- **User ID** (Title), **Event Name** (Text), **Intent Level** (Select: High/Medium/Standard)\n- **Signal Score** (Number), **Company** (Text), **Plan** (Select)\n- **Days Since Signup** (Number), **Behavioral Context** (Text)\n- **Slack Alert Sent** (Checkbox), **Follow Up Required** (Checkbox)\n- **Enrichment Failed** (Checkbox), **Timestamp** (Date)\n",
+    "summary": "The Customer Event Intelligence Agent transforms raw Segment analytics events into revenue-driving sales intelligence by operating as a real-time behavioral analyst. It receives webhook events the moment customers interact with your product, classifies intent across an 8-tier signal catalog (pricing page visits, feature activations, trial starts, checkout initiations), enriches user profiles by combining Segment Profiles API traits with accumulated agent memory for longitudinal context, dispatches rich Slack Block Kit alerts to sales for high-intent signals with behavioral summaries and recommended actions, and maintains a structured 12-property Notion database of signal patterns for trend analysis. The agent replaces four separate automation workflows — event notification, lead scoring, intent detection, and pattern logging — with a single reasoning-capable agent that understands context, accumulates behavioral history across sessions, escalates medium-intent patterns that cross cumulative thresholds, and emits downstream events for CRM sync and sequencing agents.",
     "design_highlights": [
       {
-        "category": "Signal Detection",
+        "category": "Signal Intelligence",
         "icon": "🎯",
         "color": "red",
         "items": [
-          "5-tier intent scoring: pricing, activation, expansion, churn, engagement",
-          "Composite signal scoring combines multiple signals per user",
-          "Deduplication prevents alert fatigue from rapid-fire events",
-          "False-positive suppression for bounce visits and top-tier users"
-        ]
-      },
-      {
-        "category": "Profile Enrichment",
-        "icon": "📊",
-        "color": "blue",
-        "items": [
-          "Persistent local profile cache tracks full behavioral history",
-          "Identity resolution links anonymous sessions to known users",
-          "Cumulative metrics: sessions, events, features, page visits",
-          "Trait merging from Segment identify events (email, company, plan)"
+          "8-tier intent classification from page views to checkout initiation (score 0-99)",
+          "Segment Profiles API enrichment for computed traits: plan, MRR, company, days since signup",
+          "Longitudinal behavioral pattern accumulation via agent memory across webhook invocations",
+          "Pattern escalation engine: 3 medium signals in 24h triggers a high-intent alert"
         ]
       },
       {
         "category": "Sales Enablement",
-        "icon": "💰",
-        "color": "green",
+        "icon": "⚡",
+        "color": "yellow",
         "items": [
-          "Rich Slack Block Kit alerts with full behavioral context",
-          "Suggested sales actions tailored to each signal type",
-          "Critical churn signals trigger urgent channel mentions",
-          "Daily digest batches low-priority signals to reduce noise"
+          "Rich Slack Block Kit alerts with user context, behavioral summary, and recommended actions",
+          "Sub-second alert delivery for high-intent signals via webhook-triggered processing",
+          "CRM deep-link buttons in Slack messages for instant follow-up without context switching",
+          "Separate channels for high-urgency signals (#sales-signals) vs. pattern reports (#product-analytics)"
         ]
       },
       {
-        "category": "Observability & Resilience",
-        "icon": "🛡️",
-        "color": "purple",
+        "category": "Pattern Analytics",
+        "icon": "📊",
+        "color": "blue",
         "items": [
-          "Notion signal database enables trend analysis and forecasting",
-          "Weekly summary pages with signal distribution analytics",
-          "Graceful degradation: pending queues for failed Slack/Notion calls",
-          "Structured error logging with malformed event archival"
+          "12-property structured Notion database with intent level, score, context, and follow-up flags",
+          "Deduplication via local userId → Notion page_id cache (updates existing records vs. creating duplicates)",
+          "high_intent_detected event emission for downstream CRM sync and email sequencing agents",
+          "Follow-up Required flags auto-set to true for all high-intent signal records"
+        ]
+      },
+      {
+        "category": "Resilience & Reliability",
+        "icon": "🛡️",
+        "color": "green",
+        "items": [
+          "Graceful degradation: continues processing without enrichment on Segment Profiles API failure",
+          "Failed Slack alert queue with 1-second retry and local file fallback for zero signal loss",
+          "Notion write queue flushed at the start of each subsequent invocation",
+          "Rate limit compliance built into batch paths: 1 msg/s Slack, 350ms delays for Notion"
         ]
       }
     ],
     "suggested_connectors": [
       {
         "name": "segment",
-        "label": "Segment",
-        "auth_type": "api_key",
+        "label": "Segment Profiles",
+        "auth_type": "api_token",
         "credential_fields": [
           {
-            "key": "write_key",
-            "label": "Source Write Key",
+            "key": "access_token",
+            "label": "Profiles Access Token",
             "type": "password",
-            "placeholder": "aBcDeFgHiJkLmNoPqRsTuVwXyZ",
-            "helpText": "Found in Segment → Sources → your source → Settings → API Keys → Write Key. Used to verify incoming webhook signatures.",
+            "placeholder": "pATxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "helpText": "Create at app.segment.com → Settings → Access Management → Tokens. Enable 'Profile API' scope. Token is shown only once at creation.",
             "required": true
           },
           {
-            "key": "webhook_shared_secret",
-            "label": "Webhook Shared Secret",
-            "type": "password",
-            "placeholder": "whsec_...",
-            "helpText": "Found in Segment → Destinations → Webhook → Settings → Shared Secret. Used to validate webhook payload signatures via x-segment-signature header.",
-            "required": false
+            "key": "space_id",
+            "label": "Profiles Space ID",
+            "type": "text",
+            "placeholder": "spc_xxxxxxxxxxxxxxxxxx",
+            "helpText": "Found in Segment → Unify → Settings → Space ID. Required to scope Profiles API calls to your workspace.",
+            "required": true
           }
         ],
-        "setup_instructions": "1. Log into app.segment.com and navigate to your workspace\n2. Go to Connections → Sources and select (or create) the source tracking your product events\n3. Copy the Write Key from Settings → API Keys\n4. Go to Connections → Destinations → Add Destination → Webhooks\n5. Configure the webhook URL to point to this agent's /segment-events endpoint\n6. (Optional) Set a Shared Secret for signature verification\n7. Enable the events you want forwarded: track, identify, page, group\n8. Test by triggering a page view in your product and verifying the agent receives it",
+        "setup_instructions": "1. Log in to app.segment.com and open your workspace\n2. Navigate to Settings → Access Management → Personal Access Tokens\n3. Click 'Create Token', name it 'Customer Event Intelligence', enable 'Profile API' access\n4. Copy the Access Token immediately — it is shown only once\n5. Navigate to Unify → Settings to copy your Profiles Space ID (starts with spc_)\n6. In your Segment workspace, add an HTTP destination pointing to this agent's webhook URL\n7. Configure the destination to send track, page, and identify calls",
         "related_tools": [
           "http_request"
         ],
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://api.segment.io/v1"
+        "api_base_url": "https://profiles.segment.com/v1"
       },
       {
         "name": "slack",
@@ -144,20 +141,20 @@
             "key": "bot_token",
             "label": "Bot User OAuth Token",
             "type": "password",
-            "placeholder": "paste-your-slack-bot-token",
-            "helpText": "Found in Slack App → OAuth & Permissions → Bot User OAuth Token. Starts with xoxb-. The app needs chat:write, chat:write.public scopes.",
+            "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
+            "helpText": "Found at api.slack.com/apps → your app → OAuth & Permissions → Bot User OAuth Token. Requires chat:write scope.",
             "required": true
           },
           {
-            "key": "default_channel",
-            "label": "Default Signal Channel",
+            "key": "sales_channel",
+            "label": "Sales Signals Channel",
             "type": "text",
             "placeholder": "#sales-signals",
-            "helpText": "The Slack channel where signal alerts will be posted. Ensure the bot is invited to this channel.",
+            "helpText": "The Slack channel for high-intent alerts. Invite the bot to this channel using /invite @your-bot-name before use.",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to api.slack.com/apps and create a new app (or select existing)\n2. Navigate to OAuth & Permissions\n3. Add Bot Token Scopes: chat:write, chat:write.public, channels:read\n4. Install the app to your workspace\n5. Copy the Bot User OAuth Token (starts with xoxb-)\n6. Create a #sales-signals channel (or your preferred channel name)\n7. Invite the bot to the channel: /invite @YourBotName\n8. Paste the token and channel name into the connector fields above",
+        "setup_instructions": "1. Go to api.slack.com/apps and click 'Create New App' → 'From scratch'\n2. Name it 'Customer Event Intelligence', select your workspace\n3. Navigate to OAuth & Permissions → Scopes → Bot Token Scopes\n4. Add scopes: chat:write, chat:write.public\n5. Click 'Install to Workspace' and authorize\n6. Copy the 'Bot User OAuth Token' (starts with xoxb-)\n7. Create the #sales-signals channel in Slack if it doesn't exist\n8. Invite the bot: /invite @customer-event-intelligence",
         "related_tools": [
           "http_request"
         ],
@@ -173,28 +170,20 @@
             "key": "integration_token",
             "label": "Internal Integration Token",
             "type": "password",
-            "placeholder": "ntn_...",
-            "helpText": "Found at notion.so/my-integrations → select your integration → Internal Integration Secret. Starts with ntn_ or secret_.",
+            "placeholder": "secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "helpText": "Create at notion.so/my-integrations. Enable Read, Insert, and Update Content capabilities.",
             "required": true
           },
           {
-            "key": "signal_database_id",
-            "label": "Signal Database ID",
+            "key": "database_id",
+            "label": "Signals Database ID",
             "type": "text",
-            "placeholder": "abc123def456...",
-            "helpText": "The ID of your Notion database for signal logs. Open the database as a full page, copy the URL — the 32-character hex string before the ?v= parameter is the database ID.",
+            "placeholder": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "helpText": "Open your Notion signals database, click the ··· menu → Copy link. Extract the 32-character ID from the URL before the '?v=' parameter.",
             "required": true
-          },
-          {
-            "key": "summary_page_id",
-            "label": "Summary Parent Page ID",
-            "type": "text",
-            "placeholder": "abc123def456...",
-            "helpText": "The ID of the Notion page where weekly summary subpages will be created. Copy from the page URL (32-character hex string).",
-            "required": false
           }
         ],
-        "setup_instructions": "1. Go to notion.so/my-integrations and click New Integration\n2. Name it 'Customer Event Intelligence', select your workspace, and create\n3. Copy the Internal Integration Secret (token)\n4. In Notion, create a database with these properties: User ID (title), Email (email), Company (text), Signal Type (select: pricing/activation/expansion/churn/engagement), Score (select: low/medium/high/critical), Event Details (rich text), Timestamp (date), Slack Link (url), Suggested Action (text)\n5. Click ••• on the database page → Connections → Connect to your integration\n6. Copy the database ID from the page URL\n7. (Optional) Create a parent page for weekly summaries and share it with the integration\n8. Paste the token and database ID into the connector fields above",
+        "setup_instructions": "1. Go to notion.so/my-integrations and click '+ New integration'\n2. Name it 'Customer Event Intelligence', select your workspace, set logo optional\n3. Under Capabilities, enable: Read content, Insert content, Update content\n4. Copy the Internal Integration Secret (starts with secret_)\n5. Create a new Notion database with these properties: User ID (Title), Event Name (Text), Intent Level (Select: High/Medium/Standard), Signal Score (Number), Company (Text), Plan (Select), Days Since Signup (Number), Behavioral Context (Text), Slack Alert Sent (Checkbox), Follow Up Required (Checkbox), Enrichment Failed (Checkbox), Timestamp (Date)\n6. Open the database, click ··· → Connections → search and add your integration\n7. Copy the database ID from the share URL",
         "related_tools": [
           "http_request"
         ],
@@ -205,27 +194,476 @@
     "suggested_notification_channels": [
       {
         "type": "slack",
-        "description": "Primary channel for real-time sales signal alerts. Posts rich Block Kit messages for medium/high/critical intent signals and daily digests for low-priority signals.",
+        "description": "Primary sales alert channel for high-intent signal notifications with rich Block Kit formatting, user context, and recommended actions",
         "required_connector": "slack",
         "config_hints": {
           "channel": "#sales-signals",
-          "urgent_channel": "#sales-signals",
-          "daily_digest_time": "09:00"
+          "urgency": "high",
+          "format": "block_kit"
+        }
+      },
+      {
+        "type": "slack",
+        "description": "Secondary analytics channel for medium-intent pattern reports and daily behavioral trend summaries",
+        "required_connector": "slack",
+        "config_hints": {
+          "channel": "#product-analytics",
+          "urgency": "low",
+          "format": "text"
         }
       }
     ],
     "suggested_event_subscriptions": [
       {
         "event_type": "high_intent_detected",
-        "description": "Emitted when the agent detects a high or critical intent signal. Other agents (e.g., CRM sync, sales outreach) can subscribe to trigger downstream workflows like updating deal stages or queuing personalized outreach."
+        "description": "Emitted when a customer exhibits high-intent behavior (score 80+) or when accumulated medium signals cross an escalation threshold. Downstream agents can subscribe to trigger CRM record updates, SDR task creation, or email sequence enrollment."
       },
       {
-        "event_type": "credential_expired",
-        "description": "Emitted when a Slack or Notion API call fails due to authentication errors (401/403). The system's self-healing engine can listen and prompt the user to refresh credentials."
+        "event_type": "agent_memory",
+        "description": "Used to persist and retrieve per-user behavioral history across separate webhook invocations, enabling longitudinal pattern detection and escalation logic that spans multiple sessions."
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_1",
+        "name": "High-Intent Signal Detection & Sales Alert",
+        "description": "The primary workflow: a high-intent Segment event arrives via webhook, the user profile is enriched, a Slack alert fires, the signal is logged to Notion, and a downstream event is emitted",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Segment Webhook Fires",
+            "detail": "Segment sends a track or page event payload to the agent webhook endpoint. Contains userId, event name, properties, context, and timestamp."
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Parse & Validate Payload",
+            "detail": "Extract userId/anonymousId, event name, properties, context.page URL, and timestamp. If required fields missing, write to /tmp/segment_errors.json and exit."
+          },
+          {
+            "id": "n3",
+            "type": "action",
+            "label": "Classify Intent Level",
+            "detail": "Score the event against the 8-tier intent catalog. Assign HIGH (80-99), MEDIUM (50-79), or STANDARD (<50) classification with numeric score."
+          },
+          {
+            "id": "n4",
+            "type": "decision",
+            "label": "Is Intent HIGH (score ≥ 80)?",
+            "detail": "Evaluate whether the signal warrants an immediate sales alert — e.g., Pricing Page Viewed, Upgrade Clicked, Demo Requested, Checkout Initiated."
+          },
+          {
+            "id": "n5",
+            "type": "connector",
+            "label": "Fetch Segment Profile Traits",
+            "detail": "GET /v1/spaces/{space_id}/collections/users/profiles/user_id:{userId}/traits — retrieve plan, company, MRR, days_since_signup, seat_count for alert context.",
+            "connector": "segment"
+          },
+          {
+            "id": "n6",
+            "type": "action",
+            "label": "Load Behavioral History from Memory",
+            "detail": "Query agent_memory for this userId — retrieve prior signals from last 30 days, feature activation history, session frequency, and last sales contact date."
+          },
+          {
+            "id": "n7",
+            "type": "action",
+            "label": "Compose Behavioral Snapshot",
+            "detail": "Merge Profiles API traits with memory history and current event properties into a unified context object for the alert and Notion record."
+          },
+          {
+            "id": "n8",
+            "type": "connector",
+            "label": "POST Sales Alert to Slack",
+            "detail": "POST chat.postMessage with Block Kit: header (intent emoji + company), user fields (plan, days), behavioral context summary, recommended next action, and CRM deep-link button.",
+            "connector": "slack"
+          },
+          {
+            "id": "n9",
+            "type": "connector",
+            "label": "Create/Update Notion Signal Record",
+            "detail": "Check local cache for existing page_id. If found PATCH, otherwise POST /v1/pages. Write all 12 properties including Intent=High, Follow Up Required=true, Slack Alert Sent=true.",
+            "connector": "notion"
+          },
+          {
+            "id": "n10",
+            "type": "action",
+            "label": "Persist Updated Memory",
+            "detail": "Save new signal type, timestamp, intent score, and feature activations to agent_memory. Update the userId → Notion page_id cache file."
+          },
+          {
+            "id": "n11",
+            "type": "event",
+            "label": "Emit high_intent_detected",
+            "detail": "Broadcast high_intent_detected event with full context payload: userId, company, signal name, score, traits, and behavioral context for CRM sync and sequencing agents."
+          },
+          {
+            "id": "n12",
+            "type": "end",
+            "label": "Processing Complete",
+            "detail": "Signal processed, sales team alerted, Notion record logged, memory updated, downstream event emitted."
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5",
+            "label": "HIGH intent",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n9",
+            "label": "MEDIUM / STANDARD",
+            "variant": "no"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7"
+          },
+          {
+            "id": "e8",
+            "source": "n7",
+            "target": "n8"
+          },
+          {
+            "id": "e9",
+            "source": "n8",
+            "target": "n9"
+          },
+          {
+            "id": "e10",
+            "source": "n9",
+            "target": "n10"
+          },
+          {
+            "id": "e11",
+            "source": "n10",
+            "target": "n11"
+          },
+          {
+            "id": "e12",
+            "source": "n11",
+            "target": "n12"
+          }
+        ]
       },
       {
-        "event_type": "churn_risk_detected",
-        "description": "Emitted specifically for critical churn signals (cancel/downgrade page visits, account deletion). Allows a dedicated retention agent or customer success workflow to engage immediately."
+        "id": "flow_2",
+        "name": "Behavioral Pattern Accumulation & Escalation",
+        "description": "Medium-intent events that individually are below the alert threshold but collectively signal high purchase intent — triggering escalation when a pattern emerges",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Medium Intent Event Received",
+            "detail": "Segment event classified as MEDIUM (score 50-79): e.g., Integrations Page Viewed, API Docs Viewed, Feature Used 3+ times in session."
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Load Behavioral History",
+            "detail": "Retrieve full behavioral history for this userId from agent_memory, including timestamp and score for each prior medium/high signal."
+          },
+          {
+            "id": "n3",
+            "type": "action",
+            "label": "Accumulate Pattern Score",
+            "detail": "Append current event to history. Recalculate cumulative pattern score: sum of recent medium signals weighted by recency (signals in last 4h weighted 2x)."
+          },
+          {
+            "id": "n4",
+            "type": "decision",
+            "label": "Pattern Escalation Threshold Met?",
+            "detail": "Has the user triggered 3+ medium-intent signals within 24 hours? Or does the cumulative pattern score exceed 200?"
+          },
+          {
+            "id": "n5",
+            "type": "connector",
+            "label": "Enrich Profile for Escalation Alert",
+            "detail": "GET Segment Profiles API to fetch latest traits for the Slack escalation message: company, plan, MRR, seat_count.",
+            "connector": "segment"
+          },
+          {
+            "id": "n6",
+            "type": "connector",
+            "label": "Send Pattern Escalation Alert to Slack",
+            "detail": "POST chat.postMessage to #sales-signals: 'Sustained Interest Pattern — {user} showing deep product exploration across {N} signals in {timeframe}. No prior alert sent. Recommend proactive outreach.'",
+            "connector": "slack"
+          },
+          {
+            "id": "n7",
+            "type": "connector",
+            "label": "Log Pattern to Notion",
+            "detail": "Create/update Notion record with Intent=Medium (or High if escalated), accumulated behavioral context JSON, pattern score, and Slack Alert Sent flag.",
+            "connector": "notion"
+          },
+          {
+            "id": "n8",
+            "type": "action",
+            "label": "Update Agent Memory",
+            "detail": "Save updated behavioral history with new signal appended. Mark escalation as sent to prevent duplicate alerts. Persist cache with Notion page_id."
+          },
+          {
+            "id": "n9",
+            "type": "event",
+            "label": "Emit high_intent_detected (Escalation)",
+            "detail": "Emit the event with escalation context: N medium signals in Xh, cumulative pattern score, recommended action = developer success outreach."
+          },
+          {
+            "id": "n10",
+            "type": "end",
+            "label": "Pattern Updated",
+            "detail": "Behavioral profile updated. Escalation fired if threshold met. No-op if still below threshold — agent memory updated for future tracking."
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5",
+            "label": "Threshold Met",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n7",
+            "label": "Below Threshold",
+            "variant": "no"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7"
+          },
+          {
+            "id": "e8",
+            "source": "n7",
+            "target": "n8"
+          },
+          {
+            "id": "e9",
+            "source": "n8",
+            "target": "n9"
+          },
+          {
+            "id": "e10",
+            "source": "n9",
+            "target": "n10"
+          }
+        ]
+      },
+      {
+        "id": "flow_3",
+        "name": "Error Recovery & Retry Queue Flush",
+        "description": "Handles API failures gracefully with retry logic and local queuing, and flushes pending records from previous failed invocations at the start of each new event",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "New Webhook Invocation Begins",
+            "detail": "Any new Segment webhook event triggers this flow's pre-processing check before handling the new event."
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Check Local Retry Queues",
+            "detail": "Read /tmp/failed_slack_alerts.json and /tmp/notion_queue.json to see if any records from previous failed invocations need flushing."
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Pending Records in Queue?",
+            "detail": "Do either queue files exist and contain at least one unprocessed record?"
+          },
+          {
+            "id": "n4",
+            "type": "connector",
+            "label": "Retry Queued Slack Alerts",
+            "detail": "For each entry in /tmp/failed_slack_alerts.json, POST chat.postMessage. On success remove from queue. On failure leave in queue for next run.",
+            "connector": "slack"
+          },
+          {
+            "id": "n5",
+            "type": "connector",
+            "label": "Flush Queued Notion Records",
+            "detail": "For each entry in /tmp/notion_queue.json, POST or PATCH to Notion API. On success remove from queue. On failure leave for next run.",
+            "connector": "notion"
+          },
+          {
+            "id": "n6",
+            "type": "action",
+            "label": "Proceed to Main Event Processing",
+            "detail": "Queues handled (or empty). Continue to parse and process the new incoming Segment event normally."
+          },
+          {
+            "id": "n7",
+            "type": "decision",
+            "label": "API Call Failure During Main Flow?",
+            "detail": "Did a Slack or Notion API call in the main event processing return a non-200 response or throw an error?"
+          },
+          {
+            "id": "n8",
+            "type": "action",
+            "label": "Retry Once with Backoff",
+            "detail": "Wait 1 second and retry the failed API call exactly once. Log the initial failure and retry attempt with status codes."
+          },
+          {
+            "id": "n9",
+            "type": "decision",
+            "label": "Retry Succeeded?",
+            "detail": "Did the second attempt return a successful response (Slack: ok=true, Notion: HTTP 200)?"
+          },
+          {
+            "id": "n10",
+            "type": "action",
+            "label": "Queue Failed Record Locally",
+            "detail": "Append the failed payload to the appropriate queue file (/tmp/failed_slack_alerts.json or /tmp/notion_queue.json) as a JSON array entry."
+          },
+          {
+            "id": "n11",
+            "type": "error",
+            "label": "Log Error for Audit",
+            "error_message": "Persistent failures may indicate expired credentials, API quota exhaustion, or service outage. Check connector configuration and service status."
+          },
+          {
+            "id": "n12",
+            "type": "end",
+            "label": "Graceful Recovery Complete",
+            "detail": "All failures handled without crashing. Records queued for next invocation. Main processing continues normally."
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "Pending records found",
+            "variant": "yes"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n6",
+            "label": "Queues empty",
+            "variant": "no"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7"
+          },
+          {
+            "id": "e8",
+            "source": "n7",
+            "target": "n8",
+            "label": "Failure detected",
+            "variant": "yes"
+          },
+          {
+            "id": "e9",
+            "source": "n7",
+            "target": "n12",
+            "label": "All calls succeeded",
+            "variant": "no"
+          },
+          {
+            "id": "e10",
+            "source": "n8",
+            "target": "n9"
+          },
+          {
+            "id": "e11",
+            "source": "n9",
+            "target": "n12",
+            "label": "Retry succeeded",
+            "variant": "yes"
+          },
+          {
+            "id": "e12",
+            "source": "n9",
+            "target": "n10",
+            "label": "Still failing",
+            "variant": "no"
+          },
+          {
+            "id": "e13",
+            "source": "n10",
+            "target": "n11",
+            "variant": "error"
+          },
+          {
+            "id": "e14",
+            "source": "n11",
+            "target": "n12",
+            "variant": "error"
+          }
+        ]
       }
     ]
   }

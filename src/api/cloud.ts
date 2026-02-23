@@ -7,7 +7,6 @@ import type { CloudOAuthStatusResponse } from "@/lib/bindings/CloudOAuthStatusRe
 
 export type { CloudConfig } from "@/lib/bindings/CloudConfig";
 export type { CloudWorkerCounts } from "@/lib/bindings/CloudWorkerCounts";
-export type { CloudOAuthState } from "@/lib/bindings/CloudOAuthState";
 export type { CloudStatusResponse } from "@/lib/bindings/CloudStatusResponse";
 export type { CloudOAuthAuthorizeResponse } from "@/lib/bindings/CloudOAuthAuthorizeResponse";
 export type { CloudOAuthStatusResponse } from "@/lib/bindings/CloudOAuthStatusResponse";

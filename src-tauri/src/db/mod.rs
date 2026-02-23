@@ -6,6 +6,7 @@ pub mod migrations;
 pub mod models;
 #[allow(dead_code)]
 pub mod repos;
+pub mod settings_keys;
 
 use r2d2::{CustomizeConnection, Pool};
 use r2d2_sqlite::SqliteConnectionManager;

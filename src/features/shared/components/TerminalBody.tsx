@@ -11,8 +11,12 @@ interface TerminalBodyProps {
   isLineVisible?: (line: string, style: TerminalLineStyle) => boolean;
   /** True when a non-trivial filter is active (dims non-matching lines). */
   isFiltering?: boolean;
-  /** Max height CSS class. Defaults to "max-h-[500px]". */
+  /** Max height CSS class. Defaults to "max-h-[500px]". Ignored when maxHeightPx or flexFill is set. */
   maxHeightClass?: string;
+  /** Dynamic pixel max-height (for resizable terminals). Overrides maxHeightClass. */
+  maxHeightPx?: number;
+  /** Grow to fill available flex height (fullscreen mode). Overrides maxHeightClass and maxHeightPx. */
+  flexFill?: boolean;
   /** Show summary-line rendering with status icons (PersonaRunner style). */
   showSummaryLines?: boolean;
   /** Show animated cursor when running. */
@@ -27,6 +31,8 @@ export function TerminalBody({
   isLineVisible,
   isFiltering = false,
   maxHeightClass = 'max-h-[500px]',
+  maxHeightPx,
+  flexFill = false,
   showSummaryLines = false,
   showCursor = false,
   enableUnseenCounter = false,
@@ -65,12 +71,18 @@ export function TerminalBody({
     }
   }, []);
 
+  const scrollClass = flexFill
+    ? 'flex-1 min-h-0 overflow-y-auto text-sm bg-background font-mono'
+    : `${maxHeightPx === undefined ? maxHeightClass : ''} overflow-y-auto text-sm bg-background font-mono`;
+  const scrollStyle = !flexFill && maxHeightPx !== undefined ? { maxHeight: maxHeightPx } : undefined;
+
   return (
-    <div className="relative">
+    <div className={flexFill ? 'relative flex-1 flex flex-col min-h-0' : 'relative'}>
       <div
         ref={containerRef}
         onScroll={handleScroll}
-        className={`${maxHeightClass} overflow-y-auto text-sm bg-background font-mono`}
+        className={scrollClass}
+        style={scrollStyle}
       >
         {lines.length === 0 ? (
           <div className="p-6 text-muted-foreground/80 text-center">

@@ -4,6 +4,7 @@ import type { PersonaTrigger } from "@/lib/bindings/PersonaTrigger";
 import type { CreateTriggerInput } from "@/lib/bindings/CreateTriggerInput";
 import type { UpdateTriggerInput } from "@/lib/bindings/UpdateTriggerInput";
 import type { TriggerChainLink } from "@/lib/bindings/TriggerChainLink";
+import type { TriggerValidationResult } from "@/lib/bindings/TriggerValidationResult";
 import type { WebhookStatus } from "@/lib/bindings/WebhookStatus";
 
 // ============================================================================
@@ -24,6 +25,20 @@ export const updateTrigger = (id: string, input: UpdateTriggerInput) =>
 
 export const deleteTrigger = (id: string) =>
   invoke<boolean>("delete_trigger", { id });
+
+// ============================================================================
+// Trigger Health
+// ============================================================================
+
+export const getTriggerHealthMap = () =>
+  invoke<Record<string, string>>("get_trigger_health_map");
+
+// ============================================================================
+// Trigger Validation
+// ============================================================================
+
+export const validateTrigger = (id: string) =>
+  invoke<TriggerValidationResult>("validate_trigger", { id });
 
 // ============================================================================
 // Chain Triggers

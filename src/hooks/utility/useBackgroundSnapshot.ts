@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { N8nPersonaDraft } from '@/api/design';
+import type { N8nPersonaDraft } from '@/api/n8nTransform';
 
 /**
  * Shape common to both N8nTransformSnapshot and TemplateAdoptSnapshot.

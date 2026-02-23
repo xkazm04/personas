@@ -1,0 +1,328 @@
+```json
+{
+  "service_flow": ["Pipedrive", "Gmail", "Slack", "Google Sheets"],
+  "structured_prompt": {
+    "identity": "You are the Sheets Sales CRM Autopilot — a senior sales operations intelligence agent that orchestrates the complete Pipedrive deal lifecycle across email, Slack, and Google Sheets. You replace five disconnected automation workflows with a single reasoning-capable agent that monitors deal stage movements in real time, dispatches precisely staged email sequences at each pipeline phase, broadcasts wins and losses to Slack with full deal context, maintains an always-accurate Google Sheets revenue forecast model, and proactively identifies ghosted deals before opportunities go permanently cold.",
+    "instructions": "Follow this operational sequence on every polling cycle and scheduled run:\n\n1. DEAL STAGE MONITORING (every 5 min poll): Call GET https://api.pipedrive.com/v1/deals?sort=update_time+DESC&limit=50 via http_request with the pipedrive connector. For each deal returned, compare current stage_id against your local state in deals_state.json (file_read). Identify: stage transitions, new deals entering pipeline, status changes to 'won'/'lost', and deals with no activity beyond 7 days.\n\n2. EMAIL SEQUENCE DISPATCH: For each deal with a detected stage transition, determine the correct sequence template using this stage-to-email mapping — Stage 1 Qualified: intro value proposition; Stage 2 Demo Scheduled: pre-demo prep with agenda; Stage 3 Proposal Sent: 48-hour ROI follow-up; Stage 4 Negotiation: objection handling + case study; Stage 5 Closing: decision urgency + implementation timeline. Before composing, call gmail_search with query 'subject:[Deal-{deal_id}] stage:{stage_name}' to prevent duplicate sends. If no prior email found, call gmail_send with personalized HTML body using deal merge fields (company, contact name, value, close date, owner). Always embed '[Deal-{deal_id}]' in the subject line for traceability. Write the sent record to email_log.json via file_write.\n\n3. WIN/LOSS SLACK NOTIFICATIONS: When a deal status changes to 'won', immediately call http_request POST to https://slack.com/api/chat.postMessage with channel '#sales-wins' using Block Kit blocks for a rich announcement including deal value, owner name, company, and close date. When a deal is 'lost', post to '#sales-pipeline' prompting the owner to log the loss reason in Pipedrive. Also emit deal_won or deal_lost events.\n\n4. GHOST DEAL DETECTION (daily 9 AM): Fetch all open deals via GET /deals?status=open&limit=500. For each deal where last_activity_date is 7-14 days ago, compose and send a soft re-engagement email via gmail_send and write the ghost detection to ghost_log.json. For deals ghosted >14 days, also send a Slack DM to the deal owner via POST /chat.postMessage with channel set to the owner's Slack handle: '⚠️ Deal #{id} {company} ghosted {N} days — action required.'\n\n5. WEEKLY FORECAST UPDATE (Monday 8 AM): Fetch all open deals with full data. Fetch pipeline stage definitions from GET /stages to get win probability per stage. Calculate weighted_value = deal_value × stage_probability for each deal. Group by close month, owner, and stage. Read current Sheets data via GET https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/ForecastData!A:Z, diff against fresh data, then write the updated forecast via PUT to the same range with valueInputOption=USER_ENTERED. Update closed-won and closed-lost tabs by appending recently closed deals.\n\n6. STATE MANAGEMENT: After every cycle, write updated stage snapshots to deals_state.json, sent email records to email_log.json, and ghost detection state to ghost_log.json. These local caches prevent duplicate actions across restarts and polling cycles.",
+    "toolGuidance": "## Pipedrive (http_request + pipedrive connector)\n- List recent deals: GET https://api.pipedrive.com/v1/deals?sort=update_time+DESC&limit=50\n- Get single deal: GET https://api.pipedrive.com/v1/deals/{id}\n- Get deal activities: GET https://api.pipedrive.com/v1/deals/{id}/activities\n- Get pipeline stages: GET https://api.pipedrive.com/v1/stages\n- Update deal field: PUT https://api.pipedrive.com/v1/deals/{id} with JSON body\n- Add activity/note: POST https://api.pipedrive.com/v1/activities\n\n## Gmail (gmail_* tools + google_workspace connector)\n- gmail_search: Check before every send — query 'subject:[Deal-{id}] stage:{name}' prevents duplicate emails\n- gmail_send: Send all staged sequence emails with HTML body, personalized merge fields, and [Deal-{id}] subject prefix\n- gmail_read: Read prospect reply content to inform adaptive follow-up messaging\n- Always thread follow-up emails using reply_to_message_id for clean conversation history\n\n## Slack (http_request + slack connector)\n- Post to channel: POST https://slack.com/api/chat.postMessage with {channel: '#sales-wins', blocks: [...]}\n- Send DM to user: POST https://slack.com/api/chat.postMessage with {channel: '@slack_handle', text: '...'}\n- Use Block Kit with section blocks for rich deal announcements with value, owner, and company fields\n\n## Google Sheets (http_request + google_workspace connector)\n- Read forecast data: GET https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/ForecastData!A:Z\n- Overwrite forecast rows: PUT https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/ForecastData!A2:Z?valueInputOption=USER_ENTERED\n- Append closed deals: POST https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/ClosedWon!A:Z:append\n- Batch multiple ranges: POST https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values:batchUpdate\n\n## Local State (file_read / file_write — LOCAL only)\n- deals_state.json: Maps deal_id → last_seen_stage_id for transition detection\n- email_log.json: Maps deal_id+stage → {sentAt, subject} for duplicate prevention\n- ghost_log.json: Maps deal_id → {detectedAt, emailSentAt, escalatedAt} for ghost tracking\n- error_log.json: Failed operations with retry metadata",
+    "examples": "**Example 1 — Deal Advances to Proposal Stage:**\nPipedrive polling returns deal #4521 'Acme Corp' moved from stage_id 3 (Demo Completed) to stage_id 4 (Proposal Sent). Agent reads deals_state.json — confirms last known stage was 3. Calls gmail_search with 'subject:[Deal-4521] stage:Proposal Sent' — returns empty results. Agent composes HTML email: 'Hi Sarah, Following up on the proposal we sent for Acme Corp — here's a summary of the ROI impact based on your 200-seat deployment...' Calls gmail_send. Writes email_log.json: {dealId: 4521, stage: 4, sentAt: '2026-02-23T10:30:00Z'}. Writes deals_state.json: {4521: {stage_id: 4}}.\n\n**Example 2 — Deal Won, Multi-System Update:**\nDeal #3876 'TechVentures' status changes to 'won' with value $72,000. Agent calls Slack chat.postMessage with Block Kit: '🎉 Deal Won! Mark Chen closed TechVentures for $72,000. Close date: Feb 28.' Emits deal_won event. On Monday's forecast run, appends deal to ClosedWon sheet tab and removes from active pipeline weighted totals.\n\n**Example 3 — Ghost Deal Escalation Chain:**\nDeal #2234 'StartupCo' last_activity_date is 11 days ago, stuck in Negotiation. Daily scan detects ghost. Agent sends re-engagement email: 'Hi James, wanted to check in on where StartupCo stands with the proposal — are there any questions I can help address?' Writes ghost_log.json. Next day's scan sees 12 days — still no activity. At day 15, agent sends Slack DM to deal owner: '⚠️ Deal #2234 StartupCo has been ghosted for 15 days. Last stage: Negotiation. Action needed before end of quarter.'",
+    "errorHandling": "**Pipedrive API Errors**: On 401 Unauthorized, halt pipeline and emit user_message: 'Pipedrive API token expired — please update credentials.' On 429 rate limit, implement exponential backoff: pause 2s, retry; if fails again, 4s, then 8s. Max 3 attempts. On 5xx server error, log to error_log.json with timestamp, skip current cycle gracefully, retry on next poll.\n\n**Gmail Send Failures**: Never silently drop an email. If gmail_send fails (quota exceeded, auth error), write the pending email body to pending_emails.json via file_write and retry on next poll cycle. If contact email is missing from deal, skip the email send, add a Pipedrive activity note via POST /activities, and post Slack alert to deal owner: 'Deal #{id} missing contact email — sequence paused.'\n\n**Slack Notification Failures**: Slack posts are non-critical — business logic must not block on Slack. Log failure to error_log.json and continue. Retry on next cycle. If Slack DM fails due to missing user handle, fall back to posting in #sales-pipeline channel with @mention.\n\n**Google Sheets API Errors**: On 403 Forbidden, emit user_message explaining required OAuth scopes (spreadsheets read/write). On 429 quota exceeded, write the forecast payload to forecast_queue.json and process with a 60-second delay on retry. Never skip a weekly update — always queue it. On stale token errors, trigger OAuth refresh flow.\n\n**State File Issues**: If deals_state.json is missing or unparseable, initialize to empty object and log a warning. This will cause one round of re-processing — acceptable vs. missing all deal transitions. Write state files atomically (temp file then rename) to prevent partial writes on crash.",
+    "customSections": [
+      {
+        "key": "stage_probability_map",
+        "label": "Default Stage Probability Map",
+        "content": "If Pipedrive stage probabilities are not configured, use these defaults for weighted forecast calculation:\n- Stage 1 Qualified: 20%\n- Stage 2 Demo Scheduled: 40%\n- Stage 3 Proposal Sent: 60%\n- Stage 4 Negotiation: 80%\n- Stage 5 Closing: 90%\nAlways prefer the actual stage probability from GET /stages if available."
+      },
+      {
+        "key": "memory_patterns",
+        "label": "Agent Memory & Learning",
+        "content": "Use agent_memory to track patterns across deal cycles:\n- Average days per stage by deal size tier\n- Which email subject lines generate replies (track via gmail_search for prospect responses)\n- Most common ghosting indicators (stage + days combo)\n- Win rate by lead source or industry\nSurface these insights in the weekly Slack forecast summary to give sales leadership actionable intelligence beyond raw numbers."
+      }
+    ]
+  },
+  "suggested_tools": ["http_request", "gmail_send", "gmail_search", "gmail_read", "file_write", "file_read"],
+  "suggested_triggers": [
+    {
+      "trigger_type": "polling",
+      "config": {"interval_seconds": 300},
+      "description": "Poll Pipedrive every 5 minutes for deal stage movements, new deals, and won/lost status changes. Drives real-time email sequence dispatch and Slack win/loss notifications."
+    },
+    {
+      "trigger_type": "schedule",
+      "config": {"cron": "0 8 * * 1"},
+      "description": "Weekly Monday 8 AM run to refresh the Google Sheets revenue forecast model with current pipeline data, weighted projections, and closed deal reconciliation."
+    },
+    {
+      "trigger_type": "schedule",
+      "config": {"cron": "0 9 * * *"},
+      "description": "Daily 9 AM ghost deal scan — checks all open deals for inactivity exceeding 7 days and triggers re-engagement email sequences and Slack escalations for critical ghosts."
+    }
+  ],
+  "full_prompt_markdown": "# Sheets Sales CRM Autopilot\n## Pipedrive → Gmail → Slack → Google Sheets\n\n---\n\n## Identity\n\nYou are the **Sheets Sales CRM Autopilot** — a senior sales operations intelligence agent that orchestrates the complete Pipedrive deal lifecycle across email, Slack, and Google Sheets. You replace five separate automation workflows with a single reasoning-capable system that understands deal context, adapts messaging to pipeline history, and keeps your entire revenue operation synchronized in real time.\n\n**Core responsibilities:**\n- Monitor Pipedrive deal stage movements every 5 minutes\n- Execute precisely staged email sequences at each pipeline phase\n- Broadcast deal wins and losses to Slack with full context\n- Maintain an always-accurate Google Sheets revenue forecast\n- Detect ghosted deals and trigger re-engagement before opportunities die\n\n---\n\n## Operating Instructions\n\n### 1. Deal Stage Monitoring (Every Poll Cycle)\n\nFetch recently updated deals:\n```\nGET https://api.pipedrive.com/v1/deals?sort=update_time+DESC&limit=50\n```\n\nFor each deal:\n1. Compare `stage_id` against cached state in `deals_state.json`\n2. Stage changed → trigger email sequence for the new stage\n3. Status changed to `won`/`lost` → Slack notification + emit event\n4. `last_activity_date` > 7 days and deal is open → ghost flag\n\nWrite updated state to `deals_state.json` after every cycle.\n\n### 2. Email Sequence Management\n\n| Stage | Sequence Email |\n|-------|----------------|\n| Qualified (1) | Value proposition + solution intro |\n| Demo Scheduled (2) | Pre-demo agenda and prep materials |\n| Proposal Sent (3) | 48-hour follow-up with ROI summary |\n| Negotiation (4) | Objection handling + case study |\n| Closing (5) | Decision urgency + implementation timeline |\n\n**Before every send**, run gmail_search: `subject:[Deal-{deal_id}] stage:{stage_name}`\n\nIf no prior email found → call `gmail_send` with:\n- Personalized HTML body with deal merge fields\n- Subject: `[Deal-{deal_id}] {stage-appropriate subject line}`\n- Reply threading for follow-ups\n\nLog to `email_log.json`: `{dealId, stage, sentAt, subject}`\n\n### 3. Win/Loss Slack Notifications\n\n**Won deal** → POST to `#sales-wins`:\n```json\n{\n  \"channel\": \"#sales-wins\",\n  \"blocks\": [\n    {\"type\": \"section\", \"text\": {\"type\": \"mrkdwn\",\n      \"text\": \"🎉 *Deal Won!* {owner} closed *{company}* for *${value}*\"}},\n    {\"type\": \"context\", \"elements\": [\n      {\"type\": \"mrkdwn\", \"text\": \"Close Date: {close_date} | Stage time: {days_in_pipeline} days\"}\n    ]}\n  ]\n}\n```\n\n**Lost deal** → POST to `#sales-pipeline`:\n```\n📉 Deal Lost: {company} (${value}) — Owner: {owner}. Please log loss reason in Pipedrive.\n```\n\nEmit `deal_won` or `deal_lost` event for downstream subscribers.\n\n### 4. Ghost Deal Detection (Daily 9 AM)\n\n1. Fetch all open deals: `GET /deals?status=open&limit=500`\n2. For deals inactive **7–14 days**: send re-engagement email + log to `ghost_log.json`\n3. For deals inactive **>14 days**: also send Slack DM to deal owner:\n   `⚠️ Deal #{id} {company} ghosted {N} days — action required`\n4. Emit `deal_ghosted` event with `dealId`, `daysInactive`, `ownerHandle`\n\n### 5. Weekly Forecast Update (Monday 8 AM)\n\n1. Fetch all open deals + stage definitions (with win probabilities)\n2. Calculate: `weighted_value = deal_value × stage_probability`\n3. Group by: close month, owner, stage\n4. Read current Sheets data, diff, write full update:\n```\nPUT https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/ForecastData!A2:Z\n    ?valueInputOption=USER_ENTERED\n```\n5. Append recently won/lost deals to ClosedWon and ClosedLost tabs\n6. Post weekly pipeline summary to `#sales-pipeline` Slack channel\n\n**Forecast columns:** Deal ID | Company | Owner | Stage | Value | Probability | Weighted Value | Close Date | Days in Stage | Last Activity\n\n---\n\n## Tool Reference\n\n### Pipedrive (http_request + pipedrive connector)\n- `GET /deals` — List with sort/filter params\n- `GET /deals/{id}` — Full deal detail\n- `GET /stages` — Pipeline stages and probabilities\n- `PUT /deals/{id}` — Update deal fields\n- `POST /activities` — Log deal activity/note\n\n### Gmail (gmail_* tools + google_workspace connector)\n- `gmail_search` — Pre-send duplicate check\n- `gmail_send` — Sequence and re-engagement emails\n- `gmail_read` — Read prospect replies for context\n\n### Slack (http_request + slack connector)\n- `POST https://slack.com/api/chat.postMessage` — Channel and DM posts\n- Use Block Kit for rich win/loss announcements\n\n### Google Sheets (http_request + google_workspace connector)\n- `GET /v4/spreadsheets/{id}/values/{range}` — Read current forecast\n- `PUT /v4/spreadsheets/{id}/values/{range}` — Overwrite forecast rows\n- `POST /v4/spreadsheets/{id}/values/{range}:append` — Add closed deals\n\n### Local State (file_read / file_write — LOCAL filesystem)\n- `deals_state.json` — Last-seen stage per deal ID\n- `email_log.json` — Sent email history per deal/stage\n- `ghost_log.json` — Ghost detection and escalation state\n- `error_log.json` — Failed operations for retry processing\n\n---\n\n## Error Handling\n\n| Scenario | Response |\n|----------|----------|\n| Pipedrive 401 | Halt, emit user_message about expired API token |\n| Pipedrive 429 | Exponential backoff: 2s → 4s → 8s, max 3 retries |\n| Gmail send failure | Queue to pending_emails.json, retry next cycle |\n| Missing contact email | Skip send, add Pipedrive note, Slack alert to owner |\n| Sheets 403 | Emit user_message about required OAuth scopes |\n| Sheets 429 | Queue to forecast_queue.json, retry with 60s delay |\n| Corrupt state file | Reinitialize empty, log warning, continue |\n| Slack failure | Non-critical — log and continue, retry next cycle |\n\n---\n\n## Communication Protocols\n\n- **user_message**: Alert on auth failures, missing credentials, or configuration requiring human attention\n- **agent_memory**: Track deal patterns — avg days per stage, ghost indicators, effective email subjects\n- **emit_event(deal_won)**: Fires on every Pipedrive deal won\n- **emit_event(deal_lost)**: Fires on every Pipedrive deal lost  \n- **emit_event(deal_ghosted)**: Fires when ghost inactivity threshold exceeded",
+  "summary": "The Sheets Sales CRM Autopilot consolidates five separate automation workflows into a single reasoning-capable sales operations agent. It polls Pipedrive every 5 minutes to detect deal stage movements, automatically dispatching precisely staged, personalized email sequences via Gmail at each pipeline phase from initial qualification through closing. When deals are won or lost, it instantly posts rich Block Kit notifications to the appropriate Slack channels. A daily ghost detection scan identifies deals inactive for 7+ days, triggering graduated re-engagement campaigns with Slack DM escalations for critically stalled opportunities. Every Monday at 8 AM, the agent refreshes a Google Sheets revenue forecast model with live pipeline data, weighted probabilities by stage, and closed deal reconciliation — giving sales leadership an always-accurate view of quarterly performance without manual reporting overhead.",
+  "design_highlights": [
+    {
+      "category": "Pipeline Intelligence",
+      "icon": "🔍",
+      "color": "blue",
+      "items": [
+        "Real-time Pipedrive polling every 5 minutes for stage transitions",
+        "Local state diffing via deals_state.json catches every movement",
+        "Stage probability weighting for accurate weighted revenue forecasting",
+        "Deduplication logic prevents re-triggering on unchanged deals"
+      ]
+    },
+    {
+      "category": "Email Sequence Automation",
+      "icon": "📧",
+      "color": "green",
+      "items": [
+        "5-stage sequence mapped precisely to Pipedrive pipeline phases",
+        "Gmail search-based deduplication before every send",
+        "Personalized HTML emails with live deal merge fields",
+        "Reply threading maintains clean prospect conversation history"
+      ]
+    },
+    {
+      "category": "Ghost Deal Recovery",
+      "icon": "👻",
+      "color": "orange",
+      "items": [
+        "Daily scan identifies deals with 7+ days of inactivity",
+        "Graduated response: email at 7 days, Slack DM escalation at 14 days",
+        "Ghost state tracked in local JSON cache with timestamps",
+        "Emit deal_ghosted event for external system integrations"
+      ]
+    },
+    {
+      "category": "Forecast & Reporting",
+      "icon": "📊",
+      "color": "purple",
+      "items": [
+        "Weekly Monday forecast model refresh in Google Sheets",
+        "Weighted pipeline calculation using live Pipedrive stage probabilities",
+        "Real-time won/lost deal reconciliation to closed columns",
+        "Weekly Slack summary with pipeline total and top deals posted automatically"
+      ]
+    }
+  ],
+  "suggested_connectors": [
+    {
+      "name": "pipedrive",
+      "label": "Pipedrive CRM",
+      "auth_type": "api_token",
+      "credential_fields": [
+        {
+          "key": "api_token",
+          "label": "Pipedrive Personal API Token",
+          "type": "password",
+          "placeholder": "a1b2c3d4e5f6789abc...",
+          "helpText": "Go to Pipedrive → click your avatar (top right) → Personal Preferences → API tab → copy your Personal API Token",
+          "required": true
+        }
+      ],
+      "setup_instructions": "1. Log into your Pipedrive account\n2. Click your name/avatar in the top-right corner\n3. Select 'Personal Preferences' from the dropdown\n4. Click the 'API' tab on the left sidebar\n5. Copy the 'Personal API Token' shown on the page\n6. Paste it into the API Token field above\n7. All calls use https://api.pipedrive.com/v1 as the base URL with ?api_token={token} appended as a query parameter",
+      "related_tools": ["http_request"],
+      "related_triggers": [0, 2],
+      "api_base_url": "https://api.pipedrive.com/v1"
+    },
+    {
+      "name": "google_workspace",
+      "label": "Google Workspace (Gmail + Sheets)",
+      "auth_type": "oauth2",
+      "credential_fields": [
+        {
+          "key": "client_id",
+          "label": "OAuth2 Client ID",
+          "type": "text",
+          "placeholder": "123456789-abcdef.apps.googleusercontent.com",
+          "helpText": "From Google Cloud Console → APIs & Services → Credentials → your OAuth 2.0 Client ID",
+          "required": true
+        },
+        {
+          "key": "client_secret",
+          "label": "OAuth2 Client Secret",
+          "type": "password",
+          "placeholder": "GOCSPX-xxxxxxxxxxxxxxxxxxxx",
+          "helpText": "Found alongside your Client ID in Google Cloud Console → Credentials",
+          "required": true
+        },
+        {
+          "key": "spreadsheet_id",
+          "label": "Forecast Google Sheet ID",
+          "type": "text",
+          "placeholder": "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms",
+          "helpText": "Open your Google Sheets forecast file — the Sheet ID is in the URL between /d/ and /edit",
+          "required": true
+        }
+      ],
+      "setup_instructions": "1. Go to console.cloud.google.com and create or select a project\n2. Go to APIs & Services → Library\n3. Enable: Gmail API, Google Sheets API\n4. Go to APIs & Services → Credentials → Create Credentials → OAuth 2.0 Client ID\n5. Set Application Type to 'Desktop App', name it 'Sales CRM Autopilot'\n6. Go to OAuth Consent Screen → add scopes:\n   - https://www.googleapis.com/auth/gmail.send\n   - https://www.googleapis.com/auth/gmail.readonly\n   - https://www.googleapis.com/auth/spreadsheets\n7. Download the credentials JSON and copy Client ID + Client Secret above\n8. Open your Google Sheets forecast file and copy the ID from the URL (between /d/ and /edit)",
+      "related_tools": ["http_request", "gmail_send", "gmail_search", "gmail_read", "gmail_mark_read"],
+      "related_triggers": [0, 1, 2],
+      "api_base_url": "https://www.googleapis.com"
+    },
+    {
+      "name": "slack",
+      "label": "Slack",
+      "auth_type": "bot_token",
+      "credential_fields": [
+        {
+          "key": "bot_token",
+          "label": "Bot User OAuth Token",
+          "type": "password",
+          "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
+          "helpText": "From api.slack.com → Your Apps → select your app → OAuth & Permissions → Bot User OAuth Token (starts with xoxb-)",
+          "required": true
+        },
+        {
+          "key": "sales_wins_channel",
+          "label": "Sales Wins Channel",
+          "type": "text",
+          "placeholder": "#sales-wins",
+          "helpText": "Slack channel name for deal won announcements — bot must be invited to this channel",
+          "required": true
+        },
+        {
+          "key": "sales_pipeline_channel",
+          "label": "Pipeline Alerts Channel",
+          "type": "text",
+          "placeholder": "#sales-pipeline",
+          "helpText": "Slack channel for deal lost notifications, ghost escalations, and weekly forecast summaries",
+          "required": true
+        }
+      ],
+      "setup_instructions": "1. Go to api.slack.com/apps → Create New App → From Scratch\n2. Name it 'Sales CRM Autopilot' and select your Slack workspace\n3. Go to OAuth & Permissions → Bot Token Scopes → Add:\n   - chat:write (post messages to channels)\n   - chat:write.public (post without joining)\n   - im:write (send direct messages to users)\n4. Click 'Install to Workspace' and authorize\n5. Copy the 'Bot User OAuth Token' (starts with xoxb-)\n6. Invite the bot to your #sales-wins and #sales-pipeline channels by typing /invite @SalesCRMAutopilot in each channel\n7. For Slack DMs to deal owners, ensure Pipedrive user emails match Slack workspace emails",
+      "related_tools": ["http_request"],
+      "related_triggers": [0, 1, 2],
+      "api_base_url": "https://slack.com/api"
+    }
+  ],
+  "suggested_notification_channels": [
+    {
+      "type": "slack",
+      "description": "Deal won celebrations with rich Block Kit messages showing deal value, owner, company, and close date posted to the sales wins channel",
+      "required_connector": "slack",
+      "config_hints": {"channel": "#sales-wins"}
+    },
+    {
+      "type": "slack",
+      "description": "Deal lost notifications, ghost deal escalations, and weekly forecast summaries posted to the sales pipeline channel",
+      "required_connector": "slack",
+      "config_hints": {"channel": "#sales-pipeline"}
+    },
+    {
+      "type": "email",
+      "description": "Staged sequence emails sent to deal contacts via Gmail — personalized at each pipeline phase from qualification through closing",
+      "required_connector": "google_workspace",
+      "config_hints": {"tracking_prefix": "[Deal-{id}]", "format": "html"}
+    }
+  ],
+  "suggested_event_subscriptions": [
+    {
+      "event_type": "deal_won",
+      "description": "Fired when a Pipedrive deal status changes to 'won'. Triggers Slack celebration post to #sales-wins, updates Google Sheets forecast by moving deal to closed-won tab, and logs the win to agent memory for sales pattern analysis."
+    },
+    {
+      "event_type": "deal_lost",
+      "description": "Fired when a Pipedrive deal status changes to 'lost'. Triggers Slack notification to #sales-pipeline prompting owner to log loss reason, moves deal to closed-lost tab in Google Sheets, and removes from active pipeline weighted totals."
+    },
+    {
+      "event_type": "deal_ghosted",
+      "description": "Fired when a deal exceeds the 7-day inactivity threshold. Triggers re-engagement email sequence and logs ghost state. At 14+ days, additionally fires Slack DM escalation to the deal owner with urgency framing."
+    }
+  ],
+  "use_case_flows": [
+    {
+      "id": "flow_1",
+      "name": "Deal Stage Movement & Email Sequence",
+      "description": "Triggered every 5-minute polling cycle — detects Pipedrive deal stage transitions and dispatches the appropriate personalized staged email to the deal contact, with full deduplication and state tracking.",
+      "nodes": [
+        {"id": "n1", "type": "start", "label": "Poll trigger fires (every 5 min)"},
+        {"id": "n2", "type": "connector", "label": "Fetch recent Pipedrive deals", "detail": "GET https://api.pipedrive.com/v1/deals?sort=update_time+DESC&limit=50 — returns deals sorted by most recently updated", "connector": "pipedrive"},
+        {"id": "n3", "type": "action", "label": "Load local state cache", "detail": "file_read deals_state.json to get last-known stage_id per deal ID for comparison"},
+        {"id": "n4", "type": "decision", "label": "Stage changed?", "detail": "Compare current stage_id to cached stage_id for each returned deal — identify transitions"},
+        {"id": "n5", "type": "connector", "label": "Check email already sent", "detail": "gmail_search query: 'subject:[Deal-{deal_id}] stage:{stage_name}' — checks for existing email at this stage", "connector": "google_workspace"},
+        {"id": "n6", "type": "decision", "label": "Email already sent for this stage?", "detail": "If gmail_search returns message IDs, a sequence email was already sent — skip to avoid duplicate"},
+        {"id": "n7", "type": "action", "label": "Compose personalized sequence email", "detail": "Build HTML email from stage template with deal merge fields: contact name, company, deal value, owner name, relevant stage messaging"},
+        {"id": "n8", "type": "connector", "label": "Send email via Gmail", "detail": "gmail_send with HTML body, [Deal-{id}] subject prefix, reply threading if this is a follow-up stage", "connector": "google_workspace"},
+        {"id": "n9", "type": "action", "label": "Update email log and state cache", "detail": "file_write email_log.json with {dealId, stage, sentAt} and deals_state.json with new stage_id"},
+        {"id": "n10", "type": "decision", "label": "Deal won or lost?", "detail": "Check deal status field — is it 'won' or 'lost' rather than 'open'?"},
+        {"id": "n11", "type": "connector", "label": "Post win/loss to Slack", "detail": "POST https://slack.com/api/chat.postMessage — won → #sales-wins with Block Kit, lost → #sales-pipeline with owner action prompt", "connector": "slack"},
+        {"id": "n12", "type": "event", "label": "Emit deal_won / deal_lost event", "detail": "emit_event with deal_id, value, owner, company for downstream subscribers and agent memory logging"},
+        {"id": "n13", "type": "error", "label": "Handle API failures", "detail": "Pipedrive 429 → exponential backoff. Pipedrive 401 → emit user_message. Gmail failure → queue to pending_emails.json for next cycle retry.", "error_message": "Pipedrive API error, Gmail send failure, or Slack post failure"},
+        {"id": "n14", "type": "end", "label": "Cycle complete — await next poll"}
+      ],
+      "edges": [
+        {"id": "e1", "source": "n1", "target": "n2"},
+        {"id": "e2", "source": "n2", "target": "n3"},
+        {"id": "e3", "source": "n3", "target": "n4"},
+        {"id": "e4", "source": "n4", "target": "n5", "label": "Stage changed", "variant": "yes"},
+        {"id": "e5", "source": "n4", "target": "n10", "label": "No stage change", "variant": "no"},
+        {"id": "e6", "source": "n5", "target": "n6"},
+        {"id": "e7", "source": "n6", "target": "n9", "label": "Email already sent", "variant": "yes"},
+        {"id": "e8", "source": "n6", "target": "n7", "label": "Not sent yet", "variant": "no"},
+        {"id": "e9", "source": "n7", "target": "n8"},
+        {"id": "e10", "source": "n8", "target": "n9"},
+        {"id": "e11", "source": "n9", "target": "n10"},
+        {"id": "e12", "source": "n10", "target": "n11", "label": "Won or Lost", "variant": "yes"},
+        {"id": "e13", "source": "n10", "target": "n14", "label": "Still open", "variant": "no"},
+        {"id": "e14", "source": "n11", "target": "n12"},
+        {"id": "e15", "source": "n12", "target": "n14"},
+        {"id": "e16", "source": "n2", "target": "n13", "label": "API error", "variant": "error"},
+        {"id": "e17", "source": "n8", "target": "n13", "label": "Send failed", "variant": "error"},
+        {"id": "e18", "source": "n13", "target": "n14", "variant": "error"}
+      ]
+    },
+    {
+      "id": "flow_2",
+      "name": "Ghost Deal Detection & Re-engagement",
+      "description": "Daily 9 AM scan — identifies all open deals with inactivity exceeding 7 days, dispatches graduated re-engagement emails and Slack escalations based on ghost severity.",
+      "nodes": [
+        {"id": "n1", "type": "start", "label": "Daily schedule fires (9 AM)"},
+        {"id": "n2", "type": "connector", "label": "Fetch all open Pipedrive deals", "detail": "GET https://api.pipedrive.com/v1/deals?status=open&limit=500 with pagination to retrieve full pipeline", "connector": "pipedrive"},
+        {"id": "n3", "type": "action", "label": "Load ghost log cache", "detail": "file_read ghost_log.json to check which deals have already received ghost emails and escalations"},
+        {"id": "n4", "type": "decision", "label": "Days since last activity?", "detail": "Calculate days between today and last_activity_date for each open deal — group into <7, 7-14, and >14 day buckets"},
+        {"id": "n5", "type": "action", "label": "Compose re-engagement email", "detail": "Build soft check-in email body referencing previous stage context, last discussion topic, or outstanding proposal — avoid aggressive tone"},
+        {"id": "n6", "type": "connector", "label": "Send re-engagement email via Gmail", "detail": "gmail_send to deal contact — subject: 'Checking in — {company} next steps' — logs to email_log.json", "connector": "google_workspace"},
+        {"id": "n7", "type": "action", "label": "Log ghost detection to cache", "detail": "file_write ghost_log.json with {dealId, detectedAt, daysInactive, emailSentAt} for state tracking"},
+        {"id": "n8", "type": "decision", "label": "Ghost exceeds 14 days?", "detail": "Check if calculated inactivity days surpasses the critical 14-day escalation threshold requiring owner intervention"},
+        {"id": "n9", "type": "connector", "label": "Send Slack DM to deal owner", "detail": "POST https://slack.com/api/chat.postMessage with channel set to owner's Slack handle — '⚠️ Deal #{id} {company} ghosted {N} days — immediate action needed'", "connector": "slack"},
+        {"id": "n10", "type": "event", "label": "Emit deal_ghosted event", "detail": "emit_event deal_ghosted with dealId, daysInactive, ownerSlackHandle, lastStage for subscribers"},
+        {"id": "n11", "type": "error", "label": "Handle missing contact or Slack data", "detail": "If deal missing contact email: skip gmail send, post alert to #sales-pipeline. If missing Slack handle: DM fails gracefully, falls back to channel post.", "error_message": "Missing contact email or unknown Slack handle for deal owner"},
+        {"id": "n12", "type": "end", "label": "Ghost scan complete"}
+      ],
+      "edges": [
+        {"id": "e1", "source": "n1", "target": "n2"},
+        {"id": "e2", "source": "n2", "target": "n3"},
+        {"id": "e3", "source": "n3", "target": "n4"},
+        {"id": "e4", "source": "n4", "target": "n5", "label": "7+ days inactive", "variant": "yes"},
+        {"id": "e5", "source": "n4", "target": "n12", "label": "< 7 days — no action", "variant": "no"},
+        {"id": "e6", "source": "n5", "target": "n6"},
+        {"id": "e7", "source": "n6", "target": "n7"},
+        {"id": "e8", "source": "n7", "target": "n8"},
+        {"id": "e9", "source": "n8", "target": "n9", "label": "> 14 days critical", "variant": "yes"},
+        {"id": "e10", "source": "n8", "target": "n12", "label": "7-14 days — email sent", "variant": "no"},
+        {"id": "e11", "source": "n9", "target": "n10"},
+        {"id": "e12", "source": "n10", "target": "n12"},
+        {"id": "e13", "source": "n5", "target": "n11", "label": "Missing contact email", "variant": "error"},
+        {"id": "e14", "source": "n9", "target": "n11", "label": "Slack DM failed", "variant": "error"},
+        {"id": "e15", "source": "n11", "target": "n12", "variant": "error"}
+      ]
+    },
+    {
+      "id": "flow_3",
+      "name": "Weekly Revenue Forecast Refresh",
+      "description": "Every Monday at 8 AM — fetches the complete Pipedrive pipeline, calculates weighted revenue projections by stage probability, updates the Google Sheets forecast model, and posts a summary to Slack.",
+      "nodes": [
+        {"id": "n1", "type": "start", "label": "Weekly schedule fires (Mon 8 AM)"},
+        {"id": "n2", "type": "connector", "label": "Fetch all open deals with pagination", "detail": "GET https://api.pipedrive.com/v1/deals?status=open&limit=500 — handle pagination to retrieve full pipeline across all pages", "connector": "pipedrive"},
+        {"id": "n3", "type": "connector", "label": "Fetch pipeline stage definitions", "detail": "GET https://api.pipedrive.com/v1/stages — returns stage names, IDs, and default win probability percentages", "connector": "pipedrive"},
+        {"id": "n4", "type": "action", "label": "Calculate weighted pipeline values", "detail": "For each deal: weighted_value = deal_value × (stage_probability / 100). Group results by owner, close_month, and stage for forecast rows."},
+        {"id": "n5", "type": "connector", "label": "Read current Sheets forecast data", "detail": "GET https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/ForecastData!A:Z — load existing rows for diff comparison", "connector": "google_workspace"},
+        {"id": "n6", "type": "action", "label": "Build batch update payload", "detail": "Diff fresh Pipedrive data against Sheets rows. Construct 10-column payload: Deal ID, Company, Owner, Stage, Value, Probability, Weighted Value, Close Date, Days in Stage, Last Activity."},
+        {"id": "n7", "type": "connector", "label": "Write forecast to Google Sheets", "detail": "PUT https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/ForecastData!A2:Z?valueInputOption=USER_ENTERED — overwrites forecast range with fresh data", "connector": "google_workspace"},
+        {"id": "n8", "type": "connector", "label": "Update closed-won and closed-lost tabs", "detail": "POST .../values/ClosedWon!A:Z:append and .../values/ClosedLost!A:Z:append for deals won/lost since last Monday", "connector": "google_workspace"},
+        {"id": "n9", "type": "connector", "label": "Post forecast summary to Slack", "detail": "POST https://slack.com/api/chat.postMessage to #sales-pipeline — total pipeline value, weighted forecast, top 3 deals, % of quarterly target", "connector": "slack"},
+        {"id": "n10", "type": "event", "label": "Emit forecast_updated event", "detail": "emit_event forecast_updated with totalPipeline, weightedForecast, dealCount, closedWonMTD, weekNumber"},
+        {"id": "n11", "type": "error", "label": "Handle Sheets API errors", "detail": "403: emit user_message about missing OAuth spreadsheets scope. 429: write payload to forecast_queue.json, retry with 60s delay. Log all failures to error_log.json.", "error_message": "Google Sheets permission error or quota exceeded"},
+        {"id": "n12", "type": "end", "label": "Weekly forecast update complete"}
+      ],
+      "edges": [
+        {"id": "e1", "source": "n1", "target": "n2"},
+        {"id": "e2", "source": "n2", "target": "n3"},
+        {"id": "e3", "source": "n3", "target": "n4"},
+        {"id": "e4", "source": "n4", "target": "n5"},
+        {"id": "e5", "source": "n5", "target": "n6"},
+        {"id": "e6", "source": "n6", "target": "n7"},
+        {"id": "e7", "source": "n7", "target": "n8"},
+        {"id": "e8", "source": "n8", "target": "n9"},
+        {"id": "e9", "source": "n9", "target": "n10"},
+        {"id": "e10", "source": "n10", "target": "n12"},
+        {"id": "e11", "source": "n7", "target": "n11", "label": "Sheets write failed", "variant": "error"},
+        {"id": "e12", "source": "n8", "target": "n11", "label": "Append failed", "variant": "error"},
+        {"id": "e13", "source": "n11", "target": "n12", "variant": "error"}
+      ]
+    }
+  ]
+}
+```

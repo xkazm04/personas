@@ -42,9 +42,11 @@ export interface SummaryCardProps {
   color: string;
   trend?: TrendData | null;
   sparklineData?: number[];
+  subtitle?: string | null;
+  subtitleColor?: string;
 }
 
-export function SummaryCard({ icon: Icon, label, numericValue, format, color, trend, sparklineData }: SummaryCardProps) {
+export function SummaryCard({ icon: Icon, label, numericValue, format, color, trend, sparklineData, subtitle, subtitleColor }: SummaryCardProps) {
   const colorMap: Record<string, string> = {
     emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
     blue: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
@@ -76,6 +78,9 @@ export function SummaryCard({ icon: Icon, label, numericValue, format, color, tr
       <div className="text-xl font-bold text-foreground">{format(animated)}</div>
       {sparklineData && sparklineData.length >= 2 && (
         <Sparkline data={sparklineData} color={SPARKLINE_HEX[color] || '#3b82f6'} />
+      )}
+      {subtitle && (
+        <p className={`text-sm mt-1 ${subtitleColor || 'text-muted-foreground/80'}`}>{subtitle}</p>
       )}
       {trendDisplay && (
         <div className={`flex items-center gap-1 mt-1.5 text-sm ${trendDisplay.trendColor}`}>

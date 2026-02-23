@@ -23,8 +23,9 @@ import {
   cancelTemplateAdopt,
   confirmTemplateAdoptDraft,
   continueTemplateAdopt,
-} from '@/api/design';
-import type { N8nPersonaDraft } from '@/api/design';
+  instantAdoptTemplate,
+} from '@/api/templateAdopt';
+import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import type { ConnectorReadinessStatus } from '@/lib/types/designTypes';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
@@ -40,7 +41,7 @@ import {
 } from './useAdoptReducer';
 import { ConnectorReadiness, deriveConnectorReadiness } from './ConnectorReadiness';
 import { AdoptConfirmStep } from './AdoptConfirmStep';
-import { N8nTransformProgress } from '@/features/templates/sub_n8n/N8nTransformProgress';
+import { TransformProgress } from '@/features/shared/components/TransformProgress';
 import { ConfigureStep } from '@/features/shared/components/ConfigureStep';
 import { DraftEditStep } from '@/features/shared/components/draft-editor';
 import {
@@ -78,7 +79,8 @@ export default function AdoptionWizardModal({
   const fetchPersonas = usePersonaStore((s) => s.fetchPersonas);
   const selectPersona = usePersonaStore((s) => s.selectPersona);
   const setTemplateAdoptActive = usePersonaStore((s) => s.setTemplateAdoptActive);
-  const { state, dispatch, goBack } = useAdoptReducer();
+  const wizard = useAdoptReducer();
+  const { state, goBack } = wizard;
   const backdropRef = useRef<HTMLDivElement>(null);
   const confirmingRef = useRef(false);
   const [isRestoring, setIsRestoring] = useState(false);
@@ -95,7 +97,7 @@ export default function AdoptionWizardModal({
     outputEvent: 'template-adopt-output',
     statusEvent: 'template-adopt-status',
     idField: 'adopt_id',
-    onFailed: (message) => dispatch({ type: 'TRANSFORM_FAILED', error: message }),
+    onFailed: (message) => wizard.transformFailed(message),
   });
 
   // ── Restore persisted context on open ──
@@ -103,15 +105,14 @@ export default function AdoptionWizardModal({
   const handleRestoreContext = useCallback(
     (parsed: PersistedAdoptContext) => {
       setIsRestoring(true);
-      dispatch({
-        type: 'RESTORE_CONTEXT',
-        adoptId: parsed.adoptId,
-        templateName: parsed.templateName || '',
-        designResultJson: parsed.designResultJson || '',
-      });
+      wizard.restoreContext(
+        parsed.templateName || '',
+        parsed.designResultJson || '',
+        parsed.adoptId,
+      );
       void startAdoptStream(parsed.adoptId);
     },
-    [dispatch, startAdoptStream],
+    [wizard.restoreContext, startAdoptStream],
   );
 
   const validateAdoptContext = useCallback(
@@ -143,76 +144,69 @@ export default function AdoptionWizardModal({
     const designResult = parseJsonSafe<DesignAnalysisResult | null>(review.design_result, null);
     if (!designResult) return;
 
-    dispatch({
-      type: 'INIT',
-      templateName: review.test_case_name,
-      reviewId: review.id,
+    wizard.init(
+      review.test_case_name,
+      review.id,
       designResult,
-      designResultJson: review.design_result ?? '',
-    });
-  }, [isOpen, review, dispatch, state.backgroundAdoptId]);
+      review.design_result ?? '',
+    );
+  }, [isOpen, review, wizard.init, state.backgroundAdoptId]);
 
   // ── Poll for snapshot updates ──
 
   const handleSnapshotLines = useCallback(
     (lines: string[]) => {
-      dispatch({ type: 'TRANSFORM_LINES', lines });
+      wizard.transformLines(lines);
       setStreamLines(lines);
     },
-    [dispatch, setStreamLines],
+    [wizard.transformLines, setStreamLines],
   );
 
   const handleSnapshotPhase = useCallback(
     (phase: 'running' | 'completed' | 'failed') => {
-      dispatch({ type: 'TRANSFORM_PHASE', phase });
+      wizard.transformPhase(phase);
       setStreamPhase(phase);
     },
-    [dispatch, setStreamPhase],
+    [wizard.transformPhase, setStreamPhase],
   );
 
   const handleSnapshotDraft = useCallback(
     (draft: N8nPersonaDraft) => {
       try {
         const normalized = normalizeDraft(draft);
-        dispatch({ type: 'TRANSFORM_COMPLETED', draft: normalized });
+        wizard.transformCompleted(normalized);
       } catch {
-        dispatch({ type: 'TRANSFORM_COMPLETED', draft });
+        wizard.transformCompleted(draft);
       }
       setIsRestoring(false);
       setTemplateAdoptActive(false);
     },
-    [dispatch, setTemplateAdoptActive],
+    [wizard.transformCompleted, setTemplateAdoptActive],
   );
 
   const handleSnapshotCompletedNoDraft = useCallback(() => {
     setIsRestoring(false);
     setTemplateAdoptActive(false);
     try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
-    dispatch({
-      type: 'TRANSFORM_FAILED',
-      error: 'Transform completed but no draft was generated. Please try again.',
-    });
-  }, [dispatch, setTemplateAdoptActive]);
+    wizard.transformFailed('Transform completed but no draft was generated. Please try again.');
+  }, [wizard.transformFailed, setTemplateAdoptActive]);
 
   const handleSnapshotFailed = useCallback(
     (error: string) => {
       setIsRestoring(false);
       setTemplateAdoptActive(false);
       try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
-      dispatch({ type: 'TRANSFORM_FAILED', error });
+      wizard.transformFailed(error);
     },
-    [dispatch, setTemplateAdoptActive],
+    [wizard.transformFailed, setTemplateAdoptActive],
   );
 
   const handleSnapshotSessionLost = useCallback(() => {
     setIsRestoring(false);
     setTemplateAdoptActive(false);
     try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
-    dispatch({
-      type: 'TRANSFORM_FAILED',
-      error: 'Adoption session lost. The backend may have restarted. Please try again.',
-    });
-  }, [dispatch, setTemplateAdoptActive]);
+    wizard.transformFailed('Adoption session lost. The backend may have restarted. Please try again.');
+  }, [wizard.transformFailed, setTemplateAdoptActive]);
 
   const handleSnapshotQuestions = useCallback(
     (questions: unknown[]) => {
@@ -228,10 +222,10 @@ export default function AdoptionWizardModal({
         }));
 
       if (mapped.length > 0) {
-        dispatch({ type: 'QUESTIONS_GENERATED', questions: mapped });
+        wizard.questionsGenerated(mapped);
       }
     },
-    [dispatch],
+    [wizard.questionsGenerated],
   );
 
   useBackgroundSnapshot({
@@ -260,7 +254,7 @@ export default function AdoptionWizardModal({
   const handleStartTransform = useCallback(async () => {
     if (state.transforming || state.confirming) return;
     if (!state.designResultJson || !state.designResultJson.trim()) {
-      dispatch({ type: 'SET_ERROR', error: 'Template has no design data. Cannot adopt.' });
+      wizard.setError('Template has no design data. Cannot adopt.');
       return;
     }
 
@@ -274,7 +268,7 @@ export default function AdoptionWizardModal({
     try {
       setIsRestoring(false);
       await startAdoptStream(adoptId);
-      dispatch({ type: 'TRANSFORM_STARTED', adoptId });
+      wizard.transformStarted(adoptId);
       setTemplateAdoptActive(true);
 
       // Persist context for session recovery with savedAt timestamp
@@ -305,19 +299,16 @@ export default function AdoptionWizardModal({
       );
 
       if (state.adjustmentRequest.trim()) {
-        dispatch({ type: 'SET_ADJUSTMENT', text: '' });
+        wizard.setAdjustment('');
       }
     } catch (err) {
       // Clean up on failure
       setTemplateAdoptActive(false);
       try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
       void resetAdoptStream();
-      dispatch({
-        type: 'TRANSFORM_FAILED',
-        error: err instanceof Error ? err.message : 'Failed to start template adoption.',
-      });
+      wizard.transformFailed(err instanceof Error ? err.message : 'Failed to start template adoption.');
     }
-  }, [state, dispatch, startAdoptStream, resetAdoptStream, setTemplateAdoptActive]);
+  }, [state, wizard, startAdoptStream, resetAdoptStream, setTemplateAdoptActive]);
 
   const handleConfirmSave = useCallback(async () => {
     if (confirmingRef.current) return;
@@ -325,27 +316,27 @@ export default function AdoptionWizardModal({
     if (!payloadJson || state.transforming || state.confirming || state.draftJsonError) return;
 
     confirmingRef.current = true;
-    dispatch({ type: 'CONFIRM_STARTED' });
+    wizard.confirmStarted();
 
     try {
       let parsed: unknown;
       try {
         parsed = JSON.parse(payloadJson);
       } catch (parseErr) {
-        dispatch({ type: 'CONFIRM_FAILED', error: `Draft JSON is malformed: ${parseErr instanceof Error ? parseErr.message : 'parse error'}` });
+        wizard.confirmFailed(`Draft JSON is malformed: ${parseErr instanceof Error ? parseErr.message : 'parse error'}`);
         return;
       }
 
       const normalized = normalizeDraftFromUnknown(parsed);
       if (!normalized) {
-        dispatch({ type: 'CONFIRM_FAILED', error: 'Draft JSON is invalid. Please fix draft fields.' });
+        wizard.confirmFailed('Draft JSON is invalid. Please fix draft fields.');
         return;
       }
 
       const response = await confirmTemplateAdoptDraft(stringifyDraft(normalized));
       await fetchPersonas();
       selectPersona(response.persona.id);
-      dispatch({ type: 'CONFIRM_COMPLETED' });
+      wizard.confirmCompleted();
 
       if (state.backgroundAdoptId) {
         void clearTemplateAdoptSnapshot(state.backgroundAdoptId).catch(() => {});
@@ -353,14 +344,34 @@ export default function AdoptionWizardModal({
       try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
       onPersonaCreated();
     } catch (err) {
-      dispatch({
-        type: 'CONFIRM_FAILED',
-        error: err instanceof Error ? err.message : 'Failed to create persona.',
-      });
+      wizard.confirmFailed(err instanceof Error ? err.message : 'Failed to create persona.');
     } finally {
       confirmingRef.current = false;
     }
-  }, [state, dispatch, fetchPersonas, selectPersona, onPersonaCreated]);
+  }, [state, wizard, fetchPersonas, selectPersona, onPersonaCreated]);
+
+  const [instantAdopting, setInstantAdopting] = useState(false);
+
+  const handleInstantAdopt = useCallback(async () => {
+    if (instantAdopting || state.transforming || state.confirming) return;
+    if (!state.designResultJson || !state.designResultJson.trim()) {
+      wizard.setError('Template has no design data. Cannot adopt.');
+      return;
+    }
+
+    setInstantAdopting(true);
+    try {
+      const response = await instantAdoptTemplate(state.templateName, state.designResultJson);
+      await fetchPersonas();
+      selectPersona(response.persona.id);
+      wizard.confirmCompleted();
+      onPersonaCreated();
+    } catch (err) {
+      wizard.setError(err instanceof Error ? err.message : 'Failed to adopt template.');
+    } finally {
+      setInstantAdopting(false);
+    }
+  }, [instantAdopting, state.transforming, state.confirming, state.designResultJson, state.templateName, wizard, fetchPersonas, selectPersona, onPersonaCreated]);
 
   const handleCancelTransform = useCallback(async () => {
     try {
@@ -376,14 +387,14 @@ export default function AdoptionWizardModal({
       void resetAdoptStream();
       setIsRestoring(false);
       setTemplateAdoptActive(false);
-      dispatch({ type: 'TRANSFORM_CANCELLED' });
+      wizard.transformCancelled();
     } catch {
       // Ensure we always reset UI state even if cancel fails
       setIsRestoring(false);
       setTemplateAdoptActive(false);
-      dispatch({ type: 'TRANSFORM_CANCELLED' });
+      wizard.transformCancelled();
     }
-  }, [state.backgroundAdoptId, currentAdoptId, dispatch, resetAdoptStream, setTemplateAdoptActive]);
+  }, [state.backgroundAdoptId, currentAdoptId, wizard, resetAdoptStream, setTemplateAdoptActive]);
 
   // ── Continue transform (Turn 2: submit user answers to resume session) ──
 
@@ -395,18 +406,15 @@ export default function AdoptionWizardModal({
     const userAnswersJson = hasAnswers ? JSON.stringify(state.userAnswers) : '{}';
 
     try {
-      dispatch({ type: 'TRANSFORM_STARTED', adoptId });
+      wizard.transformStarted(adoptId);
       setTemplateAdoptActive(true);
 
       await continueTemplateAdopt(adoptId, userAnswersJson);
     } catch (err) {
       setTemplateAdoptActive(false);
-      dispatch({
-        type: 'TRANSFORM_FAILED',
-        error: err instanceof Error ? err.message : 'Failed to continue template adoption.',
-      });
+      wizard.transformFailed(err instanceof Error ? err.message : 'Failed to continue template adoption.');
     }
-  }, [state.backgroundAdoptId, state.transforming, state.confirming, state.userAnswers, dispatch, setTemplateAdoptActive]);
+  }, [state.backgroundAdoptId, state.transforming, state.confirming, state.userAnswers, wizard, setTemplateAdoptActive]);
 
   // Close = hide modal. Does NOT cancel background work.
   const handleClose = useCallback(() => {
@@ -420,7 +428,7 @@ export default function AdoptionWizardModal({
       }
       try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
       void resetAdoptStream();
-      dispatch({ type: 'RESET' });
+      wizard.reset();
     }
     // If not transforming, it's safe to fully reset (no background work to preserve)
     else if (!state.transforming) {
@@ -431,21 +439,21 @@ export default function AdoptionWizardModal({
       try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
       void resetAdoptStream();
       setTemplateAdoptActive(false);
-      dispatch({ type: 'RESET' });
+      wizard.reset();
     }
     // If transforming: just hide the modal. Background work continues.
     // localStorage and snapshot remain for session recovery.
 
     onClose();
-  }, [state, currentAdoptId, dispatch, resetAdoptStream, onClose, setTemplateAdoptActive]);
+  }, [state, currentAdoptId, wizard, resetAdoptStream, onClose, setTemplateAdoptActive]);
 
   // Draft update helper for DraftEditStep
   const updateDraft = useCallback(
     (updater: (current: N8nPersonaDraft) => N8nPersonaDraft) => {
       if (!state.draft) return;
-      dispatch({ type: 'DRAFT_UPDATED', draft: updater(state.draft) });
+      wizard.draftUpdated(updater(state.draft));
     },
-    [state.draft, dispatch],
+    [state.draft, wizard],
   );
 
   // ── Next step handler ──
@@ -458,24 +466,24 @@ export default function AdoptionWizardModal({
   const handleNext = useCallback(() => {
     switch (state.step) {
       case 'overview':
-        // Unified Turn 1: starts transform which may produce questions or persona
-        void handleStartTransform();
+        // Instant adopt: create persona directly from design data
+        void handleInstantAdopt();
         break;
       case 'configure':
         // Turn 2: submit user answers to resume the Claude session
         void handleContinueTransform();
         break;
       case 'transform':
-        if (state.draft) dispatch({ type: 'GO_TO_STEP', step: 'edit' });
+        if (state.draft) wizard.goToStep('edit');
         break;
       case 'edit':
-        dispatch({ type: 'GO_TO_STEP', step: 'confirm' });
+        wizard.goToStep('confirm');
         break;
       case 'confirm':
         void handleConfirmSave();
         break;
     }
-  }, [state.step, state.draft, dispatch, handleStartTransform, handleContinueTransform, handleConfirmSave]);
+  }, [state.step, state.draft, wizard, handleInstantAdopt, handleContinueTransform, handleConfirmSave]);
 
   if (!isOpen) return null;
 
@@ -497,12 +505,9 @@ export default function AdoptionWizardModal({
   } | null => {
     switch (state.step) {
       case 'overview':
-        return {
-          label: 'Customize with AI',
-          icon: Sparkles,
-          disabled: state.transforming,
-          variant: 'violet',
-        };
+        return instantAdopting
+          ? { label: 'Adopting...', icon: RefreshCw, disabled: true, variant: 'emerald' as const, spinning: true }
+          : { label: 'Adopt Now', icon: Download, disabled: state.transforming, variant: 'emerald' as const };
       case 'configure':
         return state.questionGenerating
           ? { label: 'Analyzing...', icon: RefreshCw, disabled: true, variant: 'violet', spinning: true }
@@ -602,7 +607,7 @@ export default function AdoptionWizardModal({
             <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
             <p className="text-sm text-red-400/80 flex-1">{state.error}</p>
             <button
-              onClick={() => dispatch({ type: 'CLEAR_ERROR' })}
+              onClick={() => wizard.clearError()}
               className="text-red-400/50 hover:text-red-400 text-sm"
             >
               Dismiss
@@ -669,8 +674,8 @@ export default function AdoptionWizardModal({
                 <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-violet-500/5 border border-violet-500/10">
                   <Sparkles className="w-4 h-4 text-violet-400/60 flex-shrink-0 mt-0.5" />
                   <p className="text-sm text-violet-300/60 leading-relaxed">
-                    Claude will analyze this template and generate a persona draft tailored to its design.
-                    You can review and customize the draft before creating the persona.
+                    <strong className="text-violet-300/80">Adopt Now</strong> creates a persona instantly from the template design.{' '}
+                    <strong className="text-violet-300/80">Customize with AI</strong> lets Claude analyze and tailor the persona to your needs before creating it.
                   </p>
                 </div>
               </motion.div>
@@ -690,7 +695,7 @@ export default function AdoptionWizardModal({
                   userAnswers={state.userAnswers}
                   questionGenerating={state.questionGenerating}
                   onAnswerUpdated={(questionId, answer) =>
-                    dispatch({ type: 'ANSWER_UPDATED', questionId, answer })
+                    wizard.answerUpdated(questionId, answer)
                   }
                   onSkip={handleSkipQuestions}
                   loadingText="Analyzing template requirements..."
@@ -708,7 +713,7 @@ export default function AdoptionWizardModal({
                 transition={{ duration: 0.15 }}
                 className="space-y-4"
               >
-                <N8nTransformProgress
+                <TransformProgress
                   phase={state.transformPhase}
                   lines={state.transformLines}
                   runId={currentAdoptId}
@@ -736,7 +741,7 @@ export default function AdoptionWizardModal({
                     </label>
                     <textarea
                       value={state.adjustmentRequest}
-                      onChange={(e) => dispatch({ type: 'SET_ADJUSTMENT', text: e.target.value })}
+                      onChange={(e) => wizard.setAdjustment(e.target.value)}
                       placeholder="Example: Change the schedule to run at 9 AM, remove ClickUp integration, add Slack notifications"
                       className="w-full h-20 p-3 rounded-xl border border-primary/15 bg-background/40 text-sm text-foreground/75 resize-y placeholder-muted-foreground/30"
                     />
@@ -763,11 +768,11 @@ export default function AdoptionWizardModal({
                   transforming={state.transforming}
                   disabled={state.transforming || state.confirming}
                   updateDraft={updateDraft}
-                  onDraftUpdated={(draft) => dispatch({ type: 'DRAFT_UPDATED', draft })}
+                  onDraftUpdated={(draft) => wizard.draftUpdated(draft)}
                   onJsonEdited={(json, draft, error) =>
-                    dispatch({ type: 'DRAFT_JSON_EDITED', json, draft, error })
+                    wizard.draftJsonEdited(json, draft, error)
                   }
-                  onAdjustmentChange={(text) => dispatch({ type: 'SET_ADJUSTMENT', text })}
+                  onAdjustmentChange={(text) => wizard.setAdjustment(text)}
                   onApplyAdjustment={() => void handleStartTransform()}
                 />
               </motion.div>
@@ -795,7 +800,7 @@ export default function AdoptionWizardModal({
                     try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
                     void resetAdoptStream();
                     setTemplateAdoptActive(false);
-                    dispatch({ type: 'RESET' });
+                    wizard.reset();
                   }}
                 />
               </motion.div>
@@ -828,25 +833,40 @@ export default function AdoptionWizardModal({
                 : 'Back'}
           </button>
 
-          {nextAction && (
-            <button
-              onClick={() => {
-                if (state.created) handleClose();
-                else handleNext();
-              }}
-              disabled={nextAction.disabled}
-              className={`flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-xl border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-                nextAction.variant === 'emerald'
-                  ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25 hover:bg-emerald-500/25'
-                  : 'bg-violet-500/15 text-violet-300 border-violet-500/25 hover:bg-violet-500/25'
-              }`}
-            >
-              <nextAction.icon
-                className={`w-4 h-4 ${nextAction.spinning ? 'animate-spin' : ''}`}
-              />
-              {nextAction.label}
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {/* Customize with AI — secondary action on overview step */}
+            {state.step === 'overview' && !instantAdopting && (
+              <button
+                onClick={() => void handleStartTransform()}
+                disabled={state.transforming}
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border bg-violet-500/15 text-violet-300 border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Sparkles className="w-4 h-4" />
+                Customize with AI
+              </button>
+            )}
+
+            {/* Primary action */}
+            {nextAction && (
+              <button
+                onClick={() => {
+                  if (state.created) handleClose();
+                  else handleNext();
+                }}
+                disabled={nextAction.disabled}
+                className={`flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-xl border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                  nextAction.variant === 'emerald'
+                    ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25 hover:bg-emerald-500/25'
+                    : 'bg-violet-500/15 text-violet-300 border-violet-500/25 hover:bg-violet-500/25'
+                }`}
+              >
+                <nextAction.icon
+                  className={`w-4 h-4 ${nextAction.spinning ? 'animate-spin' : ''}`}
+                />
+                {nextAction.label}
+              </button>
+            )}
+          </div>
         </div>
       </motion.div>
     </div>

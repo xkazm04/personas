@@ -1,6 +1,10 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { Zap, ChevronDown, ChevronUp, RefreshCw, AlertCircle, CheckCircle2, Clock, Loader2 } from 'lucide-react';
+import hljs from 'highlight.js/lib/core';
+import json from 'highlight.js/lib/languages/json';
+
+hljs.registerLanguage('json', json);
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { UuidLabel } from '@/features/shared/components/UuidLabel';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,6 +13,32 @@ import { formatRelativeTime, EVENT_STATUS_COLORS, EVENT_TYPE_COLORS } from '@/li
 import type { PersonaEvent } from '@/lib/types/types';
 
 type EventFilter = 'all' | 'pending' | 'completed' | 'failed';
+
+function HighlightedJson({ raw }: { raw: string }) {
+  const html = useMemo(() => {
+    try {
+      const pretty = JSON.stringify(JSON.parse(raw), null, 2);
+      return hljs.highlight(pretty, { language: 'json' }).value;
+    } catch {
+      return null;
+    }
+  }, [raw]);
+
+  if (!html) {
+    return (
+      <pre className="bg-background/40 p-2 rounded-lg text-foreground/90 overflow-x-auto max-h-40 text-sm">
+        {raw}
+      </pre>
+    );
+  }
+
+  return (
+    <pre
+      className="json-highlight bg-background/40 p-2 rounded-lg overflow-x-auto max-h-40 text-sm"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+}
 
 export default function EventLogList() {
   const recentEvents = usePersonaStore((s) => s.recentEvents);
@@ -226,15 +256,7 @@ export default function EventLogList() {
                           {event.payload && (
                             <div>
                               <span className="text-muted-foreground/80 block mb-1">Payload:</span>
-                              <pre className="bg-background/40 p-2 rounded-lg text-foreground/90 overflow-x-auto max-h-40 text-sm">
-                                {(() => {
-                                  try {
-                                    return JSON.stringify(JSON.parse(event.payload), null, 2);
-                                  } catch {
-                                    return event.payload;
-                                  }
-                                })()}
-                              </pre>
+                              <HighlightedJson raw={event.payload} />
                             </div>
                           )}
                           {event.error_message && (

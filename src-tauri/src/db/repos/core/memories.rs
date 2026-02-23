@@ -122,6 +122,20 @@ pub fn get_by_persona(
     Ok(results)
 }
 
+pub fn get_by_execution(
+    pool: &DbPool,
+    execution_id: &str,
+) -> Result<Vec<PersonaMemory>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT * FROM persona_memories WHERE source_execution_id = ?1
+         ORDER BY created_at ASC",
+    )?;
+    let rows = stmt.query_map(params![execution_id], row_to_memory)?;
+    let results: Vec<PersonaMemory> = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+    Ok(results)
+}
+
 pub fn create(pool: &DbPool, input: CreatePersonaMemoryInput) -> Result<PersonaMemory, AppError> {
     if input.title.trim().is_empty() {
         return Err(AppError::Validation("Title cannot be empty".into()));
@@ -206,6 +220,104 @@ pub fn get_total_count(
     Ok(count)
 }
 
+/// Aggregated memory statistics computed over the full dataset (not paginated).
+#[derive(Debug, serde::Serialize)]
+pub struct MemoryStats {
+    pub total: i64,
+    pub avg_importance: f64,
+    /// (category, count) pairs for every category that has at least one memory.
+    pub category_counts: Vec<(String, i64)>,
+    /// (persona_id, count) pairs for every persona that owns at least one memory.
+    pub agent_counts: Vec<(String, i64)>,
+}
+
+/// Return aggregate stats over the full (filtered) memory dataset.
+pub fn get_stats(
+    pool: &DbPool,
+    persona_id: Option<&str>,
+    category: Option<&str>,
+    search: Option<&str>,
+) -> Result<MemoryStats, AppError> {
+    let conn = pool.get()?;
+
+    // Build shared WHERE clause
+    let mut conditions: Vec<String> = Vec::new();
+    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+    let mut param_idx = 1u32;
+
+    if let Some(pid) = persona_id {
+        conditions.push(format!("persona_id = ?{}", param_idx));
+        param_values.push(Box::new(pid.to_string()));
+        param_idx += 1;
+    }
+    if let Some(cat) = category {
+        conditions.push(format!("category = ?{}", param_idx));
+        param_values.push(Box::new(cat.to_string()));
+        param_idx += 1;
+    }
+    if let Some(q) = search {
+        let trimmed = q.trim();
+        if !trimmed.is_empty() {
+            let pattern = format!("%{}%", escape_like(trimmed));
+            conditions.push(format!(
+                "(title LIKE ?{} ESCAPE '\\' OR content LIKE ?{} ESCAPE '\\')",
+                param_idx,
+                param_idx + 1
+            ));
+            param_values.push(Box::new(pattern.clone()));
+            param_values.push(Box::new(pattern));
+        }
+    }
+
+    let where_clause = if conditions.is_empty() {
+        String::new()
+    } else {
+        format!("WHERE {}", conditions.join(" AND "))
+    };
+
+    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+        param_values.iter().map(|p| p.as_ref()).collect();
+
+    // Total + avg importance in one query
+    let agg_sql = format!(
+        "SELECT COUNT(*), COALESCE(AVG(importance), 0) FROM persona_memories {}",
+        where_clause
+    );
+    let (total, avg_importance): (i64, f64) =
+        conn.query_row(&agg_sql, params_ref.as_slice(), |row| {
+            Ok((row.get(0)?, row.get(1)?))
+        })?;
+
+    // Category breakdown
+    let cat_sql = format!(
+        "SELECT category, COUNT(*) as cnt FROM persona_memories {} GROUP BY category ORDER BY cnt DESC",
+        where_clause
+    );
+    let mut cat_stmt = conn.prepare(&cat_sql)?;
+    let category_counts: Vec<(String, i64)> = cat_stmt
+        .query_map(params_ref.as_slice(), |row| Ok((row.get(0)?, row.get(1)?)))?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)?;
+
+    // Agent breakdown
+    let agent_sql = format!(
+        "SELECT persona_id, COUNT(*) as cnt FROM persona_memories {} GROUP BY persona_id ORDER BY cnt DESC",
+        where_clause
+    );
+    let mut agent_stmt = conn.prepare(&agent_sql)?;
+    let agent_counts: Vec<(String, i64)> = agent_stmt
+        .query_map(params_ref.as_slice(), |row| Ok((row.get(0)?, row.get(1)?)))?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)?;
+
+    Ok(MemoryStats {
+        total,
+        avg_importance,
+        category_counts,
+        agent_counts,
+    })
+}
+
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     let conn = pool.get()?;
     let rows = conn.execute("DELETE FROM persona_memories WHERE id = ?1", params![id])?;
@@ -242,6 +354,7 @@ mod tests {
                 max_turns: None,
                 design_context: None,
                 group_id: None,
+                notification_channels: None,
             },
         )
         .unwrap();

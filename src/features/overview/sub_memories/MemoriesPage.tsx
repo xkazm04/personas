@@ -17,6 +17,7 @@ export default function MemoriesPage() {
   const personas = usePersonaStore((s) => s.personas);
   const memories = usePersonaStore((s) => s.memories);
   const memoriesTotal = usePersonaStore((s) => s.memoriesTotal);
+  const backendStats = usePersonaStore((s) => s.memoryStats);
   const fetchMemories = usePersonaStore((s) => s.fetchMemories);
   const deleteMemory = usePersonaStore((s) => s.deleteMemory);
 
@@ -81,30 +82,18 @@ export default function MemoriesPage() {
     return sorted;
   }, [filteredMemories, sort]);
 
-  // ── Stats computation ──────────────────────────────────────────
+  // ── Stats computation (from backend aggregates over full dataset) ──
   const memoryStats = useMemo(() => {
-    const total = filteredMemories.length;
-    const categoryCounts = new Map<string, number>();
-    const agentCounts = new Map<string, number>();
-    let importanceSum = 0;
-
-    for (const m of filteredMemories) {
-      categoryCounts.set(m.category, (categoryCounts.get(m.category) || 0) + 1);
-      agentCounts.set(m.persona_id, (agentCounts.get(m.persona_id) || 0) + 1);
-      importanceSum += m.importance;
+    if (!backendStats) {
+      return { total: 0, avgImportance: 0, topAgent: null, topAgentId: null, topAgentCount: 0, segments: [] };
     }
 
-    const avgImportance = total > 0 ? (importanceSum / total) : 0;
+    const { total, avg_importance, category_counts, agent_counts } = backendStats;
 
-    // Top agent
-    let topAgentId: string | null = null;
-    let topAgentCount = 0;
-    for (const [pid, count] of agentCounts) {
-      if (count > topAgentCount) {
-        topAgentId = pid;
-        topAgentCount = count;
-      }
-    }
+    // Top agent (agent_counts is sorted DESC by backend)
+    const topEntry = agent_counts[0] as [string, number] | undefined;
+    const topAgentId = topEntry?.[0] ?? null;
+    const topAgentCount = topEntry?.[1] ?? 0;
     const topAgent = topAgentId ? personaMap.get(topAgentId) : null;
 
     // Category segments for stacked bar
@@ -112,18 +101,19 @@ export default function MemoriesPage() {
       fact: '#3b82f6', preference: '#f59e0b', instruction: '#8b5cf6',
       context: '#10b981', learned: '#06b6d4', custom: '#6b7280',
     };
+    const catMap = new Map(category_counts);
     const segments = ALL_MEMORY_CATEGORIES
-      .filter((cat) => (categoryCounts.get(cat) || 0) > 0)
+      .filter((cat) => (catMap.get(cat) || 0) > 0)
       .map((cat) => ({
         category: cat,
-        count: categoryCounts.get(cat) || 0,
-        pct: total > 0 ? ((categoryCounts.get(cat) || 0) / total) * 100 : 0,
+        count: catMap.get(cat) || 0,
+        pct: total > 0 ? ((catMap.get(cat) || 0) / total) * 100 : 0,
         color: categoryHexColors[cat] || '#6b7280',
         label: MEMORY_CATEGORY_COLORS[cat]?.label ?? cat,
       }));
 
-    return { total, avgImportance, topAgent, topAgentId, topAgentCount, segments };
-  }, [filteredMemories, personaMap]);
+    return { total, avgImportance: avg_importance, topAgent, topAgentId, topAgentCount, segments };
+  }, [backendStats, personaMap]);
 
   return (
     <ContentBox>

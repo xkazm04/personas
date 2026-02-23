@@ -43,8 +43,9 @@ fn spawn_design_run(
     cli_args: crate::engine::types::CliArgs,
     tool_names: Vec<String>,
     connector_names: Vec<String>,
+    client_design_id: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
-    let design_id = uuid::Uuid::new_v4().to_string();
+    let design_id = client_design_id.unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
     let pool = state.db.clone();
     let persona_id_owned = persona_id.to_string();
     let design_id_clone = design_id.clone();
@@ -81,6 +82,7 @@ pub async fn start_design_analysis(
     app: tauri::AppHandle,
     persona_id: String,
     instruction: String,
+    design_id: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
     let tools = tool_repo::get_all_definitions(&state.db)?;
@@ -100,7 +102,7 @@ pub async fn start_design_analysis(
     let tool_names = tools.iter().map(|t| t.name.clone()).collect();
     let connector_names = connectors.iter().map(|c| c.name.clone()).collect();
 
-    spawn_design_run(&state, app, &persona_id, design_prompt, cli_args, tool_names, connector_names)
+    spawn_design_run(&state, app, &persona_id, design_prompt, cli_args, tool_names, connector_names, design_id)
 }
 
 #[tauri::command]
@@ -110,6 +112,7 @@ pub async fn refine_design(
     persona_id: String,
     feedback: String,
     current_result: Option<String>,
+    design_id: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
 
@@ -132,7 +135,7 @@ pub async fn refine_design(
     let tool_names = tools.iter().map(|t| t.name.clone()).collect();
     let connector_names = connectors.iter().map(|c| c.name.clone()).collect();
 
-    spawn_design_run(&state, app, &persona_id, refinement_prompt, cli_args, tool_names, connector_names)
+    spawn_design_run(&state, app, &persona_id, refinement_prompt, cli_args, tool_names, connector_names, design_id)
 }
 
 #[tauri::command]
@@ -293,12 +296,11 @@ async fn run_design_analysis(params: DesignRunParams) {
     })
     .await;
 
-    // Wait for process and clear the PID (process has exited)
-    let _ = child.wait().await;
-    *active_child_pid.lock().unwrap() = None;
-
+    // On timeout, kill the process BEFORE waiting — otherwise wait() blocks forever
     if stream_result.is_err() {
         let _ = child.kill().await;
+        let _ = child.wait().await;
+        *active_child_pid.lock().unwrap() = None;
         let _ = app.emit(
             "design-status",
             DesignStatusEvent {
@@ -311,6 +313,10 @@ async fn run_design_analysis(params: DesignRunParams) {
         );
         return;
     }
+
+    // Normal exit — wait for process and clear the PID
+    let _ = child.wait().await;
+    *active_child_pid.lock().unwrap() = None;
 
     // Check if this analysis was cancelled before persisting
     let is_cancelled = {

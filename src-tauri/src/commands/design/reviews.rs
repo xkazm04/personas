@@ -1,5 +1,6 @@
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use serde::Serialize;
 use serde_json::json;
@@ -8,7 +9,7 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
 
 use crate::db::models::{
-    CreateDesignReviewInput, CreatePersonaInput, ImportDesignReviewInput, PersonaDesignReview,
+    ConnectorWithCount, CreateDesignReviewInput, ImportDesignReviewInput, PersonaDesignReview,
     PersonaManualReview,
 };
 use crate::db::repos::communication::{manual_reviews as manual_repo, reviews as repo};
@@ -69,6 +70,38 @@ pub fn delete_design_review(
 }
 
 #[tauri::command]
+pub fn list_design_reviews_paginated(
+    state: State<'_, Arc<AppState>>,
+    search: Option<String>,
+    connector_filter: Option<Vec<String>>,
+    sort_by: Option<String>,
+    sort_dir: Option<String>,
+    page: Option<i64>,
+    per_page: Option<i64>,
+) -> Result<serde_json::Value, AppError> {
+    let result = repo::get_reviews_paginated(
+        &state.db,
+        search.as_deref(),
+        connector_filter.as_deref(),
+        sort_by.as_deref(),
+        sort_dir.as_deref(),
+        page.unwrap_or(0),
+        per_page.unwrap_or(10),
+    )?;
+    Ok(serde_json::json!({
+        "items": result.items,
+        "total": result.total,
+    }))
+}
+
+#[tauri::command]
+pub fn list_review_connectors(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<ConnectorWithCount>, AppError> {
+    repo::get_distinct_connectors(&state.db)
+}
+
+#[tauri::command]
 pub async fn start_design_review_run(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
@@ -94,6 +127,7 @@ pub async fn start_design_review_run(
         map.insert(run_id.clone(), cancel_flag.clone());
     }
     let cancel_map = state.active_test_run_cancelled.clone();
+    let child_pids = state.active_review_child_pids.clone();
 
     tokio::spawn(async move {
         for (i, test_case) in test_cases.iter().enumerate() {
@@ -186,12 +220,20 @@ pub async fn start_design_review_run(
                 &app,
                 &run_id_clone,
                 i,
+                &child_pids,
             )
             .await;
 
             let elapsed = start_time.elapsed().as_millis() as u64;
 
             let now = chrono::Utc::now().to_rfc3339();
+            let mut input = CreateDesignReviewInput::base(
+                test_case_id,
+                test_case_name.clone(),
+                instruction,
+                run_id_clone.clone(),
+                now,
+            );
 
             match cli_result {
                 Ok(full_output) => {
@@ -201,30 +243,12 @@ pub async fn start_design_review_run(
                             test_case = %test_case_name,
                             "Claude asked a question during batch generation — skipping"
                         );
-                        let _ = repo::create_review(
-                            &pool,
-                            &CreateDesignReviewInput {
-                                test_case_id,
-                                test_case_name: test_case_name.clone(),
-                                instruction,
-                                status: "error".into(),
-                                structural_score: Some(0),
-                                semantic_score: Some(0),
-                                connectors_used: None,
-                                trigger_types: None,
-                                design_result: None,
-                                structural_evaluation: None,
-                                semantic_evaluation: None,
-                                test_run_id: run_id_clone.clone(),
-                                had_references: None,
-                                suggested_adjustment: Some(
-                                    "Claude asked a clarification question instead of generating. Re-run with a more specific instruction.".into()
-                                ),
-                                adjustment_generation: None,
-                                use_case_flows: None,
-                                reviewed_at: now,
-                            },
+                        input.structural_score = Some(0);
+                        input.semantic_score = Some(0);
+                        input.suggested_adjustment = Some(
+                            "Claude asked a clarification question instead of generating. Re-run with a more specific instruction.".into()
                         );
+                        let _ = repo::create_review(&pool, &input);
                         emit_status(
                             &app, &run_id_clone, i, total,
                             "error", &test_case_name,
@@ -260,34 +284,20 @@ pub async fn start_design_review_run(
                             let (structural_score, semantic_score) =
                                 score_design_result(&result, &tool_names, &connector_names);
 
-                            let status = if structural_score >= 60 && semantic_score >= 40 {
+                            let status = if structural_score >= 55 {
                                 "passed"
                             } else {
                                 "failed"
                             };
 
-                            let _ = repo::create_review(
-                                &pool,
-                                &CreateDesignReviewInput {
-                                    test_case_id,
-                                    test_case_name: test_case_name.clone(),
-                                    instruction,
-                                    status: status.into(),
-                                    structural_score: Some(structural_score),
-                                    semantic_score: Some(semantic_score),
-                                    connectors_used: Some(connectors_used),
-                                    trigger_types: Some(trigger_types),
-                                    design_result: Some(result_json),
-                                    structural_evaluation: None,
-                                    semantic_evaluation: None,
-                                    test_run_id: run_id_clone.clone(),
-                                    had_references: None,
-                                    suggested_adjustment: None,
-                                    adjustment_generation: None,
-                                    use_case_flows: None,
-                                    reviewed_at: now,
-                                },
-                            );
+                            input.status = status.into();
+                            input.structural_score = Some(structural_score);
+                            input.semantic_score = Some(semantic_score);
+                            input.connectors_used = Some(connectors_used);
+                            input.trigger_types = Some(trigger_types);
+                            input.design_result = Some(result_json);
+                            input.use_case_flows = extract_use_case_flows_from_result(&result);
+                            let _ = repo::create_review(&pool, &input);
 
                             emit_status(
                                 &app, &run_id_clone, i, total,
@@ -300,30 +310,12 @@ pub async fn start_design_review_run(
                                 test_case = %test_case_name,
                                 "Failed to extract design result from Claude output"
                             );
-                            let _ = repo::create_review(
-                                &pool,
-                                &CreateDesignReviewInput {
-                                    test_case_id,
-                                    test_case_name: test_case_name.clone(),
-                                    instruction,
-                                    status: "error".into(),
-                                    structural_score: Some(0),
-                                    semantic_score: Some(0),
-                                    connectors_used: None,
-                                    trigger_types: None,
-                                    design_result: None,
-                                    structural_evaluation: None,
-                                    semantic_evaluation: None,
-                                    test_run_id: run_id_clone.clone(),
-                                    had_references: None,
-                                    suggested_adjustment: Some(
-                                        "Failed to extract valid JSON from Claude output".into(),
-                                    ),
-                                    adjustment_generation: None,
-                                    use_case_flows: None,
-                                    reviewed_at: now,
-                                },
+                            input.structural_score = Some(0);
+                            input.semantic_score = Some(0);
+                            input.suggested_adjustment = Some(
+                                "Failed to extract valid JSON from Claude output".into(),
                             );
+                            let _ = repo::create_review(&pool, &input);
                             emit_status(
                                 &app, &run_id_clone, i, total,
                                 "error", &test_case_name,
@@ -339,28 +331,10 @@ pub async fn start_design_review_run(
                         error = %error_msg,
                         "CLI failed for template generation"
                     );
-                    let _ = repo::create_review(
-                        &pool,
-                        &CreateDesignReviewInput {
-                            test_case_id,
-                            test_case_name: test_case_name.clone(),
-                            instruction,
-                            status: "error".into(),
-                            structural_score: Some(0),
-                            semantic_score: Some(0),
-                            connectors_used: None,
-                            trigger_types: None,
-                            design_result: None,
-                            structural_evaluation: None,
-                            semantic_evaluation: Some(error_msg.clone()),
-                            test_run_id: run_id_clone.clone(),
-                            had_references: None,
-                            suggested_adjustment: None,
-                            adjustment_generation: None,
-                            use_case_flows: None,
-                            reviewed_at: now,
-                        },
-                    );
+                    input.structural_score = Some(0);
+                    input.semantic_score = Some(0);
+                    input.semantic_evaluation = Some(error_msg.clone());
+                    let _ = repo::create_review(&pool, &input);
                     emit_status(
                         &app, &run_id_clone, i, total,
                         "error", &test_case_name,
@@ -370,10 +344,14 @@ pub async fn start_design_review_run(
             }
         }
 
-        // Cleanup cancellation flag
+        // Cleanup cancellation flag and child PID
         {
             let mut map = cancel_map.lock().unwrap();
             map.remove(&run_id_clone);
+        }
+        {
+            let mut pids = child_pids.lock().unwrap();
+            pids.remove(&run_id_clone);
         }
 
         // Emit completion
@@ -403,7 +381,319 @@ pub fn cancel_design_review_run(
     if let Some(flag) = map.get(&run_id) {
         flag.store(true, Ordering::Relaxed);
     }
+
+    // Kill the currently-running CLI child process to stop API credit consumption immediately.
+    if let Some(pid) = state.active_review_child_pids.lock().unwrap().remove(&run_id) {
+        tracing::info!(run_id = %run_id, pid = pid, "Killing review CLI child process");
+        crate::engine::kill_process(pid);
+    }
+
     Ok(())
+}
+
+// ── Rebuild ─────────────────────────────────────────────────────
+
+fn build_rebuild_prompt(
+    test_case_name: &str,
+    instruction: &str,
+    user_direction: Option<&str>,
+    existing_design_result: Option<&str>,
+    tools: &[crate::db::models::PersonaToolDefinition],
+    connectors: &[crate::db::models::ConnectorDefinition],
+) -> String {
+    let user_direction_section = user_direction
+        .filter(|d| !d.trim().is_empty())
+        .map(|d| format!("\n## User Custom Direction\nThe user has provided specific requirements for this rebuild:\n{d}\nHonor these requirements when generating the persona design.\n"))
+        .unwrap_or_default();
+
+    let existing_design_section = existing_design_result
+        .filter(|d| !d.trim().is_empty())
+        .map(|d| format!(
+            "\n## Current Design (preserve and improve)\nThe template already has a design. Preserve what works, fix what's incomplete, and enhance based on the instructions. Pay special attention to filling in missing dimensions (flows, events, notifications, structured_prompt).\n```json\n{d}\n```\n"
+        ))
+        .unwrap_or_default();
+
+    let mut tools_section = String::new();
+    if !tools.is_empty() {
+        tools_section.push_str("\n## Available Tools\n");
+        for tool in tools {
+            tools_section.push_str(&format!(
+                "- **{}** ({}): {}\n",
+                tool.name, tool.category, tool.description
+            ));
+        }
+    }
+
+    let mut connectors_section = String::new();
+    if !connectors.is_empty() {
+        connectors_section.push_str("\n## Available Connectors\n");
+        for conn in connectors {
+            connectors_section.push_str(&format!(
+                "- **{}** ({}): {}\n",
+                conn.name, conn.category, conn.label
+            ));
+        }
+    }
+
+    format!(
+        r##"You are a senior Personas architect. Analyze the template concept below and generate a complete, production-ready persona design with ALL data dimensions filled.
+
+## Template: {test_case_name}
+
+## App Capabilities (Personas Platform)
+- Personas has a built-in LLM execution engine. Do NOT suggest external LLM API tools.
+  No Anthropic API, no OpenAI API calls. The persona's system_prompt IS the AI brain.
+- Tools are external scripts that interact with APIs (Gmail, Slack, HTTP, etc.)
+- Triggers start the persona (schedule, webhook, polling, manual)
+- Each tool can reference a connector (credential type) it requires
+
+## Persona Protocol System (CRITICAL — embed these in the structured_prompt)
+
+During execution, the persona can output special JSON protocol messages to communicate
+with the user, persist knowledge, and request human approval. You MUST reference these
+in the structured_prompt instructions and toolGuidance wherever the design involves
+human interaction, data storage, notifications, or approval gates.
+
+### Protocol 1: User Messages (notify the user)
+Output: {{"user_message": {{"title": "string", "content": "string", "content_type": "text|markdown", "priority": "low|normal|high|critical"}}}}
+
+Use for: status updates, summaries, alerts, draft previews, completion reports.
+
+### Protocol 2: Agent Memory (ACTIVE business knowledge — improves every run)
+Output: {{"agent_memory": {{"title": "string", "content": "string", "category": "fact|preference|instruction|context|learned", "importance": 1-10, "tags": ["tag1"]}}}}
+
+CRITICAL: Memory is the persona's competitive advantage. Each execution should
+make the persona smarter at its business domain. Memory must be ACTIVE (consulted
+before decisions) and PROGRESSIVE (each run builds on previous knowledge).
+
+Categories:
+- "fact": Business facts extracted from data (e.g., "Client X prefers morning meetings")
+- "preference": Stakeholder and system preferences (e.g., "Marketing team wants Slack over email")
+- "instruction": Learned procedures and rules (e.g., "Always CC legal on contracts above $10k")
+- "context": Ongoing business situations (e.g., "Q4 budget freeze — hold non-critical purchases")
+- "learned": Patterns and optimizations discovered through operation
+
+### Protocol 3: Manual Review (human-in-the-loop approval gate)
+Output: {{"manual_review": {{"title": "string", "description": "string", "severity": "info|warning|error|critical", "context_data": "string", "suggested_actions": ["Approve", "Reject", "Edit"]}}}}
+
+Use for: draft review before sending, data deletion confirmation, high-stakes decisions.
+
+### Protocol 4: Events (inter-persona communication)
+Output: {{"emit_event": {{"type": "event_name", "data": {{}}}}}}
+
+Use for: multi-agent coordination, triggering downstream workflows.
+
+## Design Pattern Mapping
+
+Apply these patterns when designing:
+
+1. HUMAN-IN-THE-LOOP: If the persona sends emails, posts messages, modifies databases,
+   or performs any externally-visible action → add manual_review BEFORE the action.
+   Include a "human_in_the_loop" customSection in structured_prompt.
+
+2. KNOWLEDGE EXTRACTION: If the persona processes data (emails, documents, API responses)
+   → add agent_memory instructions to extract and store BUSINESS-RELEVANT information.
+
+3. PROGRESSIVE LEARNING: For recurring tasks → instruct the persona to CHECK memories
+   before acting and STORE new patterns after. Create a feedback loop:
+   CHECK → ACT → LEARN → IMPROVE.
+   ALWAYS include a "memory_strategy" customSection describing what to capture and when.
+
+4. NOTIFICATIONS: Map status updates to user_message with appropriate priority levels.
+
+5. ERROR ESCALATION: Map critical errors to user_message with priority "critical".
+
+## Composition Philosophy
+1. Produce robust prompt architecture (identity, instructions, toolGuidance, examples, errorHandling, customSections).
+2. Keep instructions deterministic, testable, and failure-aware.
+3. Ensure ALL 9 data dimensions are filled: structured_prompt, tools, triggers, connectors, flows, events, notifications, summary, service_flow.
+4. ALWAYS include a "memory_strategy" customSection.
+5. ALWAYS include a "human_in_the_loop" customSection when external actions are involved.
+6. Use the protocol system throughout the instructions and examples.
+{tools_section}{connectors_section}{existing_design_section}{user_direction_section}
+## Template Instruction
+{instruction}
+
+{DESIGN_OUTPUT_SCHEMA}
+"##,
+        DESIGN_OUTPUT_SCHEMA = crate::engine::design::DESIGN_OUTPUT_SCHEMA,
+    )
+}
+
+#[tauri::command]
+pub async fn rebuild_design_review(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    id: String,
+    user_instruction: Option<String>,
+) -> Result<serde_json::Value, AppError> {
+    use crate::commands::design::n8n_transform::job_state as n8n_job_state;
+    use crate::commands::design::n8n_transform::run_claude_prompt_text;
+    use tokio_util::sync::CancellationToken;
+
+    let review = repo::get_review_by_id(&state.db, &id)?;
+    let tools = tool_repo::get_all_definitions(&state.db)?;
+    let connectors = connector_repo::get_all(&state.db)?;
+
+    let rebuild_id = format!("rebuild-{}", id);
+    let pool = state.db.clone();
+    let tool_names: Vec<String> = tools.iter().map(|t| t.name.clone()).collect();
+    let connector_names: Vec<String> = connectors.iter().map(|c| c.name.clone()).collect();
+
+    // Initialize job in n8n job_state for background tracking
+    let cancel_token = CancellationToken::new();
+    {
+        let mut jobs = n8n_job_state::lock_jobs()?;
+        n8n_job_state::evict_stale_n8n_jobs(&mut jobs);
+        jobs.insert(
+            rebuild_id.clone(),
+            n8n_job_state::N8nTransformJobState {
+                status: "running".into(),
+                cancel_token: Some(cancel_token.clone()),
+                ..Default::default()
+            },
+        );
+    }
+    n8n_job_state::set_n8n_transform_status(&app, &rebuild_id, "running", None);
+
+    let rebuild_id_ret = rebuild_id.clone();
+
+    tokio::spawn(async move {
+        n8n_job_state::emit_n8n_transform_line(&app, &rebuild_id, "[Milestone] Building design prompt...");
+
+        // Build the rich rebuild prompt
+        let design_prompt = build_rebuild_prompt(
+            &review.test_case_name,
+            &review.instruction,
+            user_instruction.as_deref(),
+            review.design_result.as_deref(),
+            &tools,
+            &connectors,
+        );
+
+        n8n_job_state::emit_n8n_transform_line(&app, &rebuild_id, "[Milestone] Running Claude CLI...");
+
+        // Use the n8n CLI runner with streaming output
+        let cli_args = prompt::build_cli_args(None, None);
+        let cli_result = run_claude_prompt_text(
+            design_prompt,
+            &cli_args,
+            Some((&app, &rebuild_id)),
+        )
+        .await;
+
+        let now = chrono::Utc::now().to_rfc3339();
+
+        match cli_result {
+            Ok((full_output, _session_id)) => {
+                n8n_job_state::emit_n8n_transform_line(&app, &rebuild_id, "[Milestone] Extracting design result...");
+
+                match design::extract_design_result(&full_output) {
+                    Some(mut result) => {
+                        // Attach feasibility
+                        let feasibility = design::check_feasibility(
+                            &result.to_string(),
+                            &tool_names,
+                            &connector_names,
+                        );
+                        if let Some(obj) = result.as_object_mut() {
+                            obj.insert(
+                                "feasibility".into(),
+                                json!({
+                                    "confirmed_capabilities": feasibility.confirmed_capabilities,
+                                    "issues": feasibility.issues,
+                                    "overall_feasibility": feasibility.overall,
+                                }),
+                            );
+                        }
+
+                        let result_json = result.to_string();
+                        let connectors_used = extract_connectors_from_result(&result);
+                        let trigger_types = extract_triggers_from_result(&result);
+                        let use_case_flows = extract_use_case_flows_from_result(&result);
+                        let (structural_score, semantic_score) =
+                            score_design_result(&result, &tool_names, &connector_names);
+
+                        let status = if structural_score >= 55 {
+                            "passed"
+                        } else {
+                            "failed"
+                        };
+
+                        let _ = repo::update_review_result(
+                            &pool,
+                            &review.id,
+                            status,
+                            Some(structural_score),
+                            Some(semantic_score),
+                            Some(&connectors_used),
+                            Some(&trigger_types),
+                            Some(&result_json),
+                            use_case_flows.as_deref(),
+                            None,
+                            &now,
+                        );
+
+                        n8n_job_state::emit_n8n_transform_line(
+                            &app, &rebuild_id,
+                            format!("[Milestone] Rebuild complete — quality: {}%", structural_score),
+                        );
+                        n8n_job_state::set_n8n_transform_status(&app, &rebuild_id, "completed", None);
+                    }
+                    None => {
+                        let _ = repo::update_review_result(
+                            &pool,
+                            &review.id,
+                            "error",
+                            Some(0),
+                            Some(0),
+                            None,
+                            None,
+                            None,
+                            None,
+                            Some("Failed to extract valid JSON from Claude output"),
+                            &now,
+                        );
+                        n8n_job_state::set_n8n_transform_status(
+                            &app, &rebuild_id, "failed",
+                            Some("Failed to extract design result from Claude output".into()),
+                        );
+                    }
+                }
+            }
+            Err(error_msg) => {
+                let _ = repo::update_review_result(
+                    &pool,
+                    &review.id,
+                    "error",
+                    Some(0),
+                    Some(0),
+                    None,
+                    None,
+                    None,
+                    None,
+                    Some(&error_msg),
+                    &now,
+                );
+                n8n_job_state::set_n8n_transform_status(
+                    &app, &rebuild_id, "failed",
+                    Some(error_msg),
+                );
+            }
+        }
+    });
+
+    Ok(json!({ "rebuild_id": rebuild_id_ret }))
+}
+
+#[tauri::command]
+pub fn get_rebuild_snapshot(rebuild_id: String) -> Result<serde_json::Value, AppError> {
+    crate::commands::design::n8n_transform::job_state::get_n8n_transform_snapshot(rebuild_id)
+}
+
+#[tauri::command]
+pub fn cancel_rebuild(app: tauri::AppHandle, rebuild_id: String) -> Result<(), AppError> {
+    crate::commands::design::n8n_transform::job_state::cancel_n8n_transform(app, rebuild_id)
 }
 
 // ── Manual Review Commands ───────────────────────────────────
@@ -473,61 +763,6 @@ pub fn import_design_review(
     repo::create_review(&state.db, &review_input)
 }
 
-// ── Adopt Design Review as Persona ────────────────────────────
-
-#[tauri::command]
-pub fn adopt_design_review(
-    state: State<'_, Arc<AppState>>,
-    review_id: String,
-) -> Result<serde_json::Value, AppError> {
-    let review = repo::get_review_by_id(&state.db, &review_id)?;
-
-    let design_result_str = review
-        .design_result
-        .as_deref()
-        .ok_or_else(|| AppError::Validation("No design data available for this template".into()))?;
-
-    let design: serde_json::Value = serde_json::from_str(design_result_str)
-        .map_err(|e| AppError::Validation(format!("Invalid design result JSON: {e}")))?;
-
-    let full_prompt = design
-        .get("full_prompt_markdown")
-        .and_then(|v| v.as_str())
-        .unwrap_or("You are a helpful AI assistant.")
-        .to_string();
-
-    let summary = design
-        .get("summary")
-        .and_then(|v| v.as_str())
-        .map(|s| s.to_string())
-        .or_else(|| Some(format!("Adopted from template: {}", review.test_case_name)));
-
-    let structured_prompt = design.get("structured_prompt").map(|v| v.to_string());
-
-    let persona = persona_repo::create(
-        &state.db,
-        CreatePersonaInput {
-            name: review.test_case_name,
-            system_prompt: full_prompt,
-            project_id: None,
-            description: summary,
-            structured_prompt,
-            icon: None,
-            color: None,
-            enabled: Some(false),
-            max_concurrent: None,
-            timeout_ms: None,
-            model_profile: None,
-            max_budget_usd: None,
-            max_turns: None,
-            design_context: Some(design_result_str.to_string()),
-            group_id: None,
-        },
-    )?;
-
-    Ok(json!({ "persona": persona }))
-}
-
 // ── CLI Runner ─────────────────────────────────────────────────
 
 /// Spawn Claude CLI for a single template and return the full output string.
@@ -537,6 +772,7 @@ async fn run_cli_for_template(
     app: &tauri::AppHandle,
     run_id: &str,
     test_case_index: usize,
+    child_pids: &Arc<Mutex<HashMap<String, u32>>>,
 ) -> Result<String, String> {
     let mut cmd = Command::new(&cli_args.command);
     cmd.args(&cli_args.args)
@@ -568,6 +804,11 @@ async fn run_cli_for_template(
             };
         }
     };
+
+    // Register child PID so cancel can kill it immediately
+    if let Some(pid) = child.id() {
+        child_pids.lock().unwrap().insert(run_id.to_string(), pid);
+    }
 
     // Write prompt to stdin
     if let Some(mut stdin) = child.stdin.take() {
@@ -606,8 +847,9 @@ async fn run_cli_for_template(
     })
     .await;
 
-    // Wait for process
+    // Wait for process and clear the PID (process has exited)
     let _ = child.wait().await;
+    child_pids.lock().unwrap().remove(run_id);
 
     if stream_result.is_err() {
         let _ = child.kill().await;
@@ -715,93 +957,150 @@ fn extract_triggers_from_result(result: &serde_json::Value) -> String {
     serde_json::to_string(&types).unwrap_or_else(|_| "[]".to_string())
 }
 
-/// Score a generated DesignAnalysisResult for quality.
-/// Returns (structural_score, semantic_score) each 0-100.
+/// Extract use_case_flows array from a parsed DesignAnalysisResult as a JSON string.
+fn extract_use_case_flows_from_result(result: &serde_json::Value) -> Option<String> {
+    result
+        .get("use_case_flows")
+        .filter(|v| v.is_array())
+        .map(|v| v.to_string())
+}
+
+/// Score a generated DesignAnalysisResult for quality based on dimension completion.
+/// Measures 9 Persona data dimensions. Returns (score, score) where score is 0-100
+/// representing the percentage of dimensions that pass validation.
 fn score_design_result(
     result: &serde_json::Value,
-    tool_names: &[String],
-    connector_names: &[String],
+    _tool_names: &[String],
+    _connector_names: &[String],
 ) -> (i32, i32) {
-    let mut structural = 0i32;
+    let mut passed = 0i32;
+    let total = 9i32;
 
-    // Top-level fields
-    if result.get("structured_prompt").is_some() {
-        structural += 20;
-    }
-    if result.get("suggested_tools").is_some() {
-        structural += 15;
-    }
-    if result.get("suggested_triggers").is_some() {
-        structural += 15;
-    }
-    if result.get("full_prompt_markdown").is_some() {
-        structural += 20;
-    }
-    if result.get("summary").is_some() {
-        structural += 10;
-    }
-
-    // Structured prompt sub-fields
+    // 1. Prompt dimension — structured_prompt with meaningful identity + instructions
     if let Some(sp) = result.get("structured_prompt") {
-        if sp
+        let identity_ok = sp
             .get("identity")
             .and_then(|v| v.as_str())
-            .is_some_and(|s| s.len() > 20)
-        {
-            structural += 5;
-        }
-        if sp
+            .is_some_and(|s| s.len() > 20);
+        let instructions_ok = sp
             .get("instructions")
             .and_then(|v| v.as_str())
-            .is_some_and(|s| s.len() > 50)
-        {
-            structural += 5;
-        }
-        if sp
+            .is_some_and(|s| s.len() > 50);
+        let has_guidance = sp
             .get("toolGuidance")
             .and_then(|v| v.as_str())
             .is_some_and(|s| !s.is_empty())
-        {
-            structural += 5;
-        }
-        if sp
-            .get("errorHandling")
-            .and_then(|v| v.as_str())
-            .is_some_and(|s| !s.is_empty())
-        {
-            structural += 5;
+            || sp
+                .get("errorHandling")
+                .and_then(|v| v.as_str())
+                .is_some_and(|s| !s.is_empty());
+        if identity_ok && instructions_ok && has_guidance {
+            passed += 1;
         }
     }
 
-    // Semantic score: tool/connector matching
-    let mut semantic = 0i32;
-
-    if let Some(tools) = result.get("suggested_tools").and_then(|v| v.as_array()) {
-        if !tools.is_empty() {
-            let matched = tools
-                .iter()
-                .filter_map(|t| t.as_str())
-                .filter(|name| tool_names.iter().any(|tn| tn == name))
-                .count();
-            semantic += ((matched as f64 / tools.len() as f64) * 50.0) as i32;
-        }
+    // 2. Tools dimension — non-empty suggested_tools array
+    if result
+        .get("suggested_tools")
+        .and_then(|v| v.as_array())
+        .is_some_and(|arr| !arr.is_empty())
+    {
+        passed += 1;
     }
 
-    if let Some(conns) = result.get("suggested_connectors").and_then(|v| v.as_array()) {
-        if !conns.is_empty() {
-            let matched = conns
-                .iter()
-                .filter_map(|c| c.get("name").and_then(|n| n.as_str()))
-                .filter(|name| connector_names.iter().any(|cn| cn == name))
-                .count();
-            semantic += ((matched as f64 / conns.len() as f64) * 50.0) as i32;
-        }
-    } else {
-        // No connectors suggested — give full marks for connector portion
-        semantic += 50;
+    // 3. Triggers dimension — items with valid trigger_type
+    if result
+        .get("suggested_triggers")
+        .and_then(|v| v.as_array())
+        .is_some_and(|arr| {
+            !arr.is_empty()
+                && arr
+                    .iter()
+                    .any(|t| t.get("trigger_type").and_then(|v| v.as_str()).is_some())
+        })
+    {
+        passed += 1;
     }
 
-    (structural, semantic)
+    // 4. Connectors dimension — items with credential_fields + auth_type
+    if result
+        .get("suggested_connectors")
+        .and_then(|v| v.as_array())
+        .is_some_and(|arr| {
+            !arr.is_empty()
+                && arr.iter().any(|c| {
+                    c.get("credential_fields")
+                        .and_then(|v| v.as_array())
+                        .is_some_and(|f| !f.is_empty())
+                        && c.get("auth_type").and_then(|v| v.as_str()).is_some()
+                })
+        })
+    {
+        passed += 1;
+    }
+
+    // 5. Flows dimension — at least one flow with start/end nodes and ≥5 nodes
+    if result
+        .get("use_case_flows")
+        .and_then(|v| v.as_array())
+        .is_some_and(|arr| {
+            !arr.is_empty()
+                && arr.iter().any(|flow| {
+                    let nodes = flow.get("nodes").and_then(|v| v.as_array());
+                    let has_start = nodes.as_ref().is_some_and(|n| {
+                        n.iter()
+                            .any(|node| node.get("type").and_then(|v| v.as_str()) == Some("start"))
+                    });
+                    let has_end = nodes.as_ref().is_some_and(|n| {
+                        n.iter()
+                            .any(|node| node.get("type").and_then(|v| v.as_str()) == Some("end"))
+                    });
+                    let enough_nodes = nodes.is_some_and(|n| n.len() >= 5);
+                    has_start && has_end && enough_nodes
+                })
+        })
+    {
+        passed += 1;
+    }
+
+    // 6. Events dimension — non-empty suggested_event_subscriptions
+    if result
+        .get("suggested_event_subscriptions")
+        .and_then(|v| v.as_array())
+        .is_some_and(|arr| !arr.is_empty())
+    {
+        passed += 1;
+    }
+
+    // 7. Notifications dimension — non-empty suggested_notification_channels
+    if result
+        .get("suggested_notification_channels")
+        .and_then(|v| v.as_array())
+        .is_some_and(|arr| !arr.is_empty())
+    {
+        passed += 1;
+    }
+
+    // 8. Summary dimension — summary string >50 chars
+    if result
+        .get("summary")
+        .and_then(|v| v.as_str())
+        .is_some_and(|s| s.len() > 50)
+    {
+        passed += 1;
+    }
+
+    // 9. Service Flow dimension — non-empty service_flow array
+    if result
+        .get("service_flow")
+        .and_then(|v| v.as_array())
+        .is_some_and(|arr| !arr.is_empty())
+    {
+        passed += 1;
+    }
+
+    let score = ((passed as f64 / total as f64) * 100.0).round() as i32;
+    (score, score)
 }
 
 /// Score a design prompt based on structural completeness (legacy pre-check).

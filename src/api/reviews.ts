@@ -28,6 +28,65 @@ export const startDesignReviewRun = (personaId: string, testCases: object[]) =>
 export const cancelDesignReviewRun = (runId: string) =>
   invoke<void>("cancel_design_review_run", { runId });
 
+export const rebuildDesignReview = (id: string, userInstruction?: string) =>
+  invoke<{ rebuild_id: string }>("rebuild_design_review", {
+    id,
+    userInstruction: userInstruction ?? null,
+  });
+
+export const getRebuildSnapshot = (rebuildId: string) =>
+  invoke<{
+    transform_id: string;
+    status: 'idle' | 'running' | 'completed' | 'failed';
+    error: string | null;
+    lines: string[];
+    draft: unknown | null;
+    questions: unknown | null;
+  }>("get_rebuild_snapshot", { rebuildId });
+
+export const cancelRebuild = (rebuildId: string) =>
+  invoke<void>("cancel_rebuild", { rebuildId });
+
+// ============================================================================
+// Paginated Design Reviews
+// ============================================================================
+
+export interface PaginatedReviewsResult {
+  items: PersonaDesignReview[];
+  total: number;
+}
+
+export interface ReviewQueryParams {
+  search?: string;
+  connectorFilter?: string[];
+  sortBy?: string;
+  sortDir?: string;
+  page?: number;
+  perPage?: number;
+}
+
+export const listDesignReviewsPaginated = (params: ReviewQueryParams) =>
+  invoke<PaginatedReviewsResult>("list_design_reviews_paginated", {
+    search: params.search ?? null,
+    connectorFilter: params.connectorFilter ?? null,
+    sortBy: params.sortBy ?? null,
+    sortDir: params.sortDir ?? null,
+    page: params.page ?? 0,
+    perPage: params.perPage ?? 10,
+  });
+
+export interface ConnectorWithCount {
+  name: string;
+  count: number;
+}
+
+export const listReviewConnectors = () =>
+  invoke<ConnectorWithCount[]>("list_review_connectors");
+
+// ============================================================================
+// Import
+// ============================================================================
+
 export const importDesignReview = (input: {
   test_case_id: string;
   test_case_name: string;
@@ -38,6 +97,7 @@ export const importDesignReview = (input: {
   connectors_used: string | null;
   trigger_types: string | null;
   design_result: string | null;
+  use_case_flows?: string | null;
   test_run_id: string;
   reviewed_at: string;
 }) => invoke<PersonaDesignReview>("import_design_review", { input });

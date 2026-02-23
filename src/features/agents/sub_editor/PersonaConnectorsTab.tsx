@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Link, Wrench, CheckCircle2, AlertCircle, XCircle, Activity, Loader2, RefreshCw, ChevronDown, Star, Plus } from 'lucide-react';
+import { Link, Wrench, CheckCircle2, AlertCircle, XCircle, Activity, Loader2, RefreshCw, ChevronDown, Star, Plus, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
 import { translateHealthcheckMessage } from '@/features/vault/components/credential-design/CredentialDesignHelpers';
 import { CredentialDesignModal } from '@/features/vault/components/CredentialDesignModal';
+import { parseDesignContext, mergeCredentialLink } from '@/features/shared/components/UseCasesList';
 
 interface ConnectorStatus {
   name: string;
@@ -28,11 +29,16 @@ function getStatusKey(status: ConnectorStatus): keyof typeof STATUS_CONFIG {
   return status.result.success ? 'ready' : 'failed';
 }
 
-export function PersonaConnectorsTab() {
+interface PersonaConnectorsTabProps {
+  onMissingCountChange?: (count: number) => void;
+}
+
+export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectorsTabProps) {
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
   const credentials = usePersonaStore((s) => s.credentials);
   const fetchCredentials = usePersonaStore((s) => s.fetchCredentials);
   const healthcheckCredential = usePersonaStore((s) => s.healthcheckCredential);
+  const updatePersona = usePersonaStore((s) => s.updatePersona);
 
   const [statuses, setStatuses] = useState<ConnectorStatus[]>([]);
   const [linkingConnector, setLinkingConnector] = useState<string | null>(null);
@@ -53,6 +59,12 @@ export function PersonaConnectorsTab() {
     return [...types];
   }, [tools]);
 
+  // Load persisted credential links from design_context
+  const credentialLinks = useMemo(
+    () => parseDesignContext(selectedPersona?.design_context).credential_links ?? {},
+    [selectedPersona?.design_context],
+  );
+
   // Build connector statuses
   useEffect(() => {
     if (requiredCredTypes.length === 0) {
@@ -64,20 +76,22 @@ export function PersonaConnectorsTab() {
       return requiredCredTypes.map((credType) => {
         const matchedCred = credentials.find((c) => c.service_type === credType);
         const existing = prev.find((p) => p.name === credType);
+        const linkedCredId = credentialLinks[credType];
+        const linkedCred = linkedCredId ? credentials.find((c) => c.id === linkedCredId) : null;
 
         return {
           name: credType,
-          credentialId: existing?.credentialId ?? matchedCred?.id ?? null,
-          credentialName: existing?.credentialName ?? matchedCred?.name ?? null,
+          credentialId: existing?.credentialId ?? matchedCred?.id ?? linkedCred?.id ?? null,
+          credentialName: existing?.credentialName ?? matchedCred?.name ?? linkedCred?.name ?? null,
           testing: existing?.testing ?? false,
           result: existing?.result ?? null,
         };
       });
     });
-  }, [requiredCredTypes, credentials]);
+  }, [requiredCredTypes, credentials, credentialLinks]);
 
   useEffect(() => {
-    void fetchCredentials();
+    void fetchCredentials().catch(() => {});
   }, [fetchCredentials]);
 
   // Auto-test on mount
@@ -128,6 +142,13 @@ export function PersonaConnectorsTab() {
       ),
     );
     setLinkingConnector(null);
+
+    // Persist to persona's design_context
+    if (selectedPersona) {
+      const newDesignContext = mergeCredentialLink(selectedPersona.design_context, connectorName, credentialId);
+      void updatePersona(selectedPersona.id, { design_context: newDesignContext });
+    }
+
     void testConnector(connectorName, credentialId);
   };
 
@@ -140,7 +161,7 @@ export function PersonaConnectorsTab() {
   const handleDesignComplete = () => {
     setDesignOpen(false);
     setDesignInstruction('');
-    void fetchCredentials();
+    void fetchCredentials().catch(() => {});
   };
 
   if (!selectedPersona) {
@@ -155,8 +176,28 @@ export function PersonaConnectorsTab() {
   const readyCount = statuses.filter((s) => s.result?.success).length;
   const missingCount = statuses.filter((s) => !s.credentialId).length;
 
+  // Report missing count to parent
+  useEffect(() => {
+    onMissingCountChange?.(missingCount);
+  }, [missingCount, onMissingCountChange]);
+
   return (
     <div className="space-y-6">
+      {/* Readiness warning */}
+      {missingCount > 0 && (
+        <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-amber-500/5 border border-amber-500/15">
+          <AlertTriangle className="w-4 h-4 text-amber-400/70 flex-shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <p className="font-medium text-amber-400/80">
+              {missingCount} connector{missingCount !== 1 ? 's' : ''} need credentials before execution
+            </p>
+            <p className="text-amber-400/50 mt-0.5">
+              Link or create credentials for all connectors to enable execution.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Tools section */}
       <div className="space-y-3">
         <div className="flex items-center gap-2 px-1">

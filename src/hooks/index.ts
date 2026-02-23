@@ -1,6 +1,7 @@
 // Design hooks
 export * from "./design/useDesignAnalysis";
 export * from "./design/useDesignReviews";
+export * from "./design/useTemplateGallery";
 export * from "./design/useCredentialDesign";
 export * from "./design/useOAuthConsent";
 export * from "./design/useCredentialNegotiator";
@@ -20,3 +21,6 @@ export * from "./utility/useAutoUpdater";
 export * from "./utility/useToggleSet";
 export * from "./utility/useAppSetting";
 export * from "./utility/useCopyToClipboard";
+export * from "./utility/useClickOutside";
+export * from "./utility/useElapsedTimer";
+export * from "./utility/useDebouncedSave";

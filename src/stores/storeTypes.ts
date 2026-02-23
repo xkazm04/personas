@@ -12,7 +12,6 @@ import type { CredentialSlice } from "./slices/credentialSlice";
 import type { OverviewSlice } from "./slices/overviewSlice";
 import type { MessageSlice } from "./slices/messageSlice";
 import type { EventSlice } from "./slices/eventSlice";
-import type { ObservabilitySlice } from "./slices/observabilitySlice";
 import type { HealingSlice } from "./slices/healingSlice";
 import type { TeamSlice } from "./slices/teamSlice";
 import type { GroupSlice } from "./slices/groupSlice";
@@ -39,7 +38,6 @@ export type PersonaStore = PersonaSlice &
   OverviewSlice &
   MessageSlice &
   EventSlice &
-  ObservabilitySlice &
   HealingSlice &
   TeamSlice &
   GroupSlice &

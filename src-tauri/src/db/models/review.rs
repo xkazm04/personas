@@ -44,6 +44,16 @@ pub struct UpdateManualReviewInput {
 }
 
 // ============================================================================
+// Connector Counts
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConnectorWithCount {
+    pub name: String,
+    pub count: i64,
+}
+
+// ============================================================================
 // Design Reviews
 // ============================================================================
 
@@ -90,6 +100,38 @@ pub struct CreateDesignReviewInput {
     pub adjustment_generation: Option<i32>,
     pub use_case_flows: Option<String>,
     pub reviewed_at: String,
+}
+
+impl CreateDesignReviewInput {
+    /// Create a base input with shared fields pre-filled and all Option fields set to None.
+    /// Callers override the fields that differ per branch.
+    pub fn base(
+        test_case_id: String,
+        test_case_name: String,
+        instruction: String,
+        test_run_id: String,
+        reviewed_at: String,
+    ) -> Self {
+        Self {
+            test_case_id,
+            test_case_name,
+            instruction,
+            status: "error".into(),
+            structural_score: None,
+            semantic_score: None,
+            connectors_used: None,
+            trigger_types: None,
+            design_result: None,
+            structural_evaluation: None,
+            semantic_evaluation: None,
+            test_run_id,
+            had_references: None,
+            suggested_adjustment: None,
+            adjustment_generation: None,
+            use_case_flows: None,
+            reviewed_at,
+        }
+    }
 }
 
 // ============================================================================

@@ -42,11 +42,23 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
     set({ isLoading: true, error: null });
     try {
       const personas = await api.listPersonas();
-      set({ personas, isLoading: false });
+      set((state) => {
+        // Validate persisted selection — clear if the persona was deleted
+        const stillExists =
+          state.selectedPersonaId == null ||
+          personas.some((p) => p.id === state.selectedPersonaId);
+        return {
+          personas,
+          isLoading: false,
+          selectedPersonaId: stillExists ? state.selectedPersonaId : null,
+          selectedPersona: stillExists ? state.selectedPersona : null,
+        };
+      });
       // Fire-and-forget: load sidebar badge data
       get().fetchPersonaSummaries();
     } catch (err) {
       set({ error: errMsg(err, "Failed to fetch personas"), isLoading: false });
+      throw err;
     }
   },
 
@@ -93,7 +105,8 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
       set({ selectedPersona: detail, selectedPersonaId: id, isLoading: false });
     } catch (err) {
       if (seq !== fetchDetailSeq) return; // superseded by a newer request
-      set({ error: errMsg(err, "Failed to fetch persona"), isLoading: false });
+      // Clear stale selection so the editor doesn't render with missing data
+      set({ error: errMsg(err, "Failed to fetch persona"), isLoading: false, selectedPersonaId: null, selectedPersona: null });
     }
   },
 
@@ -116,6 +129,7 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
         max_turns: null,
         design_context: input.design_context ?? null,
         group_id: null,
+        notification_channels: null,
       });
       set((state) => ({ personas: [persona, ...state.personas] }));
       return persona;

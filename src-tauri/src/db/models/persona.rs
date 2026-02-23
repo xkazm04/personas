@@ -48,6 +48,7 @@ pub struct CreatePersonaInput {
     pub max_turns: Option<i32>,
     pub design_context: Option<String>,
     pub group_id: Option<String>,
+    pub notification_channels: Option<String>,
 }
 
 /// Lightweight summary for sidebar badges: trigger count and last execution time.

@@ -1,6 +1,8 @@
 use rusqlite::{params, Row};
 
-use crate::db::models::{CreateDesignReviewInput, PersonaDesignPattern, PersonaDesignReview};
+use crate::db::models::{
+    ConnectorWithCount, CreateDesignReviewInput, PersonaDesignPattern, PersonaDesignReview,
+};
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -142,6 +144,160 @@ pub fn delete_review(pool: &DbPool, id: &str) -> Result<bool, AppError> {
         params![id],
     )?;
     Ok(rows > 0)
+}
+
+pub fn update_review_result(
+    pool: &DbPool,
+    id: &str,
+    status: &str,
+    structural_score: Option<i32>,
+    semantic_score: Option<i32>,
+    connectors_used: Option<&str>,
+    trigger_types: Option<&str>,
+    design_result: Option<&str>,
+    use_case_flows: Option<&str>,
+    suggested_adjustment: Option<&str>,
+    reviewed_at: &str,
+) -> Result<PersonaDesignReview, AppError> {
+    let conn = pool.get()?;
+    conn.execute(
+        "UPDATE persona_design_reviews
+         SET status = ?1, structural_score = ?2, semantic_score = ?3,
+             connectors_used = ?4, trigger_types = ?5, design_result = ?6,
+             use_case_flows = ?7, suggested_adjustment = ?8, reviewed_at = ?9,
+             structural_evaluation = NULL, semantic_evaluation = NULL
+         WHERE id = ?10",
+        params![
+            status,
+            structural_score,
+            semantic_score,
+            connectors_used,
+            trigger_types,
+            design_result,
+            use_case_flows,
+            suggested_adjustment,
+            reviewed_at,
+            id,
+        ],
+    )?;
+    get_review_by_id(pool, id)
+}
+
+pub struct PaginatedReviewResult {
+    pub items: Vec<PersonaDesignReview>,
+    pub total: i64,
+}
+
+pub fn get_reviews_paginated(
+    pool: &DbPool,
+    search: Option<&str>,
+    connector_filter: Option<&[String]>,
+    sort_by: Option<&str>,
+    sort_dir: Option<&str>,
+    page: i64,
+    per_page: i64,
+) -> Result<PaginatedReviewResult, AppError> {
+    let conn = pool.get()?;
+
+    // Build WHERE clause
+    let mut conditions: Vec<String> = Vec::new();
+    let mut params_vec: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+    let mut param_idx = 1usize;
+
+    if let Some(q) = search {
+        if !q.trim().is_empty() {
+            let like = format!("%{}%", q.trim());
+            conditions.push(format!(
+                "(test_case_name LIKE ?{} OR instruction LIKE ?{})",
+                param_idx,
+                param_idx + 1
+            ));
+            params_vec.push(Box::new(like.clone()));
+            params_vec.push(Box::new(like));
+            param_idx += 2;
+        }
+    }
+
+    if let Some(connectors) = connector_filter {
+        if !connectors.is_empty() {
+            // Each connector must be present: connectors_used LIKE '%"name"%'
+            let mut connector_conds = Vec::new();
+            for c in connectors {
+                connector_conds.push(format!("connectors_used LIKE ?{}", param_idx));
+                params_vec.push(Box::new(format!("%\"{}\"", c)));
+                param_idx += 1;
+            }
+            // ANY connector matches (OR logic)
+            conditions.push(format!("({})", connector_conds.join(" OR ")));
+        }
+    }
+
+    let where_clause = if conditions.is_empty() {
+        String::new()
+    } else {
+        format!(" WHERE {}", conditions.join(" AND "))
+    };
+
+    // Count total
+    let count_sql = format!("SELECT COUNT(*) FROM persona_design_reviews{}", where_clause);
+    let params_refs: Vec<&dyn rusqlite::types::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
+    let total: i64 = conn.query_row(&count_sql, params_refs.as_slice(), |row| row.get(0))?;
+
+    // Sort
+    let order_col = match sort_by.unwrap_or("created_at") {
+        "name" => "test_case_name",
+        "quality" => "COALESCE(structural_score,0) + COALESCE(semantic_score,0)",
+        _ => "created_at",
+    };
+    let order_dir = match sort_dir.unwrap_or("desc") {
+        "asc" => "ASC",
+        _ => "DESC",
+    };
+
+    let offset = page * per_page;
+    let select_sql = format!(
+        "SELECT * FROM persona_design_reviews{} ORDER BY {} {} LIMIT ?{} OFFSET ?{}",
+        where_clause, order_col, order_dir, param_idx, param_idx + 1,
+    );
+
+    let mut all_params = params_vec;
+    all_params.push(Box::new(per_page));
+    all_params.push(Box::new(offset));
+    let all_refs: Vec<&dyn rusqlite::types::ToSql> = all_params.iter().map(|p| p.as_ref()).collect();
+
+    let mut stmt = conn.prepare(&select_sql)?;
+    let rows = stmt.query_map(all_refs.as_slice(), row_to_review)?;
+    let items = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+
+    Ok(PaginatedReviewResult { items, total })
+}
+
+pub fn get_distinct_connectors(pool: &DbPool) -> Result<Vec<ConnectorWithCount>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT connectors_used FROM persona_design_reviews WHERE connectors_used IS NOT NULL",
+    )?;
+    let rows = stmt.query_map([], |row| {
+        let json_str: String = row.get(0)?;
+        Ok(json_str)
+    })?;
+
+    let mut counts: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
+    for row in rows {
+        if let Ok(json_str) = row {
+            if let Ok(arr) = serde_json::from_str::<Vec<String>>(&json_str) {
+                for name in arr {
+                    *counts.entry(name).or_insert(0) += 1;
+                }
+            }
+        }
+    }
+    let mut result: Vec<ConnectorWithCount> = counts
+        .into_iter()
+        .map(|(name, count)| ConnectorWithCount { name, count })
+        .collect();
+    result.sort_by(|a, b| a.name.cmp(&b.name));
+    Ok(result)
 }
 
 // ============================================================================
