@@ -19,7 +19,7 @@ export function SidebarPersonaCard({
 }) {
   const triggerCount = usePersonaStore((s) => s.personaTriggerCounts[persona.id]);
   const lastRun = usePersonaStore((s) => s.personaLastRun[persona.id]);
-  const connectors = useMemo(() => extractConnectorNames(persona), [persona.last_design_result]);
+  const connectors = useMemo(() => extractConnectorNames(persona), [persona]);
 
   return (
     <button

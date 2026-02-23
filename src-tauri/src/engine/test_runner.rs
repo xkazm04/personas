@@ -16,6 +16,11 @@ use super::parser;
 use super::prompt;
 use super::types::*;
 
+// ── Composite score weights (keep in sync with testUtils.ts) ──
+const WEIGHT_TOOL_ACCURACY: f64 = 0.4;
+const WEIGHT_OUTPUT_QUALITY: f64 = 0.4;
+const WEIGHT_PROTOCOL_COMPLIANCE: f64 = 0.2;
+
 // ── Types ──────────────────────────────────────────────────────
 
 /// Model configuration for a test run, passed from the frontend.
@@ -629,7 +634,9 @@ async fn build_summary(
             let total_cost: f64 = results.iter().map(|r| r.3).sum();
             let avg_duration = results.iter().map(|r| r.4 as f64).sum::<f64>() / count;
 
-            let composite = avg_ta * 0.4 + avg_oq * 0.4 + avg_pc * 0.2;
+            let composite = avg_ta * WEIGHT_TOOL_ACCURACY
+                + avg_oq * WEIGHT_OUTPUT_QUALITY
+                + avg_pc * WEIGHT_PROTOCOL_COMPLIANCE;
             let value_score = if total_cost > 0.0 {
                 composite / (total_cost * 1000.0 + 1.0) * 100.0
             } else {

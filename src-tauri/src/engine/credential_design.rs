@@ -1,5 +1,5 @@
 use crate::db::models::ConnectorDefinition;
-use super::design::{extract_fenced_json, find_matching_brace};
+use super::design::{extract_fenced_json, extract_bare_json_with_key};
 
 // ============================================================================
 // Credential Design Prompt Builder
@@ -92,7 +92,7 @@ pub fn extract_credential_design_result(output: &str) -> Option<serde_json::Valu
     }
 
     // Strategy 2: Find bare JSON object containing "connector" key
-    if let Some(result) = extract_bare_connector_json(output) {
+    if let Some(result) = extract_bare_json_with_key(output, &["connector"]) {
         return Some(result);
     }
 
@@ -107,48 +107,7 @@ pub fn extract_healthcheck_config_result(output: &str) -> Option<serde_json::Val
         }
     }
 
-    let chars: Vec<char> = output.chars().collect();
-    let len = chars.len();
-    let mut i = 0;
-
-    while i < len {
-        if chars[i] == '{' {
-            if let Some(end) = find_matching_brace(&chars, i) {
-                let candidate: String = chars[i..=end].iter().collect();
-                if let Ok(val) = serde_json::from_str::<serde_json::Value>(&candidate) {
-                    if val.get("skip").is_some() || val.get("endpoint").is_some() {
-                        return Some(val);
-                    }
-                }
-            }
-        }
-        i += 1;
-    }
-
-    None
-}
-
-/// Find a bare JSON object in the output that contains a `connector` key.
-fn extract_bare_connector_json(output: &str) -> Option<serde_json::Value> {
-    let chars: Vec<char> = output.chars().collect();
-    let len = chars.len();
-    let mut i = 0;
-
-    while i < len {
-        if chars[i] == '{' {
-            if let Some(end) = find_matching_brace(&chars, i) {
-                let candidate: String = chars[i..=end].iter().collect();
-                if let Ok(val) = serde_json::from_str::<serde_json::Value>(&candidate) {
-                    if val.get("connector").is_some() {
-                        return Some(val);
-                    }
-                }
-            }
-        }
-        i += 1;
-    }
-
-    None
+    extract_bare_json_with_key(output, &["skip", "endpoint"])
 }
 
 // ============================================================================

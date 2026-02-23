@@ -200,8 +200,9 @@ Return ONLY valid JSON (no markdown fences, no commentary), with this exact shap
       "toolGuidance": "string — how to use each tool, including when to request manual_review before tool calls",
       "examples": "string — include examples of protocol message usage for this specific workflow",
       "errorHandling": "string — include user_message notifications for critical errors",
+      "webSearch": "string — research guidance for web-enabled runs (empty string if not applicable)",
       "customSections": [
-        {{ "key": "string", "label": "string", "content": "string" }}
+        {{ "title": "string", "content": "string" }}
       ]
     }},
     "icon": "Sparkles",
@@ -360,7 +361,8 @@ Return ONLY valid JSON (no markdown fences, no commentary):
       "toolGuidance": "string",
       "examples": "string",
       "errorHandling": "string",
-      "customSections": [{{"key": "string", "label": "string", "content": "string"}}]
+      "webSearch": "string — research guidance for web-enabled runs (empty string if not applicable)",
+      "customSections": [{{"title": "string", "content": "string"}}]
     }},
     "icon": "Sparkles",
     "color": "#8b5cf6",

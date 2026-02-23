@@ -5,9 +5,11 @@
  * Source of truth: builtinTemplates.ts (curated template set).
  */
 import { BUILTIN_TEMPLATES } from './builtinTemplates';
+import { CATEGORY_TEMPLATES } from './categoryTemplates';
 import type { BuiltinTemplate } from '@/lib/types/templateTypes';
 
-const SEED_RUN_ID = 'seed-builtin-v1';
+const SEED_BUILTIN_RUN_ID = 'seed-builtin-v1';
+const SEED_CATEGORY_RUN_ID = 'seed-category-v1';
 
 export interface SeedReviewInput {
   test_case_id: string;
@@ -24,7 +26,7 @@ export interface SeedReviewInput {
   reviewed_at: string;
 }
 
-function templateToReviewInput(template: BuiltinTemplate): SeedReviewInput {
+function templateToReviewInput(template: BuiltinTemplate, runId: string): SeedReviewInput {
   const payload = template.payload as unknown as Record<string, unknown>;
   const connectors = Array.isArray(payload.suggested_connectors)
     ? (payload.suggested_connectors as Array<{ name: string }>).map((c) => c.name)
@@ -48,14 +50,17 @@ function templateToReviewInput(template: BuiltinTemplate): SeedReviewInput {
     trigger_types: JSON.stringify(triggers),
     design_result: JSON.stringify(payload),
     use_case_flows: flows ? JSON.stringify(flows) : null,
-    test_run_id: SEED_RUN_ID,
+    test_run_id: runId,
     reviewed_at: new Date().toISOString(),
   };
 }
 
 /** All seed templates that should be present in the Generated tab. */
 export function getSeedReviews(): SeedReviewInput[] {
-  return BUILTIN_TEMPLATES.map(templateToReviewInput);
+  return [
+    ...BUILTIN_TEMPLATES.map((t) => templateToReviewInput(t, SEED_BUILTIN_RUN_ID)),
+    ...CATEGORY_TEMPLATES.map((t) => templateToReviewInput(t, SEED_CATEGORY_RUN_ID)),
+  ];
 }
 
-export { SEED_RUN_ID };
+export { SEED_BUILTIN_RUN_ID, SEED_CATEGORY_RUN_ID };

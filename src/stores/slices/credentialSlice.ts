@@ -150,12 +150,8 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
 
   fetchCredentialEvents: async () => {
     try {
-      // Credential events need a credential ID — fetch for all credentials
-      const { credentials } = get();
-      const allEvents = await Promise.all(
-        credentials.map((c) => api.listCredentialEvents(c.id).catch(() => [])),
-      );
-      set({ credentialEvents: allEvents.flat() });
+      const allEvents = await api.listAllCredentialEvents();
+      set({ credentialEvents: allEvents });
     } catch (err) {
       set({ error: errMsg(err, "Failed to fetch credential events") });
     }

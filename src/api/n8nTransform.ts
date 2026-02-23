@@ -50,23 +50,6 @@ export interface N8nTransformSnapshot {
 // N8n Transform — commands
 // ============================================================================
 
-export const transformN8nToPersona = (
-  transformId: string,
-  workflowName: string,
-  workflowJson: string,
-  parserResultJson: string,
-  adjustmentRequest?: string | null,
-  previousDraftJson?: string | null,
-) =>
-  invoke<N8nTransformResult>("transform_n8n_to_persona", {
-    transformId,
-    workflowName,
-    workflowJson,
-    parserResultJson,
-    adjustmentRequest: adjustmentRequest ?? null,
-    previousDraftJson: previousDraftJson ?? null,
-  });
-
 export const startN8nTransformBackground = (
   transformId: string,
   workflowName: string,

@@ -7,6 +7,7 @@ import {
 import { usePersonaStore } from '@/stores/personaStore';
 import { usePersonaTests } from '@/hooks/tests/usePersonaTests';
 import { TestComparisonTable } from './TestComparisonTable';
+import { statusBadge } from './testUtils';
 import type { PersonaTestRun } from '@/lib/bindings/PersonaTestRun';
 import type { ModelTestConfig } from '@/api/tests';
 import {
@@ -39,21 +40,6 @@ const OLLAMA_MODELS: ModelOption[] = OLLAMA_CLOUD_PRESETS.map((p) => ({
 }));
 
 const ALL_MODELS: ModelOption[] = [...ANTHROPIC_MODELS, ...OLLAMA_MODELS];
-
-// ── Status helpers ────────────────────────────────────────────────────
-
-function statusBadge(status: string) {
-  const map: Record<string, { bg: string; text: string; border: string }> = {
-    generating: { bg: 'bg-primary/15', text: 'text-primary', border: 'border-primary/30' },
-    running: { bg: 'bg-primary/15', text: 'text-primary', border: 'border-primary/30' },
-    completed: { bg: 'bg-emerald-500/15', text: 'text-emerald-400', border: 'border-emerald-500/20' },
-    failed: { bg: 'bg-red-500/15', text: 'text-red-400', border: 'border-red-500/20' },
-    cancelled: { bg: 'bg-amber-500/15', text: 'text-amber-400', border: 'border-amber-500/20' },
-  };
-  const fallback = { bg: 'bg-red-500/15', text: 'text-red-400', border: 'border-red-500/20' };
-  const c = map[status] ?? fallback;
-  return `px-2 py-0.5 rounded-md text-sm font-medium border ${c.bg} ${c.text} ${c.border}`;
-}
 
 // ── Main component ────────────────────────────────────────────────────
 

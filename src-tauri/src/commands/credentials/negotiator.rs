@@ -1,34 +1,33 @@
 use std::sync::Arc;
 
-use serde::Serialize;
 use serde_json::json;
-use tauri::{Emitter, State};
+use tauri::State;
 
 use crate::engine::credential_negotiator;
-use crate::engine::prompt;
-use crate::engine::types::StreamLineType;
 use crate::error::AppError;
 use crate::AppState;
 
-use super::credential_design::{spawn_claude_and_collect, run_claude_prompt};
+use super::credential_design::{
+    run_credential_task, run_claude_prompt,
+    CredentialTaskMessages, CredentialTaskParams,
+};
+use super::shared::build_credential_task_cli_args;
 
-const NEGOTIATOR_MODEL: &str = "claude-sonnet-4-6";
+// ── Negotiation messages ────────────────────────────────────────
 
-// ── Event payloads ──────────────────────────────────────────────
-
-#[derive(Clone, Serialize)]
-struct NegotiatorProgressEvent {
-    negotiation_id: String,
-    line: String,
-}
-
-#[derive(Clone, Serialize)]
-struct NegotiatorStatusEvent {
-    negotiation_id: String,
-    status: String,
-    result: Option<serde_json::Value>,
-    error: Option<String>,
-}
+const NEGOTIATION_MESSAGES: CredentialTaskMessages = CredentialTaskMessages {
+    status_event: "credential-negotiation-status",
+    progress_event: "credential-negotiation-progress",
+    id_field: "negotiation_id",
+    initial_status: "planning",
+    init_progress: "Analyzing developer portal...",
+    streaming_progress: "Generating provisioning steps...",
+    complete_prefix: "Plan ready",
+    success_progress: "Provisioning plan generated",
+    extraction_failed_error: "Failed to generate provisioning plan. Try again.",
+    log_label: "negotiation",
+    timeout_secs: 300,
+};
 
 // ── Commands ────────────────────────────────────────────────────
 
@@ -47,7 +46,7 @@ pub async fn start_credential_negotiation(
         &field_keys,
     );
 
-    let cli_args = build_negotiator_cli_args();
+    let cli_args = build_credential_task_cli_args();
     let negotiation_id = uuid::Uuid::new_v4().to_string();
 
     // Use the active_credential_design_id mutex to track active negotiation too
@@ -61,12 +60,15 @@ pub async fn start_credential_negotiation(
     let neg_id = negotiation_id.clone();
 
     tokio::spawn(async move {
-        run_negotiation(NegotiationRunParams {
+        run_credential_task(CredentialTaskParams {
             app,
-            negotiation_id: neg_id,
+            task_id: neg_id,
             prompt_text: negotiation_prompt,
             cli_args,
             active_id,
+            active_child_pid: None,
+            messages: NEGOTIATION_MESSAGES,
+            extractor: credential_negotiator::extract_negotiation_result,
         })
         .await;
     });
@@ -100,7 +102,7 @@ pub async fn get_negotiation_step_help(
         &user_question,
     );
 
-    let cli_args = build_negotiator_cli_args();
+    let cli_args = build_credential_task_cli_args();
     let output_text = run_claude_prompt(prompt_text, &cli_args, 120, "Claude produced no output for step help")
         .await
         .map_err(AppError::Internal)?;
@@ -111,184 +113,3 @@ pub async fn get_negotiation_step_help(
     Ok(help_result)
 }
 
-// ── Negotiation runner ──────────────────────────────────────────
-
-struct NegotiationRunParams {
-    app: tauri::AppHandle,
-    negotiation_id: String,
-    prompt_text: String,
-    cli_args: crate::engine::types::CliArgs,
-    active_id: Arc<std::sync::Mutex<Option<String>>>,
-}
-
-fn emit_negotiation_progress(app: &tauri::AppHandle, negotiation_id: &str, line: &str) {
-    let _ = app.emit(
-        "credential-negotiation-progress",
-        NegotiatorProgressEvent {
-            negotiation_id: negotiation_id.to_string(),
-            line: line.to_string(),
-        },
-    );
-}
-
-async fn run_negotiation(params: NegotiationRunParams) {
-    let NegotiationRunParams {
-        app,
-        negotiation_id,
-        prompt_text,
-        cli_args,
-        active_id,
-    } = params;
-
-    let _ = app.emit(
-        "credential-negotiation-status",
-        NegotiatorStatusEvent {
-            negotiation_id: negotiation_id.clone(),
-            status: "planning".into(),
-            result: None,
-            error: None,
-        },
-    );
-
-    emit_negotiation_progress(&app, &negotiation_id, "Connecting to Claude...");
-
-    let mut emitted_analyzing = false;
-    let result = spawn_claude_and_collect(
-        &cli_args,
-        prompt_text,
-        300,
-        |line_type, _raw_line| match line_type {
-            StreamLineType::SystemInit { model, .. } => {
-                emit_negotiation_progress(&app, &negotiation_id, &format!("Connected ({})", model));
-                emit_negotiation_progress(&app, &negotiation_id, "Analyzing developer portal...");
-            }
-            StreamLineType::AssistantText { .. } => {
-                if !emitted_analyzing {
-                    emitted_analyzing = true;
-                    emit_negotiation_progress(
-                        &app,
-                        &negotiation_id,
-                        "Generating provisioning steps...",
-                    );
-                }
-            }
-            StreamLineType::AssistantToolUse { tool_name, .. } => {
-                emit_negotiation_progress(
-                    &app,
-                    &negotiation_id,
-                    &format!("Researching: {}", tool_name),
-                );
-            }
-            StreamLineType::Result {
-                duration_ms,
-                total_cost_usd,
-                ..
-            } => {
-                let mut msg = "Plan ready".to_string();
-                if let Some(ms) = duration_ms {
-                    let secs = *ms as f64 / 1000.0;
-                    msg = format!("Plan ready ({:.1}s", secs);
-                    if let Some(cost) = total_cost_usd {
-                        msg.push_str(&format!(", ${:.4}", cost));
-                    }
-                    msg.push(')');
-                }
-                emit_negotiation_progress(&app, &negotiation_id, &msg);
-            }
-            _ => {}
-        },
-    )
-    .await;
-
-    // Check if cancelled
-    let is_cancelled = {
-        let guard = active_id.lock().unwrap();
-        guard.as_deref() != Some(&negotiation_id)
-    };
-
-    if is_cancelled {
-        tracing::info!(negotiation_id = %negotiation_id, "Credential negotiation cancelled");
-        return;
-    }
-
-    match result {
-        Err(error_msg) => {
-            tracing::error!(negotiation_id = %negotiation_id, error = %error_msg, "Negotiation Claude CLI failed");
-            let _ = app.emit(
-                "credential-negotiation-status",
-                NegotiatorStatusEvent {
-                    negotiation_id,
-                    status: "failed".into(),
-                    result: None,
-                    error: Some(error_msg),
-                },
-            );
-        }
-        Ok(spawn_result) => {
-            if !spawn_result.stderr_output.trim().is_empty() {
-                tracing::warn!(
-                    negotiation_id = %negotiation_id,
-                    stderr = %spawn_result.stderr_output.trim(),
-                    "Negotiation Claude CLI stderr"
-                );
-            }
-
-            match credential_negotiator::extract_negotiation_result(&spawn_result.text_output) {
-                Some(plan_result) => {
-                    {
-                        let mut guard = active_id.lock().unwrap();
-                        if guard.as_deref() == Some(&negotiation_id) {
-                            *guard = None;
-                        }
-                    }
-                    emit_negotiation_progress(
-                        &app,
-                        &negotiation_id,
-                        "Provisioning plan generated",
-                    );
-                    let _ = app.emit(
-                        "credential-negotiation-status",
-                        NegotiatorStatusEvent {
-                            negotiation_id,
-                            status: "completed".into(),
-                            result: Some(plan_result),
-                            error: None,
-                        },
-                    );
-                }
-                None => {
-                    {
-                        let mut guard = active_id.lock().unwrap();
-                        if guard.as_deref() == Some(&negotiation_id) {
-                            *guard = None;
-                        }
-                    }
-                    tracing::warn!(
-                        negotiation_id = %negotiation_id,
-                        "Failed to extract negotiation plan from Claude output"
-                    );
-                    let _ = app.emit(
-                        "credential-negotiation-status",
-                        NegotiatorStatusEvent {
-                            negotiation_id,
-                            status: "failed".into(),
-                            result: None,
-                            error: Some("Failed to generate provisioning plan. Try again.".into()),
-                        },
-                    );
-                }
-            }
-        }
-    }
-}
-
-// ── CLI helpers ─────────────────────────────────────────────────
-
-fn build_negotiator_cli_args() -> crate::engine::types::CliArgs {
-    let mut cli_args = prompt::build_cli_args(None, None);
-    if !cli_args.args.iter().any(|arg| arg == "--model") {
-        cli_args.args.push("--model".to_string());
-        cli_args.args.push(NEGOTIATOR_MODEL.to_string());
-    }
-    cli_args
-}

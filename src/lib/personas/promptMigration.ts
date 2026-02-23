@@ -74,7 +74,11 @@ export function parseStructuredPrompt(json: string | null): StructuredPrompt | n
         parsed.customSections = parsed.customSections
           .filter((s: unknown) => s && typeof s === 'object')
           .map((s: Record<string, unknown>) => ({
-            title: typeof s.title === 'string' ? s.title : '',
+            title: typeof s.title === 'string' ? s.title
+                 : typeof s.label === 'string' ? s.label
+                 : typeof s.name === 'string' ? s.name
+                 : typeof s.key === 'string' ? s.key
+                 : '',
             content: typeof s.content === 'string' ? s.content : '',
           }));
       }

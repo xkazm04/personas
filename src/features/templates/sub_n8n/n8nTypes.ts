@@ -13,6 +13,7 @@ export type EditableStructuredPrompt = {
   toolGuidance: string;
   examples: string;
   errorHandling: string;
+  webSearch: string;
   customSections: EditableCustomSection[];
 };
 
@@ -35,6 +36,7 @@ export function toEditableStructuredPrompt(value: Record<string, unknown> | null
     toolGuidance: asString(src.toolGuidance),
     examples: asString(src.examples),
     errorHandling: asString(src.errorHandling),
+    webSearch: asString(src.webSearch),
     customSections: rawCustom
       .filter((entry): entry is Record<string, unknown> => !!entry && typeof entry === 'object')
       .map((entry) => ({
@@ -52,6 +54,7 @@ export function fromEditableStructuredPrompt(value: EditableStructuredPrompt): R
     toolGuidance: value.toolGuidance,
     examples: value.examples,
     errorHandling: value.errorHandling,
+    webSearch: value.webSearch,
     customSections: value.customSections
       .filter((section) => section.label.trim() || section.key.trim() || section.content.trim())
       .map((section) => ({

@@ -150,24 +150,12 @@ pub fn extract_design_question(output: &str) -> Option<serde_json::Value> {
     }
 
     // Strategy 2: bare JSON object
-    let chars: Vec<char> = output.chars().collect();
-    let len = chars.len();
-    let mut i = 0;
-
-    while i < len {
-        if chars[i] == '{' {
-            if let Some(end) = find_matching_brace(&chars, i) {
-                let candidate: String = chars[i..=end].iter().collect();
-                if let Ok(val) = serde_json::from_str::<serde_json::Value>(&candidate) {
-                    if let Some(q) = val.get("design_question") {
-                        if q.get("question").and_then(|v| v.as_str()).is_some() {
-                            return Some(q.clone());
-                        }
-                    }
-                }
+    if let Some(val) = extract_bare_json_with_key(output, &["design_question"]) {
+        if let Some(q) = val.get("design_question") {
+            if q.get("question").and_then(|v| v.as_str()).is_some() {
+                return Some(q.clone());
             }
         }
-        i += 1;
     }
 
     None
@@ -184,7 +172,7 @@ pub fn extract_design_result(output: &str) -> Option<serde_json::Value> {
     }
 
     // Strategy 2: Find bare JSON object containing structured_prompt
-    if let Some(result) = extract_bare_json(output) {
+    if let Some(result) = extract_bare_json_with_key(output, &["structured_prompt"]) {
         return Some(result);
     }
 
@@ -222,20 +210,20 @@ pub(crate) fn extract_fenced_json(output: &str) -> Option<serde_json::Value> {
     best_result
 }
 
-/// Find the largest JSON object in the output that contains `structured_prompt`.
-fn extract_bare_json(output: &str) -> Option<serde_json::Value> {
-    // Look for lines starting with `{` that might be a JSON object start
+/// Find the first bare JSON object in the output that contains **any** of the
+/// given discriminating keys. This is the shared implementation behind all
+/// `extract_bare_*_json` helpers.
+pub(crate) fn extract_bare_json_with_key(output: &str, keys: &[&str]) -> Option<serde_json::Value> {
     let chars: Vec<char> = output.chars().collect();
     let len = chars.len();
     let mut i = 0;
 
     while i < len {
         if chars[i] == '{' {
-            // Try to find the matching closing brace
             if let Some(end) = find_matching_brace(&chars, i) {
                 let candidate: String = chars[i..=end].iter().collect();
                 if let Ok(val) = serde_json::from_str::<serde_json::Value>(&candidate) {
-                    if val.get("structured_prompt").is_some() {
+                    if keys.iter().any(|k| val.get(*k).is_some()) {
                         return Some(val);
                     }
                 }
@@ -385,8 +373,9 @@ You MUST output your result as a single JSON code block. The JSON must conform t
     "toolGuidance": "How and when to use each tool, with API endpoint examples",
     "examples": "Example interactions or scenarios",
     "errorHandling": "How to handle errors and edge cases",
+    "webSearch": "Research guidance for web-enabled runs (empty string if not applicable)",
     "customSections": [
-      { "key": "section_key", "label": "Section Label", "content": "Section content" }
+      { "title": "Section Title", "content": "Section content" }
     ]
   },
   "suggested_tools": ["tool_name_1", "tool_name_2"],

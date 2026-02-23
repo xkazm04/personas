@@ -5,3 +5,4 @@ pub mod negotiator;
 pub mod oauth;
 pub mod connectors;
 pub mod rotation;
+mod shared;

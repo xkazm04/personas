@@ -15,6 +15,20 @@ import jsonLang from 'highlight.js/lib/languages/json';
 
 hljs.registerLanguage('json', jsonLang);
 
+/** Check whether a raw JSON string parses into a non-empty array or object. */
+function hasNonEmptyJson(raw: string | null | undefined, type: 'array' | 'object'): boolean {
+  if (!raw) return false;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (type === 'array') {
+      return Array.isArray(parsed) && parsed.length > 0;
+    }
+    return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed) && Object.keys(parsed as Record<string, unknown>).length > 0;
+  } catch {
+    return type === 'object' ? !!raw : false;
+  }
+}
+
 interface ErrorAction {
   label: string;
   icon: LucideIcon;
@@ -143,36 +157,9 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
     }
   }, [showLog, logContent, execution.id]);
 
-  const hasToolSteps = (() => {
-    if (!execution.tool_steps) return false;
-    try {
-      const parsed = JSON.parse(execution.tool_steps);
-      return Array.isArray(parsed) && parsed.length > 0;
-    } catch {
-      return false;
-    }
-  })();
-
-
-  const hasInputData = (() => {
-    if (!execution.input_data) return false;
-    try {
-      const parsed = JSON.parse(execution.input_data);
-      return parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0;
-    } catch {
-      return !!execution.input_data;
-    }
-  })();
-
-  const hasOutputData = (() => {
-    if (!execution.output_data) return false;
-    try {
-      const parsed = JSON.parse(execution.output_data);
-      return parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0;
-    } catch {
-      return !!execution.output_data;
-    }
-  })();
+  const hasToolSteps = hasNonEmptyJson(execution.tool_steps, 'array');
+  const hasInputData = hasNonEmptyJson(execution.input_data, 'object');
+  const hasOutputData = hasNonEmptyJson(execution.output_data, 'object');
 
   return (
     <div className="space-y-4">

@@ -26,6 +26,9 @@ export const deleteCredential = (id: string) =>
 export const listCredentialEvents = (credentialId: string) =>
   invoke<CredentialEvent[]>("list_credential_events", { credentialId });
 
+export const listAllCredentialEvents = () =>
+  invoke<CredentialEvent[]>("list_all_credential_events");
+
 export const createCredentialEvent = (input: CreateCredentialEventInput) =>
   invoke<CredentialEvent>("create_credential_event", { input });
 

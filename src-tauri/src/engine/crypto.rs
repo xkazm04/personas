@@ -99,20 +99,30 @@ fn try_keychain() -> Result<[u8; 32], CryptoError> {
     }
 }
 
-/// Derive a deterministic fallback key when the OS keychain is unavailable
+/// Generate or load a random fallback key when the OS keychain is unavailable
 /// (e.g., in CI, headless environments, or tests).
 fn derive_fallback_key() -> [u8; 32] {
-    use pbkdf2::pbkdf2_hmac;
-    use sha2::Sha256;
+    // Try to load a previously persisted random key first.
+    if let Ok(Some(existing)) = load_local_fallback_key() {
+        tracing::warn!(
+            "OS keychain unavailable — using fallback key from local file. \
+             Credential encryption is less protected than with a keychain."
+        );
+        return existing;
+    }
 
-    let username = whoami::username();
-    let hostname = whoami::fallible::hostname().unwrap_or_else(|_| "unknown-host".into());
-    let password = format!("{}@{}", username, hostname);
-    let salt = b"personas-desktop-fallback-salt-v1";
-
+    // Generate a new random key and persist it.
     let mut key = [0u8; 32];
-    pbkdf2_hmac::<Sha256>(password.as_bytes(), salt, 600_000, &mut key);
-    tracing::info!("Fallback master key derived from machine identity");
+    OsRng.fill_bytes(&mut key);
+
+    if let Err(e) = save_local_fallback_key(&key) {
+        tracing::error!("Failed to persist fallback key to local file: {}", e);
+    }
+
+    tracing::warn!(
+        "OS keychain unavailable — generated new random fallback key. \
+         Credential encryption is less protected than with a keychain."
+    );
     key
 }
 
@@ -228,48 +238,60 @@ pub fn is_plaintext(iv: &str) -> bool {
 // ---------------------------------------------------------------------------
 
 /// Migrate plaintext credentials (iv == "") to encrypted form.
+/// The entire migration runs inside a SQLite transaction so it either
+/// fully completes or fully rolls back — no partial-state risk.
 /// Returns `(migrated_count, failed_count)`.
 pub fn migrate_plaintext_credentials(pool: &DbPool) -> Result<(usize, usize), CryptoError> {
-    let conn = pool
+    let mut conn = pool
         .get()
         .map_err(|e| CryptoError::KeyManagement(format!("DB pool error: {}", e)))?;
 
-    let mut stmt = conn
-        .prepare("SELECT id, encrypted_data FROM persona_credentials WHERE iv = ''")
-        .map_err(|e| CryptoError::KeyManagement(format!("Query error: {}", e)))?;
+    // Collect plaintext rows before starting the transaction.
+    let rows: Vec<(String, String)> = {
+        let mut stmt = conn
+            .prepare("SELECT id, encrypted_data FROM persona_credentials WHERE iv = ''")
+            .map_err(|e| CryptoError::KeyManagement(format!("Query error: {}", e)))?;
 
-    let rows: Vec<(String, String)> = stmt
-        .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
-        .map_err(|e| CryptoError::KeyManagement(format!("Query error: {}", e)))?
-        .filter_map(|r| r.ok())
-        .collect();
+        let result: Vec<(String, String)> = stmt
+            .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
+            .map_err(|e| CryptoError::KeyManagement(format!("Query error: {}", e)))?
+            .filter_map(|r| r.ok())
+            .collect();
+        result
+    };
 
-    let mut migrated = 0;
-    let mut failed = 0;
-
-    for (id, plaintext_data) in &rows {
-        match encrypt_for_db(plaintext_data) {
-            Ok((ciphertext, nonce)) => {
-                let result = conn.execute(
-                    "UPDATE persona_credentials SET encrypted_data = ?1, iv = ?2 WHERE id = ?3",
-                    rusqlite::params![ciphertext, nonce, id],
-                );
-                match result {
-                    Ok(_) => migrated += 1,
-                    Err(e) => {
-                        tracing::error!("Failed to update credential {}: {}", id, e);
-                        failed += 1;
-                    }
-                }
-            }
-            Err(e) => {
-                tracing::error!("Failed to encrypt credential {}: {}", id, e);
-                failed += 1;
-            }
-        }
+    if rows.is_empty() {
+        return Ok((0, 0));
     }
 
-    Ok((migrated, failed))
+    let tx = conn
+        .transaction()
+        .map_err(|e| CryptoError::KeyManagement(format!("Transaction begin error: {}", e)))?;
+
+    let mut migrated = 0;
+
+    for (id, plaintext_data) in &rows {
+        let (ciphertext, nonce) = encrypt_for_db(plaintext_data).map_err(|e| {
+            tracing::error!("Failed to encrypt credential {}: {}", id, e);
+            e
+        })?;
+
+        tx.execute(
+            "UPDATE persona_credentials SET encrypted_data = ?1, iv = ?2 WHERE id = ?3",
+            rusqlite::params![ciphertext, nonce, id],
+        )
+        .map_err(|e| {
+            tracing::error!("Failed to update credential {}: {}", id, e);
+            CryptoError::KeyManagement(format!("Update error for credential {}: {}", id, e))
+        })?;
+
+        migrated += 1;
+    }
+
+    tx.commit()
+        .map_err(|e| CryptoError::KeyManagement(format!("Transaction commit error: {}", e)))?;
+
+    Ok((migrated, 0))
 }
 
 // ---------------------------------------------------------------------------

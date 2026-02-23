@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::net::IpAddr;
 
 use crate::db::repos::resources::connectors as connector_repo;
 use crate::db::repos::resources::credentials as cred_repo;
@@ -100,6 +100,9 @@ async fn execute_healthcheck_request(
 
     let resolved_endpoint = resolve_template(&hc_config.endpoint, &resolved_values);
 
+    // Validate the URL to prevent SSRF against internal/private endpoints
+    validate_healthcheck_url(&resolved_endpoint)?;
+
     // Build and send the request
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(5))
@@ -170,6 +173,100 @@ pub(crate) fn resolve_template(template: &str, values: &HashMap<String, String>)
     resolved
 }
 
+/// Validate that a healthcheck URL targets a public endpoint and is not an SSRF vector.
+///
+/// Blocks:
+/// - Non-HTTP(S) schemes
+/// - Localhost / loopback addresses (127.x.x.x, ::1)
+/// - Private network ranges (10.x, 172.16-31.x, 192.168.x, fc00::/7)
+/// - Link-local addresses (169.254.x.x, fe80::/10) — includes cloud metadata endpoints
+/// - URLs with unresolved template placeholders (`{{...}}`)
+pub(crate) fn validate_healthcheck_url(url: &str) -> Result<(), AppError> {
+    // Reject unresolved template placeholders
+    if url.contains("{{") {
+        return Err(AppError::Validation(
+            "Healthcheck URL contains unresolved template placeholders".into(),
+        ));
+    }
+
+    let parsed = url::Url::parse(url).map_err(|e| {
+        AppError::Validation(format!("Invalid healthcheck URL: {e}"))
+    })?;
+
+    // Only allow HTTP and HTTPS schemes
+    match parsed.scheme() {
+        "http" | "https" => {}
+        scheme => {
+            return Err(AppError::Validation(format!(
+                "Healthcheck URL scheme '{scheme}' is not allowed (only http/https)"
+            )));
+        }
+    }
+
+    let host = parsed
+        .host()
+        .ok_or_else(|| AppError::Validation("Healthcheck URL has no host".into()))?;
+
+    match &host {
+        url::Host::Ipv4(v4) => {
+            if is_private_ip(&IpAddr::V4(*v4)) {
+                return Err(AppError::Validation(format!(
+                    "Healthcheck URL targets a private/internal address ({v4})"
+                )));
+            }
+        }
+        url::Host::Ipv6(v6) => {
+            if is_private_ip(&IpAddr::V6(*v6)) {
+                return Err(AppError::Validation(format!(
+                    "Healthcheck URL targets a private/internal address ({v6})"
+                )));
+            }
+        }
+        url::Host::Domain(domain) => {
+            let lower = domain.to_lowercase();
+            if lower == "localhost"
+                || lower.ends_with(".local")
+                || lower.ends_with(".internal")
+                || lower == "metadata.google.internal"
+            {
+                return Err(AppError::Validation(format!(
+                    "Healthcheck URL targets a private/internal hostname ({domain})"
+                )));
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// Check if an IP address is in a private, loopback, or link-local range.
+fn is_private_ip(ip: &IpAddr) -> bool {
+    match ip {
+        IpAddr::V4(v4) => {
+            v4.is_loopback()             // 127.0.0.0/8
+                || v4.is_private()        // 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
+                || v4.is_link_local()     // 169.254.0.0/16 (cloud metadata!)
+                || v4.is_unspecified()    // 0.0.0.0
+                || v4.is_broadcast()      // 255.255.255.255
+        }
+        IpAddr::V6(v6) => {
+            v6.is_loopback()             // ::1
+                || v6.is_unspecified()    // ::
+                || is_ipv6_private(v6)
+        }
+    }
+}
+
+/// Check IPv6 private/internal ranges: ULA (fc00::/7) and link-local (fe80::/10).
+fn is_ipv6_private(v6: &std::net::Ipv6Addr) -> bool {
+    let segments = v6.segments();
+    let first = segments[0];
+    // fc00::/7 — Unique Local Addresses
+    (first & 0xfe00) == 0xfc00
+    // fe80::/10 — Link-Local
+    || (first & 0xffc0) == 0xfe80
+}
+
 fn parse_credential_fields(
     encrypted_data: &str,
     iv: &str,
@@ -209,7 +306,7 @@ async fn resolve_auth_token(
     let refresh_token = find_nonempty(fields, &["refresh_token", "refreshToken"])
         .ok_or_else(|| AppError::Validation("Google credential is missing refresh_token".into()))?;
 
-    let (client_id, client_secret) = resolve_google_oauth_client_credentials()?;
+    let (client_id, client_secret) = super::google_oauth::resolve_google_oauth_env_credentials()?;
     let access_token = exchange_refresh_for_access_token(&client_id, &client_secret, &refresh_token).await?;
     Ok(Some(access_token))
 }
@@ -217,7 +314,7 @@ async fn resolve_auth_token(
 fn is_google_oauth_connector(
     service_type: &str,
     connector_metadata: Option<&str>,
-    fields: &HashMap<String, String>,
+    _fields: &HashMap<String, String>,
 ) -> bool {
     if service_type.contains("google") {
         return true;
@@ -235,28 +332,7 @@ fn is_google_oauth_connector(
         }
     }
 
-    fields.contains_key("refresh_token") || fields.contains_key("refreshToken")
-}
-
-fn resolve_google_oauth_client_credentials() -> Result<(String, String), AppError> {
-    let client_id = option_env!("GCP_CLIENT_ID")
-        .map(|v| v.trim().to_string())
-        .filter(|v| !v.is_empty())
-        .or_else(|| env_var_first_nonempty(&["GCP_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_CLIENT_ID"]))
-        .or_else(|| dotenv_var_first_nonempty(&["GCP_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_CLIENT_ID"]));
-
-    let client_secret = option_env!("GCP_CLIENT_SECRET")
-        .map(|v| v.trim().to_string())
-        .filter(|v| !v.is_empty())
-        .or_else(|| env_var_first_nonempty(&["GCP_CLIENT_SECRET", "GOOGLE_OAUTH_CLIENT_SECRET", "GOOGLE_CLIENT_SECRET"]))
-        .or_else(|| dotenv_var_first_nonempty(&["GCP_CLIENT_SECRET", "GOOGLE_OAUTH_CLIENT_SECRET", "GOOGLE_CLIENT_SECRET"]));
-
-    match (client_id, client_secret) {
-        (Some(id), Some(secret)) => Ok((id, secret)),
-        _ => Err(AppError::Validation(
-            "Google OAuth client credentials are missing. Set GCP_CLIENT_ID and GCP_CLIENT_SECRET in app env/.env.".into(),
-        )),
-    }
+    false
 }
 
 async fn exchange_refresh_for_access_token(
@@ -307,54 +383,6 @@ fn find_nonempty(fields: &HashMap<String, String>, keys: &[&str]) -> Option<Stri
             }
         }
     }
-    None
-}
-
-fn env_var_first_nonempty(keys: &[&str]) -> Option<String> {
-    for key in keys {
-        if let Ok(value) = std::env::var(key) {
-            let trimmed = value.trim();
-            if !trimmed.is_empty() {
-                return Some(trimmed.to_string());
-            }
-        }
-    }
-    None
-}
-
-fn dotenv_var_first_nonempty(keys: &[&str]) -> Option<String> {
-    let candidates = [
-        PathBuf::from(".env"),
-        PathBuf::from("../.env"),
-        PathBuf::from("../../.env"),
-    ];
-
-    for path in candidates {
-        if let Ok(content) = std::fs::read_to_string(&path) {
-            let mut map = HashMap::<String, String>::new();
-            for line in content.lines() {
-                let trimmed = line.trim();
-                if trimmed.is_empty() || trimmed.starts_with('#') {
-                    continue;
-                }
-                if let Some((k, v)) = trimmed.split_once('=') {
-                    map.insert(
-                        k.trim().to_string(),
-                        v.trim().trim_matches('"').trim_matches('\'').to_string(),
-                    );
-                }
-            }
-
-            for key in keys {
-                if let Some(value) = map.get(*key) {
-                    if !value.trim().is_empty() {
-                        return Some(value.trim().to_string());
-                    }
-                }
-            }
-        }
-    }
-
     None
 }
 
@@ -468,5 +496,62 @@ mod tests {
         fields2.insert("username".into(), "admin".into());
         fields2.insert("password".into(), "secret".into());
         assert!(build_auth_header(&fields2).is_none());
+    }
+
+    #[test]
+    fn test_validate_url_allows_public_https() {
+        assert!(validate_healthcheck_url("https://api.example.com/v1/me").is_ok());
+        assert!(validate_healthcheck_url("https://slack.com/api/auth.test").is_ok());
+        assert!(validate_healthcheck_url("http://api.github.com/user").is_ok());
+    }
+
+    #[test]
+    fn test_validate_url_blocks_localhost() {
+        assert!(validate_healthcheck_url("http://localhost:8080/admin").is_err());
+        assert!(validate_healthcheck_url("https://localhost/secret").is_err());
+        assert!(validate_healthcheck_url("http://127.0.0.1:3000").is_err());
+        assert!(validate_healthcheck_url("http://127.0.0.2/path").is_err());
+    }
+
+    #[test]
+    fn test_validate_url_blocks_private_networks() {
+        assert!(validate_healthcheck_url("http://10.0.0.1/admin").is_err());
+        assert!(validate_healthcheck_url("http://172.16.0.1/api").is_err());
+        assert!(validate_healthcheck_url("http://192.168.1.1/").is_err());
+    }
+
+    #[test]
+    fn test_validate_url_blocks_cloud_metadata() {
+        // AWS/GCP/Azure metadata endpoint
+        assert!(validate_healthcheck_url("http://169.254.169.254/latest/meta-data/").is_err());
+        assert!(validate_healthcheck_url("http://metadata.google.internal/computeMetadata/v1/").is_err());
+    }
+
+    #[test]
+    fn test_validate_url_blocks_non_http_schemes() {
+        assert!(validate_healthcheck_url("file:///etc/passwd").is_err());
+        assert!(validate_healthcheck_url("ftp://internal.server/data").is_err());
+        assert!(validate_healthcheck_url("gopher://evil.com/").is_err());
+    }
+
+    #[test]
+    fn test_validate_url_blocks_unresolved_templates() {
+        assert!(validate_healthcheck_url("https://api.example.com/{{api_key}}/test").is_err());
+    }
+
+    #[test]
+    fn test_validate_url_blocks_ipv6_loopback() {
+        assert!(validate_healthcheck_url("http://[::1]:8080/admin").is_err());
+    }
+
+    #[test]
+    fn test_validate_url_blocks_internal_hostnames() {
+        assert!(validate_healthcheck_url("http://myservice.local/api").is_err());
+        assert!(validate_healthcheck_url("http://db.internal/health").is_err());
+    }
+
+    #[test]
+    fn test_validate_url_blocks_unspecified() {
+        assert!(validate_healthcheck_url("http://0.0.0.0/").is_err());
     }
 }

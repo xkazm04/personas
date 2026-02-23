@@ -226,6 +226,23 @@ pub async fn start_design_review_run(
 
             let elapsed = start_time.elapsed().as_millis() as u64;
 
+            // Check cancellation after CLI completes but before persisting review
+            if cancel_flag.load(Ordering::Relaxed) {
+                let _ = app.emit(
+                    "design-review-status",
+                    DesignReviewStatusEvent {
+                        run_id: run_id_clone.clone(),
+                        test_case_index: i,
+                        total,
+                        status: "cancelled".into(),
+                        test_case_name: test_case_name.clone(),
+                        error_message: None,
+                        elapsed_ms: Some(elapsed),
+                    },
+                );
+                break;
+            }
+
             let now = chrono::Utc::now().to_rfc3339();
             let mut input = CreateDesignReviewInput::base(
                 test_case_id,
@@ -248,7 +265,20 @@ pub async fn start_design_review_run(
                         input.suggested_adjustment = Some(
                             "Claude asked a clarification question instead of generating. Re-run with a more specific instruction.".into()
                         );
-                        let _ = repo::create_review(&pool, &input);
+                        if let Err(e) = repo::create_review(&pool, &input) {
+                            tracing::error!(
+                                test_case = %test_case_name,
+                                error = %e,
+                                "Failed to persist design review to database"
+                            );
+                            emit_status(
+                                &app, &run_id_clone, i, total,
+                                "error", &test_case_name,
+                                Some(format!("DB write failed: {e}")),
+                                Some(elapsed),
+                            );
+                            continue;
+                        }
                         emit_status(
                             &app, &run_id_clone, i, total,
                             "error", &test_case_name,
@@ -297,13 +327,25 @@ pub async fn start_design_review_run(
                             input.trigger_types = Some(trigger_types);
                             input.design_result = Some(result_json);
                             input.use_case_flows = extract_use_case_flows_from_result(&result);
-                            let _ = repo::create_review(&pool, &input);
-
-                            emit_status(
-                                &app, &run_id_clone, i, total,
-                                status, &test_case_name,
-                                None, Some(elapsed),
-                            );
+                            if let Err(e) = repo::create_review(&pool, &input) {
+                                tracing::error!(
+                                    test_case = %test_case_name,
+                                    error = %e,
+                                    "Failed to persist design review to database"
+                                );
+                                emit_status(
+                                    &app, &run_id_clone, i, total,
+                                    "error", &test_case_name,
+                                    Some(format!("DB write failed: {e}")),
+                                    Some(elapsed),
+                                );
+                            } else {
+                                emit_status(
+                                    &app, &run_id_clone, i, total,
+                                    status, &test_case_name,
+                                    None, Some(elapsed),
+                                );
+                            }
                         }
                         None => {
                             tracing::warn!(
@@ -315,7 +357,13 @@ pub async fn start_design_review_run(
                             input.suggested_adjustment = Some(
                                 "Failed to extract valid JSON from Claude output".into(),
                             );
-                            let _ = repo::create_review(&pool, &input);
+                            if let Err(e) = repo::create_review(&pool, &input) {
+                                tracing::error!(
+                                    test_case = %test_case_name,
+                                    error = %e,
+                                    "Failed to persist design review to database"
+                                );
+                            }
                             emit_status(
                                 &app, &run_id_clone, i, total,
                                 "error", &test_case_name,
@@ -334,7 +382,13 @@ pub async fn start_design_review_run(
                     input.structural_score = Some(0);
                     input.semantic_score = Some(0);
                     input.semantic_evaluation = Some(error_msg.clone());
-                    let _ = repo::create_review(&pool, &input);
+                    if let Err(e) = repo::create_review(&pool, &input) {
+                        tracing::error!(
+                            test_case = %test_case_name,
+                            error = %e,
+                            "Failed to persist design review to database"
+                        );
+                    }
                     emit_status(
                         &app, &run_id_clone, i, total,
                         "error", &test_case_name,
@@ -847,14 +901,17 @@ async fn run_cli_for_template(
     })
     .await;
 
-    // Wait for process and clear the PID (process has exited)
-    let _ = child.wait().await;
-    child_pids.lock().unwrap().remove(run_id);
-
+    // If the stream timed out, kill the process first so wait() doesn't block.
+    // If it completed normally, just wait() for the exit status.
     if stream_result.is_err() {
         let _ = child.kill().await;
+        let _ = child.wait().await;
+        child_pids.lock().unwrap().remove(run_id);
         return Err("Template generation timed out after 3 minutes".into());
     }
+
+    let _ = child.wait().await;
+    child_pids.lock().unwrap().remove(run_id);
 
     if full_output.is_empty() {
         // Read stderr for error info

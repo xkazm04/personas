@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import * as api from '@/api/tauriApi';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-import { getSeedReviews, SEED_RUN_ID } from '@/lib/personas/seedTemplates';
+import { getSeedReviews } from '@/lib/personas/seedTemplates';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 
 interface ReviewStatusPayload {
@@ -75,7 +75,7 @@ export function useDesignReviews() {
     const seeds = getSeedReviews();
     const existingIds = new Set(
       existingReviews
-        .filter((r) => r.test_run_id === SEED_RUN_ID)
+        .filter((r) => r.test_run_id?.startsWith('seed-'))
         .map((r) => r.test_case_id),
     );
 
@@ -127,6 +127,14 @@ export function useDesignReviews() {
       }
       unlistenRef.current = await listen<ReviewStatusPayload>('design-review-status', (event) => {
         const { status, test_case_name, test_case_index, total, run_id, error_message, elapsed_ms } = event.payload;
+
+        // Filter out events from other runs. The first event may arrive before
+        // startDesignReviewRun returns, so accept it and latch the run_id.
+        if (currentRunId.current === null) {
+          currentRunId.current = run_id;
+        } else if (run_id !== currentRunId.current) {
+          return;
+        }
 
         if ((status === 'completed' || status === 'cancelled') && test_case_index === total) {
           setIsRunning(false);

@@ -1,7 +1,6 @@
 use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
 
-use serde::Serialize;
 use serde_json::json;
 use tauri::{Emitter, State};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -9,30 +8,13 @@ use tokio::process::Command;
 
 use crate::db::repos::resources::connectors as connector_repo;
 use crate::engine::credential_design;
-use crate::engine::healthcheck::resolve_template;
+use crate::engine::healthcheck::{resolve_template, validate_healthcheck_url};
 use crate::engine::parser::parse_stream_line;
 use crate::engine::types::StreamLineType;
-use crate::engine::prompt;
 use crate::error::AppError;
 use crate::AppState;
 
-const CREDENTIAL_TASK_MODEL: &str = "claude-sonnet-4-6";
-
-// ── Event payloads ──────────────────────────────────────────────
-
-#[derive(Clone, Serialize)]
-struct CredentialDesignOutputEvent {
-    design_id: String,
-    line: String,
-}
-
-#[derive(Clone, Serialize)]
-struct CredentialDesignStatusEvent {
-    design_id: String,
-    status: String,
-    result: Option<serde_json::Value>,
-    error: Option<String>,
-}
+use super::shared::build_credential_task_cli_args;
 
 // ── Commands ────────────────────────────────────────────────────
 
@@ -49,10 +31,11 @@ pub async fn start_credential_design(
         &connectors,
     );
 
-    let cli_args = build_credential_cli_args();
+    let cli_args = build_credential_task_cli_args();
 
     let design_id = uuid::Uuid::new_v4().to_string();
     let active_id = state.active_credential_design_id.clone();
+    let active_child_pid = state.active_credential_design_child_pid.clone();
 
     {
         let mut guard = active_id.lock().unwrap();
@@ -62,12 +45,15 @@ pub async fn start_credential_design(
     let design_id_clone = design_id.clone();
 
     tokio::spawn(async move {
-        run_credential_design(CredentialDesignRunParams {
+        run_credential_task(CredentialTaskParams {
             app,
-            design_id: design_id_clone,
+            task_id: design_id_clone,
             prompt_text: design_prompt,
             cli_args,
-            active_design_id: active_id,
+            active_id,
+            active_child_pid: Some(active_child_pid),
+            messages: DESIGN_MESSAGES,
+            extractor: credential_design::extract_credential_design_result,
         })
         .await;
     });
@@ -81,6 +67,14 @@ pub fn cancel_credential_design(
 ) -> Result<(), AppError> {
     let mut guard = state.active_credential_design_id.lock().unwrap();
     *guard = None;
+
+    // Kill the CLI child process to stop API credit consumption immediately.
+    let pid = state.active_credential_design_child_pid.lock().unwrap().take();
+    if let Some(pid) = pid {
+        tracing::info!(pid = pid, "Killing credential design CLI child process");
+        crate::engine::kill_process(pid);
+    }
+
     Ok(())
 }
 
@@ -101,7 +95,7 @@ pub async fn test_credential_design_healthcheck(
         &field_keys,
     );
 
-    let cli_args = build_credential_cli_args();
+    let cli_args = build_credential_task_cli_args();
     let output_text = run_claude_prompt(prompt_text, &cli_args, 300, "Claude produced no output for healthcheck generation")
         .await
         .map_err(AppError::Internal)?;
@@ -142,6 +136,9 @@ pub async fn test_credential_design_healthcheck(
         .map(|v| v as u16);
 
     let resolved_endpoint = resolve_template(endpoint, &values_map);
+
+    // Validate the resolved URL to prevent SSRF via AI-generated endpoints
+    validate_healthcheck_url(&resolved_endpoint)?;
 
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(10))
@@ -192,26 +189,7 @@ pub async fn test_credential_design_healthcheck(
     }
 }
 
-// ── Credential design runner ────────────────────────────────────
-
-struct CredentialDesignRunParams {
-    app: tauri::AppHandle,
-    design_id: String,
-    prompt_text: String,
-    cli_args: crate::engine::types::CliArgs,
-    active_design_id: Arc<Mutex<Option<String>>>,
-}
-
-/// Emit a user-friendly progress step to the frontend.
-fn emit_progress(app: &tauri::AppHandle, design_id: &str, line: &str) {
-    let _ = app.emit(
-        "credential-design-output",
-        CredentialDesignOutputEvent {
-            design_id: design_id.to_string(),
-            line: line.to_string(),
-        },
-    );
-}
+// ── Shared credential task runner ────────────────────────────────
 
 /// Try to extract the response text from a stream-json "result" line.
 /// The result event has a `result` field containing the full response text.
@@ -220,154 +198,194 @@ pub(crate) fn extract_result_text(line: &str) -> Option<String> {
     if value.get("type").and_then(|t| t.as_str()) != Some("result") {
         return None;
     }
-    // The result field can be a string directly or nested content
     if let Some(text) = value.get("result").and_then(|r| r.as_str()) {
         return Some(text.to_string());
     }
     None
 }
 
-async fn run_credential_design(params: CredentialDesignRunParams) {
-    let CredentialDesignRunParams {
+/// Progress message labels that differ between credential design and negotiation.
+pub(crate) struct CredentialTaskMessages {
+    /// Status event name (e.g. "credential-design-status")
+    pub status_event: &'static str,
+    /// Progress/output event name (e.g. "credential-design-output")
+    pub progress_event: &'static str,
+    /// ID field name in event payloads (e.g. "design_id", "negotiation_id")
+    pub id_field: &'static str,
+    /// Initial status value (e.g. "analyzing", "planning")
+    pub initial_status: &'static str,
+    /// Progress after SystemInit (e.g. "Analyzing service requirements...")
+    pub init_progress: &'static str,
+    /// Progress on first AssistantText (e.g. "Designing connector structure...")
+    pub streaming_progress: &'static str,
+    /// Prefix for the Result line (e.g. "Analysis complete", "Plan ready")
+    pub complete_prefix: &'static str,
+    /// Progress on successful extraction (e.g. "Connector designed successfully")
+    pub success_progress: &'static str,
+    /// User-facing error when extraction fails
+    pub extraction_failed_error: &'static str,
+    /// Log label for the task (e.g. "credential_design", "negotiation")
+    pub log_label: &'static str,
+    /// Timeout in seconds for spawn_claude_and_collect
+    pub timeout_secs: u64,
+}
+
+/// Parameters for a credential task run.
+pub(crate) struct CredentialTaskParams {
+    pub app: tauri::AppHandle,
+    pub task_id: String,
+    pub prompt_text: String,
+    pub cli_args: crate::engine::types::CliArgs,
+    pub active_id: Arc<Mutex<Option<String>>>,
+    pub active_child_pid: Option<Arc<Mutex<Option<u32>>>>,
+    pub messages: CredentialTaskMessages,
+    pub extractor: fn(&str) -> Option<serde_json::Value>,
+}
+
+/// Emit a progress line on the configured progress event channel.
+fn emit_task_progress(app: &tauri::AppHandle, event: &str, id_field: &str, task_id: &str, line: &str) {
+    let _ = app.emit(event, json!({ id_field: task_id, "line": line }));
+}
+
+/// Emit a status update on the configured status event channel.
+fn emit_task_status(
+    app: &tauri::AppHandle,
+    event: &str,
+    id_field: &str,
+    task_id: &str,
+    status: &str,
+    result: Option<serde_json::Value>,
+    error: Option<String>,
+) {
+    let _ = app.emit(event, json!({
+        id_field: task_id,
+        "status": status,
+        "result": result,
+        "error": error,
+    }));
+}
+
+/// Generic runner for credential design and negotiation tasks.
+///
+/// Both flows follow the same lifecycle: emit initial status → spawn Claude →
+/// stream progress → check cancellation → extract result → emit final status.
+pub(crate) async fn run_credential_task(params: CredentialTaskParams) {
+    let CredentialTaskParams {
         app,
-        design_id,
+        task_id,
         prompt_text,
         cli_args,
-        active_design_id,
+        active_id,
+        active_child_pid,
+        messages,
+        extractor,
     } = params;
 
-    let _ = app.emit(
-        "credential-design-status",
-        CredentialDesignStatusEvent {
-            design_id: design_id.clone(),
-            status: "analyzing".into(),
-            result: None,
-            error: None,
-        },
-    );
+    emit_task_status(&app, messages.status_event, messages.id_field, &task_id, messages.initial_status, None, None);
+    emit_task_progress(&app, messages.progress_event, messages.id_field, &task_id, "Connecting to Claude...");
 
-    emit_progress(&app, &design_id, "Connecting to Claude...");
-
-    let mut emitted_analyzing = false;
+    let pe = messages.progress_event;
+    let idf = messages.id_field;
+    let tid = task_id.clone();
+    let mut emitted_streaming = false;
     let result = spawn_claude_and_collect(
         &cli_args,
         prompt_text,
-        600,
+        messages.timeout_secs,
         |line_type, _raw_line| match line_type {
             StreamLineType::SystemInit { model, .. } => {
-                emit_progress(&app, &design_id, &format!("Connected ({})", model));
-                emit_progress(&app, &design_id, "Analyzing service requirements...");
+                emit_task_progress(&app, pe, idf, &tid, &format!("Connected ({})", model));
+                emit_task_progress(&app, pe, idf, &tid, messages.init_progress);
             }
             StreamLineType::AssistantText { .. } => {
-                if !emitted_analyzing {
-                    emitted_analyzing = true;
-                    emit_progress(&app, &design_id, "Designing connector structure...");
+                if !emitted_streaming {
+                    emitted_streaming = true;
+                    emit_task_progress(&app, pe, idf, &tid, messages.streaming_progress);
                 }
             }
             StreamLineType::AssistantToolUse { tool_name, .. } => {
-                emit_progress(&app, &design_id, &format!("Researching: {}", tool_name));
+                emit_task_progress(&app, pe, idf, &tid, &format!("Researching: {}", tool_name));
             }
             StreamLineType::Result {
                 duration_ms,
                 total_cost_usd,
                 ..
             } => {
-                let mut msg = "Analysis complete".to_string();
+                let mut msg = messages.complete_prefix.to_string();
                 if let Some(ms) = duration_ms {
                     let secs = *ms as f64 / 1000.0;
-                    msg = format!("Analysis complete ({:.1}s", secs);
+                    msg = format!("{} ({:.1}s", messages.complete_prefix, secs);
                     if let Some(cost) = total_cost_usd {
                         msg.push_str(&format!(", ${:.4}", cost));
                     }
                     msg.push(')');
                 }
-                emit_progress(&app, &design_id, &msg);
+                emit_task_progress(&app, pe, idf, &tid, &msg);
             }
             _ => {}
         },
+        active_child_pid.as_ref(),
     )
     .await;
 
     // Check if cancelled
     let is_cancelled = {
-        let guard = active_design_id.lock().unwrap();
-        guard.as_deref() != Some(&design_id)
+        let guard = active_id.lock().unwrap();
+        guard.as_deref() != Some(&task_id)
     };
 
     if is_cancelled {
-        tracing::info!(design_id = %design_id, "Credential design cancelled");
+        tracing::info!(task_id = %task_id, label = messages.log_label, "Credential task cancelled");
         return;
     }
 
     match result {
         Err(error_msg) => {
-            tracing::error!(design_id = %design_id, error = %error_msg, "Claude CLI failed");
-            let _ = app.emit(
-                "credential-design-status",
-                CredentialDesignStatusEvent {
-                    design_id,
-                    status: "failed".into(),
-                    result: None,
-                    error: Some(error_msg),
-                },
-            );
+            tracing::error!(task_id = %task_id, label = messages.log_label, error = %error_msg, "Claude CLI failed");
+            emit_task_status(&app, messages.status_event, messages.id_field, &task_id, "failed", None, Some(error_msg));
         }
         Ok(spawn_result) => {
             if !spawn_result.stderr_output.trim().is_empty() {
                 tracing::warn!(
-                    design_id = %design_id,
+                    task_id = %task_id,
+                    label = messages.log_label,
                     stderr = %spawn_result.stderr_output.trim(),
                     "Claude CLI stderr output"
                 );
             }
 
-            tracing::info!(
-                design_id = %design_id,
-                text_output_len = spawn_result.text_output.len(),
-                text_output_preview = %spawn_result.text_output.chars().take(500).collect::<String>(),
-                "Attempting to extract credential design from text output"
-            );
-
-            match credential_design::extract_credential_design_result(&spawn_result.text_output) {
-                Some(design_result) => {
+            match extractor(&spawn_result.text_output) {
+                Some(extracted) => {
                     {
-                        let mut guard = active_design_id.lock().unwrap();
-                        if guard.as_deref() == Some(&design_id) {
+                        let mut guard = active_id.lock().unwrap();
+                        if guard.as_deref() == Some(&task_id) {
                             *guard = None;
                         }
                     }
-                    emit_progress(&app, &design_id, "Connector designed successfully");
-                    let _ = app.emit(
-                        "credential-design-status",
-                        CredentialDesignStatusEvent {
-                            design_id,
-                            status: "completed".into(),
-                            result: Some(design_result),
-                            error: None,
-                        },
-                    );
+                    emit_task_progress(&app, messages.progress_event, messages.id_field, &task_id, messages.success_progress);
+                    emit_task_status(&app, messages.status_event, messages.id_field, &task_id, "completed", Some(extracted), None);
                 }
                 None => {
                     {
-                        let mut guard = active_design_id.lock().unwrap();
-                        if guard.as_deref() == Some(&design_id) {
+                        let mut guard = active_id.lock().unwrap();
+                        if guard.as_deref() == Some(&task_id) {
                             *guard = None;
                         }
                     }
                     tracing::warn!(
-                        design_id = %design_id,
+                        task_id = %task_id,
+                        label = messages.log_label,
                         text_output_len = spawn_result.text_output.len(),
-                        text_output_tail = %spawn_result.text_output.chars().rev().take(500).collect::<String>().chars().rev().collect::<String>(),
-                        "Failed to extract connector design from Claude text output"
+                        "Failed to extract result from Claude text output"
                     );
-                    let _ = app.emit(
-                        "credential-design-status",
-                        CredentialDesignStatusEvent {
-                            design_id,
-                            status: "failed".into(),
-                            result: None,
-                            error: Some("Failed to extract connector design from Claude output. Try describing the service more specifically.".into()),
-                        },
+                    emit_task_status(
+                        &app,
+                        messages.status_event,
+                        messages.id_field,
+                        &task_id,
+                        "failed",
+                        None,
+                        Some(messages.extraction_failed_error.into()),
                     );
                 }
             }
@@ -375,14 +393,21 @@ async fn run_credential_design(params: CredentialDesignRunParams) {
     }
 }
 
-fn build_credential_cli_args() -> crate::engine::types::CliArgs {
-    let mut cli_args = prompt::build_cli_args(None, None);
-    if !cli_args.args.iter().any(|arg| arg == "--model") {
-        cli_args.args.push("--model".to_string());
-        cli_args.args.push(CREDENTIAL_TASK_MODEL.to_string());
-    }
-    cli_args
-}
+// ── Credential design messages ──────────────────────────────────
+
+const DESIGN_MESSAGES: CredentialTaskMessages = CredentialTaskMessages {
+    status_event: "credential-design-status",
+    progress_event: "credential-design-output",
+    id_field: "design_id",
+    initial_status: "analyzing",
+    init_progress: "Analyzing service requirements...",
+    streaming_progress: "Designing connector structure...",
+    complete_prefix: "Analysis complete",
+    success_progress: "Connector designed successfully",
+    extraction_failed_error: "Failed to extract connector design from Claude output. Try describing the service more specifically.",
+    log_label: "credential_design",
+    timeout_secs: 600,
+};
 
 // ── Shared Claude CLI helper ────────────────────────────────────
 
@@ -397,11 +422,15 @@ pub(crate) struct ClaudeSpawnResult {
 /// `on_line` is called for each parsed stream-json line, allowing callers to
 /// emit progress events or handle line-type-specific logic. Text accumulation
 /// (AssistantText, Result, Unknown) is handled internally.
+///
+/// If `child_pid_out` is provided, the child process PID is stored there so
+/// callers can kill the process from a cancel handler.
 pub(crate) async fn spawn_claude_and_collect(
     cli_args: &crate::engine::types::CliArgs,
     prompt_text: String,
     timeout_secs: u64,
     mut on_line: impl FnMut(&StreamLineType, &str),
+    child_pid_out: Option<&Arc<Mutex<Option<u32>>>>,
 ) -> Result<ClaudeSpawnResult, String> {
     let mut cmd = Command::new(&cli_args.command);
     cmd.args(&cli_args.args)
@@ -433,6 +462,13 @@ pub(crate) async fn spawn_claude_and_collect(
             format!("Failed to spawn Claude CLI: {}", e)
         }
     })?;
+
+    // Register child PID so cancel handlers can kill the process immediately
+    if let Some(pid_ref) = child_pid_out {
+        if let Some(pid) = child.id() {
+            *pid_ref.lock().unwrap() = Some(pid);
+        }
+    }
 
     if let Some(mut stdin) = child.stdin.take() {
         let _ = stdin.write_all(prompt_text.as_bytes()).await;
@@ -492,6 +528,11 @@ pub(crate) async fn spawn_claude_and_collect(
         .map_err(|e| format!("Failed waiting for Claude CLI: {}", e))?;
     let stderr_output = stderr_task.await.unwrap_or_default();
 
+    // Clear the PID now that the process has exited
+    if let Some(pid_ref) = child_pid_out {
+        *pid_ref.lock().unwrap() = None;
+    }
+
     if stream_result.is_err() {
         let _ = child.kill().await;
         return Err(format!("Claude CLI timed out after {} seconds", timeout_secs));
@@ -522,7 +563,7 @@ pub(crate) async fn run_claude_prompt(
     timeout_secs: u64,
     empty_error: &str,
 ) -> Result<String, String> {
-    let result = spawn_claude_and_collect(cli_args, prompt_text, timeout_secs, |_, _| {}).await?;
+    let result = spawn_claude_and_collect(cli_args, prompt_text, timeout_secs, |_, _| {}, None).await?;
 
     if result.text_output.trim().is_empty() {
         return Err(empty_error.into());

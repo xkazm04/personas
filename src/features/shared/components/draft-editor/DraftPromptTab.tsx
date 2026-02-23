@@ -38,7 +38,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
     }));
   };
 
-  const isStandardField = (tab: PromptSubtab): tab is keyof Omit<EditableStructuredPrompt, 'customSections'> =>
+  const isStandardField = (tab: PromptSubtab): tab is keyof Omit<EditableStructuredPrompt, 'customSections' | 'webSearch'> =>
     tab !== 'custom';
 
   return (

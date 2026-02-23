@@ -1,7 +1,7 @@
-import { useState, useCallback, useRef } from 'react';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { useState, useCallback } from 'react';
 import { startCredentialDesign, cancelCredentialDesign } from '@/api/tauriApi';
 import { usePersonaStore } from '@/stores/personaStore';
+import { useTauriStream } from './useTauriStream';
 
 export type CredentialDesignPhase = 'idle' | 'analyzing' | 'preview' | 'saving' | 'done' | 'error';
 
@@ -24,92 +24,55 @@ export interface CredentialDesignResult {
   summary: string;
 }
 
-interface DesignOutputPayload {
-  design_id: string;
-  line: string;
-}
+const getLine = (payload: Record<string, unknown>) => payload.line as string;
 
-interface DesignStatusPayload {
-  design_id: string;
-  status: string;
-  result?: CredentialDesignResult;
-  error?: string;
-}
+const resolveStatus = (payload: Record<string, unknown>) => {
+  const status = payload.status as string;
+  if (status === 'completed' && payload.result) {
+    return { result: payload.result as CredentialDesignResult };
+  }
+  if (status === 'failed') {
+    return { error: (payload.error as string) || 'Credential design failed' };
+  }
+  return null;
+};
 
 export function useCredentialDesign() {
-  const [phase, setPhase] = useState<CredentialDesignPhase>('idle');
-  const [outputLines, setOutputLines] = useState<string[]>([]);
-  const [result, setResult] = useState<CredentialDesignResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [savedCredentialId, setSavedCredentialId] = useState<string | null>(null);
-  const unlistenersRef = useRef<UnlistenFn[]>([]);
 
   const createConnectorDefinition = usePersonaStore((s) => s.createConnectorDefinition);
   const createCredential = usePersonaStore((s) => s.createCredential);
 
-  const cleanup = useCallback(() => {
-    for (const unlisten of unlistenersRef.current) {
-      unlisten();
-    }
-    unlistenersRef.current = [];
-  }, []);
+  const stream = useTauriStream<CredentialDesignResult>({
+    progressEvent: 'credential-design-output',
+    statusEvent: 'credential-design-status',
+    getLine,
+    resolveStatus,
+    completedPhase: 'preview',
+    runningPhase: 'analyzing',
+    startErrorMessage: 'Failed to start credential design',
+  });
 
   const start = useCallback(async (instruction: string) => {
-    cleanup();
-    setPhase('analyzing');
-    setOutputLines([]);
-    setResult(null);
-    setError(null);
-
-    try {
-      const unlistenOutput = await listen<DesignOutputPayload>('credential-design-output', (event) => {
-        setOutputLines((prev) => [...prev, event.payload.line]);
-      });
-
-      const unlistenStatus = await listen<DesignStatusPayload>('credential-design-status', (event) => {
-        const { status, result: designResult, error: designError } = event.payload;
-
-        if (status === 'completed' && designResult) {
-          setResult(designResult);
-          setPhase('preview');
-          cleanup();
-        } else if (status === 'failed') {
-          setError(designError || 'Credential design failed');
-          setPhase('error');
-          cleanup();
-        }
-      });
-
-      unlistenersRef.current = [unlistenOutput, unlistenStatus];
-
-      await startCredentialDesign(instruction);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to start credential design');
-      setPhase('error');
-      cleanup();
-    }
-  }, [cleanup]);
+    await stream.start(() => startCredentialDesign(instruction));
+  }, [stream.start]);
 
   const cancel = useCallback(() => {
-    cancelCredentialDesign().catch(() => {});
-    cleanup();
-    setPhase('idle');
-    setOutputLines([]);
-    setError(null);
-  }, [cleanup]);
+    stream.cancel(() => cancelCredentialDesign());
+  }, [stream.cancel]);
 
   const save = useCallback(async (
     credentialName: string,
     fieldValues: Record<string, string>,
     healthcheckOverride?: Record<string, unknown> | null,
   ) => {
-    if (!result) return;
+    if (!stream.result) return;
 
-    setPhase('saving');
+    stream.setPhase('saving');
     try {
       // Create connector definition if it doesn't already exist
-      if (!result.match_existing) {
-        const conn = result.connector;
+      if (!stream.result.match_existing) {
+        const conn = stream.result.connector;
         await createConnectorDefinition({
           name: conn.name,
           label: conn.label,
@@ -121,15 +84,15 @@ export function useCredentialDesign() {
           events: JSON.stringify(conn.events || []),
           metadata: JSON.stringify({
             template_enabled: true,
-            setup_instructions: result.setup_instructions,
-            summary: result.summary,
+            setup_instructions: stream.result.setup_instructions,
+            summary: stream.result.summary,
           }),
           is_builtin: false,
         });
       }
 
       // Create the credential
-      const serviceType = result.match_existing || result.connector.name;
+      const serviceType = stream.result.match_existing || stream.result.connector.name;
       const credId = await createCredential({
         name: credentialName,
         service_type: serviceType,
@@ -137,35 +100,31 @@ export function useCredentialDesign() {
       });
 
       setSavedCredentialId(credId ?? null);
-      setPhase('done');
+      stream.setPhase('done');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save credential');
-      setPhase('preview');
+      stream.setError(err instanceof Error ? err.message : 'Failed to save credential');
+      stream.setPhase('preview');
     }
-  }, [result, createConnectorDefinition, createCredential]);
+  }, [stream.result, stream.setPhase, stream.setError, createConnectorDefinition, createCredential]);
 
   const reset = useCallback(() => {
-    cleanup();
-    setPhase('idle');
-    setOutputLines([]);
-    setResult(null);
-    setError(null);
+    stream.reset();
     setSavedCredentialId(null);
-  }, [cleanup]);
+  }, [stream.reset]);
 
   const loadTemplate = useCallback((template: CredentialDesignResult) => {
-    cleanup();
-    setOutputLines([]);
-    setError(null);
-    setResult(template);
-    setPhase('preview');
-  }, [cleanup]);
+    stream.cleanup();
+    stream.setLines([]);
+    stream.setError(null);
+    stream.setResult(template);
+    stream.setPhase('preview');
+  }, [stream.cleanup, stream.setLines, stream.setError, stream.setResult, stream.setPhase]);
 
   return {
-    phase,
-    outputLines,
-    result,
-    error,
+    phase: stream.phase as CredentialDesignPhase,
+    outputLines: stream.lines,
+    result: stream.result,
+    error: stream.error,
     savedCredentialId,
     start,
     cancel,

@@ -1,10 +1,10 @@
 import { useState, useCallback, useRef } from 'react';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import {
   startCredentialNegotiation,
   cancelCredentialNegotiation,
   getNegotiationStepHelp,
 } from '@/api/negotiator';
+import { useTauriStream } from './useTauriStream';
 
 // ── Types ───────────────────────────────────────────────────────
 
@@ -30,124 +30,73 @@ export interface NegotiationPlan {
   tips: string[];
 }
 
-interface NegotiationProgressPayload {
-  negotiation_id: string;
-  line: string;
-}
+const getLine = (payload: Record<string, unknown>) => payload.line as string;
 
-interface NegotiationStatusPayload {
-  negotiation_id: string;
-  status: string;
-  result?: NegotiationPlan;
-  error?: string;
-}
+const resolveStatus = (payload: Record<string, unknown>) => {
+  const status = payload.status as string;
+  if (status === 'completed' && payload.result) {
+    return { result: payload.result as NegotiationPlan };
+  }
+  if (status === 'failed') {
+    return { error: (payload.error as string) || 'Failed to generate provisioning plan' };
+  }
+  return null;
+};
 
 // ── Hook ────────────────────────────────────────────────────────
 
 export function useCredentialNegotiator() {
-  const [phase, setPhase] = useState<NegotiatorPhase>('idle');
-  const [progressLines, setProgressLines] = useState<string[]>([]);
-  const [plan, setPlan] = useState<NegotiationPlan | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [capturedValues, setCapturedValues] = useState<Record<string, string>>({});
   const [stepHelp, setStepHelp] = useState<{ answer: string; stepIndex: number } | null>(null);
   const [isLoadingHelp, setIsLoadingHelp] = useState(false);
-  const unlistenersRef = useRef<UnlistenFn[]>([]);
   const serviceNameRef = useRef('');
 
-  const cleanup = useCallback(() => {
-    for (const unlisten of unlistenersRef.current) {
-      unlisten();
-    }
-    unlistenersRef.current = [];
-  }, []);
+  const stream = useTauriStream<NegotiationPlan>({
+    progressEvent: 'credential-negotiation-progress',
+    statusEvent: 'credential-negotiation-status',
+    getLine,
+    resolveStatus,
+    completedPhase: 'guiding',
+    runningPhase: 'planning',
+    startErrorMessage: 'Failed to start negotiation',
+  });
 
   const start = useCallback(async (
     serviceName: string,
     connector: Record<string, unknown>,
     fieldKeys: string[],
   ) => {
-    cleanup();
     serviceNameRef.current = serviceName;
-    setPhase('planning');
-    setProgressLines([]);
-    setPlan(null);
-    setError(null);
     setActiveStepIndex(0);
     setCompletedSteps(new Set());
     setCapturedValues({});
     setStepHelp(null);
 
-    try {
-      const unlistenProgress = await listen<NegotiationProgressPayload>(
-        'credential-negotiation-progress',
-        (event) => {
-          setProgressLines((prev) => [...prev, event.payload.line]);
-        },
-      );
-
-      const unlistenStatus = await listen<NegotiationStatusPayload>(
-        'credential-negotiation-status',
-        (event) => {
-          const { status, result: planResult, error: planError } = event.payload;
-
-          if (status === 'completed' && planResult) {
-            setPlan(planResult);
-            setPhase('guiding');
-            cleanup();
-          } else if (status === 'failed') {
-            setError(planError || 'Failed to generate provisioning plan');
-            setPhase('error');
-            cleanup();
-          }
-        },
-      );
-
-      unlistenersRef.current = [unlistenProgress, unlistenStatus];
-
-      await startCredentialNegotiation(serviceName, connector, fieldKeys);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to start negotiation');
-      setPhase('error');
-      cleanup();
-    }
-  }, [cleanup]);
+    await stream.start(() => startCredentialNegotiation(serviceName, connector, fieldKeys));
+  }, [stream.start]);
 
   const cancel = useCallback(() => {
-    cancelCredentialNegotiation().catch(() => {});
-    cleanup();
-    setPhase('idle');
-    setProgressLines([]);
-    setError(null);
-  }, [cleanup]);
+    stream.cancel(() => cancelCredentialNegotiation());
+  }, [stream.cancel]);
 
   const completeStep = useCallback((stepIndex: number) => {
     setCompletedSteps((prev) => {
       const next = new Set(prev);
       next.add(stepIndex);
+      // Transition to done when every step is marked complete
+      if (stream.result && next.size === stream.result.steps.length) {
+        stream.setPhase('done');
+      }
       return next;
     });
 
     // Auto-advance to next step
-    if (plan && stepIndex < plan.steps.length - 1) {
+    if (stream.result && stepIndex < stream.result.steps.length - 1) {
       setActiveStepIndex(stepIndex + 1);
     }
-
-    // Check if all steps are complete
-    if (plan && stepIndex === plan.steps.length - 1) {
-      // All steps completed — check all are marked
-      setCompletedSteps((prev) => {
-        const next = new Set(prev);
-        next.add(stepIndex);
-        if (next.size === plan.steps.length) {
-          setPhase('done');
-        }
-        return next;
-      });
-    }
-  }, [plan]);
+  }, [stream.result, stream.setPhase]);
 
   const captureValue = useCallback((fieldKey: string, value: string) => {
     setCapturedValues((prev) => ({ ...prev, [fieldKey]: value }));
@@ -159,9 +108,9 @@ export function useCredentialNegotiator() {
   }, []);
 
   const requestStepHelp = useCallback(async (stepIndex: number, question: string) => {
-    if (!plan) return;
+    if (!stream.result) return;
 
-    const step = plan.steps[stepIndex];
+    const step = stream.result.steps[stepIndex];
     if (!step) return;
 
     setIsLoadingHelp(true);
@@ -183,25 +132,21 @@ export function useCredentialNegotiator() {
     } finally {
       setIsLoadingHelp(false);
     }
-  }, [plan]);
+  }, [stream.result]);
 
   const reset = useCallback(() => {
-    cleanup();
-    setPhase('idle');
-    setProgressLines([]);
-    setPlan(null);
-    setError(null);
+    stream.reset();
     setActiveStepIndex(0);
     setCompletedSteps(new Set());
     setCapturedValues({});
     setStepHelp(null);
-  }, [cleanup]);
+  }, [stream.reset]);
 
   return {
-    phase,
-    progressLines,
-    plan,
-    error,
+    phase: stream.phase as NegotiatorPhase,
+    progressLines: stream.lines,
+    plan: stream.result,
+    error: stream.error,
     activeStepIndex,
     completedSteps,
     capturedValues,

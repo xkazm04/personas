@@ -25,10 +25,13 @@ pub async fn start_test_run(
     let tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
 
     // Parse model configs from frontend
-    let model_configs: Vec<TestModelConfig> = models
-        .iter()
-        .filter_map(|v| serde_json::from_value(v.clone()).ok())
-        .collect();
+    let mut model_configs: Vec<TestModelConfig> = Vec::new();
+    for v in models {
+        match serde_json::from_value(v.clone()) {
+            Ok(config) => model_configs.push(config),
+            Err(e) => return Err(AppError::Validation(format!("Invalid model config: {}", e))),
+        }
+    }
 
     if model_configs.is_empty() {
         return Err(AppError::Validation("No valid models provided".into()));
