@@ -10,6 +10,7 @@ import PersonaOverviewPage from '@/features/agents/components/PersonaOverviewPag
 import DesignReviewsPage from '@/features/templates/components/DesignReviewsPage';
 import TeamCanvas from '@/features/pipeline/components/TeamCanvas';
 import CloudDeployPanel from '@/features/deployment/components/CloudDeployPanel';
+import GitLabPanel from '@/features/gitlab/components/GitLabPanel';
 import SettingsPage from '@/features/settings/components/SettingsPage';
 import OnboardingWizard from '@/features/agents/components/OnboardingWizard';
 import { PersonaCreationWizard } from '@/features/agents/components/PersonaCreationWizard';
@@ -59,6 +60,7 @@ export default function PersonasPage() {
 
     if (sidebarSection === 'team') return <TeamCanvas />;
     if (sidebarSection === 'cloud') return <CloudDeployPanel />;
+    if (sidebarSection === 'gitlab') return <GitLabPanel />;
     if (sidebarSection === 'overview') return <OverviewPage />;
     if (sidebarSection === 'credentials') return <CredentialManager />;
     if (sidebarSection === 'events') return <EventsPage />;

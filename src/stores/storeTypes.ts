@@ -20,6 +20,7 @@ import type { MemorySlice } from "./slices/memorySlice";
 import type { UiSlice } from "./slices/uiSlice";
 import type { TestSlice } from "./slices/testSlice";
 import type { CloudSlice } from "./slices/cloudSlice";
+import type { GitLabSlice } from "./slices/gitlabSlice";
 
 // ── Shared helper ──────────────────────────────────────────────────────
 export function errMsg(err: unknown, fallback: string): string {
@@ -45,4 +46,5 @@ export type PersonaStore = PersonaSlice &
   MemorySlice &
   UiSlice &
   TestSlice &
-  CloudSlice;
+  CloudSlice &
+  GitLabSlice;

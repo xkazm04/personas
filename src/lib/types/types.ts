@@ -190,7 +190,7 @@ export interface CredentialTemplateEvent {
 
 // ── Navigation Types ───────────────────────────────────────────────────
 
-export type SidebarSection = "overview" | "personas" | "events" | "credentials" | "design-reviews" | "team" | "cloud" | "settings";
+export type SidebarSection = "overview" | "personas" | "events" | "credentials" | "design-reviews" | "team" | "cloud" | "gitlab" | "settings";
 export type EditorTab = "use-cases" | "prompt" | "connectors" | "executions" | "settings" | "tests" | "design";
 export type OverviewTab = "system-check" | "executions" | "manual-review" | "messages" | "usage" | "events" | "observability" | "realtime" | "memories" | "budget";
 export type TemplateTab = "builtin" | "n8n" | "generated";

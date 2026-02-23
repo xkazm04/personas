@@ -49,6 +49,7 @@ tauri-plugin-deep-link = "2"
 tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
 open = "5"
 url = "2"
+urlencoding = "2"
 sentry = { version = "0.34", default-features = false, features = [
     "backtrace", "contexts", "panic", "rustls", "reqwest"
 ] }

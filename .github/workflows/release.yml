@@ -1,7 +1,8 @@
 name: Release
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
       - master
 
@@ -16,13 +17,14 @@ jobs:
   # ─── Job 1: Bump version, commit, tag, push ───────────────
   bump-version:
     runs-on: ubuntu-latest
-    if: "!startsWith(github.event.head_commit.message, 'chore: bump version')"
+    if: github.event.pull_request.merged == true
     outputs:
       new_version: ${{ steps.bump.outputs.new_version }}
     steps:
-      - name: Checkout
+      - name: Checkout master
         uses: actions/checkout@v4
         with:
+          ref: master
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 

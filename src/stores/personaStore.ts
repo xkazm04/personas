@@ -26,6 +26,7 @@ import { createMemorySlice } from "./slices/memorySlice";
 import { createUiSlice } from "./slices/uiSlice";
 import { createTestSlice } from "./slices/testSlice";
 import { createCloudSlice } from "./slices/cloudSlice";
+import { createGitLabSlice } from "./slices/gitlabSlice";
 
 // ── Store ──────────────────────────────────────────────────────────────
 
@@ -49,6 +50,7 @@ export const usePersonaStore = create<PersonaStore>()(
         ...createUiSlice(...a),
         ...createTestSlice(...a),
         ...createCloudSlice(...a),
+        ...createGitLabSlice(...a),
       }),
       {
         name: "persona-ui-state",

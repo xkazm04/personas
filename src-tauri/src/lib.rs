@@ -3,6 +3,7 @@ mod commands;
 mod db;
 mod engine;
 mod error;
+mod gitlab;
 mod logging;
 mod notifications;
 mod tray;
@@ -37,6 +38,8 @@ pub struct AppState {
     pub active_setup_cancelled: Arc<Mutex<bool>>,
     /// Cancellation flags for active test runs, keyed by run ID.
     pub active_test_run_cancelled: Arc<Mutex<HashMap<String, Arc<std::sync::atomic::AtomicBool>>>>,
+    /// GitLab API client (None when not connected).
+    pub gitlab_client: Arc<tokio::sync::Mutex<Option<Arc<gitlab::client::GitLabClient>>>>,
 }
 
 /// Hello world IPC command — verifies the Rust ↔ React bridge works.
@@ -125,6 +128,16 @@ pub fn run() {
                 tracing::info!("Cloud orchestrator config restored from keyring");
             }
 
+            // Restore GitLab client from keyring if previously connected
+            let gitlab_client_opt = gitlab::config::load_gitlab_config()
+                .map(|token| Arc::new(gitlab::client::GitLabClient::new(
+                    "https://gitlab.com".to_string(),
+                    token,
+                )));
+            if gitlab_client_opt.is_some() {
+                tracing::info!("GitLab config restored from keyring");
+            }
+
             let state_arc = Arc::new(AppState {
                 db: pool.clone(),
                 engine: engine.clone(),
@@ -137,6 +150,7 @@ pub fn run() {
                 cloud_exec_ids: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
                 active_setup_cancelled: Arc::new(Mutex::new(false)),
                 active_test_run_cancelled: Arc::new(Mutex::new(HashMap::new())),
+                gitlab_client: Arc::new(tokio::sync::Mutex::new(gitlab_client_opt)),
             });
             app.manage(state_arc.clone());
 
@@ -426,6 +440,15 @@ pub fn run() {
             commands::infrastructure::cloud::cloud_oauth_status,
             commands::infrastructure::cloud::cloud_oauth_refresh,
             commands::infrastructure::cloud::cloud_oauth_disconnect,
+            // Infrastructure — GitLab
+            commands::infrastructure::gitlab::gitlab_connect,
+            commands::infrastructure::gitlab::gitlab_disconnect,
+            commands::infrastructure::gitlab::gitlab_get_config,
+            commands::infrastructure::gitlab::gitlab_list_projects,
+            commands::infrastructure::gitlab::gitlab_deploy_persona,
+            commands::infrastructure::gitlab::gitlab_list_agents,
+            commands::infrastructure::gitlab::gitlab_undeploy_agent,
+            commands::infrastructure::gitlab::gitlab_revoke_credentials,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
