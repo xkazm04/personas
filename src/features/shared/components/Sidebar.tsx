@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Eye, Users, Radio, Brain, DollarSign, Cloud, Plus, LayoutTemplate, Monitor, Blocks, Upload, List, Settings, Chrome, Palette, Bell } from 'lucide-react';
+import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Eye, Users, Radio, Brain, DollarSign, Cloud, Plus, LayoutTemplate, Monitor, Blocks, Upload, List, Settings, Chrome, Palette, Bell, GitBranch } from 'lucide-react';
 import { getVersion } from '@tauri-apps/api/app';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { SidebarSection, OverviewTab, TemplateTab, SettingsTab } from '@/lib/types/types';
@@ -16,6 +16,7 @@ const sections: Array<{ id: SidebarSection; icon: typeof Bot; label: string }> =
   { id: 'design-reviews', icon: FlaskConical, label: 'Templates' },
   { id: 'team', icon: Users, label: 'Teams' },
   { id: 'cloud', icon: Cloud, label: 'Cloud' },
+  { id: 'gitlab', icon: GitBranch, label: 'GitLab' },
   { id: 'settings', icon: Settings, label: 'Settings' },
 ];
 
@@ -273,6 +274,18 @@ export default function Sidebar() {
           </div>
           <p className="text-sm text-muted-foreground/80">Cloud Execution</p>
           <p className="text-sm text-muted-foreground/80 mt-1">Run agents on remote workers</p>
+        </div>
+      );
+    }
+
+    if (sidebarSection === 'gitlab') {
+      return (
+        <div className="text-center py-12">
+          <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
+            <GitBranch className="w-6 h-6 text-orange-400/60" />
+          </div>
+          <p className="text-sm text-muted-foreground/80">GitLab Integration</p>
+          <p className="text-sm text-muted-foreground/80 mt-1">Deploy personas as Duo Agents</p>
         </div>
       );
     }

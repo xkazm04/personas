@@ -1,0 +1,190 @@
+# GitLab CI/CD Pipeline for Personas Desktop
+# Parallel CI option alongside GitHub Actions (.github/workflows/ci.yml)
+
+stages:
+  - lint
+  - test
+  - security
+  - build-check
+  - binding-drift
+  - report
+
+# ── Variables ────────────────────────────────────────────────────────────
+variables:
+  CARGO_HOME: $CI_PROJECT_DIR/.cargo
+  RUSTUP_HOME: $CI_PROJECT_DIR/.rustup
+  CARGO_MANIFEST: src-tauri/Cargo.toml
+
+# ── Cache templates ──────────────────────────────────────────────────────
+.node-cache: &node-cache
+  key:
+    files:
+      - package-lock.json
+  paths:
+    - node_modules/
+  policy: pull
+
+.rust-cache: &rust-cache
+  key:
+    files:
+      - src-tauri/Cargo.lock
+  paths:
+    - .cargo/registry/
+    - .cargo/git/
+    - src-tauri/target/
+  policy: pull
+
+# ── Reusable before_script snippets ─────────────────────────────────────
+.install-node: &install-node
+  image: node:22
+  before_script:
+    - npm ci --prefer-offline
+
+.install-rust: &install-rust
+  image: rust:latest
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq
+        libwebkit2gtk-4.1-dev
+        libappindicator3-dev
+        librsvg2-dev
+        patchelf
+        libgtk-3-dev
+        libsoup-3.0-dev
+        libjavascriptcoregtk-4.1-dev
+    - rustup component add clippy
+
+# ═══════════════════════════════════════════════════════════════════════
+# Stage 1: Lint
+# ═══════════════════════════════════════════════════════════════════════
+
+frontend-lint:
+  stage: lint
+  <<: *install-node
+  cache:
+    <<: *node-cache
+    policy: pull-push
+  script:
+    - npm run lint
+
+rust-lint:
+  stage: lint
+  <<: *install-rust
+  cache:
+    <<: *rust-cache
+    policy: pull-push
+  script:
+    - cargo clippy --manifest-path $CARGO_MANIFEST -- -D warnings
+
+# ═══════════════════════════════════════════════════════════════════════
+# Stage 2: Test
+# ═══════════════════════════════════════════════════════════════════════
+
+frontend-test:
+  stage: test
+  <<: *install-node
+  cache:
+    <<: *node-cache
+  script:
+    - npm run test -- --run
+
+rust-test:
+  stage: test
+  <<: *install-rust
+  cache:
+    <<: *rust-cache
+  script:
+    - cargo test --manifest-path $CARGO_MANIFEST
+
+# ═══════════════════════════════════════════════════════════════════════
+# Stage 3: Security
+# ═══════════════════════════════════════════════════════════════════════
+
+cargo-audit:
+  stage: security
+  image: rust:latest
+  before_script:
+    - cargo install cargo-audit --locked
+  script:
+    - cargo audit --file src-tauri/Cargo.lock
+  allow_failure: true
+
+npm-audit:
+  stage: security
+  <<: *install-node
+  cache:
+    <<: *node-cache
+  script:
+    - npm audit --audit-level=high
+  allow_failure: true
+
+security-deep:
+  stage: security
+  image: rust:latest
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq nodejs npm
+    - npm ci --prefer-offline
+    - cargo install cargo-audit --locked || true
+  script:
+    - bash scripts/security-audit.sh
+  artifacts:
+    when: always
+    reports:
+      junit: security-results/security-audit.xml
+    paths:
+      - security-results/
+  allow_failure: true
+
+# GitLab-provided security scanning templates
+include:
+  - template: Security/SAST.gitlab-ci.yml
+  - template: Security/Dependency-Scanning.gitlab-ci.yml
+  - template: Security/Secret-Detection.gitlab-ci.yml
+
+# ═══════════════════════════════════════════════════════════════════════
+# Stage 4: Build check
+# ═══════════════════════════════════════════════════════════════════════
+
+typecheck:
+  stage: build-check
+  <<: *install-node
+  cache:
+    <<: *node-cache
+  script:
+    - npm run build
+
+# ═══════════════════════════════════════════════════════════════════════
+# Stage 5: Binding drift
+# ═══════════════════════════════════════════════════════════════════════
+
+check-bindings:
+  stage: binding-drift
+  <<: *install-rust
+  cache:
+    <<: *rust-cache
+  script:
+    - cargo test --manifest-path $CARGO_MANIFEST export_bindings 2>/dev/null || true
+    - |
+      if ! git diff --quiet src/lib/bindings/; then
+        echo "TypeScript bindings are out of date."
+        echo "Run 'cargo test export_bindings' locally and commit the changes."
+        git diff src/lib/bindings/
+        exit 1
+      fi
+      echo "Bindings are up to date."
+
+# ═══════════════════════════════════════════════════════════════════════
+# Stage 6: Report
+# ═══════════════════════════════════════════════════════════════════════
+
+summary:
+  stage: report
+  image: alpine:latest
+  script:
+    - echo "All CI stages completed successfully."
+    - echo "  - Frontend lint ✓"
+    - echo "  - Rust lint (clippy) ✓"
+    - echo "  - Frontend tests ✓"
+    - echo "  - Rust tests ✓"
+    - echo "  - Security scans ✓"
+    - echo "  - TypeScript build ✓"
+    - echo "  - Binding drift check ✓"

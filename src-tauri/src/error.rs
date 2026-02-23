@@ -38,6 +38,9 @@ pub enum AppError {
     #[error("Cloud error: {0}")]
     Cloud(String),
 
+    #[error("GitLab error: {0}")]
+    GitLab(String),
+
     #[error("{0}")]
     Internal(String),
 }
@@ -66,6 +69,7 @@ impl Serialize for AppError {
                 AppError::Auth(_) => "auth",
                 AppError::NetworkOffline(_) => "network_offline",
                 AppError::Cloud(_) => "cloud",
+                AppError::GitLab(_) => "gitlab",
                 AppError::Internal(_) => "internal",
             },
         )?;

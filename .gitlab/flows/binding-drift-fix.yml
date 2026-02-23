@@ -1,0 +1,59 @@
+# GitLab Duo Flow: Auto-fix TypeScript binding drift
+# Trigger: MR created/updated with changes to Rust model files
+# Agent: gitlab-duo
+# Action: Regenerate TypeScript bindings and push commit to MR branch
+
+name: Fix Binding Drift
+description: >
+  When Rust model structs with #[derive(TS)] are modified in a merge request,
+  automatically regenerate the TypeScript bindings and push the updated files
+  to the MR branch, preventing CI binding-drift check failures.
+
+on:
+  merge_request:
+    events:
+      - created
+      - updated
+    paths:
+      - "src-tauri/src/db/models/**/*.rs"
+      - "src-tauri/src/cloud/client.rs"
+      - "src-tauri/src/commands/infrastructure/cloud.rs"
+      - "src-tauri/src/commands/infrastructure/gitlab.rs"
+      - "src-tauri/src/gitlab/types.rs"
+
+agent: gitlab-duo
+
+steps:
+  - name: Check for TS derive
+    action: analyze
+    prompt: |
+      Look at the changed files in this MR and determine if any Rust structs
+      with `#[derive(TS)]` or `#[ts(export)]` annotations were added or modified.
+
+      If no TS-exported structs were changed, respond with "no_action_needed".
+
+      Changed files:
+      {{ merge_request.changes }}
+
+  - name: Regenerate bindings
+    action: run_command
+    when: "{{ steps.check_for_ts_derive.output != 'no_action_needed' }}"
+    params:
+      command: |
+        cd src-tauri && cargo test export_bindings 2>/dev/null || true
+
+  - name: Check for drift
+    action: run_command
+    when: "{{ steps.regenerate_bindings.status == 'success' }}"
+    params:
+      command: |
+        git diff --name-only src/lib/bindings/
+
+  - name: Commit and push
+    action: git_commit
+    when: "{{ steps.check_for_drift.output != '' }}"
+    params:
+      files:
+        - "src/lib/bindings/**/*.ts"
+      message: "chore: regenerate TypeScript bindings for model changes"
+      push_to: "{{ merge_request.source_branch }}"
