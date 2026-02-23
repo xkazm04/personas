@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, CheckCircle2, ChevronDown } from 'lucide-react';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import type { TransformQuestion, TransformSubPhase } from './useN8nImportReducer';
-import { N8nTransformProgress } from './N8nTransformProgress';
+import { TransformProgress } from '@/features/shared/components/TransformProgress';
 
 // Theme subtone colors cycled across questions
 const QUESTION_TONES = [
@@ -51,30 +51,21 @@ export function N8nTransformChat({
 
   return (
     <div ref={scrollRef} className="space-y-4">
-      {/* Phase 1: Asking — question generation in progress */}
+      {/* Phase 1: Asking — unified transform in progress */}
       {transformSubPhase === 'asking' && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-xl border border-primary/10 bg-secondary/20 p-5"
+          className="space-y-4"
         >
-          <div className="flex items-center gap-3">
-            <div className="relative flex-shrink-0">
-              <motion.div
-                className="absolute inset-0 w-8 h-8 rounded-lg bg-violet-500/20"
-                animate={{ scale: [1, 1.4, 1], opacity: [0.4, 0, 0.4] }}
-                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-              />
-              <div className="w-8 h-8 rounded-lg bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-violet-400" />
-              </div>
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-foreground/85">Analyzing workflow...</p>
-              <p className="text-sm text-muted-foreground/80 mt-0.5">The model will ask questions if needed, or generate directly</p>
-            </div>
-          </div>
-
+          <TransformProgress
+            phase={transformPhase}
+            lines={transformLines}
+            runId={runId}
+            isRestoring={isRestoring}
+            onRetry={onRetry}
+            onCancel={onCancel}
+          />
         </motion.div>
       )}
 
@@ -236,7 +227,7 @@ export function N8nTransformChat({
             </motion.div>
           )}
 
-          <N8nTransformProgress
+          <TransformProgress
             phase={transformPhase}
             lines={transformLines}
             runId={runId}
@@ -249,7 +240,7 @@ export function N8nTransformChat({
 
       {/* Phase 4: Failed — show progress (which renders failure state) */}
       {transformSubPhase === 'failed' && (
-        <N8nTransformProgress
+        <TransformProgress
           phase={transformPhase}
           lines={transformLines}
           runId={runId}
@@ -261,7 +252,7 @@ export function N8nTransformChat({
 
       {/* Idle state — shouldn't normally be visible, but handle gracefully */}
       {transformSubPhase === 'idle' && (
-        <N8nTransformProgress
+        <TransformProgress
           phase="idle"
           lines={[]}
           runId={null}

@@ -12,7 +12,7 @@ import { usePersonaStore } from '@/stores/personaStore';
 import * as api from '@/api/tauriApi';
 import { formatTimestamp, formatRelativeTime } from '@/lib/utils/formatters';
 import type { RotationStatus } from '@/api/rotation';
-import { getRotationStatus, createRotationPolicy, rotateCredentialNow, deleteRotationPolicy } from '@/api/rotation';
+import { getRotationStatus, createRotationPolicy, updateRotationPolicy, rotateCredentialNow, deleteRotationPolicy } from '@/api/rotation';
 
 type ExpandedSection = 'services' | 'events' | 'intelligence' | 'rotation' | null;
 
@@ -43,6 +43,8 @@ export function CredentialCard({
   const [rotationStatus, setRotationStatus] = useState<RotationStatus | null>(null);
   const [isRotating, setIsRotating] = useState(false);
   const [rotationCountdown, setRotationCountdown] = useState<string | null>(null);
+  const [rotationDays, setRotationDays] = useState(90);
+  const [isEditingPeriod, setIsEditingPeriod] = useState(false);
 
   const googleOAuth = useGoogleOAuth({
     onSuccess: () => setEditError(null),
@@ -53,6 +55,9 @@ export function CredentialCard({
     try {
       const status = await getRotationStatus(credential.id);
       setRotationStatus(status);
+      if (status.rotation_interval_days) {
+        setRotationDays(status.rotation_interval_days);
+      }
     } catch {
       // No rotation data yet — that's fine
     }
@@ -255,67 +260,9 @@ export function CredentialCard({
             className="overflow-hidden"
           >
             <div className="px-3 pb-3 border-t border-primary/10">
-              {/* Section Tabs */}
-              <div className="flex gap-1 pt-3 pb-3">
-                {connector && connector.services.length > 0 && (
-                  <button
-                    onClick={() => setExpandedSection('services')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                      expandedSection === 'services'
-                        ? 'bg-primary/10 text-primary border border-primary/20'
-                        : 'text-muted-foreground/90 hover:text-foreground/95 hover:bg-secondary/60'
-                    }`}
-                  >
-                    <Wrench className="w-3 h-3" />
-                    Services ({connector.services.length})
-                  </button>
-                )}
-                {connector && connector.events.length > 0 && (
-                  <button
-                    onClick={() => setExpandedSection('events')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                      expandedSection === 'events'
-                        ? 'bg-primary/10 text-primary border border-primary/20'
-                        : 'text-muted-foreground/90 hover:text-foreground/95 hover:bg-secondary/60'
-                    }`}
-                  >
-                    <Zap className="w-3 h-3" />
-                    Events ({connector.events.length})
-                  </button>
-                )}
-                <button
-                  onClick={() => setExpandedSection(expandedSection === 'intelligence' ? null : 'intelligence')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    expandedSection === 'intelligence'
-                      ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/25'
-                      : 'text-muted-foreground/90 hover:text-foreground/95 hover:bg-secondary/60'
-                  }`}
-                >
-                  <BarChart3 className="w-3 h-3" />
-                  Intelligence
-                </button>
-                <button
-                  onClick={() => {
-                    setExpandedSection(expandedSection === 'rotation' ? null : 'rotation');
-                    if (expandedSection !== 'rotation') fetchRotationStatus();
-                  }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    expandedSection === 'rotation'
-                      ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/25'
-                      : 'text-muted-foreground/90 hover:text-foreground/95 hover:bg-secondary/60'
-                  }`}
-                >
-                  <RotateCw className="w-3 h-3" />
-                  Rotation
-                  {rotationStatus?.anomaly_detected && (
-                    <AlertTriangle className="w-3 h-3 text-amber-400" />
-                  )}
-                </button>
-              </div>
-
-              {/* Edit Section */}
-              {connector && (
-                <div className="space-y-3">
+              {/* Detail Section — credential config & health */}
+              {connector ? (
+                <div className="pt-3 space-y-3">
                   {editError && (
                     <div className="flex items-start gap-2.5 px-3 py-2.5 bg-red-500/10 border border-red-500/20 rounded-xl text-sm text-red-400">
                       <XCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
@@ -406,34 +353,95 @@ export function CredentialCard({
                               ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
                               : 'bg-red-500/10 border border-red-500/20 text-red-400'
                           }`}>
-                            <span>{effectiveHealthcheckResult.success ? 'OK' : 'FAIL'}:</span>
+                            <span className="font-semibold">{effectiveHealthcheckResult.success ? 'OK' : 'FAIL'}:</span>
                             <span>{effectiveHealthcheckResult.message}</span>
                           </div>
                         );
                       })()}
 
-                      {/* Show field names (not values - they're encrypted) */}
-                      <div className="space-y-1">
+                      {/* Field schema */}
+                      <div className="bg-secondary/15 border border-primary/8 rounded-lg p-2.5 space-y-1">
+                        <p className="text-sm font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1.5">Fields</p>
                         {connector.fields.map((f) => (
-                          <div key={f.key} className="flex items-center gap-2 text-sm text-muted-foreground/80">
-                            <span className="font-mono text-muted-foreground/90">{f.key}</span>
-                            <span className="text-muted-foreground/20">-</span>
-                            <span>{f.label}</span>
-                            {f.required && <span className="text-amber-400/60">(required)</span>}
+                          <div key={f.key} className="flex items-center gap-2 text-sm py-0.5">
+                            <span className="font-mono text-foreground/75 bg-secondary/30 px-1.5 py-px rounded">{f.key}</span>
+                            <span className="text-muted-foreground/60">{f.label}</span>
+                            {f.required && <span className="text-amber-400/50 text-sm">required</span>}
                           </div>
                         ))}
                       </div>
                     </div>
                   )}
                 </div>
-              )}
-
-              {/* Edit section fallback for no connector */}
-              {!connector && (
-                <div className="text-sm text-muted-foreground/80 py-2">
+              ) : (
+                <div className="text-sm text-muted-foreground/80 py-3">
                   No connector definition available for this credential type.
                 </div>
               )}
+
+              {/* Divider between detail and section tabs */}
+              <div className="my-3 border-t border-primary/8" />
+
+              {/* Section Tabs */}
+              <div className="flex gap-1 pb-3">
+                {connector && connector.services.length > 0 && (
+                  <button
+                    onClick={() => setExpandedSection(expandedSection === 'services' ? null : 'services')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      expandedSection === 'services'
+                        ? 'bg-primary/10 text-primary border border-primary/20'
+                        : 'text-muted-foreground/90 hover:text-foreground/95 hover:bg-secondary/60 border border-transparent'
+                    }`}
+                  >
+                    <Wrench className="w-3 h-3" />
+                    Services ({connector.services.length})
+                  </button>
+                )}
+                {connector && connector.events.length > 0 && (
+                  <button
+                    onClick={() => setExpandedSection(expandedSection === 'events' ? null : 'events')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      expandedSection === 'events'
+                        ? 'bg-primary/10 text-primary border border-primary/20'
+                        : 'text-muted-foreground/90 hover:text-foreground/95 hover:bg-secondary/60 border border-transparent'
+                    }`}
+                  >
+                    <Zap className="w-3 h-3" />
+                    Events ({connector.events.length})
+                  </button>
+                )}
+                <button
+                  onClick={() => setExpandedSection(expandedSection === 'intelligence' ? null : 'intelligence')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    expandedSection === 'intelligence'
+                      ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/25'
+                      : 'text-muted-foreground/90 hover:text-foreground/95 hover:bg-secondary/60 border border-transparent'
+                  }`}
+                >
+                  <BarChart3 className="w-3 h-3" />
+                  Intelligence
+                </button>
+                <button
+                  onClick={() => {
+                    setExpandedSection(expandedSection === 'rotation' ? null : 'rotation');
+                    if (expandedSection !== 'rotation') fetchRotationStatus();
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    expandedSection === 'rotation'
+                      ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/25'
+                      : 'text-muted-foreground/90 hover:text-foreground/95 hover:bg-secondary/60 border border-transparent'
+                  }`}
+                >
+                  <RotateCw className="w-3 h-3" />
+                  Rotation
+                  {rotationStatus?.anomaly_detected && (
+                    <AlertTriangle className="w-3 h-3 text-amber-400" />
+                  )}
+                </button>
+              </div>
+
+              {/* Section Content */}
+              {expandedSection && <div className="border-t border-primary/8 pt-3" />}
 
               {/* Services Section */}
               {expandedSection === 'services' && connector && (
@@ -446,7 +454,7 @@ export function CredentialCard({
                       <Wrench className="w-3.5 h-3.5 text-muted-foreground/80" />
                       <div>
                         <span className="text-sm text-foreground/80">{service.label}</span>
-                        <span className="ml-2 text-sm font-mono text-muted-foreground/80">{service.toolName}</span>
+                        <span className="ml-2 text-sm font-mono text-muted-foreground/60">{service.toolName}</span>
                       </div>
                     </div>
                   ))}
@@ -479,74 +487,152 @@ export function CredentialCard({
 
                   {/* Rotation Status Summary */}
                   {rotationStatus?.has_policy ? (
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <ShieldCheck className={`w-4 h-4 ${rotationStatus.policy_enabled ? 'text-cyan-400' : 'text-muted-foreground/80'}`} />
-                        <div className="text-sm">
-                          <span className={rotationStatus.policy_enabled ? 'text-cyan-400 font-medium' : 'text-muted-foreground/90'}>
-                            {rotationStatus.policy_enabled ? 'Auto-rotation active' : 'Rotation paused'}
-                          </span>
-                          {rotationStatus.rotation_interval_days && (
-                            <span className="text-muted-foreground/80 ml-1.5">
-                              every {rotationStatus.rotation_interval_days}d
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <ShieldCheck className={`w-4 h-4 ${rotationStatus.policy_enabled ? 'text-cyan-400' : 'text-muted-foreground/80'}`} />
+                          <div className="text-sm">
+                            <span className={rotationStatus.policy_enabled ? 'text-cyan-400 font-medium' : 'text-muted-foreground/90'}>
+                              {rotationStatus.policy_enabled ? 'Auto-rotation active' : 'Rotation paused'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {rotationCountdown && rotationStatus.policy_enabled && (
+                            <span className="flex items-center gap-1 text-sm text-muted-foreground/90 font-mono">
+                              <Clock className="w-3 h-3" />
+                              {rotationCountdown}
                             </span>
                           )}
+                          <button
+                            onClick={async () => {
+                              setIsRotating(true);
+                              try {
+                                await rotateCredentialNow(credential.id);
+                                await fetchRotationStatus();
+                                onHealthcheck(credential.id);
+                              } catch {
+                                // handled silently; rotation history records failures
+                              } finally {
+                                setIsRotating(false);
+                              }
+                            }}
+                            disabled={isRotating}
+                            className="flex items-center gap-1 px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-400 rounded-lg text-sm font-medium transition-all disabled:opacity-50"
+                          >
+                            <RotateCw className={`w-3 h-3 ${isRotating ? 'animate-spin' : ''}`} />
+                            Rotate Now
+                          </button>
+                          <button
+                            onClick={async () => {
+                              try {
+                                const allPolicies = await api.listRotationPolicies(credential.id);
+                                for (const p of allPolicies) {
+                                  await deleteRotationPolicy(p.id);
+                                }
+                                await fetchRotationStatus();
+                              } catch {
+                                // silent
+                              }
+                            }}
+                            className="p-1 hover:bg-red-500/10 rounded-lg transition-colors"
+                            title="Remove rotation policy"
+                          >
+                            <Trash2 className="w-3 h-3 text-red-400/50" />
+                          </button>
                         </div>
                       </div>
+
+                      {/* Rotation period editor */}
                       <div className="flex items-center gap-2">
-                        {rotationCountdown && rotationStatus.policy_enabled && (
-                          <span className="flex items-center gap-1 text-sm text-muted-foreground/90 font-mono">
-                            <Clock className="w-3 h-3" />
-                            {rotationCountdown}
-                          </span>
+                        <span className="text-sm text-muted-foreground/80">Rotate every</span>
+                        {isEditingPeriod ? (
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="number"
+                              value={rotationDays}
+                              onChange={(e) => setRotationDays(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                              min={1}
+                              className="w-16 px-2 py-0.5 bg-background/50 border border-cyan-500/25 rounded-md text-sm text-foreground text-center focus:outline-none focus:ring-1 focus:ring-cyan-500/40"
+                            />
+                            <span className="text-sm text-muted-foreground/80">days</span>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const allPolicies = await api.listRotationPolicies(credential.id);
+                                  if (allPolicies.length > 0) {
+                                    await updateRotationPolicy(allPolicies[0]!.id, { rotation_interval_days: rotationDays });
+                                  }
+                                  await fetchRotationStatus();
+                                  setIsEditingPeriod(false);
+                                } catch {
+                                  // silent
+                                }
+                              }}
+                              className="px-2 py-0.5 bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/25 text-cyan-400 rounded-md text-sm font-medium transition-colors"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => {
+                                setRotationDays(rotationStatus.rotation_interval_days ?? 90);
+                                setIsEditingPeriod(false);
+                              }}
+                              className="px-2 py-0.5 text-muted-foreground/80 hover:text-foreground/90 text-sm transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setIsEditingPeriod(true)}
+                            className="flex items-center gap-1 px-2 py-0.5 bg-secondary/40 hover:bg-secondary/60 border border-primary/15 rounded-md text-sm text-foreground/80 transition-colors"
+                          >
+                            <span className="font-mono">{rotationStatus.rotation_interval_days ?? 90}</span>
+                            <span>days</span>
+                            <Pencil className="w-2.5 h-2.5 text-muted-foreground/60 ml-0.5" />
+                          </button>
                         )}
-                        <button
-                          onClick={async () => {
-                            setIsRotating(true);
-                            try {
-                              await rotateCredentialNow(credential.id);
-                              await fetchRotationStatus();
-                              onHealthcheck(credential.id);
-                            } catch {
-                              // handled silently; rotation history records failures
-                            } finally {
-                              setIsRotating(false);
-                            }
-                          }}
-                          disabled={isRotating}
-                          className="flex items-center gap-1 px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-400 rounded-lg text-sm font-medium transition-all disabled:opacity-50"
-                        >
-                          <RotateCw className={`w-3 h-3 ${isRotating ? 'animate-spin' : ''}`} />
-                          Rotate Now
-                        </button>
-                        <button
-                          onClick={async () => {
-                            try {
-                              const allPolicies = await api.listRotationPolicies(credential.id);
-                              for (const p of allPolicies) {
-                                await deleteRotationPolicy(p.id);
-                              }
-                              await fetchRotationStatus();
-                            } catch {
-                              // silent
-                            }
-                          }}
-                          className="p-1 hover:bg-red-500/10 rounded-lg transition-colors"
-                          title="Remove rotation policy"
-                        >
-                          <Trash2 className="w-3 h-3 text-red-400/50" />
-                        </button>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="space-y-3">
                       <p className="text-sm text-muted-foreground/80">No rotation policy configured.</p>
+
+                      {/* Period selection */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground/80">Rotate every</span>
+                        <div className="flex items-center gap-1">
+                          {[30, 60, 90, 180].map((d) => (
+                            <button
+                              key={d}
+                              onClick={() => setRotationDays(d)}
+                              className={`px-2 py-0.5 rounded-md text-sm font-mono transition-colors ${
+                                rotationDays === d
+                                  ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/25'
+                                  : 'bg-secondary/40 text-muted-foreground/80 border border-transparent hover:bg-secondary/60'
+                              }`}
+                            >
+                              {d}d
+                            </button>
+                          ))}
+                          <input
+                            type="number"
+                            value={rotationDays}
+                            onChange={(e) => setRotationDays(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                            min={1}
+                            className="w-16 px-2 py-0.5 bg-background/50 border border-primary/15 rounded-md text-sm text-foreground text-center focus:outline-none focus:ring-1 focus:ring-cyan-500/40"
+                          />
+                          <span className="text-sm text-muted-foreground/60">days</span>
+                        </div>
+                      </div>
+
                       <button
                         onClick={async () => {
                           try {
                             await createRotationPolicy({
                               credential_id: credential.id,
-                              rotation_interval_days: 90,
+                              rotation_interval_days: rotationDays,
                               policy_type: 'scheduled',
                               enabled: true,
                             });
@@ -558,7 +644,7 @@ export function CredentialCard({
                         className="flex items-center gap-1 px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-400 rounded-lg text-sm font-medium transition-all"
                       >
                         <Plus className="w-3 h-3" />
-                        Enable (90 days)
+                        Enable Rotation
                       </button>
                     </div>
                   )}
@@ -579,29 +665,32 @@ export function CredentialCard({
 
                   {/* Rotation History Timeline */}
                   {rotationStatus && rotationStatus.recent_history.length > 0 && (
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground/80 uppercase tracking-wider font-medium">History</p>
-                      <div className="space-y-1 max-h-[160px] overflow-y-auto">
-                        {rotationStatus.recent_history.map((entry) => (
-                          <div key={entry.id} className="flex items-start gap-2 text-sm">
-                            <span className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${
-                              entry.status === 'success' ? 'bg-emerald-400' :
-                              entry.status === 'failed' ? 'bg-red-400' :
-                              'bg-amber-400/60'
-                            }`} />
-                            <div className="flex-1 min-w-0">
-                              <span className="text-muted-foreground/90 font-mono">{entry.rotation_type}</span>
-                              {entry.detail && (
-                                <span className="text-muted-foreground/80 ml-1.5 truncate">{entry.detail}</span>
-                              )}
+                    <>
+                      <div className="border-t border-primary/10" />
+                      <div className="space-y-1.5">
+                        <p className="text-sm text-muted-foreground/60 uppercase tracking-wider font-semibold">History</p>
+                        <div className="space-y-1 max-h-[160px] overflow-y-auto">
+                          {rotationStatus.recent_history.map((entry) => (
+                            <div key={entry.id} className="flex items-start gap-2 text-sm">
+                              <span className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${
+                                entry.status === 'success' ? 'bg-emerald-400' :
+                                entry.status === 'failed' ? 'bg-red-400' :
+                                'bg-amber-400/60'
+                              }`} />
+                              <div className="flex-1 min-w-0">
+                                <span className="text-muted-foreground/90 font-mono">{entry.rotation_type}</span>
+                                {entry.detail && (
+                                  <span className="text-muted-foreground/80 ml-1.5 truncate">{entry.detail}</span>
+                                )}
+                              </div>
+                              <span className="text-muted-foreground/80 shrink-0">
+                                {formatRelativeTime(entry.created_at)}
+                              </span>
                             </div>
-                            <span className="text-muted-foreground/80 shrink-0">
-                              {formatRelativeTime(entry.created_at)}
-                            </span>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    </>
                   )}
                 </div>
               )}

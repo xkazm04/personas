@@ -262,17 +262,29 @@ pub async fn cloud_execute_persona(
 
         if !cancelled_clone.load(Ordering::Acquire) {
             let status = if result.success { "completed" } else { "failed" };
-            let _ = executions::update_status(
-                &pool,
-                &exec_id,
-                UpdateExecutionStatus {
-                    status: status.into(),
-                    error_message: result.error,
-                    duration_ms: Some(result.duration_ms as i64),
-                    cost_usd: result.cost_usd,
-                    ..Default::default()
-                },
-            );
+            let update = UpdateExecutionStatus {
+                status: status.into(),
+                error_message: result.error,
+                duration_ms: Some(result.duration_ms as i64),
+                cost_usd: result.cost_usd,
+                ..Default::default()
+            };
+
+            if let Err(e) = executions::update_status(&pool, &exec_id, update.clone()) {
+                tracing::error!(
+                    execution_id = %exec_id,
+                    error = %e,
+                    "Cloud execution DB status update failed, retrying in 1s",
+                );
+                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                if let Err(e2) = executions::update_status(&pool, &exec_id, update) {
+                    tracing::error!(
+                        execution_id = %exec_id,
+                        error = %e2,
+                        "Cloud execution DB status update failed on retry — execution stuck as running",
+                    );
+                }
+            }
 
             tracing::info!(
                 execution_id = %exec_id,

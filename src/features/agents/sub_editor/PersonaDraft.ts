@@ -20,6 +20,32 @@ export interface PersonaDraft {
   maxTurns: number | '';
 }
 
+// ── Key groups for dirty detection ────────────────────────────────
+
+/** Fields that belong to the Settings tab (name, appearance, limits). */
+export const SETTINGS_KEYS = [
+  'name', 'description', 'icon', 'color', 'maxConcurrent', 'timeout', 'enabled',
+] as const satisfies readonly (keyof PersonaDraft)[];
+
+/** Fields that belong to the Model / Provider tab. */
+export const MODEL_KEYS = [
+  'selectedModel', 'selectedProvider', 'baseUrl', 'authToken', 'customModelName',
+  'maxBudget', 'maxTurns',
+] as const satisfies readonly (keyof PersonaDraft)[];
+
+/**
+ * Returns true if any of the listed keys differ between draft and baseline.
+ * Using key arrays means new PersonaDraft fields are only included in dirty
+ * detection once explicitly added to SETTINGS_KEYS or MODEL_KEYS.
+ */
+export function draftChanged(
+  draft: PersonaDraft,
+  baseline: PersonaDraft,
+  keys: readonly (keyof PersonaDraft)[],
+): boolean {
+  return keys.some((k) => draft[k] !== baseline[k]);
+}
+
 export function buildDraft(persona: { name: string; description?: string | null; icon?: string | null; color?: string | null; max_concurrent?: number | null; timeout_ms?: number | null; enabled: boolean; model_profile?: string | null; max_budget_usd?: number | null; max_turns?: number | null }): PersonaDraft {
   let selectedModel = '';
   let provider: ModelProvider = 'anthropic';

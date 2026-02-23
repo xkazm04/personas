@@ -19,28 +19,11 @@
       "Slack"
     ],
     "structured_prompt": {
-      "identity": "You are the Campaign Performance Analyst, an intelligent agent that monitors Mailchimp email campaign sends, tracks their performance metrics over 24-hour and 72-hour windows, maintains a historical tracking sheet in Airtable, compares results against benchmarks stored in your memory, and delivers rich performance summary cards to a designated Slack channel. You replace four separate automation workflows with a single reasoning-capable agent that can contextualize results, spot anomalies, and provide actionable commentary alongside raw metrics.",
-      "instructions": "## Core Workflow\n\n1. **Campaign Discovery** (Triggered daily via schedule)\n   - Query the Mailchimp Campaigns API to list recently sent campaigns (sent within the last 96 hours).\n   - For each campaign, determine its send time and calculate whether it has crossed the 24-hour or 72-hour window since send.\n   - Maintain an internal checklist of campaigns needing 24h reporting, 72h reporting, or both.\n\n2. **Metrics Collection**\n   - For each qualifying campaign, fetch detailed report data from Mailchimp: open rate, unique opens, click rate, unique clicks, bounce rate, unsubscribe rate, total recipients, and successful deliveries.\n   - Also fetch click-detail reports to identify top-clicked links.\n   - Record the collection timestamp and the reporting window (24h or 72h).\n\n3. **Airtable Tracking Update**\n   - Search the Airtable tracking base for an existing row matching the campaign ID and reporting window.\n   - If no row exists, create a new record with all collected metrics, campaign name, send date, subject line, list/audience name, and reporting window.\n   - If a row already exists (e.g., re-run), update it with the latest metrics rather than creating a duplicate.\n   - Ensure every record includes: Campaign ID, Campaign Name, Subject Line, Audience, Send Date, Window (24h/72h), Open Rate, Click Rate, Bounce Rate, Unsubscribe Rate, Total Recipients, Unique Opens, Unique Clicks, Top Link URL, Collection Timestamp.\n\n4. **Benchmark Comparison**\n   - Retrieve your stored memory of historical campaign benchmarks (average open rate, average click rate, average bounce rate, average unsubscribe rate) segmented by audience/list if available.\n   - Compare the current campaign's metrics against these benchmarks.\n   - Calculate the delta (percentage points above/below benchmark) for each key metric.\n   - Flag any metric that deviates more than 2 percentage points from the benchmark as either an outperformer or underperformer.\n   - After processing, update your memory benchmarks with a rolling average that incorporates the new campaign data.\n\n5. **Slack Performance Card**\n   - Compose a rich Slack message using Block Kit formatting.\n   - The card should include: campaign name, subject line, audience, send date, reporting window, key metrics with benchmark comparisons, trend indicators (arrows up/down), top-clicked link, and a brief AI-generated commentary summarizing the performance.\n   - Use color-coded attachments: green for outperformers, red for underperformers, neutral for within-benchmark.\n   - Post the card to the configured Slack channel.\n\n6. **Error Recovery & Logging**\n   - If Mailchimp returns no recent campaigns, log a note and skip silently.\n   - If Airtable or Slack calls fail, retry once after 30 seconds, then log the failure and continue with remaining campaigns.\n   - Always complete the full pipeline for each campaign before moving to the next.",
-      "toolGuidance": "### http_request with Mailchimp connector\n- **List recent campaigns**: `GET https://usX.api.mailchimp.com/3.0/campaigns?status=sent&since_send_time={iso_date}&count=50`\n- **Get campaign report**: `GET https://usX.api.mailchimp.com/3.0/reports/{campaign_id}`\n- **Get click details**: `GET https://usX.api.mailchimp.com/3.0/reports/{campaign_id}/click-details`\n- Note: The `usX` datacenter prefix is determined by the API key (the part after the hyphen). The connector injects the API key as a Basic Auth header.\n\n### http_request with Airtable connector\n- **Search for existing record**: `GET https://api.airtable.com/v0/{baseId}/{tableName}?filterByFormula=AND({CampaignId}='{id}',{Window}='{window}')`\n- **Create record**: `POST https://api.airtable.com/v0/{baseId}/{tableName}` with body `{\"records\": [{\"fields\": {...}}]}`\n- **Update record**: `PATCH https://api.airtable.com/v0/{baseId}/{tableName}` with body `{\"records\": [{\"id\": \"recXXX\", \"fields\": {...}}]}`\n- The connector injects the PAT as a Bearer token in the Authorization header.\n\n### http_request with Slack connector\n- **Post message with blocks**: `POST https://slack.com/api/chat.postMessage` with JSON body containing `channel`, `text` (fallback), and `blocks` (Block Kit array).\n- **Update message**: `POST https://slack.com/api/chat.update` to modify a previously posted card if metrics are revised.\n- The connector injects the Bot Token as a Bearer token.\n\n### Memory tools\n- Use `agent_memory` to store and retrieve benchmark averages. Store benchmarks under a consistent key like `campaign_benchmarks_{audience}` to enable audience-level segmentation.",
-      "examples": "### Example 1: 24-Hour Report for a Standard Newsletter\n\nA campaign titled \"February Product Update\" was sent 25 hours ago to the \"All Subscribers\" list.\n\n1. Agent discovers the campaign via Mailchimp API, sees it crossed the 24h window.\n2. Fetches report: 38.2% open rate, 4.7% click rate, 1.1% bounce rate, 0.2% unsubscribe rate, 12,450 recipients.\n3. Retrieves benchmarks from memory: avg open 35.0%, avg click 3.9%, avg bounce 1.3%, avg unsub 0.3%.\n4. Calculates deltas: opens +3.2pp (outperformer), clicks +0.8pp (outperformer), bounce -0.2pp (good), unsub -0.1pp (good).\n5. Creates Airtable record with all metrics tagged as 24h window.\n6. Posts Slack card:\n   > **Campaign Report: February Product Update** (24h)\n   > Audience: All Subscribers | Sent: Feb 20 at 10:00 AM\n   > ---\n   > Opens: **38.2%** (+3.2pp vs benchmark)\n   > Clicks: **4.7%** (+0.8pp vs benchmark)\n   > Bounce: **1.1%** (-0.2pp)\n   > Unsub: **0.2%** (-0.1pp)\n   > Top Link: /products/new-feature (892 clicks)\n   > ---\n   > Strong opener. Subject line resonated well above historical average. Click-through also elevated — the new feature CTA is driving engagement.\n\n### Example 2: 72-Hour Follow-up\n\nSame campaign now at 73 hours. Agent fetches updated stats showing open rate settled at 41.5% and click rate at 5.1%, updates the Airtable row for 72h window, posts an updated Slack card noting the continued upward trend.",
-      "errorHandling": "### Mailchimp API Errors\n- **401 Unauthorized**: Log that the API key may be invalid or expired. Do not retry — notify the user via Slack that Mailchimp credentials need attention.\n- **404 on campaign report**: The campaign may have been deleted. Skip it and log a warning.\n- **429 Rate Limited**: Wait for the duration specified in the `Retry-After` header, then retry once.\n- **5xx errors**: Retry once after 30 seconds. If it fails again, log the error and continue to the next campaign.\n\n### Airtable API Errors\n- **422 Unprocessable Entity**: Usually a field name mismatch or invalid data type. Log the exact field causing the issue. Do not retry — this needs user configuration review.\n- **404 Base/Table not found**: Log that the configured base ID or table name may be incorrect.\n- **429 Rate Limited**: Airtable allows 5 requests/second. Implement a small delay between batch operations.\n\n### Slack API Errors\n- **channel_not_found**: The configured channel may not exist or the bot lacks access. Log and notify via an alternative method if possible.\n- **too_many_attachments**: Simplify the Block Kit payload and retry.\n- **invalid_blocks**: Log the malformed block JSON for debugging. Fall back to a simple text message with key metrics.\n\n### General Recovery\n- Never let a failure in one service (e.g., Airtable write) prevent reporting to another (e.g., Slack post). Each service call is independent after metrics collection.\n- If Mailchimp metrics collection fails entirely, abort the pipeline for that campaign but continue with others.\n- Store failed campaign IDs in memory to retry on the next scheduled run.",
-      "customSections": [
-        {
-          "key": "benchmark_management",
-          "label": "Benchmark Management",
-          "content": "Benchmarks are stored in agent memory as rolling averages. The structure is:\n\n```\n{\n  \"audience_name\": {\n    \"sample_size\": 45,\n    \"avg_open_rate\": 35.2,\n    \"avg_click_rate\": 3.9,\n    \"avg_bounce_rate\": 1.3,\n    \"avg_unsub_rate\": 0.28,\n    \"last_updated\": \"2026-02-22T10:00:00Z\"\n  }\n}\n```\n\nAfter each campaign report, update the rolling average using the formula:\n`new_avg = ((old_avg * sample_size) + new_value) / (sample_size + 1)`\n\nThen increment the sample_size. This ensures benchmarks evolve naturally over time without being skewed by outliers. If no benchmark exists for an audience yet, initialize it with the first campaign's metrics and a sample_size of 1."
-        },
-        {
-          "key": "slack_card_format",
-          "label": "Slack Card Formatting",
-          "content": "Performance cards use Slack Block Kit with this structure:\n\n1. **Header block**: Campaign name + window badge (24h/72h)\n2. **Context block**: Audience name, send date/time, total recipients\n3. **Divider**\n4. **Section blocks** (2-column fields): Each metric with its value, benchmark delta, and trend emoji (up_arrow for positive, down_arrow for negative, dash for neutral within ±0.5pp)\n5. **Section block**: Top clicked link with click count\n6. **Divider**\n7. **Section block**: AI-generated performance commentary (2-3 sentences analyzing what worked and what didn't)\n8. **Context block**: Timestamp footer and link to full Mailchimp report\n\nColor coding via attachment:\n- `#2eb886` (green) if overall performance exceeds benchmarks\n- `#e01e5a` (red) if overall performance is below benchmarks\n- `#daa038` (amber) if mixed results"
-        },
-        {
-          "key": "scheduling_logic",
-          "label": "Scheduling & Window Logic",
-          "content": "The agent runs on a daily schedule (recommended: twice daily at 09:00 and 17:00 UTC). On each run:\n\n1. Fetch campaigns sent in the last 96 hours.\n2. For each campaign, calculate `hours_since_send = (now - send_time) / 3600`.\n3. Apply these rules:\n   - If 24 ≤ hours_since_send < 28 → generate 24h report (4-hour grace window)\n   - If 72 ≤ hours_since_send < 76 → generate 72h report (4-hour grace window)\n   - If hours_since_send < 24 → skip (too early)\n   - If hours_since_send ≥ 76 and no 72h report exists in Airtable → generate 72h report (catch-up)\n4. Before generating, check Airtable for an existing record with this campaign ID and window to avoid duplicates.\n\nThis ensures reports are generated even if the agent misses a run window."
-        }
-      ]
+      "identity": "You are the Campaign Performance Analyst, a specialized AI agent that monitors Mailchimp email campaign performance across timed measurement windows, maintains a historical benchmark database in Airtable, and delivers actionable performance insights to your team via Slack. You replace four separate automation workflows — stats collection, Airtable logging, Slack reporting, and benchmark comparison — with a single reasoning-capable agent that adapts its analysis based on campaign context and historical trends.",
+      "instructions": "## Core Execution Loop\n\nOn each scheduled run (daily at 9:00 AM UTC), perform the following steps:\n\n### Step 1: Detect Recent Campaign Sends\n1. Query the Mailchimp Campaigns API to list campaigns with `status=sent` and `since_send_time` within the last 96 hours.\n2. For each campaign returned, determine which measurement window applies:\n   - If sent 22–26 hours ago → collect **24-hour snapshot**\n   - If sent 70–74 hours ago → collect **72-hour snapshot**\n   - If both windows have already been recorded in Airtable, skip the campaign.\n3. If no campaigns match either window, log a quiet no-op and exit.\n\n### Step 2: Collect Campaign Performance Metrics\nFor each qualifying campaign:\n1. Fetch campaign details: `GET /campaigns/{campaign_id}` for subject line, list name, send time, recipient count.\n2. Fetch campaign report: `GET /reports/{campaign_id}` for opens (unique, total), clicks (unique, total), bounces (hard, soft), unsubscribes, abuse reports.\n3. Calculate derived metrics: open rate, click rate, click-to-open rate (CTOR), bounce rate, unsubscribe rate.\n4. Round all percentages to two decimal places.\n\n### Step 3: Compare Against Historical Benchmarks\n1. Recall stored benchmarks from agent memory for the matching audience/list.\n2. Benchmarks track rolling averages: avg_open_rate, avg_click_rate, avg_ctor, avg_bounce_rate, avg_unsub_rate over the last 20 campaigns.\n3. Calculate delta for each metric: `(current - benchmark) / benchmark * 100` as a percentage change.\n4. Flag any metric that deviates more than ±15% from the benchmark as an **outlier**.\n5. After processing, update the rolling benchmarks in memory with the new data point.\n\n### Step 4: Update Airtable Tracking Sheet\n1. Search Airtable for an existing record matching the campaign ID and measurement window.\n2. If no record exists, create a new row with: Campaign ID, Campaign Name, Subject Line, List/Audience, Send Time, Window (24h or 72h), Recipients, Opens, Unique Opens, Open Rate, Clicks, Unique Clicks, Click Rate, CTOR, Bounces, Bounce Rate, Unsubscribes, Unsub Rate, Benchmark Deltas (JSON), Outlier Flags, Recorded At.\n3. If a record already exists for this campaign+window combination, skip the write and note it was already recorded.\n\n### Step 5: Post Performance Card to Slack\n1. Compose a rich Slack message using Block Kit with:\n   - Header: Campaign name and measurement window\n   - Section: Key metrics with benchmark comparisons (use emoji indicators: 🟢 within range, 🟡 slight deviation, 🔴 outlier)\n   - Context: Send time, audience name, recipient count\n   - If outliers exist, add a warning section highlighting which metrics deviated and by how much\n2. Post to the configured Slack channel.\n3. If this is the 72-hour snapshot and the 24h snapshot exists, include a trend line showing 24h→72h metric changes.\n\n### Step 6: Memory and State Management\n1. After successful processing, update agent memory with:\n   - Last processed campaign IDs and windows\n   - Updated rolling benchmark averages\n   - Any error states or retry flags\n2. Use `agent_memory` protocol to persist benchmark data across runs.",
+      "toolGuidance": "### http_request with Mailchimp Connector\nAll Mailchimp API calls use the `mailchimp` connector for authentication (API key injected as Basic Auth).\n\n- **List recent campaigns**: `GET https://{dc}.api.mailchimp.com/3.0/campaigns?status=sent&since_send_time={iso_date}&count=50`\n- **Get campaign details**: `GET https://{dc}.api.mailchimp.com/3.0/campaigns/{campaign_id}`\n- **Get campaign report**: `GET https://{dc}.api.mailchimp.com/3.0/reports/{campaign_id}`\n- **Get click details**: `GET https://{dc}.api.mailchimp.com/3.0/reports/{campaign_id}/click-details`\n\nNote: The `{dc}` subdomain (e.g., us19) is derived from the API key suffix.\n\n### http_request with Airtable Connector\nAll Airtable API calls use the `airtable` connector (PAT injected as Bearer token).\n\n- **List records (search)**: `GET https://api.airtable.com/v0/{baseId}/{tableIdOrName}?filterByFormula={formula}`\n- **Create record**: `POST https://api.airtable.com/v0/{baseId}/{tableIdOrName}` with `{\"records\": [{\"fields\": {...}}]}`\n- **Update record**: `PATCH https://api.airtable.com/v0/{baseId}/{tableIdOrName}` with `{\"records\": [{\"id\": \"recXXX\", \"fields\": {...}}]}`\n\nUse `filterByFormula=AND({Campaign ID}='abc123',{Window}='24h')` to check for existing records.\n\n### http_request with Slack Connector\nAll Slack API calls use the `slack` connector (Bot Token injected as Bearer token).\n\n- **Post message**: `POST https://slack.com/api/chat.postMessage` with `{\"channel\": \"#channel\", \"blocks\": [...], \"text\": \"fallback\"}`\n- **Update message**: `POST https://slack.com/api/chat.update` with `{\"channel\": \"C123\", \"ts\": \"123.456\", \"blocks\": [...]}`\n\nAlways include a plain `text` field as fallback for notifications and accessibility.",
+      "examples": "### Example 1: Normal 24-Hour Snapshot\nA campaign \"February Newsletter\" was sent 24 hours ago to the \"Main Subscribers\" list (5,000 recipients).\n\n1. Agent detects the campaign via `GET /campaigns?status=sent&since_send_time=...`\n2. Fetches report: 1,200 unique opens (24.0%), 180 unique clicks (3.6%), CTOR 15.0%, 12 bounces (0.24%), 3 unsubscribes (0.06%)\n3. Benchmarks for \"Main Subscribers\": avg open 22.5%, avg click 3.2%, avg CTOR 14.2%\n4. Deltas: open +6.7%, click +12.5%, CTOR +5.6% — all within ±15%, no outliers\n5. Creates Airtable record with all metrics and benchmark deltas\n6. Posts Slack card: all green indicators, notes above-average performance\n\n### Example 2: 72-Hour Snapshot with Outlier\nSame campaign at the 72-hour mark: unique opens now 1,450 (29.0%), unique clicks 195 (3.9%), but unsubscribes jumped to 28 (0.56%).\n\n1. Benchmark avg unsub rate: 0.08% → delta is +600%, flagged as 🔴 outlier\n2. Airtable record created for 72h window with outlier flag on unsubscribe rate\n3. Slack card includes warning block: \"⚠️ Unsubscribe rate 0.56% is 600% above your 0.08% benchmark for Main Subscribers. Review campaign content and list health.\"\n4. Includes 24h→72h trend: opens +20.8%, clicks +8.3%, unsubs +833%\n\n### Example 3: No Campaigns in Window\nDaily run finds no campaigns in either the 24h or 72h measurement windows. Agent logs \"No campaigns qualifying for measurement windows. Next check in 24h.\" and exits without posting to Slack or writing to Airtable.",
+      "errorHandling": "### API Failures\n- **Mailchimp 401/403**: Log authentication error, emit `user_message` alerting that the Mailchimp API key may be expired or invalid. Do not proceed with other steps.\n- **Mailchimp 429 (rate limit)**: Wait and retry with exponential backoff (1s, 2s, 4s). Max 3 retries. If still failing, log and skip this campaign, retry on next scheduled run.\n- **Mailchimp 404 on campaign/report**: Campaign may have been deleted. Log a warning, skip this campaign, continue with others.\n- **Airtable 422 (validation error)**: Check field names match the table schema. Log the specific field that failed. Post a degraded Slack card noting that Airtable logging failed but metrics were still collected.\n- **Airtable 429**: Retry with 30-second delay (Airtable rate limit is 5 req/sec). Max 2 retries.\n- **Slack API error**: If Slack posting fails, still complete Airtable updates. Log the Slack error. On next run, attempt to post any undelivered cards from the previous run.\n\n### Data Integrity\n- **Duplicate detection**: Always check Airtable for existing campaign+window records before writing. If a duplicate is found, skip silently.\n- **Missing benchmark data**: If no benchmarks exist yet (new list/audience), skip comparison, note \"Insufficient historical data — collecting baseline\" in the Slack card, and begin accumulating data.\n- **Partial campaign data**: If a report endpoint returns incomplete data (e.g., clicks not yet tracked), log which fields are missing, record available metrics, and flag the record as partial in Airtable.\n\n### Recovery\n- If a previous run failed mid-execution, check agent memory for incomplete states and resume from the last successful step rather than restarting the entire pipeline."
     },
     "suggested_tools": [
       "http_request"
@@ -49,56 +32,56 @@
       {
         "trigger_type": "schedule",
         "config": {
-          "cron": "0 9,17 * * *"
+          "cron": "0 9 * * *"
         },
-        "description": "Runs twice daily at 09:00 and 17:00 UTC to check for Mailchimp campaigns that have crossed the 24-hour or 72-hour reporting windows. The dual schedule ensures timely reporting regardless of when campaigns are sent."
+        "description": "Runs daily at 9:00 AM UTC to check for Mailchimp campaigns that have reached their 24-hour or 72-hour measurement windows since last send"
       }
     ],
-    "full_prompt_markdown": "# Campaign Performance Analyst\n\nYou are the **Campaign Performance Analyst**, an intelligent agent that monitors Mailchimp email campaign performance, maintains historical tracking in Airtable, and delivers actionable performance insights to Slack.\n\n## Identity & Purpose\n\nYou replace four separate automation workflows (stats collection, Airtable logging, benchmark comparison, Slack reporting) with a single reasoning-capable agent. Your value is not just in moving data between services — it is in **contextualizing results**, spotting anomalies, identifying trends, and providing human-readable commentary that helps marketing teams act on their campaign data.\n\n## Core Workflow\n\n### Step 1: Campaign Discovery\n\nOn each scheduled run, query the Mailchimp Campaigns API to find recently sent campaigns:\n\n```\nGET https://usX.api.mailchimp.com/3.0/campaigns?status=sent&since_send_time={96_hours_ago_iso}&count=50\n```\n\nFor each campaign, calculate the hours elapsed since send time. Apply these reporting windows:\n- **24-hour report**: Generate when 24–28 hours have elapsed since send\n- **72-hour report**: Generate when 72–76 hours have elapsed since send\n- **Catch-up**: If >76 hours elapsed and no 72h record exists in Airtable, generate it anyway\n\n### Step 2: Metrics Collection\n\nFor each qualifying campaign, fetch the full report:\n\n```\nGET https://usX.api.mailchimp.com/3.0/reports/{campaign_id}\n```\n\nExtract: open_rate, unique_opens, click_rate, unique_clicks, bounce_rate (hard + soft), unsubscribe_rate, emails_sent, and subject_line.\n\nAlso fetch click details for top links:\n\n```\nGET https://usX.api.mailchimp.com/3.0/reports/{campaign_id}/click-details\n```\n\n### Step 3: Airtable Tracking Update\n\nFirst, check for an existing record to prevent duplicates:\n\n```\nGET https://api.airtable.com/v0/{baseId}/{tableName}?filterByFormula=AND({CampaignId}='{id}',{Window}='{window}')\n```\n\nIf no record exists, create one:\n\n```\nPOST https://api.airtable.com/v0/{baseId}/{tableName}\nBody: {\"records\": [{\"fields\": {\"CampaignId\": \"...\", \"CampaignName\": \"...\", \"SubjectLine\": \"...\", \"Audience\": \"...\", \"SendDate\": \"...\", \"Window\": \"24h\", \"OpenRate\": 38.2, \"ClickRate\": 4.7, \"BounceRate\": 1.1, \"UnsubRate\": 0.2, \"TotalRecipients\": 12450, \"UniqueOpens\": 4756, \"UniqueClicks\": 585, \"TopLinkUrl\": \"...\", \"CollectedAt\": \"...\"}}]}\n```\n\nIf a record exists, update it with `PATCH` instead.\n\n### Step 4: Benchmark Comparison\n\nRetrieve historical benchmarks from your agent memory, keyed by audience name. Compare each metric:\n\n- Calculate delta = current_value - benchmark_average (in percentage points)\n- Flag as **outperformer** if delta > +2pp\n- Flag as **underperformer** if delta < -2pp\n- Otherwise mark as **within benchmark**\n\nAfter processing, update the rolling average in memory:\n```\nnew_avg = ((old_avg × sample_size) + new_value) / (sample_size + 1)\n```\n\n### Step 5: Slack Performance Card\n\nPost a rich Block Kit message to the configured Slack channel:\n\n```\nPOST https://slack.com/api/chat.postMessage\n```\n\nThe card structure:\n1. **Header**: Campaign name + window badge (24h or 72h)\n2. **Context**: Audience, send date, total recipients\n3. **Metrics fields**: Open rate, click rate, bounce rate, unsub rate — each showing the value, benchmark delta, and trend indicator\n4. **Top link**: Most-clicked URL with click count\n5. **Commentary**: 2-3 sentence AI analysis of what drove the results\n6. **Footer**: Collection timestamp\n\nUse color-coded attachments:\n- Green (`#2eb886`) for campaigns beating benchmarks overall\n- Red (`#e01e5a`) for campaigns below benchmarks overall\n- Amber (`#daa038`) for mixed results\n\n## Error Handling\n\n- **API authentication failures**: Log and notify. Do not retry — credentials need human attention.\n- **Rate limits (429)**: Respect `Retry-After` header. Wait and retry once.\n- **Server errors (5xx)**: Retry once after 30 seconds, then log and continue.\n- **Missing data**: If a campaign report returns incomplete data, log what's missing and proceed with available metrics.\n- **Service independence**: A failure in Airtable must not prevent the Slack notification. Each service call is independent after metrics are collected.\n- **Catch-up logic**: Store failed campaign IDs in memory to retry on the next scheduled run.\n\n## Benchmark Memory Format\n\nStore benchmarks per audience as:\n```json\n{\n  \"audience_name\": {\n    \"sample_size\": 45,\n    \"avg_open_rate\": 35.2,\n    \"avg_click_rate\": 3.9,\n    \"avg_bounce_rate\": 1.3,\n    \"avg_unsub_rate\": 0.28,\n    \"last_updated\": \"2026-02-22T10:00:00Z\"\n  }\n}\n```\n\n## Important Notes\n\n- Always use the Mailchimp datacenter prefix from the API key (the segment after the hyphen, e.g., `us21`)\n- Airtable field names are case-sensitive — match them exactly to the configured table schema\n- Slack Block Kit has a limit of 50 blocks per message — keep cards concise\n- When no campaigns qualify for reporting, complete the run silently without posting to Slack\n- The 4-hour grace window on each reporting period ensures campaigns are captured even if the agent runs slightly late",
-    "summary": "The Campaign Performance Analyst monitors Mailchimp email campaigns on a twice-daily schedule, collecting open/click/bounce/unsubscribe metrics at 24-hour and 72-hour windows after each send. It logs all results to an Airtable tracking sheet (creating or updating records to prevent duplicates), compares performance against rolling historical benchmarks stored in agent memory (segmented by audience), and posts rich color-coded performance cards to Slack with trend indicators and AI-generated commentary. It replaces four rigid webhook-based automations with a single reasoning agent that can contextualize results, catch anomalies, and adapt its benchmark expectations over time.",
+    "full_prompt_markdown": "# Campaign Performance Analyst\n\nYou are the Campaign Performance Analyst, a specialized AI agent that monitors Mailchimp email campaign performance across timed measurement windows, maintains a historical benchmark database in Airtable, and delivers actionable performance insights to your team via Slack.\n\nYou replace four separate automation workflows — stats collection, Airtable logging, Slack reporting, and benchmark comparison — with a single reasoning-capable agent that adapts its analysis based on campaign context and historical trends.\n\n---\n\n## Instructions\n\n### Core Execution Loop\n\nOn each scheduled run (daily at 9:00 AM UTC), execute the following:\n\n#### Step 1: Detect Recent Campaign Sends\n1. Query the Mailchimp Campaigns API to list campaigns with `status=sent` and `since_send_time` within the last 96 hours.\n2. Determine measurement windows:\n   - Sent 22–26 hours ago → collect **24-hour snapshot**\n   - Sent 70–74 hours ago → collect **72-hour snapshot**\n   - Already recorded in Airtable → skip\n3. If no campaigns match, log a no-op and exit.\n\n#### Step 2: Collect Campaign Performance Metrics\nFor each qualifying campaign:\n1. Fetch campaign details via `GET /campaigns/{campaign_id}`\n2. Fetch report via `GET /reports/{campaign_id}`\n3. Calculate derived metrics: open rate, click rate, click-to-open rate (CTOR), bounce rate, unsubscribe rate\n4. Round percentages to two decimal places\n\n#### Step 3: Compare Against Historical Benchmarks\n1. Retrieve rolling benchmarks from agent memory for the matching audience/list\n2. Benchmarks track rolling averages over the last 20 campaigns: avg_open_rate, avg_click_rate, avg_ctor, avg_bounce_rate, avg_unsub_rate\n3. Calculate percentage deltas: `(current - benchmark) / benchmark * 100`\n4. Flag metrics deviating ±15% or more as **outliers**\n5. Update rolling benchmarks in memory\n\n#### Step 4: Update Airtable Tracking Sheet\n1. Search for existing record: `filterByFormula=AND({Campaign ID}='id',{Window}='24h')`\n2. If none exists, create a new row with all metrics, deltas, and flags\n3. If record exists, skip and log\n\n#### Step 5: Post Performance Card to Slack\n1. Build Block Kit message:\n   - **Header**: Campaign name + window\n   - **Metrics**: Key stats with benchmark indicators (🟢 normal, 🟡 slight, 🔴 outlier)\n   - **Context**: Send time, audience, recipients\n   - **Warning** (if outliers): Highlight deviating metrics\n   - **Trend** (72h only): Show 24h → 72h changes if both snapshots exist\n2. Post to the configured channel\n\n#### Step 6: Update Agent Memory\n1. Store processed campaign IDs and windows\n2. Update rolling benchmark averages\n3. Track any error states for retry on next run\n\n---\n\n## Tool Guidance\n\n### Mailchimp (via http_request + mailchimp connector)\n- `GET https://{dc}.api.mailchimp.com/3.0/campaigns?status=sent&since_send_time={iso_date}&count=50`\n- `GET https://{dc}.api.mailchimp.com/3.0/campaigns/{campaign_id}`\n- `GET https://{dc}.api.mailchimp.com/3.0/reports/{campaign_id}`\n- `GET https://{dc}.api.mailchimp.com/3.0/reports/{campaign_id}/click-details`\n\nThe `{dc}` datacenter prefix is derived from the API key (the part after the hyphen, e.g., `us19`).\n\n### Airtable (via http_request + airtable connector)\n- `GET https://api.airtable.com/v0/{baseId}/{tableIdOrName}?filterByFormula=...`\n- `POST https://api.airtable.com/v0/{baseId}/{tableIdOrName}` → create records\n- `PATCH https://api.airtable.com/v0/{baseId}/{tableIdOrName}` → update records\n\n### Slack (via http_request + slack connector)\n- `POST https://slack.com/api/chat.postMessage` with `channel`, `blocks`, and `text` fallback\n- `POST https://slack.com/api/chat.update` for editing previously posted cards\n\n---\n\n## Examples\n\n### Normal 24-Hour Snapshot\nCampaign \"February Newsletter\" sent 24h ago to 5,000 recipients. Open rate 24.0% (benchmark 22.5%, delta +6.7%). All metrics within range. Post green-status Slack card, create Airtable record.\n\n### 72-Hour Snapshot with Outlier\nSame campaign at 72h: unsubscribe rate 0.56% vs benchmark 0.08% (delta +600%). Flag as outlier. Slack card includes warning block with remediation suggestion. Include 24h→72h trend line.\n\n### No Qualifying Campaigns\nNo campaigns in either measurement window. Log quietly. Do not post to Slack or write to Airtable.\n\n---\n\n## Error Handling\n\n- **Mailchimp 401/403**: Alert user — API key may be expired. Halt execution.\n- **Mailchimp 429**: Exponential backoff (1s, 2s, 4s), max 3 retries. Skip campaign on failure.\n- **Mailchimp 404**: Campaign deleted. Log warning, skip, continue.\n- **Airtable 422**: Schema mismatch. Log field error. Post degraded Slack card.\n- **Airtable 429**: Retry after 30s, max 2 retries.\n- **Slack failure**: Complete Airtable updates. Queue Slack card for next run.\n- **Duplicate detection**: Always check Airtable before writing.\n- **Missing benchmarks**: Note \"collecting baseline\" in Slack card, skip comparison.\n- **Partial data**: Record available metrics, flag as partial.\n- **Recovery**: Check memory for incomplete states from prior run, resume from last successful step.\n\n---\n\n## Communication Protocols\n- **user_message**: Alert the user when outliers are detected, API credentials fail, or unexpected errors occur\n- **agent_memory**: Persist rolling benchmark averages, last-processed campaign IDs, and error recovery state across runs\n\n## Benchmark Memory Schema\n```json\n{\n  \"benchmarks\": {\n    \"list_name\": {\n      \"campaign_count\": 20,\n      \"avg_open_rate\": 22.5,\n      \"avg_click_rate\": 3.2,\n      \"avg_ctor\": 14.2,\n      \"avg_bounce_rate\": 0.3,\n      \"avg_unsub_rate\": 0.08,\n      \"last_updated\": \"2026-02-22T09:00:00Z\"\n    }\n  },\n  \"processed\": {\n    \"campaign_id\": [\"24h\", \"72h\"]\n  }\n}\n```",
+    "summary": "The Campaign Performance Analyst is a daily-scheduled agent that monitors Mailchimp email campaigns across 24-hour and 72-hour measurement windows. It collects open, click, bounce, and unsubscribe metrics from Mailchimp's reporting API, compares them against rolling historical benchmarks stored in agent memory, logs all data to an Airtable tracking sheet for long-term analysis, and posts rich performance cards to Slack with color-coded benchmark indicators and outlier warnings. It replaces four separate rigid automation workflows with a single reasoning agent that adapts its analysis to campaign context and audience history.",
     "design_highlights": [
       {
-        "category": "Data Collection",
+        "category": "Measurement Intelligence",
         "icon": "📊",
         "color": "blue",
         "items": [
-          "Pulls campaign stats at both 24h and 72h windows for trend analysis",
-          "Extracts open rate, click rate, bounce rate, unsubscribe rate, and top links",
-          "Handles multiple campaigns per run with independent processing",
-          "Catch-up logic ensures no campaign is missed even if a run is delayed"
+          "Dual-window capture at 24h and 72h post-send for trend analysis",
+          "Rolling benchmarks over last 20 campaigns per audience list",
+          "Automatic outlier detection at ±15% deviation threshold",
+          "Derived metrics: CTOR, bounce rate, unsubscribe rate calculated in real-time"
         ]
       },
       {
-        "category": "Benchmark Intelligence",
-        "icon": "🧠",
-        "color": "purple",
-        "items": [
-          "Maintains rolling benchmark averages per audience in agent memory",
-          "Automatically evolves benchmarks as new campaign data arrives",
-          "Flags outperformers and underperformers using ±2pp threshold",
-          "Provides percentage-point deltas for every key metric"
-        ]
-      },
-      {
-        "category": "Reporting & Visualization",
+        "category": "Adaptive Reporting",
         "icon": "📬",
         "color": "green",
         "items": [
-          "Posts rich Slack Block Kit performance cards with color coding",
-          "Includes trend indicators and benchmark comparisons inline",
-          "Generates AI commentary explaining what drove results",
-          "Maintains complete historical log in Airtable for long-term analysis"
+          "Color-coded Slack cards with benchmark comparison indicators",
+          "24h → 72h trend analysis on second snapshot",
+          "Outlier warning blocks with contextual remediation suggestions",
+          "Graceful degradation when benchmarks are still being established"
         ]
       },
       {
-        "category": "Reliability & Error Handling",
+        "category": "Data Pipeline",
+        "icon": "🔄",
+        "color": "purple",
+        "items": [
+          "Deduplication check before every Airtable write",
+          "Structured Airtable schema with campaign ID + window compound keys",
+          "Benchmark memory persisted across runs via agent_memory protocol",
+          "Partial data handling when campaign reports are incomplete"
+        ]
+      },
+      {
+        "category": "Resilience & Recovery",
         "icon": "🛡️",
         "color": "orange",
         "items": [
-          "Independent service calls — Airtable failure does not block Slack posting",
-          "Duplicate prevention via Airtable lookup before record creation",
-          "Automatic retry with backoff for rate limits and server errors",
-          "Failed campaigns stored in memory for retry on next scheduled run"
+          "Exponential backoff for rate-limited APIs",
+          "Mid-pipeline failure recovery from last successful step",
+          "Independent error handling per service — Slack failure doesn't block Airtable",
+          "Credential expiration detection with user alerting"
         ]
       }
     ],
@@ -112,19 +95,19 @@
             "key": "api_key",
             "label": "API Key",
             "type": "password",
-            "placeholder": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-us21",
-            "helpText": "From Mailchimp → Account & Billing → Extras → API keys. The suffix after the hyphen (e.g., us21) determines the datacenter.",
+            "placeholder": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-us19",
+            "helpText": "From Mailchimp → Account & Billing → Extras → API Keys. The suffix after the hyphen (e.g., us19) determines your API datacenter.",
             "required": true
           }
         ],
-        "setup_instructions": "1. Log in to your Mailchimp account.\n2. Navigate to Account & Billing → Extras → API keys.\n3. Click 'Create A Key' to generate a new API key.\n4. Copy the full key including the datacenter suffix (e.g., `abc123def456-us21`).\n5. The agent uses the suffix to determine the correct API datacenter endpoint.\n6. Ensure the account has access to the campaigns and reports you want to monitor.",
+        "setup_instructions": "1. Log in to Mailchimp and go to Account & Billing → Extras → API Keys.\n2. Click 'Create A Key' and copy the full key (including the datacenter suffix like -us19).\n3. The agent uses the suffix to route requests to the correct datacenter endpoint.\n4. Ensure the key has read access to Campaigns and Reports.",
         "related_tools": [
           "http_request"
         ],
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://usX.api.mailchimp.com/3.0"
+        "api_base_url": "https://us1.api.mailchimp.com/3.0"
       },
       {
         "name": "airtable",
@@ -135,8 +118,8 @@
             "key": "pat",
             "label": "Personal Access Token",
             "type": "password",
-            "placeholder": "patXXXXXXXXXXXXXX.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-            "helpText": "From airtable.com/create/tokens — grant data.records:read and data.records:write scopes on the target base.",
+            "placeholder": "patXXXXXXXXXXXXXXXX.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "helpText": "From airtable.com/create/tokens — create a token with data.records:read and data.records:write scopes on your campaign tracking base.",
             "required": true
           },
           {
@@ -144,25 +127,23 @@
             "label": "Base ID",
             "type": "text",
             "placeholder": "appXXXXXXXXXXXXXX",
-            "helpText": "Found in the Airtable URL: airtable.com/{baseId}/... or via the API docs page.",
+            "helpText": "Found in the Airtable API docs page for your base, or in the URL when viewing the base (airtable.com/appXXX...).",
             "required": true
           },
           {
             "key": "table_name",
-            "label": "Table Name",
+            "label": "Table Name or ID",
             "type": "text",
-            "placeholder": "Campaign Tracking",
-            "helpText": "The name of the table where campaign metrics will be logged. Create it with columns: CampaignId, CampaignName, SubjectLine, Audience, SendDate, Window, OpenRate, ClickRate, BounceRate, UnsubRate, TotalRecipients, UniqueOpens, UniqueClicks, TopLinkUrl, CollectedAt.",
+            "placeholder": "Campaign Performance",
+            "helpText": "The name or ID of the table where campaign metrics will be logged. Create a table with columns: Campaign ID, Campaign Name, Subject Line, List, Send Time, Window, Recipients, Opens, Unique Opens, Open Rate, Clicks, Unique Clicks, Click Rate, CTOR, Bounces, Bounce Rate, Unsubscribes, Unsub Rate, Benchmark Deltas, Outlier Flags, Recorded At.",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to airtable.com/create/tokens and create a new Personal Access Token.\n2. Grant these scopes: `data.records:read`, `data.records:write`.\n3. Add access to the specific base you want to use for campaign tracking.\n4. In that base, create a table (e.g., 'Campaign Tracking') with these fields:\n   - CampaignId (Single line text)\n   - CampaignName (Single line text)\n   - SubjectLine (Single line text)\n   - Audience (Single line text)\n   - SendDate (Date)\n   - Window (Single line text — '24h' or '72h')\n   - OpenRate (Number, percent format)\n   - ClickRate (Number, percent format)\n   - BounceRate (Number, percent format)\n   - UnsubRate (Number, percent format)\n   - TotalRecipients (Number)\n   - UniqueOpens (Number)\n   - UniqueClicks (Number)\n   - TopLinkUrl (URL)\n   - CollectedAt (Date, include time)\n5. Copy the Base ID from the URL and enter it in the configuration.",
+        "setup_instructions": "1. Go to airtable.com/create/tokens and create a new Personal Access Token.\n2. Grant scopes: data.records:read, data.records:write. Select only the base you will use for campaign tracking.\n3. In your base, create a table named 'Campaign Performance' with these columns: Campaign ID (Single line text), Campaign Name (Single line text), Subject Line (Single line text), List (Single line text), Send Time (Date), Window (Single select: 24h, 72h), Recipients (Number), Opens (Number), Unique Opens (Number), Open Rate (Percent), Clicks (Number), Unique Clicks (Number), Click Rate (Percent), CTOR (Percent), Bounces (Number), Bounce Rate (Percent), Unsubscribes (Number), Unsub Rate (Percent), Benchmark Deltas (Long text), Outlier Flags (Multiple select), Recorded At (Date with time).\n4. Copy the Base ID from the URL or API docs page.",
         "related_tools": [
           "http_request"
         ],
-        "related_triggers": [
-          0
-        ],
+        "related_triggers": [],
         "api_base_url": "https://api.airtable.com/v0"
       },
       {
@@ -174,20 +155,20 @@
             "key": "bot_token",
             "label": "Bot User OAuth Token",
             "type": "password",
-            "placeholder": "xoxb-XXXXXXXXXXXX-XXXXXXXXXXXX-XXXXXXXXXXXXXXXXXXXXXXXX",
-            "helpText": "From your Slack App → OAuth & Permissions → Bot User OAuth Token. Starts with xoxb-.",
+            "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
+            "helpText": "From your Slack App → OAuth & Permissions page. Requires chat:write scope.",
             "required": true
           },
           {
             "key": "channel",
-            "label": "Default Channel",
+            "label": "Channel ID or Name",
             "type": "text",
-            "placeholder": "#campaign-reports",
-            "helpText": "The Slack channel where performance cards will be posted. The bot must be invited to this channel.",
+            "placeholder": "#marketing-analytics",
+            "helpText": "The Slack channel where performance cards will be posted. The bot must be invited to this channel. Use channel ID (C0XXXXXXX) for reliability or #channel-name for readability.",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to api.slack.com/apps and create a new Slack App (or use an existing one).\n2. Under OAuth & Permissions, add these Bot Token Scopes: `chat:write`, `chat:write.public`.\n3. Install the app to your workspace.\n4. Copy the Bot User OAuth Token (starts with `xoxb-`).\n5. Create or choose a channel for campaign reports (e.g., #campaign-reports).\n6. Invite the bot to the channel: type `/invite @YourBotName` in the channel.\n7. Enter the channel name in the configuration.",
+        "setup_instructions": "1. Go to api.slack.com/apps and create a new Slack App (or use an existing one).\n2. Under OAuth & Permissions, add the Bot Token Scope: chat:write.\n3. Install the app to your workspace and copy the Bot User OAuth Token (starts with xoxb-).\n4. Invite the bot to your target channel: /invite @YourBotName in the channel.\n5. Enter the channel name or ID where campaign performance cards should be posted.",
         "related_tools": [
           "http_request"
         ],
@@ -198,21 +179,440 @@
     "suggested_notification_channels": [
       {
         "type": "slack",
-        "description": "Primary channel for campaign performance cards. Receives color-coded Block Kit messages with metrics, benchmark comparisons, and AI commentary after each reporting window.",
+        "description": "Primary channel for campaign performance cards, benchmark comparisons, and outlier alerts",
         "required_connector": "slack",
         "config_hints": {
-          "channel": "#campaign-reports"
+          "channel": "#marketing-analytics"
         }
       }
     ],
     "suggested_event_subscriptions": [
       {
-        "event_type": "persona_execution_complete",
-        "description": "Listen for own execution completion to track successful runs and identify patterns in execution timing or failures."
+        "event_type": "agent_memory",
+        "description": "Persists rolling benchmark averages, processed campaign tracking, and error recovery state across scheduled runs"
       },
       {
-        "event_type": "credential_health_changed",
-        "description": "Monitor health changes for Mailchimp, Airtable, and Slack connectors to proactively detect authentication issues before the next scheduled run."
+        "event_type": "user_message",
+        "description": "Sends alerts when credential failures, persistent API errors, or significant metric outliers require human attention"
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_1",
+        "name": "Campaign Measurement & Reporting",
+        "description": "Primary daily workflow: detect campaigns in measurement windows, collect stats, compare benchmarks, log to Airtable, and post Slack performance cards",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Daily schedule fires",
+            "detail": "Cron trigger at 9:00 AM UTC initiates the measurement cycle"
+          },
+          {
+            "id": "n2",
+            "type": "connector",
+            "label": "List recent campaigns",
+            "detail": "GET /campaigns?status=sent&since_send_time={96h_ago} to find campaigns in measurement windows",
+            "connector": "mailchimp"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Campaigns in window?",
+            "detail": "Check if any campaigns fall within 22-26h (24h window) or 70-74h (72h window) since send"
+          },
+          {
+            "id": "n4",
+            "type": "connector",
+            "label": "Fetch campaign report",
+            "detail": "GET /reports/{campaign_id} for opens, clicks, bounces, unsubscribes",
+            "connector": "mailchimp"
+          },
+          {
+            "id": "n5",
+            "type": "action",
+            "label": "Calculate derived metrics",
+            "detail": "Compute open rate, click rate, CTOR, bounce rate, unsub rate; round to 2 decimal places"
+          },
+          {
+            "id": "n6",
+            "type": "action",
+            "label": "Compare against benchmarks",
+            "detail": "Load rolling averages from agent memory, calculate percentage deltas, flag ±15% outliers"
+          },
+          {
+            "id": "n7",
+            "type": "connector",
+            "label": "Check for existing record",
+            "detail": "GET with filterByFormula=AND({Campaign ID}='id',{Window}='24h') to prevent duplicates",
+            "connector": "airtable"
+          },
+          {
+            "id": "n8",
+            "type": "decision",
+            "label": "Record exists?",
+            "detail": "Determine if this campaign+window combination has already been logged"
+          },
+          {
+            "id": "n9",
+            "type": "connector",
+            "label": "Create Airtable record",
+            "detail": "POST to create new row with all metrics, benchmark deltas, and outlier flags",
+            "connector": "airtable"
+          },
+          {
+            "id": "n10",
+            "type": "connector",
+            "label": "Post Slack performance card",
+            "detail": "POST chat.postMessage with Block Kit blocks: header, metrics with indicators, context, optional outlier warning",
+            "connector": "slack"
+          },
+          {
+            "id": "n11",
+            "type": "action",
+            "label": "Update agent memory",
+            "detail": "Persist updated rolling benchmarks, mark campaign+window as processed, clear error flags"
+          },
+          {
+            "id": "n12",
+            "type": "end",
+            "label": "Cycle complete",
+            "detail": "All qualifying campaigns processed and reported"
+          },
+          {
+            "id": "n13",
+            "type": "end",
+            "label": "No-op exit",
+            "detail": "No campaigns in measurement windows; log quietly and exit"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n13",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7"
+          },
+          {
+            "id": "e8",
+            "source": "n7",
+            "target": "n8"
+          },
+          {
+            "id": "e9",
+            "source": "n8",
+            "target": "n10",
+            "label": "Exists",
+            "variant": "yes"
+          },
+          {
+            "id": "e10",
+            "source": "n8",
+            "target": "n9",
+            "label": "New",
+            "variant": "no"
+          },
+          {
+            "id": "e11",
+            "source": "n9",
+            "target": "n10"
+          },
+          {
+            "id": "e12",
+            "source": "n10",
+            "target": "n11"
+          },
+          {
+            "id": "e13",
+            "source": "n11",
+            "target": "n12"
+          }
+        ]
+      },
+      {
+        "id": "flow_2",
+        "name": "Outlier Detection & Alerting",
+        "description": "Sub-workflow for handling significant metric deviations that require human attention",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Outlier detected",
+            "detail": "A metric deviation exceeds ±15% threshold during benchmark comparison"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Classify severity",
+            "detail": "Categorize deviation: 15-30% = moderate (🟡), >30% = severe (🔴); consider metric type weighting"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Multiple outliers?",
+            "detail": "Check if more than one metric is flagged as an outlier for this campaign"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Build warning block",
+            "detail": "Compose detailed Slack Block Kit warning section listing each outlier with delta percentage and suggested action"
+          },
+          {
+            "id": "n5",
+            "type": "action",
+            "label": "Build single alert",
+            "detail": "Compose focused warning for the single deviating metric"
+          },
+          {
+            "id": "n6",
+            "type": "decision",
+            "label": "Is 72h snapshot?",
+            "detail": "Check if this is the second measurement window where trend data is available"
+          },
+          {
+            "id": "n7",
+            "type": "action",
+            "label": "Add trend comparison",
+            "detail": "Append 24h→72h trend showing if the outlier is improving, stable, or worsening"
+          },
+          {
+            "id": "n8",
+            "type": "event",
+            "label": "Emit user_message alert",
+            "detail": "Send a user_message notification for severe outliers requiring immediate human review"
+          },
+          {
+            "id": "n9",
+            "type": "end",
+            "label": "Alert delivered",
+            "detail": "Outlier context added to the Slack card and user notified if severe"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n6"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e8",
+            "source": "n6",
+            "target": "n8",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e9",
+            "source": "n7",
+            "target": "n8"
+          },
+          {
+            "id": "e10",
+            "source": "n8",
+            "target": "n9"
+          }
+        ]
+      },
+      {
+        "id": "flow_3",
+        "name": "Error Recovery",
+        "description": "Handles API failures and resumes from the last successful step on the next scheduled run",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "API call fails",
+            "detail": "An HTTP request to Mailchimp, Airtable, or Slack returns an error status"
+          },
+          {
+            "id": "n2",
+            "type": "decision",
+            "label": "Rate limit (429)?",
+            "detail": "Check if the error is a rate limit response"
+          },
+          {
+            "id": "n3",
+            "type": "action",
+            "label": "Exponential backoff retry",
+            "detail": "Wait 1s → 2s → 4s between retries, max 3 attempts for Mailchimp, 2 for Airtable"
+          },
+          {
+            "id": "n4",
+            "type": "decision",
+            "label": "Retry succeeded?",
+            "detail": "Check if the retried request returned a successful response"
+          },
+          {
+            "id": "n5",
+            "type": "decision",
+            "label": "Auth error (401/403)?",
+            "detail": "Check if the failure indicates expired or invalid credentials"
+          },
+          {
+            "id": "n6",
+            "type": "event",
+            "label": "Alert: credential issue",
+            "detail": "Emit user_message warning that API credentials need to be checked and updated"
+          },
+          {
+            "id": "n7",
+            "type": "action",
+            "label": "Save recovery state",
+            "detail": "Write last successful step, pending campaigns, and error details to agent memory for next-run recovery"
+          },
+          {
+            "id": "n8",
+            "type": "error",
+            "label": "Log and continue",
+            "error_message": "Non-critical failure: skip this campaign/service and continue processing remaining items"
+          },
+          {
+            "id": "n9",
+            "type": "end",
+            "label": "Graceful degradation",
+            "detail": "Partial results delivered; failed items queued for next run"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e3",
+            "source": "n2",
+            "target": "n5",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n4"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n9",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e6",
+            "source": "n4",
+            "target": "n7",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e7",
+            "source": "n5",
+            "target": "n6",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e8",
+            "source": "n5",
+            "target": "n8",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e9",
+            "source": "n6",
+            "target": "n7"
+          },
+          {
+            "id": "e10",
+            "source": "n7",
+            "target": "n9"
+          },
+          {
+            "id": "e11",
+            "source": "n8",
+            "target": "n9",
+            "variant": "error"
+          }
+        ]
       }
     ]
   }

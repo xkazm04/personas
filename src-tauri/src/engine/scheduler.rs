@@ -1,49 +1,36 @@
 use chrono::{DateTime, Duration, Utc};
 
-use crate::db::models::PersonaTrigger;
+use crate::db::models::{PersonaTrigger, TriggerConfig};
 
 use super::cron;
 
-/// Compute the next trigger time for a trigger based on its type and config.
-/// Returns RFC3339 string or None.
-pub fn compute_next_trigger_at(trigger: &PersonaTrigger, now: DateTime<Utc>) -> Option<String> {
-    match trigger.trigger_type.as_str() {
-        "schedule" => {
-            let config = trigger.config.as_deref()?;
-            let parsed: serde_json::Value = serde_json::from_str(config).ok()?;
-            let cron_expr = parsed.get("cron")?.as_str()?;
+/// Compute the next trigger time from an already-parsed `TriggerConfig`.
+/// Called by `compute_next_trigger_at` and also directly from `background.rs`
+/// when `parse_config()` has already been called for other purposes.
+pub(crate) fn compute_next_from_config(cfg: &TriggerConfig, now: DateTime<Utc>) -> Option<String> {
+    match cfg {
+        TriggerConfig::Schedule { cron: Some(cron_expr), .. } => {
             let schedule = cron::parse_cron(cron_expr).ok()?;
             let next = cron::next_fire_time(&schedule, now)?;
             Some(next.to_rfc3339())
         }
-        "polling" => {
-            let config = trigger.config.as_deref()?;
-            let parsed: serde_json::Value = serde_json::from_str(config).ok()?;
-            let interval_secs = parsed.get("interval_seconds")?.as_u64()?;
-            let next = now + Duration::seconds(interval_secs as i64);
+        TriggerConfig::Polling { interval_seconds: Some(secs), .. } => {
+            let next = now + Duration::seconds(*secs as i64);
             Some(next.to_rfc3339())
         }
-        _ => None, // "manual", "webhook", and "chain" have no scheduled next time
+        _ => None, // "manual", "webhook", "chain", and unknown have no scheduled next time
     }
+}
+
+/// Compute the next trigger time for a trigger based on its type and config.
+/// Returns RFC3339 string or None.
+pub fn compute_next_trigger_at(trigger: &PersonaTrigger, now: DateTime<Utc>) -> Option<String> {
+    compute_next_from_config(&trigger.parse_config(), now)
 }
 
 /// Extract the event_type from a trigger's config. Default: "trigger_fired".
 pub fn trigger_event_type(trigger: &PersonaTrigger) -> String {
-    trigger
-        .config
-        .as_deref()
-        .and_then(|c| serde_json::from_str::<serde_json::Value>(c).ok())
-        .and_then(|v| v.get("event_type").and_then(|e| e.as_str().map(String::from)))
-        .unwrap_or_else(|| "trigger_fired".to_string())
-}
-
-/// Extract optional payload from trigger config.
-pub fn trigger_payload(trigger: &PersonaTrigger) -> Option<String> {
-    trigger
-        .config
-        .as_deref()
-        .and_then(|c| serde_json::from_str::<serde_json::Value>(c).ok())
-        .and_then(|v| v.get("payload").map(|p| p.to_string()))
+    trigger.parse_config().event_type().to_string()
 }
 
 #[cfg(test)]

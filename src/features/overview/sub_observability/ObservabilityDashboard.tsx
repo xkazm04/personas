@@ -1,20 +1,21 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { usePersonaStore, initHealingListener } from '@/stores/personaStore';
-import { DollarSign, Zap, CheckCircle, TrendingUp, TrendingDown, ArrowRight, RefreshCw, Stethoscope, CheckCircle2, X } from 'lucide-react';
+import { DollarSign, Zap, CheckCircle, TrendingUp, TrendingDown, ArrowRight, RefreshCw, Stethoscope, CheckCircle2, X, AlertTriangle } from 'lucide-react';
+import { getAllMonthlySpend } from '@/api/observability';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import HealingIssueModal from '@/features/overview/sub_observability/HealingIssueModal';
 import { DayRangePicker, PersonaSelect } from '@/features/overview/sub_usage/DashboardFilters';
 import type { DayRange } from '@/features/overview/sub_usage/DashboardFilters';
 import { SEVERITY_COLORS, HEALING_CATEGORY_COLORS, badgeClass } from '@/lib/utils/formatters';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
-import type { PersonaMetricsSnapshot } from '@/lib/bindings/PersonaMetricsSnapshot';
 import { MetricsCharts } from '@/features/overview/sub_observability/MetricsCharts';
-import type { ChartDataPoint, PieDataPoint } from '@/features/overview/sub_observability/MetricsCharts';
+import type { PieDataPoint } from '@/features/overview/sub_observability/MetricsCharts';
 import { SummaryCard } from '@/features/overview/sub_observability/SpendOverview';
 
 export default function ObservabilityDashboard() {
   const fetchObservabilityMetrics = usePersonaStore((s) => s.fetchObservabilityMetrics);
   const observabilityMetrics = usePersonaStore((s) => s.observabilityMetrics);
+  const observabilityError = usePersonaStore((s) => s.observabilityError);
   const personas = usePersonaStore((s) => s.personas);
   const healingIssues = usePersonaStore((s) => s.healingIssues);
   const healingRunning = usePersonaStore((s) => s.healingRunning);
@@ -32,6 +33,23 @@ export default function ObservabilityDashboard() {
     auto_fixed: number;
   } | null>(null);
 
+  // ── Budget warning state ──
+  const [budgetData, setBudgetData] = useState<Array<{ personaId: string; name: string; spend: number; budget: number | null }>>([]);
+
+  const budgetWarnings = useMemo(() => {
+    return budgetData.filter((d) => d.budget && d.budget > 0 && d.spend >= d.budget * 0.8);
+  }, [budgetData]);
+
+  const refreshAll = useCallback(() => {
+    return Promise.all([
+      fetchObservabilityMetrics(days, selectedPersonaId || undefined),
+      fetchHealingIssues(),
+      getAllMonthlySpend().then((data) => {
+        setBudgetData(data.map((d) => ({ personaId: d.id, name: d.name, spend: d.spend, budget: d.max_budget_usd })));
+      }).catch(() => {}),
+    ]);
+  }, [days, selectedPersonaId, fetchObservabilityMetrics, fetchHealingIssues]);
+
   const handleRunAnalysis = useCallback(async () => {
     setAnalysisResult(null);
     const result = await triggerHealing(selectedPersonaId || personas[0]?.id);
@@ -43,58 +61,29 @@ export default function ObservabilityDashboard() {
   }, []);
 
   useEffect(() => {
-    Promise.all([
-      fetchObservabilityMetrics(days, selectedPersonaId || undefined),
-      fetchHealingIssues(),
-    ]);
-  }, [days, selectedPersonaId, fetchObservabilityMetrics, fetchHealingIssues]);
-
-  const handleRefresh = async () => {
-    await Promise.all([
-      fetchObservabilityMetrics(days, selectedPersonaId || undefined),
-      fetchHealingIssues(),
-    ]);
-  };
+    refreshAll();
+  }, [refreshAll]);
 
   useEffect(() => {
     if (!autoRefresh) return;
-    const interval = setInterval(() => {
-      Promise.all([
-        fetchObservabilityMetrics(days, selectedPersonaId || undefined),
-        fetchHealingIssues(),
-      ]);
-    }, 30000);
+    const interval = setInterval(refreshAll, 30000);
     return () => clearInterval(interval);
-  }, [autoRefresh, days, selectedPersonaId, fetchObservabilityMetrics, fetchHealingIssues]);
+  }, [autoRefresh, refreshAll]);
 
   const summary = observabilityMetrics?.summary;
-  const timeSeries: PersonaMetricsSnapshot[] = observabilityMetrics?.timeSeries || [];
+  const backendChartData = observabilityMetrics?.chartData;
 
-  // Aggregate time series by date for charts
-  const dateMap = new Map<string, ChartDataPoint>();
-  for (const row of timeSeries) {
-    const date = row.snapshot_date;
-    const existing = dateMap.get(date) || { date, cost: 0, executions: 0, success: 0, failed: 0, tokens: 0 };
-    existing.cost += row.total_cost_usd || 0;
-    existing.executions += row.total_executions || 0;
-    existing.success += row.successful_executions || 0;
-    existing.failed += row.failed_executions || 0;
-    existing.tokens += (row.total_input_tokens || 0) + (row.total_output_tokens || 0);
-    dateMap.set(date, existing);
-  }
-  const chartData = Array.from(dateMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+  // Pre-bucketed chart data from SQL — no client-side aggregation needed
+  const chartData = backendChartData?.chart_points ?? [];
 
-  // Per-persona breakdown for pie chart
-  const personaMap = new Map<string, PieDataPoint>();
-  for (const row of timeSeries) {
-    const pid = row.persona_id;
-    const personaName = personas.find((p) => p.id === pid)?.name || pid;
-    const existing = personaMap.get(pid) || { name: personaName, executions: 0, cost: 0 };
-    existing.executions += row.total_executions || 0;
-    existing.cost += row.total_cost_usd || 0;
-    personaMap.set(pid, existing);
-  }
-  const pieData = Array.from(personaMap.values()).filter(d => d.executions > 0);
+  // Per-persona breakdown for pie chart (map persona_id to display name)
+  const pieData: PieDataPoint[] = useMemo(() =>
+    (backendChartData?.persona_breakdown ?? []).map((b) => ({
+      name: personas.find((p) => p.id === b.persona_id)?.name || b.persona_id,
+      executions: b.executions,
+      cost: b.cost,
+    })),
+  [backendChartData?.persona_breakdown, personas]);
 
   const successRate = summary && summary.total_executions > 0
     ? ((summary.successful_executions / summary.total_executions) * 100).toFixed(1)
@@ -125,19 +114,28 @@ export default function ObservabilityDashboard() {
 
     const pctChange = (curr: number, prev: number) => prev === 0 ? (curr > 0 ? 100 : 0) : ((curr - prev) / prev) * 100;
 
-    // Active personas: count unique persona IDs per half from raw time series
-    const prevDates = new Set(prev.map(d => d.date));
-    const prevPersonas = new Set(timeSeries.filter(r => prevDates.has(r.snapshot_date) && r.total_executions > 0).map(r => r.persona_id));
-    const currDates = new Set(curr.map(d => d.date));
-    const currPersonas = new Set(timeSeries.filter(r => currDates.has(r.snapshot_date) && r.total_executions > 0).map(r => r.persona_id));
+    // Active personas per half — now available directly from backend chart points
+    const prevPersonas = prev.reduce((acc, d) => acc + d.active_personas, 0) / (prev.length || 1);
+    const currPersonas = curr.reduce((acc, d) => acc + d.active_personas, 0) / (curr.length || 1);
 
     return {
       cost: { pct: pctChange(currCost, prevCost), invertColor: true },
       executions: { pct: pctChange(currExec, prevExec), invertColor: false },
       successRate: { pct: currRate - prevRate, invertColor: false },
-      personas: { pct: pctChange(currPersonas.size, prevPersonas.size), invertColor: false },
+      personas: { pct: pctChange(currPersonas, prevPersonas), invertColor: false },
     };
-  }, [chartData, timeSeries]);
+  }, [chartData]);
+
+  // Budget subtitle for Total Cost card
+  const budgetSubtitle = useMemo(() => {
+    const withBudget = budgetData.filter((d) => d.budget && d.budget > 0);
+    if (withBudget.length === 0) return null;
+    const totalBudget = withBudget.reduce((sum, d) => sum + d.budget!, 0);
+    const totalSpend = withBudget.reduce((sum, d) => sum + d.spend, 0);
+    const ratio = totalBudget > 0 ? totalSpend / totalBudget : 0;
+    const color = ratio >= 1 ? 'text-red-400' : ratio >= 0.8 ? 'text-amber-400' : 'text-muted-foreground/80';
+    return { text: `$${totalSpend.toFixed(2)} of $${totalBudget.toFixed(2)} budget`, color };
+  }, [budgetData]);
 
   // Issue counts and filtered/sorted list
   const issueCounts = useMemo(() => {
@@ -172,7 +170,7 @@ export default function ObservabilityDashboard() {
         actions={
           <>
             <button
-              onClick={handleRefresh}
+              onClick={refreshAll}
               className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
               title="Refresh metrics"
             >
@@ -201,12 +199,66 @@ export default function ObservabilityDashboard() {
       <ContentBody>
       <div className="space-y-6">
 
+      {/* Metrics Fetch Error Banner */}
+      {observabilityError && (
+        <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-red-300">Metrics unavailable — data shown may be stale</p>
+              <p className="text-sm text-red-400/70 mt-0.5">{observabilityError}</p>
+            </div>
+            <button onClick={refreshAll} className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-lg bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors">
+              <RefreshCw className="w-3 h-3" /> Retry
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Budget Warning Banner */}
+      {budgetWarnings.length > 0 && (
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-amber-300">
+                {budgetWarnings.length === 1 ? '1 persona' : `${budgetWarnings.length} personas`} approaching or exceeding budget
+              </p>
+              <div className="mt-1.5 flex flex-wrap gap-2">
+                {budgetWarnings.map((w) => {
+                  const ratio = w.budget! > 0 ? w.spend / w.budget! : 0;
+                  const exceeded = ratio >= 1;
+                  return (
+                    <span
+                      key={w.personaId}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm border ${
+                        exceeded
+                          ? 'bg-red-500/15 text-red-300 border-red-500/25'
+                          : 'bg-amber-500/15 text-amber-300 border-amber-500/25'
+                      }`}
+                    >
+                      {w.name}
+                      <span className="font-mono text-sm opacity-80">
+                        ${w.spend.toFixed(2)} / ${w.budget!.toFixed(2)}
+                      </span>
+                      <span className={`font-mono text-sm font-bold ${exceeded ? 'text-red-400' : 'text-amber-400'}`}>
+                        {(ratio * 100).toFixed(0)}%
+                      </span>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <SummaryCard icon={DollarSign} label="Total Cost" numericValue={summary?.total_cost_usd || 0} format={(n) => `$${n.toFixed(2)}`} color="emerald" trend={trends.cost} sparklineData={chartData.slice(-7).map((d) => d.cost)} />
+        <SummaryCard icon={DollarSign} label="Total Cost" numericValue={summary?.total_cost_usd || 0} format={(n) => `$${n.toFixed(2)}`} color="emerald" trend={trends.cost} sparklineData={chartData.slice(-7).map((d) => d.cost)} subtitle={budgetSubtitle?.text} subtitleColor={budgetSubtitle?.color} />
         <SummaryCard icon={Zap} label="Executions" numericValue={summary?.total_executions || 0} format={(n) => String(Math.round(n))} color="blue" trend={trends.executions} sparklineData={chartData.slice(-7).map((d) => d.executions)} />
         <SummaryCard icon={CheckCircle} label="Success Rate" numericValue={parseFloat(successRate)} format={(n) => `${n.toFixed(1)}%`} color="green" trend={trends.successRate} sparklineData={chartData.slice(-7).map((d) => { const total = d.success + d.failed; return total > 0 ? (d.success / total) * 100 : 0; })} />
-        <SummaryCard icon={TrendingUp} label="Active Personas" numericValue={summary?.active_personas || 0} format={(n) => String(Math.round(n))} color="purple" trend={trends.personas} sparklineData={chartData.slice(-7).map((d) => { const personasSet = new Set(timeSeries.filter((r) => r.snapshot_date === d.date && r.total_executions > 0).map((r) => r.persona_id)); return personasSet.size; })} />
+        <SummaryCard icon={TrendingUp} label="Active Personas" numericValue={summary?.active_personas || 0} format={(n) => String(Math.round(n))} color="purple" trend={trends.personas} sparklineData={chartData.slice(-7).map((d) => d.active_personas)} />
       </div>
 
       {/* Charts */}

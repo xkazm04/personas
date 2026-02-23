@@ -72,6 +72,7 @@ CREATE TABLE IF NOT EXISTS persona_tool_definitions (
     input_schema            TEXT,
     output_schema           TEXT,
     requires_credential_type TEXT,
+    implementation_guide    TEXT,
     is_builtin              INTEGER NOT NULL DEFAULT 0,
     created_at              TEXT NOT NULL,
     updated_at              TEXT NOT NULL
@@ -379,6 +380,7 @@ CREATE TABLE IF NOT EXISTS persona_prompt_versions (
     structured_prompt TEXT,
     system_prompt     TEXT,
     change_summary    TEXT,
+    tag               TEXT NOT NULL DEFAULT 'experimental',
     created_at        TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_ppv_persona ON persona_prompt_versions(persona_id);
@@ -759,17 +761,33 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Migrated n8n_transform_sessions: added transform_id, questions_json, awaiting_answers status");
     }
 
-    // Recreate persona_triggers with 'chain' trigger type support.
+    // Add tag column to persona_prompt_versions (Prompt Lab: version tagging)
+    let has_ppv_tag: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_prompt_versions') WHERE name = 'tag'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_ppv_tag {
+        conn.execute_batch(
+            "ALTER TABLE persona_prompt_versions ADD COLUMN tag TEXT NOT NULL DEFAULT 'experimental';"
+        )?;
+        tracing::info!("Added tag column to persona_prompt_versions");
+    }
+
+    // Recreate persona_triggers with 'chain' trigger type support if needed.
     // SQLite doesn't support ALTER CHECK, so we recreate the table.
-    // We detect by trying to insert a chain trigger — if the CHECK rejects it,
-    // we need to migrate.
-    let needs_chain_migration = conn
-        .execute(
-            "INSERT INTO persona_triggers (id, persona_id, trigger_type, config, enabled, created_at, updated_at)
-             VALUES ('__chain_check__', '__none__', 'chain', NULL, 0, '', '')",
-            [],
-        )
-        .is_err();
+    // Detect by reading the stored CREATE TABLE SQL from sqlite_master —
+    // the old INSERT-based probe always failed due to FK enforcement with
+    // foreign_keys=ON, causing the table to be rebuilt on every startup.
+    let trigger_table_sql: String = conn
+        .prepare(
+            "SELECT COALESCE(sql, '') FROM sqlite_master WHERE type='table' AND name='persona_triggers'",
+        )?
+        .query_row([], |row| row.get::<_, String>(0))
+        .unwrap_or_default();
+
+    let needs_chain_migration = !trigger_table_sql.contains("'chain'");
 
     if needs_chain_migration {
         conn.execute_batch(
@@ -792,9 +810,19 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             CREATE INDEX IF NOT EXISTS idx_ptr_enabled      ON persona_triggers(enabled);"
         )?;
         tracing::info!("Migrated persona_triggers to support 'chain' trigger type");
-    } else {
-        // Clean up the test row
-        let _ = conn.execute("DELETE FROM persona_triggers WHERE id = '__chain_check__'", []);
+    }
+
+    // Add implementation_guide column to persona_tool_definitions
+    let has_impl_guide: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_tool_definitions') WHERE name = 'implementation_guide'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if !has_impl_guide {
+        conn.execute_batch(
+            "ALTER TABLE persona_tool_definitions ADD COLUMN implementation_guide TEXT;",
+        )?;
+        tracing::info!("Added implementation_guide column to persona_tool_definitions");
     }
 
     Ok(())

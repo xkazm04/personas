@@ -35,6 +35,7 @@ export const createToolSlice: StateCreator<PersonaStore, [], [], ToolSlice> = (s
       set({ toolDefinitions });
     } catch (err) {
       set({ error: errMsg(err, "Failed to fetch tools") });
+      throw err;
     }
   },
 

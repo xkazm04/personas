@@ -15,6 +15,7 @@ export interface StructuredPrompt {
   examples: string;
   errorHandling: string;
   customSections: StructuredPromptSection[];
+  webSearch: string;
 }
 
 /**
@@ -28,6 +29,7 @@ export function createEmptyStructuredPrompt(): StructuredPrompt {
     examples: '',
     errorHandling: '',
     customSections: [],
+    webSearch: '',
   };
 }
 
@@ -52,6 +54,7 @@ export function isStructuredPromptEmpty(sp: StructuredPrompt): boolean {
     !sp.toolGuidance.trim() &&
     !sp.examples.trim() &&
     !sp.errorHandling.trim() &&
+    !sp.webSearch.trim() &&
     sp.customSections.every(s => !s.content.trim())
   );
 }
@@ -74,6 +77,9 @@ export function parseStructuredPrompt(json: string | null): StructuredPrompt | n
             title: typeof s.title === 'string' ? s.title : '',
             content: typeof s.content === 'string' ? s.content : '',
           }));
+      }
+      if (typeof parsed.webSearch !== 'string') {
+        parsed.webSearch = '';
       }
       return parsed as StructuredPrompt;
     }

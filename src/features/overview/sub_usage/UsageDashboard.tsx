@@ -3,24 +3,14 @@ import { BarChart3, Play, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  AreaChart,
-  Area,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  PieChart, Pie, Cell, AreaChart, Area,
 } from 'recharts';
 import { DayRangePicker, PersonaSelect } from '@/features/overview/sub_usage/DashboardFilters';
 import type { DayRange } from '@/features/overview/sub_usage/DashboardFilters';
 import { CHART_COLORS, GRID_STROKE, AXIS_TICK_FILL } from '@/features/overview/sub_usage/charts/chartConstants';
 import { ChartTooltip } from '@/features/overview/sub_usage/charts/ChartTooltip';
+import { MetricChart } from '@/features/overview/sub_usage/charts/MetricChart';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -274,147 +264,72 @@ export function UsageDashboard() {
       {/* ── Top Row: Bar Chart + Pie Chart ─────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Tool Invocations (horizontal bar) */}
-        <div className="lg:col-span-3 bg-secondary/30 border border-primary/10 rounded-xl p-4">
-          <h3 className="text-sm font-medium text-foreground/90 mb-1">Tool Invocations</h3>
-          {barInsight && <p className="text-sm text-muted-foreground/80 mb-3">{barInsight}</p>}
-          {!barInsight && <div className="mb-3" />}
-          <ResponsiveContainer width="100%" height={Math.max(200, barData.length * 40)}>
-            <BarChart data={barData} layout="vertical" margin={{ left: 10, right: 20, top: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} horizontal={false} />
-              <XAxis type="number" tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis
-                dataKey="name"
-                type="category"
-                width={120}
-                tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-              <Bar dataKey="invocations" name="Invocations" fill={CHART_COLORS[0]} radius={[0, 4, 4, 0]} barSize={20} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <MetricChart title="Tool Invocations" insight={barInsight} height={Math.max(200, barData.length * 40)} className="lg:col-span-3">
+          <BarChart data={barData} layout="vertical" margin={{ left: 10, right: 20, top: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} horizontal={false} />
+            <XAxis type="number" tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={false} tickLine={false} />
+            <YAxis dataKey="name" type="category" width={120} tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={false} tickLine={false} />
+            <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+            <Bar dataKey="invocations" name="Invocations" fill={CHART_COLORS[0]} radius={[0, 4, 4, 0]} barSize={20} />
+          </BarChart>
+        </MetricChart>
 
         {/* Distribution (pie) */}
-        <div className="lg:col-span-2 bg-secondary/30 border border-primary/10 rounded-xl p-4">
-          <h3 className="text-sm font-medium text-foreground/90 mb-1">Distribution</h3>
-          {pieInsight && <p className="text-sm text-muted-foreground/80 mb-3">{pieInsight}</p>}
-          {!pieInsight && <div className="mb-3" />}
-          <ResponsiveContainer width="100%" height={260}>
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                innerRadius={50}
-                outerRadius={90}
-                paddingAngle={2}
-                dataKey="value"
-                nameKey="name"
-                stroke="none"
-              >
-                {pieData.map((_, idx) => (
-                  <Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
-                ))}
-              </Pie>
-              {/* Donut center total */}
-              <text x="50%" y="46%" textAnchor="middle" dominantBaseline="central" className="fill-foreground text-lg font-bold">
-                {pieTotal.toLocaleString()}
-              </text>
-              <text x="50%" y="58%" textAnchor="middle" dominantBaseline="central" className="fill-muted-foreground/50 text-sm">
-                total
-              </text>
-              <Tooltip content={<ChartTooltip />} />
-              <Legend
-                verticalAlign="bottom"
-                iconType="circle"
-                iconSize={8}
-                formatter={(value: string) => (
-                  <span className="text-sm text-foreground/90">{value}</span>
-                )}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+        <MetricChart title="Distribution" insight={pieInsight} height={260} className="lg:col-span-2">
+          <PieChart>
+            <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={90} paddingAngle={2} dataKey="value" nameKey="name" stroke="none">
+              {pieData.map((_, idx) => (
+                <Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
+              ))}
+            </Pie>
+            {/* Donut center total */}
+            <text x="50%" y="46%" textAnchor="middle" dominantBaseline="central" className="fill-foreground text-lg font-bold">
+              {pieTotal.toLocaleString()}
+            </text>
+            <text x="50%" y="58%" textAnchor="middle" dominantBaseline="central" className="fill-muted-foreground/50 text-sm">
+              total
+            </text>
+            <Tooltip content={<ChartTooltip />} />
+            <Legend verticalAlign="bottom" iconType="circle" iconSize={8} formatter={(value: string) => (
+              <span className="text-sm text-foreground/90">{value}</span>
+            )} />
+          </PieChart>
+        </MetricChart>
       </div>
 
       {/* ── Usage Over Time (stacked area) ─────────────────────── */}
       {areaData.length > 0 && (
-        <div className="bg-secondary/30 border border-primary/10 rounded-xl p-4">
-          <h3 className="text-sm font-medium text-foreground/90 mb-1">Usage Over Time</h3>
-          {areaInsight && <p className="text-sm text-muted-foreground/80 mb-3">{areaInsight}</p>}
-          {!areaInsight && <div className="mb-3" />}
-          <ResponsiveContainer width="100%" height={280}>
-            <AreaChart data={areaData} margin={{ left: 0, right: 10, top: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-              <XAxis
-                dataKey="date"
-                tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-              />
-              <YAxis
-                tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }}
-                axisLine={false}
-                tickLine={false}
-                allowDecimals={false}
-              />
-              <Tooltip content={<ChartTooltip />} />
-              <Legend
-                verticalAlign="top"
-                iconType="circle"
-                iconSize={8}
-                formatter={(value: string) => (
-                  <span className="text-sm text-foreground/90">{formatToolName(value)}</span>
-                )}
-              />
-              {allToolNames.map((toolName, idx) => (
-                <Area
-                  key={toolName}
-                  type="monotone"
-                  dataKey={toolName}
-                  name={toolName}
-                  stackId="1"
-                  fill={CHART_COLORS[idx % CHART_COLORS.length]}
-                  fillOpacity={0.3}
-                  stroke={CHART_COLORS[idx % CHART_COLORS.length]}
-                  strokeWidth={1.5}
-                />
-              ))}
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
+        <MetricChart title="Usage Over Time" insight={areaInsight} height={280}>
+          <AreaChart data={areaData} margin={{ left: 0, right: 10, top: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
+            <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
+            <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+            <Tooltip content={<ChartTooltip />} />
+            <Legend verticalAlign="top" iconType="circle" iconSize={8} formatter={(value: string) => (
+              <span className="text-sm text-foreground/90">{formatToolName(value)}</span>
+            )} />
+            {allToolNames.map((toolName, idx) => (
+              <Area key={toolName} type="monotone" dataKey={toolName} name={toolName} stackId="1" fill={CHART_COLORS[idx % CHART_COLORS.length]} fillOpacity={0.3} stroke={CHART_COLORS[idx % CHART_COLORS.length]} strokeWidth={1.5} />
+            ))}
+          </AreaChart>
+        </MetricChart>
       )}
 
       {/* ── By Persona (horizontal bar) ───────────────────────── */}
       {personaBarData.length > 0 && (
-        <div className="bg-secondary/30 border border-primary/10 rounded-xl p-4">
-          <h3 className="text-sm font-medium text-foreground/90 mb-1">By Persona</h3>
-          {personaInsight && <p className="text-sm text-muted-foreground/80 mb-3">{personaInsight}</p>}
-          {!personaInsight && <div className="mb-3" />}
-          <ResponsiveContainer width="100%" height={Math.max(180, personaBarData.length * 44)}>
-            <BarChart data={personaBarData} layout="vertical" margin={{ left: 10, right: 20, top: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} horizontal={false} />
-              <XAxis type="number" tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis
-                dataKey="name"
-                type="category"
-                width={140}
-                tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-              <Bar dataKey="invocations" name="Invocations" radius={[0, 4, 4, 0]} barSize={22}>
-                {personaBarData.map((entry, idx) => (
-                  <Cell key={idx} fill={entry.color} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <MetricChart title="By Persona" insight={personaInsight} height={Math.max(180, personaBarData.length * 44)}>
+          <BarChart data={personaBarData} layout="vertical" margin={{ left: 10, right: 20, top: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} horizontal={false} />
+            <XAxis type="number" tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={false} tickLine={false} />
+            <YAxis dataKey="name" type="category" width={140} tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={false} tickLine={false} />
+            <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+            <Bar dataKey="invocations" name="Invocations" radius={[0, 4, 4, 0]} barSize={22}>
+              {personaBarData.map((entry, idx) => (
+                <Cell key={idx} fill={entry.color} />
+              ))}
+            </Bar>
+          </BarChart>
+        </MetricChart>
       )}
           </div>
         )}

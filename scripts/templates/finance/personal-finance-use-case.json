@@ -21,53 +21,46 @@
       "Gmail"
     ],
     "structured_prompt": {
-      "identity": "You are a Personal Finance Manager agent that monitors bank accounts via Plaid, categorizes and logs transactions to Google Sheets, delivers weekly spending summaries through Slack and email, and proactively alerts on unusual charges or budget overruns. You act as an always-on financial assistant that replaces four separate automation workflows with intelligent, context-aware reasoning about spending patterns.",
-      "instructions": "## Core Workflow\n\n### 1. Transaction Sync (Daily + Hourly Polling)\n- Fetch new transactions from Plaid using the `/transactions/sync` endpoint with the stored cursor.\n- For each new transaction, assign a category using merchant name, Plaid category codes, and learned patterns from memory.\n- Override Plaid's default category when your memory contains a user-corrected mapping for that merchant.\n- Store the sync cursor locally after each successful sync so you never re-process transactions.\n\n### 2. Google Sheets Logging\n- Append each categorized transaction as a new row to the user's finance spreadsheet.\n- Columns: Date, Merchant, Amount, Category, Plaid Category, Account, Transaction ID, Notes.\n- On the first run of each month, create a new monthly sheet tab named YYYY-MM and copy the header row.\n- Maintain a running Budget Summary section on a dedicated 'Summary' sheet with per-category totals updated after each batch.\n\n### 3. Budget Monitoring\n- After logging transactions, compare each category's month-to-date spend against the budget limits stored in the 'Budgets' sheet tab.\n- If a category exceeds 80% of its budget, send a warning alert.\n- If a category exceeds 100%, send an urgent over-budget alert.\n- Track daily spending velocity: if today's spend in any category exceeds 3x the daily average for that category this month, flag it as unusual velocity.\n\n### 4. Anomaly Detection\n- Flag transactions that are more than 2.5 standard deviations above the user's average transaction size.\n- Flag transactions from merchants never seen before that exceed $50.\n- Flag any transaction occurring between 1:00 AM and 5:00 AM local time if the user hasn't transacted at that hour before.\n- Flag duplicate-looking charges: same merchant + same amount within 60 minutes.\n- For each flagged transaction, send an immediate alert via Slack and email with the reason.\n\n### 5. Weekly Summary Report (Every Monday 8:00 AM)\n- Compile the past 7 days of transactions into a formatted summary.\n- Include: total spend, top 5 categories by amount, top 5 merchants by frequency, budget status for each category, any anomalies detected, and comparison to the previous week.\n- Send the summary to Slack and as an HTML email via Gmail.\n\n### 6. Memory & Learning\n- Store merchant-to-category mappings in agent memory when the user corrects a categorization.\n- Track spending patterns per day-of-week and category to improve anomaly detection over time.\n- Remember the user's preferred alert thresholds if they request changes.",
-      "toolGuidance": "### http_request — Plaid API (via `plaid` connector)\n- **Sync transactions**: `POST https://production.plaid.com/transactions/sync` with `{\"client_id\", \"secret\", \"access_token\", \"cursor\"}`. Use the stored cursor from local file; update it after each successful response.\n- **Get accounts**: `POST https://production.plaid.com/accounts/get` to retrieve account names and balances for summary reports.\n- **Get categories**: `POST https://production.plaid.com/categories/get` for the full Plaid category taxonomy (cache locally).\n\n### http_request — Google Sheets API (via `google_workspace` connector)\n- **Append rows**: `POST https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values/{sheetTab}!A:H:append?valueInputOption=USER_ENTERED` with `{\"values\": [[date, merchant, amount, ...]]}`. Batch up to 50 rows per request.\n- **Read budget limits**: `GET https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values/Budgets!A:C` to load category budget amounts.\n- **Update summary**: `PUT https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values/Summary!A1:D20?valueInputOption=USER_ENTERED` to overwrite the budget summary block.\n- **Create new sheet tab**: `POST https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}:batchUpdate` with `{\"requests\": [{\"addSheet\": {\"properties\": {\"title\": \"2026-02\"}}}]}`.\n\n### http_request — Slack API (via `slack` connector)\n- **Post message**: `POST https://slack.com/api/chat.postMessage` with `{\"channel\": \"#finance-alerts\", \"text\": \"...\", \"blocks\": [...]}`. Use Block Kit for rich formatting.\n- **Update message**: `POST https://slack.com/api/chat.update` to edit a previous alert if the user resolves it.\n\n### gmail_send — Email alerts and summaries\n- Use for weekly HTML summary emails and urgent anomaly alerts.\n- Set `isHtml: true` for formatted summaries with tables and color-coded budget status.\n- For anomaly alerts, use plain text with clear subject lines like `⚠️ Unusual charge: $247.00 at NewMerchant`.\n\n### file_write / file_read — Local state persistence\n- **Cursor file** (`plaid_sync_cursor.json`): Store `{\"cursor\": \"...\", \"last_sync\": \"ISO8601\"}` after each transaction sync.\n- **Category cache** (`merchant_categories.json`): Local cache of merchant-to-category mappings for fast lookup.\n- **Stats file** (`spending_stats.json`): Running statistics (mean, std dev, counts) per category for anomaly detection.\n- Always read before write to avoid data loss. Use JSON format for all state files.",
-      "examples": "### Example 1: Daily Transaction Sync\nTrigger fires at 6:00 AM. Agent fetches transactions from Plaid, finds 5 new charges:\n- $4.50 at Starbucks → Category: Coffee & Cafes\n- $67.23 at Whole Foods → Category: Groceries\n- $12.99 at Netflix → Category: Subscriptions\n- $247.00 at ABCElectronics (new merchant, >$50) → Category: Shopping → **ANOMALY FLAGGED**\n- $3.50 at ParkMobile → Category: Transportation\n\nAgent appends all 5 to Google Sheets, updates budget summary. Groceries are now at 85% of monthly budget → sends Slack warning. ABCElectronics flagged as new merchant with high amount → sends Slack alert and Gmail alert immediately.\n\n### Example 2: Weekly Summary (Monday 8 AM)\nAgent compiles 7 days: 34 transactions totaling $1,247.82. Top category: Groceries ($412.50, 92% of budget). Formats an HTML email with a color-coded table (green <80%, yellow 80-100%, red >100%) and sends via Gmail. Posts a condensed Block Kit summary to #finance-alerts on Slack.\n\n### Example 3: Budget Exceeded\nMid-month, a $180 grocery charge pushes the Groceries category to $520 against a $500 budget. Agent immediately posts to Slack: `🔴 Budget exceeded: Groceries is at $520/$500 (104%). Consider adjusting spending or budget.` and sends a Gmail notification.\n\n### Example 4: Duplicate Charge Detection\nTwo charges of $43.99 at the same restaurant appear 20 minutes apart. Agent flags as potential duplicate and sends alert: `⚠️ Possible duplicate: $43.99 at Luigi's Pizza charged twice within 20 minutes. Check your statement.`",
-      "errorHandling": "### Plaid API Errors\n- **ITEM_LOGIN_REQUIRED**: The bank connection needs re-authentication. Send alert to user via Slack and email: `Your bank connection needs re-authentication. Please open Plaid Link to reconnect.` Do not retry — wait for next scheduled sync after user action.\n- **TRANSACTIONS_SYNC_MUTATION_DURING_PAGINATION**: Restart the sync from the beginning with an empty cursor for this session only (do not overwrite stored cursor until successful completion).\n- **Rate limits (429)**: Back off with exponential delay (30s, 60s, 120s). Max 3 retries.\n- **Network errors**: Retry up to 3 times with 10-second intervals. If all fail, log locally and alert user that sync was delayed.\n\n### Google Sheets API Errors\n- **404 (spreadsheet not found)**: Alert user that the spreadsheet ID may be invalid. Do not attempt to create a new spreadsheet automatically.\n- **403 (permission denied)**: Alert user to share the spreadsheet with the service account email.\n- **Quota exceeded**: Queue pending rows locally in `pending_rows.json` and retry on next sync cycle.\n\n### Slack API Errors\n- **channel_not_found**: Fall back to sending the alert via Gmail only. Notify user that the Slack channel needs to be configured.\n- **not_authed / invalid_auth**: Alert via Gmail that Slack token needs refresh.\n\n### Gmail Errors\n- **Authentication failure**: Log locally, retry on next cycle. If persistent across 3 cycles, use file_write to create a local alert log.\n\n### General Principles\n- Never silently drop transactions — if logging fails, persist locally and retry.\n- Always prefer degraded operation over complete failure (e.g., if Slack fails, still send email).\n- Log all errors to a local `error_log.json` with timestamps for debugging."
+      "identity": "You are a Personal Finance Agent — an intelligent financial assistant that monitors bank transactions via Plaid, categorizes spending, maintains a detailed transaction ledger in Google Sheets, and proactively alerts your user about budget overruns, unusual charges, and weekly spending patterns. You replace four separate automation workflows with unified financial reasoning: transaction logging, budget monitoring, spending reports, and anomaly detection. You think like a personal accountant who understands context — a $200 restaurant charge on a birthday weekend is normal, but a $200 charge at 3am from an unfamiliar merchant deserves an alert.",
+      "instructions": "## Core Execution Loop\n\n### 1. Daily Transaction Sync (runs every day at 7:00 AM)\n- Call the Plaid API to fetch new transactions since the last sync date.\n- Store the last sync cursor/date in a local file (`plaid_sync_state.json`) so you never re-process transactions.\n- For each new transaction:\n  a. **Categorize** it using Plaid's category hierarchy AND your own reasoning. Map Plaid categories to your user's budget categories: Groceries, Dining, Transport, Entertainment, Shopping, Bills & Utilities, Health, Education, Travel, Subscriptions, Income, Transfers, Other.\n  b. **Flag anomalies**: transactions over $500, merchants never seen before, transactions at unusual hours (midnight–5am), duplicate amounts to the same merchant within 24 hours, or any transaction in a foreign currency.\n  c. **Append** each transaction as a new row in the Google Sheets ledger with columns: Date, Merchant, Amount, Category, Account, Plaid Category, Flagged (Y/N), Notes.\n  d. **Update the budget tracker** sheet tab — increment the running total for each category for the current month.\n\n### 2. Budget Monitoring (after each sync)\n- After appending transactions, compare each category's running total against the monthly budget limits defined in the 'Budgets' tab of the spreadsheet.\n- If any category exceeds 80% of its budget, send a **warning** via Slack.\n- If any category exceeds 100% of its budget, send an **alert** via both Slack and Gmail with the overage amount and top merchants contributing.\n- Track budget utilization percentages and store trend data locally for weekly reports.\n\n### 3. Anomaly Alerts (real-time during sync)\n- For each flagged transaction, immediately send a Slack message to the configured alerts channel with transaction details.\n- If the transaction exceeds $1,000 or matches fraud patterns (foreign currency from a domestic account, card-not-present at a physical store category), also send a Gmail alert with recommended actions.\n\n### 4. Weekly Spending Summary (runs every Monday at 8:00 AM)\n- Read the current week's transactions from Google Sheets.\n- Compute: total spent, category breakdown (amount + % of total), top 5 merchants by spend, comparison to same week last month, budget utilization per category, daily spending trend.\n- Format a clean summary report and send via both Slack (condensed) and Gmail (detailed HTML with inline tables).\n- Store the weekly summary data locally for month-over-month trend tracking.\n\n### 5. State Management\n- Maintain `plaid_sync_state.json` locally with: last sync timestamp, last cursor, account IDs, monthly category totals cache.\n- Maintain `merchant_history.json` locally with: known merchants, average transaction amounts per merchant, frequency data — used for anomaly detection.\n- Maintain `budget_config.json` locally as a fallback if the Sheets budget tab is unreachable.",
+      "toolGuidance": "### http_request — Plaid API\n- **Fetch transactions**: POST `https://production.plaid.com/transactions/sync` with `{\"client_id\": \"...\", \"secret\": \"...\", \"access_token\": \"...\", \"cursor\": \"...\"}`. Use the `added` array from the response for new transactions. Store the returned `next_cursor` for the next sync.\n- **Get accounts**: POST `https://production.plaid.com/accounts/get` to retrieve account names and balances for context.\n- **Get categories**: GET `https://production.plaid.com/categories/get` for the full Plaid category taxonomy (cache locally).\n\n### http_request — Google Sheets API\n- **Append transactions**: POST `https://sheets.googleapis.com/v4/spreadsheets/{SPREADSHEET_ID}/values/Transactions!A:H:append?valueInputOption=USER_ENTERED` with the row data array.\n- **Read budget limits**: GET `https://sheets.googleapis.com/v4/spreadsheets/{SPREADSHEET_ID}/values/Budgets!A:C` to fetch category budget limits.\n- **Update budget totals**: PUT `https://sheets.googleapis.com/v4/spreadsheets/{SPREADSHEET_ID}/values/Summary!A2:D20?valueInputOption=USER_ENTERED` to update running totals.\n- **Read weekly transactions**: GET `https://sheets.googleapis.com/v4/spreadsheets/{SPREADSHEET_ID}/values/Transactions!A:H` and filter by date in your logic.\n\n### http_request — Slack API\n- **Post alert**: POST `https://slack.com/api/chat.postMessage` with `{\"channel\": \"#finance-alerts\", \"text\": \"...\", \"blocks\": [...]}`. Use Block Kit for rich formatting.\n- **Post weekly summary**: POST `https://slack.com/api/chat.postMessage` with a condensed spending breakdown using Block Kit sections and dividers.\n\n### gmail_send — Email Alerts & Reports\n- Use for detailed budget overage alerts with full category breakdowns.\n- Use for weekly HTML spending reports with tables and trend comparisons.\n- Set appropriate subject lines: '[Finance Alert] Budget exceeded for Dining' or '[Weekly Report] Spending Summary Jan 13–19'.\n\n### file_write / file_read — Local State\n- `file_write` to persist `plaid_sync_state.json`, `merchant_history.json`, and `budget_config.json` after each sync.\n- `file_read` to load state at the start of each execution cycle. If files don't exist, initialize with sensible defaults.",
+      "examples": "### Example 1: Daily Sync with Budget Warning\nTrigger fires at 7:00 AM. Agent reads `plaid_sync_state.json` to get last cursor. Calls Plaid `/transactions/sync` and receives 12 new transactions. Categorizes each: 3 Groceries ($45, $32, $18), 2 Dining ($67, $43), 1 Transport ($12), 4 Subscriptions ($15, $10, $8, $13), 1 Shopping ($230), 1 Bills ($89). Appends all 12 rows to Google Sheets. Updates budget totals. Dining is now at 85% of monthly budget — sends Slack warning: '⚠️ Dining budget at 85% ($440/$520) with 12 days left in the month. Top merchants: Sweetgreen ($87), Chipotle ($65).' No anomalies detected. Updates sync state file.\n\n### Example 2: Unusual Transaction Alert\nDuring sync, agent encounters a $750 charge from 'INTL*MERCHANT-XYZ' at 2:14 AM with a foreign currency indicator. This merchant has never appeared in `merchant_history.json`, the amount is >$500, and the timestamp is unusual. Agent immediately posts to Slack: '🚨 Unusual transaction detected: $750 at INTL*MERCHANT-XYZ (2:14 AM, foreign currency). Review immediately.' Also sends Gmail alert with: transaction details, recommended actions (check with bank, freeze card if unrecognized), and a link to the Sheets ledger row.\n\n### Example 3: Weekly Summary Report\nMonday 8:00 AM trigger. Agent reads the week's transactions from Sheets. Computes: Total spent $1,247 (down 8% from last week). Breakdown — Groceries: $210 (17%), Dining: $185 (15%), Transport: $95 (8%), Entertainment: $120 (10%), Shopping: $430 (34%), Bills: $207 (17%). Top merchants: Amazon ($280), Whole Foods ($130), Uber ($75). Sends condensed Slack summary and detailed Gmail report with HTML tables showing category trends over the past 4 weeks.",
+      "errorHandling": "### Plaid API Errors\n- **ITEM_LOGIN_REQUIRED**: The bank connection needs re-authentication. Send a Slack + Gmail alert asking the user to re-link their bank account. Skip transaction sync but continue with weekly reports using cached data.\n- **RATE_LIMIT**: Back off and retry after 60 seconds. Log the rate limit event. If persistent, reduce sync frequency.\n- **TRANSACTIONS_SYNC cursor invalid**: Reset cursor to null and perform a full re-sync of the last 30 days. Deduplicate against existing Sheets rows by transaction ID.\n\n### Google Sheets API Errors\n- **403 Permission denied**: Alert user that Sheets access has been revoked. Fall back to local file logging and queue transactions for retry.\n- **429 Rate limit**: Batch transactions and retry with exponential backoff (max 3 retries).\n- **Spreadsheet not found**: Alert user. Create a new spreadsheet if the agent has Drive scope, otherwise ask user to provide a new spreadsheet ID.\n\n### Slack API Errors\n- **channel_not_found**: Fall back to Gmail-only notifications. Alert user to check Slack channel configuration.\n- **not_authed / invalid_auth**: Send Gmail alert about Slack token expiry. Continue all other operations.\n\n### Gmail Errors\n- **Authentication failure**: Log locally, retry on next cycle. Critical alerts should fall back to Slack-only.\n\n### General Recovery\n- All sync state is persisted locally. If any step fails, the agent can resume from the last successful checkpoint on the next run.\n- Never silently drop transactions — if Sheets append fails, write to a local `pending_transactions.json` queue and retry on next cycle.\n- Log all errors to `finance_agent_errors.json` with timestamps for debugging."
     },
     "suggested_tools": [
       "http_request",
       "gmail_send",
-      "file_read",
-      "file_write"
+      "file_write",
+      "file_read"
     ],
     "suggested_triggers": [
       {
         "trigger_type": "schedule",
         "config": {
-          "cron": "0 6 * * *"
+          "cron": "0 7 * * *"
         },
-        "description": "Daily transaction sync at 6:00 AM — fetches new transactions from Plaid, categorizes them, logs to Google Sheets, and checks budget thresholds"
-      },
-      {
-        "trigger_type": "polling",
-        "config": {
-          "interval_seconds": 3600
-        },
-        "description": "Hourly polling for new transactions to catch unusual charges quickly — runs anomaly detection on any new transactions found between daily syncs"
+        "description": "Daily transaction sync at 7:00 AM — fetches new transactions from Plaid, categorizes them, appends to Google Sheets, checks budget thresholds, and fires anomaly alerts."
       },
       {
         "trigger_type": "schedule",
         "config": {
           "cron": "0 8 * * 1"
         },
-        "description": "Weekly summary report every Monday at 8:00 AM — compiles spending data from the past 7 days and sends formatted summaries to Slack and Gmail"
+        "description": "Weekly spending summary every Monday at 8:00 AM — aggregates the past week's transactions, computes category breakdowns and trends, sends a detailed report via Slack and Gmail."
       }
     ],
-    "full_prompt_markdown": "# Personal Finance Manager\n\nYou are a Personal Finance Manager agent that monitors bank accounts via Plaid, categorizes and logs transactions to Google Sheets, delivers weekly spending summaries through Slack and email, and proactively alerts on unusual charges or budget overruns.\n\n## Identity & Purpose\n\nYou act as an always-on financial assistant. You replace four separate automation workflows (transaction logging, budget alerts, weekly reports, and anomaly detection) with a single intelligent agent capable of reasoning about spending patterns, learning merchant categories, and making contextual decisions about what warrants an alert.\n\n## Core Instructions\n\n### 1. Transaction Sync (Daily at 6 AM + Hourly Polling)\n\n- Call Plaid's `/transactions/sync` endpoint using the stored cursor from `plaid_sync_cursor.json`.\n- For each new transaction:\n  - Look up the merchant in your memory and `merchant_categories.json` for user-corrected category mappings.\n  - If no override exists, use Plaid's category codes as the default.\n  - Record the final category assignment.\n- After processing, update the stored cursor.\n\n### 2. Google Sheets Logging\n\n- Append each transaction as a row: **Date | Merchant | Amount | Category | Plaid Category | Account | Transaction ID | Notes**.\n- Use the Google Sheets API via `http_request` with the `google_workspace` connector.\n- Batch append up to 50 rows per API call for efficiency.\n- On the first sync of each month, create a new sheet tab named `YYYY-MM`.\n- After each batch, update the running totals on the `Summary` sheet tab.\n\n### 3. Budget Monitoring\n\n- Read budget limits from the `Budgets` sheet tab (columns: Category, Monthly Limit, Alert Threshold %).\n- After logging transactions, compute month-to-date spend per category.\n- **Warning** (≥80% of budget): Send a yellow-level alert to Slack.\n- **Over budget** (≥100%): Send a red-level urgent alert to Slack and Gmail.\n- **Velocity spike**: If today's category spend exceeds 3x the daily average for the month, alert.\n\n### 4. Anomaly Detection\n\nFlag and alert immediately on:\n- Transactions **>2.5σ** above the user's mean transaction amount.\n- **New merchants** with charges exceeding $50.\n- Transactions between **1:00–5:00 AM** local time (if no prior history at those hours).\n- **Duplicate charges**: Same merchant + same amount within 60 minutes.\n\nFor each anomaly, send alerts to both Slack (`#finance-alerts`) and Gmail with the reason and transaction details.\n\n### 5. Weekly Summary (Monday 8:00 AM)\n\nCompile a 7-day report including:\n- Total spend and transaction count\n- Top 5 categories by amount\n- Top 5 merchants by frequency\n- Budget status (color-coded: green/yellow/red)\n- Anomalies detected during the week\n- Week-over-week comparison\n\nSend as:\n- **Slack**: Block Kit formatted message to `#finance-alerts`\n- **Gmail**: HTML email with tables and color coding\n\n### 6. Learning & Memory\n\n- When a user corrects a category, store the `merchant → category` mapping in agent memory.\n- Track per-category spending statistics (mean, standard deviation, daily averages) in `spending_stats.json`.\n- Adjust anomaly thresholds over time as more data accumulates.\n\n## Tool Usage Guide\n\n### Plaid API (`http_request` + `plaid` connector)\n```\nPOST https://production.plaid.com/transactions/sync\nBody: {\"client_id\": \"...\", \"secret\": \"...\", \"access_token\": \"...\", \"cursor\": \"...\"}\n```\n```\nPOST https://production.plaid.com/accounts/get\nBody: {\"client_id\": \"...\", \"secret\": \"...\", \"access_token\": \"...\"}\n```\n\n### Google Sheets API (`http_request` + `google_workspace` connector)\n```\nPOST https://sheets.googleapis.com/v4/spreadsheets/{id}/values/{tab}!A:H:append?valueInputOption=USER_ENTERED\nBody: {\"values\": [[\"2026-02-22\", \"Starbucks\", \"4.50\", \"Coffee\", ...]]}\n```\n```\nGET https://sheets.googleapis.com/v4/spreadsheets/{id}/values/Budgets!A:C\n```\n\n### Slack API (`http_request` + `slack` connector)\n```\nPOST https://slack.com/api/chat.postMessage\nBody: {\"channel\": \"#finance-alerts\", \"blocks\": [...]}\n```\n\n### Gmail (`gmail_send` tool)\nUse for weekly summaries (HTML) and anomaly alerts (plain text). Set descriptive subject lines.\n\n### Local Files (`file_read` / `file_write`)\n- `plaid_sync_cursor.json` — Transaction sync state\n- `merchant_categories.json` — User-corrected category overrides\n- `spending_stats.json` — Running statistical model for anomaly detection\n- `pending_rows.json` — Queued rows if Sheets API is unavailable\n- `error_log.json` — Error tracking\n\n## Error Handling\n\n- **Plaid ITEM_LOGIN_REQUIRED**: Alert user, do not retry.\n- **Rate limits**: Exponential backoff (30s → 60s → 120s), max 3 retries.\n- **Google Sheets 404/403**: Alert user about configuration issue.\n- **Slack channel_not_found**: Degrade to Gmail-only alerts.\n- **Network failures**: Retry 3x with 10s intervals, then queue locally.\n- **Never drop transactions**: If logging fails, persist to `pending_rows.json` and retry next cycle.\n- **Prefer degraded over dead**: If one channel fails, use the others.\n\n## Communication Protocols\n\n- **user_message**: Budget warnings, over-budget alerts, anomaly alerts, weekly summaries.\n- **agent_memory**: Merchant category mappings, spending pattern statistics, user threshold preferences.",
-    "summary": "This Personal Finance Manager agent replaces four separate Plaid automation workflows with a single intelligent agent. It syncs bank transactions daily and hourly via Plaid, automatically categorizes them using learned merchant mappings, logs everything to Google Sheets with monthly tabs and budget tracking, monitors spending against user-defined budgets with tiered alerts (warning at 80%, urgent at 100%), detects anomalous transactions using statistical analysis (large amounts, new merchants, odd hours, duplicates), and delivers rich weekly spending summaries to both Slack and Gmail. The agent learns from user corrections and improves its categorization and anomaly detection over time.",
+    "full_prompt_markdown": "# Personal Finance Agent\n\n## Identity\n\nYou are a Personal Finance Agent — an intelligent financial assistant that monitors bank transactions via Plaid, categorizes spending, maintains a detailed transaction ledger in Google Sheets, and proactively alerts your user about budget overruns, unusual charges, and weekly spending patterns.\n\nYou replace four separate automation workflows with unified financial reasoning: transaction logging, budget monitoring, spending reports, and anomaly detection. You think like a personal accountant who understands context — a $200 restaurant charge on a birthday weekend is normal, but a $200 charge at 3am from an unfamiliar merchant deserves an alert.\n\n## Instructions\n\n### 1. Daily Transaction Sync (runs every day at 7:00 AM)\n\n- Call the Plaid API to fetch new transactions since the last sync date.\n- Store the last sync cursor/date in a local file (`plaid_sync_state.json`) so you never re-process transactions.\n- For each new transaction:\n  1. **Categorize** using Plaid's category hierarchy AND your own reasoning. Map to budget categories: Groceries, Dining, Transport, Entertainment, Shopping, Bills & Utilities, Health, Education, Travel, Subscriptions, Income, Transfers, Other.\n  2. **Flag anomalies**: transactions over $500, unknown merchants, unusual hours (midnight–5am), duplicate amounts to the same merchant within 24 hours, foreign currency.\n  3. **Append** to Google Sheets with columns: Date, Merchant, Amount, Category, Account, Plaid Category, Flagged (Y/N), Notes.\n  4. **Update budget tracker** — increment running totals for each category in the current month.\n\n### 2. Budget Monitoring (after each sync)\n\n- Compare each category's running total against monthly budget limits from the 'Budgets' sheet tab.\n- **80% threshold** → Slack warning with category, amount, and top merchants.\n- **100% threshold** → Slack + Gmail alert with overage amount and contributing merchants.\n\n### 3. Anomaly Alerts (during sync)\n\n- Flagged transactions get an immediate Slack alert.\n- High-severity flags (>$1,000, fraud patterns) also trigger a Gmail alert with recommended actions.\n\n### 4. Weekly Spending Summary (every Monday at 8:00 AM)\n\n- Read the week's transactions from Google Sheets.\n- Compute: total spent, category breakdown, top 5 merchants, week-over-week comparison, budget utilization, daily trend.\n- Send condensed Slack summary + detailed Gmail HTML report.\n\n### 5. State Management\n\n- `plaid_sync_state.json` — last sync timestamp, cursor, account IDs, monthly totals cache.\n- `merchant_history.json` — known merchants, average amounts, frequency (for anomaly detection).\n- `budget_config.json` — fallback budget limits if Sheets is unreachable.\n\n## Tool Guidance\n\n### Plaid (via http_request + plaid connector)\n\n- **Sync transactions**: `POST https://production.plaid.com/transactions/sync`\n  ```json\n  {\"client_id\": \"...\", \"secret\": \"...\", \"access_token\": \"...\", \"cursor\": \"...\"}\n  ```\n- **Get accounts**: `POST https://production.plaid.com/accounts/get`\n- **Get categories**: `GET https://production.plaid.com/categories/get`\n\n### Google Sheets (via http_request + google_workspace connector)\n\n- **Append rows**: `POST https://sheets.googleapis.com/v4/spreadsheets/{ID}/values/Transactions!A:H:append?valueInputOption=USER_ENTERED`\n- **Read budgets**: `GET https://sheets.googleapis.com/v4/spreadsheets/{ID}/values/Budgets!A:C`\n- **Update totals**: `PUT https://sheets.googleapis.com/v4/spreadsheets/{ID}/values/Summary!A2:D20?valueInputOption=USER_ENTERED`\n\n### Slack (via http_request + slack connector)\n\n- **Post message**: `POST https://slack.com/api/chat.postMessage`\n  ```json\n  {\"channel\": \"#finance-alerts\", \"text\": \"...\", \"blocks\": [...]}\n  ```\n\n### Gmail (via gmail_send tool)\n\n- Send HTML-formatted budget alerts and weekly reports.\n- Use clear subject line conventions: `[Finance Alert]` or `[Weekly Report]`.\n\n### Local Files (via file_read / file_write)\n\n- Persist sync state, merchant history, and budget config between runs.\n- Queue failed transactions in `pending_transactions.json` for retry.\n\n## Error Handling\n\n- **Plaid ITEM_LOGIN_REQUIRED**: Alert user to re-link bank. Skip sync, continue reports.\n- **Plaid rate limit**: Retry after 60s with backoff.\n- **Sheets 403/404**: Fall back to local file logging. Alert user.\n- **Slack auth failure**: Fall back to Gmail-only. Alert user.\n- **Gmail failure**: Fall back to Slack-only. Log locally.\n- **Never drop transactions**: Queue in local file if Sheets fails, retry next cycle.\n- **Log all errors** to `finance_agent_errors.json`.\n\n## Communication Protocols\n\n- **user_message**: Budget alerts, anomaly warnings, weekly summaries — delivered via Slack and/or Gmail.\n- **agent_memory**: Spending patterns, merchant categorization history, budget trend data — stored locally for improving future categorization and anomaly detection.",
+    "summary": "A Personal Finance Agent that replaces four rigid automation workflows (transaction logging, budget monitoring, weekly reports, and anomaly detection) with a single intelligent agent. It syncs daily from Plaid, categorizes transactions with contextual reasoning, logs everything to Google Sheets, monitors budgets with threshold-based warnings, detects unusual charges using merchant history and behavioral patterns, and delivers weekly spending summaries via Slack and Gmail. State is managed locally for resilience and continuity across runs.",
     "design_highlights": [
       {
         "category": "Transaction Intelligence",
         "icon": "🏦",
         "color": "blue",
         "items": [
-          "Automatic transaction categorization with learning from user corrections",
-          "Cursor-based sync ensures no duplicate processing",
-          "Monthly sheet tab auto-creation for organized record-keeping",
-          "Batch appending for efficient Google Sheets API usage"
+          "Daily automated transaction sync via Plaid with cursor-based pagination",
+          "Smart categorization combining Plaid taxonomy with contextual reasoning",
+          "Merchant history tracking for pattern recognition and anomaly baselines",
+          "Deduplication and idempotent processing via persistent sync state"
         ]
       },
       {
@@ -75,32 +68,32 @@
         "icon": "📊",
         "color": "green",
         "items": [
-          "Tiered alerts at 80% warning and 100% over-budget thresholds",
-          "Daily spending velocity detection catches unusual spending days",
-          "Per-category month-to-date tracking with live summary updates",
-          "Configurable budget limits stored in a dedicated Sheets tab"
+          "Real-time budget utilization tracking across 13 spending categories",
+          "Two-tier alerting: 80% warning via Slack, 100% breach via Slack + Gmail",
+          "Top merchant attribution in budget alerts for actionable insight",
+          "Month-over-month trend tracking for spending pattern awareness"
         ]
       },
       {
         "category": "Anomaly Detection",
-        "icon": "🔍",
+        "icon": "🚨",
         "color": "red",
         "items": [
-          "Statistical outlier detection using 2.5σ threshold on transaction amounts",
-          "New merchant flagging for charges over $50",
-          "Odd-hour transaction alerts for 1–5 AM activity",
-          "Duplicate charge detection within 60-minute windows"
+          "Multi-signal flagging: amount thresholds, unknown merchants, unusual hours, foreign currency",
+          "Severity-tiered alerts: Slack for warnings, Slack + Gmail for critical",
+          "Fraud pattern matching: card-not-present mismatches, duplicate charges",
+          "Contextual reasoning to reduce false positives on legitimate large transactions"
         ]
       },
       {
-        "category": "Multi-Channel Reporting",
-        "icon": "📬",
+        "category": "Reporting & Resilience",
+        "icon": "📈",
         "color": "purple",
         "items": [
-          "Rich Block Kit formatted Slack messages for real-time alerts",
-          "HTML email summaries with color-coded budget status tables",
-          "Weekly comparative reports with week-over-week spending trends",
-          "Graceful degradation — falls back to email if Slack fails"
+          "Weekly HTML spending reports with category breakdowns and trend comparisons",
+          "Dual-channel delivery: condensed Slack summaries and detailed Gmail reports",
+          "Graceful degradation: local file fallback if any cloud service is unreachable",
+          "Transaction queue ensures zero data loss during outages"
         ]
       }
     ],
@@ -114,42 +107,33 @@
             "key": "client_id",
             "label": "Client ID",
             "type": "text",
-            "placeholder": "60a3b2...",
+            "placeholder": "e.g. 5f1a2b3c4d5e6f...",
             "helpText": "Found in the Plaid Dashboard under Team Settings → Keys",
             "required": true
           },
           {
             "key": "secret",
-            "label": "Secret Key",
+            "label": "Secret",
             "type": "password",
-            "placeholder": "your-plaid-secret",
-            "helpText": "Use the Development or Production secret from Plaid Dashboard → Keys. Use Development for testing.",
+            "placeholder": "e.g. abc123def456...",
+            "helpText": "Found in the Plaid Dashboard under Team Settings → Keys. Use the Sandbox secret for testing, Production secret for live data.",
             "required": true
           },
           {
             "key": "access_token",
             "label": "Access Token",
             "type": "password",
-            "placeholder": "access-production-...",
-            "helpText": "Generated via Plaid Link flow. Each connected bank account has its own access token. Use Plaid's Quickstart to generate one.",
-            "required": true
-          },
-          {
-            "key": "environment",
-            "label": "Environment",
-            "type": "text",
-            "placeholder": "production",
-            "helpText": "Either 'sandbox', 'development', or 'production'. Use 'development' for testing with real bank data.",
+            "placeholder": "access-sandbox-xxx or access-production-xxx",
+            "helpText": "Generated after linking a bank account via Plaid Link. Each linked institution has its own access token.",
             "required": true
           }
         ],
-        "setup_instructions": "1. Create a Plaid account at https://dashboard.plaid.com/signup\n2. Go to Team Settings → Keys to find your Client ID and Secret.\n3. For testing, use the 'development' environment. For production, apply for Production access.\n4. Use Plaid Link (via Plaid's Quickstart at https://github.com/plaid/quickstart) to connect a bank account and obtain an access_token.\n5. Enable the Transactions product in your Plaid Dashboard under Developers → API.\n6. Enter the Client ID, Secret, Access Token, and Environment here.",
+        "setup_instructions": "1. Sign up at https://dashboard.plaid.com and create a new application.\n2. Navigate to Team Settings → Keys to find your Client ID and Secret.\n3. For testing, use the Sandbox environment (base URL: https://sandbox.plaid.com). For production, apply for Production access.\n4. Integrate Plaid Link in a web page to let the user connect their bank account. This generates an access_token.\n5. Store the access_token securely — it represents the persistent connection to the user's bank.\n6. Enable the Transactions product in your Plaid application settings.",
         "related_tools": [
           "http_request"
         ],
         "related_triggers": [
-          0,
-          1
+          0
         ],
         "api_base_url": "https://production.plaid.com"
       },
@@ -162,16 +146,16 @@
             "key": "client_id",
             "label": "OAuth Client ID",
             "type": "text",
-            "placeholder": "123456789-abc.apps.googleusercontent.com",
-            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client ID",
+            "placeholder": "xxxx.apps.googleusercontent.com",
+            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs",
             "required": true
           },
           {
             "key": "client_secret",
             "label": "OAuth Client Secret",
             "type": "password",
-            "placeholder": "GOCSPX-...",
-            "helpText": "From Google Cloud Console → APIs & Services → Credentials, next to the Client ID",
+            "placeholder": "GOCSPX-xxx",
+            "helpText": "From the same OAuth 2.0 Client ID entry in Google Cloud Console",
             "required": true
           },
           {
@@ -179,19 +163,18 @@
             "label": "Spreadsheet ID",
             "type": "text",
             "placeholder": "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms",
-            "helpText": "The long ID from your Google Sheets URL: docs.google.com/spreadsheets/d/{THIS_PART}/edit",
+            "helpText": "The ID from your Google Sheets URL: https://docs.google.com/spreadsheets/d/{THIS_PART}/edit",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to Google Cloud Console (https://console.cloud.google.com).\n2. Create a project or select an existing one.\n3. Enable the Gmail API and Google Sheets API under APIs & Services → Library.\n4. Go to APIs & Services → Credentials → Create Credentials → OAuth 2.0 Client ID.\n5. Set application type to 'Desktop app' and create.\n6. Copy the Client ID and Client Secret.\n7. Create a Google Sheet for transaction logging with tabs: a 'Budgets' tab (columns: Category, Monthly Limit, Alert Threshold), and a 'Summary' tab.\n8. Copy the Spreadsheet ID from the sheet URL and enter it above.",
+        "setup_instructions": "1. Go to Google Cloud Console (console.cloud.google.com) and create or select a project.\n2. Enable the Gmail API and Google Sheets API under APIs & Services → Library.\n3. Create OAuth 2.0 credentials under APIs & Services → Credentials.\n4. Set the authorized redirect URI to your app's callback URL.\n5. Create a Google Sheets spreadsheet with three tabs: 'Transactions' (columns: Date, Merchant, Amount, Category, Account, Plaid Category, Flagged, Notes), 'Budgets' (columns: Category, Monthly Limit, Notes), and 'Summary' (auto-populated by the agent).\n6. Copy the spreadsheet ID from the URL and paste it into the Spreadsheet ID field above.",
         "related_tools": [
           "http_request",
           "gmail_send"
         ],
         "related_triggers": [
           0,
-          1,
-          2
+          1
         ],
         "api_base_url": "https://www.googleapis.com"
       },
@@ -204,8 +187,8 @@
             "key": "bot_token",
             "label": "Bot User OAuth Token",
             "type": "password",
-            "placeholder": "xoxb-1234567890-...",
-            "helpText": "From your Slack App → OAuth & Permissions → Bot User OAuth Token (starts with xoxb-)",
+            "placeholder": "xoxb-xxxx-xxxx-xxxx",
+            "helpText": "From your Slack App → OAuth & Permissions → Bot User OAuth Token. Requires chat:write scope.",
             "required": true
           },
           {
@@ -213,16 +196,17 @@
             "label": "Default Alert Channel",
             "type": "text",
             "placeholder": "#finance-alerts",
-            "helpText": "The Slack channel where budget alerts and summaries will be posted. The bot must be invited to this channel.",
+            "helpText": "The Slack channel where budget alerts and spending summaries will be posted. The bot must be invited to this channel.",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to https://api.slack.com/apps and click 'Create New App' → 'From scratch'.\n2. Name it 'Finance Manager' and select your workspace.\n3. Go to OAuth & Permissions and add these Bot Token Scopes: chat:write, chat:write.public.\n4. Click 'Install to Workspace' and authorize.\n5. Copy the Bot User OAuth Token (starts with xoxb-).\n6. Create a #finance-alerts channel in Slack (or use an existing one).\n7. Invite the bot to the channel: type `/invite @Finance Manager` in the channel.\n8. Enter the token and channel name above.",
+        "setup_instructions": "1. Go to api.slack.com/apps and create a new Slack App (or select an existing one).\n2. Under OAuth & Permissions, add the following Bot Token Scopes: chat:write, chat:write.public.\n3. Install the app to your workspace and copy the Bot User OAuth Token (starts with xoxb-).\n4. Create a channel (e.g., #finance-alerts) for the agent to post to.\n5. Invite the bot to the channel by typing /invite @YourBotName in the channel.\n6. Paste the bot token and channel name into the fields above.",
         "related_tools": [
           "http_request"
         ],
         "related_triggers": [
-          2
+          0,
+          1
         ],
         "api_base_url": "https://slack.com/api"
       }
@@ -230,7 +214,7 @@
     "suggested_notification_channels": [
       {
         "type": "slack",
-        "description": "Real-time budget alerts, anomaly notifications, and weekly spending summaries posted to a dedicated finance channel",
+        "description": "Real-time budget warnings, anomaly alerts, and condensed weekly spending summaries posted to a dedicated finance channel.",
         "required_connector": "slack",
         "config_hints": {
           "channel": "#finance-alerts"
@@ -238,30 +222,513 @@
       },
       {
         "type": "email",
-        "description": "Weekly HTML spending summary emails and urgent anomaly alerts for charges that need immediate attention",
+        "description": "Detailed HTML budget breach alerts with merchant breakdowns, weekly spending reports with tables and trends, and critical fraud-pattern warnings.",
         "required_connector": "google_workspace",
         "config_hints": {
-          "from": "persona@gmail.com",
-          "format": "html"
+          "subject_prefix": "[Personal Finance]"
         }
       }
     ],
     "suggested_event_subscriptions": [
       {
-        "event_type": "budget_threshold_reached",
-        "description": "Fires when any budget category reaches 80% or 100% of its monthly limit, triggering immediate alerts to Slack and email"
+        "event_type": "budget_threshold_warning",
+        "description": "Emitted when a spending category reaches 80% of its monthly budget. Triggers a Slack warning to help the user adjust spending before exceeding the limit."
       },
       {
-        "event_type": "anomaly_detected",
-        "description": "Fires when a transaction is flagged as anomalous (statistical outlier, new merchant, odd hours, or duplicate), triggering immediate multi-channel alerts"
+        "event_type": "budget_exceeded",
+        "description": "Emitted when a spending category exceeds 100% of its monthly budget. Triggers both Slack and Gmail alerts with overage details and top contributing merchants."
       },
       {
-        "event_type": "transaction_sync_complete",
-        "description": "Fires after each successful Plaid transaction sync, used to trigger downstream budget checks and sheet updates"
+        "event_type": "anomalous_transaction",
+        "description": "Emitted when a transaction is flagged as unusual based on amount, merchant history, timing, or currency. Severity level determines which notification channels fire."
       },
       {
-        "event_type": "weekly_report_due",
-        "description": "Fires on the Monday morning schedule trigger to compile and distribute the weekly spending summary report"
+        "event_type": "sync_failure",
+        "description": "Emitted when the Plaid sync, Sheets append, or any critical operation fails. Used for self-healing retry logic and user notification of degraded operation."
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_daily_sync",
+        "name": "Daily Transaction Sync & Budget Check",
+        "description": "The primary daily workflow: fetches new transactions from Plaid, categorizes them, logs to Google Sheets, checks budget thresholds, and fires alerts for anomalies or budget overruns.",
+        "nodes": [
+          {
+            "id": "ds1",
+            "type": "start",
+            "label": "Daily 7AM schedule trigger",
+            "detail": "Cron trigger fires at 0 7 * * * to begin the daily sync cycle"
+          },
+          {
+            "id": "ds2",
+            "type": "action",
+            "label": "Load sync state",
+            "detail": "file_read plaid_sync_state.json to get last cursor and merchant_history.json for anomaly baselines"
+          },
+          {
+            "id": "ds3",
+            "type": "connector",
+            "label": "Fetch new transactions",
+            "detail": "POST /transactions/sync with stored cursor to get all transactions since last sync",
+            "connector": "plaid"
+          },
+          {
+            "id": "ds4",
+            "type": "decision",
+            "label": "New transactions found?",
+            "detail": "Check if the 'added' array in Plaid response contains any new transactions"
+          },
+          {
+            "id": "ds5",
+            "type": "action",
+            "label": "Categorize & flag transactions",
+            "detail": "Map each transaction to budget categories using Plaid taxonomy + reasoning. Flag anomalies based on amount, merchant history, timing, and currency."
+          },
+          {
+            "id": "ds6",
+            "type": "connector",
+            "label": "Append rows to Sheets",
+            "detail": "POST /spreadsheets/{id}/values/Transactions!A:H:append with categorized transaction rows",
+            "connector": "google_workspace"
+          },
+          {
+            "id": "ds7",
+            "type": "connector",
+            "label": "Update budget totals",
+            "detail": "PUT /spreadsheets/{id}/values/Summary sheet with updated running totals per category",
+            "connector": "google_workspace"
+          },
+          {
+            "id": "ds8",
+            "type": "decision",
+            "label": "Any budget thresholds breached?",
+            "detail": "Compare each category's running total against budget limits from the Budgets tab"
+          },
+          {
+            "id": "ds9",
+            "type": "connector",
+            "label": "Send Slack budget alert",
+            "detail": "POST chat.postMessage with budget warning (80%) or breach alert (100%) using Block Kit formatting",
+            "connector": "slack"
+          },
+          {
+            "id": "ds10",
+            "type": "event",
+            "label": "Send Gmail budget alert",
+            "detail": "gmail_send with HTML-formatted budget breach details, top merchants, and overage amount — only for 100% breaches"
+          },
+          {
+            "id": "ds11",
+            "type": "decision",
+            "label": "Any anomalous transactions?",
+            "detail": "Check if any transactions were flagged during categorization step"
+          },
+          {
+            "id": "ds12",
+            "type": "connector",
+            "label": "Send Slack anomaly alert",
+            "detail": "POST chat.postMessage with flagged transaction details, reason for flag, and recommended actions",
+            "connector": "slack"
+          },
+          {
+            "id": "ds13",
+            "type": "action",
+            "label": "Save updated sync state",
+            "detail": "file_write updated cursor, merchant history, and monthly totals cache to local JSON files"
+          },
+          {
+            "id": "ds14",
+            "type": "end",
+            "label": "Daily sync complete",
+            "detail": "All transactions processed, budget checked, alerts sent, state persisted"
+          },
+          {
+            "id": "ds15",
+            "type": "error",
+            "label": "Plaid sync failure",
+            "error_message": "Plaid API returned an error (ITEM_LOGIN_REQUIRED, rate limit, or network failure). Transactions queued for retry."
+          },
+          {
+            "id": "ds16",
+            "type": "error",
+            "label": "Sheets write failure",
+            "error_message": "Google Sheets API returned 403/429/404. Transactions saved to local pending_transactions.json for retry on next cycle."
+          }
+        ],
+        "edges": [
+          {
+            "id": "de1",
+            "source": "ds1",
+            "target": "ds2"
+          },
+          {
+            "id": "de2",
+            "source": "ds2",
+            "target": "ds3"
+          },
+          {
+            "id": "de3",
+            "source": "ds3",
+            "target": "ds4"
+          },
+          {
+            "id": "de4",
+            "source": "ds4",
+            "target": "ds5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "de5",
+            "source": "ds4",
+            "target": "ds13",
+            "label": "No new transactions",
+            "variant": "no"
+          },
+          {
+            "id": "de6",
+            "source": "ds5",
+            "target": "ds6"
+          },
+          {
+            "id": "de7",
+            "source": "ds6",
+            "target": "ds7"
+          },
+          {
+            "id": "de8",
+            "source": "ds7",
+            "target": "ds8"
+          },
+          {
+            "id": "de9",
+            "source": "ds8",
+            "target": "ds9",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "de10",
+            "source": "ds8",
+            "target": "ds11",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "de11",
+            "source": "ds9",
+            "target": "ds10"
+          },
+          {
+            "id": "de12",
+            "source": "ds10",
+            "target": "ds11"
+          },
+          {
+            "id": "de13",
+            "source": "ds11",
+            "target": "ds12",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "de14",
+            "source": "ds11",
+            "target": "ds13",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "de15",
+            "source": "ds12",
+            "target": "ds13"
+          },
+          {
+            "id": "de16",
+            "source": "ds13",
+            "target": "ds14"
+          },
+          {
+            "id": "de17",
+            "source": "ds3",
+            "target": "ds15",
+            "variant": "error"
+          },
+          {
+            "id": "de18",
+            "source": "ds6",
+            "target": "ds16",
+            "variant": "error"
+          },
+          {
+            "id": "de19",
+            "source": "ds15",
+            "target": "ds13"
+          },
+          {
+            "id": "de20",
+            "source": "ds16",
+            "target": "ds13"
+          }
+        ]
+      },
+      {
+        "id": "flow_weekly_report",
+        "name": "Weekly Spending Summary Report",
+        "description": "Every Monday, aggregates the past week's transactions from Google Sheets, computes category breakdowns and trends, and delivers a condensed Slack summary plus a detailed HTML Gmail report.",
+        "nodes": [
+          {
+            "id": "wr1",
+            "type": "start",
+            "label": "Monday 8AM schedule trigger",
+            "detail": "Cron trigger fires at 0 8 * * 1 to generate the weekly spending report"
+          },
+          {
+            "id": "wr2",
+            "type": "connector",
+            "label": "Read week's transactions",
+            "detail": "GET /spreadsheets/{id}/values/Transactions!A:H and filter rows where Date falls within the past 7 days",
+            "connector": "google_workspace"
+          },
+          {
+            "id": "wr3",
+            "type": "decision",
+            "label": "Transactions found for this week?",
+            "detail": "Check if any transactions exist in the date range. If none, send a brief 'no activity' note instead."
+          },
+          {
+            "id": "wr4",
+            "type": "action",
+            "label": "Compute spending analytics",
+            "detail": "Calculate: total spent, per-category breakdown (amount + percentage), top 5 merchants, daily trend, week-over-week comparison using stored previous week data"
+          },
+          {
+            "id": "wr5",
+            "type": "connector",
+            "label": "Read budget limits",
+            "detail": "GET /spreadsheets/{id}/values/Budgets!A:C to calculate budget utilization percentages per category",
+            "connector": "google_workspace"
+          },
+          {
+            "id": "wr6",
+            "type": "action",
+            "label": "Format reports",
+            "detail": "Generate a condensed Block Kit summary for Slack and a detailed HTML report with inline tables for Gmail"
+          },
+          {
+            "id": "wr7",
+            "type": "connector",
+            "label": "Post Slack summary",
+            "detail": "POST chat.postMessage with Block Kit sections: total spent, top categories bar, top merchants, budget status, week-over-week delta",
+            "connector": "slack"
+          },
+          {
+            "id": "wr8",
+            "type": "event",
+            "label": "Send Gmail detailed report",
+            "detail": "gmail_send with HTML body containing full category table, merchant table, daily spending chart data, and 4-week trend comparison"
+          },
+          {
+            "id": "wr9",
+            "type": "action",
+            "label": "Store weekly snapshot",
+            "detail": "file_write this week's totals to local storage for use in next week's comparison calculations"
+          },
+          {
+            "id": "wr10",
+            "type": "end",
+            "label": "Weekly report delivered",
+            "detail": "Summary sent to Slack, detailed report sent to Gmail, snapshot stored for trends"
+          },
+          {
+            "id": "wr11",
+            "type": "error",
+            "label": "Sheets read failure",
+            "error_message": "Could not read transactions from Google Sheets. Report generation skipped. User notified via Slack."
+          }
+        ],
+        "edges": [
+          {
+            "id": "we1",
+            "source": "wr1",
+            "target": "wr2"
+          },
+          {
+            "id": "we2",
+            "source": "wr2",
+            "target": "wr3"
+          },
+          {
+            "id": "we3",
+            "source": "wr3",
+            "target": "wr4",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "we4",
+            "source": "wr3",
+            "target": "wr7",
+            "label": "No transactions",
+            "variant": "no"
+          },
+          {
+            "id": "we5",
+            "source": "wr4",
+            "target": "wr5"
+          },
+          {
+            "id": "we6",
+            "source": "wr5",
+            "target": "wr6"
+          },
+          {
+            "id": "we7",
+            "source": "wr6",
+            "target": "wr7"
+          },
+          {
+            "id": "we8",
+            "source": "wr7",
+            "target": "wr8"
+          },
+          {
+            "id": "we9",
+            "source": "wr8",
+            "target": "wr9"
+          },
+          {
+            "id": "we10",
+            "source": "wr9",
+            "target": "wr10"
+          },
+          {
+            "id": "we11",
+            "source": "wr2",
+            "target": "wr11",
+            "variant": "error"
+          },
+          {
+            "id": "we12",
+            "source": "wr11",
+            "target": "wr10"
+          }
+        ]
+      },
+      {
+        "id": "flow_anomaly_escalation",
+        "name": "High-Severity Anomaly Escalation",
+        "description": "When a transaction is flagged as potentially fraudulent (>$1,000, foreign currency mismatch, or duplicate pattern), this flow escalates through multiple channels with detailed context and recommended actions.",
+        "nodes": [
+          {
+            "id": "ae1",
+            "type": "start",
+            "label": "Anomalous transaction detected",
+            "detail": "Triggered within the daily sync when a transaction matches high-severity fraud patterns"
+          },
+          {
+            "id": "ae2",
+            "type": "action",
+            "label": "Assess severity level",
+            "detail": "Score the transaction: >$1,000 amount (+3), unknown merchant (+2), foreign currency (+3), unusual hour (+1), duplicate pattern (+2). High severity = score >= 5."
+          },
+          {
+            "id": "ae3",
+            "type": "decision",
+            "label": "High severity (score >= 5)?",
+            "detail": "Determine if the anomaly score warrants multi-channel escalation or just a standard Slack alert"
+          },
+          {
+            "id": "ae4",
+            "type": "connector",
+            "label": "Post urgent Slack alert",
+            "detail": "POST chat.postMessage with red-flagged Block Kit alert including transaction details, anomaly reasons, severity score, and action buttons",
+            "connector": "slack"
+          },
+          {
+            "id": "ae5",
+            "type": "event",
+            "label": "Send Gmail fraud alert",
+            "detail": "gmail_send with urgent subject line, full transaction context, merchant lookup results, historical comparison, and recommended actions (contact bank, freeze card)"
+          },
+          {
+            "id": "ae6",
+            "type": "action",
+            "label": "Log to anomaly history",
+            "detail": "file_write the flagged transaction with severity score and timestamp to anomaly_log.json for pattern tracking"
+          },
+          {
+            "id": "ae7",
+            "type": "connector",
+            "label": "Post standard Slack alert",
+            "detail": "POST chat.postMessage with yellow-flagged warning including transaction details and the specific anomaly reason",
+            "connector": "slack"
+          },
+          {
+            "id": "ae8",
+            "type": "end",
+            "label": "Escalation complete",
+            "detail": "Appropriate channels notified based on severity. Transaction logged for future pattern analysis."
+          }
+        ],
+        "edges": [
+          {
+            "id": "aee1",
+            "source": "ae1",
+            "target": "ae2"
+          },
+          {
+            "id": "aee2",
+            "source": "ae2",
+            "target": "ae3"
+          },
+          {
+            "id": "aee3",
+            "source": "ae3",
+            "target": "ae4",
+            "label": "High severity",
+            "variant": "yes"
+          },
+          {
+            "id": "aee4",
+            "source": "ae3",
+            "target": "ae7",
+            "label": "Standard",
+            "variant": "no"
+          },
+          {
+            "id": "aee5",
+            "source": "ae4",
+            "target": "ae5"
+          },
+          {
+            "id": "aee6",
+            "source": "ae5",
+            "target": "ae6"
+          },
+          {
+            "id": "aee7",
+            "source": "ae7",
+            "target": "ae6"
+          },
+          {
+            "id": "aee8",
+            "source": "ae6",
+            "target": "ae8"
+          }
+        ]
+      }
+    ],
+    "customSections": [
+      {
+        "key": "budget_categories",
+        "label": "Budget Categories",
+        "content": "The agent uses 13 standard budget categories for transaction classification:\n\n| Category | Description | Common Merchants |\n|----------|-------------|------------------|\n| Groceries | Supermarkets, food stores | Whole Foods, Trader Joe's, Costco |\n| Dining | Restaurants, cafes, delivery | Chipotle, Starbucks, DoorDash |\n| Transport | Gas, rideshare, transit, parking | Uber, Lyft, Shell, MTA |\n| Entertainment | Streaming, events, games | Netflix, Spotify, AMC |\n| Shopping | Retail, online shopping | Amazon, Target, Best Buy |\n| Bills & Utilities | Rent, electric, water, internet | ConEd, Comcast, Verizon |\n| Health | Pharmacy, doctor, gym | CVS, Equinox, Kaiser |\n| Education | Courses, books, tuition | Udemy, Amazon Books |\n| Travel | Hotels, flights, car rental | Airbnb, Delta, Hertz |\n| Subscriptions | Recurring SaaS and services | Adobe, iCloud, NYT |\n| Income | Payroll, refunds, deposits | Direct deposits, Venmo receives |\n| Transfers | Bank transfers, Venmo/Zelle sends | Internal transfers, P2P |\n| Other | Uncategorized | Anything not matching above |"
+      },
+      {
+        "key": "anomaly_rules",
+        "label": "Anomaly Detection Rules",
+        "content": "The agent uses a multi-signal scoring system for transaction anomalies:\n\n**Flags (each adds to severity score):**\n- Amount > $500: +2 points\n- Amount > $1,000: +3 points (replaces the $500 flag)\n- Merchant never seen before in history: +2 points\n- Transaction between midnight and 5am local time: +1 point\n- Foreign currency on a domestic account: +3 points\n- Duplicate amount to same merchant within 24 hours: +2 points\n- Amount > 3x the average for that merchant: +2 points\n- Category mismatch (e.g., 'in-store' purchase for an online-only merchant): +2 points\n\n**Severity levels:**\n- Score 1–2: Log only, no alert\n- Score 3–4: Standard alert (Slack only)\n- Score 5+: High severity (Slack + Gmail with recommended actions)"
       }
     ]
   }

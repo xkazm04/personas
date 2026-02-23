@@ -18,7 +18,6 @@ import { createCredentialSlice } from "./slices/credentialSlice";
 import { createOverviewSlice } from "./slices/overviewSlice";
 import { createMessageSlice } from "./slices/messageSlice";
 import { createEventSlice } from "./slices/eventSlice";
-import { createObservabilitySlice } from "./slices/observabilitySlice";
 import { createHealingSlice } from "./slices/healingSlice";
 import { createTeamSlice } from "./slices/teamSlice";
 import { createGroupSlice } from "./slices/groupSlice";
@@ -42,7 +41,6 @@ export const usePersonaStore = create<PersonaStore>()(
         ...createOverviewSlice(...a),
         ...createMessageSlice(...a),
         ...createEventSlice(...a),
-        ...createObservabilitySlice(...a),
         ...createHealingSlice(...a),
         ...createTeamSlice(...a),
         ...createGroupSlice(...a),
@@ -60,6 +58,7 @@ export const usePersonaStore = create<PersonaStore>()(
           selectedPersonaId: state.selectedPersonaId,
           overviewTab: state.overviewTab,
           editorTab: state.editorTab,
+          cloudTab: state.cloudTab,
           settingsTab: state.settingsTab,
         }),
       },

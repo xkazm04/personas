@@ -4,6 +4,7 @@ use serde::Serialize;
 use tauri::{Manager, State};
 use ts_rs::TS;
 
+use crate::db::settings_keys;
 use crate::error::AppError;
 use crate::AppState;
 
@@ -192,7 +193,7 @@ pub async fn system_health_check(
     // -- Section 2: Agents --
     let mut agent_items = Vec::new();
 
-    let ollama_key_configured = crate::db::repos::core::settings::get(&state.db, "ollama_api_key")
+    let ollama_key_configured = crate::db::repos::core::settings::get(&state.db, settings_keys::OLLAMA_API_KEY)
         .ok()
         .flatten()
         .is_some_and(|k| !k.is_empty());
@@ -215,11 +216,11 @@ pub async fn system_health_check(
         installable: false,
     });
 
-    let litellm_url_configured = crate::db::repos::core::settings::get(&state.db, "litellm_base_url")
+    let litellm_url_configured = crate::db::repos::core::settings::get(&state.db, settings_keys::LITELLM_BASE_URL)
         .ok()
         .flatten()
         .is_some_and(|u| !u.is_empty());
-    let litellm_key_configured = crate::db::repos::core::settings::get(&state.db, "litellm_master_key")
+    let litellm_key_configured = crate::db::repos::core::settings::get(&state.db, settings_keys::LITELLM_MASTER_KEY)
         .ok()
         .flatten()
         .is_some_and(|k| !k.is_empty());

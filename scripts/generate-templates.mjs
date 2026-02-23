@@ -655,6 +655,33 @@ You MUST output your result as a single JSON code block. The JSON must conform t
       "event_type": "event_name",
       "description": "When and why to listen for this event"
     }
+  ],
+  "use_case_flows": [
+    {
+      "id": "flow_1",
+      "name": "Primary Workflow",
+      "description": "Description of this workflow path",
+      "nodes": [
+        { "id": "n1", "type": "start", "label": "Trigger fires" },
+        { "id": "n2", "type": "connector", "label": "Read from Service", "detail": "API call details", "connector": "connector_slug" },
+        { "id": "n3", "type": "decision", "label": "Condition check?", "detail": "What is being evaluated" },
+        { "id": "n4", "type": "action", "label": "Process data", "detail": "What processing occurs" },
+        { "id": "n5", "type": "connector", "label": "Write to Service", "connector": "another_connector" },
+        { "id": "n6", "type": "event", "label": "Emit notification" },
+        { "id": "n7", "type": "error", "label": "Handle failure", "error_message": "What went wrong" },
+        { "id": "n8", "type": "end", "label": "Complete" }
+      ],
+      "edges": [
+        { "id": "e1", "source": "n1", "target": "n2" },
+        { "id": "e2", "source": "n2", "target": "n3" },
+        { "id": "e3", "source": "n3", "target": "n4", "label": "Yes", "variant": "yes" },
+        { "id": "e4", "source": "n3", "target": "n7", "label": "No", "variant": "no" },
+        { "id": "e5", "source": "n4", "target": "n5" },
+        { "id": "e6", "source": "n5", "target": "n6" },
+        { "id": "e7", "source": "n6", "target": "n8" },
+        { "id": "e8", "source": "n7", "target": "n8", "variant": "error" }
+      ]
+    }
   ]
 }
 \`\`\`
@@ -673,7 +700,14 @@ Critical rules:
 11. Do NOT ask clarification questions — produce the best possible design
 12. Each section of structured_prompt should be detailed (identity >100 chars, instructions >500 chars, toolGuidance >200 chars, examples >200 chars, errorHandling >200 chars)
 13. Include at least 3-4 design_highlights with 3-4 items each
-14. The toolGuidance section MUST include specific API endpoints and HTTP methods for each connector service`;
+14. The toolGuidance section MUST include specific API endpoints and HTTP methods for each connector service
+15. \`use_case_flows\` MUST contain 1-3 flow diagrams documenting the persona's primary workflows
+16. Each flow MUST have a "start" node and an "end" node, with at least 5-10 nodes total
+17. Flow node types: "start" (trigger), "end" (completion), "action" (processing), "decision" (branching logic), "connector" (external API call — set \`connector\` field to the connector slug), "event" (emit notification/event), "error" (failure handling)
+18. Flow edges MUST use \`variant\`: "yes"/"no" for decision branches, "error" for error paths, omit for default flow
+19. Connector nodes MUST set the \`connector\` field to match the connector slug from \`suggested_connectors\` (e.g., "slack", "github")
+20. Flow nodes should have meaningful \`detail\` descriptions explaining what happens at each step
+21. Create separate flows for distinct use cases (e.g., "Incoming Email Processing", "Daily Digest Generation", "Error Recovery")`;
 
 function buildDesignPrompt(template) {
   let prompt = '# Persona Design Analysis\n\n';
@@ -780,7 +814,7 @@ function runClaudeCli(promptText, timeoutSecs = 180) {
   writeFileSync(tmpFile, promptText, 'utf-8');
 
   try {
-    const cmd = `claude -p - --output-format stream-json --verbose --dangerously-skip-permissions --max-turns 1 < "${tmpFile.replace(/\\/g, '/')}"`;
+    const cmd = `claude -p - --dangerously-skip-permissions --max-turns 1 < "${tmpFile.replace(/\\/g, '/')}"`;
     const env = { ...process.env };
     delete env.CLAUDECODE;
     delete env.CLAUDE_CODE_ENTRYPOINT;
@@ -1218,8 +1252,9 @@ async function main() {
     // Count named connectors (not http_generic)
     const namedConns = (designResult.suggested_connectors || []).filter(c => c.name !== 'http_generic').length;
     const hasCredFields = (designResult.suggested_connectors || []).some(c => c.credential_fields?.length > 0);
+    const flowCount = (designResult.use_case_flows || []).length;
 
-    log(`${progress} ${template.name}: ${status} (${elapsed}s) — structural: ${scores.structural}, semantic: ${scores.semantic}, connectors: ${namedConns}${hasCredFields ? ' (with creds)' : ''}`);
+    log(`${progress} ${template.name}: ${status} (${elapsed}s) — structural: ${scores.structural}, semantic: ${scores.semantic}, connectors: ${namedConns}${hasCredFields ? ' (with creds)' : ''}, flows: ${flowCount}`);
     log(`         → ${filePath.replace(ROOT, '.')}`);
 
     // ETA

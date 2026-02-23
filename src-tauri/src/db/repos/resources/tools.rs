@@ -14,6 +14,7 @@ fn row_to_tool_def(row: &Row) -> rusqlite::Result<PersonaToolDefinition> {
         input_schema: row.get("input_schema")?,
         output_schema: row.get("output_schema")?,
         requires_credential_type: row.get("requires_credential_type")?,
+        implementation_guide: row.get("implementation_guide")?,
         is_builtin: row.get::<_, i32>("is_builtin")? != 0,
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
@@ -73,9 +74,10 @@ pub fn create_definition(
     conn.execute(
         "INSERT INTO persona_tool_definitions
          (id, name, category, description, script_path,
-          input_schema, output_schema, requires_credential_type, is_builtin,
+          input_schema, output_schema, requires_credential_type,
+          implementation_guide, is_builtin,
           created_at, updated_at)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?10)",
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?11)",
         params![
             id,
             input.name,
@@ -85,6 +87,7 @@ pub fn create_definition(
             input.input_schema,
             input.output_schema,
             input.requires_credential_type,
+            input.implementation_guide,
             is_builtin,
             now,
         ],
@@ -120,6 +123,7 @@ pub fn update_definition(
     push_field!(input.input_schema, "input_schema", sets, param_idx);
     push_field!(input.output_schema, "output_schema", sets, param_idx);
     push_field!(input.requires_credential_type, "requires_credential_type", sets, param_idx);
+    push_field!(input.implementation_guide, "implementation_guide", sets, param_idx);
 
     let sql = format!(
         "UPDATE persona_tool_definitions SET {} WHERE id = ?{}",
@@ -148,6 +152,9 @@ pub fn update_definition(
         param_values.push(Box::new(v.clone()));
     }
     if let Some(ref v) = input.requires_credential_type {
+        param_values.push(Box::new(v.clone()));
+    }
+    if let Some(ref v) = input.implementation_guide {
         param_values.push(Box::new(v.clone()));
     }
     param_values.push(Box::new(id.to_string()));
@@ -262,6 +269,7 @@ mod tests {
                 input_schema: Some(r#"{"type":"object"}"#.into()),
                 output_schema: None,
                 requires_credential_type: None,
+                implementation_guide: None,
                 is_builtin: Some(false),
             },
         )
@@ -301,6 +309,7 @@ mod tests {
                 input_schema: None,
                 output_schema: None,
                 requires_credential_type: None,
+                implementation_guide: None,
                 is_builtin: None,
             },
         );
@@ -331,6 +340,7 @@ mod tests {
                 max_turns: None,
                 design_context: None,
                 group_id: None,
+                notification_channels: None,
             },
         )
         .unwrap();
@@ -380,6 +390,7 @@ mod tests {
                 max_turns: None,
                 design_context: None,
                 group_id: None,
+                notification_channels: None,
             },
         )
         .unwrap();

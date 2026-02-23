@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import type { PersonaEvent } from '@/lib/bindings/PersonaEvent';
 
@@ -44,21 +44,34 @@ function teardownIfEmpty() {
  * Subscribes to the Tauri 'event-bus' channel and invokes a callback for each
  * incoming PersonaEvent. Uses a singleton listener internally — multiple calls
  * share one Tauri subscription, eliminating duplicate events.
+ *
+ * Returns `true` once the Tauri listener is confirmed attached, `false` while
+ * setup is pending or if the listener has been torn down.
  */
 export function useEventBusListener(
   callback: (event: PersonaEvent) => void,
-) {
+): boolean {
   const callbackRef = useRef(callback);
   callbackRef.current = callback;
+  const [attached, setAttached] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     const subscriber: Subscriber = (event) => callbackRef.current(event);
     subscribers.add(subscriber);
     ensureListener();
 
+    // Mark attached once the singleton listener setup resolves
+    setupPromise?.then(() => {
+      if (!cancelled) setAttached(true);
+    });
+
     return () => {
+      cancelled = true;
       subscribers.delete(subscriber);
       teardownIfEmpty();
     };
   }, []);
+
+  return attached;
 }

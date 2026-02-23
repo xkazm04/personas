@@ -1,9 +1,13 @@
-import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
+import { useMemo, useRef, useEffect, useState, useCallback, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
 import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
 import BusLane from './BusLane';
 import EventParticle from './EventParticle';
+import {
+  Mail, MessageSquare, Github, Calendar, CreditCard,
+  HardDrive, SquareKanban, Figma,
+} from 'lucide-react';
 
 interface PersonaInfo {
   id: string;
@@ -29,9 +33,9 @@ interface NodePosition {
 }
 
 const PADDING_X = 60;
-const PADDING_Y = 40;
-const NODE_RADIUS = 20;
-const BUS_HEIGHT = 4;
+const PADDING_Y = 50;
+const NODE_RADIUS = 22;
+const BUS_HEIGHT = 6;
 const MAX_LEGEND_ITEMS = 6;
 
 const EVENT_TYPE_LABELS: Record<string, string> = {
@@ -40,10 +44,38 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
   persona_action: 'Persona Action',
   credential_event: 'Credential',
   task_created: 'Task Created',
+  test_event: 'Test Event',
   custom: 'Custom',
 };
 
+/** Default producer nodes shown when there are no real events (or for test flow). */
+const DEFAULT_PRODUCERS = [
+  { id: 'default:gmail', label: 'Gmail', icon: 'mail', color: '#ea4335' },
+  { id: 'default:slack', label: 'Slack', icon: 'slack', color: '#4a154b' },
+  { id: 'default:github', label: 'GitHub', icon: 'github', color: '#8b5cf6' },
+  { id: 'default:calendar', label: 'Calendar', icon: 'calendar', color: '#06b6d4' },
+];
+
+const DEFAULT_CONSUMERS = [
+  { id: 'default:jira', label: 'Jira', icon: 'jira', color: '#0052cc' },
+  { id: 'default:drive', label: 'Drive', icon: 'drive', color: '#34a853' },
+  { id: 'default:stripe', label: 'Stripe', icon: 'stripe', color: '#635bff' },
+  { id: 'default:figma', label: 'Figma', icon: 'figma', color: '#f24e1e' },
+];
+
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  mail: Mail,
+  slack: MessageSquare,
+  github: Github,
+  calendar: Calendar,
+  jira: SquareKanban,
+  drive: HardDrive,
+  stripe: CreditCard,
+  figma: Figma,
+};
+
 export default function EventBusVisualization({ events, personas, onSelectEvent }: Props) {
+  const uid = useId();
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 400 });
 
@@ -72,7 +104,7 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
     return m;
   }, [personas]);
 
-  // Compute producer and consumer nodes from events
+  // Compute producer and consumer nodes from events, falling back to defaults
   const { producers, consumers } = useMemo(() => {
     const sourceSet = new Map<string, { type: string; id: string | null }>();
     const targetSet = new Set<string>();
@@ -87,41 +119,66 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
       }
     }
 
-    const producerArr: NodePosition[] = [];
-    const sourceEntries = Array.from(sourceSet.entries()).slice(0, 8);
-    const pCount = Math.max(sourceEntries.length, 1);
-    sourceEntries.forEach(([key, val], i) => {
-      const persona = val.id ? personaMap.get(val.id) : null;
-      const sourceLabels: Record<string, string> = {
-        webhook: 'Webhook', execution: 'Execution', persona: 'Persona',
-        trigger: 'Trigger', system: 'System',
-      };
-      producerArr.push({
-        id: key,
-        label: persona?.name ?? sourceLabels[val.type] ?? val.type,
-        icon: persona?.icon ?? null,
-        color: persona?.color ?? null,
-        x: PADDING_X + ((width - 2 * PADDING_X) / (pCount + 1)) * (i + 1),
-        y: PADDING_Y + NODE_RADIUS,
-        side: 'top',
-      });
-    });
+    let producerArr: NodePosition[];
+    let consumerArr: NodePosition[];
 
-    const consumerArr: NodePosition[] = [];
-    const targetEntries = Array.from(targetSet).slice(0, 8);
-    const cCount = Math.max(targetEntries.length, 1);
-    targetEntries.forEach((pid, i) => {
-      const persona = personaMap.get(pid);
-      consumerArr.push({
-        id: pid,
-        label: persona?.name ?? pid.slice(0, 8),
-        icon: persona?.icon ?? null,
-        color: persona?.color ?? null,
-        x: PADDING_X + ((width - 2 * PADDING_X) / (cCount + 1)) * (i + 1),
+    if (sourceSet.size === 0) {
+      // Show default showcase nodes when no real events
+      producerArr = DEFAULT_PRODUCERS.map((d, i) => ({
+        id: d.id,
+        label: d.label,
+        icon: d.icon,
+        color: d.color,
+        x: PADDING_X + ((width - 2 * PADDING_X) / (DEFAULT_PRODUCERS.length + 1)) * (i + 1),
+        y: PADDING_Y + NODE_RADIUS,
+        side: 'top' as const,
+      }));
+      consumerArr = DEFAULT_CONSUMERS.map((d, i) => ({
+        id: d.id,
+        label: d.label,
+        icon: d.icon,
+        color: d.color,
+        x: PADDING_X + ((width - 2 * PADDING_X) / (DEFAULT_CONSUMERS.length + 1)) * (i + 1),
         y: height - PADDING_Y - NODE_RADIUS,
-        side: 'bottom',
+        side: 'bottom' as const,
+      }));
+    } else {
+      producerArr = [];
+      const sourceEntries = Array.from(sourceSet.entries()).slice(0, 8);
+      const pCount = Math.max(sourceEntries.length, 1);
+      sourceEntries.forEach(([key, val], i) => {
+        const persona = val.id ? personaMap.get(val.id) : null;
+        const sourceLabels: Record<string, string> = {
+          webhook: 'Webhook', execution: 'Execution', persona: 'Persona',
+          trigger: 'Trigger', system: 'System',
+        };
+        producerArr.push({
+          id: key,
+          label: persona?.name ?? sourceLabels[val.type] ?? val.type,
+          icon: persona?.icon ?? null,
+          color: persona?.color ?? null,
+          x: PADDING_X + ((width - 2 * PADDING_X) / (pCount + 1)) * (i + 1),
+          y: PADDING_Y + NODE_RADIUS,
+          side: 'top',
+        });
       });
-    });
+
+      consumerArr = [];
+      const targetEntries = Array.from(targetSet).slice(0, 8);
+      const cCount = Math.max(targetEntries.length, 1);
+      targetEntries.forEach((pid, i) => {
+        const persona = personaMap.get(pid);
+        consumerArr.push({
+          id: pid,
+          label: persona?.name ?? pid.slice(0, 8),
+          icon: persona?.icon ?? null,
+          color: persona?.color ?? null,
+          x: PADDING_X + ((width - 2 * PADDING_X) / (cCount + 1)) * (i + 1),
+          y: height - PADDING_Y - NODE_RADIUS,
+          side: 'bottom',
+        });
+      });
+    }
 
     return { producers: producerArr, consumers: consumerArr };
   }, [events, personaMap, width, height]);
@@ -162,24 +219,57 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
     return ids;
   }, [activeEvents]);
 
-  // Track seen event types across the session (accumulate, never remove)
-  const [seenTypes, setSeenTypes] = useState<string[]>([]);
-  useEffect(() => {
-    setSeenTypes((prev) => {
-      const existing = new Set(prev);
-      const added: string[] = [];
-      for (const evt of events) {
-        if (!existing.has(evt.event_type)) {
-          existing.add(evt.event_type);
-          added.push(evt.event_type);
-        }
-      }
-      return added.length > 0 ? [...prev, ...added] : prev;
-    });
+  // Derive unique event types
+  const seenTypes = useMemo(() => {
+    const types = new Set<string>();
+    for (const evt of events) types.add(evt.event_type);
+    return [...types];
   }, [events]);
 
+  // Ambient animated dots flowing across the bus (web-style visual)
+  const ambientDots = useMemo(() => {
+    const colors = ['#ea4335', '#4a154b', '#8b5cf6', '#06b6d4', '#0052cc', '#34a853', '#635bff', '#f24e1e'];
+    return Array.from({ length: 6 }, (_, i) => ({
+      color: colors[i % colors.length]!,
+      delay: i * 0.8,
+      duration: 2.5 + (i % 3) * 0.4,
+    }));
+  }, []);
+
+  // Helper to render a Lucide icon inside an SVG foreignObject
+  const renderNodeIcon = (node: NodePosition) => {
+    const IconComp = node.icon ? ICON_MAP[node.icon] : null;
+    if (IconComp) {
+      return (
+        <foreignObject
+          x={node.x - 8}
+          y={node.y - 8}
+          width={16}
+          height={16}
+        >
+          <IconComp className="w-4 h-4 text-white/80" />
+        </foreignObject>
+      );
+    }
+    // Fallback: emoji icon or first letter
+    return (
+      <text
+        x={node.x}
+        y={node.y}
+        textAnchor="middle"
+        dominantBaseline="central"
+        fill="white"
+        fontSize={12}
+        fontWeight="bold"
+        opacity={0.8}
+      >
+        {node.icon && node.icon.length <= 2 ? node.icon : (node.label[0]?.toUpperCase() ?? '?')}
+      </text>
+    );
+  };
+
   return (
-    <div ref={containerRef} className="w-full h-full relative">
+    <div ref={containerRef} className="w-full h-full relative min-h-[350px]">
       <svg
         width={width}
         height={height}
@@ -188,6 +278,13 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
       >
         {/* Gradient definitions */}
         <defs>
+          <linearGradient id={`${uid}-busGrad`} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="rgba(6, 182, 212, 0)" />
+            <stop offset="15%" stopColor="rgba(6, 182, 212, 0.12)" />
+            <stop offset="50%" stopColor="rgba(168, 85, 247, 0.10)" />
+            <stop offset="85%" stopColor="rgba(6, 182, 212, 0.12)" />
+            <stop offset="100%" stopColor="rgba(6, 182, 212, 0)" />
+          </linearGradient>
           <linearGradient id="busGradient" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="rgba(139, 92, 246, 0)" />
             <stop offset="15%" stopColor="rgba(139, 92, 246, 0.5)" />
@@ -209,37 +306,88 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
+          <clipPath id={`${uid}-busClip`}>
+            <rect
+              x={PADDING_X}
+              y={busY - BUS_HEIGHT * 2}
+              width={width - 2 * PADDING_X}
+              height={BUS_HEIGHT * 4}
+              rx={BUS_HEIGHT}
+            />
+          </clipPath>
         </defs>
 
-        {/* Connection lines from producer nodes to bus */}
-        {producers.map(node => (
-          <line
-            key={`conn-prod-${node.id}`}
-            x1={node.x}
-            y1={node.y + NODE_RADIUS}
-            x2={node.x}
-            y2={busY - BUS_HEIGHT / 2}
-            stroke={activeNodeIds.has(node.id) ? 'rgba(139, 92, 246, 0.3)' : 'rgba(139, 92, 246, 0.08)'}
-            strokeWidth={1}
-            strokeDasharray="4 4"
-            className="transition-all duration-500"
-          />
-        ))}
+        {/* Connection lines from producer nodes to bus — with arrow tips */}
+        {producers.map(node => {
+          const isActive = activeNodeIds.has(node.id);
+          const nodeColor = node.color ?? '#8b5cf6';
+          return (
+            <g key={`conn-prod-${node.id}`}>
+              <line
+                x1={node.x}
+                y1={node.y + NODE_RADIUS}
+                x2={node.x}
+                y2={busY - BUS_HEIGHT * 2}
+                stroke={isActive ? `${nodeColor}50` : 'rgba(255,255,255,0.06)'}
+                strokeWidth={isActive ? 1.5 : 0.8}
+                strokeDasharray="4 4"
+                className="transition-all duration-500"
+              />
+              <polygon
+                points={`${node.x - 4},${busY - BUS_HEIGHT * 2 - 4} ${node.x},${busY - BUS_HEIGHT * 2} ${node.x + 4},${busY - BUS_HEIGHT * 2 - 4}`}
+                fill={isActive ? `${nodeColor}40` : 'rgba(255,255,255,0.08)'}
+              />
+              {/* Animated dot flowing from producer to bus */}
+              {isActive && (
+                <motion.circle
+                  r={2.5}
+                  fill={nodeColor}
+                  cx={node.x}
+                  filter="url(#particleGlow)"
+                  initial={{ cy: node.y + NODE_RADIUS, opacity: 0 }}
+                  animate={{ cy: [node.y + NODE_RADIUS, busY - BUS_HEIGHT * 2], opacity: [0, 0.9, 0.9, 0] }}
+                  transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 2.5, ease: 'linear' }}
+                />
+              )}
+            </g>
+          );
+        })}
 
         {/* Connection lines from bus to consumer nodes */}
-        {consumers.map(node => (
-          <line
-            key={`conn-cons-${node.id}`}
-            x1={node.x}
-            y1={busY + BUS_HEIGHT / 2}
-            x2={node.x}
-            y2={node.y - NODE_RADIUS}
-            stroke={activeNodeIds.has(node.id) ? 'rgba(139, 92, 246, 0.3)' : 'rgba(139, 92, 246, 0.08)'}
-            strokeWidth={1}
-            strokeDasharray="4 4"
-            className="transition-all duration-500"
-          />
-        ))}
+        {consumers.map(node => {
+          const isActive = activeNodeIds.has(node.id);
+          const nodeColor = node.color ?? '#8b5cf6';
+          return (
+            <g key={`conn-cons-${node.id}`}>
+              <line
+                x1={node.x}
+                y1={busY + BUS_HEIGHT * 2}
+                x2={node.x}
+                y2={node.y - NODE_RADIUS}
+                stroke={isActive ? `${nodeColor}50` : 'rgba(255,255,255,0.06)'}
+                strokeWidth={isActive ? 1.5 : 0.8}
+                strokeDasharray="4 4"
+                className="transition-all duration-500"
+              />
+              <polygon
+                points={`${node.x - 4},${node.y - NODE_RADIUS + 4} ${node.x},${node.y - NODE_RADIUS} ${node.x + 4},${node.y - NODE_RADIUS + 4}`}
+                fill={isActive ? `${nodeColor}40` : 'rgba(255,255,255,0.08)'}
+              />
+              {/* Animated dot flowing from bus to consumer */}
+              {isActive && (
+                <motion.circle
+                  r={2.5}
+                  fill={nodeColor}
+                  cx={node.x}
+                  filter="url(#particleGlow)"
+                  initial={{ cy: busY + BUS_HEIGHT * 2, opacity: 0 }}
+                  animate={{ cy: [busY + BUS_HEIGHT * 2, node.y - NODE_RADIUS], opacity: [0, 0.9, 0.9, 0] }}
+                  transition={{ duration: 1.8, delay: 0.3, repeat: Infinity, repeatDelay: 2.5, ease: 'linear' }}
+                />
+              )}
+            </g>
+          );
+        })}
 
         {/* Bus lane */}
         <BusLane
@@ -249,6 +397,131 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
           height={BUS_HEIGHT}
           isActive={activeEvents.length > 0}
         />
+
+        {/* Ambient flowing dots across the bus (web-style visual) */}
+        <g clipPath={`url(#${uid}-busClip)`}>
+          {ambientDots.map((dot, i) => (
+            <motion.circle
+              key={`ambient-${i}`}
+              r={2}
+              cy={busY}
+              fill={dot.color}
+              opacity={0.6}
+              filter="url(#particleGlow)"
+              initial={{ cx: PADDING_X - 10 }}
+              animate={{ cx: [PADDING_X - 10, width - PADDING_X + 10] }}
+              transition={{
+                duration: dot.duration,
+                delay: dot.delay,
+                repeat: Infinity,
+                repeatDelay: 1.5,
+                ease: 'linear',
+              }}
+            />
+          ))}
+        </g>
+
+        {/* Direction arrow on bus */}
+        <polygon
+          points={`${width - PADDING_X - 6},${busY - 4} ${width - PADDING_X},${busY} ${width - PADDING_X - 6},${busY + 4}`}
+          fill="rgba(6, 182, 212, 0.25)"
+        />
+
+        {/* Producer nodes — concentric circles (web style) */}
+        {producers.map(node => {
+          const isActive = activeNodeIds.has(node.id);
+          const nodeColor = node.color ?? '#6366f1';
+          return (
+            <g key={`node-prod-${node.id}`}>
+              {/* Outer glow ring */}
+              <circle
+                cx={node.x}
+                cy={node.y}
+                r={NODE_RADIUS}
+                fill={`${nodeColor}08`}
+                stroke={nodeColor}
+                strokeWidth={isActive ? 1.5 : 0.6}
+                opacity={isActive ? 0.9 : 0.5}
+                className="transition-all duration-500"
+              />
+              {/* Active glow halo */}
+              {isActive && (
+                <circle
+                  cx={node.x}
+                  cy={node.y}
+                  r={NODE_RADIUS + 4}
+                  fill="none"
+                  stroke={nodeColor}
+                  strokeWidth={0.5}
+                  opacity={0.2}
+                >
+                  <animate
+                    attributeName="opacity"
+                    values="0.1;0.3;0.1"
+                    dur="2s"
+                    repeatCount="indefinite"
+                  />
+                </circle>
+              )}
+              {/* Inner filled circle */}
+              <circle
+                cx={node.x}
+                cy={node.y}
+                r={NODE_RADIUS * 0.45}
+                fill={nodeColor}
+                opacity={0.85}
+              />
+              {/* Icon */}
+              {renderNodeIcon(node)}
+            </g>
+          );
+        })}
+
+        {/* Consumer nodes — concentric circles (web style) */}
+        {consumers.map(node => {
+          const isActive = activeNodeIds.has(node.id);
+          const nodeColor = node.color ?? '#6366f1';
+          return (
+            <g key={`node-cons-${node.id}`}>
+              <circle
+                cx={node.x}
+                cy={node.y}
+                r={NODE_RADIUS}
+                fill={`${nodeColor}08`}
+                stroke={nodeColor}
+                strokeWidth={isActive ? 1.5 : 0.6}
+                opacity={isActive ? 0.9 : 0.5}
+                className="transition-all duration-500"
+              />
+              {isActive && (
+                <circle
+                  cx={node.x}
+                  cy={node.y}
+                  r={NODE_RADIUS + 4}
+                  fill="none"
+                  stroke={nodeColor}
+                  strokeWidth={0.5}
+                  opacity={0.2}
+                >
+                  <animate
+                    attributeName="opacity"
+                    values="0.1;0.3;0.1"
+                    dur="2s"
+                    repeatCount="indefinite"
+                  />
+                </circle>
+              )}
+              <circle
+                cx={node.x}
+                cy={node.y}
+                r={NODE_RADIUS * 0.45}
+                fill={nodeColor}
+                opacity={0.85}
+              />
+              {renderNodeIcon(node)}
+            </g>
+          );
+        })}
 
         {/* Event particles */}
         {activeEvents.map(evt => (
@@ -264,53 +537,43 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
         ))}
       </svg>
 
-      {/* Producer node labels rendered as HTML overlays for better text rendering */}
+      {/* Producer labels as HTML overlays */}
       {producers.map(node => (
         <div
           key={`label-prod-${node.id}`}
-          className="absolute flex flex-col items-center"
+          className="absolute flex flex-col items-center pointer-events-none"
           style={{
-            left: node.x - 40,
-            top: node.y - NODE_RADIUS - 4,
-            width: 80,
+            left: node.x - 44,
+            top: node.y - NODE_RADIUS - 6,
+            width: 88,
             transform: 'translateY(-100%)',
           }}
         >
-          <div
-            className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-bold transition-all duration-500 ${
-              activeNodeIds.has(node.id) ? 'border-purple-400/60 shadow-lg shadow-purple-500/20' : 'border-primary/20'
-            }`}
-            style={{ backgroundColor: (node.color ?? '#6366f1') + '20' }}
-          >
-            {node.icon && node.icon.length <= 2 ? node.icon : node.label[0]?.toUpperCase()}
-          </div>
-          <span className="text-sm text-muted-foreground/90 mt-1 truncate max-w-[80px] text-center" title={node.label}>
+          <span className="text-[11px] font-medium text-foreground/80 truncate max-w-[88px] text-center" title={node.label}>
             {node.label}
+          </span>
+          <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground/40 mt-0.5">
+            producer
           </span>
         </div>
       ))}
 
-      {/* Consumer node labels rendered as HTML overlays */}
+      {/* Consumer labels as HTML overlays */}
       {consumers.map(node => (
         <div
           key={`label-cons-${node.id}`}
-          className="absolute flex flex-col items-center"
+          className="absolute flex flex-col items-center pointer-events-none"
           style={{
-            left: node.x - 40,
-            top: node.y + NODE_RADIUS + 4,
-            width: 80,
+            left: node.x - 44,
+            top: node.y + NODE_RADIUS + 6,
+            width: 88,
           }}
         >
-          <div
-            className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-bold transition-all duration-500 ${
-              activeNodeIds.has(node.id) ? 'border-purple-400/60 shadow-lg shadow-purple-500/20' : 'border-primary/20'
-            }`}
-            style={{ backgroundColor: (node.color ?? '#6366f1') + '20' }}
-          >
-            {node.icon && node.icon.length <= 2 ? node.icon : node.label[0]?.toUpperCase()}
-          </div>
-          <span className="text-sm text-muted-foreground/90 mt-1 truncate max-w-[80px] text-center" title={node.label}>
+          <span className="text-[11px] font-medium text-foreground/80 truncate max-w-[88px] text-center" title={node.label}>
             {node.label}
+          </span>
+          <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground/40 mt-0.5">
+            consumer
           </span>
         </div>
       ))}
@@ -346,34 +609,16 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
         </div>
       )}
 
-      {/* Empty state */}
+      {/* Empty state overlay — centered message under the visualization */}
       {events.length === 0 && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4, ease: 'easeOut' }}
-          className="absolute inset-0 flex items-center justify-center pointer-events-none"
-        >
-          <div className="text-center">
-            <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-purple-500/5 border border-purple-500/15 flex items-center justify-center">
-              <motion.svg
-                className="w-5 h-5 text-purple-400/40"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                animate={{ y: [0, -3, 0] }}
-                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </motion.svg>
-            </div>
-            <p className="text-sm text-muted-foreground/80 flex items-center justify-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
-              Waiting for events...
-            </p>
-            <p className="text-sm text-muted-foreground/80 mt-1">Click &quot;Test Flow&quot; to see it in action</p>
+        <div className="absolute bottom-4 left-0 right-0 flex justify-center pointer-events-none">
+          <div className="flex items-center gap-2 bg-background/60 backdrop-blur-sm border border-primary/10 rounded-lg px-4 py-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+            <span className="text-sm text-muted-foreground/80">
+              Waiting for events — click <span className="font-medium text-purple-300">Test Flow</span> to simulate traffic
+            </span>
           </div>
-        </motion.div>
+        </div>
       )}
     </div>
   );

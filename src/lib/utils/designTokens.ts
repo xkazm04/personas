@@ -4,13 +4,6 @@ export interface StatusColorToken {
   borderColor: string;
 }
 
-/** Severity-level colors: info, warning, critical */
-export const SEVERITY_COLORS: Record<string, StatusColorToken> = {
-  info: { color: 'text-blue-400', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/30' },
-  warning: { color: 'text-amber-400', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
-  critical: { color: 'text-red-400', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30' },
-};
-
 /** Review status colors: pending, approved, rejected */
 export const STATUS_COLORS: Record<string, StatusColorToken> = {
   pending: { color: 'text-amber-400', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },

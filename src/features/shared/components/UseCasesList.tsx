@@ -11,6 +11,7 @@ export interface UseCaseItem {
 export interface DesignContextData {
   summary?: string;
   use_cases?: UseCaseItem[];
+  credential_links?: Record<string, string>; // connector_name → credential_id
 }
 
 const CATEGORY_STYLES: Record<string, { bg: string; text: string }> = {
@@ -33,6 +34,19 @@ export function parseDesignContext(raw: string | null | undefined): DesignContex
     // Legacy plain-text design_context
   }
   return { summary: raw };
+}
+
+/** Merge a credential link into a design_context JSON string. */
+export function mergeCredentialLink(
+  rawDesignContext: string | null | undefined,
+  connectorName: string,
+  credentialId: string,
+): string {
+  const data = parseDesignContext(rawDesignContext);
+  return JSON.stringify({
+    ...data,
+    credential_links: { ...data.credential_links, [connectorName]: credentialId },
+  });
 }
 
 interface UseCasesListProps {

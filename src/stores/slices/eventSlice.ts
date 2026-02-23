@@ -20,8 +20,8 @@ export const createEventSlice: StateCreator<PersonaStore, [], [], EventSlice> = 
     try {
       const events = await api.listEvents(limit ?? 50);
       set({ recentEvents: events, pendingEventCount: events.filter((e) => e.status === "pending").length });
-    } catch {
-      // Silent fail
+    } catch (err) {
+      console.warn("[eventSlice] fetchRecentEvents failed:", err);
     }
   },
 });

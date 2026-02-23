@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { User, FileText, Lightbulb } from 'lucide-react';
-import type { N8nPersonaDraft } from '@/api/design';
+import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import { SectionEditor } from './SectionEditor';
+import { DesignContextViewer } from './DesignContextViewer';
 
 interface DraftIdentityTabProps {
   draft: N8nPersonaDraft;
@@ -52,7 +53,13 @@ export function DraftIdentityTab({ draft, disabled, updateDraft }: DraftIdentity
               <input
                 type="text"
                 value={draft.name ?? ''}
-                onChange={(e) => updateDraft((curr) => ({ ...curr, name: e.target.value.trim() || null }))}
+                onChange={(e) => updateDraft((curr) => ({ ...curr, name: e.target.value || null }))}
+                onBlur={(e) => {
+                  const trimmed = e.target.value.trim();
+                  if (trimmed !== e.target.value) {
+                    updateDraft((curr) => ({ ...curr, name: trimmed || null }));
+                  }
+                }}
                 disabled={disabled}
                 placeholder="Give your persona a name..."
                 className="w-full px-3 py-2.5 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
@@ -89,7 +96,7 @@ export function DraftIdentityTab({ draft, disabled, updateDraft }: DraftIdentity
         )}
 
         {subtab === 'design_context' && (
-          <SectionEditor
+          <DesignContextViewer
             value={draft.design_context ?? ''}
             onChange={(v) =>
               updateDraft((curr) => ({
@@ -97,8 +104,6 @@ export function DraftIdentityTab({ draft, disabled, updateDraft }: DraftIdentity
                 design_context: v.trim() ? v : null,
               }))
             }
-            label="Design Context"
-            placeholder="Additional context about how this persona was designed..."
             disabled={disabled}
           />
         )}

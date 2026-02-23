@@ -49,12 +49,14 @@ export const useAuthStore = create<AuthState>()(
         },
 
         loginWithGoogle: async () => {
+          clearLoginTimeout();
           set({ isLoading: true, error: null });
           try {
             await invoke("login_with_google");
             // Actual state update comes via "auth-state-changed" event.
             // Set a timeout to recover from missed/failed OAuth callbacks.
-            setTimeout(() => {
+            loginTimeoutId = setTimeout(() => {
+              loginTimeoutId = null;
               const s = useAuthStore.getState();
               if (s.isLoading && !s.isAuthenticated) {
                 set({
@@ -64,6 +66,7 @@ export const useAuthStore = create<AuthState>()(
               }
             }, 120_000);
           } catch (err) {
+            clearLoginTimeout();
             set({ isLoading: false, error: String(err) });
           }
         },
@@ -97,12 +100,22 @@ export const useAuthStore = create<AuthState>()(
 // Event listener
 // ---------------------------------------------------------------------------
 
+let loginTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+function clearLoginTimeout() {
+  if (loginTimeoutId !== null) {
+    clearTimeout(loginTimeoutId);
+    loginTimeoutId = null;
+  }
+}
+
 let authListenerAttached = false;
 
 export function initAuthListener() {
   if (authListenerAttached) return;
   authListenerAttached = true;
   listen<AuthStateResponse>("auth-state-changed", (event) => {
+    clearLoginTimeout();
     const state = event.payload;
     useAuthStore.setState({
       user: state.user,

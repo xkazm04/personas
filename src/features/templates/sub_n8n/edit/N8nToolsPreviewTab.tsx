@@ -1,5 +1,5 @@
 import { Wrench, Zap, Link } from 'lucide-react';
-import type { N8nPersonaDraft } from '@/api/design';
+import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 
 interface N8nToolsPreviewTabProps {

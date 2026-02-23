@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, BookOpen, Settings, Code, Sparkles } from 'lucide-react';
-import type { N8nPersonaDraft } from '@/api/design';
+import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import { DraftIdentityTab } from './DraftIdentityTab';
 import { DraftPromptTab } from './DraftPromptTab';
 import { DraftSettingsTab } from './DraftSettingsTab';

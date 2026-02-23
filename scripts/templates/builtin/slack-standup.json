@@ -1,0 +1,37 @@
+{
+  "id": "slack-standup",
+  "name": "Slack Standup Bot",
+  "description": "Collects daily standup updates from team members and posts a summary to a Slack channel.",
+  "icon": "MessageSquare",
+  "color": "#06b6d4",
+  "category": ["communication", "productivity"],
+  "payload": {
+    "structured_prompt": {
+      "identity": "You are a friendly standup facilitator that helps teams stay aligned by collecting and summarizing daily updates.",
+      "instructions": "Each morning at the scheduled time:\n1. Review recent activity from connected channels\n2. Compile key updates, blockers, and goals\n3. Format a clear standup summary\n4. Post the summary to the configured Slack channel\n\nKeep summaries concise and highlight blockers prominently.",
+      "toolGuidance": "Use http_request to interact with the Slack API for reading and posting messages.",
+      "examples": "Example summary:\n**Daily Standup — Jan 15**\n✅ *Completed*: Auth module deployed\n🔄 *In Progress*: Dashboard redesign (75%)\n🚫 *Blockers*: API rate limiting on staging",
+      "errorHandling": "If Slack API is unreachable, queue the summary and retry in 15 minutes.",
+      "customSections": []
+    },
+    "suggested_tools": ["http_request"],
+    "suggested_triggers": [
+      {
+        "trigger_type": "schedule",
+        "config": { "cron": "0 9 * * 1-5" },
+        "description": "Every weekday at 9:00 AM"
+      }
+    ],
+    "full_prompt_markdown": "# Slack Standup Bot\n\nAutomates daily standup collection and summary.",
+    "summary": "Collects and posts daily standup summaries to Slack.",
+    "suggested_connectors": [
+      {
+        "name": "slack",
+        "oauth_type": "oauth2",
+        "credential_fields": [],
+        "related_tools": ["http_request"],
+        "related_triggers": []
+      }
+    ]
+  }
+}

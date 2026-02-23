@@ -85,10 +85,15 @@ export function useDesignAnalysis() {
     setQuestion(null);
     personaIdRef.current = personaId;
 
+    // Generate design_id client-side and set it BEFORE listeners to prevent
+    // the race where events arrive before designIdRef is set, bypassing the
+    // guard and accepting events from stale/overlapping analyses.
+    const clientDesignId = crypto.randomUUID();
+    designIdRef.current = clientDesignId;
+
     try {
       await setupDesignListeners('Design analysis failed', 'idle');
-      const { design_id } = await startDesignAnalysis(instruction, personaId);
-      designIdRef.current = design_id;
+      await startDesignAnalysis(instruction, personaId, clientDesignId);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start analysis');
       setPhase('idle');
@@ -109,10 +114,13 @@ export function useDesignAnalysis() {
     setError(null);
     setQuestion(null);
 
+    // Generate design_id client-side to prevent event race (same as startAnalysis)
+    const clientDesignId = crypto.randomUUID();
+    designIdRef.current = clientDesignId;
+
     try {
       await setupDesignListeners('Refinement failed', 'preview');
-      const { design_id } = await refineDesign(personaIdRef.current, feedback, currentResultJson);
-      designIdRef.current = design_id;
+      await refineDesign(personaIdRef.current, feedback, currentResultJson, clientDesignId);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to refine design');
       setPhase('preview');

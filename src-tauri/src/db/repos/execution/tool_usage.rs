@@ -4,6 +4,30 @@ use crate::db::models::PersonaToolUsage;
 use crate::db::DbPool;
 use crate::error::AppError;
 
+/// Internal CLI tools that should be excluded from usage analytics charts.
+/// These are Claude Code's built-in tools, not persona-defined use-case tools.
+const INTERNAL_TOOLS: &[&str] = &[
+    "bash", "Bash",
+    "read", "Read", "read_file",
+    "write", "Write", "write_file",
+    "edit", "Edit", "edit_file",
+    "glob", "Glob",
+    "grep", "Grep",
+    "list_directory", "ListDirectory",
+    "search_replace", "SearchReplace",
+    "notebook_edit", "NotebookEdit",
+    "web_search", "WebSearch",
+    "web_fetch", "WebFetch",
+    "todoread", "TodoRead", "todowrite", "TodoWrite",
+];
+
+/// Build a SQL NOT IN clause for excluding internal tools.
+/// `col` is the column reference, e.g. "tool_name" or "u.tool_name".
+fn internal_tools_exclusion(col: &str) -> String {
+    let placeholders: Vec<String> = INTERNAL_TOOLS.iter().map(|t| format!("'{}'", t)).collect();
+    format!("{} NOT IN ({})", col, placeholders.join(", "))
+}
+
 fn row_to_usage(row: &Row) -> rusqlite::Result<PersonaToolUsage> {
     Ok(PersonaToolUsage {
         id: row.get("id")?,
@@ -71,9 +95,10 @@ pub fn get_usage_summary(
                 COUNT(DISTINCT execution_id) as unique_executions,
                 COUNT(DISTINCT persona_id) as unique_personas
          FROM persona_tool_usage
-         WHERE created_at >= ?1{}
+         WHERE created_at >= ?1 AND {}{}
          GROUP BY tool_name
          ORDER BY total_invocations DESC",
+        internal_tools_exclusion("tool_name"),
         persona_clause
     );
 
@@ -107,9 +132,10 @@ pub fn get_usage_over_time(
                 tool_name,
                 SUM(invocation_count) as invocations
          FROM persona_tool_usage
-         WHERE created_at >= ?1{}
+         WHERE created_at >= ?1 AND {}{}
          GROUP BY date, tool_name
          ORDER BY date ASC, tool_name ASC",
+        internal_tools_exclusion("tool_name"),
         persona_clause
     );
 
@@ -135,7 +161,7 @@ pub fn get_usage_by_persona(
     since: &str,
 ) -> Result<Vec<serde_json::Value>, AppError> {
     let conn = pool.get()?;
-    let mut stmt = conn.prepare(
+    let sql = format!(
         "SELECT u.persona_id,
                 p.name as persona_name,
                 p.icon as persona_icon,
@@ -144,10 +170,12 @@ pub fn get_usage_by_persona(
                 COUNT(DISTINCT u.tool_name) as unique_tools
          FROM persona_tool_usage u
          JOIN personas p ON p.id = u.persona_id
-         WHERE u.created_at >= ?1
+         WHERE u.created_at >= ?1 AND {}
          GROUP BY u.persona_id
          ORDER BY total_invocations DESC",
-    )?;
+        internal_tools_exclusion("u.tool_name")
+    );
+    let mut stmt = conn.prepare(&sql)?;
     let rows = stmt.query_map(params![since], |row| {
         Ok(serde_json::json!({
             "persona_id": row.get::<_, String>("persona_id")?,
@@ -191,6 +219,7 @@ mod tests {
                 max_turns: None,
                 design_context: None,
                 group_id: None,
+                notification_channels: None,
             },
         )
         .unwrap();

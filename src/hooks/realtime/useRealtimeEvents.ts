@@ -99,7 +99,6 @@ function computeStats(events: RealtimeEvent[]): RealtimeStats {
 export function useRealtimeEvents(): UseRealtimeEventsReturn {
   const [events, setEvents] = useState<RealtimeEvent[]>([]);
   const [isPaused, setIsPaused] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<RealtimeEvent | null>(
     null
   );
@@ -125,17 +124,15 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
       return next.length > 200 ? next.slice(0, 200) : next;
     });
   }, []);
-  useEventBusListener(handleBusEvent);
-
-  // Mark connected once the hook has been set up
-  useEffect(() => {
-    setIsConnected(true);
-  }, []);
+  const isConnected = useEventBusListener(handleBusEvent);
 
   // Phase progression timer (entering -> on-bus -> delivering -> done)
   // Prunes events 2s after reaching 'done' to avoid unbounded accumulation.
   // Returns the same array reference when nothing changed to avoid re-renders.
+  // Stopped when paused to avoid ~10 wasted timer fires/sec.
   useEffect(() => {
+    if (isPaused) return;
+
     const DONE_GRACE_MS = 2000;
     const timer = setInterval(() => {
       const now = Date.now();
@@ -171,7 +168,7 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
       });
     }, 100);
     return () => clearInterval(timer);
-  }, []);
+  }, [isPaused]);
 
   const togglePause = useCallback(() => setIsPaused((p) => !p), []);
   const selectEvent = useCallback(
@@ -182,10 +179,47 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
   const triggerTestFlow = useCallback(async () => {
     setTestFlowLoading(true);
     try {
+      // Fire the backend test event
       await testEventFlow(
         'test_event',
         JSON.stringify({ test: true, timestamp: new Date().toISOString() })
       );
+
+      // Also inject simulated visual events to create lively traffic
+      const simSources = [
+        { type: 'webhook', id: 'gmail', label: 'Gmail' },
+        { type: 'webhook', id: 'slack', label: 'Slack' },
+        { type: 'trigger', id: 'github', label: 'GitHub' },
+        { type: 'system', id: 'calendar', label: 'Calendar' },
+      ];
+      const simEventTypes = ['webhook_received', 'execution_completed', 'persona_action', 'test_event'];
+
+      for (let i = 0; i < 4; i++) {
+        const src = simSources[i % simSources.length]!;
+        setTimeout(() => {
+          if (isPausedRef.current) return;
+          const simEvent: RealtimeEvent = {
+            id: `sim-${Date.now()}-${i}`,
+            project_id: 'test',
+            event_type: simEventTypes[i % simEventTypes.length]!,
+            source_type: src.type,
+            source_id: src.id,
+            target_persona_id: null,
+            payload: JSON.stringify({ simulated: true, index: i }),
+            status: 'completed',
+            error_message: null,
+            processed_at: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+            _animationId: `sim-${Date.now()}-${i}`,
+            _phase: 'entering',
+            _phaseStartedAt: Date.now(),
+          };
+          setEvents((prev) => {
+            const next = [simEvent, ...prev];
+            return next.length > 200 ? next.slice(0, 200) : next;
+          });
+        }, i * 350);
+      }
     } finally {
       setTestFlowLoading(false);
     }

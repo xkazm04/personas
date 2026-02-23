@@ -5,8 +5,12 @@ use crate::db::models::{HealingKnowledge, PersonaExecution, PersonaHealingIssue}
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::healing as repo;
 use crate::engine::healing;
+use crate::engine::healing::HealingAction;
 use crate::error::AppError;
 use crate::AppState;
+
+/// Maximum number of retries for a single execution chain (mirrors engine constant).
+const MAX_RETRY_COUNT: i64 = 3;
 
 #[tauri::command]
 pub fn list_healing_issues(
@@ -34,10 +38,12 @@ pub fn update_healing_status(
     repo::update_status(&state.db, &id, &status)
 }
 
-/// Scan recent failed executions for a persona and create healing issues.
+/// Scan recent failed executions for a persona, create healing issues,
+/// and execute auto-fix actions (RetryWithBackoff, RetryWithTimeout).
 #[tauri::command]
-pub fn run_healing_analysis(
+pub async fn run_healing_analysis(
     state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
     persona_id: String,
 ) -> Result<serde_json::Value, AppError> {
     let pool = &state.db;
@@ -46,9 +52,14 @@ pub fn run_healing_analysis(
 
     let mut created = 0u32;
     let mut auto_fixed = 0u32;
+    let mut auto_retried = 0u32;
 
     // Load existing issues once to avoid duplicates
     let existing = repo::get_all(pool, Some(&persona_id), None)?;
+
+    // Only retry the most recent auto-fixable failure to avoid spawning
+    // multiple concurrent retries from a single scan.
+    let mut retry_scheduled = false;
 
     for exec in &failures {
         // Skip if a healing issue already exists for this execution
@@ -80,9 +91,28 @@ pub fn run_healing_analysis(
         )?;
 
         created += 1;
-        if healing::is_auto_fixable(&category) {
+
+        let is_auto_fixable = healing::is_auto_fixable(&category)
+            && consecutive < 3
+            && exec.retry_count < MAX_RETRY_COUNT
+            && matches!(diagnosis.action, HealingAction::RetryWithBackoff { .. } | HealingAction::RetryWithTimeout { .. });
+
+        if is_auto_fixable {
             let _ = repo::mark_auto_fixed(pool, &issue.id);
             auto_fixed += 1;
+
+            // Execute the healing action: schedule an actual retry
+            if !retry_scheduled {
+                state.engine.schedule_healing_retry(
+                    &app,
+                    pool,
+                    &exec.id,
+                    &persona_id,
+                    &diagnosis,
+                );
+                auto_retried += 1;
+                retry_scheduled = true;
+            }
         }
     }
 
@@ -91,6 +121,7 @@ pub fn run_healing_analysis(
         "failures_analyzed": failures.len(),
         "issues_created": created,
         "auto_fixed": auto_fixed,
+        "auto_retried": auto_retried,
     }))
 }
 

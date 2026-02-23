@@ -1,108 +1,15 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Play, Square, CheckCircle2, XCircle, AlertTriangle, Upload, Plus, Trash2, FileText, Beaker, Copy, Check, Clock, List } from 'lucide-react';
+import { X, Play, Square, CheckCircle2, XCircle, AlertTriangle, Copy, Check, Clock } from 'lucide-react';
 import type { RunProgress } from '@/hooks/design/useDesignReviews';
+import { parseListMdFormat, PREDEFINED_TEST_CASES, type PredefinedTestCase, type ParsedTemplate } from './designRunnerConstants';
+import { PredefinedModePanel } from './PredefinedModePanel';
+import { CustomModePanel } from './CustomModePanel';
+import { BatchModePanel } from './BatchModePanel';
+
+export type { PredefinedTestCase } from './designRunnerConstants';
 
 type RunMode = 'predefined' | 'custom' | 'batch';
-
-export interface PredefinedTestCase {
-  id: string;
-  name: string;
-  instruction: string;
-  tools?: string;
-  trigger?: string;
-  category?: string;
-}
-
-interface ParsedTemplate {
-  id: string;
-  name: string;
-  instruction: string;
-  tools: string;
-  trigger: string;
-  category: string;
-}
-
-function parseListMdFormat(text: string): ParsedTemplate[] {
-  const templates: ParsedTemplate[] = [];
-  const lines = text.split('\n');
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]!.trim();
-
-    // Match: **N. Template Name**
-    const headerMatch = line.match(/^\*\*(\d+)\.\s+(.+?)\*\*$/);
-    if (!headerMatch) continue;
-
-    const num = headerMatch[1]!;
-    const name = headerMatch[2]!;
-
-    // Next line is the description
-    let description = '';
-    if (i + 1 < lines.length) {
-      const nextLine = lines[i + 1]!.trim();
-      // Skip if it's another header or metadata line or section divider
-      if (nextLine && !nextLine.startsWith('**') && !nextLine.startsWith('`Tools:') && nextLine !== '---') {
-        description = nextLine;
-        i++;
-      }
-    }
-
-    // Look for metadata line: `Tools: ...` · `Trigger: ...` · `Category: ...`
-    let tools = '';
-    let trigger = '';
-    let category = '';
-    if (i + 1 < lines.length) {
-      const metaLine = lines[i + 1]!.trim();
-      const toolsMatch = metaLine.match(/`Tools:\s*([^`]+)`/);
-      const triggerMatch = metaLine.match(/`Trigger:\s*([^`]+)`/);
-      const categoryMatch = metaLine.match(/`Category:\s*([^`]+)`/);
-      if (toolsMatch) tools = toolsMatch[1]!.trim();
-      if (triggerMatch) trigger = triggerMatch[1]!.trim();
-      if (categoryMatch) category = categoryMatch[1]!.trim();
-      if (toolsMatch || triggerMatch || categoryMatch) i++;
-    }
-
-    templates.push({
-      id: `template_${num}`,
-      name,
-      instruction: description,
-      tools,
-      trigger,
-      category,
-    });
-  }
-
-  return templates;
-}
-
-const PREDEFINED_TEST_CASES: PredefinedTestCase[] = [
-  {
-    id: 'gmail-filter',
-    name: 'Gmail Smart Filter',
-    instruction: 'Create an agent that monitors Gmail for important emails, categorizes them by sender and urgency, applies labels, and forwards urgent ones to Slack. Use polling trigger with gmail and slack connectors.',
-  },
-  {
-    id: 'github-reviewer',
-    name: 'GitHub PR Reviewer',
-    instruction: 'Create an agent that automatically reviews pull requests for code quality, security issues, and best practices. Triggers on webhook when a PR is opened or updated. Uses github connector.',
-  },
-  {
-    id: 'calendar-digest',
-    name: 'Daily Calendar Digest',
-    instruction: 'Create an agent that compiles a daily digest of upcoming meetings, prep notes, and schedule conflicts. Runs on a morning schedule trigger. Uses google_calendar connector and sends summary via email.',
-  },
-  {
-    id: 'webhook-processor',
-    name: 'Webhook Data Processor',
-    instruction: 'Create an agent that receives webhook payloads, validates the data, transforms it, and routes it to the appropriate downstream system via HTTP requests. Uses webhook trigger and http connector.',
-  },
-  {
-    id: 'multi-agent-coord',
-    name: 'Multi-Agent Coordinator',
-    instruction: 'Create an agent that orchestrates other personas by subscribing to their execution events, aggregating results, handling failures, and triggering follow-up actions. Uses event subscriptions for execution_completed and execution_failed events.',
-  },
-];
 
 interface TestRunResult {
   testRunId: string;
@@ -123,24 +30,6 @@ interface DesignReviewRunnerProps {
   onCancel: () => void;
 }
 
-const CATEGORY_COLORS: Record<string, string> = {
-  Email: 'bg-blue-500/15 text-blue-300 border-blue-500/25',
-  Development: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25',
-  Content: 'bg-amber-500/15 text-amber-300 border-amber-500/25',
-  Research: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/25',
-  'Project Management': 'bg-purple-500/15 text-purple-300 border-purple-500/25',
-  Finance: 'bg-green-500/15 text-green-300 border-green-500/25',
-  DevOps: 'bg-orange-500/15 text-orange-300 border-orange-500/25',
-  HR: 'bg-pink-500/15 text-pink-300 border-pink-500/25',
-  Sales: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/25',
-  Support: 'bg-teal-500/15 text-teal-300 border-teal-500/25',
-  Legal: 'bg-red-500/15 text-red-300 border-red-500/25',
-  Productivity: 'bg-violet-500/15 text-violet-300 border-violet-500/25',
-  Marketing: 'bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/25',
-  Security: 'bg-rose-500/15 text-rose-300 border-rose-500/25',
-  Pipeline: 'bg-sky-500/15 text-sky-300 border-sky-500/25',
-};
-
 export default function DesignReviewRunner({
   isOpen,
   onClose,
@@ -153,7 +42,6 @@ export default function DesignReviewRunner({
 }: DesignReviewRunnerProps) {
   const terminalRef = useRef<HTMLDivElement>(null);
   const shouldAutoScroll = useRef(true);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const animateFromRef = useRef(0);
   const modalRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
@@ -162,7 +50,6 @@ export default function DesignReviewRunner({
   const [copied, setCopied] = useState(false);
   const [batchTemplates, setBatchTemplates] = useState<ParsedTemplate[]>([]);
   const [batchCategoryFilter, setBatchCategoryFilter] = useState<string | null>(null);
-  const batchFileInputRef = useRef<HTMLInputElement>(null);
 
   // Capture the trigger element on open, restore focus on close
   useEffect(() => {
@@ -241,18 +128,6 @@ export default function DesignReviewRunner({
     }
   };
 
-  const addInstruction = () => {
-    setCustomInstructions((prev) => [...prev, '']);
-  };
-
-  const removeInstruction = (index: number) => {
-    setCustomInstructions((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const updateInstruction = (index: number, value: string) => {
-    setCustomInstructions((prev) => prev.map((v, i) => (i === index ? value : v)));
-  };
-
   const parseBulletPoints = (text: string): string[] => {
     return text
       .split('\n')
@@ -293,9 +168,10 @@ export default function DesignReviewRunner({
     e.target.value = '';
   }, []);
 
-  const handleBatchFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    handleFileUpload(e);
-  }, [handleFileUpload]);
+  const filteredBatchTemplates = useMemo(() => {
+    if (!batchCategoryFilter) return batchTemplates;
+    return batchTemplates.filter((t) => t.category === batchCategoryFilter);
+  }, [batchTemplates, batchCategoryFilter]);
 
   const handleStart = () => {
     if (mode === 'predefined') {
@@ -329,19 +205,6 @@ export default function DesignReviewRunner({
       setTimeout(() => setCopied(false), 2000);
     });
   }, [lines]);
-
-  const batchCategories = useMemo(() => {
-    const cats = new Set<string>();
-    for (const t of batchTemplates) {
-      if (t.category) cats.add(t.category);
-    }
-    return Array.from(cats).sort();
-  }, [batchTemplates]);
-
-  const filteredBatchTemplates = useMemo(() => {
-    if (!batchCategoryFilter) return batchTemplates;
-    return batchTemplates.filter((t) => t.category === batchCategoryFilter);
-  }, [batchTemplates, batchCategoryFilter]);
 
   const progressInfo = useMemo(() => {
     if (!runProgress) return null;
@@ -419,221 +282,30 @@ export default function DesignReviewRunner({
           {!hasStarted && (
             <div className="px-5 py-4 border-b border-primary/10 space-y-4">
               {/* Tabs */}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setMode('predefined')}
-                  className={`px-4 py-2 text-sm rounded-xl border transition-all flex items-center gap-2 ${
-                    mode === 'predefined'
-                      ? 'bg-violet-500/15 border-violet-500/30 text-violet-300'
-                      : 'bg-secondary/30 border-primary/10 text-muted-foreground/90 hover:border-primary/20'
-                  }`}
-                >
-                  <Beaker className="w-3.5 h-3.5" />
-                  Predefined (5)
-                </button>
-                <button
-                  onClick={() => setMode('custom')}
-                  className={`px-4 py-2 text-sm rounded-xl border transition-all flex items-center gap-2 ${
-                    mode === 'custom'
-                      ? 'bg-violet-500/15 border-violet-500/30 text-violet-300'
-                      : 'bg-secondary/30 border-primary/10 text-muted-foreground/90 hover:border-primary/20'
-                  }`}
-                >
-                  <FileText className="w-3.5 h-3.5" />
-                  Custom
-                </button>
-                <button
-                  onClick={() => setMode('batch')}
-                  className={`px-4 py-2 text-sm rounded-xl border transition-all flex items-center gap-2 ${
-                    mode === 'batch'
-                      ? 'bg-violet-500/15 border-violet-500/30 text-violet-300'
-                      : 'bg-secondary/30 border-primary/10 text-muted-foreground/90 hover:border-primary/20'
-                  }`}
-                >
-                  <List className="w-3.5 h-3.5" />
-                  Batch{batchTemplates.length > 0 ? ` (${batchTemplates.length})` : ''}
-                </button>
-              </div>
+              <ModeTabBar mode={mode} onModeChange={setMode} batchCount={batchTemplates.length} />
 
-              {/* Predefined mode content */}
-              {mode === 'predefined' && (
-                <div className="text-sm text-muted-foreground/90 space-y-1">
-                  <p>Runs {PREDEFINED_TEST_CASES.length} predefined use cases through the design engine:</p>
-                  <ul className="list-disc list-inside text-muted-foreground/80 space-y-0.5 ml-1">
-                    {PREDEFINED_TEST_CASES.map((tc) => (
-                      <li key={tc.id}>{tc.name}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Custom mode content */}
+              {mode === 'predefined' && <PredefinedModePanel />}
               {mode === 'custom' && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-muted-foreground/90">
-                      Enter use case instructions ({validCustomCount} valid)
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept=".txt,.md"
-                        onChange={handleFileUpload}
-                        className="hidden"
-                      />
-                      <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="px-3 py-1.5 text-sm rounded-lg border border-primary/15 hover:bg-secondary/50 text-muted-foreground/90 transition-colors flex items-center gap-1.5"
-                        title="Load from .txt or .md file (lines starting with '-')"
-                      >
-                        <Upload className="w-3 h-3" />
-                        Load file
-                      </button>
-                      <button
-                        onClick={addInstruction}
-                        className="px-3 py-1.5 text-sm rounded-lg border border-primary/15 hover:bg-secondary/50 text-muted-foreground/90 transition-colors flex items-center gap-1.5"
-                      >
-                        <Plus className="w-3 h-3" />
-                        Add
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="max-h-[200px] overflow-y-auto space-y-2 pr-1">
-                    {customInstructions.map((instruction, index) => (
-                      <div key={index} className="flex items-start gap-2">
-                        <span className="text-sm text-muted-foreground/80 mt-2.5 w-5 text-right flex-shrink-0">
-                          {index + 1}.
-                        </span>
-                        <textarea
-                          value={instruction}
-                          onChange={(e) => updateInstruction(index, e.target.value)}
-                          placeholder="Describe a persona use case to test..."
-                          rows={2}
-                          className="flex-1 px-3 py-2 text-sm bg-secondary/30 border border-primary/10 rounded-lg text-foreground/80 placeholder:text-muted-foreground/80 resize-none focus:outline-none focus:border-violet-500/30 transition-colors"
-                        />
-                        {customInstructions.length > 1 && (
-                          <button
-                            onClick={() => removeInstruction(index)}
-                            className="mt-2 p-1 rounded hover:bg-red-500/10 text-muted-foreground/80 hover:text-red-400 transition-colors flex-shrink-0"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  <p className="text-sm text-muted-foreground/80">
-                    Tip: Upload a .txt or .md file with bullet points (lines starting with &apos;-&apos;) to load multiple cases at once
-                  </p>
-                </div>
+                <CustomModePanel
+                  instructions={customInstructions}
+                  validCount={validCustomCount}
+                  onAdd={() => setCustomInstructions((prev) => [...prev, ''])}
+                  onRemove={(index) => setCustomInstructions((prev) => prev.filter((_, i) => i !== index))}
+                  onUpdate={(index, value) => setCustomInstructions((prev) => prev.map((v, i) => (i === index ? value : v)))}
+                  onFileUpload={handleFileUpload}
+                />
               )}
-
-              {/* Batch mode content */}
               {mode === 'batch' && (
-                <div className="space-y-3">
-                  {batchTemplates.length === 0 ? (
-                    <div className="space-y-3">
-                      <p className="text-sm text-muted-foreground/90">
-                        Upload a list.md file with numbered template entries to batch-generate templates via Claude CLI.
-                      </p>
-                      <div className="flex justify-center">
-                        <input
-                          ref={batchFileInputRef}
-                          type="file"
-                          accept=".md,.txt"
-                          onChange={handleBatchFileUpload}
-                          className="hidden"
-                        />
-                        <button
-                          onClick={() => batchFileInputRef.current?.click()}
-                          className="px-4 py-3 rounded-xl border-2 border-dashed border-primary/15 hover:border-violet-500/30 hover:bg-violet-500/5 text-muted-foreground/90 hover:text-violet-300 transition-all flex items-center gap-2"
-                        >
-                          <Upload className="w-4 h-4" />
-                          Upload list.md
-                        </button>
-                      </div>
-                      <p className="text-sm text-muted-foreground/80 text-center">
-                        Expected format: <code className="text-muted-foreground/80">**1. Template Name**</code> followed by description and metadata
-                      </p>
-                    </div>
-                  ) : (
-                    <>
-                      {/* Category filter chips */}
-                      {batchCategories.length > 1 && (
-                        <div className="flex flex-wrap gap-1.5">
-                          <button
-                            onClick={() => setBatchCategoryFilter(null)}
-                            className={`px-2.5 py-1 text-sm rounded-lg border transition-all ${
-                              batchCategoryFilter === null
-                                ? 'bg-violet-500/15 border-violet-500/30 text-violet-300'
-                                : 'bg-secondary/30 border-primary/10 text-muted-foreground/80 hover:border-primary/20'
-                            }`}
-                          >
-                            All ({batchTemplates.length})
-                          </button>
-                          {batchCategories.map((cat) => {
-                            const count = batchTemplates.filter((t) => t.category === cat).length;
-                            return (
-                              <button
-                                key={cat}
-                                onClick={() => setBatchCategoryFilter(batchCategoryFilter === cat ? null : cat)}
-                                className={`px-2.5 py-1 text-sm rounded-lg border transition-all ${
-                                  batchCategoryFilter === cat
-                                    ? 'bg-violet-500/15 border-violet-500/30 text-violet-300'
-                                    : 'bg-secondary/30 border-primary/10 text-muted-foreground/80 hover:border-primary/20'
-                                }`}
-                              >
-                                {cat} ({count})
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-
-                      {/* Template list */}
-                      <div className="max-h-[220px] overflow-y-auto space-y-1 pr-1">
-                        {filteredBatchTemplates.map((t) => {
-                          const catStyle = CATEGORY_COLORS[t.category] ?? 'bg-secondary/30 text-muted-foreground/90 border-primary/15';
-                          return (
-                            <div
-                              key={t.id}
-                              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/20 border border-primary/5 hover:border-primary/15 transition-colors"
-                            >
-                              <span className="text-sm text-muted-foreground/80 w-6 text-right flex-shrink-0">
-                                {t.id.replace('template_', '')}
-                              </span>
-                              <span className="text-sm text-foreground/90 flex-1 truncate">{t.name}</span>
-                              {t.category && (
-                                <span className={`px-2 py-0.5 text-sm rounded-md border flex-shrink-0 ${catStyle}`}>
-                                  {t.category}
-                                </span>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm text-muted-foreground/80">
-                          {filteredBatchTemplates.length} template{filteredBatchTemplates.length !== 1 ? 's' : ''} will be generated via Claude CLI (~45s each)
-                        </p>
-                        <button
-                          onClick={() => {
-                            setBatchTemplates([]);
-                            setBatchCategoryFilter(null);
-                          }}
-                          className="px-2 py-1 text-sm rounded-md text-muted-foreground/80 hover:text-red-400 transition-colors"
-                        >
-                          Clear
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
+                <BatchModePanel
+                  templates={batchTemplates}
+                  categoryFilter={batchCategoryFilter}
+                  onCategoryFilterChange={setBatchCategoryFilter}
+                  onClear={() => {
+                    setBatchTemplates([]);
+                    setBatchCategoryFilter(null);
+                  }}
+                  onFileUpload={handleFileUpload}
+                />
               )}
             </div>
           )}
@@ -789,5 +461,46 @@ export default function DesignReviewRunner({
         </motion.div>
       </motion.div>
     </AnimatePresence>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Tab bar for mode selection
+// ---------------------------------------------------------------------------
+
+import { Beaker, FileText, List } from 'lucide-react';
+
+function ModeTabBar({
+  mode,
+  onModeChange,
+  batchCount,
+}: {
+  mode: RunMode;
+  onModeChange: (m: RunMode) => void;
+  batchCount: number;
+}) {
+  const tabs: { id: RunMode; label: string; Icon: typeof Beaker }[] = [
+    { id: 'predefined', label: 'Predefined (5)', Icon: Beaker },
+    { id: 'custom', label: 'Custom', Icon: FileText },
+    { id: 'batch', label: `Batch${batchCount > 0 ? ` (${batchCount})` : ''}`, Icon: List },
+  ];
+
+  return (
+    <div className="flex gap-2">
+      {tabs.map(({ id, label, Icon }) => (
+        <button
+          key={id}
+          onClick={() => onModeChange(id)}
+          className={`px-4 py-2 text-sm rounded-xl border transition-all flex items-center gap-2 ${
+            mode === id
+              ? 'bg-violet-500/15 border-violet-500/30 text-violet-300'
+              : 'bg-secondary/30 border-primary/10 text-muted-foreground/90 hover:border-primary/20'
+          }`}
+        >
+          <Icon className="w-3.5 h-3.5" />
+          {label}
+        </button>
+      ))}
+    </div>
   );
 }

@@ -1,5 +1,5 @@
-import { useReducer, useCallback } from 'react';
-import type { N8nPersonaDraft, TransformQuestionResponse } from '@/api/design';
+import { useState, useCallback } from 'react';
+import type { N8nPersonaDraft, TransformQuestionResponse } from '@/api/n8nTransform';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 
@@ -94,195 +94,115 @@ const INITIAL_STATE: AdoptState = {
   error: null,
 };
 
-// ── Actions ──
-
-export type AdoptAction =
-  | { type: 'INIT'; templateName: string; reviewId: string; designResult: DesignAnalysisResult; designResultJson: string }
-  | { type: 'SET_ADJUSTMENT'; text: string }
-  | { type: 'QUESTIONS_GENERATING' }
-  | { type: 'QUESTIONS_GENERATED'; questions: TransformQuestionResponse[] }
-  | { type: 'QUESTIONS_FAILED'; error: string }
-  | { type: 'ANSWER_UPDATED'; questionId: string; answer: string }
-  | { type: 'TRANSFORM_STARTED'; adoptId: string }
-  | { type: 'TRANSFORM_LINES'; lines: string[] }
-  | { type: 'TRANSFORM_PHASE'; phase: CliRunPhase }
-  | { type: 'AWAITING_ANSWERS'; questions: TransformQuestionResponse[] }
-  | { type: 'TRANSFORM_COMPLETED'; draft: N8nPersonaDraft }
-  | { type: 'TRANSFORM_FAILED'; error: string }
-  | { type: 'TRANSFORM_CANCELLED' }
-  | { type: 'DRAFT_UPDATED'; draft: N8nPersonaDraft }
-  | { type: 'DRAFT_JSON_EDITED'; json: string; draft: N8nPersonaDraft | null; error: string | null }
-  | { type: 'CONFIRM_STARTED' }
-  | { type: 'CONFIRM_COMPLETED' }
-  | { type: 'CONFIRM_FAILED'; error: string }
-  | { type: 'SET_ERROR'; error: string }
-  | { type: 'CLEAR_ERROR' }
-  | { type: 'GO_TO_STEP'; step: AdoptWizardStep }
-  | { type: 'RESTORE_CONTEXT'; templateName: string; designResultJson: string; adoptId: string }
-  | { type: 'RESET' };
-
-// ── Reducer ──
-
-function adoptReducer(state: AdoptState, action: AdoptAction): AdoptState {
-  switch (action.type) {
-    case 'INIT':
-      return {
-        ...INITIAL_STATE,
-        step: 'overview',
-        templateName: action.templateName,
-        reviewId: action.reviewId,
-        designResult: action.designResult,
-        designResultJson: action.designResultJson,
-      };
-
-    case 'SET_ADJUSTMENT':
-      return { ...state, adjustmentRequest: action.text };
-
-    case 'QUESTIONS_GENERATING':
-      return { ...state, step: 'configure', questionGenerating: true, error: null };
-
-    case 'QUESTIONS_GENERATED':
-      return {
-        ...state,
-        questionGenerating: false,
-        questions: action.questions,
-        // Pre-fill default answers
-        userAnswers: action.questions.reduce<Record<string, string>>((acc, q) => {
-          if (q.default) acc[q.id] = q.default;
-          return acc;
-        }, {}),
-      };
-
-    case 'QUESTIONS_FAILED':
-      // On failure, skip configure step — user can still proceed to transform
-      return { ...state, questionGenerating: false, questions: null, error: action.error };
-
-    case 'ANSWER_UPDATED':
-      return {
-        ...state,
-        userAnswers: { ...state.userAnswers, [action.questionId]: action.answer },
-      };
-
-    case 'TRANSFORM_STARTED':
-      return {
-        ...state,
-        step: 'transform',
-        transforming: true,
-        backgroundAdoptId: action.adoptId,
-        transformPhase: 'running',
-        transformLines: [],
-        error: null,
-      };
-
-    case 'TRANSFORM_LINES':
-      return { ...state, transformLines: action.lines };
-
-    case 'TRANSFORM_PHASE':
-      return { ...state, transformPhase: action.phase };
-
-    case 'AWAITING_ANSWERS':
-      return {
-        ...state,
-        step: 'configure',
-        transforming: false,
-        transformPhase: 'idle',
-        questions: action.questions,
-        questionGenerating: false,
-        // Pre-fill default answers
-        userAnswers: action.questions.reduce<Record<string, string>>((acc, q) => {
-          if (q.default) acc[q.id] = q.default;
-          return acc;
-        }, {}),
-      };
-
-    case 'TRANSFORM_COMPLETED':
-      return {
-        ...state,
-        step: 'edit',
-        transforming: false,
-        transformPhase: 'completed',
-        draft: action.draft,
-        draftJson: JSON.stringify(action.draft, null, 2),
-        draftJsonError: null,
-      };
-
-    case 'TRANSFORM_FAILED':
-      return {
-        ...state,
-        transforming: false,
-        backgroundAdoptId: null,
-        transformPhase: 'failed',
-        error: action.error,
-      };
-
-    case 'TRANSFORM_CANCELLED':
-      return {
-        ...state,
-        step: 'overview',
-        transforming: false,
-        backgroundAdoptId: null,
-        transformPhase: 'idle',
-        transformLines: [],
-        error: null,
-      };
-
-    case 'DRAFT_UPDATED':
-      return {
-        ...state,
-        draft: action.draft,
-        draftJson: JSON.stringify(action.draft, null, 2),
-        draftJsonError: null,
-      };
-
-    case 'DRAFT_JSON_EDITED':
-      return {
-        ...state,
-        draftJson: action.json,
-        draft: action.draft ?? state.draft,
-        draftJsonError: action.error,
-      };
-
-    case 'CONFIRM_STARTED':
-      return { ...state, confirming: true, error: null };
-
-    case 'CONFIRM_COMPLETED':
-      return { ...state, confirming: false, created: true };
-
-    case 'CONFIRM_FAILED':
-      return { ...state, confirming: false, error: action.error };
-
-    case 'SET_ERROR':
-      return { ...state, error: action.error };
-
-    case 'CLEAR_ERROR':
-      return { ...state, error: null };
-
-    case 'GO_TO_STEP':
-      return { ...state, step: action.step, error: null };
-
-    case 'RESTORE_CONTEXT':
-      return {
-        ...state,
-        step: 'transform',
-        templateName: action.templateName,
-        designResultJson: action.designResultJson,
-        backgroundAdoptId: action.adoptId,
-        transforming: true,
-        transformPhase: 'running',
-      };
-
-    case 'RESET':
-      return INITIAL_STATE;
-
-    default:
-      return state;
-  }
+function prefillDefaults(questions: TransformQuestionResponse[]): Record<string, string> {
+  return questions.reduce<Record<string, string>>((acc, q) => {
+    if (q.default) acc[q.id] = q.default;
+    return acc;
+  }, {});
 }
 
 // ── Hook ──
 
 export function useAdoptReducer() {
-  const [state, dispatch] = useReducer(adoptReducer, INITIAL_STATE);
+  const [state, setState] = useState<AdoptState>(INITIAL_STATE);
+
+  const update = useCallback((patch: Partial<AdoptState>) => {
+    setState((prev) => ({ ...prev, ...patch }));
+  }, []);
+
+  const init = useCallback((templateName: string, reviewId: string, designResult: DesignAnalysisResult, designResultJson: string) => {
+    setState({ ...INITIAL_STATE, step: 'overview', templateName, reviewId, designResult, designResultJson });
+  }, []);
+
+  const setAdjustment = useCallback((text: string) => {
+    update({ adjustmentRequest: text });
+  }, [update]);
+
+  const questionsGenerating = useCallback(() => {
+    update({ step: 'configure', questionGenerating: true, error: null });
+  }, [update]);
+
+  const questionsGenerated = useCallback((questions: TransformQuestionResponse[]) => {
+    update({ questionGenerating: false, questions, userAnswers: prefillDefaults(questions) });
+  }, [update]);
+
+  const questionsFailed = useCallback((error: string) => {
+    update({ questionGenerating: false, questions: null, error });
+  }, [update]);
+
+  const answerUpdated = useCallback((questionId: string, answer: string) => {
+    setState((prev) => ({ ...prev, userAnswers: { ...prev.userAnswers, [questionId]: answer } }));
+  }, []);
+
+  const transformStarted = useCallback((adoptId: string) => {
+    update({ step: 'transform', transforming: true, backgroundAdoptId: adoptId, transformPhase: 'running', transformLines: [], error: null });
+  }, [update]);
+
+  const transformLines = useCallback((lines: string[]) => {
+    update({ transformLines: lines });
+  }, [update]);
+
+  const transformPhase = useCallback((phase: CliRunPhase) => {
+    update({ transformPhase: phase });
+  }, [update]);
+
+  const awaitingAnswers = useCallback((questions: TransformQuestionResponse[]) => {
+    update({ step: 'configure', transforming: false, transformPhase: 'idle', questions, questionGenerating: false, userAnswers: prefillDefaults(questions) });
+  }, [update]);
+
+  const transformCompleted = useCallback((draft: N8nPersonaDraft) => {
+    update({ step: 'edit', transforming: false, transformPhase: 'completed', draft, draftJson: JSON.stringify(draft, null, 2), draftJsonError: null });
+  }, [update]);
+
+  const transformFailed = useCallback((error: string) => {
+    update({ transforming: false, backgroundAdoptId: null, transformPhase: 'failed', error });
+  }, [update]);
+
+  const transformCancelled = useCallback(() => {
+    update({ step: 'overview', transforming: false, backgroundAdoptId: null, transformPhase: 'idle', transformLines: [], error: null });
+  }, [update]);
+
+  const draftUpdated = useCallback((draft: N8nPersonaDraft) => {
+    update({ draft, draftJson: JSON.stringify(draft, null, 2), draftJsonError: null });
+  }, [update]);
+
+  const draftJsonEdited = useCallback((json: string, draft: N8nPersonaDraft | null, error: string | null) => {
+    setState((prev) => ({ ...prev, draftJson: json, draft: draft ?? prev.draft, draftJsonError: error }));
+  }, []);
+
+  const confirmStarted = useCallback(() => {
+    update({ confirming: true, error: null });
+  }, [update]);
+
+  const confirmCompleted = useCallback(() => {
+    update({ confirming: false, created: true });
+  }, [update]);
+
+  const confirmFailed = useCallback((error: string) => {
+    update({ confirming: false, error });
+  }, [update]);
+
+  const setError = useCallback((error: string) => {
+    update({ error });
+  }, [update]);
+
+  const clearError = useCallback(() => {
+    update({ error: null });
+  }, [update]);
+
+  const goToStep = useCallback((step: AdoptWizardStep) => {
+    update({ step, error: null });
+  }, [update]);
+
+  const restoreContext = useCallback((templateName: string, designResultJson: string, adoptId: string) => {
+    update({ step: 'transform', templateName, designResultJson, backgroundAdoptId: adoptId, transforming: true, transformPhase: 'running' });
+  }, [update]);
+
+  const reset = useCallback(() => {
+    setState(INITIAL_STATE);
+  }, []);
+
+  // ── Navigation ──
 
   const canGoBack = state.step !== 'overview' && !state.transforming && !state.confirming && !state.questionGenerating;
 
@@ -291,14 +211,41 @@ export function useAdoptReducer() {
     const idx = ADOPT_STEP_META[state.step].index;
     if (idx <= 0) return;
 
-    // Skip transform step when going back (go to configure or overview)
     const prevStep = state.step === 'edit'
       ? (state.questions ? 'configure' : 'overview')
       : state.step === 'configure'
         ? 'overview'
         : ADOPT_STEPS[idx - 1];
-    if (prevStep) dispatch({ type: 'GO_TO_STEP', step: prevStep });
-  }, [canGoBack, state.step, state.questions]);
+    if (prevStep) goToStep(prevStep);
+  }, [canGoBack, state.step, state.questions, goToStep]);
 
-  return { state, dispatch, canGoBack, goBack };
+  return {
+    state,
+    canGoBack,
+    goBack,
+    // Setters
+    init,
+    setAdjustment,
+    questionsGenerating,
+    questionsGenerated,
+    questionsFailed,
+    answerUpdated,
+    transformStarted,
+    transformLines,
+    transformPhase,
+    awaitingAnswers,
+    transformCompleted,
+    transformFailed,
+    transformCancelled,
+    draftUpdated,
+    draftJsonEdited,
+    confirmStarted,
+    confirmCompleted,
+    confirmFailed,
+    setError,
+    clearError,
+    goToStep,
+    restoreContext,
+    reset,
+  };
 }

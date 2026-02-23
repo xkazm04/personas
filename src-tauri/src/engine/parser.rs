@@ -6,10 +6,9 @@ const MAX_TOOL_RESULT_DISPLAY: usize = 200;
 
 /// Truncate a string to `max_len` characters, appending "..." if truncated.
 fn truncate_field(text: &str, max_len: usize) -> String {
-    if text.len() > max_len {
-        format!("{}...", &text[..max_len])
-    } else {
-        text.to_string()
+    match text.char_indices().nth(max_len) {
+        Some((byte_offset, _)) => format!("{}...", &text[..byte_offset]),
+        None => text.to_string(),
     }
 }
 
@@ -26,8 +25,10 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
     let value: serde_json::Value = match serde_json::from_str(trimmed) {
         Ok(v) => v,
         Err(_) => {
-            // Non-JSON line — show as-is
-            return (StreamLineType::Unknown, Some(trimmed.to_string()));
+            // Non-JSON line — suppress display. With --verbose + stream-json,
+            // Claude CLI emits both JSON events and plain-text duplicates.
+            // We only display the parsed JSON events to prevent 5x duplication.
+            return (StreamLineType::Unknown, None);
         }
     };
 
@@ -524,7 +525,8 @@ mod tests {
         let (st, display) = parse_stream_line(line);
 
         assert_eq!(st, StreamLineType::Unknown);
-        assert_eq!(display, Some("This is just regular text output".to_string()));
+        // Non-JSON lines are suppressed to prevent verbose duplicate output
+        assert_eq!(display, None);
     }
 
     #[test]

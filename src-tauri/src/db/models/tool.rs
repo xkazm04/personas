@@ -16,6 +16,7 @@ pub struct PersonaToolDefinition {
     pub input_schema: Option<String>,
     pub output_schema: Option<String>,
     pub requires_credential_type: Option<String>,
+    pub implementation_guide: Option<String>,
     pub is_builtin: bool,
     pub created_at: String,
     pub updated_at: String,
@@ -31,6 +32,7 @@ pub struct CreateToolDefinitionInput {
     pub input_schema: Option<String>,
     pub output_schema: Option<String>,
     pub requires_credential_type: Option<String>,
+    pub implementation_guide: Option<String>,
     pub is_builtin: Option<bool>,
 }
 
@@ -44,6 +46,7 @@ pub struct UpdateToolDefinitionInput {
     pub input_schema: Option<Option<String>>,
     pub output_schema: Option<Option<String>>,
     pub requires_credential_type: Option<Option<String>>,
+    pub implementation_guide: Option<Option<String>>,
 }
 
 // ============================================================================

@@ -161,7 +161,7 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
 
           {/* Two pathway cards */}
           <div className="grid grid-cols-2 gap-3">
-            {/* Template path */}
+            {/* Catalog path */}
             <button
               onClick={() => usePersonaStore.getState().setCredentialView('from-template')}
               className="group text-left p-4 rounded-xl border border-primary/15 bg-secondary/25 hover:bg-secondary/50 hover:border-primary/25 transition-all"
@@ -169,7 +169,7 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
               <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-3">
                 <LayoutTemplate className="w-4.5 h-4.5 text-emerald-400" />
               </div>
-              <p className="text-sm font-medium text-foreground/80 mb-1">Use a template</p>
+              <p className="text-sm font-medium text-foreground/80 mb-1">Add from catalog</p>
               <p className="text-sm text-muted-foreground/90 leading-relaxed">
                 Pick a known service like Slack, GitHub, or OpenAI. Pre-configured fields and healthchecks.
               </p>

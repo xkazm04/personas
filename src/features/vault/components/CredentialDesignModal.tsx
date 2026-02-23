@@ -243,7 +243,7 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
       : '';
     const summary = typeof metadata.summary === 'string'
       ? metadata.summary
-      : `${template.label} template`;
+      : `${template.label} connector`;
 
     loadTemplate({
       match_existing: template.name,

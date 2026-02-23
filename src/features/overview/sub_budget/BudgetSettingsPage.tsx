@@ -71,8 +71,8 @@ export default function BudgetSettingsPage() {
     try {
       const data = await api.getAllMonthlySpend();
       const map: Record<string, number> = {};
-      for (const [personaId, spend] of data) {
-        map[personaId] = spend;
+      for (const d of data) {
+        map[d.id] = d.spend ?? 0;
       }
       setMonthlySpend(map);
     } catch (err) {

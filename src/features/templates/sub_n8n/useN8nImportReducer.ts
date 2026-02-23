@@ -1,5 +1,5 @@
 import { useReducer, useCallback } from 'react';
-import type { N8nPersonaDraft } from '@/api/design';
+import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 
@@ -76,6 +76,13 @@ export interface N8nImportState {
   draftJson: string;
   draftJsonError: string | null;
 
+  // Draft validation / streaming test
+  testStatus: 'idle' | 'running' | 'passed' | 'failed';
+  testError: string | null;
+  testRunId: string | null;
+  testLines: string[];
+  testPhase: CliRunPhase;
+
   // Confirm
   confirming: boolean;
   created: boolean;
@@ -102,6 +109,11 @@ const INITIAL_STATE: N8nImportState = {
   draft: null,
   draftJson: '',
   draftJsonError: null,
+  testStatus: 'idle',
+  testError: null,
+  testRunId: null,
+  testLines: [],
+  testPhase: 'idle',
   confirming: false,
   created: false,
 };
@@ -128,12 +140,18 @@ export type N8nImportAction =
   | { type: 'CONFIRM_STARTED' }
   | { type: 'CONFIRM_COMPLETED' }
   | { type: 'CONFIRM_FAILED'; error: string }
+  | { type: 'TEST_STREAM_STARTED'; testId: string }
+  | { type: 'TEST_LINES'; lines: string[] }
+  | { type: 'TEST_PHASE'; phase: CliRunPhase }
+  | { type: 'TEST_STARTED' }
+  | { type: 'TEST_PASSED' }
+  | { type: 'TEST_FAILED'; error: string }
   | { type: 'SET_ERROR'; error: string }
   | { type: 'CLEAR_ERROR' }
   | { type: 'GO_TO_STEP'; step: N8nWizardStep }
   | { type: 'RESTORE_CONTEXT'; workflowName: string; rawWorkflowJson: string; parsedResult: DesignAnalysisResult | null; transformId: string }
   | { type: 'SESSION_CREATED'; sessionId: string }
-  | { type: 'SESSION_LOADED'; sessionId: string; step: N8nWizardStep; workflowName: string; rawWorkflowJson: string; parsedResult: DesignAnalysisResult | null; draft: N8nPersonaDraft | null; questions: TransformQuestion[] | null; transformId: string | null }
+  | { type: 'SESSION_LOADED'; sessionId: string; step: N8nWizardStep; workflowName: string; rawWorkflowJson: string; parsedResult: DesignAnalysisResult | null; draft: N8nPersonaDraft | null; questions: TransformQuestion[] | null; transformId: string | null; userAnswers: Record<string, string> | null }
   | { type: 'RESET' };
 
 // ── Helpers ──
@@ -269,6 +287,11 @@ function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nIm
         draft: action.draft,
         draftJson: JSON.stringify(action.draft, null, 2),
         draftJsonError: null,
+        testStatus: 'idle',
+        testError: null,
+        testRunId: null,
+        testLines: [],
+        testPhase: 'idle',
       };
 
     case 'DRAFT_JSON_EDITED':
@@ -277,7 +300,30 @@ function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nIm
         draftJson: action.json,
         draft: action.draft ?? state.draft,
         draftJsonError: action.error,
+        testStatus: 'idle',
+        testError: null,
+        testRunId: null,
+        testLines: [],
+        testPhase: 'idle',
       };
+
+    case 'TEST_STREAM_STARTED':
+      return { ...state, testRunId: action.testId, testStatus: 'running', testError: null, testLines: [], testPhase: 'running' };
+
+    case 'TEST_LINES':
+      return { ...state, testLines: action.lines };
+
+    case 'TEST_PHASE':
+      return { ...state, testPhase: action.phase };
+
+    case 'TEST_STARTED':
+      return { ...state, testStatus: 'running', testError: null };
+
+    case 'TEST_PASSED':
+      return { ...state, testStatus: 'passed', testError: null, testPhase: 'completed' };
+
+    case 'TEST_FAILED':
+      return { ...state, testStatus: 'failed', testError: action.error, testPhase: 'failed' };
 
     case 'CONFIRM_STARTED':
       return { ...state, confirming: true, error: null };
@@ -327,13 +373,14 @@ function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nIm
           subPhase = 'idle';
         }
       }
-      // Pre-fill default answers from restored questions
-      const restoredAnswers = action.questions
+      // Restore saved answers, falling back to question defaults for any missing
+      const defaultAnswers = action.questions
         ? action.questions.reduce<Record<string, string>>((acc, q) => {
             if (q.default) acc[q.id] = q.default;
             return acc;
           }, {})
         : {};
+      const restoredAnswers = { ...defaultAnswers, ...(action.userAnswers ?? {}) };
       return {
         ...INITIAL_STATE,
         sessionId: action.sessionId,

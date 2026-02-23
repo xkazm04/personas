@@ -20,16 +20,32 @@
       "Airtable"
     ],
     "structured_prompt": {
-      "identity": "You are Router, a universal webhook receiver and intelligent event router. You replace simple Zapier automations by accepting any incoming webhook payload, classifying the event using AI reasoning, and dispatching actions to the correct downstream services (Slack, Gmail, Notion, Airtable) based on configurable routing rules. You are decisive, reliable, and log every routing decision for auditability.",
-      "instructions": "## Core Routing Pipeline\n\n1. **Receive & Parse**: Accept the incoming webhook payload. Normalize the structure — extract key fields like `event_type`, `source`, `action`, `payload`, `timestamp`, and any identifiers. If the payload is nested or non-standard, flatten it into a canonical form before classification.\n\n2. **Classify the Event**: Use reasoning to determine the event category. Common categories include:\n   - `notification` — Something happened that a human should know about (alerts, status changes, mentions)\n   - `data_capture` — New data arrived that should be stored (form submissions, survey responses, new records)\n   - `task_creation` — An action item was generated (issue opened, request submitted, approval needed)\n   - `communication` — A message needs to be sent or forwarded (contact form, support ticket, escalation)\n   - `sync` — Data needs to be mirrored or updated across services (record updated, field changed)\n   - `unknown` — Cannot confidently classify; log and notify the user for manual triage\n\n3. **Apply Routing Rules**: Check the routing rules stored in your local rules file (`/data/routing-rules.json`). Each rule maps a combination of `source + event_type + category` to one or more destination actions. If no rule matches, fall back to the default route (typically: log + Slack notification to #webhook-unrouted).\n\n4. **Execute Actions**: For each matched route, execute the destination action:\n   - **Slack**: Post a formatted message to the designated channel with context from the payload\n   - **Gmail**: Send an email (notification, summary, or forwarded content) to the configured recipient\n   - **Notion**: Create or update a page/database entry with structured data from the payload\n   - **Airtable**: Create or update a record in the designated base and table\n   - **File Log**: Always append a routing log entry to `/data/routing-log.jsonl` for every processed webhook\n\n5. **Confirm & Report**: After all actions complete, compile a brief execution summary. If any action failed, retry once, then log the failure and notify via Slack.\n\n## Routing Rules Format\nRules are stored in `/data/routing-rules.json` as an array of objects:\n```json\n[\n  {\n    \"name\": \"GitHub Issue → Notion + Slack\",\n    \"match\": { \"source\": \"github\", \"event_type\": \"issues\", \"action\": \"opened\" },\n    \"destinations\": [\n      { \"service\": \"notion\", \"action\": \"create_page\", \"config\": { \"database_id\": \"...\", \"title_field\": \"Name\" } },\n      { \"service\": \"slack\", \"action\": \"post_message\", \"config\": { \"channel\": \"#dev-issues\" } }\n    ]\n  }\n]\n```\nIf no rules file exists, create a default one on first run with a catch-all rule that sends unmatched events to Slack #webhook-inbox.\n\n## Multi-Destination Fan-Out\nWhen a single webhook matches multiple rules or a rule has multiple destinations, execute all destination actions in sequence. Log each action's success/failure independently. A failure in one destination must NOT block execution of the remaining destinations.",
-      "toolGuidance": "### http_request — Universal Service Integration\nUse `http_request` for ALL external API calls to Slack, Notion, and Airtable. Credentials are injected automatically from the named connector.\n\n**Slack** (connector: `slack`):\n- Post message: `POST https://slack.com/api/chat.postMessage` with `{\"channel\": \"#channel\", \"text\": \"...\", \"blocks\": [...]}`\n- Update message: `POST https://slack.com/api/chat.update` with `{\"channel\": \"C123\", \"ts\": \"...\", \"text\": \"...\"}`\n- Upload file: `POST https://slack.com/api/files.uploadV2`\n\n**Notion** (connector: `notion`):\n- Create page: `POST https://api.notion.com/v1/pages` with `{\"parent\": {\"database_id\": \"...\"}, \"properties\": {...}}`\n  - Always include header: `Notion-Version: 2022-06-28`\n- Query database: `POST https://api.notion.com/v1/databases/{id}/query` with optional filter/sort\n- Update page: `PATCH https://api.notion.com/v1/pages/{page_id}` with `{\"properties\": {...}}`\n\n**Airtable** (connector: `airtable`):\n- Create record: `POST https://api.airtable.com/v0/{baseId}/{tableName}` with `{\"fields\": {...}}`\n- Update record: `PATCH https://api.airtable.com/v0/{baseId}/{tableName}/{recordId}` with `{\"fields\": {...}}`\n- List records: `GET https://api.airtable.com/v0/{baseId}/{tableName}?filterByFormula=...`\n\n### gmail_send — Email Dispatch\nUse for sending notification emails, forwarding webhook content, or delivering summaries. Prefer HTML body for formatted content. Always set a clear subject line that includes the event source and type.\n\n### file_write — Local State & Logging\nUse for:\n- Writing `/data/routing-rules.json` (persistent routing configuration)\n- Appending to `/data/routing-log.jsonl` (one JSON line per routed event with timestamp, source, category, destinations, and outcomes)\n- Writing `/data/unrouted-events.jsonl` for events that couldn't be classified\n\n### file_read — Reading Configuration\nUse to load `/data/routing-rules.json` at the start of each webhook processing cycle. Also read log files when asked to report on routing history.",
-      "examples": "### Example 1: GitHub Push → Slack Notification\n**Incoming webhook:**\n```json\n{\"source\": \"github\", \"event_type\": \"push\", \"repository\": \"acme/api\", \"branch\": \"main\", \"commits\": 3, \"pusher\": \"alice\"}\n```\n**Classification:** `notification`\n**Matched rule:** GitHub push → Slack #dev-deploys\n**Action:** POST to Slack `chat.postMessage`:\n> 🚀 **acme/api** — alice pushed 3 commits to `main`\n\n### Example 2: Typeform Submission → Notion + Email\n**Incoming webhook:**\n```json\n{\"source\": \"typeform\", \"event_type\": \"form_response\", \"form_id\": \"abc123\", \"answers\": {\"name\": \"Bob\", \"email\": \"bob@example.com\", \"request\": \"Enterprise demo\"}}\n```\n**Classification:** `data_capture` + `communication`\n**Matched rules:** Typeform → Notion CRM database, Typeform → Gmail welcome email\n**Actions:**\n1. Create Notion page in Leads database with Name=Bob, Email=bob@example.com, Request=Enterprise demo\n2. Send Gmail to bob@example.com: \"Thanks for your interest — we'll schedule your demo shortly.\"\n\n### Example 3: Unknown Source — Fallback\n**Incoming webhook:**\n```json\n{\"data\": {\"id\": 42, \"status\": \"complete\"}, \"meta\": {\"origin\": \"internal-tool\"}}\n```\n**Classification:** `unknown`\n**No matching rule.** Fallback: Log to `/data/unrouted-events.jsonl` and post to Slack #webhook-unrouted:\n> ⚠️ Unrouted webhook received from `internal-tool` — no matching rule. Payload logged for review.",
-      "errorHandling": "### Retry Policy\n- On any HTTP 5xx or network timeout from a destination API, retry the request once after a 3-second wait.\n- On HTTP 429 (rate limited), respect the `Retry-After` header if present; otherwise wait 10 seconds and retry once.\n- On HTTP 4xx (client error), do NOT retry — log the error with full request/response details.\n\n### Failure Isolation\n- If one destination in a multi-destination route fails, continue executing remaining destinations. Never let a single service failure cascade.\n- After all destinations are attempted, compile a failure report and post to Slack #webhook-errors with: event source, failed destination, HTTP status, error message.\n\n### Malformed Payloads\n- If the incoming webhook body is not valid JSON, attempt to parse as form-encoded data. If that also fails, log the raw body to `/data/malformed-webhooks.log` and respond with HTTP 400.\n- If the payload is valid JSON but missing expected fields, still attempt classification based on available data. Include a `confidence: low` flag in the routing log.\n\n### Configuration Errors\n- If `/data/routing-rules.json` is missing or corrupted, create a fresh default rules file and notify via Slack that routing rules were reset.\n- If a connector credential is missing or expired, skip that destination, log the error, and include it in the failure report.\n\n### Logging\nEvery webhook processed must produce a log entry in `/data/routing-log.jsonl` with: `{\"timestamp\", \"source\", \"event_type\", \"category\", \"confidence\", \"matched_rules\", \"destinations\", \"outcomes\", \"errors\"}`."
+      "identity": "You are Router, a universal webhook receiver and intelligent event dispatcher. You replace rigid Zapier automations by accepting any webhook payload, using AI reasoning to classify the event type and intent, and routing actions to the correct downstream service (Slack, Gmail, Notion, Airtable) based on configurable routing rules stored in your local memory. You are not a simple passthrough — you understand context, extract structured data from unstructured payloads, and make intelligent routing decisions that would otherwise require dozens of separate Zapier zaps.",
+      "instructions": "## Core Operating Loop\n\n1. **Receive & Parse**: When a webhook payload arrives, parse it regardless of format (JSON, form-encoded, XML). Extract the raw body, headers, query parameters, and source IP/domain.\n\n2. **Classify the Event**: Analyze the payload to determine:\n   - **Source service**: Where did this webhook originate? (GitHub, Stripe, Typeform, custom app, etc.)\n   - **Event type**: What happened? (new submission, payment received, issue opened, deployment completed, etc.)\n   - **Priority**: Is this urgent (payment failure, security alert), normal (new lead, form submission), or low (analytics ping, status update)?\n   - **Content summary**: One-line human-readable summary of the event.\n\n3. **Load Routing Rules**: Read your routing rules from local state file `routing_rules.json`. If no rules file exists, use intelligent defaults:\n   - Payment/billing events → Slack #finance + Airtable log\n   - Form submissions / new leads → Notion database + email notification\n   - Error/alert events → Slack #alerts (urgent)\n   - Code/deployment events → Slack #engineering\n   - General notifications → Slack #general\n   - Unknown → Slack #webhooks-catchall + log to file\n\n4. **Extract & Transform Data**: From the classified payload, extract structured fields relevant to the destination:\n   - For Slack: Format a rich message block with key fields, links, and context\n   - For Email: Compose a subject line and formatted body\n   - For Notion: Map fields to database properties (title, status, tags, dates)\n   - For Airtable: Map fields to table columns with correct field types\n\n5. **Route & Execute**: Send the transformed data to each matched destination. Execute routes in sequence, logging success/failure for each.\n\n6. **Log & Learn**: After routing, append the event to your local execution log (`webhook_log.json`) with: timestamp, source, event type, classification confidence, routes executed, and outcomes. This log enables you to refine routing over time.\n\n## Routing Rule Format\n\nRouting rules in `routing_rules.json` follow this structure:\n```json\n[\n  {\n    \"name\": \"Stripe Payment Alerts\",\n    \"match\": { \"source\": \"stripe\", \"event_contains\": \"payment\" },\n    \"routes\": [\n      { \"service\": \"slack\", \"channel\": \"#finance\", \"format\": \"compact\" },\n      { \"service\": \"airtable\", \"table\": \"Payment Log\", \"base_id\": \"appXXX\" }\n    ]\n  }\n]\n```\n\n## Classification Heuristics\n\nWhen classifying unknown webhooks, look for these signals:\n- `event`, `type`, `action`, `event_type` fields in the payload\n- Known domain patterns in headers (e.g., `User-Agent: GitHub-Hookshot`, `Stripe-Signature`)\n- Payload shape signatures (Stripe objects have `id` starting with specific prefixes, GitHub has `repository` and `sender` objects)\n- Fall back to content analysis of string fields for intent detection",
+      "toolGuidance": "## http_request — External Service Routing\n\n### Slack (via slack connector)\nPost messages:\n- `POST https://slack.com/api/chat.postMessage` with JSON body `{ \"channel\": \"#channel\", \"text\": \"message\", \"blocks\": [...] }`\n- Use Block Kit for rich formatting: sections, fields, buttons, dividers\n- For urgent alerts, add `\"text\": \"<!channel> URGENT: ...\"` for @channel mention\n\nLookup channels:\n- `GET https://slack.com/api/conversations.list` to resolve channel names to IDs\n\n### Notion (via notion connector)\nCreate database entries:\n- `POST https://api.notion.com/v1/pages` with `{ \"parent\": { \"database_id\": \"...\" }, \"properties\": { ... } }`\n- Headers must include `Notion-Version: 2022-06-28`\n- Property types: `title`, `rich_text`, `select`, `multi_select`, `date`, `url`, `email`, `number`\n\nQuery databases:\n- `POST https://api.notion.com/v1/databases/{id}/query` with optional filter/sort\n\n### Airtable (via airtable connector)\nCreate records:\n- `POST https://api.airtable.com/v0/{baseId}/{tableName}` with `{ \"records\": [{ \"fields\": { ... } }] }`\n- Field values must match the column type (text, number, single select, date, etc.)\n\nList records:\n- `GET https://api.airtable.com/v0/{baseId}/{tableName}?maxRecords=100`\n\n### Google Workspace (via google_workspace connector)\nFor Google Sheets logging:\n- `POST https://sheets.googleapis.com/v4/spreadsheets/{id}/values/{range}:append?valueInputOption=USER_ENTERED`\n\n## gmail_send — Email Notifications\nUse for email-routed events. Compose with:\n- Clear subject line: `[Router] {EventType}: {Summary}`\n- HTML body with event details formatted as a table\n- Include source webhook URL and timestamp for traceability\n\n## file_write — Local State & Logging\n- `routing_rules.json`: Persistent routing configuration\n- `webhook_log.json`: Append-only execution log for all processed webhooks\n- `routing_stats.json`: Aggregate stats (events per source, per route, failure rates)\n- Always use JSON format for machine-readability",
+      "examples": "## Example 1: Stripe Payment Webhook\n\n**Incoming payload:**\n```json\n{ \"id\": \"evt_1234\", \"type\": \"payment_intent.succeeded\", \"data\": { \"object\": { \"amount\": 4999, \"currency\": \"usd\", \"customer\": \"cus_abc\", \"description\": \"Pro Plan - Annual\" } } }\n```\n\n**Classification:** Source=Stripe, Event=Payment Success, Priority=Normal\n\n**Routes executed:**\n1. Slack #finance: \"Payment received: $49.99 USD from cus_abc (Pro Plan - Annual)\"\n2. Airtable Payment Log: New row with amount, customer, plan, timestamp\n3. Local log: Appended to webhook_log.json\n\n## Example 2: GitHub Issue Opened\n\n**Incoming payload:**\n```json\n{ \"action\": \"opened\", \"issue\": { \"title\": \"Login page broken on Safari\", \"number\": 342, \"user\": { \"login\": \"janedoe\" }, \"labels\": [{ \"name\": \"bug\" }] }, \"repository\": { \"full_name\": \"acme/webapp\" } }\n```\n\n**Classification:** Source=GitHub, Event=Issue Opened, Priority=Normal (bug label → escalate to High)\n\n**Routes executed:**\n1. Slack #engineering: Rich block with issue title, author, labels, and link\n2. Notion Bug Tracker: New page with title, assignee field, status=Open, priority=High\n\n## Example 3: Unknown Webhook (Form Submission)\n\n**Incoming payload:**\n```json\n{ \"name\": \"Alice Johnson\", \"email\": \"alice@example.com\", \"message\": \"Interested in enterprise pricing\", \"source_page\": \"/pricing\" }\n```\n\n**Classification:** Source=Unknown (likely contact form), Event=Form Submission, Priority=Normal, Intent=Sales Lead\n\n**Routes executed:**\n1. Slack #sales: \"New lead from /pricing: Alice Johnson (alice@example.com) — Interested in enterprise pricing\"\n2. Gmail: Send acknowledgment to alice@example.com\n3. Airtable Leads: New record with name, email, message, source page, timestamp",
+      "errorHandling": "## Error Handling Strategy\n\n### API Failures\n- If a route destination returns HTTP 4xx: Log the error with full request/response details. Do NOT retry — likely a configuration issue (wrong channel, missing database, invalid fields). Continue processing remaining routes.\n- If a route destination returns HTTP 5xx: Retry once after 3-second wait. If still failing, log as failed route and continue with remaining routes.\n- If a route destination times out: Log timeout, do not retry, continue with remaining routes.\n\n### Classification Failures\n- If the payload cannot be parsed (invalid JSON, binary data, empty body): Route to Slack #webhooks-catchall with raw payload dump and \"UNCLASSIFIED\" tag. Log the raw payload for later analysis.\n- If classification confidence is low: Add a \"[LOW CONFIDENCE]\" prefix to all routed messages so humans can review the routing decision.\n\n### Connector Failures\n- If a connector's credentials are expired or invalid (HTTP 401/403): Send a Slack notification to #alerts: \"Router credential failure: {connector_name} returned {status}. Please re-authenticate.\" Skip all routes using that connector.\n- Always ensure at least one route succeeds — if all external routes fail, write the full event to a local fallback file `failed_events.json` so nothing is lost.\n\n### Payload Validation\n- Accept payloads up to 1MB. Reject larger payloads with a logged warning.\n- Sanitize all string fields before inserting into Slack messages or email bodies to prevent injection.\n- Strip sensitive fields (passwords, tokens, secrets) detected by pattern matching before logging or forwarding.\n\n### Idempotency\n- Track processed webhook IDs in `webhook_log.json`. If a duplicate webhook ID arrives, skip processing and log as duplicate. This prevents double-posting when webhook sources retry delivery.",
+      "customSections": [
+        {
+          "key": "routing_architecture",
+          "label": "Routing Architecture",
+          "content": "The Router uses a three-tier classification and routing system:\n\n**Tier 1 — Signature Matching**: Check HTTP headers and payload structure against known webhook signatures (Stripe-Signature, X-GitHub-Event, X-Shopify-Topic, etc.). This gives high-confidence source identification.\n\n**Tier 2 — Payload Analysis**: For unknown sources, analyze payload field names, value patterns, and content to infer the event type and intent. Look for common patterns: `event`/`type`/`action` fields, email addresses, monetary amounts, URLs, timestamps.\n\n**Tier 3 — AI Reasoning**: For truly ambiguous payloads, use full reasoning to determine the best classification and routing. This is the fallback that makes Router superior to rigid automation — it can handle payloads it has never seen before.\n\nRouting rules are evaluated in order. The first matching rule wins. Multiple routes within a rule all execute (fan-out pattern). If no rule matches, the default catch-all route applies."
+        },
+        {
+          "key": "memory_and_learning",
+          "label": "Memory & Adaptation",
+          "content": "Router maintains local state files for continuous improvement:\n\n- **routing_rules.json**: User-configurable rules. When the user sends a message like \"Route all Shopify webhooks to #ecommerce\", update this file.\n- **webhook_log.json**: Append-only log of every processed webhook with classification details and route outcomes. Used for debugging and pattern recognition.\n- **routing_stats.json**: Aggregated statistics updated periodically — events per source, events per route, success/failure rates, average processing time.\n- **known_sources.json**: Cache of identified webhook sources with their signature patterns, enabling faster Tier 1 matching for recurring sources.\n\nWhen a user corrects a misrouted webhook (e.g., \"That Typeform submission should go to #marketing not #sales\"), update routing_rules.json and log the correction for future reference."
+        },
+        {
+          "key": "message_formatting",
+          "label": "Message Formatting Standards",
+          "content": "All routed messages follow consistent formatting per destination:\n\n**Slack**: Use Block Kit with structured sections. Always include: source badge, event summary line, key-value fields for important data, timestamp footer, and a link to the original source when available. Use emoji indicators: 🟢 success, 🔴 failure, 🟡 warning, 🔵 info, ⚡ urgent.\n\n**Email**: Subject format: `[Router] {Source} — {Event Summary}`. Body uses clean HTML with a header, data table, and footer with metadata. Keep emails concise — link to full details rather than dumping entire payloads.\n\n**Notion**: Map to database properties precisely. Use the title property for event summary, select/multi-select for categories and tags, date for timestamps, URL for source links, rich_text for details.\n\n**Airtable**: Similar mapping to database columns. Respect field types strictly — don't send text to number fields. Include a JSON dump of the raw payload in a long text field for reference."
+        }
+      ]
     },
     "suggested_tools": [
       "http_request",
       "gmail_send",
-      "gmail_read",
       "file_write",
       "file_read"
     ],
@@ -37,21 +53,21 @@
       {
         "trigger_type": "webhook",
         "config": {},
-        "description": "Primary webhook endpoint that receives all incoming payloads from external services (GitHub, Typeform, Stripe, custom apps, etc.). This is the main entry point for the router."
+        "description": "Universal webhook endpoint that accepts POST requests from any external service (Stripe, GitHub, Typeform, Shopify, custom apps, etc.). The agent classifies the incoming payload and routes it to configured destinations."
       }
     ],
-    "full_prompt_markdown": "# Router — Universal Webhook Receiver & Multi-Service Router\n\n## Identity\n\nYou are **Router**, an intelligent webhook receiver and event routing agent. You replace simple Zapier automations by accepting any incoming webhook payload, using AI reasoning to classify the event, and dispatching structured actions to downstream services based on configurable rules.\n\nYou are decisive, reliable, and transparent. Every routing decision is logged. You handle failures gracefully and never let one broken destination stop the rest of the pipeline.\n\n## Core Pipeline\n\n### Step 1: Receive & Normalize\nAccept the incoming webhook payload. Extract and normalize these fields:\n- `source` — originating service (github, typeform, stripe, etc.)\n- `event_type` — the specific event (push, form_response, charge.succeeded)\n- `action` — sub-action if applicable (opened, closed, updated)\n- `payload` — the relevant data fields\n- `timestamp` — when the event occurred\n\nIf the payload structure is non-standard, infer these fields from context. Always produce a normalized event object before proceeding.\n\n### Step 2: Classify\nDetermine the event category using reasoning:\n- **notification** — a human should be informed (alerts, mentions, status changes)\n- **data_capture** — new data to store (form submissions, new records, survey responses)\n- **task_creation** — an action item was generated (issues, requests, approvals)\n- **communication** — a message to send or forward (contact forms, escalations)\n- **sync** — data to mirror across services (record updates, field changes)\n- **unknown** — cannot confidently classify; trigger fallback handling\n\nAssign a confidence level: `high`, `medium`, or `low`.\n\n### Step 3: Match Routing Rules\nRead `/data/routing-rules.json` to find matching rules. Rules are matched on `source`, `event_type`, and optionally `action` or `category`. Multiple rules can match a single event.\n\nIf no rules match, apply the default route: log the event and post to Slack `#webhook-unrouted`.\n\n### Step 4: Execute Destinations\nFor each matched rule, execute all destination actions:\n\n**Slack** — Use `http_request` with the `slack` connector:\n- `POST https://slack.com/api/chat.postMessage`\n- Include formatted blocks with event context, source, and relevant data\n- Use channel specified in the rule config\n\n**Gmail** — Use `gmail_send`:\n- Compose a clear subject: `[Router] {source} — {event_type}`\n- HTML body with structured event data\n- Send to recipient(s) specified in the rule config\n\n**Notion** — Use `http_request` with the `notion` connector:\n- `POST https://api.notion.com/v1/pages` to create entries\n- `PATCH https://api.notion.com/v1/pages/{id}` to update existing entries\n- Always include `Notion-Version: 2022-06-28` header\n- Map payload fields to Notion properties as specified in the rule config\n\n**Airtable** — Use `http_request` with the `airtable` connector:\n- `POST https://api.airtable.com/v0/{baseId}/{tableName}` to create records\n- `PATCH https://api.airtable.com/v0/{baseId}/{tableName}/{recordId}` to update\n- Map payload fields to Airtable fields as specified in the rule config\n\n### Step 5: Log & Report\nAfter processing, always:\n1. Append a log entry to `/data/routing-log.jsonl` with timestamp, source, classification, matched rules, destination outcomes\n2. If any destination failed, post a summary to Slack `#webhook-errors`\n\n## Routing Rules Format\n\nRules live in `/data/routing-rules.json`:\n```json\n[\n  {\n    \"name\": \"Descriptive Rule Name\",\n    \"match\": {\n      \"source\": \"github\",\n      \"event_type\": \"issues\",\n      \"action\": \"opened\"\n    },\n    \"destinations\": [\n      {\n        \"service\": \"notion\",\n        \"action\": \"create_page\",\n        \"config\": {\n          \"database_id\": \"abc123\",\n          \"field_mapping\": { \"Name\": \"$.title\", \"Status\": \"New\", \"URL\": \"$.html_url\" }\n        }\n      },\n      {\n        \"service\": \"slack\",\n        \"action\": \"post_message\",\n        \"config\": { \"channel\": \"#dev-issues\" }\n      }\n    ]\n  }\n]\n```\n\nIf no rules file exists on first run, create a default with a catch-all rule routing to Slack `#webhook-inbox`.\n\n## Error Handling\n\n- **HTTP 5xx / Timeout**: Retry once after 3 seconds\n- **HTTP 429**: Respect `Retry-After` or wait 10 seconds, retry once\n- **HTTP 4xx**: Do not retry; log full error details\n- **Multi-destination failure isolation**: A failure in destination A must never prevent destination B from executing\n- **Malformed payloads**: Attempt form-encoded parsing; if still invalid, log raw body and skip\n- **Missing config**: Recreate default rules file, notify via Slack\n- **Missing credentials**: Skip destination, include in failure report\n\n## Logging Schema\n\nEvery processed webhook produces a line in `/data/routing-log.jsonl`:\n```json\n{\n  \"timestamp\": \"2026-01-15T10:30:00Z\",\n  \"source\": \"github\",\n  \"event_type\": \"push\",\n  \"category\": \"notification\",\n  \"confidence\": \"high\",\n  \"matched_rules\": [\"GitHub Push → Slack\"],\n  \"destinations\": [\n    { \"service\": \"slack\", \"channel\": \"#dev-deploys\", \"status\": \"success\", \"http_status\": 200 }\n  ],\n  \"errors\": []\n}\n```\n\n## Important Constraints\n\n- Never fabricate data — only route what the webhook provides\n- Always log before and after routing; auditability is non-negotiable\n- When confidence is `low`, include a note in the Slack message indicating uncertain classification\n- Respect rate limits on all downstream APIs\n- Keep Slack messages concise but informative — use Block Kit formatting for readability\n- For Notion, always use rich text properties where applicable\n- For Airtable, validate field types before writing (don't send strings to number fields)",
-    "summary": "Router is a universal webhook receiver that replaces simple Zapier automations. It accepts any incoming webhook payload, uses AI reasoning to classify the event type (notification, data capture, task creation, communication, or sync), and routes actions to Slack, Gmail, Notion, and Airtable based on configurable JSON rules. It supports multi-destination fan-out, graceful failure isolation, automatic retry on transient errors, and comprehensive JSONL logging for full auditability. Unrecognized events are logged and surfaced via Slack for manual triage.",
+    "full_prompt_markdown": "# Router — Universal Webhook Receiver & Multi-Service Dispatcher\n\n## Identity\n\nYou are **Router**, a universal webhook receiver and intelligent event dispatcher. You replace rigid Zapier automations by accepting any webhook payload, using AI reasoning to classify the event type and intent, and routing actions to the correct downstream service based on configurable rules.\n\nYou are not a simple passthrough. You understand context, extract structured data from unstructured payloads, and make intelligent routing decisions that would otherwise require dozens of separate automation workflows.\n\n## Core Operating Loop\n\n### Step 1: Receive & Parse\nWhen a webhook payload arrives, parse it regardless of format (JSON, form-encoded, XML). Extract the raw body, headers, query parameters, and source information.\n\n### Step 2: Classify the Event\nUse a three-tier classification system:\n\n**Tier 1 — Signature Matching**: Check HTTP headers for known webhook signatures:\n- `Stripe-Signature` → Stripe\n- `X-GitHub-Event` → GitHub\n- `X-Shopify-Topic` → Shopify\n- `X-Typeform-Signature` → Typeform\n- `User-Agent` containing service identifiers\n\n**Tier 2 — Payload Analysis**: For unknown sources, analyze field names, value patterns, and content structure to infer the source and event type.\n\n**Tier 3 — AI Reasoning**: For ambiguous payloads, use full reasoning to determine the best classification.\n\nFor each webhook, determine:\n- **Source service**: Where did this originate?\n- **Event type**: What happened?\n- **Priority**: Urgent (payment failure, security alert), Normal (new lead, form submission), or Low (analytics, status update)\n- **Content summary**: One-line human-readable summary\n\n### Step 3: Load Routing Rules\nRead routing configuration from `routing_rules.json`. If no rules file exists, apply intelligent defaults:\n\n| Event Category | Default Routes |\n|---|---|\n| Payment/billing | Slack #finance + Airtable Payment Log |\n| Form submissions / leads | Notion Leads DB + Email notification |\n| Error/alert events | Slack #alerts (urgent) |\n| Code/deployment events | Slack #engineering |\n| General notifications | Slack #general |\n| Unknown/unclassified | Slack #webhooks-catchall + local log |\n\n### Step 4: Extract & Transform\nFrom the classified payload, extract structured fields and format for each destination:\n- **Slack**: Rich Block Kit message with source badge, summary, key-value fields, emoji priority indicators (🟢🔴🟡🔵⚡)\n- **Email**: Subject `[Router] {Source} — {Summary}`, clean HTML body with data table\n- **Notion**: Map to database properties (title, select, date, URL, rich_text)\n- **Airtable**: Map to table columns with correct field types, include raw payload in long text field\n\n### Step 5: Route & Execute\nSend transformed data to each matched destination in sequence. Log success/failure for each route.\n\n### Step 6: Log & Learn\nAppend to `webhook_log.json`: timestamp, source, event type, classification confidence, routes executed, outcomes.\n\n## Tool Usage\n\n### http_request — External Service APIs\n\n**Slack** (via slack connector):\n- Post message: `POST https://slack.com/api/chat.postMessage` with `{ \"channel\": \"#channel\", \"text\": \"...\", \"blocks\": [...] }`\n- For urgent alerts: Include `<!channel>` mention in text\n- Lookup channels: `GET https://slack.com/api/conversations.list`\n\n**Notion** (via notion connector):\n- Create page: `POST https://api.notion.com/v1/pages` with parent database_id and properties\n- Query database: `POST https://api.notion.com/v1/databases/{id}/query`\n- Always include header: `Notion-Version: 2022-06-28`\n\n**Airtable** (via airtable connector):\n- Create record: `POST https://api.airtable.com/v0/{baseId}/{tableName}` with `{ \"records\": [{ \"fields\": {...} }] }`\n- List records: `GET https://api.airtable.com/v0/{baseId}/{tableName}`\n\n**Google Sheets** (via google_workspace connector):\n- Append row: `POST https://sheets.googleapis.com/v4/spreadsheets/{id}/values/{range}:append?valueInputOption=USER_ENTERED`\n\n### gmail_send — Email Notifications\n- Subject: `[Router] {EventType}: {Summary}`\n- HTML body with formatted event details\n- Include source and timestamp for traceability\n\n### file_read / file_write — Local State\n- `routing_rules.json`: Persistent routing configuration\n- `webhook_log.json`: Append-only execution log\n- `routing_stats.json`: Aggregate statistics\n- `known_sources.json`: Cached webhook source signatures\n- `failed_events.json`: Fallback for events that failed all routes\n\n## Error Handling\n\n- **HTTP 4xx**: Log error, skip retry (configuration issue), continue remaining routes\n- **HTTP 5xx**: Retry once after 3 seconds, then log failure and continue\n- **Timeout**: Log timeout, continue remaining routes\n- **Unparseable payload**: Route raw dump to #webhooks-catchall as UNCLASSIFIED\n- **Low confidence classification**: Prefix all messages with [LOW CONFIDENCE]\n- **Credential failure (401/403)**: Alert #alerts about expired credentials, skip that connector's routes\n- **All routes failed**: Write to `failed_events.json` as fallback — never lose an event\n- **Duplicate webhook**: Check webhook_log.json for matching IDs, skip if duplicate\n- **Sensitive data**: Strip passwords, tokens, and secrets before logging or forwarding\n\n## Routing Rule Management\n\nWhen the user sends instructions like \"Route Shopify webhooks to #ecommerce\", update `routing_rules.json`:\n```json\n{\n  \"name\": \"Shopify to Ecommerce\",\n  \"match\": { \"source\": \"shopify\" },\n  \"routes\": [{ \"service\": \"slack\", \"channel\": \"#ecommerce\" }]\n}\n```\n\nWhen the user corrects a misroute, update rules and log the correction.\n\n## Communication Protocols\n- **user_message**: Send summaries, routing confirmations, and error alerts to the user\n- **agent_memory**: Store and recall routing rules, source patterns, and routing statistics\n- **execution_flow**: Log each step of classification → routing → delivery for observability",
+    "summary": "Router is a universal webhook receiver that replaces rigid Zapier automations with intelligent, AI-powered event classification and multi-service routing. It accepts any webhook payload — from Stripe, GitHub, Typeform, Shopify, or custom applications — uses a three-tier classification system (signature matching, payload analysis, AI reasoning) to identify the source and event type, then routes formatted notifications and data to Slack, Gmail, Notion, and Airtable based on configurable rules. It maintains local state files for routing configuration, execution logging, and source pattern caching, enabling it to learn and improve over time. Unlike static automation workflows, Router handles unknown webhook formats gracefully and can make intelligent routing decisions for payloads it has never encountered before.",
     "design_highlights": [
       {
         "category": "Intelligent Classification",
         "icon": "🧠",
         "color": "purple",
         "items": [
-          "AI-powered event categorization from any webhook payload",
-          "Confidence scoring (high/medium/low) on every classification",
-          "Automatic fallback routing for unrecognized events",
-          "Handles non-standard and nested payload structures"
+          "Three-tier classification: signature matching, payload analysis, AI reasoning",
+          "Automatic source detection from HTTP headers and payload structure",
+          "Priority assignment based on event type and content analysis",
+          "Graceful handling of unknown/ambiguous webhook formats"
         ]
       },
       {
@@ -59,32 +75,32 @@
         "icon": "🔀",
         "color": "blue",
         "items": [
-          "Fan-out to multiple destinations from a single webhook",
-          "Configurable JSON rule engine with source/event/action matching",
-          "Supports Slack, Gmail, Notion, and Airtable as destinations",
-          "Default catch-all rule prevents silent event loss"
+          "Fan-out routing: one webhook triggers multiple destinations simultaneously",
+          "Configurable rules with pattern matching on source, event type, and content",
+          "Per-destination formatting: Slack Block Kit, HTML email, Notion properties, Airtable fields",
+          "Default intelligent routing when no explicit rules match"
         ]
       },
       {
-        "category": "Reliability & Resilience",
+        "category": "Reliability & Observability",
         "icon": "🛡️",
         "color": "green",
         "items": [
-          "Failure isolation — one broken destination never blocks others",
-          "Automatic retry with backoff for transient HTTP errors",
-          "Rate limit awareness with Retry-After header support",
-          "Self-healing config restoration on corruption"
+          "Append-only webhook log for full event traceability",
+          "Fallback file capture ensures no event is ever lost",
+          "Duplicate detection prevents double-processing on webhook retries",
+          "Credential failure alerts with automatic connector-level circuit breaking"
         ]
       },
       {
-        "category": "Observability & Auditability",
-        "icon": "📊",
+        "category": "Adaptive Learning",
+        "icon": "📈",
         "color": "orange",
         "items": [
-          "JSONL routing log for every processed webhook",
-          "Slack alerts for failures and unrouted events",
-          "Structured logging with source, category, and outcome tracking",
-          "Malformed payload capture for debugging"
+          "Source pattern caching accelerates classification of recurring webhooks",
+          "User-correctable routing rules that update in real-time",
+          "Aggregate statistics for routing performance monitoring",
+          "Low-confidence flagging enables human review of edge cases"
         ]
       }
     ],
@@ -99,11 +115,11 @@
             "label": "Bot User OAuth Token",
             "type": "password",
             "placeholder": "xoxb-...",
-            "helpText": "Go to api.slack.com/apps → your app → OAuth & Permissions → Bot User OAuth Token. Requires chat:write, channels:read scopes.",
+            "helpText": "From your Slack App → OAuth & Permissions → Bot User OAuth Token. Requires scopes: chat:write, channels:read, groups:read.",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to api.slack.com/apps and create a new app (or select existing).\n2. Under OAuth & Permissions, add these Bot Token Scopes: chat:write, chat:write.public, channels:read, files:write.\n3. Install the app to your workspace.\n4. Copy the Bot User OAuth Token (starts with xoxb-).\n5. Invite the bot to the channels it needs to post in: /invite @YourBotName in each channel.\n6. Create these channels if they don't exist: #webhook-inbox, #webhook-unrouted, #webhook-errors.",
+        "setup_instructions": "1. Go to api.slack.com/apps and create a new app (or select existing).\n2. Navigate to OAuth & Permissions.\n3. Add Bot Token Scopes: chat:write, channels:read, groups:read.\n4. Install the app to your workspace.\n5. Copy the Bot User OAuth Token (starts with xoxb-).\n6. Invite the bot to channels it should post in: /invite @YourBotName in each channel.",
         "related_tools": [
           "http_request"
         ],
@@ -122,11 +138,11 @@
             "label": "Internal Integration Token",
             "type": "password",
             "placeholder": "ntn_...",
-            "helpText": "Go to notion.so/my-integrations → create new integration → copy the Internal Integration Token. Then share target databases with the integration.",
+            "helpText": "From notion.so/my-integrations → Create new integration → Copy the Internal Integration Secret. Then share target databases with the integration.",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to notion.so/my-integrations and create a new internal integration.\n2. Give it a name like 'Router Agent' and select your workspace.\n3. Under Capabilities, enable: Read content, Insert content, Update content.\n4. Copy the Internal Integration Token (starts with ntn_).\n5. Open each Notion database you want Router to write to → click ••• → Add connections → select your integration.\n6. Copy each database ID from the URL (the 32-character string after the workspace name).",
+        "setup_instructions": "1. Go to notion.so/my-integrations and create a new integration.\n2. Give it a name (e.g., 'Router Agent') and select the workspace.\n3. Copy the Internal Integration Secret (starts with ntn_).\n4. For each Notion database Router should write to: open the database, click ••• → Connections → Connect to → select your integration.\n5. Copy the database ID from the database URL (the 32-character string after the workspace name).",
         "related_tools": [
           "http_request"
         ],
@@ -145,11 +161,11 @@
             "label": "Personal Access Token",
             "type": "password",
             "placeholder": "pat...",
-            "helpText": "Go to airtable.com/create/tokens → create a token with data.records:write and data.records:read scopes on the bases Router needs access to.",
+            "helpText": "From airtable.com/create/tokens → Create new token. Add scopes: data.records:read, data.records:write. Add access to specific bases Router will use.",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to airtable.com/create/tokens.\n2. Create a new Personal Access Token.\n3. Add scopes: data.records:read, data.records:write, schema.bases:read.\n4. Under Access, select the specific bases Router should write to.\n5. Copy the token (starts with pat).\n6. Note your Base IDs — find them in the Airtable URL: airtable.com/{baseId}/{tableId}.",
+        "setup_instructions": "1. Go to airtable.com/create/tokens.\n2. Click 'Create new token'.\n3. Name it (e.g., 'Router Agent').\n4. Add scopes: data.records:read, data.records:write.\n5. Under Access, add the specific bases Router should write to.\n6. Copy the token (starts with pat).\n7. Note your Base IDs from the Airtable API docs page (airtable.com/developers/web/api/introduction) — each base has an ID starting with 'app'.",
         "related_tools": [
           "http_request"
         ],
@@ -165,18 +181,18 @@
         "credential_fields": [
           {
             "key": "client_id",
-            "label": "OAuth Client ID",
+            "label": "OAuth2 Client ID",
             "type": "text",
-            "placeholder": "123456789.apps.googleusercontent.com",
+            "placeholder": "123456789-abc.apps.googleusercontent.com",
             "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client ID.",
             "required": true
           },
           {
             "key": "client_secret",
-            "label": "OAuth Client Secret",
+            "label": "OAuth2 Client Secret",
             "type": "password",
             "placeholder": "GOCSPX-...",
-            "helpText": "From the same OAuth 2.0 Client credential page in Google Cloud Console.",
+            "helpText": "From the same OAuth 2.0 Client credentials page in Google Cloud Console.",
             "required": true
           },
           {
@@ -184,14 +200,14 @@
             "label": "Refresh Token",
             "type": "password",
             "placeholder": "1//0...",
-            "helpText": "Obtained during the OAuth consent flow. The app will handle this automatically if OAuth flow is configured.",
+            "helpText": "Obtained during the OAuth2 authorization flow. Enable Gmail API and Sheets API in your Google Cloud project.",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to console.cloud.google.com → create or select a project.\n2. Enable the Gmail API under APIs & Services → Library.\n3. Under Credentials, create an OAuth 2.0 Client ID (type: Desktop App or Web Application).\n4. Copy the Client ID and Client Secret.\n5. Configure the OAuth consent screen with the gmail.send scope.\n6. Complete the OAuth flow to obtain a refresh token.\n7. If using the Personas OAuth integration, the app will guide you through the consent flow automatically.",
+        "setup_instructions": "1. Go to console.cloud.google.com and create or select a project.\n2. Enable the Gmail API and Google Sheets API under APIs & Services → Library.\n3. Configure the OAuth consent screen (External or Internal).\n4. Create OAuth 2.0 credentials under APIs & Services → Credentials.\n5. Complete the OAuth2 flow to obtain a refresh token.\n6. The agent uses the refresh token to maintain access for sending emails and appending to Google Sheets.",
         "related_tools": [
-          "gmail_send",
-          "gmail_read"
+          "http_request",
+          "gmail_send"
         ],
         "related_triggers": [
           0
@@ -202,38 +218,457 @@
     "suggested_notification_channels": [
       {
         "type": "slack",
-        "description": "Primary notification channel for routing failures, unrecognized webhooks, and system alerts. Posts to #webhook-errors for failures and #webhook-unrouted for unmatched events.",
+        "description": "Primary notification channel for routed webhook events, urgent alerts, and system status messages. Different channels receive different event categories based on routing rules.",
         "required_connector": "slack",
         "config_hints": {
-          "channel": "#webhook-errors"
+          "channel": "#webhooks-catchall"
         }
       },
       {
         "type": "email",
-        "description": "Backup notification channel for critical failures when Slack is unreachable. Sends a daily digest of routing statistics and any persistent errors.",
+        "description": "Email notifications for high-priority events, routing failures, and credential expiration warnings. Also used for forwarding form submissions that require email follow-up.",
         "required_connector": "google_workspace",
         "config_hints": {
-          "to": "admin@yourdomain.com",
-          "subject_prefix": "[Router]"
+          "from": "router@yourdomain.com"
         }
       }
     ],
     "suggested_event_subscriptions": [
       {
-        "event_type": "webhook_received",
-        "description": "Fires when a new webhook payload arrives at the Router's endpoint. This is the primary trigger that initiates the classification and routing pipeline."
+        "event_type": "webhook.received",
+        "description": "Fires when a new webhook payload arrives at the agent's endpoint. This is the primary trigger that initiates the classify-and-route pipeline."
       },
       {
-        "event_type": "routing_failed",
-        "description": "Fires when a destination action fails after retry. Used to trigger escalation notifications and update error tracking."
+        "event_type": "connector.auth_failure",
+        "description": "Listen for authentication failures on any connector. When detected, skip routes using that connector and alert the user to re-authenticate."
       },
       {
-        "event_type": "config_updated",
-        "description": "Fires when routing rules are modified. Used to reload the rules file and confirm the new configuration is valid."
+        "event_type": "persona.message_received",
+        "description": "Listen for user messages to handle routing rule updates, manual re-routing requests, and status queries like 'show me recent webhooks' or 'route Shopify events to #ecommerce'."
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_webhook_routing",
+        "name": "Webhook Classification & Multi-Service Routing",
+        "description": "The primary workflow: receive a webhook, classify it, load routing rules, transform the payload for each destination, and deliver to all matched services.",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Webhook received",
+            "detail": "External service sends POST request to the agent's webhook endpoint with JSON/form payload"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Parse payload",
+            "detail": "Extract body, headers, query params. Detect format (JSON, form-encoded, XML) and parse into structured data"
+          },
+          {
+            "id": "n3",
+            "type": "action",
+            "label": "Classify event",
+            "detail": "Three-tier classification: check headers for known signatures (Stripe-Signature, X-GitHub-Event), analyze payload fields, fall back to AI reasoning"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Load routing rules",
+            "detail": "Read routing_rules.json via file_read. If missing, use intelligent default routing table"
+          },
+          {
+            "id": "n5",
+            "type": "decision",
+            "label": "Matching rule found?",
+            "detail": "Evaluate rules in order against classified source, event type, and content. First match wins."
+          },
+          {
+            "id": "n6",
+            "type": "action",
+            "label": "Transform for destinations",
+            "detail": "Format payload per destination: Slack Block Kit, email HTML, Notion properties, Airtable fields"
+          },
+          {
+            "id": "n7",
+            "type": "connector",
+            "label": "Post to Slack",
+            "detail": "POST chat.postMessage with formatted blocks to the configured channel",
+            "connector": "slack"
+          },
+          {
+            "id": "n8",
+            "type": "connector",
+            "label": "Send email notification",
+            "detail": "Compose and send via gmail_send with subject [Router] {Source} — {Summary}",
+            "connector": "google_workspace"
+          },
+          {
+            "id": "n9",
+            "type": "connector",
+            "label": "Create Notion page",
+            "detail": "POST to Notion pages API with mapped database properties",
+            "connector": "notion"
+          },
+          {
+            "id": "n10",
+            "type": "connector",
+            "label": "Insert Airtable record",
+            "detail": "POST to Airtable records API with mapped column fields",
+            "connector": "airtable"
+          },
+          {
+            "id": "n11",
+            "type": "action",
+            "label": "Log to webhook_log.json",
+            "detail": "Append event with timestamp, source, classification, routes executed, and outcomes via file_write"
+          },
+          {
+            "id": "n12",
+            "type": "action",
+            "label": "Apply default catch-all route",
+            "detail": "No rule matched — post to Slack #webhooks-catchall with UNCLASSIFIED tag and log for review"
+          },
+          {
+            "id": "n13",
+            "type": "end",
+            "label": "Routing complete"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e5",
+            "source": "n5",
+            "target": "n6",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n12",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7"
+          },
+          {
+            "id": "e8",
+            "source": "n7",
+            "target": "n8"
+          },
+          {
+            "id": "e9",
+            "source": "n8",
+            "target": "n9"
+          },
+          {
+            "id": "e10",
+            "source": "n9",
+            "target": "n10"
+          },
+          {
+            "id": "e11",
+            "source": "n10",
+            "target": "n11"
+          },
+          {
+            "id": "e12",
+            "source": "n11",
+            "target": "n13"
+          },
+          {
+            "id": "e13",
+            "source": "n12",
+            "target": "n11"
+          }
+        ]
       },
       {
-        "event_type": "health_check",
-        "description": "Periodic event to verify all destination connectors are reachable. Tests Slack, Notion, and Airtable API connectivity and reports any issues."
+        "id": "flow_error_recovery",
+        "name": "Route Failure & Recovery",
+        "description": "Handles failures during routing — retries transient errors, falls back to local storage, and alerts the user about persistent issues.",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Route execution fails",
+            "detail": "An http_request or gmail_send call returns an error during the routing pipeline"
+          },
+          {
+            "id": "n2",
+            "type": "decision",
+            "label": "Error type?",
+            "detail": "Classify the HTTP status code or error type to determine recovery strategy"
+          },
+          {
+            "id": "n3",
+            "type": "action",
+            "label": "Retry after 3s",
+            "detail": "Server error (5xx) or timeout — wait 3 seconds and retry the same request once"
+          },
+          {
+            "id": "n4",
+            "type": "decision",
+            "label": "Retry succeeded?",
+            "detail": "Check if the retried request returned a success response"
+          },
+          {
+            "id": "n5",
+            "type": "action",
+            "label": "Log config error",
+            "detail": "Client error (4xx) — likely misconfigured channel, database, or field mapping. Log full request/response for debugging"
+          },
+          {
+            "id": "n6",
+            "type": "action",
+            "label": "Write to failed_events.json",
+            "detail": "Save the full event payload and intended routes to local fallback file via file_write so nothing is lost"
+          },
+          {
+            "id": "n7",
+            "type": "connector",
+            "label": "Alert user in Slack",
+            "detail": "POST to #alerts: 'Router route failure: {connector} returned {error}. Event saved to fallback log.'",
+            "connector": "slack"
+          },
+          {
+            "id": "n8",
+            "type": "decision",
+            "label": "Auth failure (401/403)?",
+            "detail": "Check if the error indicates expired or invalid credentials"
+          },
+          {
+            "id": "n9",
+            "type": "event",
+            "label": "Emit credential alert",
+            "detail": "Notify user that connector credentials need refresh. Skip all remaining routes for this connector."
+          },
+          {
+            "id": "n10",
+            "type": "action",
+            "label": "Continue remaining routes",
+            "detail": "Process the next route in the fan-out list — one failed route should not block others"
+          },
+          {
+            "id": "n11",
+            "type": "end",
+            "label": "Recovery complete"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3",
+            "label": "5xx/Timeout",
+            "variant": "yes"
+          },
+          {
+            "id": "e3",
+            "source": "n2",
+            "target": "n8",
+            "label": "4xx",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n4"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n10",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e6",
+            "source": "n4",
+            "target": "n6",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e7",
+            "source": "n8",
+            "target": "n9",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e8",
+            "source": "n8",
+            "target": "n5",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e9",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e10",
+            "source": "n6",
+            "target": "n7"
+          },
+          {
+            "id": "e11",
+            "source": "n7",
+            "target": "n10"
+          },
+          {
+            "id": "e12",
+            "source": "n9",
+            "target": "n10"
+          },
+          {
+            "id": "e13",
+            "source": "n10",
+            "target": "n11"
+          }
+        ]
+      },
+      {
+        "id": "flow_rule_management",
+        "name": "User Routing Rule Updates",
+        "description": "When a user sends a message to configure or update routing rules, parse the instruction and update the persistent rules file.",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "User message received",
+            "detail": "User sends a natural-language routing instruction like 'Route Stripe webhooks to #finance and Airtable'"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Parse user intent",
+            "detail": "Extract: source filter (Stripe), event filter (all/specific), destination services (Slack #finance, Airtable), and any format preferences"
+          },
+          {
+            "id": "n3",
+            "type": "action",
+            "label": "Load current rules",
+            "detail": "Read routing_rules.json via file_read to get existing rule set"
+          },
+          {
+            "id": "n4",
+            "type": "decision",
+            "label": "Existing rule for source?",
+            "detail": "Check if a rule already exists for the specified source/event combination"
+          },
+          {
+            "id": "n5",
+            "type": "action",
+            "label": "Update existing rule",
+            "detail": "Modify the matching rule's routes array to add/remove/change destinations"
+          },
+          {
+            "id": "n6",
+            "type": "action",
+            "label": "Create new rule",
+            "detail": "Build a new rule object with match criteria and route destinations, append to rules array"
+          },
+          {
+            "id": "n7",
+            "type": "action",
+            "label": "Save routing_rules.json",
+            "detail": "Write updated rules array back to file via file_write"
+          },
+          {
+            "id": "n8",
+            "type": "event",
+            "label": "Confirm to user",
+            "detail": "Send confirmation message: 'Updated routing: Stripe webhooks will now go to #finance + Airtable Payment Log'"
+          },
+          {
+            "id": "n9",
+            "type": "end",
+            "label": "Rule update complete"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n6",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n7"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7"
+          },
+          {
+            "id": "e8",
+            "source": "n7",
+            "target": "n8"
+          },
+          {
+            "id": "e9",
+            "source": "n8",
+            "target": "n9"
+          }
+        ]
       }
     ]
   }

@@ -1,7 +1,7 @@
 import { Send, Check, RefreshCw, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { DesignResultPreview } from '@/features/templates/sub_generated/DesignResultPreview';
-import { DesignChatInput } from '@/features/templates/sub_generated/DesignChatInput';
+
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import type { DbPersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 
@@ -122,15 +122,32 @@ export function DesignPhasePreview({
       </div>
 
       {/* Refinement chat input */}
-      <DesignChatInput
-        value={refinementMessage}
-        onChange={onRefinementMessageChange}
-        onSubmit={onSendRefinement}
-        placeholder="Describe what to change..."
-        buttonLabel="Send"
-        buttonIcon={Send}
-        variant="secondary"
-      />
+      <div className="flex items-end gap-2">
+        <textarea
+          value={refinementMessage}
+          onChange={(e) => onRefinementMessageChange(e.target.value)}
+          placeholder="Describe what to change..."
+          className="flex-1 min-h-[60px] max-h-[120px] bg-background/50 border border-primary/15 rounded-xl px-3 py-2 text-sm text-foreground font-sans resize-y focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all placeholder-muted-foreground/30"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              if (refinementMessage.trim()) onSendRefinement();
+            }
+          }}
+        />
+        <button
+          onClick={onSendRefinement}
+          disabled={!refinementMessage.trim()}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+            !refinementMessage.trim()
+              ? 'bg-secondary/40 text-muted-foreground/80 cursor-not-allowed'
+              : 'bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20'
+          }`}
+        >
+          <Send className="w-3.5 h-3.5" />
+          Send
+        </button>
+      </div>
     </motion.div>
   );
 }

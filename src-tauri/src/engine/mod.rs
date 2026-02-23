@@ -384,6 +384,75 @@ impl ExecutionEngine {
     ) -> Option<Arc<AtomicBool>> {
         self.cancelled_flags.lock().await.get(execution_id).cloned()
     }
+
+    /// Schedule a healing retry based on a diagnosis.
+    ///
+    /// Called from the manual `run_healing_analysis` command to execute
+    /// auto-fixable healing actions (RetryWithBackoff, RetryWithTimeout).
+    pub fn schedule_healing_retry(
+        &self,
+        app: &AppHandle,
+        pool: &DbPool,
+        exec_id: &str,
+        persona_id: &str,
+        diagnosis: &healing::HealingDiagnosis,
+    ) {
+        let current_retry_count = exec_repo::get_by_id(pool, exec_id)
+            .map(|e| e.retry_count)
+            .unwrap_or(0);
+        let original_exec_id = exec_repo::get_by_id(pool, exec_id)
+            .ok()
+            .and_then(|e| e.retry_of_execution_id)
+            .unwrap_or_else(|| exec_id.to_string());
+
+        let next_retry_count = current_retry_count + 1;
+
+        match &diagnosis.action {
+            healing::HealingAction::RetryWithBackoff { delay_secs } => {
+                tracing::info!(
+                    persona_id = %persona_id,
+                    delay_secs = delay_secs,
+                    "Healing analysis: scheduling retry with {}s backoff",
+                    delay_secs,
+                );
+                spawn_delayed_retry(
+                    *delay_secs,
+                    None,
+                    pool.clone(),
+                    app.clone(),
+                    persona_id.to_string(),
+                    original_exec_id,
+                    next_retry_count,
+                    self.tracker.clone(),
+                    self.child_pids.clone(),
+                    self.cancelled_flags.clone(),
+                    self.log_dir.clone(),
+                );
+            }
+            healing::HealingAction::RetryWithTimeout { new_timeout_ms } => {
+                tracing::info!(
+                    persona_id = %persona_id,
+                    new_timeout_ms = new_timeout_ms,
+                    "Healing analysis: scheduling retry with increased timeout {}ms",
+                    new_timeout_ms,
+                );
+                spawn_delayed_retry(
+                    5,
+                    Some(*new_timeout_ms),
+                    pool.clone(),
+                    app.clone(),
+                    persona_id.to_string(),
+                    original_exec_id,
+                    next_retry_count,
+                    self.tracker.clone(),
+                    self.child_pids.clone(),
+                    self.cancelled_flags.clone(),
+                    self.log_dir.clone(),
+                );
+            }
+            healing::HealingAction::CreateIssue => {}
+        }
+    }
 }
 
 /// Kill an OS process by PID. Cross-platform.
@@ -455,13 +524,23 @@ fn handle_execution_result(
         check_budget_enforcement(pool, persona_id, exec_id);
     }
 
-    // Chain triggers
+    // Chain triggers — extract chain depth/visited from execution's input_data
+    // (propagated via chain event payloads to prevent infinite cycles)
+    let (chain_depth, mut visited) = exec_repo::get_by_id(pool, exec_id)
+        .ok()
+        .and_then(|exec| exec.input_data)
+        .map(|input| chain::extract_chain_metadata(Some(&input)))
+        .unwrap_or_default();
+    visited.insert(persona_id.to_string());
+
     chain::evaluate_chain_triggers(
         pool,
         persona_id,
         status,
         result.output.as_deref(),
         exec_id,
+        chain_depth,
+        &visited,
     );
 
     // Healing check for failed executions
@@ -846,6 +925,20 @@ fn spawn_delayed_retry(
         // 4. Apply timeout override if specified (for RetryWithTimeout healing)
         if let Some(override_ms) = timeout_override_ms {
             persona.timeout_ms = override_ms as i32;
+            // Persist the increased timeout to the persona so future executions use it
+            let _ = persona_repo::update(
+                &pool,
+                &persona_id,
+                crate::db::models::UpdatePersonaInput {
+                    timeout_ms: Some(override_ms as i32),
+                    ..Default::default()
+                },
+            );
+            tracing::info!(
+                persona_id = %persona_id,
+                new_timeout_ms = override_ms,
+                "Healing: persisted increased timeout_ms to persona",
+            );
         }
 
         // 5. Create retry execution record with lineage

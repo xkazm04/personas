@@ -7,17 +7,26 @@ import type {
   ManualReviewItem,
 } from "@/lib/types/types";
 import { enrichWithPersona } from "@/lib/types/types";
+import type { ObservabilityMetrics } from "@/lib/bindings/ObservabilityMetrics";
 import * as api from "@/api/tauriApi";
 
 export interface OverviewSlice {
-  // State
+  // State — navigation
   overviewTab: OverviewTab;
+
+  // State — executions
   globalExecutions: GlobalExecution[];
   globalExecutionsTotal: number;
   globalExecutionsOffset: number;
+
+  // State — reviews
   manualReviews: ManualReviewItem[];
   manualReviewsTotal: number;
   pendingReviewCount: number;
+
+  // State — observability metrics
+  observabilityMetrics: ObservabilityMetrics | null;
+  observabilityError: string | null;
 
   // Actions
   setOverviewTab: (tab: OverviewTab) => void;
@@ -25,6 +34,7 @@ export interface OverviewSlice {
   fetchManualReviews: (status?: string) => Promise<void>;
   updateManualReview: (id: string, updates: { status?: string; reviewer_notes?: string }) => Promise<void>;
   fetchPendingReviewCount: () => Promise<void>;
+  fetchObservabilityMetrics: (days?: number, personaId?: string) => Promise<void>;
 }
 
 export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSlice> = (set, get) => ({
@@ -35,6 +45,8 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
   manualReviews: [],
   manualReviewsTotal: 0,
   pendingReviewCount: 0,
+  observabilityMetrics: null,
+  observabilityError: null,
 
   setOverviewTab: (tab) => set({ overviewTab: tab }),
 
@@ -116,4 +128,17 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
       set({ pendingReviewCount: 0 });
     }
   },
+
+  fetchObservabilityMetrics: async (days = 30, personaId?: string) => {
+    try {
+      const [summary, chartData] = await Promise.all([
+        api.getMetricsSummary(days, personaId),
+        api.getMetricsChartData(days, personaId),
+      ]);
+      set({ observabilityMetrics: { summary, chartData }, observabilityError: null });
+    } catch (err) {
+      set({ observabilityError: errMsg(err, "Failed to load observability metrics") });
+    }
+  },
+
 });

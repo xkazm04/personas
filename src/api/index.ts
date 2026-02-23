@@ -6,6 +6,8 @@ export * from "./credentials";
 export * from "./events";
 export * from "./messages";
 export * from "./design";
+export * from "./n8nTransform";
+export * from "./templateAdopt";
 export * from "./credentialDesign";
 export * from "./reviews";
 export * from "./observability";

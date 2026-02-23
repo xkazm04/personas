@@ -2,12 +2,14 @@ import type { StateCreator } from "zustand";
 import type { PersonaStore } from "../storeTypes";
 import { errMsg } from "../storeTypes";
 import type { DbPersonaMemory } from "@/lib/types/types";
+import type { MemoryStats } from "@/api/memories";
 import * as api from "@/api/tauriApi";
 
 export interface MemorySlice {
   // State
   memories: DbPersonaMemory[];
   memoriesTotal: number;
+  memoryStats: MemoryStats | null;
 
   // Actions
   fetchMemories: (filters?: { persona_id?: string; category?: string; search?: string }) => Promise<void>;
@@ -18,12 +20,13 @@ export interface MemorySlice {
 export const createMemorySlice: StateCreator<PersonaStore, [], [], MemorySlice> = (set) => ({
   memories: [],
   memoriesTotal: 0,
+  memoryStats: null,
 
   fetchMemories: async (filters?) => {
     try {
       const hasSearch = !!filters?.search?.trim();
       const limit = hasSearch ? 500 : 100;
-      const [memories, total] = await Promise.all([
+      const [memories, total, stats] = await Promise.all([
         api.listMemories(
           filters?.persona_id,
           filters?.category,
@@ -32,8 +35,9 @@ export const createMemorySlice: StateCreator<PersonaStore, [], [], MemorySlice> 
           0,
         ),
         api.getMemoryCount(filters?.persona_id, filters?.category, filters?.search),
+        api.getMemoryStats(filters?.persona_id, filters?.category, filters?.search),
       ]);
-      set({ memories, memoriesTotal: total });
+      set({ memories, memoriesTotal: total, memoryStats: stats });
     } catch (err) {
       set({ error: errMsg(err, "Failed to fetch memories") });
     }

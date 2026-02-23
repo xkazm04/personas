@@ -15,12 +15,31 @@ pub fn parse_model_profile(json: Option<&str>) -> Option<ModelProfile> {
 pub fn build_tool_documentation(tool: &PersonaToolDefinition) -> String {
     let mut doc = format!("### {}\n{}\n", tool.name, tool.description);
     doc.push_str(&format!("**Category**: {}\n", tool.category));
-    doc.push_str(&format!(
-        "**Usage**: npx tsx \"{}\" --input '<JSON>'\n",
-        tool.script_path
-    ));
+
+    if tool.script_path.is_empty() {
+        // N8n-imported tools: no script file, use built-in Bash tool
+        if let Some(ref guide) = tool.implementation_guide {
+            doc.push_str("**Implementation Guide**:\n");
+            doc.push_str(guide);
+            doc.push('\n');
+        } else {
+            doc.push_str("**Implementation**: Use the Bash tool to call the relevant API (curl, python, etc.). Credentials are available as environment variables.\n");
+        }
+    } else {
+        doc.push_str(&format!(
+            "**Usage**: npx tsx \"{}\" --input '<JSON>'\n",
+            tool.script_path
+        ));
+    }
+
     if let Some(ref schema) = tool.input_schema {
         doc.push_str(&format!("**Input Schema**: {}\n", schema));
+    }
+    if let Some(ref cred_type) = tool.requires_credential_type {
+        doc.push_str(&format!(
+            "**Requires Credential**: {} (available as env var)\n",
+            cred_type
+        ));
     }
     doc
 }
@@ -102,6 +121,16 @@ pub fn assemble_prompt(
                         prompt.push_str(content);
                         prompt.push_str("\n\n");
                     }
+                }
+            }
+
+            // Web Search research prompt
+            if let Some(ws) = sp.get("webSearch").and_then(|v| v.as_str()) {
+                if !ws.is_empty() {
+                    prompt.push_str("## Web Search Research Prompt\n");
+                    prompt.push_str("When performing web searches during this execution, use the following research guidance:\n\n");
+                    prompt.push_str(ws);
+                    prompt.push_str("\n\n");
                 }
             }
         } else {
@@ -255,7 +284,10 @@ pub fn build_cli_args(
 ) -> CliArgs {
     let (command, mut args) = base_cli_setup();
 
-    // Base flags: read prompt from stdin, stream-json output, verbose, skip permissions
+    // Base flags: read prompt from stdin, stream-json output, verbose (required by
+    // --print + stream-json), skip permissions.
+    // NOTE: --verbose causes Claude CLI to emit both JSON events AND plain-text lines.
+    // The parser filters out non-JSON lines to prevent duplicate output display.
     args.extend([
         "-p".to_string(),
         "-".to_string(),
@@ -478,6 +510,7 @@ mod tests {
             input_schema: Some(r#"{"path": "string"}"#.into()),
             output_schema: None,
             requires_credential_type: None,
+            implementation_guide: None,
             is_builtin: true,
             created_at: "2026-01-01T00:00:00Z".into(),
             updated_at: "2026-01-01T00:00:00Z".into(),
@@ -546,6 +579,42 @@ mod tests {
     }
 
     #[test]
+    fn test_prompt_with_web_search() {
+        let mut persona = test_persona();
+        persona.structured_prompt = Some(
+            serde_json::json!({
+                "identity": "I am a researcher.",
+                "instructions": "Research market trends.",
+                "webSearch": "Search for Q1 2026 tech industry reports and competitor pricing data."
+            })
+            .to_string(),
+        );
+
+        let prompt = assemble_prompt(&persona, &[], None, None);
+
+        assert!(prompt.contains("## Web Search Research Prompt"));
+        assert!(prompt.contains("Q1 2026 tech industry reports"));
+        assert!(prompt.contains("research guidance"));
+    }
+
+    #[test]
+    fn test_prompt_without_web_search_when_empty() {
+        let mut persona = test_persona();
+        persona.structured_prompt = Some(
+            serde_json::json!({
+                "identity": "I am a helper.",
+                "instructions": "Help users.",
+                "webSearch": ""
+            })
+            .to_string(),
+        );
+
+        let prompt = assemble_prompt(&persona, &[], None, None);
+
+        assert!(!prompt.contains("## Web Search Research Prompt"));
+    }
+
+    #[test]
     fn test_prompt_with_tools() {
         let persona = test_persona();
         let tool = test_tool();
@@ -559,6 +628,28 @@ mod tests {
         assert!(prompt.contains(r#"{"path": "string"}"#));
         // Should include "Use available tools" when tools present
         assert!(prompt.contains("Use available tools as needed."));
+    }
+
+    #[test]
+    fn test_tool_with_implementation_guide() {
+        let mut tool = test_tool();
+        tool.script_path = String::new(); // n8n-imported tool
+        tool.implementation_guide =
+            Some("API: GET https://api.example.com/data\nAuth: Bearer $TOKEN".into());
+        let doc = build_tool_documentation(&tool);
+        assert!(doc.contains("**Implementation Guide**:"));
+        assert!(doc.contains("https://api.example.com/data"));
+        assert!(!doc.contains("Use the Bash tool"));
+    }
+
+    #[test]
+    fn test_tool_without_guide_shows_fallback() {
+        let mut tool = test_tool();
+        tool.script_path = String::new(); // n8n-imported tool, no guide
+        tool.implementation_guide = None;
+        let doc = build_tool_documentation(&tool);
+        assert!(doc.contains("Use the Bash tool to call the relevant API"));
+        assert!(!doc.contains("**Implementation Guide**:"));
     }
 
     #[test]

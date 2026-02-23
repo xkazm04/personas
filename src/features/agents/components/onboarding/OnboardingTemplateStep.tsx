@@ -1,7 +1,7 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  SkipForward,
+  PenLine,
   Sparkles,
   Code,
   MessageSquare,
@@ -16,12 +16,10 @@ import {
   FlaskConical,
   RefreshCw,
   Activity,
-  Loader2,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { BUILTIN_TEMPLATES } from '@/lib/personas/builtinTemplates';
 import type { BuiltinTemplate } from '@/lib/types/templateTypes';
-import { usePersonaStore } from '@/stores/personaStore';
 
 const CATEGORY_LABELS: Record<string, string> = {
   all: 'All',
@@ -78,16 +76,15 @@ function getIcon(iconName: string): LucideIcon {
 }
 
 interface TemplatePickerStepProps {
-  onBack: () => void;
+  /** Called when a template is selected (advances to identity step). */
+  onSelect: (template: BuiltinTemplate) => void;
+  /** Called when user wants to start from scratch. */
+  onFromScratch: () => void;
+  /** Called when user wants to cancel (only shown when canCancel is true). */
+  onCancel?: () => void;
 }
 
-export function TemplatePickerStep({ onBack }: TemplatePickerStepProps) {
-  const createPersona = usePersonaStore((s) => s.createPersona);
-  const selectPersona = usePersonaStore((s) => s.selectPersona);
-  const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
-  const setShowDesignNudge = usePersonaStore((s) => s.setShowDesignNudge);
-  const setShowCloudNudge = usePersonaStore((s) => s.setShowCloudNudge);
-  const [creatingId, setCreatingId] = useState<string | null>(null);
+export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: TemplatePickerStepProps) {
   const [activeFilter, setActiveFilter] = useState<string>('all');
 
   const filteredTemplates = useMemo(
@@ -97,34 +94,6 @@ export function TemplatePickerStep({ onBack }: TemplatePickerStepProps) {
         : BUILTIN_TEMPLATES.filter((t) => t.category.includes(activeFilter)),
     [activeFilter],
   );
-
-  const handlePick = useCallback(
-    async (template: BuiltinTemplate) => {
-      setCreatingId(template.id);
-      try {
-        const persona = await createPersona({
-          name: template.name,
-          description: template.description,
-          system_prompt: template.payload.full_prompt_markdown,
-          icon: template.icon,
-          color: template.color,
-        });
-        setSidebarSection('personas');
-        selectPersona(persona.id);
-        setShowDesignNudge(true);
-        setShowCloudNudge(true);
-      } catch (err) {
-        console.error('Failed to create persona from template:', err);
-      } finally {
-        setCreatingId(null);
-      }
-    },
-    [createPersona, selectPersona, setSidebarSection, setShowDesignNudge, setShowCloudNudge],
-  );
-
-  const handleSkip = () => {
-    setSidebarSection('personas');
-  };
 
   return (
     <motion.div
@@ -137,7 +106,7 @@ export function TemplatePickerStep({ onBack }: TemplatePickerStepProps) {
       <div>
         <h2 className="text-lg font-semibold text-foreground/90">Choose a Template</h2>
         <p className="text-sm text-muted-foreground/90 mt-1">
-          Pick a template to create your first agent, or skip to start from scratch.
+          Pick a template to pre-fill your agent, or start from scratch.
         </p>
       </div>
 
@@ -174,7 +143,6 @@ export function TemplatePickerStep({ onBack }: TemplatePickerStepProps) {
           <AnimatePresence mode="popLayout">
             {filteredTemplates.map((template) => {
               const Icon = getIcon(template.icon);
-              const isCreating = creatingId === template.id;
 
               return (
                 <motion.button
@@ -184,9 +152,8 @@ export function TemplatePickerStep({ onBack }: TemplatePickerStepProps) {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.2 }}
-                  onClick={() => handlePick(template)}
-                  disabled={creatingId !== null}
-                  className="flex items-start gap-3 p-3 rounded-xl border border-primary/10 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/20 transition-colors text-left disabled:opacity-50"
+                  onClick={() => onSelect(template)}
+                  className="flex items-start gap-3 p-3 rounded-xl border border-primary/10 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/20 transition-colors text-left"
                 >
                   <div
                     className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 border"
@@ -195,11 +162,7 @@ export function TemplatePickerStep({ onBack }: TemplatePickerStepProps) {
                       borderColor: `${template.color}30`,
                     }}
                   >
-                    {isCreating ? (
-                      <Loader2 className="w-4 h-4 animate-spin" style={{ color: template.color }} />
-                    ) : (
-                      <Icon className="w-4 h-4" style={{ color: template.color }} />
-                    )}
+                    <Icon className="w-4 h-4" style={{ color: template.color }} />
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground/85 truncate">{template.name}</p>
@@ -215,18 +178,22 @@ export function TemplatePickerStep({ onBack }: TemplatePickerStepProps) {
       </div>
 
       <div className="flex items-center justify-between">
+        {onCancel ? (
+          <button
+            onClick={onCancel}
+            className="px-4 py-2.5 text-sm text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+          >
+            Cancel
+          </button>
+        ) : (
+          <div />
+        )}
         <button
-          onClick={onBack}
-          className="px-4 py-2.5 text-sm rounded-xl border border-primary/15 hover:bg-secondary/50 text-muted-foreground/80 transition-colors"
-        >
-          Back
-        </button>
-        <button
-          onClick={handleSkip}
+          onClick={onFromScratch}
           className="px-4 py-2.5 text-sm text-muted-foreground/80 hover:text-muted-foreground transition-colors flex items-center gap-1.5"
         >
-          <SkipForward className="w-3.5 h-3.5" />
-          Skip for now
+          <PenLine className="w-3.5 h-3.5" />
+          Start from scratch
         </button>
       </div>
     </motion.div>

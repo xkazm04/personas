@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useDebouncedSave } from '@/hooks';
 import { usePersonaStore } from '@/stores/personaStore';
-import { User, BookOpen, Wrench, Code, AlertTriangle, Layers, Plus, X, Check, Save } from 'lucide-react';
+import { User, BookOpen, Wrench, Code, AlertTriangle, Layers, Globe, Plus, X, Check, Save } from 'lucide-react';
+import { useEditorDirty } from '@/features/agents/sub_editor/EditorDirtyContext';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   migratePromptToStructured,
@@ -10,7 +12,9 @@ import {
 import type { StructuredPrompt } from '@/lib/personas/promptMigration';
 import { SectionEditor } from '@/features/shared/components/draft-editor/SectionEditor';
 
-type SubTab = 'identity' | 'instructions' | 'toolGuidance' | 'examples' | 'errorHandling' | 'custom';
+import type { ModelProfile } from '@/lib/types/frontendTypes';
+
+type SubTab = 'identity' | 'instructions' | 'toolGuidance' | 'examples' | 'errorHandling' | 'webSearch' | 'custom';
 
 interface SidebarEntry {
   key: SubTab;
@@ -24,6 +28,7 @@ const STANDARD_TABS: SidebarEntry[] = [
   { key: 'toolGuidance', label: 'Tool Guidance', Icon: Wrench },
   { key: 'examples', label: 'Examples', Icon: Code },
   { key: 'errorHandling', label: 'Error Handling', Icon: AlertTriangle },
+  { key: 'webSearch', label: 'Web Search', Icon: Globe },
   { key: 'custom', label: 'Custom', Icon: Layers },
 ];
 
@@ -32,13 +37,37 @@ export function PersonaPromptEditor() {
   const updatePersona = usePersonaStore((state) => state.updatePersona);
 
   const [activeTab, setActiveTab] = useState<SubTab>('instructions');
+
+  // Detect if persona uses Anthropic provider (web search is Anthropic-only)
+  const isAnthropic = useMemo(() => {
+    if (!selectedPersona?.model_profile) return true; // default is Anthropic
+    try {
+      const mp: ModelProfile = JSON.parse(selectedPersona.model_profile);
+      return !mp.provider || mp.provider === 'anthropic';
+    } catch {
+      return true;
+    }
+  }, [selectedPersona?.model_profile]);
+
+  const visibleTabs = useMemo(() => {
+    return STANDARD_TABS.filter((tab) => {
+      if (tab.key === 'webSearch') return isAnthropic;
+      return true;
+    });
+  }, [isAnthropic]);
+
   const [sp, setSp] = useState<StructuredPrompt>(createEmptyStructuredPrompt());
-  const [isSaving, setIsSaving] = useState(false);
   const [showSaved, setShowSaved] = useState(false);
   const [selectedCustomIndex, setSelectedCustomIndex] = useState(0);
 
+  // Auto-switch away from webSearch if provider changes to non-Anthropic
+  useEffect(() => {
+    if (activeTab === 'webSearch' && !isAnthropic) {
+      setActiveTab('instructions');
+    }
+  }, [isAnthropic, activeTab]);
+
   const personaIdRef = useRef<string | null>(null);
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const spRef = useRef(sp);
   spRef.current = sp;
   const lastSavedJsonRef = useRef<string | null>(null);
@@ -47,10 +76,6 @@ export function PersonaPromptEditor() {
   // Initialize structured prompt from persona data
   useEffect(() => {
     if (!selectedPersona) {
-      if (saveTimerRef.current) {
-        clearTimeout(saveTimerRef.current);
-        saveTimerRef.current = null;
-      }
       setSp(createEmptyStructuredPrompt());
       personaIdRef.current = null;
       lastLoadedPromptRef.current = null;
@@ -67,11 +92,6 @@ export function PersonaPromptEditor() {
       currentPromptRaw !== lastSavedJsonRef.current;
 
     if (!isNewPersona && !isExternalUpdate) return;
-
-    if (saveTimerRef.current) {
-      clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = null;
-    }
 
     personaIdRef.current = selectedPersona.id;
     lastLoadedPromptRef.current = currentPromptRaw;
@@ -103,7 +123,6 @@ export function PersonaPromptEditor() {
     const jsonStr = JSON.stringify(spRef.current);
     if (jsonStr === lastSavedJsonRef.current) return;
 
-    setIsSaving(true);
     try {
       await updatePersona(pid, {
         structured_prompt: jsonStr,
@@ -115,29 +134,18 @@ export function PersonaPromptEditor() {
       setTimeout(() => setShowSaved(false), 2000);
     } catch (error) {
       console.error('Failed to save structured prompt:', error);
-    } finally {
-      setIsSaving(false);
     }
   }, [updatePersona]);
 
-  useEffect(() => {
-    if (!personaIdRef.current) return;
+  // Register prompt dirty state with the unified editor context
+  const promptDirty = useMemo(
+    () => lastSavedJsonRef.current !== null && JSON.stringify(sp) !== lastSavedJsonRef.current,
+    [sp],
+  );
+  const unregisterDirty = useEditorDirty('prompt', promptDirty, doSave);
+  useEffect(() => unregisterDirty, [unregisterDirty]);
 
-    const jsonStr = JSON.stringify(sp);
-    if (jsonStr === lastSavedJsonRef.current) return;
-
-    const scheduledForId = personaIdRef.current;
-
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => {
-      if (personaIdRef.current !== scheduledForId) return;
-      doSave();
-    }, 1000);
-
-    return () => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    };
-  }, [sp]);
+  const isSaving = useDebouncedSave(doSave, promptDirty, [sp], 1000);
 
   const updateField = useCallback((field: keyof Omit<StructuredPrompt, 'customSections'>, value: string) => {
     setSp((prev) => ({ ...prev, [field]: value }));
@@ -179,6 +187,7 @@ export function PersonaPromptEditor() {
     toolGuidance: !!sp.toolGuidance?.trim(),
     examples: !!sp.examples?.trim(),
     errorHandling: !!sp.errorHandling?.trim(),
+    webSearch: !!sp.webSearch?.trim(),
     custom: sp.customSections.length > 0,
   }), [sp]);
 
@@ -200,7 +209,7 @@ export function PersonaPromptEditor() {
       {/* Left sidebar navigation */}
       <div className="w-36 flex-shrink-0 flex flex-col gap-1">
         <div className="space-y-0.5 flex-1">
-          {STANDARD_TABS.map((tab) => {
+          {visibleTabs.map((tab) => {
             const active = activeTab === tab.key;
             const filled = sectionFilled[tab.key];
             return (

@@ -11,7 +11,7 @@ import {
   RefreshCw,
   AlertTriangle,
 } from 'lucide-react';
-import type { N8nPersonaDraft } from '@/api/design';
+import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import type { ConnectorReadinessStatus } from '@/lib/types/designTypes';
 

@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from 'react';
-import type { N8nPersonaDraft } from '@/api/design';
+import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import type { ModelProfile, NotificationChannel } from '@/lib/types/frontendTypes';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
 import { profileToDropdownValue, getOllamaPreset, OLLAMA_CLOUD_BASE_URL } from '@/features/agents/sub_editor/model-config/OllamaCloudPresets';
@@ -63,7 +63,7 @@ interface DraftSettingsTabProps {
 
 export function DraftSettingsTab({
   draft,
-  disabled: _disabled,
+  disabled,
   updateDraft,
   connectors = [],
   credentials = [],
@@ -87,7 +87,10 @@ export function DraftSettingsTab({
   );
 
   return (
-    <div className="space-y-4 h-full overflow-y-auto pr-1">
+    <fieldset
+      disabled={disabled}
+      className={`space-y-4 h-full overflow-y-auto pr-1 border-none p-0 m-0${disabled ? ' opacity-50 pointer-events-none' : ''}`}
+    >
       {/* Appearance */}
       <div className="space-y-3">
         <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
@@ -155,6 +158,6 @@ export function DraftSettingsTab({
           />
         </div>
       )}
-    </div>
+    </fieldset>
   );
 }

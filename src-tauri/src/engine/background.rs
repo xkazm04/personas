@@ -18,6 +18,7 @@ use crate::engine::ExecutionEngine;
 /// Runtime state for the scheduler, shared across threads.
 pub struct SchedulerState {
     running: AtomicBool,
+    webhook_alive: AtomicBool,
     events_processed: AtomicU64,
     events_delivered: AtomicU64,
     events_failed: AtomicU64,
@@ -34,6 +35,7 @@ impl SchedulerState {
     pub fn new() -> Self {
         Self {
             running: AtomicBool::new(false),
+            webhook_alive: AtomicBool::new(false),
             events_processed: AtomicU64::new(0),
             events_delivered: AtomicU64::new(0),
             events_failed: AtomicU64::new(0),
@@ -43,6 +45,10 @@ impl SchedulerState {
 
     pub fn is_running(&self) -> bool {
         self.running.load(Ordering::Relaxed)
+    }
+
+    pub fn is_webhook_alive(&self) -> bool {
+        self.webhook_alive.load(Ordering::Relaxed)
     }
 
     pub fn stats(&self) -> SchedulerStats {
@@ -76,7 +82,7 @@ pub fn start_loops(
     engine: Arc<ExecutionEngine>,
 ) -> tokio::sync::watch::Sender<bool> {
     scheduler.running.store(true, Ordering::Relaxed);
-    tracing::info!("Scheduler starting: event bus (2s) + trigger scheduler (5s) + polling (dedicated) + webhook server (port 9420)");
+    tracing::info!("Scheduler starting: event bus (2s) + trigger scheduler (5s, schedule/chain) + polling (dedicated, 10s) + webhook server (port 9420)");
 
     // Event bus loop
     tokio::spawn({
@@ -129,10 +135,13 @@ pub fn start_loops(
     let (webhook_shutdown_tx, webhook_shutdown_rx) = tokio::sync::watch::channel(false);
     tokio::spawn({
         let pool = pool.clone();
+        let scheduler = scheduler.clone();
         async move {
+            scheduler.webhook_alive.store(true, Ordering::Relaxed);
             if let Err(e) = super::webhook::start_webhook_server(pool, webhook_shutdown_rx).await {
                 tracing::error!("Webhook server failed: {}", e);
             }
+            scheduler.webhook_alive.store(false, Ordering::Relaxed);
         }
     });
 
@@ -310,9 +319,16 @@ async fn trigger_scheduler_loop(scheduler: Arc<SchedulerState>, pool: DbPool) {
         };
 
         for trigger in triggers {
-            // 2. Publish event
-            let event_type = sched_logic::trigger_event_type(&trigger);
-            let payload = sched_logic::trigger_payload(&trigger);
+            // Skip polling triggers — they are handled by the dedicated polling_loop
+            // which does HTTP content-hash diffing before deciding whether to fire.
+            if trigger.trigger_type == "polling" {
+                continue;
+            }
+
+            // 2. Parse config once; reuse for event_type, payload, and next schedule time
+            let cfg = trigger.parse_config();
+            let event_type = cfg.event_type().to_string();
+            let payload = cfg.payload();
 
             match event_repo::publish(
                 &pool,
@@ -334,8 +350,8 @@ async fn trigger_scheduler_loop(scheduler: Arc<SchedulerState>, pool: DbPool) {
                 }
             }
 
-            // 3. Compute next trigger time
-            let next = sched_logic::compute_next_trigger_at(&trigger, now);
+            // 3. Compute next trigger time (reuses already-parsed config)
+            let next = sched_logic::compute_next_from_config(&cfg, now);
 
             // 4. Mark triggered (returns false if trigger was deleted between get_due and now)
             match trigger_repo::mark_triggered(&pool, &trigger.id, next) {
@@ -410,34 +426,9 @@ async fn polling_loop(scheduler: Arc<SchedulerState>, pool: DbPool) {
 
 /// Emit event update to frontend for realtime visualization.
 fn emit_event_to_frontend(app: &AppHandle, event: &PersonaEvent, status: &str) {
-    #[derive(Clone, Serialize)]
-    struct EventBusPayload {
-        id: String,
-        project_id: String,
-        event_type: String,
-        source_type: String,
-        source_id: Option<String>,
-        target_persona_id: Option<String>,
-        payload: Option<String>,
-        status: String,
-        error_message: Option<String>,
-        processed_at: Option<String>,
-        created_at: String,
-    }
-
-    let payload = EventBusPayload {
-        id: event.id.clone(),
-        project_id: event.project_id.clone(),
-        event_type: event.event_type.clone(),
-        source_type: event.source_type.clone(),
-        source_id: event.source_id.clone(),
-        target_persona_id: event.target_persona_id.clone(),
-        payload: event.payload.clone(),
-        status: status.to_string(),
-        processed_at: Some(chrono::Utc::now().to_rfc3339()),
-        error_message: event.error_message.clone(),
-        created_at: event.created_at.clone(),
-    };
+    let mut payload = event.clone();
+    payload.status = status.to_string();
+    payload.processed_at = Some(chrono::Utc::now().to_rfc3339());
 
     if let Err(e) = app.emit("event-bus", payload) {
         tracing::warn!(event_id = %event.id, error = %e, "Failed to emit event-bus event to frontend");

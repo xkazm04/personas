@@ -1,6 +1,6 @@
 import { X } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { DesignTerminal } from '@/features/templates/sub_generated/DesignTerminal';
+import { TransformProgress } from '@/features/shared/components/TransformProgress';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 
 interface DesignPhaseRefiningProps {
@@ -26,7 +26,7 @@ export function DesignPhaseRefining({ outputLines, result, onCancel }: DesignPha
         </div>
       )}
 
-      <DesignTerminal lines={outputLines} isRunning={true} />
+      <TransformProgress mode="analysis" lines={outputLines} isRunning={true} />
 
       <button
         onClick={onCancel}

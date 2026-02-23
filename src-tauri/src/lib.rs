@@ -38,6 +38,9 @@ pub struct AppState {
     pub active_setup_cancelled: Arc<Mutex<bool>>,
     /// Cancellation flags for active test runs, keyed by run ID.
     pub active_test_run_cancelled: Arc<Mutex<HashMap<String, Arc<std::sync::atomic::AtomicBool>>>>,
+    /// PID of the currently-running CLI child process for each design review run.
+    /// Used to kill the process immediately when the user cancels a batch review.
+    pub active_review_child_pids: Arc<Mutex<HashMap<String, u32>>>,
     /// GitLab API client (None when not connected).
     pub gitlab_client: Arc<tokio::sync::Mutex<Option<Arc<gitlab::client::GitLabClient>>>>,
 }
@@ -150,6 +153,7 @@ pub fn run() {
                 cloud_exec_ids: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
                 active_setup_cancelled: Arc::new(Mutex::new(false)),
                 active_test_run_cancelled: Arc::new(Mutex::new(HashMap::new())),
+                active_review_child_pids: Arc::new(Mutex::new(HashMap::new())),
                 gitlab_client: Arc::new(tokio::sync::Mutex::new(gitlab_client_opt)),
             });
             app.manage(state_arc.clone());
@@ -232,6 +236,8 @@ pub fn run() {
             // Core — Memories
             commands::core::memories::list_memories,
             commands::core::memories::get_memory_count,
+            commands::core::memories::get_memory_stats,
+            commands::core::memories::list_memories_by_execution,
             commands::core::memories::create_memory,
             commands::core::memories::delete_memory,
             // Core — Import/Export
@@ -254,6 +260,8 @@ pub fn run() {
             commands::execution::tests::get_test_results,
             commands::execution::tests::delete_test_run,
             commands::execution::tests::cancel_test_run,
+            commands::execution::tests::validate_n8n_draft,
+            commands::execution::tests::test_n8n_draft,
             // Execution — Healing
             commands::execution::healing::list_healing_issues,
             commands::execution::healing::get_healing_issue,
@@ -267,14 +275,13 @@ pub fn run() {
             commands::design::analysis::test_design_feasibility,
             commands::design::analysis::cancel_design_analysis,
             // Design — N8n Transform
-            commands::design::n8n_transform::transform_n8n_to_persona,
-            commands::design::n8n_transform::start_n8n_transform_background,
-            commands::design::n8n_transform::get_n8n_transform_snapshot,
-            commands::design::n8n_transform::clear_n8n_transform_snapshot,
-            commands::design::n8n_transform::cancel_n8n_transform,
-            commands::design::n8n_transform::confirm_n8n_persona_draft,
-            commands::design::n8n_transform::continue_n8n_transform,
-            commands::design::n8n_transform::generate_n8n_transform_questions,
+            commands::design::n8n_transform::cli_runner::transform_n8n_to_persona,
+            commands::design::n8n_transform::cli_runner::start_n8n_transform_background,
+            commands::design::n8n_transform::job_state::get_n8n_transform_snapshot,
+            commands::design::n8n_transform::job_state::clear_n8n_transform_snapshot,
+            commands::design::n8n_transform::job_state::cancel_n8n_transform,
+            commands::design::n8n_transform::confirmation::confirm_n8n_persona_draft,
+            commands::design::n8n_transform::cli_runner::continue_n8n_transform,
             // Design — N8n Sessions
             commands::design::n8n_sessions::create_n8n_session,
             commands::design::n8n_sessions::get_n8n_session,
@@ -289,14 +296,24 @@ pub fn run() {
             commands::design::template_adopt::confirm_template_adopt_draft,
             commands::design::template_adopt::generate_template_adopt_questions,
             commands::design::template_adopt::continue_template_adopt,
+            commands::design::template_adopt::instant_adopt_template,
+            commands::design::template_adopt::generate_template_background,
+            commands::design::template_adopt::get_template_generate_snapshot,
+            commands::design::template_adopt::clear_template_generate_snapshot,
+            commands::design::template_adopt::cancel_template_generate,
+            commands::design::template_adopt::save_custom_template,
             // Design — Reviews
             commands::design::reviews::list_design_reviews,
+            commands::design::reviews::list_design_reviews_paginated,
+            commands::design::reviews::list_review_connectors,
             commands::design::reviews::get_design_review,
             commands::design::reviews::delete_design_review,
             commands::design::reviews::start_design_review_run,
             commands::design::reviews::import_design_review,
-            commands::design::reviews::adopt_design_review,
             commands::design::reviews::cancel_design_review_run,
+            commands::design::reviews::rebuild_design_review,
+            commands::design::reviews::get_rebuild_snapshot,
+            commands::design::reviews::cancel_rebuild,
             commands::design::reviews::list_manual_reviews,
             commands::design::reviews::update_manual_review_status,
             commands::design::reviews::get_pending_review_count,
@@ -366,10 +383,14 @@ pub fn run() {
             commands::communication::messages::get_message_deliveries,
             // Communication — Observability
             commands::communication::observability::get_metrics_summary,
-            commands::communication::observability::get_metrics_snapshots,
-            commands::communication::observability::get_live_metrics_timeseries,
+            commands::communication::observability::get_metrics_chart_data,
             commands::communication::observability::get_prompt_versions,
             commands::communication::observability::get_all_monthly_spend,
+            // Communication — Prompt Lab
+            commands::communication::observability::tag_prompt_version,
+            commands::communication::observability::rollback_prompt_version,
+            commands::communication::observability::get_prompt_error_rate,
+            commands::communication::observability::run_prompt_ab_test,
             // Teams
             commands::teams::teams::list_teams,
             commands::teams::teams::get_team_counts,
@@ -408,6 +429,8 @@ pub fn run() {
             commands::tools::triggers::create_trigger,
             commands::tools::triggers::update_trigger,
             commands::tools::triggers::delete_trigger,
+            commands::tools::triggers::validate_trigger,
+            commands::tools::triggers::get_trigger_health_map,
             commands::tools::triggers::list_trigger_chains,
             commands::tools::triggers::get_webhook_status,
             // Infrastructure — Auth

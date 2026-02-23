@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { Trash2, Bot, Tag, ChevronDown } from 'lucide-react';
+import { Trash2, Bot, Tag, ChevronDown, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { DbPersonaMemory } from '@/lib/types/types';
 import { formatRelativeTime, MEMORY_CATEGORY_COLORS } from '@/lib/utils/formatters';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
+import { usePersonaStore } from '@/stores/personaStore';
 
 function parseTags(tagsJson: string | null): string[] {
   return parseJsonOrDefault<string[]>(tagsJson, []);
@@ -213,8 +214,20 @@ export function MemoryRow({
                 </div>
               )}
               {memory.source_execution_id && (
-                <div className="mt-2 text-sm font-mono text-muted-foreground/80">
-                  Source: {memory.source_execution_id}
+                <div className="mt-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const store = usePersonaStore.getState();
+                      store.selectPersona(memory.persona_id);
+                      store.setEditorTab('executions');
+                    }}
+                    className="inline-flex items-center gap-1 text-sm text-blue-400/70 hover:text-blue-400 transition-colors"
+                    title={`Execution: ${memory.source_execution_id}`}
+                  >
+                    View Source Execution
+                    <ExternalLink className="w-3 h-3" />
+                  </button>
                 </div>
               )}
             </div>

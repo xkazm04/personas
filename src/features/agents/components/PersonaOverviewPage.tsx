@@ -5,7 +5,7 @@ import { usePersonaStore } from '@/stores/personaStore';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { formatRelativeTime } from '@/lib/utils/formatters';
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import { extractConnectorNames } from '@/lib/personas/utils';
 import PersonaHoverPreview from './PersonaHoverPreview';
 
 type HealthLevel = 'healthy' | 'mixed' | 'failing' | 'inactive';
@@ -74,15 +74,7 @@ export default function PersonaOverviewPage() {
       <ContentBody>
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         {personas.map((persona, i) => {
-          const connectors = (() => {
-            if (!persona.last_design_result) return [];
-            try {
-              const dr = JSON.parse(persona.last_design_result) as DesignAnalysisResult;
-              return (dr.suggested_connectors ?? []).map(c => typeof c === 'string' ? c : c.name).slice(0, 4);
-            } catch {
-              return [];
-            }
-          })();
+          const connectors = extractConnectorNames(persona);
           const triggerCount = triggerCounts[persona.id];
           const lastRun = lastRunMap[persona.id];
           const groupColor = persona.group_id ? groupColorMap[persona.group_id] : undefined;

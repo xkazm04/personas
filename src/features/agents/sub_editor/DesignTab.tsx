@@ -86,7 +86,7 @@ export function DesignTab() {
     ? `${result.summary}-${result.suggested_tools.length}`
     : null;
 
-  useMemo(() => {
+  useEffect(() => {
     if (result) {
       setSelectedTools(new Set(result.suggested_tools));
       setSelectedTriggerIndices(

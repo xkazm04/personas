@@ -142,7 +142,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
       }
     } else if (triggerType === 'webhook') {
       if (hmacSecret) {
-        config.hmac_secret = hmacSecret;
+        config.webhook_secret = hmacSecret;
       }
     }
 

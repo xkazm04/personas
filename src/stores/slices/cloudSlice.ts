@@ -122,8 +122,21 @@ export const createCloudSlice: StateCreator<PersonaStore, [], [], CloudSlice> = 
           await cloudReconnectFromKeyring();
           const refreshed = await cloudGetConfig();
           set({ cloudConfig: refreshed });
-        } catch {
-          // Orchestrator unreachable — stay disconnected silently
+        } catch (err) {
+          // Distinguish auth errors (user needs to act) from network errors (stay quiet).
+          const raw = String(err).toLowerCase();
+          const isAuthError =
+            raw.includes("401") ||
+            raw.includes("unauthorized") ||
+            raw.includes("403") ||
+            raw.includes("forbidden") ||
+            raw.includes("expired") ||
+            raw.includes("revoked");
+
+          if (isAuthError) {
+            set({ cloudError: "Credentials expired or revoked. Please reconnect to the cloud orchestrator." });
+          }
+          // Network / unreachable errors — stay disconnected silently
         }
       }
     } catch {

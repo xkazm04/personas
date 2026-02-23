@@ -1,34 +1,25 @@
 import { invoke } from "@tauri-apps/api/core";
 
+import type { MetricsChartData } from "@/lib/bindings/MetricsChartData";
 import type { MetricsSummary } from "@/lib/bindings/MetricsSummary";
-import type { PersonaMetricsSnapshot } from "@/lib/bindings/PersonaMetricsSnapshot";
 import type { PersonaPromptVersion } from "@/lib/bindings/PersonaPromptVersion";
+import type { PromptAbTestResult } from "@/lib/bindings/PromptAbTestResult";
 
 // ============================================================================
 // Observability
 // ============================================================================
 
-export const getMetricsSummary = (days?: number) =>
+export const getMetricsSummary = (days?: number, personaId?: string) =>
   invoke<MetricsSummary>("get_metrics_summary", {
     days: days ?? null,
-  });
-
-export const getMetricsSnapshots = (
-  personaId?: string,
-  startDate?: string,
-  endDate?: string,
-) =>
-  invoke<PersonaMetricsSnapshot[]>("get_metrics_snapshots", {
     personaId: personaId ?? null,
-    startDate: startDate ?? null,
-    endDate: endDate ?? null,
   });
 
-export const getLiveMetricsTimeseries = (
+export const getMetricsChartData = (
   days?: number,
   personaId?: string,
 ) =>
-  invoke<PersonaMetricsSnapshot[]>("get_live_metrics_timeseries", {
+  invoke<MetricsChartData>("get_metrics_chart_data", {
     days: days ?? null,
     personaId: personaId ?? null,
   });
@@ -40,4 +31,33 @@ export const getPromptVersions = (personaId: string, limit?: number) =>
   });
 
 export const getAllMonthlySpend = () =>
-  invoke<Array<[string, number]>>("get_all_monthly_spend");
+  invoke<Array<import('@/lib/bindings/PersonaMonthlySpend').PersonaMonthlySpend>>("get_all_monthly_spend");
+
+// ============================================================================
+// Prompt Lab
+// ============================================================================
+
+export const tagPromptVersion = (id: string, tag: string) =>
+  invoke<PersonaPromptVersion>("tag_prompt_version", { id, tag });
+
+export const rollbackPromptVersion = (versionId: string) =>
+  invoke<PersonaPromptVersion>("rollback_prompt_version", { versionId });
+
+export const getPromptErrorRate = (personaId: string, window?: number) =>
+  invoke<number>("get_prompt_error_rate", {
+    personaId,
+    window: window ?? null,
+  });
+
+export const runPromptAbTest = (
+  personaId: string,
+  versionAId: string,
+  versionBId: string,
+  testInput?: string,
+) =>
+  invoke<PromptAbTestResult>("run_prompt_ab_test", {
+    personaId,
+    versionAId,
+    versionBId,
+    testInput: testInput ?? null,
+  });

@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { PersonaStore } from "../storeTypes";
-import type { SidebarSection, EditorTab, TemplateTab, SettingsTab } from "@/lib/types/types";
+import type { SidebarSection, EditorTab, TemplateTab, CloudTab, SettingsTab } from "@/lib/types/types";
 
 export interface UiSlice {
   // State
@@ -8,6 +8,7 @@ export interface UiSlice {
   credentialView: "credentials" | "from-template" | "add-new";
   templateTab: TemplateTab;
   editorTab: EditorTab;
+  cloudTab: CloudTab;
   settingsTab: SettingsTab;
   rerunInputData: string | null;
   isLoading: boolean;
@@ -24,6 +25,7 @@ export interface UiSlice {
   setCredentialView: (view: "credentials" | "from-template" | "add-new") => void;
   setTemplateTab: (tab: TemplateTab) => void;
   setEditorTab: (tab: EditorTab) => void;
+  setCloudTab: (tab: CloudTab) => void;
   setSettingsTab: (tab: SettingsTab) => void;
   setRerunInputData: (data: string | null) => void;
   setError: (error: string | null) => void;
@@ -40,6 +42,7 @@ export const createUiSlice: StateCreator<PersonaStore, [], [], UiSlice> = (set) 
   credentialView: "credentials",
   templateTab: "builtin" as TemplateTab,
   editorTab: "use-cases" as EditorTab,
+  cloudTab: "cloud" as CloudTab,
   settingsTab: "account" as SettingsTab,
   rerunInputData: null,
   isLoading: false,
@@ -55,6 +58,7 @@ export const createUiSlice: StateCreator<PersonaStore, [], [], UiSlice> = (set) 
   setCredentialView: (view) => set({ credentialView: view }),
   setTemplateTab: (tab) => set({ templateTab: tab }),
   setEditorTab: (tab) => set({ editorTab: tab }),
+  setCloudTab: (tab) => set({ cloudTab: tab }),
   setSettingsTab: (tab) => set({ settingsTab: tab }),
   setRerunInputData: (data) => set({ rerunInputData: data }),
   setError: (error) => set({ error }),
