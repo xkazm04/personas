@@ -1,24 +1,17 @@
 import { Trash2, AlertTriangle, Loader2, Check } from 'lucide-react';
 import type { PersonaDraft } from '@/features/agents/sub_editor/PersonaDraft';
-import { ModelSelector } from '@/features/agents/sub_editor/model-config/ModelSelector';
-import type { CustomModelConfig } from '@/features/agents/sub_editor/model-config/ModelSelector';
-import { NotificationChannelSettings } from '@/features/agents/sub_editor/NotificationChannelSettings';
-import { EventSubscriptionSettings } from '@/features/agents/sub_editor/EventSubscriptionSettings';
 import { AccessibleToggle } from '@/features/shared/components/AccessibleToggle';
-import { IconSelector } from '@/features/shared/components/IconSelector';
-import { ColorPicker } from '@/features/shared/components/ColorPicker';
-import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
-import type { ModelProvider } from '@/lib/types/frontendTypes';
+import { PopupIconSelector } from '@/features/shared/components/PopupIconSelector';
+import { PopupColorPicker } from '@/features/shared/components/PopupColorPicker';
+import type { ConnectorDefinition } from '@/lib/types/types';
 
 interface PersonaSettingsTabProps {
   draft: PersonaDraft;
   patch: (updates: Partial<PersonaDraft>) => void;
   isDirty: boolean;
   settingsDirty: boolean;
-  modelDirty: boolean;
   changedSections: string[];
   connectorDefinitions: ConnectorDefinition[];
-  credentials: CredentialMetadata[];
   selectedPersonaId: string;
   showDeleteConfirm: boolean;
   setShowDeleteConfirm: (show: boolean) => void;
@@ -31,11 +24,9 @@ export function PersonaSettingsTab({
   patch,
   isDirty,
   settingsDirty: _settingsDirty,
-  modelDirty,
   changedSections,
   connectorDefinitions,
-  credentials,
-  selectedPersonaId,
+  selectedPersonaId: _selectedPersonaId,
   showDeleteConfirm,
   setShowDeleteConfirm,
   isSaving,
@@ -64,50 +55,31 @@ export function PersonaSettingsTab({
             <textarea
               value={draft.description}
               onChange={(e) => patch({ description: e.target.value })}
-              rows={2}
+              rows={4}
               className="w-full px-3 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all resize-none"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-foreground/80 mb-2">Icon</label>
-            <IconSelector
-              value={draft.icon}
-              onChange={(icon) => patch({ icon })}
-              connectors={connectorDefinitions}
-              size="sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-foreground/80 mb-2">Color</label>
-            <ColorPicker
-              value={draft.color}
-              onChange={(color) => patch({ color })}
-              size="sm"
-            />
+          <div className="flex items-center gap-4">
+            <div>
+              <label className="block text-sm font-medium text-foreground/80 mb-2">Icon</label>
+              <PopupIconSelector
+                value={draft.icon}
+                onChange={(icon) => patch({ icon })}
+                connectors={connectorDefinitions}
+                size="sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground/80 mb-2">Color</label>
+              <PopupColorPicker
+                value={draft.color}
+                onChange={(color) => patch({ color })}
+                size="sm"
+              />
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Model & Provider */}
-      <ModelSelector
-        selectedModel={draft.selectedModel}
-        onSelectModel={(value) => patch({ selectedModel: value })}
-        customConfig={{
-          selectedProvider: draft.selectedProvider,
-          customModelName: draft.customModelName,
-          baseUrl: draft.baseUrl,
-          authToken: draft.authToken,
-          onProviderChange: (p: ModelProvider) => patch({ selectedProvider: p }),
-          onCustomModelNameChange: (n) => patch({ customModelName: n }),
-          onBaseUrlChange: (u) => patch({ baseUrl: u }),
-          onAuthTokenChange: (t) => patch({ authToken: t }),
-        } satisfies CustomModelConfig}
-        maxBudget={draft.maxBudget}
-        maxTurns={draft.maxTurns}
-        onMaxBudgetChange={(v) => patch({ maxBudget: v as number | '' })}
-        onMaxTurnsChange={(v) => patch({ maxTurns: v as number | '' })}
-        dirty={modelDirty}
-      />
 
       {/* Execution */}
       <div className="space-y-3">
@@ -151,28 +123,6 @@ export function PersonaSettingsTab({
             />
           </div>
         </div>
-      </div>
-
-      {/* Notification Channels */}
-      <div className="space-y-3">
-        <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
-          <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
-          Notifications
-        </h4>
-        <NotificationChannelSettings
-          personaId={selectedPersonaId}
-          credentials={credentials}
-          connectorDefinitions={connectorDefinitions}
-        />
-      </div>
-
-      {/* Event Subscriptions */}
-      <div className="space-y-3">
-        <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
-          <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
-          Event Subscriptions
-        </h4>
-        <EventSubscriptionSettings personaId={selectedPersonaId} />
       </div>
 
       {/* Save status + Danger */}

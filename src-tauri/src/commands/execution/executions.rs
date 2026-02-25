@@ -32,8 +32,9 @@ pub fn create_execution(
     trigger_id: Option<String>,
     input_data: Option<String>,
     model_used: Option<String>,
+    use_case_id: Option<String>,
 ) -> Result<PersonaExecution, AppError> {
-    repo::create(&state.db, &persona_id, trigger_id, input_data, model_used)
+    repo::create(&state.db, &persona_id, trigger_id, input_data, model_used, use_case_id)
 }
 
 /// Start a persona execution: create record, spawn Claude CLI, stream output.
@@ -44,6 +45,7 @@ pub async fn execute_persona(
     persona_id: String,
     trigger_id: Option<String>,
     input_data: Option<String>,
+    use_case_id: Option<String>,
 ) -> Result<PersonaExecution, AppError> {
     // 1. Get persona
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
@@ -88,6 +90,7 @@ pub async fn execute_persona(
         trigger_id,
         input_data.clone(),
         model_used,
+        use_case_id,
     )?;
 
     // 5. Update status to running
@@ -123,6 +126,16 @@ pub async fn execute_persona(
 
     // 9. Return the execution record (frontend uses the ID for event filtering)
     repo::get_by_id(&state.db, &execution.id)
+}
+
+#[tauri::command]
+pub fn list_executions_for_use_case(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+    use_case_id: String,
+    limit: Option<i64>,
+) -> Result<Vec<PersonaExecution>, AppError> {
+    repo::get_by_use_case_id(&state.db, &persona_id, &use_case_id, limit)
 }
 
 /// Cancel a running execution.

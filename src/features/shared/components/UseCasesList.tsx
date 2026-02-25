@@ -1,11 +1,46 @@
 import { useMemo } from 'react';
 import { ListChecks } from 'lucide-react';
+import type { ModelProfile, NotificationChannel } from '@/lib/types/frontendTypes';
+
+export interface UseCaseEventSubscription {
+  event_type: string;
+  source_filter?: string;
+  enabled: boolean;
+}
+
+export interface UseCaseInputField {
+  key: string;
+  type: 'text' | 'number' | 'select' | 'boolean';
+  label: string;
+  default?: unknown;
+  options?: string[];
+}
+
+export interface UseCaseTimeFilter {
+  field: string;
+  default_window: string;
+  description: string;
+}
+
+export interface UseCaseSuggestedTrigger {
+  type: 'schedule' | 'polling' | 'webhook' | 'manual';
+  cron?: string;
+  description: string;
+}
 
 export interface UseCaseItem {
   id: string;
   title: string;
   description: string;
   category?: string;
+  execution_mode?: 'e2e' | 'mock' | 'non_executable';
+  sample_input?: Record<string, unknown> | null;
+  time_filter?: UseCaseTimeFilter;
+  input_schema?: UseCaseInputField[];
+  suggested_trigger?: UseCaseSuggestedTrigger;
+  model_override?: ModelProfile;
+  notification_channels?: NotificationChannel[];
+  event_subscriptions?: UseCaseEventSubscription[];
 }
 
 export interface DesignContextData {

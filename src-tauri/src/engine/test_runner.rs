@@ -89,11 +89,12 @@ pub async fn run_test(
     model_configs: Vec<TestModelConfig>,
     _log_dir: PathBuf,
     cancelled: Arc<std::sync::atomic::AtomicBool>,
+    use_case_filter: Option<String>,
 ) {
     // Phase 1: Generate scenarios
     emit_status(&app, &run_id, "generating", None);
 
-    let scenarios = match generate_scenarios(&persona, &tools).await {
+    let scenarios = match generate_scenarios(&persona, &tools, use_case_filter.as_deref()).await {
         Ok(s) if s.is_empty() => {
             finish_with_error(&app, &pool, &run_id, "No test scenarios were generated");
             return;
@@ -297,8 +298,9 @@ pub async fn run_test(
 async fn generate_scenarios(
     persona: &Persona,
     tools: &[PersonaToolDefinition],
+    use_case_filter: Option<&str>,
 ) -> Result<Vec<TestScenario>, String> {
-    let coordinator_prompt = build_coordinator_prompt(persona, tools);
+    let coordinator_prompt = build_coordinator_prompt(persona, tools, use_case_filter);
 
     let mut cli_args = prompt::build_cli_args(None, None);
     // Limit to 1 turn — we just want the JSON output
@@ -311,7 +313,7 @@ async fn generate_scenarios(
     parse_scenarios_from_output(&output)
 }
 
-fn build_coordinator_prompt(persona: &Persona, tools: &[PersonaToolDefinition]) -> String {
+fn build_coordinator_prompt(persona: &Persona, tools: &[PersonaToolDefinition], use_case_filter: Option<&str>) -> String {
     let mut p = String::new();
 
     p.push_str("# Test Scenario Generator\n\n");
@@ -379,6 +381,49 @@ fn build_coordinator_prompt(persona: &Persona, tools: &[PersonaToolDefinition]) 
   "expected_tool_sequence": ["tool1", "tool2"],
   "expected_protocols": ["user_message"]
 }]"#);
+
+    // If a use case filter is provided, extract the matching use case from design_context
+    // and append focused instructions
+    if let Some(uc_id) = use_case_filter {
+        if let Some(ref dc_json) = persona.design_context {
+            if let Ok(dc) = serde_json::from_str::<serde_json::Value>(dc_json) {
+                if let Some(use_cases) = dc.get("use_cases").and_then(|v| v.as_array()) {
+                    for uc in use_cases {
+                        let id = uc.get("id").and_then(|v| v.as_str()).unwrap_or("");
+                        if id == uc_id {
+                            let title = uc.get("title").and_then(|v| v.as_str()).unwrap_or("Unknown");
+                            let desc = uc.get("description").and_then(|v| v.as_str()).unwrap_or("");
+                            let category = uc.get("category").and_then(|v| v.as_str()).unwrap_or("");
+
+                            p.push_str("\n\n## FOCUS: Specific Use Case\n");
+                            p.push_str(&format!("Generate ALL test scenarios specifically for this use case:\n"));
+                            p.push_str(&format!("- **Title**: {}\n", title));
+                            if !desc.is_empty() {
+                                p.push_str(&format!("- **Description**: {}\n", desc));
+                            }
+                            if !category.is_empty() {
+                                p.push_str(&format!("- **Category**: {}\n", category));
+                            }
+
+                            // Include sample_input if available
+                            if let Some(sample) = uc.get("sample_input") {
+                                if !sample.is_null() {
+                                    p.push_str(&format!(
+                                        "- **Sample Input**: {}\n",
+                                        serde_json::to_string_pretty(sample).unwrap_or_default()
+                                    ));
+                                }
+                            }
+
+                            p.push_str("\nAll scenarios must be realistic variations of this specific use case. ");
+                            p.push_str("Do NOT generate scenarios for other use cases.\n");
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     p
 }

@@ -35,6 +35,8 @@ export interface UseBackgroundSnapshotOptions {
   interval?: number;
   /** Number of consecutive fetch failures before treating session as lost. Defaults to 3. */
   maxFailures?: number;
+  /** Increment to force polling restart (e.g. after user answers questions and Turn 2 begins). */
+  epoch?: number;
 }
 
 /**
@@ -56,6 +58,7 @@ export function useBackgroundSnapshot({
   onQuestions,
   interval = 1500,
   maxFailures = 3,
+  epoch = 0,
 }: UseBackgroundSnapshotOptions) {
   const pollTimerRef = useRef<number | null>(null);
   const notFoundCountRef = useRef(0);
@@ -137,7 +140,7 @@ export function useBackgroundSnapshot({
         pollTimerRef.current = null;
       }
     };
-  }, [snapshotId, getSnapshot, onLines, onPhase, onDraft, onCompletedNoDraft, onFailed, onSessionLost, onQuestions, interval, maxFailures]);
+  }, [snapshotId, getSnapshot, onLines, onPhase, onDraft, onCompletedNoDraft, onFailed, onSessionLost, onQuestions, interval, maxFailures, epoch]);
 
   // Cleanup poll timer on unmount
   useEffect(() => {

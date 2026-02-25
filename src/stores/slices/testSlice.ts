@@ -6,6 +6,7 @@ import type { PersonaTestResult } from "@/lib/bindings/PersonaTestResult";
 import * as api from "@/api/tauriApi";
 
 export interface TestRunProgress {
+  runId?: string;
   phase: string;
   scenariosCount?: number;
   current?: number;
@@ -27,7 +28,7 @@ export interface TestSlice {
 
   // Actions
   fetchTestRuns: (personaId: string) => Promise<void>;
-  startTest: (personaId: string, models: api.ModelTestConfig[]) => Promise<string | null>;
+  startTest: (personaId: string, models: api.ModelTestConfig[], useCaseFilter?: string) => Promise<string | null>;
   cancelTest: (runId: string) => Promise<void>;
   fetchTestResults: (testRunId: string) => Promise<void>;
   deleteTest: (runId: string) => Promise<void>;
@@ -50,10 +51,10 @@ export const createTestSlice: StateCreator<PersonaStore, [], [], TestSlice> = (s
     }
   },
 
-  startTest: async (personaId, models) => {
+  startTest: async (personaId, models, useCaseFilter) => {
     set({ isTestRunning: true, testRunProgress: null, activeTestResults: [], error: null });
     try {
-      const run = await api.startTestRun(personaId, models);
+      const run = await api.startTestRun(personaId, models, useCaseFilter);
       return run.id;
     } catch (err) {
       set({ error: errMsg(err, "Failed to start test run"), isTestRunning: false });

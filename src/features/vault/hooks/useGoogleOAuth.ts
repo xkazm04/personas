@@ -116,7 +116,8 @@ export function useGoogleOAuth(options: UseGoogleOAuthOptions = {}): GoogleOAuth
       .catch((err) => {
         setSessionId(null);
         setIsAuthorizing(false);
-        onErrorRef.current?.(err instanceof Error ? err.message : 'Failed to start Google authorization.');
+        const message = err instanceof Error ? err.message : typeof err === 'string' ? err : 'Failed to start Google authorization.';
+        onErrorRef.current?.(message);
       });
   }, []);
 

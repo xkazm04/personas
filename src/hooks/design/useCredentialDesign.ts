@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { startCredentialDesign, cancelCredentialDesign } from '@/api/tauriApi';
 import { usePersonaStore } from '@/stores/personaStore';
-import { useTauriStream } from './useTauriStream';
+import { useAiArtifactFlow, defaultGetLine, buildResolveStatus } from './useAiArtifactFlow';
 
 export type CredentialDesignPhase = 'idle' | 'analyzing' | 'preview' | 'saving' | 'done' | 'error';
 
@@ -24,55 +24,41 @@ export interface CredentialDesignResult {
   summary: string;
 }
 
-const getLine = (payload: Record<string, unknown>) => payload.line as string;
-
-const resolveStatus = (payload: Record<string, unknown>) => {
-  const status = payload.status as string;
-  if (status === 'completed' && payload.result) {
-    return { result: payload.result as CredentialDesignResult };
-  }
-  if (status === 'failed') {
-    return { error: (payload.error as string) || 'Credential design failed' };
-  }
-  return null;
-};
-
 export function useCredentialDesign() {
   const [savedCredentialId, setSavedCredentialId] = useState<string | null>(null);
 
   const createConnectorDefinition = usePersonaStore((s) => s.createConnectorDefinition);
   const createCredential = usePersonaStore((s) => s.createCredential);
 
-  const stream = useTauriStream<CredentialDesignResult>({
-    progressEvent: 'credential-design-output',
-    statusEvent: 'credential-design-status',
-    getLine,
-    resolveStatus,
-    completedPhase: 'preview',
-    runningPhase: 'analyzing',
-    startErrorMessage: 'Failed to start credential design',
+  const flow = useAiArtifactFlow<string, CredentialDesignResult>({
+    stream: {
+      progressEvent: 'credential-design-output',
+      statusEvent: 'credential-design-status',
+      getLine: defaultGetLine,
+      resolveStatus: buildResolveStatus('Credential design failed'),
+      completedPhase: 'preview',
+      runningPhase: 'analyzing',
+      startErrorMessage: 'Failed to start credential design',
+    },
+    startFn: (instruction) => startCredentialDesign(instruction),
   });
 
-  const start = useCallback(async (instruction: string) => {
-    await stream.start(() => startCredentialDesign(instruction));
-  }, [stream.start]);
-
   const cancel = useCallback(() => {
-    stream.cancel(() => cancelCredentialDesign());
-  }, [stream.cancel]);
+    flow.cancel(() => cancelCredentialDesign());
+  }, [flow.cancel]);
 
   const save = useCallback(async (
     credentialName: string,
     fieldValues: Record<string, string>,
     healthcheckOverride?: Record<string, unknown> | null,
   ) => {
-    if (!stream.result) return;
+    if (!flow.result) return;
 
-    stream.setPhase('saving');
+    flow.setPhase('saving');
     try {
       // Create connector definition if it doesn't already exist
-      if (!stream.result.match_existing) {
-        const conn = stream.result.connector;
+      if (!flow.result.match_existing) {
+        const conn = flow.result.connector;
         await createConnectorDefinition({
           name: conn.name,
           label: conn.label,
@@ -84,15 +70,15 @@ export function useCredentialDesign() {
           events: JSON.stringify(conn.events || []),
           metadata: JSON.stringify({
             template_enabled: true,
-            setup_instructions: stream.result.setup_instructions,
-            summary: stream.result.summary,
+            setup_instructions: flow.result.setup_instructions,
+            summary: flow.result.summary,
           }),
           is_builtin: false,
         });
       }
 
       // Create the credential
-      const serviceType = stream.result.match_existing || stream.result.connector.name;
+      const serviceType = flow.result.match_existing || flow.result.connector.name;
       const credId = await createCredential({
         name: credentialName,
         service_type: serviceType,
@@ -100,33 +86,33 @@ export function useCredentialDesign() {
       });
 
       setSavedCredentialId(credId ?? null);
-      stream.setPhase('done');
+      flow.setPhase('done');
     } catch (err) {
-      stream.setError(err instanceof Error ? err.message : 'Failed to save credential');
-      stream.setPhase('preview');
+      flow.setError(err instanceof Error ? err.message : 'Failed to save credential');
+      flow.setPhase('preview');
     }
-  }, [stream.result, stream.setPhase, stream.setError, createConnectorDefinition, createCredential]);
+  }, [flow.result, flow.setPhase, flow.setError, createConnectorDefinition, createCredential]);
 
   const reset = useCallback(() => {
-    stream.reset();
+    flow.reset();
     setSavedCredentialId(null);
-  }, [stream.reset]);
+  }, [flow.reset]);
 
   const loadTemplate = useCallback((template: CredentialDesignResult) => {
-    stream.cleanup();
-    stream.setLines([]);
-    stream.setError(null);
-    stream.setResult(template);
-    stream.setPhase('preview');
-  }, [stream.cleanup, stream.setLines, stream.setError, stream.setResult, stream.setPhase]);
+    flow.cleanup();
+    flow.setLines([]);
+    flow.setError(null);
+    flow.setResult(template);
+    flow.setPhase('preview');
+  }, [flow.cleanup, flow.setLines, flow.setError, flow.setResult, flow.setPhase]);
 
   return {
-    phase: stream.phase as CredentialDesignPhase,
-    outputLines: stream.lines,
-    result: stream.result,
-    error: stream.error,
+    phase: flow.phase as CredentialDesignPhase,
+    outputLines: flow.lines,
+    result: flow.result,
+    error: flow.error,
     savedCredentialId,
-    start,
+    start: flow.start,
     cancel,
     save,
     reset,

@@ -1,13 +1,15 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FlaskConical, Play, Square, ChevronDown, ChevronRight,
-  Trash2, Clock, Trophy, Loader2, AlertCircle,
+  Trash2, Clock, Trophy, Loader2, AlertCircle, Filter,
 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { usePersonaTests } from '@/hooks/tests/usePersonaTests';
 import { TestComparisonTable } from './TestComparisonTable';
 import { statusBadge } from './testUtils';
+import { parseDesignContext, type UseCaseItem } from '@/features/shared/components/UseCasesList';
+import { Listbox } from '@/features/shared/components/Listbox';
 import type { PersonaTestRun } from '@/lib/bindings/PersonaTestRun';
 import type { ModelTestConfig } from '@/api/tests';
 import {
@@ -58,8 +60,40 @@ export function PersonaTestsTab() {
   const [selectedModels, setSelectedModels] = useState<Set<string>>(new Set(['haiku', 'sonnet']));
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const [selectedUseCaseId, setSelectedUseCaseId] = useState<string | null>(null);
 
   usePersonaTests();
+
+  // Parse use cases from design_context
+  const useCases: UseCaseItem[] = useMemo(() => {
+    const ctx = parseDesignContext(selectedPersona?.design_context);
+    return ctx.use_cases ?? [];
+  }, [selectedPersona?.design_context]);
+
+  const selectedUseCase = useMemo(
+    () => useCases.find((uc) => uc.id === selectedUseCaseId) ?? null,
+    [useCases, selectedUseCaseId],
+  );
+
+  // Build Listbox options for use case filter
+  const useCaseOptions = useMemo(() => [
+    { value: '__all__', label: 'All Use Cases' },
+    ...useCases.map((uc) => ({ value: uc.id, label: uc.title })),
+  ], [useCases]);
+
+  // When a use case with model_override is selected, pre-select that model
+  useEffect(() => {
+    if (selectedUseCase?.model_override) {
+      const override = selectedUseCase.model_override;
+      // Try to find matching model in ALL_MODELS
+      const match = ALL_MODELS.find((m) =>
+        m.provider === override.provider && m.model === override.model
+      );
+      if (match) {
+        setSelectedModels(new Set([match.id]));
+      }
+    }
+  }, [selectedUseCase]);
 
   useEffect(() => {
     if (selectedPersona?.id) {
@@ -98,7 +132,8 @@ export function PersonaTestsTab() {
       })
       .filter(Boolean) as ModelTestConfig[];
 
-    const runId = await startTest(selectedPersona.id, models);
+    const useCaseFilter = selectedUseCaseId && selectedUseCaseId !== '__all__' ? selectedUseCaseId : undefined;
+    const runId = await startTest(selectedPersona.id, models, useCaseFilter);
     if (runId) setActiveRunId(runId);
   };
 
@@ -159,6 +194,66 @@ export function PersonaTestsTab() {
                 {!hasPrompt && <p>This persona has no prompt configured. Add a prompt first.</p>}
                 {!hasTools && <p>This persona has no tools assigned. Add tools for richer testing.</p>}
               </div>
+            </div>
+          )}
+
+          {/* Use case filter */}
+          {useCases.length > 0 && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-muted-foreground/80 flex items-center gap-1.5">
+                <Filter className="w-3.5 h-3.5" />
+                Focus on Use Case
+              </label>
+              <Listbox
+                itemCount={useCaseOptions.length}
+                onSelectFocused={(idx) => {
+                  const opt = useCaseOptions[idx];
+                  if (opt) setSelectedUseCaseId(opt.value === '__all__' ? null : opt.value);
+                }}
+                ariaLabel="Filter by use case"
+                renderTrigger={({ isOpen, toggle }) => (
+                  <button
+                    onClick={toggle}
+                    disabled={isTestRunning}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm border transition-all ${
+                      isOpen
+                        ? 'bg-primary/10 border-primary/30 text-foreground/90'
+                        : 'bg-background/30 border-primary/10 text-muted-foreground/90 hover:border-primary/20'
+                    } ${isTestRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  >
+                    <span>{useCaseOptions.find((o) => o.value === (selectedUseCaseId ?? '__all__'))?.label ?? 'All Use Cases'}</span>
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                )}
+              >
+                {({ close, focusIndex }) => (
+                  <div className="py-1 bg-background border border-primary/15 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
+                    {useCaseOptions.map((opt, i) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => {
+                          setSelectedUseCaseId(opt.value === '__all__' ? null : opt.value);
+                          close();
+                        }}
+                        className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
+                          focusIndex === i ? 'bg-primary/15 text-foreground' : ''
+                        } ${
+                          (selectedUseCaseId ?? '__all__') === opt.value
+                            ? 'text-primary font-medium'
+                            : 'text-muted-foreground/90 hover:bg-secondary/30'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </Listbox>
+              {selectedUseCase && (
+                <p className="text-sm text-muted-foreground/50 ml-1">
+                  Scenarios will target: {selectedUseCase.description}
+                </p>
+              )}
             </div>
           )}
 
@@ -226,7 +321,7 @@ export function PersonaTestsTab() {
               className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-2xl font-medium text-sm transition-all bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               <Play className="w-4 h-4" />
-              Run Test ({selectedModels.size} model{selectedModels.size !== 1 ? 's' : ''})
+              Run Test ({selectedModels.size} model{selectedModels.size !== 1 ? 's' : ''}{selectedUseCase ? ` — ${selectedUseCase.title}` : ''})
             </button>
           )}
 

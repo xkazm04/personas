@@ -220,7 +220,7 @@ export function MemoryRow({
                       e.stopPropagation();
                       const store = usePersonaStore.getState();
                       store.selectPersona(memory.persona_id);
-                      store.setEditorTab('executions');
+                      store.setEditorTab('use-cases');
                     }}
                     className="inline-flex items-center gap-1 text-sm text-blue-400/70 hover:text-blue-400 transition-colors"
                     title={`Execution: ${memory.source_execution_id}`}

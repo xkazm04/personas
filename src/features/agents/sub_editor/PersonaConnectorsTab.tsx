@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Link, Wrench, CheckCircle2, AlertCircle, XCircle, Activity, Loader2, RefreshCw, ChevronDown, Star, Plus, AlertTriangle } from 'lucide-react';
+import { Link, Wrench, CheckCircle2, AlertCircle, XCircle, Activity, Loader2, RefreshCw, ChevronDown, Star, Plus, AlertTriangle, Radio } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
 import { translateHealthcheckMessage } from '@/features/vault/components/credential-design/CredentialDesignHelpers';
 import { CredentialDesignModal } from '@/features/vault/components/CredentialDesignModal';
 import { parseDesignContext, mergeCredentialLink } from '@/features/shared/components/UseCasesList';
+import { UseCaseSubscriptions } from '@/features/agents/sub_editor/use-cases/UseCaseSubscriptions';
+import { updateUseCaseInContext } from '@/features/agents/sub_editor/use-cases/useCaseHelpers';
+import type { UseCaseEventSubscription } from '@/features/shared/components/UseCasesList';
 
 interface ConnectorStatus {
   name: string;
@@ -430,6 +433,9 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
         </div>
       )}
 
+      {/* Event Subscriptions per use case */}
+      <UseCaseSubscriptionsSection />
+
       {/* Embedded credential design modal */}
       {designOpen && (
         <div className="mt-4 border border-violet-500/20 rounded-2xl overflow-hidden">
@@ -442,6 +448,90 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
           />
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Event Subscriptions Section ─────────────────────────────────────
+
+function UseCaseSubscriptionsSection() {
+  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
+  const updatePersona = usePersonaStore((s) => s.updatePersona);
+
+  const contextData = useMemo(
+    () => parseDesignContext(selectedPersona?.design_context),
+    [selectedPersona?.design_context],
+  );
+  const useCases = contextData.use_cases ?? [];
+
+  // Only show use cases that have subscriptions or if there are any use cases at all
+  const useCasesWithSubs = useCases.filter((uc) => (uc.event_subscriptions?.length ?? 0) > 0);
+
+  const [expandedId, setExpandedId] = useState<string | null>(
+    useCasesWithSubs.length === 1 ? useCasesWithSubs[0]!.id : null,
+  );
+
+  const handleSubscriptionsChange = useCallback(
+    (useCaseId: string, subs: UseCaseEventSubscription[]) => {
+      if (!selectedPersona) return;
+      const newContext = updateUseCaseInContext(
+        selectedPersona.design_context,
+        useCaseId,
+        (uc) => ({ ...uc, event_subscriptions: subs.length > 0 ? subs : undefined }),
+      );
+      void updatePersona(selectedPersona.id, { design_context: newContext });
+    },
+    [selectedPersona, updatePersona],
+  );
+
+  if (useCases.length === 0) return null;
+
+  const totalSubs = useCases.reduce((sum, uc) => sum + (uc.event_subscriptions?.length ?? 0), 0);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 px-1">
+        <Radio className="w-3.5 h-3.5 text-muted-foreground/80" />
+        <p className="text-sm font-medium text-muted-foreground/80">
+          Event Subscriptions
+        </p>
+        {totalSubs > 0 && (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+            {totalSubs} active
+          </span>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        {useCases.map((uc) => {
+          const subCount = uc.event_subscriptions?.length ?? 0;
+          const isExpanded = expandedId === uc.id;
+
+          return (
+            <div key={uc.id} className="bg-secondary/20 border border-primary/10 rounded-xl overflow-hidden">
+              <button
+                onClick={() => setExpandedId(isExpanded ? null : uc.id)}
+                className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left hover:bg-secondary/30 transition-colors"
+              >
+                <ChevronDown className={`w-3 h-3 text-muted-foreground/50 transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
+                <span className="text-sm font-medium text-foreground/80 flex-1 truncate">{uc.title}</span>
+                {subCount > 0 && (
+                  <span className="text-xs text-cyan-400/70">{subCount} sub{subCount !== 1 ? 's' : ''}</span>
+                )}
+              </button>
+
+              {isExpanded && (
+                <div className="border-t border-primary/10 p-3.5">
+                  <UseCaseSubscriptions
+                    subscriptions={uc.event_subscriptions ?? []}
+                    onChange={(subs) => handleSubscriptionsChange(uc.id, subs)}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

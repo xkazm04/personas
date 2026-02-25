@@ -11,6 +11,7 @@ pub struct PersonaExecution {
     pub id: String,
     pub persona_id: String,
     pub trigger_id: Option<String>,
+    pub use_case_id: Option<String>,
     pub status: String,
     pub input_data: Option<String>,
     pub output_data: Option<String>,

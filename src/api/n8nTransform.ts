@@ -30,6 +30,7 @@ export interface N8nTransformStartResult {
 
 export interface TransformQuestionResponse {
   id: string;
+  category?: string;
   question: string;
   type: 'select' | 'text' | 'boolean';
   options?: string[];

@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, BookOpen, Settings, Code, Sparkles } from 'lucide-react';
+import { BookOpen, Settings, Code, Sparkles } from 'lucide-react';
 import type { N8nPersonaDraft } from '@/api/n8nTransform';
-import { DraftIdentityTab } from './DraftIdentityTab';
 import { DraftPromptTab } from './DraftPromptTab';
 import { DraftSettingsTab } from './DraftSettingsTab';
 import { DraftJsonTab } from './DraftJsonTab';
@@ -16,7 +15,7 @@ export interface DraftEditTab {
   badge?: React.ReactNode;
 }
 
-type BuiltinTabId = 'identity' | 'prompt' | 'settings' | 'json';
+type BuiltinTabId = 'prompt' | 'settings' | 'json';
 
 interface DraftEditStepProps {
   draft: N8nPersonaDraft;
@@ -30,7 +29,7 @@ interface DraftEditStepProps {
   onJsonEdited: (json: string, draft: N8nPersonaDraft | null, error: string | null) => void;
   onAdjustmentChange: (text: string) => void;
   onApplyAdjustment: () => void;
-  /** Tabs inserted after Identity tab */
+  /** Tabs inserted before Prompt tab */
   earlyTabs?: DraftEditTab[];
   /** Additional tabs inserted after Settings, before JSON tab */
   additionalTabs?: DraftEditTab[];
@@ -41,7 +40,6 @@ interface DraftEditStepProps {
 }
 
 const BUILTIN_TABS: { id: BuiltinTabId; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
-  { id: 'identity', label: 'Identity', Icon: User },
   { id: 'prompt', label: 'Prompt', Icon: BookOpen },
   { id: 'settings', label: 'Settings', Icon: Settings },
   // JSON tab added last, after any additional tabs
@@ -66,20 +64,20 @@ export function DraftEditStep({
   hideAdjustmentPanel = false,
   showNotifications,
 }: DraftEditStepProps) {
-  const [activeTab, setActiveTab] = useState<string>('identity');
+  const defaultTab = earlyTabs.length > 0 ? earlyTabs[0]!.id : 'prompt';
+  const [activeTab, setActiveTab] = useState<string>(defaultTab);
 
-  // Build full tab list: Identity + earlyTabs + Prompt + Settings + additionalTabs + JSON
+  // Build full tab list: earlyTabs + Prompt + Settings + additionalTabs + JSON
   const allTabs: { id: string; label: string; Icon: React.ComponentType<{ className?: string }>; badge?: React.ReactNode }[] = [
-    BUILTIN_TABS[0]!,  // Identity
     ...earlyTabs.map((t) => ({ id: t.id, label: t.label, Icon: t.Icon, badge: t.badge })),
-    ...BUILTIN_TABS.slice(1),  // Prompt, Settings
+    ...BUILTIN_TABS,  // Prompt, Settings
     ...additionalTabs.map((t) => ({ id: t.id, label: t.label, Icon: t.Icon, badge: t.badge })),
     JSON_TAB,
   ];
 
   return (
     <div className="flex flex-col h-full gap-4">
-      {/* Persona quick preview */}
+      {/* Editable persona header */}
       <div className="flex items-center gap-3 px-1 flex-shrink-0">
         <div
           className="w-9 h-9 rounded-xl flex items-center justify-center text-sm border flex-shrink-0"
@@ -90,13 +88,29 @@ export function DraftEditStep({
         >
           {draft.icon ?? '\u2728'}
         </div>
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-foreground/80 truncate">
-            {draft.name || 'Unnamed Persona'}
-          </p>
-          <p className="text-sm text-muted-foreground/80 truncate">
-            {draft.description || 'Edit the details below'}
-          </p>
+        <div className="flex-1 min-w-0 space-y-0.5">
+          <input
+            type="text"
+            value={draft.name ?? ''}
+            onChange={(e) => updateDraft((curr) => ({ ...curr, name: e.target.value || null }))}
+            onBlur={(e) => {
+              const trimmed = e.target.value.trim();
+              if (trimmed !== e.target.value) {
+                updateDraft((curr) => ({ ...curr, name: trimmed || null }));
+              }
+            }}
+            placeholder="Persona name..."
+            disabled={disabled}
+            className="w-full text-sm font-medium text-foreground/80 bg-transparent border-none outline-none placeholder-muted-foreground/30 p-0"
+          />
+          <input
+            type="text"
+            value={draft.description ?? ''}
+            onChange={(e) => updateDraft((curr) => ({ ...curr, description: e.target.value.trim() ? e.target.value : null }))}
+            placeholder="Brief description..."
+            disabled={disabled}
+            className="w-full text-sm text-muted-foreground/80 bg-transparent border-none outline-none placeholder-muted-foreground/30 p-0"
+          />
         </div>
       </div>
 
@@ -130,10 +144,6 @@ export function DraftEditStep({
             transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
             className="h-full"
           >
-          {activeTab === 'identity' && (
-            <DraftIdentityTab draft={draft} disabled={disabled} updateDraft={updateDraft} />
-          )}
-
           {activeTab === 'prompt' && (
             <DraftPromptTab draft={draft} disabled={disabled} updateDraft={updateDraft} />
           )}
@@ -142,7 +152,7 @@ export function DraftEditStep({
             <DraftSettingsTab draft={draft} disabled={disabled} updateDraft={updateDraft} showNotifications={showNotifications} />
           )}
 
-          {/* Render early tabs (after Identity) */}
+          {/* Render early tabs (before Prompt) */}
           {earlyTabs.map((tab) =>
             activeTab === tab.id ? (
               <div key={tab.id} className="h-full">{tab.content}</div>

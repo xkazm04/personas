@@ -9,6 +9,7 @@ fn row_to_execution(row: &Row) -> rusqlite::Result<PersonaExecution> {
         id: row.get("id")?,
         persona_id: row.get("persona_id")?,
         trigger_id: row.get("trigger_id")?,
+        use_case_id: row.get("use_case_id")?,
         status: row.get("status")?,
         input_data: row.get("input_data")?,
         output_data: row.get("output_data")?,
@@ -65,6 +66,7 @@ pub fn create(
     trigger_id: Option<String>,
     input_data: Option<String>,
     model_used: Option<String>,
+    use_case_id: Option<String>,
 ) -> Result<PersonaExecution, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
@@ -72,12 +74,27 @@ pub fn create(
     let conn = pool.get()?;
     conn.execute(
         "INSERT INTO persona_executions
-         (id, persona_id, trigger_id, status, input_data, model_used, input_tokens, output_tokens, cost_usd, created_at)
-         VALUES (?1, ?2, ?3, 'queued', ?4, ?5, 0, 0, 0, ?6)",
-        params![id, persona_id, trigger_id, input_data, model_used, now],
+         (id, persona_id, trigger_id, status, input_data, model_used, input_tokens, output_tokens, cost_usd, use_case_id, created_at)
+         VALUES (?1, ?2, ?3, 'queued', ?4, ?5, 0, 0, 0, ?6, ?7)",
+        params![id, persona_id, trigger_id, input_data, model_used, use_case_id, now],
     )?;
 
     get_by_id(pool, &id)
+}
+
+pub fn get_by_use_case_id(
+    pool: &DbPool,
+    persona_id: &str,
+    use_case_id: &str,
+    limit: Option<i64>,
+) -> Result<Vec<PersonaExecution>, AppError> {
+    let limit = limit.unwrap_or(20);
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT * FROM persona_executions WHERE persona_id = ?1 AND use_case_id = ?2 ORDER BY created_at DESC LIMIT ?3",
+    )?;
+    let rows = stmt.query_map(params![persona_id, use_case_id, limit], row_to_execution)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
 }
 
 pub fn update_status(
@@ -309,6 +326,7 @@ mod tests {
             None,
             Some("test input".into()),
             Some("claude-sonnet".into()),
+            None,
         )
         .unwrap();
         assert_eq!(exec.status, "queued");

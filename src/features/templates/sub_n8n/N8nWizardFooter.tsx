@@ -80,7 +80,7 @@ export function N8nWizardFooter({
         return {
           label: 'Review & Confirm',
           icon: ArrowRight,
-          disabled: !hasDraft || transforming || testStatus !== 'passed',
+          disabled: !hasDraft || transforming || testStatus !== 'passed' || connectorsMissing > 0,
           variant: 'violet',
         };
       case 'confirm':

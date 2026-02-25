@@ -205,9 +205,30 @@ pub fn cancel_n8n_transform(
     transform_id: String,
 ) -> Result<(), AppError> {
     let token = {
-        let jobs = lock_jobs()?;
-        jobs.get(&transform_id)
-            .and_then(|job| job.cancel_token.clone())
+        let mut jobs = lock_jobs()?;
+        if let Some(job) = jobs.get_mut(&transform_id) {
+            job.cancel_token.clone()
+        } else {
+            // Job doesn't exist yet. Create a cancelled token and insert it
+            // to prevent a race condition where start_n8n_transform_background
+            // hasn't inserted the job yet.
+            let token = tokio_util::sync::CancellationToken::new();
+            token.cancel();
+            jobs.insert(
+                transform_id.clone(),
+                N8nTransformJobState {
+                    status: "failed".into(),
+                    error: Some("Cancelled by user".into()),
+                    lines: Vec::new(),
+                    draft: None,
+                    cancel_token: Some(token.clone()),
+                    claude_session_id: None,
+                    questions: None,
+                    created_at: std::time::Instant::now(),
+                },
+            );
+            Some(token)
+        }
     };
 
     if let Some(token) = token {

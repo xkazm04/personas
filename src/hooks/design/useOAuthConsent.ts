@@ -144,11 +144,10 @@ export function useOAuthConsent(): OAuthConsentState {
       .catch((err) => {
         setSessionId(null);
         setIsAuthorizing(false);
+        const detail = err instanceof Error ? err.message : typeof err === 'string' ? err : 'unknown error';
         setMessage({
           success: false,
-          message: err instanceof Error
-            ? `Google authorization did not start: ${err.message}`
-            : 'Google authorization did not start.',
+          message: `Google authorization did not start: ${detail}`,
         });
       });
   }, []);

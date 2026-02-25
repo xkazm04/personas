@@ -58,6 +58,11 @@ pub async fn start_n8n_transform_background(
             if existing.status == "running" {
                 return Err(AppError::Validation("Transform is already running".into()));
             }
+            if let Some(token) = &existing.cancel_token {
+                if token.is_cancelled() {
+                    return Err(AppError::Internal("Transform cancelled by user".into()));
+                }
+            }
         }
         jobs.insert(
             transform_id.clone(),
@@ -72,6 +77,10 @@ pub async fn start_n8n_transform_background(
                 created_at: std::time::Instant::now(),
             },
         );
+    }
+
+    if cancel_token.is_cancelled() {
+        return Err(AppError::Internal("Transform cancelled by user".into()));
     }
 
     set_n8n_transform_status(&app, &transform_id, "running", None);
@@ -528,8 +537,14 @@ pub async fn run_claude_prompt_text_inner(
     on_line: Option<&(dyn Fn(&str) + Send + Sync)>,
     timeout_secs: u64,
 ) -> Result<(String, Option<String>), String> {
+    // Use a temp directory as CWD so Claude CLI doesn't pick up project context
+    // (.claude/, CLAUDE.md) from the app's working directory.
+    let exec_dir = std::env::temp_dir().join("personas-transform");
+    let _ = std::fs::create_dir_all(&exec_dir);
+
     let mut cmd = Command::new(&cli_args.command);
     cmd.args(&cli_args.args)
+        .current_dir(&exec_dir)
         .kill_on_drop(true)
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())

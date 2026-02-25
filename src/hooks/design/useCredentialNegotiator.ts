@@ -4,7 +4,7 @@ import {
   cancelCredentialNegotiation,
   getNegotiationStepHelp,
 } from '@/api/negotiator';
-import { useTauriStream } from './useTauriStream';
+import { useAiArtifactFlow, defaultGetLine, buildResolveStatus } from './useAiArtifactFlow';
 
 // ── Types ───────────────────────────────────────────────────────
 
@@ -30,18 +30,12 @@ export interface NegotiationPlan {
   tips: string[];
 }
 
-const getLine = (payload: Record<string, unknown>) => payload.line as string;
-
-const resolveStatus = (payload: Record<string, unknown>) => {
-  const status = payload.status as string;
-  if (status === 'completed' && payload.result) {
-    return { result: payload.result as NegotiationPlan };
-  }
-  if (status === 'failed') {
-    return { error: (payload.error as string) || 'Failed to generate provisioning plan' };
-  }
-  return null;
-};
+/** Prompt input for the negotiator flow: (serviceName, connector, fieldKeys) */
+interface NegotiationInput {
+  serviceName: string;
+  connector: Record<string, unknown>;
+  fieldKeys: string[];
+}
 
 // ── Hook ────────────────────────────────────────────────────────
 
@@ -53,14 +47,18 @@ export function useCredentialNegotiator() {
   const [isLoadingHelp, setIsLoadingHelp] = useState(false);
   const serviceNameRef = useRef('');
 
-  const stream = useTauriStream<NegotiationPlan>({
-    progressEvent: 'credential-negotiation-progress',
-    statusEvent: 'credential-negotiation-status',
-    getLine,
-    resolveStatus,
-    completedPhase: 'guiding',
-    runningPhase: 'planning',
-    startErrorMessage: 'Failed to start negotiation',
+  const flow = useAiArtifactFlow<NegotiationInput, NegotiationPlan>({
+    stream: {
+      progressEvent: 'credential-negotiation-progress',
+      statusEvent: 'credential-negotiation-status',
+      getLine: defaultGetLine,
+      resolveStatus: buildResolveStatus('Failed to generate provisioning plan'),
+      completedPhase: 'guiding',
+      runningPhase: 'planning',
+      startErrorMessage: 'Failed to start negotiation',
+    },
+    startFn: ({ serviceName, connector, fieldKeys }) =>
+      startCredentialNegotiation(serviceName, connector, fieldKeys),
   });
 
   const start = useCallback(async (
@@ -74,29 +72,29 @@ export function useCredentialNegotiator() {
     setCapturedValues({});
     setStepHelp(null);
 
-    await stream.start(() => startCredentialNegotiation(serviceName, connector, fieldKeys));
-  }, [stream.start]);
+    await flow.start({ serviceName, connector, fieldKeys });
+  }, [flow.start]);
 
   const cancel = useCallback(() => {
-    stream.cancel(() => cancelCredentialNegotiation());
-  }, [stream.cancel]);
+    flow.cancel(() => cancelCredentialNegotiation());
+  }, [flow.cancel]);
 
   const completeStep = useCallback((stepIndex: number) => {
     setCompletedSteps((prev) => {
       const next = new Set(prev);
       next.add(stepIndex);
       // Transition to done when every step is marked complete
-      if (stream.result && next.size === stream.result.steps.length) {
-        stream.setPhase('done');
+      if (flow.result && next.size === flow.result.steps.length) {
+        flow.setPhase('done');
       }
       return next;
     });
 
     // Auto-advance to next step
-    if (stream.result && stepIndex < stream.result.steps.length - 1) {
+    if (flow.result && stepIndex < flow.result.steps.length - 1) {
       setActiveStepIndex(stepIndex + 1);
     }
-  }, [stream.result, stream.setPhase]);
+  }, [flow.result, flow.setPhase]);
 
   const captureValue = useCallback((fieldKey: string, value: string) => {
     setCapturedValues((prev) => ({ ...prev, [fieldKey]: value }));
@@ -108,9 +106,9 @@ export function useCredentialNegotiator() {
   }, []);
 
   const requestStepHelp = useCallback(async (stepIndex: number, question: string) => {
-    if (!stream.result) return;
+    if (!flow.result) return;
 
-    const step = stream.result.steps[stepIndex];
+    const step = flow.result.steps[stepIndex];
     if (!step) return;
 
     setIsLoadingHelp(true);
@@ -132,21 +130,21 @@ export function useCredentialNegotiator() {
     } finally {
       setIsLoadingHelp(false);
     }
-  }, [stream.result]);
+  }, [flow.result]);
 
   const reset = useCallback(() => {
-    stream.reset();
+    flow.reset();
     setActiveStepIndex(0);
     setCompletedSteps(new Set());
     setCapturedValues({});
     setStepHelp(null);
-  }, [stream.reset]);
+  }, [flow.reset]);
 
   return {
-    phase: stream.phase as NegotiatorPhase,
-    progressLines: stream.lines,
-    plan: stream.result,
-    error: stream.error,
+    phase: flow.phase as NegotiatorPhase,
+    progressLines: flow.lines,
+    plan: flow.result,
+    error: flow.error,
     activeStepIndex,
     completedSteps,
     capturedValues,

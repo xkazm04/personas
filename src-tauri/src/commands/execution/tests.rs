@@ -20,6 +20,7 @@ pub async fn start_test_run(
     app: tauri::AppHandle,
     persona_id: String,
     models: Vec<serde_json::Value>,
+    use_case_filter: Option<String>,
 ) -> Result<PersonaTestRun, AppError> {
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
     let tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
@@ -74,6 +75,7 @@ pub async fn start_test_run(
             model_configs,
             std::env::temp_dir(),
             cancelled_clone,
+            use_case_filter,
         )
         .await;
 

@@ -1,12 +1,11 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
-import { Wrench, Link, ListChecks, FlaskConical } from 'lucide-react';
+import { Wrench, ListChecks, ChevronDown, ChevronRight } from 'lucide-react';
 import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import { DraftEditStep, type DraftEditTab } from '@/features/shared/components/draft-editor';
 import { ExecutionTerminal } from '@/features/agents/sub_executions/ExecutionTerminal';
-import { N8nToolsPreviewTab } from './edit/N8nToolsPreviewTab';
-import { N8nConnectorsTab } from './edit/N8nConnectorsTab';
+import { N8nEntitiesTab } from './edit/N8nEntitiesTab';
 import { N8nUseCasesTab } from './edit/N8nUseCasesTab';
 import { parseDesignContext } from '@/features/shared/components/UseCasesList';
 import { usePersonaStore } from '@/stores/personaStore';
@@ -34,6 +33,10 @@ interface N8nEditStepProps {
   testPhase?: CliRunPhase;
   testLines?: string[];
   testRunId?: string | null;
+  /** Called when the user clicks the test button on a use case */
+  onTestUseCase?: (useCaseId: string, sampleInput?: Record<string, unknown>) => void;
+  /** ID of the use case currently being tested */
+  testingUseCaseId?: string | null;
 }
 
 export function N8nEditStep({
@@ -57,6 +60,8 @@ export function N8nEditStep({
   testPhase = 'idle',
   testLines = [],
   testRunId,
+  onTestUseCase,
+  testingUseCaseId,
 }: N8nEditStepProps) {
   // Track manually linked credentials so they survive tab switches (component remounts)
   const [manualLinks, setManualLinks] = useState<Record<string, { id: string; name: string }>>({});
@@ -103,90 +108,112 @@ export function N8nEditStep({
           disabled={disabled}
           onAdjustmentChange={onAdjustmentChange}
           onApplyAdjustment={onApplyAdjustment}
+          onTestUseCase={onTestUseCase}
+          testingUseCaseId={testingUseCaseId}
         />
       ),
     },
-  ], [draft, adjustmentRequest, transforming, disabled, onAdjustmentChange, onApplyAdjustment]);
+  ], [draft, adjustmentRequest, transforming, disabled, onAdjustmentChange, onApplyAdjustment, onTestUseCase, testingUseCaseId]);
 
   // Orange dot badge for connectors tab when action is needed
   const connectorsBadge = connectorsMissing > 0 ? (
     <span className="w-2 h-2 rounded-full bg-orange-400 flex-shrink-0" />
   ) : null;
 
-  // Test badge — green dot when passed, red when failed
-  const testBadge = testPhase === 'completed' ? (
-    <span className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" />
-  ) : testPhase === 'failed' ? (
-    <span className="w-2 h-2 rounded-full bg-red-400 flex-shrink-0" />
-  ) : testPhase === 'running' ? (
-    <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse flex-shrink-0" />
-  ) : null;
-
-  // N8n-specific tabs: tools + connectors + test — inserted after Settings
+  // N8n-specific tabs: entities (tools+connectors+triggers) — inserted after Settings
   const additionalTabs: DraftEditTab[] = useMemo(() => [
     {
-      id: 'tools',
-      label: 'Tools',
+      id: 'entities',
+      label: 'Tools & Connectors',
       Icon: Wrench,
+      badge: connectorsBadge,
       content: (
-        <N8nToolsPreviewTab
+        <N8nEntitiesTab
           draft={draft}
           parsedResult={parsedResult}
           selectedToolIndices={selectedToolIndices}
           selectedTriggerIndices={selectedTriggerIndices}
           selectedConnectorNames={selectedConnectorNames}
+          manualLinks={manualLinks}
+          updateDraft={updateDraft}
+          onLink={handleConnectorLink}
+          onMissingCountChange={handleMissingCountChange}
           onGoToAnalyze={onGoToAnalyze}
         />
       ),
     },
-    {
-      id: 'connectors',
-      label: 'Connectors',
-      Icon: Link,
-      badge: connectorsBadge,
-      content: (
-        <N8nConnectorsTab
-          draft={draft}
-          updateDraft={updateDraft}
-          manualLinks={manualLinks}
-          onLink={handleConnectorLink}
-          onMissingCountChange={handleMissingCountChange}
-        />
-      ),
-    },
-    {
-      id: 'test',
-      label: 'Test Output',
-      Icon: FlaskConical,
-      badge: testBadge,
-      content: (
-        <ExecutionTerminal
-          lines={testLines}
-          isRunning={testPhase === 'running'}
-          label={testRunId ? `test:${testRunId.slice(0, 8)}` : undefined}
-          terminalHeight={350}
-        />
-      ),
-    },
-  ], [draft, parsedResult, selectedToolIndices, selectedTriggerIndices, selectedConnectorNames, onGoToAnalyze, connectorsBadge, manualLinks, handleConnectorLink, handleMissingCountChange, updateDraft, testPhase, testLines, testRunId, testBadge]);
+  ], [draft, parsedResult, selectedToolIndices, selectedTriggerIndices, selectedConnectorNames, onGoToAnalyze, connectorsBadge, manualLinks, handleConnectorLink, handleMissingCountChange, updateDraft]);
+
+  // Show test output panel when a test has been started
+  const showTestPanel = testPhase !== 'idle' || testLines.length > 0;
+  const [testPanelOpen, setTestPanelOpen] = useState(true);
+
+  // Auto-open panel when test starts
+  useEffect(() => {
+    if (testPhase === 'running') setTestPanelOpen(true);
+  }, [testPhase]);
 
   return (
-    <DraftEditStep
-      draft={draft}
-      draftJson={draftJson}
-      draftJsonError={draftJsonError}
-      adjustmentRequest={adjustmentRequest}
-      transforming={transforming}
-      disabled={disabled}
-      updateDraft={updateDraft}
-      onDraftUpdated={onDraftUpdated}
-      onJsonEdited={onJsonEdited}
-      onAdjustmentChange={onAdjustmentChange}
-      onApplyAdjustment={onApplyAdjustment}
-      earlyTabs={earlyTabs}
-      additionalTabs={additionalTabs}
-      hideAdjustmentPanel
-      showNotifications
-    />
+    <div className="flex flex-col h-full">
+      <div className="flex-1 min-h-0">
+        <DraftEditStep
+          draft={draft}
+          draftJson={draftJson}
+          draftJsonError={draftJsonError}
+          adjustmentRequest={adjustmentRequest}
+          transforming={transforming}
+          disabled={disabled}
+          updateDraft={updateDraft}
+          onDraftUpdated={onDraftUpdated}
+          onJsonEdited={onJsonEdited}
+          onAdjustmentChange={onAdjustmentChange}
+          onApplyAdjustment={onApplyAdjustment}
+          earlyTabs={earlyTabs}
+          additionalTabs={additionalTabs}
+          hideAdjustmentPanel
+          showNotifications
+        />
+      </div>
+
+      {/* Test output panel — below editor so user can see test CLI log */}
+      {showTestPanel && (
+        <div className="flex-shrink-0 border-t border-primary/10">
+          <button
+            onClick={() => setTestPanelOpen((p) => !p)}
+            className="flex items-center justify-between w-full px-4 py-2 bg-primary/5 hover:bg-secondary/40 transition-colors cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              {testPanelOpen ? (
+                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/70" />
+              ) : (
+                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/70" />
+              )}
+              <span className="text-sm font-mono text-muted-foreground/80">
+                Test Output
+              </span>
+              {testPhase === 'running' && (
+                <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+              )}
+              {testPhase === 'completed' && (
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              )}
+              {testPhase === 'failed' && (
+                <span className="w-2 h-2 rounded-full bg-red-400" />
+              )}
+            </div>
+            <span className="text-sm text-muted-foreground/60 font-mono">{testLines.length} lines</span>
+          </button>
+
+          {testPanelOpen && (
+            <ExecutionTerminal
+              lines={testLines}
+              isRunning={testPhase === 'running'}
+              label={testRunId ? `test:${testRunId.slice(0, 8)}` : undefined}
+              terminalHeight={200}
+            />
+          )}
+        </div>
+      )}
+    </div>
   );
 }

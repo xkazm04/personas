@@ -1,9 +1,18 @@
 import { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, CheckCircle2, ChevronDown } from 'lucide-react';
+import { Sparkles, CheckCircle2, ChevronDown, KeyRound, Settings2, ShieldCheck, Brain, Bell } from 'lucide-react';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import type { TransformQuestion, TransformSubPhase } from './useN8nImportReducer';
 import { TransformProgress } from '@/features/shared/components/TransformProgress';
+
+// Dimension category labels and icons
+const DIMENSION_LABELS: Record<string, { label: string; Icon: React.ComponentType<{ className?: string }> }> = {
+  credentials:       { label: 'Credentials',       Icon: KeyRound },
+  configuration:     { label: 'Configuration',     Icon: Settings2 },
+  human_in_the_loop: { label: 'Human in the Loop', Icon: ShieldCheck },
+  memory:            { label: 'Memory & Learning',  Icon: Brain },
+  notifications:     { label: 'Notifications',      Icon: Bell },
+};
 
 // Theme subtone colors cycled across questions
 const QUESTION_TONES = [
@@ -98,73 +107,89 @@ export function N8nTransformChat({
               <div className="space-y-3">
                 {questions.map((q, i) => {
                   const tone = QUESTION_TONES[i % QUESTION_TONES.length]!;
-                  return (
-                    <motion.div
-                      key={q.id}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                      className={`p-4 rounded-xl border ${tone.border} ${tone.bg}`}
-                    >
-                      <label className={`block text-sm font-medium mb-2 ${tone.accent}`}>
-                        {q.question}
-                      </label>
+                  const prevCategory = i > 0 ? questions[i - 1]!.category : undefined;
+                  const showSeparator = q.category && q.category !== prevCategory;
+                  const dim = q.category ? DIMENSION_LABELS[q.category] : undefined;
 
-                      {q.context && (
-                        <p className="text-sm text-muted-foreground/70 mb-2 leading-relaxed">
-                          {q.context}
-                        </p>
+                  return (
+                    <div key={q.id}>
+                      {/* Category dimension separator */}
+                      {showSeparator && dim && (
+                        <div className="flex items-center gap-2 pt-3 pb-1">
+                          <dim.Icon className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground/50 font-semibold whitespace-nowrap">
+                            {dim.label}
+                          </span>
+                          <hr className="flex-1 border-primary/8" />
+                        </div>
                       )}
 
-                      {q.type === 'select' && q.options && (
-                        <div className="relative">
-                          <select
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        className={`p-4 rounded-xl border ${tone.border} ${tone.bg}`}
+                      >
+                        <label className={`block text-sm font-medium mb-2 ${tone.accent}`}>
+                          {q.question}
+                        </label>
+
+                        {q.context && (
+                          <p className="text-sm text-muted-foreground/70 mb-2 leading-relaxed">
+                            {q.context}
+                          </p>
+                        )}
+
+                        {q.type === 'select' && q.options && (
+                          <div className="relative">
+                            <select
+                              value={userAnswers[q.id] ?? q.default ?? ''}
+                              onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
+                              className="w-full px-3 py-2 text-sm rounded-lg border border-primary/15 bg-background/80 text-foreground/85 appearance-none cursor-pointer focus:outline-none focus:border-primary/30 transition-colors [&>option]:bg-[#14141f] [&>option]:text-foreground/85"
+                            >
+                              <option value="">Select...</option>
+                              {q.options.map((opt) => (
+                                <option key={opt} value={opt}>
+                                  {opt}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground/80 pointer-events-none" />
+                          </div>
+                        )}
+
+                        {q.type === 'text' && (
+                          <input
+                            type="text"
                             value={userAnswers[q.id] ?? q.default ?? ''}
                             onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
-                            className="w-full px-3 py-2 text-sm rounded-lg border border-primary/15 bg-background/80 text-foreground/85 appearance-none cursor-pointer focus:outline-none focus:border-primary/30 transition-colors [&>option]:bg-[#14141f] [&>option]:text-foreground/85"
-                          >
-                            <option value="">Select...</option>
-                            {q.options.map((opt) => (
-                              <option key={opt} value={opt}>
-                                {opt}
-                              </option>
-                            ))}
-                          </select>
-                          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground/80 pointer-events-none" />
-                        </div>
-                      )}
+                            placeholder={q.default ?? 'Type your answer...'}
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-primary/15 bg-background/80 text-foreground/85 placeholder-muted-foreground/30 focus:outline-none focus:border-primary/30 transition-colors"
+                          />
+                        )}
 
-                      {q.type === 'text' && (
-                        <input
-                          type="text"
-                          value={userAnswers[q.id] ?? q.default ?? ''}
-                          onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
-                          placeholder={q.default ?? 'Type your answer...'}
-                          className="w-full px-3 py-2 text-sm rounded-lg border border-primary/15 bg-background/80 text-foreground/85 placeholder-muted-foreground/30 focus:outline-none focus:border-primary/30 transition-colors"
-                        />
-                      )}
-
-                      {q.type === 'boolean' && (
-                        <div className="flex gap-3">
-                          {(q.options ?? ['Yes', 'No']).map((opt) => {
-                            const isSelected = (userAnswers[q.id] ?? q.default ?? '') === opt;
-                            return (
-                              <button
-                                key={opt}
-                                onClick={() => onAnswerUpdated(q.id, opt)}
-                                className={`px-4 py-1.5 text-sm rounded-lg border transition-colors ${
-                                  isSelected
-                                    ? tone.selectBg
-                                    : 'text-muted-foreground/90 border-primary/10 hover:bg-secondary/30'
-                                }`}
-                              >
-                                {opt}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </motion.div>
+                        {q.type === 'boolean' && (
+                          <div className="flex gap-3">
+                            {(q.options ?? ['Yes', 'No']).map((opt) => {
+                              const isSelected = (userAnswers[q.id] ?? q.default ?? '') === opt;
+                              return (
+                                <button
+                                  key={opt}
+                                  onClick={() => onAnswerUpdated(q.id, opt)}
+                                  className={`px-4 py-1.5 text-sm rounded-lg border transition-colors ${
+                                    isSelected
+                                      ? tone.selectBg
+                                      : 'text-muted-foreground/90 border-primary/10 hover:bg-secondary/30'
+                                  }`}
+                                >
+                                  {opt}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </motion.div>
+                    </div>
                   );
                 })}
               </div>
