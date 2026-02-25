@@ -263,6 +263,7 @@ export default function N8nImportTab() {
         .filter((q): q is Record<string, unknown> => !!q && typeof q === 'object')
         .map((q) => ({
           id: String(q.id ?? ''),
+          category: typeof q.category === 'string' ? q.category : undefined,
           question: String(q.question ?? ''),
           type: (q.type === 'select' || q.type === 'text' || q.type === 'boolean' ? q.type : 'text') as 'select' | 'text' | 'boolean',
           options: Array.isArray(q.options) ? q.options.map(String) : undefined,
@@ -299,6 +300,7 @@ export default function N8nImportTab() {
     onFailed: handleSnapshotFailed,
     onSessionLost: handleSnapshotSessionLost,
     onQuestions: handleSnapshotQuestions,
+    epoch: state.snapshotEpoch,
   });
 
   // ── Handlers ──
@@ -810,6 +812,8 @@ export default function N8nImportTab() {
                 testPhase={state.testPhase}
                 testLines={state.testLines}
                 testRunId={state.testRunId}
+                onTestUseCase={() => void handleTestDraft()}
+                testingUseCaseId={state.testStatus === 'running' ? '__testing__' : null}
               />
             )}
 

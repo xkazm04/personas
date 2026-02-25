@@ -753,24 +753,25 @@ no external services), skip questions and go directly to PHASE 2.
 ### When asking questions, output EXACTLY this format and then STOP:
 
 TRANSFORM_QUESTIONS
-[{{"id":"q1","question":"Your question here","type":"select","options":["Option A","Option B"],"default":"Option A","context":"Why this matters"}}]
+[{{"id":"q1","category":"configuration","question":"Your question here","type":"select","options":["Option A","Option B"],"default":"Option A","context":"Why this matters"}}]
 
 Question rules:
 - type must be one of: "select", "text", "boolean"
+- category must be one of: "credentials", "configuration", "human_in_the_loop", "memory", "notifications"
 - For boolean type, options should be ["Yes", "No"]
 - For select type, always include options array
 - For text type, options is optional
 - ALWAYS include at least one question about human-in-the-loop approval
 - ALWAYS include at least one question about memory/learning strategy
-- Order questions from most critical to strategic
+- Order questions grouped by category: credentials → configuration → human_in_the_loop → memory → notifications
 - Each question must have a unique id
 
-Question categories to cover:
-1. Credential mapping — which credentials for each service (only if the template references external services)
-2. Configuration parameters — template-specific settings to customize
-3. Human-in-the-Loop — for actions with external consequences, ask about manual approval
-4. Memory & Learning — what should the persona remember across runs
-5. Notification preferences — how to notify the user
+Question categories (MUST include "category" field on every question):
+1. "credentials" — which credentials for each service (only if the template references external services)
+2. "configuration" — template-specific settings to customize
+3. "human_in_the_loop" — for actions with external consequences, ask about manual approval
+4. "memory" — what should the persona remember across runs
+5. "notifications" — how to notify the user
 
 After outputting the TRANSFORM_QUESTIONS block, STOP. Do not output anything else.
 
@@ -830,7 +831,7 @@ Return ONLY valid JSON (no markdown fences, no commentary):
     "model_profile": null,
     "max_budget_usd": null,
     "max_turns": null,
-    "design_context": "string (brief summary of the template's capabilities and integrations)",
+    "design_context": "JSON string: {{\"summary\":\"Brief overview\",\"use_cases\":[{{\"id\":\"uc1\",\"title\":\"...\",\"description\":\"...\",\"category\":\"notification|data-sync|monitoring|automation|communication|reporting\",\"execution_mode\":\"e2e|mock|non_executable\",\"sample_input\":{{}},\"time_filter\":{{\"field\":\"date\",\"default_window\":\"24h\",\"description\":\"Only process recent items\"}},\"input_schema\":[{{\"key\":\"mode\",\"type\":\"select\",\"label\":\"Mode\",\"options\":[\"a\",\"b\"],\"default\":\"a\"}}],\"suggested_trigger\":{{\"type\":\"schedule\",\"cron\":\"0 */6 * * *\",\"description\":\"Every 6 hours\"}}}}]}}. Generate 3-6 use_cases. execution_mode: e2e (default), mock (example output), non_executable (informational). sample_input: realistic test JSON matching input_schema keys. time_filter: REQUIRED for time-series data use cases (emails, messages, logs). input_schema: structured input fields replacing free-text JSON. suggested_trigger: proposed schedule/trigger for recurring use cases.",
     "triggers": [{{"trigger_type": "schedule|polling|webhook|manual", "config": {{}}, "description": "string"}}],
     "tools": [{{"name": "tool_name_snake_case", "category": "email|http|database|file|messaging|other", "description": "string", "requires_credential_type": "connector_name_or_null", "input_schema": null, "implementation_guide": "Step-by-step API docs (REQUIRED for each tool)"}}],
     "required_connectors": [{{"name": "connector_name", "n8n_credential_type": "service_type", "has_credential": false}}]
@@ -1065,7 +1066,7 @@ Return ONLY valid JSON (no markdown fences, no commentary), with this exact shap
     "model_profile": null,
     "max_budget_usd": null,
     "max_turns": null,
-    "design_context": "string (brief summary of the template's capabilities and integrations)",
+    "design_context": "JSON string: {{\"summary\":\"Brief overview\",\"use_cases\":[{{\"id\":\"uc1\",\"title\":\"...\",\"description\":\"...\",\"category\":\"notification|data-sync|monitoring|automation|communication|reporting\",\"execution_mode\":\"e2e|mock|non_executable\",\"sample_input\":{{}},\"time_filter\":{{\"field\":\"date\",\"default_window\":\"24h\",\"description\":\"Only process recent items\"}},\"input_schema\":[{{\"key\":\"mode\",\"type\":\"select\",\"label\":\"Mode\",\"options\":[\"a\",\"b\"],\"default\":\"a\"}}],\"suggested_trigger\":{{\"type\":\"schedule\",\"cron\":\"0 */6 * * *\",\"description\":\"Every 6 hours\"}}}}]}}. Generate 3-6 use_cases. execution_mode: e2e (default), mock (example output), non_executable (informational). sample_input: realistic test JSON matching input_schema keys. time_filter: REQUIRED for time-series data use cases (emails, messages, logs). input_schema: structured input fields replacing free-text JSON. suggested_trigger: proposed schedule/trigger for recurring use cases.",
     "triggers": [{{"trigger_type": "schedule|polling|webhook|manual", "config": {{}}, "description": "string"}}],
     "tools": [{{"name": "tool_name_snake_case", "category": "email|http|database|file|messaging|other", "description": "string", "requires_credential_type": "connector_name_or_null", "input_schema": null, "implementation_guide": "Step-by-step API docs (REQUIRED for each tool)"}}],
     "required_connectors": [{{"name": "connector_name", "n8n_credential_type": "service_type", "has_credential": false}}]

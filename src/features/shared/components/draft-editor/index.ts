@@ -1,5 +1,4 @@
 export { SectionEditor } from './SectionEditor';
-export { DraftIdentityTab } from './DraftIdentityTab';
 export { DraftPromptTab } from './DraftPromptTab';
 export { DraftSettingsTab } from './DraftSettingsTab';
 export { DraftJsonTab } from './DraftJsonTab';

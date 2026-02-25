@@ -9,11 +9,12 @@ export interface ExecutionSlice {
   executions: DbPersonaExecution[];
   activeExecutionId: string | null;
   executionPersonaId: string | null;
+  activeUseCaseId: string | null;
   executionOutput: string[];
   isExecuting: boolean;
 
   // Actions
-  executePersona: (personaId: string, inputData?: object) => Promise<string | null>;
+  executePersona: (personaId: string, inputData?: object, useCaseId?: string) => Promise<string | null>;
   cancelExecution: (executionId: string) => Promise<void>;
   finishExecution: (status?: string) => void;
   fetchExecutions: (personaId: string) => Promise<void>;
@@ -25,21 +26,23 @@ export const createExecutionSlice: StateCreator<PersonaStore, [], [], ExecutionS
   executions: [],
   activeExecutionId: null,
   executionPersonaId: null,
+  activeUseCaseId: null,
   executionOutput: [],
   isExecuting: false,
 
-  executePersona: async (personaId, inputData) => {
-    set({ isExecuting: true, executionOutput: [], error: null, executionPersonaId: personaId });
+  executePersona: async (personaId, inputData, useCaseId) => {
+    set({ isExecuting: true, executionOutput: [], error: null, executionPersonaId: personaId, activeUseCaseId: useCaseId ?? null });
     try {
       const execution = await api.executePersona(
         personaId,
         undefined,
         inputData ? JSON.stringify(inputData) : undefined,
+        useCaseId,
       );
       set({ activeExecutionId: execution.id });
       return execution.id;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to execute persona"), isExecuting: false });
+      set({ error: errMsg(err, "Failed to execute persona"), isExecuting: false, activeUseCaseId: null });
       return null;
     }
   },
@@ -54,7 +57,7 @@ export const createExecutionSlice: StateCreator<PersonaStore, [], [], ExecutionS
   },
 
   finishExecution: (_status?: string) => {
-    set({ isExecuting: false });
+    set({ isExecuting: false, activeUseCaseId: null });
     const personaId = get().selectedPersona?.id;
     if (personaId) get().fetchExecutions(personaId);
   },
@@ -83,6 +86,6 @@ export const createExecutionSlice: StateCreator<PersonaStore, [], [], ExecutionS
   },
 
   clearExecutionOutput: () => {
-    set({ executionOutput: [], activeExecutionId: null, isExecuting: false, executionPersonaId: null });
+    set({ executionOutput: [], activeExecutionId: null, isExecuting: false, executionPersonaId: null, activeUseCaseId: null });
   },
 });

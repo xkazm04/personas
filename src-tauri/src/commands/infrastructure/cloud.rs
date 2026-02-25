@@ -218,7 +218,7 @@ pub async fn cloud_execute_persona(
         None,
     );
 
-    let exec = executions::create(&state.db, &persona_id, None, input_data.clone(), None)?;
+    let exec = executions::create(&state.db, &persona_id, None, input_data.clone(), None, None)?;
 
     let timeout_ms = if persona.timeout_ms > 0 {
         persona.timeout_ms as u64

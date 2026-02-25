@@ -31,6 +31,7 @@ export type TransformSubPhase = 'idle' | 'asking' | 'answering' | 'generating' |
 
 export interface TransformQuestion {
   id: string;
+  category?: string;
   question: string;
   type: 'select' | 'text' | 'boolean';
   options?: string[];
@@ -67,6 +68,8 @@ export interface N8nImportState {
   // Transform
   transforming: boolean;
   backgroundTransformId: string | null;
+  /** Incremented each time polling should restart (e.g. Turn 2 after answers). */
+  snapshotEpoch: number;
   adjustmentRequest: string;
   transformPhase: CliRunPhase;
   transformLines: string[];
@@ -103,6 +106,7 @@ const INITIAL_STATE: N8nImportState = {
   transformSubPhase: 'idle',
   transforming: false,
   backgroundTransformId: null,
+  snapshotEpoch: 0,
   adjustmentRequest: '',
   transformPhase: 'idle',
   transformLines: [],
@@ -237,6 +241,7 @@ function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nIm
         transformSubPhase: action.subPhase ?? 'generating',
         transforming: true,
         backgroundTransformId: action.transformId,
+        snapshotEpoch: state.snapshotEpoch + 1,
         transformPhase: 'running',
         transformLines: [],
         error: null,

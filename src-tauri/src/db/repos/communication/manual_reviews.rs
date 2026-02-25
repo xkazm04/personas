@@ -213,7 +213,7 @@ mod tests {
         )
         .unwrap();
 
-        let exec = executions::create(pool, &persona.id, None, None, None).unwrap();
+        let exec = executions::create(pool, &persona.id, None, None, None, None).unwrap();
         (persona.id, exec.id)
     }
 

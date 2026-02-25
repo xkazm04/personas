@@ -17,13 +17,13 @@ pub fn build_tool_documentation(tool: &PersonaToolDefinition) -> String {
     doc.push_str(&format!("**Category**: {}\n", tool.category));
 
     if tool.script_path.is_empty() {
-        // N8n-imported tools: no script file, use built-in Bash tool
+        // N8n-imported tools: no script file, use built-in Bash tool with curl
         if let Some(ref guide) = tool.implementation_guide {
             doc.push_str("**Implementation Guide**:\n");
             doc.push_str(guide);
             doc.push('\n');
         } else {
-            doc.push_str("**Implementation**: Use the Bash tool to call the relevant API (curl, python, etc.). Credentials are available as environment variables.\n");
+            doc.push_str("**Implementation**: Use the Bash tool with `curl` to call the API. Credentials are available as environment variables (e.g. `$GOOGLE_ACCESS_TOKEN`).\n");
         }
     } else {
         doc.push_str(&format!(
@@ -160,15 +160,36 @@ pub fn assemble_prompt(
         }
     }
 
+    // Platform and execution environment guidance
+    prompt.push_str("## Execution Environment\n");
+    #[cfg(windows)]
+    prompt.push_str(
+        "- Platform: Windows\n\
+         - Available: `curl`, `node`, `npx`, `git`, PowerShell\n\
+         - NOT available: Python (not on PATH), pip, jq\n\
+         - ALWAYS use `curl` for HTTP API calls — never write Python or Node.js scripts for simple API calls\n\
+         - For JSON parsing, use `node -e` with inline JavaScript (one-liners) or pipe through `node -p`\n\
+         - Credentials are pre-injected as environment variables — access them with `$ENV_VAR_NAME` in curl commands\n\n"
+    );
+    #[cfg(not(windows))]
+    prompt.push_str(
+        "- Platform: Linux/macOS\n\
+         - Available: `curl`, `node`, `npx`, `git`, `bash`\n\
+         - PREFER `curl` for HTTP API calls — avoid writing scripts when a single curl command works\n\
+         - Credentials are pre-injected as environment variables — access them with `$ENV_VAR_NAME` in curl commands\n\n"
+    );
+
     // Available Credentials (as environment variables)
     if let Some(hints) = credential_hints {
         if !hints.is_empty() {
             prompt.push_str("## Available Credentials (as environment variables)\n");
+            prompt.push_str("These env vars are ALREADY SET in your shell — use them directly in curl commands:\n");
             for hint in hints {
                 prompt.push_str(&format!("- {}\n", hint));
             }
             prompt.push_str(
-                "\nUse these environment variables to authenticate with external services.\n\n",
+                "\nExample: `curl -H \"Authorization: Bearer $GOOGLE_ACCESS_TOKEN\" https://api.example.com`\n\
+                 IMPORTANT: Do NOT check if env vars exist — they are pre-configured. Just use them.\n\n",
             );
         }
     }
@@ -185,6 +206,36 @@ pub fn assemble_prompt(
 
     // Input Data
     if let Some(data) = input_data {
+        // Inject use case context if present
+        if let Some(use_case) = data.get("_use_case") {
+            prompt.push_str("## Use Case Context\n");
+            if let Some(title) = use_case.get("title").and_then(|v| v.as_str()) {
+                prompt.push_str(&format!("You are executing the use case: **{}**\n", title));
+            }
+            if let Some(desc) = use_case.get("description").and_then(|v| v.as_str()) {
+                prompt.push_str(&format!("Description: {}\n", desc));
+            }
+            prompt.push_str("Focus on this specific use case.\n\n");
+        }
+
+        // Inject time filter constraints if present
+        if let Some(time_filter) = data.get("_time_filter") {
+            prompt.push_str("## Time Filter (IMPORTANT)\n");
+            if let Some(desc) = time_filter.get("description").and_then(|v| v.as_str()) {
+                prompt.push_str(&format!("{}\n", desc));
+            }
+            if let Some(field) = time_filter.get("field").and_then(|v| v.as_str()) {
+                if let Some(window) = time_filter.get("default_window").and_then(|v| v.as_str()) {
+                    prompt.push_str(&format!(
+                        "When querying data, use the '{}' parameter to limit results to the last {}. ",
+                        field, window
+                    ));
+                    prompt.push_str("Do NOT fetch all historical data — only process recent items within this time window.\n");
+                }
+            }
+            prompt.push_str("\n");
+        }
+
         prompt.push_str("## Input Data\n```json\n");
         if let Ok(pretty) = serde_json::to_string_pretty(data) {
             prompt.push_str(&pretty);
@@ -653,7 +704,7 @@ mod tests {
         tool.script_path = String::new(); // n8n-imported tool, no guide
         tool.implementation_guide = None;
         let doc = build_tool_documentation(&tool);
-        assert!(doc.contains("Use the Bash tool to call the relevant API"));
+        assert!(doc.contains("Use the Bash tool with `curl` to call the API"));
         assert!(!doc.contains("**Implementation Guide**:"));
     }
 

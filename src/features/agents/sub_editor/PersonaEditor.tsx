@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, AlertCircle, ListChecks, FileText, Link, Play, Settings, FlaskConical, Wand2, Cloud, LogIn, X, GitBranch } from 'lucide-react';
+import { AlertTriangle, AlertCircle, ListChecks, FileText, Link, Settings, FlaskConical, Wand2, Cloud, LogIn, X, GitBranch } from 'lucide-react';
 import type { ModelProfile } from '@/lib/types/frontendTypes';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useAuthStore } from '@/stores/authStore';
@@ -8,8 +8,6 @@ import { ContentBox, ContentHeader } from '@/features/shared/components/ContentL
 import type { EditorTab } from '@/lib/types/types';
 import { PersonaPromptEditor } from '@/features/agents/sub_editor/PersonaPromptEditor';
 import { PromptLabTab } from '@/features/agents/sub_editor/PromptLabTab';
-import { ExecutionList } from '@/features/agents/sub_executions/ExecutionList';
-import { PersonaRunner } from '@/features/agents/sub_executions/PersonaRunner';
 import { AccessibleToggle } from '@/features/shared/components/AccessibleToggle';
 import { PersonaSettingsTab } from '@/features/agents/sub_editor/PersonaSettingsTab';
 import { PersonaTestsTab } from '@/features/agents/sub_tests/PersonaTestsTab';
@@ -27,7 +25,6 @@ const tabDefs: Array<{ id: EditorTab; label: string; icon: typeof FileText }> = 
   { id: 'prompt-lab', label: 'Prompt Lab', icon: GitBranch },
   { id: 'connectors', label: 'Connectors', icon: Link },
   { id: 'design', label: 'Design', icon: Wand2 },
-  { id: 'executions', label: 'Executions', icon: Play },
   { id: 'settings', label: 'Settings', icon: Settings },
   { id: 'tests', label: 'Tests', icon: FlaskConical },
 ];
@@ -286,7 +283,15 @@ function PersonaEditorInner() {
   const renderTabContent = () => {
     switch (editorTab) {
       case 'use-cases':
-        return <PersonaUseCasesTab />;
+        return (
+          <PersonaUseCasesTab
+            draft={draft}
+            patch={patch}
+            modelDirty={modelDirty}
+            credentials={credentials}
+            connectorDefinitions={connectorDefinitions}
+          />
+        );
       case 'prompt':
         return <PersonaPromptEditor />;
       case 'prompt-lab':
@@ -295,13 +300,6 @@ function PersonaEditorInner() {
         return <PersonaConnectorsTab onMissingCountChange={setConnectorsMissing} />;
       case 'design':
         return <DesignTab />;
-      case 'executions':
-        return (
-          <div className="space-y-6">
-            <PersonaRunner />
-            <ExecutionList />
-          </div>
-        );
       case 'settings':
         return (
           <PersonaSettingsTab
@@ -309,10 +307,8 @@ function PersonaEditorInner() {
             patch={patch}
             isDirty={isDirty}
             settingsDirty={settingsDirty}
-            modelDirty={modelDirty}
             changedSections={changedSections}
             connectorDefinitions={connectorDefinitions}
-            credentials={credentials}
             selectedPersonaId={selectedPersona.id}
             showDeleteConfirm={showDeleteConfirm}
             setShowDeleteConfirm={setShowDeleteConfirm}
@@ -435,9 +431,9 @@ function PersonaEditorInner() {
           {tabDefs.map((tab) => {
             const Icon = tab.icon;
             const isActive = editorTab === tab.id;
-            const tabDirty = (tab.id === 'settings' && localDirty)
-              || (tab.id === 'prompt' && allDirtyTabs.includes('prompt'))
-              || (tab.id === 'settings' && allDirtyTabs.includes('notifications'));
+            const tabDirty = (tab.id === 'settings' && settingsDirty)
+              || (tab.id === 'use-cases' && (modelDirty || allDirtyTabs.includes('use-cases')))
+              || (tab.id === 'prompt' && allDirtyTabs.includes('prompt'));
             return (
               <button
                 key={tab.id}

@@ -29,6 +29,7 @@ export function usePersonaTests() {
           const p = event.payload;
 
           setTestRunProgress({
+            runId: p.run_id,
             phase: p.phase,
             scenariosCount: p.scenarios_count,
             current: p.current,

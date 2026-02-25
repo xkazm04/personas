@@ -2,61 +2,71 @@ You are an expert software engineer. Execute the following requirement immediate
 
 REQUIREMENT TO EXECUTE NOW:
 
-# Cancel-then-spawn race leaves session stuck running
+# Extract reusable FilterBar component for list pages
 
 ## Metadata
-- **Category**: functionality
-- **Effort**: Low (1/3)
+- **Category**: maintenance
+- **Effort**: Medium (2/3)
 - **Impact**: Medium (2/3)
-- **Scan Type**: bug_hunter
-- **Generated**: 2/23/2026, 9:12:25 PM
+- **Scan Type**: code_refactor
+- **Generated**: 2/23/2026, 9:53:20 PM
 
 ## Description
-In cli_runner.rs:124 and job_state.rs:203-218, there is a race between start_n8n_transform_background setting status to running (line 124) and cancel_n8n_transform setting status to failed (job_state.rs:217). If cancel fires before the spawned task begins, cancel sets failed, then the task's set_n8n_transform_status overrides it back to running. The spawned task then proceeds normally but the cancel token was already triggered, so tokio::select immediately picks the cancelled branch and calls handle_transform_result with failed. However the initial running status was already emitted to the frontend, creating a confusing flash of running then failed. Worse, if the task hasn't started at all, the status remains running permanently.
+EventLogList, MessageList, and ManualReviewList all render nearly identical filter bar UI: a horizontal row of pill buttons with active/inactive Tailwind classes (bg-primary/15 text-primary border-primary/30 vs bg-secondary/30), optional badge counts, and a 'Showing X of Y' counter. Extract a shared FilterBar<T> component that accepts filter options, active filter, counts map, and onFilterChange callback. This eliminates ~30 lines of duplicated JSX per list page.
 
 ## Reasoning
-Rapid cancel-after-start is common UX � user clicks transform then immediately regrets it. The race window is small but real on slower machines. A session permanently stuck in running state blocks the user from retrying, since the existing-running check at cli_runner.rs:104-108 rejects new transforms for that ID. The user must manually clear the session or restart the app.
+Three list pages copy-paste the same filter bar pattern with identical styling. When the design system changes (e.g., filter pill styling), all three must be updated manually. A shared component provides a single source of truth and reduces per-page code by ~30 lines.
 
 ## Context
 
 **Note**: This section provides supporting architectural documentation and is NOT a hard requirement. Use it as guidance to understand existing code structure and maintain consistency.
 
-### Context: n8n Workflow Import & Transform
+### Context: Events, Messages & Memories
 
-**Description**: Import n8n workflow JSON files and transform them into Personas agent configurations using AI-powered real-time chat, with step-by-step wizard including upload, parsing, AI transformation, editing connectors and tools, and confirmation.
+**Description**: View event logs and message inbox for agent communications, manage manual review queues for human-in-the-loop workflows, and create and browse global persona memories that persist across executions.
 **Related Files**:
-- `src/features/templates/sub_n8n/N8nImportTab.tsx`
-- `src/features/templates/sub_n8n/N8nUploadStep.tsx`
-- `src/features/templates/sub_n8n/N8nParserResults.tsx`
-- `src/features/templates/sub_n8n/N8nTransformChat.tsx`
-- `src/features/templates/sub_n8n/N8nEditStep.tsx`
-- `src/features/templates/sub_n8n/N8nConfirmStep.tsx`
-- `src/features/templates/sub_n8n/N8nSessionList.tsx`
-- `src/features/templates/sub_n8n/N8nStepIndicator.tsx`
-- `src/features/templates/sub_n8n/N8nWizardFooter.tsx`
-- `src/features/templates/sub_n8n/n8nTypes.ts`
-- `src/features/templates/sub_n8n/useN8nImportReducer.ts`
-- `src/features/templates/sub_n8n/edit/N8nConnectorsTab.tsx`
-- `src/features/templates/sub_n8n/edit/N8nToolsPreviewTab.tsx`
-- `src/features/templates/sub_n8n/edit/N8nUseCasesTab.tsx`
-- `src/features/templates/sub_n8n/edit/protocolParser.ts`
-- `src/api/n8nTransform.ts`
-- `src-tauri/src/commands/design/n8n_sessions.rs`
-- `src-tauri/src/commands/design/n8n_transform/mod.rs`
-- `src-tauri/src/commands/design/n8n_transform/cli_runner.rs`
-- `src-tauri/src/commands/design/n8n_transform/confirmation.rs`
-- `src-tauri/src/commands/design/n8n_transform/job_state.rs`
-- `src-tauri/src/commands/design/n8n_transform/prompts.rs`
-- `src-tauri/src/commands/design/n8n_transform/types.rs`
-- `src-tauri/src/db/repos/resources/n8n_sessions.rs`
-- `src-tauri/src/db/models/n8n_session.rs`
-- `src/lib/bindings/N8nTransformSession.ts`
+- `src/features/overview/sub_events/EventLogList.tsx`
+- `src/features/overview/sub_messages/MessageList.tsx`
+- `src/features/overview/sub_manual-review/ManualReviewList.tsx`
+- `src/features/overview/sub_memories/MemoriesPage.tsx`
+- `src/features/overview/sub_memories/MemoryCard.tsx`
+- `src/features/overview/sub_memories/CreateMemoryForm.tsx`
+- `src/features/overview/sub_memories/MemoryFilterBar.tsx`
+- `src/api/events.ts`
+- `src/api/messages.ts`
+- `src/api/memories.ts`
+- `src/stores/slices/eventSlice.ts`
+- `src/stores/slices/messageSlice.ts`
+- `src/stores/slices/memorySlice.ts`
+- `src-tauri/src/commands/communication/events.rs`
+- `src-tauri/src/commands/communication/messages.rs`
+- `src-tauri/src/commands/core/memories.rs`
+- `src-tauri/src/db/repos/communication/events.rs`
+- `src-tauri/src/db/repos/communication/messages.rs`
+- `src-tauri/src/db/repos/communication/manual_reviews.rs`
+- `src-tauri/src/db/repos/core/memories.rs`
+- `src-tauri/src/db/models/event.rs`
+- `src-tauri/src/db/models/message.rs`
+- `src-tauri/src/db/models/memory.rs`
+- `src/lib/bindings/PersonaEvent.ts`
+- `src/lib/bindings/CreatePersonaEventInput.ts`
+- `src/lib/bindings/PersonaEventSubscription.ts`
+- `src/lib/bindings/CreateEventSubscriptionInput.ts`
+- `src/lib/bindings/UpdateEventSubscriptionInput.ts`
+- `src/lib/bindings/PersonaMessage.ts`
+- `src/lib/bindings/CreateMessageInput.ts`
+- `src/lib/bindings/PersonaMessageDelivery.ts`
+- `src/lib/bindings/PersonaManualReview.ts`
+- `src/lib/bindings/CreateManualReviewInput.ts`
+- `src/lib/bindings/UpdateManualReviewInput.ts`
+- `src/lib/bindings/PersonaMemory.ts`
+- `src/lib/bindings/CreatePersonaMemoryInput.ts`
 
 **Post-Implementation**: After completing this requirement, evaluate if the context description or file paths need updates. Use the appropriate API/DB query to update the context if architectural changes were made.
 
 ## Recommended Skills
 
-Use Claude Code skills as appropriate for implementation guidance. Check `.claude/skills/` directory for available skills.
+- **compact-ui-design**: Use `.claude/skills/compact-ui-design.md` for high-quality UI design references and patterns
 
 ## Notes
 
@@ -153,7 +163,7 @@ curl -X POST "http://localhost:3000/api/implementation-log" \
   -H "Content-Type: application/json" \
   -d '{
     "projectId": "0410aba5-7d5b-43a5-98b3-bc0508ba6803",
-    "contextId": "ctx_1771875462951_4755jyt",
+    "contextId": "ctx_1771875503315_bnqvy4h",
     "requirementName": "<requirement-filename-without-.md>",
     "title": "<2-6 word summary>",
     "overview": "<1-2 paragraphs describing implementation>",
@@ -192,7 +202,7 @@ curl -X POST "http://localhost:3000/api/implementation-log" \
 curl -X POST "http://localhost:3000/api/tester/screenshot" \
   -H "Content-Type: application/json" \
   -d '{"contextId":"
-    "contextId": "ctx_1771875462951_4755jyt",","scanOnly":true}'
+    "contextId": "ctx_1771875503315_bnqvy4h",","scanOnly":true}'
 ```
 
 **If `hasScenario: false`**: Skip all remaining screenshot steps. Set `screenshot: null` in log.
@@ -218,7 +228,7 @@ fi
 curl -X POST "http://localhost:3000/api/tester/screenshot" \
   -H "Content-Type: application/json" \
   -d '{"contextId":"
-    "contextId": "ctx_1771875462951_4755jyt","}'
+    "contextId": "ctx_1771875503315_bnqvy4h","}'
 ```
 
 ### Step 4: Stop Server (CRITICAL)

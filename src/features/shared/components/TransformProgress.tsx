@@ -17,17 +17,20 @@ import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 
 // ── Shared line classification ──
 
-type LineStyle = 'error' | 'system' | 'success' | 'default';
+type LineStyle = 'error' | 'system' | 'success' | 'marker' | 'default';
 
 const LINE_STYLES: Record<LineStyle, { text: string; dot: string }> = {
   error:   { text: 'text-red-400/80',     dot: 'bg-red-400' },
   system:  { text: 'text-amber-400/70',   dot: 'bg-amber-400' },
   success: { text: 'text-emerald-400/80', dot: 'bg-emerald-400' },
+  marker:  { text: 'text-cyan-300/80',    dot: 'bg-cyan-400' },
   default: { text: 'text-blue-400/80',    dot: 'bg-blue-400/40' },
 };
 
 function classifyLine(line: string): LineStyle {
   const lower = line.toLowerCase();
+  // Markers (transform protocol lines) — show as cyan, not red
+  if (lower.includes('transform_questions') || lower.includes('transform_persona') || lower.includes('[milestone]')) return 'marker';
   if (lower.includes('error') || lower.includes('failed') || lower.includes('failure') || lower.includes('[warn]')) return 'error';
   if (lower.includes('[system]') || lower.includes('starting') || lower.includes('initializing')) return 'system';
   if (lower.includes('complete') || lower.includes('success') || lower.includes('finished') || lower.includes('done') || lower.includes('✓')) return 'success';
@@ -137,8 +140,8 @@ export function TransformProgress({
 }: TransformProgressProps) {
   const terminalRef = useRef<HTMLDivElement>(null);
   const shouldAutoScroll = useRef(true);
-  // analysis mode starts expanded; transform mode starts collapsed
-  const [showTerminal, setShowTerminal] = useState(() => mode === 'analysis');
+  // Start expanded so users can see the CLI output immediately
+  const [showTerminal, setShowTerminal] = useState(true);
 
   useEffect(() => {
     if (terminalRef.current && shouldAutoScroll.current) {
@@ -153,7 +156,7 @@ export function TransformProgress({
     }
   };
 
-  // Auto-expand terminal on failure (transform mode)
+  // Auto-expand terminal on failure
   useEffect(() => {
     if (phase === 'failed') setShowTerminal(true);
   }, [phase]);

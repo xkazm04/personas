@@ -502,7 +502,7 @@ function ReviewRow({
                     e.stopPropagation();
                     const store = usePersonaStore.getState();
                     store.selectPersona(review.persona_id);
-                    store.setEditorTab('executions');
+                    store.setEditorTab('use-cases');
                   }}
                   className="inline-flex items-center gap-1 text-blue-400/70 hover:text-blue-400 transition-colors"
                   title={`View execution ${review.execution_id}`}

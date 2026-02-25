@@ -418,7 +418,7 @@ export function N8nConnectorsTab({ draft, onCredentialCreated, onMissingCountCha
 
       {/* Embedded credential design modal */}
       {designOpen && (
-        <div className="mt-4 border border-violet-500/20 rounded-2xl overflow-hidden">
+        <div className="mt-4 border border-violet-500/20 rounded-2xl">
           <CredentialDesignModal
             open={designOpen}
             embedded

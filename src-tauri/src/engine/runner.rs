@@ -68,8 +68,8 @@ pub async fn run_execution(
     // Build CLI args
     let mut cli_args = prompt::build_cli_args(Some(&persona), model_profile.as_ref());
 
-    // Inject decrypted service credentials as env vars
-    let (cred_env, cred_hints) = resolve_credential_env_vars(&pool, &tools, &persona.id, &persona.name);
+    // Inject decrypted service credentials as env vars (with OAuth token refresh)
+    let (cred_env, cred_hints) = resolve_credential_env_vars(&pool, &tools, &persona.id, &persona.name).await;
     for (key, val) in cred_env {
         cli_args.env_overrides.push((key, val));
     }
@@ -736,7 +736,8 @@ fn default_result() -> ExecutionResult {
 ///    to match against connector names or credential `service_type` values.
 ///
 /// Each credential field is mapped to an env var: `{CONNECTOR_NAME_UPPER}_{FIELD_KEY_UPPER}`.
-fn resolve_credential_env_vars(
+/// For OAuth credentials with a refresh_token, automatically refreshes the access_token.
+async fn resolve_credential_env_vars(
     pool: &DbPool,
     tools: &[PersonaToolDefinition],
     persona_id: &str,
@@ -778,7 +779,7 @@ fn resolve_credential_env_vars(
                 &mut hints,
                 persona_id,
                 persona_name,
-            ) {
+            ).await {
                 matched_connector = true;
             }
         }
@@ -808,7 +809,7 @@ fn resolve_credential_env_vars(
                         &mut hints,
                         persona_id,
                         persona_name,
-                    ) {
+                    ).await {
                         matched_connector = true;
                         break;
                     }
@@ -827,7 +828,7 @@ fn resolve_credential_env_vars(
                                 &mut hints,
                                 persona_id,
                                 persona_name,
-                            );
+                            ).await;
                         }
                     }
                 }
@@ -840,7 +841,7 @@ fn resolve_credential_env_vars(
 
 /// Decrypt and inject all fields from a connector's first credential as env vars.
 /// Returns true if credentials were found and injected.
-fn inject_connector_credentials(
+async fn inject_connector_credentials(
     pool: &DbPool,
     connector: &crate::db::models::ConnectorDefinition,
     env_vars: &mut Vec<(String, String)>,
@@ -863,16 +864,84 @@ fn inject_connector_credentials(
             hints,
             persona_id,
             persona_name,
-        );
+        ).await;
         true
     } else {
         false
     }
 }
 
+/// Attempt to refresh an OAuth access_token using a stored refresh_token.
+/// `override_client` can supply (client_id, client_secret) when the credential
+/// itself doesn't store them (e.g. `app_managed` mode).
+/// Returns the new access_token on success, or None on failure.
+async fn try_refresh_oauth_token(
+    fields: &HashMap<String, String>,
+    connector_name: &str,
+    override_client: Option<(&str, &str)>,
+) -> Option<String> {
+    let refresh_token = fields.get("refresh_token").filter(|v| !v.is_empty())?;
+
+    // Resolve client credentials: prefer fields, then override, then fail
+    let (cid, csec) = if let (Some(id), Some(secret)) = (
+        fields.get("client_id").filter(|v| !v.is_empty()),
+        fields.get("client_secret").filter(|v| !v.is_empty()),
+    ) {
+        (id.clone(), secret.clone())
+    } else if let Some((id, secret)) = override_client {
+        (id.to_string(), secret.to_string())
+    } else {
+        tracing::debug!("No client credentials available for OAuth refresh of '{}'", connector_name);
+        return None;
+    };
+    let client_id = &cid;
+    let client_secret = &csec;
+
+    // Determine the token endpoint based on connector type
+    let token_url = match connector_name {
+        n if n.starts_with("google") || n == "gmail" || n == "google_calendar" || n == "google_drive" => {
+            "https://oauth2.googleapis.com/token"
+        }
+        "microsoft" => "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+        "slack" => "https://slack.com/api/oauth.v2.access",
+        "github" => "https://github.com/login/oauth/access_token",
+        _ => return None, // Unknown provider — skip refresh
+    };
+
+    tracing::info!("Refreshing OAuth access token for connector '{}'", connector_name);
+
+    let response = reqwest::Client::new()
+        .post(token_url)
+        .header("Accept", "application/json")
+        .form(&[
+            ("client_id", client_id.as_str()),
+            ("client_secret", client_secret.as_str()),
+            ("refresh_token", refresh_token.as_str()),
+            ("grant_type", "refresh_token"),
+        ])
+        .timeout(std::time::Duration::from_secs(10))
+        .send()
+        .await
+        .ok()?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        tracing::warn!("OAuth token refresh failed for '{}' ({}): {}", connector_name, status, body);
+        return None;
+    }
+
+    let value: serde_json::Value = response.json().await.ok()?;
+    let new_token = value.get("access_token")?.as_str()?.to_string();
+
+    tracing::info!("Successfully refreshed OAuth access token for '{}'", connector_name);
+    Some(new_token)
+}
+
 /// Decrypt a single credential and inject its fields as env vars.
+/// For OAuth credentials, automatically refreshes expired access tokens.
 #[allow(clippy::too_many_arguments)]
-fn inject_credential(
+async fn inject_credential(
     pool: &DbPool,
     cred: &crate::db::models::PersonaCredential,
     connector_name: &str,
@@ -894,10 +963,62 @@ fn inject_credential(
         }
     };
 
-    let fields: HashMap<String, String> = serde_json::from_str(&plaintext).unwrap_or_default();
+    let mut fields: HashMap<String, String> = serde_json::from_str(&plaintext).unwrap_or_default();
     let prefix = connector_name.to_uppercase().replace('-', "_");
 
+    // Auto-refresh OAuth token if refresh_token is present.
+    // For app_managed credentials (no client_id in fields), resolve from platform env.
+    if fields.get("refresh_token").map_or(false, |v| !v.is_empty()) {
+        let override_client = if fields.get("client_id").map_or(true, |v| v.is_empty()) {
+            // Resolve platform-managed client credentials for Google connectors
+            let is_google = connector_name.starts_with("google")
+                || connector_name == "gmail"
+                || connector_name == "google_calendar"
+                || connector_name == "google_drive";
+            if is_google {
+                super::google_oauth::resolve_google_oauth_env_credentials()
+                    .ok()
+                    .map(|(id, secret)| (id, secret))
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+        let override_ref = override_client.as_ref().map(|(id, sec)| (id.as_str(), sec.as_str()));
+        if let Some(fresh_token) = try_refresh_oauth_token(&fields, connector_name, override_ref).await {
+            fields.insert("access_token".to_string(), fresh_token.clone());
+            // Persist the refreshed token back to the credential store
+            let updated_json = serde_json::to_string(&fields).unwrap_or_default();
+            if !updated_json.is_empty() {
+                match super::crypto::encrypt_for_db(&updated_json) {
+                    Ok((encrypted, iv)) => {
+                        let _ = cred_repo::update(pool, &cred.id, crate::db::models::UpdateCredentialInput {
+                            name: None,
+                            service_type: None,
+                            encrypted_data: Some(encrypted),
+                            iv: Some(iv),
+                            metadata: None,
+                        });
+                    }
+                    Err(e) => {
+                        tracing::warn!("Failed to persist refreshed token for '{}': {}", connector_name, e);
+                    }
+                }
+            }
+        }
+    }
+
+    // Internal metadata fields that shouldn't be exposed as env vars
+    const SKIP_FIELDS: &[&str] = &[
+        "oauth_client_mode", "client_id", "client_secret",
+        "token_type", "expiry_date", "expires_in",
+    ];
+
     for (field_key, field_val) in &fields {
+        if SKIP_FIELDS.contains(&field_key.as_str()) || field_val.is_empty() {
+            continue;
+        }
         let env_key = format!("{}_{}", prefix, field_key.to_uppercase().replace('-', "_"));
         env_vars.push((env_key.clone(), field_val.clone()));
         hints.push(format!(

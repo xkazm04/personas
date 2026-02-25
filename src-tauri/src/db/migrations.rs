@@ -825,5 +825,19 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added implementation_guide column to persona_tool_definitions");
     }
 
+    // Add use_case_id column to persona_executions
+    let has_use_case_id: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_executions') WHERE name = 'use_case_id'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if !has_use_case_id {
+        conn.execute_batch(
+            "ALTER TABLE persona_executions ADD COLUMN use_case_id TEXT;
+             CREATE INDEX IF NOT EXISTS idx_pe_use_case ON persona_executions(use_case_id);"
+        )?;
+        tracing::info!("Added use_case_id column to persona_executions");
+    }
+
     Ok(())
 }

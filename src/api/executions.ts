@@ -22,11 +22,24 @@ export const executePersona = (
   personaId: string,
   triggerId?: string,
   inputData?: string,
+  useCaseId?: string,
 ) =>
   invoke<PersonaExecution>("execute_persona", {
     personaId,
     triggerId: triggerId ?? null,
     inputData: inputData ?? null,
+    useCaseId: useCaseId ?? null,
+  });
+
+export const listExecutionsForUseCase = (
+  personaId: string,
+  useCaseId: string,
+  limit?: number,
+) =>
+  invoke<PersonaExecution[]>("list_executions_for_use_case", {
+    personaId,
+    useCaseId,
+    limit: limit ?? null,
   });
 
 export const getExecutionLog = (id: string) =>

@@ -224,7 +224,7 @@ mod tests {
         )
         .unwrap();
 
-        let exec = executions::create(&pool, &persona.id, None, None, None).unwrap();
+        let exec = executions::create(&pool, &persona.id, None, None, None, None).unwrap();
 
         // Record tool usage
         let usage = record(&pool, &exec.id, &persona.id, "http_request", 5).unwrap();

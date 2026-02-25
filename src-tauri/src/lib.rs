@@ -253,6 +253,7 @@ pub fn run() {
             commands::execution::executions::create_execution,
             commands::execution::executions::execute_persona,
             commands::execution::executions::cancel_execution,
+            commands::execution::executions::list_executions_for_use_case,
             commands::execution::executions::get_execution_log,
             // Execution — Scheduler
             commands::execution::scheduler::get_scheduler_status,

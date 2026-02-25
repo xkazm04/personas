@@ -224,7 +224,7 @@ pub async fn run_prompt_ab_test(
     }
 
     let exec_a = crate::db::repos::execution::executions::create(
-        &state.db, &persona_id, None, test_input.clone(), model_used.clone(),
+        &state.db, &persona_id, None, test_input.clone(), model_used.clone(), None,
     )?;
     crate::db::repos::execution::executions::update_status(
         &state.db, &exec_a.id,
@@ -241,7 +241,7 @@ pub async fn run_prompt_ab_test(
     }
 
     let exec_b = crate::db::repos::execution::executions::create(
-        &state.db, &persona_id, None, test_input, model_used,
+        &state.db, &persona_id, None, test_input, model_used, None,
     )?;
     crate::db::repos::execution::executions::update_status(
         &state.db, &exec_b.id,
