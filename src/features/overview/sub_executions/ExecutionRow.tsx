@@ -1,18 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronRight, RotateCw } from 'lucide-react';
 import type { GlobalExecution } from '@/lib/types/types';
-import type { PersonaExecutionStatus } from '@/lib/types/frontendTypes';
-import { formatDuration, formatRelativeTime } from '@/lib/utils/formatters';
+import { formatDuration, formatRelativeTime, getStatusEntry } from '@/lib/utils/formatters';
 import { ExecutionDetail } from '@/features/agents/sub_executions/ExecutionDetail';
-
-const statusConfig: Record<PersonaExecutionStatus, { label: string; color: string; bgColor: string; borderColor: string; pulse?: boolean }> = {
-  pending: { label: 'Pending', color: 'text-muted-foreground', bgColor: 'bg-muted/30', borderColor: 'border-muted-foreground/20' },
-  running: { label: 'Running', color: 'text-blue-400', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/30', pulse: true },
-  completed: { label: 'Completed', color: 'text-emerald-400', bgColor: 'bg-emerald-500/10', borderColor: 'border-emerald-500/30' },
-  failed: { label: 'Failed', color: 'text-red-400', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30' },
-  cancelled: { label: 'Cancelled', color: 'text-amber-400', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
-  incomplete: { label: 'Incomplete', color: 'text-orange-400', bgColor: 'bg-orange-500/10', borderColor: 'border-orange-500/30' },
-};
 
 interface ExecutionRowProps {
   execution: GlobalExecution;
@@ -21,7 +11,7 @@ interface ExecutionRowProps {
 }
 
 export function ExecutionRow({ execution, isExpanded, onToggle }: ExecutionRowProps) {
-  const status = statusConfig[execution.status as PersonaExecutionStatus] || statusConfig.pending;
+  const status = getStatusEntry(execution.status);
 
   return (
     <motion.div
@@ -58,7 +48,7 @@ export function ExecutionRow({ execution, isExpanded, onToggle }: ExecutionRowPr
         </div>
 
         {/* Status badge */}
-        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium border ${status.bgColor} ${status.color} ${status.borderColor}`}>
+        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium border ${status.bg} ${status.text} ${status.border}`}>
           {status.pulse && (
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />

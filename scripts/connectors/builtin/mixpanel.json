@@ -1,0 +1,33 @@
+{
+  "id": "builtin-mixpanel",
+  "name": "mixpanel",
+  "label": "Mixpanel",
+  "color": "#7856FF",
+  "icon_url": "/icons/connectors/mixpanel.svg",
+  "category": "analytics",
+  "fields": [
+    { "key": "service_account_username", "label": "Service Account Username", "type": "text", "required": true, "placeholder": "", "helpText": "From Mixpanel → Organization Settings → Service Accounts" },
+    { "key": "service_account_secret", "label": "Service Account Secret", "type": "password", "required": true, "placeholder": "", "helpText": "The secret paired with the service account username" },
+    { "key": "project_id", "label": "Project ID", "type": "text", "required": true, "placeholder": "", "helpText": "From Mixpanel → Project Settings → Project ID" },
+    { "key": "project_token", "label": "Project Token", "type": "password", "required": false, "placeholder": "", "helpText": "From Mixpanel → Project Settings → Access Keys → Project Token" }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://mixpanel.com/api/app/me",
+    "method": "GET",
+    "headers": { "Authorization": "Basic {{base64(service_account_username:service_account_secret)}}" },
+    "description": "Validates service account via Mixpanel app/me endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Mixpanel product analytics with GDPR-compliant data access.",
+    "auth_type": "project_secret",
+    "auth_type_label": "Service Account",
+    "docs_url": "https://developer.mixpanel.com/reference/project-secret",
+    "auth_variants": [
+      { "id": "service_account", "label": "Service Account", "fields": ["service_account_username", "service_account_secret", "project_id"], "auth_type_label": "Service Account" },
+      { "id": "project_token", "label": "Project Token", "fields": ["project_id", "project_token"], "auth_type_label": "Project Token" }
+    ]
+  }
+}

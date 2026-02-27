@@ -1,16 +1,17 @@
 use std::sync::Arc;
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use tauri::{Emitter, State};
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::io::{AsyncBufReadExt, BufReader};
 
-use crate::db::models::{Persona, PersonaTestResult, PersonaTestRun, PersonaToolDefinition};
+use crate::db::models::{PersonaTestResult, PersonaTestRun};
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::execution::test_runs as repo;
+use crate::db::repos::execution::test_suites as suite_repo;
 use crate::db::repos::resources::tools as tool_repo;
-use crate::engine::{parser, prompt};
-use crate::engine::test_runner::{self, TestModelConfig};
-use crate::engine::types::StreamLineType;
+use crate::engine::{eval, parser, prompt};
+use crate::engine::test_runner::{self, build_cli_command, write_prompt_to_stdin, TestModelConfig, TestScenario};
+use crate::engine::types::{EphemeralPersona, StreamLineType};
 use crate::error::AppError;
 use crate::AppState;
 
@@ -21,9 +22,11 @@ pub async fn start_test_run(
     persona_id: String,
     models: Vec<serde_json::Value>,
     use_case_filter: Option<String>,
+    suite_id: Option<String>,
 ) -> Result<PersonaTestRun, AppError> {
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
     let tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
+    let ephemeral = EphemeralPersona::from_persisted(persona, tools);
 
     // Parse model configs from frontend
     let mut model_configs: Vec<TestModelConfig> = Vec::new();
@@ -37,6 +40,16 @@ pub async fn start_test_run(
     if model_configs.is_empty() {
         return Err(AppError::Validation("No valid models provided".into()));
     }
+
+    // If a suite_id is provided, load the saved scenarios
+    let preloaded_scenarios: Option<Vec<TestScenario>> = if let Some(ref sid) = suite_id {
+        let suite = suite_repo::get_by_id(&state.db, sid)?;
+        let scenarios: Vec<TestScenario> = serde_json::from_str(&suite.scenarios)
+            .map_err(|e| AppError::Validation(format!("Failed to parse suite scenarios: {e}")))?;
+        Some(scenarios)
+    } else {
+        None
+    };
 
     let models_json = serde_json::to_string(
         &model_configs.iter().map(|m| &m.id).collect::<Vec<_>>(),
@@ -70,12 +83,12 @@ pub async fn start_test_run(
             app,
             pool,
             run_id_for_cancel.clone(),
-            persona,
-            tools,
+            ephemeral,
             model_configs,
             std::env::temp_dir(),
             cancelled_clone,
             use_case_filter,
+            preloaded_scenarios,
         )
         .await;
 
@@ -134,29 +147,6 @@ pub fn cancel_test_run(
 
 // ── Draft Validation & Streaming Test ──────────────────────────
 
-#[derive(Deserialize)]
-struct DraftToolInput {
-    name: String,
-    category: String,
-    description: String,
-    script_path: Option<String>,
-    input_schema: Option<serde_json::Value>,
-    requires_credential_type: Option<String>,
-    implementation_guide: Option<String>,
-}
-
-#[derive(Deserialize)]
-struct DraftInput {
-    name: Option<String>,
-    system_prompt: String,
-    structured_prompt: Option<serde_json::Value>,
-    description: Option<String>,
-    model_profile: Option<String>,
-    max_budget_usd: Option<f64>,
-    design_context: Option<String>,
-    tools: Option<Vec<DraftToolInput>>,
-}
-
 #[derive(Serialize)]
 pub struct ToolIssue {
     tool_name: String,
@@ -187,76 +177,19 @@ struct N8nTestStatusEvent {
     passed: Option<bool>,
 }
 
-/// Build a temporary Persona + tools from draft JSON (shared by validate and test).
-fn build_draft_persona_and_tools(
-    draft_json: &str,
-) -> Result<(Persona, Vec<PersonaToolDefinition>), AppError> {
-    let draft: DraftInput = serde_json::from_str(draft_json)
-        .map_err(|e| AppError::Validation(format!("Invalid draft JSON: {}", e)))?;
-
-    let now = chrono::Utc::now().to_rfc3339();
-    let persona = Persona {
-        id: format!("draft-validate-{}", uuid::Uuid::new_v4()),
-        project_id: "default".to_string(),
-        name: draft.name.unwrap_or_else(|| "Draft Validation".to_string()),
-        description: draft.description,
-        system_prompt: draft.system_prompt,
-        structured_prompt: draft.structured_prompt.map(|v| v.to_string()),
-        icon: None,
-        color: None,
-        enabled: false,
-        max_concurrent: 1,
-        timeout_ms: 30_000,
-        notification_channels: None,
-        last_design_result: None,
-        model_profile: draft.model_profile,
-        max_budget_usd: draft.max_budget_usd,
-        max_turns: Some(1),
-        design_context: draft.design_context,
-        group_id: None,
-        created_at: now.clone(),
-        updated_at: now,
-    };
-
-    let tools: Vec<PersonaToolDefinition> = draft
-        .tools
-        .unwrap_or_default()
-        .into_iter()
-        .map(|t| {
-            let tool_now = chrono::Utc::now().to_rfc3339();
-            PersonaToolDefinition {
-                id: format!("draft-tool-{}", uuid::Uuid::new_v4()),
-                name: t.name.clone(),
-                category: t.category,
-                description: t.description,
-                // Empty string = use Bash tool via prompt (n8n-imported tools).
-                // Non-empty = real script path.
-                script_path: t.script_path.unwrap_or_default(),
-                input_schema: t.input_schema.map(|v| v.to_string()),
-                output_schema: None,
-                requires_credential_type: t.requires_credential_type,
-                implementation_guide: t.implementation_guide,
-                is_builtin: false,
-                created_at: tool_now.clone(),
-                updated_at: tool_now,
-            }
-        })
-        .collect();
-
-    Ok((persona, tools))
-}
-
 /// Static-only validation: checks tool script paths without spawning CLI.
 /// Used for quick pre-checks. Returns immediately.
 #[tauri::command]
 pub async fn validate_n8n_draft(
     draft_json: String,
 ) -> Result<DraftValidationResult, AppError> {
-    let (_persona, tools) = build_draft_persona_and_tools(&draft_json)?;
+    let ephemeral = EphemeralPersona::from_draft_json(&draft_json)
+        .map_err(AppError::Validation)?;
+    let tools = &ephemeral.tools;
 
     // Check for tools with non-empty script_path pointing to missing files
     let mut tool_issues: Vec<ToolIssue> = Vec::new();
-    for tool in &tools {
+    for tool in tools {
         let script = &tool.script_path;
         if script.is_empty() {
             continue; // Empty = uses Bash tool, no script needed
@@ -309,10 +242,13 @@ pub async fn test_n8n_draft(
     test_id: String,
     draft_json: String,
 ) -> Result<(), AppError> {
-    let (persona, tools) = build_draft_persona_and_tools(&draft_json)?;
+    let ephemeral = EphemeralPersona::from_draft_json(&draft_json)
+        .map_err(AppError::Validation)?;
+    let persona = &ephemeral.persona;
+    let tools = &ephemeral.tools;
 
     // Static pre-check: tools with non-empty script_path that don't exist
-    for tool in &tools {
+    for tool in tools {
         let script = &tool.script_path;
         if script.is_empty() {
             continue;
@@ -335,7 +271,7 @@ pub async fn test_n8n_draft(
 
     // Build prompt and CLI args
     let model_profile = prompt::parse_model_profile(persona.model_profile.as_deref());
-    let mut cli_args = prompt::build_cli_args(Some(&persona), model_profile.as_ref());
+    let mut cli_args = prompt::build_cli_args(Some(persona), model_profile.as_ref());
     if !cli_args.args.iter().any(|a| a == "--max-turns") {
         cli_args.args.push("--max-turns".to_string());
         cli_args.args.push("1".to_string());
@@ -362,22 +298,26 @@ pub async fn test_n8n_draft(
         Some(credential_hint_refs.as_slice())
     };
 
-    let prompt_text = prompt::assemble_prompt(&persona, &tools, None, cred_hints);
+    let prompt_text = prompt::assemble_prompt(persona, tools, None, cred_hints, None);
 
-    // Create temp dir
-    let exec_dir = std::env::temp_dir().join(format!("personas-test-{}", uuid::Uuid::new_v4()));
-    if let Err(e) = std::fs::create_dir_all(&exec_dir) {
-        let _ = app.emit(
-            "n8n-test-status",
-            N8nTestStatusEvent {
-                test_id,
-                status: "failed".to_string(),
-                error: Some(format!("Failed to create temp dir: {}", e)),
-                passed: Some(false),
-            },
-        );
-        return Ok(());
-    }
+    // Build CLI command with shared helper
+    let (mut cmd, exec_dir) = match build_cli_command(&cli_args, "personas-test") {
+        Ok(pair) => pair,
+        Err(e) => {
+            let _ = app.emit(
+                "n8n-test-status",
+                N8nTestStatusEvent {
+                    test_id,
+                    status: "failed".to_string(),
+                    error: Some(e),
+                    passed: Some(false),
+                },
+            );
+            return Ok(());
+        }
+    };
+    // Override stderr to piped for streaming output
+    cmd.stderr(std::process::Stdio::piped());
 
     // Emit running status
     let _ = app.emit(
@@ -389,28 +329,6 @@ pub async fn test_n8n_draft(
             passed: None,
         },
     );
-
-    // Spawn CLI process
-    let mut cmd = tokio::process::Command::new(&cli_args.command);
-    cmd.args(&cli_args.args)
-        .current_dir(&exec_dir)
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped());
-
-    #[cfg(windows)]
-    {
-        #[allow(unused_imports)]
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-    }
-
-    for key in &cli_args.env_removals {
-        cmd.env_remove(key);
-    }
-    for (key, val) in &cli_args.env_overrides {
-        cmd.env(key, val);
-    }
 
     let mut child = match cmd.spawn() {
         Ok(c) => c,
@@ -435,11 +353,7 @@ pub async fn test_n8n_draft(
     };
 
     // Write prompt to stdin
-    if let Some(mut stdin) = child.stdin.take() {
-        let prompt_bytes = prompt_text.into_bytes();
-        let _ = stdin.write_all(&prompt_bytes).await;
-        let _ = stdin.shutdown().await;
-    }
+    write_prompt_to_stdin(&mut child, &prompt_text).await;
 
     // Track whether the draft has tools — confused agents without tool use should fail
     let has_tools = !tools.is_empty();
@@ -531,43 +445,24 @@ pub async fn test_n8n_draft(
             };
             ("failed".to_string(), Some(false), Some(err))
         } else {
-            // saw_init && saw_text — now apply deeper validation
-            let text_lower = assistant_full_text.to_lowercase();
+            // saw_init && saw_text — apply confusion detection via eval framework
+            let actual_tools_empty: Vec<String> = Vec::new();
+            let actual_tools: &[String] = if saw_tool_use { &["_tool_used".to_string()] } else { &actual_tools_empty };
+            let eval_input = eval::EvalInput {
+                output: &assistant_full_text,
+                expected_behavior: None,
+                expected_tools: None,
+                actual_tools: Some(actual_tools),
+                expected_protocols: None,
+                has_tools,
+            };
+            let confusion_result = eval::eval_confusion_detect(&eval_input);
 
-            // Detect confused/lost agent
-            let confusion_phrases = [
-                "i don't have enough information",
-                "i don't know which api",
-                "unable to determine",
-                "i cannot determine",
-                "i'm not sure how to",
-                "i don't have access to",
-                "i need more information",
-                "i cannot find any",
-                "no api endpoint",
-                "no implementation details",
-                "missing credentials",
-                "i don't know how to call",
-                "i'm unable to proceed",
-                "i cannot proceed",
-            ];
-
-            let is_confused = confusion_phrases
-                .iter()
-                .any(|phrase| text_lower.contains(phrase));
-
-            if is_confused {
+            if confusion_result.passed == Some(false) {
                 (
                     "failed".to_string(),
                     Some(false),
-                    Some("Agent appears confused — it could not determine how to use the tools. Check that implementation_guide fields contain API endpoints, auth headers, and curl examples.".to_string()),
-                )
-            } else if has_tools && !saw_tool_use {
-                // Agent has tools but didn't attempt to use any of them
-                (
-                    "failed".to_string(),
-                    Some(false),
-                    Some("Agent did not attempt to use any tools. The prompt may lack actionable API details for tool execution.".to_string()),
+                    Some(confusion_result.explanation),
                 )
             } else {
                 ("completed".to_string(), Some(true), None)

@@ -38,6 +38,12 @@ pub fn create_execution(
 }
 
 /// Start a persona execution: create record, spawn Claude CLI, stream output.
+///
+/// Pipeline stages executed here:
+///   Initiate -> Validate -> CreateRecord -> SpawnEngine
+///
+/// The remaining stages (StreamOutput, FinalizeStatus, Complete) run
+/// asynchronously inside the spawned engine task.
 #[tauri::command]
 pub async fn execute_persona(
     state: State<'_, Arc<AppState>>,
@@ -46,7 +52,17 @@ pub async fn execute_persona(
     trigger_id: Option<String>,
     input_data: Option<String>,
     use_case_id: Option<String>,
+    continuation: Option<crate::engine::types::Continuation>,
 ) -> Result<PersonaExecution, AppError> {
+    use crate::engine::pipeline::{PipelineContext, PipelineStage};
+
+    // ── Stage: Initiate ──────────────────────────────────────────────
+    let mut pipeline = PipelineContext::new("pending", &persona_id);
+    pipeline.enter_stage(PipelineStage::Initiate);
+
+    // ── Stage: Validate ──────────────────────────────────────────────
+    pipeline.enter_stage(PipelineStage::Validate);
+
     // 1. Get persona
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
 
@@ -56,6 +72,7 @@ pub async fn execute_persona(
         .has_capacity(&persona_id, persona.max_concurrent)
         .await
     {
+        pipeline.fail_stage("concurrency limit reached");
         return Err(AppError::Validation(format!(
             "Persona '{}' has reached max concurrent executions ({})",
             persona.name, persona.max_concurrent
@@ -70,6 +87,7 @@ pub async fn execute_persona(
                 &persona_id,
             )?;
             if monthly_spend >= budget {
+                pipeline.fail_stage("budget limit exceeded");
                 return Err(AppError::Validation(format!(
                     "Budget limit exceeded for '{}': ${:.2} spent this month, limit is ${:.2}",
                     persona.name, monthly_spend, budget
@@ -83,6 +101,9 @@ pub async fn execute_persona(
         crate::engine::prompt::parse_model_profile(persona.model_profile.as_deref())
             .and_then(|mp| mp.model);
 
+    // ── Stage: CreateRecord ──────────────────────────────────────────
+    pipeline.enter_stage(PipelineStage::CreateRecord);
+
     // 4. Create execution record in DB
     let execution = repo::create(
         &state.db,
@@ -93,15 +114,21 @@ pub async fn execute_persona(
         use_case_id,
     )?;
 
+    // Update pipeline context with real execution ID
+    pipeline.execution_id = execution.id.clone();
+
     // 5. Update status to running
     repo::update_status(
         &state.db,
         &execution.id,
         UpdateExecutionStatus {
-            status: "running".into(),
+            status: crate::engine::types::ExecutionState::Running,
             ..Default::default()
         },
     )?;
+
+    // ── Stage: SpawnEngine ───────────────────────────────────────────
+    pipeline.enter_stage(PipelineStage::SpawnEngine);
 
     // 6. Get tools
     let tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
@@ -111,7 +138,7 @@ pub async fn execute_persona(
         .as_deref()
         .and_then(|s| serde_json::from_str(s).ok());
 
-    // 8. Start execution in background
+    // 8. Start execution in background (remaining stages run in the spawned task)
     state
         .engine
         .start_execution(
@@ -121,8 +148,12 @@ pub async fn execute_persona(
             persona,
             tools,
             input_json,
+            continuation,
         )
         .await?;
+
+    pipeline.complete_stage();
+    pipeline.log_summary();
 
     // 9. Return the execution record (frontend uses the ID for event filtering)
     repo::get_by_id(&state.db, &execution.id)

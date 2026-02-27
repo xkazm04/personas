@@ -1,23 +1,38 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useCorrelatedCliStream } from './useCorrelatedCliStream';
-
-const TERMINAL_STATUSES = ['completed', 'failed', 'cancelled', 'incomplete'];
+import { traceStage } from '@/lib/execution/pipeline';
+import { isTerminalState } from '@/lib/execution/executionState';
 
 export function usePersonaExecution() {
   const clearOutput = usePersonaStore((s) => s.clearExecutionOutput);
   const activeExecutionId = usePersonaStore((s) => s.activeExecutionId);
   const prevExecIdRef = useRef<string | null>(null);
+  const streamTracedRef = useRef(false);
 
   const handleOutputLine = useCallback((line: string) => {
-    usePersonaStore.getState().appendExecutionOutput(line);
+    const store = usePersonaStore.getState();
+    // Pipeline: trace stream_output on first output line
+    if (!streamTracedRef.current && store.pipelineTrace) {
+      streamTracedRef.current = true;
+      store.pipelineTrace = traceStage(store.pipelineTrace, 'stream_output');
+    }
+    store.appendExecutionOutput(line);
   }, []);
 
   const handleStatusEvent = useCallback((payload: Record<string, unknown>) => {
     const status = payload['status'];
-    if (typeof status !== 'string' || !TERMINAL_STATUSES.includes(status)) return;
+    if (typeof status !== 'string' || !isTerminalState(status)) return;
 
     const store = usePersonaStore.getState();
+    // Pipeline: trace finalize_status
+    if (store.pipelineTrace) {
+      store.pipelineTrace = traceStage(store.pipelineTrace, 'finalize_status', {
+        status,
+        durationMs: payload['duration_ms'] ?? null,
+        costUsd: payload['cost_usd'] ?? null,
+      });
+    }
     const error = payload['error'];
     if (typeof error === 'string' && error) {
       store.appendExecutionOutput(`[ERROR] ${error}`);
@@ -43,6 +58,7 @@ export function usePersonaExecution() {
   useEffect(() => {
     if (activeExecutionId && activeExecutionId !== prevExecIdRef.current) {
       prevExecIdRef.current = activeExecutionId;
+      streamTracedRef.current = false;
       void start(activeExecutionId);
     }
   }, [activeExecutionId, start]);

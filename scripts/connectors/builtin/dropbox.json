@@ -1,0 +1,35 @@
+{
+  "id": "builtin-dropbox",
+  "name": "dropbox",
+  "label": "Dropbox",
+  "color": "#0061FF",
+  "icon_url": "/icons/connectors/dropbox.svg",
+  "category": "storage",
+  "fields": [
+    {
+      "key": "access_token",
+      "label": "Access Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "sl.u...",
+      "helpText": "From Dropbox App Console → Generate Access Token (or use OAuth flow)"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.dropboxapi.com/2/users/get_current_account",
+    "method": "POST",
+    "headers": {
+      "Authorization": "Bearer {{access_token}}"
+    },
+    "description": "Validates access token via Dropbox current account endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Dropbox cloud storage for file sync, sharing, and collaboration.",
+    "auth_type": "pat",
+    "auth_type_label": "Access Token",
+    "docs_url": "https://www.dropbox.com/developers/apps"
+  }
+}

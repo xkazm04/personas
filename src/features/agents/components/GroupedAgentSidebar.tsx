@@ -8,6 +8,7 @@ import { usePersonaStore } from '@/stores/personaStore';
 import { DraggablePersonaCard, SidebarPersonaCard } from '@/features/agents/components/sub_sidebar/DraggablePersonaCard';
 import { DroppableGroup } from '@/features/agents/components/sub_sidebar/DroppableGroup';
 import { PersonaContextMenu, type ContextMenuState } from '@/features/agents/components/sub_sidebar/PersonaContextMenu';
+import { buildSidebarTree, type SidebarDragData } from '@/lib/types/frontendTypes';
 import type { DbPersona } from '@/lib/types/types';
 
 // ── Color palette for groups ──────────────────────────────────────
@@ -15,6 +16,26 @@ const GROUP_COLORS = [
   '#6B7280', '#3B82F6', '#8B5CF6', '#EC4899', '#EF4444',
   '#F59E0B', '#10B981', '#06B6D4', '#6366F1', '#F97316',
 ];
+
+// ── Drag ID helpers ───────────────────────────────────────────────
+
+/** Parse a dnd-kit active.id into typed drag data. */
+function parseDragId(raw: string): SidebarDragData {
+  if (raw.startsWith('group-drag:')) {
+    return { type: 'group', groupId: raw.replace('group-drag:', '') };
+  }
+  return { type: 'persona', personaId: raw };
+}
+
+/** Resolve a drop target ID to a group ID (or null for ungrouped). */
+function parseDropTargetGroupId(overId: string, personas: DbPersona[]): string | null {
+  if (overId === 'ungrouped') return null;
+  if (overId.startsWith('group:')) return overId.replace('group:', '');
+  if (overId.startsWith('group-drag:')) return overId.replace('group-drag:', '');
+  // Dropped on a persona — use that persona's group
+  const target = personas.find(p => p.id === overId);
+  return target?.group_id || null;
+}
 
 // ── Ungrouped Zone ────────────────────────────────────────────────
 interface UngroupedZoneProps {
@@ -106,28 +127,25 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
-  // Group personas
-  const grouped = useMemo(() => {
-    const map = new Map<string | null, DbPersona[]>();
-    map.set(null, []); // ungrouped
-    for (const g of groups) map.set(g.id, []);
-    for (const p of personas) {
-      const key = p.group_id || null;
-      if (!map.has(key)) map.set(null, [...(map.get(null) || []), p]);
-      else map.get(key)!.push(p);
-    }
-    return map;
-  }, [personas, groups]);
+  // Build tree once from flat arrays
+  const tree = useMemo(() => buildSidebarTree(groups, personas), [groups, personas]);
 
+  const groupNodes = tree.filter((n) => n.kind === 'group');
+  const ungroupedNode = tree.find((n) => n.kind === 'ungrouped');
+  const ungrouped = ungroupedNode?.children ?? [];
+
+  // Sorted group list for reorder operations
   const sortedGroups = useMemo(() => {
-    return [...groups].sort((a, b) => a.sort_order - b.sort_order);
+    return [...groups].sort((a, b) => a.sortOrder - b.sortOrder);
   }, [groups]);
 
-  const ungrouped = grouped.get(null) || [];
-
-  const activePersona = activeId ? personas.find(p => p.id === activeId) : null;
-  const activeGroup = activeId?.startsWith('group-drag:')
-    ? sortedGroups.find(g => g.id === activeId.replace('group-drag:', ''))
+  // Resolve active drag overlay
+  const activeDrag = activeId ? parseDragId(activeId) : null;
+  const activePersona = activeDrag?.type === 'persona'
+    ? personas.find(p => p.id === activeDrag.personaId)
+    : null;
+  const activeGroup = activeDrag?.type === 'group'
+    ? sortedGroups.find(g => g.id === activeDrag.groupId)
     : null;
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
@@ -139,18 +157,18 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
     const { active, over } = event;
     if (!over) return;
 
-    const activeIdStr = String(active.id);
+    const drag = parseDragId(String(active.id));
     const overId = String(over.id);
 
     // ── Group reordering ──
-    if (activeIdStr.startsWith('group-drag:')) {
-      const draggedGroupId = activeIdStr.replace('group-drag:', '');
-      let targetGroupId: string | null = null;
-      if (overId.startsWith('group-drag:')) {
-        targetGroupId = overId.replace('group-drag:', '');
-      } else if (overId.startsWith('group:')) {
-        targetGroupId = overId.replace('group:', '');
-      }
+    if (drag.type === 'group') {
+      const draggedGroupId = drag.groupId!;
+      const targetGroupId = overId.startsWith('group-drag:')
+        ? overId.replace('group-drag:', '')
+        : overId.startsWith('group:')
+          ? overId.replace('group:', '')
+          : null;
+
       if (targetGroupId && draggedGroupId !== targetGroupId) {
         const ids = sortedGroups.map(g => g.id);
         const fromIdx = ids.indexOf(draggedGroupId);
@@ -165,19 +183,8 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
     }
 
     // ── Persona reordering ──
-    const personaId = activeIdStr;
-    let targetGroupId: string | null;
-    if (overId === 'ungrouped') {
-      targetGroupId = null;
-    } else if (overId.startsWith('group:')) {
-      targetGroupId = overId.replace('group:', '');
-    } else if (overId.startsWith('group-drag:')) {
-      targetGroupId = overId.replace('group-drag:', '');
-    } else {
-      // Dropped on another persona - find that persona's group
-      const targetPersona = personas.find(p => p.id === overId);
-      targetGroupId = targetPersona?.group_id || null;
-    }
+    const personaId = drag.personaId!;
+    const targetGroupId = parseDropTargetGroupId(overId, personas);
 
     const currentPersona = personas.find(p => p.id === personaId);
     if (currentPersona && (currentPersona.group_id || null) !== targetGroupId) {
@@ -197,6 +204,7 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
       {/* All Agents overview button */}
       <button
         onClick={() => selectPersona(null)}
+        data-testid="sidebar-all-agents-btn"
         className={`w-full flex items-center gap-2.5 px-3 py-2 mb-2 rounded-xl transition-all ${
           selectedPersonaId === null
             ? 'bg-primary/10 border border-primary/20'
@@ -222,6 +230,7 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
       <div className="flex gap-1.5 mb-3">
         <button
           onClick={onCreatePersona}
+          data-testid="sidebar-create-agent-btn"
           className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-dashed border-primary/30 hover:border-primary/50 bg-primary/5 hover:bg-primary/10 transition-all group"
         >
           <Plus className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform" />
@@ -229,6 +238,7 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
         </button>
         <button
           onClick={() => { setShowNewGroup(true); setTimeout(() => newGroupInputRef.current?.focus(), 50); }}
+          data-testid="sidebar-create-group-btn"
           className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-dashed border-violet-500/30 hover:border-violet-500/50 bg-violet-500/5 hover:bg-violet-500/10 transition-all group"
         >
           <FolderPlus className="w-3.5 h-3.5 text-violet-400 group-hover:scale-110 transition-transform" />
@@ -252,12 +262,13 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
                 onChange={(e) => setNewGroupName(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleCreateGroup(); if (e.key === 'Escape') setShowNewGroup(false); }}
                 placeholder="Group name..."
+                data-testid="sidebar-new-group-input"
                 className="flex-1 min-w-0 text-sm bg-transparent border-none outline-none text-foreground/90 placeholder:text-muted-foreground/80"
               />
-              <button onClick={handleCreateGroup} className="p-1 rounded hover:bg-violet-500/15">
+              <button onClick={handleCreateGroup} data-testid="sidebar-confirm-group-btn" className="p-1 rounded hover:bg-violet-500/15">
                 <Check className="w-3.5 h-3.5 text-violet-400" />
               </button>
-              <button onClick={() => setShowNewGroup(false)} className="p-1 rounded hover:bg-secondary/60">
+              <button onClick={() => setShowNewGroup(false)} data-testid="sidebar-cancel-group-btn" className="p-1 rounded hover:bg-secondary/60">
                 <X className="w-3.5 h-3.5 text-muted-foreground/90" />
               </button>
             </div>
@@ -272,17 +283,18 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        {/* Groups */}
-        {sortedGroups.map((group) => (
+        {/* Groups — iterate tree nodes directly */}
+        {groupNodes.map((node) => (
           <DroppableGroup
-            key={group.id}
-            group={group}
-            personas={grouped.get(group.id) || []}
+            key={node.group.id}
+            group={node.group}
+            personas={node.children}
             selectedPersonaId={selectedPersonaId}
             onSelectPersona={selectPersona}
-            onToggleCollapse={() => updateGroup(group.id, { collapsed: !group.collapsed })}
-            onRename={(name) => updateGroup(group.id, { name })}
-            onDelete={() => deleteGroup(group.id)}
+            onToggleCollapse={() => updateGroup(node.group.id, { collapsed: !node.group.collapsed })}
+            onRename={(name) => updateGroup(node.group.id, { name })}
+            onDelete={() => deleteGroup(node.group.id)}
+            onUpdateWorkspace={(updates) => updateGroup(node.group.id, updates)}
             isDragActive={!!activeId}
             onPersonaContextMenu={handleContextMenu}
           />

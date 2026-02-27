@@ -46,6 +46,7 @@ fn row_to_event(row: &Row) -> rusqlite::Result<PersonaEvent> {
         error_message: row.get("error_message")?,
         processed_at: row.get("processed_at")?,
         created_at: row.get("created_at")?,
+        use_case_id: row.get("use_case_id")?,
     })
 }
 
@@ -58,6 +59,7 @@ fn row_to_subscription(row: &Row) -> rusqlite::Result<PersonaEventSubscription> 
         enabled: row.get::<_, i32>("enabled")? != 0,
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
+        use_case_id: row.get("use_case_id")?,
     })
 }
 
@@ -73,8 +75,8 @@ pub fn publish(pool: &DbPool, input: CreatePersonaEventInput) -> Result<PersonaE
     let conn = pool.get()?;
     conn.execute(
         "INSERT INTO persona_events
-         (id, project_id, event_type, source_type, source_id, target_persona_id, payload, status, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'pending', ?8)",
+         (id, project_id, event_type, source_type, source_id, target_persona_id, payload, use_case_id, status, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 'pending', ?9)",
         params![
             id,
             project_id,
@@ -83,6 +85,7 @@ pub fn publish(pool: &DbPool, input: CreatePersonaEventInput) -> Result<PersonaE
             input.source_id,
             input.target_persona_id,
             input.payload,
+            input.use_case_id,
             now,
         ],
     )?;
@@ -267,14 +270,15 @@ pub fn create_subscription(
     let conn = pool.get()?;
     conn.execute(
         "INSERT INTO persona_event_subscriptions
-         (id, persona_id, event_type, source_filter, enabled, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6)",
+         (id, persona_id, event_type, source_filter, enabled, use_case_id, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
         params![
             id,
             input.persona_id,
             input.event_type,
             input.source_filter,
             enabled,
+            input.use_case_id,
             now,
         ],
     )?;
@@ -389,6 +393,7 @@ mod tests {
                 source_id: Some("watcher-1".into()),
                 target_persona_id: None,
                 payload: Some(r#"{"path":"src/main.rs"}"#.into()),
+                use_case_id: None,
             },
         )
         .unwrap();
@@ -426,6 +431,7 @@ mod tests {
                 source_id: None,
                 target_persona_id: None,
                 payload: None,
+                use_case_id: None,
             },
         )
         .unwrap();
@@ -439,6 +445,7 @@ mod tests {
                 source_id: None,
                 target_persona_id: None,
                 payload: None,
+                use_case_id: None,
             },
         )
         .unwrap();
@@ -470,6 +477,7 @@ mod tests {
                 source_id: None,
                 target_persona_id: None,
                 payload: None,
+                use_case_id: None,
             },
         )
         .unwrap();
@@ -490,6 +498,7 @@ mod tests {
                 source_id: None,
                 target_persona_id: None,
                 payload: None,
+                use_case_id: None,
             },
         )
         .unwrap();
@@ -528,6 +537,7 @@ mod tests {
                     source_id: None,
                     target_persona_id: None,
                     payload: None,
+                    use_case_id: None,
                 },
             )
             .unwrap();
@@ -553,6 +563,7 @@ mod tests {
                 source_id: None,
                 target_persona_id: None,
                 payload: None,
+                use_case_id: None,
             },
         )
         .unwrap();
@@ -585,6 +596,7 @@ mod tests {
                 event_type: "file_changed".into(),
                 source_filter: Some("src/**".into()),
                 enabled: Some(true),
+                use_case_id: None,
             },
         )
         .unwrap();
@@ -637,6 +649,7 @@ mod tests {
                 event_type: "event_a".into(),
                 source_filter: None,
                 enabled: Some(true),
+                use_case_id: None,
             },
         )
         .unwrap();
@@ -648,6 +661,7 @@ mod tests {
                 event_type: "event_b".into(),
                 source_filter: None,
                 enabled: Some(true),
+                use_case_id: None,
             },
         )
         .unwrap();
@@ -669,6 +683,7 @@ mod tests {
                 event_type: "deploy".into(),
                 source_filter: None,
                 enabled: Some(true),
+                use_case_id: None,
             },
         )
         .unwrap();
@@ -680,6 +695,7 @@ mod tests {
                 event_type: "deploy".into(),
                 source_filter: Some("staging".into()),
                 enabled: Some(false),
+                use_case_id: None,
             },
         )
         .unwrap();

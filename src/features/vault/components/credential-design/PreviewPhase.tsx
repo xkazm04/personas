@@ -5,6 +5,14 @@ import { CredentialEditForm } from '@/features/vault/components/CredentialEditFo
 import { NegotiatorPanel } from '@/features/vault/components/credential-negotiator/NegotiatorPanel';
 import { InteractiveSetupInstructions } from './InteractiveSetupInstructions';
 import { useCredentialDesignContext } from './CredentialDesignContext';
+import {
+  isOAuthFlow,
+  showsHealthcheck,
+  showsNegotiator,
+  getProviderLabel,
+  getOAuthConsentHint,
+  getSaveDisabledReason,
+} from './CredentialDesignHelpers';
 
 export function PreviewPhase() {
   const {
@@ -16,8 +24,7 @@ export function PreviewPhase() {
     requiredCount,
     optionalCount,
     firstSetupUrl,
-    isGoogleOAuthFlow,
-    universalOAuthProvider,
+    credentialFlow,
     oauthInitialValues,
     isAuthorizingOAuth,
     oauthConsentCompletedAt,
@@ -36,9 +43,7 @@ export function PreviewPhase() {
 
   const [showNegotiator, setShowNegotiator] = useState(false);
 
-  const oauthProviderLabel = universalOAuthProvider
-    ? universalOAuthProvider.charAt(0).toUpperCase() + universalOAuthProvider.slice(1)
-    : 'Google';
+  const providerLabel = getProviderLabel(credentialFlow);
 
   return (
     <motion.div
@@ -116,7 +121,7 @@ export function PreviewPhase() {
       )}
 
       {/* AI Auto-Provision */}
-      {!isGoogleOAuthFlow && (
+      {showsNegotiator(credentialFlow) && (
         <AnimatePresence>
           {!showNegotiator ? (
             <motion.div
@@ -182,30 +187,22 @@ export function PreviewPhase() {
         initialValues={oauthInitialValues}
         fields={effectiveFields}
         onSave={onSave}
-        onOAuthConsent={(isGoogleOAuthFlow || universalOAuthProvider) ? onOAuthConsent : undefined}
+        onOAuthConsent={isOAuthFlow(credentialFlow) ? onOAuthConsent : undefined}
         oauthConsentLabel={isAuthorizingOAuth
-          ? `Authorizing with ${oauthProviderLabel}...`
-          : `Authorize with ${oauthProviderLabel}`}
+          ? `Authorizing with ${providerLabel}...`
+          : `Authorize with ${providerLabel}`}
         oauthConsentDisabled={isAuthorizingOAuth}
-        oauthConsentHint={isGoogleOAuthFlow
-          ? 'One click consent using app-managed Google OAuth. You can uncheck permissions on the consent screen.'
-          : universalOAuthProvider
-            ? `Enter your ${oauthProviderLabel} OAuth client credentials above, then click to authorize.`
-            : undefined}
+        oauthConsentHint={getOAuthConsentHint(credentialFlow)}
         oauthConsentSuccessBadge={oauthConsentCompletedAt
-          ? `${oauthProviderLabel} consent completed at ${oauthConsentCompletedAt}`
+          ? `${providerLabel} consent completed at ${oauthConsentCompletedAt}`
           : undefined}
-        onHealthcheck={universalOAuthProvider ? undefined : onHealthcheck}
+        onHealthcheck={showsHealthcheck(credentialFlow) ? onHealthcheck : undefined}
         testHint="Run Test Connection to let Claude choose the best endpoint for this service and verify your entered credentials dynamically."
         onValuesChanged={onValuesChanged}
         isHealthchecking={isHealthchecking}
         healthcheckResult={healthcheckResult}
         saveDisabled={!canSaveCredential}
-        saveDisabledReason={isGoogleOAuthFlow
-          ? 'Save is unlocked after Google consent returns a refresh token.'
-          : universalOAuthProvider
-            ? `Save is unlocked after ${oauthProviderLabel} authorization completes.`
-            : 'Save is locked until Test Connection succeeds for the current credential values.'}
+        saveDisabledReason={getSaveDisabledReason(credentialFlow)}
         onCancel={onReset}
       />
 

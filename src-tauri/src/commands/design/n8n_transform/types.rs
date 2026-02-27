@@ -24,6 +24,7 @@ pub struct N8nTriggerDraft {
     pub trigger_type: String,
     pub config: Option<serde_json::Value>,
     pub description: Option<String>,
+    pub use_case_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

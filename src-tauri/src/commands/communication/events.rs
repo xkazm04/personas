@@ -78,6 +78,7 @@ pub fn test_event_flow(
         source_id: None,
         target_persona_id: None,
         payload,
+        use_case_id: None,
     };
     let event = repo::publish(&state.db, input)?;
     if let Err(e) = app.emit("event-bus", event.clone()) {

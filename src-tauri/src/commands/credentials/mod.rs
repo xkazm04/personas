@@ -1,3 +1,4 @@
+pub mod ai_artifact_flow;
 pub mod crud;
 pub mod credential_design;
 pub mod intelligence;

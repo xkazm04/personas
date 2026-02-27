@@ -7,14 +7,8 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
 use tokio::sync::Mutex;
 
-use crate::db::models::{
-    CreateManualReviewInput, CreateMessageInput, CreatePersonaEventInput, CreatePersonaMemoryInput,
-    Persona, PersonaToolDefinition,
-};
-use crate::db::repos::communication::{
-    events as event_repo, manual_reviews as review_repo, messages as msg_repo,
-};
-use crate::db::repos::core::memories as mem_repo;
+use crate::db::models::{Persona, PersonaToolDefinition};
+use crate::db::repos::core::groups as group_repo;
 use crate::db::repos::execution::tool_usage as usage_repo;
 use crate::db::repos::resources::{
     audit_log, connectors as connector_repo, credentials as cred_repo,
@@ -25,6 +19,7 @@ use crate::db::DbPool;
 use super::logger::ExecutionLogger;
 use super::parser;
 use super::prompt;
+use super::provider::{self, PromptDelivery};
 use super::types::*;
 
 /// Run a persona execution: spawn Claude CLI, stream output, capture results.
@@ -39,6 +34,7 @@ pub async fn run_execution(
     log_dir: PathBuf,
     child_pids: Arc<Mutex<HashMap<String, u32>>>,
     cancelled: Arc<AtomicBool>,
+    continuation: Option<Continuation>,
 ) -> ExecutionResult {
     let start_time = std::time::Instant::now();
 
@@ -57,6 +53,28 @@ pub async fn run_execution(
 
     let log_file_path = logger.path().to_string_lossy().to_string();
 
+    // Resolve workspace (group) defaults — persona-level > group-level > global
+    let workspace = persona
+        .group_id
+        .as_deref()
+        .and_then(|gid| group_repo::get_by_id(&pool, gid).ok());
+
+    let mut persona = persona;
+    if let Some(ref ws) = workspace {
+        // Fall back to workspace model profile when persona has none
+        if persona.model_profile.is_none() && ws.default_model_profile.is_some() {
+            persona.model_profile = ws.default_model_profile.clone();
+        }
+        // Fall back to workspace budget when persona has none
+        if persona.max_budget_usd.is_none() && ws.default_max_budget_usd.is_some() {
+            persona.max_budget_usd = ws.default_max_budget_usd;
+        }
+        // Fall back to workspace max turns when persona has none
+        if persona.max_turns.is_none() && ws.default_max_turns.is_some() {
+            persona.max_turns = ws.default_max_turns;
+        }
+    }
+
     // Parse model profile
     let mut model_profile = prompt::parse_model_profile(persona.model_profile.as_deref());
 
@@ -65,27 +83,97 @@ pub async fn run_execution(
         resolve_global_provider_settings(&pool, profile);
     }
 
-    // Build CLI args
-    let mut cli_args = prompt::build_cli_args(Some(&persona), model_profile.as_ref());
+    // Workspace shared instructions — appended to the prompt later
+    let workspace_instructions = workspace
+        .as_ref()
+        .and_then(|ws| ws.shared_instructions.clone())
+        .filter(|s| !s.trim().is_empty());
+
+    // Apply Continuation: SessionResume uses --resume CLI args,
+    // PromptHint injects a hint into the input data for the prompt.
+    let mut input_data = input_data;
+    let is_session_resume = matches!(continuation, Some(Continuation::SessionResume(_)));
+
+    if let Some(Continuation::PromptHint(ref hint)) = continuation {
+        let mut obj = input_data
+            .as_ref()
+            .and_then(|v| v.as_object().cloned())
+            .unwrap_or_default();
+        obj.insert("_resume_hint".to_string(), serde_json::Value::String(hint.clone()));
+        input_data = Some(serde_json::Value::Object(obj));
+    }
+
+    // Resolve CLI provider based on global engine setting
+    let engine_kind = provider::load_engine_kind(&pool);
+    let cli_provider = provider::resolve_provider(engine_kind);
+
+    // Build CLI args — use resume args when we have a session ID
+    let mut cli_args = if let Some(Continuation::SessionResume(ref session_id)) = continuation {
+        let mut args = cli_provider.build_resume_args(session_id);
+        // Apply provider env even for resume sessions
+        if let Some(profile) = model_profile.as_ref() {
+            cli_provider.apply_provider_env(&mut args, profile);
+        }
+        args
+    } else {
+        cli_provider.build_execution_args(Some(&persona), model_profile.as_ref())
+    };
 
     // Inject decrypted service credentials as env vars (with OAuth token refresh)
     let (cred_env, cred_hints) = resolve_credential_env_vars(&pool, &tools, &persona.id, &persona.name).await;
+    let cred_env_clone = cred_env.clone();
     for (key, val) in cred_env {
         cli_args.env_overrides.push((key, val));
     }
 
     // Assemble prompt (with credential env var hints)
     let hint_refs: Vec<&str> = cred_hints.iter().map(|s| s.as_str()).collect();
-    let prompt_text = prompt::assemble_prompt(
-        &persona,
-        &tools,
-        input_data.as_ref(),
-        if hint_refs.is_empty() {
-            None
-        } else {
-            Some(&hint_refs)
-        },
-    );
+    let prompt_text = if is_session_resume {
+        // For session resume, send a lighter prompt — the session already has context
+        prompt::assemble_resume_prompt(
+            input_data.as_ref(),
+            if hint_refs.is_empty() { None } else { Some(&hint_refs) },
+        )
+    } else {
+        prompt::assemble_prompt(
+            &persona,
+            &tools,
+            input_data.as_ref(),
+            if hint_refs.is_empty() {
+                None
+            } else {
+                Some(&hint_refs)
+            },
+            workspace_instructions.as_deref(),
+        )
+    };
+
+    // For non-Stdin providers, rebuild args with the prompt embedded
+    match cli_provider.prompt_delivery() {
+        PromptDelivery::PositionalArg | PromptDelivery::Flag(_) => {
+            cli_args = if let Some(Continuation::SessionResume(ref session_id)) = continuation {
+                let mut args = cli_provider.build_resume_args_with_prompt(session_id, &prompt_text);
+                if let Some(profile) = model_profile.as_ref() {
+                    cli_provider.apply_provider_env(&mut args, profile);
+                }
+                for (key, val) in &cred_env_clone {
+                    args.env_overrides.push((key.clone(), val.clone()));
+                }
+                args
+            } else {
+                let mut args = cli_provider.build_execution_args_with_prompt(
+                    Some(&persona),
+                    model_profile.as_ref(),
+                    &prompt_text,
+                );
+                for (key, val) in &cred_env_clone {
+                    args.env_overrides.push((key.clone(), val.clone()));
+                }
+                args
+            };
+        }
+        PromptDelivery::Stdin => {} // args already correct
+    }
 
     logger.log("=== Persona Execution Started ===");
     logger.log(&format!("Persona: {}", persona.name));
@@ -153,10 +241,12 @@ pub async fn run_execution(
         Err(e) => {
             let duration_ms = start_time.elapsed().as_millis() as u64;
             let error_msg = if e.kind() == std::io::ErrorKind::NotFound {
-                "Claude CLI not found. Install it from https://docs.anthropic.com/en/docs/claude-code"
-                    .to_string()
+                format!(
+                    "{} not found. Please install it or select a different engine in Settings.",
+                    cli_provider.engine_name()
+                )
             } else {
-                format!("Failed to spawn Claude CLI: {}", e)
+                format!("Failed to spawn {}: {}", cli_provider.engine_name(), e)
             };
 
             logger.log(&format!("[ERROR] {}", error_msg));
@@ -174,7 +264,7 @@ pub async fn run_execution(
                 "execution-status",
                 ExecutionStatusEvent {
                     execution_id: execution_id.clone(),
-                    status: "failed".into(),
+                    status: ExecutionState::Failed,
                     error: Some(error_msg.clone()),
                     duration_ms: Some(duration_ms),
                     cost_usd: None,
@@ -228,11 +318,22 @@ pub async fn run_execution(
         };
     }
 
-    // Write prompt to stdin
-    if let Some(mut stdin) = child.stdin.take() {
-        let prompt_bytes = prompt_text.into_bytes();
-        let _ = stdin.write_all(&prompt_bytes).await;
-        let _ = stdin.shutdown().await;
+    // Deliver prompt based on provider strategy
+    match cli_provider.prompt_delivery() {
+        PromptDelivery::Stdin => {
+            // Claude: write prompt to stdin, then close
+            if let Some(mut stdin) = child.stdin.take() {
+                let prompt_bytes = prompt_text.into_bytes();
+                let _ = stdin.write_all(&prompt_bytes).await;
+                let _ = stdin.shutdown().await;
+            }
+        }
+        PromptDelivery::PositionalArg | PromptDelivery::Flag(_) => {
+            // Codex/Gemini: prompt already embedded in args, just close stdin
+            if let Some(mut stdin) = child.stdin.take() {
+                let _ = stdin.shutdown().await;
+            }
+        }
     }
 
     // Read stdout line by line
@@ -296,8 +397,8 @@ pub async fn run_execution(
 
             logger.log(&format!("[STDOUT] {}", line.trim()));
 
-            // Parse stream line
-            let (line_type, display) = parser::parse_stream_line(&line);
+            // Parse stream line using the active provider
+            let (line_type, display) = cli_provider.parse_stream_line(&line);
 
             // Emit user-facing output to frontend
             if let Some(ref display_text) = display {
@@ -359,7 +460,7 @@ pub async fn run_execution(
 
                     // Mid-stream protocol message detection
                     if let Some(protocol_msg) = parser::extract_protocol_message(text_line) {
-                        let mut proto_ctx = ProtocolMessageContext {
+                        let mut dispatch_ctx = super::dispatch::DispatchContext {
                             app: &app,
                             pool: &pool_for_stream,
                             execution_id: &exec_id_for_stream,
@@ -369,7 +470,7 @@ pub async fn run_execution(
                             notification_channels: notif_channels_for_stream.as_deref(),
                             logger: &mut logger,
                         };
-                        handle_protocol_message(&mut proto_ctx, &protocol_msg);
+                        super::dispatch::dispatch(&mut dispatch_ctx, &protocol_msg);
                     }
                 }
             }
@@ -460,13 +561,13 @@ pub async fn run_execution(
     };
 
     // Check outcome assessment: CLI exited 0 but task may not have been accomplished
-    let mut final_status = if success { "completed" } else { "failed" };
+    let mut final_status = if success { ExecutionState::Completed } else { ExecutionState::Failed };
     if success {
         if let Some((accomplished, ref _summary)) =
             parser::parse_outcome_assessment(&assistant_text)
         {
             if !accomplished {
-                final_status = "incomplete";
+                final_status = ExecutionState::Incomplete;
                 logger.log("[OUTCOME] Task not accomplished — marking as incomplete");
             }
         } else {
@@ -481,7 +582,7 @@ pub async fn run_execution(
                 || lower_text.contains("completed")
                 || lower_text.contains("done");
             if has_error_indicators && !has_success_indicators {
-                final_status = "incomplete";
+                final_status = ExecutionState::Incomplete;
                 logger.log("[OUTCOME] No assessment found, error indicators detected — marking as incomplete");
             }
         }
@@ -497,7 +598,7 @@ pub async fn run_execution(
         "execution-status",
         ExecutionStatusEvent {
             execution_id: execution_id.clone(),
-            status: final_status.into(),
+            status: final_status,
             error: error.clone(),
             duration_ms: Some(duration_ms),
             cost_usd: Some(metrics.cost_usd),
@@ -518,168 +619,6 @@ pub async fn run_execution(
         output_tokens: metrics.output_tokens,
         cost_usd: metrics.cost_usd,
         tool_steps: tool_steps_json,
-    }
-}
-
-/// Context for protocol message handling, avoiding a long parameter list.
-struct ProtocolMessageContext<'a> {
-    app: &'a AppHandle,
-    pool: &'a DbPool,
-    execution_id: &'a str,
-    persona_id: &'a str,
-    project_id: &'a str,
-    persona_name: &'a str,
-    notification_channels: Option<&'a str>,
-    logger: &'a mut ExecutionLogger,
-}
-
-/// Handle a protocol message by writing to the appropriate DB table.
-fn handle_protocol_message(ctx: &mut ProtocolMessageContext<'_>, msg: &ProtocolMessage) {
-    match msg {
-        ProtocolMessage::UserMessage {
-            title,
-            content,
-            content_type,
-            priority,
-        } => {
-            match msg_repo::create(
-                ctx.pool,
-                CreateMessageInput {
-                    persona_id: ctx.persona_id.to_string(),
-                    execution_id: Some(ctx.execution_id.to_string()),
-                    title: title.clone(),
-                    content: content.clone(),
-                    content_type: content_type.clone(),
-                    priority: priority.clone(),
-                    metadata: None,
-                },
-            ) {
-                Ok(m) => {
-                    ctx.logger.log(&format!(
-                        "[MESSAGE] Created: {} ({})",
-                        m.title.as_deref().unwrap_or("untitled"),
-                        m.id
-                    ));
-                    let _ = ctx.app.emit("message-created", &m);
-                    crate::notifications::notify_new_message(
-                        ctx.app,
-                        ctx.persona_name,
-                        m.title.as_deref().unwrap_or("New message"),
-                        ctx.notification_channels,
-                    );
-                }
-                Err(e) => ctx.logger.log(&format!("[MESSAGE] Failed to create: {}", e)),
-            }
-        }
-        ProtocolMessage::PersonaAction {
-            target,
-            action,
-            input,
-        } => {
-            match event_repo::publish(
-                ctx.pool,
-                CreatePersonaEventInput {
-                    event_type: "persona_action".to_string(),
-                    source_type: "persona".to_string(),
-                    source_id: Some(ctx.persona_id.to_string()),
-                    target_persona_id: None, // Resolved by event bus in Phase 6
-                    project_id: Some(ctx.project_id.to_string()),
-                    payload: Some(
-                        serde_json::json!({
-                            "target": target,
-                            "action": action,
-                            "input": input,
-                        })
-                        .to_string(),
-                    ),
-                },
-            ) {
-                Ok(_) => ctx.logger.log(&format!(
-                    "[EVENT] Published persona_action targeting '{}'",
-                    target
-                )),
-                Err(e) => ctx.logger.log(&format!("[EVENT] Failed to publish persona_action: {}", e)),
-            }
-        }
-        ProtocolMessage::EmitEvent { event_type, data } => {
-            match event_repo::publish(
-                ctx.pool,
-                CreatePersonaEventInput {
-                    event_type: event_type.clone(),
-                    source_type: "persona".to_string(),
-                    source_id: Some(ctx.persona_id.to_string()),
-                    target_persona_id: None,
-                    project_id: Some(ctx.project_id.to_string()),
-                    payload: data.as_ref().map(|d| d.to_string()),
-                },
-            ) {
-                Ok(_) => ctx.logger.log(&format!("[EVENT] Published custom event: {}", event_type)),
-                Err(e) => ctx.logger.log(&format!("[EVENT] Failed to publish: {}", e)),
-            }
-        }
-        ProtocolMessage::AgentMemory {
-            title,
-            content,
-            category,
-            importance,
-            tags,
-        } => {
-            match mem_repo::create(
-                ctx.pool,
-                CreatePersonaMemoryInput {
-                    persona_id: ctx.persona_id.to_string(),
-                    source_execution_id: Some(ctx.execution_id.to_string()),
-                    title: title.clone(),
-                    content: content.clone(),
-                    category: category.clone(),
-                    importance: *importance,
-                    tags: tags.as_ref().map(|t| serde_json::json!(t).to_string()),
-                },
-            ) {
-                Ok(m) => ctx.logger.log(&format!("[MEMORY] Stored: {} ({})", title, m.id)),
-                Err(e) => ctx.logger.log(&format!("[MEMORY] Failed to store: {}", e)),
-            }
-        }
-        ProtocolMessage::ManualReview {
-            title,
-            description,
-            severity,
-            context_data,
-            suggested_actions,
-        } => {
-            match review_repo::create(
-                ctx.pool,
-                CreateManualReviewInput {
-                    execution_id: ctx.execution_id.to_string(),
-                    persona_id: ctx.persona_id.to_string(),
-                    title: title.clone(),
-                    description: description.clone(),
-                    severity: severity.clone(),
-                    context_data: context_data.clone(),
-                    suggested_actions: suggested_actions
-                        .as_ref()
-                        .map(|a| serde_json::json!(a).to_string()),
-                },
-            ) {
-                Ok(r) => {
-                    ctx.logger.log(&format!(
-                        "[REVIEW] Created manual review: {} ({})",
-                        title, r.id
-                    ));
-                    crate::notifications::notify_manual_review(
-                        ctx.app,
-                        ctx.persona_name,
-                        title,
-                        ctx.notification_channels,
-                    );
-                }
-                Err(e) => ctx.logger.log(&format!("[REVIEW] Failed to create: {}", e)),
-            }
-        }
-        ProtocolMessage::ExecutionFlow { .. } => {
-            // Execution flows are handled at the top level, not here
-            ctx.logger.log("[FLOW] Execution flow captured (will be stored on completion)");
-        }
     }
 }
 

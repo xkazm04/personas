@@ -232,7 +232,8 @@ Return ONLY valid JSON (no markdown fences, no commentary), with this exact shap
     "triggers": [{{
       "trigger_type": "schedule|polling|webhook|manual",
       "config": {{ }},
-      "description": "string"
+      "description": "string",
+      "use_case_id": "string — the id of the use case this trigger serves (from design_context use_cases[].id), or null"
     }}],
     "tools": [{{
       "name": "tool_name_snake_case",
@@ -413,7 +414,7 @@ Return ONLY valid JSON (no markdown fences, no commentary):
     "max_budget_usd": null,
     "max_turns": null,
     "design_context": "JSON string — a valid JSON string with keys: summary (string), use_cases (array of {{id, title, description, category, execution_mode, sample_input, time_filter, input_schema, suggested_trigger}}). Generate 3-6 use_cases describing key capabilities. MUST include time_filter for any use case processing time-series data. MUST include input_schema with structured fields instead of free-text.",
-    "triggers": [{{"trigger_type": "schedule|polling|webhook|manual", "config": {{}}, "description": "string"}}],
+    "triggers": [{{"trigger_type": "schedule|polling|webhook|manual", "config": {{}}, "description": "string", "use_case_id": "string — id of the use case this trigger serves, or null"}}],
     "tools": [{{"name": "tool_name_snake_case", "category": "email|http|database|file|messaging|other", "description": "string", "requires_credential_type": "connector_name_or_null", "input_schema": null, "implementation_guide": "Step-by-step API docs with curl examples (REQUIRED — see rules below)"}}],
     "required_connectors": [{{"name": "connector_name", "n8n_credential_type": "original_n8n_type", "has_credential": false}}]
   }}

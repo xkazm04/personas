@@ -7,14 +7,17 @@ import {
   ArrowRight,
   ArrowLeft,
   Sparkles,
-  Wrench,
-  Zap,
-  Plug,
-  Bell,
   AlertCircle,
   Download,
   Check,
   RefreshCw,
+  Workflow,
+  Wrench,
+  ListChecks,
+  Plug,
+  Sliders,
+  Hammer,
+  CirclePlus,
 } from 'lucide-react';
 import {
   startTemplateAdoptBackground,
@@ -23,41 +26,50 @@ import {
   cancelTemplateAdopt,
   confirmTemplateAdoptDraft,
   continueTemplateAdopt,
-  instantAdoptTemplate,
 } from '@/api/templateAdopt';
 import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import type { ConnectorReadinessStatus } from '@/lib/types/designTypes';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
+import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useCorrelatedCliStream } from '@/hooks/execution/useCorrelatedCliStream';
 import {
   useAdoptReducer,
+  ADOPT_STEPS,
   ADOPT_STEP_META,
   ADOPT_CONTEXT_KEY,
   ADOPT_CONTEXT_MAX_AGE_MS,
+  type AdoptWizardStep,
   type PersistedAdoptContext,
 } from './useAdoptReducer';
-import { ConnectorReadiness, deriveConnectorReadiness } from './ConnectorReadiness';
-import { AdoptConfirmStep } from './AdoptConfirmStep';
+import { deriveConnectorReadiness } from './ConnectorReadiness';
 import { TransformProgress } from '@/features/shared/components/TransformProgress';
-import { ConfigureStep } from '@/features/shared/components/ConfigureStep';
-import { DraftEditStep } from '@/features/shared/components/draft-editor';
 import {
   normalizeDraft,
   normalizeDraftFromUnknown,
   stringifyDraft,
 } from '@/features/templates/sub_n8n/n8nTypes';
-
-function parseJsonSafe<T>(json: string | null, fallback: T): T {
-  if (!json) return fallback;
-  try {
-    return JSON.parse(json);
-  } catch {
-    return fallback;
-  }
-}
+import { parseJsonSafe } from '@/lib/utils/parseJson';
+import {
+  getAdoptionRequirements,
+  filterDesignResult,
+  applyTriggerConfigs,
+  substituteVariables,
+} from './templateVariables';
+import { N8nUseCasesTab } from '@/features/templates/sub_n8n/edit/N8nUseCasesTab';
+import { N8nEntitiesTab } from '@/features/templates/sub_n8n/edit/N8nEntitiesTab';
+import { DimensionRadial } from './DimensionRadial';
+import {
+  WizardSidebar,
+  ChooseStep,
+  deriveRequirementsFromFlows,
+  ConnectStep,
+  TuneStep,
+  CreateStep,
+} from './steps';
+import type { WizardSidebarStep } from './steps';
 
 interface AdoptionWizardModalProps {
   isOpen: boolean;
@@ -67,6 +79,16 @@ interface AdoptionWizardModalProps {
   connectorDefinitions: ConnectorDefinition[];
   onPersonaCreated: () => void;
 }
+
+// ── Sidebar step config ────────────────────────────────────────────────
+
+const SIDEBAR_STEPS: WizardSidebarStep[] = [
+  { key: 'choose',  label: 'Choose',  Icon: ListChecks },
+  { key: 'connect', label: 'Connect', Icon: Plug },
+  { key: 'tune',    label: 'Tune',    Icon: Sliders },
+  { key: 'build',   label: 'Build',   Icon: Hammer },
+  { key: 'create',  label: 'Create',  Icon: CirclePlus },
+];
 
 export default function AdoptionWizardModal({
   isOpen,
@@ -79,6 +101,8 @@ export default function AdoptionWizardModal({
   const fetchPersonas = usePersonaStore((s) => s.fetchPersonas);
   const selectPersona = usePersonaStore((s) => s.selectPersona);
   const setTemplateAdoptActive = usePersonaStore((s) => s.setTemplateAdoptActive);
+  const fetchCredentials = usePersonaStore((s) => s.fetchCredentials);
+  const storeCredentials = usePersonaStore((s) => s.credentials);
   const wizard = useAdoptReducer();
   const { state, goBack } = wizard;
   const backdropRef = useRef<HTMLDivElement>(null);
@@ -138,7 +162,6 @@ export default function AdoptionWizardModal({
 
   useEffect(() => {
     if (!isOpen || !review) return;
-    // Don't overwrite restored state
     if (state.backgroundAdoptId) return;
 
     const designResult = parseJsonSafe<DesignAnalysisResult | null>(review.design_result, null);
@@ -151,6 +174,27 @@ export default function AdoptionWizardModal({
       review.design_result ?? '',
     );
   }, [isOpen, review, wizard.init, state.backgroundAdoptId]);
+
+  // ── Use case flows (parsed from review) ──
+
+  const useCaseFlows = useMemo<UseCaseFlow[]>(() => {
+    if (!review) return [];
+    const flows = parseJsonSafe<UseCaseFlow[]>(review.use_case_flows, []);
+    if (flows.length > 0) return flows;
+    const raw = state.designResult as unknown as Record<string, unknown> | null;
+    return raw?.use_case_flows
+      ? parseJsonSafe<UseCaseFlow[]>(JSON.stringify(raw.use_case_flows), [])
+      : [];
+  }, [review, state.designResult]);
+
+  // Pre-select all use case IDs on init
+  useEffect(() => {
+    if (useCaseFlows.length > 0 && state.selectedUseCaseIds.size === 0 && state.step === 'choose') {
+      for (const flow of useCaseFlows) {
+        wizard.toggleUseCaseId(flow.id);
+      }
+    }
+  }, [useCaseFlows, state.selectedUseCaseIds.size, state.step, wizard.toggleUseCaseId]);
 
   // ── Poll for snapshot updates ──
 
@@ -249,14 +293,94 @@ export default function AdoptionWizardModal({
     return deriveConnectorReadiness(state.designResult.suggested_connectors, installedNames, credTypes);
   }, [state.designResult, connectorDefinitions, credentials]);
 
+  const adoptionRequirements = useMemo(
+    () => state.designResult ? getAdoptionRequirements(state.designResult) : [],
+    [state.designResult],
+  );
+
+  // Derive which connectors are required based on selected use cases
+  const requiredConnectors = useMemo(() => {
+    if (!state.designResult) return [];
+    const allConnectors = state.designResult.suggested_connectors ?? [];
+
+    // If we have flows, derive from selected use cases
+    if (useCaseFlows.length > 0 && state.selectedUseCaseIds.size > 0) {
+      const { connectorNames } = deriveRequirementsFromFlows(useCaseFlows, state.selectedUseCaseIds);
+      return allConnectors
+        .filter((c) => connectorNames.has(c.name))
+        .map((c) => ({
+          name: c.name,
+          setup_url: c.setup_url,
+          setup_instructions: c.setup_instructions,
+          credential_fields: c.credential_fields,
+        }));
+    }
+
+    // Fallback: use selected connector names
+    return allConnectors
+      .filter((c) => state.selectedConnectorNames.has(c.name))
+      .map((c) => ({
+        name: c.name,
+        setup_url: c.setup_url,
+        setup_instructions: c.setup_instructions,
+        credential_fields: c.credential_fields,
+      }));
+  }, [state.designResult, useCaseFlows, state.selectedUseCaseIds, state.selectedConnectorNames]);
+
+  // Use real-time credential list (updated after inline creation)
+  const liveCredentials = storeCredentials.length > 0 ? storeCredentials : credentials;
+
+  // Completed steps for sidebar
+  const completedSteps = useMemo<Set<AdoptWizardStep>>(() => {
+    const completed = new Set<AdoptWizardStep>();
+    const currentIndex = ADOPT_STEP_META[state.step].index;
+
+    // All steps before current are completed
+    for (const step of ADOPT_STEPS) {
+      if (ADOPT_STEP_META[step].index < currentIndex) {
+        completed.add(step);
+      }
+    }
+
+    // Create is completed if persona was created
+    if (state.created) completed.add('create');
+
+    return completed;
+  }, [state.step, state.created]);
+
+  // ── Sync selections when transitioning from Choose→Connect ──
+
+  const syncSelectionsFromUseCases = useCallback(() => {
+    // Selections from use case flows are derived at transform time
+    // via filterDesignResult — no explicit sync needed
+  }, []);
+
   // ── Handlers ──
 
   const handleStartTransform = useCallback(async () => {
     if (state.transforming || state.confirming) return;
-    if (!state.designResultJson || !state.designResultJson.trim()) {
+    if (!state.designResult || !state.designResultJson || !state.designResultJson.trim()) {
       wizard.setError('Template has no design data. Cannot adopt.');
       return;
     }
+
+    // 1. Filter by user selections
+    const filtered = filterDesignResult(state.designResult, {
+      selectedToolIndices: state.selectedToolIndices,
+      selectedTriggerIndices: state.selectedTriggerIndices,
+      selectedConnectorNames: state.selectedConnectorNames,
+      selectedChannelIndices: state.selectedChannelIndices,
+      selectedEventIndices: state.selectedEventIndices,
+    });
+
+    // 2. Apply trigger configs
+    filtered.suggested_triggers = applyTriggerConfigs(filtered.suggested_triggers, state.triggerConfigs);
+
+    // 3. Substitute template variables
+    const substituted = substituteVariables(filtered, state.variableValues);
+
+    // 4. Serialize
+    const designResultJson = JSON.stringify(substituted);
 
     const adoptId =
       typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -271,28 +395,42 @@ export default function AdoptionWizardModal({
       wizard.transformStarted(adoptId);
       setTemplateAdoptActive(true);
 
-      // Persist context for session recovery with savedAt timestamp
       try {
         const context: PersistedAdoptContext = {
           adoptId,
           templateName: state.templateName,
-          designResultJson: state.designResultJson,
+          designResultJson,
           savedAt: Date.now(),
         };
         window.localStorage.setItem(ADOPT_CONTEXT_KEY, JSON.stringify(context));
       } catch {
-        // localStorage might be full — continue without persistence
+        // localStorage might be full
       }
 
-      // Serialize user answers if any were provided
       const hasAnswers = Object.keys(state.userAnswers).length > 0;
-      const userAnswersJson = hasAnswers ? JSON.stringify(state.userAnswers) : null;
+      const userAnswersJson = hasAnswers
+        ? JSON.stringify({
+            ...state.userAnswers,
+            _selections: {
+              useCases: [...state.selectedUseCaseIds],
+              toolCount: state.selectedToolIndices.size,
+              triggerCount: state.selectedTriggerIndices.size,
+              connectorNames: [...state.selectedConnectorNames],
+            },
+          })
+        : JSON.stringify({
+            _selections: {
+              useCases: [...state.selectedUseCaseIds],
+              toolCount: state.selectedToolIndices.size,
+              triggerCount: state.selectedTriggerIndices.size,
+              connectorNames: [...state.selectedConnectorNames],
+            },
+          });
 
-      // Call the backend API — this registers the job before returning
       await startTemplateAdoptBackground(
         adoptId,
         state.templateName,
-        state.designResultJson,
+        designResultJson,
         state.adjustmentRequest.trim() || null,
         previousDraftJson,
         userAnswersJson,
@@ -302,7 +440,6 @@ export default function AdoptionWizardModal({
         wizard.setAdjustment('');
       }
     } catch (err) {
-      // Clean up on failure
       setTemplateAdoptActive(false);
       try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
       void resetAdoptStream();
@@ -350,29 +487,6 @@ export default function AdoptionWizardModal({
     }
   }, [state, wizard, fetchPersonas, selectPersona, onPersonaCreated]);
 
-  const [instantAdopting, setInstantAdopting] = useState(false);
-
-  const handleInstantAdopt = useCallback(async () => {
-    if (instantAdopting || state.transforming || state.confirming) return;
-    if (!state.designResultJson || !state.designResultJson.trim()) {
-      wizard.setError('Template has no design data. Cannot adopt.');
-      return;
-    }
-
-    setInstantAdopting(true);
-    try {
-      const response = await instantAdoptTemplate(state.templateName, state.designResultJson);
-      await fetchPersonas();
-      selectPersona(response.persona.id);
-      wizard.confirmCompleted();
-      onPersonaCreated();
-    } catch (err) {
-      wizard.setError(err instanceof Error ? err.message : 'Failed to adopt template.');
-    } finally {
-      setInstantAdopting(false);
-    }
-  }, [instantAdopting, state.transforming, state.confirming, state.designResultJson, state.templateName, wizard, fetchPersonas, selectPersona, onPersonaCreated]);
-
   const handleCancelTransform = useCallback(async () => {
     try {
       const adoptId = state.backgroundAdoptId || currentAdoptId;
@@ -389,14 +503,11 @@ export default function AdoptionWizardModal({
       setTemplateAdoptActive(false);
       wizard.transformCancelled();
     } catch {
-      // Ensure we always reset UI state even if cancel fails
       setIsRestoring(false);
       setTemplateAdoptActive(false);
       wizard.transformCancelled();
     }
   }, [state.backgroundAdoptId, currentAdoptId, wizard, resetAdoptStream, setTemplateAdoptActive]);
-
-  // ── Continue transform (Turn 2: submit user answers to resume session) ──
 
   const handleContinueTransform = useCallback(async () => {
     const adoptId = state.backgroundAdoptId;
@@ -408,7 +519,6 @@ export default function AdoptionWizardModal({
     try {
       wizard.transformStarted(adoptId);
       setTemplateAdoptActive(true);
-
       await continueTemplateAdopt(adoptId, userAnswersJson);
     } catch (err) {
       setTemplateAdoptActive(false);
@@ -416,11 +526,9 @@ export default function AdoptionWizardModal({
     }
   }, [state.backgroundAdoptId, state.transforming, state.confirming, state.userAnswers, wizard, setTemplateAdoptActive]);
 
-  // Close = hide modal. Does NOT cancel background work.
   const handleClose = useCallback(() => {
     if (state.confirming) return;
 
-    // If persona was created, clean up fully
     if (state.created) {
       const snapshotId = state.backgroundAdoptId || currentAdoptId;
       if (snapshotId) {
@@ -429,9 +537,7 @@ export default function AdoptionWizardModal({
       try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
       void resetAdoptStream();
       wizard.reset();
-    }
-    // If not transforming, it's safe to fully reset (no background work to preserve)
-    else if (!state.transforming) {
+    } else if (!state.transforming) {
       const snapshotId = state.backgroundAdoptId || currentAdoptId;
       if (snapshotId) {
         void clearTemplateAdoptSnapshot(snapshotId).catch(() => {});
@@ -441,13 +547,10 @@ export default function AdoptionWizardModal({
       setTemplateAdoptActive(false);
       wizard.reset();
     }
-    // If transforming: just hide the modal. Background work continues.
-    // localStorage and snapshot remain for session recovery.
 
     onClose();
   }, [state, currentAdoptId, wizard, resetAdoptStream, onClose, setTemplateAdoptActive]);
 
-  // Draft update helper for DraftEditStep
   const updateDraft = useCallback(
     (updater: (current: N8nPersonaDraft) => N8nPersonaDraft) => {
       if (!state.draft) return;
@@ -456,45 +559,101 @@ export default function AdoptionWizardModal({
     [state.draft, wizard],
   );
 
-  // ── Next step handler ──
-
   const handleSkipQuestions = useCallback(() => {
-    // Skip configure and continue with empty answers (Turn 2)
     void handleContinueTransform();
   }, [handleContinueTransform]);
 
+  const handleCredentialCreated = useCallback(() => {
+    void fetchCredentials();
+  }, [fetchCredentials]);
+
+  // ── Next step handler ──
+
   const handleNext = useCallback(() => {
     switch (state.step) {
-      case 'overview':
-        // Instant adopt: create persona directly from design data
-        void handleInstantAdopt();
+      case 'choose':
+        syncSelectionsFromUseCases();
+        wizard.goToStep('connect');
         break;
-      case 'configure':
-        // Turn 2: submit user answers to resume the Claude session
-        void handleContinueTransform();
+      case 'connect':
+        wizard.goToStep('tune');
         break;
-      case 'transform':
-        if (state.draft) wizard.goToStep('edit');
+      case 'tune':
+        if (state.backgroundAdoptId) {
+          void handleContinueTransform();
+        } else {
+          void handleStartTransform();
+        }
         break;
-      case 'edit':
-        wizard.goToStep('confirm');
+      case 'build':
+        if (state.draft) wizard.goToStep('create');
         break;
-      case 'confirm':
+      case 'create':
         void handleConfirmSave();
         break;
     }
-  }, [state.step, state.draft, wizard, handleInstantAdopt, handleContinueTransform, handleConfirmSave]);
+  }, [state.step, state.draft, state.backgroundAdoptId, wizard, syncSelectionsFromUseCases, handleContinueTransform, handleStartTransform, handleConfirmSave]);
+
+  // ── Sidebar step click handler ──
+
+  const handleSidebarStepClick = useCallback((step: AdoptWizardStep) => {
+    if (state.transforming || state.confirming) return;
+    wizard.goToStep(step);
+  }, [state.transforming, state.confirming, wizard]);
+
+  // ── Derived (all hooks must be above early return) ──
+
+  const designResult = state.designResult;
+
+  // ── Edit step tabs (Use Cases + Entities) ──
+
+  const earlyTabs = useMemo(() => {
+    if (!state.draft) return [];
+    return [
+      {
+        id: 'use-cases',
+        label: 'Use Cases',
+        Icon: Workflow,
+        content: (
+          <N8nUseCasesTab
+            draft={state.draft}
+            adjustmentRequest={state.adjustmentRequest}
+            transforming={state.transforming}
+            disabled={state.transforming || state.confirming}
+            onAdjustmentChange={(text) => wizard.setAdjustment(text)}
+            onApplyAdjustment={() => void handleStartTransform()}
+          />
+        ),
+      },
+    ];
+  }, [state.draft, state.adjustmentRequest, state.transforming, state.confirming, wizard, handleStartTransform]);
+
+  const additionalTabs = useMemo(() => {
+    if (!state.draft || !designResult) return [];
+    return [
+      {
+        id: 'entities',
+        label: 'Tools & Connectors',
+        Icon: Wrench,
+        content: (
+          <N8nEntitiesTab
+            draft={state.draft}
+            parsedResult={designResult}
+            selectedToolIndices={state.selectedToolIndices}
+            selectedTriggerIndices={state.selectedTriggerIndices}
+            selectedConnectorNames={state.selectedConnectorNames}
+            updateDraft={updateDraft}
+          />
+        ),
+      },
+    ];
+  }, [state.draft, designResult, state.selectedToolIndices, state.selectedTriggerIndices, state.selectedConnectorNames, updateDraft]);
+
+  // ── Early return (all hooks are above) ──
 
   if (!isOpen) return null;
 
-  const designResult = state.designResult;
-  const toolCount = designResult?.suggested_tools?.length ?? 0;
-  const triggerCount = designResult?.suggested_triggers?.length ?? 0;
-  const connectorCount = designResult?.suggested_connectors?.length ?? 0;
-  const channelCount = designResult?.suggested_notification_channels?.length ?? 0;
-  const stepIndex = ADOPT_STEP_META[state.step].index;
-
-  // ── Footer button config (data-driven like N8nWizardFooter) ──
+  // ── Footer button config ──
 
   const getNextAction = (): {
     label: string;
@@ -504,26 +663,23 @@ export default function AdoptionWizardModal({
     spinning?: boolean;
   } | null => {
     switch (state.step) {
-      case 'overview':
-        return instantAdopting
-          ? { label: 'Adopting...', icon: RefreshCw, disabled: true, variant: 'emerald' as const, spinning: true }
-          : { label: 'Adopt Now', icon: Download, disabled: state.transforming, variant: 'emerald' as const };
-      case 'configure':
-        return state.questionGenerating
-          ? { label: 'Analyzing...', icon: RefreshCw, disabled: true, variant: 'violet', spinning: true }
-          : { label: 'Continue with Answers', icon: ArrowRight, disabled: false, variant: 'violet' };
-      case 'transform':
+      case 'choose':
+        return { label: 'Connect', icon: ArrowRight, disabled: false, variant: 'violet' };
+      case 'connect':
+        return { label: 'Configure', icon: ArrowRight, disabled: false, variant: 'violet' };
+      case 'tune':
+        if (state.questionGenerating) {
+          return { label: 'Analyzing...', icon: RefreshCw, disabled: true, variant: 'violet', spinning: true };
+        }
+        if (state.backgroundAdoptId && state.questions) {
+          return { label: 'Continue with Answers', icon: ArrowRight, disabled: false, variant: 'violet' };
+        }
+        return { label: 'Build Persona', icon: Sparkles, disabled: false, variant: 'violet' };
+      case 'build':
         return state.transforming
           ? { label: 'Generating...', icon: RefreshCw, disabled: true, variant: 'violet', spinning: true }
           : { label: 'Review Draft', icon: ArrowRight, disabled: !state.draft, variant: 'violet' };
-      case 'edit':
-        return {
-          label: 'Review & Confirm',
-          icon: ArrowRight,
-          disabled: !!state.draftJsonError || !state.draft,
-          variant: 'violet',
-        };
-      case 'confirm':
+      case 'create':
         if (state.created) {
           return { label: 'Done', icon: Check, disabled: false, variant: 'emerald' };
         }
@@ -537,6 +693,13 @@ export default function AdoptionWizardModal({
 
   const nextAction = getNextAction();
 
+  // ── Back button label ──
+  const getBackLabel = () => {
+    if (state.step === 'choose') return 'Cancel';
+    if (state.step === 'build' && state.transforming) return 'Cancel';
+    return 'Back';
+  };
+
   return (
     <div
       ref={backdropRef}
@@ -546,16 +709,16 @@ export default function AdoptionWizardModal({
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
-      {/* Modal */}
+      {/* Full-screen modal */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 8 }}
+        initial={{ opacity: 0, scale: 0.97, y: 8 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 8 }}
+        exit={{ opacity: 0, scale: 0.97, y: 8 }}
         transition={{ duration: 0.2 }}
-        className="relative w-full max-w-2xl bg-background border border-primary/15 rounded-2xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col"
+        className="relative w-[95vw] max-w-[1400px] h-[92vh] bg-background border border-primary/15 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-3.5 border-b border-primary/10 flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
               <Download className="w-4.5 h-4.5 text-violet-400" />
@@ -565,44 +728,30 @@ export default function AdoptionWizardModal({
               <p className="text-sm text-muted-foreground/90">{state.templateName}</p>
             </div>
           </div>
-          <button
-            onClick={handleClose}
-            disabled={state.confirming}
-            className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/80 hover:text-foreground/95 disabled:opacity-30"
-            title={state.transforming ? 'Close (processing continues in background)' : 'Close'}
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
 
-        {/* Progress bar */}
-        <div className="px-6 pt-4 pb-2 flex-shrink-0">
-          <div className="flex items-center gap-2">
-            {[0, 1, 2, 3, 4].map((i) => (
-              <div key={i} className="flex-1">
-                <div
-                  className={`h-1 rounded-full transition-colors ${
-                    i < stepIndex
-                      ? 'bg-emerald-500/50'
-                      : i === stepIndex
-                        ? 'bg-violet-500/50'
-                        : 'bg-primary/10'
-                  }`}
-                />
-              </div>
-            ))}
+          <div className="flex items-center gap-3">
+            {/* Dimension radial in header */}
+            {designResult && (
+              <DimensionRadial designResult={designResult} size={28} />
+            )}
+
+            <button
+              onClick={handleClose}
+              disabled={state.confirming}
+              className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/80 hover:text-foreground/95 disabled:opacity-30"
+              title={state.transforming ? 'Close (processing continues in background)' : 'Close'}
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <p className="text-sm text-muted-foreground/80 mt-2">
-            Step {stepIndex + 1} of 5 — {ADOPT_STEP_META[state.step].label}
-          </p>
         </div>
 
         {/* Error banner */}
-        {state.error && state.step !== 'transform' && (
+        {state.error && state.step !== 'build' && (
           <motion.div
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mx-6 mb-2 flex items-start gap-3 p-3 rounded-xl bg-red-500/10 border border-red-500/20"
+            className="mx-6 mt-2 flex items-start gap-3 p-3 rounded-xl bg-red-500/10 border border-red-500/20"
           >
             <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
             <p className="text-sm text-red-400/80 flex-1">{state.error}</p>
@@ -615,238 +764,208 @@ export default function AdoptionWizardModal({
           </motion.div>
         )}
 
-        {/* Content */}
-        <div className="px-6 py-4 flex-1 overflow-y-auto min-h-0">
-          <AnimatePresence mode="wait">
-            {/* Step 1: Overview */}
-            {state.step === 'overview' && designResult && (
-              <motion.div
-                key="overview"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.15 }}
-                className="space-y-4"
-              >
-                <div>
-                  <h3 className="text-sm font-medium text-foreground/80 mb-1">Template Summary</h3>
-                  <p className="text-sm text-muted-foreground/90 leading-relaxed">
-                    {designResult.summary || review?.instruction}
-                  </p>
-                </div>
+        {/* Main body: Sidebar + Content */}
+        <div className="flex flex-1 min-h-0">
+          {/* Sidebar navigation */}
+          <WizardSidebar
+            steps={SIDEBAR_STEPS}
+            currentStep={state.step}
+            completedSteps={completedSteps}
+            onStepClick={handleSidebarStepClick}
+            disabled={state.transforming || state.confirming}
+          />
 
-                {/* Stat pills */}
-                <div className="flex flex-wrap gap-2">
-                  {connectorCount > 0 && (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/15">
-                      <Plug className="w-3.5 h-3.5" />
-                      {connectorCount} Connector{connectorCount !== 1 ? 's' : ''}
-                    </span>
-                  )}
-                  {toolCount > 0 && (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-primary/10 text-foreground/80 border border-primary/15">
-                      <Wrench className="w-3.5 h-3.5" />
-                      {toolCount} Tool{toolCount !== 1 ? 's' : ''}
-                    </span>
-                  )}
-                  {triggerCount > 0 && (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/15">
-                      <Zap className="w-3.5 h-3.5" />
-                      {triggerCount} Trigger{triggerCount !== 1 ? 's' : ''}
-                    </span>
-                  )}
-                  {channelCount > 0 && (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/15">
-                      <Bell className="w-3.5 h-3.5" />
-                      {channelCount} Channel{channelCount !== 1 ? 's' : ''}
-                    </span>
-                  )}
-                </div>
+          {/* Content area */}
+          <div className="flex-1 overflow-y-auto min-h-0 p-6">
+            <AnimatePresence mode="wait">
+              {/* Step 1: Choose use cases */}
+              {state.step === 'choose' && designResult && (
+                <motion.div
+                  key="choose"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  <ChooseStep
+                    useCaseFlows={useCaseFlows}
+                    designResult={designResult}
+                    selectedUseCaseIds={state.selectedUseCaseIds}
+                    onToggleUseCaseId={wizard.toggleUseCaseId}
+                    selectedToolIndices={state.selectedToolIndices}
+                    selectedTriggerIndices={state.selectedTriggerIndices}
+                    selectedConnectorNames={state.selectedConnectorNames}
+                    onToggleTool={wizard.toggleTool}
+                    onToggleTrigger={wizard.toggleTrigger}
+                    onToggleConnector={wizard.toggleConnector}
+                  />
+                </motion.div>
+              )}
 
-                {/* Connector readiness */}
-                {readinessStatuses.length > 0 && (
-                  <div className="pt-2 border-t border-primary/[0.08]">
-                    <ConnectorReadiness statuses={readinessStatuses} compact={false} />
-                  </div>
-                )}
+              {/* Step 2: Connect credentials */}
+              {state.step === 'connect' && (
+                <motion.div
+                  key="connect"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  <ConnectStep
+                    requiredConnectors={requiredConnectors}
+                    connectorDefinitions={connectorDefinitions}
+                    credentials={liveCredentials}
+                    connectorCredentialMap={state.connectorCredentialMap}
+                    inlineCredentialConnector={state.inlineCredentialConnector}
+                    onSetCredential={wizard.setConnectorCredential}
+                    onClearCredential={wizard.clearConnectorCredential}
+                    onSetInlineConnector={wizard.setInlineCredentialConnector}
+                    onCredentialCreated={handleCredentialCreated}
+                  />
+                </motion.div>
+              )}
 
-                {/* Info note */}
-                <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-violet-500/5 border border-violet-500/10">
-                  <Sparkles className="w-4 h-4 text-violet-400/60 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-violet-300/60 leading-relaxed">
-                    <strong className="text-violet-300/80">Adopt Now</strong> creates a persona instantly from the template design.{' '}
-                    <strong className="text-violet-300/80">Customize with AI</strong> lets Claude analyze and tailor the persona to your needs before creating it.
-                  </p>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Step 2: Configure (pre-transform questions) */}
-            {state.step === 'configure' && (
-              <motion.div
-                key="configure"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.15 }}
-              >
-                <ConfigureStep
-                  questions={state.questions}
-                  userAnswers={state.userAnswers}
-                  questionGenerating={state.questionGenerating}
-                  onAnswerUpdated={(questionId, answer) =>
-                    wizard.answerUpdated(questionId, answer)
-                  }
-                  onSkip={handleSkipQuestions}
-                  loadingText="Analyzing template requirements..."
-                />
-              </motion.div>
-            )}
-
-            {/* Step 3: Transform */}
-            {state.step === 'transform' && (
-              <motion.div
-                key="transform"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.15 }}
-                className="space-y-4"
-              >
-                <TransformProgress
-                  phase={state.transformPhase}
-                  lines={state.transformLines}
-                  runId={currentAdoptId}
-                  isRestoring={isRestoring}
-                  onRetry={() => void handleStartTransform()}
-                  onCancel={() => void handleCancelTransform()}
-                />
-
-                {/* Background hint when transforming */}
-                {state.transforming && (
-                  <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-blue-500/5 border border-blue-500/10">
-                    <Sparkles className="w-4 h-4 text-blue-400/60 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-blue-300/60 leading-relaxed">
-                      You can close this dialog — processing will continue in the background.
-                      Re-open the wizard to check progress.
-                    </p>
-                  </div>
-                )}
-
-                {/* Adjustment request for re-runs */}
-                {state.draft && !state.transforming && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider">
-                      Request adjustments (optional)
-                    </label>
-                    <textarea
-                      value={state.adjustmentRequest}
-                      onChange={(e) => wizard.setAdjustment(e.target.value)}
-                      placeholder="Example: Change the schedule to run at 9 AM, remove ClickUp integration, add Slack notifications"
-                      className="w-full h-20 p-3 rounded-xl border border-primary/15 bg-background/40 text-sm text-foreground/75 resize-y placeholder-muted-foreground/30"
-                    />
-                  </div>
-                )}
-              </motion.div>
-            )}
-
-            {/* Step 4: Edit — DraftEditStep (shared tabbed editor) */}
-            {state.step === 'edit' && state.draft && (
-              <motion.div
-                key="edit"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.15 }}
-                className="min-h-[400px]"
-              >
-                <DraftEditStep
-                  draft={state.draft}
-                  draftJson={state.draftJson}
-                  draftJsonError={state.draftJsonError}
-                  adjustmentRequest={state.adjustmentRequest}
-                  transforming={state.transforming}
-                  disabled={state.transforming || state.confirming}
-                  updateDraft={updateDraft}
-                  onDraftUpdated={(draft) => wizard.draftUpdated(draft)}
-                  onJsonEdited={(json, draft, error) =>
-                    wizard.draftJsonEdited(json, draft, error)
-                  }
-                  onAdjustmentChange={(text) => wizard.setAdjustment(text)}
-                  onApplyAdjustment={() => void handleStartTransform()}
-                />
-              </motion.div>
-            )}
-
-            {/* Step 5: Confirm — AdoptConfirmStep (rich preview) */}
-            {state.step === 'confirm' && state.draft && (
-              <motion.div
-                key="confirm"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.15 }}
-              >
-                <AdoptConfirmStep
-                  draft={state.draft}
-                  designResult={state.designResult}
-                  readinessStatuses={readinessStatuses}
-                  created={state.created}
-                  onReset={() => {
-                    const snapshotId = state.backgroundAdoptId || currentAdoptId;
-                    if (snapshotId) {
-                      void clearTemplateAdoptSnapshot(snapshotId).catch(() => {});
+              {/* Step 3: Tune configuration */}
+              {state.step === 'tune' && (
+                <motion.div
+                  key="tune"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  <TuneStep
+                    designResult={designResult}
+                    adoptionRequirements={adoptionRequirements}
+                    variableValues={state.variableValues}
+                    onUpdateVariable={wizard.updateVariable}
+                    selectedTriggerIndices={state.selectedTriggerIndices}
+                    triggerConfigs={state.triggerConfigs}
+                    onTriggerConfigChange={wizard.updateTriggerConfig}
+                    questions={state.questions}
+                    userAnswers={state.userAnswers}
+                    questionGenerating={state.questionGenerating}
+                    onAnswerUpdated={(questionId, answer) =>
+                      wizard.answerUpdated(questionId, answer)
                     }
-                    try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
-                    void resetAdoptStream();
-                    setTemplateAdoptActive(false);
-                    wizard.reset();
-                  }}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+                    onSkipQuestions={handleSkipQuestions}
+                  />
+                </motion.div>
+              )}
+
+              {/* Step 4: Build (transform) */}
+              {state.step === 'build' && (
+                <motion.div
+                  key="build"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.15 }}
+                  className="space-y-4"
+                >
+                  <TransformProgress
+                    phase={state.transformPhase}
+                    lines={state.transformLines}
+                    runId={currentAdoptId}
+                    isRestoring={isRestoring}
+                    onRetry={() => void handleStartTransform()}
+                    onCancel={() => void handleCancelTransform()}
+                  />
+
+                  {state.transforming && (
+                    <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-blue-500/5 border border-blue-500/10">
+                      <Sparkles className="w-4 h-4 text-blue-400/60 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-blue-300/60 leading-relaxed">
+                        You can close this dialog — processing will continue in the background.
+                        Re-open the wizard to check progress.
+                      </p>
+                    </div>
+                  )}
+
+                  {state.draft && !state.transforming && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider">
+                        Request adjustments (optional)
+                      </label>
+                      <textarea
+                        value={state.adjustmentRequest}
+                        onChange={(e) => wizard.setAdjustment(e.target.value)}
+                        placeholder="Example: Change the schedule to run at 9 AM, remove ClickUp integration, add Slack notifications"
+                        className="w-full h-20 p-3 rounded-xl border border-primary/15 bg-background/40 text-sm text-foreground/75 resize-y placeholder-muted-foreground/30"
+                      />
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {/* Step 5: Create (confirm + optional edit) */}
+              {state.step === 'create' && (
+                <motion.div
+                  key="create"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  <CreateStep
+                    draft={state.draft}
+                    designResult={designResult}
+                    readinessStatuses={readinessStatuses}
+                    created={state.created}
+                    showEditInline={state.showEditInline}
+                    confirming={state.confirming}
+                    onToggleEditInline={wizard.toggleEditInline}
+                    onReset={() => {
+                      const snapshotId = state.backgroundAdoptId || currentAdoptId;
+                      if (snapshotId) {
+                        void clearTemplateAdoptSnapshot(snapshotId).catch(() => {});
+                      }
+                      try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
+                      void resetAdoptStream();
+                      setTemplateAdoptActive(false);
+                      wizard.reset();
+                    }}
+                    draftJson={state.draftJson}
+                    draftJsonError={state.draftJsonError}
+                    adjustmentRequest={state.adjustmentRequest}
+                    transforming={state.transforming}
+                    updateDraft={updateDraft}
+                    onDraftUpdated={(draft) => wizard.draftUpdated(draft)}
+                    onJsonEdited={(json, draft, error) =>
+                      wizard.draftJsonEdited(json, draft, error)
+                    }
+                    onAdjustmentChange={(text) => wizard.setAdjustment(text)}
+                    onApplyAdjustment={() => void handleStartTransform()}
+                    earlyTabs={earlyTabs}
+                    additionalTabs={additionalTabs}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
-        {/* Footer (data-driven) */}
+        {/* Footer */}
         <div className="flex items-center justify-between px-6 py-3 border-t border-primary/10 bg-secondary/10 flex-shrink-0">
           <button
             onClick={() => {
-              if (state.step === 'overview') handleClose();
-              else if (state.step === 'configure' && state.questionGenerating) {
-                // Can't go back while generating questions — user can skip instead
+              if (state.step === 'choose') handleClose();
+              else if (state.step === 'tune' && state.questionGenerating) {
                 return;
-              } else if (state.step === 'transform' && state.transforming) {
+              } else if (state.step === 'build' && state.transforming) {
                 void handleCancelTransform();
               } else {
                 goBack();
               }
             }}
-            disabled={state.confirming || state.created || (state.step === 'configure' && state.questionGenerating)}
+            disabled={state.confirming || state.created || (state.step === 'tune' && state.questionGenerating)}
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            {state.step === 'overview'
-              ? 'Cancel'
-              : state.step === 'transform' && state.transforming
-                ? 'Cancel'
-                : 'Back'}
+            {getBackLabel()}
           </button>
 
           <div className="flex items-center gap-2">
-            {/* Customize with AI — secondary action on overview step */}
-            {state.step === 'overview' && !instantAdopting && (
-              <button
-                onClick={() => void handleStartTransform()}
-                disabled={state.transforming}
-                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border bg-violet-500/15 text-violet-300 border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <Sparkles className="w-4 h-4" />
-                Customize with AI
-              </button>
-            )}
-
-            {/* Primary action */}
             {nextAction && (
               <button
                 onClick={() => {

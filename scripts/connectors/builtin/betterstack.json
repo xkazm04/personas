@@ -1,0 +1,20 @@
+{
+  "id": "builtin-betterstack",
+  "name": "betterstack",
+  "label": "Better Stack",
+  "color": "#E5484D",
+  "icon_url": "/icons/connectors/betterstack.svg",
+  "category": "monitoring",
+  "fields": [
+    { "key": "api_token", "label": "API Token", "type": "password", "required": true, "placeholder": "", "helpText": "From Better Stack Dashboard → Settings → API tokens" }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://uptime.betterstack.com/api/v2/monitors",
+    "method": "GET",
+    "headers": { "Authorization": "Bearer {{api_token}}" },
+    "description": "Validates API token via monitors endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": { "template_enabled": true, "summary": "Better Stack uptime monitoring, incident management, and status pages.", "auth_type": "pat", "auth_type_label": "PAT", "docs_url": "https://betterstack.com/docs/uptime/api/getting-started-with-uptime-api/" }
+}

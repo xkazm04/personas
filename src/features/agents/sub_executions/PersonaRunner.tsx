@@ -2,20 +2,35 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useElapsedTimer } from '@/hooks';
 import { usePersonaStore } from '@/stores/personaStore';
 import { usePersonaExecution } from '@/hooks/execution/usePersonaExecution';
-import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, CheckCircle2, XCircle, Timer, DollarSign, Pause, RotateCw, Wrench, Zap, Brain, Cpu, CheckCheck, AlertTriangle } from 'lucide-react';
+import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, Timer, DollarSign, RotateCw, Wrench, Zap, Brain, Cpu, CheckCheck, AlertTriangle } from 'lucide-react';
 import { classifyLine, parseSummaryLine } from '@/lib/utils/terminalColors';
-import { formatElapsed } from '@/lib/utils/formatters';
+import { formatElapsed, getStatusEntry } from '@/lib/utils/formatters';
 import { motion, AnimatePresence } from 'framer-motion';
 import { JsonEditor } from '@/features/shared/components/JsonEditor';
 import { ExecutionTerminal } from '@/features/agents/sub_executions/ExecutionTerminal';
 import * as api from '@/api/tauriApi';
 
 
+interface ToolCallDot {
+  toolName: string;
+  startMs: number;
+  endMs?: number;
+}
+
 interface PhaseEntry {
   id: string;
   label: string;
   startMs: number;
   endMs?: number;
+  toolCalls: ToolCallDot[];
+}
+
+/** Duration color for tool-call dots — mirrors ExecutionInspector's durationColor. */
+function dotColor(ms: number | undefined): string {
+  if (ms === undefined) return 'bg-blue-400/70'; // still running
+  if (ms < 2000) return 'bg-emerald-400';
+  if (ms < 10000) return 'bg-amber-400';
+  return 'bg-red-400';
 }
 
 const PHASE_META: Record<string, { label: string; icon: typeof Zap }> = {
@@ -27,30 +42,9 @@ const PHASE_META: Record<string, { label: string; icon: typeof Zap }> = {
   error: { label: 'Error', icon: AlertTriangle },
 };
 
-interface StatusPresentation {
-  Icon: typeof CheckCircle2;
-  textClass: string;
-  bgClass: string;
-  borderClass: string;
-}
-
-const STATUS_PRESENTATION: Record<string, StatusPresentation> = {
-  completed: { Icon: CheckCircle2, textClass: 'text-emerald-400', bgClass: 'bg-emerald-500/5', borderClass: 'border-emerald-500/20' },
-  incomplete: { Icon: AlertTriangle, textClass: 'text-orange-400', bgClass: 'bg-orange-500/5', borderClass: 'border-orange-500/20' },
-  cancelled: { Icon: Pause, textClass: 'text-amber-400', bgClass: 'bg-amber-500/5', borderClass: 'border-amber-500/20' },
-  failed: { Icon: XCircle, textClass: 'text-red-400', bgClass: 'bg-red-500/5', borderClass: 'border-red-500/20' },
-};
-
-const DEFAULT_STATUS_PRESENTATION: StatusPresentation = {
-  Icon: XCircle,
-  textClass: 'text-amber-400',
-  bgClass: 'bg-amber-500/5',
-  borderClass: 'border-amber-500/20',
-};
-
 function StatusIcon({ status, className }: { status: string; className?: string }) {
-  const { Icon, textClass } = STATUS_PRESENTATION[status] ?? DEFAULT_STATUS_PRESENTATION;
-  return <Icon className={`${textClass} ${className ?? ''}`} />;
+  const entry = getStatusEntry(status);
+  return <entry.icon className={`${entry.text} ${className ?? ''}`} />;
 }
 
 function detectPhaseFromLine(line: string, hasSeenTools: boolean): string | null {
@@ -162,6 +156,21 @@ export function PersonaRunner() {
       const updated = [...prev];
       for (let i = phaseLineCount.current; i < outputLines.length; i++) {
         const line = outputLines[i]!;
+
+        // Track tool calls within the current phase
+        if (line.startsWith('> Using tool:')) {
+          const toolName = line.replace('> Using tool:', '').trim();
+          const currentPhase = updated[updated.length - 1];
+          if (currentPhase) {
+            // Close the previous open tool call in this phase
+            const lastTool = currentPhase.toolCalls[currentPhase.toolCalls.length - 1];
+            if (lastTool && lastTool.endMs === undefined) {
+              lastTool.endMs = now;
+            }
+            currentPhase.toolCalls.push({ toolName, startMs: now });
+          }
+        }
+
         const detected = detectPhaseFromLine(line, hasSeenToolsRef.current);
         if (!detected) continue;
         if (detected === 'calling_tools') hasSeenToolsRef.current = true;
@@ -170,9 +179,14 @@ export function PersonaRunner() {
         if (currentPhase?.id === detected) continue;
 
         if (currentPhase && !currentPhase.endMs) {
+          // Close any open tool call
+          const lastTool = currentPhase.toolCalls[currentPhase.toolCalls.length - 1];
+          if (lastTool && lastTool.endMs === undefined) {
+            lastTool.endMs = now;
+          }
           currentPhase.endMs = now;
         }
-        updated.push({ id: detected, label: PHASE_META[detected]?.label ?? detected, startMs: now });
+        updated.push({ id: detected, label: PHASE_META[detected]?.label ?? detected, startMs: now, toolCalls: [] });
       }
       return updated;
     });
@@ -223,6 +237,19 @@ export function PersonaRunner() {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isTerminalFullscreen]);
+
+  // Ref for Enter-key shortcut — populated after handleExecute is defined below
+  const handleExecuteRef = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter' || isExecuting) return;
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable) return;
+      handleExecuteRef.current?.();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isExecuting]);
 
   // Clean up on unmount
   useEffect(() => {
@@ -288,6 +315,9 @@ export function PersonaRunner() {
     }
   };
 
+  // Keep ref in sync for Enter-key shortcut
+  handleExecuteRef.current = handleExecute;
+
   const handleStop = () => {
     if (activeExecutionId) {
       // Capture state before cancelling
@@ -307,32 +337,42 @@ export function PersonaRunner() {
     }
   };
 
-  const handleResume = () => {
+  const handleResume = async () => {
     if (!selectedPersona) return;
     const lastTool = executionSummary?.last_tool;
-    let resumeInput: Record<string, unknown> = {};
-    try {
-      resumeInput = JSON.parse(inputData);
-    } catch {
-      // keep empty
-    }
-    resumeInput._resume_hint = `Previous execution was cancelled${
+
+    // Build the resume hint text
+    const hint = `Previous execution was cancelled${
       executionSummary?.duration_ms ? ` after ${formatElapsed(executionSummary.duration_ms)}` : ''
     }${lastTool ? ` while running tool "${lastTool}"` : ''}. Please continue from where the previous execution left off.`;
 
-    const formatted = JSON.stringify(resumeInput, null, 2);
-    setInputData(formatted);
-    setShowInputEditor(true);
+    // Check if we can do a native session resume via claude_session_id
+    let sessionId: string | null = null;
+    if (activeExecutionId) {
+      try {
+        const exec = await api.getExecution(activeExecutionId);
+        sessionId = exec.claude_session_id ?? null;
+      } catch {
+        // Fall back to prompt hint
+      }
+    }
+
+    let parsedInput = {};
+    if (inputData.trim()) {
+      try { parsedInput = JSON.parse(inputData); } catch { /* keep empty */ }
+    }
+
     setOutputLines([]);
-    // Trigger execution with resume context
-    setTimeout(() => {
-      handleExecute();
-    }, 0);
+
+    // Choose continuation strategy: prefer native session resume
+    const continuation: import('@/lib/bindings/Continuation').Continuation = sessionId
+      ? { type: 'SessionResume', value: sessionId }
+      : { type: 'PromptHint', value: hint };
+
+    await executePersona(personaId, parsedInput, undefined, continuation);
   };
 
-  const summaryPresentation = executionSummary
-    ? (STATUS_PRESENTATION[executionSummary.status] ?? DEFAULT_STATUS_PRESENTATION)
-    : DEFAULT_STATUS_PRESENTATION;
+  const summaryPresentation = getStatusEntry(executionSummary?.status ?? 'failed');
 
   return (
     <div ref={runnerRef} className="space-y-5">
@@ -383,6 +423,7 @@ export function PersonaRunner() {
 
         {/* Execute Button */}
         <button
+          data-testid="execute-persona-btn"
           onClick={isExecuting ? handleStop : handleExecute}
           className={`w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl font-medium text-sm transition-all ${
             isExecuting
@@ -450,12 +491,12 @@ export function PersonaRunner() {
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-          className={`rounded-xl border p-4 ${summaryPresentation.borderClass} ${summaryPresentation.bgClass}`}
+          className={`rounded-xl border p-4 ${summaryPresentation.border} ${summaryPresentation.bg}`}
         >
           <div className="flex items-center gap-5 flex-wrap">
             <div className="flex items-center gap-2">
               <StatusIcon status={executionSummary.status} className="w-5 h-5" />
-              <span className={`text-sm font-semibold capitalize ${summaryPresentation.textClass}`}>
+              <span className={`text-sm font-semibold capitalize ${summaryPresentation.text}`}>
                 {executionSummary.status}
               </span>
             </div>
@@ -498,6 +539,48 @@ export function PersonaRunner() {
           )}
         </motion.div>
       )}
+
+      {/* Coached empty state — shown when no execution output is visible */}
+      <AnimatePresence>
+        {!(isThisPersonasExecution && (isExecuting || outputLines.length > 0)) && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="flex flex-col items-center justify-center py-16 gap-4"
+            data-testid="runner-empty-state"
+          >
+            {selectedPersona.icon ? (
+              selectedPersona.icon.startsWith('http') ? (
+                <img src={selectedPersona.icon} alt="" className="w-12 h-12 rounded-xl opacity-60" />
+              ) : (
+                <span className="text-4xl leading-none opacity-60">{selectedPersona.icon}</span>
+              )
+            ) : (
+              <div
+                className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold opacity-50"
+                style={{
+                  backgroundColor: `${selectedPersona.color || '#6B7280'}20`,
+                  border: `1px solid ${selectedPersona.color || '#6B7280'}40`,
+                  color: selectedPersona.color || '#6B7280',
+                }}
+              >
+                {selectedPersona.name.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div className="text-center space-y-1.5">
+              <p className="text-sm font-medium text-foreground/70">{selectedPersona.name}</p>
+              <p className="text-sm text-zinc-500">
+                Ready to execute &mdash; click Run or press{' '}
+                <kbd className="inline-flex items-center px-1.5 py-0.5 rounded border border-zinc-700 bg-zinc-800/60 text-zinc-400 text-xs font-mono">
+                  Enter
+                </kbd>
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Terminal Output */}
       {isThisPersonasExecution && (isExecuting || outputLines.length > 0) && (
@@ -544,7 +627,7 @@ export function PersonaRunner() {
                           const minGrow = totalDur > 0 ? totalDur * 0.06 : 1;
 
                           return (
-                            <div className="flex w-full h-7 rounded-lg overflow-hidden gap-px">
+                            <div className="flex w-full h-7 rounded-lg overflow-hidden gap-px" data-testid="phase-timeline-bar">
                               {phases.map((phase, i) => {
                                 const isActive = i === phases.length - 1 && isExecuting;
                                 const meta = PHASE_META[phase.id];
@@ -563,7 +646,7 @@ export function PersonaRunner() {
                                           : 'bg-secondary/40 text-muted-foreground/80'
                                     }`}
                                     style={{ flexGrow: Math.max(duration, minGrow) }}
-                                    title={`${phase.label}: ${formatElapsed(duration)}`}
+                                    title={`${phase.label}: ${formatElapsed(duration)}${phase.toolCalls.length > 0 ? ` — ${phase.toolCalls.length} tool call${phase.toolCalls.length > 1 ? 's' : ''}` : ''}`}
                                   >
                                     {isActive && (
                                       <motion.div
@@ -576,10 +659,29 @@ export function PersonaRunner() {
                                         transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
                                       />
                                     )}
-                                    <PhaseIcon className="w-3 h-3 flex-shrink-0 relative z-[1]" />
-                                    <span className="truncate text-xs font-medium relative z-[1]">{phase.label}</span>
+                                    {/* Tool-call activity dots */}
+                                    {phase.toolCalls.length > 0 && duration > 0 && (
+                                      <div className="absolute inset-0 pointer-events-none z-[1]">
+                                        {phase.toolCalls.map((tc, j) => {
+                                          const offset = tc.startMs - phase.startMs;
+                                          const pct = Math.min(100, Math.max(0, (offset / duration) * 100));
+                                          const tcDuration = tc.endMs != null ? tc.endMs - tc.startMs : undefined;
+                                          return (
+                                            <span
+                                              key={j}
+                                              className={`absolute top-1/2 -translate-y-1/2 w-[5px] h-[5px] rounded-full ${dotColor(tcDuration)} opacity-90`}
+                                              style={{ left: `${pct}%` }}
+                                              title={`${tc.toolName}${tcDuration != null ? `: ${formatElapsed(tcDuration)}` : ''}`}
+                                              data-testid={`tool-dot-${i}-${j}`}
+                                            />
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                    <PhaseIcon className="w-3 h-3 flex-shrink-0 relative z-[2]" />
+                                    <span className="truncate text-xs font-medium relative z-[2]">{phase.label}</span>
                                     {duration > 0 && (
-                                      <span className="font-mono text-[11px] opacity-60 relative z-[1] flex-shrink-0">
+                                      <span className="font-mono text-[11px] opacity-60 relative z-[2] flex-shrink-0">
                                         {formatElapsed(duration)}
                                       </span>
                                     )}

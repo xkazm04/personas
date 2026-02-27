@@ -1,0 +1,52 @@
+{
+  "id": "builtin-confluence",
+  "name": "confluence",
+  "label": "Confluence",
+  "color": "#172B4D",
+  "icon_url": "/icons/connectors/confluence.svg",
+  "category": "development",
+  "fields": [
+    {
+      "key": "domain",
+      "label": "Atlassian Domain",
+      "type": "text",
+      "required": true,
+      "placeholder": "your-company.atlassian.net",
+      "helpText": "Your Confluence Cloud domain (without https://)"
+    },
+    {
+      "key": "email",
+      "label": "Account Email",
+      "type": "text",
+      "required": true,
+      "placeholder": "you@company.com",
+      "helpText": "The email address for your Atlassian account"
+    },
+    {
+      "key": "api_token",
+      "label": "API Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "From id.atlassian.com/manage-profile/security/api-tokens"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://{{domain}}/wiki/rest/api/space?limit=1",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Basic {{base64(email:api_token)}}",
+      "Accept": "application/json"
+    },
+    "description": "Validates credentials via Confluence spaces endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Confluence wiki and knowledge base for team documentation and collaboration.",
+    "auth_type": "basic_api_token",
+    "auth_type_label": "API Token",
+    "docs_url": "https://id.atlassian.com/manage-profile/security/api-tokens"
+  }
+}

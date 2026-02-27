@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
+import DashboardHome from '@/features/overview/components/DashboardHome';
 import GlobalExecutionList from '@/features/overview/sub_executions/GlobalExecutionList';
 import ManualReviewList from '@/features/overview/sub_manual-review/ManualReviewList';
 import MessageList from '@/features/overview/sub_messages/MessageList';
@@ -22,7 +23,8 @@ export default function OverviewPage() {
       transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
       className="flex-1 min-h-0 flex flex-col overflow-hidden"
     >
-      {overviewTab === 'system-check' ? <SystemHealthPanel /> :
+      {overviewTab === 'home' ? <DashboardHome /> :
+       overviewTab === 'system-check' ? <SystemHealthPanel /> :
        overviewTab === 'executions' ? <GlobalExecutionList /> :
        overviewTab === 'manual-review' ? <ManualReviewList /> :
        overviewTab === 'messages' ? <MessageList /> :
@@ -32,7 +34,7 @@ export default function OverviewPage() {
        overviewTab === 'realtime' ? <RealtimeVisualizerPage /> :
        overviewTab === 'memories' ? <MemoriesPage /> :
        overviewTab === 'budget' ? <BudgetSettingsPage /> :
-       <GlobalExecutionList />}
+       <DashboardHome />}
     </motion.div>
   );
 }

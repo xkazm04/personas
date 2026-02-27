@@ -12,18 +12,11 @@ import {
 } from 'lucide-react';
 import { PromptTabsPreview } from '@/features/shared/components/PromptTabsPreview';
 import { DesignConnectorGrid } from '@/features/shared/components/DesignConnectorGrid';
+import { DimensionRadial } from './DimensionRadial';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
-
-function parseJsonSafe<T>(json: string | null | undefined, fallback: T): T {
-  if (!json) return fallback;
-  try {
-    return JSON.parse(json);
-  } catch {
-    return fallback;
-  }
-}
+import { parseJsonSafe } from '@/lib/utils/parseJson';
 
 type DetailTab = 'overview' | 'prompt' | 'connectors' | 'json';
 
@@ -63,8 +56,6 @@ export function TemplateDetailModal({
     appliedFixes: string[];
   } | null>(review.suggested_adjustment, null);
 
-  const qualityScore = review.structural_score ?? review.semantic_score ?? null;
-
   const statusBadge = {
     passed: { Icon: CheckCircle2, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20', label: 'Passed' },
     failed: { Icon: XCircle, color: 'text-red-400 bg-red-500/10 border-red-500/20', label: 'Failed' },
@@ -94,13 +85,7 @@ export function TemplateDetailModal({
                 <StatusIcon className="w-3 h-3" />
                 {statusBadge.label}
               </span>
-              {qualityScore !== null && (
-                <span className={`text-xs font-mono font-semibold ${
-                  qualityScore >= 80 ? 'text-emerald-400' : qualityScore >= 60 ? 'text-amber-400' : 'text-red-400'
-                }`}>
-                  Dimension Completion: {qualityScore}%
-                </span>
-              )}
+              <DimensionRadial designResult={designResult} />
               {review.had_references && (
                 <span className="text-xs text-violet-400/50 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-violet-400/40" />

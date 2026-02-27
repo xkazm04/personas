@@ -9,6 +9,7 @@ pub struct EventMatch {
     pub persona_id: String,
     pub payload: Option<String>,
     pub source_id: Option<String>,
+    pub use_case_id: Option<String>,
 }
 
 /// Match a single event against a list of subscriptions.
@@ -58,6 +59,7 @@ pub fn match_event(
             persona_id: sub.persona_id.clone(),
             payload: event.payload.clone(),
             source_id: event.source_id.clone(),
+            use_case_id: sub.use_case_id.clone(),
         })
         .collect()
 }
@@ -93,6 +95,7 @@ mod tests {
             error_message: None,
             processed_at: None,
             created_at: "2026-01-15T10:00:00Z".into(),
+            use_case_id: None,
         }
     }
 
@@ -105,6 +108,7 @@ mod tests {
             enabled: true,
             created_at: "2026-01-15T10:00:00Z".into(),
             updated_at: "2026-01-15T10:00:00Z".into(),
+            use_case_id: None,
         }
     }
 

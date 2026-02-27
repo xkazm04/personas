@@ -1,17 +1,21 @@
-import { parseDesignContext, type UseCaseItem, type DesignContextData } from '@/features/shared/components/UseCasesList';
+import { parseDesignContext, serializeDesignContext } from '@/features/shared/components/UseCasesList';
+import type { DesignContextData, DesignUseCase } from '@/lib/types/frontendTypes';
+
+// Re-export UseCaseItem alias for backward compat
+export type { DesignUseCase as UseCaseItem } from '@/lib/types/frontendTypes';
 
 /** Find a single use case by ID from raw design_context JSON. */
 export function getUseCaseById(
   rawDesignContext: string | null | undefined,
   useCaseId: string,
-): UseCaseItem | undefined {
+): DesignUseCase | undefined {
   const data = parseDesignContext(rawDesignContext);
-  return data.use_cases?.find((uc) => uc.id === useCaseId);
+  return data.useCases?.find((uc) => uc.id === useCaseId);
 }
 
 /** Get all use cases from raw design_context JSON. */
-export function getUseCases(rawDesignContext: string | null | undefined): UseCaseItem[] {
-  return parseDesignContext(rawDesignContext).use_cases ?? [];
+export function getUseCases(rawDesignContext: string | null | undefined): DesignUseCase[] {
+  return parseDesignContext(rawDesignContext).useCases ?? [];
 }
 
 /**
@@ -21,10 +25,10 @@ export function getUseCases(rawDesignContext: string | null | undefined): UseCas
 export function updateUseCaseInContext(
   rawDesignContext: string | null | undefined,
   useCaseId: string,
-  updater: (uc: UseCaseItem) => UseCaseItem,
+  updater: (uc: DesignUseCase) => DesignUseCase,
 ): string {
   const data: DesignContextData = parseDesignContext(rawDesignContext);
-  const useCases = data.use_cases ?? [];
+  const useCases = data.useCases ?? [];
   const updated = useCases.map((uc) => (uc.id === useCaseId ? updater(uc) : uc));
-  return JSON.stringify({ ...data, use_cases: updated });
+  return serializeDesignContext({ ...data, useCases: updated });
 }

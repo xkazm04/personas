@@ -1,6 +1,6 @@
 use rusqlite::{params, Row};
 
-use crate::db::models::{CreatePersonaInput, Persona, PersonaSummary, UpdatePersonaInput};
+use crate::db::models::{CreatePersonaInput, Persona, PersonaHealth, PersonaSummary, UpdatePersonaInput};
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -257,11 +257,13 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
     get_by_id(pool, id)
 }
 
-/// Batch-fetch sidebar summary data (enabled trigger count + last execution time)
+/// Batch-fetch sidebar summary data (enabled trigger count + last execution time + health)
 /// for all personas in a single query, eliminating the N+1 IPC pattern.
 pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
     let conn = pool.get()?;
-    let mut stmt = conn.prepare(
+
+    // Step 1: Basic summary (trigger counts + last run)
+    let mut summary_stmt = conn.prepare(
         "SELECT
              p.id AS persona_id,
              COALESCE(t.cnt, 0) AS enabled_trigger_count,
@@ -279,14 +281,124 @@ pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
              GROUP BY persona_id
          ) e ON e.persona_id = p.id",
     )?;
-    let rows = stmt.query_map([], |row| {
-        Ok(PersonaSummary {
-            persona_id: row.get("persona_id")?,
-            enabled_trigger_count: row.get("enabled_trigger_count")?,
-            last_run_at: row.get("last_run_at")?,
+    let base_rows: Vec<(String, i64, Option<String>)> = summary_stmt
+        .query_map([], |row| {
+            Ok((
+                row.get::<_, String>("persona_id")?,
+                row.get::<_, i64>("enabled_trigger_count")?,
+                row.get::<_, Option<String>>("last_run_at")?,
+            ))
+        })?
+        .filter_map(|r| r.ok())
+        .collect();
+
+    // Step 2: Compute health for each persona from recent executions
+    let today_start = chrono::Utc::now().date_naive().and_hms_opt(0, 0, 0).unwrap().to_string();
+    let week_ago = (chrono::Utc::now() - chrono::Duration::days(7)).to_rfc3339();
+
+    let mut summaries = Vec::with_capacity(base_rows.len());
+    for (persona_id, enabled_trigger_count, last_run_at) in base_rows {
+        let health = compute_persona_health(&conn, &persona_id, &today_start, &week_ago)?;
+        summaries.push(PersonaSummary {
+            persona_id,
+            enabled_trigger_count,
+            last_run_at,
+            health,
+        });
+    }
+
+    Ok(summaries)
+}
+
+/// Compute health data for a single persona from its recent executions.
+fn compute_persona_health(
+    conn: &rusqlite::Connection,
+    persona_id: &str,
+    today_start: &str,
+    week_ago: &str,
+) -> Result<PersonaHealth, AppError> {
+    // Recent statuses (last 10, newest first)
+    let mut status_stmt = conn.prepare_cached(
+        "SELECT status FROM persona_executions
+         WHERE persona_id = ?1
+         ORDER BY created_at DESC
+         LIMIT 10",
+    )?;
+    let recent_statuses: Vec<String> = status_stmt
+        .query_map(params![persona_id], |row| row.get(0))?
+        .filter_map(|r| r.ok())
+        .collect();
+
+    let total_recent = recent_statuses.len() as i64;
+
+    // Success rate
+    let success_count = recent_statuses
+        .iter()
+        .filter(|s| s.as_str() == "completed")
+        .count() as f64;
+    let fail_count = recent_statuses
+        .iter()
+        .filter(|s| s.as_str() == "failed" || s.as_str() == "error")
+        .count() as f64;
+    let success_rate = if total_recent > 0 {
+        success_count / total_recent as f64
+    } else {
+        0.0
+    };
+
+    // Health status derivation
+    let status = if total_recent == 0 {
+        "dormant"
+    } else {
+        let fail_ratio = fail_count / total_recent as f64;
+        if fail_ratio == 0.0 {
+            "healthy"
+        } else if fail_ratio >= 0.6 {
+            "failing"
+        } else {
+            "degraded"
+        }
+    }
+    .to_string();
+
+    // Runs today
+    let runs_today: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM persona_executions
+         WHERE persona_id = ?1 AND created_at >= ?2",
+        params![persona_id, today_start],
+        |row| row.get(0),
+    )?;
+
+    // 7-day sparkline: count executions per day for the last 7 days
+    let mut sparkline_stmt = conn.prepare_cached(
+        "SELECT DATE(created_at) AS day, COUNT(*) AS cnt
+         FROM persona_executions
+         WHERE persona_id = ?1 AND created_at >= ?2
+         GROUP BY DATE(created_at)",
+    )?;
+    let day_counts: std::collections::HashMap<String, i64> = sparkline_stmt
+        .query_map(params![persona_id, week_ago], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
+        })?
+        .filter_map(|r| r.ok())
+        .collect();
+
+    let today = chrono::Utc::now().date_naive();
+    let sparkline: Vec<i64> = (0..7)
+        .map(|days_ago| {
+            let day = (today - chrono::Duration::days(6 - days_ago)).to_string();
+            *day_counts.get(&day).unwrap_or(&0)
         })
-    })?;
-    Ok(rows.filter_map(|r| r.ok()).collect())
+        .collect();
+
+    Ok(PersonaHealth {
+        status,
+        recent_statuses,
+        success_rate,
+        total_recent,
+        runs_today,
+        sparkline,
+    })
 }
 
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {

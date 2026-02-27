@@ -83,6 +83,9 @@ export interface ConnectorWithCount {
 export const listReviewConnectors = () =>
   invoke<ConnectorWithCount[]>("list_review_connectors");
 
+export const cleanupDuplicateReviews = () =>
+  invoke<{ deleted: number }>("cleanup_duplicate_reviews");
+
 // ============================================================================
 // Import
 // ============================================================================

@@ -7,6 +7,7 @@ import {
 import { usePersonaStore } from '@/stores/personaStore';
 import { usePersonaTests } from '@/hooks/tests/usePersonaTests';
 import { TestComparisonTable } from './TestComparisonTable';
+import { TestSuiteManager } from './TestSuiteManager';
 import { statusBadge } from './testUtils';
 import { parseDesignContext, type UseCaseItem } from '@/features/shared/components/UseCasesList';
 import { Listbox } from '@/features/shared/components/Listbox';
@@ -61,13 +62,14 @@ export function PersonaTestsTab() {
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [selectedUseCaseId, setSelectedUseCaseId] = useState<string | null>(null);
+  const [lastGeneratedScenarios, setLastGeneratedScenarios] = useState<unknown[] | null>(null);
 
   usePersonaTests();
 
   // Parse use cases from design_context
   const useCases: UseCaseItem[] = useMemo(() => {
     const ctx = parseDesignContext(selectedPersona?.design_context);
-    return ctx.use_cases ?? [];
+    return ctx.useCases ?? [];
   }, [selectedPersona?.design_context]);
 
   const selectedUseCase = useMemo(
@@ -100,6 +102,13 @@ export function PersonaTestsTab() {
       fetchTestRuns(selectedPersona.id);
     }
   }, [selectedPersona?.id, fetchTestRuns]);
+
+  // Capture generated scenarios from progress events
+  useEffect(() => {
+    if (testRunProgress?.phase === 'generated' && testRunProgress.scenarios && testRunProgress.scenarios.length > 0) {
+      setLastGeneratedScenarios(testRunProgress.scenarios);
+    }
+  }, [testRunProgress?.phase, testRunProgress?.scenarios]);
 
   // Fetch results when expanding a run
   useEffect(() => {
@@ -165,6 +174,20 @@ export function PersonaTestsTab() {
     } catch {
       return null;
     }
+  };
+
+  const handleRunSuite = async (suiteId: string) => {
+    if (!selectedPersona || selectedModels.size === 0) return;
+    const models: ModelTestConfig[] = [...selectedModels]
+      .map((id) => {
+        const opt = ALL_MODELS.find((m) => m.id === id);
+        if (!opt) return null;
+        return { id: opt.id, provider: opt.provider, model: opt.model, base_url: opt.base_url };
+      })
+      .filter(Boolean) as ModelTestConfig[];
+
+    const runId = await startTest(selectedPersona.id, models, undefined, suiteId);
+    if (runId) setActiveRunId(runId);
   };
 
   const hasTools = (selectedPersona?.tools?.length ?? 0) > 0;
@@ -376,6 +399,17 @@ export function PersonaTestsTab() {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Saved Test Suites */}
+      {selectedPersona && (
+        <TestSuiteManager
+          personaId={selectedPersona.id}
+          onRunSuite={handleRunSuite}
+          lastGeneratedScenarios={lastGeneratedScenarios}
+          lastRunId={activeRunId}
+          disabled={isTestRunning}
+        />
+      )}
 
       {/* Results History */}
       <div className="space-y-3">

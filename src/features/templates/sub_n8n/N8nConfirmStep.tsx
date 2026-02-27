@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion';
-import { CheckCircle2, Wrench, Zap, Link, ChevronDown, ChevronRight, RefreshCw, AlertTriangle, Brain, Activity, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, Wrench, Zap, Link, ChevronDown, ChevronRight, RefreshCw, AlertTriangle, Brain, Activity, ShieldCheck, XCircle } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import { MarkdownRenderer } from '@/features/shared/components/MarkdownRenderer';
 import { parseDesignContext } from '@/features/shared/components/UseCasesList';
+import { translateHealthcheckMessage } from '@/features/vault/components/credential-design/CredentialDesignHelpers';
 import { extractProtocolCapabilities, countByType } from './edit/protocolParser';
 import { usePersonaStore } from '@/stores/personaStore';
 
@@ -54,10 +55,7 @@ export function N8nConfirmStep({
   const toolCount = draftTools ? draftTools.length : selectedTools.length;
   const triggerCount = draftTriggers ? draftTriggers.length : selectedTriggers.length;
   const connectorCount = draftConnectors ? draftConnectors.length : selectedConnectors.length;
-  const credentialLinks = parseDesignContext(draft.design_context).credential_links ?? {};
-  const connectorsNeedingSetup = draftConnectors?.filter(
-    (c) => !c.has_credential && !credentialLinks[c.name],
-  ) ?? [];
+  const credentialLinks = parseDesignContext(draft.design_context).credentialLinks ?? {};
 
   // Protocol capability counts from prompt analysis
   const capabilities = useMemo(
@@ -88,6 +86,34 @@ export function N8nConfirmStep({
       return !hasMatchingCred;
     });
   }, [draftTools, credentialLinks, credentials]);
+
+  // Connector health statuses for the rail
+  type ConnectorHealth = 'ready' | 'missing' | 'failed';
+  interface ConnectorRailItem {
+    name: string;
+    health: ConnectorHealth;
+    credentialName: string | null;
+    errorMessage: string | null;
+  }
+
+  const connectorRailItems = useMemo((): ConnectorRailItem[] => {
+    if (!draftConnectors) return [];
+    return draftConnectors.map((c) => {
+      const linked = credentialLinks[c.name];
+      const matchedCred = credentials.find(
+        (cr) => cr.service_type === c.name || cr.id === linked,
+      );
+      const hasCredential = c.has_credential || !!linked || !!matchedCred;
+      return {
+        name: c.name,
+        health: hasCredential ? 'ready' as const : 'missing' as const,
+        credentialName: matchedCred?.name ?? (linked ? linked : null),
+        errorMessage: null,
+      };
+    });
+  }, [draftConnectors, credentialLinks, credentials]);
+
+  const readyConnectorCount = connectorRailItems.filter((c) => c.health === 'ready').length;
 
   return (
     <div className="space-y-4">
@@ -278,19 +304,78 @@ export function N8nConfirmStep({
             </div>
           ) : null}
 
-          {/* Connector badges */}
-          {draftConnectors && draftConnectors.length > 0 && (
-            <div className="flex flex-wrap gap-1 mb-2">
-              {draftConnectors.map((c) => (
-                <span
-                  key={c.name}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono rounded bg-emerald-500/10 text-emerald-400/60 border border-emerald-500/15"
-                  title={`n8n type: ${c.n8n_credential_type}`}
-                >
-                  {c.name}
-                  {c.has_credential && <CheckCircle2 className="w-2.5 h-2.5" />}
+          {/* Connector health rail */}
+          {connectorRailItems.length > 0 && (
+            <div className="rounded-xl border border-primary/10 bg-secondary/15 overflow-hidden mb-2" data-testid="connector-health-rail">
+              {/* Summary bar */}
+              <div className="flex items-center gap-3 px-3.5 py-2.5 bg-secondary/25 border-b border-primary/[0.06]" data-testid="connector-health-summary">
+                <span className="text-sm text-muted-foreground/80">
+                  <span className={`font-semibold ${readyConnectorCount === connectorRailItems.length ? 'text-emerald-400' : readyConnectorCount > 0 ? 'text-amber-400' : 'text-red-400'}`}>
+                    {readyConnectorCount}
+                  </span>
+                  {' '}of {connectorRailItems.length} connector{connectorRailItems.length !== 1 ? 's' : ''} ready
                 </span>
-              ))}
+                <div className="flex-1 h-1 rounded-full bg-primary/10 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-emerald-400 transition-all duration-300"
+                    style={{ width: connectorRailItems.length > 0 ? `${(readyConnectorCount / connectorRailItems.length) * 100}%` : '0%' }}
+                  />
+                </div>
+              </div>
+
+              {/* Connector rows */}
+              <div className="divide-y divide-primary/[0.06]">
+                {connectorRailItems.map((item) => {
+                  const dotColor = item.health === 'ready'
+                    ? 'bg-emerald-400'
+                    : item.health === 'failed'
+                      ? 'bg-red-400'
+                      : 'bg-amber-400';
+                  const statusIcon = item.health === 'ready'
+                    ? <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+                    : item.health === 'failed'
+                      ? <XCircle className="w-3 h-3 text-red-400 flex-shrink-0" />
+                      : <AlertTriangle className="w-3 h-3 text-amber-400 flex-shrink-0" />;
+                  const translated = item.errorMessage
+                    ? translateHealthcheckMessage(item.errorMessage)
+                    : null;
+
+                  return (
+                    <div
+                      key={item.name}
+                      className="flex items-center gap-3 px-3.5 h-10"
+                      data-testid={`connector-rail-row-${item.name}`}
+                    >
+                      {/* Status dot */}
+                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`} />
+
+                      {/* Connector name */}
+                      <span className="text-sm font-medium text-foreground/80 truncate min-w-0 flex-1">
+                        {item.name}
+                      </span>
+
+                      {/* Credential name or missing label */}
+                      {item.credentialName ? (
+                        <span className="text-sm text-muted-foreground/60 truncate max-w-[140px]">
+                          {item.credentialName}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-amber-400/70">No credential</span>
+                      )}
+
+                      {/* Status icon */}
+                      {statusIcon}
+
+                      {/* Error message for failed connectors */}
+                      {translated && (
+                        <span className="text-sm text-red-400/70 truncate max-w-[180px]" title={translated.raw}>
+                          {translated.friendly}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
@@ -314,17 +399,6 @@ export function N8nConfirmStep({
                   </span>
                 );
               })}
-            </div>
-          )}
-
-          {/* Connectors needing setup warning */}
-          {connectorsNeedingSetup.length > 0 && (
-            <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/5 border border-amber-500/15 mb-2">
-              <AlertTriangle className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-amber-400/60">
-                <p className="font-medium">Connectors needing setup:</p>
-                <p className="mt-0.5">{connectorsNeedingSetup.map((c) => c.name).join(', ')}</p>
-              </div>
             </div>
           )}
 

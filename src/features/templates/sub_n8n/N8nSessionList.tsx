@@ -5,6 +5,7 @@ import type { N8nTransformSession } from '@/lib/bindings/N8nTransformSession';
 import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import type { N8nWizardStep, TransformQuestion } from './useN8nImportReducer';
+import { WorkflowThumbnail } from './WorkflowThumbnail';
 
 interface N8nSessionListProps {
   onLoadSession: (
@@ -201,7 +202,9 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
               onClick={() => void handleLoad(session)}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); void handleLoad(session); } }}
               className="w-full flex items-center gap-3 p-3 rounded-xl border border-primary/10 bg-secondary/20 hover:bg-secondary/40 transition-colors text-left group cursor-pointer"
+              data-testid={`n8n-session-card-${session.id}`}
             >
+              <WorkflowThumbnail rawWorkflowJson={session.raw_workflow_json} />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground/90 truncate">
                   {session.workflow_name}
@@ -223,6 +226,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
                   disabled={deletingId === session.id}
                   className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100"
                   title="Delete session"
+                  data-testid={`n8n-session-delete-${session.id}`}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>

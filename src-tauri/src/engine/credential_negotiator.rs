@@ -1,4 +1,4 @@
-use super::design::{extract_fenced_json, extract_bare_json_with_key};
+use super::design::extract_json_by_key;
 
 // ============================================================================
 // Credential Negotiator Prompt Builder
@@ -81,26 +81,12 @@ pub fn build_step_help_prompt(
 
 /// Extract a negotiation plan JSON from Claude's output text.
 pub fn extract_negotiation_result(output: &str) -> Option<serde_json::Value> {
-    // Strategy 1: Find fenced JSON code block
-    if let Some(result) = extract_fenced_json(output) {
-        if result.get("steps").is_some() {
-            return Some(result);
-        }
-    }
-
-    // Strategy 2: Find bare JSON object containing "steps" key
-    extract_bare_json_with_key(output, &["steps"])
+    extract_json_by_key(output, &["steps"])
 }
 
 /// Extract a step help response from Claude's output text.
 pub fn extract_step_help_result(output: &str) -> Option<serde_json::Value> {
-    if let Some(result) = extract_fenced_json(output) {
-        if result.get("answer").is_some() {
-            return Some(result);
-        }
-    }
-
-    extract_bare_json_with_key(output, &["answer"])
+    extract_json_by_key(output, &["answer"])
 }
 
 // ============================================================================

@@ -5,6 +5,7 @@ import {
   getNegotiationStepHelp,
 } from '@/api/negotiator';
 import { useAiArtifactFlow, defaultGetLine, buildResolveStatus } from './useAiArtifactFlow';
+import { useStepProgress } from '@/hooks/useStepProgress';
 
 // ── Types ───────────────────────────────────────────────────────
 
@@ -40,9 +41,6 @@ interface NegotiationInput {
 // ── Hook ────────────────────────────────────────────────────────
 
 export function useCredentialNegotiator() {
-  const [activeStepIndex, setActiveStepIndex] = useState(0);
-  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
-  const [capturedValues, setCapturedValues] = useState<Record<string, string>>({});
   const [stepHelp, setStepHelp] = useState<{ answer: string; stepIndex: number } | null>(null);
   const [isLoadingHelp, setIsLoadingHelp] = useState(false);
   const serviceNameRef = useRef('');
@@ -61,49 +59,44 @@ export function useCredentialNegotiator() {
       startCredentialNegotiation(serviceName, connector, fieldKeys),
   });
 
+  // Derive totalSteps from plan — this re-renders when flow.result changes
+  const totalSteps = flow.result?.steps.length ?? 0;
+  const sp = useStepProgress(totalSteps);
+
   const start = useCallback(async (
     serviceName: string,
     connector: Record<string, unknown>,
     fieldKeys: string[],
   ) => {
     serviceNameRef.current = serviceName;
-    setActiveStepIndex(0);
-    setCompletedSteps(new Set());
-    setCapturedValues({});
+    sp.reset();
     setStepHelp(null);
 
     await flow.start({ serviceName, connector, fieldKeys });
-  }, [flow.start]);
+  }, [flow.start, sp.reset]);
 
   const cancel = useCallback(() => {
     flow.cancel(() => cancelCredentialNegotiation());
   }, [flow.cancel]);
 
   const completeStep = useCallback((stepIndex: number) => {
-    setCompletedSteps((prev) => {
-      const next = new Set(prev);
-      next.add(stepIndex);
-      // Transition to done when every step is marked complete
-      if (flow.result && next.size === flow.result.steps.length) {
+    sp.completeStep(stepIndex);
+
+    // Transition to done when every step is marked complete
+    if (flow.result) {
+      // +1 because the step we just completed isn't in completedSteps yet
+      // (state update is async), so check count manually
+      const willBeComplete = sp.completedSteps.size + (sp.completedSteps.has(stepIndex) ? 0 : 1);
+      if (willBeComplete >= flow.result.steps.length) {
         flow.setPhase('done');
       }
-      return next;
-    });
-
-    // Auto-advance to next step
-    if (flow.result && stepIndex < flow.result.steps.length - 1) {
-      setActiveStepIndex(stepIndex + 1);
     }
-  }, [flow.result, flow.setPhase]);
-
-  const captureValue = useCallback((fieldKey: string, value: string) => {
-    setCapturedValues((prev) => ({ ...prev, [fieldKey]: value }));
-  }, []);
+  }, [flow.result, flow.setPhase, sp.completeStep, sp.completedSteps]);
 
   const goToStep = useCallback((stepIndex: number) => {
-    setActiveStepIndex(stepIndex);
+    sp.goToStep(stepIndex);
     setStepHelp(null);
-  }, []);
+  }, [sp.goToStep]);
 
   const requestStepHelp = useCallback(async (stepIndex: number, question: string) => {
     if (!flow.result) return;
@@ -134,26 +127,24 @@ export function useCredentialNegotiator() {
 
   const reset = useCallback(() => {
     flow.reset();
-    setActiveStepIndex(0);
-    setCompletedSteps(new Set());
-    setCapturedValues({});
+    sp.reset();
     setStepHelp(null);
-  }, [flow.reset]);
+  }, [flow.reset, sp.reset]);
 
   return {
     phase: flow.phase as NegotiatorPhase,
     progressLines: flow.lines,
     plan: flow.result,
     error: flow.error,
-    activeStepIndex,
-    completedSteps,
-    capturedValues,
+    activeStepIndex: sp.activeStepIndex,
+    completedSteps: sp.completedSteps,
+    capturedValues: sp.capturedValues,
     stepHelp,
     isLoadingHelp,
     start,
     cancel,
     completeStep,
-    captureValue,
+    captureValue: sp.captureValue,
     goToStep,
     requestStepHelp,
     reset,

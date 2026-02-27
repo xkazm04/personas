@@ -249,6 +249,67 @@ pub fn unassign_tool(pool: &DbPool, persona_id: &str, tool_id: &str) -> Result<b
     Ok(rows > 0)
 }
 
+/// Assign multiple tools to a persona in a single transaction.
+pub fn bulk_assign_tools(
+    pool: &DbPool,
+    persona_id: &str,
+    tool_ids: &[String],
+) -> Result<u32, AppError> {
+    if tool_ids.is_empty() {
+        return Ok(0);
+    }
+    let conn = pool.get()?;
+    let mut count = 0u32;
+    let tx = conn.unchecked_transaction()?;
+    for tool_id in tool_ids {
+        // Skip if already assigned
+        let exists: bool = tx
+            .query_row(
+                "SELECT COUNT(*) FROM persona_tools WHERE persona_id = ?1 AND tool_id = ?2",
+                params![persona_id, tool_id],
+                |row| row.get::<_, i64>(0),
+            )
+            .map(|c| c > 0)
+            .unwrap_or(false);
+        if exists {
+            continue;
+        }
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        tx.execute(
+            "INSERT INTO persona_tools (id, persona_id, tool_id, tool_config, created_at)
+             VALUES (?1, ?2, ?3, NULL, ?4)",
+            params![id, persona_id, tool_id, now],
+        )?;
+        count += 1;
+    }
+    tx.commit()?;
+    Ok(count)
+}
+
+/// Remove multiple tools from a persona in a single transaction.
+pub fn bulk_unassign_tools(
+    pool: &DbPool,
+    persona_id: &str,
+    tool_ids: &[String],
+) -> Result<u32, AppError> {
+    if tool_ids.is_empty() {
+        return Ok(0);
+    }
+    let conn = pool.get()?;
+    let mut count = 0u32;
+    let tx = conn.unchecked_transaction()?;
+    for tool_id in tool_ids {
+        let rows = tx.execute(
+            "DELETE FROM persona_tools WHERE persona_id = ?1 AND tool_id = ?2",
+            params![persona_id, tool_id],
+        )?;
+        count += rows as u32;
+    }
+    tx.commit()?;
+    Ok(count)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

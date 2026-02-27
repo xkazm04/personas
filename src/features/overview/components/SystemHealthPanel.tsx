@@ -505,31 +505,44 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
             {[0, 1, 2, 3].map((idx) => (
               <motion.div
                 key={`loading-${idx}`}
                 initial={{ opacity: 0.35, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.12, duration: prefersReducedMotion ? 0.2 : 0.45 }}
-                className="rounded-xl border border-primary/10 bg-secondary/20 min-h-[220px] relative overflow-hidden"
+                className="rounded-2xl border border-primary/5 bg-secondary/10 shadow-sm min-h-[240px] relative overflow-hidden flex flex-col"
               >
                 <motion.div
-                  className="absolute inset-y-0 -left-1/2 w-1/2 bg-gradient-to-r from-transparent via-primary/10 to-transparent"
-                  animate={prefersReducedMotion ? { opacity: 0 } : { x: ['0%', '300%'] }}
+                  className="absolute inset-y-0 -left-1/2 w-[200%] bg-gradient-to-r from-transparent via-primary/5 to-transparent"
+                  animate={prefersReducedMotion ? { opacity: 0 } : { x: ['0%', '200%'] }}
                   transition={
                     prefersReducedMotion
                       ? { duration: 0 }
-                      : { duration: 1.8, repeat: Infinity, ease: 'linear', delay: idx * 0.12 }
+                      : { duration: 2, repeat: Infinity, ease: 'linear', delay: idx * 0.15 }
                   }
                 />
-                <div className="px-4 py-2.5 border-b border-primary/5">
-                  <div className="h-3 w-28 rounded bg-primary/10" />
+                <div className="px-5 py-4 border-b border-primary/5 flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-xl bg-primary/10" />
+                  <div className="h-4 w-24 rounded-md bg-primary/10" />
+                  <div className="ml-auto w-2 h-2 rounded-full bg-primary/10" />
                 </div>
-                <div className="px-4 py-3 space-y-3">
-                  <div className="h-3 w-3/4 rounded bg-primary/10" />
-                  <div className="h-3 w-2/3 rounded bg-primary/10" />
-                  <div className="h-3 w-4/5 rounded bg-primary/10" />
+                <div className="px-5 py-4 space-y-4 flex-1">
+                  <div className="flex gap-3">
+                    <div className="w-4 h-4 rounded-full bg-primary/10 flex-shrink-0" />
+                    <div className="space-y-2 flex-1">
+                      <div className="h-3 w-3/4 rounded-md bg-primary/10" />
+                      <div className="h-2 w-1/2 rounded-md bg-primary/5" />
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="w-4 h-4 rounded-full bg-primary/10 flex-shrink-0" />
+                    <div className="space-y-2 flex-1">
+                      <div className="h-3 w-4/5 rounded-md bg-primary/10" />
+                      <div className="h-2 w-2/3 rounded-md bg-primary/5" />
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             ))}
@@ -537,7 +550,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
         </div>
       ) : (
         <div className="flex-1 min-h-0 overflow-y-auto pr-1">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
           {sections.map((section, sectionIdx) => {
             const SectionIcon = SECTION_ICONS[section.id] || Monitor;
             const sectionStyle = SECTION_STYLES[section.id] ?? DEFAULT_SECTION_STYLE;
@@ -551,13 +564,13 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: sectionIdx * 0.1, duration: 0.25 }}
-                className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden flex flex-col min-h-[220px]"
+                className="rounded-2xl border border-primary/10 bg-secondary/20 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col min-h-[240px] group"
               >
-                <div className="flex items-center gap-2.5 px-4 py-2.5 border-b border-primary/5">
-                  <div className={`w-6 h-6 rounded-md flex items-center justify-center ${sectionStyle.badge}`}>
-                    <SectionIcon className={`w-3.5 h-3.5 ${sectionStyle.icon}`} />
+                <div className="flex items-center gap-3 px-5 py-4 border-b border-primary/5 bg-background/30 group-hover:bg-background/50 transition-colors">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center border shadow-inner ${sectionStyle.badge}`}>
+                    <SectionIcon className={`w-4 h-4 ${sectionStyle.icon}`} />
                   </div>
-                  <span className="text-sm font-medium text-foreground/80 uppercase tracking-wider">
+                  <span className="text-[13px] font-bold text-foreground/90 uppercase tracking-widest">
                     {section.label}
                   </span>
                   <div className="ml-auto">
@@ -565,9 +578,9 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
                   </div>
                 </div>
 
-                <div className="divide-y divide-primary/5 flex-1">
+                <div className="divide-y divide-primary/5 flex-1 bg-gradient-to-b from-transparent to-black/[0.02]">
                   {section.items.map((check) => (
-                    <div key={check.id} className="flex items-start gap-3 px-4 py-2.5">
+                    <div key={check.id} className="flex items-start gap-3 px-5 py-3 hover:bg-white/[0.02] transition-colors">
                       {getStatusIcon(check.status)}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-foreground/80">{check.label}</p>

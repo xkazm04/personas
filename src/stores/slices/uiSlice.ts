@@ -5,7 +5,7 @@ import type { SidebarSection, EditorTab, TemplateTab, CloudTab, SettingsTab } fr
 export interface UiSlice {
   // State
   sidebarSection: SidebarSection;
-  credentialView: "credentials" | "from-template" | "add-new";
+  credentialView: "credentials" | "from-template" | "add-new" | "add-api-tool" | "add-mcp" | "add-custom" | "add-database";
   templateTab: TemplateTab;
   editorTab: EditorTab;
   cloudTab: CloudTab;
@@ -22,7 +22,7 @@ export interface UiSlice {
 
   // Actions
   setSidebarSection: (section: SidebarSection) => void;
-  setCredentialView: (view: "credentials" | "from-template" | "add-new") => void;
+  setCredentialView: (view: "credentials" | "from-template" | "add-new" | "add-api-tool" | "add-mcp" | "add-custom" | "add-database") => void;
   setTemplateTab: (tab: TemplateTab) => void;
   setEditorTab: (tab: EditorTab) => void;
   setCloudTab: (tab: CloudTab) => void;

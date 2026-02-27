@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   CheckCircle2,
@@ -10,10 +10,12 @@ import {
   ChevronRight,
   RefreshCw,
   AlertTriangle,
+  Shield,
 } from 'lucide-react';
 import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import type { ConnectorReadinessStatus } from '@/lib/types/designTypes';
+import { extractProtocolCapabilities } from '@/features/templates/sub_n8n/edit/protocolParser';
 
 interface AdoptConfirmStepProps {
   draft: N8nPersonaDraft;
@@ -37,6 +39,15 @@ export function AdoptConfirmStep({
   const connectorCount = designResult?.suggested_connectors?.length ?? 0;
   const channelCount = designResult?.suggested_notification_channels?.length ?? 0;
   const connectorsNeedingSetup = readinessStatuses.filter((s) => s.health !== 'ready');
+  const readyCount = readinessStatuses.filter((s) => s.health === 'ready').length;
+
+  const capabilities = useMemo(
+    () => extractProtocolCapabilities(
+      draft.system_prompt,
+      draft.structured_prompt as Record<string, unknown> | null,
+    ),
+    [draft.system_prompt, draft.structured_prompt],
+  );
 
   return (
     <div className="space-y-4">
@@ -189,13 +200,49 @@ export function AdoptConfirmStep({
             </div>
           )}
 
-          {/* Connectors needing setup warning */}
-          {connectorsNeedingSetup.length > 0 && (
-            <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/5 border border-amber-500/15 mb-2">
-              <AlertTriangle className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-amber-400/60">
-                <p className="font-medium">Connectors needing setup:</p>
-                <p className="mt-0.5">{connectorsNeedingSetup.map((s) => s.connector_name).join(', ')}</p>
+          {/* Protocol capability badges */}
+          {capabilities.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {capabilities.map((cap) => (
+                <span
+                  key={cap.type}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-cyan-500/10 text-cyan-400/70 border border-cyan-500/15"
+                  title={cap.context}
+                >
+                  <Shield className="w-3 h-3" />
+                  {cap.label}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Connector health rail */}
+          {readinessStatuses.length > 0 && (
+            <div className="mt-3 mb-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs uppercase tracking-wider text-muted-foreground/50">
+                  Connector Readiness
+                </span>
+                <span className="text-xs text-emerald-400/80">
+                  {readyCount} of {readinessStatuses.length} ready
+                </span>
+              </div>
+              <div className="h-1.5 rounded-full bg-secondary/40 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-emerald-400 transition-all"
+                  style={{ width: `${(readyCount / readinessStatuses.length) * 100}%` }}
+                />
+              </div>
+              <div className="mt-2 space-y-1.5">
+                {readinessStatuses.map((s) => (
+                  <div key={s.connector_name} className="flex items-center gap-2 text-xs">
+                    <span className={`w-1.5 h-1.5 rounded-full ${s.health === 'ready' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                    <span className="text-foreground/70">{s.connector_name}</span>
+                    <span className="text-muted-foreground/40 ml-auto">
+                      {s.health === 'ready' ? 'Ready' : 'Needs setup'}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           )}

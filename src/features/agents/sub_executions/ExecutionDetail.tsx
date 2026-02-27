@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import type { DbPersonaExecution } from '@/lib/types/types';
-import { ChevronDown, ChevronRight, Clock, Calendar, FileText, AlertCircle, Search, ListTree, Lightbulb, RotateCw, RefreshCw, Key, Zap, Settings, ArrowRight, Shield, Loader2, Brain } from 'lucide-react';
+import { ChevronDown, ChevronRight, Clock, Calendar, FileText, AlertCircle, Search, ListTree, RotateCw, RefreshCw, Key, Zap, Settings, ArrowRight, Shield, Loader2, Brain, XCircle, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { formatTimestamp, formatDuration, EXECUTION_STATUS_COLORS, badgeClass, MEMORY_CATEGORY_COLORS } from '@/lib/utils/formatters';
+import { formatTimestamp, formatDuration, getStatusEntry, badgeClass, MEMORY_CATEGORY_COLORS } from '@/lib/utils/formatters';
 import { ExecutionInspector } from '@/features/agents/sub_executions/ExecutionInspector';
 import { usePersonaStore } from '@/stores/personaStore';
 import { getExecutionLog } from '@/api/executions';
@@ -10,6 +10,7 @@ import { listMemoriesByExecution } from '@/api/memories';
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
 import type { LucideIcon } from 'lucide-react';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
+import { isTerminalState } from '@/lib/execution/executionState';
 import hljs from 'highlight.js/lib/core';
 import jsonLang from 'highlight.js/lib/languages/json';
 
@@ -36,26 +37,34 @@ interface ErrorAction {
   navigate: 'vault' | 'triggers' | 'persona-settings';
 }
 
-const ERROR_PATTERNS: Array<{ pattern: RegExp; summary: string; guidance: string; action?: ErrorAction }> = [
-  { pattern: /api key/i, summary: 'API key issue detected.', guidance: 'Check that your API key is valid and hasn\'t expired.', action: { label: 'Go to Vault', icon: Key, navigate: 'vault' } },
-  { pattern: /invalid.*key|invalid_api_key|authentication|unauthorized|401/i, summary: 'Authentication failed.', guidance: 'Your API key may be invalid or expired.', action: { label: 'Go to Vault', icon: Key, navigate: 'vault' } },
-  { pattern: /rate.?limit|429|too many requests/i, summary: 'Rate limit reached.', guidance: 'The API rate limit was hit. Try reducing the trigger frequency.', action: { label: 'Edit Triggers', icon: Zap, navigate: 'triggers' } },
-  { pattern: /timeout|timed?\s*out|ETIMEDOUT|ESOCKETTIMEDOUT/i, summary: 'The operation timed out.', guidance: 'The request took too long. Adjust the timeout in persona settings.', action: { label: 'Persona Settings', icon: Settings, navigate: 'persona-settings' } },
-  { pattern: /ECONNREFUSED|ECONNRESET|ENOTFOUND|network|DNS/i, summary: 'Network connection failed.', guidance: 'Could not reach the server. Check your internet connection and that the target service is available.' },
-  { pattern: /permission.?denied|forbidden|403/i, summary: 'Permission denied.', guidance: 'The tool or API denied access. Verify your credentials have the necessary permissions.', action: { label: 'Check Credentials', icon: Shield, navigate: 'vault' } },
-  { pattern: /quota|billing|payment|insufficient.?funds|402/i, summary: 'Account quota or billing issue.', guidance: 'Your API account may have reached its spending limit. Check your account billing status.' },
-  { pattern: /spawn\s+ENOENT|command not found|not recognized/i, summary: 'Required command not found.', guidance: 'A system command needed for this execution is not installed. Check that all required CLI tools are available on your system.' },
-  { pattern: /exit\s+code\s+1|exited?\s+with\s+1/i, summary: 'The process exited with an error.', guidance: 'The underlying process reported a failure. Check the execution log for more details.' },
-  { pattern: /ENOMEM|out of memory/i, summary: 'Out of memory.', guidance: 'The system ran out of memory. Try closing other applications or reducing the task complexity.' },
-  { pattern: /500|internal.?server.?error/i, summary: 'The remote server encountered an error.', guidance: 'The API returned a server error. This is usually temporary — try again in a few minutes.' },
-  { pattern: /JSON|parse|unexpected token/i, summary: 'Failed to parse response data.', guidance: 'The response was not in the expected format. This may indicate an API change or malformed data.' },
-  { pattern: /credential|secret|token/i, summary: 'Credential issue.', guidance: 'A required credential may be missing or invalid.', action: { label: 'Go to Vault', icon: Key, navigate: 'vault' } },
+type ErrorSeverity = 'critical' | 'warning' | 'info';
+
+const SEVERITY_CONFIG: Record<ErrorSeverity, { border: string; icon: LucideIcon; iconColor: string }> = {
+  critical: { border: 'border-l-red-500', icon: XCircle, iconColor: 'text-red-400' },
+  warning:  { border: 'border-l-amber-500', icon: AlertTriangle, iconColor: 'text-amber-400' },
+  info:     { border: 'border-l-yellow-500', icon: Clock, iconColor: 'text-yellow-400' },
+};
+
+const ERROR_PATTERNS: Array<{ pattern: RegExp; summary: string; guidance: string; severity: ErrorSeverity; action?: ErrorAction }> = [
+  { pattern: /api key/i, severity: 'critical', summary: 'API key issue detected.', guidance: 'Check that your API key is valid and hasn\'t expired.', action: { label: 'Go to Vault', icon: Key, navigate: 'vault' } },
+  { pattern: /invalid.*key|invalid_api_key|authentication|unauthorized|401/i, severity: 'critical', summary: 'Authentication failed.', guidance: 'Your API key may be invalid or expired.', action: { label: 'Go to Vault', icon: Key, navigate: 'vault' } },
+  { pattern: /rate.?limit|429|too many requests/i, severity: 'warning', summary: 'Rate limit reached.', guidance: 'The API rate limit was hit. Try reducing the trigger frequency.', action: { label: 'Edit Triggers', icon: Zap, navigate: 'triggers' } },
+  { pattern: /timeout|timed?\s*out|ETIMEDOUT|ESOCKETTIMEDOUT/i, severity: 'warning', summary: 'The operation timed out.', guidance: 'The request took too long. Adjust the timeout in persona settings.', action: { label: 'Persona Settings', icon: Settings, navigate: 'persona-settings' } },
+  { pattern: /ECONNREFUSED|ECONNRESET|ENOTFOUND|network|DNS/i, severity: 'info', summary: 'Network connection failed.', guidance: 'Could not reach the server. Check your internet connection and that the target service is available.' },
+  { pattern: /permission.?denied|forbidden|403/i, severity: 'critical', summary: 'Permission denied.', guidance: 'The tool or API denied access. Verify your credentials have the necessary permissions.', action: { label: 'Check Credentials', icon: Shield, navigate: 'vault' } },
+  { pattern: /quota|billing|payment|insufficient.?funds|402/i, severity: 'warning', summary: 'Account quota or billing issue.', guidance: 'Your API account may have reached its spending limit. Check your account billing status.' },
+  { pattern: /spawn\s+ENOENT|command not found|not recognized/i, severity: 'critical', summary: 'Required command not found.', guidance: 'A system command needed for this execution is not installed. Check that all required CLI tools are available on your system.' },
+  { pattern: /exit\s+code\s+1|exited?\s+with\s+1/i, severity: 'info', summary: 'The process exited with an error.', guidance: 'The underlying process reported a failure. Check the execution log for more details.' },
+  { pattern: /ENOMEM|out of memory/i, severity: 'warning', summary: 'Out of memory.', guidance: 'The system ran out of memory. Try closing other applications or reducing the task complexity.' },
+  { pattern: /500|internal.?server.?error/i, severity: 'warning', summary: 'The remote server encountered an error.', guidance: 'The API returned a server error. This is usually temporary — try again in a few minutes.' },
+  { pattern: /JSON|parse|unexpected token/i, severity: 'info', summary: 'Failed to parse response data.', guidance: 'The response was not in the expected format. This may indicate an API change or malformed data.' },
+  { pattern: /credential|secret|token/i, severity: 'critical', summary: 'Credential issue.', guidance: 'A required credential may be missing or invalid.', action: { label: 'Go to Vault', icon: Key, navigate: 'vault' } },
 ];
 
-function getErrorExplanation(errorMessage: string): { summary: string; guidance: string; action?: ErrorAction } | null {
-  for (const { pattern, summary, guidance, action } of ERROR_PATTERNS) {
+function getErrorExplanation(errorMessage: string): { summary: string; guidance: string; severity: ErrorSeverity; action?: ErrorAction } | null {
+  for (const { pattern, summary, guidance, severity, action } of ERROR_PATTERNS) {
     if (pattern.test(errorMessage)) {
-      return { summary, guidance, action };
+      return { summary, guidance, severity, action };
     }
   }
   return null;
@@ -128,7 +137,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
 
   useEffect(() => {
     // Fetch memories created by this execution (only for completed/finished)
-    if (execution.status === 'completed' || execution.status === 'failed' || execution.status === 'incomplete') {
+    if (isTerminalState(execution.status) && execution.status !== 'cancelled') {
       listMemoriesByExecution(execution.id)
         .then((memories) => {
           setExecutionMemories(memories);
@@ -201,8 +210,8 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
             <div className="space-y-1.5">
               <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider">Status</div>
               <div className="flex items-center gap-2">
-                <span className={`inline-block px-2 py-0.5 rounded-md text-sm font-medium ${EXECUTION_STATUS_COLORS[execution.status] ? badgeClass(EXECUTION_STATUS_COLORS[execution.status]!) : ''}`}>
-                  {execution.status}
+                <span className={`inline-block px-2 py-0.5 rounded-md text-sm font-medium ${badgeClass(getStatusEntry(execution.status))}`}>
+                  {getStatusEntry(execution.status).label}
                 </span>
                 {execution.retry_count > 0 && (
                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" title={`Healing retry #${execution.retry_count} of original execution`}>
@@ -249,30 +258,39 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
             const explanation = getErrorExplanation(execution.error_message);
             return (
               <div className="space-y-2">
-                {explanation && (
-                  <div className="p-3.5 bg-amber-500/8 border border-amber-500/15 rounded-xl">
-                    <div className="flex items-start gap-2.5">
-                      <Lightbulb className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-amber-300/90">{explanation.summary}</p>
-                        <p className="text-sm text-amber-300/60 mt-1">{explanation.guidance}</p>
-                        {explanation.action && (() => {
-                          const ActionIcon = explanation.action.icon;
-                          return (
-                            <button
-                              onClick={() => handleErrorAction(explanation.action!)}
-                              className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/25 hover:bg-amber-500/25 hover:text-amber-200 transition-all group"
-                            >
-                              <ActionIcon className="w-3.5 h-3.5" />
-                              {explanation.action.label}
-                              <ArrowRight className="w-3 h-3 opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-                            </button>
-                          );
-                        })()}
+                {explanation && (() => {
+                  const sev = SEVERITY_CONFIG[explanation.severity];
+                  const SeverityIcon = sev.icon;
+                  return (
+                    <div
+                      className={`border-l-[3px] ${sev.border} rounded-lg bg-zinc-900/50 p-3.5`}
+                      data-testid="error-explanation-card"
+                      data-severity={explanation.severity}
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <SeverityIcon className={`w-4 h-4 ${sev.iconColor} mt-0.5 flex-shrink-0`} data-testid="error-severity-icon" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground/90">{explanation.summary}</p>
+                          <p className="text-sm text-muted-foreground/70 mt-1">{explanation.guidance}</p>
+                          {explanation.action && (() => {
+                            const ActionIcon = explanation.action.icon;
+                            return (
+                              <button
+                                onClick={() => handleErrorAction(explanation.action!)}
+                                data-testid="error-action-btn"
+                                className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary/10 text-primary/80 border border-primary/15 hover:bg-primary/20 hover:text-primary transition-all group"
+                              >
+                                <ActionIcon className="w-3.5 h-3.5" />
+                                {explanation.action.label}
+                                <ArrowRight className="w-3 h-3 opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                              </button>
+                            );
+                          })()}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
                 <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
                   <div className="flex items-start gap-2.5">
                     <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
@@ -289,7 +307,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
           })()}
 
           {/* Re-run Button */}
-          {(execution.status === 'completed' || execution.status === 'failed' || execution.status === 'error' || execution.status === 'cancelled' || execution.status === 'incomplete') && (
+          {isTerminalState(execution.status) && (
             <button
               onClick={() => setRerunInputData(execution.input_data || '{}')}
               className="flex items-center gap-2 px-3.5 py-2 text-sm font-medium rounded-xl bg-primary/10 text-primary/80 border border-primary/15 hover:bg-primary/20 hover:text-primary transition-colors"

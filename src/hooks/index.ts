@@ -1,5 +1,6 @@
 // Design hooks
 export * from "./design/useDesignAnalysis";
+export * from "./design/usePersonaCompiler";
 export * from "./design/useDesignReviews";
 export * from "./design/useTemplateGallery";
 export * from "./design/useTauriStream";
@@ -15,6 +16,12 @@ export * from "./execution/useCorrelatedCliStream";
 
 // Realtime hooks
 export * from "./realtime/useRealtimeEvents";
+
+// Lab hooks
+export * from "./lab/useLabEvents";
+
+// Step progress
+export * from "./useStepProgress";
 
 // Utility hooks
 export * from "./utility/useAnimatedNumber";

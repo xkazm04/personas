@@ -6,15 +6,7 @@ import { DesignConnectorGrid } from '@/features/shared/components/DesignConnecto
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
-
-function parseJsonSafe<T>(json: string | null, fallback: T): T {
-  if (!json) return fallback;
-  try {
-    return JSON.parse(json);
-  } catch {
-    return fallback;
-  }
-}
+import { parseJsonSafe } from '@/lib/utils/parseJson';
 
 export function ReviewExpandedDetail({
   review,

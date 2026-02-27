@@ -24,6 +24,7 @@ import { createGroupSlice } from "./slices/groupSlice";
 import { createMemorySlice } from "./slices/memorySlice";
 import { createUiSlice } from "./slices/uiSlice";
 import { createTestSlice } from "./slices/testSlice";
+import { createLabSlice } from "./slices/labSlice";
 import { createCloudSlice } from "./slices/cloudSlice";
 import { createGitLabSlice } from "./slices/gitlabSlice";
 
@@ -47,6 +48,7 @@ export const usePersonaStore = create<PersonaStore>()(
         ...createMemorySlice(...a),
         ...createUiSlice(...a),
         ...createTestSlice(...a),
+        ...createLabSlice(...a),
         ...createCloudSlice(...a),
         ...createGitLabSlice(...a),
       }),

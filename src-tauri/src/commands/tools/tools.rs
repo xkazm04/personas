@@ -75,6 +75,24 @@ pub fn unassign_tool(
 }
 
 #[tauri::command]
+pub fn bulk_assign_tools(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+    tool_ids: Vec<String>,
+) -> Result<u32, AppError> {
+    repo::bulk_assign_tools(&state.db, &persona_id, &tool_ids)
+}
+
+#[tauri::command]
+pub fn bulk_unassign_tools(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+    tool_ids: Vec<String>,
+) -> Result<u32, AppError> {
+    repo::bulk_unassign_tools(&state.db, &persona_id, &tool_ids)
+}
+
+#[tauri::command]
 pub fn get_tool_usage_summary(
     state: State<'_, Arc<AppState>>,
     since: String,

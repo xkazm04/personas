@@ -42,6 +42,12 @@ export const assignTool = (
 export const unassignTool = (personaId: string, toolId: string) =>
   invoke<boolean>("unassign_tool", { personaId, toolId });
 
+export const bulkAssignTools = (personaId: string, toolIds: string[]) =>
+  invoke<number>("bulk_assign_tools", { personaId, toolIds });
+
+export const bulkUnassignTools = (personaId: string, toolIds: string[]) =>
+  invoke<number>("bulk_unassign_tools", { personaId, toolIds });
+
 // ── Tool Usage Analytics ──────────────────────────────────────────────────
 
 export const getToolUsageSummary = (since: string, personaId?: string) =>

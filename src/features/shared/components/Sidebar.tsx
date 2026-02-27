@@ -1,12 +1,11 @@
 import { motion } from 'framer-motion';
-import { useEffect, useState, type ReactNode } from 'react';
-import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Eye, Users, Radio, Brain, DollarSign, Cloud, Plus, LayoutTemplate, Monitor, Blocks, Upload, List, Settings, Chrome, Palette, Bell, GitBranch, type LucideIcon } from 'lucide-react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Eye, Users, Radio, Brain, DollarSign, Cloud, Plus, LayoutTemplate, Monitor, Blocks, Upload, List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu, type LucideIcon } from 'lucide-react';
 import { getVersion } from '@tauri-apps/api/app';
 import { usePersonaStore } from '@/stores/personaStore';
+import { useAuthStore } from '@/stores/authStore';
 import type { SidebarSection, OverviewTab, TemplateTab, CloudTab, SettingsTab } from '@/lib/types/types';
 import GroupedAgentSidebar from '@/features/agents/components/GroupedAgentSidebar';
-
-const disabledSections = new Set<SidebarSection>(['team']);
 
 const sections: Array<{ id: SidebarSection; icon: typeof Bot; label: string }> = [
   { id: 'overview', icon: BarChart3, label: 'Overview' },
@@ -124,6 +123,13 @@ export default function Sidebar() {
   const settingsTab = usePersonaStore((s) => s.settingsTab);
   const setSettingsTab = usePersonaStore((s) => s.setSettingsTab);
 
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const disabledSections = useMemo(() => {
+    const disabled = new Set<SidebarSection>(['team']);
+    if (!isAuthenticated) disabled.add('cloud');
+    return disabled;
+  }, [isAuthenticated]);
+
   const templateCount = connectorDefinitions.filter((conn) => {
     const metadata = conn.metadata as Record<string, unknown> | null;
     return metadata?.template_enabled === true;
@@ -153,6 +159,7 @@ export default function Sidebar() {
   };
 
   const overviewItems: Array<{ id: OverviewTab; icon: typeof Activity; label: string }> = [
+    { id: 'home', icon: LayoutDashboard, label: 'Dashboard' },
     { id: 'system-check', icon: Monitor, label: 'System Check' },
     { id: 'executions', icon: Activity, label: 'Executions' },
     { id: 'manual-review', icon: ClipboardCheck, label: 'Manual Review' },
@@ -178,7 +185,7 @@ export default function Sidebar() {
 
   const credentialItems: SubNavItem[] = [
     { id: 'credentials', label: 'Credentials', icon: Key },
-    { id: 'from-template', label: 'Add from catalog', icon: LayoutTemplate },
+    { id: 'from-template', label: 'Catalog', icon: LayoutTemplate },
     { id: 'add-new', label: 'Add new', icon: Plus },
   ];
 
@@ -197,6 +204,7 @@ export default function Sidebar() {
     { id: 'account', label: 'Account', icon: Chrome },
     { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'engine', label: 'Engine', icon: Cpu },
   ];
 
   const renderLevel2 = () => {
@@ -306,7 +314,7 @@ export default function Sidebar() {
               className={`relative w-11 h-11 rounded-xl flex items-center justify-center transition-all group ${
                 isDisabled ? 'cursor-not-allowed opacity-40' : ''
               }`}
-              title={isDisabled ? `${section.label} (Coming soon)` : section.label}
+              title={isDisabled ? `${section.label} (${section.id === 'cloud' ? 'Sign in required' : 'Coming soon'})` : section.label}
             >
               {isActive && !isDisabled && (
                 <motion.div
@@ -320,7 +328,7 @@ export default function Sidebar() {
                   ? 'text-muted-foreground/80'
                   : isActive ? 'text-primary' : 'text-muted-foreground/90 group-hover:text-foreground/95'
               }`} />
-              {isDisabled && (
+              {isDisabled && section.id !== 'cloud' && (
                 <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 z-20 px-1 py-px text-[7px] font-semibold uppercase tracking-wider leading-none rounded bg-muted-foreground/15 text-muted-foreground/80 whitespace-nowrap">
                   soon
                 </span>

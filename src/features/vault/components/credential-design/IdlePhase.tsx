@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plug, Sparkles } from 'lucide-react';
-import { QUICK_SERVICE_HINTS } from '@/features/vault/components/credential-design/CredentialDesignHelpers';
+import { QUICK_SERVICE_HINTS, HINT_COLORS } from '@/features/vault/components/credential-design/CredentialDesignHelpers';
 import type { ConnectorDefinition } from '@/lib/types/types';
 
 interface IdlePhaseProps {
@@ -56,8 +56,13 @@ export function IdlePhase({
           <button
             key={hint}
             onClick={() => onInstructionChange(hint)}
-            className="px-2.5 py-1 text-sm rounded-lg border border-primary/15 text-foreground/85 hover:bg-secondary/60 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-lg border border-primary/15 text-foreground/85 hover:bg-secondary/60 transition-colors"
+            data-testid={`hint-chip-${hint.split(' ')[0]?.toLowerCase()}`}
           >
+            <span
+              className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+              style={{ backgroundColor: HINT_COLORS[hint] ?? '#888' }}
+            />
             {hint}
           </button>
         ))}

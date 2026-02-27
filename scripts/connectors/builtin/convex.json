@@ -1,0 +1,21 @@
+{
+  "id": "builtin-convex",
+  "name": "convex",
+  "label": "Convex",
+  "color": "#F97316",
+  "icon_url": "/icons/connectors/convex.svg",
+  "category": "database",
+  "fields": [
+    { "key": "deployment_url", "label": "Deployment URL", "type": "url", "required": true, "placeholder": "https://your-app-123.convex.cloud", "helpText": "From Convex Dashboard → Settings → URL" },
+    { "key": "deploy_key", "label": "Deploy Key", "type": "password", "required": true, "placeholder": "prod:...", "helpText": "From Convex Dashboard → Settings → Deploy Key" }
+  ],
+  "healthcheck_config": {
+    "endpoint": "{{deployment_url}}/version",
+    "method": "GET",
+    "headers": {},
+    "description": "Validates Convex deployment URL is reachable"
+  },
+  "services": [],
+  "events": [],
+  "metadata": { "template_enabled": true, "summary": "Convex real-time backend-as-a-service with database, functions, and scheduling.", "auth_type": "deploy_key", "auth_type_label": "Deploy Key", "docs_url": "https://docs.convex.dev/production/hosting/deploy-keys" }
+}

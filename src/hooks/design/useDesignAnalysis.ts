@@ -1,6 +1,8 @@
 import { useState, useCallback, useRef } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { startDesignAnalysis, refineDesign, cancelDesignAnalysis } from '@/api/tauriApi';
+import { createTrigger } from '@/api/triggers';
+import { createSubscription } from '@/api/events';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { DesignPhase, DesignAnalysisResult, DesignQuestion } from '@/lib/types/designTypes';
 
@@ -27,9 +29,10 @@ export function useDesignAnalysis() {
   const [question, setQuestion] = useState<DesignQuestion | null>(null);
   const personaIdRef = useRef<string | null>(null);
   const designIdRef = useRef<string | null>(null);
+  const conversationIdRef = useRef<string | null>(null);
   const unlistenersRef = useRef<UnlistenFn[]>([]);
 
-  const updatePersona = usePersonaStore((s) => s.updatePersona);
+  const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
   const refreshPersonas = usePersonaStore((s) => s.fetchPersonas);
 
   const cleanup = useCallback(() => {
@@ -76,7 +79,7 @@ export function useDesignAnalysis() {
     unlistenersRef.current = [unlistenOutput, unlistenStatus];
   }, [cleanup]);
 
-  const startAnalysis = useCallback(async (personaId: string, instruction: string) => {
+  const startAnalysis = useCallback(async (personaId: string, instruction: string, conversationId?: string | null) => {
     cleanup();
     setPhase('analyzing');
     setOutputLines([]);
@@ -84,6 +87,7 @@ export function useDesignAnalysis() {
     setError(null);
     setQuestion(null);
     personaIdRef.current = personaId;
+    conversationIdRef.current = conversationId ?? null;
 
     // Generate design_id client-side and set it BEFORE listeners to prevent
     // the race where events arrive before designIdRef is set, bypassing the
@@ -120,7 +124,7 @@ export function useDesignAnalysis() {
 
     try {
       await setupDesignListeners('Refinement failed', 'preview');
-      await refineDesign(personaIdRef.current, feedback, currentResultJson, clientDesignId);
+      await refineDesign(personaIdRef.current, feedback, currentResultJson, clientDesignId, conversationIdRef.current);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to refine design');
       setPhase('preview');
@@ -153,6 +157,7 @@ export function useDesignAnalysis() {
     selectedSubscriptionIndices?: Set<number>;
   }) => {
     if (!personaIdRef.current || !result) return;
+    const personaId = personaIdRef.current;
 
     setPhase('applying');
     try {
@@ -188,18 +193,55 @@ export function useDesignAnalysis() {
         updates.system_prompt = filteredResult.full_prompt_markdown;
       }
 
-      await updatePersona(personaIdRef.current, updates);
+      await applyPersonaOp(personaId, { kind: 'ApplyDesignResult', updates });
+
+      // Create actual triggers for each selected suggestion
+      for (const trigger of filteredResult.suggested_triggers) {
+        try {
+          await createTrigger({
+            persona_id: personaId,
+            trigger_type: trigger.trigger_type,
+            config: trigger.config ? JSON.stringify(trigger.config) : null,
+            enabled: true,
+            use_case_id: null,
+          });
+        } catch {
+          // Individual trigger creation failure should not block the rest
+        }
+      }
+
+      // Create actual event subscriptions for each selected suggestion
+      for (const sub of filteredResult.suggested_event_subscriptions ?? []) {
+        try {
+          await createSubscription({
+            persona_id: personaId,
+            event_type: sub.event_type,
+            source_filter: sub.source_filter ? JSON.stringify(sub.source_filter) : null,
+            enabled: true,
+            use_case_id: null,
+          });
+        } catch {
+          // Individual subscription creation failure should not block the rest
+        }
+      }
+
       await refreshPersonas();
       setPhase('applied');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to apply design');
       setPhase('preview');
     }
-  }, [result, updatePersona, refreshPersonas]);
+  }, [result, applyPersonaOp, refreshPersonas]);
+
+  /** Update the conversation ID (used when a conversation is started externally) */
+  const setConversationId = useCallback((id: string | null) => {
+    conversationIdRef.current = id;
+  }, []);
 
   const reset = useCallback(() => {
     cleanup();
     designIdRef.current = null;
+    conversationIdRef.current = null;
     setPhase('idle');
     setOutputLines([]);
     setResult(null);
@@ -219,5 +261,6 @@ export function useDesignAnalysis() {
     cancelAnalysis,
     applyResult,
     reset,
+    setConversationId,
   };
 }

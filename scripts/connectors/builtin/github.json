@@ -1,0 +1,20 @@
+{
+  "id": "builtin-github",
+  "name": "github",
+  "label": "GitHub",
+  "color": "#1F2937",
+  "icon_url": "/icons/connectors/github.svg",
+  "category": "development",
+  "fields": [
+    { "key": "personal_access_token", "label": "Personal Access Token", "type": "password", "required": true, "placeholder": "ghp_...", "helpText": "Generate at github.com/settings/tokens with required scopes" }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.github.com/user",
+    "method": "GET",
+    "headers": { "Authorization": "Bearer {{personal_access_token}}", "Accept": "application/vnd.github+json", "User-Agent": "personas-desktop" },
+    "description": "Validates PAT via GitHub user endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": { "template_enabled": true, "summary": "GitHub for repositories, issues, pull requests, and CI/CD.", "auth_type": "pat", "auth_type_label": "PAT", "docs_url": "https://github.com/settings/tokens" }
+}

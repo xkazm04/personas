@@ -1,32 +1,30 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, AlertCircle, ListChecks, FileText, Link, Settings, FlaskConical, Wand2, Cloud, LogIn, X, GitBranch } from 'lucide-react';
+import { AlertTriangle, AlertCircle, ListChecks, FileText, Link, Settings, FlaskConical, Wand2, Cloud, LogIn, X } from 'lucide-react';
 import type { ModelProfile } from '@/lib/types/frontendTypes';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useAuthStore } from '@/stores/authStore';
 import { ContentBox, ContentHeader } from '@/features/shared/components/ContentLayout';
 import type { EditorTab } from '@/lib/types/types';
 import { PersonaPromptEditor } from '@/features/agents/sub_editor/PersonaPromptEditor';
-import { PromptLabTab } from '@/features/agents/sub_editor/PromptLabTab';
 import { AccessibleToggle } from '@/features/shared/components/AccessibleToggle';
 import { PersonaSettingsTab } from '@/features/agents/sub_editor/PersonaSettingsTab';
-import { PersonaTestsTab } from '@/features/agents/sub_tests/PersonaTestsTab';
 import { PersonaUseCasesTab } from '@/features/agents/sub_editor/PersonaUseCasesTab';
 import { PersonaConnectorsTab } from '@/features/agents/sub_editor/PersonaConnectorsTab';
 import { DesignTab } from '@/features/agents/sub_editor/DesignTab';
+import { LabTab } from '@/features/agents/sub_lab/LabTab';
 import { type PersonaDraft, buildDraft, draftChanged, SETTINGS_KEYS, MODEL_KEYS } from '@/features/agents/sub_editor/PersonaDraft';
 import { OLLAMA_CLOUD_BASE_URL, getOllamaPreset } from '@/features/agents/sub_editor/model-config/OllamaCloudPresets';
-import { EditorDirtyProvider, useEditorDirty, useEditorDirtyState } from '@/features/agents/sub_editor/EditorDirtyContext';
+import { EditorDirtyProvider, useEditorDirty, useEditorDirtyState } from '@/features/agents/sub_editor/EditorDocument';
 import { useDebouncedSave } from '@/hooks';
 
 const tabDefs: Array<{ id: EditorTab; label: string; icon: typeof FileText }> = [
   { id: 'use-cases', label: 'Use Cases', icon: ListChecks },
   { id: 'prompt', label: 'Prompt', icon: FileText },
-  { id: 'prompt-lab', label: 'Prompt Lab', icon: GitBranch },
+  { id: 'lab', label: 'Lab', icon: FlaskConical },
   { id: 'connectors', label: 'Connectors', icon: Link },
   { id: 'design', label: 'Design', icon: Wand2 },
   { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'tests', label: 'Tests', icon: FlaskConical },
 ];
 
 export default function PersonaEditor() {
@@ -41,7 +39,7 @@ function PersonaEditorInner() {
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
   const editorTab = usePersonaStore((s) => s.editorTab);
   const setEditorTab = usePersonaStore((s) => s.setEditorTab);
-  const updatePersona = usePersonaStore((s) => s.updatePersona);
+  const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
   const deletePersona = usePersonaStore((s) => s.deletePersona);
   const credentials = usePersonaStore((s) => s.credentials);
   const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
@@ -100,25 +98,11 @@ function PersonaEditorInner() {
   const settingsDirty = draftChanged(draft, baseline, SETTINGS_KEYS);
   const modelDirty = draftChanged(draft, baseline, MODEL_KEYS);
 
-  const localDirty = settingsDirty || modelDirty;
-
-  // Register settings/model dirty state with the unified context
-  useEditorDirty('settings', settingsDirty);
-  useEditorDirty('model', modelDirty);
-
-  // Aggregate dirty state from all editor tabs (prompt, notifications, etc.)
-  const { isDirty: anyTabDirty, dirtyTabs: allDirtyTabs, saveAll: saveAllTabs, clearAll: clearAllDirty } = useEditorDirtyState();
-
-  // Combined: local settings/model OR any child tab
-  const isDirty = localDirty || anyTabDirty;
-
-  // Keep dirtyRef in sync for the store subscription
-  dirtyRef.current = isDirty;
-
-  // Save functions defined here so they can be passed to useDebouncedSave below
+  // Save functions — defined before useEditorDirty so they can be registered as save callbacks
   const handleSaveSettings = async () => {
     if (!selectedPersona) return;
-    await updatePersona(selectedPersona.id, {
+    await applyPersonaOp(selectedPersona.id, {
+      kind: 'UpdateSettings',
       name: draft.name,
       description: draft.description || null,
       icon: draft.icon || null,
@@ -156,13 +140,25 @@ function PersonaEditorInner() {
       } satisfies ModelProfile);
     }
 
-    await updatePersona(selectedPersona.id, {
+    await applyPersonaOp(selectedPersona.id, {
+      kind: 'SwitchModel',
       model_profile: profile,
       max_budget_usd: draft.maxBudget === '' ? null : draft.maxBudget,
       max_turns: draft.maxTurns === '' ? null : draft.maxTurns,
     });
     setBaseline((prev) => ({ ...prev, selectedModel: draft.selectedModel, selectedProvider: draft.selectedProvider, baseUrl: draft.baseUrl, authToken: draft.authToken, customModelName: draft.customModelName, maxBudget: draft.maxBudget, maxTurns: draft.maxTurns }));
   };
+
+  // Register all dirty state + save callbacks with the unified EditorDocument.
+  // This is the single source of truth for unsaved changes across all tabs.
+  useEditorDirty('settings', settingsDirty, handleSaveSettings);
+  useEditorDirty('model', modelDirty, saveModelSettings);
+
+  // Aggregate dirty state from EditorDocument (covers ALL tabs: settings, model, prompt, notifications, use-cases)
+  const { isDirty, dirtyTabs: allDirtyTabs, saveAll: saveAllTabs, clearAll: clearAllDirty } = useEditorDirtyState();
+
+  // Keep dirtyRef in sync for the store subscription
+  dirtyRef.current = isDirty;
 
   // Debounced auto-save for settings and model fields
   const isSavingSettings = useDebouncedSave(
@@ -225,7 +221,7 @@ function PersonaEditorInner() {
       setTimeout(() => setShowReadinessTooltip(false), 3000);
       return;
     }
-    await updatePersona(selectedPersona.id, { enabled: nextEnabled });
+    await applyPersonaOp(selectedPersona.id, { kind: 'ToggleEnabled', enabled: nextEnabled });
   };
 
   if (!selectedPersona) {
@@ -250,9 +246,7 @@ function PersonaEditorInner() {
 
   const handleSaveAndSwitch = async () => {
     try {
-      if (settingsDirty) await handleSaveSettings();
-      if (modelDirty) await saveModelSettings();
-      // Save all child tabs (prompt, notifications, etc.)
+      // Unified save: saveAllTabs covers settings, model, prompt, notifications, use-cases
       await saveAllTabs();
     } catch {
       // updatePersona already sets store.error — don't proceed with switch
@@ -270,10 +264,8 @@ function PersonaEditorInner() {
     }
   };
 
-  // Collect all dirty section names for the banner
-  const changedSections: string[] = [...allDirtyTabs.map((t) => t.charAt(0).toUpperCase() + t.slice(1))];
-  if (!changedSections.includes('Settings') && settingsDirty) changedSections.push('Settings');
-  if (!changedSections.includes('Model') && modelDirty) changedSections.push('Model');
+  // Collect all dirty section names for the banner (unified from EditorDocument)
+  const changedSections: string[] = allDirtyTabs.map((t) => t.charAt(0).toUpperCase() + t.slice(1));
 
   const handleDelete = async () => {
     await deletePersona(selectedPersona.id);
@@ -294,8 +286,8 @@ function PersonaEditorInner() {
         );
       case 'prompt':
         return <PersonaPromptEditor />;
-      case 'prompt-lab':
-        return <PromptLabTab />;
+      case 'lab':
+        return <LabTab />;
       case 'connectors':
         return <PersonaConnectorsTab onMissingCountChange={setConnectorsMissing} />;
       case 'design':
@@ -306,18 +298,14 @@ function PersonaEditorInner() {
             draft={draft}
             patch={patch}
             isDirty={isDirty}
-            settingsDirty={settingsDirty}
             changedSections={changedSections}
             connectorDefinitions={connectorDefinitions}
-            selectedPersonaId={selectedPersona.id}
             showDeleteConfirm={showDeleteConfirm}
             setShowDeleteConfirm={setShowDeleteConfirm}
             isSaving={isSaving}
             onDelete={handleDelete}
           />
         );
-      case 'tests':
-        return <PersonaTestsTab />;
       default:
         return null;
     }
@@ -431,9 +419,8 @@ function PersonaEditorInner() {
           {tabDefs.map((tab) => {
             const Icon = tab.icon;
             const isActive = editorTab === tab.id;
-            const tabDirty = (tab.id === 'settings' && settingsDirty)
-              || (tab.id === 'use-cases' && (modelDirty || allDirtyTabs.includes('use-cases')))
-              || (tab.id === 'prompt' && allDirtyTabs.includes('prompt'));
+            const tabDirty = allDirtyTabs.includes(tab.id)
+              || (tab.id === 'use-cases' && allDirtyTabs.includes('model'));
             return (
               <button
                 key={tab.id}

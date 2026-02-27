@@ -20,6 +20,8 @@ export interface ToolSlice {
   fetchToolDefinitions: () => Promise<void>;
   assignTool: (personaId: string, toolId: string) => Promise<void>;
   removeTool: (personaId: string, toolId: string) => Promise<void>;
+  bulkAssignTools: (personaId: string, toolIds: string[]) => Promise<void>;
+  bulkRemoveTools: (personaId: string, toolIds: string[]) => Promise<void>;
   fetchToolUsage: (days?: number, personaId?: string) => Promise<void>;
 }
 
@@ -54,6 +56,26 @@ export const createToolSlice: StateCreator<PersonaStore, [], [], ToolSlice> = (s
       get().fetchDetail(personaId);
     } catch (err) {
       set({ error: errMsg(err, "Failed to remove tool") });
+    }
+  },
+
+  bulkAssignTools: async (personaId, toolIds) => {
+    try {
+      await api.bulkAssignTools(personaId, toolIds);
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to assign tools") });
+    } finally {
+      get().fetchDetail(personaId);
+    }
+  },
+
+  bulkRemoveTools: async (personaId, toolIds) => {
+    try {
+      await api.bulkUnassignTools(personaId, toolIds);
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to remove tools") });
+    } finally {
+      get().fetchDetail(personaId);
     }
   },
 

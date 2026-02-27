@@ -377,6 +377,7 @@ pub async fn execute_team(
                     persona,
                     tools,
                     node_input,
+                    None,
                 )
                 .await
             {

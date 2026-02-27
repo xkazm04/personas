@@ -5,8 +5,9 @@ import type {
   DbPersona,
   PersonaWithDetails,
 } from "@/lib/types/types";
-import type { PartialPersonaUpdate } from "@/api/personas";
-import { buildUpdateInput } from "@/api/personas";
+import type { PartialPersonaUpdate, PersonaOperation } from "@/api/personas";
+import { buildUpdateInput, operationToPartial } from "@/api/personas";
+import type { PersonaHealth } from "@/lib/bindings/PersonaHealth";
 import * as api from "@/api/tauriApi";
 
 export interface PersonaSlice {
@@ -16,7 +17,7 @@ export interface PersonaSlice {
   selectedPersona: PersonaWithDetails | null;
   personaTriggerCounts: Record<string, number>;
   personaLastRun: Record<string, string | null>;
-  personaHealthMap: Record<string, string[]>;
+  personaHealthMap: Record<string, PersonaHealth>;
 
   // Actions
   fetchPersonas: () => Promise<void>;
@@ -24,6 +25,7 @@ export interface PersonaSlice {
   fetchDetail: (id: string) => Promise<void>;
   createPersona: (input: { name: string; description?: string; system_prompt: string; icon?: string; color?: string; structured_prompt?: string; design_context?: string }) => Promise<DbPersona>;
   updatePersona: (id: string, input: PartialPersonaUpdate) => Promise<void>;
+  applyPersonaOp: (id: string, op: PersonaOperation) => Promise<void>;
   deletePersona: (id: string) => Promise<void>;
   selectPersona: (id: string | null) => void;
 }
@@ -67,13 +69,11 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
       const summaries = await api.getPersonaSummaries();
       const triggerCounts: Record<string, number> = {};
       const lastRun: Record<string, string | null> = {};
-      const healthMap: Record<string, string[]> = {};
+      const healthMap: Record<string, PersonaHealth> = {};
       for (const s of summaries) {
-        triggerCounts[s.persona_id] = s.enabled_trigger_count;
-        lastRun[s.persona_id] = s.last_run_at;
-        if ('health_statuses' in s && Array.isArray(s.health_statuses)) {
-          healthMap[s.persona_id] = s.health_statuses;
-        }
+        triggerCounts[s.personaId] = s.enabledTriggerCount;
+        lastRun[s.personaId] = s.lastRunAt;
+        healthMap[s.personaId] = s.health;
       }
       set({ personaTriggerCounts: triggerCounts, personaLastRun: lastRun, personaHealthMap: healthMap });
     } catch {
@@ -153,6 +153,10 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
     } catch (err) {
       set({ error: errMsg(err, "Failed to update persona") });
     }
+  },
+
+  applyPersonaOp: async (id, op) => {
+    await get().updatePersona(id, operationToPartial(op));
   },
 
   deletePersona: async (id) => {

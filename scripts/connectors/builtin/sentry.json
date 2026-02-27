@@ -1,0 +1,21 @@
+{
+  "id": "builtin-sentry",
+  "name": "sentry",
+  "label": "Sentry",
+  "color": "#362D59",
+  "icon_url": "/icons/connectors/sentry.svg",
+  "category": "monitoring",
+  "fields": [
+    { "key": "auth_token", "label": "Auth Token", "type": "password", "required": true, "placeholder": "sntrys_...", "helpText": "Generate at sentry.io/settings/auth-tokens/" },
+    { "key": "organization_slug", "label": "Organization Slug", "type": "text", "required": true, "placeholder": "my-org", "helpText": "Your Sentry organization slug from the URL" }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://sentry.io/api/0/organizations/{{organization_slug}}/",
+    "method": "GET",
+    "headers": { "Authorization": "Bearer {{auth_token}}" },
+    "description": "Validates auth token via organization endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": { "template_enabled": true, "summary": "Sentry application monitoring for errors, performance, and session replay.", "auth_type": "pat", "auth_type_label": "PAT", "docs_url": "https://docs.sentry.io/api/guides/create-auth-token/" }
+}

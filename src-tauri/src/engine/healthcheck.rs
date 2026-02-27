@@ -142,6 +142,12 @@ async fn execute_healthcheck_request(
         }
     }
 
+    // Attach body if configured (needed for GraphQL healthchecks)
+    if let Some(ref body_template) = hc_config.body {
+        let resolved_body = resolve_template(body_template, &resolved_values);
+        request = request.body(resolved_body);
+    }
+
     match request.send().await {
         Ok(resp) => {
             let status = resp.status();
@@ -395,6 +401,7 @@ struct HealthcheckConfig {
     endpoint: String,
     method: Option<String>,
     headers: HashMap<String, String>,
+    body: Option<String>,
 }
 
 fn parse_healthcheck_config(json: &str) -> Option<HealthcheckConfig> {
@@ -421,10 +428,16 @@ fn parse_healthcheck_config(json: &str) -> Option<HealthcheckConfig> {
         }
     }
 
+    let body = val
+        .get("body")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+
     Some(HealthcheckConfig {
         endpoint,
         method,
         headers,
+        body,
     })
 }
 

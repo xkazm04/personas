@@ -45,12 +45,13 @@ pub fn build_tool_documentation(tool: &PersonaToolDefinition) -> String {
 }
 
 /// Assemble the full prompt string from persona configuration, tools, input data,
-/// and optional credential environment variable hints.
+/// optional credential environment variable hints, and optional workspace shared instructions.
 pub fn assemble_prompt(
     persona: &Persona,
     tools: &[PersonaToolDefinition],
     input_data: Option<&serde_json::Value>,
     credential_hints: Option<&[&str]>,
+    workspace_instructions: Option<&str>,
 ) -> String {
     let mut prompt = String::new();
 
@@ -148,6 +149,13 @@ pub fn assemble_prompt(
         // No structured prompt, use system_prompt as identity
         prompt.push_str("## Identity\n");
         prompt.push_str(&persona.system_prompt);
+        prompt.push_str("\n\n");
+    }
+
+    // Workspace Shared Instructions (from group/workspace defaults)
+    if let Some(ws_instructions) = workspace_instructions {
+        prompt.push_str("## Workspace Instructions\n");
+        prompt.push_str(ws_instructions);
         prompt.push_str("\n\n");
     }
 
@@ -426,6 +434,37 @@ pub fn build_resume_cli_args(claude_session_id: &str) -> CliArgs {
     }
 }
 
+/// Assemble a lighter prompt for session-resume executions.
+///
+/// When using `--resume`, the Claude CLI session already has the full persona
+/// context. We only send new input data and credential hints.
+pub fn assemble_resume_prompt(
+    input_data: Option<&serde_json::Value>,
+    credential_hints: Option<&[&str]>,
+) -> String {
+    let mut prompt = String::new();
+
+    prompt.push_str("Continue the previous execution.\n\n");
+
+    if let Some(hints) = credential_hints {
+        if !hints.is_empty() {
+            prompt.push_str("## Available Credentials\n");
+            for hint in hints {
+                prompt.push_str(&format!("- {}\n", hint));
+            }
+            prompt.push('\n');
+        }
+    }
+
+    if let Some(data) = input_data {
+        prompt.push_str("## Input Data\n```json\n");
+        prompt.push_str(&serde_json::to_string_pretty(data).unwrap_or_else(|_| data.to_string()));
+        prompt.push_str("\n```\n");
+    }
+
+    prompt
+}
+
 // ---------------------------------------------------------------------------
 // Protocol instruction constants
 // ---------------------------------------------------------------------------
@@ -576,7 +615,7 @@ mod tests {
     #[test]
     fn test_assemble_minimal_prompt() {
         let persona = test_persona();
-        let prompt = assemble_prompt(&persona, &[], None, None);
+        let prompt = assemble_prompt(&persona, &[], None, None, None);
 
         assert!(prompt.contains("# Persona: Test Agent"));
         assert!(prompt.contains("You are a helpful test agent."));
@@ -590,7 +629,7 @@ mod tests {
     #[test]
     fn test_prompt_contains_persona_name() {
         let persona = test_persona();
-        let prompt = assemble_prompt(&persona, &[], None, None);
+        let prompt = assemble_prompt(&persona, &[], None, None, None);
 
         assert!(prompt.contains("# Persona: Test Agent"));
         assert!(prompt.contains("You are Test Agent."));
@@ -599,7 +638,7 @@ mod tests {
     #[test]
     fn test_prompt_contains_system_prompt() {
         let persona = test_persona();
-        let prompt = assemble_prompt(&persona, &[], None, None);
+        let prompt = assemble_prompt(&persona, &[], None, None, None);
 
         assert!(prompt.contains("## Identity"));
         assert!(prompt.contains("You are a helpful test agent."));
@@ -622,7 +661,7 @@ mod tests {
             .to_string(),
         );
 
-        let prompt = assemble_prompt(&persona, &[], None, None);
+        let prompt = assemble_prompt(&persona, &[], None, None, None);
 
         assert!(prompt.contains("## Identity\nI am a code reviewer."));
         assert!(prompt.contains("## Instructions\nReview all pull requests carefully."));
@@ -646,7 +685,7 @@ mod tests {
             .to_string(),
         );
 
-        let prompt = assemble_prompt(&persona, &[], None, None);
+        let prompt = assemble_prompt(&persona, &[], None, None, None);
 
         assert!(prompt.contains("## Web Search Research Prompt"));
         assert!(prompt.contains("Q1 2026 tech industry reports"));
@@ -665,7 +704,7 @@ mod tests {
             .to_string(),
         );
 
-        let prompt = assemble_prompt(&persona, &[], None, None);
+        let prompt = assemble_prompt(&persona, &[], None, None, None);
 
         assert!(!prompt.contains("## Web Search Research Prompt"));
     }
@@ -674,7 +713,7 @@ mod tests {
     fn test_prompt_with_tools() {
         let persona = test_persona();
         let tool = test_tool();
-        let prompt = assemble_prompt(&persona, &[tool], None, None);
+        let prompt = assemble_prompt(&persona, &[tool], None, None, None);
 
         assert!(prompt.contains("## Available Tools"));
         assert!(prompt.contains("### file_reader"));
@@ -712,7 +751,7 @@ mod tests {
     fn test_prompt_with_input_data() {
         let persona = test_persona();
         let input = serde_json::json!({"task": "review", "files": ["main.rs"]});
-        let prompt = assemble_prompt(&persona, &[], Some(&input), None);
+        let prompt = assemble_prompt(&persona, &[], Some(&input), None, None);
 
         assert!(prompt.contains("## Input Data"));
         assert!(prompt.contains("```json"));
@@ -723,7 +762,7 @@ mod tests {
     #[test]
     fn test_prompt_contains_protocols() {
         let persona = test_persona();
-        let prompt = assemble_prompt(&persona, &[], None, None);
+        let prompt = assemble_prompt(&persona, &[], None, None, None);
 
         assert!(prompt.contains("## Communication Protocols"));
         assert!(prompt.contains("### User Message Protocol"));
@@ -738,7 +777,7 @@ mod tests {
     #[test]
     fn test_prompt_ends_with_execute_now() {
         let persona = test_persona();
-        let prompt = assemble_prompt(&persona, &[], None, None);
+        let prompt = assemble_prompt(&persona, &[], None, None, None);
 
         assert!(prompt.contains("## EXECUTE NOW"));
         assert!(prompt.contains("Respond naturally and complete the task."));

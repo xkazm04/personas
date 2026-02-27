@@ -1,21 +1,13 @@
 import type { N8nPersonaDraft } from '@/api/tauriApi';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import {
+  toEditableStructuredPrompt,
+  fromEditableStructuredPrompt,
+} from '@/lib/personas/promptMigration';
 
-export type EditableCustomSection = {
-  key: string;
-  label: string;
-  content: string;
-};
-
-export type EditableStructuredPrompt = {
-  identity: string;
-  instructions: string;
-  toolGuidance: string;
-  examples: string;
-  errorHandling: string;
-  webSearch: string;
-  customSections: EditableCustomSection[];
-};
+// Re-export StructuredPrompt types from the canonical module
+export type { EditableCustomSection, EditableStructuredPrompt } from '@/lib/personas/promptMigration';
+export { toEditableStructuredPrompt, fromEditableStructuredPrompt };
 
 export const asString = (value: unknown): string => (typeof value === 'string' ? value : '');
 export const asNullableString = (value: unknown): string | null => {
@@ -25,45 +17,6 @@ export const asNullableString = (value: unknown): string | null => {
 };
 export const asNullableNumber = (value: unknown): number | null =>
   typeof value === 'number' && Number.isFinite(value) ? value : null;
-
-export function toEditableStructuredPrompt(value: Record<string, unknown> | null): EditableStructuredPrompt {
-  const src = value ?? {};
-  const rawCustom = Array.isArray(src.customSections) ? src.customSections : [];
-
-  return {
-    identity: asString(src.identity),
-    instructions: asString(src.instructions),
-    toolGuidance: asString(src.toolGuidance),
-    examples: asString(src.examples),
-    errorHandling: asString(src.errorHandling),
-    webSearch: asString(src.webSearch),
-    customSections: rawCustom
-      .filter((entry): entry is Record<string, unknown> => !!entry && typeof entry === 'object')
-      .map((entry) => ({
-        key: asString(entry.key),
-        label: asString(entry.label || entry.title),
-        content: asString(entry.content),
-      })),
-  };
-}
-
-export function fromEditableStructuredPrompt(value: EditableStructuredPrompt): Record<string, unknown> {
-  return {
-    identity: value.identity,
-    instructions: value.instructions,
-    toolGuidance: value.toolGuidance,
-    examples: value.examples,
-    errorHandling: value.errorHandling,
-    webSearch: value.webSearch,
-    customSections: value.customSections
-      .filter((section) => section.label.trim() || section.key.trim() || section.content.trim())
-      .map((section) => ({
-        key: section.key,
-        label: section.label,
-        content: section.content,
-      })),
-  };
-}
 
 export function normalizeDraftFromUnknown(value: unknown): N8nPersonaDraft | null {
   if (!value || typeof value !== 'object') return null;

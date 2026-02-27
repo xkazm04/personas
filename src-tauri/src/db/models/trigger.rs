@@ -77,6 +77,7 @@ pub struct PersonaTrigger {
     pub next_trigger_at: Option<String>,
     pub created_at: String,
     pub updated_at: String,
+    pub use_case_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -86,6 +87,7 @@ pub struct CreateTriggerInput {
     pub trigger_type: String,
     pub config: Option<String>,
     pub enabled: Option<bool>,
+    pub use_case_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

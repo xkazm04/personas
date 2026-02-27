@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { staggerContainer, staggerItem } from '@/features/templates/animationPresets';
 import {
   Code,
   MessageSquare,
@@ -96,8 +97,13 @@ export default function BuiltinTemplatesTab() {
 
   return (
     <div className="p-6 overflow-y-auto h-full">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {BUILTIN_TEMPLATES.map((template, index) => {
+      <motion.div
+        className="grid grid-cols-1 md:grid-cols-2 gap-4"
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+      >
+        {BUILTIN_TEMPLATES.map((template) => {
           const Icon = getIcon(template.icon);
           const isExpanded = expandedId === template.id;
           const isCreating = creatingId === template.id;
@@ -106,9 +112,8 @@ export default function BuiltinTemplatesTab() {
           return (
             <motion.div
               key={template.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.05, ease: [0.22, 1, 0.36, 1] }}
+              variants={staggerItem}
+              layout="position"
               className="rounded-xl border border-primary/10 bg-secondary/20 hover:bg-secondary/30 transition-colors overflow-hidden"
             >
               {/* Card header */}
@@ -255,7 +260,7 @@ export default function BuiltinTemplatesTab() {
             </motion.div>
           );
         })}
-      </div>
+      </motion.div>
     </div>
   );
 }

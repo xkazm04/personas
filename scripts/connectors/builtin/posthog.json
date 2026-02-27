@@ -1,0 +1,32 @@
+{
+  "id": "builtin-posthog",
+  "name": "posthog",
+  "label": "PostHog",
+  "color": "#F9BD2B",
+  "icon_url": "/icons/connectors/posthog.svg",
+  "category": "analytics",
+  "fields": [
+    { "key": "personal_api_key", "label": "Personal API Key", "type": "password", "required": true, "placeholder": "phx_...", "helpText": "From PostHog → Settings → Personal API Keys" },
+    { "key": "project_api_key", "label": "Project API Key", "type": "password", "required": false, "placeholder": "phc_...", "helpText": "Optional: project token for event ingestion" },
+    { "key": "host", "label": "Host", "type": "url", "required": false, "placeholder": "https://us.posthog.com", "helpText": "Defaults to us.posthog.com. Use eu.posthog.com for EU cloud." }
+  ],
+  "healthcheck_config": {
+    "endpoint": "{{host|https://us.posthog.com}}/api/projects/",
+    "method": "GET",
+    "headers": { "Authorization": "Bearer {{personal_api_key}}" },
+    "description": "Validates personal API key via projects endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "PostHog product analytics, feature flags, session replay, and A/B testing.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://posthog.com/docs/api",
+    "auth_variants": [
+      { "id": "personal", "label": "Personal API Key", "fields": ["personal_api_key", "host"], "auth_type_label": "API Key" },
+      { "id": "project", "label": "Project Key", "fields": ["project_api_key", "host"], "auth_type_label": "Project Key" }
+    ]
+  }
+}

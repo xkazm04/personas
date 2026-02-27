@@ -224,6 +224,7 @@ async fn handle_webhook(
             target_persona_id: Some(trigger.persona_id.clone()),
             project_id: None,
             payload,
+            use_case_id: trigger.use_case_id.clone(),
         },
     ) {
         Ok(event) => {

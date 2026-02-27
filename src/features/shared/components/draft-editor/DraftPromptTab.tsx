@@ -5,7 +5,7 @@ import {
   type EditableStructuredPrompt,
   toEditableStructuredPrompt,
   fromEditableStructuredPrompt,
-} from '@/features/templates/sub_n8n/n8nTypes';
+} from '@/lib/personas/promptMigration';
 import { SectionEditor } from './SectionEditor';
 
 interface DraftPromptTabProps {

@@ -7,10 +7,140 @@ export const QUICK_SERVICE_HINTS = [
   'Datadog API key',
 ];
 
+/** Brand colors for service hint chips (keyed by hint label). */
+export const HINT_COLORS: Record<string, string> = {
+  'OpenAI API key': '#10A37F',
+  'GitHub personal access token': '#24292F',
+  'Slack bot token': '#4A154B',
+  'Stripe secret key': '#635BFF',
+  'Notion integration token': '#000000',
+  'Datadog API key': '#632CA6',
+};
+
 export function extractFirstUrl(text?: string): string | null {
   if (!text) return null;
   const match = text.match(/https?:\/\/[^\s)]+/i);
   return match ? match[0] : null;
+}
+
+// ── Credential flow discriminated union ─────────────────────────
+
+import type { CredentialTemplateField } from '@/lib/types/types';
+
+export type CredentialFlow =
+  | { kind: 'google_oauth'; providerLabel: string }
+  | { kind: 'provider_oauth'; providerId: string; providerLabel: string }
+  | { kind: 'api_key' };
+
+/** Derive the credential flow variant from connector metadata and fields. */
+export function deriveCredentialFlow(
+  oauthType: string | null | undefined,
+  fieldKeys: Set<string>,
+): CredentialFlow {
+  if (
+    oauthType === 'google'
+    || (fieldKeys.has('client_id') && fieldKeys.has('client_secret') && fieldKeys.has('refresh_token'))
+  ) {
+    return { kind: 'google_oauth', providerLabel: 'Google' };
+  }
+  if (oauthType && oauthType !== 'google') {
+    return {
+      kind: 'provider_oauth',
+      providerId: oauthType,
+      providerLabel: oauthType.charAt(0).toUpperCase() + oauthType.slice(1),
+    };
+  }
+  return { kind: 'api_key' };
+}
+
+/** Fields hidden from the user for each flow variant (auto-filled by OAuth). */
+export function getHiddenFieldKeys(flow: CredentialFlow): string[] {
+  switch (flow.kind) {
+    case 'google_oauth':
+      return ['client_id', 'client_secret', 'refresh_token', 'scopes'];
+    case 'provider_oauth':
+      return ['access_token', 'refresh_token', 'scopes', 'oauth_scope'];
+    case 'api_key':
+      return [];
+  }
+}
+
+/** Filter fields to only those the user should fill in. */
+export function getEffectiveFields(
+  fields: CredentialTemplateField[],
+  flow: CredentialFlow,
+): CredentialTemplateField[] {
+  const hidden = getHiddenFieldKeys(flow);
+  if (hidden.length === 0) return fields;
+  return fields.filter((f) => !hidden.includes(f.key));
+}
+
+/** Whether save is gated by OAuth consent vs healthcheck. */
+export function isSaveReady(
+  flow: CredentialFlow,
+  oauthValues: Record<string, string>,
+  healthcheckSuccess: boolean,
+  testedConfig: unknown,
+): boolean {
+  switch (flow.kind) {
+    case 'google_oauth':
+      return Boolean(oauthValues.refresh_token);
+    case 'provider_oauth':
+      return Boolean(oauthValues.access_token);
+    case 'api_key':
+      return healthcheckSuccess && testedConfig !== null;
+  }
+}
+
+/** Provider label for display purposes. */
+export function getProviderLabel(flow: CredentialFlow): string {
+  switch (flow.kind) {
+    case 'google_oauth':
+      return flow.providerLabel;
+    case 'provider_oauth':
+      return flow.providerLabel;
+    case 'api_key':
+      return '';
+  }
+}
+
+/** User-facing explanation for why save is disabled. */
+export function getSaveDisabledReason(flow: CredentialFlow): string {
+  switch (flow.kind) {
+    case 'google_oauth':
+      return 'Save is unlocked after Google consent returns a refresh token.';
+    case 'provider_oauth':
+      return `Save is unlocked after ${flow.providerLabel} authorization completes.`;
+    case 'api_key':
+      return 'Save is locked until Test Connection succeeds for the current credential values.';
+  }
+}
+
+/** OAuth consent hint displayed below the consent button. */
+export function getOAuthConsentHint(flow: CredentialFlow): string | undefined {
+  switch (flow.kind) {
+    case 'google_oauth':
+      return 'One click consent using app-managed Google OAuth. You can uncheck permissions on the consent screen.';
+    case 'provider_oauth':
+      return `Enter your ${flow.providerLabel} OAuth client credentials above, then click to authorize.`;
+    case 'api_key':
+      return undefined;
+  }
+}
+
+/** Whether the flow uses OAuth consent (Google or provider). */
+export function isOAuthFlow(flow: CredentialFlow): boolean {
+  return flow.kind === 'google_oauth' || flow.kind === 'provider_oauth';
+}
+
+/** Whether to show the healthcheck (test connection) button. */
+export function showsHealthcheck(flow: CredentialFlow): boolean {
+  return flow.kind !== 'provider_oauth';
+}
+
+/** Whether to show the AI auto-provision negotiator. */
+export function showsNegotiator(flow: CredentialFlow): boolean {
+  return flow.kind !== 'google_oauth';
 }
 
 // ── Healthcheck message translation ─────────────────────────────

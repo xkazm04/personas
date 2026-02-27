@@ -1,19 +1,21 @@
 import { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Loader2, Check, Circle, Clock } from 'lucide-react';
+import { useStepProgress } from '@/hooks/useStepProgress';
 
 interface AnalyzingPhaseProps {
   outputLines: string[];
   onCancel: () => void;
 }
 
-interface Stage {
-  label: string;
-  description: string;
-  status: 'pending' | 'active' | 'completed';
-}
+const STAGE_DEFS = [
+  { label: 'Connecting', description: 'Establishing connection to AI' },
+  { label: 'Analyzing requirements', description: 'Identifying authentication patterns' },
+  { label: 'Designing connector', description: 'Generating fields and validation rules' },
+  { label: 'Generating healthcheck', description: 'Building test endpoint configuration' },
+] as const;
 
-/** Map raw backend output lines to a stage index (0–3). */
+/** Map raw backend output lines to a stage index (0–4). */
 function deriveStageIndex(lines: string[]): number {
   for (let i = lines.length - 1; i >= 0; i--) {
     const l = lines[i]!.toLowerCase();
@@ -40,26 +42,20 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
     return () => clearInterval(id);
   }, []);
 
-  const currentStageIdx = useMemo(() => deriveStageIndex(outputLines), [outputLines]);
+  const derivedIdx = useMemo(() => deriveStageIndex(outputLines), [outputLines]);
 
-  const stages: Stage[] = useMemo(() => {
-    const defs = [
-      { label: 'Connecting', description: 'Establishing connection to AI' },
-      { label: 'Analyzing requirements', description: 'Identifying authentication patterns' },
-      { label: 'Designing connector', description: 'Generating fields and validation rules' },
-      { label: 'Generating healthcheck', description: 'Building test endpoint configuration' },
-    ];
-    return defs.map((d, i) => ({
-      ...d,
-      status: i < currentStageIdx ? 'completed' as const : i === currentStageIdx ? 'active' as const : 'pending' as const,
-    }));
-  }, [currentStageIdx]);
+  const sp = useStepProgress(STAGE_DEFS.length);
+
+  // Drive step progress from derived index
+  useEffect(() => {
+    sp.setDerivedIndex(derivedIdx);
+  }, [derivedIdx]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Latest meaningful line for detail text
   const latestLine = outputLines.length > 0 ? outputLines[outputLines.length - 1] : null;
 
-  // Progress percentage (0-100)
-  const progress = Math.min((currentStageIdx / 4) * 100, 100);
+  // Progress: use derived index directly against total (4) for smooth 0→100
+  const progress = Math.min((derivedIdx / STAGE_DEFS.length) * 100, 100);
 
   return (
     <motion.div
@@ -90,43 +86,46 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
 
       {/* Stage indicators */}
       <div className="space-y-1 px-1">
-        {stages.map((stage, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.2, delay: i * 0.05 }}
-            className="flex items-center gap-3 py-1.5"
-          >
-            {/* Status icon */}
-            <div className="w-5 h-5 flex items-center justify-center shrink-0">
-              {stage.status === 'completed' ? (
-                <div className="w-5 h-5 rounded-full bg-emerald-500/15 flex items-center justify-center">
-                  <Check className="w-3 h-3 text-emerald-400" />
-                </div>
-              ) : stage.status === 'active' ? (
-                <Loader2 className="w-4 h-4 text-primary animate-spin" />
-              ) : (
-                <Circle className="w-3.5 h-3.5 text-muted-foreground/20" />
-              )}
-            </div>
-            {/* Label + description */}
-            <div className="flex-1 min-w-0">
-              <span className={`text-sm font-medium ${
-                stage.status === 'completed'
-                  ? 'text-muted-foreground/90'
-                  : stage.status === 'active'
-                    ? 'text-foreground'
-                    : 'text-muted-foreground/80'
-              }`}>
-                {stage.label}
-              </span>
-              {stage.status === 'active' && (
-                <span className="ml-2 text-sm text-muted-foreground/90">{stage.description}</span>
-              )}
-            </div>
-          </motion.div>
-        ))}
+        {sp.steps.map((step, i) => {
+          const def = STAGE_DEFS[i]!;
+          return (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.2, delay: i * 0.05 }}
+              className="flex items-center gap-3 py-1.5"
+            >
+              {/* Status icon */}
+              <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                {step.status === 'completed' ? (
+                  <div className="w-5 h-5 rounded-full bg-emerald-500/15 flex items-center justify-center">
+                    <Check className="w-3 h-3 text-emerald-400" />
+                  </div>
+                ) : step.status === 'active' ? (
+                  <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                ) : (
+                  <Circle className="w-3.5 h-3.5 text-muted-foreground/20" />
+                )}
+              </div>
+              {/* Label + description */}
+              <div className="flex-1 min-w-0">
+                <span className={`text-sm font-medium ${
+                  step.status === 'completed'
+                    ? 'text-muted-foreground/90'
+                    : step.status === 'active'
+                      ? 'text-foreground'
+                      : 'text-muted-foreground/80'
+                }`}>
+                  {def.label}
+                </span>
+                {step.status === 'active' && (
+                  <span className="ml-2 text-sm text-muted-foreground/90">{def.description}</span>
+                )}
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
 
       {/* Latest output detail */}
@@ -140,6 +139,7 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
         <button
           onClick={onCancel}
           className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-xl text-sm transition-colors"
+          data-testid="analyzing-cancel-btn"
         >
           Cancel
         </button>

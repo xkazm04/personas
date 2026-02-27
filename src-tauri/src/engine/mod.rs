@@ -1,24 +1,30 @@
 pub mod background;
 pub mod bus;
 pub mod chain;
+pub mod compiler;
 pub mod credential_design;
+pub mod dispatch;
 pub mod credential_negotiator;
 pub mod cron;
 pub mod crypto;
 pub mod design;
+pub mod eval;
 pub mod google_oauth;
 pub mod healing;
 pub mod healthcheck;
 pub mod logger;
 pub mod optimizer;
 pub mod parser;
+pub mod pipeline;
 pub mod polling;
 pub mod topology;
 pub mod prompt;
+pub mod provider;
 pub mod queue;
 pub mod rotation;
 pub mod runner;
 pub mod scheduler;
+pub mod subscription;
 pub mod test_runner;
 pub mod types;
 pub mod webhook;
@@ -40,7 +46,7 @@ use crate::db::repos::resources::tools as tool_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
 
-use self::types::{ExecutionResult, HealingEventPayload};
+use self::types::{ExecutionResult, ExecutionState, HealingEventPayload};
 
 use self::queue::ConcurrencyTracker;
 
@@ -141,7 +147,7 @@ impl ExecutionEngine {
                         None,
                         &exec.id,
                         UpdateExecutionStatus {
-                            status: "failed".into(),
+                            status: ExecutionState::Failed,
                             error_message: Some("App restarted while execution was running".into()),
                             ..Default::default()
                         },
@@ -176,6 +182,7 @@ impl ExecutionEngine {
         persona: Persona,
         tools: Vec<PersonaToolDefinition>,
         input_data: Option<serde_json::Value>,
+        continuation: Option<types::Continuation>,
     ) -> Result<(), AppError> {
         // Atomically check capacity and register in tracker
         {
@@ -225,6 +232,7 @@ impl ExecutionEngine {
                 log_dir,
                 child_pids.clone(),
                 cancelled.clone(),
+                continuation,
             )
             .await;
 
@@ -239,7 +247,7 @@ impl ExecutionEngine {
                     Some(&app_for_healing),
                     &exec_id,
                     UpdateExecutionStatus {
-                        status: "cancelled".into(),
+                        status: ExecutionState::Cancelled,
                         error_message: Some("Cancelled by user".into()),
                         duration_ms: Some(result.duration_ms as i64),
                         log_file_path: result.log_file_path.clone(),
@@ -307,7 +315,7 @@ impl ExecutionEngine {
             None,
             execution_id,
             UpdateExecutionStatus {
-                status: "cancelled".into(),
+                status: ExecutionState::Cancelled,
                 ..Default::default()
             },
         );
@@ -405,7 +413,7 @@ impl ExecutionEngine {
             None,
             execution_id,
             UpdateExecutionStatus {
-                status: "cancelled".into(),
+                status: ExecutionState::Cancelled,
                 ..Default::default()
             },
         );
@@ -544,7 +552,7 @@ fn handle_execution_result(
     cancelled_flags: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
     log_dir: PathBuf,
 ) {
-    let status = if result.success { "completed" } else { "failed" };
+    let status = if result.success { ExecutionState::Completed } else { ExecutionState::Failed };
 
     // Write final status to DB
     persist_status_update(
@@ -552,7 +560,7 @@ fn handle_execution_result(
         Some(app),
         exec_id,
         UpdateExecutionStatus {
-            status: status.into(),
+            status,
             output_data: result.output.clone(),
             error_message: result.error.clone(),
             duration_ms: Some(result.duration_ms as i64),
@@ -566,7 +574,7 @@ fn handle_execution_result(
     );
 
     // OS Notification
-    notify_execution(app, pool, persona_id, status, result.duration_ms);
+    notify_execution(app, pool, persona_id, status.as_str(), result.duration_ms);
 
     // Budget enforcement (only on success)
     if result.success {
@@ -585,7 +593,7 @@ fn handle_execution_result(
     chain::evaluate_chain_triggers(
         pool,
         persona_id,
-        status,
+        status.as_str(),
         result.output.as_deref(),
         exec_id,
         chain_depth,
@@ -1027,7 +1035,7 @@ fn spawn_delayed_retry(
             Some(&app),
             &exec_id,
             UpdateExecutionStatus {
-                status: "running".into(),
+                status: ExecutionState::Running,
                 ..Default::default()
             },
         );
@@ -1061,6 +1069,7 @@ fn spawn_delayed_retry(
             log_dir,
             child_pids.clone(),
             cancelled.clone(),
+            None, // no continuation for healing retries
         )
         .await;
 
@@ -1073,7 +1082,7 @@ fn spawn_delayed_retry(
                 Some(&app),
                 &exec_id,
                 UpdateExecutionStatus {
-                    status: "cancelled".into(),
+                    status: ExecutionState::Cancelled,
                     error_message: Some("Cancelled by user".into()),
                     duration_ms: Some(result.duration_ms as i64),
                     log_file_path: result.log_file_path.clone(),
@@ -1085,13 +1094,13 @@ fn spawn_delayed_retry(
                 },
             );
         } else {
-            let status = if result.success { "completed" } else { "failed" };
+            let status = if result.success { ExecutionState::Completed } else { ExecutionState::Failed };
             persist_status_update(
                 &pool,
                 Some(&app),
                 &exec_id,
                 UpdateExecutionStatus {
-                    status: status.into(),
+                    status,
                     output_data: result.output.clone(),
                     error_message: result.error.clone(),
                     duration_ms: Some(result.duration_ms as i64),
@@ -1109,7 +1118,7 @@ fn spawn_delayed_retry(
                 "execution-status",
                 types::ExecutionStatusEvent {
                     execution_id: exec_id.clone(),
-                    status: status.into(),
+                    status,
                     error: result.error.clone(),
                     duration_ms: Some(result.duration_ms),
                     cost_usd: Some(result.cost_usd),
@@ -1130,11 +1139,6 @@ fn spawn_delayed_retry(
                     retry_count = retry_count,
                     "Healing retry: execution failed again",
                 );
-                // Note: the next healing cycle will be triggered by the normal
-                // post-execution healing check when this retry execution is
-                // processed by the main task. We don't recursively heal here
-                // to avoid unbounded retry chains — the main task's healing
-                // section has MAX_RETRY_COUNT and circuit breaker guards.
             }
 
             // Notification
@@ -1151,7 +1155,7 @@ fn spawn_delayed_retry(
                 crate::notifications::notify_execution_completed(
                     &app,
                     p_name,
-                    status,
+                    status.as_str(),
                     result.duration_ms,
                     notif_channels,
                 );

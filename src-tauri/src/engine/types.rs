@@ -1,4 +1,111 @@
+use std::fmt;
+use std::str::FromStr;
+
 use serde::{Deserialize, Serialize};
+
+use crate::db::models::{Persona, PersonaToolDefinition};
+
+// =============================================================================
+// ExecutionState — canonical state machine for execution status
+// =============================================================================
+
+/// Canonical execution state machine.
+///
+/// Valid transitions:
+///   Queued -> Running
+///   Running -> Completed | Failed | Incomplete | Cancelled
+///
+/// This is the single source of truth for execution status. The DB column
+/// stores the lowercase string form, the frontend `isExecuting` boolean is
+/// derived from `is_active()`, and event payloads carry this enum serialized.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ExecutionState {
+    Queued,
+    Running,
+    Completed,
+    Failed,
+    Incomplete,
+    Cancelled,
+}
+
+impl ExecutionState {
+    /// All terminal states (execution is done, no further transitions).
+    pub const TERMINAL: &'static [ExecutionState] = &[
+        ExecutionState::Completed,
+        ExecutionState::Failed,
+        ExecutionState::Incomplete,
+        ExecutionState::Cancelled,
+    ];
+
+    /// All active states (execution is in progress).
+    pub const ACTIVE: &'static [ExecutionState] = &[
+        ExecutionState::Queued,
+        ExecutionState::Running,
+    ];
+
+    /// Returns true if the execution is still active (not in a terminal state).
+    pub fn is_active(&self) -> bool {
+        matches!(self, ExecutionState::Queued | ExecutionState::Running)
+    }
+
+    /// Returns true if the execution has reached a terminal state.
+    pub fn is_terminal(&self) -> bool {
+        !self.is_active()
+    }
+
+    /// Check whether transitioning from `self` to `target` is valid.
+    pub fn can_transition_to(&self, target: ExecutionState) -> bool {
+        matches!(
+            (self, target),
+            (ExecutionState::Queued, ExecutionState::Running)
+                | (ExecutionState::Running, ExecutionState::Completed)
+                | (ExecutionState::Running, ExecutionState::Failed)
+                | (ExecutionState::Running, ExecutionState::Incomplete)
+                | (ExecutionState::Running, ExecutionState::Cancelled)
+                // Recovery transitions: allow terminal -> cancelled for edge cases
+                // and queued -> failed for stale execution recovery
+                | (ExecutionState::Queued, ExecutionState::Failed)
+                | (ExecutionState::Queued, ExecutionState::Cancelled)
+        )
+    }
+
+    /// Returns the DB string representation (lowercase).
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ExecutionState::Queued => "queued",
+            ExecutionState::Running => "running",
+            ExecutionState::Completed => "completed",
+            ExecutionState::Failed => "failed",
+            ExecutionState::Incomplete => "incomplete",
+            ExecutionState::Cancelled => "cancelled",
+        }
+    }
+}
+
+impl fmt::Display for ExecutionState {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl FromStr for ExecutionState {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "queued" => Ok(ExecutionState::Queued),
+            "running" => Ok(ExecutionState::Running),
+            "completed" => Ok(ExecutionState::Completed),
+            "failed" => Ok(ExecutionState::Failed),
+            "incomplete" => Ok(ExecutionState::Incomplete),
+            "cancelled" => Ok(ExecutionState::Cancelled),
+            // Backwards-compat: some old DB rows might have "pending"
+            "pending" => Ok(ExecutionState::Queued),
+            other => Err(format!("Unknown execution state: '{}'", other)),
+        }
+    }
+}
 
 /// Classified stream-json line from Claude CLI stdout
 #[derive(Debug, Clone, PartialEq)]
@@ -64,6 +171,29 @@ pub enum ProtocolMessage {
     ExecutionFlow {
         flows: serde_json::Value,
     },
+}
+
+// =============================================================================
+// Continuation — unified resume mechanism
+// =============================================================================
+
+/// How to continue a previous execution.
+///
+/// Unifies two independent resume strategies into a single first-class type:
+/// - `PromptHint`: injects a contextual hint into the input data so the LLM
+///   knows it should continue from where a previous execution left off.
+/// - `SessionResume`: uses Claude CLI `--resume <session_id>` to natively
+///   continue a prior conversation, preserving full context.
+///
+/// The frontend decides which variant to use based on whether a
+/// `claude_session_id` is available from the previous execution.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", content = "value")]
+pub enum Continuation {
+    /// Soft continuation: injects a resume hint into the prompt input data.
+    PromptHint(String),
+    /// Hard continuation: resumes a prior Claude CLI session by ID.
+    SessionResume(String),
 }
 
 /// CLI spawn arguments
@@ -134,6 +264,130 @@ pub mod providers {
     pub const CUSTOM: &str = "custom";
 }
 
+// =============================================================================
+// EphemeralPersona — virtual persona that never touches the database
+// =============================================================================
+
+/// A virtual persona + tools bundle that exists only in memory.
+///
+/// Used for draft validation, sandbox testing, and preview-before-save flows
+/// where a fully-formed persona config is needed without DB persistence.
+#[derive(Debug, Clone)]
+pub struct EphemeralPersona {
+    pub persona: Persona,
+    pub tools: Vec<PersonaToolDefinition>,
+    pub model_override: Option<ModelProfile>,
+}
+
+impl EphemeralPersona {
+    /// Create an EphemeralPersona from a DB-persisted persona and its tools.
+    pub fn from_persisted(
+        persona: Persona,
+        tools: Vec<PersonaToolDefinition>,
+    ) -> Self {
+        Self {
+            persona,
+            tools,
+            model_override: None,
+        }
+    }
+
+    /// Create an EphemeralPersona from a DB-persisted persona, tools, and a model override.
+    pub fn from_persisted_with_model(
+        persona: Persona,
+        tools: Vec<PersonaToolDefinition>,
+        model_override: ModelProfile,
+    ) -> Self {
+        Self {
+            persona,
+            tools,
+            model_override: Some(model_override),
+        }
+    }
+
+    /// Build from draft JSON (used by n8n draft validation and test commands).
+    pub fn from_draft_json(draft_json: &str) -> Result<Self, String> {
+        #[derive(Deserialize)]
+        struct DraftToolInput {
+            name: String,
+            category: String,
+            description: String,
+            script_path: Option<String>,
+            input_schema: Option<serde_json::Value>,
+            requires_credential_type: Option<String>,
+            implementation_guide: Option<String>,
+        }
+
+        #[derive(Deserialize)]
+        struct DraftInput {
+            name: Option<String>,
+            system_prompt: String,
+            structured_prompt: Option<serde_json::Value>,
+            description: Option<String>,
+            model_profile: Option<String>,
+            max_budget_usd: Option<f64>,
+            design_context: Option<String>,
+            tools: Option<Vec<DraftToolInput>>,
+        }
+
+        let draft: DraftInput = serde_json::from_str(draft_json)
+            .map_err(|e| format!("Invalid draft JSON: {}", e))?;
+
+        let now = chrono::Utc::now().to_rfc3339();
+        let persona = Persona {
+            id: format!("draft-validate-{}", uuid::Uuid::new_v4()),
+            project_id: "default".to_string(),
+            name: draft.name.unwrap_or_else(|| "Draft Validation".to_string()),
+            description: draft.description,
+            system_prompt: draft.system_prompt,
+            structured_prompt: draft.structured_prompt.map(|v| v.to_string()),
+            icon: None,
+            color: None,
+            enabled: false,
+            max_concurrent: 1,
+            timeout_ms: 30_000,
+            notification_channels: None,
+            last_design_result: None,
+            model_profile: draft.model_profile,
+            max_budget_usd: draft.max_budget_usd,
+            max_turns: Some(1),
+            design_context: draft.design_context,
+            group_id: None,
+            created_at: now.clone(),
+            updated_at: now,
+        };
+
+        let tools: Vec<PersonaToolDefinition> = draft
+            .tools
+            .unwrap_or_default()
+            .into_iter()
+            .map(|t| {
+                let tool_now = chrono::Utc::now().to_rfc3339();
+                PersonaToolDefinition {
+                    id: format!("draft-tool-{}", uuid::Uuid::new_v4()),
+                    name: t.name,
+                    category: t.category,
+                    description: t.description,
+                    script_path: t.script_path.unwrap_or_default(),
+                    input_schema: t.input_schema.map(|v| v.to_string()),
+                    output_schema: None,
+                    requires_credential_type: t.requires_credential_type,
+                    implementation_guide: t.implementation_guide,
+                    is_builtin: false,
+                    created_at: tool_now.clone(),
+                    updated_at: tool_now,
+                }
+            })
+            .collect();
+
+        Ok(Self {
+            persona,
+            tools,
+            model_override: None,
+        })
+    }
+}
+
 /// Event payload emitted to frontend
 #[derive(Debug, Clone, Serialize)]
 pub struct ExecutionOutputEvent {
@@ -141,11 +395,12 @@ pub struct ExecutionOutputEvent {
     pub line: String,
 }
 
-/// Status event payload emitted to frontend
+/// Status event payload emitted to frontend.
+/// The `status` field serializes as a lowercase string (e.g. "completed").
 #[derive(Debug, Clone, Serialize)]
 pub struct ExecutionStatusEvent {
     pub execution_id: String,
-    pub status: String,
+    pub status: ExecutionState,
     pub error: Option<String>,
     pub duration_ms: Option<u64>,
     pub cost_usd: Option<f64>,

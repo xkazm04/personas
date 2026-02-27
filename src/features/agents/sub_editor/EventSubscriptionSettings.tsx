@@ -68,6 +68,7 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
         event_type: newEventType,
         source_filter: newSourceFilter.trim() || null,
         enabled: true,
+        use_case_id: null,
       });
       setSubscriptions((prev) => [...prev, created]);
       setNewEventType('');

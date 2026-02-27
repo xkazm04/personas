@@ -6,7 +6,8 @@ import { CredentialEventConfig } from '@/features/vault/components/CredentialEve
 import { CredentialIntelligence } from '@/features/vault/components/CredentialIntelligence';
 import { CredentialRotationSection } from '@/features/vault/components/CredentialRotationSection';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
-import { toCredentialMetadata } from '@/lib/types/types';
+import { toCredentialMetadata, getAuthMethods } from '@/lib/types/types';
+import { getAuthBadgeClasses } from '@/features/vault/utils/authMethodStyles';
 import { isGoogleOAuthConnector } from '@/lib/utils/connectors';
 import { useGoogleOAuth } from '@/features/vault/hooks/useGoogleOAuth';
 import { usePersonaStore } from '@/stores/personaStore';
@@ -151,55 +152,18 @@ export function CredentialCard({
                 <h4 className="font-medium text-foreground text-sm truncate max-w-[220px] sm:max-w-[320px]">
                   {credential.name}
                 </h4>
-                <span
-                  className="text-sm px-1.5 py-0.5 rounded-md font-mono border shrink-0"
-                  style={{
-                    backgroundColor: connector ? `${connector.color}15` : undefined,
-                    borderColor: connector ? `${connector.color}25` : undefined,
-                    color: connector?.color,
-                  }}
-                >
-                  {credential.service_type}
-                </span>
-                {isHealthchecking ? (
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 flex-shrink-0">
-                    <span className="w-2 h-2 rounded-full border border-amber-400 border-t-transparent animate-spin" />
-                    <span className="text-sm text-amber-400">Checking…</span>
-                  </span>
-                ) : (
-                  <span
-                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full flex-shrink-0 border ${
-                      effectiveHealthcheckResult === null
-                        ? 'bg-amber-500/10 border-amber-500/20'
-                        : effectiveHealthcheckResult.success
-                          ? 'bg-emerald-500/10 border-emerald-500/20'
-                          : 'bg-red-500/10 border-red-500/20'
-                    }`}
-                  >
+                {connector ? (
+                  getAuthMethods(connector).map((m) => (
                     <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        effectiveHealthcheckResult === null
-                          ? 'bg-amber-400/60'
-                          : effectiveHealthcheckResult.success
-                            ? 'bg-emerald-400'
-                            : 'bg-red-400'
-                      }`}
-                    />
-                    <span
-                      className={`text-sm ${
-                        effectiveHealthcheckResult === null
-                          ? 'text-amber-400'
-                          : effectiveHealthcheckResult.success
-                            ? 'text-emerald-400'
-                            : 'text-red-400'
-                      }`}
+                      key={m.id}
+                      className={`text-sm px-1.5 py-0.5 rounded-md font-mono border shrink-0 ${getAuthBadgeClasses(m)}`}
                     >
-                      {effectiveHealthcheckResult === null
-                        ? 'Untested'
-                        : effectiveHealthcheckResult.success
-                          ? 'Healthy'
-                          : 'Failed'}
+                      {m.label}
                     </span>
+                  ))
+                ) : (
+                  <span className="text-sm px-1.5 py-0.5 rounded-md font-mono border shrink-0 bg-secondary/40 border-primary/15 text-muted-foreground/60">
+                    {credential.service_type}
                   </span>
                 )}
                 {rotationStatus?.policy_enabled && rotationCountdown && (
@@ -213,6 +177,15 @@ export function CredentialCard({
                     <AlertTriangle className="w-2.5 h-2.5 text-amber-400" />
                     <span className="text-sm text-amber-400">Anomaly</span>
                   </span>
+                )}
+                {/* Field key tags */}
+                {connector?.fields.slice(0, 3).map((f) => (
+                  <span key={f.key} className="text-[10px] px-1 py-0.5 rounded bg-secondary/40 border border-primary/8 text-muted-foreground/50 font-mono shrink-0">
+                    {f.key}
+                  </span>
+                ))}
+                {connector && connector.fields.length > 3 && (
+                  <span className="text-[10px] text-muted-foreground/40 shrink-0">+{connector.fields.length - 3}</span>
                 )}
               </div>
 
@@ -313,33 +286,84 @@ export function CredentialCard({
                     />
                   ) : (
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm text-muted-foreground/80">
-                          {connector.healthcheck_config?.description || 'Credential configuration'}
-                        </p>
-                        <div className="flex gap-2">
+                      {/* Unified button panel */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                          onClick={() => onHealthcheck(credential.id)}
+                          disabled={isHealthchecking}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 rounded-lg text-sm font-medium transition-all disabled:opacity-50"
+                        >
+                          {isHealthchecking ? (
+                            <div className="w-3 h-3 border border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Key className="w-3 h-3" />
+                          )}
+                          Test
+                        </button>
+                        <button
+                          onClick={() => setEditingId(credential.id)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/90 rounded-lg text-sm font-medium transition-all"
+                        >
+                          <Pencil className="w-3 h-3" />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => setExpandedSection(expandedSection === 'intelligence' ? null : 'intelligence')}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                            expandedSection === 'intelligence'
+                              ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/25'
+                              : 'bg-secondary/40 hover:bg-secondary/60 border border-primary/10 text-muted-foreground/80'
+                          }`}
+                        >
+                          <BarChart3 className="w-3 h-3" />
+                          Intelligence
+                        </button>
+                        <button
+                          onClick={() => {
+                            setExpandedSection(expandedSection === 'rotation' ? null : 'rotation');
+                            if (expandedSection !== 'rotation') fetchRotationStatus();
+                          }}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                            expandedSection === 'rotation'
+                              ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/25'
+                              : 'bg-secondary/40 hover:bg-secondary/60 border border-primary/10 text-muted-foreground/80'
+                          }`}
+                        >
+                          <RotateCw className="w-3 h-3" />
+                          Rotation
+                          {rotationStatus?.anomaly_detected && (
+                            <AlertTriangle className="w-3 h-3 text-amber-400" />
+                          )}
+                        </button>
+                        {connector.services.length > 0 && (
                           <button
-                            onClick={() => onHealthcheck(credential.id)}
-                            disabled={isHealthchecking}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 rounded-lg text-sm font-medium transition-all disabled:opacity-50"
+                            onClick={() => setExpandedSection(expandedSection === 'services' ? null : 'services')}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                              expandedSection === 'services'
+                                ? 'bg-primary/10 text-primary border border-primary/20'
+                                : 'bg-secondary/40 hover:bg-secondary/60 border border-primary/10 text-muted-foreground/80'
+                            }`}
                           >
-                            {isHealthchecking ? (
-                              <div className="w-3 h-3 border border-emerald-400 border-t-transparent rounded-full animate-spin" />
-                            ) : (
-                              <Key className="w-3 h-3" />
-                            )}
-                            Test Connection
+                            <Wrench className="w-3 h-3" />
+                            Services ({connector.services.length})
                           </button>
+                        )}
+                        {connector.events.length > 0 && (
                           <button
-                            onClick={() => setEditingId(credential.id)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/90 rounded-lg text-sm font-medium transition-all"
+                            onClick={() => setExpandedSection(expandedSection === 'events' ? null : 'events')}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                              expandedSection === 'events'
+                                ? 'bg-primary/10 text-primary border border-primary/20'
+                                : 'bg-secondary/40 hover:bg-secondary/60 border border-primary/10 text-muted-foreground/80'
+                            }`}
                           >
-                            <Pencil className="w-3 h-3" />
-                            Edit Fields
+                            <Zap className="w-3 h-3" />
+                            Events ({connector.events.length})
                           </button>
-                        </div>
+                        )}
                       </div>
 
+                      {/* Healthcheck result */}
                       {(() => {
                         if (!effectiveHealthcheckResult) return null;
                         return (
@@ -354,17 +378,43 @@ export function CredentialCard({
                         );
                       })()}
 
-                      {/* Field schema */}
-                      <div className="bg-secondary/15 border border-primary/8 rounded-lg p-2.5 space-y-1">
-                        <p className="text-sm font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1.5">Fields</p>
-                        {connector.fields.map((f) => (
-                          <div key={f.key} className="flex items-center gap-2 text-sm py-0.5">
-                            <span className="font-mono text-foreground/75 bg-secondary/30 px-1.5 py-px rounded">{f.key}</span>
-                            <span className="text-muted-foreground/60">{f.label}</span>
-                            {f.required && <span className="text-amber-400/50 text-sm">required</span>}
-                          </div>
-                        ))}
-                      </div>
+                      {/* Section content */}
+                      {expandedSection && (
+                        <div className="bg-secondary/10 border border-primary/6 rounded-xl p-4">
+                          {expandedSection === 'services' && (
+                            <div className="space-y-2">
+                              {connector.services.map((service) => (
+                                <div
+                                  key={service.toolName}
+                                  className="flex items-center gap-3 p-3 bg-secondary/20 border border-primary/10 rounded-xl border-l-2"
+                                  style={{ borderLeftColor: connector.color || 'transparent' }}
+                                >
+                                  <Wrench className="w-3.5 h-3.5 text-muted-foreground/80" />
+                                  <div>
+                                    <span className="text-sm text-foreground/80">{service.label}</span>
+                                    <span className="ml-2 text-xs font-mono text-muted-foreground/60">{service.toolName}</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {expandedSection === 'events' && (
+                            <CredentialEventConfig credentialId={credential.id} events={connector.events} />
+                          )}
+                          {expandedSection === 'intelligence' && (
+                            <CredentialIntelligence credentialId={credential.id} />
+                          )}
+                          {expandedSection === 'rotation' && (
+                            <CredentialRotationSection
+                              credentialId={credential.id}
+                              rotationStatus={rotationStatus}
+                              rotationCountdown={rotationCountdown}
+                              onRefresh={fetchRotationStatus}
+                              onHealthcheck={onHealthcheck}
+                            />
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -372,112 +422,6 @@ export function CredentialCard({
                 <div className="text-sm text-muted-foreground/80 py-3">
                   No connector definition available for this credential type.
                 </div>
-              )}
-
-              {/* Divider between detail and section tabs */}
-              <div className="my-3 border-t border-primary/8" />
-
-              {/* Section Tabs */}
-              <div className="flex gap-1 pb-3">
-                {connector && connector.services.length > 0 && (
-                  <button
-                    onClick={() => setExpandedSection(expandedSection === 'services' ? null : 'services')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                      expandedSection === 'services'
-                        ? 'bg-primary/10 text-primary border border-primary/20'
-                        : 'text-muted-foreground/90 hover:text-foreground/95 hover:bg-secondary/60 border border-transparent'
-                    }`}
-                  >
-                    <Wrench className="w-3 h-3" />
-                    Services ({connector.services.length})
-                  </button>
-                )}
-                {connector && connector.events.length > 0 && (
-                  <button
-                    onClick={() => setExpandedSection(expandedSection === 'events' ? null : 'events')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                      expandedSection === 'events'
-                        ? 'bg-primary/10 text-primary border border-primary/20'
-                        : 'text-muted-foreground/90 hover:text-foreground/95 hover:bg-secondary/60 border border-transparent'
-                    }`}
-                  >
-                    <Zap className="w-3 h-3" />
-                    Events ({connector.events.length})
-                  </button>
-                )}
-                <button
-                  onClick={() => setExpandedSection(expandedSection === 'intelligence' ? null : 'intelligence')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    expandedSection === 'intelligence'
-                      ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/25'
-                      : 'text-muted-foreground/90 hover:text-foreground/95 hover:bg-secondary/60 border border-transparent'
-                  }`}
-                >
-                  <BarChart3 className="w-3 h-3" />
-                  Intelligence
-                </button>
-                <button
-                  onClick={() => {
-                    setExpandedSection(expandedSection === 'rotation' ? null : 'rotation');
-                    if (expandedSection !== 'rotation') fetchRotationStatus();
-                  }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    expandedSection === 'rotation'
-                      ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/25'
-                      : 'text-muted-foreground/90 hover:text-foreground/95 hover:bg-secondary/60 border border-transparent'
-                  }`}
-                >
-                  <RotateCw className="w-3 h-3" />
-                  Rotation
-                  {rotationStatus?.anomaly_detected && (
-                    <AlertTriangle className="w-3 h-3 text-amber-400" />
-                  )}
-                </button>
-              </div>
-
-              {/* Section Content */}
-              {expandedSection && <div className="border-t border-primary/8 pt-3" />}
-
-              {/* Services Section */}
-              {expandedSection === 'services' && connector && (
-                <div className="space-y-2">
-                  {connector.services.map((service) => (
-                    <div
-                      key={service.toolName}
-                      className="flex items-center gap-3 p-3 bg-secondary/20 border border-primary/15 rounded-xl"
-                    >
-                      <Wrench className="w-3.5 h-3.5 text-muted-foreground/80" />
-                      <div>
-                        <span className="text-sm text-foreground/80">{service.label}</span>
-                        <span className="ml-2 text-sm font-mono text-muted-foreground/60">{service.toolName}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Events Section */}
-              {expandedSection === 'events' && connector && (
-                <CredentialEventConfig
-                  credentialId={credential.id}
-                  events={connector.events}
-                />
-              )}
-
-              {/* Intelligence Section */}
-              {expandedSection === 'intelligence' && (
-                <CredentialIntelligence credentialId={credential.id} />
-              )}
-
-              {/* Rotation Section */}
-              {expandedSection === 'rotation' && (
-                <CredentialRotationSection
-                  credentialId={credential.id}
-                  rotationStatus={rotationStatus}
-                  rotationCountdown={rotationCountdown}
-                  onRefresh={fetchRotationStatus}
-                  onHealthcheck={onHealthcheck}
-                />
               )}
             </div>
           </motion.div>

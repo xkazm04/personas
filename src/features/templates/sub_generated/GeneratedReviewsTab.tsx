@@ -1,4 +1,6 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { staggerContainer, staggerItem } from '@/features/templates/animationPresets';
 import { useClickOutside } from '@/hooks/utility/useClickOutside';
 import {
   FlaskConical,
@@ -18,24 +20,27 @@ import {
   Clock,
   Lightbulb,
   Workflow,
-  CircleDot,
   Webhook,
   MousePointerClick,
   Radio,
+  GitFork,
+  Plug,
+  Bell,
+  Wrench,
 } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useTemplateGallery } from '@/hooks/design/useTemplateGallery';
-import { deleteDesignReview } from '@/api/reviews';
+import { deleteDesignReview, cleanupDuplicateReviews } from '@/api/reviews';
 import { deriveConnectorReadiness } from './ConnectorReadiness';
 import { TemplateSearchBar } from './TemplateSearchBar';
 import { TemplatePagination } from './TemplatePagination';
 import { TemplateDetailModal } from './TemplateDetailModal';
-import { TemplateAdoptDialog } from './TemplateAdoptDialog';
 import { CreateTemplateModal } from './CreateTemplateModal';
 import { ADOPT_CONTEXT_KEY } from './useAdoptReducer';
 import AdoptionWizardModal from './AdoptionWizardModal';
 import { RebuildModal } from './RebuildModal';
+import { DimensionRadial } from './DimensionRadial';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { DesignAnalysisResult, SuggestedTrigger } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
@@ -46,21 +51,24 @@ import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
 // Helpers
 // ============================================================================
 
-function getQualityScore(review: PersonaDesignReview): number | null {
-  return review.structural_score ?? review.semantic_score ?? null;
-}
-
-function getQualityColor(score: number): string {
-  if (score >= 80) return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
-  if (score >= 60) return 'text-amber-400 bg-amber-500/10 border-amber-500/20';
-  return 'text-red-400 bg-red-500/10 border-red-500/20';
-}
 
 const TRIGGER_ICONS: Record<string, typeof Clock> = {
   schedule: Clock,
   webhook: Webhook,
   manual: MousePointerClick,
   polling: Radio,
+};
+
+const NODE_TYPE_DISPLAY: Record<string, {
+  Icon: typeof Clock;
+  color: string;
+  label: string;
+}> = {
+  action:    { Icon: Wrench,        color: 'text-blue-400 bg-blue-500/10 border-blue-500/15',       label: 'action' },
+  decision:  { Icon: GitFork,       color: 'text-amber-400 bg-amber-500/10 border-amber-500/15',    label: 'decision' },
+  connector: { Icon: Plug,          color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/15', label: 'connector' },
+  event:     { Icon: Radio,         color: 'text-violet-400 bg-violet-500/10 border-violet-500/15',  label: 'event' },
+  error:     { Icon: AlertTriangle, color: 'text-rose-400 bg-rose-500/10 border-rose-500/15',       label: 'error' },
 };
 
 // ============================================================================
@@ -93,19 +101,19 @@ function RowActionMenu({
         className="p-1 rounded-md opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-secondary/60 transition-all"
         aria-label="Row actions"
       >
-        <MoreVertical className="w-4 h-4 text-muted-foreground/90" />
+        <MoreVertical className="w-4.5 h-4.5 text-muted-foreground/90" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 z-50 min-w-[170px] py-1 bg-background border border-primary/20 rounded-lg shadow-2xl backdrop-blur-sm">
+        <div className="absolute right-0 top-full mt-1 z-50 min-w-[180px] py-1.5 bg-background border border-primary/20 rounded-lg shadow-2xl backdrop-blur-sm">
           <button
             onClick={(e) => {
               e.stopPropagation();
               setOpen(false);
               onViewDetails();
             }}
-            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-foreground/80 hover:bg-primary/5 transition-colors text-left"
+            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-foreground/80 hover:bg-primary/5 transition-colors text-left"
           >
-            <Eye className="w-3.5 h-3.5" />
+            <Eye className="w-4 h-4" />
             View Details
           </button>
           <button
@@ -114,9 +122,9 @@ function RowActionMenu({
               setOpen(false);
               onRebuild();
             }}
-            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-blue-400 hover:bg-blue-500/10 transition-colors text-left"
+            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-blue-400 hover:bg-blue-500/10 transition-colors text-left"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw className="w-4 h-4" />
             Rebuild
           </button>
           <button
@@ -125,9 +133,9 @@ function RowActionMenu({
               setOpen(false);
               onDelete(reviewId);
             }}
-            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-red-400 hover:bg-red-500/10 transition-colors text-left"
+            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors text-left"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-4 h-4" />
             Delete template
           </button>
         </div>
@@ -137,7 +145,7 @@ function RowActionMenu({
 }
 
 // ============================================================================
-// Expanded Row — 3-Column Layout (Use Cases | Connectors | Triggers)
+// Expanded Row — Consolidated Layout (Summary + Rail → Hero Cards → Actions)
 // ============================================================================
 
 function ExpandedRowContent({
@@ -156,7 +164,6 @@ function ExpandedRowContent({
   onAdopt: () => void;
 }) {
   const flows = parseJsonSafe<UseCaseFlow[]>(review.use_case_flows, []);
-  // Fallback: try extracting flows from design_result
   const displayFlows = flows.length > 0
     ? flows
     : (() => {
@@ -167,147 +174,218 @@ function ExpandedRowContent({
       })();
 
   const connectors: string[] = parseJsonSafe(review.connectors_used, []);
-  const triggerTypes: string[] = parseJsonSafe(review.trigger_types, []);
   const suggestedTriggers: SuggestedTrigger[] = designResult?.suggested_triggers ?? [];
 
   const readinessStatuses = designResult?.suggested_connectors
     ? deriveConnectorReadiness(designResult.suggested_connectors, installedConnectorNames, credentialServiceTypes)
     : [];
 
+  const eventCount = designResult?.suggested_event_subscriptions?.length ?? 0;
+  const channelCount = designResult?.suggested_notification_channels?.length ?? 0;
+
+  // Per-flow node type statistics for hero cards
+  const perFlowStats = useMemo(
+    () =>
+      displayFlows.map((flow) => {
+        const counts: Record<string, number> = {};
+        for (const node of flow.nodes) {
+          if (node.type !== 'start' && node.type !== 'end') {
+            counts[node.type] = (counts[node.type] ?? 0) + 1;
+          }
+        }
+        return counts;
+      }),
+    [displayFlows],
+  );
+
+  // Total human-in-loop decisions across all flows
+  const totalDecisions = useMemo(
+    () =>
+      displayFlows.reduce(
+        (sum, flow) => sum + flow.nodes.filter((n) => n.type === 'decision').length,
+        0,
+      ),
+    [displayFlows],
+  );
+
   return (
-    <div className="space-y-4">
-      {/* Summary */}
-      {designResult?.summary && (
-        <div className="bg-gradient-to-r from-violet-500/5 to-transparent border border-violet-500/10 rounded-xl px-4 py-3">
-          <p className="text-sm text-foreground/90 leading-relaxed">{designResult.summary}</p>
-        </div>
-      )}
+    <div className="space-y-3">
+      {/* ── Section A: Header bar — summary + metadata rail ── */}
+      <div className="flex items-start gap-4">
+        {/* Left: summary text */}
+        <p className="flex-1 min-w-0 text-sm text-foreground/80 leading-relaxed">
+          {designResult?.summary || review.instruction}
+        </p>
 
-      {/* 3-Column Grid */}
-      <div className="grid grid-cols-3 gap-4">
-        {/* Use Cases */}
-        <div className="bg-secondary/20 rounded-xl border border-primary/8 p-3">
-          <h4 className="text-[10px] uppercase tracking-wider text-muted-foreground/50 font-medium mb-2 flex items-center gap-1.5">
-            <Workflow className="w-3 h-3 text-violet-400/60" />
-            Use Cases
-          </h4>
-          {displayFlows.length > 0 ? (
-            <div className="space-y-1.5">
-              {displayFlows.map((flow) => (
-                <button
-                  key={flow.id}
-                  onClick={onViewFlows}
-                  className="flex items-start gap-1.5 w-full text-left group/flow hover:text-violet-300 transition-colors"
-                >
-                  <CircleDot className="w-3 h-3 text-violet-400/60 flex-shrink-0 mt-0.5" />
-                  <div className="min-w-0">
-                    <span className="text-xs font-medium text-foreground/80 group-hover/flow:text-violet-300 block truncate">
-                      {flow.name}
-                    </span>
-                    {flow.description && (
-                      <span className="text-[10px] text-muted-foreground/50 block truncate">
-                        {flow.description}
-                      </span>
-                    )}
-                  </div>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground/40 italic">No use case flows defined</p>
-          )}
-        </div>
-
-        {/* Connectors */}
-        <div className="bg-secondary/20 rounded-xl border border-primary/8 p-3">
-          <h4 className="text-[10px] uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">
-            Connectors
-          </h4>
-          {connectors.length > 0 ? (
-            <div className="space-y-1.5">
+        {/* Right: metadata rail */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Connector icon cluster */}
+          {connectors.length > 0 && (
+            <div className="flex items-center gap-1">
               {connectors.map((c) => {
                 const meta = getConnectorMeta(c);
                 const status = readinessStatuses.find((s) => s.connector_name === c);
                 const isReady = status?.health === 'ready';
                 return (
-                  <div key={c} className="flex items-center gap-2">
+                  <div
+                    key={c}
+                    className="relative flex-shrink-0"
+                    title={`${meta.label}${isReady ? '' : ' (needs setup)'}`}
+                  >
                     <div
-                      className={`w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 transition-opacity ${
+                      className={`w-7 h-7 rounded-lg flex items-center justify-center transition-opacity ${
                         isReady ? '' : 'opacity-30 grayscale'
                       }`}
                       style={{ backgroundColor: `${meta.color}18` }}
                     >
-                      <ConnectorIcon meta={meta} size="w-3.5 h-3.5" />
+                      <ConnectorIcon meta={meta} size="w-4 h-4" />
                     </div>
-                    <span className={`text-xs ${isReady ? 'text-foreground/80' : 'text-muted-foreground/50'}`}>
-                      {meta.label}
-                    </span>
-                    {isReady ? (
-                      <CheckCircle2 className="w-3 h-3 text-emerald-400/60 ml-auto flex-shrink-0" />
-                    ) : (
-                      <XCircle className="w-3 h-3 text-red-400/40 ml-auto flex-shrink-0" />
-                    )}
+                    <span
+                      className={`absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full ${
+                        isReady ? 'bg-emerald-500' : 'bg-amber-500/60'
+                      }`}
+                    />
                   </div>
                 );
               })}
             </div>
-          ) : (
-            <p className="text-xs text-muted-foreground/40 italic">No connectors</p>
           )}
-        </div>
 
-        {/* Events & Triggers */}
-        <div className="bg-secondary/20 rounded-xl border border-primary/8 p-3">
-          <h4 className="text-[10px] uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">
-            Events & Triggers
-          </h4>
-          {(suggestedTriggers.length > 0 || triggerTypes.length > 0) ? (
-            <div className="space-y-1.5">
-              {(suggestedTriggers.length > 0
-                ? suggestedTriggers
-                : triggerTypes.map((t) => ({ trigger_type: t, description: t, config: {} }))
-              ).map((trigger, i) => {
+          {/* Divider */}
+          {connectors.length > 0 && suggestedTriggers.length > 0 && (
+            <div className="w-px h-5 bg-primary/10" />
+          )}
+
+          {/* Trigger pills */}
+          {suggestedTriggers.length > 0 && (
+            <div className="flex items-center gap-1">
+              {suggestedTriggers.map((trigger, i) => {
                 const TriggerIcon = TRIGGER_ICONS[trigger.trigger_type] ?? Clock;
                 return (
-                  <div key={i} className="flex items-start gap-2">
-                    <div className="w-6 h-6 rounded-md bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-                      <TriggerIcon className="w-3.5 h-3.5 text-blue-400/60" />
-                    </div>
-                    <div className="min-w-0">
-                      <span className="text-xs font-medium text-foreground/80 block capitalize">
-                        {trigger.trigger_type}
-                      </span>
-                      {trigger.description && trigger.description !== trigger.trigger_type && (
-                        <span className="text-[10px] text-muted-foreground/50 block truncate">
-                          {trigger.description}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                  <span
+                    key={i}
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono uppercase rounded bg-blue-500/8 text-blue-400/70 border border-blue-500/12"
+                    title={trigger.description}
+                  >
+                    <TriggerIcon className="w-2.5 h-2.5" />
+                    {trigger.trigger_type}
+                  </span>
                 );
               })}
             </div>
-          ) : (
-            <p className="text-xs text-muted-foreground/40 italic">No triggers defined</p>
           )}
+
+          {/* Count badges */}
+          {eventCount > 0 && (
+            <span
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono rounded bg-rose-500/8 text-rose-400/70 border border-rose-500/12"
+              title={`${eventCount} event subscription${eventCount !== 1 ? 's' : ''}`}
+            >
+              <Radio className="w-2.5 h-2.5" />
+              {eventCount}
+            </span>
+          )}
+          {channelCount > 0 && (
+            <span
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono rounded bg-purple-500/8 text-purple-400/70 border border-purple-500/12"
+              title={`${channelCount} notification channel${channelCount !== 1 ? 's' : ''}`}
+            >
+              <Bell className="w-2.5 h-2.5" />
+              {channelCount}
+            </span>
+          )}
+          {totalDecisions > 0 && (
+            <span
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono rounded bg-amber-500/8 text-amber-400/70 border border-amber-500/12"
+              title={`${totalDecisions} human-in-loop decision${totalDecisions !== 1 ? 's' : ''}`}
+            >
+              <GitFork className="w-2.5 h-2.5" />
+              {totalDecisions}
+            </span>
+          )}
+
+          {/* Quality radial */}
+          <DimensionRadial designResult={designResult} size={36} className="flex-shrink-0" />
         </div>
       </div>
 
-      {/* Adopt button row */}
+      {/* ── Section B: Use Case Hero Cards ── */}
+      {displayFlows.length > 0 ? (
+        <div className="grid grid-cols-2 gap-3">
+          {displayFlows.map((flow, idx) => {
+            const stats = perFlowStats[idx] ?? {};
+            return (
+              <motion.button
+                key={flow.id}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.05, duration: 0.2 }}
+                onClick={onViewFlows}
+                className="group/card text-left p-3.5 rounded-xl bg-secondary/25 border border-primary/8 hover:border-violet-500/20 hover:bg-violet-500/5 transition-all"
+              >
+                {/* Card header */}
+                <div className="flex items-start gap-2 mb-1.5">
+                  <Workflow className="w-3.5 h-3.5 text-violet-400/50 flex-shrink-0 mt-0.5" />
+                  <div className="min-w-0 flex-1">
+                    <span className="text-sm font-medium text-foreground/85 group-hover/card:text-violet-300 block truncate">
+                      {flow.name}
+                    </span>
+                    {flow.description && (
+                      <span className="text-xs text-muted-foreground/50 block line-clamp-2 leading-relaxed mt-0.5">
+                        {flow.description}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Separator */}
+                <div className="border-t border-primary/6 my-2" />
+
+                {/* Node type pills */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {Object.entries(stats).map(([type, count]) => {
+                    const display = NODE_TYPE_DISPLAY[type];
+                    if (!display) return null;
+                    const { Icon, color } = display;
+                    return (
+                      <span
+                        key={type}
+                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono rounded border ${color}`}
+                      >
+                        <Icon className="w-2.5 h-2.5" />
+                        {count} {display.label}{count !== 1 ? 's' : ''}
+                      </span>
+                    );
+                  })}
+                  {Object.keys(stats).length === 0 && (
+                    <span className="text-[10px] text-muted-foreground/30 italic">No steps</span>
+                  )}
+                </div>
+              </motion.button>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="py-4 text-center text-sm text-muted-foreground/40 italic">
+          No use case flows defined
+        </div>
+      )}
+
+      {/* ── Section C: Action Row ── */}
       <div className="flex items-center justify-between pt-1">
         <button
           onClick={onAdopt}
-          className="px-4 py-2 text-xs rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2"
+          className="px-5 py-2.5 text-sm rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2"
         >
-          <Download className="w-3.5 h-3.5" />
+          <Download className="w-4 h-4" />
           Adopt as Persona
         </button>
         {displayFlows.length > 0 && (
           <button
             onClick={onViewFlows}
-            className="px-3 py-1.5 text-xs rounded-lg bg-violet-500/8 text-violet-400/70 hover:bg-violet-500/15 transition-colors inline-flex items-center gap-1.5"
+            className="px-4 py-2 text-sm rounded-lg bg-violet-500/8 text-violet-400/70 hover:bg-violet-500/15 transition-colors inline-flex items-center gap-1.5"
           >
-            <Workflow className="w-3 h-3" />
+            <Workflow className="w-3.5 h-3.5" />
             View {displayFlows.length} flow{displayFlows.length !== 1 ? 's' : ''}
           </button>
         )}
@@ -342,10 +420,10 @@ export default function GeneratedReviewsTab({
 
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [adoptReview, setAdoptReview] = useState<PersonaDesignReview | null>(null);
-  const [adoptMode, setAdoptMode] = useState<'simple' | 'ai-wizard' | null>(null);
   const [showCreateTemplate, setShowCreateTemplate] = useState(false);
   const [detailReview, setDetailReview] = useState<PersonaDesignReview | null>(null);
   const [rebuildReview, setRebuildReview] = useState<PersonaDesignReview | null>(null);
+  const [isCleaningUp, setIsCleaningUp] = useState(false);
 
   const installedConnectorNames = useMemo(
     () => new Set(connectorDefinitions.map((c) => c.name)),
@@ -358,16 +436,10 @@ export default function GeneratedReviewsTab({
 
   const handleAdoptClick = (review: PersonaDesignReview) => {
     setAdoptReview(review);
-    setAdoptMode('simple');
-  };
-
-  const handleSwitchToAIWizard = () => {
-    setAdoptMode('ai-wizard');
   };
 
   const handleCloseAdopt = () => {
     setAdoptReview(null);
-    setAdoptMode(null);
   };
 
   const handleDeleteReview = async (id: string) => {
@@ -379,13 +451,25 @@ export default function GeneratedReviewsTab({
     }
   };
 
+  const handleCleanupDuplicates = async () => {
+    setIsCleaningUp(true);
+    try {
+      await cleanupDuplicateReviews();
+      gallery.refresh();
+    } catch (err) {
+      console.error('Failed to cleanup duplicates:', err);
+    } finally {
+      setIsCleaningUp(false);
+    }
+  };
+
   const handlePersonaCreated = () => {
     handleCloseAdopt();
     gallery.refresh();
     onPersonaCreated?.();
   };
 
-  // Re-open the AI wizard to show background progress
+  // Re-open the wizard to show background progress
   const handleResumeAdoption = () => {
     try {
       const raw = window.localStorage.getItem(ADOPT_CONTEXT_KEY);
@@ -394,14 +478,12 @@ export default function GeneratedReviewsTab({
         const match = gallery.items.find((r) => r.test_case_name === parsed.templateName);
         if (match) {
           setAdoptReview(match);
-          setAdoptMode('ai-wizard');
           return;
         }
       }
     } catch { /* ignore */ }
     if (gallery.items[0]) {
       setAdoptReview(gallery.items[0]);
-      setAdoptMode('ai-wizard');
     }
   };
 
@@ -454,7 +536,7 @@ export default function GeneratedReviewsTab({
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full" style={{ minWidth: 960 }}>
       {/* Background adoption banner */}
       {templateAdoptActive && !adoptReview && (
         <div className="mx-4 mt-3 mb-0">
@@ -489,28 +571,35 @@ export default function GeneratedReviewsTab({
         page={gallery.page}
         perPage={gallery.perPage}
         onNewTemplate={() => setShowCreateTemplate(true)}
+        onCleanupDuplicates={handleCleanupDuplicates}
+        isCleaningUp={isCleaningUp}
       />
 
       {/* Table */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overflow-x-auto">
         {gallery.items.length > 0 ? (
-          <table className="w-full">
+          <table className="w-full" style={{ minWidth: 960 }}>
             <thead className="sticky top-0 z-10">
               <tr className="bg-background border-b border-primary/10" style={{ backgroundColor: 'hsl(var(--background))' }}>
-                <th className="text-left text-xs font-medium text-muted-foreground/70 px-6 py-2.5 w-8 bg-secondary/80" />
-                <th className="text-left text-xs font-medium text-muted-foreground/70 px-4 py-2.5 bg-secondary/80">Template Name</th>
-                <th className="text-left text-xs font-medium text-muted-foreground/70 px-4 py-2.5 bg-secondary/80">Connectors</th>
-                <th className="text-center text-xs font-medium text-muted-foreground/70 px-4 py-2.5 bg-secondary/80">Flows</th>
-                <th className="text-center text-xs font-medium text-muted-foreground/70 px-4 py-2.5 bg-secondary/80">Quality</th>
-                <th className="text-center text-xs font-medium text-muted-foreground/70 px-4 py-2.5 bg-secondary/80">Status</th>
-                <th className="text-right text-xs font-medium text-muted-foreground/70 px-6 py-2.5 w-24 bg-secondary/80" />
+                <th className="text-left text-sm font-medium text-muted-foreground/70 px-6 py-3 w-10 bg-secondary/80" />
+                <th className="text-left text-sm font-medium text-muted-foreground/70 px-4 py-3 bg-secondary/80">Template Name</th>
+                <th className="text-left text-sm font-medium text-muted-foreground/70 px-4 py-3 bg-secondary/80">Connectors</th>
+                <th className="text-center text-sm font-medium text-muted-foreground/70 px-4 py-3 bg-secondary/80">Flows</th>
+                <th className="text-center text-sm font-medium text-muted-foreground/70 px-4 py-3 bg-secondary/80">Quality</th>
+                <th className="text-center text-sm font-medium text-muted-foreground/70 px-4 py-3 bg-secondary/80">Status</th>
+                <th className="text-right text-sm font-medium text-muted-foreground/70 px-6 py-3 w-28 bg-secondary/80" />
               </tr>
             </thead>
-            <tbody>
+            <AnimatePresence mode="popLayout">
+            <motion.tbody
+              key={`${gallery.search}-${gallery.connectorFilter.join(',')}-${gallery.page}`}
+              variants={staggerContainer}
+              initial="hidden"
+              animate="show"
+            >
               {gallery.items.map((review) => {
                 const isExpanded = expandedRow === review.id;
                 const connectors: string[] = parseJsonSafe(review.connectors_used, []);
-                const qualityScore = getQualityScore(review);
                 const designResult = parseJsonSafe<DesignAnalysisResult | null>(review.design_result, null);
                 const flowCount = parseJsonSafe<unknown[]>(review.use_case_flows, []).length;
 
@@ -528,31 +617,34 @@ export default function GeneratedReviewsTab({
 
                 return (
                   <React.Fragment key={review.id}>
-                    <tr
+                    <motion.tr
+                      variants={staggerItem}
+                      layout="position"
                       onClick={() => setExpandedRow(isExpanded ? null : review.id)}
                       className="group border-b border-primary/5 hover:bg-secondary/30 cursor-pointer transition-colors"
+                      data-testid={`template-row-${review.id}`}
                     >
-                      <td className="px-6 py-3">
+                      <td className="px-6 py-4">
                         {isExpanded ? (
-                          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/80" />
+                          <ChevronDown className="w-4.5 h-4.5 text-muted-foreground/80" />
                         ) : (
-                          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/80" />
+                          <ChevronRight className="w-4.5 h-4.5 text-muted-foreground/80" />
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-4">
                         <div>
-                          <span className="text-sm font-medium text-foreground/80 block">
+                          <span className="text-base font-semibold text-foreground/80 block">
                             {review.test_case_name}
                           </span>
-                          <span className="text-xs text-muted-foreground/60 block truncate max-w-[400px]">
-                            {review.instruction.length > 80
-                              ? review.instruction.slice(0, 80) + '...'
+                          <span className="text-sm text-muted-foreground/60 block truncate max-w-[500px]">
+                            {review.instruction.length > 100
+                              ? review.instruction.slice(0, 100) + '...'
                               : review.instruction}
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1.5 flex-wrap">
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-2 flex-wrap">
                           {connectors.map((c) => {
                             const meta = getConnectorMeta(c);
                             const status = readinessStatuses.find((s) => s.connector_name === c);
@@ -560,64 +652,71 @@ export default function GeneratedReviewsTab({
                             return (
                               <div
                                 key={c}
-                                className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-opacity ${
-                                  isReady ? '' : 'opacity-30 grayscale'
-                                }`}
-                                style={{ backgroundColor: `${meta.color}18` }}
+                                className="relative flex-shrink-0"
                                 title={`${meta.label}${isReady ? '' : ' (not configured)'}`}
+                                data-testid={`connector-readiness-dot-${c}`}
                               >
-                                <ConnectorIcon meta={meta} size="w-4 h-4" />
+                                <div
+                                  className={`w-9 h-9 rounded-lg flex items-center justify-center transition-opacity ${
+                                    isReady ? '' : 'opacity-30 grayscale'
+                                  }`}
+                                  style={{ backgroundColor: `${meta.color}18` }}
+                                >
+                                  <ConnectorIcon meta={meta} size="w-5 h-5" />
+                                </div>
+                                {/* Readiness dot */}
+                                <span
+                                  className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full ${
+                                    isReady
+                                      ? 'bg-emerald-500'
+                                      : 'bg-amber-500/60 border border-dashed border-amber-500/30'
+                                  }`}
+                                />
                               </div>
                             );
                           })}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-4 py-4 text-center">
                         {flowCount > 0 ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300">
-                            <Workflow className="w-3 h-3" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300">
+                            <Workflow className="w-3.5 h-3.5" />
                             {flowCount}
                           </span>
                         ) : (
-                          <span className="text-xs text-muted-foreground/40">--</span>
+                          <span className="text-sm text-muted-foreground/40">--</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-center">
-                        {qualityScore !== null ? (
-                          <span
-                            className={`inline-flex items-center px-2.5 py-1 text-xs font-mono font-semibold rounded-full border ${getQualityColor(qualityScore)}`}
-                          >
-                            {qualityScore}%
-                          </span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground/60">--</span>
-                        )}
+                      <td className="px-4 py-4 text-center">
+                        <div className="flex justify-center">
+                          <DimensionRadial designResult={designResult} size={32} />
+                        </div>
                       </td>
-                      <td className="px-4 py-3 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
+                      <td className="px-4 py-4 text-center">
+                        <div className="flex items-center justify-center gap-2">
                           <span
-                            className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full border ${statusBadge.color}`}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-full border ${statusBadge.color}`}
                           >
-                            <StatusIcon className="w-3 h-3" />
+                            <StatusIcon className="w-3.5 h-3.5" />
                             {statusBadge.label}
                           </span>
                           {review.suggested_adjustment && (
                             <span title="Adjustment suggestion available">
-                              <Lightbulb className="w-3.5 h-3.5 text-amber-400/60" />
+                              <Lightbulb className="w-4 h-4 text-amber-400/60" />
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleAdoptClick(review);
                             }}
-                            className="px-3 py-1.5 text-xs rounded-lg bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors inline-flex items-center gap-1.5"
+                            className="px-3.5 py-2 text-sm rounded-lg bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors inline-flex items-center gap-1.5"
                           >
-                            <Download className="w-3 h-3" />
+                            <Download className="w-3.5 h-3.5" />
                             Adopt
                           </button>
                           <RowActionMenu
@@ -628,7 +727,7 @@ export default function GeneratedReviewsTab({
                           />
                         </div>
                       </td>
-                    </tr>
+                    </motion.tr>
                     {isExpanded && (
                       <tr>
                         <td colSpan={7} className="px-6 py-4 bg-secondary/20 border-b border-primary/10">
@@ -646,10 +745,11 @@ export default function GeneratedReviewsTab({
                   </React.Fragment>
                 );
               })}
-            </tbody>
+            </motion.tbody>
+            </AnimatePresence>
           </table>
         ) : (
-          <div className="flex items-center justify-center h-40 text-sm text-muted-foreground/60">
+          <div className="flex items-center justify-center h-40 text-sm text-muted-foreground/60" style={{ minWidth: 960 }}>
             No templates match your search
           </div>
         )}
@@ -675,20 +775,9 @@ export default function GeneratedReviewsTab({
         }}
       />
 
-      {/* Simple Adoption Dialog */}
-      <TemplateAdoptDialog
-        isOpen={adoptMode === 'simple' && !!adoptReview}
-        onClose={handleCloseAdopt}
-        review={adoptReview}
-        credentials={credentials}
-        connectorDefinitions={connectorDefinitions}
-        onPersonaCreated={handlePersonaCreated}
-        onCustomizeWithAI={handleSwitchToAIWizard}
-      />
-
-      {/* AI Wizard Modal */}
+      {/* Adoption Wizard Modal */}
       <AdoptionWizardModal
-        isOpen={adoptMode === 'ai-wizard' && !!adoptReview}
+        isOpen={!!adoptReview}
         onClose={handleCloseAdopt}
         review={adoptReview}
         credentials={credentials}

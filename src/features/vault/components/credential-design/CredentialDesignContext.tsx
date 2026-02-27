@@ -1,6 +1,7 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import type { CredentialTemplateField } from '@/lib/types/types';
 import type { CredentialDesignResult } from '@/hooks/design/useCredentialDesign';
+import type { CredentialFlow } from './CredentialDesignHelpers';
 
 // ── Context value ────────────────────────────────────────────────
 
@@ -17,9 +18,8 @@ export interface CredentialDesignContextValue {
   credentialName: string;
   onCredentialNameChange: (name: string) => void;
 
-  // OAuth state
-  isGoogleOAuthFlow: boolean;
-  universalOAuthProvider: string | null;
+  // Credential flow (discriminated union replacing triple-OAuth booleans)
+  credentialFlow: CredentialFlow;
   oauthInitialValues: Record<string, string>;
   isAuthorizingOAuth: boolean;
   oauthConsentCompletedAt: string | null;

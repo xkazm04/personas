@@ -101,6 +101,18 @@ pub fn build_refinement_prompt(
     feedback: &str,
     design_context: Option<&str>,
 ) -> String {
+    build_refinement_prompt_with_history(current_result_json, feedback, design_context, None)
+}
+
+/// Build a refinement prompt that includes conversation history for richer multi-turn context.
+/// When `conversation_history` is provided, earlier exchanges are injected so the LLM
+/// can see the full thread of instructions, questions, answers, and intermediate results.
+pub fn build_refinement_prompt_with_history(
+    current_result_json: &str,
+    feedback: &str,
+    design_context: Option<&str>,
+    conversation_history: Option<&str>,
+) -> String {
     let mut prompt = String::new();
 
     prompt.push_str("# Design Refinement\n\n");
@@ -113,6 +125,52 @@ pub fn build_refinement_prompt(
             prompt.push_str("The user provided the following context files and references during the original design:\n");
             prompt.push_str(ctx);
             prompt.push_str("\n\n");
+        }
+    }
+
+    // Include conversation history if available — this gives the LLM the full
+    // multi-turn thread so refinement quality improves across rounds.
+    if let Some(history) = conversation_history {
+        if !history.is_empty() && history != "[]" {
+            prompt.push_str("## Conversation History\n");
+            prompt.push_str("The following is the full design conversation so far. Use it to understand the user's evolving intent and previous decisions:\n\n");
+            // Parse messages and render as a readable thread
+            if let Ok(messages) = serde_json::from_str::<Vec<serde_json::Value>>(history) {
+                for msg in &messages {
+                    let role = msg.get("role").and_then(|v| v.as_str()).unwrap_or("unknown");
+                    let content = msg.get("content").and_then(|v| v.as_str()).unwrap_or("");
+                    let msg_type = msg.get("messageType").and_then(|v| v.as_str()).unwrap_or("");
+                    if content.is_empty() {
+                        continue;
+                    }
+                    match role {
+                        "user" => {
+                            let label = match msg_type {
+                                "instruction" => "User Instruction",
+                                "answer" => "User Answer",
+                                "feedback" => "User Feedback",
+                                _ => "User",
+                            };
+                            prompt.push_str(&format!("**{}**: {}\n\n", label, content));
+                        }
+                        "assistant" => {
+                            let label = match msg_type {
+                                "question" => "AI Question",
+                                "result" => "AI Result",
+                                _ => "AI",
+                            };
+                            // For results, truncate to avoid blowing up prompt size
+                            if msg_type == "result" && content.len() > 500 {
+                                prompt.push_str(&format!("**{}**: [Design result — {} chars, see Current Design below]\n\n", label, content.len()));
+                            } else {
+                                prompt.push_str(&format!("**{}**: {}\n\n", label, content));
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            prompt.push_str("---\n\n");
         }
     }
 
@@ -140,47 +198,22 @@ pub fn build_refinement_prompt(
 /// Extract a design question JSON from Claude's output text.
 /// Looks for JSON objects containing `design_question` key.
 pub fn extract_design_question(output: &str) -> Option<serde_json::Value> {
-    // Strategy 1: fenced JSON block
-    if let Some(val) = extract_fenced_json(output) {
-        if let Some(q) = val.get("design_question") {
-            if q.get("question").and_then(|v| v.as_str()).is_some() {
-                return Some(q.clone());
-            }
-        }
+    let val = extract_json_by_key(output, &["design_question"])?;
+    let q = val.get("design_question")?;
+    if q.get("question").and_then(|v| v.as_str()).is_some() {
+        return Some(q.clone());
     }
-
-    // Strategy 2: bare JSON object
-    if let Some(val) = extract_bare_json_with_key(output, &["design_question"]) {
-        if let Some(q) = val.get("design_question") {
-            if q.get("question").and_then(|v| v.as_str()).is_some() {
-                return Some(q.clone());
-            }
-        }
-    }
-
     None
 }
 
 /// Extract a DesignAnalysisResult JSON object from Claude's output text.
 /// Looks for fenced ```json blocks or bare JSON objects with `structured_prompt`.
 pub fn extract_design_result(output: &str) -> Option<serde_json::Value> {
-    // Strategy 1: Find fenced JSON code block
-    if let Some(result) = extract_fenced_json(output) {
-        if result.get("structured_prompt").is_some() {
-            return Some(result);
-        }
-    }
-
-    // Strategy 2: Find bare JSON object containing structured_prompt
-    if let Some(result) = extract_bare_json_with_key(output, &["structured_prompt"]) {
-        return Some(result);
-    }
-
-    None
+    extract_json_by_key(output, &["structured_prompt"])
 }
 
 /// Extract JSON from a fenced ```json ... ``` block.
-pub(crate) fn extract_fenced_json(output: &str) -> Option<serde_json::Value> {
+fn extract_fenced_json(output: &str) -> Option<serde_json::Value> {
     let mut in_block = false;
     let mut json_content = String::new();
     let mut best_result: Option<serde_json::Value> = None;
@@ -213,7 +246,7 @@ pub(crate) fn extract_fenced_json(output: &str) -> Option<serde_json::Value> {
 /// Find the first bare JSON object in the output that contains **any** of the
 /// given discriminating keys. This is the shared implementation behind all
 /// `extract_bare_*_json` helpers.
-pub(crate) fn extract_bare_json_with_key(output: &str, keys: &[&str]) -> Option<serde_json::Value> {
+fn extract_bare_json_with_key(output: &str, keys: &[&str]) -> Option<serde_json::Value> {
     let chars: Vec<char> = output.chars().collect();
     let len = chars.len();
     let mut i = 0;
@@ -235,8 +268,22 @@ pub(crate) fn extract_bare_json_with_key(output: &str, keys: &[&str]) -> Option<
     None
 }
 
+/// Unified JSON extraction combinator. Tries fenced ```json block first, then
+/// scans for bare JSON objects containing any of the given discriminant keys.
+/// This is the single entry point for all AI-output JSON extraction.
+pub fn extract_json_by_key(output: &str, keys: &[&str]) -> Option<serde_json::Value> {
+    // Strategy 1: fenced JSON code block
+    if let Some(val) = extract_fenced_json(output) {
+        if keys.iter().any(|k| val.get(*k).is_some()) {
+            return Some(val);
+        }
+    }
+    // Strategy 2: bare JSON object with discriminant key
+    extract_bare_json_with_key(output, keys)
+}
+
 /// Find the index of the matching closing brace for an opening brace at `start`.
-pub(crate) fn find_matching_brace(chars: &[char], start: usize) -> Option<usize> {
+fn find_matching_brace(chars: &[char], start: usize) -> Option<usize> {
     let mut depth = 0;
     let mut in_string = false;
     let mut escape_next = false;

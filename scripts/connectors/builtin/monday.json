@@ -1,0 +1,21 @@
+{
+  "id": "builtin-monday",
+  "name": "monday",
+  "label": "Monday.com",
+  "color": "#FF3D57",
+  "icon_url": "/icons/connectors/monday.svg",
+  "category": "productivity",
+  "fields": [
+    { "key": "api_key_v2", "label": "API v2 Token", "type": "password", "required": true, "placeholder": "eyJ...", "helpText": "From monday.com → Avatar → Developers → My Access Tokens" }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.monday.com/v2",
+    "method": "POST",
+    "headers": { "Authorization": "{{api_key_v2}}", "Content-Type": "application/json" },
+    "body": "{\"query\":\"{ me { id } }\"}",
+    "description": "Validates API token via Monday GraphQL endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": { "template_enabled": true, "summary": "Monday.com work management platform for projects, workflows, and CRM.", "auth_type": "pat", "auth_type_label": "PAT", "docs_url": "https://developer.monday.com/api-reference/docs/authentication" }
+}

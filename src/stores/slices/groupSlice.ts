@@ -2,7 +2,7 @@ import type { StateCreator } from "zustand";
 import type { PersonaStore } from "../storeTypes";
 import { errMsg } from "../storeTypes";
 import type { DbPersonaGroup } from "@/lib/types/types";
-import { buildUpdateInput } from "@/api/personas";
+import type { UpdatePersonaGroupInput } from "@/lib/bindings/UpdatePersonaGroupInput";
 import * as api from "@/api/tauriApi";
 
 export interface GroupSlice {
@@ -11,14 +11,23 @@ export interface GroupSlice {
 
   // Actions
   fetchGroups: () => Promise<void>;
-  createGroup: (input: { name: string; color?: string }) => Promise<DbPersonaGroup | null>;
-  updateGroup: (id: string, updates: { name?: string; color?: string; collapsed?: boolean }) => Promise<void>;
+  createGroup: (input: { name: string; color?: string; description?: string }) => Promise<DbPersonaGroup | null>;
+  updateGroup: (id: string, updates: Partial<{
+    name: string;
+    color: string;
+    collapsed: boolean;
+    description: string;
+    defaultModelProfile: string;
+    defaultMaxBudgetUsd: number;
+    defaultMaxTurns: number;
+    sharedInstructions: string;
+  }>) => Promise<void>;
   deleteGroup: (id: string) => Promise<void>;
   reorderGroups: (orderedIds: string[]) => Promise<void>;
   movePersonaToGroup: (personaId: string, groupId: string | null) => Promise<void>;
 }
 
-export const createGroupSlice: StateCreator<PersonaStore, [], [], GroupSlice> = (set, _get) => ({
+export const createGroupSlice: StateCreator<PersonaStore, [], [], GroupSlice> = (set, get) => ({
   groups: [],
 
   fetchGroups: async () => {
@@ -35,7 +44,8 @@ export const createGroupSlice: StateCreator<PersonaStore, [], [], GroupSlice> = 
       const group = await api.createGroup({
         name: input.name,
         color: input.color ?? "#6B7280",
-        sort_order: null,
+        sortOrder: null,
+        description: input.description ?? null,
       });
       set((state) => ({ groups: [...state.groups, group] }));
       return group;
@@ -47,12 +57,18 @@ export const createGroupSlice: StateCreator<PersonaStore, [], [], GroupSlice> = 
 
   updateGroup: async (id, updates) => {
     try {
-      const group = await api.updateGroup(id, {
+      const input: UpdatePersonaGroupInput = {
         name: updates.name ?? null,
         color: updates.color ?? null,
-        sort_order: null,
+        sortOrder: null,
         collapsed: updates.collapsed !== undefined ? updates.collapsed : null,
-      });
+        description: updates.description !== undefined ? updates.description : null,
+        defaultModelProfile: updates.defaultModelProfile !== undefined ? updates.defaultModelProfile : null,
+        defaultMaxBudgetUsd: updates.defaultMaxBudgetUsd !== undefined ? updates.defaultMaxBudgetUsd : null,
+        defaultMaxTurns: updates.defaultMaxTurns !== undefined ? updates.defaultMaxTurns : null,
+        sharedInstructions: updates.sharedInstructions !== undefined ? updates.sharedInstructions : null,
+      };
+      const group = await api.updateGroup(id, input);
       set((state) => ({
         groups: state.groups.map((g) => (g.id === id ? group : g)),
       }));
@@ -80,8 +96,8 @@ export const createGroupSlice: StateCreator<PersonaStore, [], [], GroupSlice> = 
       await api.reorderGroups(orderedIds);
       set((state) => ({
         groups: state.groups
-          .map((g) => ({ ...g, sort_order: orderedIds.indexOf(g.id) }))
-          .sort((a, b) => a.sort_order - b.sort_order),
+          .map((g) => ({ ...g, sortOrder: orderedIds.indexOf(g.id) }))
+          .sort((a, b) => a.sortOrder - b.sortOrder),
       }));
     } catch (err) {
       set({ error: errMsg(err, "Failed to reorder groups") });
@@ -90,12 +106,7 @@ export const createGroupSlice: StateCreator<PersonaStore, [], [], GroupSlice> = 
 
   movePersonaToGroup: async (personaId, groupId) => {
     try {
-      await api.updatePersona(personaId, buildUpdateInput({ group_id: groupId }));
-      set((state) => ({
-        personas: state.personas.map((p) =>
-          p.id === personaId ? { ...p, group_id: groupId } : p,
-        ),
-      }));
+      await get().applyPersonaOp(personaId, { kind: 'MoveToGroup', group_id: groupId });
     } catch (err) {
       set({ error: errMsg(err, "Failed to move persona") });
     }

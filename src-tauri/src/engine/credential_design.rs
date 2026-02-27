@@ -1,5 +1,5 @@
 use crate::db::models::ConnectorDefinition;
-use super::design::{extract_fenced_json, extract_bare_json_with_key};
+use super::design::extract_json_by_key;
 
 // ============================================================================
 // Credential Design Prompt Builder
@@ -84,30 +84,12 @@ pub fn build_credential_healthcheck_prompt(
 /// Extract a credential design result JSON from Claude's output text.
 /// Looks for fenced ```json blocks or bare JSON objects with a `connector` key.
 pub fn extract_credential_design_result(output: &str) -> Option<serde_json::Value> {
-    // Strategy 1: Find fenced JSON code block
-    if let Some(result) = extract_fenced_json(output) {
-        if result.get("connector").is_some() {
-            return Some(result);
-        }
-    }
-
-    // Strategy 2: Find bare JSON object containing "connector" key
-    if let Some(result) = extract_bare_json_with_key(output, &["connector"]) {
-        return Some(result);
-    }
-
-    None
+    extract_json_by_key(output, &["connector"])
 }
 
 /// Extract healthcheck config output from Claude text.
 pub fn extract_healthcheck_config_result(output: &str) -> Option<serde_json::Value> {
-    if let Some(result) = extract_fenced_json(output) {
-        if result.get("skip").is_some() || result.get("endpoint").is_some() {
-            return Some(result);
-        }
-    }
-
-    extract_bare_json_with_key(output, &["skip", "endpoint"])
+    extract_json_by_key(output, &["skip", "endpoint"])
 }
 
 // ============================================================================

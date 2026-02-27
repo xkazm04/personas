@@ -5,7 +5,7 @@ import * as api from '@/api/tauriApi';
 import type { DbPersonaTrigger } from '@/lib/types/types';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, parseTriggerConfig } from '@/lib/utils/triggerConstants';
-import { formatInterval, formatDuration, formatRelativeTime, EXECUTION_STATUS_COLORS, badgeClass } from '@/lib/utils/formatters';
+import { formatInterval, formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 
 export interface TriggerListItemProps {
   trigger: DbPersonaTrigger;
@@ -394,8 +394,8 @@ export function TriggerListItem({
                             key={exec.id}
                             className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-background/30 border border-primary/5 text-sm"
                           >
-                            <span className={`px-1.5 py-0.5 rounded text-sm font-medium ${EXECUTION_STATUS_COLORS[exec.status] ? badgeClass(EXECUTION_STATUS_COLORS[exec.status]!) : ''}`}>
-                              {exec.status}
+                            <span className={`px-1.5 py-0.5 rounded text-sm font-medium ${badgeClass(getStatusEntry(exec.status))}`}>
+                              {getStatusEntry(exec.status).label}
                             </span>
                             <span className="text-muted-foreground/90 font-mono">
                               {formatDuration(exec.duration_ms)}

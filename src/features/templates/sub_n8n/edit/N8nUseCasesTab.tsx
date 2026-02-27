@@ -56,7 +56,7 @@ export function N8nUseCasesTab({
   );
 
   const contextData = useMemo(() => parseDesignContext(draft.design_context), [draft.design_context]);
-  const useCases: UseCaseItem[] = contextData.use_cases ?? [];
+  const useCases: UseCaseItem[] = contextData.useCases ?? [];
 
   // Mock mode viewer
   const [mockViewId, setMockViewId] = useState<string | null>(null);

@@ -101,6 +101,11 @@ pub async fn cloud_connect(
     cloud::config::store_cloud_config(&normalized, &api_key)
         .map_err(|e| AppError::Cloud(format!("Failed to store cloud config: {e}")))?;
 
+    // Push Supabase user token to the cloud client for per-user isolation
+    if let Some(ref token) = state.auth.lock().await.access_token {
+        client.set_user_token(Some(token.clone())).await;
+    }
+
     *state.cloud_client.lock().await = Some(client);
 
     tracing::info!(url = %normalized, "Connected to cloud orchestrator");
@@ -130,6 +135,11 @@ pub async fn cloud_reconnect_from_keyring(
     client.health().await.map_err(|e| {
         AppError::Cloud(format!("Cloud orchestrator is not reachable: {e}"))
     })?;
+
+    // Push Supabase user token to the cloud client for per-user isolation
+    if let Some(ref token) = state.auth.lock().await.access_token {
+        client.set_user_token(Some(token.clone())).await;
+    }
 
     *state.cloud_client.lock().await = Some(client);
 
@@ -216,6 +226,7 @@ pub async fn cloud_execute_persona(
         &tools,
         input_value.as_ref(),
         None,
+        None,
     );
 
     let exec = executions::create(&state.db, &persona_id, None, input_data.clone(), None, None)?;
@@ -261,9 +272,9 @@ pub async fn cloud_execute_persona(
         exec_ids_map.lock().await.remove(&exec_id);
 
         if !cancelled_clone.load(Ordering::Acquire) {
-            let status = if result.success { "completed" } else { "failed" };
+            let status = if result.success { crate::engine::types::ExecutionState::Completed } else { crate::engine::types::ExecutionState::Failed };
             let update = UpdateExecutionStatus {
-                status: status.into(),
+                status,
                 error_message: result.error,
                 duration_ms: Some(result.duration_ms as i64),
                 cost_usd: result.cost_usd,
@@ -289,7 +300,7 @@ pub async fn cloud_execute_persona(
             tracing::info!(
                 execution_id = %exec_id,
                 persona_id = %persona_id_clone,
-                status = status,
+                status = %status,
                 duration_ms = result.duration_ms,
                 "Cloud execution finished"
             );

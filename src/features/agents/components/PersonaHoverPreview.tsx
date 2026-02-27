@@ -1,10 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Zap, CheckCircle2, XCircle, Timer, TrendingUp } from 'lucide-react';
-import { listExecutions } from '@/api/executions';
-import { formatDuration } from '@/lib/utils/formatters';
-import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
+import { Activity, Zap, CheckCircle2, XCircle, TrendingUp } from 'lucide-react';
+import { usePersonaStore } from '@/stores/personaStore';
+import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 
 interface PersonaHoverPreviewProps {
   personaId: string;
@@ -43,57 +42,11 @@ function Sparkline({ data }: { data: number[] }) {
   );
 }
 
-function computeStats(executions: PersonaExecution[]) {
-  const now = Date.now();
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-
-  // Last execution
-  const last = executions[0] ?? null;
-
-  // Runs today
-  const runsToday = executions.filter(e => {
-    const t = e.started_at ?? e.created_at;
-    return new Date(t).getTime() >= todayStart.getTime();
-  }).length;
-
-  // 7-day sparkline (one bucket per day, most recent = last element)
-  const days = Array.from({ length: 7 }, () => 0);
-  for (const e of executions) {
-    const t = e.started_at ?? e.created_at;
-    const daysAgo = Math.floor((now - new Date(t).getTime()) / 86_400_000);
-    const idx = 6 - daysAgo;
-    if (daysAgo >= 0 && daysAgo < 7 && days[idx] != null) {
-      days[idx]++;
-    }
-  }
-
-  // Success / failure counts (all loaded executions)
-  const successCount = executions.filter(e => e.status === 'completed').length;
-  const failCount = executions.filter(e => e.status === 'failed' || e.status === 'error').length;
-
-  return { last, runsToday, sparkline: days, successCount, failCount };
-}
-
 export default function PersonaHoverPreview({ personaId, triggerCount, anchorRef, visible }: PersonaHoverPreviewProps) {
-  const [executions, setExecutions] = useState<PersonaExecution[] | null>(null);
+  const healthMap = usePersonaStore(s => s.personaHealthMap);
+  const health: PersonaHealth | undefined = healthMap[personaId];
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
-
-  // Fetch executions when popover becomes visible
-  useEffect(() => {
-    if (!visible) {
-      setExecutions(null);
-      return;
-    }
-    let cancelled = false;
-    listExecutions(personaId, 50).then(data => {
-      if (!cancelled) setExecutions(data);
-    }).catch(() => {
-      if (!cancelled) setExecutions([]);
-    });
-    return () => { cancelled = true; };
-  }, [personaId, visible]);
 
   // Position calculation
   const updatePosition = useCallback(() => {
@@ -131,7 +84,14 @@ export default function PersonaHoverPreview({ personaId, triggerCount, anchorRef
     };
   }, [visible, updatePosition]);
 
-  const stats = executions ? computeStats(executions) : null;
+  // Derive stats from the unified health model
+  const successCount = health
+    ? health.recentStatuses.filter(s => s === 'completed').length
+    : 0;
+  const failCount = health
+    ? health.recentStatuses.filter(s => s === 'failed' || s === 'error').length
+    : 0;
+  const lastStatus = health?.recentStatuses[0] ?? null;
 
   return createPortal(
     <AnimatePresence>
@@ -144,38 +104,36 @@ export default function PersonaHoverPreview({ personaId, triggerCount, anchorRef
           transition={{ duration: 0.15 }}
           className="fixed z-[9999] w-[260px] p-3.5 rounded-xl bg-background/95 backdrop-blur-xl border border-primary/15 shadow-xl shadow-black/20 pointer-events-none"
           style={{ top: pos.top, left: pos.left }}
+          data-testid={`persona-hover-preview-${personaId}`}
         >
-          {!stats ? (
+          {!health ? (
             <div className="flex items-center justify-center py-4">
-              <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+              <span className="text-sm text-muted-foreground/80">No data</span>
             </div>
           ) : (
             <div className="space-y-3">
               {/* Last Execution */}
               <div className="space-y-1">
                 <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider">Last Execution</div>
-                {stats.last ? (
+                {lastStatus ? (
                   <div className="flex items-center gap-2">
-                    {stats.last.status === 'completed' ? (
+                    {lastStatus === 'completed' ? (
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    ) : stats.last.status === 'failed' || stats.last.status === 'error' ? (
+                    ) : lastStatus === 'failed' || lastStatus === 'error' ? (
                       <XCircle className="w-3.5 h-3.5 text-red-400" />
                     ) : (
                       <Activity className="w-3.5 h-3.5 text-blue-400" />
                     )}
                     <span className={`text-sm font-medium ${
-                      stats.last.status === 'completed' ? 'text-emerald-400/90' :
-                      stats.last.status === 'failed' || stats.last.status === 'error' ? 'text-red-400/90' :
+                      lastStatus === 'completed' ? 'text-emerald-400/90' :
+                      lastStatus === 'failed' || lastStatus === 'error' ? 'text-red-400/90' :
                       'text-blue-400/90'
                     }`}>
-                      {stats.last.status}
+                      {lastStatus}
                     </span>
-                    {stats.last.duration_ms != null && (
-                      <span className="flex items-center gap-1 text-sm text-muted-foreground/80 ml-auto font-mono">
-                        <Timer className="w-3 h-3" />
-                        {formatDuration(stats.last.duration_ms)}
-                      </span>
-                    )}
+                    <span className="text-sm text-muted-foreground/60 ml-auto font-mono">
+                      {Math.round(health.successRate * 100)}% ok
+                    </span>
                   </div>
                 ) : (
                   <span className="text-sm text-muted-foreground/80">No executions yet</span>
@@ -186,19 +144,19 @@ export default function PersonaHoverPreview({ personaId, triggerCount, anchorRef
               <div className="grid grid-cols-3 gap-2">
                 <div className="p-2 rounded-lg bg-secondary/40 border border-primary/8">
                   <div className="text-sm text-muted-foreground/35 mb-0.5">Today</div>
-                  <div className="text-sm font-semibold text-foreground/80 font-mono">{stats.runsToday}</div>
+                  <div className="text-sm font-semibold text-foreground/80 font-mono" data-testid="hover-runs-today">{health.runsToday}</div>
                 </div>
                 <div className="p-2 rounded-lg bg-secondary/40 border border-primary/8">
                   <div className="text-sm text-muted-foreground/35 mb-0.5 flex items-center gap-0.5">
                     <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400/50" /> OK
                   </div>
-                  <div className="text-sm font-semibold text-emerald-400/80 font-mono">{stats.successCount}</div>
+                  <div className="text-sm font-semibold text-emerald-400/80 font-mono" data-testid="hover-success-count">{successCount}</div>
                 </div>
                 <div className="p-2 rounded-lg bg-secondary/40 border border-primary/8">
                   <div className="text-sm text-muted-foreground/35 mb-0.5 flex items-center gap-0.5">
                     <XCircle className="w-2.5 h-2.5 text-red-400/50" /> Fail
                   </div>
-                  <div className="text-sm font-semibold text-red-400/80 font-mono">{stats.failCount}</div>
+                  <div className="text-sm font-semibold text-red-400/80 font-mono" data-testid="hover-fail-count">{failCount}</div>
                 </div>
               </div>
 
@@ -216,11 +174,11 @@ export default function PersonaHoverPreview({ personaId, triggerCount, anchorRef
                   </div>
                 )}
 
-                {/* 7-day sparkline */}
-                {stats.sparkline.some(v => v > 0) && (
+                {/* 7-day sparkline from unified health */}
+                {health.sparkline.some(v => v > 0) && (
                   <div className="flex items-center gap-1.5">
                     <TrendingUp className="w-3 h-3 text-muted-foreground/80" />
-                    <Sparkline data={stats.sparkline} />
+                    <Sparkline data={health.sparkline} />
                   </div>
                 )}
               </div>

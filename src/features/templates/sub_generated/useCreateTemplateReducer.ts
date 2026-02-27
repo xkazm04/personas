@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
+import { useWizardReducer } from '@/hooks/useWizardReducer';
 
 // ── Persistence ──
 
@@ -81,11 +82,17 @@ const INITIAL_STATE: CreateTemplateState = {
 // ── Hook ──
 
 export function useCreateTemplateReducer() {
-  const [state, setState] = useState<CreateTemplateState>(INITIAL_STATE);
+  const core = useWizardReducer<CreateTemplateState>({
+    initialState: INITIAL_STATE,
+    stepMeta: CREATE_TEMPLATE_STEP_META,
+    canGoBack: (s) => s.step !== 'describe' && !s.generating && !s.saving,
+    goBack: (s, goToStep) => {
+      if (s.step === 'review') goToStep('describe');
+      else if (s.step === 'generate' && !s.generating) goToStep('describe');
+    },
+  });
 
-  const update = useCallback((patch: Partial<CreateTemplateState>) => {
-    setState((prev) => ({ ...prev, ...patch }));
-  }, []);
+  const { update } = core;
 
   const setTemplateName = useCallback((name: string) => {
     update({ templateName: name });
@@ -146,18 +153,6 @@ export function useCreateTemplateReducer() {
     });
   }, [update]);
 
-  const draftUpdated = useCallback((draft: N8nPersonaDraft) => {
-    update({ draft, draftJson: JSON.stringify(draft, null, 2), draftJsonError: null });
-  }, [update]);
-
-  const draftJsonEdited = useCallback((json: string, draft: N8nPersonaDraft | null, error: string | null) => {
-    setState((prev) => ({ ...prev, draftJson: json, draft: draft ?? prev.draft, draftJsonError: error }));
-  }, []);
-
-  const setAdjustment = useCallback((text: string) => {
-    update({ adjustmentRequest: text });
-  }, [update]);
-
   const saveStarted = useCallback(() => {
     update({ saving: true, error: null });
   }, [update]);
@@ -168,18 +163,6 @@ export function useCreateTemplateReducer() {
 
   const saveFailed = useCallback((error: string) => {
     update({ saving: false, error });
-  }, [update]);
-
-  const setError = useCallback((error: string) => {
-    update({ error });
-  }, [update]);
-
-  const clearError = useCallback(() => {
-    update({ error: null });
-  }, [update]);
-
-  const goToStep = useCallback((step: CreateTemplateStep) => {
-    update({ step, error: null });
   }, [update]);
 
   const restoreContext = useCallback((templateName: string, description: string, genId: string) => {
@@ -193,24 +176,13 @@ export function useCreateTemplateReducer() {
     });
   }, [update]);
 
-  const reset = useCallback(() => {
-    setState(INITIAL_STATE);
-  }, []);
-
-  // ── Navigation ──
-
-  const canGoBack = state.step !== 'describe' && !state.generating && !state.saving;
-
-  const goBack = useCallback(() => {
-    if (!canGoBack) return;
-    if (state.step === 'review') goToStep('describe');
-    else if (state.step === 'generate' && !state.generating) goToStep('describe');
-  }, [canGoBack, state.step, state.generating, goToStep]);
-
   return {
-    state,
-    canGoBack,
-    goBack,
+    state: core.state,
+    canGoBack: core.canGoBack,
+    goBack: core.goBack,
+    // Core shared actions
+    ...({ setAdjustment: core.setAdjustment, draftUpdated: core.draftUpdated, draftJsonEdited: core.draftJsonEdited, setError: core.setError, clearError: core.clearError, goToStep: core.goToStep, reset: core.reset }),
+    // Domain-specific actions
     setTemplateName,
     setDescription,
     generateStarted,
@@ -219,16 +191,9 @@ export function useCreateTemplateReducer() {
     generateCompleted,
     generateFailed,
     generateCancelled,
-    draftUpdated,
-    draftJsonEdited,
-    setAdjustment,
     saveStarted,
     saveCompleted,
     saveFailed,
-    setError,
-    clearError,
-    goToStep,
     restoreContext,
-    reset,
   };
 }

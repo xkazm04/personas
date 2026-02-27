@@ -112,6 +112,7 @@ pub struct CloudClient {
     http: reqwest::Client,
     base_url: String,
     api_key: String,
+    user_token: tokio::sync::RwLock<Option<String>>,
 }
 
 impl CloudClient {
@@ -128,7 +129,13 @@ impl CloudClient {
             http,
             base_url,
             api_key,
+            user_token: tokio::sync::RwLock::new(None),
         }
+    }
+
+    /// Set or clear the Supabase user JWT for per-user cloud isolation.
+    pub async fn set_user_token(&self, token: Option<String>) {
+        *self.user_token.write().await = token;
     }
 
     // --------------------------------------------------------------------
@@ -136,10 +143,17 @@ impl CloudClient {
     // --------------------------------------------------------------------
 
     /// Build an authenticated request to the given endpoint path.
-    fn authed(&self, method: reqwest::Method, path: &str) -> reqwest::RequestBuilder {
-        self.http
+    /// Includes the `X-User-Token` header when a Supabase JWT is available.
+    async fn authed(&self, method: reqwest::Method, path: &str) -> reqwest::RequestBuilder {
+        let mut req = self.http
             .request(method, format!("{}{}", self.base_url, path))
-            .bearer_auth(&self.api_key)
+            .bearer_auth(&self.api_key);
+
+        if let Some(ref token) = *self.user_token.read().await {
+            req = req.header("X-User-Token", token.as_str());
+        }
+
+        req
     }
 
     /// Send a request, check the status code, and deserialize the JSON response.
@@ -173,12 +187,12 @@ impl CloudClient {
 
     /// `GET /health` -- basic health check.
     pub async fn health(&self) -> Result<CloudHealthResponse, AppError> {
-        self.send_json(self.authed(reqwest::Method::GET, "/health")).await
+        self.send_json(self.authed(reqwest::Method::GET, "/health").await).await
     }
 
     /// `GET /api/status` -- orchestrator status including worker counts and OAuth state.
     pub async fn status(&self) -> Result<CloudStatusResponse, AppError> {
-        self.send_json(self.authed(reqwest::Method::GET, "/api/status")).await
+        self.send_json(self.authed(reqwest::Method::GET, "/api/status").await).await
     }
 
     // --------------------------------------------------------------------
@@ -193,7 +207,7 @@ impl CloudClient {
         timeout_ms: Option<u64>,
     ) -> Result<CloudSubmitResponse, AppError> {
         let req = self
-            .authed(reqwest::Method::POST, "/api/execute")
+            .authed(reqwest::Method::POST, "/api/execute").await
             .json(&SubmitExecutionBody { prompt, persona_id, timeout_ms });
         self.send_json(req).await
     }
@@ -205,13 +219,13 @@ impl CloudClient {
         offset: u32,
     ) -> Result<CloudExecutionPoll, AppError> {
         let path = format!("/api/executions/{}?offset={}", execution_id, offset);
-        self.send_json(self.authed(reqwest::Method::GET, &path)).await
+        self.send_json(self.authed(reqwest::Method::GET, &path).await).await
     }
 
     /// `POST /api/executions/{id}/cancel` -- cancel a running execution.
     pub async fn cancel_execution(&self, execution_id: &str) -> Result<(), AppError> {
         let path = format!("/api/executions/{}/cancel", execution_id);
-        self.send_ok(self.authed(reqwest::Method::POST, &path)).await
+        self.send_ok(self.authed(reqwest::Method::POST, &path).await).await
     }
 
     // --------------------------------------------------------------------
@@ -220,7 +234,7 @@ impl CloudClient {
 
     /// `POST /api/oauth/authorize` -- initiate OAuth authorization flow.
     pub async fn oauth_authorize(&self) -> Result<CloudOAuthAuthorizeResponse, AppError> {
-        self.send_json(self.authed(reqwest::Method::POST, "/api/oauth/authorize")).await
+        self.send_json(self.authed(reqwest::Method::POST, "/api/oauth/authorize").await).await
     }
 
     /// `POST /api/oauth/callback` -- exchange authorization code for tokens.
@@ -230,23 +244,23 @@ impl CloudClient {
         state: &str,
     ) -> Result<serde_json::Value, AppError> {
         let req = self
-            .authed(reqwest::Method::POST, "/api/oauth/callback")
+            .authed(reqwest::Method::POST, "/api/oauth/callback").await
             .json(&OAuthCallbackBody { code, state });
         self.send_json(req).await
     }
 
     /// `GET /api/oauth/status` -- check current OAuth connection status.
     pub async fn oauth_status(&self) -> Result<CloudOAuthStatusResponse, AppError> {
-        self.send_json(self.authed(reqwest::Method::GET, "/api/oauth/status")).await
+        self.send_json(self.authed(reqwest::Method::GET, "/api/oauth/status").await).await
     }
 
     /// `POST /api/oauth/refresh` -- refresh the OAuth token.
     pub async fn oauth_refresh(&self) -> Result<serde_json::Value, AppError> {
-        self.send_json(self.authed(reqwest::Method::POST, "/api/oauth/refresh")).await
+        self.send_json(self.authed(reqwest::Method::POST, "/api/oauth/refresh").await).await
     }
 
     /// `DELETE /api/oauth/disconnect` -- disconnect the OAuth integration.
     pub async fn oauth_disconnect(&self) -> Result<(), AppError> {
-        self.send_ok(self.authed(reqwest::Method::DELETE, "/api/oauth/disconnect")).await
+        self.send_ok(self.authed(reqwest::Method::DELETE, "/api/oauth/disconnect").await).await
     }
 }

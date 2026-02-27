@@ -188,14 +188,41 @@ export interface CredentialTemplateEvent {
   config_fields?: CredentialTemplateField[];
 }
 
+/** An auth method available for a connector (PAT, OAuth, MCP, etc.) */
+export interface ConnectorAuthMethod {
+  id: string;
+  label: string;
+  type: 'credential' | 'mcp' | 'oauth';
+  is_default?: boolean;
+  /** MCP: npm package name (e.g., "@supabase/mcp-server-supabase") */
+  package?: string;
+  /** MCP: transport type */
+  transport?: 'stdio' | 'sse';
+  /** MCP: suggested environment variables */
+  suggested_env?: Record<string, string>;
+}
+
+/** Extract auth methods from connector metadata, with backward-compatible fallback. */
+export function getAuthMethods(connector: ConnectorDefinition): ConnectorAuthMethod[] {
+  const meta = (connector.metadata ?? {}) as Record<string, unknown>;
+  if (Array.isArray(meta.auth_methods) && meta.auth_methods.length > 0) {
+    return meta.auth_methods as ConnectorAuthMethod[];
+  }
+  const label = typeof meta.auth_type_label === 'string' ? meta.auth_type_label : 'Credential';
+  const id = typeof meta.auth_type === 'string' ? meta.auth_type : 'default';
+  return [{ id, label, type: 'credential', is_default: true }];
+}
+
 // ── Navigation Types ───────────────────────────────────────────────────
 
 export type SidebarSection = "overview" | "personas" | "events" | "credentials" | "design-reviews" | "team" | "cloud" | "gitlab" | "settings";
-export type EditorTab = "use-cases" | "prompt" | "prompt-lab" | "connectors" | "settings" | "tests" | "design";
-export type OverviewTab = "system-check" | "executions" | "manual-review" | "messages" | "usage" | "events" | "observability" | "realtime" | "memories" | "budget";
+export type EditorTab = "use-cases" | "prompt" | "lab" | "connectors" | "settings" | "design";
+export type OverviewTab = "home" | "system-check" | "executions" | "manual-review" | "messages" | "usage" | "events" | "observability" | "realtime" | "memories" | "budget";
 export type TemplateTab = "builtin" | "n8n" | "generated";
 export type CloudTab = "cloud" | "gitlab";
-export type SettingsTab = "account" | "appearance" | "notifications";
+export type SettingsTab = "account" | "appearance" | "notifications" | "engine";
+
+export type CliEngine = "claude_code" | "codex_cli" | "gemini_cli";
 
 // ── Analytics Types ────────────────────────────────────────────────────
 

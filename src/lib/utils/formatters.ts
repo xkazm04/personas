@@ -1,4 +1,6 @@
 import type { PersonaMemoryCategory } from '@/lib/types/frontendTypes';
+import type { LucideIcon } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertTriangle, Pause, Clock, Loader2 } from 'lucide-react';
 
 export function formatTimestamp(timestamp: string | null, fallback = '-'): string {
   if (!timestamp) return fallback;
@@ -32,15 +34,43 @@ export function badgeClass(colors: BadgeColors): string {
   return `${colors.bg} ${colors.text} border ${colors.border}`;
 }
 
-export const EXECUTION_STATUS_COLORS: Record<string, BadgeColors> = {
-  queued: { bg: 'bg-secondary/60', text: 'text-muted-foreground/80', border: 'border-primary/15' },
-  pending: { bg: 'bg-secondary/60', text: 'text-muted-foreground/80', border: 'border-primary/15' },
-  running: { bg: 'bg-primary/15', text: 'text-primary', border: 'border-primary/30' },
-  completed: { bg: 'bg-emerald-500/15', text: 'text-emerald-400', border: 'border-emerald-500/20' },
-  failed: { bg: 'bg-red-500/15', text: 'text-red-400', border: 'border-red-500/20' },
-  cancelled: { bg: 'bg-amber-500/15', text: 'text-amber-400', border: 'border-amber-500/20' },
-  incomplete: { bg: 'bg-orange-500/15', text: 'text-orange-400', border: 'border-orange-500/20' },
+// ── Unified execution status map ────────────────────────────────────────
+export interface ExecutionStatusEntry extends BadgeColors {
+  label: string;
+  icon: LucideIcon;
+  pulse?: boolean;
+}
+
+export const EXECUTION_STATUS_MAP: Record<string, ExecutionStatusEntry> = {
+  queued:     { label: 'Queued',     icon: Clock,         text: 'text-muted-foreground',  bg: 'bg-muted/30',          border: 'border-muted-foreground/20' },
+  running:    { label: 'Running',    icon: Loader2,       text: 'text-blue-400',          bg: 'bg-blue-500/10',       border: 'border-blue-500/30',       pulse: true },
+  completed:  { label: 'Completed',  icon: CheckCircle2,  text: 'text-emerald-400',       bg: 'bg-emerald-500/10',    border: 'border-emerald-500/20' },
+  failed:     { label: 'Failed',     icon: XCircle,       text: 'text-red-400',           bg: 'bg-red-500/10',        border: 'border-red-500/20' },
+  cancelled:  { label: 'Cancelled',  icon: Pause,         text: 'text-amber-400',         bg: 'bg-amber-500/10',      border: 'border-amber-500/20' },
+  incomplete: { label: 'Incomplete', icon: AlertTriangle,  text: 'text-orange-400',        bg: 'bg-orange-500/10',     border: 'border-orange-500/20' },
 };
+
+/** Fallback entry for unknown statuses. */
+export const DEFAULT_STATUS_ENTRY: ExecutionStatusEntry = EXECUTION_STATUS_MAP.failed!;
+
+/** Look up a status entry with fallback. */
+export function getStatusEntry(status: string): ExecutionStatusEntry {
+  return EXECUTION_STATUS_MAP[status] ?? DEFAULT_STATUS_ENTRY;
+}
+
+/**
+ * @deprecated Use EXECUTION_STATUS_MAP or getStatusEntry() instead.
+ * Kept for backward compatibility — derives BadgeColors from the canonical map.
+ */
+export const EXECUTION_STATUS_COLORS: Record<string, BadgeColors> = (() => {
+  const map: Record<string, BadgeColors> = {};
+  for (const [k, v] of Object.entries(EXECUTION_STATUS_MAP)) {
+    map[k] = { bg: v.bg, text: v.text, border: v.border };
+  }
+  // Legacy alias
+  map.pending = map.queued!;
+  return map;
+})();
 
 export const EVENT_STATUS_COLORS: Record<string, BadgeColors> = {
   pending: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' },

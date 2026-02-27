@@ -212,6 +212,7 @@ pub async fn poll_due_triggers(
                     target_persona_id: Some(trigger.persona_id.clone()),
                     project_id: None,
                     payload: Some(serde_json::to_string(&payload).unwrap_or_default()),
+                    use_case_id: trigger.use_case_id.clone(),
                 },
             ) {
                 Ok(_) => {

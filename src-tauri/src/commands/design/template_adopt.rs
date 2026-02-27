@@ -1,14 +1,11 @@
-use std::collections::HashMap;
-use std::sync::{Mutex, OnceLock};
-use std::time::Instant;
-
 use serde::Serialize;
 use serde_json::json;
-use tauri::{Emitter, State};
+use tauri::State;
 use tokio_util::sync::CancellationToken;
 
 use std::sync::Arc;
 
+use crate::background_job::BackgroundJobManager;
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::models::CreatePersonaInput;
 use crate::engine::prompt;
@@ -20,21 +17,16 @@ use super::n8n_transform::{
     parse_persona_output, run_claude_prompt_text_inner, N8nPersonaOutput,
 };
 
-// ── Event payloads ──────────────────────────────────────────────
+// ── Adopt job extra state ───────────────────────────────────────
 
-#[derive(Clone, Serialize)]
-struct TemplateAdoptOutputEvent {
-    adopt_id: String,
-    line: String,
+#[derive(Clone, Default)]
+struct AdoptExtra {
+    draft: Option<serde_json::Value>,
+    claude_session_id: Option<String>,
+    questions: Option<serde_json::Value>,
 }
 
-#[derive(Clone, Serialize)]
-struct TemplateAdoptStatusEvent {
-    adopt_id: String,
-    status: String,
-    error: Option<String>,
-}
-
+/// Snapshot serialized for the frontend.
 #[derive(Clone, Serialize)]
 struct TemplateAdoptSnapshot {
     adopt_id: String,
@@ -45,137 +37,39 @@ struct TemplateAdoptSnapshot {
     questions: Option<serde_json::Value>,
 }
 
-const JOB_TTL_SECS: u64 = 30 * 60; // 30 minutes
-
-#[derive(Clone)]
-struct TemplateAdoptJobState {
-    status: String,
-    error: Option<String>,
-    lines: Vec<String>,
-    draft: Option<serde_json::Value>,
-    cancel_token: Option<CancellationToken>,
-    claude_session_id: Option<String>,
-    questions: Option<serde_json::Value>,
-    created_at: Instant,
-}
-
-impl Default for TemplateAdoptJobState {
-    fn default() -> Self {
-        Self {
-            status: String::new(),
-            error: None,
-            lines: Vec::new(),
-            draft: None,
-            cancel_token: None,
-            claude_session_id: None,
-            questions: None,
-            created_at: Instant::now(),
-        }
-    }
-}
-
-static TEMPLATE_ADOPT_JOBS: OnceLock<Mutex<HashMap<String, TemplateAdoptJobState>>> =
-    OnceLock::new();
-
-fn adopt_jobs() -> &'static Mutex<HashMap<String, TemplateAdoptJobState>> {
-    TEMPLATE_ADOPT_JOBS.get_or_init(|| Mutex::new(HashMap::new()))
-}
-
-fn lock_adopt_jobs() -> Result<std::sync::MutexGuard<'static, HashMap<String, TemplateAdoptJobState>>, AppError> {
-    adopt_jobs()
-        .lock()
-        .map_err(|_| AppError::Internal("template adopt job lock poisoned".into()))
-}
-
-/// Remove non-running job entries older than `JOB_TTL_SECS`.
-/// Called on each new job insert to prevent unbounded memory growth.
-fn evict_stale_adopt_jobs(jobs: &mut HashMap<String, TemplateAdoptJobState>) {
-    let cutoff = std::time::Duration::from_secs(JOB_TTL_SECS);
-    jobs.retain(|_, job| job.status == "running" || job.created_at.elapsed() < cutoff);
-}
-
-fn set_adopt_status(
-    app: &tauri::AppHandle,
-    adopt_id: &str,
-    status: &str,
-    error: Option<String>,
-) {
-    if let Ok(mut jobs) = lock_adopt_jobs() {
-        let entry = jobs
-            .entry(adopt_id.to_string())
-            .or_insert_with(TemplateAdoptJobState::default);
-        entry.status = status.to_string();
-        entry.error = error.clone();
-    }
-
-    let _ = app.emit(
-        "template-adopt-status",
-        TemplateAdoptStatusEvent {
-            adopt_id: adopt_id.to_string(),
-            status: status.to_string(),
-            error,
-        },
-    );
-}
-
-fn emit_adopt_line(app: &tauri::AppHandle, adopt_id: &str, line: impl Into<String>) {
-    let line = line.into();
-    if let Ok(mut jobs) = lock_adopt_jobs() {
-        let entry = jobs
-            .entry(adopt_id.to_string())
-            .or_insert_with(TemplateAdoptJobState::default);
-        if entry.lines.len() < 500 {
-            entry.lines.push(line.clone());
-        }
-    }
-
-    let _ = app.emit(
-        "template-adopt-output",
-        TemplateAdoptOutputEvent {
-            adopt_id: adopt_id.to_string(),
-            line,
-        },
-    );
-}
+static ADOPT_JOBS: BackgroundJobManager<AdoptExtra> = BackgroundJobManager::new(
+    "template adopt job lock poisoned",
+    "template-adopt-status",
+    "template-adopt-output",
+);
 
 fn set_adopt_draft(adopt_id: &str, draft: &N8nPersonaOutput) {
     if let Ok(serialized) = serde_json::to_value(draft) {
-        if let Ok(mut jobs) = lock_adopt_jobs() {
-            let entry = jobs
-                .entry(adopt_id.to_string())
-                .or_insert_with(TemplateAdoptJobState::default);
-            entry.draft = Some(serialized);
-        }
+        ADOPT_JOBS.update_extra(adopt_id, |extra| {
+            extra.draft = Some(serialized);
+        });
     }
 }
 
 fn set_adopt_questions(adopt_id: &str, questions: serde_json::Value) {
-    if let Ok(mut jobs) = lock_adopt_jobs() {
-        let entry = jobs
-            .entry(adopt_id.to_string())
-            .or_insert_with(TemplateAdoptJobState::default);
-        entry.questions = Some(questions);
-    }
+    ADOPT_JOBS.update_extra(adopt_id, |extra| {
+        extra.questions = Some(questions);
+    });
 }
 
 fn set_adopt_claude_session(adopt_id: &str, session_id: String) {
-    if let Ok(mut jobs) = lock_adopt_jobs() {
-        let entry = jobs
-            .entry(adopt_id.to_string())
-            .or_insert_with(TemplateAdoptJobState::default);
-        entry.claude_session_id = Some(session_id);
-    }
+    ADOPT_JOBS.update_extra(adopt_id, |extra| {
+        extra.claude_session_id = Some(session_id);
+    });
 }
 
 fn get_adopt_claude_session(adopt_id: &str) -> Option<String> {
-    let jobs = lock_adopt_jobs().ok()?;
-    jobs.get(adopt_id)?.claude_session_id.clone()
+    ADOPT_JOBS.read_extra(adopt_id, |extra| extra.claude_session_id.clone())?
 }
 
 fn get_adopt_snapshot_internal(adopt_id: &str) -> Option<TemplateAdoptSnapshot> {
-    let jobs = lock_adopt_jobs().ok()?;
-    jobs.get(adopt_id).map(|job| TemplateAdoptSnapshot {
-        adopt_id: adopt_id.to_string(),
+    ADOPT_JOBS.get_snapshot_with(adopt_id, |id, job| TemplateAdoptSnapshot {
+        adopt_id: id.to_string(),
         status: if job.status.is_empty() {
             "idle".to_string()
         } else {
@@ -183,8 +77,8 @@ fn get_adopt_snapshot_internal(adopt_id: &str) -> Option<TemplateAdoptSnapshot> 
         },
         error: job.error.clone(),
         lines: job.lines.clone(),
-        draft: job.draft.clone(),
-        questions: job.questions.clone(),
+        draft: job.extra.draft.clone(),
+        questions: job.extra.questions.clone(),
     })
 }
 
@@ -207,33 +101,8 @@ pub async fn start_template_adopt_background(
     }
 
     let cancel_token = CancellationToken::new();
-
-    {
-        let mut jobs = lock_adopt_jobs()?;
-        evict_stale_adopt_jobs(&mut jobs);
-        if let Some(existing) = jobs.get(&adopt_id) {
-            if existing.status == "running" {
-                return Err(AppError::Validation(
-                    "Adoption transform is already running".into(),
-                ));
-            }
-        }
-        jobs.insert(
-            adopt_id.clone(),
-            TemplateAdoptJobState {
-                status: "running".into(),
-                error: None,
-                lines: Vec::new(),
-                draft: None,
-                cancel_token: Some(cancel_token.clone()),
-                claude_session_id: None,
-                questions: None,
-                created_at: Instant::now(),
-            },
-        );
-    }
-
-    set_adopt_status(&app, &adopt_id, "running", None);
+    ADOPT_JOBS.insert_running(adopt_id.clone(), cancel_token.clone(), AdoptExtra::default())?;
+    ADOPT_JOBS.set_status(&app, &adopt_id, "running", None);
 
     // Determine if this is an adjustment re-run or initial transform
     let is_adjustment = adjustment_request.as_ref().is_some_and(|a| !a.trim().is_empty())
@@ -331,22 +200,10 @@ pub async fn continue_template_adopt(
         .ok_or_else(|| AppError::NotFound("No Claude session found for this adoption".into()))?;
 
     // Update job state
-    {
-        let mut jobs = lock_adopt_jobs()?;
-        if let Some(job) = jobs.get_mut(&adopt_id) {
-            job.status = "running".into();
-            job.error = None;
-        }
-    }
-    set_adopt_status(&app, &adopt_id, "running", None);
+    ADOPT_JOBS.set_status(&app, &adopt_id, "running", None);
 
     let cancel_token = CancellationToken::new();
-    {
-        let mut jobs = lock_adopt_jobs()?;
-        if let Some(job) = jobs.get_mut(&adopt_id) {
-            job.cancel_token = Some(cancel_token.clone());
-        }
-    }
+    ADOPT_JOBS.set_cancel_token(&adopt_id, cancel_token.clone())?;
 
     let app_handle = app.clone();
     let adopt_id_for_task = adopt_id.clone();
@@ -385,9 +242,7 @@ pub fn get_template_adopt_snapshot(adopt_id: String) -> Result<serde_json::Value
 
 #[tauri::command]
 pub fn clear_template_adopt_snapshot(adopt_id: String) -> Result<(), AppError> {
-    let mut jobs = lock_adopt_jobs()?;
-    jobs.remove(&adopt_id);
-    Ok(())
+    ADOPT_JOBS.remove(&adopt_id)
 }
 
 #[tauri::command]
@@ -395,18 +250,7 @@ pub fn cancel_template_adopt(
     app: tauri::AppHandle,
     adopt_id: String,
 ) -> Result<(), AppError> {
-    let token = {
-        let jobs = lock_adopt_jobs()?;
-        jobs.get(&adopt_id)
-            .and_then(|job| job.cancel_token.clone())
-    };
-
-    if let Some(token) = token {
-        token.cancel();
-    }
-
-    set_adopt_status(&app, &adopt_id, "failed", Some("Cancelled by user".into()));
-    Ok(())
+    ADOPT_JOBS.cancel(&app, &adopt_id)
 }
 
 #[tauri::command]
@@ -708,13 +552,13 @@ fn handle_adopt_result(
     match result {
         Ok((draft, _)) => {
             set_adopt_draft(adopt_id, &draft);
-            set_adopt_status(app, adopt_id, "completed", None);
+            ADOPT_JOBS.set_status(app, adopt_id, "completed", None);
             crate::notifications::notify_n8n_transform_completed(app, template_name, true);
         }
         Err(err) => {
             let msg = err.to_string();
             tracing::error!(adopt_id = %adopt_id, error = %msg, "template adoption failed");
-            set_adopt_status(app, adopt_id, "failed", Some(msg));
+            ADOPT_JOBS.set_status(app, adopt_id, "failed", Some(msg));
             crate::notifications::notify_n8n_transform_completed(app, template_name, false);
         }
     }
@@ -832,7 +676,7 @@ Return ONLY valid JSON (no markdown fences, no commentary):
     "max_budget_usd": null,
     "max_turns": null,
     "design_context": "JSON string: {{\"summary\":\"Brief overview\",\"use_cases\":[{{\"id\":\"uc1\",\"title\":\"...\",\"description\":\"...\",\"category\":\"notification|data-sync|monitoring|automation|communication|reporting\",\"execution_mode\":\"e2e|mock|non_executable\",\"sample_input\":{{}},\"time_filter\":{{\"field\":\"date\",\"default_window\":\"24h\",\"description\":\"Only process recent items\"}},\"input_schema\":[{{\"key\":\"mode\",\"type\":\"select\",\"label\":\"Mode\",\"options\":[\"a\",\"b\"],\"default\":\"a\"}}],\"suggested_trigger\":{{\"type\":\"schedule\",\"cron\":\"0 */6 * * *\",\"description\":\"Every 6 hours\"}}}}]}}. Generate 3-6 use_cases. execution_mode: e2e (default), mock (example output), non_executable (informational). sample_input: realistic test JSON matching input_schema keys. time_filter: REQUIRED for time-series data use cases (emails, messages, logs). input_schema: structured input fields replacing free-text JSON. suggested_trigger: proposed schedule/trigger for recurring use cases.",
-    "triggers": [{{"trigger_type": "schedule|polling|webhook|manual", "config": {{}}, "description": "string"}}],
+    "triggers": [{{"trigger_type": "schedule|polling|webhook|manual", "config": {{}}, "description": "string", "use_case_id": "string — id of the use case this trigger serves, or null"}}],
     "tools": [{{"name": "tool_name_snake_case", "category": "email|http|database|file|messaging|other", "description": "string", "requires_credential_type": "connector_name_or_null", "input_schema": null, "implementation_guide": "Step-by-step API docs (REQUIRED for each tool)"}}],
     "required_connectors": [{{"name": "connector_name", "n8n_credential_type": "service_type", "has_credential": false}}]
   }}
@@ -863,7 +707,7 @@ async fn run_unified_adopt_turn1(
         design_result_json,
     );
 
-    emit_adopt_line(
+    ADOPT_JOBS.emit_line(
         app,
         adopt_id,
         "[Milestone] Analyzing template and preparing transformation...",
@@ -876,7 +720,7 @@ async fn run_unified_adopt_turn1(
     let app_for_emit = app.clone();
     let adopt_id_for_emit = adopt_id.to_string();
     let on_line = move |line: &str| {
-        emit_adopt_line(&app_for_emit, &adopt_id_for_emit, line.to_string());
+        ADOPT_JOBS.emit_line(&app_for_emit, &adopt_id_for_emit, line.to_string());
     };
     let (output_text, captured_session_id) =
         run_claude_prompt_text_inner(prompt_text, &cli_args, Some(&on_line), 420)
@@ -892,8 +736,8 @@ async fn run_unified_adopt_turn1(
     if let Some(questions) = extract_questions_output(&output_text) {
         tracing::info!(adopt_id = %adopt_id, "Turn 1 produced questions");
         set_adopt_questions(adopt_id, questions.clone());
-        set_adopt_status(app, adopt_id, "awaiting_answers", None);
-        emit_adopt_line(
+        ADOPT_JOBS.set_status(app, adopt_id, "awaiting_answers", None);
+        ADOPT_JOBS.emit_line(
             app,
             adopt_id,
             "[Milestone] Questions generated. Awaiting user answers...",
@@ -902,7 +746,7 @@ async fn run_unified_adopt_turn1(
     }
 
     // No questions — try to parse persona output directly
-    emit_adopt_line(
+    ADOPT_JOBS.emit_line(
         app,
         adopt_id,
         "[Milestone] Claude output received. Extracting persona JSON draft...",
@@ -910,7 +754,7 @@ async fn run_unified_adopt_turn1(
 
     let draft = parse_persona_output(&output_text, template_name)?;
 
-    emit_adopt_line(
+    ADOPT_JOBS.emit_line(
         app,
         adopt_id,
         "[Milestone] Draft ready for review.",
@@ -928,7 +772,7 @@ async fn run_continue_adopt(
 ) -> Result<N8nPersonaOutput, AppError> {
     tracing::info!(adopt_id = %adopt_id, "Starting unified adopt Turn 2 (resume)");
 
-    emit_adopt_line(
+    ADOPT_JOBS.emit_line(
         app,
         adopt_id,
         "[Milestone] Resuming session with your answers. Generating persona draft...",
@@ -951,13 +795,13 @@ Remember: return ONLY valid JSON with the persona object, no markdown fences."#,
     let app_for_emit2 = app.clone();
     let adopt_id_for_emit2 = adopt_id.to_string();
     let on_line2 = move |line: &str| {
-        emit_adopt_line(&app_for_emit2, &adopt_id_for_emit2, line.to_string());
+        ADOPT_JOBS.emit_line(&app_for_emit2, &adopt_id_for_emit2, line.to_string());
     };
     let (output_text, _) = run_claude_prompt_text_inner(prompt_text, &cli_args, Some(&on_line2), 420)
         .await
         .map_err(AppError::Internal)?;
 
-    emit_adopt_line(
+    ADOPT_JOBS.emit_line(
         app,
         adopt_id,
         "[Milestone] Claude output received. Extracting persona JSON draft...",
@@ -965,7 +809,7 @@ Remember: return ONLY valid JSON with the persona object, no markdown fences."#,
 
     let draft = parse_persona_output(&output_text, "adopted template")?;
 
-    emit_adopt_line(
+    ADOPT_JOBS.emit_line(
         app,
         adopt_id,
         "[Milestone] Draft ready for review. Confirm save is required to persist.",
@@ -1067,7 +911,7 @@ Return ONLY valid JSON (no markdown fences, no commentary), with this exact shap
     "max_budget_usd": null,
     "max_turns": null,
     "design_context": "JSON string: {{\"summary\":\"Brief overview\",\"use_cases\":[{{\"id\":\"uc1\",\"title\":\"...\",\"description\":\"...\",\"category\":\"notification|data-sync|monitoring|automation|communication|reporting\",\"execution_mode\":\"e2e|mock|non_executable\",\"sample_input\":{{}},\"time_filter\":{{\"field\":\"date\",\"default_window\":\"24h\",\"description\":\"Only process recent items\"}},\"input_schema\":[{{\"key\":\"mode\",\"type\":\"select\",\"label\":\"Mode\",\"options\":[\"a\",\"b\"],\"default\":\"a\"}}],\"suggested_trigger\":{{\"type\":\"schedule\",\"cron\":\"0 */6 * * *\",\"description\":\"Every 6 hours\"}}}}]}}. Generate 3-6 use_cases. execution_mode: e2e (default), mock (example output), non_executable (informational). sample_input: realistic test JSON matching input_schema keys. time_filter: REQUIRED for time-series data use cases (emails, messages, logs). input_schema: structured input fields replacing free-text JSON. suggested_trigger: proposed schedule/trigger for recurring use cases.",
-    "triggers": [{{"trigger_type": "schedule|polling|webhook|manual", "config": {{}}, "description": "string"}}],
+    "triggers": [{{"trigger_type": "schedule|polling|webhook|manual", "config": {{}}, "description": "string", "use_case_id": "string — id of the use case this trigger serves, or null"}}],
     "tools": [{{"name": "tool_name_snake_case", "category": "email|http|database|file|messaging|other", "description": "string", "requires_credential_type": "connector_name_or_null", "input_schema": null, "implementation_guide": "Step-by-step API docs (REQUIRED for each tool)"}}],
     "required_connectors": [{{"name": "connector_name", "n8n_credential_type": "service_type", "has_credential": false}}]
   }}
@@ -1090,17 +934,11 @@ Design Analysis Result JSON:
 // Template Generation (create new templates from user description)
 // ══════════════════════════════════════════════════════════════════
 
-#[derive(Clone, Serialize)]
-struct TemplateGenOutputEvent {
-    gen_id: String,
-    line: String,
-}
+// ── Gen job extra state ─────────────────────────────────────────
 
-#[derive(Clone, Serialize)]
-struct TemplateGenStatusEvent {
-    gen_id: String,
-    status: String,
-    error: Option<String>,
+#[derive(Clone, Default)]
+struct GenExtra {
+    result_json: Option<String>,
 }
 
 #[derive(Clone, Serialize)]
@@ -1112,92 +950,11 @@ struct TemplateGenSnapshot {
     result_json: Option<String>,
 }
 
-#[derive(Clone)]
-struct TemplateGenJobState {
-    status: String,
-    error: Option<String>,
-    lines: Vec<String>,
-    result_json: Option<String>,
-    cancel_token: Option<CancellationToken>,
-    created_at: Instant,
-}
-
-impl Default for TemplateGenJobState {
-    fn default() -> Self {
-        Self {
-            status: String::new(),
-            error: None,
-            lines: Vec::new(),
-            result_json: None,
-            cancel_token: None,
-            created_at: Instant::now(),
-        }
-    }
-}
-
-static TEMPLATE_GEN_JOBS: OnceLock<Mutex<HashMap<String, TemplateGenJobState>>> = OnceLock::new();
-
-fn gen_jobs() -> &'static Mutex<HashMap<String, TemplateGenJobState>> {
-    TEMPLATE_GEN_JOBS.get_or_init(|| Mutex::new(HashMap::new()))
-}
-
-fn lock_gen_jobs(
-) -> Result<std::sync::MutexGuard<'static, HashMap<String, TemplateGenJobState>>, AppError> {
-    gen_jobs()
-        .lock()
-        .map_err(|_| AppError::Internal("template gen job lock poisoned".into()))
-}
-
-fn evict_stale_gen_jobs(jobs: &mut HashMap<String, TemplateGenJobState>) {
-    let cutoff = std::time::Duration::from_secs(JOB_TTL_SECS);
-    jobs.retain(|_, job| job.status == "running" || job.created_at.elapsed() < cutoff);
-}
-
-fn set_gen_status(app: &tauri::AppHandle, gen_id: &str, status: &str, error: Option<String>) {
-    if let Ok(mut jobs) = lock_gen_jobs() {
-        let entry = jobs
-            .entry(gen_id.to_string())
-            .or_insert_with(TemplateGenJobState::default);
-        entry.status = status.to_string();
-        entry.error = error.clone();
-    }
-    let _ = app.emit(
-        "template-generate-status",
-        TemplateGenStatusEvent {
-            gen_id: gen_id.to_string(),
-            status: status.to_string(),
-            error,
-        },
-    );
-}
-
-fn emit_gen_line(app: &tauri::AppHandle, gen_id: &str, line: impl Into<String>) {
-    let line = line.into();
-    if let Ok(mut jobs) = lock_gen_jobs() {
-        let entry = jobs
-            .entry(gen_id.to_string())
-            .or_insert_with(TemplateGenJobState::default);
-        if entry.lines.len() < 500 {
-            entry.lines.push(line.clone());
-        }
-    }
-    let _ = app.emit(
-        "template-generate-output",
-        TemplateGenOutputEvent {
-            gen_id: gen_id.to_string(),
-            line,
-        },
-    );
-}
-
-fn set_gen_result(gen_id: &str, result_json: String) {
-    if let Ok(mut jobs) = lock_gen_jobs() {
-        let entry = jobs
-            .entry(gen_id.to_string())
-            .or_insert_with(TemplateGenJobState::default);
-        entry.result_json = Some(result_json);
-    }
-}
+static GEN_JOBS: BackgroundJobManager<GenExtra> = BackgroundJobManager::new(
+    "template gen job lock poisoned",
+    "template-generate-status",
+    "template-generate-output",
+);
 
 #[tauri::command]
 pub async fn generate_template_background(
@@ -1213,31 +970,8 @@ pub async fn generate_template_background(
     }
 
     let cancel_token = CancellationToken::new();
-
-    {
-        let mut jobs = lock_gen_jobs()?;
-        evict_stale_gen_jobs(&mut jobs);
-        if let Some(existing) = jobs.get(&gen_id) {
-            if existing.status == "running" {
-                return Err(AppError::Validation(
-                    "Template generation is already running".into(),
-                ));
-            }
-        }
-        jobs.insert(
-            gen_id.clone(),
-            TemplateGenJobState {
-                status: "running".into(),
-                error: None,
-                lines: Vec::new(),
-                result_json: None,
-                cancel_token: Some(cancel_token.clone()),
-                created_at: Instant::now(),
-            },
-        );
-    }
-
-    set_gen_status(&app, &gen_id, "running", None);
+    GEN_JOBS.insert_running(gen_id.clone(), cancel_token.clone(), GenExtra::default())?;
+    GEN_JOBS.set_status(&app, &gen_id, "running", None);
 
     let app_handle = app.clone();
     let gen_id_for_task = gen_id.clone();
@@ -1258,13 +992,15 @@ pub async fn generate_template_background(
 
         match result {
             Ok(result_json) => {
-                set_gen_result(&gen_id_for_task, result_json);
-                set_gen_status(&app_handle, &gen_id_for_task, "completed", None);
+                GEN_JOBS.update_extra(&gen_id_for_task, |extra| {
+                    extra.result_json = Some(result_json);
+                });
+                GEN_JOBS.set_status(&app_handle, &gen_id_for_task, "completed", None);
             }
             Err(err) => {
                 let msg = err.to_string();
                 tracing::error!(gen_id = %gen_id_for_task, error = %msg, "template generation failed");
-                set_gen_status(&app_handle, &gen_id_for_task, "failed", Some(msg));
+                GEN_JOBS.set_status(&app_handle, &gen_id_for_task, "failed", Some(msg));
             }
         }
     });
@@ -1274,11 +1010,9 @@ pub async fn generate_template_background(
 
 #[tauri::command]
 pub fn get_template_generate_snapshot(gen_id: String) -> Result<serde_json::Value, AppError> {
-    let jobs = lock_gen_jobs()?;
-    let snapshot = jobs
-        .get(&gen_id)
-        .map(|job| TemplateGenSnapshot {
-            gen_id: gen_id.clone(),
+    let snapshot = GEN_JOBS
+        .get_snapshot_with(&gen_id, |id, job| TemplateGenSnapshot {
+            gen_id: id.to_string(),
             status: if job.status.is_empty() {
                 "idle".to_string()
             } else {
@@ -1286,7 +1020,7 @@ pub fn get_template_generate_snapshot(gen_id: String) -> Result<serde_json::Valu
             },
             error: job.error.clone(),
             lines: job.lines.clone(),
-            result_json: job.result_json.clone(),
+            result_json: job.extra.result_json.clone(),
         })
         .ok_or_else(|| AppError::NotFound("Template generation not found".into()))?;
     Ok(serde_json::to_value(snapshot).unwrap_or_else(|_| json!({})))
@@ -1294,30 +1028,12 @@ pub fn get_template_generate_snapshot(gen_id: String) -> Result<serde_json::Valu
 
 #[tauri::command]
 pub fn clear_template_generate_snapshot(gen_id: String) -> Result<(), AppError> {
-    let mut jobs = lock_gen_jobs()?;
-    jobs.remove(&gen_id);
-    Ok(())
+    GEN_JOBS.remove(&gen_id)
 }
 
 #[tauri::command]
 pub fn cancel_template_generate(app: tauri::AppHandle, gen_id: String) -> Result<(), AppError> {
-    let token = {
-        let jobs = lock_gen_jobs()?;
-        jobs.get(&gen_id)
-            .and_then(|job| job.cancel_token.clone())
-    };
-
-    if let Some(token) = token {
-        token.cancel();
-    }
-
-    set_gen_status(
-        &app,
-        &gen_id,
-        "failed",
-        Some("Cancelled by user".into()),
-    );
-    Ok(())
+    GEN_JOBS.cancel(&app, &gen_id)
 }
 
 #[tauri::command]
@@ -1392,7 +1108,7 @@ async fn run_template_generate_job(
 ) -> Result<String, AppError> {
     tracing::info!(gen_id = %gen_id, "Starting template generation");
 
-    emit_gen_line(app, gen_id, "[Milestone] Preparing template generation prompt...");
+    GEN_JOBS.emit_line(app, gen_id, "[Milestone] Preparing template generation prompt...");
 
     let prompt_text = format!(
         r##"You are a senior Personas architect. Generate a complete template design (DesignAnalysisResult)
@@ -1487,7 +1203,7 @@ Return ONLY valid JSON (no markdown fences, no commentary).
 "##
     );
 
-    emit_gen_line(app, gen_id, "[Milestone] Starting Claude generation...");
+    GEN_JOBS.emit_line(app, gen_id, "[Milestone] Starting Claude generation...");
 
     let mut cli_args = prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());
@@ -1496,7 +1212,7 @@ Return ONLY valid JSON (no markdown fences, no commentary).
     let app_for_emit = app.clone();
     let gen_id_for_emit = gen_id.to_string();
     let on_line = move |line: &str| {
-        emit_gen_line(&app_for_emit, &gen_id_for_emit, line.to_string());
+        GEN_JOBS.emit_line(&app_for_emit, &gen_id_for_emit, line.to_string());
     };
 
     let (output_text, _session_id) =
@@ -1504,7 +1220,7 @@ Return ONLY valid JSON (no markdown fences, no commentary).
             .await
             .map_err(AppError::Internal)?;
 
-    emit_gen_line(app, gen_id, "[Milestone] Claude output received. Extracting design JSON...");
+    GEN_JOBS.emit_line(app, gen_id, "[Milestone] Claude output received. Extracting design JSON...");
 
     // Extract JSON from output
     let json_str = extract_first_json_object(&output_text).ok_or_else(|| {
@@ -1515,7 +1231,7 @@ Return ONLY valid JSON (no markdown fences, no commentary).
     let _: serde_json::Value = serde_json::from_str(&json_str)
         .map_err(|e| AppError::Internal(format!("Invalid JSON in generation output: {e}")))?;
 
-    emit_gen_line(app, gen_id, "[Milestone] Template design generated successfully.");
+    GEN_JOBS.emit_line(app, gen_id, "[Milestone] Template design generated successfully.");
 
     Ok(json_str)
 }
@@ -1539,7 +1255,7 @@ async fn run_template_adopt_job(
         user_answers_json,
     );
 
-    emit_adopt_line(
+    ADOPT_JOBS.emit_line(
         app,
         adopt_id,
         "[Milestone] Preparing Claude transformation prompt for template adoption...",
@@ -1549,7 +1265,7 @@ async fn run_template_adopt_job(
     cli_args.args.push("--model".to_string());
     cli_args.args.push("claude-sonnet-4-6".to_string());
 
-    emit_adopt_line(
+    ADOPT_JOBS.emit_line(
         app,
         adopt_id,
         "[Milestone] Claude CLI started. Generating persona draft from template...",
@@ -1558,14 +1274,14 @@ async fn run_template_adopt_job(
     let app_for_emit = app.clone();
     let adopt_id_for_emit = adopt_id.to_string();
     let on_line = move |line: &str| {
-        emit_adopt_line(&app_for_emit, &adopt_id_for_emit, line.to_string());
+        ADOPT_JOBS.emit_line(&app_for_emit, &adopt_id_for_emit, line.to_string());
     };
     let (output_text, _session_id) =
         run_claude_prompt_text_inner(prompt_text, &cli_args, Some(&on_line), 420)
             .await
             .map_err(AppError::Internal)?;
 
-    emit_adopt_line(
+    ADOPT_JOBS.emit_line(
         app,
         adopt_id,
         "[Milestone] Claude output received. Extracting persona JSON draft...",
@@ -1573,7 +1289,7 @@ async fn run_template_adopt_job(
 
     let draft = parse_persona_output(&output_text, template_name)?;
 
-    emit_adopt_line(
+    ADOPT_JOBS.emit_line(
         app,
         adopt_id,
         "[Milestone] Draft ready for review. Confirm save is required to persist.",

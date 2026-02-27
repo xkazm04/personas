@@ -17,6 +17,9 @@ mod test_run;
 mod n8n_session;
 mod audit_log;
 mod rotation;
+mod lab;
+mod design_conversation;
+mod test_suite;
 
 pub use persona::*;
 pub use tool::*;
@@ -37,3 +40,6 @@ pub use test_run::*;
 pub use n8n_session::*;
 pub use audit_log::*;
 pub use rotation::*;
+pub use lab::*;
+pub use design_conversation::*;
+pub use test_suite::*;

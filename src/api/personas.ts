@@ -71,6 +71,116 @@ export interface PartialPersonaUpdate {
   group_id?: string | null;
 }
 
+// ============================================================================
+// Named persona operations (semantic intent layer)
+// ============================================================================
+
+/** Switch the model/provider configuration. */
+export interface SwitchModelOp {
+  kind: 'SwitchModel';
+  model_profile: string | null;
+  max_budget_usd?: number | null;
+  max_turns?: number | null;
+}
+
+/** Move persona to a different group. */
+export interface MoveToGroupOp {
+  kind: 'MoveToGroup';
+  group_id: string | null;
+}
+
+/** Toggle enabled/disabled. */
+export interface ToggleEnabledOp {
+  kind: 'ToggleEnabled';
+  enabled: boolean;
+}
+
+/** Save the structured prompt and/or system prompt. */
+export interface UpdatePromptOp {
+  kind: 'UpdatePrompt';
+  structured_prompt?: string | null;
+  system_prompt?: string;
+}
+
+/** Update persona metadata (name, description, icon, color, concurrency, timeout). */
+export interface UpdateSettingsOp {
+  kind: 'UpdateSettings';
+  name?: string;
+  description?: string | null;
+  icon?: string | null;
+  color?: string | null;
+  enabled?: boolean;
+  max_concurrent?: number;
+  timeout_ms?: number;
+}
+
+/** Update design context (use-cases, design files, connector links). */
+export interface UpdateDesignContextOp {
+  kind: 'UpdateDesignContext';
+  design_context: string | null;
+}
+
+/** Apply an AI design analysis result (multi-field update). */
+export interface ApplyDesignResultOp {
+  kind: 'ApplyDesignResult';
+  updates: PartialPersonaUpdate;
+}
+
+/** Update budget limit. */
+export interface UpdateBudgetOp {
+  kind: 'UpdateBudget';
+  max_budget_usd: number | null;
+}
+
+/** Update notification channel configuration. */
+export interface UpdateNotificationsOp {
+  kind: 'UpdateNotifications';
+  notification_channels: string;
+}
+
+/**
+ * Discriminated union of all persona mutation intents.
+ * Each variant maps to specific fields in PartialPersonaUpdate but preserves
+ * the semantic action for analytics, undo, and permission checks.
+ */
+export type PersonaOperation =
+  | SwitchModelOp
+  | MoveToGroupOp
+  | ToggleEnabledOp
+  | UpdatePromptOp
+  | UpdateSettingsOp
+  | UpdateDesignContextOp
+  | ApplyDesignResultOp
+  | UpdateBudgetOp
+  | UpdateNotificationsOp;
+
+/** Map a named operation to its underlying PartialPersonaUpdate. */
+export function operationToPartial(op: PersonaOperation): PartialPersonaUpdate {
+  switch (op.kind) {
+    case 'SwitchModel':
+      return { model_profile: op.model_profile, max_budget_usd: op.max_budget_usd, max_turns: op.max_turns };
+    case 'MoveToGroup':
+      return { group_id: op.group_id };
+    case 'ToggleEnabled':
+      return { enabled: op.enabled };
+    case 'UpdatePrompt':
+      return { structured_prompt: op.structured_prompt, system_prompt: op.system_prompt };
+    case 'UpdateSettings':
+      return {
+        name: op.name, description: op.description, icon: op.icon, color: op.color,
+        enabled: op.enabled, max_concurrent: op.max_concurrent, timeout_ms: op.timeout_ms,
+      };
+    case 'UpdateDesignContext':
+      return { design_context: op.design_context };
+    case 'ApplyDesignResult':
+      return op.updates;
+    case 'UpdateBudget':
+      return { max_budget_usd: op.max_budget_usd };
+    case 'UpdateNotifications':
+      return { notification_channels: op.notification_channels };
+  }
+}
+
 /**
  * Convert a caller-friendly partial update into the full UpdatePersonaInput
  * expected by the Tauri command.

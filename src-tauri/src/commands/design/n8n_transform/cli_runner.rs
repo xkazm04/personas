@@ -14,7 +14,7 @@ use crate::engine::types::StreamLineType;
 use crate::error::AppError;
 use crate::AppState;
 
-use super::job_state::*;
+use super::job_state::{self, *};
 use super::prompts::{build_n8n_transform_prompt, build_n8n_unified_prompt};
 use super::types::N8nPersonaOutput;
 
@@ -51,9 +51,10 @@ pub async fn start_n8n_transform_background(
 
     let cancel_token = CancellationToken::new();
 
+    // Check for pre-emptive cancellation (race condition guard)
     {
-        let mut jobs = lock_jobs()?;
-        evict_stale_n8n_jobs(&mut jobs);
+        let mgr = job_state::manager();
+        let jobs = mgr.lock()?;
         if let Some(existing) = jobs.get(&transform_id) {
             if existing.status == "running" {
                 return Err(AppError::Validation("Transform is already running".into()));
@@ -64,19 +65,8 @@ pub async fn start_n8n_transform_background(
                 }
             }
         }
-        jobs.insert(
-            transform_id.clone(),
-            N8nTransformJobState {
-                status: "running".into(),
-                error: None,
-                lines: Vec::new(),
-                draft: None,
-                cancel_token: Some(cancel_token.clone()),
-                claude_session_id: None,
-                questions: None,
-                created_at: std::time::Instant::now(),
-            },
-        );
+        drop(jobs);
+        mgr.insert_running(transform_id.clone(), cancel_token.clone(), N8nTransformExtra::default())?;
     }
 
     if cancel_token.is_cancelled() {
@@ -202,22 +192,10 @@ pub async fn continue_n8n_transform(
         .ok_or_else(|| AppError::NotFound("No Claude session found for this transform".into()))?;
 
     // Update job state
-    {
-        let mut jobs = lock_jobs()?;
-        if let Some(job) = jobs.get_mut(&transform_id) {
-            job.status = "running".into();
-            job.error = None;
-        }
-    }
     set_n8n_transform_status(&app, &transform_id, "running", None);
 
     let cancel_token = CancellationToken::new();
-    {
-        let mut jobs = lock_jobs()?;
-        if let Some(job) = jobs.get_mut(&transform_id) {
-            job.cancel_token = Some(cancel_token.clone());
-        }
-    }
+    job_state::manager().set_cancel_token(&transform_id, cancel_token.clone())?;
 
     let app_handle = app.clone();
     let transform_id_for_task = transform_id.clone();

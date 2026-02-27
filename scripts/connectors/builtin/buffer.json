@@ -1,0 +1,20 @@
+{
+  "id": "builtin-buffer",
+  "name": "buffer",
+  "label": "Buffer",
+  "color": "#168EEA",
+  "icon_url": "/icons/connectors/buffer.svg",
+  "category": "social",
+  "fields": [
+    { "key": "access_token", "label": "Access Token", "type": "password", "required": true, "placeholder": "", "helpText": "From Buffer → Settings → Apps → Access Token" }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.bufferapp.com/1/user.json",
+    "method": "GET",
+    "headers": { "Authorization": "Bearer {{access_token}}" },
+    "description": "Validates access token via Buffer user endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": { "template_enabled": true, "summary": "Buffer social media management for scheduling and publishing.", "auth_type": "pat", "auth_type_label": "PAT", "docs_url": "https://buffer.com/developers/api" }
+}

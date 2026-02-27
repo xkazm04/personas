@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::engine::types::ExecutionState;
+
 // ============================================================================
 // Executions
 // ============================================================================
@@ -38,9 +40,16 @@ pub struct PersonaExecution {
     pub created_at: String,
 }
 
-#[derive(Debug, Clone, Default)]
+impl PersonaExecution {
+    /// Parse the status string into the canonical ExecutionState enum.
+    pub fn state(&self) -> ExecutionState {
+        self.status.parse().unwrap_or(ExecutionState::Failed)
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct UpdateExecutionStatus {
-    pub status: String,
+    pub status: ExecutionState,
     pub output_data: Option<String>,
     pub error_message: Option<String>,
     pub duration_ms: Option<i64>,
@@ -50,4 +59,21 @@ pub struct UpdateExecutionStatus {
     pub output_tokens: Option<i64>,
     pub cost_usd: Option<f64>,
     pub tool_steps: Option<String>,
+}
+
+impl Default for UpdateExecutionStatus {
+    fn default() -> Self {
+        Self {
+            status: ExecutionState::Queued,
+            output_data: None,
+            error_message: None,
+            duration_ms: None,
+            log_file_path: None,
+            execution_flows: None,
+            input_tokens: None,
+            output_tokens: None,
+            cost_usd: None,
+            tool_steps: None,
+        }
+    }
 }

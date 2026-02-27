@@ -1,5 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { PersonaStore } from "../storeTypes";
+import { useAuthStore } from "@/stores/authStore";
 import {
   cloudConnect,
   cloudReconnectFromKeyring,
@@ -111,6 +112,9 @@ export const createCloudSlice: StateCreator<PersonaStore, [], [], CloudSlice> = 
   cloudError: null,
 
   cloudInitialize: async () => {
+    // Skip cloud initialization if user is not authenticated
+    if (!useAuthStore.getState().isAuthenticated) return;
+
     try {
       const config = await cloudGetConfig();
       set({ cloudConfig: config });

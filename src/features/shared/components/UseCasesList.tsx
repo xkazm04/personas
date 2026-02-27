@@ -1,74 +1,79 @@
 import { useMemo } from 'react';
 import { ListChecks } from 'lucide-react';
-import type { ModelProfile, NotificationChannel } from '@/lib/types/frontendTypes';
+import type {
+  DesignContextData,
+  DesignFilesSection,
+  DesignUseCase,
+} from '@/lib/types/frontendTypes';
 
-export interface UseCaseEventSubscription {
-  event_type: string;
-  source_filter?: string;
-  enabled: boolean;
-}
+// ── Re-exports for backward compatibility ───────────────────────────
+// These types are now canonically defined in frontendTypes.ts.
+// Consumers that imported them from here continue to work.
+export type { DesignContextData } from '@/lib/types/frontendTypes';
+export type { DesignUseCase as UseCaseItem } from '@/lib/types/frontendTypes';
+export type { UseCaseEventSubscription } from '@/lib/types/frontendTypes';
+export type { UseCaseInputField } from '@/lib/types/frontendTypes';
+export type { UseCaseTimeFilter } from '@/lib/types/frontendTypes';
+export type { UseCaseSuggestedTrigger } from '@/lib/types/frontendTypes';
 
-export interface UseCaseInputField {
-  key: string;
-  type: 'text' | 'number' | 'select' | 'boolean';
-  label: string;
-  default?: unknown;
-  options?: string[];
-}
+// ── Parser ──────────────────────────────────────────────────────────
 
-export interface UseCaseTimeFilter {
-  field: string;
-  default_window: string;
-  description: string;
-}
-
-export interface UseCaseSuggestedTrigger {
-  type: 'schedule' | 'polling' | 'webhook' | 'manual';
-  cron?: string;
-  description: string;
-}
-
-export interface UseCaseItem {
-  id: string;
-  title: string;
-  description: string;
-  category?: string;
-  execution_mode?: 'e2e' | 'mock' | 'non_executable';
-  sample_input?: Record<string, unknown> | null;
-  time_filter?: UseCaseTimeFilter;
-  input_schema?: UseCaseInputField[];
-  suggested_trigger?: UseCaseSuggestedTrigger;
-  model_override?: ModelProfile;
-  notification_channels?: NotificationChannel[];
-  event_subscriptions?: UseCaseEventSubscription[];
-}
-
-export interface DesignContextData {
-  summary?: string;
-  use_cases?: UseCaseItem[];
-  credential_links?: Record<string, string>; // connector_name → credential_id
-}
-
-const CATEGORY_STYLES: Record<string, { bg: string; text: string }> = {
-  notification:   { bg: 'bg-rose-500/10 border-rose-500/15',   text: 'text-rose-400/70' },
-  'data-sync':    { bg: 'bg-cyan-500/10 border-cyan-500/15',   text: 'text-cyan-400/70' },
-  monitoring:     { bg: 'bg-amber-500/10 border-amber-500/15', text: 'text-amber-400/70' },
-  automation:     { bg: 'bg-violet-500/10 border-violet-500/15', text: 'text-violet-400/70' },
-  communication:  { bg: 'bg-blue-500/10 border-blue-500/15',   text: 'text-blue-400/70' },
-  reporting:      { bg: 'bg-emerald-500/10 border-emerald-500/15', text: 'text-emerald-400/70' },
-};
-
+/**
+ * Parse a raw `design_context` JSON string into the typed envelope.
+ * Handles both the new structured format (with camelCase keys) and
+ * the legacy flat format (with snake_case keys like `use_cases`, `credential_links`).
+ */
 export function parseDesignContext(raw: string | null | undefined): DesignContextData {
   if (!raw || !raw.trim()) return {};
   try {
-    const parsed = JSON.parse(raw) as unknown;
-    if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
-      return parsed as DesignContextData;
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      return { summary: raw };
     }
+
+    // New format: check for camelCase envelope keys
+    if ('designFiles' in parsed || 'credentialLinks' in parsed || 'useCases' in parsed) {
+      return parsed as unknown as DesignContextData;
+    }
+
+    // Legacy format: snake_case top-level keys → migrate to camelCase envelope
+    const result: DesignContextData = {};
+
+    // Legacy: top-level "files"/"references" → designFiles
+    if ('files' in parsed || 'references' in parsed) {
+      result.designFiles = {
+        files: (parsed.files as DesignFilesSection['files']) ?? [],
+        references: (parsed.references as string[]) ?? [],
+      };
+    }
+
+    // Legacy: top-level "credential_links"
+    if ('credential_links' in parsed && parsed.credential_links && typeof parsed.credential_links === 'object') {
+      result.credentialLinks = parsed.credential_links as Record<string, string>;
+    }
+
+    // Legacy: top-level "use_cases"
+    if ('use_cases' in parsed && Array.isArray(parsed.use_cases)) {
+      result.useCases = parsed.use_cases as DesignUseCase[];
+    }
+
+    // Legacy: top-level "summary"
+    if ('summary' in parsed && typeof parsed.summary === 'string' && parsed.summary) {
+      result.summary = parsed.summary;
+    }
+
+    return result;
   } catch {
-    // Legacy plain-text design_context
+    // Completely unparseable — treat raw text as summary
+    return { summary: raw };
   }
-  return { summary: raw };
+}
+
+/**
+ * Serialize a `DesignContextData` envelope to a JSON string for DB storage.
+ */
+export function serializeDesignContext(data: DesignContextData): string {
+  return JSON.stringify(data);
 }
 
 /** Merge a credential link into a design_context JSON string. */
@@ -78,11 +83,22 @@ export function mergeCredentialLink(
   credentialId: string,
 ): string {
   const data = parseDesignContext(rawDesignContext);
-  return JSON.stringify({
+  return serializeDesignContext({
     ...data,
-    credential_links: { ...data.credential_links, [connectorName]: credentialId },
+    credentialLinks: { ...data.credentialLinks, [connectorName]: credentialId },
   });
 }
+
+// ── Component ───────────────────────────────────────────────────────
+
+const CATEGORY_STYLES: Record<string, { bg: string; text: string }> = {
+  notification:   { bg: 'bg-rose-500/10 border-rose-500/15',   text: 'text-rose-400/70' },
+  'data-sync':    { bg: 'bg-cyan-500/10 border-cyan-500/15',   text: 'text-cyan-400/70' },
+  monitoring:     { bg: 'bg-amber-500/10 border-amber-500/15', text: 'text-amber-400/70' },
+  automation:     { bg: 'bg-violet-500/10 border-violet-500/15', text: 'text-violet-400/70' },
+  communication:  { bg: 'bg-blue-500/10 border-blue-500/15',   text: 'text-blue-400/70' },
+  reporting:      { bg: 'bg-emerald-500/10 border-emerald-500/15', text: 'text-emerald-400/70' },
+};
 
 interface UseCasesListProps {
   designContext: string | null | undefined;
@@ -94,7 +110,7 @@ interface UseCasesListProps {
 
 export function UseCasesList({ designContext, emptyMessage, emptyHint }: UseCasesListProps) {
   const contextData = useMemo(() => parseDesignContext(designContext), [designContext]);
-  const useCases = contextData.use_cases ?? [];
+  const useCases = contextData.useCases ?? [];
 
   if (useCases.length === 0) {
     return (
