@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import type { ConnectorDefinition } from '@/lib/types/types';
+import { getAuthMethods } from '@/lib/types/types';
 import { isGoogleOAuthConnector } from '@/lib/utils/connectors';
 
 type TemplateMode = 'pick-type' | 'add-form';
@@ -45,7 +46,9 @@ export function useTemplateSelection(connectorDefinitions: ConnectorDefinition[]
 
   const pickType = useCallback((connector: ConnectorDefinition) => {
     setSelectedConnector(connector);
-    setCredentialName(`${connector.label} Credential`);
+    const methods = getAuthMethods(connector);
+    const defaultMethod = methods.find((m) => m.is_default) ?? methods[0];
+    setCredentialName(`${connector.label} ${defaultMethod?.label ?? 'Credential'}`);
     setTemplateMode('add-form');
   }, []);
 

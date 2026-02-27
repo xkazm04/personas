@@ -175,40 +175,68 @@ export function NegotiatorStepCard({
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-4 pb-4 space-y-3">
+            <motion.div
+              className="px-4 pb-4 space-y-3"
+              initial="hidden"
+              animate="visible"
+              variants={{ visible: { transition: { staggerChildren: 0.05 } } }}
+              data-testid={`negotiator-step-${stepIndex}-content`}
+            >
               {/* Description */}
-              <p className="text-sm text-foreground/80">{step.description}</p>
+              <motion.p
+                variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}
+                className="text-sm text-foreground/80"
+                data-testid={`negotiator-step-${stepIndex}-description`}
+              >
+                {step.description}
+              </motion.p>
 
               {/* Visual hint */}
               {step.visual_hint && (
-                <div className="px-3 py-2 rounded-lg bg-secondary/40 border border-primary/10 text-sm text-foreground/90">
+                <motion.div
+                  variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}
+                  className="px-3 py-2 rounded-lg bg-secondary/40 border border-primary/10 text-sm text-foreground/90"
+                  data-testid={`negotiator-step-${stepIndex}-visual-hint`}
+                >
                   {step.visual_hint}
-                </div>
+                </motion.div>
               )}
 
               {/* URL button */}
               {step.url && (
-                <button
-                  onClick={handleOpenUrl}
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-violet-500/10 border border-violet-500/20 text-violet-300 text-sm hover:bg-violet-500/20 transition-colors"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  Open in browser
-                  <span className="text-violet-400/50 truncate max-w-[200px]">{step.url}</span>
-                </button>
+                <motion.div variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}>
+                  <button
+                    onClick={handleOpenUrl}
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-violet-500/10 border border-violet-500/20 text-violet-300 text-sm hover:bg-violet-500/20 transition-colors"
+                    data-testid={`negotiator-step-${stepIndex}-open-url-btn`}
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    Open in browser
+                    <span className="text-violet-400/50 truncate max-w-[200px]">{step.url}</span>
+                  </button>
+                </motion.div>
               )}
 
               {/* Waiting for */}
               {step.wait_for && (
-                <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                <motion.div
+                  variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}
+                  className="flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20"
+                  data-testid={`negotiator-step-${stepIndex}-wait-for`}
+                >
                   <Loader2 className="w-3.5 h-3.5 text-amber-400 mt-0.5 shrink-0 animate-spin" />
                   <span className="text-sm text-amber-200/80">{step.wait_for}</span>
-                </div>
+                </motion.div>
               )}
 
               {/* Capture fields */}
               {step.field_fills && Object.entries(step.field_fills).map(([fieldKey, hint]) => (
-                <div key={fieldKey} className="space-y-1.5">
+                <motion.div
+                  key={fieldKey}
+                  variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}
+                  className="space-y-1.5"
+                  data-testid={`negotiator-step-${stepIndex}-field-${fieldKey}`}
+                >
                   <label className="text-sm text-foreground/80 font-medium">
                     Paste: {fieldKey.replace(/_/g, ' ')}
                   </label>
@@ -220,23 +248,30 @@ export function NegotiatorStepCard({
                       onChange={(e) => onCaptureValue(fieldKey, e.target.value)}
                       placeholder={`Paste ${fieldKey.replace(/_/g, ' ')} here...`}
                       className="flex-1 px-3 py-2 bg-background/50 border border-primary/15 rounded-lg text-foreground text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/40 transition-all font-mono"
+                      data-testid={`negotiator-step-${stepIndex}-field-${fieldKey}-input`}
                     />
                     <button
                       onClick={() => handlePasteFromClipboard(fieldKey)}
                       className="px-3 py-2 rounded-lg bg-secondary/60 border border-primary/15 text-muted-foreground/80 hover:text-foreground hover:bg-secondary transition-colors"
                       title="Paste from clipboard"
+                      data-testid={`negotiator-step-${stepIndex}-field-${fieldKey}-paste-btn`}
                     >
                       <ClipboardPaste className="w-4 h-4" />
                     </button>
                   </div>
-                </div>
+                </motion.div>
               ))}
 
               {/* Help section */}
-              <div className="pt-1">
+              <motion.div
+                variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}
+                className="pt-1"
+                data-testid={`negotiator-step-${stepIndex}-help-section`}
+              >
                 <button
                   onClick={() => setShowHelp(!showHelp)}
                   className="inline-flex items-center gap-1.5 text-sm text-muted-foreground/90 hover:text-foreground/95 transition-colors"
+                  data-testid={`negotiator-step-${stepIndex}-help-toggle-btn`}
                 >
                   <HelpCircle className="w-3 h-3" />
                   {showHelp ? 'Hide help' : 'Need help with this step?'}
@@ -258,46 +293,59 @@ export function NegotiatorStepCard({
                           onKeyDown={(e) => e.key === 'Enter' && handleAskHelp()}
                           placeholder="Ask a question about this step..."
                           className="flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-foreground text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-violet-500/40 transition-all"
+                          data-testid={`negotiator-step-${stepIndex}-help-input`}
                         />
                         <button
                           onClick={handleAskHelp}
                           disabled={!helpQuestion.trim() || isLoadingHelp}
                           className="px-3 py-1.5 rounded-lg bg-violet-500/20 border border-violet-500/30 text-violet-300 text-sm hover:bg-violet-500/30 transition-colors disabled:opacity-40"
+                          data-testid={`negotiator-step-${stepIndex}-help-ask-btn`}
                         >
                           {isLoadingHelp ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Ask'}
                         </button>
                       </div>
 
                       {stepHelp && stepHelp.stepIndex === stepIndex && (
-                        <div className="px-3 py-2 rounded-lg bg-violet-500/10 border border-violet-500/20 text-sm text-foreground/80">
+                        <div
+                          className="px-3 py-2 rounded-lg bg-violet-500/10 border border-violet-500/20 text-sm text-foreground/80"
+                          data-testid={`negotiator-step-${stepIndex}-help-answer`}
+                        >
                           {stepHelp.answer}
                         </div>
                       )}
                     </motion.div>
                   )}
                 </AnimatePresence>
-              </div>
+              </motion.div>
 
               {/* Action buttons */}
-              <div className="flex items-center gap-2 pt-1">
+              <motion.div
+                variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}
+                className="flex items-center gap-2 pt-1"
+                data-testid={`negotiator-step-${stepIndex}-actions`}
+              >
                 {!isCompleted && (
                   <button
                     onClick={onComplete}
                     disabled={step.field_fills ? !allFieldsCaptured : false}
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 text-sm font-medium hover:bg-emerald-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    data-testid={`negotiator-step-${stepIndex}-complete-btn`}
                   >
                     <Check className="w-3.5 h-3.5" />
                     {step.field_fills ? 'Step complete — values captured' : 'Mark step complete'}
                   </button>
                 )}
                 {isCompleted && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-sm">
+                  <span
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-sm"
+                    data-testid={`negotiator-step-${stepIndex}-completed-badge`}
+                  >
                     <Check className="w-3 h-3" />
                     Completed
                   </span>
                 )}
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

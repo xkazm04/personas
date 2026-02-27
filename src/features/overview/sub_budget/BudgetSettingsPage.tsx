@@ -56,7 +56,7 @@ function budgetProgressDetail(spend: number, budget: number | null): { text: str
 
 export default function BudgetSettingsPage() {
   const personas = usePersonaStore((s) => s.personas);
-  const updatePersona = usePersonaStore((s) => s.updatePersona);
+  const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
   const [monthlySpend, setMonthlySpend] = useState<Record<string, number>>({});
   const [editingBudgets, setEditingBudgets] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -102,7 +102,7 @@ export default function BudgetSettingsPage() {
     setSaveError(null);
     setSavingBudgetId(personaId);
     try {
-      await updatePersona(personaId, { max_budget_usd: budget });
+      await applyPersonaOp(personaId, { kind: 'UpdateBudget', max_budget_usd: budget });
       setEditingBudgets((prev) => {
         const next = { ...prev };
         delete next[personaId];

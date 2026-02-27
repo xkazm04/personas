@@ -19,6 +19,7 @@ pub struct PersonaEvent {
     pub error_message: Option<String>,
     pub processed_at: Option<String>,
     pub created_at: String,
+    pub use_case_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -30,6 +31,7 @@ pub struct CreatePersonaEventInput {
     pub source_id: Option<String>,
     pub target_persona_id: Option<String>,
     pub payload: Option<String>,
+    pub use_case_id: Option<String>,
 }
 
 // ============================================================================
@@ -46,6 +48,7 @@ pub struct PersonaEventSubscription {
     pub enabled: bool,
     pub created_at: String,
     pub updated_at: String,
+    pub use_case_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -55,6 +58,7 @@ pub struct CreateEventSubscriptionInput {
     pub event_type: String,
     pub source_filter: Option<String>,
     pub enabled: Option<bool>,
+    pub use_case_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

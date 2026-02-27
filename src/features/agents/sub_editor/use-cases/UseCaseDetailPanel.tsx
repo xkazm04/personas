@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Cpu, Bell, ChevronDown, Check, Play, Square, Loader2, ArrowRight, Hash, Send, Mail } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { useEditorDirty } from '@/features/agents/sub_editor/EditorDirtyContext';
+import { useEditorDirty } from '@/features/agents/sub_editor/EditorDocument';
 import { getUseCaseById, updateUseCaseInContext } from '@/features/agents/sub_editor/use-cases/useCaseHelpers';
 import { Listbox } from '@/features/shared/components/Listbox';
 import type { UseCaseItem } from '@/features/shared/components/UseCasesList';
@@ -89,7 +89,7 @@ interface UseCaseDetailPanelProps {
 
 export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, connectorDefinitions: _connectorDefinitions }: UseCaseDetailPanelProps) {
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const updatePersona = usePersonaStore((s) => s.updatePersona);
+  const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
   const isTestRunning = usePersonaStore((s) => s.isTestRunning);
   const testRunProgress = usePersonaStore((s) => s.testRunProgress);
   const startTest = usePersonaStore((s) => s.startTest);
@@ -109,10 +109,10 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
         (uc) => ({ ...uc, ...partial }),
       );
       setIsDirty(true);
-      await updatePersona(selectedPersona.id, { design_context: newContext });
+      await applyPersonaOp(selectedPersona.id, { kind: 'UpdateDesignContext', design_context: newContext });
       setIsDirty(false);
     },
-    [selectedPersona, useCaseId, updatePersona],
+    [selectedPersona, useCaseId, applyPersonaOp],
   );
 
   // Register dirty state with editor context
@@ -313,7 +313,7 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
 
       {/* Link to full tests */}
       <button
-        onClick={() => setEditorTab('tests')}
+        onClick={() => setEditorTab('lab')}
         className="flex items-center gap-1 text-sm text-muted-foreground/40 hover:text-primary/70 transition-colors ml-auto"
         title="View full test history"
       >

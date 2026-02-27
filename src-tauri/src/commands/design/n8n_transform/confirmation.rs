@@ -40,6 +40,7 @@ pub fn create_persona_entities(
                     trigger_type,
                     config: trigger_draft.config.as_ref().and_then(|c| serde_json::to_string(c).ok()),
                     enabled: Some(true),
+                    use_case_id: trigger_draft.use_case_id.clone(),
                 },
             ) {
                 Ok(_) => triggers_created += 1,

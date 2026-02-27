@@ -1,6 +1,7 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { useDesignAnalysis } from '@/hooks/design/useDesignAnalysis';
+import { usePersonaCompiler } from '@/hooks/design/usePersonaCompiler';
+import { useDesignConversation } from '@/hooks/design/useDesignConversation';
 import { useToggleSet } from '@/hooks/utility/useToggleSet';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import { AnimatePresence } from 'framer-motion';
@@ -12,8 +13,11 @@ import { DesignPhaseRefining } from '@/features/agents/sub_editor/DesignPhaseRef
 import { DesignPhasePreview } from '@/features/agents/sub_editor/DesignPhasePreview';
 import { DesignPhaseApplying } from '@/features/agents/sub_editor/DesignPhaseApplying';
 import { DesignPhaseApplied } from '@/features/agents/sub_editor/DesignPhaseApplied';
-import type { DesignContext } from '@/lib/types/frontendTypes';
+import { DesignConversationHistory } from '@/features/agents/sub_editor/DesignConversationHistory';
+import type { DesignFilesSection } from '@/lib/types/frontendTypes';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
+import { parseDesignContext, serializeDesignContext } from '@/features/shared/components/UseCasesList';
+import { parseConversationMessages } from '@/lib/types/designTypes';
 
 export function DesignTab() {
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
@@ -21,7 +25,7 @@ export function DesignTab() {
   const credentials = usePersonaStore((s) => s.credentials);
   const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
   const fetchConnectorDefinitions = usePersonaStore((s) => s.fetchConnectorDefinitions);
-  const updatePersona = usePersonaStore((s) => s.updatePersona);
+  const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
   const autoStartDesignInstruction = usePersonaStore((s) => s.autoStartDesignInstruction);
   const setAutoStartDesignInstruction = usePersonaStore((s) => s.setAutoStartDesignInstruction);
 
@@ -38,30 +42,70 @@ export function DesignTab() {
     result,
     error,
     question,
-    startAnalysis,
-    cancelAnalysis,
-    refineAnalysis,
-    answerQuestion,
-    applyResult,
+    compile,
+    cancel: cancelAnalysis,
+    recompile,
+    answerAndContinue,
+    applyCompilation,
     reset,
-  } = useDesignAnalysis();
+    setConversationId,
+  } = usePersonaCompiler();
+
+  // Persistent conversation management
+  const {
+    conversations,
+    activeConversationId,
+    startConversation,
+    addUserMessage,
+    addQuestionMessage,
+    addResultMessage,
+    addErrorMessage,
+    completeConversation,
+    resumeConversation,
+    removeConversation,
+    clearActive,
+  } = useDesignConversation(selectedPersona?.id ?? null);
+
+  // Track prev phase to detect transitions
+  const prevPhaseRef = useRef(phase);
 
   const [instruction, setInstruction] = useState('');
-  const [designContext, setDesignContext] = useState<DesignContext>({ files: [], references: [] });
+  const [designContext, setDesignContext] = useState<DesignFilesSection>({ files: [], references: [] });
   const [refinementMessage, setRefinementMessage] = useState('');
   const [selectedTools, handleToolToggle, setSelectedTools] = useToggleSet<string>();
   const [selectedTriggerIndices, handleTriggerToggle, setSelectedTriggerIndices] = useToggleSet<number>();
   const [selectedChannelIndices, handleChannelToggle, setSelectedChannelIndices] = useToggleSet<number>();
   const [selectedSubscriptionIndices, handleSubscriptionToggle, setSelectedSubscriptionIndices] = useToggleSet<number>();
 
-  // Auto-start design analysis when coming from PersonaCreationWizard
+  // Record conversation messages on phase transitions
+  useEffect(() => {
+    const prev = prevPhaseRef.current;
+    prevPhaseRef.current = phase;
+
+    // When a question arrives, record it in the conversation
+    if (phase === 'awaiting-input' && question && prev !== 'awaiting-input') {
+      addQuestionMessage(question);
+    }
+
+    // When a result arrives (preview phase), record it
+    if (phase === 'preview' && result && prev !== 'preview') {
+      addResultMessage(result);
+    }
+
+    // When an error occurs while transitioning back to idle/preview, record it
+    if (error && (phase === 'idle' || phase === 'preview') && (prev === 'analyzing' || prev === 'refining')) {
+      addErrorMessage(error);
+    }
+  }, [phase, question, result, error, addQuestionMessage, addResultMessage, addErrorMessage]);
+
+  // Auto-start design analysis when coming from CreationWizard
   useEffect(() => {
     if (autoStartDesignInstruction && selectedPersona && phase === 'idle') {
       setInstruction(autoStartDesignInstruction);
       setAutoStartDesignInstruction(null);
-      startAnalysis(selectedPersona.id, autoStartDesignInstruction);
+      compile(selectedPersona.id, autoStartDesignInstruction);
     }
-  }, [autoStartDesignInstruction, selectedPersona, phase, setAutoStartDesignInstruction, startAnalysis]);
+  }, [autoStartDesignInstruction, selectedPersona, phase, setAutoStartDesignInstruction, compile]);
 
   // Parse saved design result from persona DB
   const savedDesignResult = useMemo<DesignAnalysisResult | null>(() => {
@@ -76,9 +120,10 @@ export function DesignTab() {
     return parsed;
   }, [selectedPersona?.last_design_result]);
 
-  // Initialize design context from persona DB
+  // Initialize design files from persona DB (extract from typed envelope)
   useEffect(() => {
-    setDesignContext(parseJsonOrDefault<DesignContext>(selectedPersona?.design_context, { files: [], references: [] }));
+    const ctx = parseDesignContext(selectedPersona?.design_context);
+    setDesignContext(ctx.designFiles ?? { files: [], references: [] });
   }, [selectedPersona?.id]);
 
   // Initialize selections when result arrives
@@ -154,21 +199,30 @@ export function DesignTab() {
     if (!selectedPersona || !instruction.trim()) return;
     const hasContext = designContext.files.length > 0 || designContext.references.length > 0;
     if (hasContext) {
-      await updatePersona(selectedPersona.id, {
-        design_context: JSON.stringify(designContext),
+      // Merge the design files into the existing envelope, preserving other sections
+      const existing = parseDesignContext(selectedPersona.design_context);
+      await applyPersonaOp(selectedPersona.id, {
+        kind: 'UpdateDesignContext',
+        design_context: serializeDesignContext({ ...existing, designFiles: designContext }),
       });
     }
-    startAnalysis(selectedPersona.id, instruction.trim());
+    // Create a new design conversation for this session
+    const conv = await startConversation(instruction.trim());
+    const convId = conv?.id ?? null;
+    setConversationId(convId);
+    compile(selectedPersona.id, instruction.trim(), convId);
   };
 
   const handleApply = async () => {
     if (!selectedPersona || !result) return;
-    await applyResult({
+    await applyCompilation({
       selectedTools,
       selectedTriggerIndices,
       selectedChannelIndices,
       selectedSubscriptionIndices,
     });
+    // Mark conversation as completed after successful apply
+    await completeConversation();
   };
 
   const handleRefine = () => {
@@ -177,20 +231,38 @@ export function DesignTab() {
 
   const handleSendRefinement = () => {
     if (!selectedPersona || !refinementMessage.trim()) return;
-    refineAnalysis(refinementMessage.trim());
+    addUserMessage(refinementMessage.trim(), 'feedback');
+    recompile(refinementMessage.trim());
     setRefinementMessage('');
   };
 
   const handleDiscard = () => {
     reset();
+    clearActive();
     setInstruction('');
     setDesignContext({ files: [], references: [] });
   };
 
   const handleReset = () => {
     reset();
+    clearActive();
     setInstruction('');
   };
+
+  const handleResumeConversation = useCallback(async (conversation: typeof conversations[0]) => {
+    const updated = await resumeConversation(conversation);
+    if (!updated || !selectedPersona) return;
+
+    // Parse messages to find the last instruction and set it
+    const messages = parseConversationMessages(updated.messages);
+    const lastInstruction = [...messages].reverse().find((m) => m.role === 'user' && m.messageType === 'instruction');
+    if (lastInstruction) {
+      setInstruction(lastInstruction.content);
+    }
+
+    // Link the conversation so refinements use its history
+    setConversationId(updated.id);
+  }, [resumeConversation, selectedPersona, setConversationId]);
 
   if (!selectedPersona) {
     return (
@@ -203,6 +275,17 @@ export function DesignTab() {
   return (
     <div className="space-y-4">
       <PhaseIndicator phase={phase} />
+
+      {/* Conversation history — always visible in idle phase */}
+      {phase === 'idle' && conversations.length > 0 && (
+        <DesignConversationHistory
+          conversations={conversations}
+          activeConversationId={activeConversationId}
+          onResumeConversation={handleResumeConversation}
+          onDeleteConversation={removeConversation}
+        />
+      )}
+
       <AnimatePresence mode="wait">
         {phase === 'idle' && (
           <DesignPhasePanel
@@ -243,7 +326,10 @@ export function DesignTab() {
           <DesignQuestionPanel
             outputLines={outputLines}
             question={question}
-            onAnswerQuestion={answerQuestion}
+            onAnswerQuestion={(answer: string) => {
+              addUserMessage(answer, 'answer');
+              answerAndContinue(answer);
+            }}
             onCancelAnalysis={cancelAnalysis}
           />
         )}

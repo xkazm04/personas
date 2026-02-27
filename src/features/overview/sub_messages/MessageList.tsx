@@ -4,6 +4,7 @@ import { ChevronDown, ChevronRight, MessageSquare, CheckCheck, RefreshCw, Trash2
 import { listen } from '@tauri-apps/api/event';
 import { usePersonaStore } from '@/stores/personaStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
+import { FilterBar } from '@/features/shared/components/FilterBar';
 import { MarkdownRenderer } from '@/features/shared/components/MarkdownRenderer';
 import type { PersonaMessage } from '@/lib/types/types';
 import type { PersonaMessage as RawPersonaMessage } from '@/lib/bindings/PersonaMessage';
@@ -23,11 +24,11 @@ const priorityConfig: Record<string, { color: string; bgColor: string; borderCol
 
 type FilterType = 'all' | 'unread' | 'high';
 
-const filterOptions: Array<{ id: FilterType; label: string }> = [
-  { id: 'all', label: 'All' },
-  { id: 'unread', label: 'Unread' },
-  { id: 'high', label: 'High Priority' },
-];
+const FILTER_LABELS: Record<FilterType, string> = {
+  all: 'All',
+  unread: 'Unread',
+  high: 'High Priority',
+};
 
 // ---------------------------------------------------------------------------
 // Component
@@ -149,32 +150,17 @@ export default function MessageList() {
       />
 
       {/* Filter bar */}
-      <div className="px-4 md:px-6 py-3 border-b border-primary/10 flex items-center gap-2 flex-shrink-0">
-        {filterOptions.map((opt) => {
-          const count = badgeCounts[opt.id];
-          return (
-            <button
-              key={opt.id}
-              onClick={() => setFilter(opt.id)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all border flex items-center gap-1.5 ${
-                filter === opt.id
-                  ? 'bg-primary/15 text-primary border-primary/30'
-                  : 'bg-secondary/30 text-muted-foreground/80 border-primary/15 hover:text-muted-foreground hover:bg-secondary/50'
-              }`}
-            >
-              {opt.label}
-              {count > 0 && (
-                <span className="text-sm bg-primary/20 text-primary rounded-full min-w-[18px] px-1 inline-flex items-center justify-center">
-                  {count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-        <span className="ml-auto text-sm font-mono text-muted-foreground/80">
-          Showing {filteredMessages.length} of {messagesTotal}
-        </span>
-      </div>
+      <FilterBar<FilterType>
+        options={(['all', 'unread', 'high'] as FilterType[]).map((id) => ({
+          id,
+          label: FILTER_LABELS[id],
+          badge: badgeCounts[id],
+        }))}
+        value={filter}
+        onChange={setFilter}
+        layoutIdPrefix="message-filter"
+        summary={`Showing ${filteredMessages.length} of ${messagesTotal}`}
+      />
 
       {/* Message list */}
       <ContentBody flex>

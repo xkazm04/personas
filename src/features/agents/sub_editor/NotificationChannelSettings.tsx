@@ -5,7 +5,7 @@ import { usePersonaStore } from '@/stores/personaStore';
 import type { NotificationChannel, NotificationChannelType } from '@/lib/types/frontendTypes';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { AccessibleToggle } from '@/features/shared/components/AccessibleToggle';
-import { useEditorDirty } from '@/features/agents/sub_editor/EditorDirtyContext';
+import { useEditorDirty } from '@/features/agents/sub_editor/EditorDocument';
 
 interface NotificationChannelSettingsProps {
   /** Persona ID for persisted mode — omit for draft mode */
@@ -116,7 +116,7 @@ function CredentialPicker({
 export function NotificationChannelSettings({ personaId, credentials, connectorDefinitions, draftChannels, onDraftChannelsChange }: NotificationChannelSettingsProps) {
   const isDraftMode = draftChannels !== undefined && onDraftChannelsChange !== undefined;
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const updatePersona = usePersonaStore((s) => s.updatePersona);
+  const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
 
   const [channels, setChannelsInternal] = useState<NotificationChannel[]>([]);
   const [isDirty, setIsDirty] = useState(false);
@@ -212,7 +212,8 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
 
     setIsSaving(true);
     try {
-      await updatePersona(personaId, {
+      await applyPersonaOp(personaId, {
+        kind: 'UpdateNotifications',
         notification_channels: JSON.stringify(effectiveChannels),
       });
       setIsDirty(false);

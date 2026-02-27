@@ -1,0 +1,34 @@
+{
+  "id": "builtin-supabase",
+  "name": "supabase",
+  "label": "Supabase",
+  "color": "#3ECF8E",
+  "icon_url": "/icons/connectors/supabase.svg",
+  "category": "database",
+  "fields": [
+    { "key": "project_url", "label": "Project URL", "type": "url", "required": true, "placeholder": "https://xxxx.supabase.co", "helpText": "From Supabase Dashboard → Settings → API" },
+    { "key": "anon_key", "label": "Anon / Public Key", "type": "password", "required": true, "placeholder": "eyJ...", "helpText": "The anon key for client-side access" },
+    { "key": "service_role_key", "label": "Service Role Key", "type": "password", "required": false, "placeholder": "eyJ...", "helpText": "Optional: for server-side admin access (bypasses RLS)" },
+    { "key": "pooler_url", "label": "Pooler Connection String", "type": "password", "required": false, "placeholder": "postgresql://postgres.xxxx:...", "helpText": "Optional: Supavisor pooler URL for direct database access" }
+  ],
+  "healthcheck_config": {
+    "endpoint": "{{project_url}}/rest/v1/",
+    "method": "GET",
+    "headers": { "apikey": "{{anon_key}}", "Authorization": "Bearer {{anon_key}}" },
+    "description": "Validates Supabase connection via REST endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Supabase open-source Firebase alternative with Postgres, auth, and realtime.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://supabase.com/dashboard/project/_/settings/api",
+    "auth_variants": [
+      { "id": "anon", "label": "Anon Key", "fields": ["project_url", "anon_key"], "auth_type_label": "API Key" },
+      { "id": "service_role", "label": "Service Role", "fields": ["project_url", "anon_key", "service_role_key"], "auth_type_label": "Service Role" },
+      { "id": "pooler", "label": "Pooler URL", "fields": ["project_url", "anon_key", "pooler_url"], "auth_type_label": "Connection String" }
+    ]
+  }
+}

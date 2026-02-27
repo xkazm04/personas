@@ -2,6 +2,7 @@ use rusqlite::{params, Row};
 
 use crate::db::models::{PersonaExecution, UpdateExecutionStatus};
 use crate::db::DbPool;
+use crate::engine::types::ExecutionState;
 use crate::error::AppError;
 
 fn row_to_execution(row: &Row) -> rusqlite::Result<PersonaExecution> {
@@ -105,18 +106,20 @@ pub fn update_status(
     let now = chrono::Utc::now().to_rfc3339();
     let conn = pool.get()?;
 
-    let started_at: Option<String> = if input.status == "running" {
+    let started_at: Option<String> = if input.status == ExecutionState::Running {
         Some(now.clone())
     } else {
         None
     };
 
-    let completed_at: Option<String> =
-        if ["completed", "failed", "cancelled", "incomplete"].contains(&input.status.as_str()) {
-            Some(now)
-        } else {
-            None
-        };
+    let completed_at: Option<String> = if input.status.is_terminal() {
+        Some(now)
+    } else {
+        None
+    };
+
+    // Serialize ExecutionState to its DB string form
+    let status_str = input.status.as_str();
 
     conn.execute(
         "UPDATE persona_executions SET
@@ -134,7 +137,7 @@ pub fn update_status(
             tool_steps = COALESCE(?13, tool_steps)
          WHERE id = ?12",
         params![
-            input.status,
+            status_str,
             input.output_data,
             input.error_message,
             input.duration_ms,
@@ -358,7 +361,7 @@ mod tests {
             &pool,
             &exec.id,
             UpdateExecutionStatus {
-                status: "running".into(),
+                status: ExecutionState::Running,
                 ..Default::default()
             },
         )
@@ -373,7 +376,7 @@ mod tests {
             &pool,
             &exec.id,
             UpdateExecutionStatus {
-                status: "completed".into(),
+                status: ExecutionState::Completed,
                 output_data: Some("output result".into()),
                 duration_ms: Some(1500),
                 log_file_path: Some("/tmp/log.txt".into()),

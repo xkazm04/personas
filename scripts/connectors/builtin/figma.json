@@ -1,0 +1,35 @@
+{
+  "id": "builtin-figma",
+  "name": "figma",
+  "label": "Figma",
+  "color": "#F24E1E",
+  "icon_url": "/icons/connectors/figma.svg",
+  "category": "creativity",
+  "fields": [
+    {
+      "key": "personal_access_token",
+      "label": "Personal Access Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "figd_...",
+      "helpText": "From Figma → Settings → Personal Access Tokens → Generate"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.figma.com/v1/me",
+    "method": "GET",
+    "headers": {
+      "X-Figma-Token": "{{personal_access_token}}"
+    },
+    "description": "Validates personal access token via Figma me endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Figma collaborative design tool for UI/UX, prototyping, and design systems.",
+    "auth_type": "pat",
+    "auth_type_label": "PAT",
+    "docs_url": "https://www.figma.com/developers/api"
+  }
+}

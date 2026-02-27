@@ -1,5 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
-import { startGoogleCredentialOAuth, getGoogleCredentialOAuthStatus, openExternalUrl } from '@/api/tauriApi';
+import { useRef, useCallback } from 'react';
+import * as api from '@/api/tauriApi';
+import type { GoogleCredentialOAuthStatusResult } from '@/api/tauriApi';
+import { useOAuthPolling } from './useOAuthPolling';
 
 export interface OAuthConsentState {
   /** Initial credential field values produced by the OAuth flow (refresh_token, scopes, etc.) */
@@ -17,156 +19,44 @@ export interface OAuthConsentState {
 }
 
 export function useOAuthConsent(): OAuthConsentState {
-  const [initialValues, setInitialValues] = useState<Record<string, string>>({});
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [isAuthorizing, setIsAuthorizing] = useState(false);
-  const [completedAt, setCompletedAt] = useState<string | null>(null);
-  const [scopeFromConsent, setScopeFromConsent] = useState<string | null>(null);
-  const [message, setMessage] = useState<{ success: boolean; message: string } | null>(null);
+  // Track the scope the user typed so extractValues can fall back to it
+  const scopeRef = useRef<string | null>(null);
 
-  // Poll for OAuth session completion
-  useEffect(() => {
-    if (!sessionId) return;
+  const polling = useOAuthPolling<[string, string[] | undefined], GoogleCredentialOAuthStatusResult>({
+    startFn: (connectorName, extraScopes) =>
+      api.startGoogleCredentialOAuth(undefined, undefined, connectorName, extraScopes),
+    pollFn: (sessionId) => api.getGoogleCredentialOAuthStatus(sessionId),
+    extractValues: (poll, prev) => {
+      const effectiveScope = poll.scope ?? scopeRef.current ?? '';
+      return {
+        ...prev,
+        refresh_token: poll.refresh_token ?? prev.refresh_token ?? '',
+        scopes: effectiveScope,
+        oauth_scope: effectiveScope,
+        oauth_completed_at: new Date().toISOString(),
+        oauth_client_mode: 'app_managed',
+      };
+    },
+    label: 'Google',
+  });
 
-    let cancelled = false;
-    let timer: number | null = null;
-
-    const poll = async () => {
-      try {
-        const status = await getGoogleCredentialOAuthStatus(sessionId);
-        if (cancelled) return;
-
-        if (status.status === 'pending') {
-          timer = window.setTimeout(poll, 1500);
-          return;
-        }
-
-        setSessionId(null);
-        setIsAuthorizing(false);
-
-        if (status.status === 'success' && status.refresh_token) {
-          const nowIso = new Date().toISOString();
-          const effectiveScope = status.scope ?? scopeFromConsent ?? '';
-
-          setInitialValues((prev) => ({
-            ...prev,
-            refresh_token: status.refresh_token!,
-            scopes: effectiveScope,
-            oauth_scope: effectiveScope,
-            oauth_completed_at: nowIso,
-            oauth_client_mode: 'app_managed',
-          }));
-          setCompletedAt(new Date().toLocaleTimeString());
-          setMessage({
-            success: true,
-            message: 'Google authorization completed. Refresh token was auto-filled.',
-          });
-          return;
-        }
-
-        setMessage({
-          success: false,
-          message: status.error || 'Google authorization failed. Please try again.',
-        });
-      } catch (err) {
-        if (cancelled) return;
-        setSessionId(null);
-        setIsAuthorizing(false);
-        setMessage({
-          success: false,
-          message: err instanceof Error ? err.message : 'Failed to check OAuth status.',
-        });
-      }
-    };
-
-    poll();
-
-    return () => {
-      cancelled = true;
-      if (timer) {
-        window.clearTimeout(timer);
-      }
-    };
-  }, [sessionId, scopeFromConsent]);
-
-  const startConsent = useCallback((connectorName: string, values: Record<string, string>) => {
-    const extraScopes = values.scopes?.trim()
-      ? values.scopes.trim().split(/\s+/)
-      : undefined;
-    setScopeFromConsent(extraScopes ? extraScopes.join(' ') : null);
-
-    setIsAuthorizing(true);
-    setCompletedAt(null);
-    setMessage({
-      success: false,
-      message: 'Starting Google authorization (requesting OAuth session)...',
-    });
-
-    const startPromise = startGoogleCredentialOAuth(undefined, undefined, connectorName || 'google', extraScopes);
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      window.setTimeout(() => {
-        reject(new Error('OAuth session start timed out (no IPC response in 12s).'));
-      }, 12000);
-    });
-
-    Promise.race([startPromise, timeoutPromise])
-      .then(async (oauthStart) => {
-        const resolved = oauthStart as { auth_url: string; session_id: string };
-        let opened = false;
-        if (!opened) {
-          try {
-            await openExternalUrl(resolved.auth_url);
-            opened = true;
-          } catch {
-            // fallback below
-          }
-        }
-
-        if (!opened) {
-          try {
-            const popup = window.open(resolved.auth_url, '_blank', 'noopener,noreferrer');
-            opened = popup !== null;
-          } catch {
-            // no-op
-          }
-        }
-
-        if (!opened) {
-          throw new Error('Could not open Google consent page. Please allow popups or external browser open.');
-        }
-
-        setMessage({
-          success: false,
-          message: 'Google consent page opened. Complete consent in browser; refresh token will be auto-filled.',
-        });
-        setSessionId(resolved.session_id);
-      })
-      .catch((err) => {
-        setSessionId(null);
-        setIsAuthorizing(false);
-        const detail = err instanceof Error ? err.message : typeof err === 'string' ? err : 'unknown error';
-        setMessage({
-          success: false,
-          message: `Google authorization did not start: ${detail}`,
-        });
-      });
-  }, []);
-
-  const reset = useCallback(() => {
-    setInitialValues({});
-    setSessionId(null);
-    setIsAuthorizing(false);
-    setCompletedAt(null);
-    setScopeFromConsent(null);
-    setMessage(null);
-  }, []);
+  const startConsent = useCallback(
+    (connectorName: string, values: Record<string, string>) => {
+      const extraScopes = values.scopes?.trim()
+        ? values.scopes.trim().split(/\s+/)
+        : undefined;
+      scopeRef.current = extraScopes ? extraScopes.join(' ') : null;
+      polling.startConsent(connectorName || 'google', extraScopes);
+    },
+    [polling.startConsent],
+  );
 
   return {
-    initialValues,
-    isAuthorizing,
-    completedAt,
-    message,
+    initialValues: polling.initialValues,
+    isAuthorizing: polling.isAuthorizing,
+    completedAt: polling.completedAt,
+    message: polling.message,
     startConsent,
-    reset,
+    reset: polling.reset,
   };
 }

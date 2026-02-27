@@ -1,0 +1,21 @@
+{
+  "id": "builtin-linear",
+  "name": "linear",
+  "label": "Linear",
+  "color": "#5E6AD2",
+  "icon_url": "/icons/connectors/linear.svg",
+  "category": "development",
+  "fields": [
+    { "key": "api_key", "label": "API Key", "type": "password", "required": true, "placeholder": "lin_api_...", "helpText": "From Linear → Settings → API → Personal API keys" }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.linear.app/graphql",
+    "method": "POST",
+    "headers": { "Authorization": "{{api_key}}", "Content-Type": "application/json" },
+    "body": "{\"query\":\"{ viewer { id } }\"}",
+    "description": "Validates API key via Linear GraphQL viewer query"
+  },
+  "services": [],
+  "events": [],
+  "metadata": { "template_enabled": true, "summary": "Linear issue tracking for software teams with cycles, projects, and triage.", "auth_type": "pat", "auth_type_label": "PAT", "docs_url": "https://linear.app/settings/api" }
+}

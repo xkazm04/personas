@@ -1,0 +1,31 @@
+{
+  "id": "builtin-twilio-segment",
+  "name": "twilio_segment",
+  "label": "Twilio Segment",
+  "color": "#52BD94",
+  "icon_url": "/icons/connectors/twilio.svg",
+  "category": "analytics",
+  "fields": [
+    { "key": "write_key", "label": "Write Key", "type": "password", "required": true, "placeholder": "", "helpText": "From Segment → Sources → your source → Settings → API Keys" },
+    { "key": "access_token", "label": "Access Token", "type": "password", "required": false, "placeholder": "", "helpText": "Optional: for Config API access (workspace-level)" }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.segment.io/v1/batch",
+    "method": "POST",
+    "headers": { "Authorization": "Basic {{base64(write_key:)}}", "Content-Type": "application/json" },
+    "description": "Validates write key via Segment batch endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Twilio Segment customer data platform for event tracking and routing.",
+    "auth_type": "write_key",
+    "auth_type_label": "Write Key",
+    "docs_url": "https://segment.com/docs/connections/sources/catalog/",
+    "auth_variants": [
+      { "id": "write", "label": "Write Key", "fields": ["write_key"], "auth_type_label": "Write Key" },
+      { "id": "config", "label": "Write + Config API", "fields": ["write_key", "access_token"], "auth_type_label": "Config API" }
+    ]
+  }
+}

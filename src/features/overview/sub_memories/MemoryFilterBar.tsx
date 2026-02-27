@@ -55,16 +55,16 @@ export function MemoryFilterBar({
       <div className="flex items-center gap-1.5 flex-wrap">
         <button
           onClick={() => onCategoryChange(null)}
-          className={`relative px-2.5 py-1.5 text-sm font-medium rounded-lg border transition-colors ${
+          className={`relative px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors ${
             selectedCategory === null
-              ? 'bg-foreground/10 text-foreground/80 border-foreground/20'
-              : 'bg-secondary/40 text-muted-foreground/90 border-primary/10 hover:text-muted-foreground'
+              ? 'bg-primary/15 text-primary border-primary/30'
+              : 'bg-secondary/30 text-muted-foreground/80 border-primary/15 hover:text-muted-foreground hover:bg-secondary/50'
           }`}
         >
           {selectedCategory === null && (
             <motion.div
               layoutId="category-chip-active"
-              className="absolute inset-0 rounded-lg bg-foreground/10 border border-foreground/20"
+              className="absolute inset-0 rounded-lg bg-primary/15 border border-primary/30"
               transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
             />
           )}
@@ -78,10 +78,10 @@ export function MemoryFilterBar({
             <button
               key={cat}
               onClick={() => onCategoryChange(isActive ? null : cat)}
-              className={`relative flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-medium rounded-lg border transition-colors ${
+              className={`relative flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors ${
                 isActive
                   ? `${colors.bg} ${colors.text} ${colors.border}`
-                  : 'bg-secondary/40 text-muted-foreground/90 border-primary/10 hover:text-muted-foreground'
+                  : 'bg-secondary/30 text-muted-foreground/80 border-primary/15 hover:text-muted-foreground hover:bg-secondary/50'
               }`}
             >
               {isActive && (

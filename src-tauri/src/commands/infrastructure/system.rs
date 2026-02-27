@@ -79,65 +79,107 @@ pub async fn system_health_check(
     // -- Section 1: Local Environment --
     let mut local_items = Vec::new();
 
-    let claude_candidates: &[&str] = if cfg!(target_os = "windows") {
-        &["claude", "claude.cmd", "claude.exe", "claude-code"]
-    } else {
-        &["claude", "claude-code"]
-    };
+    // Determine the active engine
+    let active_engine = crate::db::repos::core::settings::get(&state.db, settings_keys::CLI_ENGINE)
+        .ok()
+        .flatten()
+        .unwrap_or_else(|| "claude_code".to_string());
 
-    let mut claude_errors = Vec::new();
-    let mut claude_detected_in_path = false;
-    let mut claude_version_result: Option<(String, String)> = None;
-
-    for candidate in claude_candidates {
-        if command_exists_in_path(candidate) {
-            claude_detected_in_path = true;
-        }
-
-        match command_version(candidate) {
-            Ok(version) => {
-                claude_version_result = Some(((*candidate).to_string(), version));
-                break;
-            }
-            Err(err) => {
-                claude_errors.push(format!("{candidate}: {err}"));
-            }
-        }
+    // Probe all three CLI engines
+    struct EngineProbe {
+        id: &'static str,
+        label: &'static str,
+        setting_key: &'static str,
+        candidates: &'static [&'static str],
     }
 
-    if let Some((command_name, version)) = claude_version_result {
-        local_items.push(HealthCheckItem {
-            id: "claude_cli".into(),
-            label: "Claude CLI".into(),
-            status: "ok".into(),
-            detail: Some(format!("{version} ({command_name})")),
-            installable: false,
-        });
-    } else if claude_detected_in_path {
-        local_items.push(HealthCheckItem {
-            id: "claude_cli".into(),
-            label: "Claude CLI".into(),
-            status: "warn".into(),
-            detail: Some(
-                "CLI executable detected in PATH, but version probe failed. Try opening a new terminal session or reinstalling Claude Code CLI.".into(),
-            ),
-            installable: true,
-        });
-    } else {
-        local_items.push(HealthCheckItem {
-            id: "claude_cli".into(),
-            label: "Claude CLI".into(),
-            status: "error".into(),
-            detail: Some(if claude_errors.is_empty() {
-                "Not found. Click Install to set up automatically.".into()
+    let engines = [
+        EngineProbe {
+            id: "claude_cli",
+            label: "Claude Code CLI",
+            setting_key: "claude_code",
+            candidates: if cfg!(target_os = "windows") {
+                &["claude", "claude.cmd", "claude.exe", "claude-code"]
             } else {
-                format!(
-                    "Not found. Click Install to set up automatically. Last probe: {}",
-                    claude_errors.join(" | ")
-                )
-            }),
-            installable: true,
-        });
+                &["claude", "claude-code"]
+            },
+        },
+        EngineProbe {
+            id: "codex_cli",
+            label: "Codex CLI",
+            setting_key: "codex_cli",
+            candidates: if cfg!(target_os = "windows") {
+                &["codex", "codex.cmd"]
+            } else {
+                &["codex"]
+            },
+        },
+        EngineProbe {
+            id: "gemini_cli",
+            label: "Gemini CLI",
+            setting_key: "gemini_cli",
+            candidates: if cfg!(target_os = "windows") {
+                &["gemini", "gemini.cmd"]
+            } else {
+                &["gemini"]
+            },
+        },
+    ];
+
+    for engine in &engines {
+        let is_active = active_engine == engine.setting_key;
+        let suffix = if is_active { " (active)" } else { "" };
+
+        let mut errors = Vec::new();
+        let mut detected_in_path = false;
+        let mut version_result: Option<(String, String)> = None;
+
+        for candidate in engine.candidates {
+            if command_exists_in_path(candidate) {
+                detected_in_path = true;
+            }
+            match command_version(candidate) {
+                Ok(version) => {
+                    version_result = Some(((*candidate).to_string(), version));
+                    break;
+                }
+                Err(err) => {
+                    errors.push(format!("{candidate}: {err}"));
+                }
+            }
+        }
+
+        if let Some((command_name, version)) = version_result {
+            local_items.push(HealthCheckItem {
+                id: engine.id.into(),
+                label: format!("{}{}", engine.label, suffix),
+                status: "ok".into(),
+                detail: Some(format!("{version} ({command_name})")),
+                installable: false,
+            });
+        } else if detected_in_path {
+            local_items.push(HealthCheckItem {
+                id: engine.id.into(),
+                label: format!("{}{}", engine.label, suffix),
+                status: if is_active { "warn" } else { "inactive" }.into(),
+                detail: Some(
+                    "CLI executable detected in PATH, but version probe failed. Try opening a new terminal session or reinstalling.".into(),
+                ),
+                installable: true,
+            });
+        } else {
+            local_items.push(HealthCheckItem {
+                id: engine.id.into(),
+                label: format!("{}{}", engine.label, suffix),
+                status: if is_active { "error" } else { "inactive" }.into(),
+                detail: Some(if is_active {
+                    "Not found. Click Install to set up, or select a different engine in Settings.".into()
+                } else {
+                    "Not installed (optional)".into()
+                }),
+                installable: true,
+            });
+        }
     }
 
     let node_candidates = ["node", "nodejs"];

@@ -396,14 +396,6 @@ export default function N8nImportTab() {
     [dispatch],
   );
 
-  const handleFileSelect = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) processFile(file);
-    },
-    [processFile],
-  );
-
   const handleFileDrop = useCallback(
     (file: File) => {
       processFile(file);
@@ -734,7 +726,6 @@ export default function N8nImportTab() {
               <>
                 <N8nUploadStep
                   fileInputRef={fileInputRef}
-                  onFileSelect={handleFileSelect}
                   onFileDrop={handleFileDrop}
                 />
                 <div className="mt-6">

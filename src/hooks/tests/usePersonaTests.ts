@@ -14,6 +14,7 @@ interface TestRunStatusPayload {
   scores?: { tool_accuracy?: number; output_quality?: number; protocol_compliance?: number };
   summary?: Record<string, unknown>;
   error?: string;
+  scenarios?: unknown[];
 }
 
 export function usePersonaTests() {
@@ -40,6 +41,7 @@ export function usePersonaTests() {
             scores: p.scores,
             summary: p.summary,
             error: p.error,
+            scenarios: p.scenarios,
           });
 
           if (["completed", "failed", "cancelled"].includes(p.phase)) {

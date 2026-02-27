@@ -71,9 +71,9 @@ export function N8nEditStep({
   const credentials = usePersonaStore((s) => s.credentials);
   useEffect(() => {
     const data = parseDesignContext(draft.design_context);
-    if (data.credential_links && Object.keys(data.credential_links).length > 0) {
+    if (data.credentialLinks && Object.keys(data.credentialLinks).length > 0) {
       const links: Record<string, { id: string; name: string }> = {};
-      for (const [connName, credId] of Object.entries(data.credential_links)) {
+      for (const [connName, credId] of Object.entries(data.credentialLinks)) {
         const cred = credentials.find((c) => c.id === credId);
         if (cred) {
           links[connName] = { id: cred.id, name: cred.name };

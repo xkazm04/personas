@@ -38,7 +38,7 @@ export interface OverviewSlice {
 }
 
 export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSlice> = (set, get) => ({
-  overviewTab: "system-check" as OverviewTab,
+  overviewTab: "home" as OverviewTab,
   globalExecutions: [],
   globalExecutionsTotal: 0,
   globalExecutionsOffset: 0,

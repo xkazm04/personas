@@ -1,0 +1,43 @@
+{
+  "id": "builtin-upstash",
+  "name": "upstash",
+  "label": "Upstash",
+  "color": "#00E9A3",
+  "icon_url": "/icons/connectors/upstash.svg",
+  "category": "database",
+  "fields": [
+    {
+      "key": "redis_url",
+      "label": "REST URL",
+      "type": "url",
+      "required": true,
+      "placeholder": "https://xxx.upstash.io",
+      "helpText": "From Upstash Console → Database → Details → REST API → URL"
+    },
+    {
+      "key": "redis_token",
+      "label": "REST Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "From Upstash Console → Database → Details → REST API → Token"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "{{redis_url}}/ping",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{redis_token}}"
+    },
+    "description": "Validates REST token via Upstash Redis PING command"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Upstash serverless Redis and Kafka for low-latency data at the edge.",
+    "auth_type": "api_token",
+    "auth_type_label": "REST Token",
+    "docs_url": "https://upstash.com/docs/redis/features/restapi"
+  }
+}

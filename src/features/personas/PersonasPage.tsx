@@ -12,7 +12,7 @@ import TeamCanvas from '@/features/pipeline/components/TeamCanvas';
 import CloudDeployPanel from '@/features/deployment/components/CloudDeployPanel';
 import GitLabPanel from '@/features/gitlab/components/GitLabPanel';
 import SettingsPage from '@/features/settings/components/SettingsPage';
-import OnboardingWizard from '@/features/agents/components/OnboardingWizard';
+import CreationWizard from '@/features/agents/components/CreationWizard';
 
 export default function PersonasPage() {
   const sidebarSection = usePersonaStore((s) => s.sidebarSection);
@@ -32,7 +32,7 @@ export default function PersonasPage() {
   const fetchDetail = usePersonaStore((s) => s.fetchDetail);
 
   // True only after fetchPersonas has settled (success or fail).
-  // Prevents showing OnboardingWizard before the first load completes.
+  // Prevents showing CreationWizard before the first load completes.
   const [personasFetched, setPersonasFetched] = useState(false);
 
   useEffect(() => {
@@ -68,10 +68,10 @@ export default function PersonasPage() {
     // Show unified wizard when no personas exist OR when explicitly creating
     if (sidebarSection === 'personas') {
       if (personasFetched && !isLoading && !error && personas.length === 0) {
-        return <OnboardingWizard />;
+        return <CreationWizard />;
       }
       if (isCreatingPersona) {
-        return <OnboardingWizard canCancel />;
+        return <CreationWizard canCancel />;
       }
     }
 

@@ -167,6 +167,21 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
   const steps = useMemo(() => parseToolSteps(execution.tool_steps ?? null), [execution.tool_steps]);
   const model = execution.model_used || 'claude-sonnet-4';
 
+  // Timeline rail animation state
+  const isLive = execution.status === 'running' || execution.status === 'queued';
+  const hasErrors = execution.status === 'failed';
+  const completedCount = steps.filter((s) => s.ended_at_ms != null).length;
+  const railFillPct = steps.length > 0
+    ? isLive
+      ? Math.max((completedCount / steps.length) * 100, 10) // at least 10% when live
+      : 100 // terminal executions fill the rail fully
+    : 0;
+  const railGradient = hasErrors
+    ? 'linear-gradient(to bottom, rgb(59 130 246 / 0.6), rgb(239 68 68 / 0.6))'
+    : isLive
+      ? 'linear-gradient(to bottom, rgb(59 130 246 / 0.6), rgb(245 158 11 / 0.6))'
+      : 'linear-gradient(to bottom, rgb(59 130 246 / 0.6), rgb(16 185 129 / 0.6))';
+
   return (
     <div className="space-y-6">
       {/* Metrics Summary Row */}
@@ -226,8 +241,20 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
           </div>
 
           <div className="relative pl-7">
-            {/* Vertical timeline rail */}
-            <div className="absolute left-[10px] top-5 bottom-5 w-[2px] bg-primary/20 rounded-full" />
+            {/* Vertical timeline rail — background track + animated fill */}
+            <div className="absolute left-[10px] top-5 bottom-5 w-[2px] rounded-full overflow-hidden">
+              {/* Static background track */}
+              <div className="absolute inset-0 bg-primary/15" />
+              {/* Animated gradient fill overlay */}
+              <div
+                className="absolute top-0 left-0 right-0 rounded-full"
+                style={{
+                  height: `${railFillPct}%`,
+                  background: railGradient,
+                  transition: 'height 300ms ease-out',
+                }}
+              />
+            </div>
 
             {steps.map((step, i) => {
               const prev = steps[i - 1];
@@ -235,6 +262,8 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
                 prev?.ended_at_ms != null
                   ? step.started_at_ms - prev.ended_at_ms
                   : null;
+              const isCompleted = step.ended_at_ms != null;
+              const isActive = !isCompleted && isLive;
 
               return (
                 <Fragment key={step.step_index}>
@@ -251,7 +280,18 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
 
                   {/* Step with circle node */}
                   <div className="relative">
-                    <div className="absolute left-[-22px] top-[16px] w-2.5 h-2.5 rounded-full border-2 border-primary/30 bg-background z-10" />
+                    {/* Node circle — colored by status, pulsing when active */}
+                    <div
+                      className={`absolute left-[-22px] top-[16px] w-2.5 h-2.5 rounded-full border-2 z-10 transition-colors duration-300 ${
+                        isActive
+                          ? 'border-blue-400 bg-blue-400 animate-pulse'
+                          : isCompleted
+                            ? hasErrors
+                              ? 'border-red-400/60 bg-red-400/40'
+                              : 'border-emerald-400/60 bg-emerald-400/40'
+                            : 'border-primary/30 bg-background'
+                      }`}
+                    />
                     <ToolCallCard step={step} />
                   </div>
                 </Fragment>

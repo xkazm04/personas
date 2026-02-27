@@ -10,6 +10,8 @@ export function ToolSelector() {
   const credentials = usePersonaStore((state) => state.credentials);
   const assignTool = usePersonaStore((state) => state.assignTool);
   const removeTool = usePersonaStore((state) => state.removeTool);
+  const bulkAssignTools = usePersonaStore((state) => state.bulkAssignTools);
+  const bulkRemoveTools = usePersonaStore((state) => state.bulkRemoveTools);
   const setSidebarSection = usePersonaStore((state) => state.setSidebarSection);
   const setCredentialView = usePersonaStore((state) => state.setCredentialView);
   const toolUsageSummary = usePersonaStore((state) => state.toolUsageSummary);
@@ -147,20 +149,17 @@ export function ToolSelector() {
 
   const handleClearAll = async () => {
     clearUndoToast();
-    for (const tool of assignedTools) {
-      await removeTool(personaId, tool.id);
-    }
+    await bulkRemoveTools(personaId, assignedTools.map((t) => t.id));
   };
 
   const handleBulkToggle = async (tools: typeof filteredTools, allAssigned: boolean) => {
     clearUndoToast();
-    for (const tool of tools) {
-      const isAssigned = assignedToolIds.includes(tool.id);
-      if (allAssigned && isAssigned) {
-        await removeTool(personaId, tool.id);
-      } else if (!allAssigned && !isAssigned) {
-        await assignTool(personaId, tool.id);
-      }
+    if (allAssigned) {
+      const toRemove = tools.filter((t) => assignedToolIds.includes(t.id)).map((t) => t.id);
+      await bulkRemoveTools(personaId, toRemove);
+    } else {
+      const toAssign = tools.filter((t) => !assignedToolIds.includes(t.id)).map((t) => t.id);
+      await bulkAssignTools(personaId, toAssign);
     }
   };
 

@@ -18,6 +18,7 @@ import type { GroupSlice } from "./slices/groupSlice";
 import type { MemorySlice } from "./slices/memorySlice";
 import type { UiSlice } from "./slices/uiSlice";
 import type { TestSlice } from "./slices/testSlice";
+import type { LabSlice } from "./slices/labSlice";
 import type { CloudSlice } from "./slices/cloudSlice";
 import type { GitLabSlice } from "./slices/gitlabSlice";
 
@@ -44,5 +45,6 @@ export type PersonaStore = PersonaSlice &
   MemorySlice &
   UiSlice &
   TestSlice &
+  LabSlice &
   CloudSlice &
   GitLabSlice;

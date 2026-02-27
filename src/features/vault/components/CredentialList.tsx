@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Key, LayoutTemplate, Sparkles, Plug, ArrowRight } from 'lucide-react';
 import { CredentialCard } from '@/features/vault/components/CredentialCard';
@@ -9,6 +9,10 @@ import * as api from '@/api/tauriApi';
 
 /** Well-known service names for quick-start buttons. Matched by connector `name`. */
 const QUICK_START_SERVICES = ['openai', 'slack', 'github', 'linear'] as const;
+
+function capitalize(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
 
 interface CredentialListProps {
   credentials: CredentialMetadata[];
@@ -116,6 +120,19 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
     setExpandedId(prev => prev === id ? null : id);
   };
 
+  const grouped = useMemo(() => {
+    const groups: Record<string, { credential: CredentialMetadata; connector?: ConnectorDefinition }[]> = {};
+    for (const cred of filteredCredentials) {
+      const conn = getConnectorForType(cred.service_type);
+      const cat = conn?.category || 'other';
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push({ credential: cred, connector: conn });
+    }
+    return Object.entries(groups)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([cat, items]) => ({ category: cat, items }));
+  }, [filteredCredentials, connectorDefinitions]);
+
   return (
     <motion.div
       key="list"
@@ -124,18 +141,25 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
       exit={{ opacity: 0 }}
       className="space-y-2"
     >
-      {filteredCredentials.map((credential) => (
-        <CredentialCard
-          key={credential.id}
-          credential={credential}
-          connector={getConnectorForType(credential.service_type)}
-          isExpanded={expandedId === credential.id}
-          onToggleExpand={() => toggleExpand(credential.id)}
-          onDelete={onDelete}
-          onHealthcheck={handleHealthcheck}
-          isHealthchecking={healthchecking === credential.id}
-          healthcheckResult={healthcheckResults[credential.id] || null}
-        />
+      {grouped.map(({ category, items }, gi) => (
+        <div key={category}>
+          <p className={`text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/40 mb-2 ${gi > 0 ? 'mt-4' : ''}`}>
+            {capitalize(category)}
+          </p>
+          {items.map(({ credential, connector }) => (
+            <CredentialCard
+              key={credential.id}
+              credential={credential}
+              connector={connector}
+              isExpanded={expandedId === credential.id}
+              onToggleExpand={() => toggleExpand(credential.id)}
+              onDelete={onDelete}
+              onHealthcheck={handleHealthcheck}
+              isHealthchecking={healthchecking === credential.id}
+              healthcheckResult={healthcheckResults[credential.id] || null}
+            />
+          ))}
+        </div>
       ))}
 
       {filteredCredentials.length === 0 && credentials.length > 0 && (

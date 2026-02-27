@@ -1,0 +1,35 @@
+{
+  "id": "builtin-discord",
+  "name": "discord",
+  "label": "Discord",
+  "color": "#5865F2",
+  "icon_url": "/icons/connectors/discord.svg",
+  "category": "messaging",
+  "fields": [
+    {
+      "key": "bot_token",
+      "label": "Bot Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "From Discord Developer Portal → Bot → Token"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://discord.com/api/v10/users/@me",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bot {{bot_token}}"
+    },
+    "description": "Validates bot token via Discord users/@me endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Discord bot integration for server messaging, moderation, and notifications.",
+    "auth_type": "bot_token",
+    "auth_type_label": "Bot Token",
+    "docs_url": "https://discord.com/developers/applications"
+  }
+}

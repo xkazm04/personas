@@ -7,15 +7,14 @@ use crate::engine::credential_negotiator;
 use crate::error::AppError;
 use crate::AppState;
 
-use super::credential_design::{
-    run_credential_task, run_claude_prompt,
-    CredentialTaskMessages, CredentialTaskParams,
+use super::ai_artifact_flow::{
+    AiArtifactMessages, AiArtifactParams, run_ai_artifact_task, run_claude_prompt,
 };
 use super::shared::build_credential_task_cli_args;
 
 // ── Negotiation messages ────────────────────────────────────────
 
-const NEGOTIATION_MESSAGES: CredentialTaskMessages = CredentialTaskMessages {
+const NEGOTIATION_MESSAGES: AiArtifactMessages = AiArtifactMessages {
     status_event: "credential-negotiation-status",
     progress_event: "credential-negotiation-progress",
     id_field: "negotiation_id",
@@ -60,7 +59,7 @@ pub async fn start_credential_negotiation(
     let neg_id = negotiation_id.clone();
 
     tokio::spawn(async move {
-        run_credential_task(CredentialTaskParams {
+        run_ai_artifact_task(AiArtifactParams {
             app,
             task_id: neg_id,
             prompt_text: negotiation_prompt,
@@ -112,4 +111,3 @@ pub async fn get_negotiation_step_help(
 
     Ok(help_result)
 }
-

@@ -116,6 +116,7 @@ export function initAuthListener() {
   authListenerAttached = true;
   listen<AuthStateResponse>("auth-state-changed", (event) => {
     clearLoginTimeout();
+    const prev = useAuthStore.getState();
     const state = event.payload;
     useAuthStore.setState({
       user: state.user,
@@ -123,5 +124,12 @@ export function initAuthListener() {
       isOffline: state.is_offline,
       isLoading: false,
     });
+
+    // When user becomes authenticated, auto-initialize cloud connection
+    if (state.is_authenticated && !prev.isAuthenticated) {
+      import("@/stores/personaStore").then(({ usePersonaStore }) => {
+        usePersonaStore.getState().cloudInitialize();
+      });
+    }
   });
 }

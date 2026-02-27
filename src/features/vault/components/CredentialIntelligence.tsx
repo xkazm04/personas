@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Activity, Users, Clock, Shield, AlertTriangle } from 'lucide-react';
-import { formatTimestamp } from '@/lib/utils/formatters';
+import { formatTimestamp, formatRelativeTime } from '@/lib/utils/formatters';
 import {
   getCredentialAuditLog,
   getCredentialUsageStats,
@@ -16,12 +16,12 @@ interface CredentialIntelligenceProps {
 
 type IntelTab = 'overview' | 'dependents' | 'audit';
 
-const OP_LABELS: Record<string, { label: string; color: string }> = {
-  decrypt: { label: 'Decrypted', color: 'text-blue-400' },
-  create: { label: 'Created', color: 'text-emerald-400' },
-  update: { label: 'Updated', color: 'text-amber-400' },
-  delete: { label: 'Deleted', color: 'text-red-400' },
-  healthcheck: { label: 'Healthcheck', color: 'text-indigo-400' },
+const OP_LABELS: Record<string, { label: string; color: string; dot: string }> = {
+  decrypt: { label: 'Decrypted', color: 'text-blue-400', dot: 'bg-blue-400' },
+  create: { label: 'Created', color: 'text-emerald-400', dot: 'bg-emerald-400' },
+  update: { label: 'Updated', color: 'text-purple-400', dot: 'bg-purple-400' },
+  delete: { label: 'Deleted', color: 'text-red-400', dot: 'bg-red-400' },
+  healthcheck: { label: 'Healthcheck', color: 'text-amber-400', dot: 'bg-amber-400' },
 };
 
 export function CredentialIntelligence({ credentialId }: CredentialIntelligenceProps) {
@@ -183,31 +183,54 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
 
       {/* Audit log tab */}
       {tab === 'audit' && (
-        <div className="space-y-1">
+        <div data-testid="audit-log-tab">
           {auditLog.length === 0 ? (
-            <div className="text-sm text-muted-foreground/80 py-3 text-center">
+            <div className="text-sm text-muted-foreground/80 py-3 text-center" data-testid="audit-log-empty">
               No audit entries yet. Operations will be logged as they occur.
             </div>
           ) : (
-            <div className="max-h-60 overflow-y-auto space-y-0.5 pr-1">
-              {auditLog.map((entry) => {
-                const op = OP_LABELS[entry.operation] ?? { label: entry.operation, color: 'text-muted-foreground' };
+            <div className="max-h-60 overflow-y-auto pr-1" data-testid="audit-log-timeline">
+              {auditLog.map((entry, idx) => {
+                const op = OP_LABELS[entry.operation] ?? { label: entry.operation, color: 'text-muted-foreground', dot: 'bg-muted-foreground' };
+                const isFirst = idx === 0;
+                const isLast = idx === auditLog.length - 1;
                 return (
                   <div
                     key={entry.id}
-                    className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-secondary/30 transition-colors group"
+                    className="flex gap-3 group"
+                    data-testid={`audit-entry-${entry.id}`}
                   >
-                    <span className={`text-sm font-medium w-16 shrink-0 ${op.color}`}>
-                      {op.label}
-                    </span>
-                    <span className="text-sm text-foreground/80 truncate flex-1">
-                      {entry.persona_name
-                        ? `by ${entry.persona_name}`
-                        : entry.detail ?? ''}
-                    </span>
-                    <span className="text-sm text-muted-foreground/80 shrink-0 tabular-nums">
-                      {formatTimestamp(entry.created_at, '')}
-                    </span>
+                    {/* Timeline rail */}
+                    <div className="flex flex-col items-center shrink-0 w-3">
+                      {/* Dot */}
+                      <div
+                        className={`rounded-full shrink-0 ${op.dot} ${
+                          isFirst ? 'w-3 h-3 ring-2 ring-background shadow-sm' : 'w-2 h-2 mt-0.5'
+                        }`}
+                        data-testid={`audit-dot-${entry.id}`}
+                      />
+                      {/* Connecting line */}
+                      {!isLast && (
+                        <div className="flex-1 w-px border-l border-border/20 min-h-[16px]" />
+                      )}
+                    </div>
+
+                    {/* Entry content */}
+                    <div className="flex-1 min-w-0 pb-3">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-sm font-medium shrink-0 ${op.color}`} data-testid={`audit-op-${entry.id}`}>
+                          {op.label}
+                        </span>
+                        <span className="text-sm text-foreground/80 truncate">
+                          {entry.persona_name
+                            ? `by ${entry.persona_name}`
+                            : entry.detail ?? ''}
+                        </span>
+                      </div>
+                      <span className="text-xs text-muted-foreground/60 tabular-nums" data-testid={`audit-time-${entry.id}`}>
+                        {formatRelativeTime(entry.created_at, '')}
+                      </span>
+                    </div>
                   </div>
                 );
               })}

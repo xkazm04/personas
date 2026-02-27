@@ -102,6 +102,14 @@ pub fn list_review_connectors(
 }
 
 #[tauri::command]
+pub fn cleanup_duplicate_reviews(
+    state: State<'_, Arc<AppState>>,
+) -> Result<serde_json::Value, AppError> {
+    let deleted = repo::cleanup_duplicate_reviews(&state.db)?;
+    Ok(serde_json::json!({ "deleted": deleted }))
+}
+
+#[tauri::command]
 pub async fn start_design_review_run(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
@@ -596,18 +604,11 @@ pub async fn rebuild_design_review(
 
     // Initialize job in n8n job_state for background tracking
     let cancel_token = CancellationToken::new();
-    {
-        let mut jobs = n8n_job_state::lock_jobs()?;
-        n8n_job_state::evict_stale_n8n_jobs(&mut jobs);
-        jobs.insert(
-            rebuild_id.clone(),
-            n8n_job_state::N8nTransformJobState {
-                status: "running".into(),
-                cancel_token: Some(cancel_token.clone()),
-                ..Default::default()
-            },
-        );
-    }
+    n8n_job_state::manager().insert_running(
+        rebuild_id.clone(),
+        cancel_token.clone(),
+        n8n_job_state::N8nTransformExtra::default(),
+    )?;
     n8n_job_state::set_n8n_transform_status(&app, &rebuild_id, "running", None);
 
     let rebuild_id_ret = rebuild_id.clone();

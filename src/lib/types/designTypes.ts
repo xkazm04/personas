@@ -118,3 +118,36 @@ export interface ConnectorReadinessStatus {
   health: "ready" | "missing" | "unhealthy" | "unknown";
 }
 
+// ── Design Conversations ──────────────────────────────────────────
+
+/** A single message in a persistent design conversation thread */
+export interface DesignConversationMessage {
+  role: "user" | "assistant" | "system";
+  content: string;
+  /** UI rendering hint: instruction, feedback, question, answer, result, error */
+  messageType?: string;
+  timestamp: string;
+}
+
+/** A persistent design conversation that accumulates multi-turn context */
+export interface DesignConversation {
+  id: string;
+  personaId: string;
+  title: string;
+  status: "active" | "completed" | "abandoned";
+  /** JSON-serialized DesignConversationMessage[] */
+  messages: string;
+  lastResult?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Helper to parse the messages JSON string from a DesignConversation */
+export function parseConversationMessages(messagesJson: string): DesignConversationMessage[] {
+  try {
+    return JSON.parse(messagesJson) as DesignConversationMessage[];
+  } catch {
+    return [];
+  }
+}
+

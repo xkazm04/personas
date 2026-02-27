@@ -675,6 +675,141 @@ CREATE TABLE IF NOT EXISTS healing_knowledge (
 CREATE INDEX IF NOT EXISTS idx_hk_service ON healing_knowledge(service_type);
 CREATE INDEX IF NOT EXISTS idx_hk_pattern ON healing_knowledge(pattern_key);
 
+-- ============================================================================
+-- Lab: Arena Runs & Results (Multi-model comparison)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS lab_arena_runs (
+    id              TEXT PRIMARY KEY,
+    persona_id      TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+    status          TEXT NOT NULL DEFAULT 'generating',
+    models_tested   TEXT NOT NULL DEFAULT '[]',
+    scenarios_count INTEGER NOT NULL DEFAULT 0,
+    use_case_filter TEXT,
+    summary         TEXT,
+    error           TEXT,
+    created_at      TEXT NOT NULL,
+    completed_at    TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_lab_arena_runs_persona ON lab_arena_runs(persona_id);
+CREATE INDEX IF NOT EXISTS idx_lab_arena_runs_created ON lab_arena_runs(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS lab_arena_results (
+    id                    TEXT PRIMARY KEY,
+    run_id                TEXT NOT NULL REFERENCES lab_arena_runs(id) ON DELETE CASCADE,
+    scenario_name         TEXT NOT NULL,
+    model_id              TEXT NOT NULL,
+    provider              TEXT NOT NULL DEFAULT 'anthropic',
+    status                TEXT NOT NULL DEFAULT 'pending',
+    output_preview        TEXT,
+    tool_calls_expected   TEXT,
+    tool_calls_actual     TEXT,
+    tool_accuracy_score   INTEGER,
+    output_quality_score  INTEGER,
+    protocol_compliance   INTEGER,
+    input_tokens          INTEGER NOT NULL DEFAULT 0,
+    output_tokens         INTEGER NOT NULL DEFAULT 0,
+    cost_usd              REAL NOT NULL DEFAULT 0.0,
+    duration_ms           INTEGER NOT NULL DEFAULT 0,
+    error_message         TEXT,
+    created_at            TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_lab_arena_results_run ON lab_arena_results(run_id);
+
+-- ============================================================================
+-- Lab: A/B Runs & Results (Prompt version comparison)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS lab_ab_runs (
+    id              TEXT PRIMARY KEY,
+    persona_id      TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+    status          TEXT NOT NULL DEFAULT 'generating',
+    version_a_id    TEXT NOT NULL,
+    version_b_id    TEXT NOT NULL,
+    version_a_num   INTEGER NOT NULL,
+    version_b_num   INTEGER NOT NULL,
+    models_tested   TEXT NOT NULL DEFAULT '[]',
+    scenarios_count INTEGER NOT NULL DEFAULT 0,
+    use_case_filter TEXT,
+    test_input      TEXT,
+    summary         TEXT,
+    error           TEXT,
+    created_at      TEXT NOT NULL,
+    completed_at    TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_lab_ab_runs_persona ON lab_ab_runs(persona_id);
+CREATE INDEX IF NOT EXISTS idx_lab_ab_runs_created ON lab_ab_runs(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS lab_ab_results (
+    id                    TEXT PRIMARY KEY,
+    run_id                TEXT NOT NULL REFERENCES lab_ab_runs(id) ON DELETE CASCADE,
+    version_id            TEXT NOT NULL,
+    version_number        INTEGER NOT NULL,
+    scenario_name         TEXT NOT NULL,
+    model_id              TEXT NOT NULL,
+    provider              TEXT NOT NULL DEFAULT 'anthropic',
+    status                TEXT NOT NULL DEFAULT 'pending',
+    output_preview        TEXT,
+    tool_calls_expected   TEXT,
+    tool_calls_actual     TEXT,
+    tool_accuracy_score   INTEGER,
+    output_quality_score  INTEGER,
+    protocol_compliance   INTEGER,
+    input_tokens          INTEGER NOT NULL DEFAULT 0,
+    output_tokens         INTEGER NOT NULL DEFAULT 0,
+    cost_usd              REAL NOT NULL DEFAULT 0.0,
+    duration_ms           INTEGER NOT NULL DEFAULT 0,
+    error_message         TEXT,
+    created_at            TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_lab_ab_results_run ON lab_ab_results(run_id);
+
+-- ============================================================================
+-- Lab: Matrix Runs & Results (Draft generation + comparison)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS lab_matrix_runs (
+    id                   TEXT PRIMARY KEY,
+    persona_id           TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+    status               TEXT NOT NULL DEFAULT 'drafting',
+    user_instruction     TEXT NOT NULL,
+    draft_prompt_json    TEXT,
+    draft_change_summary TEXT,
+    models_tested        TEXT NOT NULL DEFAULT '[]',
+    scenarios_count      INTEGER NOT NULL DEFAULT 0,
+    use_case_filter      TEXT,
+    summary              TEXT,
+    error                TEXT,
+    draft_accepted       INTEGER NOT NULL DEFAULT 0,
+    created_at           TEXT NOT NULL,
+    completed_at         TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_lab_matrix_runs_persona ON lab_matrix_runs(persona_id);
+CREATE INDEX IF NOT EXISTS idx_lab_matrix_runs_created ON lab_matrix_runs(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS lab_matrix_results (
+    id                    TEXT PRIMARY KEY,
+    run_id                TEXT NOT NULL REFERENCES lab_matrix_runs(id) ON DELETE CASCADE,
+    variant               TEXT NOT NULL CHECK(variant IN ('current', 'draft')),
+    scenario_name         TEXT NOT NULL,
+    model_id              TEXT NOT NULL,
+    provider              TEXT NOT NULL DEFAULT 'anthropic',
+    status                TEXT NOT NULL DEFAULT 'pending',
+    output_preview        TEXT,
+    tool_calls_expected   TEXT,
+    tool_calls_actual     TEXT,
+    tool_accuracy_score   INTEGER,
+    output_quality_score  INTEGER,
+    protocol_compliance   INTEGER,
+    input_tokens          INTEGER NOT NULL DEFAULT 0,
+    output_tokens         INTEGER NOT NULL DEFAULT 0,
+    cost_usd              REAL NOT NULL DEFAULT 0.0,
+    duration_ms           INTEGER NOT NULL DEFAULT 0,
+    error_message         TEXT,
+    created_at            TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_lab_matrix_results_run ON lab_matrix_results(run_id);
+
 "#;
 
 /// Incremental migrations for columns added after the initial schema.
@@ -837,6 +972,217 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
              CREATE INDEX IF NOT EXISTS idx_pe_use_case ON persona_executions(use_case_id);"
         )?;
         tracing::info!("Added use_case_id column to persona_executions");
+    }
+
+    // Add use_case_id to persona_triggers
+    let has_trigger_use_case_id: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_triggers') WHERE name = 'use_case_id'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if !has_trigger_use_case_id {
+        conn.execute_batch(
+            "ALTER TABLE persona_triggers ADD COLUMN use_case_id TEXT;
+             CREATE INDEX IF NOT EXISTS idx_pt_use_case ON persona_triggers(use_case_id);"
+        )?;
+        tracing::info!("Added use_case_id column to persona_triggers");
+    }
+
+    // Add use_case_id to persona_event_subscriptions
+    let has_sub_use_case_id: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_event_subscriptions') WHERE name = 'use_case_id'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if !has_sub_use_case_id {
+        conn.execute_batch(
+            "ALTER TABLE persona_event_subscriptions ADD COLUMN use_case_id TEXT;
+             CREATE INDEX IF NOT EXISTS idx_pes_use_case ON persona_event_subscriptions(use_case_id);"
+        )?;
+        tracing::info!("Added use_case_id column to persona_event_subscriptions");
+    }
+
+    // Add use_case_id to persona_events
+    let has_event_use_case_id: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_events') WHERE name = 'use_case_id'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if !has_event_use_case_id {
+        conn.execute_batch(
+            "ALTER TABLE persona_events ADD COLUMN use_case_id TEXT;
+             CREATE INDEX IF NOT EXISTS idx_pevt_use_case ON persona_events(use_case_id);"
+        )?;
+        tracing::info!("Added use_case_id column to persona_events");
+    }
+
+    // Migrate existing persona_test_runs → lab_arena_runs (one-time copy)
+    let arena_count: i64 = conn
+        .prepare("SELECT COUNT(*) FROM lab_arena_runs")?
+        .query_row([], |row| row.get(0))
+        .unwrap_or(0);
+    let old_test_count: i64 = conn
+        .prepare("SELECT COUNT(*) FROM persona_test_runs")?
+        .query_row([], |row| row.get(0))
+        .unwrap_or(0);
+    if arena_count == 0 && old_test_count > 0 {
+        conn.execute_batch(
+            "INSERT OR IGNORE INTO lab_arena_runs (id, persona_id, status, models_tested, scenarios_count, summary, error, created_at, completed_at)
+             SELECT id, persona_id, status, models_tested, scenarios_count, summary, error, created_at, completed_at
+             FROM persona_test_runs;
+
+             INSERT OR IGNORE INTO lab_arena_results (id, run_id, scenario_name, model_id, provider, status, output_preview, tool_calls_expected, tool_calls_actual, tool_accuracy_score, output_quality_score, protocol_compliance, input_tokens, output_tokens, cost_usd, duration_ms, error_message, created_at)
+             SELECT id, test_run_id, scenario_name, model_id, provider, status, output_preview, tool_calls_expected, tool_calls_actual, tool_accuracy_score, output_quality_score, protocol_compliance, input_tokens, output_tokens, cost_usd, duration_ms, error_message, created_at
+             FROM persona_test_results;"
+        )?;
+        tracing::info!("Migrated {} test runs to lab_arena_runs", old_test_count);
+    }
+
+    // Add design_conversations table (persistent multi-turn design sessions)
+    let has_design_conversations: bool = conn
+        .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='design_conversations'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_design_conversations {
+        conn.execute_batch(
+            "CREATE TABLE IF NOT EXISTS design_conversations (
+                id          TEXT PRIMARY KEY,
+                persona_id  TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+                title       TEXT NOT NULL,
+                status      TEXT NOT NULL DEFAULT 'active'
+                            CHECK(status IN ('active','completed','abandoned')),
+                messages    TEXT NOT NULL DEFAULT '[]',
+                last_result TEXT,
+                created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_dc_persona ON design_conversations(persona_id);
+            CREATE INDEX IF NOT EXISTS idx_dc_status  ON design_conversations(status);
+            CREATE INDEX IF NOT EXISTS idx_dc_updated ON design_conversations(updated_at DESC);"
+        )?;
+        tracing::info!("Created design_conversations table");
+    }
+
+    // Add lab_eval_runs / lab_eval_results tables (N prompt versions × M models evaluation matrix)
+    let has_eval_runs: bool = conn
+        .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='lab_eval_runs'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_eval_runs {
+        conn.execute_batch(
+            "CREATE TABLE IF NOT EXISTS lab_eval_runs (
+                id              TEXT PRIMARY KEY,
+                persona_id      TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+                status          TEXT NOT NULL DEFAULT 'generating',
+                version_ids     TEXT NOT NULL DEFAULT '[]',
+                version_numbers TEXT NOT NULL DEFAULT '[]',
+                models_tested   TEXT NOT NULL DEFAULT '[]',
+                scenarios_count INTEGER NOT NULL DEFAULT 0,
+                use_case_filter TEXT,
+                test_input      TEXT,
+                summary         TEXT,
+                error           TEXT,
+                created_at      TEXT NOT NULL,
+                completed_at    TEXT
+            );
+            CREATE INDEX IF NOT EXISTS idx_lab_eval_runs_persona ON lab_eval_runs(persona_id);
+            CREATE INDEX IF NOT EXISTS idx_lab_eval_runs_created ON lab_eval_runs(created_at DESC);
+
+            CREATE TABLE IF NOT EXISTS lab_eval_results (
+                id                    TEXT PRIMARY KEY,
+                run_id                TEXT NOT NULL REFERENCES lab_eval_runs(id) ON DELETE CASCADE,
+                version_id            TEXT NOT NULL,
+                version_number        INTEGER NOT NULL,
+                scenario_name         TEXT NOT NULL,
+                model_id              TEXT NOT NULL,
+                provider              TEXT NOT NULL DEFAULT 'anthropic',
+                status                TEXT NOT NULL DEFAULT 'pending',
+                output_preview        TEXT,
+                tool_calls_expected   TEXT,
+                tool_calls_actual     TEXT,
+                tool_accuracy_score   INTEGER,
+                output_quality_score  INTEGER,
+                protocol_compliance   INTEGER,
+                input_tokens          INTEGER NOT NULL DEFAULT 0,
+                output_tokens         INTEGER NOT NULL DEFAULT 0,
+                cost_usd              REAL NOT NULL DEFAULT 0.0,
+                duration_ms           INTEGER NOT NULL DEFAULT 0,
+                error_message         TEXT,
+                created_at            TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_lab_eval_results_run ON lab_eval_results(run_id);"
+        )?;
+        tracing::info!("Created lab_eval_runs and lab_eval_results tables");
+    }
+
+    // Add test_suites table (reusable test scenario collections)
+    let has_test_suites: bool = conn
+        .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='test_suites'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_test_suites {
+        conn.execute_batch(
+            "CREATE TABLE IF NOT EXISTS test_suites (
+                id              TEXT PRIMARY KEY,
+                persona_id      TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+                name            TEXT NOT NULL,
+                description     TEXT,
+                scenarios       TEXT NOT NULL DEFAULT '[]',
+                scenario_count  INTEGER NOT NULL DEFAULT 0,
+                source_run_id   TEXT,
+                created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_test_suites_persona ON test_suites(persona_id);
+            CREATE INDEX IF NOT EXISTS idx_test_suites_created ON test_suites(created_at DESC);"
+        )?;
+        tracing::info!("Created test_suites table");
+    }
+
+    // Promote persona_groups to workspace containers: add shared resource fields
+    let has_group_description: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_groups') WHERE name = 'description'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if !has_group_description {
+        conn.execute_batch(
+            "ALTER TABLE persona_groups ADD COLUMN description TEXT;
+             ALTER TABLE persona_groups ADD COLUMN default_model_profile TEXT;
+             ALTER TABLE persona_groups ADD COLUMN default_max_budget_usd REAL;
+             ALTER TABLE persona_groups ADD COLUMN default_max_turns INTEGER;
+             ALTER TABLE persona_groups ADD COLUMN shared_instructions TEXT;"
+        )?;
+        tracing::info!("Added workspace fields to persona_groups");
+    }
+
+    // Add unique index on test_case_name to prevent duplicate templates.
+    // First clean up existing duplicates (keep newest per name), then create unique index.
+    let has_unique_name_idx: bool = conn
+        .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_pdr_unique_name'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_unique_name_idx {
+        conn.execute_batch(
+            "DELETE FROM persona_design_reviews
+             WHERE id NOT IN (
+               SELECT id FROM (
+                 SELECT id,
+                        ROW_NUMBER() OVER (PARTITION BY test_case_name ORDER BY created_at DESC) AS rn
+                 FROM persona_design_reviews
+               ) WHERE rn = 1
+             );
+             CREATE UNIQUE INDEX IF NOT EXISTS idx_pdr_unique_name ON persona_design_reviews(test_case_name);"
+        )?;
+        tracing::info!("Cleaned up duplicate design reviews and added unique index on test_case_name");
     }
 
     Ok(())

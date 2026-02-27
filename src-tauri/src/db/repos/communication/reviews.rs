@@ -103,6 +103,9 @@ pub fn create_review(
     let had_refs_int: Option<i32> = input.had_references.map(|b| b as i32);
 
     let conn = pool.get()?;
+
+    // Upsert: if a review with the same test_case_name already exists, update it
+    // instead of creating a duplicate. The newest result replaces the old one.
     conn.execute(
         "INSERT INTO persona_design_reviews
          (id, test_case_id, test_case_name, instruction, status,
@@ -110,7 +113,25 @@ pub fn create_review(
           design_result, structural_evaluation, semantic_evaluation,
           test_run_id, had_references, suggested_adjustment, adjustment_generation,
           use_case_flows, reviewed_at, created_at)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19)",
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19)
+         ON CONFLICT(test_case_name) DO UPDATE SET
+           test_case_id = excluded.test_case_id,
+           instruction = excluded.instruction,
+           status = excluded.status,
+           structural_score = excluded.structural_score,
+           semantic_score = excluded.semantic_score,
+           connectors_used = excluded.connectors_used,
+           trigger_types = excluded.trigger_types,
+           design_result = excluded.design_result,
+           structural_evaluation = excluded.structural_evaluation,
+           semantic_evaluation = excluded.semantic_evaluation,
+           test_run_id = excluded.test_run_id,
+           had_references = excluded.had_references,
+           suggested_adjustment = excluded.suggested_adjustment,
+           adjustment_generation = excluded.adjustment_generation,
+           use_case_flows = excluded.use_case_flows,
+           reviewed_at = excluded.reviewed_at,
+           created_at = excluded.created_at",
         params![
             id,
             input.test_case_id,
@@ -134,7 +155,14 @@ pub fn create_review(
         ],
     )?;
 
-    get_review_by_id(pool, &id)
+    // After upsert, the row might have the old id (if updated) or the new id (if inserted).
+    // Fetch by test_case_name to get the correct row.
+    let row = conn.query_row(
+        "SELECT * FROM persona_design_reviews WHERE test_case_name = ?1",
+        params![input.test_case_name],
+        row_to_review,
+    )?;
+    Ok(row)
 }
 
 pub fn delete_review(pool: &DbPool, id: &str) -> Result<bool, AppError> {
@@ -224,7 +252,7 @@ pub fn get_reviews_paginated(
             let mut connector_conds = Vec::new();
             for c in connectors {
                 connector_conds.push(format!("connectors_used LIKE ?{}", param_idx));
-                params_vec.push(Box::new(format!("%\"{}\"", c)));
+                params_vec.push(Box::new(format!("%\"{}\"%", c)));
                 param_idx += 1;
             }
             // ANY connector matches (OR logic)
@@ -298,6 +326,25 @@ pub fn get_distinct_connectors(pool: &DbPool) -> Result<Vec<ConnectorWithCount>,
         .collect();
     result.sort_by(|a, b| a.name.cmp(&b.name));
     Ok(result)
+}
+
+/// Delete duplicate reviews, keeping only the newest per test_case_name.
+/// Returns the number of rows deleted.
+pub fn cleanup_duplicate_reviews(pool: &DbPool) -> Result<i64, AppError> {
+    let conn = pool.get()?;
+    // Delete all rows that are NOT the newest per test_case_name
+    let deleted = conn.execute(
+        "DELETE FROM persona_design_reviews
+         WHERE id NOT IN (
+           SELECT id FROM (
+             SELECT id,
+                    ROW_NUMBER() OVER (PARTITION BY test_case_name ORDER BY created_at DESC) AS rn
+             FROM persona_design_reviews
+           ) WHERE rn = 1
+         )",
+        [],
+    )?;
+    Ok(deleted as i64)
 }
 
 // ============================================================================

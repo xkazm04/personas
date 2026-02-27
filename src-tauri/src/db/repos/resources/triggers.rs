@@ -53,6 +53,7 @@ fn row_to_trigger(row: &Row) -> rusqlite::Result<PersonaTrigger> {
         next_trigger_at: row.get("next_trigger_at")?,
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
+        use_case_id: row.get("use_case_id")?,
     })
 }
 
@@ -104,9 +105,9 @@ pub fn create(pool: &DbPool, input: CreateTriggerInput) -> Result<PersonaTrigger
         let conn = pool.get()?;
         conn.execute(
             "INSERT INTO persona_triggers
-             (id, persona_id, trigger_type, config, enabled, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6)",
-            params![id, input.persona_id, input.trigger_type, input.config, enabled, now],
+             (id, persona_id, trigger_type, config, enabled, use_case_id, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
+            params![id, input.persona_id, input.trigger_type, input.config, enabled, input.use_case_id, now],
         )?;
     }
 
@@ -374,6 +375,7 @@ mod tests {
                 trigger_type: "schedule".into(),
                 config: Some(r#"{"cron":"0 * * * *"}"#.into()),
                 enabled: Some(true),
+                use_case_id: None,
             },
         )
         .unwrap();
@@ -423,6 +425,7 @@ mod tests {
                 trigger_type: "schedule".into(),
                 config: None,
                 enabled: Some(true),
+                use_case_id: None,
             },
         )
         .unwrap();
@@ -489,6 +492,7 @@ mod tests {
                 trigger_type: "invalid_type".into(),
                 config: None,
                 enabled: Some(true),
+                use_case_id: None,
             },
         );
         assert!(result.is_err());
@@ -506,6 +510,7 @@ mod tests {
                 trigger_type: "schedule".into(),
                 config: Some(r#"{"interval_seconds":0}"#.into()),
                 enabled: Some(true),
+                use_case_id: None,
             },
         );
         assert!(result.is_err());
@@ -523,6 +528,7 @@ mod tests {
                 trigger_type: "schedule".into(),
                 config: Some(r#"{"interval_seconds":3600}"#.into()),
                 enabled: Some(true),
+                use_case_id: None,
             },
         );
         assert!(result.is_ok());
@@ -540,6 +546,7 @@ mod tests {
                 trigger_type: "schedule".into(),
                 config: Some(r#"{"cron":"0 * * * *"}"#.into()),
                 enabled: Some(true),
+                use_case_id: None,
             },
         )
         .unwrap();
@@ -563,6 +570,7 @@ mod tests {
                 trigger_type: "polling".into(),
                 config: Some(r#"{"interval_seconds":300}"#.into()),
                 enabled: Some(true),
+                use_case_id: None,
             },
         )
         .unwrap();
@@ -585,6 +593,7 @@ mod tests {
                 trigger_type: "manual".into(),
                 config: None,
                 enabled: Some(true),
+                use_case_id: None,
             },
         )
         .unwrap();
@@ -607,6 +616,7 @@ mod tests {
                 trigger_type: "schedule".into(),
                 config: Some(r#"{"interval_seconds":null}"#.into()),
                 enabled: Some(true),
+                use_case_id: None,
             },
         );
         assert!(result.is_err());
@@ -624,6 +634,7 @@ mod tests {
                 trigger_type: "manual".into(),
                 config: None,
                 enabled: Some(true),
+                use_case_id: None,
             },
         )
         .unwrap();

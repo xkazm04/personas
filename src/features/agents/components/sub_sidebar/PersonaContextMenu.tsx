@@ -75,7 +75,7 @@ interface PersonaContextMenuProps {
 export function PersonaContextMenu({ state, onClose }: PersonaContextMenuProps) {
   const { persona, x, y } = state;
   const menuRef = useRef<HTMLDivElement>(null);
-  const updatePersona = usePersonaStore((s) => s.updatePersona);
+  const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
   const deletePersona = usePersonaStore((s) => s.deletePersona);
 
   const [showModelSub, setShowModelSub] = useState(false);
@@ -106,14 +106,14 @@ export function PersonaContextMenu({ state, onClose }: PersonaContextMenuProps) 
 
   const handleModelSwitch = useCallback(async (value: string) => {
     const profile = quickModelToProfile(value);
-    await updatePersona(persona.id, { model_profile: profile });
+    await applyPersonaOp(persona.id, { kind: 'SwitchModel', model_profile: profile });
     onClose();
-  }, [persona.id, updatePersona, onClose]);
+  }, [persona.id, applyPersonaOp, onClose]);
 
   const handleToggleEnabled = useCallback(async () => {
-    await updatePersona(persona.id, { enabled: !persona.enabled });
+    await applyPersonaOp(persona.id, { kind: 'ToggleEnabled', enabled: !persona.enabled });
     onClose();
-  }, [persona.id, persona.enabled, updatePersona, onClose]);
+  }, [persona.id, persona.enabled, applyPersonaOp, onClose]);
 
   const handleDelete = useCallback(async () => {
     if (!confirmDelete) {

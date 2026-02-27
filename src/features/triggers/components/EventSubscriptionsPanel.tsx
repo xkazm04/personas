@@ -105,6 +105,7 @@ export function EventSubscriptionsPanel() {
         event_type: newEventType.trim(),
         source_filter: newSourceFilter.trim() || null,
         enabled: true,
+        use_case_id: null,
       });
       setSubscriptions((prev) => [created, ...prev]);
       setAdding(false);

@@ -4,9 +4,64 @@ import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { ChevronDown, ChevronRight, RotateCw, Copy, Check, RefreshCw, Rocket, Play, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as api from '@/api/tauriApi';
-import { formatTimestamp, formatDuration, formatRelativeTime, EXECUTION_STATUS_COLORS, badgeClass } from '@/lib/utils/formatters';
+import { formatTimestamp, formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import { BUILTIN_TEMPLATES } from '@/lib/personas/builtinTemplates';
 import { useCopyToClipboard } from '@/hooks/utility/useCopyToClipboard';
+
+/** Inline 48x16 SVG sparkline for cost trend. No charting library needed. */
+function CostSparkline({ costs }: { costs: number[] }) {
+  if (costs.length < 2) return null;
+
+  const W = 48;
+  const H = 16;
+  const PAD = 1;
+
+  const min = Math.min(...costs);
+  const max = Math.max(...costs);
+  const range = max - min || 1;
+
+  const points = costs.map((c, i) => {
+    const x = PAD + (i / (costs.length - 1)) * (W - PAD * 2);
+    const y = H - PAD - ((c - min) / range) * (H - PAD * 2);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+
+  // Highlight last point amber if it exceeds 2x the median
+  const sorted = [...costs].sort((a, b) => a - b);
+  const median = sorted[Math.floor(sorted.length / 2)]!;
+  const lastCost = costs[costs.length - 1]!;
+  const isSpike = lastCost > median * 2;
+
+  const lastX = PAD + ((costs.length - 1) / (costs.length - 1)) * (W - PAD * 2);
+  const lastY = H - PAD - ((lastCost - min) / range) * (H - PAD * 2);
+
+  return (
+    <svg
+      width={W}
+      height={H}
+      viewBox={`0 0 ${W} ${H}`}
+      className="inline-block align-middle flex-shrink-0"
+      data-testid="cost-sparkline"
+    >
+      <polyline
+        points={points.join(' ')}
+        fill="none"
+        stroke="rgb(161 161 170)" // zinc-400
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+      {isSpike && (
+        <circle
+          cx={lastX.toFixed(1)}
+          cy={lastY.toFixed(1)}
+          r="2"
+          fill="rgb(251 191 36)" // amber-400
+        />
+      )}
+    </svg>
+  );
+}
 
 const TEMPLATE_SAMPLE_INPUT: Record<string, object> = {
   'gmail-maestro': { mode: 'process_inbox', max_emails: 5, labels: ['inbox', 'unread'] },
@@ -139,11 +194,11 @@ export function ExecutionList() {
             <div className="col-span-2">Duration</div>
             <div className="col-span-3">Started</div>
             <div className="col-span-2">Tokens</div>
-            <div className="col-span-3">Error</div>
+            <div className="col-span-3">Cost</div>
           </div>
 
           {/* Rows */}
-          {executions.map((execution) => {
+          {executions.map((execution, execIdx) => {
             const isExpanded = expandedId === execution.id;
 
             const chevron = isExpanded ? (
@@ -152,9 +207,10 @@ export function ExecutionList() {
               <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/80 flex-shrink-0" />
             );
 
+            const statusEntry = getStatusEntry(execution.status);
             const statusBadge = (
-              <span className={`px-2 py-0.5 rounded-md text-sm font-medium ${EXECUTION_STATUS_COLORS[execution.status] ? badgeClass(EXECUTION_STATUS_COLORS[execution.status]!) : ''}`}>
-                {execution.status}
+              <span className={`px-2 py-0.5 rounded-md text-sm font-medium ${badgeClass(statusEntry)}`}>
+                {statusEntry.label}
               </span>
             );
 
@@ -194,10 +250,16 @@ export function ExecutionList() {
                     {' / '}
                     <span title="Output tokens">{formatTokens(execution.output_tokens)}</span>
                   </div>
-                  <div className="col-span-3 flex items-center">
-                    <span className="text-sm text-muted-foreground/80 truncate block">
-                      {execution.error_message || '-'}
+                  <div className="col-span-3 flex items-center gap-2">
+                    <span className="text-sm text-foreground/90 font-mono">
+                      ${execution.cost_usd.toFixed(4)}
                     </span>
+                    <CostSparkline
+                      costs={executions
+                        .slice(execIdx, Math.min(executions.length, execIdx + 10))
+                        .map((e) => e.cost_usd)
+                        .reverse()}
+                    />
                   </div>
                 </motion.div>
 

@@ -13,6 +13,7 @@ import {
   ListChecks,
 } from 'lucide-react';
 import { openExternalUrl } from '@/api/tauriApi';
+import { useStepProgress } from '@/hooks/useStepProgress';
 
 interface InteractiveSetupInstructionsProps {
   markdown: string;
@@ -246,13 +247,17 @@ export function InteractiveSetupInstructions({
   markdown,
   firstSetupUrl,
 }: InteractiveSetupInstructionsProps) {
-  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [isOpen, setIsOpen] = useState(false);
 
   const { preamble, steps } = useMemo(() => parseSteps(markdown), [markdown]);
   const hasSteps = steps.length > 0;
-  const completedCount = completedSteps.size;
-  const totalSteps = steps.length;
+
+  const {
+    completedSteps,
+    completedCount,
+    totalSteps,
+    toggleStep,
+  } = useStepProgress(steps.length);
 
   const handleOpenUrl = useCallback(async (url: string) => {
     try {
@@ -263,18 +268,6 @@ export function InteractiveSetupInstructions({
   }, []);
 
   const components = useMemo(() => buildComponents(handleOpenUrl), [handleOpenUrl]);
-
-  const toggleStep = useCallback((index: number) => {
-    setCompletedSteps((prev) => {
-      const next = new Set(prev);
-      if (next.has(index)) {
-        next.delete(index);
-      } else {
-        next.add(index);
-      }
-      return next;
-    });
-  }, []);
 
   return (
     <div className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
@@ -288,16 +281,55 @@ export function InteractiveSetupInstructions({
           Setup instructions
         </span>
 
-        {/* Progress badge */}
+        {/* Progress ring + badge */}
         {hasSteps && (
-          <span className={`text-sm font-medium px-1.5 py-0.5 rounded ${
-            completedCount === totalSteps && totalSteps > 0
-              ? 'bg-emerald-500/15 text-emerald-400'
-              : completedCount > 0
-                ? 'bg-primary/10 text-primary/70'
-                : 'bg-secondary/50 text-muted-foreground/80'
-          }`}>
-            {completedCount}/{totalSteps}
+          <span className="inline-flex items-center gap-1.5">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              className="shrink-0 -rotate-90"
+              data-testid="setup-progress-ring"
+            >
+              {/* Background track */}
+              <circle
+                cx="12"
+                cy="12"
+                r="9"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                className="text-secondary/40"
+              />
+              {/* Progress arc */}
+              <circle
+                cx="12"
+                cy="12"
+                r="9"
+                fill="none"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                stroke="url(#setup-ring-gradient)"
+                strokeDasharray={2 * Math.PI * 9}
+                strokeDashoffset={totalSteps > 0 ? 2 * Math.PI * 9 * (1 - completedCount / totalSteps) : 2 * Math.PI * 9}
+                style={{ transition: 'stroke-dashoffset 0.3s ease-out' }}
+              />
+              <defs>
+                <linearGradient id="setup-ring-gradient" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" style={{ stopColor: 'var(--color-primary)', stopOpacity: 0.6 }} />
+                  <stop offset="100%" style={{ stopColor: 'rgb(16 185 129)', stopOpacity: 0.6 }} />
+                </linearGradient>
+              </defs>
+            </svg>
+            <span className={`text-sm font-medium px-1.5 py-0.5 rounded ${
+              completedCount === totalSteps && totalSteps > 0
+                ? 'bg-emerald-500/15 text-emerald-400'
+                : completedCount > 0
+                  ? 'bg-primary/10 text-primary/70'
+                  : 'bg-secondary/50 text-muted-foreground/80'
+            }`}>
+              {completedCount}/{totalSteps}
+            </span>
           </span>
         )}
 
@@ -332,20 +364,6 @@ export function InteractiveSetupInstructions({
           transition={{ duration: 0.15 }}
           className="px-4 pb-3"
         >
-          {/* Progress bar (only when there are steps) */}
-          {hasSteps && totalSteps > 1 && (
-            <div className="mb-3">
-              <div className="h-1 bg-secondary/40 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${totalSteps > 0 ? (completedCount / totalSteps) * 100 : 0}%` }}
-                  transition={{ duration: 0.3, ease: 'easeOut' }}
-                  className="h-full bg-gradient-to-r from-primary/60 to-emerald-500/60 rounded-full"
-                />
-              </div>
-            </div>
-          )}
-
           {/* Preamble (non-step content before the numbered list) */}
           {preamble && (
             <div className="px-3 py-2 mb-2 bg-background/40 rounded-lg border border-primary/10">

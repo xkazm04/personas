@@ -11,6 +11,11 @@ fn row_to_group(row: &Row) -> rusqlite::Result<PersonaGroup> {
         color: row.get("color")?,
         sort_order: row.get("sort_order")?,
         collapsed: row.get::<_, i32>("collapsed")? != 0,
+        description: row.get("description").ok().flatten(),
+        default_model_profile: row.get("default_model_profile").ok().flatten(),
+        default_max_budget_usd: row.get("default_max_budget_usd").ok().flatten(),
+        default_max_turns: row.get("default_max_turns").ok().flatten(),
+        shared_instructions: row.get("shared_instructions").ok().flatten(),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -66,9 +71,9 @@ pub fn create(pool: &DbPool, input: CreatePersonaGroupInput) -> Result<PersonaGr
     };
 
     conn.execute(
-        "INSERT INTO persona_groups (id, name, color, sort_order, collapsed, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, 0, ?5, ?5)",
-        params![id, input.name, color, sort_order, now],
+        "INSERT INTO persona_groups (id, name, color, sort_order, collapsed, description, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, 0, ?5, ?6, ?6)",
+        params![id, input.name, color, sort_order, input.description, now],
     )?;
 
     get_by_id(pool, &id)
@@ -93,6 +98,11 @@ pub fn update(
     push_field!(input.color, "color", sets, param_idx);
     push_field!(input.sort_order, "sort_order", sets, param_idx);
     push_field!(input.collapsed, "collapsed", sets, param_idx);
+    push_field!(input.description, "description", sets, param_idx);
+    push_field!(input.default_model_profile, "default_model_profile", sets, param_idx);
+    push_field!(input.default_max_budget_usd, "default_max_budget_usd", sets, param_idx);
+    push_field!(input.default_max_turns, "default_max_turns", sets, param_idx);
+    push_field!(input.shared_instructions, "shared_instructions", sets, param_idx);
 
     let sql = format!(
         "UPDATE persona_groups SET {} WHERE id = ?{}",
@@ -113,6 +123,21 @@ pub fn update(
     }
     if let Some(v) = input.collapsed {
         param_values.push(Box::new(v as i32));
+    }
+    if let Some(ref v) = input.description {
+        param_values.push(Box::new(v.clone()));
+    }
+    if let Some(ref v) = input.default_model_profile {
+        param_values.push(Box::new(v.clone()));
+    }
+    if let Some(v) = input.default_max_budget_usd {
+        param_values.push(Box::new(v));
+    }
+    if let Some(v) = input.default_max_turns {
+        param_values.push(Box::new(v));
+    }
+    if let Some(ref v) = input.shared_instructions {
+        param_values.push(Box::new(v.clone()));
     }
     param_values.push(Box::new(id.to_string()));
 
@@ -163,6 +188,7 @@ mod tests {
                 name: "Alpha".into(),
                 color: Some("#ff0000".into()),
                 sort_order: None,
+                description: Some("Alpha workspace".into()),
             },
         )
         .unwrap();
@@ -170,6 +196,7 @@ mod tests {
         assert_eq!(g1.color, "#ff0000");
         assert_eq!(g1.sort_order, 0);
         assert!(!g1.collapsed);
+        assert_eq!(g1.description.as_deref(), Some("Alpha workspace"));
 
         // Create second group (auto sort_order = 1)
         let g2 = create(
@@ -178,6 +205,7 @@ mod tests {
                 name: "Beta".into(),
                 color: None,
                 sort_order: None,
+                description: None,
             },
         )
         .unwrap();
@@ -191,6 +219,7 @@ mod tests {
                 name: "Gamma".into(),
                 color: Some("#00ff00".into()),
                 sort_order: None,
+                description: None,
             },
         )
         .unwrap();
@@ -207,7 +236,7 @@ mod tests {
         assert_eq!(all[1].name, "Beta");
         assert_eq!(all[2].name, "Gamma");
 
-        // Update
+        // Update with workspace fields
         let updated = update(
             &pool,
             &g1.id,
@@ -216,11 +245,21 @@ mod tests {
                 color: None,
                 sort_order: None,
                 collapsed: Some(true),
+                description: Some("Updated workspace".into()),
+                default_model_profile: Some(r#"{"model":"claude-sonnet-4-20250514"}"#.into()),
+                default_max_budget_usd: Some(2.5),
+                default_max_turns: Some(15),
+                shared_instructions: Some("Always be concise.".into()),
             },
         )
         .unwrap();
         assert_eq!(updated.name, "Alpha Prime");
         assert!(updated.collapsed);
+        assert_eq!(updated.description.as_deref(), Some("Updated workspace"));
+        assert!(updated.default_model_profile.is_some());
+        assert_eq!(updated.default_max_budget_usd, Some(2.5));
+        assert_eq!(updated.default_max_turns, Some(15));
+        assert_eq!(updated.shared_instructions.as_deref(), Some("Always be concise."));
 
         // Reorder: Gamma, Beta, Alpha Prime
         reorder(&pool, &[g3.id.clone(), g2.id.clone(), g1.id.clone()]).unwrap();

@@ -1,0 +1,35 @@
+{
+  "id": "builtin-hubspot",
+  "name": "hubspot",
+  "label": "HubSpot",
+  "color": "#FF7A59",
+  "icon_url": "/icons/connectors/hubspot.svg",
+  "category": "crm",
+  "fields": [
+    {
+      "key": "access_token",
+      "label": "Private App Access Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "pat-...",
+      "helpText": "From HubSpot → Settings → Integrations → Private Apps → Create"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.hubapi.com/crm/v3/objects/contacts?limit=1",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{access_token}}"
+    },
+    "description": "Validates access token via HubSpot contacts endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "HubSpot CRM for contacts, deals, marketing automation, and sales pipelines.",
+    "auth_type": "pat",
+    "auth_type_label": "PAT",
+    "docs_url": "https://developers.hubspot.com/docs/api/private-apps"
+  }
+}

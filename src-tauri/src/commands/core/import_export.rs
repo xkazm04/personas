@@ -36,6 +36,7 @@ struct TriggerExportData {
     trigger_type: String,
     config: Option<String>,
     enabled: bool,
+    use_case_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -43,6 +44,7 @@ struct SubscriptionExportData {
     event_type: String,
     source_filter: Option<String>,
     enabled: bool,
+    use_case_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -114,6 +116,7 @@ pub async fn export_persona(
                 trigger_type: t.trigger_type.clone(),
                 config: t.config.clone(),
                 enabled: t.enabled,
+                use_case_id: t.use_case_id.clone(),
             })
             .collect(),
         subscriptions: subscriptions
@@ -122,6 +125,7 @@ pub async fn export_persona(
                 event_type: s.event_type.clone(),
                 source_filter: s.source_filter.clone(),
                 enabled: s.enabled,
+                use_case_id: s.use_case_id.clone(),
             })
             .collect(),
         memories: memories
@@ -240,6 +244,7 @@ pub async fn import_persona(
                 trigger_type: t.trigger_type.clone(),
                 config: t.config.clone(),
                 enabled: Some(t.enabled),
+                use_case_id: t.use_case_id.clone(),
             },
         ) {
             warnings.push(format!("Trigger {} ({}): {}", i + 1, t.trigger_type, e));
@@ -255,6 +260,7 @@ pub async fn import_persona(
                 event_type: s.event_type.clone(),
                 source_filter: s.source_filter.clone(),
                 enabled: Some(s.enabled),
+                use_case_id: s.use_case_id.clone(),
             },
         ) {
             warnings.push(format!("Subscription {} ({}): {}", i + 1, s.event_type, e));

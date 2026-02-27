@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 
 import type { PersonaExecution } from "@/lib/bindings/PersonaExecution";
+import type { Continuation } from "@/lib/bindings/Continuation";
 
 // ============================================================================
 // Executions
@@ -23,12 +24,14 @@ export const executePersona = (
   triggerId?: string,
   inputData?: string,
   useCaseId?: string,
+  continuation?: Continuation,
 ) =>
   invoke<PersonaExecution>("execute_persona", {
     personaId,
     triggerId: triggerId ?? null,
     inputData: inputData ?? null,
     useCaseId: useCaseId ?? null,
+    continuation: continuation ?? null,
   });
 
 export const listExecutionsForUseCase = (

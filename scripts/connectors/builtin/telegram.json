@@ -1,0 +1,33 @@
+{
+  "id": "builtin-telegram",
+  "name": "telegram",
+  "label": "Telegram",
+  "color": "#26A5E4",
+  "icon_url": "/icons/connectors/telegram.svg",
+  "category": "messaging",
+  "fields": [
+    {
+      "key": "bot_token",
+      "label": "Bot Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "123456:ABC-DEF...",
+      "helpText": "From @BotFather on Telegram → /newbot or /token"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.telegram.org/bot{{bot_token}}/getMe",
+    "method": "GET",
+    "headers": {},
+    "description": "Validates bot token via Telegram getMe endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Telegram bot for messaging, notifications, and group automation.",
+    "auth_type": "bot_token",
+    "auth_type_label": "Bot Token",
+    "docs_url": "https://core.telegram.org/bots/api"
+  }
+}

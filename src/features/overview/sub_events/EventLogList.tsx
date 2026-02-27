@@ -1,11 +1,12 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { Zap, ChevronDown, ChevronUp, RefreshCw, AlertCircle, CheckCircle2, Clock, Loader2 } from 'lucide-react';
+import { Zap, ChevronDown, ChevronUp, RefreshCw, AlertCircle, CheckCircle2, Clock, Loader2, Server, Bot } from 'lucide-react';
 import hljs from 'highlight.js/lib/core';
 import json from 'highlight.js/lib/languages/json';
 
 hljs.registerLanguage('json', json);
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
+import { FilterBar } from '@/features/shared/components/FilterBar';
 import { UuidLabel } from '@/features/shared/components/UuidLabel';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEventBusListener } from '@/hooks/realtime/useEventBusListener';
@@ -50,6 +51,7 @@ export default function EventLogList() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const liveEventIds = useRef<Set<string>>(new Set());
 
   // Initial fetch for historical events
   useEffect(() => {
@@ -72,6 +74,7 @@ export default function EventLogList() {
 
   // Listen to Tauri event-bus for push updates
   const handleBusEvent = useCallback((evt: PersonaEvent) => {
+    liveEventIds.current.add(evt.id);
     usePersonaStore.setState((state) => {
       const exists = state.recentEvents.some((e: PersonaEvent) => e.id === evt.id);
       if (exists) return state;
@@ -97,10 +100,9 @@ export default function EventLogList() {
     }
   };
 
-  const getPersonaName = (id: string | null) => {
+  const getPersona = (id: string | null) => {
     if (!id) return null;
-    const p = personas.find((persona) => persona.id === id);
-    return p?.name || id.slice(0, 12) + '...';
+    return personas.find((persona) => persona.id === id) ?? null;
   };
 
   return (
@@ -123,29 +125,18 @@ export default function EventLogList() {
       />
 
       {/* Filter bar */}
-      <div className="px-4 md:px-6 py-3 border-b border-primary/10 flex items-center gap-2 flex-shrink-0">
-        {(['all', 'pending', 'completed', 'failed'] as EventFilter[]).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
-              filter === f
-                ? 'bg-primary/15 text-primary border-primary/30'
-                : 'bg-secondary/30 text-muted-foreground/80 border-primary/15 hover:text-muted-foreground hover:bg-secondary/50'
-            }`}
-          >
-            {f.charAt(0).toUpperCase() + f.slice(1)}
-            {f === 'pending' && pendingEventCount > 0 && (
-              <span className="ml-1.5 px-1.5 py-0.5 text-sm rounded-full bg-amber-500/20 text-amber-400">
-                {pendingEventCount}
-              </span>
-            )}
-          </button>
-        ))}
-        <span className="ml-auto text-sm font-mono text-muted-foreground/80">
-          Showing {filteredEvents.length} of {recentEvents.length}
-        </span>
-      </div>
+      <FilterBar<EventFilter>
+        options={[
+          { id: 'all', label: 'All' },
+          { id: 'pending', label: 'Pending', badge: pendingEventCount },
+          { id: 'completed', label: 'Completed' },
+          { id: 'failed', label: 'Failed' },
+        ]}
+        value={filter}
+        onChange={setFilter}
+        layoutIdPrefix="event-filter"
+        summary={`Showing ${filteredEvents.length} of ${recentEvents.length}`}
+      />
 
       {/* Event List */}
       <ContentBody flex>
@@ -169,6 +160,8 @@ export default function EventLogList() {
               const statusStyle = EVENT_STATUS_COLORS[event.status] ?? defaultStatus;
               const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-muted-foreground';
 
+              const targetPersona = getPersona(event.target_persona_id);
+
               return (
                   <motion.div
                   key={event.id}
@@ -176,10 +169,12 @@ export default function EventLogList() {
                   animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -4 }}
                   className="bg-secondary/20 border border-primary/15 rounded-xl overflow-hidden"
+                  data-testid={`event-row-${event.id}`}
                 >
                   <button
                     onClick={() => setExpandedId(isExpanded ? null : event.id)}
                     className="w-full p-3 flex items-center gap-3 text-left hover:bg-secondary/40 transition-colors"
+                    data-testid={`event-row-toggle-${event.id}`}
                   >
                     {/* Status icon */}
                     {event.status === 'completed' || event.status === 'processed' ? (
@@ -192,15 +187,41 @@ export default function EventLogList() {
                       <Clock className="w-4 h-4 text-amber-400 flex-shrink-0" />
                     )}
 
+                    {/* Persona avatar or system icon */}
+                    {targetPersona ? (
+                      <div
+                        className="flex items-center gap-2 min-w-[120px] flex-shrink-0"
+                        title={targetPersona.name}
+                      >
+                        <div
+                          className="w-6 h-6 rounded-md flex items-center justify-center text-sm border border-primary/15"
+                          style={{ backgroundColor: (targetPersona.color || '#6366f1') + '15' }}
+                        >
+                          {targetPersona.icon || <Bot className="w-3.5 h-3.5 text-muted-foreground/60" />}
+                        </div>
+                        <span className="text-sm text-muted-foreground/80 truncate max-w-[80px]">
+                          {targetPersona.name}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 min-w-[120px] flex-shrink-0" title="System event">
+                        <div className="w-6 h-6 rounded-md flex items-center justify-center border border-primary/10 bg-muted/20">
+                          <Server className="w-3.5 h-3.5 text-muted-foreground/50" />
+                        </div>
+                        <span className="text-sm text-muted-foreground/50 truncate max-w-[80px]">
+                          {event.source_type || 'System'}
+                        </span>
+                      </div>
+                    )}
+
                     {/* Event type */}
                     <span className={`text-sm font-medium ${typeColor} flex-shrink-0`}>
                       {event.event_type}
                     </span>
 
-                    {/* Source -> Target */}
+                    {/* Source info */}
                     <span className="text-sm text-muted-foreground/80 truncate flex-1">
                       {event.source_type}
-                      {event.target_persona_id ? ` -> ${getPersonaName(event.target_persona_id)}` : ''}
                     </span>
 
                     {/* Status badge */}

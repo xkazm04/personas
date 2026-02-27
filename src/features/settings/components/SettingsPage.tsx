@@ -3,6 +3,7 @@ import { usePersonaStore } from '@/stores/personaStore';
 import AccountSettings from '@/features/settings/sub_account/AccountSettings';
 import AppearanceSettings from '@/features/settings/sub_appearance/AppearanceSettings';
 import NotificationSettings from '@/features/settings/sub_notifications/NotificationSettings';
+import EngineSettings from '@/features/settings/sub_engine/EngineSettings';
 
 export default function SettingsPage() {
   const settingsTab = usePersonaStore((s) => s.settingsTab);
@@ -12,6 +13,7 @@ export default function SettingsPage() {
       case 'account': return <AccountSettings />;
       case 'appearance': return <AppearanceSettings />;
       case 'notifications': return <NotificationSettings />;
+      case 'engine': return <EngineSettings />;
       default: return <AccountSettings />;
     }
   })();

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useDebouncedSave } from '@/hooks';
 import { usePersonaStore } from '@/stores/personaStore';
 import { User, BookOpen, Wrench, Code, AlertTriangle, Layers, Globe, Plus, X, Check, Save } from 'lucide-react';
-import { useEditorDirty } from '@/features/agents/sub_editor/EditorDirtyContext';
+import { useEditorDirty } from '@/features/agents/sub_editor/EditorDocument';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   migratePromptToStructured,
@@ -34,7 +34,7 @@ const STANDARD_TABS: SidebarEntry[] = [
 
 export function PersonaPromptEditor() {
   const selectedPersona = usePersonaStore((state) => state.selectedPersona);
-  const updatePersona = usePersonaStore((state) => state.updatePersona);
+  const applyPersonaOp = usePersonaStore((state) => state.applyPersonaOp);
 
   const [activeTab, setActiveTab] = useState<SubTab>('instructions');
 
@@ -124,7 +124,8 @@ export function PersonaPromptEditor() {
     if (jsonStr === lastSavedJsonRef.current) return;
 
     try {
-      await updatePersona(pid, {
+      await applyPersonaOp(pid, {
+        kind: 'UpdatePrompt',
         structured_prompt: jsonStr,
         system_prompt: spRef.current.instructions || '',
       });
@@ -135,7 +136,7 @@ export function PersonaPromptEditor() {
     } catch (error) {
       console.error('Failed to save structured prompt:', error);
     }
-  }, [updatePersona]);
+  }, [applyPersonaOp]);
 
   // Register prompt dirty state with the unified editor context
   const promptDirty = useMemo(

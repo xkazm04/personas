@@ -22,5 +22,7 @@ export * from "./system";
 export * from "./settings";
 export * from "./cloud";
 export * from "./tests";
+export * from "./testSuites";
+export * from "./lab";
 export * from "./negotiator";
 export * from "./rotation";

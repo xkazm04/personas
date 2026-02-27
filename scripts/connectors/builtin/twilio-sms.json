@@ -1,0 +1,43 @@
+{
+  "id": "builtin-twilio-sms",
+  "name": "twilio_sms",
+  "label": "Twilio",
+  "color": "#F22F46",
+  "icon_url": "/icons/connectors/twilio.svg",
+  "category": "messaging",
+  "fields": [
+    {
+      "key": "account_sid",
+      "label": "Account SID",
+      "type": "text",
+      "required": true,
+      "placeholder": "AC...",
+      "helpText": "From Twilio Console → Account → Account SID"
+    },
+    {
+      "key": "auth_token",
+      "label": "Auth Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "From Twilio Console → Account → Auth Token"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.twilio.com/2010-04-01/Accounts/{{account_sid}}.json",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Basic {{base64(account_sid:auth_token)}}"
+    },
+    "description": "Validates credentials via Twilio account endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Twilio SMS, voice, WhatsApp, and communication APIs.",
+    "auth_type": "basic",
+    "auth_type_label": "Account SID",
+    "docs_url": "https://www.twilio.com/docs/usage/api"
+  }
+}

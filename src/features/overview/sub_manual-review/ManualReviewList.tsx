@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronRight, Check, X, ClipboardCheck, CheckSquare, Square, AlertTriangle, ExternalLink } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
+import { FilterBar } from '@/features/shared/components/FilterBar';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/types/frontendTypes';
 import { formatRelativeTime } from '@/lib/utils/formatters';
@@ -68,12 +69,12 @@ function SeverityIndicator({ severity }: { severity: string }) {
 
 type FilterStatus = 'all' | ManualReviewStatus;
 
-const filterOptions: Array<{ id: FilterStatus; label: string }> = [
-  { id: 'all', label: 'All' },
-  { id: 'pending', label: 'Pending' },
-  { id: 'approved', label: 'Approved' },
-  { id: 'rejected', label: 'Rejected' },
-];
+const FILTER_LABELS: Record<FilterStatus, string> = {
+  all: 'All',
+  pending: 'Pending',
+  approved: 'Approved',
+  rejected: 'Rejected',
+};
 
 // ---------------------------------------------------------------------------
 // Component
@@ -189,37 +190,33 @@ export default function ManualReviewList() {
       />
 
       {/* Filter bar */}
-      <div className="px-4 md:px-6 py-3 border-b border-primary/10 flex items-center gap-2 flex-shrink-0">
-        {filterOptions.map((opt) => (
-          <button
-            key={opt.id}
-            onClick={() => setFilter(opt.id)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
-              filter === opt.id
-                ? 'bg-primary/15 text-primary border-primary/30'
-                : 'bg-secondary/30 text-muted-foreground/80 border-primary/15 hover:text-muted-foreground hover:bg-secondary/50'
-            }`}
-          >
-            {opt.label}
-            <span className="opacity-60 ml-1">({statusCounts[opt.id] ?? 0})</span>
-          </button>
-        ))}
-
-        {/* Select all toggle (only when there are pending items to select) */}
-        {selectablePendingIds.size > 0 && (
-          <button
-            onClick={toggleSelectAll}
-            className="ml-auto flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm text-muted-foreground/90 hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
-          >
-            {activeSelectionCount === selectablePendingIds.size ? (
-              <CheckSquare className="w-3.5 h-3.5" />
-            ) : (
-              <Square className="w-3.5 h-3.5" />
-            )}
-            Select all pending
-          </button>
-        )}
-      </div>
+      <FilterBar<FilterStatus>
+        options={(['all', 'pending', 'approved', 'rejected'] as FilterStatus[]).map((id) => ({
+          id,
+          label: FILTER_LABELS[id],
+          badge: statusCounts[id] ?? 0,
+        }))}
+        value={filter}
+        onChange={setFilter}
+        badgeStyle="paren"
+        layoutIdPrefix="review-filter"
+        trailing={
+          selectablePendingIds.size > 0 ? (
+            <button
+              onClick={toggleSelectAll}
+              data-testid="review-select-all-btn"
+              className="ml-auto flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm text-muted-foreground/90 hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
+            >
+              {activeSelectionCount === selectablePendingIds.size ? (
+                <CheckSquare className="w-3.5 h-3.5" />
+              ) : (
+                <Square className="w-3.5 h-3.5" />
+              )}
+              Select all pending
+            </button>
+          ) : undefined
+        }
+      />
 
       {/* Review list */}
       <ContentBody flex>

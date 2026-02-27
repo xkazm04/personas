@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import {
   startOAuth,
   getOAuthStatus,
-  openExternalUrl,
   type StartOAuthParams,
+  type OAuthStatusResult,
 } from '@/api/tauriApi';
+import { useOAuthPolling } from './useOAuthPolling';
 
 export interface UniversalOAuthState {
   /** Credential values produced by the OAuth flow (access_token, refresh_token, etc.) */
@@ -24,157 +25,56 @@ export interface UniversalOAuthState {
 }
 
 export function useUniversalOAuth(): UniversalOAuthState {
-  const [initialValues, setInitialValues] = useState<Record<string, string>>({});
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [isAuthorizing, setIsAuthorizing] = useState(false);
-  const [completedAt, setCompletedAt] = useState<string | null>(null);
   const [providerId, setProviderId] = useState<string | null>(null);
-  const [message, setMessage] = useState<{ success: boolean; message: string } | null>(null);
+  // Ref so extractValues and label can read the latest provider synchronously
+  const providerRef = useRef<string | null>(null);
 
-  // Poll for session completion
-  useEffect(() => {
-    if (!sessionId) return;
+  const providerLabel = providerRef.current
+    ? providerRef.current.charAt(0).toUpperCase() + providerRef.current.slice(1)
+    : 'OAuth';
 
-    let cancelled = false;
-    let timer: number | null = null;
-
-    const poll = async () => {
-      try {
-        const status = await getOAuthStatus(sessionId);
-        if (cancelled) return;
-
-        if (status.status === 'pending') {
-          timer = window.setTimeout(poll, 1500);
-          return;
-        }
-
-        setSessionId(null);
-        setIsAuthorizing(false);
-
-        if (status.status === 'success') {
-          const values: Record<string, string> = {};
-          if (status.access_token) values.access_token = status.access_token;
-          if (status.refresh_token) values.refresh_token = status.refresh_token;
-          if (status.scope) {
-            values.scopes = status.scope;
-            values.oauth_scope = status.scope;
-          }
-          if (status.token_type) values.token_type = status.token_type;
-          if (status.expires_in) values.expires_in = String(status.expires_in);
-          values.oauth_completed_at = new Date().toISOString();
-          values.oauth_provider = providerId ?? 'unknown';
-
-          setInitialValues((prev) => ({ ...prev, ...values }));
-          setCompletedAt(new Date().toLocaleTimeString());
-
-          const label = providerId
-            ? providerId.charAt(0).toUpperCase() + providerId.slice(1)
-            : 'OAuth';
-          setMessage({
-            success: true,
-            message: `${label} authorization completed. Tokens were auto-filled.`,
-          });
-          return;
-        }
-
-        setMessage({
-          success: false,
-          message: status.error || 'OAuth authorization failed. Please try again.',
-        });
-      } catch (err) {
-        if (cancelled) return;
-        setSessionId(null);
-        setIsAuthorizing(false);
-        setMessage({
-          success: false,
-          message: err instanceof Error ? err.message : 'Failed to check OAuth status.',
-        });
+  const polling = useOAuthPolling<[StartOAuthParams], OAuthStatusResult>({
+    startFn: (params) => startOAuth(params),
+    pollFn: (sessionId) => getOAuthStatus(sessionId),
+    extractValues: (poll, prev) => {
+      const values: Record<string, string> = { ...prev };
+      if (poll.access_token) values.access_token = poll.access_token;
+      if (poll.refresh_token) values.refresh_token = poll.refresh_token;
+      if (poll.scope) {
+        values.scopes = poll.scope;
+        values.oauth_scope = poll.scope;
       }
-    };
+      if (poll.token_type) values.token_type = poll.token_type;
+      if (poll.expires_in) values.expires_in = String(poll.expires_in);
+      values.oauth_completed_at = new Date().toISOString();
+      values.oauth_provider = providerRef.current ?? 'unknown';
+      return values;
+    },
+    label: providerLabel,
+  });
 
-    poll();
+  const startConsent = useCallback(
+    (params: StartOAuthParams) => {
+      providerRef.current = params.providerId;
+      setProviderId(params.providerId);
+      polling.startConsent(params);
+    },
+    [polling.startConsent],
+  );
 
-    return () => {
-      cancelled = true;
-      if (timer) window.clearTimeout(timer);
-    };
-  }, [sessionId, providerId]);
-
-  const startConsent = useCallback((params: StartOAuthParams) => {
-    setProviderId(params.providerId);
-    setIsAuthorizing(true);
-    setCompletedAt(null);
-
-    const label = params.providerId.charAt(0).toUpperCase() + params.providerId.slice(1);
-    setMessage({
-      success: false,
-      message: `Starting ${label} authorization...`,
-    });
-
-    const startPromise = startOAuth(params);
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      window.setTimeout(() => {
-        reject(new Error('OAuth session start timed out.'));
-      }, 12000);
-    });
-
-    Promise.race([startPromise, timeoutPromise])
-      .then(async (result) => {
-        let opened = false;
-        try {
-          await openExternalUrl(result.auth_url);
-          opened = true;
-        } catch {
-          // fallback
-        }
-
-        if (!opened) {
-          try {
-            const popup = window.open(result.auth_url, '_blank', 'noopener,noreferrer');
-            opened = popup !== null;
-          } catch {
-            // no-op
-          }
-        }
-
-        if (!opened) {
-          throw new Error('Could not open consent page. Please allow popups or external browser open.');
-        }
-
-        setMessage({
-          success: false,
-          message: `${label} consent page opened. Complete authorization in your browser.`,
-        });
-        setSessionId(result.session_id);
-      })
-      .catch((err) => {
-        setSessionId(null);
-        setIsAuthorizing(false);
-        setMessage({
-          success: false,
-          message: err instanceof Error
-            ? `${label} authorization did not start: ${err.message}`
-            : `${label} authorization did not start.`,
-        });
-      });
-  }, []);
-
-  const reset = useCallback(() => {
-    setInitialValues({});
-    setSessionId(null);
-    setIsAuthorizing(false);
-    setCompletedAt(null);
+  const resetAll = useCallback(() => {
+    providerRef.current = null;
     setProviderId(null);
-    setMessage(null);
-  }, []);
+    polling.reset();
+  }, [polling.reset]);
 
   return {
-    initialValues,
-    isAuthorizing,
-    completedAt,
+    initialValues: polling.initialValues,
+    isAuthorizing: polling.isAuthorizing,
+    completedAt: polling.completedAt,
     providerId,
-    message,
+    message: polling.message,
     startConsent,
-    reset,
+    reset: resetAll,
   };
 }

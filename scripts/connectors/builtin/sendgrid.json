@@ -1,0 +1,35 @@
+{
+  "id": "builtin-sendgrid",
+  "name": "sendgrid",
+  "label": "SendGrid",
+  "color": "#1A82E2",
+  "icon_url": "/icons/connectors/sendgrid.svg",
+  "category": "messaging",
+  "fields": [
+    {
+      "key": "api_key",
+      "label": "API Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "SG....",
+      "helpText": "From SendGrid → Settings → API Keys → Create API Key"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.sendgrid.com/v3/scopes",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{api_key}}"
+    },
+    "description": "Validates API key via SendGrid scopes endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "SendGrid transactional and marketing email delivery at scale.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://docs.sendgrid.com/ui/account-and-settings/api-keys"
+  }
+}

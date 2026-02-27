@@ -162,7 +162,7 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
         )}
 
         <button
-          onClick={() => setEditorTab('tests')}
+          onClick={() => setEditorTab('lab')}
           className="flex items-center gap-1.5 text-sm text-muted-foreground/60 hover:text-primary/80 transition-colors"
         >
           View full test history <ArrowRight className="w-3 h-3" />

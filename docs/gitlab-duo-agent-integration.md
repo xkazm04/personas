@@ -284,9 +284,89 @@ Backend errors are translated into user-friendly messages in the frontend:
 
 ---
 
+## Cloud Orchestrator Integration
+
+The **personas-cloud** orchestrator extends GitLab integration beyond the desktop-only deploy flow. When running the cloud orchestrator alongside GitLab, personas can react to GitLab events in real time.
+
+### Inbound: GitLab Webhooks
+
+The orchestrator exposes a webhook receiver that turns GitLab events into persona executions:
+
+```
+POST https://<orchestrator>/api/gitlab/webhook
+```
+
+Configure this URL as a webhook in your GitLab project (**Settings > Webhooks**). The orchestrator automatically maps `object_kind` to event types:
+
+| GitLab Event | Persona Event Type |
+|--------------|--------------------|
+| Push | `gitlab_push` |
+| Merge Request | `gitlab_mr` |
+| Pipeline | `gitlab_pipeline` |
+| Tag Push | `gitlab_tag` |
+| Issue | `gitlab_issue` |
+| Note/Comment | `gitlab_comment` |
+| Build/Job | `gitlab_build` |
+
+The `source_id` is set to the project's `path_with_namespace` (e.g. `org/repo`), allowing subscription source filters like `org/*` to match all projects in an organization.
+
+### Reactive Execution Flow
+
+```
+GitLab Push Event
+  -> POST /api/gitlab/webhook
+    -> Event stored (status: pending, type: gitlab_push)
+      -> Event processor (2s tick) matches subscriptions
+        -> Persona prompt assembled from DB
+          -> Dispatched to worker with credentials as env vars
+```
+
+To make a persona react to GitLab pushes:
+
+1. **Register the persona** in the cloud orchestrator (`POST /api/personas`)
+2. **Create a subscription** linking the persona to the event type:
+   ```json
+   POST /api/subscriptions
+   {
+     "personaId": "my-reviewer",
+     "eventType": "gitlab_push",
+     "sourceFilter": "org/my-repo",
+     "enabled": true
+   }
+   ```
+3. **Add the webhook** to your GitLab project pointing to the orchestrator
+4. On every push, the persona executes with the webhook payload as input data
+
+### Outbound: Pipeline Triggers
+
+Personas can also trigger GitLab CI/CD pipelines during execution. The orchestrator provides a `triggerGitLabPipeline()` utility that calls:
+
+```
+POST /api/v4/projects/:id/trigger/pipeline
+```
+
+This enables patterns like: a persona monitors Slack for deploy requests, then triggers the appropriate GitLab pipeline with variables.
+
+### Desktop + Cloud Hybrid
+
+The desktop and cloud deployments are complementary:
+
+| Capability | Desktop Only | Cloud Only | Desktop + Cloud |
+|-----------|-------------|------------|-----------------|
+| Deploy to Duo Agent API | Yes | No | Yes |
+| Deploy to AGENTS.md | Yes | No | Yes |
+| Credential provisioning to CI/CD vars | Yes | No | Yes |
+| React to GitLab webhooks | No | Yes | Yes |
+| Scheduled triggers | Yes (local) | Yes (server) | Both |
+| Survive machine restart | No | Yes | Yes |
+| Multi-worker execution | No | Yes | Yes |
+
+---
+
 ## Limitations
 
 - **gitlab.com only** — the base URL is hardcoded to `https://gitlab.com`. Self-managed instances are not yet supported.
 - **Duo Agent API availability** — the API is part of GitLab Duo and may not be available on all tiers. The AGENTS.md fallback ensures deployment always works.
 - **One agent per deploy** — each deploy creates a new agent (or overwrites AGENTS.md). There is no update-in-place for API-deployed agents yet.
 - **No real-time sync** — changes to a persona after deployment are not automatically pushed. Re-deploy to update.
+- **Cloud webhook auth** — the GitLab webhook endpoint currently relies on the orchestrator's bearer token authentication. GitLab webhook secret token validation is not yet implemented.

@@ -13,32 +13,11 @@ import {
 } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { deriveConnectorReadiness } from './ConnectorReadiness';
+import { DimensionRadial } from './DimensionRadial';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { DesignAnalysisResult, SuggestedTrigger } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
-
-function parseJsonSafe<T>(json: string | null | undefined, fallback: T): T {
-  if (!json) return fallback;
-  try {
-    return JSON.parse(json);
-  } catch {
-    return fallback;
-  }
-}
-
-function getQualityScore(review: PersonaDesignReview): number | null {
-  if (review.structural_score === null && review.semantic_score === null) return null;
-  if (review.structural_score !== null && review.semantic_score !== null) {
-    return Math.round((review.structural_score + review.semantic_score) / 2);
-  }
-  return review.structural_score ?? review.semantic_score;
-}
-
-function getQualityColor(score: number): string {
-  if (score >= 80) return 'text-emerald-400';
-  if (score >= 60) return 'text-amber-400';
-  return 'text-red-400';
-}
+import { parseJsonSafe } from '@/lib/utils/parseJson';
 
 const TRIGGER_ICONS: Record<string, typeof Clock> = {
   schedule: Clock,
@@ -101,17 +80,15 @@ export function TemplateCard({
     ? deriveConnectorReadiness(designResult.suggested_connectors, installedConnectorNames, credentialServiceTypes)
     : [];
 
-  const qualityScore = getQualityScore(review);
-
   return (
     <div className="group rounded-xl border border-primary/10 bg-secondary/30 hover:bg-secondary/50 hover:border-primary/15 transition-all">
       {/* Header */}
-      <div className="px-4 pt-4 pb-2 flex items-start justify-between gap-2">
+      <div className="px-5 pt-5 pb-2.5 flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <h3 className="text-sm font-semibold text-foreground/90 truncate">
+          <h3 className="text-base font-semibold text-foreground/90 truncate">
             {review.test_case_name}
           </h3>
-          <p className="text-xs text-muted-foreground/70 mt-0.5 line-clamp-2 leading-relaxed">
+          <p className="text-sm text-muted-foreground/70 mt-1 line-clamp-2 leading-relaxed">
             {review.instruction.length > 120
               ? review.instruction.slice(0, 120) + '...'
               : review.instruction}
@@ -125,19 +102,19 @@ export function TemplateCard({
             }}
             className="p-1 rounded-md opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-secondary/60 transition-all"
           >
-            <MoreVertical className="w-4 h-4 text-muted-foreground/80" />
+            <MoreVertical className="w-4.5 h-4.5 text-muted-foreground/80" />
           </button>
           {menuOpen && (
-            <div className="absolute right-0 top-full mt-1 z-50 min-w-[150px] py-1 bg-background border border-primary/20 rounded-lg shadow-2xl backdrop-blur-sm">
+            <div className="absolute right-0 top-full mt-1 z-50 min-w-[160px] py-1.5 bg-background border border-primary/20 rounded-lg shadow-2xl backdrop-blur-sm">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setMenuOpen(false);
                   onViewDetails();
                 }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-foreground/80 hover:bg-primary/5 transition-colors text-left"
+                className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-foreground/80 hover:bg-primary/5 transition-colors text-left"
               >
-                <Eye className="w-3.5 h-3.5" />
+                <Eye className="w-4 h-4" />
                 View Details
               </button>
               <button
@@ -146,9 +123,9 @@ export function TemplateCard({
                   setMenuOpen(false);
                   onDelete();
                 }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-red-400 hover:bg-red-500/10 transition-colors text-left"
+                className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors text-left"
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 className="w-4 h-4" />
                 Delete
               </button>
             </div>
@@ -157,14 +134,14 @@ export function TemplateCard({
       </div>
 
       {/* 3-Column Body */}
-      <div className="px-4 py-3 grid grid-cols-3 gap-3 border-t border-primary/5">
+      <div className="px-5 py-4 grid grid-cols-3 gap-4 border-t border-primary/5">
         {/* Use Cases */}
         <div className="min-w-0">
-          <h4 className="text-[10px] uppercase tracking-wider text-muted-foreground/50 font-medium mb-1.5">
+          <h4 className="text-xs uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">
             Use Cases
           </h4>
           {displayFlows.length > 0 ? (
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               {displayFlows.slice(0, 4).map((flow) => (
                 <button
                   key={flow.id}
@@ -172,32 +149,32 @@ export function TemplateCard({
                     e.stopPropagation();
                     onViewFlows();
                   }}
-                  className="flex items-center gap-1.5 w-full text-left group/flow hover:text-violet-300 transition-colors"
+                  className="flex items-center gap-2 w-full text-left group/flow hover:text-violet-300 transition-colors"
                 >
-                  <CircleDot className="w-2.5 h-2.5 text-violet-400/60 flex-shrink-0" />
-                  <span className="text-xs text-foreground/70 group-hover/flow:text-violet-300 truncate">
+                  <CircleDot className="w-3 h-3 text-violet-400/60 flex-shrink-0" />
+                  <span className="text-sm text-foreground/70 group-hover/flow:text-violet-300 truncate">
                     {flow.name}
                   </span>
                 </button>
               ))}
               {displayFlows.length > 4 && (
-                <span className="text-[10px] text-muted-foreground/50 pl-4">
+                <span className="text-xs text-muted-foreground/50 pl-5">
                   +{displayFlows.length - 4} more
                 </span>
               )}
             </div>
           ) : (
-            <span className="text-xs text-muted-foreground/40 italic">No flows</span>
+            <span className="text-sm text-muted-foreground/40 italic">No flows</span>
           )}
         </div>
 
         {/* Connectors */}
         <div className="min-w-0">
-          <h4 className="text-[10px] uppercase tracking-wider text-muted-foreground/50 font-medium mb-1.5">
+          <h4 className="text-xs uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">
             Connectors
           </h4>
           {connectors.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2">
               {connectors.map((c) => {
                 const meta = getConnectorMeta(c);
                 const status = readinessStatuses.find((s) => s.connector_name === c);
@@ -205,35 +182,35 @@ export function TemplateCard({
                 return (
                   <div
                     key={c}
-                    className={`w-6 h-6 rounded-md flex items-center justify-center transition-opacity ${
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-opacity ${
                       isReady ? '' : 'opacity-30 grayscale'
                     }`}
                     style={{ backgroundColor: `${meta.color}18` }}
                     title={`${meta.label}${isReady ? '' : ' (not configured)'}`}
                   >
-                    <ConnectorIcon meta={meta} size="w-3.5 h-3.5" />
+                    <ConnectorIcon meta={meta} size="w-4.5 h-4.5" />
                   </div>
                 );
               })}
             </div>
           ) : (
-            <span className="text-xs text-muted-foreground/40 italic">None</span>
+            <span className="text-sm text-muted-foreground/40 italic">None</span>
           )}
         </div>
 
         {/* Triggers */}
         <div className="min-w-0">
-          <h4 className="text-[10px] uppercase tracking-wider text-muted-foreground/50 font-medium mb-1.5">
+          <h4 className="text-xs uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">
             Triggers
           </h4>
           {(triggerTypes.length > 0 || suggestedTriggers.length > 0) ? (
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               {(suggestedTriggers.length > 0 ? suggestedTriggers : triggerTypes.map((t) => ({ trigger_type: t, description: t, config: {} }))).slice(0, 3).map((trigger, i) => {
                 const TriggerIcon = TRIGGER_ICONS[trigger.trigger_type] ?? Clock;
                 return (
-                  <div key={i} className="flex items-center gap-1.5">
-                    <TriggerIcon className="w-2.5 h-2.5 text-blue-400/60 flex-shrink-0" />
-                    <span className="text-xs text-foreground/70 truncate">
+                  <div key={i} className="flex items-center gap-2">
+                    <TriggerIcon className="w-3.5 h-3.5 text-blue-400/60 flex-shrink-0" />
+                    <span className="text-sm text-foreground/70 truncate">
                       {trigger.description || trigger.trigger_type}
                     </span>
                   </div>
@@ -241,41 +218,37 @@ export function TemplateCard({
               })}
             </div>
           ) : (
-            <span className="text-xs text-muted-foreground/40 italic">None</span>
+            <span className="text-sm text-muted-foreground/40 italic">None</span>
           )}
         </div>
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-2.5 border-t border-primary/5 flex items-center justify-between">
+      <div className="px-5 py-3.5 border-t border-primary/5 flex items-center justify-between">
         <button
           onClick={(e) => {
             e.stopPropagation();
             onAdopt();
           }}
-          className="px-3 py-1.5 text-xs rounded-lg bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors inline-flex items-center gap-1.5"
+          className="px-3.5 py-2 text-sm rounded-lg bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors inline-flex items-center gap-1.5"
         >
-          <Download className="w-3 h-3" />
+          <Download className="w-3.5 h-3.5" />
           Adopt
         </button>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           {displayFlows.length > 0 && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onViewFlows();
               }}
-              className="px-2 py-1 text-xs rounded-md bg-violet-500/8 text-violet-400/70 hover:bg-violet-500/15 transition-colors inline-flex items-center gap-1"
+              className="px-2.5 py-1.5 text-sm rounded-md bg-violet-500/8 text-violet-400/70 hover:bg-violet-500/15 transition-colors inline-flex items-center gap-1.5"
             >
-              <Workflow className="w-3 h-3" />
+              <Workflow className="w-3.5 h-3.5" />
               {displayFlows.length}
             </button>
           )}
-          {qualityScore !== null && (
-            <span className={`text-xs font-mono font-semibold ${getQualityColor(qualityScore)}`}>
-              {qualityScore}
-            </span>
-          )}
+          <DimensionRadial designResult={designResult} size={32} />
         </div>
       </div>
     </div>

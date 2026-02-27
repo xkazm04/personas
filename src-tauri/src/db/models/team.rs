@@ -100,3 +100,10 @@ pub struct PipelineRun {
     pub completed_at: Option<String>,
     pub error_message: Option<String>,
 }
+
+impl PipelineRun {
+    /// Parse the status string into the canonical ExecutionState enum.
+    pub fn state(&self) -> crate::engine::types::ExecutionState {
+        self.status.parse().unwrap_or(crate::engine::types::ExecutionState::Failed)
+    }
+}

@@ -9,10 +9,8 @@ interface PersonaSettingsTabProps {
   draft: PersonaDraft;
   patch: (updates: Partial<PersonaDraft>) => void;
   isDirty: boolean;
-  settingsDirty: boolean;
   changedSections: string[];
   connectorDefinitions: ConnectorDefinition[];
-  selectedPersonaId: string;
   showDeleteConfirm: boolean;
   setShowDeleteConfirm: (show: boolean) => void;
   isSaving: boolean;
@@ -23,10 +21,8 @@ export function PersonaSettingsTab({
   draft,
   patch,
   isDirty,
-  settingsDirty: _settingsDirty,
   changedSections,
   connectorDefinitions,
-  selectedPersonaId: _selectedPersonaId,
   showDeleteConfirm,
   setShowDeleteConfirm,
   isSaving,

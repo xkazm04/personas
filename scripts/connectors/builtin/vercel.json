@@ -1,0 +1,35 @@
+{
+  "id": "builtin-vercel",
+  "name": "vercel",
+  "label": "Vercel",
+  "color": "#000000",
+  "icon_url": "/icons/connectors/vercel.svg",
+  "category": "devops",
+  "fields": [
+    {
+      "key": "access_token",
+      "label": "Access Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "From Vercel → Settings → Tokens → Create"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.vercel.com/v2/user",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{access_token}}"
+    },
+    "description": "Validates access token via Vercel user endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Vercel frontend deployment platform with serverless functions and edge network.",
+    "auth_type": "pat",
+    "auth_type_label": "PAT",
+    "docs_url": "https://vercel.com/account/tokens"
+  }
+}

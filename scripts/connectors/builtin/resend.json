@@ -1,0 +1,35 @@
+{
+  "id": "builtin-resend",
+  "name": "resend",
+  "label": "Resend",
+  "color": "#000000",
+  "icon_url": "/icons/connectors/resend.svg",
+  "category": "messaging",
+  "fields": [
+    {
+      "key": "api_key",
+      "label": "API Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "re_...",
+      "helpText": "From Resend Dashboard → API Keys → Create API Key"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.resend.com/domains",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{api_key}}"
+    },
+    "description": "Validates API key via Resend domains endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Resend modern email API for developers with React Email support.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://resend.com/docs/api-reference/introduction"
+  }
+}

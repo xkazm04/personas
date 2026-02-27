@@ -10,3 +10,6 @@ pub const LITELLM_BASE_URL: &str = "litellm_base_url";
 
 /// LiteLLM proxy master authentication key (`sk-...`).
 pub const LITELLM_MASTER_KEY: &str = "litellm_master_key";
+
+/// Active CLI engine: `"claude_code"`, `"codex_cli"`, or `"gemini_cli"`.
+pub const CLI_ENGINE: &str = "cli_engine";

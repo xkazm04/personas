@@ -1,0 +1,35 @@
+{
+  "id": "builtin-cloudflare",
+  "name": "cloudflare",
+  "label": "Cloudflare",
+  "color": "#F38020",
+  "icon_url": "/icons/connectors/cloudflare.svg",
+  "category": "devops",
+  "fields": [
+    {
+      "key": "api_token",
+      "label": "API Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "From Cloudflare Dashboard → My Profile → API Tokens → Create Token"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.cloudflare.com/client/v4/user/tokens/verify",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{api_token}}"
+    },
+    "description": "Validates API token via Cloudflare token verify endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Cloudflare CDN, DNS, Workers, and security services.",
+    "auth_type": "api_token",
+    "auth_type_label": "API Token",
+    "docs_url": "https://dash.cloudflare.com/profile/api-tokens"
+  }
+}

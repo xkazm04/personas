@@ -7,7 +7,7 @@ import { useUniversalOAuth } from '@/hooks/design/useUniversalOAuth';
 import { useHealthcheckState } from '@/features/vault/hooks/useHealthcheckState';
 import type { CredentialTemplateField } from '@/lib/types/types';
 import { usePersonaStore } from '@/stores/personaStore';
-import { extractFirstUrl } from '@/features/vault/components/credential-design/CredentialDesignHelpers';
+import { extractFirstUrl, deriveCredentialFlow, getEffectiveFields, isSaveReady } from '@/features/vault/components/credential-design/CredentialDesignHelpers';
 import { CredentialDesignProvider, type CredentialDesignContextValue } from '@/features/vault/components/credential-design/CredentialDesignContext';
 import { IdlePhase } from '@/features/vault/components/credential-design/IdlePhase';
 import { AnalyzingPhase } from '@/features/vault/components/credential-design/AnalyzingPhase';
@@ -89,7 +89,7 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
   };
 
   const handleSave = (values: Record<string, string>) => {
-    if (isGoogleOAuthFlow && values.refresh_token?.trim()) {
+    if (flow.kind === 'google_oauth' && values.refresh_token?.trim()) {
       const name = credentialName.trim() || `${result?.connector.label} Credential`;
       save(name, values, healthcheck.testedHealthcheckConfig);
       return;
@@ -124,13 +124,12 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
   };
 
   const handleOAuthConsent = (values: Record<string, string>) => {
-    if (universalOAuthProvider) {
-      // Universal OAuth flow
+    if (flow.kind === 'provider_oauth') {
       const clientId = values.client_id?.trim();
       const clientSecret = values.client_secret?.trim();
       if (!clientId) return;
       universalOAuth.startConsent({
-        providerId: universalOAuthProvider,
+        providerId: flow.providerId,
         clientId,
         clientSecret: clientSecret || undefined,
         scopes: values.scopes?.trim() ? values.scopes.trim().split(/\s+/) : undefined,
@@ -196,29 +195,15 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
   const optionalCount = Math.max(0, fields.length - requiredCount);
 
   const fieldKeys = new Set(fields.map((f) => f.key));
-  const isGoogleOAuthFlow = Boolean(
-    result
-    && (result.connector.oauth_type === 'google'
-      || (fieldKeys.has('client_id') && fieldKeys.has('client_secret') && fieldKeys.has('refresh_token'))),
+  const flow = deriveCredentialFlow(result?.connector.oauth_type ?? null, fieldKeys);
+  const effectiveFields = getEffectiveFields(fields, flow);
+  const mergedOAuthValues = { ...oauth.initialValues, ...universalOAuth.initialValues, ...negotiatorValues };
+  const canSaveCredential = isSaveReady(
+    flow,
+    mergedOAuthValues,
+    healthcheck.healthcheckResult?.success === true,
+    healthcheck.testedHealthcheckConfig,
   );
-
-  // Detect non-Google OAuth providers (universal OAuth)
-  const universalOAuthProvider = result?.connector.oauth_type
-    && result.connector.oauth_type !== 'google'
-    ? result.connector.oauth_type
-    : null;
-
-  const effectiveFields = isGoogleOAuthFlow
-    ? fields.filter((f) => !['client_id', 'client_secret', 'refresh_token', 'scopes'].includes(f.key))
-    : universalOAuthProvider
-      ? fields.filter((f) => !['access_token', 'refresh_token', 'scopes', 'oauth_scope'].includes(f.key))
-      : fields;
-
-  const canSaveCredential = isGoogleOAuthFlow
-    ? Boolean(oauth.initialValues.refresh_token)
-    : universalOAuthProvider
-      ? Boolean(universalOAuth.initialValues.access_token)
-      : (healthcheck.healthcheckResult?.success === true && healthcheck.testedHealthcheckConfig !== null);
 
   const handleNegotiatorValues = (values: Record<string, string>) => {
     setNegotiatorValues(values);
@@ -235,9 +220,8 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
       firstSetupUrl,
       credentialName,
       onCredentialNameChange: setCredentialName,
-      isGoogleOAuthFlow,
-      universalOAuthProvider,
-      oauthInitialValues: { ...oauth.initialValues, ...universalOAuth.initialValues, ...negotiatorValues },
+      credentialFlow: flow,
+      oauthInitialValues: mergedOAuthValues,
       isAuthorizingOAuth: oauth.isAuthorizing || universalOAuth.isAuthorizing,
       oauthConsentCompletedAt: oauth.completedAt || universalOAuth.completedAt,
       isHealthchecking: healthcheck.isHealthchecking,

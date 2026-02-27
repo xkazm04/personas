@@ -6,9 +6,11 @@ use tauri::{Emitter, State};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
 
+use crate::db::repos::core::design_conversations as conv_repo;
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::resources::{connectors as connector_repo, tools as tool_repo};
 use crate::engine;
+use crate::engine::compiler::{self, CompilationInput, ParseOutcome};
 use crate::engine::design;
 use crate::engine::prompt;
 use crate::error::AppError;
@@ -88,14 +90,18 @@ pub async fn start_design_analysis(
     let tools = tool_repo::get_all_definitions(&state.db)?;
     let connectors = connector_repo::get_all(&state.db)?;
 
-    let design_prompt = design::build_design_prompt(
-        &persona,
-        &tools,
-        &connectors,
-        &instruction,
-        persona.design_context.as_deref(),
-        persona.last_design_result.as_deref(),
-    );
+    // Stage 1: Prompt Assembly via PersonaCompiler
+    let design_files = persona.design_files_for_prompt();
+    let compilation_input = CompilationInput {
+        persona: &persona,
+        tools: &tools,
+        connectors: &connectors,
+        instruction: &instruction,
+        design_context: design_files.as_deref(),
+        existing_result: persona.last_design_result.as_deref(),
+        conversation_history: None,
+    };
+    let design_prompt = compiler::assemble_prompt(&compilation_input);
 
     let model_profile = prompt::parse_model_profile(persona.model_profile.as_deref());
     let cli_args = prompt::build_cli_args(Some(&persona), model_profile.as_ref());
@@ -113,6 +119,7 @@ pub async fn refine_design(
     feedback: String,
     current_result: Option<String>,
     design_id: Option<String>,
+    conversation_id: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
 
@@ -122,16 +129,31 @@ pub async fn refine_design(
         .or_else(|| persona.last_design_result.clone())
         .ok_or_else(|| AppError::Validation("No existing design to refine".into()))?;
 
-    let refinement_prompt = design::build_refinement_prompt(
-        &last_result,
-        &feedback,
-        persona.design_context.as_deref(),
-    );
+    // Load conversation history if a conversation_id is provided
+    let conversation_history = conversation_id.as_deref().and_then(|cid| {
+        conv_repo::get_by_id(&state.db, cid)
+            .ok()
+            .map(|c| c.messages)
+    });
+
+    let tools = tool_repo::get_all_definitions(&state.db)?;
+    let connectors = connector_repo::get_all(&state.db)?;
+
+    // Stage 1: Prompt Assembly via PersonaCompiler (recompilation with constraints)
+    let design_files = persona.design_files_for_prompt();
+    let compilation_input = CompilationInput {
+        persona: &persona,
+        tools: &tools,
+        connectors: &connectors,
+        instruction: &feedback,
+        design_context: design_files.as_deref(),
+        existing_result: Some(&last_result),
+        conversation_history: conversation_history.as_deref(),
+    };
+    let refinement_prompt = compiler::assemble_prompt(&compilation_input);
 
     let model_profile = prompt::parse_model_profile(persona.model_profile.as_deref());
     let cli_args = prompt::build_cli_args(Some(&persona), model_profile.as_ref());
-    let tools = tool_repo::get_all_definitions(&state.db)?;
-    let connectors = connector_repo::get_all(&state.db)?;
     let tool_names = tools.iter().map(|t| t.name.clone()).collect();
     let connector_names = connectors.iter().map(|c| c.name.clone()).collect();
 
@@ -329,45 +351,27 @@ async fn run_design_analysis(params: DesignRunParams) {
         return;
     }
 
-    // Check for a clarification question before extracting the full result.
-    // When Claude asks a question, the active_design_id is kept alive so the
-    // user can answer and continue via refine_design.
-    if let Some(question) = design::extract_design_question(&full_output) {
-        tracing::info!(design_id = %design_id, "Design analysis paused — question emitted");
-        let _ = app.emit(
-            "design-status",
-            DesignStatusEvent {
-                design_id,
-                status: "awaiting-input".into(),
-                result: None,
-                error: None,
-                question: Some(question),
-            },
-        );
-        return;
-    }
-
-    // Extract design result from output
-    match design::extract_design_result(&full_output) {
-        Some(mut result) => {
-            // Attach feasibility check
-            let feasibility = design::check_feasibility(
-                &result.to_string(),
-                &tool_names,
-                &connector_names,
+    // Stage 3: Parse LLM output via PersonaCompiler
+    match compiler::parse_output(&full_output) {
+        ParseOutcome::Question(question) => {
+            // Pipeline short-circuit: LLM needs clarification
+            tracing::info!(design_id = %design_id, "Design analysis paused — question emitted");
+            let _ = app.emit(
+                "design-status",
+                DesignStatusEvent {
+                    design_id,
+                    status: "awaiting-input".into(),
+                    result: None,
+                    error: None,
+                    question: Some(question),
+                },
             );
-            if let Some(obj) = result.as_object_mut() {
-                obj.insert(
-                    "feasibility".into(),
-                    json!({
-                        "confirmed_capabilities": feasibility.confirmed_capabilities,
-                        "issues": feasibility.issues,
-                        "overall_feasibility": feasibility.overall,
-                    }),
-                );
-            }
+        }
+        ParseOutcome::Result(mut result) => {
+            // Stage 4: Feasibility Check via PersonaCompiler
+            compiler::run_feasibility(&mut result, &tool_names, &connector_names);
 
-            // Save to DB, handling errors
+            // Stage 5: Persist via PersonaCompiler
             let result_json = result.to_string();
             if let Err(e) = persona_repo::update(
                 &pool,
@@ -410,8 +414,8 @@ async fn run_design_analysis(params: DesignRunParams) {
                 },
             );
         }
-        None => {
-            // Clear active design ID on failure too
+        ParseOutcome::Failed => {
+            // Clear active design ID on failure
             {
                 let mut guard = active_design_id.lock().unwrap();
                 if guard.as_deref() == Some(&design_id) {

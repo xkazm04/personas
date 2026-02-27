@@ -1,0 +1,43 @@
+{
+  "id": "builtin-planetscale",
+  "name": "planetscale",
+  "label": "PlanetScale",
+  "color": "#000000",
+  "icon_url": "/icons/connectors/planetscale.svg",
+  "category": "database",
+  "fields": [
+    {
+      "key": "service_token_id",
+      "label": "Service Token ID",
+      "type": "text",
+      "required": true,
+      "placeholder": "",
+      "helpText": "From PlanetScale → Organization → Settings → Service Tokens"
+    },
+    {
+      "key": "service_token",
+      "label": "Service Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "The service token secret paired with the token ID"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.planetscale.com/v1/organizations",
+    "method": "GET",
+    "headers": {
+      "Authorization": "{{service_token_id}}:{{service_token}}"
+    },
+    "description": "Validates service token via PlanetScale organizations endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "PlanetScale serverless MySQL platform with branching and non-blocking schema changes.",
+    "auth_type": "service_token",
+    "auth_type_label": "Service Token",
+    "docs_url": "https://planetscale.com/docs/concepts/service-tokens"
+  }
+}

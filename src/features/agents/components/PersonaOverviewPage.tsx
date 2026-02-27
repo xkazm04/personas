@@ -7,23 +7,16 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { extractConnectorNames } from '@/lib/personas/utils';
 import PersonaHoverPreview from './PersonaHoverPreview';
+import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 
-type HealthLevel = 'healthy' | 'mixed' | 'failing' | 'inactive';
+type HealthLevel = 'healthy' | 'degraded' | 'failing' | 'dormant';
 
-function deriveHealth(statuses: string[] | undefined): HealthLevel {
-  if (!statuses || statuses.length === 0) return 'inactive';
-  const failures = statuses.filter((s) => s === 'failed' || s === 'error').length;
-  const ratio = failures / statuses.length;
-  if (ratio === 0) return 'healthy';
-  if (ratio >= 0.6) return 'failing';
-  return 'mixed';
-}
-
+/** Map backend health status to ring CSS class */
 const HEALTH_RING_CLASS: Record<HealthLevel, string> = {
   healthy: 'ring-2 ring-emerald-400/40',
-  mixed: 'border-2 border-dashed border-amber-400/40',
+  degraded: 'border-2 border-dashed border-amber-400/40',
   failing: 'ring-2 ring-red-400/50',
-  inactive: 'border-2 border-dashed border-muted-foreground/15',
+  dormant: 'border-2 border-dashed border-muted-foreground/15',
 };
 
 const HEALTH_DOT_COLOR: Record<string, string> = {
@@ -78,6 +71,7 @@ export default function PersonaOverviewPage() {
           const triggerCount = triggerCounts[persona.id];
           const lastRun = lastRunMap[persona.id];
           const groupColor = persona.group_id ? groupColorMap[persona.group_id] : undefined;
+          const health: PersonaHealth | undefined = healthMap[persona.id];
 
           return (
             <motion.button
@@ -90,6 +84,7 @@ export default function PersonaOverviewPage() {
               onClick={() => selectPersona(persona.id)}
               onMouseEnter={() => handleMouseEnter(persona.id)}
               onMouseLeave={handleMouseLeave}
+              data-testid={`persona-card-${persona.id}`}
               className="text-left p-4 rounded-xl border border-primary/10 bg-secondary/30 hover:bg-secondary/50 hover:border-primary/20 transition-all group"
               style={groupColor ? {
                 borderLeftWidth: 3,
@@ -118,9 +113,9 @@ export default function PersonaOverviewPage() {
               <div className="flex items-center gap-3 mb-2">
                 {/* Icon with health ring */}
                 {(() => {
-                  const health = deriveHealth(healthMap[persona.id]);
-                  const ringClass = HEALTH_RING_CLASS[health];
-                  const statuses = healthMap[persona.id];
+                  const healthStatus = (health?.status ?? 'dormant') as HealthLevel;
+                  const ringClass = HEALTH_RING_CLASS[healthStatus] ?? HEALTH_RING_CLASS.dormant;
+                  const statuses = health?.recentStatuses;
                   return (
                     <div className="relative group/health">
                       <div className={`rounded-lg ${ringClass}`}>

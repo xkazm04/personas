@@ -31,6 +31,7 @@ import {
   CREATE_TEMPLATE_STEP_META,
 } from './useCreateTemplateReducer';
 import type { PersistedCreateTemplateContext } from './useCreateTemplateReducer';
+import { WizardStepper } from '@/features/shared/components/WizardStepper';
 
 // ── Helpers ──
 
@@ -300,35 +301,11 @@ export function CreateTemplateModal({
   }, [canGoBack, state.step, state.generating, reducer]);
 
   // ── Step indicator ──
-  const stepIndicator = useMemo(() => (
-    <div className="flex items-center gap-2">
-      {CREATE_TEMPLATE_STEPS.map((step, i) => {
-        const meta = CREATE_TEMPLATE_STEP_META[step];
-        const currentIdx = CREATE_TEMPLATE_STEP_META[state.step].index;
-        const isActive = i === currentIdx;
-        const isPast = i < currentIdx;
-        return (
-          <div key={step} className="flex items-center gap-2">
-            {i > 0 && (
-              <div className={`w-6 h-px ${isPast ? 'bg-violet-400/40' : 'bg-primary/10'}`} />
-            )}
-            <div
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm transition-colors ${
-                isActive
-                  ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25'
-                  : isPast
-                    ? 'text-violet-400/60'
-                    : 'text-muted-foreground/40'
-              }`}
-            >
-              <span className="font-mono text-xs">{i + 1}</span>
-              <span className="font-medium">{meta.label}</span>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  ), [state.step]);
+  const createWizardSteps = useMemo(
+    () => CREATE_TEMPLATE_STEPS.map((s) => ({ key: s, label: CREATE_TEMPLATE_STEP_META[s].label })),
+    [],
+  );
+  const createStepIndex = CREATE_TEMPLATE_STEP_META[state.step].index;
 
   if (!isOpen) return null;
 
@@ -363,7 +340,7 @@ export function CreateTemplateModal({
             </div>
           </div>
           <div className="flex items-center gap-4">
-            {stepIndicator}
+            <WizardStepper steps={createWizardSteps} currentIndex={createStepIndex} />
             <button
               onClick={handleClose}
               className="p-1.5 rounded-lg hover:bg-secondary/60 transition-colors"

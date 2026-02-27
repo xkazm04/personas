@@ -45,25 +45,25 @@ export function TemplatePagination({ page, totalPages, onPageChange }: TemplateP
   };
 
   return (
-    <div className="px-4 py-3 border-t border-primary/10 flex items-center justify-center gap-1">
+    <div className="px-4 py-3.5 border-t border-primary/10 flex items-center justify-center gap-1.5">
       <button
         onClick={() => onPageChange(page - 1)}
         disabled={page === 0}
-        className="p-1.5 rounded-lg text-muted-foreground/70 hover:bg-secondary/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        className="p-2 rounded-lg text-muted-foreground/70 hover:bg-secondary/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
       >
-        <ChevronLeft className="w-4 h-4" />
+        <ChevronLeft className="w-4.5 h-4.5" />
       </button>
 
       {getPageNumbers().map((p, i) =>
         p === '...' ? (
-          <span key={`ellipsis-${i}`} className="px-2 text-xs text-muted-foreground/40">
+          <span key={`ellipsis-${i}`} className="px-2.5 text-sm text-muted-foreground/40">
             ...
           </span>
         ) : (
           <button
             key={p}
             onClick={() => onPageChange(p)}
-            className={`min-w-[28px] h-7 rounded-lg text-xs font-medium transition-colors ${
+            className={`min-w-[32px] h-8 rounded-lg text-sm font-medium transition-colors ${
               p === page
                 ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30'
                 : 'text-muted-foreground/70 hover:bg-secondary/50'
@@ -77,9 +77,9 @@ export function TemplatePagination({ page, totalPages, onPageChange }: TemplateP
       <button
         onClick={() => onPageChange(page + 1)}
         disabled={page >= totalPages - 1}
-        className="p-1.5 rounded-lg text-muted-foreground/70 hover:bg-secondary/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        className="p-2 rounded-lg text-muted-foreground/70 hover:bg-secondary/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
       >
-        <ChevronRight className="w-4 h-4" />
+        <ChevronRight className="w-4.5 h-4.5" />
       </button>
     </div>
   );

@@ -228,7 +228,7 @@ pub async fn run_prompt_ab_test(
     )?;
     crate::db::repos::execution::executions::update_status(
         &state.db, &exec_a.id,
-        crate::db::models::UpdateExecutionStatus { status: "running".into(), ..Default::default() },
+        crate::db::models::UpdateExecutionStatus { status: crate::engine::types::ExecutionState::Running, ..Default::default() },
     )?;
 
     // Create execution B with version B's prompt
@@ -245,7 +245,7 @@ pub async fn run_prompt_ab_test(
     )?;
     crate::db::repos::execution::executions::update_status(
         &state.db, &exec_b.id,
-        crate::db::models::UpdateExecutionStatus { status: "running".into(), ..Default::default() },
+        crate::db::models::UpdateExecutionStatus { status: crate::engine::types::ExecutionState::Running, ..Default::default() },
     )?;
 
     // Run both executions concurrently
@@ -257,8 +257,8 @@ pub async fn run_prompt_ab_test(
     let exec_b_id = exec_b.id.clone();
 
     let (res_a, res_b) = tokio::join!(
-        engine.start_execution(app_a, db_a, exec_a_id.clone(), persona_a, tools.clone(), input_json.clone()),
-        engine.start_execution(app, db_b, exec_b_id.clone(), persona_b, tools, input_json),
+        engine.start_execution(app_a, db_a, exec_a_id.clone(), persona_a, tools.clone(), input_json.clone(), None),
+        engine.start_execution(app, db_b, exec_b_id.clone(), persona_b, tools, input_json, None),
     );
 
     // Allow execution failures — we still want to report results
@@ -274,8 +274,8 @@ pub async fn run_prompt_ab_test(
         let a = crate::db::repos::execution::executions::get_by_id(&state.db, &exec_a_id)?;
         let b = crate::db::repos::execution::executions::get_by_id(&state.db, &exec_b_id)?;
 
-        let a_done = a.status != "running" && a.status != "pending";
-        let b_done = b.status != "running" && b.status != "pending";
+        let a_done = a.state().is_terminal();
+        let b_done = b.state().is_terminal();
 
         if a_done && b_done {
             return Ok(PromptAbTestResult {

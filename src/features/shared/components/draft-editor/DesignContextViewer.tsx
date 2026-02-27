@@ -16,8 +16,8 @@ export function DesignContextViewer({ value, onChange, disabled }: DesignContext
   const contextData = useMemo(() => parseDesignContext(value), [value]);
   const credentials = usePersonaStore((s) => s.credentials);
 
-  const hasStructuredData = Boolean(contextData.summary || (contextData.use_cases && contextData.use_cases.length > 0));
-  const credentialLinks = contextData.credential_links ?? {};
+  const hasStructuredData = Boolean(contextData.summary || (contextData.useCases && contextData.useCases.length > 0));
+  const credentialLinks = contextData.credentialLinks ?? {};
   const linkEntries = Object.entries(credentialLinks);
 
   // If no structured data, fall back to SectionEditor
@@ -89,7 +89,7 @@ export function DesignContextViewer({ value, onChange, disabled }: DesignContext
             )}
 
             {/* Use Cases */}
-            {contextData.use_cases && contextData.use_cases.length > 0 && (
+            {contextData.useCases && contextData.useCases.length > 0 && (
               <div>
                 <UseCasesList designContext={value} />
               </div>

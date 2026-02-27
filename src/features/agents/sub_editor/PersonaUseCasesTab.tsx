@@ -1,7 +1,8 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { ListChecks, ChevronRight, ChevronDown, Clock } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { parseDesignContext, type UseCaseItem } from '@/features/shared/components/UseCasesList';
+import { parseDesignContext } from '@/features/shared/components/UseCasesList';
+import type { DesignUseCase as UseCaseItem } from '@/lib/types/frontendTypes';
 import { UseCaseRow } from '@/features/shared/components/UseCaseRow';
 import { UseCaseHistory } from '@/features/shared/components/UseCaseHistory';
 import { UseCaseExecutionPanel } from '@/features/shared/components/UseCaseExecutionPanel';
@@ -11,7 +12,7 @@ import { listExecutions } from '@/api/executions';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import type { PersonaDraft } from '@/features/agents/sub_editor/PersonaDraft';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
-import { formatRelativeTime, formatDuration, EXECUTION_STATUS_COLORS, badgeClass } from '@/lib/utils/formatters';
+import { formatRelativeTime, formatDuration, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 
 interface PersonaUseCasesTabProps {
   draft: PersonaDraft;
@@ -41,7 +42,7 @@ export function PersonaUseCasesTab({ draft, patch, modelDirty, credentials, conn
     () => parseDesignContext(selectedPersona?.design_context),
     [selectedPersona?.design_context],
   );
-  const useCases: UseCaseItem[] = contextData.use_cases ?? [];
+  const useCases: UseCaseItem[] = contextData.useCases ?? [];
 
   const selectedUseCase = useMemo(
     () => useCases.find((uc) => uc.id === selectedUseCaseId) ?? null,
@@ -214,11 +215,11 @@ export function PersonaUseCasesTab({ draft, patch, modelDirty, credentials, conn
             ) : (
               <div className="divide-y divide-primary/5 max-h-64 overflow-y-auto">
                 {generalHistory.slice(0, 20).map((exec) => {
-                  const statusColors = (EXECUTION_STATUS_COLORS[exec.status] ?? EXECUTION_STATUS_COLORS.queued)!;
+                  const statusEntry = getStatusEntry(exec.status);
                   return (
                     <div key={exec.id} className="px-4 py-2 flex items-center gap-3">
-                      <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded border ${badgeClass(statusColors)} uppercase`}>
-                        {exec.status}
+                      <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded border ${badgeClass(statusEntry)} uppercase`}>
+                        {statusEntry.label}
                       </span>
                       <span className="text-sm text-muted-foreground/60 font-mono w-14 flex-shrink-0">
                         {formatDuration(exec.duration_ms)}

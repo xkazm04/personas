@@ -303,6 +303,11 @@ pub async fn logout(
         *auth = AuthStateInner::default();
     }
 
+    // Clear cloud client's user token on logout
+    if let Some(ref client) = *state.cloud_client.lock().await {
+        client.set_user_token(None).await;
+    }
+
     let _ = app.emit("auth-state-changed", AuthStateResponse {
         is_authenticated: false,
         is_offline: false,
@@ -334,14 +339,20 @@ pub async fn refresh_session(
             let expires_at = std::time::Instant::now()
                 + std::time::Duration::from_secs(token_resp.expires_in);
 
+            let access_token = token_resp.access_token;
             let response = {
                 let mut auth = state.auth.lock().await;
-                auth.access_token = Some(token_resp.access_token);
+                auth.access_token = Some(access_token.clone());
                 auth.user = Some(user);
                 auth.is_offline = false;
                 auth.token_expires_at = Some(expires_at);
                 auth.to_response()
             };
+
+            // Push refreshed Supabase JWT to cloud client
+            if let Some(ref client) = *state.cloud_client.lock().await {
+                client.set_user_token(Some(access_token)).await;
+            }
 
             let _ = app.emit("auth-state-changed", &response);
             Ok(response)
@@ -407,13 +418,18 @@ pub async fn handle_auth_callback(
     let state: &Arc<AppState> = &app.state::<Arc<AppState>>();
     let response = {
         let mut auth = state.auth.lock().await;
-        auth.access_token = Some(access_token);
+        auth.access_token = Some(access_token.clone());
         auth.user = Some(user);
         auth.subscription = None; // Fetched lazily or in Phase 12
         auth.is_offline = false;
         auth.token_expires_at = Some(expires_at);
         auth.to_response()
     };
+
+    // Push Supabase JWT to cloud client for per-user isolation
+    if let Some(ref client) = *state.cloud_client.lock().await {
+        client.set_user_token(Some(access_token)).await;
+    }
 
     let _ = app.emit("auth-state-changed", &response);
 

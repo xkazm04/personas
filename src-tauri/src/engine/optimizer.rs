@@ -71,8 +71,8 @@ pub fn analyze_pipeline(
     connections: &[PersonaTeamConnection],
 ) -> PipelineAnalytics {
     let total_runs = runs.len() as i64;
-    let completed_runs = runs.iter().filter(|r| r.status == "completed").count() as i64;
-    let failed_runs = runs.iter().filter(|r| r.status == "failed").count() as i64;
+    let completed_runs = runs.iter().filter(|r| r.state() == crate::engine::types::ExecutionState::Completed).count() as i64;
+    let failed_runs = runs.iter().filter(|r| r.state() == crate::engine::types::ExecutionState::Failed).count() as i64;
     let success_rate = if total_runs > 0 {
         completed_runs as f64 / total_runs as f64
     } else {

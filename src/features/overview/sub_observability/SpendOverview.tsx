@@ -48,12 +48,21 @@ export interface SummaryCardProps {
 
 export function SummaryCard({ icon: Icon, label, numericValue, format, color, trend, sparklineData, subtitle, subtitleColor }: SummaryCardProps) {
   const colorMap: Record<string, string> = {
+    emerald: 'from-emerald-500/5 to-transparent border-emerald-500/20 text-emerald-400',
+    blue: 'from-blue-500/5 to-transparent border-blue-500/20 text-blue-400',
+    green: 'from-green-500/5 to-transparent border-green-500/20 text-green-400',
+    purple: 'from-purple-500/5 to-transparent border-purple-500/20 text-purple-400',
+  };
+  
+  const iconBgMap: Record<string, string> = {
     emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
     blue: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
     green: 'bg-green-500/10 border-green-500/20 text-green-400',
     purple: 'bg-purple-500/10 border-purple-500/20 text-purple-400',
   };
-  const cls = colorMap[color] || colorMap.blue;
+
+  const bgGrad = colorMap[color] || colorMap.blue;
+  const iconCls = iconBgMap[color] || iconBgMap.blue;
   const animated = useAnimatedNumber(numericValue);
 
   const trendDisplay = useMemo(() => {
@@ -68,27 +77,42 @@ export function SummaryCard({ icon: Icon, label, numericValue, format, color, tr
   }, [trend]);
 
   return (
-    <div className="bg-secondary/30 border border-primary/15 rounded-xl p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <div className={`w-8 h-8 rounded-lg border flex items-center justify-center ${cls}`}>
-          <Icon className="w-4 h-4" />
+    <div className={`relative bg-gradient-to-br ${bgGrad} bg-secondary/20 border border-primary/10 rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 overflow-hidden group`}>
+      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+      <div className="relative z-10 flex flex-col h-full">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className={`w-9 h-9 rounded-xl border shadow-inner flex items-center justify-center ${iconCls}`}>
+              <Icon className="w-4 h-4" />
+            </div>
+            <span className="text-[13px] font-semibold text-muted-foreground/80 uppercase tracking-widest">{label}</span>
+          </div>
+          {sparklineData && sparklineData.length >= 2 && (
+            <div className="opacity-60 group-hover:opacity-100 transition-opacity">
+              <Sparkline data={sparklineData} color={SPARKLINE_HEX[color] || '#3b82f6'} />
+            </div>
+          )}
         </div>
-        <span className="text-sm text-muted-foreground/80">{label}</span>
+        
+        <div className="mt-auto">
+          <div className="text-3xl font-black tracking-tight text-foreground/90">{format(animated)}</div>
+          
+          <div className="flex items-center gap-3 mt-2 min-h-[20px]">
+            {trendDisplay ? (
+              <div className={`flex items-center gap-1 text-[13px] font-bold ${trendDisplay.trendColor} bg-background/50 px-1.5 py-0.5 rounded border border-primary/5`}>
+                <trendDisplay.TIcon className="w-3.5 h-3.5" />
+                <span>{trendDisplay.label}</span>
+              </div>
+            ) : <span className="text-[13px] text-muted-foreground/50">—</span>}
+            
+            {subtitle && (
+              <p className={`text-xs font-medium truncate ${subtitleColor || 'text-muted-foreground/70'}`}>
+                {subtitle}
+              </p>
+            )}
+          </div>
+        </div>
       </div>
-      <div className="text-xl font-bold text-foreground">{format(animated)}</div>
-      {sparklineData && sparklineData.length >= 2 && (
-        <Sparkline data={sparklineData} color={SPARKLINE_HEX[color] || '#3b82f6'} />
-      )}
-      {subtitle && (
-        <p className={`text-sm mt-1 ${subtitleColor || 'text-muted-foreground/80'}`}>{subtitle}</p>
-      )}
-      {trendDisplay && (
-        <div className={`flex items-center gap-1 mt-1.5 text-sm ${trendDisplay.trendColor}`}>
-          <trendDisplay.TIcon className="w-3 h-3" />
-          <span>{trendDisplay.label}</span>
-          <span className="text-muted-foreground/80 ml-0.5">vs prev</span>
-        </div>
-      )}
     </div>
   );
 }

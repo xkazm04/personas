@@ -7,6 +7,10 @@ import { CredentialList } from '@/features/vault/components/CredentialList';
 import { CredentialPicker } from '@/features/vault/components/CredentialPicker';
 import { CredentialDesignModal } from '@/features/vault/components/CredentialDesignModal';
 import { CredentialTemplateForm } from '@/features/vault/components/CredentialTemplateForm';
+import { CredentialTypePicker } from '@/features/vault/components/CredentialTypePicker';
+import { McpServerForm } from '@/features/vault/components/credential-types/McpServerForm';
+import { CustomConnectionForm } from '@/features/vault/components/credential-types/CustomConnectionForm';
+import { DatabaseConnectionForm } from '@/features/vault/components/credential-types/DatabaseConnectionForm';
 import { CredentialDeleteDialog } from '@/features/vault/components/CredentialDeleteDialog';
 import { VaultStatusBadge } from '@/features/vault/components/VaultStatusBadge';
 import { useCredentialOAuth } from '@/features/vault/hooks/useCredentialOAuth';
@@ -14,6 +18,7 @@ import { useUndoDelete } from '@/features/vault/hooks/useUndoDelete';
 import { useTemplateSelection } from '@/features/vault/hooks/useTemplateSelection';
 import * as api from '@/api/tauriApi';
 import type { VaultStatus } from '@/api/tauriApi';
+import { healthcheckCredentialPreview } from '@/api/credentials';
 
 export function CredentialManager() {
   const credentials = usePersonaStore((s) => s.credentials);
@@ -31,6 +36,10 @@ export function CredentialManager() {
   const [credentialSearch, setCredentialSearch] = useState('');
 
   const template = useTemplateSelection(connectorDefinitions);
+
+  // Healthcheck state for catalog (from-template) flow
+  const [templateHcLoading, setTemplateHcLoading] = useState(false);
+  const [templateHcResult, setTemplateHcResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const handleOAuthSuccess = useCallback(async ({ credentialData }: { credentialData: Record<string, string> }) => {
     if (!template.selectedConnector) return;
@@ -54,6 +63,14 @@ export function CredentialManager() {
     onSuccess: handleOAuthSuccess,
     onError: handleOAuthError,
   });
+
+  // Wrap pickType to clear healthcheck state when switching connectors
+  const handlePickType = useCallback((connector: Parameters<typeof template.pickType>[0]) => {
+    setTemplateHcResult(null);
+    setTemplateHcLoading(false);
+    oauth.reset();
+    template.pickType(connector);
+  }, [template.pickType, oauth]);
 
   const undoDelete = useUndoDelete({
     onDelete: deleteCredential,
@@ -103,6 +120,23 @@ export function CredentialManager() {
     if (!template.selectedConnector) return;
     setError(null);
     oauth.startConsent(template.selectedConnector.name, values);
+  };
+
+  const handleTemplateHealthcheck = async (values: Record<string, string>) => {
+    if (!template.selectedConnector) return;
+    setTemplateHcLoading(true);
+    setTemplateHcResult(null);
+    try {
+      const result = await healthcheckCredentialPreview(
+        template.selectedConnector.name,
+        values,
+      );
+      setTemplateHcResult(result);
+    } catch (e) {
+      setTemplateHcResult({ success: false, message: e instanceof Error ? e.message : 'Test failed' });
+    } finally {
+      setTemplateHcLoading(false);
+    }
   };
 
   if (loading) {
@@ -174,7 +208,9 @@ export function CredentialManager() {
           >
             <CredentialPicker
               connectors={template.filteredConnectors}
-              onPickType={template.pickType}
+              credentials={credentials}
+              onPickType={handlePickType}
+              searchTerm={template.templateSearch}
             />
           </motion.div>
         )}
@@ -193,10 +229,21 @@ export function CredentialManager() {
             onCancel={() => {
               template.cancelForm();
               oauth.reset();
+              setTemplateHcResult(null);
             }}
             onValuesChanged={() => {
               if (oauth.completedAt) oauth.reset();
+              if (templateHcResult) setTemplateHcResult(null);
             }}
+            onMcpComplete={() => {
+              void fetchCredentials().catch(() => {});
+              fetchConnectorDefinitions();
+              setCredentialView('credentials');
+              template.resetAll();
+            }}
+            onHealthcheck={handleTemplateHealthcheck}
+            isHealthchecking={templateHcLoading}
+            healthcheckResult={templateHcResult}
           />
         )}
 
@@ -208,12 +255,22 @@ export function CredentialManager() {
             onDelete={handleDeleteRequest}
             onQuickStart={(connector) => {
               setCredentialView('from-template');
-              template.pickType(connector);
+              handlePickType(connector);
             }}
           />
         )}
 
         {credentialView === 'add-new' && (
+          <CredentialTypePicker
+            onSelectApiTool={() => setCredentialView('add-api-tool')}
+            onSelectMcp={() => setCredentialView('add-mcp')}
+            onSelectCustom={() => setCredentialView('add-custom')}
+            onSelectDatabase={() => setCredentialView('add-database')}
+            onBack={() => setCredentialView('credentials')}
+          />
+        )}
+
+        {credentialView === 'add-api-tool' && (
           <motion.div
             key="design-inline"
             initial={{ opacity: 0, y: -10 }}
@@ -224,7 +281,7 @@ export function CredentialManager() {
             <CredentialDesignModal
               open
               embedded
-              onClose={() => setCredentialView('credentials')}
+              onClose={() => setCredentialView('add-new')}
               onComplete={() => {
                 void fetchCredentials().catch(() => {});
                 fetchConnectorDefinitions();
@@ -232,6 +289,27 @@ export function CredentialManager() {
               }}
             />
           </motion.div>
+        )}
+
+        {credentialView === 'add-mcp' && (
+          <McpServerForm
+            onBack={() => setCredentialView('add-new')}
+            onComplete={() => setCredentialView('credentials')}
+          />
+        )}
+
+        {credentialView === 'add-custom' && (
+          <CustomConnectionForm
+            onBack={() => setCredentialView('add-new')}
+            onComplete={() => setCredentialView('credentials')}
+          />
+        )}
+
+        {credentialView === 'add-database' && (
+          <DatabaseConnectionForm
+            onBack={() => setCredentialView('add-new')}
+            onComplete={() => setCredentialView('credentials')}
+          />
         )}
       </AnimatePresence>
 

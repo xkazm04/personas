@@ -7,3 +7,6 @@ export function parseJsonOrDefault<T>(json: string | null | undefined, fallback:
     return fallback;
   }
 }
+
+/** Alias for parseJsonOrDefault — matches the name used across template components. */
+export const parseJsonSafe = parseJsonOrDefault;

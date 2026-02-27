@@ -1,0 +1,43 @@
+{
+  "id": "builtin-neon",
+  "name": "neon",
+  "label": "Neon",
+  "color": "#00E699",
+  "icon_url": "/icons/connectors/neon.svg",
+  "category": "database",
+  "fields": [
+    {
+      "key": "api_key",
+      "label": "API Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "From Neon Console → Account Settings → API Keys → Generate"
+    },
+    {
+      "key": "connection_string",
+      "label": "Connection String",
+      "type": "password",
+      "required": false,
+      "placeholder": "postgresql://user:pass@ep-xxx.region.aws.neon.tech/dbname",
+      "helpText": "Optional: PostgreSQL connection string for direct database access"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://console.neon.tech/api/v2/projects",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{api_key}}"
+    },
+    "description": "Validates API key via Neon projects endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Neon serverless Postgres with branching, autoscaling, and bottomless storage.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://neon.tech/docs/manage/api-keys"
+  }
+}

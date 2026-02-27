@@ -1,4 +1,4 @@
-import type { AdoptionRequirement, DesignAnalysisResult, StructuredPromptSection } from '@/lib/types/designTypes';
+import type { AdoptionRequirement, DesignAnalysisResult, StructuredPromptSection, SuggestedTrigger } from '@/lib/types/designTypes';
 
 const VAR_PATTERN = /\{\{(\w+)\}\}/g;
 
@@ -42,6 +42,35 @@ function replaceVars(text: string, values: Record<string, string>): string {
  * Substitute {{key}} placeholders in all text fields of a DesignAnalysisResult.
  * Returns a NEW DesignAnalysisResult with variables replaced.
  */
+/** Filter a DesignAnalysisResult to only include user-selected entities */
+export function filterDesignResult(
+  design: DesignAnalysisResult,
+  selections: {
+    selectedToolIndices: Set<number>;
+    selectedTriggerIndices: Set<number>;
+    selectedConnectorNames: Set<string>;
+    selectedChannelIndices: Set<number>;
+    selectedEventIndices: Set<number>;
+  },
+): DesignAnalysisResult {
+  return {
+    ...design,
+    suggested_tools: design.suggested_tools.filter((_, i) => selections.selectedToolIndices.has(i)),
+    suggested_triggers: design.suggested_triggers.filter((_, i) => selections.selectedTriggerIndices.has(i)),
+    suggested_connectors: design.suggested_connectors?.filter((c) => selections.selectedConnectorNames.has(c.name)),
+    suggested_notification_channels: design.suggested_notification_channels?.filter((_, i) => selections.selectedChannelIndices.has(i)),
+    suggested_event_subscriptions: design.suggested_event_subscriptions?.filter((_, i) => selections.selectedEventIndices.has(i)),
+  };
+}
+
+/** Merge user trigger configs into the selected triggers */
+export function applyTriggerConfigs(
+  triggers: SuggestedTrigger[],
+  configs: Record<number, Record<string, string>>,
+): SuggestedTrigger[] {
+  return triggers.map((t, i) => configs[i] ? { ...t, config: { ...t.config, ...configs[i] } } : t);
+}
+
 export function substituteVariables(
   design: DesignAnalysisResult,
   values: Record<string, string>,

@@ -1,5 +1,5 @@
 import { Shield, Beaker, Archive } from 'lucide-react';
-import { parseStructuredPrompt } from '@/lib/personas/promptMigration';
+import { getSectionSummary } from '@/lib/personas/promptMigration';
 
 // ── Tag colors ──
 
@@ -25,19 +25,8 @@ export function formatRelative(dateStr: string): string {
   return d.toLocaleDateString();
 }
 
-/** Extract section summaries from a structured prompt JSON string */
-export function getSectionSummary(json: string | null): Record<string, string> {
-  if (!json) return {};
-  const parsed = parseStructuredPrompt(json);
-  if (!parsed) return {};
-  const result: Record<string, string> = {};
-  if (parsed.identity) result['Identity'] = parsed.identity.slice(0, 80);
-  if (parsed.instructions) result['Instructions'] = parsed.instructions.slice(0, 80);
-  if (parsed.toolGuidance) result['Tool Guidance'] = parsed.toolGuidance.slice(0, 80);
-  if (parsed.examples) result['Examples'] = parsed.examples.slice(0, 80);
-  if (parsed.errorHandling) result['Error Handling'] = parsed.errorHandling.slice(0, 80);
-  return result;
-}
+// getSectionSummary is re-exported from the canonical StructuredPrompt module
+export { getSectionSummary };
 
 /** Simple word-level diff between two strings */
 export function diffStrings(a: string, b: string): Array<{ type: 'same' | 'added' | 'removed'; text: string }> {

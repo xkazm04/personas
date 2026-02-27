@@ -1,0 +1,52 @@
+{
+  "id": "builtin-jira",
+  "name": "jira",
+  "label": "Jira",
+  "color": "#0052CC",
+  "icon_url": "/icons/connectors/jira.svg",
+  "category": "development",
+  "fields": [
+    {
+      "key": "domain",
+      "label": "Atlassian Domain",
+      "type": "text",
+      "required": true,
+      "placeholder": "your-company.atlassian.net",
+      "helpText": "Your Jira Cloud domain (without https://)"
+    },
+    {
+      "key": "email",
+      "label": "Account Email",
+      "type": "text",
+      "required": true,
+      "placeholder": "you@company.com",
+      "helpText": "The email address for your Atlassian account"
+    },
+    {
+      "key": "api_token",
+      "label": "API Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "From id.atlassian.com/manage-profile/security/api-tokens"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://{{domain}}/rest/api/3/myself",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Basic {{base64(email:api_token)}}",
+      "Accept": "application/json"
+    },
+    "description": "Validates credentials via Jira myself endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Jira issue tracking and project management for agile software teams.",
+    "auth_type": "basic_api_token",
+    "auth_type_label": "API Token",
+    "docs_url": "https://id.atlassian.com/manage-profile/security/api-tokens"
+  }
+}

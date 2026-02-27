@@ -1,0 +1,20 @@
+{
+  "id": "builtin-circleci",
+  "name": "circleci",
+  "label": "CircleCI",
+  "color": "#343434",
+  "icon_url": "/icons/connectors/circleci.svg",
+  "category": "development",
+  "fields": [
+    { "key": "personal_token", "label": "Personal API Token", "type": "password", "required": true, "placeholder": "CCIPAT_...", "helpText": "From CircleCI → User Settings → Personal API Tokens" }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://circleci.com/api/v2/me",
+    "method": "GET",
+    "headers": { "Circle-Token": "{{personal_token}}" },
+    "description": "Validates token via CircleCI me endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": { "template_enabled": true, "summary": "CircleCI continuous integration and delivery platform.", "auth_type": "pat", "auth_type_label": "PAT", "docs_url": "https://circleci.com/docs/managing-api-tokens/" }
+}

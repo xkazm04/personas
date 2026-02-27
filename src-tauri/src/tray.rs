@@ -171,12 +171,13 @@ fn recent_execution_labels(state: &AppState, limit: usize) -> Vec<String> {
     execs
         .iter()
         .map(|e| {
-            let icon = match e.status.as_str() {
-                "completed" => "OK",
-                "failed" => "FAIL",
-                "running" => "RUN",
-                "cancelled" => "STOP",
-                _ => &e.status,
+            let icon = match e.state() {
+                crate::engine::types::ExecutionState::Completed => "OK",
+                crate::engine::types::ExecutionState::Failed => "FAIL",
+                crate::engine::types::ExecutionState::Running => "RUN",
+                crate::engine::types::ExecutionState::Cancelled => "STOP",
+                crate::engine::types::ExecutionState::Queued => "WAIT",
+                crate::engine::types::ExecutionState::Incomplete => "WARN",
             };
             let short_ts = if e.created_at.len() >= 16 {
                 &e.created_at[..16]

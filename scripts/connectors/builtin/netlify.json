@@ -1,0 +1,35 @@
+{
+  "id": "builtin-netlify",
+  "name": "netlify",
+  "label": "Netlify",
+  "color": "#00C7B7",
+  "icon_url": "/icons/connectors/netlify.svg",
+  "category": "devops",
+  "fields": [
+    {
+      "key": "access_token",
+      "label": "Personal Access Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "From Netlify → User Settings → Applications → Personal Access Tokens"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.netlify.com/api/v1/user",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{access_token}}"
+    },
+    "description": "Validates access token via Netlify user endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Netlify web deployment platform with serverless functions and form handling.",
+    "auth_type": "pat",
+    "auth_type_label": "PAT",
+    "docs_url": "https://app.netlify.com/user/applications#personal-access-tokens"
+  }
+}

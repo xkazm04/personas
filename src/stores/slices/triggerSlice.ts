@@ -11,7 +11,7 @@ export interface TriggerSlice {
   webhookStatus: WebhookStatus | null;
 
   // Actions
-  createTrigger: (personaId: string, input: { trigger_type: string; config?: object; enabled?: boolean }) => Promise<void>;
+  createTrigger: (personaId: string, input: { trigger_type: string; config?: object; enabled?: boolean; use_case_id?: string | null }) => Promise<void>;
   updateTrigger: (personaId: string, triggerId: string, updates: Record<string, unknown>) => Promise<void>;
   deleteTrigger: (personaId: string, triggerId: string) => Promise<void>;
   fetchTriggerChains: () => Promise<void>;
@@ -29,6 +29,7 @@ export const createTriggerSlice: StateCreator<PersonaStore, [], [], TriggerSlice
         trigger_type: input.trigger_type,
         config: input.config ? JSON.stringify(input.config) : null,
         enabled: input.enabled ?? null,
+        use_case_id: input.use_case_id ?? null,
       });
       get().fetchDetail(personaId);
     } catch (err) {

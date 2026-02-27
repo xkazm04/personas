@@ -1,0 +1,35 @@
+{
+  "id": "builtin-slack",
+  "name": "slack",
+  "label": "Slack",
+  "color": "#4A154B",
+  "icon_url": "/icons/connectors/slack.svg",
+  "category": "messaging",
+  "fields": [
+    {
+      "key": "bot_token",
+      "label": "Bot User OAuth Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "xoxb-...",
+      "helpText": "From Slack App → OAuth & Permissions → Bot User OAuth Token"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://slack.com/api/auth.test",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{bot_token}}"
+    },
+    "description": "Validates bot token via Slack auth.test endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Slack workspace messaging for channels, DMs, and workflow notifications.",
+    "auth_type": "bot_token",
+    "auth_type_label": "Bot Token",
+    "docs_url": "https://api.slack.com/authentication/token-types"
+  }
+}

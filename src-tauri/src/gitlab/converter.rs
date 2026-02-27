@@ -140,7 +140,7 @@ pub fn persona_to_agent(
     tools: &[PersonaToolDefinition],
     credential_hints: Option<&[&str]>,
 ) -> GitLabAgentDefinition {
-    let system_prompt = engine::prompt::assemble_prompt(persona, tools, None, credential_hints);
+    let system_prompt = engine::prompt::assemble_prompt(persona, tools, None, credential_hints, None);
 
     let agent_tools: Vec<GitLabAgentTool> = tools
         .iter()
@@ -193,7 +193,7 @@ pub fn persona_to_agents_md(
     }
 
     md.push_str("### System Prompt\n\n");
-    let prompt = engine::prompt::assemble_prompt(persona, tools, None, credential_hints);
+    let prompt = engine::prompt::assemble_prompt(persona, tools, None, credential_hints, None);
     md.push_str("```\n");
     md.push_str(&prompt);
     md.push_str("\n```\n\n");
