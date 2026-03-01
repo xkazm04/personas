@@ -13,6 +13,7 @@ import type { PromptPerformanceData } from '@/lib/bindings/PromptPerformanceData
 import type { PromptPerformancePoint } from '@/lib/bindings/PromptPerformancePoint';
 import type { MetricAnomaly } from '@/lib/bindings/MetricAnomaly';
 import { GRID_STROKE, AXIS_TICK_FILL } from '@/features/overview/sub_usage/charts/chartConstants';
+import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -312,23 +313,25 @@ export function PromptPerformanceDashboard({
       {compareMode && (
         <div className="flex items-center gap-3 px-3 py-2 bg-secondary/20 border border-primary/10 rounded-xl">
           <span className="text-xs text-muted-foreground/60">Compare versions:</span>
-          <select
+          <ThemedSelect
             value={compareA ?? ''}
             onChange={(e) => setCompareA(e.target.value ? Number(e.target.value) : null)}
-            className="bg-background/50 border border-indigo-500/20 text-sm rounded-lg px-2 py-1 text-foreground/80"
+            className="px-2 py-1 w-auto"
+            wrapperClassName="inline-block"
           >
             <option value="">Version A</option>
             {versionNumbers.map(n => <option key={n} value={n}>v{n}</option>)}
-          </select>
+          </ThemedSelect>
           <span className="text-xs text-muted-foreground/40">vs</span>
-          <select
+          <ThemedSelect
             value={compareB ?? ''}
             onChange={(e) => setCompareB(e.target.value ? Number(e.target.value) : null)}
-            className="bg-background/50 border border-pink-500/20 text-sm rounded-lg px-2 py-1 text-foreground/80"
+            className="px-2 py-1 w-auto"
+            wrapperClassName="inline-block"
           >
             <option value="">Version B</option>
             {versionNumbers.map(n => <option key={n} value={n}>v{n}</option>)}
-          </select>
+          </ThemedSelect>
         </div>
       )}
 

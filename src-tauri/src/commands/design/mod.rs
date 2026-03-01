@@ -4,4 +4,5 @@ pub mod n8n_sessions;
 pub mod n8n_transform;
 pub mod platform_definitions;
 pub mod reviews;
+pub mod smart_search;
 pub mod template_adopt;

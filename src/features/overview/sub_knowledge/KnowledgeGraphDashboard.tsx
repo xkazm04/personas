@@ -6,6 +6,7 @@ import { getKnowledgeSummary, listExecutionKnowledge } from '@/api/knowledge';
 import type { KnowledgeGraphSummary } from '@/lib/bindings/KnowledgeGraphSummary';
 import type { ExecutionKnowledge } from '@/lib/bindings/ExecutionKnowledge';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
+import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 
 // ── Knowledge type config ─────────────────────────────────────────
 const KNOWLEDGE_TYPES: Record<string, { label: string; color: string; icon: typeof Network }> = {
@@ -242,27 +243,27 @@ export default function KnowledgeGraphDashboard() {
 
           {/* Filters */}
           <div className="flex items-center gap-3 flex-wrap">
-            <select
+            <ThemedSelect
               value={selectedPersonaId ?? ''}
               onChange={(e) => setSelectedPersonaId(e.target.value || null)}
-              className="px-3 py-1.5 rounded-lg bg-secondary/30 border border-primary/10 text-sm text-foreground/80 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="py-1.5"
             >
               <option value="">All Personas (Global)</option>
               {personas.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
-            </select>
+            </ThemedSelect>
 
-            <select
+            <ThemedSelect
               value={selectedType ?? ''}
               onChange={(e) => setSelectedType(e.target.value || null)}
-              className="px-3 py-1.5 rounded-lg bg-secondary/30 border border-primary/10 text-sm text-foreground/80 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="py-1.5"
             >
               <option value="">All Types</option>
               {Object.entries(KNOWLEDGE_TYPES).map(([key, val]) => (
                 <option key={key} value={key}>{val.label}</option>
               ))}
-            </select>
+            </ThemedSelect>
           </div>
 
           {/* Entries list */}

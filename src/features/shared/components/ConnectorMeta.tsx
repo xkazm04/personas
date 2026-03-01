@@ -68,7 +68,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   google_analytics:   { label: 'Google Analytics',   color: '#E37400', iconUrl: 'https://cdn.simpleicons.org/googleanalytics/E37400', Icon: BarChart },
 
   // ── Chat & Messaging ─────────────────────────────────────────
-  slack:              { label: 'Slack',              color: '#4A154B', iconUrl: 'https://cdn.simpleicons.org/slack/4A154B',            Icon: MessageSquare },
+  slack:              { label: 'Slack',              color: '#4A154B', iconUrl: '/icons/connectors/slack.svg',                          Icon: MessageSquare },
   discord:            { label: 'Discord',            color: '#5865F2', iconUrl: 'https://cdn.simpleicons.org/discord/5865F2',          Icon: MessageSquare },
   telegram:           { label: 'Telegram',           color: '#26A5E4', iconUrl: 'https://cdn.simpleicons.org/telegram/26A5E4',        Icon: MessageSquare },
   personas_messages:  { label: 'In-App Messages',    color: '#8B5CF6', iconUrl: null,                                                  Icon: Bell },
@@ -105,6 +105,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
 
   // ── Database ──────────────────────────────────────────────────
   supabase:           { label: 'Supabase',           color: '#3FCF8E', iconUrl: 'https://cdn.simpleicons.org/supabase/3FCF8E',         Icon: Database },
+  neon:               { label: 'Neon',               color: '#00E599', iconUrl: '/icons/connectors/neon.svg',                           Icon: Database },
   postgres_proxy:     { label: 'PostgreSQL',         color: '#4169E1', iconUrl: 'https://cdn.simpleicons.org/postgresql/4169E1',       Icon: Database },
 
   // ── Monitoring & Observability ────────────────────────────────
@@ -121,7 +122,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   segment:            { label: 'Segment',            color: '#52BD95', iconUrl: 'https://cdn.simpleicons.org/segment/52BD95',          Icon: BarChart },
 
   // ── Email & SMS ───────────────────────────────────────────────
-  sendgrid:           { label: 'SendGrid',           color: '#1A82E2', iconUrl: 'https://cdn.simpleicons.org/twilio/1A82E2',           Icon: Send },
+  sendgrid:           { label: 'SendGrid',           color: '#1A82E2', iconUrl: '/icons/connectors/sendgrid.svg',                       Icon: Send },
   mailchimp:          { label: 'Mailchimp',          color: '#FFE01B', iconUrl: 'https://cdn.simpleicons.org/mailchimp/FFE01B',        Icon: Mail },
   twilio:             { label: 'Twilio',             color: '#F22F46', iconUrl: 'https://cdn.simpleicons.org/twilio/F22F46',           Icon: Phone },
 
@@ -176,6 +177,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
 
   // ── AI ────────────────────────────────────────────────────────
   openai:             { label: 'OpenAI',             color: '#412991', iconUrl: 'https://cdn.simpleicons.org/openai/f0f0f0',           Icon: Bot },
+  replicate:          { label: 'Replicate',          color: '#3D3D3D', iconUrl: '/icons/connectors/replicate.svg',                      Icon: Bot },
 
   // ── Cloud Storage ─────────────────────────────────────────────
   dropbox:            { label: 'Dropbox',            color: '#0061FF', iconUrl: 'https://cdn.simpleicons.org/dropbox/0061FF',          Icon: HardDrive },

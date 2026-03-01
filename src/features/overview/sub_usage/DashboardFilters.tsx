@@ -1,4 +1,5 @@
 import type { Persona } from '@/lib/bindings/Persona';
+import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 
 // ---------------------------------------------------------------------------
 // DayRangePicker
@@ -49,10 +50,10 @@ interface PersonaSelectProps {
 
 export function PersonaSelect({ value, onChange, personas }: PersonaSelectProps) {
   return (
-    <select
+    <ThemedSelect
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="bg-secondary/50 border border-primary/20 rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 appearance-none cursor-pointer"
+      className="py-1.5"
     >
       <option value="">All Personas</option>
       {personas.map((p) => (
@@ -60,6 +61,6 @@ export function PersonaSelect({ value, onChange, personas }: PersonaSelectProps)
           {p.icon ? `${p.icon} ` : ''}{p.name}
         </option>
       ))}
-    </select>
+    </ThemedSelect>
   );
 }

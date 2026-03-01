@@ -9,6 +9,9 @@ import {
   X,
   ArrowUpDown,
   Trash2,
+  Sparkles,
+  Loader2,
+  Send,
   LayoutGrid,
   MessageSquare,
   FileText,
@@ -92,6 +95,14 @@ interface TemplateSearchBarProps {
   isCleaningUp?: boolean;
   coverageFilter?: string;
   onCoverageFilterChange?: (value: string) => void;
+  // AI search
+  aiSearchMode?: boolean;
+  onAiSearchToggle?: () => void;
+  aiSearchLoading?: boolean;
+  aiSearchRationale?: string;
+  aiSearchActive?: boolean;
+  onAiSearchSubmit?: (query: string) => void;
+  aiCliLog?: string[];
 }
 
 const SORT_OPTIONS = [
@@ -481,8 +492,16 @@ export function TemplateSearchBar({
   isCleaningUp,
   coverageFilter,
   onCoverageFilterChange,
+  aiSearchMode,
+  onAiSearchToggle,
+  aiSearchLoading,
+  aiSearchRationale,
+  aiSearchActive,
+  onAiSearchSubmit,
+  aiCliLog,
 }: TemplateSearchBarProps) {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showCliLog, setShowCliLog] = useState(false);
 
   const start = page * perPage + 1;
   const end = Math.min((page + 1) * perPage, total);
@@ -500,25 +519,134 @@ export function TemplateSearchBar({
     <div className="border-b border-primary/10 flex-shrink-0">
       {/* Row 1 — Centered Search */}
       <div className="px-4 py-3 flex items-center justify-center">
-        <div className="relative w-full max-w-2xl">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search templates..."
-            className="w-full pl-10 pr-10 py-2.5 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground/90 placeholder:text-muted-foreground/40 focus:outline-none focus:border-violet-500/30 focus:ring-1 focus:ring-violet-500/20 transition-all"
-          />
-          {search && (
+        <div className="relative w-full max-w-2xl flex items-center gap-2">
+          {/* AI toggle */}
+          {onAiSearchToggle && (
             <button
-              onClick={() => onSearchChange('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground/70"
+              onClick={onAiSearchToggle}
+              className={`p-2.5 rounded-xl border transition-all flex-shrink-0 ${
+                aiSearchMode
+                  ? 'bg-indigo-500/15 border-indigo-500/30 text-indigo-300'
+                  : 'border-primary/10 text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-secondary/40'
+              }`}
+              title={aiSearchMode ? 'Switch to keyword search' : 'Switch to AI search'}
             >
-              <X className="w-3.5 h-3.5" />
+              <Sparkles className="w-4 h-4" />
             </button>
           )}
+          <div className="relative flex-1">
+            {aiSearchMode && aiSearchLoading ? (
+              <Loader2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-400 animate-spin" />
+            ) : (
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
+            )}
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => onSearchChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && aiSearchMode && onAiSearchSubmit && search.trim()) {
+                  e.preventDefault();
+                  onAiSearchSubmit(search.trim());
+                }
+              }}
+              placeholder={aiSearchMode ? 'Describe what you need, then press Enter...' : 'Search templates...'}
+              className={`w-full pl-10 py-2.5 text-sm bg-secondary/40 border rounded-xl text-foreground/90 placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 transition-all ${
+                aiSearchMode
+                  ? `pr-20 border-indigo-500/20 focus:border-indigo-500/40 focus:ring-indigo-500/20`
+                  : 'pr-10 border-primary/10 focus:border-violet-500/30 focus:ring-violet-500/20'
+              }`}
+            />
+            {/* Clear button (keyword mode) or AI controls */}
+            {aiSearchMode ? (
+              <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                {search && (
+                  <button
+                    onClick={() => onSearchChange('')}
+                    className="p-1 text-muted-foreground/50 hover:text-foreground/70"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                <button
+                  onClick={() => onAiSearchSubmit?.(search.trim())}
+                  disabled={!search.trim() || aiSearchLoading}
+                  className="p-1.5 rounded-lg bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  title="Search with AI"
+                >
+                  {aiSearchLoading ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Send className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </div>
+            ) : (
+              search && (
+                <button
+                  onClick={() => onSearchChange('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground/70"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )
+            )}
+          </div>
         </div>
       </div>
+
+      {/* AI search status bar */}
+      {aiSearchMode && (aiSearchLoading || aiSearchRationale) && (
+        <div className="px-4 pb-2">
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg max-w-2xl mx-auto ${
+            aiSearchLoading
+              ? 'bg-indigo-500/8 border border-indigo-500/15'
+              : aiSearchActive
+                ? 'bg-emerald-500/8 border border-emerald-500/15'
+                : 'bg-amber-500/8 border border-amber-500/15'
+          }`}>
+            {aiSearchLoading ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 text-indigo-400 animate-spin flex-shrink-0" />
+                <span className="text-xs text-indigo-300/80">Searching with AI — results will appear when ready...</span>
+              </>
+            ) : aiSearchActive ? (
+              <>
+                <Sparkles className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                <span className="text-xs text-emerald-300/80 flex-1">{aiSearchRationale}</span>
+                <span className="text-xs text-emerald-400/60 tabular-nums flex-shrink-0">{total} result{total !== 1 ? 's' : ''}</span>
+              </>
+            ) : (
+              <>
+                <AlertCircle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                <span className="text-xs text-amber-300/80 flex-1">{aiSearchRationale}</span>
+              </>
+            )}
+            {/* Toggle CLI log button */}
+            {aiCliLog && aiCliLog.length > 0 && (
+              <button
+                onClick={() => setShowCliLog(!showCliLog)}
+                className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-muted-foreground/60 hover:text-foreground/70 transition-colors flex-shrink-0"
+              >
+                {showCliLog ? 'Hide Log' : 'Show Log'}
+              </button>
+            )}
+          </div>
+          {/* Collapsible CLI log panel */}
+          {showCliLog && aiCliLog && aiCliLog.length > 0 && (
+            <div className="mt-1.5 max-w-2xl mx-auto rounded-lg bg-black/40 border border-primary/10 overflow-hidden">
+              <div className="max-h-48 overflow-y-auto p-2 font-mono text-[10px] leading-relaxed text-muted-foreground/60 space-y-0.5">
+                {aiCliLog.map((line, i) => (
+                  <div key={i} className="whitespace-pre-wrap break-all">
+                    <span className="text-muted-foreground/30 select-none">{String(i + 1).padStart(3, ' ')} </span>
+                    {line}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Row 2 — Category button + active filter chips + controls */}
       <div className="px-4 pb-3 flex items-center gap-2">

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Loader2, Rocket, Check, ExternalLink, ShieldCheck, KeyRound } from 'lucide-react';
 import type { GitLabProject, GitLabDeployResult } from '@/api/gitlab';
+import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 
 interface GitLabDeployModalProps {
   projects: GitLabProject[];
@@ -47,10 +48,9 @@ export function GitLabDeployModal({
       {/* Project picker */}
       <div>
         <label className="block text-sm font-medium text-foreground/80 mb-1.5">Target Project</label>
-        <select
+        <ThemedSelect
           value={selectedProjectId ?? ''}
           onChange={(e) => onSelectProject(Number(e.target.value))}
-          className="w-full px-3 py-2 rounded-lg border border-primary/15 bg-background text-sm text-foreground/90 focus:outline-none focus:border-orange-500/40"
         >
           <option value="">Select a project...</option>
           {projects.map((p) => (
@@ -58,16 +58,15 @@ export function GitLabDeployModal({
               {p.pathWithNamespace}
             </option>
           ))}
-        </select>
+        </ThemedSelect>
       </div>
 
       {/* Persona picker */}
       <div>
         <label className="block text-sm font-medium text-foreground/80 mb-1.5">Persona to Deploy</label>
-        <select
+        <ThemedSelect
           value={selectedPersonaId}
           onChange={(e) => setSelectedPersonaId(e.target.value)}
-          className="w-full px-3 py-2 rounded-lg border border-primary/15 bg-background text-sm text-foreground/90 focus:outline-none focus:border-orange-500/40"
         >
           <option value="">Select a persona...</option>
           {personas.map((p) => (
@@ -75,7 +74,7 @@ export function GitLabDeployModal({
               {p.icon ? `${p.icon} ` : ''}{p.name}
             </option>
           ))}
-        </select>
+        </ThemedSelect>
       </div>
 
       {/* Credential provisioning toggle */}
