@@ -821,6 +821,16 @@ export default function GeneratedReviewsTab({
         isCleaningUp={isCleaningUp}
         coverageFilter={gallery.coverageFilter}
         onCoverageFilterChange={gallery.setCoverageFilter}
+        aiSearchMode={gallery.aiSearchMode}
+        onAiSearchToggle={() => {
+          gallery.setAiSearchMode(!gallery.aiSearchMode);
+          if (gallery.aiSearchMode) gallery.clearAiSearch();
+        }}
+        aiSearchLoading={gallery.aiSearchLoading}
+        aiSearchRationale={gallery.aiSearchRationale}
+        aiSearchActive={gallery.aiSearchActive}
+        onAiSearchSubmit={(q) => gallery.triggerAiSearch(q)}
+        aiCliLog={gallery.aiCliLog}
       />
 
       {/* Trending Carousel */}

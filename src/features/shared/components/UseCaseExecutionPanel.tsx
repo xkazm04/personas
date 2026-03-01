@@ -7,6 +7,7 @@ import { ExecutionTerminal } from '@/features/agents/sub_executions/ExecutionTer
 import { JsonEditor } from '@/features/shared/components/JsonEditor';
 import { formatElapsed } from '@/lib/utils/formatters';
 import type { UseCaseItem, UseCaseInputField } from './UseCasesList';
+import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 
 const MODE_BADGE: Record<string, { label: string; bg: string; text: string }> = {
   e2e:  { label: 'E2E',  bg: 'bg-emerald-500/10 border-emerald-500/20', text: 'text-emerald-400/80' },
@@ -307,15 +308,16 @@ function StructuredField({ field, value, onChange }: { field: UseCaseInputField;
       return (
         <div className="flex items-center gap-2">
           <label className="text-xs font-medium text-muted-foreground/70 w-24 flex-shrink-0">{field.label}</label>
-          <select
+          <ThemedSelect
             value={String(value ?? field.default ?? '')}
             onChange={(e) => onChange(e.target.value)}
-            className="flex-1 px-2 py-1 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
+            className="py-1"
+            wrapperClassName="flex-1"
           >
             {field.options?.map((opt) => (
               <option key={opt} value={opt}>{opt}</option>
             ))}
-          </select>
+          </ThemedSelect>
         </div>
       );
     case 'number':

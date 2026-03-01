@@ -4,6 +4,7 @@ import { TriggerConfigPanel } from '../review/TriggerConfigPanel';
 import { ConfigureStep } from '@/features/shared/components/ConfigureStep';
 import { useAdoptionWizard } from '../AdoptionWizardContext';
 import { validateVariable } from '@/lib/utils/variableSanitizer';
+import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 
 // ── Shared styles ─────────────────────────────────────────────────────
 
@@ -344,16 +345,16 @@ export function TuneStep() {
                   {variable.description && <p className={descClass}>{variable.description}</p>}
 
                   {variable.type === 'select' && variable.options ? (
-                    <select
+                    <ThemedSelect
                       value={value}
                       onChange={(e) => wizard.updateVariable(variable.key, e.target.value)}
-                      className={`${selectClass} ${showError ? '!border-red-500/30' : ''}`}
+                      className={`py-1.5 px-2.5 ${showError ? '!border-red-500/30' : ''}`}
                     >
                       <option value="">Select...</option>
                       {variable.options.map((opt) => (
                         <option key={opt} value={opt}>{opt}</option>
                       ))}
-                    </select>
+                    </ThemedSelect>
                   ) : (
                     <input
                       type={inputType}

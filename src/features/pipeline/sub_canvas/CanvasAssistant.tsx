@@ -76,6 +76,11 @@ export default function CanvasAssistant({
 
   const roleColor = (role: string) => ROLE_COLORS[role] ?? { bg: 'bg-blue-500/15', text: 'text-blue-400', border: 'border-blue-500/25' };
 
+  // Extract suggested pattern from description (format: "... (Pattern: xyz)")
+  const suggestedPattern = blueprint?.description
+    ? blueprint.description.match(/\(Pattern:\s*([^)]+)\)/)?.[1] ?? null
+    : null;
+
   // Connection description
   const connectionSummary = blueprint
     ? (() => {
@@ -170,6 +175,14 @@ export default function CanvasAssistant({
               )}
             </div>
 
+            {/* Loading message */}
+            {loading && (
+              <div className="mx-3 mb-3 px-3 py-2 rounded-lg bg-indigo-500/8 border border-indigo-500/15 text-xs text-indigo-300/80 flex items-center gap-2">
+                <Loader2 className="w-3 h-3 animate-spin flex-shrink-0" />
+                Building your team...
+              </div>
+            )}
+
             {/* Error */}
             {error && (
               <div className="mx-3 mb-3 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400">
@@ -191,8 +204,13 @@ export default function CanvasAssistant({
                     onClick={() => setPreviewExpanded(!previewExpanded)}
                     className="w-full flex items-center justify-between px-3 py-2 hover:bg-secondary/30 transition-colors"
                   >
-                    <span className="text-sm font-semibold text-foreground/80">
+                    <span className="text-sm font-semibold text-foreground/80 flex items-center gap-2">
                       Blueprint — {blueprint.members.length} agents
+                      {suggestedPattern && (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-500/15 text-indigo-300 border border-indigo-500/20">
+                          {suggestedPattern}
+                        </span>
+                      )}
                     </span>
                     {previewExpanded ? (
                       <ChevronUp className="w-3 h-3 text-muted-foreground/90" />

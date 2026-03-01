@@ -3,6 +3,7 @@ import { Plug, ExternalLink } from 'lucide-react';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
 import { getAuthMethods } from '@/lib/types/types';
 import { getAuthBadgeClasses } from '@/features/vault/utils/authMethodStyles';
+import { PURPOSE_GROUPS, getPurposeForConnector } from '@/lib/credentials/connectorRoles';
 
 interface CredentialPickerProps {
   connectors: ConnectorDefinition[];
@@ -17,6 +18,7 @@ function capitalize(s: string) {
 
 export function CredentialPicker({ connectors, credentials, onPickType, searchTerm }: CredentialPickerProps) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activePurpose, setActivePurpose] = useState<string | null>(null);
 
   const ownedServiceTypes = useMemo(() => {
     const set = new Set<string>();
@@ -34,21 +36,71 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
       .map(([category, count]) => ({ category, count, label: capitalize(category) }));
   }, [connectors]);
 
-  const filteredConnectors = activeCategory
-    ? connectors.filter((c) => c.category === activeCategory)
-    : connectors;
+  // Purpose tabs: only show groups that have at least one connector in the current set
+  const purposeTabs = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const c of connectors) {
+      const purpose = getPurposeForConnector(c.name);
+      if (purpose) counts[purpose] = (counts[purpose] || 0) + 1;
+    }
+    return PURPOSE_GROUPS
+      .filter((pg) => counts[pg.purpose])
+      .map((pg) => ({ purpose: pg.purpose, label: pg.label, count: counts[pg.purpose] }));
+  }, [connectors]);
+
+  // Apply both filters: category then purpose
+  const filteredConnectors = useMemo(() => {
+    let result = connectors;
+    if (activeCategory) {
+      result = result.filter((c) => c.category === activeCategory);
+    }
+    if (activePurpose) {
+      result = result.filter((c) => getPurposeForConnector(c.name) === activePurpose);
+    }
+    return result;
+  }, [connectors, activeCategory, activePurpose]);
 
   useEffect(() => {
-    if (searchTerm?.trim()) setActiveCategory(null);
+    if (searchTerm?.trim()) {
+      setActiveCategory(null);
+      setActivePurpose(null);
+    }
   }, [searchTerm]);
 
   return (
     <div className="space-y-3">
+      {/* Purpose filter */}
+      <div className="flex flex-wrap gap-1.5">
+        <button
+          onClick={() => setActivePurpose(null)}
+          className={`px-2.5 py-1 rounded-lg text-md font-medium border transition-all ${
+            activePurpose === null
+              ? 'bg-violet-500/15 text-violet-400 border-violet-500/25'
+              : 'bg-secondary/25 text-muted-foreground/70 border-primary/10 hover:bg-secondary/40'
+          }`}
+        >
+          All Purposes
+        </button>
+        {purposeTabs.map((tab) => (
+          <button
+            key={tab.purpose}
+            onClick={() => setActivePurpose(activePurpose === tab.purpose ? null : tab.purpose)}
+            className={`px-2.5 py-1 rounded-lg text-md font-medium border transition-all ${
+              activePurpose === tab.purpose
+                ? 'bg-violet-500/15 text-violet-400 border-violet-500/25'
+                : 'bg-secondary/25 text-muted-foreground/70 border-primary/10 hover:bg-secondary/40'
+            }`}
+          >
+            {tab.label} ({tab.count})
+          </button>
+        ))}
+      </div>
+
       {/* Category tabs */}
       <div className="flex flex-wrap gap-1.5">
         <button
           onClick={() => setActiveCategory(null)}
-          className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+          className={`px-2.5 py-1 rounded-lg text-md font-medium border transition-all ${
             activeCategory === null
               ? 'bg-primary/15 text-primary border-primary/25'
               : 'bg-secondary/25 text-muted-foreground/70 border-primary/10 hover:bg-secondary/40'
@@ -59,8 +111,8 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
         {categoryTabs.map((tab) => (
           <button
             key={tab.category}
-            onClick={() => setActiveCategory(tab.category)}
-            className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+            onClick={() => setActiveCategory(activeCategory === tab.category ? null : tab.category)}
+            className={`px-2.5 py-1 rounded-lg text-md font-medium border transition-all ${
               activeCategory === tab.category
                 ? 'bg-primary/15 text-primary border-primary/25'
                 : 'bg-secondary/25 text-muted-foreground/70 border-primary/10 hover:bg-secondary/40'

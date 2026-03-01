@@ -16,6 +16,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
+import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 import { TemplatePickerStep } from '@/features/agents/components/onboarding/OnboardingTemplateStep';
 import { IconSelector } from '@/features/shared/components/IconSelector';
 import { ColorPicker } from '@/features/shared/components/ColorPicker';
@@ -479,20 +480,16 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
                       {groups.length > 0 && (
                         <div>
                           <label className="block text-xs font-medium text-foreground/70 mb-1.5">Group</label>
-                          <div className="relative">
-                            <select
-                              data-testid="agent-group-select"
-                              value={groupId}
-                              onChange={(e) => setGroupId(e.target.value)}
-                              className="w-full appearance-none px-3 py-2 pr-8 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
-                            >
-                              <option value="">No group</option>
-                              {groups.map((g) => (
-                                <option key={g.id} value={g.id}>{g.name}</option>
-                              ))}
-                            </select>
-                            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/80 pointer-events-none" />
-                          </div>
+                          <ThemedSelect
+                            data-testid="agent-group-select"
+                            value={groupId}
+                            onChange={(e) => setGroupId(e.target.value)}
+                          >
+                            <option value="">No group</option>
+                            {groups.map((g) => (
+                              <option key={g.id} value={g.id}>{g.name}</option>
+                            ))}
+                          </ThemedSelect>
                         </div>
                       )}
                     </div>

@@ -3,6 +3,7 @@ import { Eye, EyeOff, Activity, CheckCircle, XCircle, Loader2, Info, Lock, Shiel
 import type { CredentialTemplateField } from '@/lib/types/types';
 import { vaultStatus, type VaultStatus } from '@/api/tauriApi';
 import { translateHealthcheckMessage } from '@/features/vault/components/credential-design/CredentialDesignHelpers';
+import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 
 interface CredentialEditFormProps {
   fields: CredentialTemplateField[];
@@ -172,18 +173,18 @@ export function CredentialEditForm({
 
               <div className="relative">
                 {field.type === 'select' && field.options ? (
-                  <select
+                  <ThemedSelect
                     value={values[field.key] || ''}
                     onChange={(e) => handleChange(field.key, e.target.value)}
-                    className={`w-full px-3 py-2 bg-background/50 border rounded-xl text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all ${
-                      errors[field.key] ? 'border-red-500/50' : 'border-border/50'
+                    className={`rounded-xl ${
+                      errors[field.key] ? 'border-red-500/50' : ''
                     }`}
                   >
                     <option value="">{field.placeholder || 'Select...'}</option>
                     {field.options.map((opt) => (
                       <option key={opt} value={opt}>{opt}</option>
                     ))}
-                  </select>
+                  </ThemedSelect>
                 ) : (
                   <>
                     <input

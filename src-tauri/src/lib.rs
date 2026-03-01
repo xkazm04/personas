@@ -408,6 +408,8 @@ pub fn run() {
             commands::design::reviews::list_manual_reviews,
             commands::design::reviews::update_manual_review_status,
             commands::design::reviews::get_pending_review_count,
+            // Design — Smart Search
+            commands::design::smart_search::smart_search_templates,
             // Credentials — CRUD
             commands::credentials::crud::list_credentials,
             commands::credentials::crud::get_session_public_key,
@@ -513,6 +515,7 @@ pub fn run() {
             commands::teams::teams::cancel_pipeline,
             commands::teams::teams::get_pipeline_analytics,
             commands::teams::teams::suggest_topology,
+            commands::teams::teams::suggest_topology_llm,
             // Tools
             commands::tools::tools::list_tool_definitions,
             commands::tools::tools::get_tool_definition,

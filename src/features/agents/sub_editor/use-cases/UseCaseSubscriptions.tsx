@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Radio, Plus, Trash2, Zap, Clock } from 'lucide-react';
 import { AccessibleToggle } from '@/features/shared/components/AccessibleToggle';
+import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 import type { UseCaseEventSubscription } from '@/features/shared/components/UseCasesList';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscription';
@@ -254,16 +255,16 @@ export function UseCaseSubscriptions({
                 <label className="block text-[11px] font-mono text-muted-foreground/70 uppercase mb-1">
                   Event Type
                 </label>
-                <select
+                <ThemedSelect
                   value={newEventType}
                   onChange={(e) => setNewEventType(e.target.value)}
-                  className="w-full px-2.5 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  className="py-1.5"
                 >
                   <option value="">Select event type...</option>
                   {EVENT_TYPES.map((t) => (
                     <option key={t.value} value={t.value}>{t.label}</option>
                   ))}
-                </select>
+                </ThemedSelect>
               </div>
               <div>
                 <label className="block text-[11px] font-mono text-muted-foreground/70 uppercase mb-1">

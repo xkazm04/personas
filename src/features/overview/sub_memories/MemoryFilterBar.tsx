@@ -2,6 +2,7 @@ import { Search, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
 import type { DbPersona } from '@/lib/types/types';
+import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 
 export interface MemoryFilterBarProps {
   search: string;
@@ -40,16 +41,16 @@ export function MemoryFilterBar({
       </div>
 
       {/* Persona filter */}
-      <select
+      <ThemedSelect
         value={selectedPersonaId || ''}
         onChange={(e) => onPersonaChange(e.target.value || null)}
-        className="px-3 py-2 text-sm bg-secondary/50 border border-primary/15 rounded-lg outline-none text-foreground/90 appearance-none cursor-pointer min-w-[130px]"
+        wrapperClassName="min-w-[130px]"
       >
         <option value="">All agents</option>
         {personas.map((p) => (
           <option key={p.id} value={p.id}>{p.name}</option>
         ))}
-      </select>
+      </ThemedSelect>
 
       {/* Category filter chips */}
       <div className="flex items-center gap-1.5 flex-wrap">

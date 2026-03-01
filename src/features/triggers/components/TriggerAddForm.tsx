@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META } from '@/lib/utils/triggerConstants';
 import { formatInterval } from '@/lib/utils/formatters';
 import { previewCronSchedule, type CronPreview } from '@/api/triggers';
+import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 
 /** Compute the next N scheduled run times starting from now */
 function computeNextRuns(intervalSeconds: number, count: number): Date[] {
@@ -447,16 +448,16 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
                 <Zap className="w-3.5 h-3.5 inline mr-1 text-amber-400" />
                 Credential Event (optional)
               </label>
-              <select
+              <ThemedSelect
                 value={selectedEventId}
                 onChange={(e) => setSelectedEventId(e.target.value)}
-                className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all"
+                className="rounded-xl"
               >
                 <option value="">None - use endpoint URL instead</option>
                 {credentialEventsList.map(evt => (
                   <option key={evt.id} value={evt.id}>{evt.name}</option>
                 ))}
-              </select>
+              </ThemedSelect>
               <p className="text-sm text-muted-foreground/80 mt-1">Link to a credential event instead of a custom endpoint</p>
             </div>
           )}

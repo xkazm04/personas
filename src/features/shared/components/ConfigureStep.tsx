@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Loader2, Settings2, SkipForward } from 'lucide-react';
 import type { TransformQuestionResponse } from '@/api/n8nTransform';
+import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 
 interface ConfigureStepProps {
   questions: TransformQuestionResponse[] | null;
@@ -89,10 +90,9 @@ export function ConfigureStep({
             )}
 
             {q.type === 'select' && q.options && (
-              <select
+              <ThemedSelect
                 value={userAnswers[q.id] ?? q.default ?? ''}
                 onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-primary/15 bg-background/40 text-foreground/75"
               >
                 <option value="">Select...</option>
                 {q.options.map((opt) => (
@@ -100,7 +100,7 @@ export function ConfigureStep({
                     {opt}
                   </option>
                 ))}
-              </select>
+              </ThemedSelect>
             )}
 
             {q.type === 'text' && (

@@ -4,6 +4,7 @@ import { CheckCircle2 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { PersonaMemoryCategory } from '@/lib/types/frontendTypes';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
+import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 
 // ── Interactive Importance Dots (clickable) ─────────────────────
 function InteractiveImportanceDots({
@@ -105,15 +106,14 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5 block">Agent</label>
-            <select
+            <ThemedSelect
               value={personaId}
               onChange={(e) => setPersonaId(e.target.value)}
-              className="w-full px-3 py-2 text-sm bg-background/60 border border-primary/15 rounded-lg outline-none focus:border-violet-500/40 text-foreground/80 appearance-none cursor-pointer"
             >
               {personas.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
-            </select>
+            </ThemedSelect>
           </div>
 
           <div>

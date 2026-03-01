@@ -3,6 +3,7 @@ import { Radio, Plus, Trash2, Loader2 } from 'lucide-react';
 import { listSubscriptions, createSubscription, updateSubscription, deleteSubscription } from '@/api/tauriApi';
 import { AccessibleToggle } from '@/features/shared/components/AccessibleToggle';
 import { FieldHint } from '@/features/shared/components/FieldHint';
+import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscription';
 
 interface EventSubscriptionSettingsProps {
@@ -150,10 +151,10 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
                       example="execution_completed"
                     />
                   </label>
-                  <select
+                  <ThemedSelect
                     value={newEventType}
                     onChange={(e) => setNewEventType(e.target.value)}
-                    className="w-full px-2.5 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    className="py-1.5"
                   >
                     <option value="">Select event type...</option>
                     {EVENT_TYPES.map((t) => (
@@ -161,7 +162,7 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
                         {t.label}
                       </option>
                     ))}
-                  </select>
+                  </ThemedSelect>
                 </div>
                 <div>
                   <label className="block text-sm font-mono text-muted-foreground/80 uppercase mb-1">
