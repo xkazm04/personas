@@ -2,7 +2,7 @@
   "id": "sheets-project-portfolio-manager",
   "name": "Sheets Project Portfolio Manager",
   "description": "Monitors multiple Monday.com boards for status changes, aggregates cross-project health into a Google Sheets dashboard, sends executive summary emails weekly, and posts real-time alerts to Slack for blocked or at-risk items.",
-  "icon": "Kanban",
+  "icon": "LayoutDashboard",
   "color": "#8B5CF6",
   "category": [
     "project-management"
@@ -119,7 +119,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://api.monday.com/v2"
+        "api_base_url": "https://api.monday.com/v2",
+        "role": "project_tracking",
+        "category": "productivity"
       },
       {
         "name": "slack",
@@ -148,7 +150,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       },
       {
         "name": "google_workspace",
@@ -196,7 +200,9 @@
         "related_triggers": [
           1
         ],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://www.googleapis.com",
+        "role": "productivity_suite",
+        "category": "productivity"
       }
     ],
     "suggested_notification_channels": [

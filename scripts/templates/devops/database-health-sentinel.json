@@ -2,7 +2,7 @@
   "id": "database-health-sentinel",
   "name": "Database Health Sentinel",
   "description": "Connects to a Postgres instance via HTTP proxy, runs health queries (table sizes, slow queries, connection counts, replication lag), sends Slack alerts on anomalies, and emails a weekly DBA report.",
-  "icon": "Server",
+  "icon": "HeartPulse",
   "color": "#F97316",
   "category": [
     "devops"
@@ -125,7 +125,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://db-proxy.yourcompany.com"
+        "api_base_url": "https://db-proxy.yourcompany.com",
+        "role": "database",
+        "category": "database"
       },
       {
         "name": "slack",
@@ -149,7 +151,9 @@
           0,
           1
         ],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       },
       {
         "name": "google_workspace",
@@ -188,7 +192,9 @@
         "related_triggers": [
           1
         ],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://www.googleapis.com",
+        "role": "productivity_suite",
+        "category": "productivity"
       }
     ],
     "suggested_notification_channels": [

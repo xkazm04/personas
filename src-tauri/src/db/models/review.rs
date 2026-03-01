@@ -53,6 +53,12 @@ pub struct ConnectorWithCount {
     pub count: i64,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CategoryWithCount {
+    pub name: String,
+    pub count: i64,
+}
+
 // ============================================================================
 // Design Reviews
 // ============================================================================
@@ -79,6 +85,9 @@ pub struct PersonaDesignReview {
     pub use_case_flows: Option<String>,
     pub reviewed_at: String,
     pub created_at: String,
+    pub adoption_count: i32,
+    pub last_adopted_at: Option<String>,
+    pub category: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -100,6 +109,7 @@ pub struct CreateDesignReviewInput {
     pub adjustment_generation: Option<i32>,
     pub use_case_flows: Option<String>,
     pub reviewed_at: String,
+    pub category: Option<String>,
 }
 
 impl CreateDesignReviewInput {
@@ -130,6 +140,7 @@ impl CreateDesignReviewInput {
             adjustment_generation: None,
             use_case_flows: None,
             reviewed_at,
+            category: None,
         }
     }
 }
@@ -168,6 +179,8 @@ pub struct ImportDesignReviewInput {
     pub use_case_flows: Option<String>,
     #[serde(default = "default_reviewed_at")]
     pub reviewed_at: String,
+    #[serde(default)]
+    pub category: Option<String>,
 }
 
 impl From<ImportDesignReviewInput> for CreateDesignReviewInput {
@@ -190,6 +203,7 @@ impl From<ImportDesignReviewInput> for CreateDesignReviewInput {
             adjustment_generation: None,
             use_case_flows: imp.use_case_flows,
             reviewed_at: imp.reviewed_at,
+            category: imp.category,
         }
     }
 }

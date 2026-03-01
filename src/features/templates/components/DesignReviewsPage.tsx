@@ -90,6 +90,7 @@ export default function DesignReviewsPage() {
   const activeTab = usePersonaStore((s) => s.templateTab);
   const [showRunner, setShowRunner] = useState(false);
   const [diagramReview, setDiagramReview] = useState<PersonaDesignReview | null>(null);
+  const [galleryTotal, setGalleryTotal] = useState<number | null>(null);
 
   const passRate = useMemo(() => {
     if (reviews.length === 0) return null;
@@ -125,7 +126,10 @@ export default function DesignReviewsPage() {
         )}
         iconColor={passRate !== null ? undefined : 'violet'}
         title="Agentic Templates"
-        subtitle={`${reviews.length} template${reviews.length !== 1 ? 's' : ''} available`}
+        subtitle={(() => {
+          const count = activeTab === 'generated' && galleryTotal !== null ? galleryTotal : reviews.length;
+          return `${count} template${count !== 1 ? 's' : ''} available`;
+        })()}
         actions={
           <button
             onClick={handleStartReview}
@@ -161,6 +165,7 @@ export default function DesignReviewsPage() {
             connectorDefinitions={connectorDefinitions}
             onPersonaCreated={refresh}
             onViewFlows={setDiagramReview}
+            onTotalChange={setGalleryTotal}
           />
         )}
       </ContentBody>

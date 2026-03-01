@@ -15,10 +15,14 @@ interface DirtyStore {
   setTabDirty: (tab: string, dirty: boolean) => void;
   /** Register a save callback for a tab (called on "Save & Switch"). */
   registerSave: (tab: string, save: () => Promise<void>) => void;
+  /** Register a cancel callback for a tab's debounced save. */
+  registerCancel: (tab: string, cancel: () => void) => void;
   /** Unregister a tab completely (on unmount). */
   unregister: (tab: string) => void;
   /** Save all dirty tabs that have registered save callbacks. */
   saveAll: () => Promise<void>;
+  /** Cancel all pending debounced saves across all tabs. */
+  cancelAll: () => void;
   /** True if any tab is dirty. */
   getIsDirty: () => boolean;
   /** Names of all currently dirty tabs. */
@@ -32,6 +36,7 @@ interface DirtyStore {
 function createDirtyStore(): DirtyStore {
   const dirtyMap = new Map<string, boolean>();
   const saveMap = new Map<string, () => Promise<void>>();
+  const cancelMap = new Map<string, () => void>();
   const listeners = new Set<Listener>();
 
   // Cache for getDirtyTabs — must be referentially stable between notifications
@@ -54,17 +59,37 @@ function createDirtyStore(): DirtyStore {
     registerSave(tab, save) {
       saveMap.set(tab, save);
     },
+    registerCancel(tab, cancel) {
+      cancelMap.set(tab, cancel);
+    },
     unregister(tab) {
       dirtyMap.delete(tab);
       saveMap.delete(tab);
+      cancelMap.delete(tab);
       notify();
     },
     async saveAll() {
+      const failedTabs: string[] = [];
       for (const [tab, dirty] of dirtyMap) {
         if (dirty) {
           const save = saveMap.get(tab);
-          if (save) await save();
+          if (save) {
+            try {
+              await save();
+            } catch (error) {
+              console.error(`Failed to save tab "${tab}":`, error);
+              failedTabs.push(tab);
+            }
+          }
         }
+      }
+      if (failedTabs.length > 0) {
+        throw new Error(`Failed to save: ${failedTabs.join(', ')}`);
+      }
+    },
+    cancelAll() {
+      for (const cancel of cancelMap.values()) {
+        cancel();
       }
     },
     getIsDirty() {
@@ -115,7 +140,7 @@ function useDirtyStore(): DirtyStore | null {
 
 /** Hook for child components to register their dirty state.
  *  Safe to call outside EditorDirtyProvider (no-op in that case). */
-export function useEditorDirty(tab: string, isDirty: boolean, save?: () => Promise<void>) {
+export function useEditorDirty(tab: string, isDirty: boolean, save?: () => Promise<void>, cancel?: () => void) {
   const store = useDirtyStore();
 
   // Sync dirty state via effect — calling setTabDirty during render would
@@ -124,8 +149,9 @@ export function useEditorDirty(tab: string, isDirty: boolean, save?: () => Promi
     if (store) store.setTabDirty(tab, isDirty);
   }, [store, tab, isDirty]);
 
-  // registerSave does not call notify(), so updating it during render is safe.
+  // registerSave / registerCancel do not call notify(), so updating during render is safe.
   if (store && save) store.registerSave(tab, save);
+  if (store && cancel) store.registerCancel(tab, cancel);
 
   // Cleanup on unmount — wrapped in useCallback to stabilize
   const unregister = useCallback(() => {
@@ -154,6 +180,7 @@ export function useEditorDirtyState() {
     isDirty,
     dirtyTabs,
     saveAll: store.saveAll,
+    cancelAll: store.cancelAll,
     clearAll: store.clearAll,
   };
 }

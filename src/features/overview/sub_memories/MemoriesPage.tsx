@@ -7,6 +7,7 @@ import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/forma
 import { MemoryRow } from '@/features/overview/sub_memories/MemoryCard';
 import { InlineAddMemoryForm } from '@/features/overview/sub_memories/CreateMemoryForm';
 import { MemoryFilterBar } from '@/features/overview/sub_memories/MemoryFilterBar';
+import { useVirtualList } from '@/hooks/utility/useVirtualList';
 
 type SortColumn = 'importance' | 'created_at';
 type SortDirection = 'asc' | 'desc';
@@ -81,6 +82,8 @@ export default function MemoriesPage() {
     }
     return sorted;
   }, [filteredMemories, sort]);
+
+  const { parentRef: memoryListRef, virtualizer } = useVirtualList(sortedMemories, 48);
 
   // ── Stats computation (from backend aggregates over full dataset) ──
   const memoryStats = useMemo(() => {
@@ -308,20 +311,32 @@ export default function MemoriesPage() {
             </div>
 
             {/* Rows */}
-            <AnimatePresence>
-              {sortedMemories.map((memory) => {
-                const persona = personaMap.get(memory.persona_id);
-                return (
-                  <MemoryRow
-                    key={memory.id}
-                    memory={memory}
-                    personaName={persona?.name || 'Unknown'}
-                    personaColor={persona?.color || '#6B7280'}
-                    onDelete={() => deleteMemory(memory.id)}
-                  />
-                );
-              })}
-            </AnimatePresence>
+            <div ref={memoryListRef} className="flex-1 overflow-y-auto">
+              <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+                {virtualizer.getVirtualItems().map((virtualRow) => {
+                  const memory = sortedMemories[virtualRow.index]!;
+                  const persona = personaMap.get(memory.persona_id);
+                  return (
+                    <div
+                      key={memory.id}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        transform: `translateY(${virtualRow.start}px)`,
+                        width: '100%',
+                      }}
+                    >
+                      <MemoryRow
+                        memory={memory}
+                        personaName={persona?.name || 'Unknown'}
+                        personaColor={persona?.color || '#6B7280'}
+                        onDelete={() => deleteMemory(memory.id)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </>
         )}
       </ContentBody>

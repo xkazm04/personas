@@ -1,12 +1,14 @@
 import { Send, Check, RefreshCw, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { DesignResultPreview } from '@/features/templates/sub_generated/DesignResultPreview';
+import { IntentResultExtras } from '@/features/agents/sub_editor/IntentResultExtras';
 
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { DesignAnalysisResult, IntentCompilationResult } from '@/lib/types/designTypes';
 import type { DbPersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 
 interface DesignPhasePreviewProps {
   result: DesignAnalysisResult;
+  intentResult?: IntentCompilationResult;
   error: string | null;
   toolDefinitions: DbPersonaToolDefinition[];
   currentToolNames: string[];
@@ -31,6 +33,7 @@ interface DesignPhasePreviewProps {
 
 export function DesignPhasePreview({
   result,
+  intentResult,
   error,
   toolDefinitions,
   currentToolNames,
@@ -79,6 +82,9 @@ export function DesignPhasePreview({
         onConnectorClick={() => {}}
         feasibility={result.feasibility}
       />
+
+      {/* Intent compiler extras (use cases, model recommendation, test scenarios) */}
+      {intentResult && <IntentResultExtras result={intentResult} />}
 
       {error && (
         <p className="text-sm text-red-400 px-1">{error}</p>

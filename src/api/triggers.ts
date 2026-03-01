@@ -41,6 +41,20 @@ export const validateTrigger = (id: string) =>
   invoke<TriggerValidationResult>("validate_trigger", { id });
 
 // ============================================================================
+// Cron Preview
+// ============================================================================
+
+export interface CronPreview {
+  valid: boolean;
+  description: string;
+  next_runs: string[];
+  error: string | null;
+}
+
+export const previewCronSchedule = (cronExpression: string, count?: number) =>
+  invoke<CronPreview>("preview_cron_schedule", { cronExpression, count: count ?? null });
+
+// ============================================================================
 // Chain Triggers
 // ============================================================================
 
@@ -53,3 +67,43 @@ export const listTriggerChains = () =>
 
 export const getWebhookStatus = () =>
   invoke<WebhookStatus>("get_webhook_status");
+
+// ============================================================================
+// Dry Run
+// ============================================================================
+
+export interface DryRunSimulatedEvent {
+  event_type: string;
+  source_type: string;
+  source_id: string;
+  target_persona_id: string | null;
+  target_persona_name: string | null;
+  payload: Record<string, unknown>;
+}
+
+export interface DryRunMatchedSubscription {
+  subscription_id: string;
+  persona_id: string;
+  persona_name: string;
+  event_type: string;
+  source_filter: string | null;
+}
+
+export interface DryRunChainTarget {
+  trigger_id: string;
+  target_persona_id: string;
+  target_persona_name: string;
+  condition_type: string;
+  enabled: boolean;
+}
+
+export interface DryRunResult {
+  valid: boolean;
+  validation: import("@/lib/bindings/TriggerValidationResult").TriggerValidationResult;
+  simulated_event: DryRunSimulatedEvent | null;
+  matched_subscriptions: DryRunMatchedSubscription[];
+  chain_targets: DryRunChainTarget[];
+}
+
+export const dryRunTrigger = (id: string) =>
+  invoke<DryRunResult>("dry_run_trigger", { id });

@@ -2,7 +2,7 @@
   "id": "product-signal-detector",
   "name": "Product Signal Detector",
   "description": "Analyzes Amplitude user behavior data for significant changes (drop-offs, feature adoption spikes, funnel breakages), posts insight cards to Slack product channels, and auto-creates Linear investigation tickets for anomalies.",
-  "icon": "Search",
+  "icon": "Radio",
   "color": "#06B6D4",
   "category": [
     "research"
@@ -125,7 +125,9 @@
           0,
           1
         ],
-        "api_base_url": "https://amplitude.com/api/2"
+        "api_base_url": "https://amplitude.com/api/2",
+        "role": "analytics",
+        "category": "analytics"
       },
       {
         "name": "slack",
@@ -154,7 +156,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       },
       {
         "name": "linear",
@@ -183,7 +187,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://api.linear.app/graphql"
+        "api_base_url": "https://api.linear.app/graphql",
+        "role": "project_tracking",
+        "category": "development"
       }
     ],
     "suggested_notification_channels": [

@@ -2,7 +2,7 @@
   "id": "sre-runbook-executor",
   "name": "SRE Runbook Executor",
   "description": "Receives Prometheus alerts via Alertmanager webhook, matches them against runbook entries stored in Notion, executes diagnostic steps via HTTP, posts findings to Slack, and creates GitHub issues for unresolved incidents.",
-  "icon": "Server",
+  "icon": "Terminal",
   "color": "#F97316",
   "category": [
     "devops"
@@ -125,7 +125,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       },
       {
         "name": "github",
@@ -164,7 +166,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://api.github.com"
+        "api_base_url": "https://api.github.com",
+        "role": "source_control",
+        "category": "development"
       },
       {
         "name": "notion",
@@ -195,7 +199,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://api.notion.com/v1"
+        "api_base_url": "https://api.notion.com/v1",
+        "role": "knowledge_base",
+        "category": "productivity"
       }
     ],
     "suggested_notification_channels": [

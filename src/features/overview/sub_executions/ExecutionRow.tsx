@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronRight, RotateCw } from 'lucide-react';
 import type { GlobalExecution } from '@/lib/types/types';
@@ -10,7 +11,7 @@ interface ExecutionRowProps {
   onToggle: () => void;
 }
 
-export function ExecutionRow({ execution, isExpanded, onToggle }: ExecutionRowProps) {
+export const ExecutionRow = memo(function ExecutionRow({ execution, isExpanded, onToggle }: ExecutionRowProps) {
   const status = getStatusEntry(execution.status);
 
   return (
@@ -35,7 +36,7 @@ export function ExecutionRow({ execution, isExpanded, onToggle }: ExecutionRowPr
         </div>
 
         {/* Persona icon + name */}
-        <div className="flex items-center gap-2 min-w-[140px]">
+        <div className="flex items-center gap-2 w-[140px] sm:w-auto sm:min-w-[140px] flex-shrink-0">
           <div
             className="w-7 h-7 rounded-lg flex items-center justify-center text-sm border border-primary/15"
             style={{ backgroundColor: (execution.persona_color || '#6366f1') + '15' }}
@@ -102,4 +103,4 @@ export function ExecutionRow({ execution, isExpanded, onToggle }: ExecutionRowPr
       </AnimatePresence>
     </motion.div>
   );
-}
+});

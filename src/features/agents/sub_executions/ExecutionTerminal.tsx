@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { TerminalHeader } from '@/features/shared/components/TerminalHeader';
 import { TerminalSearchBar, useTerminalFilter } from '@/features/shared/components/TerminalSearchBar';
 import { TerminalBody } from '@/features/shared/components/TerminalBody';
+import type { TerminalEmptyState } from '@/features/shared/components/TerminalBody';
 import { useCopyToClipboard } from '@/hooks/utility/useCopyToClipboard';
 
 interface ExecutionTerminalProps {
@@ -20,6 +21,8 @@ interface ExecutionTerminalProps {
   onResizeStart?: (e: React.MouseEvent) => void;
   /** Rendered between the search bar and terminal body (e.g. phase strip). */
   children?: ReactNode;
+  /** Context-aware empty state for the terminal body. */
+  emptyState?: TerminalEmptyState;
 }
 
 export function ExecutionTerminal({
@@ -32,6 +35,7 @@ export function ExecutionTerminal({
   terminalHeight,
   onResizeStart,
   children,
+  emptyState,
 }: ExecutionTerminalProps) {
   const { copied, copy: copyToClipboard } = useCopyToClipboard();
   const { filter, setFilter, isLineVisible, isFiltering } = useTerminalFilter();
@@ -70,6 +74,7 @@ export function ExecutionTerminal({
         enableUnseenCounter
         flexFill={isFullscreen}
         maxHeightPx={!isFullscreen ? terminalHeight : undefined}
+        emptyState={emptyState}
       />
 
       {/* Drag-to-resize handle */}

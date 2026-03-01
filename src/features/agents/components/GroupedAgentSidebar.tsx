@@ -8,6 +8,8 @@ import { usePersonaStore } from '@/stores/personaStore';
 import { DraggablePersonaCard, SidebarPersonaCard } from '@/features/agents/components/sub_sidebar/DraggablePersonaCard';
 import { DroppableGroup } from '@/features/agents/components/sub_sidebar/DroppableGroup';
 import { PersonaContextMenu, type ContextMenuState } from '@/features/agents/components/sub_sidebar/PersonaContextMenu';
+import { SearchFilterBar } from '@/features/agents/components/sub_sidebar/SearchFilterBar';
+import { usePersonaFilters } from '@/features/agents/components/sub_sidebar/usePersonaFilters';
 import { buildSidebarTree, type SidebarDragData } from '@/lib/types/frontendTypes';
 import type { DbPersona } from '@/lib/types/types';
 
@@ -109,6 +111,23 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
   const deleteGroup = usePersonaStore((s) => s.deleteGroup);
   const reorderGroups = usePersonaStore((s) => s.reorderGroups);
   const movePersonaToGroup = usePersonaStore((s) => s.movePersonaToGroup);
+  const personaHealthMap = usePersonaStore((s) => s.personaHealthMap);
+  const personaLastRun = usePersonaStore((s) => s.personaLastRun);
+
+  // Search / Filter / Smart Tags
+  const {
+    filters,
+    setSearch,
+    setStatus,
+    setModel,
+    setHealth,
+    setRecency,
+    setTag,
+    clearFilters,
+    hasActiveFilters,
+    filteredIds,
+    allTags,
+  } = usePersonaFilters(personas, personaHealthMap, personaLastRun);
 
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
 
@@ -127,12 +146,26 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
-  // Build tree once from flat arrays
+  // Build tree once from flat arrays, then filter by search/filter results
   const tree = useMemo(() => buildSidebarTree(groups, personas), [groups, personas]);
 
-  const groupNodes = tree.filter((n) => n.kind === 'group');
-  const ungroupedNode = tree.find((n) => n.kind === 'ungrouped');
+  // Apply filters to tree nodes
+  const filteredTree = useMemo(() => {
+    if (!hasActiveFilters) return tree;
+    return tree.map((node) => ({
+      ...node,
+      children: node.children.filter((p) => filteredIds.has(p.id)),
+    }));
+  }, [tree, filteredIds, hasActiveFilters]);
+
+  const groupNodes = filteredTree.filter((n) => n.kind === 'group');
+  const ungroupedNode = filteredTree.find((n) => n.kind === 'ungrouped');
   const ungrouped = ungroupedNode?.children ?? [];
+
+  // Hide empty groups when filtering
+  const visibleGroupNodes = hasActiveFilters
+    ? groupNodes.filter((n) => n.kind === 'group' && n.children.length > 0)
+    : groupNodes;
 
   // Sorted group list for reorder operations
   const sortedGroups = useMemo(() => {
@@ -226,6 +259,22 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
         </span>
       </button>
 
+      {/* Search & Filter Bar */}
+      <SearchFilterBar
+        filters={filters}
+        hasActiveFilters={hasActiveFilters}
+        matchCount={filteredIds.size}
+        totalCount={personas.length}
+        allTags={allTags}
+        onSearchChange={setSearch}
+        onStatusChange={setStatus}
+        onModelChange={setModel}
+        onHealthChange={setHealth}
+        onRecencyChange={setRecency}
+        onTagChange={setTag}
+        onClear={clearFilters}
+      />
+
       {/* Action buttons row */}
       <div className="flex gap-1.5 mb-3">
         <button
@@ -283,22 +332,25 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        {/* Groups — iterate tree nodes directly */}
-        {groupNodes.map((node) => (
-          <DroppableGroup
-            key={node.group.id}
-            group={node.group}
-            personas={node.children}
-            selectedPersonaId={selectedPersonaId}
-            onSelectPersona={selectPersona}
-            onToggleCollapse={() => updateGroup(node.group.id, { collapsed: !node.group.collapsed })}
-            onRename={(name) => updateGroup(node.group.id, { name })}
-            onDelete={() => deleteGroup(node.group.id)}
-            onUpdateWorkspace={(updates) => updateGroup(node.group.id, updates)}
-            isDragActive={!!activeId}
-            onPersonaContextMenu={handleContextMenu}
-          />
-        ))}
+        {/* Groups — iterate filtered tree nodes */}
+        {visibleGroupNodes.map((node) => {
+          if (node.kind !== 'group') return null;
+          return (
+            <DroppableGroup
+              key={node.group.id}
+              group={node.group}
+              personas={node.children}
+              selectedPersonaId={selectedPersonaId}
+              onSelectPersona={selectPersona}
+              onToggleCollapse={() => updateGroup(node.group.id, { collapsed: !node.group.collapsed })}
+              onRename={(name) => updateGroup(node.group.id, { name })}
+              onDelete={() => deleteGroup(node.group.id)}
+              onUpdateWorkspace={(updates) => updateGroup(node.group.id, updates)}
+              isDragActive={!!activeId}
+              onPersonaContextMenu={handleContextMenu}
+            />
+          );
+        })}
 
         {/* Ungrouped */}
         <UngroupedZone
@@ -325,6 +377,19 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
           )}
         </DragOverlay>
       </DndContext>
+
+      {/* Empty state when filtering */}
+      {hasActiveFilters && filteredIds.size === 0 && (
+        <div className="text-center py-8 text-sm text-muted-foreground/70">
+          <p>No agents match your filters</p>
+          <button
+            onClick={clearFilters}
+            className="mt-2 text-xs text-primary/70 hover:text-primary transition-colors"
+          >
+            Clear all filters
+          </button>
+        </div>
+      )}
 
       {/* Empty state */}
       {personas.length === 0 && (

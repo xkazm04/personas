@@ -58,11 +58,14 @@ export function usePersonaCompiler() {
     outputLines: design.outputLines,
     result: design.result,
     error: design.error,
+    applyWarnings: design.applyWarnings,
     question: design.question,
 
     // ── Compiler actions ───────────────────────────────────────
     /** Start initial compilation from an instruction. */
     compile: design.startAnalysis,
+    /** Compile a plain-language intent into a full persona configuration. */
+    compileIntent: design.startIntentCompilation,
     /** Recompile with additional constraints (refinement feedback). */
     recompile: design.refineAnalysis,
     /** Answer a clarification question and resume compilation. */

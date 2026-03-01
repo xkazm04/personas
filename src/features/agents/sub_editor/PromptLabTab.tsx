@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   GitBranch, FlaskConical,
-  Shield, ArrowLeftRight, Loader2,
+  Shield, ArrowLeftRight, Loader2, TrendingUp,
 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import {
@@ -14,6 +14,7 @@ import { VersionItem } from './prompt-lab/VersionItem';
 import { DiffViewer } from './prompt-lab/DiffViewer';
 import { AbTestPanel } from './prompt-lab/AbTestPanel';
 import { AutoRollbackSettings } from './prompt-lab/AutoRollbackSettings';
+import { PromptPerformanceDashboard } from './prompt-lab/PromptPerformanceDashboard';
 
 export function PromptLabTab() {
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
@@ -26,25 +27,41 @@ export function PromptLabTab() {
   const [tagging, setTagging] = useState(false);
   const [rolling, setRolling] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activePanel, setActivePanel] = useState<'diff' | 'ab-test' | 'rollback'>('diff');
+  const [activePanel, setActivePanel] = useState<'diff' | 'ab-test' | 'rollback' | 'performance'>('diff');
 
   const personaId = selectedPersona?.id;
 
+  // Sequence counter to discard stale fetch results from manual refetches
+  // (handleTag / handleRollback). Incremented on every persona switch and
+  // every manual refetch so only the most recent response is applied.
+  const fetchSeqRef = useRef(0);
+
   const fetchVersions = useCallback(async () => {
     if (!personaId) return;
+    const seq = ++fetchSeqRef.current;
     setLoading(true);
     setError(null);
     try {
       const vs = await getPromptVersions(personaId, 50);
+      if (fetchSeqRef.current !== seq) return; // stale
       setVersions(vs);
     } catch (err) {
+      if (fetchSeqRef.current !== seq) return;
       setError(err instanceof Error ? err.message : 'Failed to load prompt versions');
     } finally {
-      setLoading(false);
+      if (fetchSeqRef.current === seq) setLoading(false);
     }
   }, [personaId]);
 
+  // Reset stale state and fetch fresh versions when persona changes
   useEffect(() => {
+    // Clear previous persona's state immediately so it's never shown during loading
+    setVersions([]);
+    setSelectedId(null);
+    setCompareAId(null);
+    setCompareBId(null);
+    setError(null);
+    fetchSeqRef.current++; // invalidate any in-flight fetches from previous persona
     void fetchVersions();
   }, [fetchVersions]);
 
@@ -154,6 +171,7 @@ export function PromptLabTab() {
             { id: 'diff' as const, label: 'Compare', icon: ArrowLeftRight },
             { id: 'ab-test' as const, label: 'A/B Test', icon: FlaskConical },
             { id: 'rollback' as const, label: 'Health', icon: Shield },
+            { id: 'performance' as const, label: 'Performance', icon: TrendingUp },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -193,6 +211,10 @@ export function PromptLabTab() {
 
           {activePanel === 'rollback' && (
             <AutoRollbackSettings personaId={personaId} />
+          )}
+
+          {activePanel === 'performance' && (
+            <PromptPerformanceDashboard personaId={personaId} />
           )}
         </div>
       </div>

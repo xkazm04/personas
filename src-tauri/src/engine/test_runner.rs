@@ -86,6 +86,7 @@ pub struct TestScores {
 
 /// Run a full test session: generate scenarios, execute across models, score, summarize.
 /// If `preloaded_scenarios` is Some, skip generation and use those scenarios directly.
+#[allow(clippy::too_many_arguments)]
 pub async fn run_test(
     app: AppHandle,
     pool: DbPool,
@@ -417,7 +418,7 @@ fn build_coordinator_prompt(persona: &Persona, tools: &[PersonaToolDefinition], 
                             let category = uc.get("category").and_then(|v| v.as_str()).unwrap_or("");
 
                             p.push_str("\n\n## FOCUS: Specific Use Case\n");
-                            p.push_str(&format!("Generate ALL test scenarios specifically for this use case:\n"));
+                            p.push_str("Generate ALL test scenarios specifically for this use case:\n");
                             p.push_str(&format!("- **Title**: {}\n", title));
                             if !desc.is_empty() {
                                 p.push_str(&format!("- **Description**: {}\n", desc));
@@ -901,6 +902,7 @@ fn emit_lab_status(app: &AppHandle, event_name: &str, run_id: &str, phase: &str,
     );
 }
 
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 pub async fn run_arena_test(
     app: AppHandle,
     pool: DbPool,
@@ -1030,7 +1032,7 @@ pub async fn run_arena_test(
 // Lab: A/B — runs scenarios across two prompt versions × models
 // ============================================================================
 
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 pub async fn run_ab_test(
     app: AppHandle,
     pool: DbPool,
@@ -1189,7 +1191,7 @@ pub async fn run_ab_test(
 // Lab: Eval — N prompt versions × M models evaluation matrix
 // ============================================================================
 
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 pub async fn run_eval_test(
     app: AppHandle,
     pool: DbPool,
@@ -1348,6 +1350,7 @@ pub async fn run_eval_test(
 // Lab: Matrix — draft generation + current vs draft comparison
 // ============================================================================
 
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 pub async fn run_matrix_test(
     app: AppHandle,
     pool: DbPool,

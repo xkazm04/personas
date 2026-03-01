@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { useGoogleOAuth } from '@/features/vault/hooks/useGoogleOAuth';
+import { OAUTH_FIELD } from '@/features/vault/components/credential-design/CredentialDesignHelpers';
 
 export interface CredentialOAuthResult {
   credentialData: Record<string, string>;
@@ -45,9 +46,9 @@ export function useCredentialOAuth({ onSuccess, onError }: UseCredentialOAuthOpt
         ...safePendingValues,
         refresh_token: data.refresh_token,
         scopes: effectiveScopes,
-        oauth_scope: data.scope ?? effectiveScopes,
-        oauth_completed_at: nowIso,
-        oauth_client_mode: 'app_managed',
+        [OAUTH_FIELD.SCOPE]: data.scope ?? effectiveScopes,
+        [OAUTH_FIELD.COMPLETED_AT]: nowIso,
+        [OAUTH_FIELD.CLIENT_MODE]: 'app_managed',
       };
 
       setPendingValues(null);

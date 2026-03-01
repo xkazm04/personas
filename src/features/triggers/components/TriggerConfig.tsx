@@ -5,14 +5,16 @@ import { AnimatePresence } from 'framer-motion';
 import type { DbPersonaTrigger } from '@/lib/types/types';
 import { TriggerAddForm } from '@/features/triggers/components/TriggerAddForm';
 import { TriggerListItem } from '@/features/triggers/components/TriggerListItem';
+import { useTriggerOperations } from '@/features/triggers/hooks/useTriggerOperations';
 
 export function TriggerConfig() {
   const selectedPersona = usePersonaStore((state) => state.selectedPersona);
   const credentialEvents = usePersonaStore((s) => s.credentialEvents);
   const fetchCredentialEvents = usePersonaStore((s) => s.fetchCredentialEvents);
-  const createTrigger = usePersonaStore((state) => state.createTrigger);
-  const updateTrigger = usePersonaStore((state) => state.updateTrigger);
-  const deleteTrigger = usePersonaStore((state) => state.deleteTrigger);
+
+  const personaId = selectedPersona?.id || '';
+  const triggers = selectedPersona?.triggers || [];
+  const ops = useTriggerOperations(personaId);
 
   const [showAddForm, setShowAddForm] = useState(false);
 
@@ -23,9 +25,6 @@ export function TriggerConfig() {
     fetchCredentialEvents();
   }, [fetchCredentialEvents]);
 
-  const personaId = selectedPersona?.id || '';
-  const triggers = selectedPersona?.triggers || [];
-
   if (!selectedPersona) {
     return (
       <div className="flex items-center justify-center py-8 text-muted-foreground/80">
@@ -35,20 +34,16 @@ export function TriggerConfig() {
   }
 
   const handleCreateTrigger = async (triggerType: string, config: Record<string, unknown>) => {
-    await createTrigger(personaId, {
-      trigger_type: triggerType,
-      config,
-      enabled: true,
-    });
+    await ops.create(triggerType, config);
     setShowAddForm(false);
   };
 
   const handleToggleEnabled = async (triggerId: string, currentEnabled: boolean) => {
-    await updateTrigger(personaId, triggerId, { enabled: !currentEnabled });
+    await ops.toggle(triggerId, currentEnabled);
   };
 
   const handleDelete = async (triggerId: string) => {
-    await deleteTrigger(personaId, triggerId);
+    await ops.remove(triggerId);
   };
 
   return (

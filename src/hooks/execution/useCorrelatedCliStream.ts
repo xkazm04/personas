@@ -3,6 +3,11 @@ import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 
 export type CliRunPhase = 'idle' | 'running' | 'completed' | 'failed';
 
+/** Maximum lines kept in the stream buffer to prevent OOM on long executions. */
+const MAX_STREAM_LINES = 5000;
+/** Maximum length of a single stream line in characters. */
+const MAX_STREAM_LINE_LENGTH = 4096;
+
 interface UseCorrelatedCliStreamOptions {
   outputEvent: string;
   statusEvent: string;
@@ -12,6 +17,12 @@ interface UseCorrelatedCliStreamOptions {
   onOutputLine?: (line: string) => void;
   /** Called for every correlated status event with the raw payload. */
   onStatusEvent?: (payload: Record<string, unknown>) => void;
+  /**
+   * Whether to accumulate lines in the hook's own state buffer. Default `true`.
+   * Set to `false` when the consumer pipes lines to an external buffer (e.g. the
+   * execution store) to avoid maintaining a duplicate 5000-line buffer.
+   */
+  bufferLines?: boolean;
 }
 
 export function useCorrelatedCliStream({
@@ -21,11 +32,17 @@ export function useCorrelatedCliStream({
   onFailed,
   onOutputLine,
   onStatusEvent,
+  bufferLines = true,
 }: UseCorrelatedCliStreamOptions) {
   const [runId, setRunId] = useState<string | null>(null);
   const [phase, setPhase] = useState<CliRunPhase>('idle');
   const [lines, setLines] = useState<string[]>([]);
   const unlistenersRef = useRef<UnlistenFn[]>([]);
+
+  // Capture bufferLines in a ref so the listener closure always sees the latest
+  // value without recreating the `start` callback.
+  const bufferLinesRef = useRef(bufferLines);
+  bufferLinesRef.current = bufferLines;
 
   // Use refs for callbacks so that the `start` callback has a stable identity.
   // Without this, any inline arrow function causes `start` to be recreated
@@ -56,14 +73,24 @@ export function useCorrelatedCliStream({
         const payload = event.payload ?? {};
         if (String(payload[idField] ?? '') !== nextRunId) return;
 
-        const line = payload['line'];
-        if (typeof line === 'string' && line.trim().length > 0) {
-          setLines((prev) => {
-            if (prev[prev.length - 1] === line) {
-              return prev;
-            }
-            return [...prev, line];
-          });
+        const rawLine = payload['line'];
+        if (typeof rawLine === 'string' && rawLine.trim().length > 0) {
+          const line = rawLine.length > MAX_STREAM_LINE_LENGTH
+            ? rawLine.slice(0, MAX_STREAM_LINE_LENGTH) + '...[truncated]'
+            : rawLine;
+          if (bufferLinesRef.current) {
+            setLines((prev) => {
+              if (prev[prev.length - 1] === line) {
+                return prev;
+              }
+              if (prev.length >= MAX_STREAM_LINES) {
+                const trimmed = prev.slice(prev.length - MAX_STREAM_LINES + 1);
+                trimmed.push(line);
+                return trimmed;
+              }
+              return [...prev, line];
+            });
+          }
           onOutputLineRef.current?.(line);
         }
       });

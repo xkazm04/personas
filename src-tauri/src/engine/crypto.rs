@@ -6,9 +6,113 @@ use aes_gcm::aead::{Aead, KeyInit, OsRng};
 use aes_gcm::{Aes256Gcm, Key, Nonce};
 use base64::engine::general_purpose::STANDARD as B64;
 use base64::Engine as _;
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 use crate::db::DbPool;
 use crate::error::AppError;
+
+// ---------------------------------------------------------------------------
+// SecureString — zeroize-on-drop wrapper for in-memory secrets
+// ---------------------------------------------------------------------------
+
+/// A wrapper around `String` that zeroizes the underlying memory on drop and
+/// redacts its contents in `Debug` / `Display` output.
+///
+/// Use this for any value that should not persist in memory after use:
+/// `client_secret`, `refresh_token`, `code_verifier`, `access_token`, etc.
+///
+/// # Usage
+/// ```ignore
+/// let secret = SecureString::new("my-api-key".into());
+/// do_something(secret.expose_secret()); // short-lived &str borrow
+/// // `secret` is zeroized when dropped
+/// ```
+#[derive(Clone, Zeroize, ZeroizeOnDrop)]
+pub struct SecureString {
+    inner: String,
+}
+
+impl SecureString {
+    /// Wrap a plain `String` in a `SecureString`.
+    pub fn new(value: String) -> Self {
+        Self { inner: value }
+    }
+
+    /// Return a short-lived reference to the secret value.
+    /// Prefer keeping the borrow short to minimise exposure.
+    pub fn expose_secret(&self) -> &str {
+        &self.inner
+    }
+}
+
+impl std::fmt::Debug for SecureString {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("[REDACTED]")
+    }
+}
+
+impl std::fmt::Display for SecureString {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("[REDACTED]")
+    }
+}
+
+impl From<String> for SecureString {
+    fn from(s: String) -> Self {
+        Self::new(s)
+    }
+}
+
+impl serde::Serialize for SecureString {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        // Serialize the actual value so OAuth sessions can return tokens to the frontend.
+        // The struct-level Zeroize/ZeroizeOnDrop handles memory cleanup.
+        serializer.serialize_str(&self.inner)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// EncryptedToken — AES-256-GCM encrypted token for at-rest protection
+// ---------------------------------------------------------------------------
+
+/// An OAuth token encrypted at rest in memory using AES-256-GCM.
+///
+/// Tokens are encrypted immediately after receipt from the token endpoint and
+/// stored as ciphertext in session HashMaps. Decryption happens only at the
+/// moment of use (e.g. serialization to the frontend), and the resulting
+/// `SecureString` is zeroized on drop.
+///
+/// This prevents plaintext tokens from sitting in memory for the full session
+/// lifetime (up to 10 minutes), protecting against memory dumps, crash reports,
+/// and malware with process read access.
+#[derive(Clone, Zeroize, ZeroizeOnDrop)]
+pub struct EncryptedToken {
+    ciphertext: String,
+    nonce: String,
+}
+
+impl EncryptedToken {
+    /// Encrypt a plaintext token. The input `SecureString` is consumed and
+    /// zeroized when dropped at the end of this call.
+    pub fn seal(token: SecureString) -> Result<Self, CryptoError> {
+        let (ciphertext, nonce) = encrypt_for_db(token.expose_secret())?;
+        // `token` drops here → SecureString::zeroize fires
+        Ok(Self { ciphertext, nonce })
+    }
+
+    /// Decrypt into a short-lived `SecureString` for immediate use.
+    /// Callers should keep the returned value as briefly as possible.
+    pub fn unseal(&self) -> Result<SecureString, CryptoError> {
+        let plaintext = decrypt_from_db(&self.ciphertext, &self.nonce)?;
+        Ok(SecureString::new(plaintext))
+    }
+}
+
+impl std::fmt::Debug for EncryptedToken {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("[ENCRYPTED]")
+    }
+}
 
 static MASTER_KEY: OnceLock<[u8; 32]> = OnceLock::new();
 
@@ -168,7 +272,62 @@ fn save_local_fallback_key(key: &[u8; 32]) -> Result<(), CryptoError> {
 
     fs::write(&path, B64.encode(key))
         .map_err(|e| CryptoError::KeyManagement(format!("Failed writing local key file: {}", e)))?;
+
+    restrict_file_permissions(&path);
+
     Ok(())
+}
+
+/// Restrict file permissions so only the current user can read/write the key file.
+/// Logs a warning on failure but does not propagate the error — the key is already
+/// persisted and functional; restrictive ACLs are defense-in-depth.
+#[cfg(windows)]
+fn restrict_file_permissions(path: &std::path::Path) {
+    let path_str = path.to_string_lossy();
+    let username = whoami::username();
+
+    // 1. Remove inherited ACEs so other users/groups lose access
+    // 2. Grant only the current user Full Control (`:r` = replace, not append)
+    let result = std::process::Command::new("icacls")
+        .args([
+            &*path_str,
+            "/inheritance:r",
+            "/grant:r",
+            &format!("{}:(F)", username),
+        ])
+        .output();
+
+    match result {
+        Ok(output) if output.status.success() => {
+            tracing::debug!("Restricted master key file permissions to current user");
+        }
+        Ok(output) => {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            tracing::warn!(
+                "icacls failed to restrict key file permissions (exit {}): {}",
+                output.status,
+                stderr.trim()
+            );
+        }
+        Err(e) => {
+            tracing::warn!("Failed to run icacls for key file permissions: {}", e);
+        }
+    }
+}
+
+#[cfg(unix)]
+fn restrict_file_permissions(path: &std::path::Path) {
+    use std::os::unix::fs::PermissionsExt;
+    if let Err(e) = fs::set_permissions(path, fs::Permissions::from_mode(0o600)) {
+        tracing::warn!("Failed to set key file permissions to 0600: {}", e);
+    } else {
+        tracing::debug!("Restricted master key file permissions to owner-only (0600)");
+    }
+}
+
+#[cfg(not(any(windows, unix)))]
+fn restrict_file_permissions(_path: &std::path::Path) {
+    tracing::warn!("Cannot restrict key file permissions on this platform");
 }
 
 /// Returns the key source: "keychain" or "fallback".
@@ -231,6 +390,28 @@ pub fn decrypt_from_db(ciphertext_b64: &str, nonce_b64: &str) -> Result<String, 
 /// Check if a credential row stores legacy plaintext data (iv is empty).
 pub fn is_plaintext(iv: &str) -> bool {
     iv.is_empty()
+}
+
+// ---------------------------------------------------------------------------
+// Field-level credential encryption helpers
+// ---------------------------------------------------------------------------
+
+/// Encrypt a single credential field value, returning `(encrypted_value, iv)`.
+/// For non-sensitive fields, returns `(plaintext_value, "")`.
+pub fn encrypt_field(value: &str, is_sensitive: bool) -> Result<(String, String), CryptoError> {
+    if !is_sensitive {
+        return Ok((value.to_string(), String::new()));
+    }
+    encrypt_for_db(value)
+}
+
+/// Decrypt a single credential field value.
+/// For non-sensitive fields (iv is empty), returns the value as-is.
+pub fn decrypt_field(encrypted_value: &str, iv: &str) -> Result<String, CryptoError> {
+    if is_plaintext(iv) {
+        return Ok(encrypted_value.to_string());
+    }
+    decrypt_from_db(encrypted_value, iv)
 }
 
 // ---------------------------------------------------------------------------

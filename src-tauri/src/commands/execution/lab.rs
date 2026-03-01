@@ -126,6 +126,7 @@ pub fn lab_cancel_arena(
 // A/B — Prompt version comparison (multi-scenario, multi-model)
 // ============================================================================
 
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn lab_start_ab(
     state: State<'_, Arc<AppState>>,

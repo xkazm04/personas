@@ -1,11 +1,25 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use tauri::{AppHandle, Emitter};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
 use tokio::sync::Mutex;
+
+/// Per-credential mutex to prevent concurrent OAuth token refreshes from racing.
+/// Keyed by credential ID. The outer std::sync::Mutex guards brief map access;
+/// the inner tokio::sync::Mutex is held across the async refresh + DB persist.
+static CREDENTIAL_REFRESH_LOCKS: OnceLock<std::sync::Mutex<HashMap<String, Arc<Mutex<()>>>>> =
+    OnceLock::new();
+
+fn credential_refresh_lock(credential_id: &str) -> Arc<Mutex<()>> {
+    let map_mutex = CREDENTIAL_REFRESH_LOCKS.get_or_init(|| std::sync::Mutex::new(HashMap::new()));
+    let mut map = map_mutex.lock().unwrap_or_else(|e| e.into_inner());
+    map.entry(credential_id.to_string())
+        .or_insert_with(|| Arc::new(Mutex::new(())))
+        .clone()
+}
 
 use crate::db::models::{Persona, PersonaToolDefinition};
 use crate::db::repos::core::groups as group_repo;
@@ -16,13 +30,19 @@ use crate::db::repos::resources::{
 use crate::db::settings_keys;
 use crate::db::DbPool;
 
+use super::failover;
 use super::logger::ExecutionLogger;
 use super::parser;
 use super::prompt;
 use super::provider::{self, PromptDelivery};
+use super::trace::{SpanType, TraceCollector, TraceSpanEvent};
 use super::types::*;
 
 /// Run a persona execution: spawn Claude CLI, stream output, capture results.
+///
+/// Supports automatic provider failover: if the primary provider fails with a
+/// retryable error (binary not found, rate limited, session limit), the next
+/// available provider/model in the failover chain is tried automatically.
 #[allow(clippy::too_many_arguments)]
 pub async fn run_execution(
     app: AppHandle,
@@ -35,8 +55,13 @@ pub async fn run_execution(
     child_pids: Arc<Mutex<HashMap<String, u32>>>,
     cancelled: Arc<AtomicBool>,
     continuation: Option<Continuation>,
+    chain_trace_id: Option<String>,
+    circuit_breaker: Arc<super::failover::ProviderCircuitBreaker>,
 ) -> ExecutionResult {
     let start_time = std::time::Instant::now();
+
+    // Initialize trace collector for structured execution tracing
+    let trace = TraceCollector::new(&execution_id, &persona.id, chain_trace_id);
 
     // Set up logger
     let mut logger = match ExecutionLogger::new(&log_dir, &execution_id) {
@@ -103,30 +128,24 @@ pub async fn run_execution(
         input_data = Some(serde_json::Value::Object(obj));
     }
 
-    // Resolve CLI provider based on global engine setting
-    let engine_kind = provider::load_engine_kind(&pool);
-    let cli_provider = provider::resolve_provider(engine_kind);
-
-    // Build CLI args — use resume args when we have a session ID
-    let mut cli_args = if let Some(Continuation::SessionResume(ref session_id)) = continuation {
-        let mut args = cli_provider.build_resume_args(session_id);
-        // Apply provider env even for resume sessions
-        if let Some(profile) = model_profile.as_ref() {
-            cli_provider.apply_provider_env(&mut args, profile);
-        }
-        args
-    } else {
-        cli_provider.build_execution_args(Some(&persona), model_profile.as_ref())
-    };
-
     // Inject decrypted service credentials as env vars (with OAuth token refresh)
+    let cred_span = trace.start_span(
+        SpanType::CredentialResolution,
+        "Credential Resolution",
+        None,
+        Some(serde_json::json!({ "tool_count": tools.len() })),
+    );
     let (cred_env, cred_hints) = resolve_credential_env_vars(&pool, &tools, &persona.id, &persona.name).await;
+    trace.end_span(&cred_span, None, None, None, None);
     let cred_env_clone = cred_env.clone();
-    for (key, val) in cred_env {
-        cli_args.env_overrides.push((key, val));
-    }
 
     // Assemble prompt (with credential env var hints)
+    let prompt_span = trace.start_span(
+        SpanType::PromptAssembly,
+        "Prompt Assembly",
+        None,
+        Some(serde_json::json!({ "is_resume": is_session_resume })),
+    );
     let hint_refs: Vec<&str> = cred_hints.iter().map(|s| s.as_str()).collect();
     let prompt_text = if is_session_resume {
         // For session resume, send a lighter prompt — the session already has context
@@ -148,32 +167,7 @@ pub async fn run_execution(
         )
     };
 
-    // For non-Stdin providers, rebuild args with the prompt embedded
-    match cli_provider.prompt_delivery() {
-        PromptDelivery::PositionalArg | PromptDelivery::Flag(_) => {
-            cli_args = if let Some(Continuation::SessionResume(ref session_id)) = continuation {
-                let mut args = cli_provider.build_resume_args_with_prompt(session_id, &prompt_text);
-                if let Some(profile) = model_profile.as_ref() {
-                    cli_provider.apply_provider_env(&mut args, profile);
-                }
-                for (key, val) in &cred_env_clone {
-                    args.env_overrides.push((key.clone(), val.clone()));
-                }
-                args
-            } else {
-                let mut args = cli_provider.build_execution_args_with_prompt(
-                    Some(&persona),
-                    model_profile.as_ref(),
-                    &prompt_text,
-                );
-                for (key, val) in &cred_env_clone {
-                    args.env_overrides.push((key.clone(), val.clone()));
-                }
-                args
-            };
-        }
-        PromptDelivery::Stdin => {} // args already correct
-    }
+    trace.end_span(&prompt_span, None, None, None, None);
 
     logger.log("=== Persona Execution Started ===");
     logger.log(&format!("Persona: {}", persona.name));
@@ -189,8 +183,6 @@ pub async fn run_execution(
     logger.log(&format!("Prompt length: {} characters", prompt_text.len()));
 
     // Create a stable per-persona working directory (persists across executions).
-    // This allows Claude Code's memory system to work correctly and lets agents
-    // maintain workspace files between runs. Falls back to per-execution temp dir.
     let exec_dir = {
         let stable_dir = std::env::temp_dir()
             .join("personas-workspace")
@@ -212,76 +204,197 @@ pub async fn run_execution(
         };
     }
 
-    // Spawn Claude CLI process
-    let mut cmd = Command::new(&cli_args.command);
-    cmd.args(&cli_args.args)
-        .current_dir(&exec_dir)
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped());
+    // =========================================================================
+    // Provider failover: build candidate chain and try each until one succeeds
+    // =========================================================================
+    let primary_engine = provider::load_engine_kind(&pool);
+    let failover_chain = failover::build_failover_chain(primary_engine, model_profile.as_ref());
 
-    // On Windows, use CREATE_NO_WINDOW flag to prevent console window popup
-    #[cfg(windows)]
-    {
-        #[allow(unused_imports)]
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-    }
+    // Resolve provider + build CLI args + spawn, trying each failover candidate
+    let mut last_spawn_error: Option<String> = None;
+    #[allow(unused_assignments)]
+    let mut active_engine_kind = primary_engine; // overwritten per-candidate in failover loop
+    #[allow(unused_assignments)]
+    let mut cli_provider: Box<dyn provider::CliProvider> = provider::resolve_provider(primary_engine); // overwritten per-candidate
+    let mut cli_args;
 
-    // Set up environment
-    for key in &cli_args.env_removals {
-        cmd.env_remove(key);
-    }
-    for (key, val) in &cli_args.env_overrides {
-        cmd.env(key, val);
-    }
+    let mut child = 'failover: {
+        for (candidate_idx, candidate) in failover_chain.iter().enumerate() {
+            // Check circuit breaker
+            if !circuit_breaker.is_available(candidate.engine_kind) {
+                logger.log(&format!(
+                    "[FAILOVER] Skipping {} (circuit breaker open)",
+                    candidate.label,
+                ));
+                continue;
+            }
 
-    let mut child = match cmd.spawn() {
-        Ok(c) => c,
-        Err(e) => {
-            let duration_ms = start_time.elapsed().as_millis() as u64;
-            let error_msg = if e.kind() == std::io::ErrorKind::NotFound {
-                format!(
-                    "{} not found. Please install it or select a different engine in Settings.",
-                    cli_provider.engine_name()
-                )
+            active_engine_kind = candidate.engine_kind;
+            cli_provider = provider::resolve_provider(candidate.engine_kind);
+
+            // Build model profile override for this candidate
+            let candidate_profile = if let Some(ref model_override) = candidate.model {
+                Some(ModelProfile {
+                    model: Some(model_override.clone()),
+                    ..model_profile.clone().unwrap_or_default()
+                })
             } else {
-                format!("Failed to spawn {}: {}", cli_provider.engine_name(), e)
+                model_profile.clone()
             };
 
-            logger.log(&format!("[ERROR] {}", error_msg));
-            logger.close();
-
-            // Emit error to frontend
-            let _ = app.emit(
-                "execution-output",
-                ExecutionOutputEvent {
-                    execution_id: execution_id.clone(),
-                    line: format!("[ERROR] {}", error_msg),
-                },
-            );
-            let _ = app.emit(
-                "execution-status",
-                ExecutionStatusEvent {
-                    execution_id: execution_id.clone(),
-                    status: ExecutionState::Failed,
-                    error: Some(error_msg.clone()),
-                    duration_ms: Some(duration_ms),
-                    cost_usd: None,
-                },
-            );
-
-            // Stable workspace dirs are not cleaned up (persist across runs)
-
-            return ExecutionResult {
-                success: false,
-                error: Some(error_msg),
-                log_file_path: Some(log_file_path),
-                duration_ms,
-                ..default_result()
+            // Build CLI args
+            cli_args = if let Some(Continuation::SessionResume(ref session_id)) = continuation {
+                let mut args = cli_provider.build_resume_args(session_id);
+                if let Some(profile) = candidate_profile.as_ref() {
+                    cli_provider.apply_provider_env(&mut args, profile);
+                }
+                args
+            } else {
+                cli_provider.build_execution_args(Some(&persona), candidate_profile.as_ref())
             };
+
+            // Inject credential env vars
+            for (key, val) in &cred_env_clone {
+                cli_args.env_overrides.push((key.clone(), val.clone()));
+            }
+
+            // For non-Stdin providers, rebuild args with the prompt embedded
+            match cli_provider.prompt_delivery() {
+                PromptDelivery::PositionalArg | PromptDelivery::Flag(_) => {
+                    cli_args = if let Some(Continuation::SessionResume(ref session_id)) = continuation {
+                        let mut args = cli_provider.build_resume_args_with_prompt(session_id, &prompt_text);
+                        if let Some(profile) = candidate_profile.as_ref() {
+                            cli_provider.apply_provider_env(&mut args, profile);
+                        }
+                        for (key, val) in &cred_env_clone {
+                            args.env_overrides.push((key.clone(), val.clone()));
+                        }
+                        args
+                    } else {
+                        let mut args = cli_provider.build_execution_args_with_prompt(
+                            Some(&persona),
+                            candidate_profile.as_ref(),
+                            &prompt_text,
+                        );
+                        for (key, val) in &cred_env_clone {
+                            args.env_overrides.push((key.clone(), val.clone()));
+                        }
+                        args
+                    };
+                }
+                PromptDelivery::Stdin => {}
+            }
+
+            if candidate_idx > 0 {
+                logger.log(&format!(
+                    "[FAILOVER] Trying {} after previous provider failed",
+                    candidate.label,
+                ));
+                let _ = app.emit(
+                    "execution-output",
+                    ExecutionOutputEvent {
+                        execution_id: execution_id.clone(),
+                        line: format!("[FAILOVER] Trying {}...", candidate.label),
+                    },
+                );
+            }
+
+            // Spawn CLI process
+            let mut cmd = Command::new(&cli_args.command);
+            cmd.args(&cli_args.args)
+                .current_dir(&exec_dir)
+                .stdin(std::process::Stdio::piped())
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped());
+
+            #[cfg(windows)]
+            {
+                #[allow(unused_imports)]
+                use std::os::windows::process::CommandExt;
+                cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+            }
+
+            for key in &cli_args.env_removals {
+                cmd.env_remove(key);
+            }
+            for (key, val) in &cli_args.env_overrides {
+                cmd.env(key, val);
+            }
+
+            match cmd.spawn() {
+                Ok(c) => {
+                    // Spawn succeeded — use this provider
+                    break 'failover c;
+                }
+                Err(e) => {
+                    let error_msg = if e.kind() == std::io::ErrorKind::NotFound {
+                        format!(
+                            "{} not found. Please install it or select a different engine in Settings.",
+                            cli_provider.engine_name()
+                        )
+                    } else {
+                        format!("Failed to spawn {}: {}", cli_provider.engine_name(), e)
+                    };
+
+                    // Record failure in circuit breaker
+                    circuit_breaker.record_failure(candidate.engine_kind);
+                    logger.log(&format!("[FAILOVER] {} failed: {}", candidate.label, error_msg));
+                    last_spawn_error = Some(error_msg);
+                    // Continue to next candidate
+                }
+            }
         }
+
+        // All candidates exhausted
+        let error_msg = last_spawn_error.unwrap_or_else(|| {
+            "All providers failed or have open circuit breakers".to_string()
+        });
+        let final_trace = trace.finalize(None, None, None, Some(error_msg.clone()));
+        let _ = crate::db::repos::execution::traces::save(&pool, &final_trace);
+
+        logger.log(&format!("[ERROR] {}", error_msg));
+        logger.close();
+
+        let _ = app.emit(
+            "execution-output",
+            ExecutionOutputEvent {
+                execution_id: execution_id.clone(),
+                line: format!("[ERROR] {}", error_msg),
+            },
+        );
+        let _ = app.emit(
+            "execution-status",
+            ExecutionStatusEvent {
+                execution_id: execution_id.clone(),
+                status: ExecutionState::Failed,
+                error: Some(error_msg.clone()),
+                duration_ms: Some(start_time.elapsed().as_millis() as u64),
+                cost_usd: None,
+            },
+        );
+
+        return ExecutionResult {
+            success: false,
+            error: Some(error_msg),
+            log_file_path: Some(log_file_path),
+            duration_ms: start_time.elapsed().as_millis() as u64,
+            trace_id: Some(final_trace.trace_id.clone()),
+            ..default_result()
+        };
     };
+
+    // Provider spawn succeeded — record in trace
+    let spawn_span = trace.start_span(
+        SpanType::CliSpawn,
+        &format!("CLI Spawn: {}", cli_provider.engine_name()),
+        None,
+        Some(serde_json::json!({
+            "engine": cli_provider.engine_name(),
+            "prompt_length": prompt_text.len(),
+        })),
+    );
+
+    trace.end_span_ok(&spawn_span);
 
     // Register child PID so cancel_execution can kill it
     if let Some(pid) = child.id() {
@@ -348,6 +461,13 @@ pub async fn run_execution(
     let mut tool_steps: Vec<ToolCallStep> = Vec::new();
     let mut step_counter: u32 = 0;
 
+    /// Maximum total stdout bytes captured before truncation (10 MB).
+    const MAX_OUTPUT_BYTES: usize = 10 * 1024 * 1024;
+    /// Maximum length of a single stdout line in characters.
+    const MAX_LINE_LENGTH: usize = 4096;
+    let mut total_stdout_bytes: usize = 0;
+    let mut output_truncated = false;
+
     // Read stderr in background (capped at 100KB to prevent OOM)
     let stderr_handle = tokio::spawn(async move {
         const MAX_STDERR_BYTES: usize = 100 * 1024;
@@ -388,12 +508,46 @@ pub async fn run_execution(
     let persona_name_for_stream = persona.name.clone();
     let notif_channels_for_stream = persona.notification_channels.clone();
 
+    // Start stream processing span
+    let stream_span = trace.start_span(
+        SpanType::StreamProcessing,
+        "Stream Processing",
+        None,
+        None,
+    );
+
     // Process stdout lines with timeout
     let stream_result = tokio::time::timeout(timeout_duration, async {
-        while let Ok(Some(line)) = stdout_reader.next_line().await {
-            if line.trim().is_empty() {
+        while let Ok(Some(raw_line)) = stdout_reader.next_line().await {
+            if raw_line.trim().is_empty() {
                 continue;
             }
+
+            // Enforce total output byte cap
+            total_stdout_bytes += raw_line.len();
+            if total_stdout_bytes > MAX_OUTPUT_BYTES {
+                if !output_truncated {
+                    output_truncated = true;
+                    logger.log("[RUNNER] stdout truncated — MAX_OUTPUT_BYTES (10MB) exceeded");
+                    let _ = app.emit(
+                        "execution-output",
+                        ExecutionOutputEvent {
+                            execution_id: exec_id_for_stream.clone(),
+                            line: "[output truncated — 10MB limit exceeded]".to_string(),
+                        },
+                    );
+                }
+                continue;
+            }
+
+            // Enforce per-line length limit
+            let line = if raw_line.len() > MAX_LINE_LENGTH {
+                let mut truncated = raw_line[..MAX_LINE_LENGTH].to_string();
+                truncated.push_str("...[truncated]");
+                truncated
+            } else {
+                raw_line
+            };
 
             logger.log(&format!("[STDOUT] {}", line.trim()));
 
@@ -422,6 +576,26 @@ pub async fn run_execution(
             {
                 tool_use_lines.push(line_type.clone());
                 step_counter += 1;
+
+                // Create trace span for this tool call
+                let tool_span_id = trace.start_span(
+                    SpanType::ToolCall,
+                    &format!("ToolCall: {}", tool_name),
+                    Some(&stream_span),
+                    Some(serde_json::json!({
+                        "tool_name": tool_name,
+                        "step_index": step_counter,
+                    })),
+                );
+                // Emit live trace span event to frontend
+                if let Some(span_data) = trace.get_span(&tool_span_id) {
+                    let _ = app.emit("execution-trace-span", TraceSpanEvent {
+                        execution_id: exec_id_for_stream.clone(),
+                        span: span_data,
+                        event_type: "start".to_string(),
+                    });
+                }
+
                 tool_steps.push(ToolCallStep {
                     step_index: step_counter,
                     tool_name: tool_name.clone(),
@@ -450,16 +624,43 @@ pub async fn run_execution(
                         last.duration_ms = Some(now.saturating_sub(last.started_at_ms));
                     }
                 }
+
+                // End the most recent open ToolCall trace span
+                let tool_span_to_close = {
+                    let spans = trace.spans.lock().unwrap();
+                    spans.iter().rev()
+                        .find(|s| s.span_type == SpanType::ToolCall && s.end_ms.is_none())
+                        .map(|s| s.span_id.clone())
+                };
+                if let Some(span_id) = tool_span_to_close {
+                    trace.end_span_ok(&span_id);
+                    // Emit live trace span end event
+                    if let Some(span_data) = trace.get_span(&span_id) {
+                        let _ = app.emit("execution-trace-span", TraceSpanEvent {
+                            execution_id: exec_id_for_stream.clone(),
+                            span: span_data,
+                            event_type: "end".to_string(),
+                        });
+                    }
+                }
             }
 
             // For assistant text, check for protocol messages
             if let StreamLineType::AssistantText { ref text } = line_type {
                 for text_line in text.split('\n') {
-                    assistant_text.push_str(text_line);
-                    assistant_text.push('\n');
+                    if assistant_text.len() < MAX_OUTPUT_BYTES {
+                        assistant_text.push_str(text_line);
+                        assistant_text.push('\n');
+                    }
 
                     // Mid-stream protocol message detection
                     if let Some(protocol_msg) = parser::extract_protocol_message(text_line) {
+                        let dispatch_span = trace.start_span(
+                            SpanType::ProtocolDispatch,
+                            &format!("Protocol: {:?}", std::mem::discriminant(&protocol_msg)),
+                            Some(&stream_span),
+                            None,
+                        );
                         let mut dispatch_ctx = super::dispatch::DispatchContext {
                             app: &app,
                             pool: &pool_for_stream,
@@ -471,12 +672,20 @@ pub async fn run_execution(
                             logger: &mut logger,
                         };
                         super::dispatch::dispatch(&mut dispatch_ctx, &protocol_msg);
+                        trace.end_span_ok(&dispatch_span);
                     }
                 }
             }
         }
     })
     .await;
+
+    // End stream processing span
+    if stream_result.is_err() {
+        trace.end_span_error(&stream_span, "Stream timed out");
+    } else {
+        trace.end_span_ok(&stream_span);
+    }
 
     // Get stderr
     let stderr_text = stderr_handle.await.unwrap_or_default();
@@ -571,8 +780,12 @@ pub async fn run_execution(
                 logger.log("[OUTCOME] Task not accomplished — marking as incomplete");
             }
         } else {
-            // No outcome_assessment found — use heuristic: if the output contains
-            // error indicators without clear success indicators, mark as incomplete.
+            // No outcome_assessment found — use heuristic, but conservatively
+            // defer to exit code 0. Agents often discuss errors they encountered
+            // and fixed (e.g., "I found an error and resolved it"), so error
+            // substrings alone are not reliable without checking for resolution
+            // language. Only mark as incomplete when error indicators appear
+            // WITHOUT any success or resolution indicators.
             let lower_text = assistant_text.to_lowercase();
             let has_error_indicators = lower_text.contains("error:")
                 || lower_text.contains("failed to")
@@ -581,7 +794,13 @@ pub async fn run_execution(
             let has_success_indicators = lower_text.contains("successfully")
                 || lower_text.contains("completed")
                 || lower_text.contains("done");
-            if has_error_indicators && !has_success_indicators {
+            let has_resolution_indicators = lower_text.contains("fixed")
+                || lower_text.contains("resolved")
+                || lower_text.contains("corrected")
+                || lower_text.contains("handled")
+                || lower_text.contains("recovered")
+                || lower_text.contains("worked around");
+            if has_error_indicators && !has_success_indicators && !has_resolution_indicators {
                 final_status = ExecutionState::Incomplete;
                 logger.log("[OUTCOME] No assessment found, error indicators detected — marking as incomplete");
             }
@@ -592,6 +811,28 @@ pub async fn run_execution(
         .as_ref()
         .map(|e| e.contains("Session limit"))
         .unwrap_or(false);
+
+    // Record circuit breaker outcome for the active provider
+    if let Some(ref err) = error {
+        if failover::classify_error(err).is_some() {
+            circuit_breaker.record_failure(active_engine_kind);
+        }
+    } else {
+        circuit_breaker.record_success(active_engine_kind);
+    }
+
+    // Finalize and save execution trace
+    let final_trace = trace.finalize(
+        Some(metrics.cost_usd),
+        Some(metrics.input_tokens),
+        Some(metrics.output_tokens),
+        error.clone(),
+    );
+    if let Err(e) = crate::db::repos::execution::traces::save(&pool, &final_trace) {
+        tracing::warn!(execution_id = %execution_id, "Failed to save execution trace: {}", e);
+    }
+    // Emit the complete trace to frontend
+    let _ = app.emit("execution-trace", &final_trace);
 
     // Emit final status
     let _ = app.emit(
@@ -619,6 +860,7 @@ pub async fn run_execution(
         output_tokens: metrics.output_tokens,
         cost_usd: metrics.cost_usd,
         tool_steps: tool_steps_json,
+        trace_id: Some(final_trace.trace_id.clone()),
     }
 }
 
@@ -664,6 +906,7 @@ fn default_result() -> ExecutionResult {
         output_tokens: 0,
         cost_usd: 0.0,
         tool_steps: None,
+        trace_id: None,
     }
 }
 
@@ -890,24 +1133,30 @@ async fn inject_credential(
     persona_id: &str,
     persona_name: &str,
 ) {
-    let plaintext = if super::crypto::is_plaintext(&cred.iv) {
-        cred.encrypted_data.clone()
-    } else {
-        match super::crypto::decrypt_from_db(&cred.encrypted_data, &cred.iv) {
-            Ok(pt) => pt,
-            Err(e) => {
-                tracing::error!("Failed to decrypt credential '{}': {}", cred.name, e);
-                return;
-            }
+    let mut fields: HashMap<String, String> = match cred_repo::get_decrypted_fields(pool, cred) {
+        Ok(f) => f,
+        Err(e) => {
+            tracing::error!("Failed to decrypt credential '{}': {}", cred.name, e);
+            return;
         }
     };
-
-    let mut fields: HashMap<String, String> = serde_json::from_str(&plaintext).unwrap_or_default();
     let prefix = connector_name.to_uppercase().replace('-', "_");
 
     // Auto-refresh OAuth token if refresh_token is present.
     // For app_managed credentials (no client_id in fields), resolve from platform env.
-    if fields.get("refresh_token").map_or(false, |v| !v.is_empty()) {
+    // Locked per credential ID to prevent concurrent refreshes from racing.
+    if fields.get("refresh_token").is_some_and(|v| !v.is_empty()) {
+        let refresh_lock = credential_refresh_lock(&cred.id);
+        let _guard = refresh_lock.lock().await;
+
+        // Re-read the credential inside the lock to pick up any token refreshed
+        // by a concurrent execution that held the lock before us.
+        if let Ok(re_read_cred) = cred_repo::get_by_id(pool, &cred.id) {
+            if let Ok(fresh_fields) = cred_repo::get_decrypted_fields(pool, &re_read_cred) {
+                fields = fresh_fields;
+            }
+        }
+
         let override_client = if fields.get("client_id").map_or(true, |v| v.is_empty()) {
             // Resolve platform-managed client credentials for Google connectors
             let is_google = connector_name.starts_with("google")
@@ -917,7 +1166,6 @@ async fn inject_credential(
             if is_google {
                 super::google_oauth::resolve_google_oauth_env_credentials()
                     .ok()
-                    .map(|(id, secret)| (id, secret))
             } else {
                 None
             }
@@ -927,24 +1175,8 @@ async fn inject_credential(
         let override_ref = override_client.as_ref().map(|(id, sec)| (id.as_str(), sec.as_str()));
         if let Some(fresh_token) = try_refresh_oauth_token(&fields, connector_name, override_ref).await {
             fields.insert("access_token".to_string(), fresh_token.clone());
-            // Persist the refreshed token back to the credential store
-            let updated_json = serde_json::to_string(&fields).unwrap_or_default();
-            if !updated_json.is_empty() {
-                match super::crypto::encrypt_for_db(&updated_json) {
-                    Ok((encrypted, iv)) => {
-                        let _ = cred_repo::update(pool, &cred.id, crate::db::models::UpdateCredentialInput {
-                            name: None,
-                            service_type: None,
-                            encrypted_data: Some(encrypted),
-                            iv: Some(iv),
-                            metadata: None,
-                        });
-                    }
-                    Err(e) => {
-                        tracing::warn!("Failed to persist refreshed token for '{}': {}", connector_name, e);
-                    }
-                }
-            }
+            // Persist the refreshed token back to field-level storage
+            let _ = cred_repo::save_fields(pool, &cred.id, &fields);
         }
     }
 

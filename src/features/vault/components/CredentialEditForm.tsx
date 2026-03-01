@@ -150,7 +150,9 @@ export function CredentialEditForm({
   };
 
   const handleOAuthConsent = () => {
-    onOAuthConsent?.(values);
+    if (validate()) {
+      onOAuthConsent?.(values);
+    }
   };
 
   return (
@@ -169,27 +171,44 @@ export function CredentialEditForm({
               </label>
 
               <div className="relative">
-                <input
-                  type={field.type === 'password' && !showPasswords[field.key] ? 'password' : 'text'}
-                  value={values[field.key] || ''}
-                  onChange={(e) => handleChange(field.key, e.target.value)}
-                  placeholder={field.placeholder}
-                  className={`w-full px-3 py-2 bg-background/50 border rounded-xl text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all placeholder-muted-foreground/30 ${
-                    field.type === 'password' ? 'pr-10' : ''
-                  } ${errors[field.key] ? 'border-red-500/50' : 'border-border/50'}`}
-                />
-                {field.type === 'password' && (
-                  <button
-                    type="button"
-                    onClick={() => togglePassword(field.key)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted-foreground/90 hover:text-foreground/95 transition-colors"
+                {field.type === 'select' && field.options ? (
+                  <select
+                    value={values[field.key] || ''}
+                    onChange={(e) => handleChange(field.key, e.target.value)}
+                    className={`w-full px-3 py-2 bg-background/50 border rounded-xl text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all ${
+                      errors[field.key] ? 'border-red-500/50' : 'border-border/50'
+                    }`}
                   >
-                    {showPasswords[field.key] ? (
-                      <EyeOff className="w-4 h-4" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
+                    <option value="">{field.placeholder || 'Select...'}</option>
+                    {field.options.map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <>
+                    <input
+                      type={field.type === 'password' && !showPasswords[field.key] ? 'password' : 'text'}
+                      value={values[field.key] || ''}
+                      onChange={(e) => handleChange(field.key, e.target.value)}
+                      placeholder={field.placeholder}
+                      className={`w-full px-3 py-2 bg-background/50 border rounded-xl text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all placeholder-muted-foreground/30 ${
+                        field.type === 'password' ? 'pr-10' : ''
+                      } ${errors[field.key] ? 'border-red-500/50' : 'border-border/50'}`}
+                    />
+                    {field.type === 'password' && (
+                      <button
+                        type="button"
+                        onClick={() => togglePassword(field.key)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted-foreground/90 hover:text-foreground/95 transition-colors"
+                      >
+                        {showPasswords[field.key] ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
                     )}
-                  </button>
+                  </>
                 )}
               </div>
 
@@ -316,7 +335,6 @@ export function CredentialEditForm({
           <button
             onClick={handleSave}
             disabled={saveDisabled}
-            title={saveDisabled ? saveDisabledReason : undefined}
             className="px-4 py-2 bg-primary hover:bg-primary/90 text-foreground rounded-xl text-sm font-medium transition-all shadow-lg shadow-primary/20 disabled:opacity-45 disabled:cursor-not-allowed"
           >
             Save Credential
@@ -325,7 +343,10 @@ export function CredentialEditForm({
       </div>
 
       {saveDisabled && saveDisabledReason && (
-        <p className="text-xs text-amber-300 text-right">{saveDisabledReason}</p>
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-sm text-amber-300">
+          <Info className="w-3.5 h-3.5 shrink-0" />
+          <span>{saveDisabledReason}</span>
+        </div>
       )}
     </div>
   );

@@ -4,6 +4,7 @@ import type { ModelProvider } from '@/lib/types/frontendTypes';
 import { OLLAMA_CLOUD_PRESETS, isOllamaCloudValue } from '@/features/agents/sub_editor/model-config/OllamaCloudPresets';
 import { OllamaApiKeyField } from '@/features/agents/sub_editor/model-config/OllamaApiKeyField';
 import { LiteLLMConfigField } from '@/features/agents/sub_editor/model-config/LiteLLMConfigField';
+import { FieldHint } from '@/features/shared/components/FieldHint';
 
 // ── Provider brand colors ─────────────────────────────────────────────
 const PROVIDER_COLORS: Record<string, string> = {
@@ -20,9 +21,9 @@ interface ModelDef {
 }
 
 const ANTHROPIC_MODELS: ModelDef[] = [
-  { value: 'haiku', name: 'Haiku', cost: '$' },
-  { value: 'sonnet', name: 'Sonnet', cost: '$$' },
-  { value: '', name: 'Opus', cost: '$$$' },
+  { value: 'haiku', name: 'Haiku', cost: '~$0.25/1K' },
+  { value: 'sonnet', name: 'Sonnet', cost: '~$3/1K' },
+  { value: '', name: 'Opus', cost: '~$15/1K' },
 ];
 
 const OLLAMA_MODELS: ModelDef[] = OLLAMA_CLOUD_PRESETS.map((p) => ({
@@ -197,7 +198,13 @@ export function ModelSelector({
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-foreground/80 mb-1">Base URL</label>
+                        <label className="block text-sm font-medium text-foreground/80 mb-1">
+                          Base URL
+                          <FieldHint
+                            text="The API endpoint for your model provider. Must include protocol (http/https) and port if non-standard."
+                            example="http://localhost:11434"
+                          />
+                        </label>
                         <input
                           type="text"
                           value={customConfig.baseUrl}
@@ -211,9 +218,16 @@ export function ModelSelector({
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-foreground/80 mb-1">Auth Token</label>
+                        <label className="block text-sm font-medium text-foreground/80 mb-1">
+                          Auth Token
+                          <FieldHint
+                            text="Authentication token for the provider API. For Ollama local, use 'ollama'. For LiteLLM, use your master key."
+                            example="sk-..."
+                          />
+                        </label>
                         <input
-                          type="text"
+                          type="password"
+                          autoComplete="off"
                           value={customConfig.authToken}
                           onChange={(e) => customConfig.onAuthTokenChange(e.target.value)}
                           placeholder={
@@ -241,12 +255,23 @@ export function ModelSelector({
           <div className="flex gap-3">
             <div className="flex-1">
               <label className="block text-sm font-medium text-foreground/80 mb-1">
-                <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" /> Max Budget (USD)</span>
+                <span className="flex items-center gap-1">
+                  <DollarSign className="w-3 h-3" /> Max Budget (USD)
+                  <FieldHint
+                    text="Maximum total spend for a single execution. The run will stop if this limit is reached."
+                    range="$0.01 and up, or leave blank for no limit"
+                    example="0.50"
+                  />
+                </span>
               </label>
               <input
                 type="number"
                 value={maxBudget ?? ''}
-                onChange={(e) => onMaxBudgetChange(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                onChange={(e) => {
+                  if (e.target.value === '') { onMaxBudgetChange(''); return; }
+                  const n = parseFloat(e.target.value);
+                  onMaxBudgetChange(Number.isNaN(n) ? '' : n);
+                }}
                 placeholder="No limit"
                 min={0}
                 step={0.01}
@@ -254,11 +279,22 @@ export function ModelSelector({
               />
             </div>
             <div className="flex-1">
-              <label className="block text-sm font-medium text-foreground/80 mb-1">Max Turns</label>
+              <label className="block text-sm font-medium text-foreground/80 mb-1">
+                Max Turns
+                <FieldHint
+                  text="Maximum number of LLM round-trips per execution. Each turn is one prompt-response cycle with tool use."
+                  range="1 and up, or leave blank for no limit"
+                  example="5"
+                />
+              </label>
               <input
                 type="number"
                 value={maxTurns ?? ''}
-                onChange={(e) => onMaxTurnsChange(e.target.value === '' ? '' : parseInt(e.target.value, 10))}
+                onChange={(e) => {
+                  if (e.target.value === '') { onMaxTurnsChange(''); return; }
+                  const n = parseInt(e.target.value, 10);
+                  onMaxTurnsChange(Number.isNaN(n) ? '' : n);
+                }}
                 placeholder="No limit"
                 min={1}
                 step={1}

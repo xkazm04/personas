@@ -31,6 +31,7 @@ pub enum ExecutionState {
 
 impl ExecutionState {
     /// All terminal states (execution is done, no further transitions).
+    #[allow(dead_code)]
     pub const TERMINAL: &'static [ExecutionState] = &[
         ExecutionState::Completed,
         ExecutionState::Failed,
@@ -39,6 +40,7 @@ impl ExecutionState {
     ];
 
     /// All active states (execution is in progress).
+    #[allow(dead_code)]
     pub const ACTIVE: &'static [ExecutionState] = &[
         ExecutionState::Queued,
         ExecutionState::Running,
@@ -55,6 +57,7 @@ impl ExecutionState {
     }
 
     /// Check whether transitioning from `self` to `target` is valid.
+    #[allow(dead_code)]
     pub fn can_transition_to(&self, target: ExecutionState) -> bool {
         matches!(
             (self, target),
@@ -236,6 +239,8 @@ pub struct ExecutionResult {
     pub output_tokens: u64,
     pub cost_usd: f64,
     pub tool_steps: Option<String>,
+    /// Trace ID for this execution (used for chain trace propagation).
+    pub trace_id: Option<String>,
 }
 
 /// Accumulated execution metrics
@@ -276,6 +281,7 @@ pub mod providers {
 pub struct EphemeralPersona {
     pub persona: Persona,
     pub tools: Vec<PersonaToolDefinition>,
+    #[allow(dead_code)]
     pub model_override: Option<ModelProfile>,
 }
 
@@ -293,6 +299,7 @@ impl EphemeralPersona {
     }
 
     /// Create an EphemeralPersona from a DB-persisted persona, tools, and a model override.
+    #[allow(dead_code)]
     pub fn from_persisted_with_model(
         persona: Persona,
         tools: Vec<PersonaToolDefinition>,
@@ -406,6 +413,19 @@ pub struct ExecutionStatusEvent {
     pub cost_usd: Option<f64>,
 }
 
+/// Queue status event emitted to frontend when an execution is queued or promoted.
+#[derive(Debug, Clone, Serialize)]
+pub struct QueueStatusEvent {
+    pub execution_id: String,
+    pub persona_id: String,
+    /// "queued" | "promoted" | "queue_full"
+    pub action: String,
+    /// 0-indexed position in the queue (only for "queued" action)
+    pub position: Option<usize>,
+    /// Total queue depth for this persona
+    pub queue_depth: usize,
+}
+
 /// Healing event emitted to frontend after post-execution analysis
 #[derive(Debug, Clone, Serialize)]
 pub struct HealingEventPayload {
@@ -420,4 +440,19 @@ pub struct HealingEventPayload {
     pub severity: String,
     pub suggested_fix: Option<String>,
     pub persona_name: String,
+    /// Human-readable description of the diagnosed failure.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    /// Strategy label, e.g. "Exponential backoff", "Increased timeout".
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub strategy: Option<String>,
+    /// Seconds until the retry fires (0 if not a retry).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub backoff_seconds: Option<u64>,
+    /// Current retry attempt number (1-based).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub retry_number: Option<i64>,
+    /// Maximum retry attempts allowed.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_retries: Option<i64>,
 }

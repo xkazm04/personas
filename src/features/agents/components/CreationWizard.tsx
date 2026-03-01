@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
+  MessageCircle,
   PenLine,
   Sparkles,
   Terminal,
@@ -17,10 +18,11 @@ import { usePersonaStore } from '@/stores/personaStore';
 import { TemplatePickerStep } from '@/features/agents/components/onboarding/OnboardingTemplateStep';
 import { IconSelector } from '@/features/shared/components/IconSelector';
 import { ColorPicker } from '@/features/shared/components/ColorPicker';
-import type { BuiltinTemplate } from '@/lib/types/templateTypes';
+import { ChatCreator } from '@/features/agents/components/ChatCreator';
+import type { TemplateCatalogEntry } from '@/lib/types/templateTypes';
 
 type WizardStep = 'entry' | 'identity';
-type EntryMode = 'template' | 'describe';
+type EntryMode = 'template' | 'describe' | 'chat';
 
 interface CreationWizardProps {
   /** Show Cancel button to exit without creating. */
@@ -54,7 +56,7 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
 
   const [step, setStep] = useState<WizardStep>('entry');
   const [entryMode, setEntryMode] = useState<EntryMode>('template');
-  const [selectedTemplate, setSelectedTemplate] = useState<BuiltinTemplate | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateCatalogEntry | null>(null);
 
   // Identity form state
   const [name, setName] = useState('');
@@ -68,7 +70,7 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
 
   // --- Entry step handlers ---
 
-  const handleTemplateSelect = useCallback((template: BuiltinTemplate) => {
+  const handleTemplateSelect = useCallback((template: TemplateCatalogEntry) => {
     setSelectedTemplate(template);
     setEntryMode('template');
     setName(template.name);
@@ -200,7 +202,7 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
                 }`}
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                Start from a template
+                Template
               </button>
               <button
                 data-testid="mode-describe-btn"
@@ -212,13 +214,36 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
                 }`}
               >
                 <PenLine className="w-3.5 h-3.5" />
-                Describe what you need
+                Describe
+              </button>
+              <button
+                data-testid="mode-chat-btn"
+                onClick={() => setEntryMode('chat')}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors ${
+                  entryMode === 'chat'
+                    ? 'bg-primary/10 text-foreground/90'
+                    : 'text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/30'
+                }`}
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                Chat
               </button>
             </div>
 
             {/* Mode content */}
             <AnimatePresence mode="wait">
-              {entryMode === 'template' ? (
+              {entryMode === 'chat' ? (
+                <motion.div
+                  key="chat-creator"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="min-h-[400px] border border-primary/10 rounded-xl overflow-hidden bg-background/30"
+                >
+                  <ChatCreator onCancel={canCancel ? handleCancel : undefined} />
+                </motion.div>
+              ) : entryMode === 'template' ? (
                 <motion.div
                   key="template-picker"
                   initial={{ opacity: 0 }}

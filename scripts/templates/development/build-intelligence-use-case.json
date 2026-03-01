@@ -2,7 +2,7 @@
   "id": "build-intelligence-use-case",
   "name": "Build Intelligence Use Case",
   "description": "Monitors CircleCI pipeline events, analyzes failed build logs to identify root causes, posts enriched Slack messages (not just \"build failed\" but \"failed because X in file Y\"), and comments on the GitHub PR with fix suggestions. Tracks flaky test patterns.",
-  "icon": "Code",
+  "icon": "Cpu",
   "color": "#10B981",
   "category": [
     "development"
@@ -120,7 +120,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://circleci.com/api/v2"
+        "api_base_url": "https://circleci.com/api/v2",
+        "role": "ci_cd",
+        "category": "development"
       },
       {
         "name": "slack",
@@ -149,7 +151,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       },
       {
         "name": "github",
@@ -170,7 +174,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://api.github.com"
+        "api_base_url": "https://api.github.com",
+        "role": "source_control",
+        "category": "development"
       }
     ],
     "suggested_notification_channels": [

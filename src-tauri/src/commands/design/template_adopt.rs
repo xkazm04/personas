@@ -7,6 +7,7 @@ use std::sync::Arc;
 
 use crate::background_job::BackgroundJobManager;
 use crate::db::repos::core::personas as persona_repo;
+use crate::db::repos::communication::reviews as reviews_repo;
 use crate::db::models::CreatePersonaInput;
 use crate::engine::prompt;
 use crate::error::AppError;
@@ -84,6 +85,7 @@ fn get_adopt_snapshot_internal(adopt_id: &str) -> Option<TemplateAdoptSnapshot> 
 
 // ── Commands ────────────────────────────────────────────────────
 
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn start_template_adopt_background(
     app: tauri::AppHandle,
@@ -93,6 +95,7 @@ pub async fn start_template_adopt_background(
     adjustment_request: Option<String>,
     previous_draft_json: Option<String>,
     user_answers_json: Option<String>,
+    connector_swaps_json: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
     if design_result_json.trim().is_empty() {
         return Err(AppError::Validation(
@@ -128,6 +131,7 @@ pub async fn start_template_adopt_background(
                     adjustment_request.as_deref(),
                     previous_draft_json.as_deref(),
                     user_answers_json.as_deref(),
+                    connector_swaps_json.as_deref(),
                 ) => res
             };
 
@@ -148,6 +152,7 @@ pub async fn start_template_adopt_background(
                     &adopt_id_for_task,
                     &template_name,
                     &design_result_json,
+                    connector_swaps_json.as_deref(),
                 ) => res
             };
 
@@ -257,6 +262,7 @@ pub fn cancel_template_adopt(
 pub fn confirm_template_adopt_draft(
     state: State<'_, Arc<AppState>>,
     draft_json: String,
+    template_name: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
     let draft: N8nPersonaOutput = serde_json::from_str(&draft_json)
         .map_err(|e| AppError::Validation(format!("Invalid draft JSON: {e}")))?;
@@ -269,45 +275,19 @@ pub fn confirm_template_adopt_draft(
         ));
     }
 
-    let created = persona_repo::create(
+    // Atomic import: persona + tools + triggers in a single SQLite transaction
+    let (response, _import_result) = super::n8n_transform::confirmation::create_persona_atomically(
         &state.db,
-        CreatePersonaInput {
-            name: draft
-                .name
-                .as_ref()
-                .filter(|n| !n.trim().is_empty())
-                .cloned()
-                .unwrap_or_else(|| "Adopted Template".into()),
-            description: draft.description.clone(),
-            system_prompt: draft.system_prompt.clone(),
-            structured_prompt: draft
-                .structured_prompt
-                .as_ref()
-                .and_then(|v| serde_json::to_string(v).ok()),
-            icon: draft.icon.clone(),
-            color: draft.color.clone(),
-            project_id: None,
-            enabled: Some(true),
-            max_concurrent: None,
-            timeout_ms: None,
-            model_profile: draft.model_profile.clone(),
-            max_budget_usd: draft.max_budget_usd,
-            max_turns: draft.max_turns,
-            design_context: draft.design_context.clone(),
-            group_id: None,
-            notification_channels: draft.notification_channels.clone(),
-        },
+        &draft,
+        None, // no n8n session for template adopt
     )?;
 
-    let (triggers_created, tools_created, connectors_needing_setup) =
-        super::n8n_transform::confirmation::create_persona_entities(&state.db, &created.id, &draft);
+    // Track adoption count for the source template
+    if let Some(name) = template_name.as_deref().or(draft.name.as_deref()) {
+        let _ = reviews_repo::increment_adoption_count(&state.db, name);
+    }
 
-    Ok(json!({
-        "persona": created,
-        "triggers_created": triggers_created,
-        "tools_created": tools_created,
-        "connectors_needing_setup": connectors_needing_setup,
-    }))
+    Ok(response)
 }
 
 // ── Instant Adopt (no AI transform — creates persona directly from design) ──
@@ -378,7 +358,7 @@ pub fn instant_adopt_template(
         .and_then(|v| v.as_str())
         .filter(|n| !n.trim().is_empty())
         .map(|s| s.to_string())
-        .unwrap_or(template_name);
+        .unwrap_or(template_name.clone());
 
     let persona = persona_repo::create(
         &state.db,
@@ -401,6 +381,9 @@ pub fn instant_adopt_template(
             notification_channels: None,
         },
     )?;
+
+    // Track adoption count for the source template
+    let _ = reviews_repo::increment_adoption_count(&state.db, &template_name);
 
     Ok(json!({ "persona": persona }))
 }
@@ -515,7 +498,7 @@ Rules:
     cli_args.args.push("--model".to_string());
     cli_args.args.push("claude-haiku-4-5-20251001".to_string());
 
-    let (output, _session_id) = run_claude_prompt_text_inner(prompt_text, &cli_args, None, 90)
+    let (output, _session_id, _) = run_claude_prompt_text_inner(prompt_text, &cli_args, None, None, None, 90)
         .await
         .map_err(AppError::Internal)?;
 
@@ -569,6 +552,7 @@ fn handle_adopt_result(
 fn build_template_adopt_unified_prompt(
     template_name: &str,
     design_result_json: &str,
+    connector_swaps_json: Option<&str>,
 ) -> String {
     let design_preview = if design_result_json.len() > 8000 {
         let mut end = 8000;
@@ -580,7 +564,7 @@ fn build_template_adopt_unified_prompt(
         design_result_json
     };
 
-    format!(
+    let mut prompt = format!(
         r##"You are a senior Personas architect. You will analyze a template design and either ask
 clarifying questions OR generate a persona directly.
 
@@ -687,7 +671,19 @@ Return ONLY valid JSON (no markdown fences, no commentary):
 Template name: {template_name}
 Design analysis (first 8000 chars): {design_preview}
 "##
-    )
+    );
+
+    // Append connector swap instructions if any
+    if let Some(swaps) = connector_swaps_json {
+        if !swaps.is_empty() && swaps != "{}" {
+            prompt.push_str(&format!(
+                "\n\n## Connector Swaps\nThe user has swapped the following connectors. Use the REPLACEMENT connector's APIs, authentication patterns, and endpoints instead of the originals:\n{}\n\nWhen generating tools, system prompt API references, and tool guidance, use the replacement connector's API patterns, not the original's.\n",
+                swaps
+            ));
+        }
+    }
+
+    prompt
 }
 
 /// Turn 1 of unified template adopt: sends unified prompt to Sonnet.
@@ -699,12 +695,14 @@ async fn run_unified_adopt_turn1(
     adopt_id: &str,
     template_name: &str,
     design_result_json: &str,
+    connector_swaps_json: Option<&str>,
 ) -> Result<(Option<N8nPersonaOutput>, bool), AppError> {
     tracing::info!(adopt_id = %adopt_id, "Starting unified adopt Turn 1");
 
     let prompt_text = build_template_adopt_unified_prompt(
         template_name,
         design_result_json,
+        connector_swaps_json,
     );
 
     ADOPT_JOBS.emit_line(
@@ -722,8 +720,8 @@ async fn run_unified_adopt_turn1(
     let on_line = move |line: &str| {
         ADOPT_JOBS.emit_line(&app_for_emit, &adopt_id_for_emit, line.to_string());
     };
-    let (output_text, captured_session_id) =
-        run_claude_prompt_text_inner(prompt_text, &cli_args, Some(&on_line), 420)
+    let (output_text, captured_session_id, _) =
+        run_claude_prompt_text_inner(prompt_text, &cli_args, Some(&on_line), None, None, 420)
             .await
             .map_err(AppError::Internal)?;
 
@@ -797,7 +795,7 @@ Remember: return ONLY valid JSON with the persona object, no markdown fences."#,
     let on_line2 = move |line: &str| {
         ADOPT_JOBS.emit_line(&app_for_emit2, &adopt_id_for_emit2, line.to_string());
     };
-    let (output_text, _) = run_claude_prompt_text_inner(prompt_text, &cli_args, Some(&on_line2), 420)
+    let (output_text, _, _) = run_claude_prompt_text_inner(prompt_text, &cli_args, Some(&on_line2), None, None, 420)
         .await
         .map_err(AppError::Internal)?;
 
@@ -826,6 +824,7 @@ fn build_template_adopt_prompt(
     adjustment_request: Option<&str>,
     previous_draft_json: Option<&str>,
     user_answers_json: Option<&str>,
+    connector_swaps_json: Option<&str>,
 ) -> String {
     let adjustment_section = adjustment_request
         .filter(|a| !a.trim().is_empty())
@@ -841,6 +840,13 @@ fn build_template_adopt_prompt(
         .filter(|a| !a.trim().is_empty() && a.trim() != "{}")
         .map(|a| format!(
             "\n## User Configuration Answers\nThe user has provided these answers to clarify the adoption. Honor these answers when generating the persona configuration:\n{}\n", a
+        ))
+        .unwrap_or_default();
+
+    let connector_swaps_section = connector_swaps_json
+        .filter(|s| !s.trim().is_empty() && s.trim() != "{}")
+        .map(|s| format!(
+            "\n## Connector Swaps\nThe user has swapped the following connectors. Use the REPLACEMENT connector's APIs, authentication patterns, and endpoints instead of the originals:\n{}\n\nWhen generating tools, system prompt API references, and tool guidance, use the replacement connector's API patterns, not the original's.\n", s
         ))
         .unwrap_or_default();
 
@@ -926,6 +932,7 @@ Design Analysis Result JSON:
 {adjustment_section}
 {previous_draft_section}
 {user_answers_section}
+{connector_swaps_section}
 "##
     )
 }
@@ -1093,6 +1100,7 @@ pub fn save_custom_template(
             adjustment_generation: None,
             use_case_flows: None,
             reviewed_at: now,
+            category: None,
         },
     )?;
 
@@ -1140,6 +1148,8 @@ Create a JSON object with this exact structure (DesignAnalysisResult):
   "suggested_connectors": [
     {{
       "name": "ConnectorName",
+      "role": "functional_role (e.g. chat_messaging, project_tracking)",
+      "category": "broad_category (e.g. messaging, development)",
       "auth_type": "api_key|oauth2|basic",
       "credential_fields": ["field1", "field2"],
       "purpose": "What this connector enables"
@@ -1215,8 +1225,8 @@ Return ONLY valid JSON (no markdown fences, no commentary).
         GEN_JOBS.emit_line(&app_for_emit, &gen_id_for_emit, line.to_string());
     };
 
-    let (output_text, _session_id) =
-        run_claude_prompt_text_inner(prompt_text, &cli_args, Some(&on_line), 420)
+    let (output_text, _session_id, _) =
+        run_claude_prompt_text_inner(prompt_text, &cli_args, Some(&on_line), None, None, 420)
             .await
             .map_err(AppError::Internal)?;
 
@@ -1238,6 +1248,7 @@ Return ONLY valid JSON (no markdown fences, no commentary).
 
 // ── Direct transform job (used for adjustment re-runs) ──────────
 
+#[allow(clippy::too_many_arguments)]
 async fn run_template_adopt_job(
     app: &tauri::AppHandle,
     adopt_id: &str,
@@ -1246,6 +1257,7 @@ async fn run_template_adopt_job(
     adjustment_request: Option<&str>,
     previous_draft_json: Option<&str>,
     user_answers_json: Option<&str>,
+    connector_swaps_json: Option<&str>,
 ) -> Result<N8nPersonaOutput, AppError> {
     let prompt_text = build_template_adopt_prompt(
         template_name,
@@ -1253,6 +1265,7 @@ async fn run_template_adopt_job(
         adjustment_request,
         previous_draft_json,
         user_answers_json,
+        connector_swaps_json,
     );
 
     ADOPT_JOBS.emit_line(
@@ -1276,8 +1289,8 @@ async fn run_template_adopt_job(
     let on_line = move |line: &str| {
         ADOPT_JOBS.emit_line(&app_for_emit, &adopt_id_for_emit, line.to_string());
     };
-    let (output_text, _session_id) =
-        run_claude_prompt_text_inner(prompt_text, &cli_args, Some(&on_line), 420)
+    let (output_text, _session_id, _) =
+        run_claude_prompt_text_inner(prompt_text, &cli_args, Some(&on_line), None, None, 420)
             .await
             .map_err(AppError::Internal)?;
 

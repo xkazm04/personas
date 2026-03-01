@@ -9,8 +9,8 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
 
 use crate::db::models::{
-    ConnectorWithCount, CreateDesignReviewInput, ImportDesignReviewInput, PersonaDesignReview,
-    PersonaManualReview,
+    CategoryWithCount, ConnectorWithCount, CreateDesignReviewInput, ImportDesignReviewInput,
+    PersonaDesignReview, PersonaManualReview,
 };
 use crate::db::repos::communication::{manual_reviews as manual_repo, reviews as repo};
 use crate::db::repos::core::personas as persona_repo;
@@ -69,24 +69,31 @@ pub fn delete_design_review(
     repo::delete_review(&state.db, &id)
 }
 
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub fn list_design_reviews_paginated(
     state: State<'_, Arc<AppState>>,
     search: Option<String>,
     connector_filter: Option<Vec<String>>,
+    category_filter: Option<Vec<String>>,
     sort_by: Option<String>,
     sort_dir: Option<String>,
     page: Option<i64>,
     per_page: Option<i64>,
+    coverage_filter: Option<String>,
+    coverage_service_types: Option<Vec<String>>,
 ) -> Result<serde_json::Value, AppError> {
     let result = repo::get_reviews_paginated(
         &state.db,
         search.as_deref(),
         connector_filter.as_deref(),
+        category_filter.as_deref(),
         sort_by.as_deref(),
         sort_dir.as_deref(),
         page.unwrap_or(0),
         per_page.unwrap_or(10),
+        coverage_filter.as_deref(),
+        coverage_service_types.as_deref(),
     )?;
     Ok(serde_json::json!({
         "items": result.items,
@@ -99,6 +106,21 @@ pub fn list_review_connectors(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<ConnectorWithCount>, AppError> {
     repo::get_distinct_connectors(&state.db)
+}
+
+#[tauri::command]
+pub fn list_review_categories(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<CategoryWithCount>, AppError> {
+    repo::get_distinct_categories(&state.db)
+}
+
+#[tauri::command]
+pub fn get_trending_templates(
+    state: State<'_, Arc<AppState>>,
+    limit: Option<i64>,
+) -> Result<Vec<PersonaDesignReview>, AppError> {
+    repo::get_trending_templates(&state.db, limit.unwrap_or(10))
 }
 
 #[tauri::command]
@@ -331,10 +353,17 @@ pub async fn start_design_review_run(
                             input.status = status.into();
                             input.structural_score = Some(structural_score);
                             input.semantic_score = Some(semantic_score);
-                            input.connectors_used = Some(connectors_used);
+                            input.connectors_used = Some(connectors_used.clone());
                             input.trigger_types = Some(trigger_types);
                             input.design_result = Some(result_json);
                             input.use_case_flows = extract_use_case_flows_from_result(&result);
+                            // Auto-categorize if no category was provided
+                            if input.category.is_none() {
+                                input.category = Some(infer_template_category(
+                                    &input.instruction,
+                                    Some(&connectors_used),
+                                ));
+                            }
                             if let Err(e) = repo::create_review(&pool, &input) {
                                 tracing::error!(
                                     test_case = %test_case_name,
@@ -807,6 +836,29 @@ pub fn get_pending_review_count(
     manual_repo::get_pending_count(&state.db, persona_id.as_deref())
 }
 
+/// Backfill categories for all reviews that currently have `category = NULL`.
+/// Uses the `infer_template_category` function to derive a category from
+/// the instruction text and connector names.  Returns the count of updated rows.
+#[tauri::command]
+pub fn backfill_review_categories(
+    state: State<'_, Arc<AppState>>,
+) -> Result<serde_json::Value, AppError> {
+    let uncategorized = repo::get_uncategorized_reviews(&state.db)?;
+    let mut updated = 0i64;
+
+    for (id, instruction, connectors_used) in &uncategorized {
+        let category = infer_template_category(instruction, connectors_used.as_deref());
+        if let Err(e) = repo::update_review_category(&state.db, id, &category) {
+            tracing::warn!(id = %id, error = %e, "Failed to backfill category");
+        } else {
+            updated += 1;
+        }
+    }
+
+    tracing::info!(total = uncategorized.len(), updated = updated, "Backfilled review categories");
+    Ok(serde_json::json!({ "total": uncategorized.len(), "updated": updated }))
+}
+
 #[tauri::command]
 pub fn import_design_review(
     state: State<'_, Arc<AppState>>,
@@ -814,7 +866,14 @@ pub fn import_design_review(
 ) -> Result<PersonaDesignReview, AppError> {
     let import_input: ImportDesignReviewInput = serde_json::from_value(input)
         .map_err(|e| AppError::Validation(format!("Invalid design review input: {e}")))?;
-    let review_input: CreateDesignReviewInput = import_input.into();
+    let mut review_input: CreateDesignReviewInput = import_input.into();
+    // Auto-categorize if no category was provided
+    if review_input.category.is_none() {
+        review_input.category = Some(infer_template_category(
+            &review_input.instruction,
+            review_input.connectors_used.as_deref(),
+        ));
+    }
     repo::create_review(&state.db, &review_input)
 }
 
@@ -954,6 +1013,80 @@ fn emit_status(
             elapsed_ms,
         },
     );
+}
+
+/// Infer a template category from the instruction text and (optionally)
+/// the connector names embedded in the design result.
+///
+/// Returns a lowercase category key that matches `CATEGORY_META` in the
+/// frontend (TemplateSearchBar.tsx).  Falls back to `"productivity"` when
+/// no rule matches.
+fn infer_template_category(instruction: &str, connectors_used: Option<&str>) -> String {
+    let text = instruction.to_lowercase();
+
+    // Ordered by specificity — more specific patterns first.
+    static RULES: &[(&[&str], &str)] = &[
+        (&["security", "vulnerability", "audit", "cve", "penetration", "pentest"], "security"),
+        (&["deploy", "ci/cd", "ci-cd", "infrastructure", "docker", "kubernetes", "k8s", "terraform"], "devops"),
+        (&["test", "qa ", "quality assurance", "coverage", "e2e"], "testing"),
+        (&["code review", "pull request", "merge request", "commit", "branch", "refactor"], "development"),
+        (&["monitor", "alert", "uptime", "health check", "incident", "error track", "observ"], "monitoring"),
+        (&["support", "ticket", "customer service", "helpdesk", "escalat", "sla"], "support"),
+        (&["market", "campaign", "advertis", "seo", "audience", "newsletter", "social media"], "marketing"),
+        (&["sales", "lead", "prospect", "deal", "quota", "pipeline"], "sales"),
+        (&["financ", "invoice", "billing", "payment", "accounting", "revenue", "expense"], "finance"),
+        (&["recruit", "hiring", "onboard", "candidate", "applicant", "hr "], "hr"),
+        (&["legal", "contract", "compliance", "gdpr", "regulation", "nda"], "legal"),
+        (&["email", "inbox", "deliverability", "newsletter", "mail"], "email"),
+        (&["content", "cms", "blog", "publish", "editorial", "article"], "content"),
+        (&["document", "wiki", "knowledge base", "confluence", "readme"], "documentation"),
+        (&["research", "intelligence", "insight", "competitive", "trend"], "research"),
+        (&["analytic", "metric", "dashboard", "report", "data analysis"], "research"),
+        (&["project", "sprint", "backlog", "kanban", "deadline", "roadmap", "milestone"], "project-management"),
+        (&["standup", "communication", "notify", "announce", "digest"], "communication"),
+        (&["database", "etl", "sync", "migration", "data pipeline", "warehouse"], "data"),
+        (&["schedule", "cron", "automat", "workflow", "task", "productiv"], "productivity"),
+    ];
+
+    for (keywords, category) in RULES {
+        if keywords.iter().any(|kw| text.contains(kw)) {
+            return category.to_string();
+        }
+    }
+
+    // Fallback: infer from connector names in connectors_used JSON
+    if let Some(json_str) = connectors_used {
+        if let Ok(names) = serde_json::from_str::<Vec<String>>(json_str) {
+            let joined = names.join(" ").to_lowercase();
+
+            if joined.contains("sentry") || joined.contains("datadog") || joined.contains("pagerduty") {
+                return "monitoring".into();
+            }
+            if joined.contains("github") || joined.contains("gitlab") || joined.contains("jira") || joined.contains("linear") {
+                return "development".into();
+            }
+            if joined.contains("stripe") || joined.contains("quickbooks") || joined.contains("xero") {
+                return "finance".into();
+            }
+            if joined.contains("zendesk") || joined.contains("freshdesk") || joined.contains("intercom") {
+                return "support".into();
+            }
+            if joined.contains("hubspot") {
+                return "sales".into();
+            }
+            if joined.contains("mailchimp") || joined.contains("buffer") {
+                return "marketing".into();
+            }
+            if joined.contains("vercel") || joined.contains("netlify") || joined.contains("aws") {
+                return "devops".into();
+            }
+            if joined.contains("shopify") {
+                return "sales".into();
+            }
+        }
+    }
+
+    "productivity".into()
 }
 
 /// Enrich instruction with metadata hints from list.md format.

@@ -2,7 +2,7 @@
   "id": "recruiting-pipeline-use-case",
   "name": "Recruiting Pipeline Use Case",
   "description": "Monitors Greenhouse for candidate stage transitions, sends personalized emails at each stage (acknowledgment, interview prep, rejection, offer), posts updates to hiring Slack channels, and compiles weekly recruiting funnel metrics.",
-  "icon": "Users",
+  "icon": "UserPlus",
   "color": "#EC4899",
   "category": [
     "hr"
@@ -118,7 +118,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://harvest.greenhouse.io/v1"
+        "api_base_url": "https://harvest.greenhouse.io/v1",
+        "role": "hr_recruiting",
+        "category": "hr"
       },
       {
         "name": "google_workspace",
@@ -156,7 +158,9 @@
           "gmail_search"
         ],
         "related_triggers": [],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://www.googleapis.com",
+        "role": "productivity_suite",
+        "category": "productivity"
       },
       {
         "name": "slack",
@@ -177,7 +181,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

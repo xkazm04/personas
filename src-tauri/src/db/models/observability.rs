@@ -77,6 +77,136 @@ pub struct MetricsChartData {
 }
 
 // ============================================================================
+// Observability: Prompt Performance Dashboard
+// ============================================================================
+
+/// Daily-bucketed performance data point for the Prompt Performance Dashboard.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct PromptPerformancePoint {
+    pub date: String,
+    pub avg_cost_usd: f64,
+    pub avg_duration_ms: f64,
+    pub avg_input_tokens: f64,
+    pub avg_output_tokens: f64,
+    #[ts(type = "number")]
+    pub total_executions: i64,
+    #[ts(type = "number")]
+    pub success_count: i64,
+    #[ts(type = "number")]
+    pub failed_count: i64,
+    pub error_rate: f64,
+    /// Percentile latencies computed from raw durations
+    pub p50_duration_ms: f64,
+    pub p95_duration_ms: f64,
+    pub p99_duration_ms: f64,
+}
+
+/// Marker for a prompt version creation event shown on charts.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct VersionMarker {
+    pub version_id: String,
+    pub version_number: i32,
+    pub tag: String,
+    pub created_at: String,
+    pub change_summary: Option<String>,
+}
+
+/// A metric anomaly (spike/drop) detected via rolling-average deviation.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct MetricAnomaly {
+    pub date: String,
+    pub metric: String,
+    pub value: f64,
+    pub baseline: f64,
+    pub deviation_pct: f64,
+    pub execution_id: Option<String>,
+}
+
+/// Combined response for the prompt performance dashboard.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct PromptPerformanceData {
+    pub daily_points: Vec<PromptPerformancePoint>,
+    pub version_markers: Vec<VersionMarker>,
+    pub anomalies: Vec<MetricAnomaly>,
+}
+
+// ============================================================================
+// Observability: Execution Metrics Dashboard (global, cross-persona)
+// ============================================================================
+
+/// Daily-bucketed data point for the global execution metrics dashboard.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct DashboardDailyPoint {
+    pub date: String,
+    pub total_cost: f64,
+    #[ts(type = "number")]
+    pub total_executions: i64,
+    #[ts(type = "number")]
+    pub completed: i64,
+    #[ts(type = "number")]
+    pub failed: i64,
+    pub success_rate: f64,
+    pub p50_duration_ms: f64,
+    pub p95_duration_ms: f64,
+    pub p99_duration_ms: f64,
+    /// Per-persona cost breakdown for this date.
+    pub persona_costs: Vec<PersonaCostEntry>,
+}
+
+/// A single persona's cost contribution on a given date.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct PersonaCostEntry {
+    pub persona_id: String,
+    pub persona_name: String,
+    pub cost: f64,
+}
+
+/// A cost anomaly detected via rolling-average deviation (>2 std deviations).
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct DashboardCostAnomaly {
+    pub date: String,
+    pub cost: f64,
+    pub moving_avg: f64,
+    pub std_dev: f64,
+    pub deviation_sigma: f64,
+    /// IDs of the costliest executions that drove the spike.
+    pub execution_ids: Vec<String>,
+}
+
+/// Top-N persona ranked by total spend.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct DashboardTopPersona {
+    pub persona_id: String,
+    pub persona_name: String,
+    pub total_cost: f64,
+    #[ts(type = "number")]
+    pub total_executions: i64,
+    pub avg_cost_per_exec: f64,
+}
+
+/// Combined response for the execution metrics dashboard.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct ExecutionDashboardData {
+    pub daily_points: Vec<DashboardDailyPoint>,
+    pub top_personas: Vec<DashboardTopPersona>,
+    pub cost_anomalies: Vec<DashboardCostAnomaly>,
+    #[ts(type = "number")]
+    pub total_executions: i64,
+    pub total_cost: f64,
+    pub overall_success_rate: f64,
+    pub avg_latency_ms: f64,
+}
+
+// ============================================================================
 // Observability: Prompt Versions
 // ============================================================================
 

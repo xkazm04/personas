@@ -41,6 +41,9 @@ pub enum AppError {
     #[error("GitLab error: {0}")]
     GitLab(String),
 
+    #[error("Rate limited: {0}")]
+    RateLimited(String),
+
     #[error("{0}")]
     Internal(String),
 }
@@ -70,6 +73,7 @@ impl Serialize for AppError {
                 AppError::NetworkOffline(_) => "network_offline",
                 AppError::Cloud(_) => "cloud",
                 AppError::GitLab(_) => "gitlab",
+                AppError::RateLimited(_) => "rate_limited",
                 AppError::Internal(_) => "internal",
             },
         )?;

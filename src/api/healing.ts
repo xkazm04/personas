@@ -13,11 +13,11 @@ export const listHealingIssues = (personaId?: string, status?: string) =>
     status: status ?? null,
   });
 
-export const getHealingIssue = (id: string) =>
-  invoke<PersonaHealingIssue>("get_healing_issue", { id });
+export const getHealingIssue = (id: string, callerPersonaId: string) =>
+  invoke<PersonaHealingIssue>("get_healing_issue", { id, callerPersonaId });
 
-export const updateHealingStatus = (id: string, status: string) =>
-  invoke<void>("update_healing_status", { id, status });
+export const updateHealingStatus = (id: string, status: string, callerPersonaId: string) =>
+  invoke<void>("update_healing_status", { id, status, callerPersonaId });
 
 export interface HealingAnalysisResult {
   status: string;
@@ -34,5 +34,5 @@ export const runHealingAnalysis = (personaId: string) =>
 // Retry Chain
 // ============================================================================
 
-export const getRetryChain = (executionId: string) =>
-  invoke<PersonaExecution[]>("get_retry_chain", { executionId });
+export const getRetryChain = (executionId: string, callerPersonaId: string) =>
+  invoke<PersonaExecution[]>("get_retry_chain", { executionId, callerPersonaId });

@@ -117,6 +117,9 @@ export const listPipelineRuns = (teamId: string) =>
 export const getPipelineRun = (id: string) =>
   invoke<PipelineRun>("get_pipeline_run", { id });
 
+export const cancelPipeline = (runId: string) =>
+  invoke<boolean>("cancel_pipeline", { runId });
+
 // ── Pipeline Analytics & Optimizer ──────────────────────────────────────
 
 export const getPipelineAnalytics = (teamId: string) =>

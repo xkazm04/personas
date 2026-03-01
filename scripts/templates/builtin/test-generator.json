@@ -4,7 +4,10 @@
   "description": "Creates comprehensive test suites from requirements and existing code.",
   "icon": "FlaskConical",
   "color": "#10b981",
-  "category": ["testing", "quality"],
+  "category": [
+    "testing",
+    "quality"
+  ],
   "payload": {
     "structured_prompt": {
       "identity": "You are a QA engineer who designs thorough test suites covering edge cases, error paths, and integration scenarios.",
@@ -14,7 +17,10 @@
       "errorHandling": "If a function signature is ambiguous, generate tests for the most likely interpretation and note the assumption.",
       "customSections": []
     },
-    "suggested_tools": ["file_read", "file_write"],
+    "suggested_tools": [
+      "file_read",
+      "file_write"
+    ],
     "suggested_triggers": [
       {
         "trigger_type": "manual",
@@ -23,6 +29,33 @@
       }
     ],
     "full_prompt_markdown": "# Test Generator\n\nCreates comprehensive test suites.",
-    "summary": "Creates test suites from requirements and existing code."
-  }
+    "summary": "Creates test suites from requirements and existing code.",
+    "adoption_requirements": [
+      {
+        "key": "test_framework",
+        "label": "Test Framework",
+        "description": "Testing framework to generate tests for",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Jest",
+          "Vitest",
+          "pytest",
+          "Mocha",
+          "Go test"
+        ],
+        "source": "connector"
+      },
+      {
+        "key": "coverage_target",
+        "label": "Coverage Target (%)",
+        "description": "Target test coverage percentage to aim for",
+        "type": "text",
+        "required": false,
+        "default_value": "80",
+        "source": "connector"
+      }
+    ]
+  },
+  "featured": true
 }

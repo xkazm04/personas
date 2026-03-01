@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect, useState, useCallback, useId } from 'react';
+import { useMemo, useRef, useEffect, useState, useCallback, useId, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
 import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
@@ -32,8 +32,8 @@ interface NodePosition {
   side: 'top' | 'bottom';
 }
 
-const PADDING_X = 60;
-const PADDING_Y = 50;
+const PADDING_X = 40;
+const PADDING_Y = 36;
 const NODE_RADIUS = 22;
 const BUS_HEIGHT = 6;
 const MAX_LEGEND_ITEMS = 6;
@@ -74,24 +74,59 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   figma: Figma,
 };
 
+const NodeIcon = memo(function NodeIcon({ node }: { node: NodePosition }) {
+  const IconComp = node.icon ? ICON_MAP[node.icon] : null;
+  if (IconComp) {
+    return (
+      <foreignObject x={node.x - 8} y={node.y - 8} width={16} height={16}>
+        <IconComp className="w-4 h-4 text-white/80" />
+      </foreignObject>
+    );
+  }
+  return (
+    <text
+      x={node.x}
+      y={node.y}
+      textAnchor="middle"
+      dominantBaseline="central"
+      fill="white"
+      fontSize={12}
+      fontWeight="bold"
+      opacity={0.8}
+    >
+      {node.icon && node.icon.length <= 2 ? node.icon : (node.label[0]?.toUpperCase() ?? '?')}
+    </text>
+  );
+});
+
 export default function EventBusVisualization({ events, personas, onSelectEvent }: Props) {
   const uid = useId();
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 400 });
 
-  // Responsive sizing
+  // Responsive sizing — debounced via rAF to prevent resize thrashing
+  const dimensionsRef = useRef(dimensions);
+  const rafRef = useRef(0);
   useEffect(() => {
     if (!containerRef.current) return;
     const observer = new ResizeObserver(entries => {
-      const entry = entries[0];
-      if (!entry) return;
-      const { width, height } = entry.contentRect;
-      if (width > 0 && height > 0) {
-        setDimensions({ width: Math.floor(width), height: Math.floor(height) });
-      }
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(() => {
+        const entry = entries[0];
+        if (!entry) return;
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          const w = Math.floor(width);
+          const h = Math.floor(height);
+          if (w !== dimensionsRef.current.width || h !== dimensionsRef.current.height) {
+            dimensionsRef.current = { width: w, height: h };
+            setDimensions({ width: w, height: h });
+          }
+        }
+      });
     });
     observer.observe(containerRef.current);
-    return () => observer.disconnect();
+    return () => { cancelAnimationFrame(rafRef.current); observer.disconnect(); };
   }, []);
 
   const { width, height } = dimensions;
@@ -203,27 +238,20 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
     return nodePositions.get(evt.target_persona_id) ?? null;
   }, [nodePositions]);
 
-  // Active events (not done)
-  const activeEvents = useMemo(
-    () => events.filter(e => e._phase !== 'done'),
-    [events]
-  );
-
-  // Active node IDs
-  const activeNodeIds = useMemo(() => {
-    const ids = new Set<string>();
-    for (const e of activeEvents) {
-      ids.add(`${e.source_type}:${e.source_id ?? 'unknown'}`);
-      if (e.target_persona_id) ids.add(e.target_persona_id);
-    }
-    return ids;
-  }, [activeEvents]);
-
-  // Derive unique event types
-  const seenTypes = useMemo(() => {
+  // Derive active events, active node IDs, and seen types in a single pass
+  const { activeEvents, activeNodeIds, seenTypes } = useMemo(() => {
+    const active: RealtimeEvent[] = [];
+    const nodeIds = new Set<string>();
     const types = new Set<string>();
-    for (const evt of events) types.add(evt.event_type);
-    return [...types];
+    for (const e of events) {
+      types.add(e.event_type);
+      if (e._phase !== 'done') {
+        active.push(e);
+        nodeIds.add(`${e.source_type}:${e.source_id ?? 'unknown'}`);
+        if (e.target_persona_id) nodeIds.add(e.target_persona_id);
+      }
+    }
+    return { activeEvents: active, activeNodeIds: nodeIds, seenTypes: [...types] };
   }, [events]);
 
   // Ambient animated dots flowing across the bus (web-style visual)
@@ -236,40 +264,10 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
     }));
   }, []);
 
-  // Helper to render a Lucide icon inside an SVG foreignObject
-  const renderNodeIcon = (node: NodePosition) => {
-    const IconComp = node.icon ? ICON_MAP[node.icon] : null;
-    if (IconComp) {
-      return (
-        <foreignObject
-          x={node.x - 8}
-          y={node.y - 8}
-          width={16}
-          height={16}
-        >
-          <IconComp className="w-4 h-4 text-white/80" />
-        </foreignObject>
-      );
-    }
-    // Fallback: emoji icon or first letter
-    return (
-      <text
-        x={node.x}
-        y={node.y}
-        textAnchor="middle"
-        dominantBaseline="central"
-        fill="white"
-        fontSize={12}
-        fontWeight="bold"
-        opacity={0.8}
-      >
-        {node.icon && node.icon.length <= 2 ? node.icon : (node.label[0]?.toUpperCase() ?? '?')}
-      </text>
-    );
-  };
+  // (renderNodeIcon extracted to NodeIcon component below)
 
   return (
-    <div ref={containerRef} className="w-full h-full relative min-h-[350px]">
+    <div ref={containerRef} className="w-full h-full relative min-h-[280px]">
       <svg
         width={width}
         height={height}
@@ -472,7 +470,7 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
                 opacity={0.85}
               />
               {/* Icon */}
-              {renderNodeIcon(node)}
+              <NodeIcon node={node} />
             </g>
           );
         })}
@@ -518,7 +516,7 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
                 fill={nodeColor}
                 opacity={0.85}
               />
-              {renderNodeIcon(node)}
+              <NodeIcon node={node} />
             </g>
           );
         })}
@@ -543,16 +541,16 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
           key={`label-prod-${node.id}`}
           className="absolute flex flex-col items-center pointer-events-none"
           style={{
-            left: node.x - 44,
+            left: node.x - 40,
             top: node.y - NODE_RADIUS - 6,
-            width: 88,
+            width: 80,
             transform: 'translateY(-100%)',
           }}
         >
-          <span className="text-[11px] font-medium text-foreground/80 truncate max-w-[88px] text-center" title={node.label}>
+          <span className="text-[11px] font-medium text-foreground/80 truncate max-w-[80px] text-center" title={node.label}>
             {node.label}
           </span>
-          <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground/40 mt-0.5">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/40 mt-0.5">
             producer
           </span>
         </div>
@@ -564,15 +562,15 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
           key={`label-cons-${node.id}`}
           className="absolute flex flex-col items-center pointer-events-none"
           style={{
-            left: node.x - 44,
+            left: node.x - 40,
             top: node.y + NODE_RADIUS + 6,
-            width: 88,
+            width: 80,
           }}
         >
-          <span className="text-[11px] font-medium text-foreground/80 truncate max-w-[88px] text-center" title={node.label}>
+          <span className="text-[11px] font-medium text-foreground/80 truncate max-w-[80px] text-center" title={node.label}>
             {node.label}
           </span>
-          <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground/40 mt-0.5">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/40 mt-0.5">
             consumer
           </span>
         </div>

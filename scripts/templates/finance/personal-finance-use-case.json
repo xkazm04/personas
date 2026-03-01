@@ -2,7 +2,7 @@
   "id": "personal-finance-use-case",
   "name": "Personal Finance Use Case",
   "description": "Connects to bank accounts via Plaid, categorizes transactions, logs them to Google Sheets, sends weekly spending summaries to Slack/email, and alerts on unusual charges or when budget categories are exceeded.",
-  "icon": "DollarSign",
+  "icon": "Wallet",
   "color": "#22C55E",
   "category": [
     "finance"
@@ -135,7 +135,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://production.plaid.com"
+        "api_base_url": "https://production.plaid.com",
+        "role": "banking_fintech",
+        "category": "finance"
       },
       {
         "name": "google_workspace",
@@ -176,7 +178,9 @@
           0,
           1
         ],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://www.googleapis.com",
+        "role": "productivity_suite",
+        "category": "productivity"
       },
       {
         "name": "slack",
@@ -208,7 +212,9 @@
           0,
           1
         ],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

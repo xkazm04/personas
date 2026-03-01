@@ -2,7 +2,7 @@
   "id": "customer-onboarding-pipeline-5-use-case-team",
   "name": "Customer Onboarding Pipeline (5-Use Case Team)",
   "description": "**Use Case A — Welcome Concierge** (worker): Sends welcome email, creates Notion client page.\n**Use Case B — Account Provisioner** (worker): Creates accounts in Stripe, adds to Slack Connect channel.\n**Use Case C — Data Migrator** (worker): Imports customer data from provided CSV/API into Airtable.\n**Use Case D — Training Scheduler** (worker): Books onboarding calls via Calendly, sends prep materials.\n**Use Case E — Onboarding Coordinator** (orchestrator): Sequences all agents and tracks completion.",
-  "icon": "GitBranch",
+  "icon": "UserCheck",
   "color": "#0EA5E9",
   "category": [
     "pipeline"
@@ -153,7 +153,9 @@
         "related_triggers": [
           1
         ],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://www.googleapis.com",
+        "role": "productivity_suite",
+        "category": "productivity"
       },
       {
         "name": "notion",
@@ -184,7 +186,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://api.notion.com/v1"
+        "api_base_url": "https://api.notion.com/v1",
+        "role": "knowledge_base",
+        "category": "productivity"
       },
       {
         "name": "stripe",
@@ -215,7 +219,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://api.stripe.com/v1"
+        "api_base_url": "https://api.stripe.com/v1",
+        "role": "payment_processing",
+        "category": "finance"
       },
       {
         "name": "slack",
@@ -246,7 +252,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       },
       {
         "name": "airtable",
@@ -286,7 +294,9 @@
           0,
           2
         ],
-        "api_base_url": "https://api.airtable.com/v0"
+        "api_base_url": "https://api.airtable.com/v0",
+        "role": "knowledge_base",
+        "category": "productivity"
       },
       {
         "name": "calendly",
@@ -317,7 +327,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://api.calendly.com"
+        "api_base_url": "https://api.calendly.com",
+        "role": "scheduling",
+        "category": "scheduling"
       }
     ],
     "suggested_notification_channels": [

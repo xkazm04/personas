@@ -2,10 +2,8 @@ import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Play, Square, CheckCircle2, XCircle, AlertTriangle, Copy, Check, Clock } from 'lucide-react';
 import type { RunProgress } from '@/hooks/design/useDesignReviews';
-import { parseListMdFormat, PREDEFINED_TEST_CASES, type PredefinedTestCase, type ParsedTemplate } from './designRunnerConstants';
-import { PredefinedModePanel } from './PredefinedModePanel';
-import { CustomModePanel } from './CustomModePanel';
-import { BatchModePanel } from './BatchModePanel';
+import { parseListMdFormat, PREDEFINED_TEST_CASES, type PredefinedTestCase } from './designRunnerConstants';
+import { TemplateSourcePanel, type TemplateSource } from './TemplateSourcePanel';
 
 export type { PredefinedTestCase } from './designRunnerConstants';
 
@@ -48,7 +46,7 @@ export default function DesignReviewRunner({
   const [mode, setMode] = useState<RunMode>('predefined');
   const [customInstructions, setCustomInstructions] = useState<string[]>(['']);
   const [copied, setCopied] = useState(false);
-  const [batchTemplates, setBatchTemplates] = useState<ParsedTemplate[]>([]);
+  const [batchTemplates, setBatchTemplates] = useState<TemplateSource[]>([]);
   const [batchCategoryFilter, setBatchCategoryFilter] = useState<string | null>(null);
 
   // Capture the trigger element on open, restore focus on close
@@ -284,9 +282,10 @@ export default function DesignReviewRunner({
               {/* Tabs */}
               <ModeTabBar mode={mode} onModeChange={setMode} batchCount={batchTemplates.length} />
 
-              {mode === 'predefined' && <PredefinedModePanel />}
+              {mode === 'predefined' && <TemplateSourcePanel mode="predefined" />}
               {mode === 'custom' && (
-                <CustomModePanel
+                <TemplateSourcePanel
+                  mode="custom"
                   instructions={customInstructions}
                   validCount={validCustomCount}
                   onAdd={() => setCustomInstructions((prev) => [...prev, ''])}
@@ -296,7 +295,8 @@ export default function DesignReviewRunner({
                 />
               )}
               {mode === 'batch' && (
-                <BatchModePanel
+                <TemplateSourcePanel
+                  mode="batch"
                   templates={batchTemplates}
                   categoryFilter={batchCategoryFilter}
                   onCategoryFilterChange={setBatchCategoryFilter}

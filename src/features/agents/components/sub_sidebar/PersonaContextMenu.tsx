@@ -106,12 +106,20 @@ export function PersonaContextMenu({ state, onClose }: PersonaContextMenuProps) 
 
   const handleModelSwitch = useCallback(async (value: string) => {
     const profile = quickModelToProfile(value);
-    await applyPersonaOp(persona.id, { kind: 'SwitchModel', model_profile: profile });
+    try {
+      await applyPersonaOp(persona.id, { kind: 'SwitchModel', model_profile: profile });
+    } catch {
+      // store.error already set
+    }
     onClose();
   }, [persona.id, applyPersonaOp, onClose]);
 
   const handleToggleEnabled = useCallback(async () => {
-    await applyPersonaOp(persona.id, { kind: 'ToggleEnabled', enabled: !persona.enabled });
+    try {
+      await applyPersonaOp(persona.id, { kind: 'ToggleEnabled', enabled: !persona.enabled });
+    } catch {
+      // store.error already set
+    }
     onClose();
   }, [persona.id, persona.enabled, applyPersonaOp, onClose]);
 

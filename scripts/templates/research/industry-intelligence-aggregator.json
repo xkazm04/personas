@@ -2,7 +2,7 @@
   "id": "industry-intelligence-aggregator",
   "name": "Industry Intelligence Aggregator",
   "description": "Fetches multiple RSS feeds (industry blogs, competitors, news), extracts and deduplicates articles, creates structured Notion entries with AI-generated summaries, emails a daily intelligence briefing, and posts breaking news to Slack.",
-  "icon": "Search",
+  "icon": "Globe",
   "color": "#06B6D4",
   "category": [
     "research"
@@ -128,7 +128,9 @@
           0,
           1
         ],
-        "api_base_url": "https://api.notion.com/v1"
+        "api_base_url": "https://api.notion.com/v1",
+        "role": "knowledge_base",
+        "category": "productivity"
       },
       {
         "name": "google_workspace",
@@ -159,7 +161,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://www.googleapis.com",
+        "role": "productivity_suite",
+        "category": "productivity"
       },
       {
         "name": "slack",
@@ -190,7 +194,9 @@
         "related_triggers": [
           1
         ],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

@@ -2,7 +2,7 @@
   "id": "documentation-publisher",
   "name": "Documentation Publisher",
   "description": "Watches a Notion database for pages marked \"Ready to Publish\", converts content to Markdown, commits to a GitHub Pages repository, triggers a rebuild, and posts the live URL to Slack. Handles image uploads and link resolution.",
-  "icon": "Code",
+  "icon": "BookMarked",
   "color": "#10B981",
   "category": [
     "development"
@@ -117,7 +117,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://api.notion.com/v1"
+        "api_base_url": "https://api.notion.com/v1",
+        "role": "knowledge_base",
+        "category": "productivity"
       },
       {
         "name": "github",
@@ -154,7 +156,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://api.github.com"
+        "api_base_url": "https://api.github.com",
+        "role": "source_control",
+        "category": "development"
       },
       {
         "name": "slack",
@@ -183,7 +187,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

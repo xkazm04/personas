@@ -1,14 +1,18 @@
 import type { DesignAnalysisResult } from './designTypes';
 
-export interface BuiltinTemplate {
+export interface TemplateCatalogEntry {
   id: string;
   name: string;
   description: string;
   icon: string;
   color: string;
   category: string[];
+  featured?: boolean;
   payload: DesignAnalysisResult;
 }
+
+/** @deprecated Use TemplateCatalogEntry instead. */
+export type BuiltinTemplate = TemplateCatalogEntry;
 
 export interface N8nNode {
   type: string;

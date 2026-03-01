@@ -15,7 +15,8 @@ use crate::error::AppError;
 use crate::AppState;
 
 use super::job_state::{self, *};
-use super::prompts::{build_n8n_transform_prompt, build_n8n_unified_prompt};
+use super::prompts::{build_n8n_transform_prompt, build_n8n_unified_prompt, wrap_prompt_with_sections};
+use super::streaming;
 use super::types::N8nPersonaOutput;
 
 use crate::commands::design::analysis::extract_display_text;
@@ -230,6 +231,41 @@ pub async fn continue_n8n_transform(
 
 // ── Internal helpers ────────────────────────────────────────────
 
+/// Build on_line and on_section callbacks for sectioned CLI streaming.
+/// Both callbacks emit to n8n transform lines; on_section also stores the section.
+fn build_section_callbacks(
+    app: &tauri::AppHandle,
+    transform_id: &str,
+) -> (
+    impl Fn(&str) + Send + Sync,
+    impl Fn(&streaming::StreamingSection) + Send + Sync,
+) {
+    let app1 = app.clone();
+    let id1 = transform_id.to_string();
+    let on_line = move |line: &str| {
+        emit_n8n_transform_line(&app1, &id1, line.to_string());
+    };
+
+    let app2 = app.clone();
+    let id2 = transform_id.to_string();
+    let on_section = move |section: &streaming::StreamingSection| {
+        if let Ok(serialized) = serde_json::to_value(section) {
+            job_state::store_n8n_transform_section(&id2, serialized);
+        }
+        emit_n8n_transform_line(
+            &app2,
+            &id2,
+            format!(
+                "[Section] {} — {}",
+                section.label,
+                if section.validation.valid { "valid" } else { "errors detected" }
+            ),
+        );
+    };
+
+    (on_line, on_section)
+}
+
 /// Handle the result from either adjustment or unified transform.
 /// Second element in the Ok tuple is unused (reserved).
 fn handle_transform_result(
@@ -348,21 +384,22 @@ async fn run_unified_transform_turn1(
 }
 
 /// Execute Turn 2 of the unified transform: resume Claude session with user answers.
+/// Uses section-by-section streaming with monolithic fallback.
 async fn run_continue_transform(
     app: &tauri::AppHandle,
     transform_id: &str,
     claude_session_id: &str,
     user_answers_json: &str,
 ) -> Result<N8nPersonaOutput, AppError> {
-    tracing::info!(transform_id = %transform_id, "Starting unified transform Turn 2 (resume)");
+    tracing::info!(transform_id = %transform_id, "Starting unified transform Turn 2 (sectioned resume)");
 
     emit_n8n_transform_line(
         app,
         transform_id,
-        "[Milestone] Resuming session with your answers. Generating persona draft...",
+        "[Milestone] Resuming session with your answers. Streaming sections...",
     );
 
-    let prompt_text = format!(
+    let base_prompt = format!(
         r#"Here are the user's answers to your questions:
 
 {}
@@ -371,29 +408,53 @@ Now proceed to PHASE 2. Generate the full persona JSON based on the workflow ana
 Remember: return ONLY valid JSON with the persona object, no markdown fences."#,
         user_answers_json
     );
+    let prompt_text = wrap_prompt_with_sections(&base_prompt);
 
     let mut cli_args = prompt::build_resume_cli_args(claude_session_id);
     cli_args.args.push("--model".to_string());
     cli_args.args.push("claude-sonnet-4-6".to_string());
 
-    let (output_text, _) = run_claude_prompt_text(prompt_text, &cli_args, Some((app, transform_id)))
-        .await
-        .map_err(AppError::Internal)?;
+    clear_n8n_transform_sections(transform_id);
+
+    let accum = streaming::SectionAccumulator::new(vec![]);
+    let (on_line, on_section) = build_section_callbacks(app, transform_id);
+
+    let (output_text, _, returned_accum) = run_claude_prompt_text_inner(
+        prompt_text,
+        &cli_args,
+        Some(&on_line),
+        Some(&on_section),
+        Some(accum),
+        420,
+    )
+    .await
+    .map_err(AppError::Internal)?;
+
+    // Try section assembly first, fall back to monolithic parsing
+    if let Some(accumulator) = returned_accum {
+        if accumulator.has_sections() {
+            if let Some(draft) = accumulator.assemble("n8n workflow") {
+                emit_n8n_transform_line(
+                    app,
+                    transform_id,
+                    "[Milestone] All sections validated. Draft ready for review.",
+                );
+                return Ok(draft);
+            }
+        }
+    }
 
     emit_n8n_transform_line(
         app,
         transform_id,
-        "[Milestone] Claude output received. Extracting persona JSON draft...",
+        "[Milestone] Extracting persona JSON draft...",
     );
-
     let draft = parse_persona_output(&output_text, "n8n workflow")?;
-
     emit_n8n_transform_line(
         app,
         transform_id,
-        "[Milestone] Draft ready for review. Confirm save is required to persist.",
+        "[Milestone] Draft ready for review.",
     );
-
     Ok(draft)
 }
 
@@ -415,10 +476,10 @@ async fn run_n8n_transform_job(
         workflow_name = %workflow_name,
         workflow_json_len = workflow_json.len(),
         parser_result_len = parser_result_json.len(),
-        "Starting n8n transform job"
+        "Starting n8n transform job (sectioned)"
     );
 
-    let prompt_text = build_n8n_transform_prompt(
+    let base_prompt = build_n8n_transform_prompt(
         workflow_name,
         workflow_json,
         parser_result_json,
@@ -428,41 +489,72 @@ async fn run_n8n_transform_job(
         credentials_json,
         user_answers_json,
     );
+    let prompt_text = wrap_prompt_with_sections(&base_prompt);
 
     emit_n8n_transform_line(
         app,
         transform_id,
-        "[Milestone] Static workflow parsing complete. Preparing Claude transformation prompt...",
+        "[Milestone] Preparing section-by-section transformation...",
     );
 
     let mut cli_args = prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());
     cli_args.args.push("claude-sonnet-4-6".to_string());
 
-    emit_n8n_transform_line(
-        app,
-        transform_id,
-        "[Milestone] Claude CLI started. Generating persona draft...",
-    );
-
-    let (output_text, _session_id) = run_claude_prompt_text(prompt_text, &cli_args, Some((app, transform_id)))
-        .await
-        .map_err(AppError::Internal)?;
+    let known_connectors =
+        streaming::extract_known_connectors(connectors_json, credentials_json);
+    clear_n8n_transform_sections(transform_id);
 
     emit_n8n_transform_line(
         app,
         transform_id,
-        "[Milestone] Claude output received. Extracting persona JSON draft...",
+        "[Milestone] Claude CLI started. Streaming sections...",
     );
 
+    let accum = streaming::SectionAccumulator::new(known_connectors);
+    let (on_line, on_section) = build_section_callbacks(app, transform_id);
+
+    let (output_text, _session_id, returned_accum) = run_claude_prompt_text_inner(
+        prompt_text,
+        &cli_args,
+        Some(&on_line),
+        Some(&on_section),
+        Some(accum),
+        420,
+    )
+    .await
+    .map_err(AppError::Internal)?;
+
+    // Try section assembly first, fall back to monolithic parsing
+    if let Some(accumulator) = returned_accum {
+        if accumulator.has_sections() {
+            if let Some(draft) = accumulator.assemble(workflow_name) {
+                emit_n8n_transform_line(
+                    app,
+                    transform_id,
+                    "[Milestone] All sections validated. Draft ready for review.",
+                );
+                return Ok(draft);
+            }
+            tracing::warn!(
+                transform_id = %transform_id,
+                "Section assembly failed with {} sections, falling back to monolithic",
+                accumulator.sections.len()
+            );
+        }
+    }
+
+    emit_n8n_transform_line(
+        app,
+        transform_id,
+        "[Milestone] Extracting persona JSON draft...",
+    );
     let draft = parse_persona_output(&output_text, workflow_name)?;
-
     emit_n8n_transform_line(
         app,
         transform_id,
-        "[Milestone] Draft ready for review. Confirm save is required to persist.",
+        "[Milestone] Draft ready for review.",
     );
-
     Ok(draft)
 }
 
@@ -471,6 +563,11 @@ async fn run_n8n_transform_job(
 pub fn should_surface_n8n_output_line(line: &str) -> bool {
     let trimmed = line.trim();
     if trimmed.is_empty() {
+        return false;
+    }
+
+    // Hide section delimiters from the raw line stream (they're shown in the sections UI)
+    if trimmed.starts_with("---SECTION:") && trimmed.ends_with("---") {
         return false;
     }
 
@@ -487,6 +584,7 @@ pub fn should_surface_n8n_output_line(line: &str) -> bool {
     true
 }
 
+/// Convenience wrapper: spawns Claude CLI with emit_ctx-based line emission, no sections.
 /// Returns (text_output, captured_claude_session_id).
 pub async fn run_claude_prompt_text(
     prompt_text: String,
@@ -501,20 +599,29 @@ pub async fn run_claude_prompt_text(
             emit_n8n_transform_line(&app, &id, line.to_string());
         }) as Box<dyn Fn(&str) + Send + Sync>
     });
-    run_claude_prompt_text_inner(prompt_text, cli_args, on_line.as_deref(), 420).await
+    let (text, session_id, _) =
+        run_claude_prompt_text_inner(prompt_text, cli_args, on_line.as_deref(), None, None, 420)
+            .await?;
+    Ok((text, session_id))
 }
 
-/// Core Claude CLI process spawning with stdout streaming, timeout, and line emission.
+/// Core Claude CLI process spawning with stdout streaming, timeout, line emission,
+/// and optional section-by-section accumulation.
 ///
 /// The `on_line` callback is invoked for each surfaceable output line (after dedup
-/// and filtering). Callers provide their own emission logic (e.g. template-adopt
-/// events or n8n-transform events).
+/// and filtering). The optional `accumulator` enables section-aware streaming:
+/// extracted text is fed to the accumulator, and completed sections are passed to
+/// `on_section`. Returns the accumulator (if provided) for post-stream assembly.
 pub async fn run_claude_prompt_text_inner(
     prompt_text: String,
     cli_args: &crate::engine::types::CliArgs,
     on_line: Option<&(dyn Fn(&str) + Send + Sync)>,
+    on_section: Option<&(dyn Fn(&streaming::StreamingSection) + Send + Sync)>,
+    accumulator: Option<streaming::SectionAccumulator>,
     timeout_secs: u64,
-) -> Result<(String, Option<String>), String> {
+) -> Result<(String, Option<String>, Option<streaming::SectionAccumulator>), String> {
+    let mut accumulator = accumulator;
+
     // Use a temp directory as CWD so Claude CLI doesn't pick up project context
     // (.claude/, CLAUDE.md) from the app's working directory.
     let exec_dir = std::env::temp_dir().join("personas-transform");
@@ -595,6 +702,15 @@ pub async fn run_claude_prompt_text_inner(
                     text_output.push_str(trimmed);
                     text_output.push('\n');
 
+                    // Feed to section accumulator if present
+                    if let Some(ref mut accum) = accumulator {
+                        if let Some(section) = accum.feed_line(trimmed) {
+                            if let Some(ref emit_section) = on_section {
+                                emit_section(&section);
+                            }
+                        }
+                    }
+
                     if !should_surface_n8n_output_line(trimmed) {
                         continue;
                     }
@@ -618,6 +734,15 @@ pub async fn run_claude_prompt_text_inner(
         return Err(format!("Claude CLI timed out after {} seconds", timeout_secs));
     }
 
+    // Flush any remaining buffered section
+    if let Some(ref mut accum) = accumulator {
+        if let Some(section) = accum.flush() {
+            if let Some(ref emit_section) = on_section {
+                emit_section(&section);
+            }
+        }
+    }
+
     let exit_status = child
         .wait()
         .await
@@ -638,7 +763,7 @@ pub async fn run_claude_prompt_text_inner(
         return Err("Claude produced no output".into());
     }
 
-    Ok((text_output, captured_session_id))
+    Ok((text_output, captured_session_id, accumulator))
 }
 
 /// Safely truncate a UTF-8 string to at most `max_bytes` bytes, always stopping
@@ -654,7 +779,19 @@ pub fn truncate_utf8(s: &str, max_bytes: usize) -> &str {
     &s[..end]
 }
 
+#[allow(clippy::needless_range_loop)]
 pub fn extract_first_json_object(input: &str) -> Option<String> {
+    extract_first_json_object_matching(input, |_| true)
+}
+
+/// Like `extract_first_json_object` but only accepts JSON objects where the
+/// `predicate` returns true. This lets callers skip incidental JSON in Claude
+/// commentary and find the object that matches an expected schema.
+#[allow(clippy::needless_range_loop)]
+pub fn extract_first_json_object_matching(
+    input: &str,
+    predicate: impl Fn(&serde_json::Value) -> bool,
+) -> Option<String> {
     let candidates = [
         input.to_string(),
         input
@@ -665,44 +802,162 @@ pub fn extract_first_json_object(input: &str) -> Option<String> {
     ];
 
     for candidate in candidates {
-        if serde_json::from_str::<serde_json::Value>(&candidate).is_ok() {
-            return Some(candidate);
+        if let Ok(val) = serde_json::from_str::<serde_json::Value>(&candidate) {
+            if predicate(&val) {
+                return Some(candidate);
+            }
         }
 
-        let start = candidate.find('{');
-        let end = candidate.rfind('}');
-        if let (Some(s), Some(e)) = (start, end) {
-            if s < e {
-                let slice = candidate[s..=e].to_string();
-                if serde_json::from_str::<serde_json::Value>(&slice).is_ok() {
-                    return Some(slice);
+        // Walk through every '{' as a potential JSON object start.
+        // Use a balanced-brace counter to find the matching '}' instead of
+        // the old greedy find('{')/rfind('}') which could span unrelated
+        // braces in surrounding commentary text.
+        let bytes = candidate.as_bytes();
+        let mut search_from = 0;
+        while let Some(rel) = candidate[search_from..].find('{') {
+            let start = search_from + rel;
+            let mut depth: usize = 0;
+            let mut in_string = false;
+            let mut escape_next = false;
+            let mut end = None;
+
+            for i in start..bytes.len() {
+                let b = bytes[i];
+
+                if escape_next {
+                    escape_next = false;
+                    continue;
+                }
+
+                if b == b'\\' && in_string {
+                    escape_next = true;
+                    continue;
+                }
+
+                if b == b'"' {
+                    in_string = !in_string;
+                    continue;
+                }
+
+                if in_string {
+                    continue;
+                }
+
+                if b == b'{' {
+                    depth += 1;
+                } else if b == b'}' {
+                    depth -= 1;
+                    if depth == 0 {
+                        end = Some(i);
+                        break;
+                    }
                 }
             }
+
+            if let Some(e) = end {
+                let slice = &candidate[start..=e];
+                if let Ok(val) = serde_json::from_str::<serde_json::Value>(slice) {
+                    if predicate(&val) {
+                        return Some(slice.to_string());
+                    }
+                }
+            }
+
+            // Advance past this '{' and try the next one
+            search_from = start + 1;
         }
     }
 
     None
 }
 
+/// Heuristic check: does this JSON value look like a persona definition?
+/// Matches objects with a `"persona"` wrapper key, or direct persona objects
+/// containing `"system_prompt"` (the only required field in N8nPersonaOutput).
+fn looks_like_persona_json(val: &serde_json::Value) -> bool {
+    let obj = match val.as_object() {
+        Some(o) => o,
+        None => return false,
+    };
+    // Wrapper: { "persona": { ... } }
+    if obj.contains_key("persona") {
+        return true;
+    }
+    // Direct persona: must have "system_prompt" (required field)
+    if obj.contains_key("system_prompt") {
+        return true;
+    }
+    // Fallback: "name" plus at least one other persona-specific key
+    if obj.contains_key("name")
+        && (obj.contains_key("description")
+            || obj.contains_key("structured_prompt")
+            || obj.contains_key("triggers")
+            || obj.contains_key("tools")
+            || obj.contains_key("design_context")
+            || obj.contains_key("required_connectors"))
+    {
+        return true;
+    }
+    false
+}
+
 /// Extract questions JSON from unified prompt output. Looks for TRANSFORM_QUESTIONS marker.
+/// Uses balanced-bracket counting to find the matching ']' for the first '['.
+#[allow(clippy::needless_range_loop)]
 pub fn extract_questions_output(text: &str) -> Option<serde_json::Value> {
     let marker = "TRANSFORM_QUESTIONS";
     let marker_pos = text.find(marker)?;
     let after_marker = &text[marker_pos + marker.len()..];
 
-    // Find the JSON array start
+    // Find the JSON array start and walk brackets to find the balanced end
     let arr_start = after_marker.find('[')?;
-    let arr_end = after_marker.rfind(']')?;
-    if arr_start >= arr_end {
-        return None;
+    let bytes = after_marker.as_bytes();
+    let mut depth: usize = 0;
+    let mut in_string = false;
+    let mut escape_next = false;
+    let mut arr_end = None;
+
+    for i in arr_start..bytes.len() {
+        let b = bytes[i];
+
+        if escape_next {
+            escape_next = false;
+            continue;
+        }
+        if b == b'\\' && in_string {
+            escape_next = true;
+            continue;
+        }
+        if b == b'"' {
+            in_string = !in_string;
+            continue;
+        }
+        if in_string {
+            continue;
+        }
+
+        if b == b'[' {
+            depth += 1;
+        } else if b == b']' {
+            depth -= 1;
+            if depth == 0 {
+                arr_end = Some(i);
+                break;
+            }
+        }
     }
-    let slice = &after_marker[arr_start..=arr_end];
+
+    let end = arr_end?;
+    let slice = &after_marker[arr_start..=end];
     serde_json::from_str::<serde_json::Value>(slice).ok()
 }
 
 /// Parse persona output from Claude CLI text. Extracts JSON and deserializes.
+/// Uses schema-aware extraction to skip incidental JSON in Claude commentary.
 pub fn parse_persona_output(output_text: &str, workflow_name: &str) -> Result<N8nPersonaOutput, AppError> {
-    let parsed_json = extract_first_json_object(output_text)
+    // Try schema-aware extraction first, fall back to any valid JSON object
+    let parsed_json = extract_first_json_object_matching(output_text, looks_like_persona_json)
+        .or_else(|| extract_first_json_object(output_text))
         .ok_or_else(|| AppError::Internal("Claude did not return valid JSON persona output".into()))?;
 
     let parsed_value: serde_json::Value = serde_json::from_str(&parsed_json)?;

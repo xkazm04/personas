@@ -137,27 +137,26 @@ export default function ObservabilityDashboard() {
     return { text: `$${totalSpend.toFixed(2)} of $${totalBudget.toFixed(2)} budget`, color };
   }, [budgetData]);
 
-  // Issue counts and filtered/sorted list
-  const issueCounts = useMemo(() => {
-    const open = healingIssues.filter((i) => !i.auto_fixed).length;
-    const autoFixed = healingIssues.filter((i) => i.auto_fixed).length;
-    return { all: healingIssues.length, open, autoFixed };
-  }, [healingIssues]);
+  // Issue counts and filtered/sorted list (single pass)
+  const { issueCounts, sortedFilteredIssues } = useMemo(() => {
+    let open = 0, autoFixed = 0;
+    for (const i of healingIssues) {
+      if (i.auto_fixed) autoFixed++;
+      else open++;
+    }
+    const counts = { all: healingIssues.length, open, autoFixed };
 
-  const sortedFilteredIssues = useMemo(() => {
+    const filtered = issueFilter === 'all' ? healingIssues
+      : issueFilter === 'open' ? healingIssues.filter(i => !i.auto_fixed)
+      : healingIssues.filter(i => i.auto_fixed);
+
     const severityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
-    const filtered = issueFilter === 'all'
-      ? healingIssues
-      : issueFilter === 'open'
-        ? healingIssues.filter((i) => !i.auto_fixed)
-        : healingIssues.filter((i) => i.auto_fixed);
-
-    return [...filtered].sort((a, b) => {
-      // Auto-fixed always sink to bottom
+    const sorted = [...filtered].sort((a, b) => {
       if (a.auto_fixed !== b.auto_fixed) return a.auto_fixed ? 1 : -1;
-      // Then by severity
       return (severityOrder[a.severity] ?? 99) - (severityOrder[b.severity] ?? 99);
     });
+
+    return { issueCounts: counts, sortedFilteredIssues: sorted };
   }, [healingIssues, issueFilter]);
 
   return (
@@ -197,7 +196,7 @@ export default function ObservabilityDashboard() {
 
       {/* Content */}
       <ContentBody>
-      <div className="space-y-6">
+      <div className="space-y-4">
 
       {/* Metrics Fetch Error Banner */}
       {observabilityError && (
@@ -272,7 +271,7 @@ export default function ObservabilityDashboard() {
             <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 shadow-inner flex items-center justify-center">
               <Stethoscope className="w-4 h-4 text-cyan-400" />
             </div>
-            <h3 className="text-[14px] font-bold text-foreground/90 uppercase tracking-widest">Health Issues</h3>
+            <h3 className="text-sm font-bold text-foreground/90 uppercase tracking-widest">Health Issues</h3>
             {healingIssues.length > 0 && (
               <span className="px-2 py-0.5 text-[11px] font-black tracking-wide rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm">
                 {healingIssues.length}
@@ -353,7 +352,7 @@ export default function ObservabilityDashboard() {
 
         {/* Issues List */}
         {healingIssues.length === 0 ? (
-          <div className="flex items-center justify-center py-16">
+          <div className="flex items-center justify-center py-10">
             <div className="text-center flex flex-col items-center">
               <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 shadow-inner flex items-center justify-center mb-4 opacity-70">
                 <CheckCircle2 className="w-6 h-6 text-emerald-400" />

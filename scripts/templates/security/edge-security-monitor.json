@@ -2,7 +2,7 @@
   "id": "edge-security-monitor",
   "name": "Edge Security Monitor",
   "description": "Monitors Cloudflare analytics and firewall events for DDoS attempts, bot surges, and WAF triggers. Posts real-time security alerts to Slack, escalates critical events to PagerDuty, and generates daily security posture reports.",
-  "icon": "Shield",
+  "icon": "ShieldAlert",
   "color": "#F43F5E",
   "category": [
     "security"
@@ -125,7 +125,9 @@
           0,
           1
         ],
-        "api_base_url": "https://api.cloudflare.com/client/v4"
+        "api_base_url": "https://api.cloudflare.com/client/v4",
+        "role": "hosting",
+        "category": "devops"
       },
       {
         "name": "slack",
@@ -146,7 +148,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       },
       {
         "name": "pagerduty",
@@ -169,7 +173,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://events.pagerduty.com"
+        "api_base_url": "https://events.pagerduty.com",
+        "role": "incident_management",
+        "category": "monitoring"
       }
     ],
     "suggested_notification_channels": [

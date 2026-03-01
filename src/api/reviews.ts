@@ -59,20 +59,26 @@ export interface PaginatedReviewsResult {
 export interface ReviewQueryParams {
   search?: string;
   connectorFilter?: string[];
+  categoryFilter?: string[];
   sortBy?: string;
   sortDir?: string;
   page?: number;
   perPage?: number;
+  coverageFilter?: string;
+  coverageServiceTypes?: string[];
 }
 
 export const listDesignReviewsPaginated = (params: ReviewQueryParams) =>
   invoke<PaginatedReviewsResult>("list_design_reviews_paginated", {
     search: params.search ?? null,
     connectorFilter: params.connectorFilter ?? null,
+    categoryFilter: params.categoryFilter ?? null,
     sortBy: params.sortBy ?? null,
     sortDir: params.sortDir ?? null,
     page: params.page ?? 0,
     perPage: params.perPage ?? 10,
+    coverageFilter: params.coverageFilter ?? null,
+    coverageServiceTypes: params.coverageServiceTypes ?? null,
   });
 
 export interface ConnectorWithCount {
@@ -83,8 +89,24 @@ export interface ConnectorWithCount {
 export const listReviewConnectors = () =>
   invoke<ConnectorWithCount[]>("list_review_connectors");
 
+export interface CategoryWithCount {
+  name: string;
+  count: number;
+}
+
+export const listReviewCategories = () =>
+  invoke<CategoryWithCount[]>("list_review_categories");
+
 export const cleanupDuplicateReviews = () =>
   invoke<{ deleted: number }>("cleanup_duplicate_reviews");
+
+export const backfillReviewCategories = () =>
+  invoke<{ total: number; updated: number }>("backfill_review_categories");
+
+export const getTrendingTemplates = (limit?: number) =>
+  invoke<PersonaDesignReview[]>("get_trending_templates", {
+    limit: limit ?? null,
+  });
 
 // ============================================================================
 // Import
@@ -103,6 +125,7 @@ export const importDesignReview = (input: {
   use_case_flows?: string | null;
   test_run_id: string;
   reviewed_at: string;
+  category?: string | null;
 }) => invoke<PersonaDesignReview>("import_design_review", { input });
 
 // ============================================================================

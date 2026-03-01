@@ -2,7 +2,7 @@
   "id": "cms-sync-use-case",
   "name": "CMS Sync Use Case",
   "description": "Watches for Webflow CMS collection changes, syncs content to an Airtable backup/analytics table, posts Slack notifications for published content, and validates that published pages have required SEO fields populated.",
-  "icon": "FileText",
+  "icon": "ArrowLeftRight",
   "color": "#F59E0B",
   "category": [
     "content"
@@ -158,7 +158,9 @@
           0,
           1
         ],
-        "api_base_url": "https://api.webflow.com/v2"
+        "api_base_url": "https://api.webflow.com/v2",
+        "role": "cms",
+        "category": "cms"
       },
       {
         "name": "airtable",
@@ -195,7 +197,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://api.airtable.com/v0"
+        "api_base_url": "https://api.airtable.com/v0",
+        "role": "knowledge_base",
+        "category": "productivity"
       },
       {
         "name": "slack",
@@ -224,7 +228,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

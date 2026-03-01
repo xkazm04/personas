@@ -20,6 +20,8 @@ mod rotation;
 mod lab;
 mod design_conversation;
 mod test_suite;
+mod platform_definition;
+mod knowledge;
 
 pub use persona::*;
 pub use tool::*;
@@ -43,3 +45,5 @@ pub use rotation::*;
 pub use lab::*;
 pub use design_conversation::*;
 pub use test_suite::*;
+pub use platform_definition::*;
+pub use knowledge::*;

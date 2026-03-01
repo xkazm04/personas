@@ -2,7 +2,7 @@
   "id": "email-deliverability-monitor",
   "name": "Email Deliverability Monitor",
   "description": "Processes SendGrid event webhooks (bounces, spam reports, unsubscribes, opens), maintains an Airtable deliverability dashboard, posts Slack alerts for bounce rate spikes, and auto-suppresses problematic addresses.",
-  "icon": "Mail",
+  "icon": "MailCheck",
   "color": "#3B82F6",
   "category": [
     "email"
@@ -134,7 +134,9 @@
           0,
           2
         ],
-        "api_base_url": "https://api.sendgrid.com/v3"
+        "api_base_url": "https://api.sendgrid.com/v3",
+        "role": "email_delivery",
+        "category": "messaging"
       },
       {
         "name": "airtable",
@@ -165,7 +167,9 @@
         "related_triggers": [
           1
         ],
-        "api_base_url": "https://api.airtable.com/v0"
+        "api_base_url": "https://api.airtable.com/v0",
+        "role": "knowledge_base",
+        "category": "productivity"
       },
       {
         "name": "slack",
@@ -196,7 +200,9 @@
         "related_triggers": [
           1
         ],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

@@ -2,7 +2,7 @@
   "id": "deployment-guardian",
   "name": "Deployment Guardian",
   "description": "Monitors Vercel deployment webhooks, checks build logs for warnings and errors, cross-references with the GitHub commit that triggered the deploy, and posts deployment status cards to Slack. Auto-rolls back if error rate spikes post-deploy.",
-  "icon": "Server",
+  "icon": "Rocket",
   "color": "#F97316",
   "category": [
     "devops"
@@ -133,7 +133,9 @@
           0,
           1
         ],
-        "api_base_url": "https://api.vercel.com"
+        "api_base_url": "https://api.vercel.com",
+        "role": "hosting",
+        "category": "devops"
       },
       {
         "name": "github",
@@ -170,7 +172,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://api.github.com"
+        "api_base_url": "https://api.github.com",
+        "role": "source_control",
+        "category": "development"
       },
       {
         "name": "slack",
@@ -199,7 +203,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

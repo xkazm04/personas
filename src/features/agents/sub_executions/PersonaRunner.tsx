@@ -1,15 +1,35 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { listen } from '@tauri-apps/api/event';
 import { useElapsedTimer } from '@/hooks';
 import { usePersonaStore } from '@/stores/personaStore';
 import { usePersonaExecution } from '@/hooks/execution/usePersonaExecution';
-import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, Timer, DollarSign, RotateCw, Wrench, Zap, Brain, Cpu, CheckCheck, AlertTriangle } from 'lucide-react';
+import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, Timer, DollarSign, RotateCw, Wrench, Zap, Brain, Cpu, CheckCheck, AlertTriangle, ShieldAlert, ExternalLink } from 'lucide-react';
 import { classifyLine, parseSummaryLine } from '@/lib/utils/terminalColors';
 import { formatElapsed, getStatusEntry } from '@/lib/utils/formatters';
 import { motion, AnimatePresence } from 'framer-motion';
 import { JsonEditor } from '@/features/shared/components/JsonEditor';
 import { ExecutionTerminal } from '@/features/agents/sub_executions/ExecutionTerminal';
+import type { TerminalEmptyState } from '@/features/shared/components/TerminalBody';
 import * as api from '@/api/tauriApi';
 
+
+/** Healing event payload from Tauri backend */
+interface HealingEventPayload {
+  issue_id: string;
+  persona_id: string;
+  execution_id: string;
+  title: string;
+  action: string; // "auto_retry" | "issue_created" | "circuit_breaker"
+  auto_fixed: boolean;
+  severity: string;
+  suggested_fix: string | null;
+  persona_name: string;
+  description?: string;
+  strategy?: string;
+  backoff_seconds?: number;
+  retry_number?: number;
+  max_retries?: number;
+}
 
 interface ToolCallDot {
   toolName: string;
@@ -79,6 +99,9 @@ export function PersonaRunner() {
   const rerunInputData = usePersonaStore((state) => state.rerunInputData);
   const setRerunInputData = usePersonaStore((state) => state.setRerunInputData);
 
+  const queuePosition = usePersonaStore((s) => s.queuePosition);
+  const queueDepth = usePersonaStore((s) => s.queueDepth);
+
   const cloudConfig = usePersonaStore((s) => s.cloudConfig);
   const cloudExecute = usePersonaStore((s) => s.cloudExecute);
 
@@ -101,6 +124,9 @@ export function PersonaRunner() {
   const phaseLineCount = useRef(0);
   const hasSeenToolsRef = useRef(false);
 
+  // Healing notification state — inline cards between output and retry
+  const [healingNotification, setHealingNotification] = useState<HealingEventPayload | null>(null);
+
   // Resizable + fullscreen terminal state
   const [terminalHeight, setTerminalHeight] = useState(400);
   const [isTerminalFullscreen, setIsTerminalFullscreen] = useState(false);
@@ -119,6 +145,13 @@ export function PersonaRunner() {
     }
     return null;
   }, [outputLines]);
+
+  // Derive terminal empty state from execution context
+  const terminalEmptyState = useMemo((): TerminalEmptyState => {
+    if (!isExecuting) return 'idle';
+    if (queuePosition != null) return { kind: 'queued', position: queuePosition + 1, depth: queueDepth ?? undefined };
+    return 'connecting';
+  }, [isExecuting, queuePosition, queueDepth]);
 
   const fetchTypicalDuration = useCallback(async (pId: string) => {
     try {
@@ -201,6 +234,28 @@ export function PersonaRunner() {
       phaseLineCount.current = 0;
       hasSeenToolsRef.current = false;
     }
+  }, [isExecuting]);
+
+  // Reset phase tracking when persona changes (prevents stale index on switch)
+  useEffect(() => {
+    setPhases([]);
+    phaseLineCount.current = 0;
+    hasSeenToolsRef.current = false;
+  }, [personaId]);
+
+  // Listen for healing events scoped to the current persona
+  useEffect(() => {
+    const unlisten = listen<HealingEventPayload>('healing-event', (event) => {
+      const payload = event.payload;
+      if (payload.persona_id !== personaId) return;
+      setHealingNotification(payload);
+    });
+    return () => { unlisten.then((fn) => fn()); };
+  }, [personaId]);
+
+  // Clear healing notification when a new execution starts
+  useEffect(() => {
+    if (isExecuting) setHealingNotification(null);
   }, [isExecuting]);
 
   // Drag-to-resize handler for terminal bottom edge
@@ -318,7 +373,7 @@ export function PersonaRunner() {
   // Keep ref in sync for Enter-key shortcut
   handleExecuteRef.current = handleExecute;
 
-  const handleStop = () => {
+  const handleStop = async () => {
     if (activeExecutionId) {
       // Capture state before cancelling
       const lastToolLine = [...outputLines].reverse().find(l => l.startsWith('> Using tool:'));
@@ -331,8 +386,11 @@ export function PersonaRunner() {
         last_tool: lastTool,
       });
 
+      // Disconnect listeners first so no stale status events can race with
+      // the state cleanup inside cancelExecution. cancelExecution
+      // unconditionally resets isExecuting in its finally block.
       disconnect();
-      cancelExecution(activeExecutionId);
+      await cancelExecution(activeExecutionId);
       setOutputLines((prev) => [...prev, '', `[SUMMARY]${cancelSummary}`]);
     }
   };
@@ -350,7 +408,7 @@ export function PersonaRunner() {
     let sessionId: string | null = null;
     if (activeExecutionId) {
       try {
-        const exec = await api.getExecution(activeExecutionId);
+        const exec = await api.getExecution(activeExecutionId, selectedPersona.id);
         sessionId = exec.claude_session_id ?? null;
       } catch {
         // Fall back to prompt hint
@@ -540,6 +598,16 @@ export function PersonaRunner() {
         </motion.div>
       )}
 
+      {/* Inline Healing Notification Card */}
+      <AnimatePresence>
+        {healingNotification && !isExecuting && isThisPersonasExecution && (
+          <HealingCard
+            notification={healingNotification}
+            onDismiss={() => setHealingNotification(null)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Coached empty state — shown when no execution output is visible */}
       <AnimatePresence>
         {!(isThisPersonasExecution && (isExecuting || outputLines.length > 0)) && (
@@ -597,7 +665,18 @@ export function PersonaRunner() {
             onToggleFullscreen={toggleTerminalFullscreen}
             terminalHeight={terminalHeight}
             onResizeStart={handleTerminalResizeStart}
+            emptyState={terminalEmptyState}
           >
+            {/* Queue position banner */}
+            {queuePosition != null && isThisPersonasExecution && (
+              <div className="flex items-center gap-2 px-3 py-2 border-b border-border/20 bg-amber-500/5">
+                <Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                <span className="text-sm text-amber-300/90 font-medium">
+                  Queued — position {queuePosition + 1}{queueDepth != null ? ` of ${queueDepth}` : ''}
+                </span>
+              </div>
+            )}
+
             {/* Proportional phase timeline */}
             {phases.length > 0 && (
               <div className="border-b border-border/20">
@@ -701,5 +780,143 @@ export function PersonaRunner() {
         </motion.div>
       )}
     </div>
+  );
+}
+
+// ── Inline Healing Notification Card ────────────────────────────────
+
+function HealingCard({
+  notification,
+  onDismiss,
+}: {
+  notification: HealingEventPayload;
+  onDismiss: () => void;
+}) {
+  const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
+  const isRetry = notification.auto_fixed && notification.backoff_seconds != null;
+  const isIssue = !notification.auto_fixed;
+
+  // Countdown timer for retry backoff
+  const [countdown, setCountdown] = useState(notification.backoff_seconds ?? 0);
+  useEffect(() => {
+    if (!isRetry || countdown <= 0) return;
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [isRetry, countdown]);
+
+  // Reset countdown when notification changes
+  useEffect(() => {
+    setCountdown(notification.backoff_seconds ?? 0);
+  }, [notification.backoff_seconds]);
+
+  // Style based on action type
+  const styles = isIssue
+    ? { border: 'border-red-500/25', bg: 'bg-red-500/[0.04]', icon: 'text-red-400', accent: 'text-red-400' }
+    : { border: 'border-amber-500/25', bg: 'bg-amber-500/[0.04]', icon: 'text-amber-400', accent: 'text-amber-300' };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8, height: 0 }}
+      animate={{ opacity: 1, y: 0, height: 'auto' }}
+      exit={{ opacity: 0, y: -8, height: 0 }}
+      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+      className={`rounded-xl border ${styles.border} ${styles.bg} overflow-hidden`}
+    >
+      <div className="px-4 py-3.5 space-y-2.5">
+        {/* Header row */}
+        <div className="flex items-start gap-2.5">
+          <ShieldAlert className={`w-4 h-4 mt-0.5 flex-shrink-0 ${styles.icon}`} />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={`text-sm font-semibold ${styles.accent}`}>
+                {notification.title}
+              </span>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-secondary/40 text-muted-foreground/60 border border-primary/8">
+                {notification.severity}
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={onDismiss}
+            className="text-muted-foreground/50 hover:text-foreground/80 transition-colors flex-shrink-0 p-0.5"
+          >
+            <span className="text-xs">dismiss</span>
+          </button>
+        </div>
+
+        {/* Strategy & description */}
+        {notification.strategy && (
+          <div className="flex items-center gap-2 text-sm">
+            <RotateCw className={`w-3.5 h-3.5 flex-shrink-0 ${styles.icon} opacity-60`} />
+            <span className="text-foreground/80">{notification.strategy}</span>
+          </div>
+        )}
+
+        {/* Retry countdown + progress */}
+        {isRetry && notification.retry_number != null && notification.max_retries != null && (
+          <div className="flex items-center gap-3 pt-1">
+            {/* Countdown */}
+            {countdown > 0 && (
+              <div className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-amber-400/60 animate-pulse" />
+                <span className="text-sm font-mono text-amber-300/90">
+                  Retrying in {countdown}s...
+                </span>
+              </div>
+            )}
+            {countdown === 0 && (
+              <div className="flex items-center gap-1.5">
+                <RotateCw className="w-3.5 h-3.5 text-blue-400/70 animate-spin" />
+                <span className="text-sm font-mono text-blue-300/90">
+                  Retrying now...
+                </span>
+              </div>
+            )}
+            {/* Attempt badge */}
+            <span className="ml-auto text-[11px] font-mono text-muted-foreground/60 px-2 py-0.5 rounded bg-secondary/30 border border-primary/8">
+              Attempt {notification.retry_number} of {notification.max_retries}
+            </span>
+          </div>
+        )}
+
+        {/* Backoff progress bar */}
+        {isRetry && (notification.backoff_seconds ?? 0) > 0 && (
+          <div className="w-full h-1 rounded-full bg-secondary/40 overflow-hidden">
+            <motion.div
+              className="h-full rounded-full bg-amber-500/40"
+              initial={{ width: '100%' }}
+              animate={{ width: '0%' }}
+              transition={{ duration: notification.backoff_seconds ?? 0, ease: 'linear' }}
+            />
+          </div>
+        )}
+
+        {/* Issue-created: link to healing panel */}
+        {isIssue && (
+          <button
+            onClick={() => setSidebarSection('overview')}
+            className="flex items-center gap-1.5 text-sm text-red-400/80 hover:text-red-300 transition-colors"
+          >
+            <ExternalLink className="w-3 h-3" />
+            View in healing issues
+          </button>
+        )}
+
+        {/* Suggested fix */}
+        {notification.suggested_fix && (
+          <p className="text-[11px] text-muted-foreground/60 leading-relaxed pl-6.5">
+            {notification.suggested_fix}
+          </p>
+        )}
+      </div>
+    </motion.div>
   );
 }

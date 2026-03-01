@@ -42,11 +42,15 @@ pub struct AppState {
     pub active_setup_cancelled: Arc<Mutex<bool>>,
     /// Cancellation flags for active test runs, keyed by run ID.
     pub active_test_run_cancelled: Arc<Mutex<HashMap<String, Arc<std::sync::atomic::AtomicBool>>>>,
+    /// Cancellation flags for active pipeline runs, keyed by run ID.
+    pub active_pipeline_cancelled: Arc<Mutex<HashMap<String, Arc<std::sync::atomic::AtomicBool>>>>,
     /// PID of the currently-running CLI child process for each design review run.
     /// Used to kill the process immediately when the user cancels a batch review.
     pub active_review_child_pids: Arc<Mutex<HashMap<String, u32>>>,
     /// GitLab API client (None when not connected).
     pub gitlab_client: Arc<tokio::sync::Mutex<Option<Arc<gitlab::client::GitLabClient>>>>,
+    /// Rate limiter for event publishing and webhook intake.
+    pub rate_limiter: Arc<engine::rate_limiter::RateLimiter>,
 }
 
 /// Hello world IPC command — verifies the Rust ↔ React bridge works.
@@ -95,6 +99,9 @@ pub fn run() {
                 }
             }
 
+            // Initialise the connector strategy registry (healthcheck + rotation dispatch)
+            engine::connector_strategy::init_registry();
+
             // Install panic crash hook that writes to crash_logs/ before aborting
             logging::install_crash_hook(&app_data_dir);
 
@@ -105,9 +112,18 @@ pub fn run() {
             engine::ExecutionEngine::recover_stale_executions(&pool);
 
             // Mark n8n transform sessions interrupted by app exit as failed
+            // and clear their in-memory job entries (dead cancellation tokens,
+            // expired status channels) so new transforms aren't shadowed.
             match db::repos::resources::n8n_sessions::recover_interrupted_sessions(&pool) {
-                Ok(count) if count > 0 => {
-                    tracing::info!("Recovered {} interrupted n8n transform session(s)", count);
+                Ok(transform_ids) if !transform_ids.is_empty() => {
+                    let n8n_manager = commands::design::n8n_transform::job_state::manager();
+                    for tid in &transform_ids {
+                        let _ = n8n_manager.remove(tid);
+                    }
+                    tracing::info!(
+                        "Recovered {} interrupted n8n transform session(s), cleared in-memory job state",
+                        transform_ids.len()
+                    );
                 }
                 Err(e) => {
                     tracing::warn!("Failed to recover n8n sessions: {}", e);
@@ -158,8 +174,10 @@ pub fn run() {
                 cloud_exec_ids: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
                 active_setup_cancelled: Arc::new(Mutex::new(false)),
                 active_test_run_cancelled: Arc::new(Mutex::new(HashMap::new())),
+                active_pipeline_cancelled: Arc::new(Mutex::new(HashMap::new())),
                 active_review_child_pids: Arc::new(Mutex::new(HashMap::new())),
                 gitlab_client: Arc::new(tokio::sync::Mutex::new(gitlab_client_opt)),
+                rate_limiter: Arc::new(engine::rate_limiter::RateLimiter::new()),
             });
             app.manage(state_arc.clone());
 
@@ -199,6 +217,7 @@ pub fn run() {
             let app_handle = app.handle().clone();
             let restore_handle = app.handle().clone();
             let restore_state = state_arc.clone();
+            let startup_rate_limiter = state_arc.rate_limiter.clone();
             tauri::async_runtime::spawn(async move {
                 tokio::time::sleep(std::time::Duration::from_secs(2)).await;
                 let _webhook_shutdown = engine::background::start_loops(
@@ -206,6 +225,7 @@ pub fn run() {
                     app_handle.clone(),
                     pool,
                     engine,
+                    startup_rate_limiter,
                 );
                 tracing::info!("Scheduler auto-started (with webhook server on port 9420)");
                 tray::refresh_tray(&app_handle);
@@ -256,6 +276,8 @@ pub fn run() {
             commands::execution::executions::cancel_execution,
             commands::execution::executions::list_executions_for_use_case,
             commands::execution::executions::get_execution_log,
+            commands::execution::executions::get_execution_trace,
+            commands::execution::executions::get_chain_trace,
             // Execution — Scheduler
             commands::execution::scheduler::get_scheduler_status,
             commands::execution::scheduler::start_scheduler,
@@ -307,11 +329,16 @@ pub fn run() {
             commands::execution::healing::run_healing_analysis,
             commands::execution::healing::get_retry_chain,
             commands::execution::healing::list_healing_knowledge,
+            // Execution — Knowledge Graph
+            commands::execution::knowledge::list_execution_knowledge,
+            commands::execution::knowledge::get_knowledge_injection,
+            commands::execution::knowledge::get_knowledge_summary,
             // Design — Analysis
             commands::design::analysis::start_design_analysis,
             commands::design::analysis::refine_design,
             commands::design::analysis::test_design_feasibility,
             commands::design::analysis::cancel_design_analysis,
+            commands::design::analysis::compile_from_intent,
             // Design — Conversations
             commands::design::conversations::list_design_conversations,
             commands::design::conversations::get_design_conversation,
@@ -347,11 +374,17 @@ pub fn run() {
             commands::design::template_adopt::clear_template_generate_snapshot,
             commands::design::template_adopt::cancel_template_generate,
             commands::design::template_adopt::save_custom_template,
+            // Design — Platform Definitions
+            commands::design::platform_definitions::list_platform_definitions,
+            commands::design::platform_definitions::get_platform_definition,
             // Design — Reviews
             commands::design::reviews::list_design_reviews,
             commands::design::reviews::list_design_reviews_paginated,
             commands::design::reviews::list_review_connectors,
+            commands::design::reviews::list_review_categories,
             commands::design::reviews::cleanup_duplicate_reviews,
+            commands::design::reviews::backfill_review_categories,
+            commands::design::reviews::get_trending_templates,
             commands::design::reviews::get_design_review,
             commands::design::reviews::delete_design_review,
             commands::design::reviews::start_design_review_run,
@@ -377,6 +410,8 @@ pub fn run() {
             commands::credentials::crud::healthcheck_credential_preview,
             commands::credentials::crud::vault_status,
             commands::credentials::crud::migrate_plaintext_credentials,
+            commands::credentials::crud::list_credential_fields,
+            commands::credentials::crud::update_credential_field,
             // Credentials — Connectors
             commands::credentials::connectors::list_connectors,
             commands::credentials::connectors::get_connector,
@@ -393,6 +428,7 @@ pub fn run() {
             commands::credentials::negotiator::get_negotiation_step_help,
             // Credentials — Intelligence
             commands::credentials::intelligence::credential_audit_log,
+            commands::credentials::intelligence::credential_audit_log_global,
             commands::credentials::intelligence::credential_usage_stats,
             commands::credentials::intelligence::credential_dependents,
             // Credentials — OAuth
@@ -433,6 +469,10 @@ pub fn run() {
             commands::communication::observability::get_metrics_chart_data,
             commands::communication::observability::get_prompt_versions,
             commands::communication::observability::get_all_monthly_spend,
+            // Communication — Prompt Performance Dashboard
+            commands::communication::observability::get_prompt_performance,
+            // Communication — Execution Metrics Dashboard
+            commands::communication::observability::get_execution_dashboard,
             // Communication — Prompt Lab
             commands::communication::observability::tag_prompt_version,
             commands::communication::observability::rollback_prompt_version,
@@ -456,6 +496,7 @@ pub fn run() {
             commands::teams::teams::list_pipeline_runs,
             commands::teams::teams::get_pipeline_run,
             commands::teams::teams::execute_team,
+            commands::teams::teams::cancel_pipeline,
             commands::teams::teams::get_pipeline_analytics,
             commands::teams::teams::suggest_topology,
             // Tools
@@ -482,6 +523,8 @@ pub fn run() {
             commands::tools::triggers::get_trigger_health_map,
             commands::tools::triggers::list_trigger_chains,
             commands::tools::triggers::get_webhook_status,
+            commands::tools::triggers::preview_cron_schedule,
+            commands::tools::triggers::dry_run_trigger,
             // Infrastructure — Auth
             commands::infrastructure::auth::login_with_google,
             commands::infrastructure::auth::get_auth_state,
@@ -489,6 +532,10 @@ pub fn run() {
             commands::infrastructure::auth::refresh_session,
             // Infrastructure — System
             commands::infrastructure::system::system_health_check,
+            commands::infrastructure::system::health_check_local,
+            commands::infrastructure::system::health_check_agents,
+            commands::infrastructure::system::health_check_cloud,
+            commands::infrastructure::system::health_check_account,
             commands::infrastructure::system::open_external_url,
             commands::infrastructure::system::get_crash_logs,
             commands::infrastructure::system::clear_crash_logs,

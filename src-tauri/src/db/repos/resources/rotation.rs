@@ -171,6 +171,63 @@ pub fn mark_rotated(pool: &DbPool, policy_id: &str) -> Result<(), AppError> {
     Ok(())
 }
 
+/// Count consecutive recent rotation failures for a credential (from most recent backwards).
+pub fn get_consecutive_rotation_failures(pool: &DbPool, credential_id: &str) -> Result<u32, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT status FROM credential_rotation_history
+         WHERE credential_id = ?1 AND rotation_type != 'anomaly'
+         ORDER BY created_at DESC
+         LIMIT 20",
+    )?;
+    let statuses: Vec<String> = stmt
+        .query_map(params![credential_id], |row| row.get::<_, String>(0))?
+        .filter_map(|r| r.ok())
+        .collect();
+
+    let count = statuses
+        .iter()
+        .take_while(|s| s.as_str() == "failed")
+        .count();
+    Ok(count as u32)
+}
+
+/// Schedule a short retry for a failed rotation using exponential backoff.
+/// Backoff: 1h, 4h, 12h (capped) based on consecutive failures.
+pub fn schedule_failed_retry(pool: &DbPool, policy_id: &str, consecutive_failures: u32) -> Result<(), AppError> {
+    let retry_hours: i64 = match consecutive_failures {
+        0 | 1 => 1,
+        2 => 4,
+        _ => 12,
+    };
+    let now = chrono::Utc::now();
+    let next = now + chrono::Duration::hours(retry_hours);
+    let next_str = next.to_rfc3339();
+    let now_str = now.to_rfc3339();
+
+    let conn = pool.get()?;
+    conn.execute(
+        "UPDATE credential_rotation_policies
+         SET next_rotation_at = ?1, updated_at = ?2
+         WHERE id = ?3",
+        params![next_str, now_str, policy_id],
+    )?;
+    Ok(())
+}
+
+/// Disable a rotation policy (e.g., after too many consecutive failures).
+pub fn disable_policy(pool: &DbPool, policy_id: &str) -> Result<(), AppError> {
+    let now = chrono::Utc::now().to_rfc3339();
+    let conn = pool.get()?;
+    conn.execute(
+        "UPDATE credential_rotation_policies
+         SET enabled = 0, updated_at = ?1
+         WHERE id = ?2",
+        params![now, policy_id],
+    )?;
+    Ok(())
+}
+
 // ============================================================================
 // Rotation History
 // ============================================================================

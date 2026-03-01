@@ -2,7 +2,7 @@
   "id": "accounting-reconciliation-use-case",
   "name": "Accounting Reconciliation Use Case",
   "description": "Pulls Xero transactions daily, reconciles against bank feeds, logs discrepancies to Google Sheets, sends Slack alerts for unmatched transactions, and emails a weekly reconciliation summary to the finance team.",
-  "icon": "DollarSign",
+  "icon": "Calculator",
   "color": "#22C55E",
   "category": [
     "finance"
@@ -128,7 +128,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://api.xero.com/api.xro/2.0"
+        "api_base_url": "https://api.xero.com/api.xro/2.0",
+        "role": "accounting",
+        "category": "finance"
       },
       {
         "name": "google_workspace",
@@ -168,7 +170,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://www.googleapis.com",
+        "role": "productivity_suite",
+        "category": "productivity"
       },
       {
         "name": "slack",
@@ -199,7 +203,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

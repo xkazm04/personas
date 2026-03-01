@@ -2,6 +2,7 @@ import { useRef, useCallback } from 'react';
 import * as api from '@/api/tauriApi';
 import type { GoogleCredentialOAuthStatusResult } from '@/api/tauriApi';
 import { useOAuthPolling } from './useOAuthPolling';
+import { OAUTH_FIELD } from '@/features/vault/components/credential-design/CredentialDesignHelpers';
 
 export interface OAuthConsentState {
   /** Initial credential field values produced by the OAuth flow (refresh_token, scopes, etc.) */
@@ -32,9 +33,9 @@ export function useOAuthConsent(): OAuthConsentState {
         ...prev,
         refresh_token: poll.refresh_token ?? prev.refresh_token ?? '',
         scopes: effectiveScope,
-        oauth_scope: effectiveScope,
-        oauth_completed_at: new Date().toISOString(),
-        oauth_client_mode: 'app_managed',
+        [OAUTH_FIELD.SCOPE]: effectiveScope,
+        [OAUTH_FIELD.COMPLETED_AT]: new Date().toISOString(),
+        [OAUTH_FIELD.CLIENT_MODE]: 'app_managed',
       };
     },
     label: 'Google',

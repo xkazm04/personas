@@ -150,43 +150,9 @@ pub fn compute_dag_layout(
         return vec![(200.0, 120.0)];
     }
 
-    // Build adjacency + in-degree
-    let mut in_degree = vec![0usize; node_count];
-    let mut adj: Vec<Vec<usize>> = vec![vec![]; node_count];
-    for &(src, tgt) in edges {
-        if src < node_count && tgt < node_count {
-            adj[src].push(tgt);
-            in_degree[tgt] += 1;
-        }
-    }
-
-    // Layer assignment via topological sort (Kahn)
-    let mut layers: Vec<usize> = vec![0; node_count];
-    let mut queue: std::collections::VecDeque<usize> = std::collections::VecDeque::new();
-    for (i, &deg) in in_degree.iter().enumerate() {
-        if deg == 0 {
-            queue.push_back(i);
-        }
-    }
-
-    while let Some(node) = queue.pop_front() {
-        for &neighbor in &adj[node] {
-            layers[neighbor] = layers[neighbor].max(layers[node] + 1);
-            in_degree[neighbor] -= 1;
-            if in_degree[neighbor] == 0 {
-                queue.push_back(neighbor);
-            }
-        }
-    }
-
-    // Handle disconnected nodes (no edges)
-    let max_layer = layers.iter().copied().max().unwrap_or(0);
-    for (i, deg) in in_degree.iter().enumerate() {
-        if *deg > 0 {
-            // Part of a cycle — assign to max + 1
-            layers[i] = max_layer + 1;
-        }
-    }
+    // Layer assignment via shared topology graph (handles cycles)
+    let graph = super::topology_graph::TopologyGraph::from_edges(node_count, edges);
+    let layers = graph.layer_assignment();
 
     // Group nodes by layer
     let total_layers = layers.iter().copied().max().unwrap_or(0) + 1;

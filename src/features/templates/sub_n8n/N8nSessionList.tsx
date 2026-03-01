@@ -4,21 +4,11 @@ import { listN8nSessions, deleteN8nSession, getN8nSession } from '@/api/n8nTrans
 import type { N8nTransformSession } from '@/lib/bindings/N8nTransformSession';
 import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
-import type { N8nWizardStep, TransformQuestion } from './useN8nImportReducer';
+import type { N8nWizardStep, TransformQuestion, TransformSubPhase, SessionLoadedPayload } from './useN8nImportReducer';
 import { WorkflowThumbnail } from './WorkflowThumbnail';
 
 interface N8nSessionListProps {
-  onLoadSession: (
-    sessionId: string,
-    step: N8nWizardStep,
-    workflowName: string,
-    rawWorkflowJson: string,
-    parsedResult: DesignAnalysisResult | null,
-    draft: N8nPersonaDraft | null,
-    questions: TransformQuestion[] | null,
-    transformId: string | null,
-    userAnswers: Record<string, string> | null,
-  ) => void;
+  onLoadSession: (payload: SessionLoadedPayload) => void;
 }
 
 /** Detect sessions interrupted by app exit (vs genuine failures) */
@@ -110,10 +100,10 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
         } catch { /* ignore */ }
       }
 
-      let userAnswers: Record<string, string> | null = null;
+      let rawUserAnswers: Record<string, string> | null = null;
       if (full.user_answers) {
         try {
-          userAnswers = JSON.parse(full.user_answers) as Record<string, string>;
+          rawUserAnswers = JSON.parse(full.user_answers) as Record<string, string>;
         } catch { /* ignore */ }
       }
 
@@ -133,32 +123,49 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
       let targetStep: N8nWizardStep;
       if (full.status === 'failed' || full.status === 'transforming') {
         if (draft) {
-          // Draft was saved before failure — go to edit
           targetStep = 'edit';
         } else if (parsedResult) {
-          // Has parse result — go to analyze (user can retry transform)
           targetStep = 'analyze';
         } else {
           targetStep = 'upload';
         }
       } else if (full.status === 'awaiting_answers') {
-        // Session was waiting for user answers — go to transform step with questions
         targetStep = 'transform';
       } else {
         targetStep = stepMap[full.step] ?? 'upload';
       }
 
-      onLoadSession(
-        full.id,
-        targetStep,
-        full.workflow_name,
-        full.raw_workflow_json,
+      // Compute transform sub-phase from loaded state
+      let subPhase: TransformSubPhase = 'idle';
+      if (targetStep === 'transform') {
+        if (draft) {
+          subPhase = 'completed';
+        } else if (questions && questions.length > 0) {
+          subPhase = 'answering';
+        }
+      }
+
+      // Merge saved answers with question defaults
+      const defaultAnswers = questions
+        ? questions.reduce<Record<string, string>>((acc, q) => {
+            if (q.default) acc[q.id] = q.default;
+            return acc;
+          }, {})
+        : {};
+      const userAnswers = { ...defaultAnswers, ...(rawUserAnswers ?? {}) };
+
+      onLoadSession({
+        sessionId: full.id,
+        step: targetStep,
+        workflowName: full.workflow_name,
+        rawWorkflowJson: full.raw_workflow_json,
         parsedResult,
         draft,
         questions,
         transformId,
         userAnswers,
-      );
+        transformSubPhase: subPhase,
+      });
     } catch {
       // ignore
     }

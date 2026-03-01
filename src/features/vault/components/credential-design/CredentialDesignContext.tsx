@@ -30,6 +30,9 @@ export interface CredentialDesignContextValue {
   canSaveCredential: boolean;
   lastSuccessfulTestAt: string | null;
 
+  // Save error (set when save fails and phase returns to preview)
+  saveError: string | null;
+
   // Actions
   onSave: (values: Record<string, string>) => void;
   onOAuthConsent?: (values: Record<string, string>) => void;

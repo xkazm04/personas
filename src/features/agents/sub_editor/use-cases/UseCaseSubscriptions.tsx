@@ -73,7 +73,7 @@ export function UseCaseSubscriptions({
   };
 
   // Check if suggested trigger is already activated
-  const isTriggerActivated = suggestedTrigger && dbTriggers.length > 0;
+  const isTriggerActivated = suggestedTrigger && dbTriggers.some((t) => t.trigger_type === suggestedTrigger.type);
 
   return (
     <div className="space-y-3">

@@ -2,7 +2,7 @@
   "id": "sales-pipeline-autopilot",
   "name": "Sales Pipeline Autopilot",
   "description": "Monitors HubSpot deal stage changes, sends personalized follow-up emails via Gmail at each stage, posts deal updates to Slack sales channels, and flags stale deals. Compiles weekly pipeline health reports.",
-  "icon": "TrendingUp",
+  "icon": "Handshake",
   "color": "#6366F1",
   "category": [
     "sales"
@@ -119,7 +119,9 @@
           0,
           1
         ],
-        "api_base_url": "https://api.hubapi.com"
+        "api_base_url": "https://api.hubapi.com",
+        "role": "crm",
+        "category": "crm"
       },
       {
         "name": "google_workspace",
@@ -157,7 +159,9 @@
           "gmail_search"
         ],
         "related_triggers": [],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://www.googleapis.com",
+        "role": "productivity_suite",
+        "category": "productivity"
       },
       {
         "name": "slack",
@@ -181,7 +185,9 @@
           0,
           1
         ],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Loader2, Check, Circle, Clock } from 'lucide-react';
 import { useStepProgress } from '@/hooks/useStepProgress';
@@ -49,10 +49,14 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
   // Drive step progress from derived index
   useEffect(() => {
     sp.setDerivedIndex(derivedIdx);
-  }, [derivedIdx]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [derivedIdx]);
 
-  // Latest meaningful line for detail text
-  const latestLine = outputLines.length > 0 ? outputLines[outputLines.length - 1] : null;
+  // Last 3 output lines for the scrollable status region
+  const tailLines = outputLines.slice(-3);
+  const tailRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    tailRef.current?.scrollTo({ top: tailRef.current.scrollHeight, behavior: 'smooth' });
+  }, [outputLines.length]);
 
   // Progress: use derived index directly against total (4) for smooth 0→100
   const progress = Math.min((derivedIdx / STAGE_DEFS.length) * 100, 100);
@@ -65,17 +69,21 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
       exit={{ opacity: 0, y: -10 }}
       className="space-y-4"
     >
-      {/* Time estimate + elapsed */}
+      {/* Time estimate + elapsed (hidden for first 5s to reduce anxiety) */}
       <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-1.5 text-sm text-muted-foreground/80">
-          <Clock className="w-3 h-3" />
-          <span>{formatElapsed(elapsed)} elapsed</span>
-        </div>
+        {elapsed >= 5 ? (
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground/80">
+            <Clock className="w-3 h-3" />
+            <span>{formatElapsed(elapsed)} elapsed</span>
+          </div>
+        ) : (
+          <div />
+        )}
         <span className="text-sm text-muted-foreground/80">Typically 15–30 seconds</span>
       </div>
 
       {/* Progress bar */}
-      <div className="h-1 rounded-full bg-primary/10 overflow-hidden">
+      <div className="h-2 rounded-full bg-primary/10 overflow-hidden">
         <motion.div
           className="h-full rounded-full bg-primary"
           initial={{ width: '0%' }}
@@ -85,7 +93,7 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
       </div>
 
       {/* Stage indicators */}
-      <div className="space-y-1 px-1">
+      <div className="space-y-1 px-1" aria-live="polite" aria-atomic="false">
         {sp.steps.map((step, i) => {
           const def = STAGE_DEFS[i]!;
           return (
@@ -128,10 +136,15 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
         })}
       </div>
 
-      {/* Latest output detail */}
-      {latestLine && (
-        <div className="px-3 py-2 rounded-xl bg-secondary/30 border border-primary/10 text-sm text-muted-foreground/80 font-mono truncate">
-          {latestLine}
+      {/* Latest output detail (scrollable, up to 3 lines) */}
+      {tailLines.length > 0 && (
+        <div
+          ref={tailRef}
+          className="px-3 py-2 rounded-xl bg-secondary/30 border border-primary/10 text-sm text-muted-foreground/80 font-mono max-h-[4.5rem] overflow-y-auto"
+        >
+          {tailLines.map((line, i) => (
+            <div key={outputLines.length - tailLines.length + i}>{line}</div>
+          ))}
         </div>
       )}
 

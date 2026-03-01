@@ -2,7 +2,7 @@
   "id": "support-intelligence-use-case",
   "name": "Support Intelligence Use Case",
   "description": "Triages incoming Zendesk tickets by analyzing content and sentiment. Routes urgent issues to Slack with context. Maintains a Notion knowledge base of common resolutions. Auto-suggests responses for known issues and escalates unknowns for manual review.",
-  "icon": "HeadphonesIcon",
+  "icon": "BrainCircuit",
   "color": "#14B8A6",
   "category": [
     "support"
@@ -142,7 +142,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://{subdomain}.zendesk.com/api/v2"
+        "api_base_url": "https://{subdomain}.zendesk.com/api/v2",
+        "role": "support_ticketing",
+        "category": "support"
       },
       {
         "name": "slack",
@@ -163,7 +165,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       },
       {
         "name": "notion",
@@ -192,7 +196,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://api.notion.com/v1"
+        "api_base_url": "https://api.notion.com/v1",
+        "role": "knowledge_base",
+        "category": "productivity"
       }
     ],
     "suggested_notification_channels": [

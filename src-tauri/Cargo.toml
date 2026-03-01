@@ -55,3 +55,4 @@ sentry = { version = "0.34", default-features = false, features = [
     "backtrace", "contexts", "panic", "rustls", "reqwest"
 ] }
 sentry-tracing = "0.34"
+zeroize = { version = "1", features = ["derive"] }

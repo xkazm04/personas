@@ -2,7 +2,7 @@
   "id": "deadline-synchronizer",
   "name": "Deadline Synchronizer",
   "description": "Watches Trello boards for cards with due dates, creates/updates Google Calendar events for each, sends Slack reminders as deadlines approach, and moves overdue cards to a \"Blocked\" list with a comment explaining the delay.",
-  "icon": "Kanban",
+  "icon": "Timer",
   "color": "#8B5CF6",
   "category": [
     "project-management"
@@ -117,7 +117,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://api.trello.com/1"
+        "api_base_url": "https://api.trello.com/1",
+        "role": "project_tracking",
+        "category": "productivity"
       },
       {
         "name": "google_workspace",
@@ -156,7 +158,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://www.googleapis.com",
+        "role": "productivity_suite",
+        "category": "productivity"
       },
       {
         "name": "slack",
@@ -187,7 +191,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

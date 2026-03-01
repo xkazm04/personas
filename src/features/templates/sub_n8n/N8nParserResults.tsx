@@ -1,7 +1,17 @@
 import { useState, useEffect } from 'react';
-import { FileJson, Wrench, Zap, Link, Check, Sparkles } from 'lucide-react';
+import { FileJson, FileCode2, Wrench, Zap, Link, Check, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { WorkflowPlatform } from '@/lib/personas/workflowDetector';
+import { PLATFORM_LABELS } from '@/lib/personas/workflowDetector';
+
+const PLATFORM_COLORS: Record<WorkflowPlatform, string> = {
+  'n8n': 'bg-orange-500/15 text-orange-400 border-orange-500/20',
+  'zapier': 'bg-amber-500/15 text-amber-400 border-amber-500/20',
+  'make': 'bg-purple-500/15 text-purple-400 border-purple-500/20',
+  'github-actions': 'bg-blue-500/15 text-blue-400 border-blue-500/20',
+  'unknown': 'bg-zinc-500/15 text-zinc-400 border-zinc-500/20',
+};
 
 interface N8nParserResultsProps {
   parsedResult: DesignAnalysisResult;
@@ -14,6 +24,8 @@ interface N8nParserResultsProps {
   onToggleTrigger?: (index: number) => void;
   onToggleConnector?: (name: string) => void;
   isAnalyzing?: boolean;
+  /** Detected source platform */
+  platform?: WorkflowPlatform;
 }
 
 function SelectionCheckbox({ checked, onChange }: { checked: boolean; onChange: () => void }) {
@@ -59,6 +71,7 @@ export function N8nParserResults({
   onToggleTrigger,
   onToggleConnector,
   isAnalyzing,
+  platform,
 }: N8nParserResultsProps) {
   const hasSelection = !!selectedToolIndices;
 
@@ -119,10 +132,20 @@ export function N8nParserResults({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-500/25 flex items-center justify-center">
-            <FileJson className="w-5 h-5 text-cyan-400" />
+            {platform === 'github-actions'
+              ? <FileCode2 className="w-5 h-5 text-cyan-400" />
+              : <FileJson className="w-5 h-5 text-cyan-400" />
+            }
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-foreground/90">{workflowName}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-foreground/90">{workflowName}</h3>
+              {platform && (
+                <span className={`text-[11px] font-mono uppercase px-1.5 py-0.5 rounded border flex-shrink-0 ${PLATFORM_COLORS[platform]}`}>
+                  {PLATFORM_LABELS[platform]}
+                </span>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground/90">{parsedResult.summary}</p>
           </div>
         </div>

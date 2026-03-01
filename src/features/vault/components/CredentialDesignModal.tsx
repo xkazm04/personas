@@ -1,14 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Sparkles, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useCredentialDesign } from '@/hooks/design/useCredentialDesign';
-import { useOAuthConsent } from '@/hooks/design/useOAuthConsent';
-import { useUniversalOAuth } from '@/hooks/design/useUniversalOAuth';
-import { useHealthcheckState } from '@/features/vault/hooks/useHealthcheckState';
-import type { CredentialTemplateField } from '@/lib/types/types';
+import { useCredentialDesignOrchestrator } from '@/features/vault/hooks/useCredentialDesignOrchestrator';
 import { usePersonaStore } from '@/stores/personaStore';
-import { extractFirstUrl, deriveCredentialFlow, getEffectiveFields, isSaveReady } from '@/features/vault/components/credential-design/CredentialDesignHelpers';
-import { CredentialDesignProvider, type CredentialDesignContextValue } from '@/features/vault/components/credential-design/CredentialDesignContext';
+import type { CredentialDesignResult } from '@/hooks/design/useCredentialDesign';
+import { CredentialDesignProvider } from '@/features/vault/components/credential-design/CredentialDesignContext';
 import { IdlePhase } from '@/features/vault/components/credential-design/IdlePhase';
 import { AnalyzingPhase } from '@/features/vault/components/credential-design/AnalyzingPhase';
 import { PreviewPhase } from '@/features/vault/components/credential-design/PreviewPhase';
@@ -24,129 +20,74 @@ interface CredentialDesignModalProps {
 }
 
 export function CredentialDesignModal({ open, embedded = false, initialInstruction, onClose, onComplete }: CredentialDesignModalProps) {
-  const { phase, outputLines, result, error, savedCredentialId, start, cancel, save, reset, loadTemplate } = useCredentialDesign();
-  const oauth = useOAuthConsent();
-  const universalOAuth = useUniversalOAuth();
-  const healthcheck = useHealthcheckState();
+  const orch = useCredentialDesignOrchestrator();
   const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
   const setCredentialView = usePersonaStore((s) => s.setCredentialView);
-  const [instruction, setInstruction] = useState('');
-  const [credentialName, setCredentialName] = useState('');
+
+  // Template UI state (local to the modal)
   const [showTemplates, setShowTemplates] = useState(false);
   const [templateSearch, setTemplateSearch] = useState('');
   const [expandedTemplateId, setExpandedTemplateId] = useState<string | null>(null);
-  const [negotiatorValues, setNegotiatorValues] = useState<Record<string, string>>({});
 
   const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
   const fetchConnectorDefinitions = usePersonaStore((s) => s.fetchConnectorDefinitions);
 
-  // Sync OAuth message into healthcheckResult
-  useEffect(() => {
-    if (oauth.message) {
-      healthcheck.setHealthcheckResult(oauth.message);
-    }
-  }, [oauth.message, healthcheck.setHealthcheckResult]);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
+  // Close on Escape
   useEffect(() => {
-    if (universalOAuth.message) {
-      healthcheck.setHealthcheckResult(universalOAuth.message);
-    }
-  }, [universalOAuth.message, healthcheck.setHealthcheckResult]);
+    if (!open) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleClose();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [open]);
 
-  // Reset when modal opens
+  // Focus trap: keep Tab within the modal
+  const handleFocusTrap = useCallback((e: React.KeyboardEvent) => {
+    if (e.key !== 'Tab' || !dialogRef.current) return;
+
+    const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    );
+    if (focusable.length === 0) return;
+
+    const first = focusable[0]!;
+    const last = focusable[focusable.length - 1]!;
+
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  }, []);
+
+  // Reset everything when modal opens
   useEffect(() => {
     if (open) {
-      reset();
-      oauth.reset();
-      universalOAuth.reset();
-      healthcheck.reset();
-      setInstruction('');
-      setCredentialName('');
+      orch.resetAll();
       setShowTemplates(false);
       setTemplateSearch('');
       setExpandedTemplateId(null);
-      setNegotiatorValues({});
-
       fetchConnectorDefinitions();
 
-      // Auto-start design if pre-filled instruction provided
       if (initialInstruction?.trim()) {
-        setInstruction(initialInstruction.trim());
-        start(initialInstruction.trim());
+        orch.setInstruction(initialInstruction.trim());
+        orch.start(initialInstruction.trim());
       }
     }
-  }, [open, reset, oauth.reset, universalOAuth.reset, healthcheck.reset, fetchConnectorDefinitions]);
-
-  useEffect(() => {
-    if (phase === 'preview' && result) {
-      setCredentialName((prev) => prev || `${result.connector.label} Credential`);
-    }
-  }, [phase, result]);
-
-  const handleStart = () => {
-    if (!instruction.trim()) return;
-    start(instruction.trim());
-  };
-
-  const handleSave = (values: Record<string, string>) => {
-    if (flow.kind === 'google_oauth' && values.refresh_token?.trim()) {
-      const name = credentialName.trim() || `${result?.connector.label} Credential`;
-      save(name, values, healthcheck.testedHealthcheckConfig);
-      return;
-    }
-
-    if (!healthcheck.healthcheckResult?.success || !healthcheck.testedHealthcheckConfig) {
-      healthcheck.setHealthcheckResult({
-        success: false,
-        message: 'Run Test Connection and get a successful result before saving.',
-      });
-      return;
-    }
-
-    const name = credentialName.trim() || `${result?.connector.label} Credential`;
-    save(name, values, healthcheck.testedHealthcheckConfig);
-  };
-
-  const handleHealthcheck = async (values: Record<string, string>) => {
-    if (!result) return;
-    await healthcheck.runHealthcheck(
-      instruction.trim() || result.connector.label,
-      result.connector as unknown as Record<string, unknown>,
-      values,
-    );
-  };
-
-  const handleCredentialValuesChanged = (key: string, value: string) => {
-    healthcheck.handleValuesChanged(key, value);
-    if (oauth.completedAt) {
-      oauth.reset();
-    }
-  };
-
-  const handleOAuthConsent = (values: Record<string, string>) => {
-    if (flow.kind === 'provider_oauth') {
-      const clientId = values.client_id?.trim();
-      const clientSecret = values.client_secret?.trim();
-      if (!clientId) return;
-      universalOAuth.startConsent({
-        providerId: flow.providerId,
-        clientId,
-        clientSecret: clientSecret || undefined,
-        scopes: values.scopes?.trim() ? values.scopes.trim().split(/\s+/) : undefined,
-      });
-    } else {
-      // Google OAuth flow
-      oauth.startConsent(result?.connector.name || 'google', values);
-    }
-  };
+  }, [open]);
 
   const handleClose = () => {
-    if (phase === 'analyzing') {
-      cancel();
-    }
-    if (phase === 'done') {
-      onComplete();
-    }
+    if (orch.phase === 'analyzing') orch.cancel();
+    if (orch.phase === 'done') onComplete();
     onClose();
   };
 
@@ -158,85 +99,15 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey && phase === 'idle') {
+    if (e.key === 'Enter' && !e.shiftKey && orch.phase === 'idle') {
       e.preventDefault();
-      handleStart();
+      orch.start();
     }
-  };
-
-  const handleResetPreview = () => {
-    reset();
-    healthcheck.reset();
-  };
-
-  const handleRefine = () => {
-    const preserved = instruction;
-    reset();
-    setInstruction(preserved);
-    setCredentialName('');
-    healthcheck.reset();
-    setNegotiatorValues({});
   };
 
   if (!open) return null;
 
-  // Map result fields to CredentialTemplateField format
-  const fields: CredentialTemplateField[] = result?.connector.fields.map((f) => ({
-    key: f.key,
-    label: f.label,
-    type: f.type as CredentialTemplateField['type'],
-    required: f.required,
-    placeholder: f.placeholder,
-    helpText: f.helpText,
-  })) ?? [];
-
-  const firstSetupUrl = extractFirstUrl(result?.setup_instructions);
-  const requiredCount = fields.filter((f) => f.required).length;
-  const optionalCount = Math.max(0, fields.length - requiredCount);
-
-  const fieldKeys = new Set(fields.map((f) => f.key));
-  const flow = deriveCredentialFlow(result?.connector.oauth_type ?? null, fieldKeys);
-  const effectiveFields = getEffectiveFields(fields, flow);
-  const mergedOAuthValues = { ...oauth.initialValues, ...universalOAuth.initialValues, ...negotiatorValues };
-  const canSaveCredential = isSaveReady(
-    flow,
-    mergedOAuthValues,
-    healthcheck.healthcheckResult?.success === true,
-    healthcheck.testedHealthcheckConfig,
-  );
-
-  const handleNegotiatorValues = (values: Record<string, string>) => {
-    setNegotiatorValues(values);
-    healthcheck.reset();
-  };
-
-  const designContext: CredentialDesignContextValue | null = result
-    ? {
-      result,
-      fields,
-      effectiveFields,
-      requiredCount,
-      optionalCount,
-      firstSetupUrl,
-      credentialName,
-      onCredentialNameChange: setCredentialName,
-      credentialFlow: flow,
-      oauthInitialValues: mergedOAuthValues,
-      isAuthorizingOAuth: oauth.isAuthorizing || universalOAuth.isAuthorizing,
-      oauthConsentCompletedAt: oauth.completedAt || universalOAuth.completedAt,
-      isHealthchecking: healthcheck.isHealthchecking,
-      healthcheckResult: healthcheck.healthcheckResult,
-      canSaveCredential,
-      lastSuccessfulTestAt: healthcheck.lastSuccessfulTestAt,
-      onSave: handleSave,
-      onOAuthConsent: handleOAuthConsent,
-      onHealthcheck: handleHealthcheck,
-      onValuesChanged: handleCredentialValuesChanged,
-      onReset: handleResetPreview,
-      onRefine: handleRefine,
-      onNegotiatorValues: handleNegotiatorValues,
-    }
-    : null;
+  // ── Template helpers ────────────────────────────────────────────
 
   const templateConnectors = connectorDefinitions.filter((conn) => {
     const metadata = conn.metadata as Record<string, unknown> | null;
@@ -264,7 +135,7 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
       ? metadata.summary
       : `${template.label} connector`;
 
-    loadTemplate({
+    const result: CredentialDesignResult = {
       match_existing: template.name,
       connector: {
         name: template.name,
@@ -284,12 +155,15 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
       },
       setup_instructions: setupInstructions,
       summary,
-    });
+    };
 
-    setInstruction(`${template.label} credential`);
-    healthcheck.reset();
+    orch.loadTemplate(result);
+    orch.setInstruction(`${template.label} credential`);
+    orch.invalidateHealth();
     setShowTemplates(false);
   };
+
+  // ── Render ──────────────────────────────────────────────────────
 
   return (
     <div className={embedded ? "relative" : "fixed inset-0 z-50 flex items-center justify-center"}>
@@ -306,6 +180,11 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
 
       {/* Modal */}
       <motion.div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="credential-design-title"
+        onKeyDown={handleFocusTrap}
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -318,14 +197,14 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
               <Sparkles className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-foreground">Design Credential</h2>
+              <h2 id="credential-design-title" className="text-sm font-semibold text-foreground">Design Credential</h2>
               <p className="text-sm text-muted-foreground/90">
-                {phase === 'idle' && 'Describe the service to connect'}
-                {phase === 'analyzing' && 'Analyzing your request...'}
-                {phase === 'preview' && 'Review and save'}
-                {phase === 'saving' && 'Saving...'}
-                {phase === 'done' && 'Credential created'}
-                {phase === 'error' && 'Something went wrong'}
+                {orch.phase === 'idle' && 'Describe the service to connect'}
+                {orch.phase === 'analyzing' && 'Analyzing your request...'}
+                {orch.phase === 'preview' && 'Review and save'}
+                {orch.phase === 'saving' && 'Saving...'}
+                {orch.phase === 'done' && 'Credential created'}
+                {orch.phase === 'error' && 'Something went wrong'}
               </p>
             </div>
           </div>
@@ -340,11 +219,12 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
         {/* Body */}
         <div className="p-6 space-y-5">
           <AnimatePresence mode="wait">
-            {phase === 'idle' && (
+            {orch.phase === 'idle' && (
               <IdlePhase
-                instruction={instruction}
-                onInstructionChange={setInstruction}
-                onStart={handleStart}
+                key="idle"
+                instruction={orch.instruction}
+                onInstructionChange={orch.setInstruction}
+                onStart={() => orch.start()}
                 onKeyDown={handleKeyDown}
                 showTemplates={showTemplates}
                 onToggleTemplates={() => setShowTemplates((prev) => !prev)}
@@ -357,17 +237,17 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
               />
             )}
 
-            {phase === 'analyzing' && (
-              <AnalyzingPhase outputLines={outputLines} onCancel={cancel} />
+            {orch.phase === 'analyzing' && (
+              <AnalyzingPhase key="analyzing" outputLines={orch.outputLines} onCancel={orch.cancel} />
             )}
 
-            {phase === 'preview' && result && (
-              <CredentialDesignProvider value={designContext!}>
+            {orch.phase === 'preview' && orch.contextValue && (
+              <CredentialDesignProvider key="preview" value={orch.contextValue}>
                 <PreviewPhase />
               </CredentialDesignProvider>
             )}
 
-            {phase === 'saving' && (
+            {orch.phase === 'saving' && (
               <motion.div
                 key="saving"
                 initial={{ opacity: 0 }}
@@ -380,27 +260,27 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
               </motion.div>
             )}
 
-            {phase === 'done' && (
+            {orch.phase === 'done' && (
               <DonePhase
-                connectorLabel={result?.connector.label}
+                key="done"
+                connectorLabel={orch.contextValue?.result.connector.label}
                 onClose={handleClose}
-                onViewCredential={savedCredentialId ? handleViewCredential : undefined}
+                onViewCredential={orch.savedCredentialId ? handleViewCredential : undefined}
               />
             )}
 
-            {phase === 'error' && (
+            {orch.phase === 'error' && (
               <ErrorPhase
-                error={error}
-                instruction={instruction}
+                key="error"
+                error={orch.error}
+                instruction={orch.instruction}
                 onRetry={() => {
-                  // Go back to idle but KEEP the instruction text
-                  const preserved = instruction;
-                  reset();
-                  setInstruction(preserved);
+                  const preserved = orch.instruction;
+                  orch.resetAll();
+                  orch.setInstruction(preserved);
                 }}
                 onStartOver={() => {
-                  reset();
-                  setInstruction('');
+                  orch.resetAll();
                 }}
               />
             )}

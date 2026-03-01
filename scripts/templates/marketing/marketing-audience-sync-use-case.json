@@ -2,7 +2,7 @@
   "id": "marketing-audience-sync-use-case",
   "name": "Marketing Audience Sync Use Case",
   "description": "Monitors Airtable contact records for tag or segment changes, syncs audiences to Mailchimp lists, triggers targeted campaigns for new segments, and posts sync status to Slack. Handles unsubscribes bidirectionally.",
-  "icon": "Megaphone",
+  "icon": "UsersRound",
   "color": "#D946EF",
   "category": [
     "marketing"
@@ -125,7 +125,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://api.airtable.com/v0"
+        "api_base_url": "https://api.airtable.com/v0",
+        "role": "knowledge_base",
+        "category": "productivity"
       },
       {
         "name": "mailchimp",
@@ -164,7 +166,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://{dc}.api.mailchimp.com/3.0"
+        "api_base_url": "https://{dc}.api.mailchimp.com/3.0",
+        "role": "email_delivery",
+        "category": "messaging"
       },
       {
         "name": "slack",
@@ -193,7 +197,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

@@ -4,7 +4,10 @@
   "description": "Monitors data pipelines for failures, anomalies, and SLA breaches.",
   "icon": "Activity",
   "color": "#06b6d4",
-  "category": ["monitoring", "data"],
+  "category": [
+    "monitoring",
+    "data"
+  ],
   "payload": {
     "structured_prompt": {
       "identity": "You are a data reliability engineer who monitors pipeline health and data quality.",
@@ -14,15 +17,66 @@
       "errorHandling": "If monitoring endpoints are unreachable, escalate as a potential infrastructure issue.",
       "customSections": []
     },
-    "suggested_tools": ["http_request"],
+    "suggested_tools": [
+      "http_request"
+    ],
     "suggested_triggers": [
       {
         "trigger_type": "polling",
-        "config": { "interval_seconds": 300 },
+        "config": {
+          "interval_seconds": 300
+        },
         "description": "Check every 5 minutes"
       }
     ],
     "full_prompt_markdown": "# Data Pipeline Monitor\n\nMonitors data pipelines for health and quality.",
-    "summary": "Monitors data pipelines for failures, anomalies, and SLA breaches."
-  }
+    "summary": "Monitors data pipelines for failures, anomalies, and SLA breaches.",
+    "suggested_notification_channels": [
+      {
+        "type": "slack",
+        "description": "Alert on SLA breaches and pipeline failures",
+        "required_connector": "slack",
+        "config_hints": {
+          "channel": "#data-alerts"
+        }
+      },
+      {
+        "type": "email",
+        "description": "Email escalation for critical failures",
+        "required_connector": "sendgrid",
+        "config_hints": {
+          "to": "oncall@company.com"
+        }
+      }
+    ],
+    "adoption_requirements": [
+      {
+        "key": "monitoring_endpoint",
+        "label": "Monitoring Endpoint",
+        "description": "URL for pipeline health API",
+        "type": "url",
+        "required": true,
+        "source": "connector"
+      },
+      {
+        "key": "poll_interval",
+        "label": "Poll Interval (seconds)",
+        "description": "How often to check pipeline status",
+        "type": "text",
+        "required": false,
+        "default_value": "300",
+        "source": "trigger"
+      },
+      {
+        "key": "sla_threshold_minutes",
+        "label": "SLA Threshold (minutes)",
+        "description": "Max acceptable pipeline delay before alerting",
+        "type": "text",
+        "required": false,
+        "default_value": "30",
+        "source": "connector"
+      }
+    ]
+  },
+  "featured": true
 }

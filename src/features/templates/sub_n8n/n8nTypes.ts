@@ -1,5 +1,6 @@
 import type { N8nPersonaDraft } from '@/api/tauriApi';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { WorkflowPlatform } from '@/lib/personas/workflowDetector';
 import {
   toEditableStructuredPrompt,
   fromEditableStructuredPrompt,
@@ -45,6 +46,10 @@ export function normalizeDraftFromUnknown(value: unknown): N8nPersonaDraft | nul
         ? record.max_turns
         : null,
     design_context: asNullableString(record.design_context),
+    // Pass through entity fields from Rust N8nPersonaOutput
+    tools: Array.isArray(record.tools) ? record.tools as N8nPersonaDraft['tools'] : undefined,
+    triggers: Array.isArray(record.triggers) ? record.triggers as N8nPersonaDraft['triggers'] : undefined,
+    required_connectors: Array.isArray(record.required_connectors) ? record.required_connectors as N8nPersonaDraft['required_connectors'] : undefined,
   };
 }
 
@@ -69,6 +74,8 @@ export type PersistedTransformContext = {
   workflowName: string;
   rawWorkflowJson: string;
   parsedResult: DesignAnalysisResult;
+  /** Detected source platform */
+  platform?: WorkflowPlatform;
   /** Timestamp when context was persisted (ms since epoch) */
   savedAt?: number;
 };

@@ -2,7 +2,7 @@
   "id": "real-time-database-watcher",
   "name": "Real-Time Database Watcher",
   "description": "Subscribes to Supabase database webhooks for specific table changes (new users, order updates, flag changes). Posts enriched notifications to Slack, triggers welcome email sequences for new signups, and logs anomalous data patterns.",
-  "icon": "Code",
+  "icon": "Database",
   "color": "#10B981",
   "category": [
     "development"
@@ -143,7 +143,9 @@
           0,
           1
         ],
-        "api_base_url": "https://{project}.supabase.co/rest/v1"
+        "api_base_url": "https://{project}.supabase.co/rest/v1",
+        "role": "database",
+        "category": "database"
       },
       {
         "name": "slack",
@@ -164,7 +166,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       },
       {
         "name": "google_workspace",
@@ -185,7 +189,9 @@
           "gmail_send"
         ],
         "related_triggers": [],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://www.googleapis.com",
+        "role": "productivity_suite",
+        "category": "productivity"
       }
     ],
     "suggested_notification_channels": [

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { RotateCw, CheckCircle2, XCircle, AlertTriangle, Pause, Clock } from 'lucide-react';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { listExecutionsForUseCase } from '@/api/executions';
@@ -25,21 +25,31 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const fetchHistory = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await listExecutionsForUseCase(personaId, useCaseId, 10);
-      setExecutions(data);
-    } catch {
-      setExecutions([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [personaId, useCaseId]);
+  // Sequence counter to discard stale responses when persona/useCase changes
+  // or a new refreshKey arrives while a fetch is still in-flight.
+  const fetchSeqRef = useRef(0);
 
   useEffect(() => {
-    fetchHistory();
-  }, [fetchHistory, refreshKey]);
+    const seq = ++fetchSeqRef.current;
+
+    // Clear stale data immediately so previous use case's history isn't visible
+    setExecutions([]);
+    setExpandedId(null);
+    setLoading(true);
+
+    listExecutionsForUseCase(personaId, useCaseId, 10)
+      .then((data) => {
+        if (fetchSeqRef.current !== seq) return; // stale
+        setExecutions(data);
+      })
+      .catch(() => {
+        if (fetchSeqRef.current !== seq) return;
+        setExecutions([]);
+      })
+      .finally(() => {
+        if (fetchSeqRef.current === seq) setLoading(false);
+      });
+  }, [personaId, useCaseId, refreshKey]);
 
   if (loading) {
     return (

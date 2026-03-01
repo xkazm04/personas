@@ -1,5 +1,4 @@
-import { useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { useMemo, useState, useCallback } from 'react';
 import {
   Wrench,
   GitFork,
@@ -11,8 +10,8 @@ import {
 } from 'lucide-react';
 import { SelectionCheckbox } from '../review/SelectionCheckbox';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/ConnectorMeta';
+import { useAdoptionWizard } from '../AdoptionWizardContext';
 import type { UseCaseFlow, FlowNode } from '@/lib/types/frontendTypes';
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 
 // ── Node-type pill config ────────────────────────────────────────────
 
@@ -48,22 +47,6 @@ export function deriveRequirementsFromFlows(
   return { connectorNames, toolNames };
 }
 
-// ── Props ────────────────────────────────────────────────────────────
-
-interface ChooseStepProps {
-  useCaseFlows: UseCaseFlow[];
-  designResult: DesignAnalysisResult;
-  selectedUseCaseIds: Set<string>;
-  onToggleUseCaseId: (id: string) => void;
-  // Fallback entity toggles (when no flows exist)
-  selectedToolIndices: Set<number>;
-  selectedTriggerIndices: Set<number>;
-  selectedConnectorNames: Set<string>;
-  onToggleTool: (index: number) => void;
-  onToggleTrigger: (index: number) => void;
-  onToggleConnector: (name: string) => void;
-}
-
 // ── Helpers ──────────────────────────────────────────────────────────
 
 function countNodeTypes(nodes: FlowNode[]): Record<string, number> {
@@ -83,21 +66,89 @@ function uniqueConnectors(nodes: FlowNode[]): string[] {
   return Array.from(seen);
 }
 
+/** Build a tooltip string like "3 actions, 2 connectors, 1 event" */
+function buildTypeSummary(nodeCounts: Record<string, number>): string {
+  return Object.entries(nodeCounts)
+    .map(([type, count]) => {
+      const label = NODE_TYPE_PILLS[type]?.label ?? type;
+      return `${count} ${label}${count !== 1 ? 's' : ''}`;
+    })
+    .join(', ');
+}
+
+/** Build a map from connector name → set of flow IDs that use it */
+function buildConnectorFlowIndex(flows: UseCaseFlow[]): Map<string, Set<string>> {
+  const index = new Map<string, Set<string>>();
+  for (const flow of flows) {
+    for (const node of flow.nodes) {
+      if (node.type === 'connector' && node.connector) {
+        let set = index.get(node.connector);
+        if (!set) {
+          set = new Set();
+          index.set(node.connector, set);
+        }
+        set.add(flow.id);
+      }
+    }
+  }
+  return index;
+}
+
 // ── Component ────────────────────────────────────────────────────────
 
-export function ChooseStep({
-  useCaseFlows,
-  designResult,
-  selectedUseCaseIds,
-  onToggleUseCaseId,
-  selectedToolIndices,
-  selectedTriggerIndices,
-  selectedConnectorNames,
-  onToggleTool,
-  onToggleTrigger,
-  onToggleConnector,
-}: ChooseStepProps) {
+export function ChooseStep() {
+  const { state, wizard, useCaseFlows, designResult: rawDesignResult } = useAdoptionWizard();
+  const designResult = rawDesignResult!;
+  const {
+    selectedUseCaseIds,
+    selectedToolIndices,
+    selectedTriggerIndices,
+    selectedConnectorNames,
+  } = state;
+  const onToggleUseCaseId = wizard.toggleUseCaseId;
+  const onToggleTool = wizard.toggleTool;
+  const onToggleTrigger = wizard.toggleTrigger;
+  const onToggleConnector = wizard.toggleConnector;
   const hasFlows = useCaseFlows.length > 0;
+
+  // Track which row is hovered to highlight shared connectors
+  const [hoveredFlowId, setHoveredFlowId] = useState<string | null>(null);
+
+  // Build connector → flow ID index for dependency highlighting
+  const connectorFlowIndex = useMemo(
+    () => buildConnectorFlowIndex(useCaseFlows),
+    [useCaseFlows],
+  );
+
+  // Determine which connector names are shared with the hovered flow
+  const highlightedConnectors = useMemo(() => {
+    if (!hoveredFlowId) return new Set<string>();
+    const hoveredFlow = useCaseFlows.find((f) => f.id === hoveredFlowId);
+    if (!hoveredFlow) return new Set<string>();
+    const hoveredConns = uniqueConnectors(hoveredFlow.nodes);
+    const shared = new Set<string>();
+    for (const conn of hoveredConns) {
+      const users = connectorFlowIndex.get(conn);
+      // Only highlight if this connector is used by at least one OTHER flow
+      if (users && users.size > 1) shared.add(conn);
+    }
+    return shared;
+  }, [hoveredFlowId, useCaseFlows, connectorFlowIndex]);
+
+  // Determine which OTHER flow IDs share connectors with the hovered flow
+  const highlightedFlowIds = useMemo(() => {
+    if (!hoveredFlowId || highlightedConnectors.size === 0) return new Set<string>();
+    const ids = new Set<string>();
+    for (const conn of highlightedConnectors) {
+      const users = connectorFlowIndex.get(conn);
+      if (users) for (const id of users) if (id !== hoveredFlowId) ids.add(id);
+    }
+    return ids;
+  }, [hoveredFlowId, highlightedConnectors, connectorFlowIndex]);
+
+  const onRowHover = useCallback((flowId: string | null) => {
+    setHoveredFlowId(flowId);
+  }, []);
 
   // Summary counts derived from selected flows
   const summary = useMemo(() => {
@@ -143,17 +194,19 @@ export function ChooseStep({
           </button>
         </div>
 
-        {/* Card grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          {useCaseFlows.map((flow, idx) => {
+        {/* Compact list */}
+        <div className="flex flex-col gap-1.5">
+          {useCaseFlows.map((flow) => {
             const checked = selectedUseCaseIds.has(flow.id);
             return (
-              <UseCaseCard
+              <UseCaseRow
                 key={flow.id}
                 flow={flow}
                 checked={checked}
-                index={idx}
                 onToggle={() => onToggleUseCaseId(flow.id)}
+                onHover={onRowHover}
+                highlightedConnectors={hoveredFlowId === flow.id ? highlightedConnectors : new Set()}
+                isDepHighlighted={highlightedFlowIds.has(flow.id)}
               />
             );
           })}
@@ -266,52 +319,69 @@ export function ChooseStep({
   );
 }
 
-// ── Use Case Card sub-component ──────────────────────────────────────
+// ── Use Case Row sub-component ───────────────────────────────────────
 
-function UseCaseCard({
+function UseCaseRow({
   flow,
   checked,
-  index,
   onToggle,
+  onHover,
+  highlightedConnectors,
+  isDepHighlighted,
 }: {
   flow: UseCaseFlow;
   checked: boolean;
-  index: number;
   onToggle: () => void;
+  onHover: (flowId: string | null) => void;
+  highlightedConnectors: Set<string>;
+  isDepHighlighted: boolean;
 }) {
   const nodeCounts = useMemo(() => countNodeTypes(flow.nodes), [flow.nodes]);
   const connectors = useMemo(() => uniqueConnectors(flow.nodes), [flow.nodes]);
+  const typeSummary = useMemo(() => buildTypeSummary(nodeCounts), [nodeCounts]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.04 }}
+    <div
       onClick={onToggle}
-      className={`rounded-2xl border p-5 cursor-pointer transition-all ${
+      onMouseEnter={() => onHover(flow.id)}
+      onMouseLeave={() => onHover(null)}
+      title={typeSummary}
+      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border cursor-pointer transition-all ${
         checked
           ? 'border-violet-500/25 bg-violet-500/5'
           : 'border-primary/10 bg-secondary/15 opacity-60'
-      }`}
+      } ${isDepHighlighted ? 'ring-1 ring-emerald-500/30 bg-emerald-500/[0.03]' : ''}`}
     >
-      {/* Top row: checkbox + name */}
-      <div className="flex items-start gap-2.5">
-        <SelectionCheckbox checked={checked} onChange={onToggle} />
-        <span className="text-base font-semibold text-foreground leading-snug">
-          {flow.name}
-        </span>
-      </div>
+      <SelectionCheckbox checked={checked} onChange={onToggle} />
+      <span className="text-sm font-medium text-foreground flex-1 truncate">
+        {flow.name}
+      </span>
 
-      {/* Description */}
-      {flow.description && (
-        <p className="mt-2 text-sm text-muted-foreground/70">{flow.description}</p>
+      {/* Connector icons — color-coded with brand colors, pulse on shared highlight */}
+      {connectors.length > 0 && (
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {connectors.map((name) => {
+            const meta = getConnectorMeta(name);
+            const isShared = highlightedConnectors.has(name);
+            return (
+              <span
+                key={name}
+                title={meta.label}
+                className={`inline-flex items-center rounded-[4px] p-0.5 border transition-all ${
+                  isShared
+                    ? 'animate-pulse border-emerald-500/30 bg-emerald-500/10'
+                    : 'border-transparent'
+                }`}
+              >
+                <ConnectorIcon meta={meta} size="w-3.5 h-3.5" />
+              </span>
+            );
+          })}
+        </div>
       )}
 
-      {/* Separator */}
-      <div className="border-t border-primary/6 my-3" />
-
-      {/* Bottom row: node type pills + connector icons */}
-      <div className="flex items-center gap-1.5 flex-wrap">
+      {/* Node type pills (legible) */}
+      <div className="flex items-center gap-1 flex-shrink-0">
         {Object.entries(nodeCounts).map(([type, count]) => {
           const pill = NODE_TYPE_PILLS[type];
           if (!pill) return null;
@@ -319,26 +389,15 @@ function UseCaseCard({
           return (
             <span
               key={type}
-              className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono rounded border ${color}`}
+              title={`${count} ${label}${count !== 1 ? 's' : ''}`}
+              className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono rounded border ${color}`}
             >
               <Icon className="w-2.5 h-2.5" />
-              {count} {label}
+              {count}
             </span>
           );
         })}
-
-        {connectors.length > 0 && (
-          <>
-            <span className="w-px h-3.5 bg-primary/10 mx-0.5" />
-            {connectors.map((name) => {
-              const meta = getConnectorMeta(name);
-              return (
-                <ConnectorIcon key={name} meta={meta} size="w-3 h-3" />
-              );
-            })}
-          </>
-        )}
       </div>
-    </motion.div>
+    </div>
   );
 }

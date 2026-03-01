@@ -12,3 +12,5 @@ export const CHART_COLORS_PURPLE = [
 
 export const GRID_STROKE = 'rgba(255,255,255,0.06)';
 export const AXIS_TICK_FILL = 'rgba(255,255,255,0.4)';
+
+export const CHART_HEIGHT = { sm: 160, md: 200, lg: 240 } as const;

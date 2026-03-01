@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, Zap, Clock, CheckCircle2, TrendingUp, Loader2, Radio } from 'lucide-react';
 import type { RealtimeStats } from '@/hooks/realtime/useRealtimeEvents';
@@ -11,7 +12,7 @@ interface Props {
   onTestFlow: () => void;
 }
 
-function AnimatedNumber({ value, color }: { value: string | number; color?: string }) {
+const AnimatedNumber = memo(function AnimatedNumber({ value, color }: { value: string | number; color?: string }) {
   return (
     <AnimatePresence mode="wait">
       <motion.span
@@ -26,7 +27,7 @@ function AnimatedNumber({ value, color }: { value: string | number; color?: stri
       </motion.span>
     </AnimatePresence>
   );
-}
+});
 
 export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlowLoading, onPause, onTestFlow }: Props) {
   return (
@@ -54,7 +55,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={stats.eventsPerMinute} color="text-purple-400 text-[15px]" />
-            <span className="text-[10px] text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5">events/min</span>
+            <span className="text-[11px] text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5">events/min</span>
           </div>
         </div>
 
@@ -67,7 +68,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={stats.pendingCount} color="text-amber-400 text-[15px]" />
-            <span className="text-[10px] text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5">pending</span>
+            <span className="text-[11px] text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5">pending</span>
           </div>
         </div>
 
@@ -82,7 +83,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={`${stats.successRate}%`} color={stats.successRate >= 90 ? 'text-emerald-400 text-[15px]' : 'text-red-400 text-[15px]'} />
-            <span className="text-[10px] text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5">success</span>
+            <span className="text-[11px] text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5">success</span>
           </div>
         </div>
 
@@ -95,7 +96,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={stats.totalInWindow} color="text-blue-400 text-[15px]" />
-            <span className="text-[10px] text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5">in window</span>
+            <span className="text-[11px] text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5">in window</span>
           </div>
         </div>
       </div>

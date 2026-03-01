@@ -53,6 +53,7 @@ fn row_to_result(row: &Row) -> rusqlite::Result<LabAbResult> {
 
 // ── A/B Runs ───────────────────────────────────────────────────
 
+#[allow(clippy::too_many_arguments)]
 pub fn create_run(
     pool: &DbPool,
     persona_id: &str,

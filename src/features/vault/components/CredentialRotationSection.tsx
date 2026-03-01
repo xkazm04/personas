@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Trash2, Pencil, RotateCw, ShieldCheck, AlertTriangle, Clock, Plus } from 'lucide-react';
+import { Trash2, Pencil, RotateCw, ShieldCheck, AlertTriangle, Clock, Plus, Activity, TrendingDown, XCircle } from 'lucide-react';
 import * as api from '@/api/tauriApi';
-import type { RotationStatus } from '@/api/rotation';
+import type { RotationStatus, AnomalyScore } from '@/api/rotation';
 import { createRotationPolicy, updateRotationPolicy, rotateCredentialNow, deleteRotationPolicy } from '@/api/rotation';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 
@@ -11,6 +11,85 @@ interface CredentialRotationSectionProps {
   rotationCountdown: string | null;
   onRefresh: () => Promise<void>;
   onHealthcheck: (id: string) => void;
+}
+
+const REMEDIATION_LABELS: Record<string, { label: string; color: string; bg: string }> = {
+  healthy: { label: 'Healthy', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
+  backoff_retry: { label: 'Transient Issues', color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
+  preemptive_rotation: { label: 'Degrading', color: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20' },
+  rotate_then_alert: { label: 'Permanent Errors', color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20' },
+  disable: { label: 'Critical', color: 'text-red-400', bg: 'bg-red-500/15 border-red-500/25' },
+};
+
+function AnomalyScorePanel({ score, tolerance }: { score: AnomalyScore; tolerance: number }) {
+  const rem = REMEDIATION_LABELS[score.remediation] ?? REMEDIATION_LABELS.healthy!;
+  const pct = (v: number) => `${(v * 100).toFixed(0)}%`;
+
+  return (
+    <div className={`rounded-xl border px-3 py-2.5 space-y-2 ${rem.bg}`}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Activity className={`w-3.5 h-3.5 ${rem.color}`} />
+          <span className={`text-sm font-medium ${rem.color}`}>{rem.label}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          {score.data_stale && (
+            <span className="text-xs text-muted-foreground/60 bg-secondary/40 px-1.5 py-0.5 rounded">stale</span>
+          )}
+          <span className="text-xs text-muted-foreground/60 tabular-nums">{score.sample_count} samples</span>
+        </div>
+      </div>
+
+      {/* Failure rate bars */}
+      <div className="grid grid-cols-3 gap-2">
+        <RateBar label="5m" rate={score.failure_rate_5m} threshold={tolerance} />
+        <RateBar label="1h" rate={score.failure_rate_1h} threshold={tolerance} />
+        <RateBar label="24h" rate={score.failure_rate_24h} threshold={tolerance} />
+      </div>
+
+      {/* Error classification breakdown */}
+      {(score.permanent_failure_rate_1h > 0 || score.transient_failure_rate_1h > 0) && (
+        <div className="flex items-center gap-3 text-xs text-muted-foreground/80">
+          {score.permanent_failure_rate_1h > 0 && (
+            <span className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+              Permanent: {pct(score.permanent_failure_rate_1h)}
+            </span>
+          )}
+          {score.transient_failure_rate_1h > 0 && (
+            <span className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+              Transient: {pct(score.transient_failure_rate_1h)}
+            </span>
+          )}
+          <span className="flex items-center gap-1 ml-auto">
+            <TrendingDown className="w-3 h-3" />
+            Tolerance: {pct(tolerance)}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RateBar({ label, rate, threshold }: { label: string; rate: number; threshold: number }) {
+  const pct = Math.min(rate * 100, 100);
+  const isOver = rate > threshold;
+  const barColor = isOver ? 'bg-red-400' : rate > 0 ? 'bg-amber-400' : 'bg-emerald-400/60';
+
+  return (
+    <div className="space-y-0.5">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-muted-foreground/70 font-mono">{label}</span>
+        <span className={`text-xs font-mono tabular-nums ${isOver ? 'text-red-400' : 'text-muted-foreground/80'}`}>
+          {pct.toFixed(0)}%
+        </span>
+      </div>
+      <div className="h-1 bg-secondary/30 rounded-full overflow-hidden">
+        <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
 }
 
 export function CredentialRotationSection({
@@ -23,14 +102,37 @@ export function CredentialRotationSection({
   const [isRotating, setIsRotating] = useState(false);
   const [rotationDays, setRotationDays] = useState(rotationStatus?.rotation_interval_days ?? 90);
   const [isEditingPeriod, setIsEditingPeriod] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const anomalyScore = rotationStatus?.anomaly_score ?? null;
+  const showAnomalyPanel = anomalyScore && anomalyScore.sample_count > 0;
 
   return (
     <div className="space-y-3">
-      {/* Anomaly Warning */}
-      {rotationStatus?.anomaly_detected && (
+      {/* Windowed Anomaly Score Panel */}
+      {showAnomalyPanel && (
+        <AnomalyScorePanel
+          score={anomalyScore}
+          tolerance={rotationStatus?.anomaly_tolerance ?? 0.8}
+        />
+      )}
+
+      {/* Legacy Anomaly Warning (only if no windowed data available) */}
+      {!showAnomalyPanel && rotationStatus?.anomaly_detected && (
         <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-sm text-amber-400">
           <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
           <span>Anomaly detected: credential suddenly failing after previous success. Possible revocation.</span>
+        </div>
+      )}
+
+      {/* Action error banner */}
+      {actionError && (
+        <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-400">
+          <XCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+          <span className="flex-1">{actionError}</span>
+          <button onClick={() => setActionError(null)} className="shrink-0 p-0.5 hover:bg-red-500/10 rounded transition-colors">
+            <XCircle className="w-3 h-3" />
+          </button>
         </div>
       )}
 
@@ -56,12 +158,13 @@ export function CredentialRotationSection({
               <button
                 onClick={async () => {
                   setIsRotating(true);
+                  setActionError(null);
                   try {
                     await rotateCredentialNow(credentialId);
                     await onRefresh();
                     onHealthcheck(credentialId);
-                  } catch {
-                    // handled silently; rotation history records failures
+                  } catch (err) {
+                    setActionError(`Rotation failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
                   } finally {
                     setIsRotating(false);
                   }
@@ -75,14 +178,15 @@ export function CredentialRotationSection({
               </button>
               <button
                 onClick={async () => {
+                  setActionError(null);
                   try {
                     const allPolicies = await api.listRotationPolicies(credentialId);
                     for (const p of allPolicies) {
                       await deleteRotationPolicy(p.id);
                     }
                     await onRefresh();
-                  } catch {
-                    // silent
+                  } catch (err) {
+                    setActionError(`Failed to remove policy: ${err instanceof Error ? err.message : 'Unknown error'}`);
                   }
                 }}
                 data-testid="rotation-delete-policy-btn"
@@ -110,6 +214,7 @@ export function CredentialRotationSection({
                 <span className="text-sm text-muted-foreground/80">days</span>
                 <button
                   onClick={async () => {
+                    setActionError(null);
                     try {
                       const allPolicies = await api.listRotationPolicies(credentialId);
                       if (allPolicies.length > 0) {
@@ -117,8 +222,8 @@ export function CredentialRotationSection({
                       }
                       await onRefresh();
                       setIsEditingPeriod(false);
-                    } catch {
-                      // silent
+                    } catch (err) {
+                      setActionError(`Failed to update rotation period: ${err instanceof Error ? err.message : 'Unknown error'}`);
                     }
                   }}
                   data-testid="rotation-save-period-btn"
@@ -186,6 +291,7 @@ export function CredentialRotationSection({
 
           <button
             onClick={async () => {
+              setActionError(null);
               try {
                 await createRotationPolicy({
                   credential_id: credentialId,
@@ -194,8 +300,8 @@ export function CredentialRotationSection({
                   enabled: true,
                 });
                 await onRefresh();
-              } catch {
-                // silent
+              } catch (err) {
+                setActionError(`Failed to enable rotation: ${err instanceof Error ? err.message : 'Unknown error'}`);
               }
             }}
             data-testid="rotation-enable-btn"

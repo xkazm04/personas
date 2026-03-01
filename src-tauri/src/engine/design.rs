@@ -55,13 +55,21 @@ pub fn build_design_prompt(
         prompt.push('\n');
     }
 
-    // Available connectors
+    // Available connectors (grouped by category — connectors in the same category are interchangeable)
     if !connectors.is_empty() {
-        prompt.push_str("## Available Connectors\n");
+        prompt.push_str("## Available Connectors (grouped by category — connectors in the same category are interchangeable)\n");
+        let mut groups: std::collections::BTreeMap<&str, Vec<&ConnectorDefinition>> =
+            std::collections::BTreeMap::new();
         for conn in connectors {
-            prompt.push_str(&format!("- **{}** ({}): {}\n", conn.name, conn.category, conn.label));
+            groups.entry(conn.category.as_str()).or_default().push(conn);
         }
-        prompt.push('\n');
+        for (category, conns) in &groups {
+            prompt.push_str(&format!("### {}\n", category));
+            for conn in conns {
+                prompt.push_str(&format!("- **{}**: {}\n", conn.name, conn.label));
+            }
+            prompt.push('\n');
+        }
     }
 
     // Design context (files, references)
@@ -96,6 +104,7 @@ pub fn build_design_prompt(
 }
 
 /// Build a prompt for refining an existing design with user feedback.
+#[allow(dead_code)]
 pub fn build_refinement_prompt(
     current_result_json: &str,
     feedback: &str,
@@ -446,6 +455,8 @@ You MUST output your result as a single JSON code block. The JSON must conform t
   "suggested_connectors": [
     {
       "name": "connector_slug",
+      "role": "functional_role (e.g. chat_messaging, project_tracking, database)",
+      "category": "broad_category (e.g. messaging, development, database)",
       "label": "Human Readable Name",
       "auth_type": "oauth2|pat|api_key|bot_token|service_account|api_token",
       "credential_fields": [
@@ -521,6 +532,7 @@ Important rules:
 10. Each flow MUST have "start" and "end" nodes, with 5-10 nodes total showing the workflow
 11. Flow node types: "start", "end", "action", "decision", "connector" (set `connector` to slug), "event", "error"
 12. Flow edges use `variant`: "yes"/"no" for decision branches, "error" for error paths
+13. Each connector SHOULD include `role` (functional purpose, e.g. "chat_messaging", "project_tracking") and `category` (broad grouping, e.g. "messaging", "development") to support interchangeable connector swapping
 
 ## Clarification Questions
 

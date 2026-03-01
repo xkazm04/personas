@@ -1,11 +1,12 @@
 import { motion } from 'framer-motion';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Eye, Users, Radio, Brain, DollarSign, Cloud, Plus, LayoutTemplate, Monitor, Blocks, Upload, List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu, type LucideIcon } from 'lucide-react';
+import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Users, Radio, Brain, DollarSign, Cloud, Plus, LayoutTemplate, Monitor, Blocks, Upload, List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu, Network, type LucideIcon } from 'lucide-react';
 import { getVersion } from '@tauri-apps/api/app';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useAuthStore } from '@/stores/authStore';
 import type { SidebarSection, OverviewTab, TemplateTab, CloudTab, SettingsTab } from '@/lib/types/types';
 import GroupedAgentSidebar from '@/features/agents/components/GroupedAgentSidebar';
+import TeamDragPanel from '@/features/pipeline/components/TeamDragPanel';
 
 const sections: Array<{ id: SidebarSection; icon: typeof Bot; label: string }> = [
   { id: 'overview', icon: BarChart3, label: 'Overview' },
@@ -15,7 +16,6 @@ const sections: Array<{ id: SidebarSection; icon: typeof Bot; label: string }> =
   { id: 'design-reviews', icon: FlaskConical, label: 'Templates' },
   { id: 'team', icon: Users, label: 'Teams' },
   { id: 'cloud', icon: Cloud, label: 'Cloud' },
-  { id: 'gitlab', icon: GitBranch, label: 'GitLab' },
   { id: 'settings', icon: Settings, label: 'Settings' },
 ];
 
@@ -118,6 +118,7 @@ export default function Sidebar() {
   const pendingEventCount = usePersonaStore((s) => s.pendingEventCount);
   const fetchRecentEvents = usePersonaStore((s) => s.fetchRecentEvents);
   const n8nTransformActive = usePersonaStore((s) => s.n8nTransformActive);
+  const selectedTeamId = usePersonaStore((s) => s.selectedTeamId);
   const cloudTab = usePersonaStore((s) => s.cloudTab);
   const setCloudTab = usePersonaStore((s) => s.setCloudTab);
   const settingsTab = usePersonaStore((s) => s.settingsTab);
@@ -125,7 +126,7 @@ export default function Sidebar() {
 
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const disabledSections = useMemo(() => {
-    const disabled = new Set<SidebarSection>(['team']);
+    const disabled = new Set<SidebarSection>();
     if (!isAuthenticated) disabled.add('cloud');
     return disabled;
   }, [isAuthenticated]);
@@ -165,10 +166,10 @@ export default function Sidebar() {
     { id: 'manual-review', icon: ClipboardCheck, label: 'Manual Review' },
     { id: 'messages', icon: MessageSquare, label: 'Messages' },
     { id: 'events', icon: Zap, label: 'Events' },
-    { id: 'usage', icon: BarChart3, label: 'Usage' },
-    { id: 'observability', icon: Eye, label: 'Observability' },
+    { id: 'analytics', icon: BarChart3, label: 'Analytics' },
     { id: 'realtime', icon: Radio, label: 'Realtime' },
     { id: 'memories', icon: Brain, label: 'Memories' },
+    { id: 'knowledge', icon: Network, label: 'Knowledge' },
     { id: 'budget', icon: DollarSign, label: 'Budget' },
   ];
 
@@ -263,13 +264,16 @@ export default function Sidebar() {
         );
 
       case 'team':
+        if (selectedTeamId) {
+          return <TeamDragPanel />;
+        }
         return (
           <div className="text-center py-12">
             <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
               <Users className="w-6 h-6 text-indigo-400/60" />
             </div>
             <p className="text-sm text-muted-foreground/80">Multi-Agent Teams</p>
-            <p className="text-sm text-muted-foreground/80 mt-1">Design agent pipelines visually</p>
+            <p className="text-sm text-muted-foreground/80 mt-1">Select a team to begin</p>
           </div>
         );
 

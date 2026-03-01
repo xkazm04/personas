@@ -241,7 +241,7 @@ pub fn assemble_prompt(
                     prompt.push_str("Do NOT fetch all historical data — only process recent items within this time window.\n");
                 }
             }
-            prompt.push_str("\n");
+            prompt.push('\n');
         }
 
         prompt.push_str("## Input Data\n```json\n");

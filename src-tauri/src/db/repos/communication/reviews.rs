@@ -1,10 +1,16 @@
 use rusqlite::{params, Row};
 
 use crate::db::models::{
-    ConnectorWithCount, CreateDesignReviewInput, PersonaDesignPattern, PersonaDesignReview,
+    CategoryWithCount, ConnectorWithCount, CreateDesignReviewInput, PersonaDesignPattern,
+    PersonaDesignReview,
 };
 use crate::db::DbPool;
 use crate::error::AppError;
+
+/// Escape LIKE metacharacters (%, _) so they are matched literally.
+fn escape_like(input: &str) -> String {
+    input.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_")
+}
 
 // ============================================================================
 // Row mappers
@@ -34,6 +40,9 @@ fn row_to_review(row: &Row) -> rusqlite::Result<PersonaDesignReview> {
         use_case_flows: row.get("use_case_flows")?,
         reviewed_at: row.get("reviewed_at")?,
         created_at: row.get("created_at")?,
+        adoption_count: row.get::<_, Option<i32>>("adoption_count")?.unwrap_or(0),
+        last_adopted_at: row.get("last_adopted_at")?,
+        category: row.get("category")?,
     })
 }
 
@@ -104,17 +113,17 @@ pub fn create_review(
 
     let conn = pool.get()?;
 
-    // Upsert: if a review with the same test_case_name already exists, update it
-    // instead of creating a duplicate. The newest result replaces the old one.
+    // Upsert: if a review with the same (test_case_name, test_run_id) already exists,
+    // update it instead of creating a duplicate. Different runs preserve their own results.
     conn.execute(
         "INSERT INTO persona_design_reviews
          (id, test_case_id, test_case_name, instruction, status,
           structural_score, semantic_score, connectors_used, trigger_types,
           design_result, structural_evaluation, semantic_evaluation,
           test_run_id, had_references, suggested_adjustment, adjustment_generation,
-          use_case_flows, reviewed_at, created_at)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19)
-         ON CONFLICT(test_case_name) DO UPDATE SET
+          use_case_flows, reviewed_at, created_at, category)
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20)
+         ON CONFLICT(test_case_name, test_run_id) DO UPDATE SET
            test_case_id = excluded.test_case_id,
            instruction = excluded.instruction,
            status = excluded.status,
@@ -125,13 +134,13 @@ pub fn create_review(
            design_result = excluded.design_result,
            structural_evaluation = excluded.structural_evaluation,
            semantic_evaluation = excluded.semantic_evaluation,
-           test_run_id = excluded.test_run_id,
            had_references = excluded.had_references,
            suggested_adjustment = excluded.suggested_adjustment,
            adjustment_generation = excluded.adjustment_generation,
            use_case_flows = excluded.use_case_flows,
            reviewed_at = excluded.reviewed_at,
-           created_at = excluded.created_at",
+           created_at = excluded.created_at,
+           category = excluded.category",
         params![
             id,
             input.test_case_id,
@@ -152,14 +161,15 @@ pub fn create_review(
             input.use_case_flows,
             input.reviewed_at,
             now,
+            input.category,
         ],
     )?;
 
     // After upsert, the row might have the old id (if updated) or the new id (if inserted).
-    // Fetch by test_case_name to get the correct row.
+    // Fetch by (test_case_name, test_run_id) to get the correct row.
     let row = conn.query_row(
-        "SELECT * FROM persona_design_reviews WHERE test_case_name = ?1",
-        params![input.test_case_name],
+        "SELECT * FROM persona_design_reviews WHERE test_case_name = ?1 AND test_run_id = ?2",
+        params![input.test_case_name, input.test_run_id],
         row_to_review,
     )?;
     Ok(row)
@@ -174,6 +184,7 @@ pub fn delete_review(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     Ok(rows > 0)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn update_review_result(
     pool: &DbPool,
     id: &str,
@@ -216,14 +227,18 @@ pub struct PaginatedReviewResult {
     pub total: i64,
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn get_reviews_paginated(
     pool: &DbPool,
     search: Option<&str>,
     connector_filter: Option<&[String]>,
+    category_filter: Option<&[String]>,
     sort_by: Option<&str>,
     sort_dir: Option<&str>,
     page: i64,
     per_page: i64,
+    coverage_filter: Option<&str>,
+    coverage_service_types: Option<&[String]>,
 ) -> Result<PaginatedReviewResult, AppError> {
     let conn = pool.get()?;
 
@@ -234,9 +249,9 @@ pub fn get_reviews_paginated(
 
     if let Some(q) = search {
         if !q.trim().is_empty() {
-            let like = format!("%{}%", q.trim());
+            let like = format!("%{}%", escape_like(q.trim()));
             conditions.push(format!(
-                "(test_case_name LIKE ?{} OR instruction LIKE ?{})",
+                "(test_case_name LIKE ?{} ESCAPE '\\' OR instruction LIKE ?{} ESCAPE '\\')",
                 param_idx,
                 param_idx + 1
             ));
@@ -260,44 +275,159 @@ pub fn get_reviews_paginated(
         }
     }
 
+    if let Some(categories) = category_filter {
+        if !categories.is_empty() {
+            let placeholders: Vec<String> = categories
+                .iter()
+                .enumerate()
+                .map(|(i, _)| format!("?{}", param_idx + i))
+                .collect();
+            conditions.push(format!(
+                "COALESCE(category, 'Other') IN ({})",
+                placeholders.join(",")
+            ));
+            for c in categories {
+                params_vec.push(Box::new(c.clone()));
+            }
+            param_idx += categories.len();
+        }
+    }
+
     let where_clause = if conditions.is_empty() {
         String::new()
     } else {
         format!(" WHERE {}", conditions.join(" AND "))
     };
 
-    // Count total
-    let count_sql = format!("SELECT COUNT(*) FROM persona_design_reviews{}", where_clause);
-    let params_refs: Vec<&dyn rusqlite::types::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
-    let total: i64 = conn.query_row(&count_sql, params_refs.as_slice(), |row| row.get(0))?;
+    // Determine if we need coverage post-filtering
+    let needs_coverage_filter = matches!(coverage_filter, Some("full") | Some("partial"));
 
-    // Sort
-    let order_col = match sort_by.unwrap_or("created_at") {
-        "name" => "test_case_name",
-        "quality" => "COALESCE(structural_score,0) + COALESCE(semantic_score,0)",
-        _ => "created_at",
-    };
-    let order_dir = match sort_dir.unwrap_or("desc") {
-        "asc" => "ASC",
-        _ => "DESC",
-    };
+    if needs_coverage_filter {
+        // Coverage filter: fetch all WHERE-matched rows, post-filter in Rust, paginate manually
+        let cred_set: std::collections::HashSet<&str> = coverage_service_types
+            .map(|types| types.iter().map(|s| s.as_str()).collect())
+            .unwrap_or_default();
+        let is_full = coverage_filter == Some("full");
 
-    let offset = page * per_page;
-    let select_sql = format!(
-        "SELECT * FROM persona_design_reviews{} ORDER BY {} {} LIMIT ?{} OFFSET ?{}",
-        where_clause, order_col, order_dir, param_idx, param_idx + 1,
-    );
+        // Sort
+        let order_col = match sort_by.unwrap_or("created_at") {
+            "name" => "test_case_name",
+            "quality" => "COALESCE(structural_score,0) + COALESCE(semantic_score,0)",
+            "trending" => "adoption_count",
+            _ => "created_at",
+        };
+        let order_dir = match sort_dir.unwrap_or("desc") {
+            "asc" => "ASC",
+            _ => "DESC",
+        };
 
-    let mut all_params = params_vec;
-    all_params.push(Box::new(per_page));
-    all_params.push(Box::new(offset));
-    let all_refs: Vec<&dyn rusqlite::types::ToSql> = all_params.iter().map(|p| p.as_ref()).collect();
+        let select_sql = format!(
+            "SELECT * FROM persona_design_reviews{} ORDER BY {} {}",
+            where_clause, order_col, order_dir,
+        );
+        let params_refs: Vec<&dyn rusqlite::types::ToSql> =
+            params_vec.iter().map(|p| p.as_ref()).collect();
 
-    let mut stmt = conn.prepare(&select_sql)?;
-    let rows = stmt.query_map(all_refs.as_slice(), row_to_review)?;
-    let items = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+        let mut stmt = conn.prepare(&select_sql)?;
+        let rows = stmt.query_map(params_refs.as_slice(), row_to_review)?;
+        let all_rows = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
 
-    Ok(PaginatedReviewResult { items, total })
+        // Post-filter by coverage
+        let filtered: Vec<PersonaDesignReview> = all_rows
+            .into_iter()
+            .filter(|review| {
+                let required: Vec<String> = review
+                    .connectors_used
+                    .as_deref()
+                    .and_then(|s| serde_json::from_str::<Vec<String>>(s).ok())
+                    .unwrap_or_default();
+                let total_required = required.len();
+                let covered = required.iter().filter(|c| cred_set.contains(c.as_str())).count();
+
+                if is_full {
+                    // Full: all connectors covered (includes zero-connector templates)
+                    covered == total_required
+                } else {
+                    // Partial: some but not all covered
+                    covered > 0 && covered < total_required
+                }
+            })
+            .collect();
+
+        let total = filtered.len() as i64;
+        let offset = (page * per_page) as usize;
+        let items: Vec<PersonaDesignReview> =
+            filtered.into_iter().skip(offset).take(per_page as usize).collect();
+
+        Ok(PaginatedReviewResult { items, total })
+    } else {
+        // Fast path: no coverage filter — use SQL LIMIT/OFFSET
+        // Count total
+        let count_sql = format!("SELECT COUNT(*) FROM persona_design_reviews{}", where_clause);
+        let params_refs: Vec<&dyn rusqlite::types::ToSql> =
+            params_vec.iter().map(|p| p.as_ref()).collect();
+        let total: i64 = conn.query_row(&count_sql, params_refs.as_slice(), |row| row.get(0))?;
+
+        // Sort
+        let order_col = match sort_by.unwrap_or("created_at") {
+            "name" => "test_case_name",
+            "quality" => "COALESCE(structural_score,0) + COALESCE(semantic_score,0)",
+            "trending" => "adoption_count",
+            _ => "created_at",
+        };
+        let order_dir = match sort_dir.unwrap_or("desc") {
+            "asc" => "ASC",
+            _ => "DESC",
+        };
+
+        let offset = page * per_page;
+        let select_sql = format!(
+            "SELECT * FROM persona_design_reviews{} ORDER BY {} {} LIMIT ?{} OFFSET ?{}",
+            where_clause, order_col, order_dir, param_idx, param_idx + 1,
+        );
+
+        let mut all_params = params_vec;
+        all_params.push(Box::new(per_page));
+        all_params.push(Box::new(offset));
+        let all_refs: Vec<&dyn rusqlite::types::ToSql> =
+            all_params.iter().map(|p| p.as_ref()).collect();
+
+        let mut stmt = conn.prepare(&select_sql)?;
+        let rows = stmt.query_map(all_refs.as_slice(), row_to_review)?;
+        let items = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+
+        Ok(PaginatedReviewResult { items, total })
+    }
+}
+
+/// Increment the adoption_count and update last_adopted_at for a template identified by name.
+pub fn increment_adoption_count(pool: &DbPool, template_name: &str) -> Result<(), AppError> {
+    let now = chrono::Utc::now().to_rfc3339();
+    let conn = pool.get()?;
+    conn.execute(
+        "UPDATE persona_design_reviews
+         SET adoption_count = adoption_count + 1, last_adopted_at = ?1
+         WHERE test_case_name = ?2",
+        params![now, template_name],
+    )?;
+    Ok(())
+}
+
+/// Get the top adopted templates in the last 7 days (trending).
+pub fn get_trending_templates(
+    pool: &DbPool,
+    limit: i64,
+) -> Result<Vec<PersonaDesignReview>, AppError> {
+    let conn = pool.get()?;
+    let cutoff = (chrono::Utc::now() - chrono::Duration::days(7)).to_rfc3339();
+    let mut stmt = conn.prepare(
+        "SELECT * FROM persona_design_reviews
+         WHERE adoption_count > 0 AND last_adopted_at >= ?1
+         ORDER BY adoption_count DESC, last_adopted_at DESC
+         LIMIT ?2",
+    )?;
+    let rows = stmt.query_map(params![cutoff, limit], row_to_review)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
 }
 
 pub fn get_distinct_connectors(pool: &DbPool) -> Result<Vec<ConnectorWithCount>, AppError> {
@@ -311,12 +441,10 @@ pub fn get_distinct_connectors(pool: &DbPool) -> Result<Vec<ConnectorWithCount>,
     })?;
 
     let mut counts: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
-    for row in rows {
-        if let Ok(json_str) = row {
-            if let Ok(arr) = serde_json::from_str::<Vec<String>>(&json_str) {
-                for name in arr {
-                    *counts.entry(name).or_insert(0) += 1;
-                }
+    for json_str in rows.flatten() {
+        if let Ok(arr) = serde_json::from_str::<Vec<String>>(&json_str) {
+            for name in arr {
+                *counts.entry(name).or_insert(0) += 1;
             }
         }
     }
@@ -326,6 +454,52 @@ pub fn get_distinct_connectors(pool: &DbPool) -> Result<Vec<ConnectorWithCount>,
         .collect();
     result.sort_by(|a, b| a.name.cmp(&b.name));
     Ok(result)
+}
+
+pub fn get_distinct_categories(pool: &DbPool) -> Result<Vec<CategoryWithCount>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT COALESCE(category, 'Other') AS cat, COUNT(*) AS cnt
+         FROM persona_design_reviews
+         GROUP BY cat
+         ORDER BY cnt DESC",
+    )?;
+    let rows = stmt.query_map([], |row| {
+        Ok(CategoryWithCount {
+            name: row.get(0)?,
+            count: row.get(1)?,
+        })
+    })?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+}
+
+/// Get all reviews that have no category (NULL).
+/// Returns (id, instruction, connectors_used) tuples for backfilling.
+pub fn get_uncategorized_reviews(
+    pool: &DbPool,
+) -> Result<Vec<(String, String, Option<String>)>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT id, instruction, connectors_used FROM persona_design_reviews WHERE category IS NULL",
+    )?;
+    let rows = stmt.query_map([], |row| {
+        Ok((
+            row.get::<_, String>(0)?,
+            row.get::<_, String>(1)?,
+            row.get::<_, Option<String>>(2)?,
+        ))
+    })?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+}
+
+/// Update the category for a single review.
+pub fn update_review_category(pool: &DbPool, id: &str, category: &str) -> Result<(), AppError> {
+    let conn = pool.get()?;
+    conn.execute(
+        "UPDATE persona_design_reviews SET category = ?1 WHERE id = ?2",
+        params![category, id],
+    )?;
+    Ok(())
 }
 
 /// Delete duplicate reviews, keeping only the newest per test_case_name.
@@ -424,6 +598,7 @@ mod tests {
                 adjustment_generation: None,
                 use_case_flows: None,
                 reviewed_at: now,
+                category: Some("Development".into()),
             },
         )
         .unwrap();

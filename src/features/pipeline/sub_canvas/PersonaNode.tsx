@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { motion } from 'framer-motion';
-import { Check, AlertTriangle, Sparkles } from 'lucide-react';
+import { Check, AlertTriangle, Sparkles, CircleDot } from 'lucide-react';
 import { ROLE_COLORS, PersonaAvatar } from './teamConstants';
 
 interface PersonaNodeData {
@@ -40,13 +40,18 @@ function PersonaNodeComponent({ data, selected }: NodeProps) {
   const color = d.color || '#6366f1';
   const role = d.role || 'worker';
   const pipelineStatus = d.pipelineStatus;
+  const dryRunStatus = d.dryRunStatus as string | undefined;
+  const hasBreakpoint = d.hasBreakpoint as boolean | undefined;
   const hasOptimizerSuggestion = d.hasOptimizerSuggestion as boolean | undefined;
+  const isGhost = d.isGhost as boolean | undefined;
   const edgeCount = (d.edgeCount as number) ?? 0;
-  const showHandleGlow = edgeCount < 2;
+  const showHandleGlow = edgeCount < 2 && !isGhost;
   const defaultRole = { bg: 'bg-blue-500/15', text: 'text-blue-400', border: 'border-blue-500/25' };
   const roleDef = ROLE_COLORS[role] ?? defaultRole;
 
-  const borderStyles = getPipelineStyles(pipelineStatus, selected);
+  // Dry-run status takes priority when active
+  const effectiveStatus = dryRunStatus || pipelineStatus;
+  const borderStyles = getPipelineStyles(effectiveStatus, selected);
 
   const handleGlowAnimation = showHandleGlow
     ? {
@@ -64,10 +69,14 @@ function PersonaNodeComponent({ data, selected }: NodeProps) {
 
   return (
     <div
-      className={`group relative px-4 py-3 rounded-xl bg-secondary/60 backdrop-blur-sm border transition-all min-w-[160px] cursor-grab active:cursor-grabbing hover:shadow-lg hover:shadow-indigo-500/10 ${borderStyles}`}
+      className={`group relative px-4 py-3 rounded-xl bg-secondary/60 backdrop-blur-sm border transition-all min-w-[160px] ${
+        isGhost
+          ? 'opacity-40 border-dashed border-indigo-500/40 pointer-events-none'
+          : `cursor-grab active:cursor-grabbing hover:shadow-lg hover:shadow-indigo-500/10 ${borderStyles}`
+      }`}
     >
       {/* Running spin-ring overlay */}
-      {pipelineStatus === 'running' && (
+      {effectiveStatus === 'running' && (
         <div
           className="absolute inset-[-3px] rounded-xl border-2 border-transparent border-t-blue-400 pointer-events-none"
           style={{ animation: 'spin-ring 1.5s linear infinite' }}
@@ -75,21 +84,28 @@ function PersonaNodeComponent({ data, selected }: NodeProps) {
       )}
 
       {/* Completed checkmark */}
-      {pipelineStatus === 'completed' && (
+      {effectiveStatus === 'completed' && (
         <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center z-10">
           <Check className="w-3 h-3 text-foreground" strokeWidth={3} />
         </div>
       )}
 
       {/* Failed warning */}
-      {pipelineStatus === 'failed' && (
+      {effectiveStatus === 'failed' && (
         <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center z-10">
           <AlertTriangle className="w-3 h-3 text-foreground" strokeWidth={3} />
         </div>
       )}
 
+      {/* Breakpoint indicator */}
+      {hasBreakpoint && (
+        <div className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-red-600 flex items-center justify-center z-10">
+          <CircleDot className="w-3 h-3 text-red-200" strokeWidth={3} />
+        </div>
+      )}
+
       {/* Optimizer suggestion indicator */}
-      {hasOptimizerSuggestion && !pipelineStatus && (
+      {hasOptimizerSuggestion && !effectiveStatus && (
         <div className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-indigo-500/90 flex items-center justify-center z-10 animate-pulse">
           <Sparkles className="w-2.5 h-2.5 text-foreground" strokeWidth={2.5} />
         </div>

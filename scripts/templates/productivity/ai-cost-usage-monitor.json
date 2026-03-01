@@ -2,7 +2,7 @@
   "id": "ai-cost-usage-monitor",
   "name": "AI Cost & Usage Monitor",
   "description": "Polls the OpenAI usage API for daily token consumption and costs, logs entries to a Notion tracking database, compares against budget thresholds, and posts Slack alerts when spending exceeds limits. Generates monthly usage optimization recommendations.",
-  "icon": "Zap",
+  "icon": "Bot",
   "color": "#7C3AED",
   "category": [
     "productivity"
@@ -117,7 +117,9 @@
           0,
           1
         ],
-        "api_base_url": "https://api.openai.com/v1"
+        "api_base_url": "https://api.openai.com/v1",
+        "role": "ai_platform",
+        "category": "ai"
       },
       {
         "name": "notion",
@@ -149,7 +151,9 @@
           0,
           1
         ],
-        "api_base_url": "https://api.notion.com/v1"
+        "api_base_url": "https://api.notion.com/v1",
+        "role": "knowledge_base",
+        "category": "productivity"
       },
       {
         "name": "slack",
@@ -181,7 +185,9 @@
           0,
           1
         ],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

@@ -149,25 +149,14 @@ function PersonaEditorInner() {
     setBaseline((prev) => ({ ...prev, selectedModel: draft.selectedModel, selectedProvider: draft.selectedProvider, baseUrl: draft.baseUrl, authToken: draft.authToken, customModelName: draft.customModelName, maxBudget: draft.maxBudget, maxTurns: draft.maxTurns }));
   };
 
-  // Register all dirty state + save callbacks with the unified EditorDocument.
-  // This is the single source of truth for unsaved changes across all tabs.
-  useEditorDirty('settings', settingsDirty, handleSaveSettings);
-  useEditorDirty('model', modelDirty, saveModelSettings);
-
-  // Aggregate dirty state from EditorDocument (covers ALL tabs: settings, model, prompt, notifications, use-cases)
-  const { isDirty, dirtyTabs: allDirtyTabs, saveAll: saveAllTabs, clearAll: clearAllDirty } = useEditorDirtyState();
-
-  // Keep dirtyRef in sync for the store subscription
-  dirtyRef.current = isDirty;
-
   // Debounced auto-save for settings and model fields
-  const isSavingSettings = useDebouncedSave(
+  const { isSaving: isSavingSettings, cancel: cancelSettingsSave } = useDebouncedSave(
     handleSaveSettings,
     settingsDirty && !!selectedPersona && !pendingPersonaId,
     [draft.name, draft.description, draft.icon, draft.color, draft.maxConcurrent, draft.timeout, draft.enabled],
     800,
   );
-  const isSavingModel = useDebouncedSave(
+  const { isSaving: isSavingModel, cancel: cancelModelSave } = useDebouncedSave(
     saveModelSettings,
     modelDirty && !!selectedPersona && !pendingPersonaId,
     [draft.selectedModel, draft.selectedProvider, draft.baseUrl, draft.authToken, draft.customModelName, draft.maxBudget, draft.maxTurns],
@@ -175,18 +164,32 @@ function PersonaEditorInner() {
   );
   const isSaving = isSavingSettings || isSavingModel;
 
-  // Intercept persona switches when any tab is dirty
+  // Register all dirty state + save/cancel callbacks with the unified EditorDocument.
+  // This is the single source of truth for unsaved changes across all tabs.
+  useEditorDirty('settings', settingsDirty, handleSaveSettings, cancelSettingsSave);
+  useEditorDirty('model', modelDirty, saveModelSettings, cancelModelSave);
+
+  // Aggregate dirty state from EditorDocument (covers ALL tabs: settings, model, prompt, notifications, use-cases)
+  const { isDirty, dirtyTabs: allDirtyTabs, saveAll: saveAllTabs, cancelAll: cancelAllDebouncedSaves, clearAll: clearAllDirty } = useEditorDirtyState();
+
+  // Keep dirtyRef in sync for the store subscription
+  dirtyRef.current = isDirty;
+
+  // Intercept persona switches when any tab is dirty.
+  // Immediately cancel all debounced saves so they don't fire while the
+  // Save/Discard banner is visible.
   useEffect(() => {
     const unsub = usePersonaStore.subscribe((state) => {
       const newId = state.selectedPersonaId;
       if (newId !== prevPersonaIdRef.current && dirtyRef.current) {
         // Revert the store selection back to the current persona
         usePersonaStore.setState({ selectedPersonaId: prevPersonaIdRef.current ?? null });
+        cancelAllDebouncedSaves();
         setPendingPersonaId(newId);
       }
     });
     return unsub;
-  }, []);
+  }, [cancelAllDebouncedSaves]);
 
   // Compute readiness: persona can only be enabled if it has triggers/subscriptions and all tool credentials
   const readiness = useMemo(() => {
@@ -221,7 +224,13 @@ function PersonaEditorInner() {
       setTimeout(() => setShowReadinessTooltip(false), 3000);
       return;
     }
-    await applyPersonaOp(selectedPersona.id, { kind: 'ToggleEnabled', enabled: nextEnabled });
+    try {
+      await applyPersonaOp(selectedPersona.id, { kind: 'ToggleEnabled', enabled: nextEnabled });
+      patch({ enabled: nextEnabled });
+      setBaseline((prev) => ({ ...prev, enabled: nextEnabled }));
+    } catch {
+      // store.error already set
+    }
   };
 
   if (!selectedPersona) {
@@ -235,6 +244,7 @@ function PersonaEditorInner() {
   }
 
   const handleDiscardAndSwitch = () => {
+    cancelAllDebouncedSaves();
     const target = pendingPersonaId;
     setPendingPersonaId(null);
     dirtyRef.current = false;
@@ -245,15 +255,15 @@ function PersonaEditorInner() {
   };
 
   const handleSaveAndSwitch = async () => {
+    // Cancel pending debounced saves to prevent them racing with the manual save
+    cancelAllDebouncedSaves();
     try {
       // Unified save: saveAllTabs covers settings, model, prompt, notifications, use-cases
       await saveAllTabs();
     } catch {
-      // updatePersona already sets store.error — don't proceed with switch
+      // updatePersona now re-throws — don't proceed with switch
       return;
     }
-    // Verify no silent failure (updatePersona catches internally)
-    if (usePersonaStore.getState().error) return;
 
     const target = pendingPersonaId;
     setPendingPersonaId(null);

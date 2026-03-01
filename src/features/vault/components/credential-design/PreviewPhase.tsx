@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plug, CheckCircle, Shield, ListChecks, KeyRound, CircleHelp, Bot, PenLine } from 'lucide-react';
+import { Plug, CheckCircle, Shield, ListChecks, KeyRound, CircleHelp, Bot, PenLine, XCircle } from 'lucide-react';
 import { CredentialEditForm } from '@/features/vault/components/CredentialEditForm';
 import { NegotiatorPanel } from '@/features/vault/components/credential-negotiator/NegotiatorPanel';
 import { InteractiveSetupInstructions } from './InteractiveSetupInstructions';
@@ -36,6 +36,7 @@ export function PreviewPhase() {
     onOAuthConsent,
     onHealthcheck,
     onValuesChanged,
+    saveError,
     onReset,
     onRefine,
     onNegotiatorValues,
@@ -53,6 +54,14 @@ export function PreviewPhase() {
       exit={{ opacity: 0, y: -10 }}
       className="space-y-5"
     >
+      {/* Save error banner */}
+      {saveError && (
+        <div className="flex items-start gap-2.5 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-sm text-red-400">
+          <XCircle className="w-4 h-4 mt-0.5 shrink-0" />
+          <span className="flex-1">{saveError}</span>
+        </div>
+      )}
+
       {/* Match existing banner */}
       {result.match_existing && (
         <div className="flex items-start gap-3 px-4 py-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">

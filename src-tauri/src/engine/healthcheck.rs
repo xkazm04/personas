@@ -6,7 +6,7 @@ use crate::db::repos::resources::credentials as cred_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
 
-use super::crypto;
+use super::connector_strategy;
 
 /// Result of a credential healthcheck.
 #[derive(Debug, serde::Serialize)]
@@ -29,14 +29,15 @@ pub async fn run_healthcheck(
     // Load credential
     let cred = cred_repo::get_by_id(pool, credential_id)?;
 
-    let fields = parse_credential_fields(&cred.encrypted_data, &cred.iv)?;
+    let fields = cred_repo::get_decrypted_fields(pool, &cred)?;
 
     let (connector, hc_config) = resolve_connector_healthcheck(pool, &cred.service_type)?;
 
-    // Find a token in credential fields
-    let token = resolve_auth_token(&cred.service_type, connector.metadata.as_deref(), &fields).await?;
+    // Resolve auth token via connector strategy
+    let strategy = connector_strategy::registry().get(&cred.service_type, connector.metadata.as_deref());
+    let token = strategy.resolve_auth_token(connector.metadata.as_deref(), &fields).await?;
 
-    execute_healthcheck_request(&cred.service_type, &hc_config, &fields, token).await
+    execute_healthcheck_request_with_strategy(strategy, &hc_config, &fields, token).await
 }
 
 pub async fn run_healthcheck_with_fields(
@@ -45,9 +46,10 @@ pub async fn run_healthcheck_with_fields(
     fields: &HashMap<String, String>,
 ) -> Result<HealthcheckResult, AppError> {
     let (connector, hc_config) = resolve_connector_healthcheck(pool, service_type)?;
-    let token = resolve_auth_token(service_type, connector.metadata.as_deref(), fields).await?;
+    let strategy = connector_strategy::registry().get(service_type, connector.metadata.as_deref());
+    let token = strategy.resolve_auth_token(connector.metadata.as_deref(), fields).await?;
 
-    execute_healthcheck_request(service_type, &hc_config, fields, token).await
+    execute_healthcheck_request_with_strategy(strategy, &hc_config, fields, token).await
 }
 
 fn resolve_connector_healthcheck(
@@ -79,8 +81,9 @@ fn resolve_connector_healthcheck(
     Ok((connector, hc_config))
 }
 
-async fn execute_healthcheck_request(
-    service_type: &str,
+/// Execute a healthcheck request using a connector strategy for auth dispatch.
+async fn execute_healthcheck_request_with_strategy(
+    strategy: &dyn connector_strategy::ConnectorStrategy,
     hc_config: &HealthcheckConfig,
     fields: &HashMap<String, String>,
     token: Option<String>,
@@ -98,9 +101,13 @@ async fn execute_healthcheck_request(
         }
     }
 
+    // Pre-resolution SSRF defense: reject templates with placeholders in host
+    validate_template_url(&hc_config.endpoint)?;
+    validate_field_values(&resolved_values)?;
+
     let resolved_endpoint = resolve_template(&hc_config.endpoint, &resolved_values);
 
-    // Validate the URL to prevent SSRF against internal/private endpoints
+    // Post-resolution SSRF defense: reject private/internal addresses
     validate_healthcheck_url(&resolved_endpoint)?;
 
     // Build and send the request
@@ -132,13 +139,10 @@ async fn execute_healthcheck_request(
         request = request.header(header_name, header_value);
     }
 
+    // Delegate auth application to the connector strategy
     if let Some(ref tok) = token {
         if !has_auth_header {
-            if service_type.contains("clickup") {
-                request = request.header("Authorization", tok);
-            } else {
-                request = request.bearer_auth(tok);
-            }
+            request = strategy.apply_auth(request, tok);
         }
     }
 
@@ -177,6 +181,109 @@ pub(crate) fn resolve_template(template: &str, values: &HashMap<String, String>)
         resolved = resolved.replace(&format!("{{{{{}}}}}", key), value);
     }
     resolved
+}
+
+/// Validate that a URL template does not contain `{{...}}` placeholders in the
+/// scheme or host/authority portion.
+///
+/// This prevents SSRF attacks where an AI-generated template looks benign
+/// (e.g. `https://{{base_url}}/api/me`) but user-provided field values inject
+/// private network addresses into the host position.
+///
+/// Allowed: `https://api.example.com/v1/{{resource_id}}`
+/// Blocked: `https://{{base_url}}/api`, `{{scheme}}://api.example.com`
+pub(crate) fn validate_template_url(template: &str) -> Result<(), AppError> {
+    // Find the scheme separator
+    let after_scheme = match template.find("://") {
+        Some(idx) => {
+            let scheme_part = &template[..idx];
+            if scheme_part.contains("{{") {
+                return Err(AppError::Validation(
+                    "Healthcheck URL template contains a placeholder in the scheme — \
+                     user-provided values must not control the URL scheme"
+                        .into(),
+                ));
+            }
+            &template[idx + 3..]
+        }
+        None => {
+            return Err(AppError::Validation(
+                "Healthcheck URL template must include a scheme (http:// or https://)".into(),
+            ));
+        }
+    };
+
+    // Extract the authority: everything before the first '/', '?', or '#'
+    // after the scheme://
+    let authority_end = after_scheme
+        .find('/')
+        .or_else(|| after_scheme.find('?'))
+        .or_else(|| after_scheme.find('#'))
+        .unwrap_or(after_scheme.len());
+    let authority = &after_scheme[..authority_end];
+
+    if authority.contains("{{") {
+        return Err(AppError::Validation(
+            "Healthcheck URL template contains a placeholder in the host/authority — \
+             user-provided values must not control the target host"
+                .into(),
+        ));
+    }
+
+    Ok(())
+}
+
+/// Validate that user-provided field values cannot be used to manipulate URL
+/// resolution into targeting internal services.
+///
+/// Blocks values containing:
+/// - Full URL schemes (`://`) that could override template structure
+/// - IP addresses in private, loopback, or link-local ranges
+/// - Known internal hostnames (localhost, .local, .internal)
+pub(crate) fn validate_field_values(
+    values: &HashMap<String, String>,
+) -> Result<(), AppError> {
+    for (key, value) in values {
+        let lower = value.to_lowercase();
+
+        // Block values that contain a URL scheme — could override template structure
+        if lower.contains("://") {
+            return Err(AppError::Validation(format!(
+                "Field '{}' contains a URL scheme — field values must not contain full URLs",
+                key
+            )));
+        }
+
+        // Block private/internal IP addresses embedded in values
+        let host_part = value
+            .split(&[':', '/', '?', '#'][..])
+            .next()
+            .unwrap_or(value);
+        if let Ok(ip) = host_part.parse::<IpAddr>() {
+            if is_private_ip(&ip) {
+                return Err(AppError::Validation(format!(
+                    "Field '{}' contains a private or internal network address ({})",
+                    key, ip
+                )));
+            }
+        }
+
+        // Block known internal hostnames
+        if lower == "localhost"
+            || lower.starts_with("localhost:")
+            || lower.starts_with("localhost/")
+            || lower.ends_with(".local")
+            || lower.ends_with(".internal")
+            || lower.contains("metadata.google.internal")
+        {
+            return Err(AppError::Validation(format!(
+                "Field '{}' contains a private or internal hostname",
+                key
+            )));
+        }
+    }
+
+    Ok(())
 }
 
 /// Validate that a healthcheck URL targets a public endpoint and is not an SSRF vector.
@@ -273,124 +380,9 @@ fn is_ipv6_private(v6: &std::net::Ipv6Addr) -> bool {
     || (first & 0xffc0) == 0xfe80
 }
 
-fn parse_credential_fields(
-    encrypted_data: &str,
-    iv: &str,
-) -> Result<HashMap<String, String>, AppError> {
-    if crypto::is_plaintext(iv) {
-        return serde_json::from_str(encrypted_data)
-            .map_err(|e| AppError::Internal(format!("Invalid credential data JSON: {}", e)));
-    }
 
-    match crypto::decrypt_from_db(encrypted_data, iv) {
-        Ok(plaintext) => serde_json::from_str(&plaintext)
-            .map_err(|e| AppError::Internal(format!("Invalid credential data JSON: {}", e))),
-        Err(_) => {
-            if let Ok(fields) = serde_json::from_str::<HashMap<String, String>>(encrypted_data) {
-                return Ok(fields);
-            }
-            Err(AppError::Internal(
-                "Decryption failed: credential data cannot be read with the current vault key. Re-save this credential and retry.".into(),
-            ))
-        }
-    }
-}
-
-async fn resolve_auth_token(
-    service_type: &str,
-    connector_metadata: Option<&str>,
-    fields: &HashMap<String, String>,
-) -> Result<Option<String>, AppError> {
-    if !is_google_oauth_connector(service_type, connector_metadata, fields) {
-        return Ok(find_auth_token(fields));
-    }
-
-    if let Some(access_token) = find_nonempty(fields, &["access_token", "accessToken"]) {
-        return Ok(Some(access_token));
-    }
-
-    let refresh_token = find_nonempty(fields, &["refresh_token", "refreshToken"])
-        .ok_or_else(|| AppError::Validation("Google credential is missing refresh_token".into()))?;
-
-    let (client_id, client_secret) = super::google_oauth::resolve_google_oauth_env_credentials()?;
-    let access_token = exchange_refresh_for_access_token(&client_id, &client_secret, &refresh_token).await?;
-    Ok(Some(access_token))
-}
-
-fn is_google_oauth_connector(
-    service_type: &str,
-    connector_metadata: Option<&str>,
-    _fields: &HashMap<String, String>,
-) -> bool {
-    if service_type.contains("google") {
-        return true;
-    }
-
-    if let Some(metadata_json) = connector_metadata {
-        if let Ok(value) = serde_json::from_str::<serde_json::Value>(metadata_json) {
-            if value
-                .get("oauth_type")
-                .and_then(|v| v.as_str())
-                .is_some_and(|v| v == "google")
-            {
-                return true;
-            }
-        }
-    }
-
-    false
-}
-
-async fn exchange_refresh_for_access_token(
-    client_id: &str,
-    client_secret: &str,
-    refresh_token: &str,
-) -> Result<String, AppError> {
-    let response = reqwest::Client::new()
-        .post("https://oauth2.googleapis.com/token")
-        .header("Content-Type", "application/x-www-form-urlencoded")
-        .form(&[
-            ("client_id", client_id),
-            ("client_secret", client_secret),
-            ("refresh_token", refresh_token),
-            ("grant_type", "refresh_token"),
-        ])
-        .send()
-        .await
-        .map_err(|e| AppError::Internal(format!("Google token refresh request failed: {}", e)))?;
-
-    if !response.status().is_success() {
-        let status = response.status();
-        let body = response.text().await.unwrap_or_else(|_| "<no body>".into());
-        return Err(AppError::Internal(format!(
-            "Google token refresh failed ({}): {}",
-            status, body
-        )));
-    }
-
-    let value = response
-        .json::<serde_json::Value>()
-        .await
-        .map_err(|e| AppError::Internal(format!("Invalid Google token response JSON: {}", e)))?;
-
-    value
-        .get("access_token")
-        .and_then(|v| v.as_str())
-        .map(|s| s.to_string())
-        .ok_or_else(|| AppError::Internal("Google token refresh did not return access_token".into()))
-}
-
-fn find_nonempty(fields: &HashMap<String, String>, keys: &[&str]) -> Option<String> {
-    for key in keys {
-        if let Some(value) = fields.get(*key) {
-            let trimmed = value.trim();
-            if !trimmed.is_empty() {
-                return Some(trimmed.to_string());
-            }
-        }
-    }
-    None
-}
+// Auth token resolution and OAuth token exchange are now handled by
+// connector strategies in `connector_strategy.rs`.
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -442,6 +434,7 @@ fn parse_healthcheck_config(json: &str) -> Option<HealthcheckConfig> {
 }
 
 /// Look for an auth token in credential fields by checking common key names.
+#[cfg(test)]
 fn find_auth_token(fields: &HashMap<String, String>) -> Option<String> {
     const TOKEN_KEYS: &[&str] = &[
         "token",
@@ -566,5 +559,139 @@ mod tests {
     #[test]
     fn test_validate_url_blocks_unspecified() {
         assert!(validate_healthcheck_url("http://0.0.0.0/").is_err());
+    }
+
+    // ---- validate_template_url tests ----
+
+    #[test]
+    fn test_template_allows_placeholders_in_path() {
+        assert!(validate_template_url("https://api.example.com/v1/{{resource_id}}").is_ok());
+        assert!(validate_template_url("https://api.example.com/{{org}}/repos").is_ok());
+    }
+
+    #[test]
+    fn test_template_allows_placeholders_in_query() {
+        assert!(validate_template_url("https://api.example.com/v1?key={{api_key}}").is_ok());
+    }
+
+    #[test]
+    fn test_template_blocks_placeholders_in_scheme() {
+        assert!(validate_template_url("{{scheme}}://api.example.com/v1").is_err());
+    }
+
+    #[test]
+    fn test_template_blocks_placeholders_in_host() {
+        assert!(validate_template_url("https://{{base_url}}/api/me").is_err());
+        assert!(validate_template_url("https://{{subdomain}}.example.com/api").is_err());
+        assert!(validate_template_url("https://{{host}}:8080/api").is_err());
+    }
+
+    #[test]
+    fn test_template_blocks_missing_scheme() {
+        assert!(validate_template_url("api.example.com/v1").is_err());
+    }
+
+    // ---- validate_field_values tests ----
+
+    #[test]
+    fn test_field_values_allows_normal_values() {
+        let mut values = HashMap::new();
+        values.insert("api_key".into(), "sk-test-123".into());
+        values.insert("org_id".into(), "my-org".into());
+        values.insert("workspace".into(), "prod".into());
+        assert!(validate_field_values(&values).is_ok());
+    }
+
+    #[test]
+    fn test_field_values_blocks_url_scheme() {
+        let mut values = HashMap::new();
+        values.insert("base_url".into(), "http://169.254.169.254/latest".into());
+        assert!(validate_field_values(&values).is_err());
+    }
+
+    #[test]
+    fn test_field_values_blocks_private_ips() {
+        let mut values = HashMap::new();
+        values.insert("host".into(), "10.0.0.1".into());
+        assert!(validate_field_values(&values).is_err());
+
+        let mut values2 = HashMap::new();
+        values2.insert("host".into(), "192.168.1.1".into());
+        assert!(validate_field_values(&values2).is_err());
+
+        let mut values3 = HashMap::new();
+        values3.insert("host".into(), "127.0.0.1".into());
+        assert!(validate_field_values(&values3).is_err());
+    }
+
+    #[test]
+    fn test_field_values_blocks_private_ip_with_port() {
+        let mut values = HashMap::new();
+        values.insert("endpoint".into(), "10.0.0.1:8080".into());
+        assert!(validate_field_values(&values).is_err());
+    }
+
+    #[test]
+    fn test_field_values_blocks_localhost() {
+        let mut values = HashMap::new();
+        values.insert("host".into(), "localhost".into());
+        assert!(validate_field_values(&values).is_err());
+    }
+
+    #[test]
+    fn test_field_values_blocks_internal_hostnames() {
+        let mut values = HashMap::new();
+        values.insert("host".into(), "myservice.local".into());
+        assert!(validate_field_values(&values).is_err());
+
+        let mut values2 = HashMap::new();
+        values2.insert("host".into(), "db.internal".into());
+        assert!(validate_field_values(&values2).is_err());
+    }
+
+    #[test]
+    fn test_field_values_blocks_cloud_metadata() {
+        let mut values = HashMap::new();
+        values.insert("url".into(), "metadata.google.internal".into());
+        assert!(validate_field_values(&values).is_err());
+    }
+
+    #[test]
+    fn test_field_values_allows_public_ips() {
+        let mut values = HashMap::new();
+        values.insert("host".into(), "8.8.8.8".into());
+        assert!(validate_field_values(&values).is_ok());
+    }
+
+    // ---- Combined attack scenario tests ----
+
+    #[test]
+    fn test_ssrf_via_base_url_injection() {
+        // Attack: template looks safe but {{base_url}} in host position
+        // allows injecting private addresses
+        assert!(validate_template_url("https://{{base_url}}/api/me").is_err());
+    }
+
+    #[test]
+    fn test_ssrf_via_field_value_with_scheme() {
+        // Attack: field value contains full URL to override path context
+        let mut values = HashMap::new();
+        values.insert("path".into(), "http://169.254.169.254/latest/meta-data/".into());
+        assert!(validate_field_values(&values).is_err());
+    }
+
+    #[test]
+    fn test_ssrf_triple_defense() {
+        // Even if template validation passes (placeholder in path),
+        // field value validation catches private IPs, and post-resolution
+        // URL validation catches anything that slips through
+        assert!(validate_template_url("https://api.example.com/{{path}}").is_ok());
+
+        let mut values = HashMap::new();
+        values.insert("path".into(), "normal-resource".into());
+        assert!(validate_field_values(&values).is_ok());
+
+        let resolved = resolve_template("https://api.example.com/{{path}}", &values);
+        assert!(validate_healthcheck_url(&resolved).is_ok());
     }
 }

@@ -42,6 +42,37 @@ export interface RotationHistoryEntry {
 }
 
 // ============================================================================
+// Anomaly Scoring Types
+// ============================================================================
+
+export type Remediation =
+  | "healthy"
+  | "backoff_retry"
+  | "preemptive_rotation"
+  | "rotate_then_alert"
+  | "disable";
+
+export interface AnomalyScore {
+  failure_rate_total: number;
+  failure_rate_5m: number;
+  failure_rate_1h: number;
+  failure_rate_24h: number;
+  permanent_failure_rate_1h: number;
+  transient_failure_rate_1h: number;
+  remediation: Remediation;
+  sample_count: number;
+  data_stale: boolean;
+}
+
+export interface HealthcheckEntry {
+  success: boolean;
+  status_code: number | null;
+  error_class: string | null;
+  message: string;
+  timestamp: string;
+}
+
+// ============================================================================
 // Rotation Status
 // ============================================================================
 
@@ -53,7 +84,10 @@ export interface RotationStatus {
   last_rotated_at: string | null;
   last_status: string | null;
   anomaly_detected: boolean;
+  consecutive_failures: number;
   recent_history: RotationHistoryEntry[];
+  anomaly_score: AnomalyScore | null;
+  anomaly_tolerance: number;
 }
 
 // ============================================================================

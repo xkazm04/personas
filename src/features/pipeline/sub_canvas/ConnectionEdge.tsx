@@ -16,6 +16,8 @@ export default function ConnectionEdge({
   const connType = (data as Record<string, unknown>)?.connection_type as string || 'sequential';
   const label = (data as Record<string, unknown>)?.label as string || '';
   const isActive = (data as Record<string, unknown>)?.isActive === true;
+  const dryRunCompleted = (data as Record<string, unknown>)?.dryRunCompleted === true;
+  const dryRunActive = (data as Record<string, unknown>)?.dryRunActive === true;
   const typeStyle = getConnectionStyle(connType);
 
   const [edgePath, labelX, labelY] = getSmoothStepPath({
@@ -28,6 +30,10 @@ export default function ConnectionEdge({
     borderRadius: 12,
   });
 
+  // Determine edge opacity and styling based on dry-run state
+  const edgeOpacity = dryRunCompleted || dryRunActive ? 1 : undefined;
+  const edgeStrokeWidth = dryRunActive ? typeStyle.strokeWidth + 1.5 : dryRunCompleted ? typeStyle.strokeWidth + 0.5 : typeStyle.strokeWidth;
+
   return (
     <>
       <BaseEdge
@@ -36,21 +42,50 @@ export default function ConnectionEdge({
         markerEnd={markerEnd}
         style={{
           ...style,
-          stroke: typeStyle.stroke,
-          strokeWidth: typeStyle.strokeWidth,
+          stroke: dryRunCompleted ? '#10b981' : dryRunActive ? '#f59e0b' : typeStyle.stroke,
+          strokeWidth: edgeStrokeWidth,
           strokeDasharray: typeStyle.strokeDasharray,
+          opacity: edgeOpacity,
         }}
       />
-      {isActive && (
+      {/* Animated particles on active edges */}
+      {(isActive || dryRunActive) &&
+        [0, 1, 2].map((i) => {
+          const particleColor = dryRunActive ? '#f59e0b' : typeStyle.stroke;
+          const dur = dryRunActive ? 2.5 : 1.5;
+          const delay = (dur / 3) * i;
+          return (
+            <g key={i}>
+              {/* Glow halo */}
+              <circle r={5} fill={particleColor} opacity={0.15}>
+                <animateMotion
+                  dur={`${dur}s`}
+                  repeatCount="indefinite"
+                  begin={`${delay}s`}
+                  path={edgePath}
+                />
+              </circle>
+              {/* Core particle */}
+              <circle r={2.5} fill={particleColor} opacity={0.85}>
+                <animateMotion
+                  dur={`${dur}s`}
+                  repeatCount="indefinite"
+                  begin={`${delay}s`}
+                  path={edgePath}
+                />
+              </circle>
+            </g>
+          );
+        })}
+      {/* Dry-run completed glow */}
+      {dryRunCompleted && (
         <path
           d={edgePath}
           fill="none"
-          stroke={typeStyle.stroke}
-          strokeWidth={typeStyle.strokeWidth + 1}
-          strokeDasharray="8 6"
+          stroke="#10b981"
+          strokeWidth={typeStyle.strokeWidth + 3}
           strokeLinecap="round"
-          className="animate-[dash-flow_1.2s_linear_infinite]"
-          style={{ opacity: 0.8 }}
+          style={{ opacity: 0.15 }}
         />
       )}
       {label && (

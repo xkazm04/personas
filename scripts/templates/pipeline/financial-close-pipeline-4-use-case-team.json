@@ -2,7 +2,7 @@
   "id": "financial-close-pipeline-4-use-case-team",
   "name": "Financial Close Pipeline (4-Use Case Team)",
   "description": "**Use Case A — Transaction Reconciler** (worker): Pulls Stripe + QuickBooks data, identifies discrepancies.\n**Use Case B — Expense Classifier** (worker): Categorizes unclassified expenses using historical patterns.\n**Use Case C — Report Generator** (worker): Compiles P&L, balance sheet summaries into Google Sheets.\n**Use Case D — Close Manager** (orchestrator): Sequences tasks, tracks completion, emails final reports.",
-  "icon": "GitBranch",
+  "icon": "Landmark",
   "color": "#0EA5E9",
   "category": [
     "pipeline"
@@ -124,7 +124,9 @@
           0,
           2
         ],
-        "api_base_url": "https://api.stripe.com/v1"
+        "api_base_url": "https://api.stripe.com/v1",
+        "role": "payment_processing",
+        "category": "finance"
       },
       {
         "name": "quickbooks",
@@ -172,7 +174,9 @@
           0,
           2
         ],
-        "api_base_url": "https://quickbooks.api.intuit.com/v3"
+        "api_base_url": "https://quickbooks.api.intuit.com/v3",
+        "role": "accounting",
+        "category": "finance"
       },
       {
         "name": "google_workspace",
@@ -223,7 +227,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://www.googleapis.com",
+        "role": "productivity_suite",
+        "category": "productivity"
       },
       {
         "name": "slack",
@@ -254,7 +260,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

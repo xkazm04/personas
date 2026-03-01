@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 
 import type { PersonaExecution } from "@/lib/bindings/PersonaExecution";
 import type { Continuation } from "@/lib/bindings/Continuation";
+import type { ExecutionTrace } from "@/lib/bindings/ExecutionTrace";
 
 // ============================================================================
 // Executions
@@ -13,11 +14,11 @@ export const listExecutions = (personaId: string, limit?: number) =>
     limit: limit ?? null,
   });
 
-export const getExecution = (id: string) =>
-  invoke<PersonaExecution>("get_execution", { id });
+export const getExecution = (id: string, callerPersonaId: string) =>
+  invoke<PersonaExecution>("get_execution", { id, callerPersonaId });
 
-export const cancelExecution = (id: string) =>
-  invoke<void>("cancel_execution", { id });
+export const cancelExecution = (id: string, callerPersonaId: string) =>
+  invoke<void>("cancel_execution", { id, callerPersonaId });
 
 export const executePersona = (
   personaId: string,
@@ -45,5 +46,15 @@ export const listExecutionsForUseCase = (
     limit: limit ?? null,
   });
 
-export const getExecutionLog = (id: string) =>
-  invoke<string | null>("get_execution_log", { id });
+export const getExecutionLog = (id: string, callerPersonaId: string) =>
+  invoke<string | null>("get_execution_log", { id, callerPersonaId });
+
+// ============================================================================
+// Traces
+// ============================================================================
+
+export const getExecutionTrace = (executionId: string, callerPersonaId: string) =>
+  invoke<ExecutionTrace | null>("get_execution_trace", { executionId, callerPersonaId });
+
+export const getChainTrace = (chainTraceId: string, callerPersonaId: string) =>
+  invoke<ExecutionTrace[]>("get_chain_trace", { chainTraceId, callerPersonaId });

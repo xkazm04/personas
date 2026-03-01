@@ -3,6 +3,7 @@ import type { PersonaDraft } from '@/features/agents/sub_editor/PersonaDraft';
 import { AccessibleToggle } from '@/features/shared/components/AccessibleToggle';
 import { PopupIconSelector } from '@/features/shared/components/PopupIconSelector';
 import { PopupColorPicker } from '@/features/shared/components/PopupColorPicker';
+import { FieldHint } from '@/features/shared/components/FieldHint';
 import type { ConnectorDefinition } from '@/lib/types/types';
 
 interface PersonaSettingsTabProps {
@@ -86,7 +87,14 @@ export function PersonaSettingsTab({
         <div className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-3 space-y-3">
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-foreground/80 mb-1">Max Concurrent</label>
+              <label className="block text-sm font-medium text-foreground/80 mb-1">
+                Max Concurrent
+                <FieldHint
+                  text="Maximum parallel executions for this persona. Limits how many runs can happen at the same time to prevent API rate limits."
+                  range="1–10"
+                  example="3"
+                />
+              </label>
               <input
                 type="number"
                 value={draft.maxConcurrent}
@@ -97,7 +105,14 @@ export function PersonaSettingsTab({
               />
             </div>
             <div className="flex-1">
-              <label className="block text-sm font-medium text-foreground/80 mb-1">Timeout (sec)</label>
+              <label className="block text-sm font-medium text-foreground/80 mb-1">
+                Timeout (sec)
+                <FieldHint
+                  text="How long a single execution can run before being cancelled. Prevents stuck runs from consuming resources."
+                  range="10–3600 seconds"
+                  example="300"
+                />
+              </label>
               <input
                 type="number"
                 value={Math.round(draft.timeout / 1000)}

@@ -11,68 +11,84 @@ import {
   RefreshCw,
   AlertTriangle,
   Shield,
+  Workflow,
 } from 'lucide-react';
 import { DraftEditStep } from '@/features/shared/components/draft-editor/DraftEditStep';
 import { extractProtocolCapabilities } from '@/features/templates/sub_n8n/edit/protocolParser';
-import type { N8nPersonaDraft } from '@/api/n8nTransform';
-import type { DesignAnalysisResult, ConnectorReadinessStatus } from '@/lib/types/designTypes';
+import { useAdoptionWizard } from '../AdoptionWizardContext';
+import { N8nUseCasesTab } from '@/features/templates/sub_n8n/edit/N8nUseCasesTab';
+import { N8nEntitiesTab } from '@/features/templates/sub_n8n/edit/N8nEntitiesTab';
 
-interface CreateStepProps {
-  draft: N8nPersonaDraft | null;
-  designResult: DesignAnalysisResult | null;
-  readinessStatuses: ConnectorReadinessStatus[];
-  created: boolean;
-  showEditInline: boolean;
-  confirming: boolean;
-  onToggleEditInline: () => void;
-  onReset: () => void;
-  // DraftEditStep props (for expandable edit)
-  draftJson: string;
-  draftJsonError: string | null;
-  adjustmentRequest: string;
-  transforming: boolean;
-  updateDraft: (updater: (d: N8nPersonaDraft) => N8nPersonaDraft) => void;
-  onDraftUpdated: (draft: N8nPersonaDraft) => void;
-  onJsonEdited: (json: string, draft: N8nPersonaDraft | null, error: string | null) => void;
-  onAdjustmentChange: (text: string) => void;
-  onApplyAdjustment: () => void;
-  earlyTabs?: Array<{
-    id: string;
-    label: string;
-    Icon: React.ComponentType<{ className?: string }>;
-    content: React.ReactNode;
-    badge?: string;
-  }>;
-  additionalTabs?: Array<{
-    id: string;
-    label: string;
-    Icon: React.ComponentType<{ className?: string }>;
-    content: React.ReactNode;
-    badge?: string;
-  }>;
-}
+export function CreateStep() {
+  const {
+    state,
+    wizard,
+    designResult,
+    readinessStatuses,
+    updateDraft,
+    startTransform,
+    cleanupAll,
+  } = useAdoptionWizard();
 
-export function CreateStep({
-  draft,
-  designResult,
-  readinessStatuses,
-  created,
-  showEditInline,
-  confirming,
-  onToggleEditInline,
-  onReset,
-  draftJson,
-  draftJsonError,
-  adjustmentRequest,
-  transforming,
-  updateDraft,
-  onDraftUpdated,
-  onJsonEdited,
-  onAdjustmentChange,
-  onApplyAdjustment,
-  earlyTabs,
-  additionalTabs,
-}: CreateStepProps) {
+  const {
+    draft,
+    created,
+    showEditInline,
+    confirming,
+    draftJson,
+    draftJsonError,
+    adjustmentRequest,
+    transforming,
+  } = state;
+
+  const onToggleEditInline = wizard.toggleEditInline;
+  const onReset = async () => {
+    await cleanupAll();
+    wizard.reset();
+  };
+  const onDraftUpdated = wizard.draftUpdated;
+  const onJsonEdited = wizard.draftJsonEdited;
+  const onAdjustmentChange = wizard.setAdjustment;
+  const onApplyAdjustment = () => void startTransform();
+
+  // Build tabs for DraftEditStep
+  const earlyTabs = useMemo(() => {
+    if (!draft) return [];
+    return [{
+      id: 'use-cases',
+      label: 'Use Cases',
+      Icon: Workflow,
+      content: (
+        <N8nUseCasesTab
+          draft={draft}
+          adjustmentRequest={adjustmentRequest}
+          transforming={transforming}
+          disabled={transforming || confirming}
+          onAdjustmentChange={onAdjustmentChange}
+          onApplyAdjustment={onApplyAdjustment}
+        />
+      ),
+    }];
+  }, [draft, adjustmentRequest, transforming, confirming]);
+
+  const additionalTabs = useMemo(() => {
+    if (!draft || !designResult) return [];
+    return [{
+      id: 'entities',
+      label: 'Tools & Connectors',
+      Icon: Wrench,
+      content: (
+        <N8nEntitiesTab
+          draft={draft}
+          parsedResult={designResult}
+          selectedToolIndices={state.selectedToolIndices}
+          selectedTriggerIndices={state.selectedTriggerIndices}
+          selectedConnectorNames={state.selectedConnectorNames}
+          updateDraft={updateDraft}
+        />
+      ),
+    }];
+  }, [draft, designResult, state.selectedToolIndices, state.selectedTriggerIndices, state.selectedConnectorNames, updateDraft]);
   const toolCount = designResult?.suggested_tools?.length ?? 0;
   const triggerCount = designResult?.suggested_triggers?.length ?? 0;
   const connectorCount = designResult?.suggested_connectors?.length ?? 0;

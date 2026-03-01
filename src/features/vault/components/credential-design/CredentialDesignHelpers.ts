@@ -23,6 +23,17 @@ export function extractFirstUrl(text?: string): string | null {
   return match ? match[0] : null;
 }
 
+// ── OAuth field-name constants ──────────────────────────────────
+// Canonical keys injected by OAuth flows. Import these instead of
+// hard-coding the strings so changes only need to happen in one place.
+
+export const OAUTH_FIELD = {
+  SCOPE: 'oauth_scope',
+  COMPLETED_AT: 'oauth_completed_at',
+  CLIENT_MODE: 'oauth_client_mode',
+  PROVIDER: 'oauth_provider',
+} as const;
+
 // ── Credential flow discriminated union ─────────────────────────
 
 import type { CredentialTemplateField } from '@/lib/types/types';
@@ -59,7 +70,7 @@ export function getHiddenFieldKeys(flow: CredentialFlow): string[] {
     case 'google_oauth':
       return ['client_id', 'client_secret', 'refresh_token', 'scopes'];
     case 'provider_oauth':
-      return ['access_token', 'refresh_token', 'scopes', 'oauth_scope'];
+      return ['access_token', 'refresh_token', 'scopes', OAUTH_FIELD.SCOPE];
     case 'api_key':
       return [];
   }

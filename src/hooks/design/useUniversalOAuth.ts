@@ -6,6 +6,7 @@ import {
   type OAuthStatusResult,
 } from '@/api/tauriApi';
 import { useOAuthPolling } from './useOAuthPolling';
+import { OAUTH_FIELD } from '@/features/vault/components/credential-design/CredentialDesignHelpers';
 
 export interface UniversalOAuthState {
   /** Credential values produced by the OAuth flow (access_token, refresh_token, etc.) */
@@ -42,12 +43,12 @@ export function useUniversalOAuth(): UniversalOAuthState {
       if (poll.refresh_token) values.refresh_token = poll.refresh_token;
       if (poll.scope) {
         values.scopes = poll.scope;
-        values.oauth_scope = poll.scope;
+        values[OAUTH_FIELD.SCOPE] = poll.scope;
       }
       if (poll.token_type) values.token_type = poll.token_type;
       if (poll.expires_in) values.expires_in = String(poll.expires_in);
-      values.oauth_completed_at = new Date().toISOString();
-      values.oauth_provider = providerRef.current ?? 'unknown';
+      values[OAUTH_FIELD.COMPLETED_AT] = new Date().toISOString();
+      values[OAUTH_FIELD.PROVIDER] = providerRef.current ?? 'unknown';
       return values;
     },
     label: providerLabel,

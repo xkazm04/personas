@@ -2,7 +2,7 @@
   "id": "campaign-performance-analyst",
   "name": "Campaign Performance Analyst",
   "description": "After each Mailchimp campaign send, pulls open/click stats over 24h and 72h windows, updates Airtable tracking sheet, compares against historical benchmarks stored in memory, and posts performance cards to Slack.",
-  "icon": "Megaphone",
+  "icon": "BarChart",
   "color": "#D946EF",
   "category": [
     "marketing"
@@ -107,7 +107,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://us1.api.mailchimp.com/3.0"
+        "api_base_url": "https://us1.api.mailchimp.com/3.0",
+        "role": "email_delivery",
+        "category": "messaging"
       },
       {
         "name": "airtable",
@@ -144,7 +146,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://api.airtable.com/v0"
+        "api_base_url": "https://api.airtable.com/v0",
+        "role": "knowledge_base",
+        "category": "productivity"
       },
       {
         "name": "slack",
@@ -173,7 +177,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

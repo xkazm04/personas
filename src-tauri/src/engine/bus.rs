@@ -1,4 +1,4 @@
-use crate::db::models::{PersonaEvent, PersonaEventSubscription};
+use crate::db::models::{PersonaEvent, PersonaEventSubscription, PersonaTrigger, TriggerConfig};
 
 /// A matched subscription: an event matched to a persona that should execute.
 #[derive(Debug, Clone, PartialEq)]
@@ -76,6 +76,51 @@ fn source_filter_matches(filter: &str, source_id: Option<&str>) -> bool {
     } else {
         source == filter
     }
+}
+
+/// Match a single event against event_listener triggers.
+///
+/// Mirrors `match_event` but works with `PersonaTrigger` rows of type `event_listener`.
+/// The `listen_event_type` filtering is already done at the SQL layer, so here we only
+/// check source_filter and target_persona_id.
+pub fn match_event_listeners(
+    event: &PersonaEvent,
+    listeners: &[PersonaTrigger],
+) -> Vec<EventMatch> {
+    listeners
+        .iter()
+        .filter_map(|trigger| {
+            let cfg = trigger.parse_config();
+            let source_filter = match &cfg {
+                TriggerConfig::EventListener { source_filter, .. } => source_filter.as_deref(),
+                _ => return None,
+            };
+
+            // If event targets a specific persona, only that persona matches
+            if let Some(ref target) = event.target_persona_id {
+                if target != &trigger.persona_id {
+                    return None;
+                }
+            }
+
+            // If trigger has a source filter, it must match
+            if let Some(filter) = source_filter {
+                if !source_filter_matches(filter, event.source_id.as_deref()) {
+                    return None;
+                }
+            }
+
+            Some(EventMatch {
+                event_id: event.id.clone(),
+                event_type: event.event_type.clone(),
+                subscription_id: trigger.id.clone(),
+                persona_id: trigger.persona_id.clone(),
+                payload: event.payload.clone(),
+                source_id: event.source_id.clone(),
+                use_case_id: trigger.use_case_id.clone(),
+            })
+        })
+        .collect()
 }
 
 #[cfg(test)]
@@ -189,5 +234,66 @@ mod tests {
         ];
         let matches = match_event(&event, &subs);
         assert_eq!(matches.len(), 2);
+    }
+
+    // ── Event listener trigger tests ─────────────────────────────────
+
+    fn make_listener(persona_id: &str, listen_event_type: &str, source_filter: Option<&str>) -> PersonaTrigger {
+        let config = serde_json::json!({
+            "listen_event_type": listen_event_type,
+            "source_filter": source_filter,
+        });
+        PersonaTrigger {
+            id: format!("trig-{}", persona_id),
+            persona_id: persona_id.into(),
+            trigger_type: "event_listener".into(),
+            config: Some(serde_json::to_string(&config).unwrap()),
+            enabled: true,
+            last_triggered_at: None,
+            next_trigger_at: None,
+            created_at: "2026-01-15T10:00:00Z".into(),
+            updated_at: "2026-01-15T10:00:00Z".into(),
+            use_case_id: None,
+        }
+    }
+
+    #[test]
+    fn test_event_listener_match() {
+        let event = make_event("file_changed");
+        let listeners = vec![make_listener("p1", "file_changed", None)];
+        let matches = match_event_listeners(&event, &listeners);
+        assert_eq!(matches.len(), 1);
+        assert_eq!(matches[0].persona_id, "p1");
+    }
+
+    #[test]
+    fn test_event_listener_source_filter_wildcard() {
+        let mut event = make_event("deploy");
+        event.source_id = Some("prod-us-east".into());
+        let listeners = vec![make_listener("p1", "deploy", Some("prod-*"))];
+        let matches = match_event_listeners(&event, &listeners);
+        assert_eq!(matches.len(), 1);
+    }
+
+    #[test]
+    fn test_event_listener_source_filter_mismatch() {
+        let mut event = make_event("deploy");
+        event.source_id = Some("staging-1".into());
+        let listeners = vec![make_listener("p1", "deploy", Some("prod-*"))];
+        let matches = match_event_listeners(&event, &listeners);
+        assert!(matches.is_empty());
+    }
+
+    #[test]
+    fn test_event_listener_target_persona_filter() {
+        let mut event = make_event("file_changed");
+        event.target_persona_id = Some("p2".into());
+        let listeners = vec![
+            make_listener("p1", "file_changed", None),
+            make_listener("p2", "file_changed", None),
+        ];
+        let matches = match_event_listeners(&event, &listeners);
+        assert_eq!(matches.len(), 1);
+        assert_eq!(matches[0].persona_id, "p2");
     }
 }

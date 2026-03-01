@@ -44,6 +44,9 @@ const sizeClasses = {
   lg: { container: 'w-10 h-10', img: 'w-5 h-5', text: 'text-base' },
 };
 
+/** Transient drag state shared between sidebar drag source and canvas drop target */
+export const canvasDragState = { personaId: null as string | null };
+
 export function PersonaAvatar({ icon, color, size = 'md' }: PersonaAvatarProps) {
   const c = color || '#6366f1';
   const isUrl = typeof icon === 'string' && icon.startsWith('http');

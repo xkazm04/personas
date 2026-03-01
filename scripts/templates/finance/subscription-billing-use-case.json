@@ -2,7 +2,7 @@
   "id": "subscription-billing-use-case",
   "name": "Subscription Billing Use Case",
   "description": "Processes Paddle subscription events (new, renewal, cancellation, payment failure), maintains customer records in Airtable, sends dunning emails for failed payments, posts revenue events to Slack, and generates monthly MRR reports.",
-  "icon": "DollarSign",
+  "icon": "CreditCard",
   "color": "#22C55E",
   "category": [
     "finance"
@@ -133,7 +133,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://api.paddle.com"
+        "api_base_url": "https://api.paddle.com",
+        "role": "payment_processing",
+        "category": "finance"
       },
       {
         "name": "airtable",
@@ -170,7 +172,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://api.airtable.com/v0"
+        "api_base_url": "https://api.airtable.com/v0",
+        "role": "knowledge_base",
+        "category": "productivity"
       },
       {
         "name": "slack",
@@ -207,7 +211,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       },
       {
         "name": "google_workspace",
@@ -244,7 +250,9 @@
           "gmail_send"
         ],
         "related_triggers": [],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://www.googleapis.com",
+        "role": "productivity_suite",
+        "category": "productivity"
       }
     ],
     "suggested_notification_channels": [

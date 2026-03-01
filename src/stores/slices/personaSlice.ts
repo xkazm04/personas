@@ -152,6 +152,7 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
       }));
     } catch (err) {
       set({ error: errMsg(err, "Failed to update persona") });
+      throw err;
     }
   },
 
@@ -174,7 +175,8 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
   },
 
   selectPersona: (id) => {
-    set({ selectedPersonaId: id, editorTab: "use-cases", sidebarSection: id ? "personas" : get().sidebarSection, isCreatingPersona: false });
+    if (!id) ++fetchDetailSeq; // invalidate any in-flight fetchDetail
+    set({ selectedPersonaId: id, editorTab: "use-cases", sidebarSection: id ? "personas" : get().sidebarSection, isCreatingPersona: false, queuePosition: null, queueDepth: null });
     if (id) get().fetchDetail(id);
     else set({ selectedPersona: null });
   },

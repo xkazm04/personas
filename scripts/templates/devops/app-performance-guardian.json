@@ -2,7 +2,7 @@
   "id": "app-performance-guardian",
   "name": "App Performance Guardian",
   "description": "Monitors Firebase Crashlytics and Performance Monitoring APIs for crash spikes, slow screens, and ANRs. Posts real-time alerts to Slack, creates Linear bugs for new crash clusters, and emails a weekly app health report.",
-  "icon": "Server",
+  "icon": "Gauge",
   "color": "#F97316",
   "category": [
     "devops"
@@ -148,7 +148,9 @@
           0,
           1
         ],
-        "api_base_url": "https://crashlytics.googleapis.com"
+        "api_base_url": "https://crashlytics.googleapis.com",
+        "role": "cloud_infra",
+        "category": "devops"
       },
       {
         "name": "slack",
@@ -188,7 +190,9 @@
           0,
           1
         ],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       },
       {
         "name": "linear",
@@ -227,7 +231,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://api.linear.app/graphql"
+        "api_base_url": "https://api.linear.app/graphql",
+        "role": "project_tracking",
+        "category": "development"
       },
       {
         "name": "google_workspace",
@@ -266,7 +272,9 @@
         "related_triggers": [
           1
         ],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://www.googleapis.com",
+        "role": "productivity_suite",
+        "category": "productivity"
       }
     ],
     "suggested_notification_channels": [

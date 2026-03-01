@@ -10,6 +10,8 @@ export interface SnapshotLike {
   lines: string[];
   draft: N8nPersonaDraft | null;
   questions?: unknown[] | null;
+  /** Streaming sections from section-by-section transform. */
+  sections?: unknown[] | null;
 }
 
 export interface UseBackgroundSnapshotOptions {
@@ -31,6 +33,8 @@ export interface UseBackgroundSnapshotOptions {
   onSessionLost: () => void;
   /** Called when the backend is awaiting user answers and questions are available. */
   onQuestions?: (questions: unknown[]) => void;
+  /** Called with streaming sections from section-by-section transform. */
+  onSections?: (sections: unknown[]) => void;
   /** Polling interval in ms. Defaults to 1500. */
   interval?: number;
   /** Number of consecutive fetch failures before treating session as lost. Defaults to 3. */
@@ -56,6 +60,7 @@ export function useBackgroundSnapshot({
   onFailed,
   onSessionLost,
   onQuestions,
+  onSections,
   interval = 1500,
   maxFailures = 3,
   epoch = 0,
@@ -77,6 +82,11 @@ export function useBackgroundSnapshot({
 
         const lines = Array.isArray(snapshot.lines) ? snapshot.lines : [];
         onLines(lines);
+
+        // Forward streaming sections if present
+        if (onSections && Array.isArray(snapshot.sections) && snapshot.sections.length > 0) {
+          onSections(snapshot.sections);
+        }
 
         if (snapshot.status === 'running' || snapshot.status === 'completed' || snapshot.status === 'failed') {
           onPhase(snapshot.status);
@@ -140,7 +150,7 @@ export function useBackgroundSnapshot({
         pollTimerRef.current = null;
       }
     };
-  }, [snapshotId, getSnapshot, onLines, onPhase, onDraft, onCompletedNoDraft, onFailed, onSessionLost, onQuestions, interval, maxFailures, epoch]);
+  }, [snapshotId, getSnapshot, onLines, onPhase, onDraft, onCompletedNoDraft, onFailed, onSessionLost, onQuestions, onSections, interval, maxFailures, epoch]);
 
   // Cleanup poll timer on unmount
   useEffect(() => {

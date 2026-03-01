@@ -22,6 +22,7 @@ use crate::engine::design;
 /// The pipeline always runs these in order. Each stage produces an output
 /// that feeds into the next. A stage can short-circuit the pipeline
 /// (e.g. `Parse` may yield a clarification question instead of a result).
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "snake_case")]
@@ -38,6 +39,7 @@ pub enum CompilationStage {
     Persist,
 }
 
+#[allow(dead_code)]
 impl CompilationStage {
     pub fn label(&self) -> &'static str {
         match self {
@@ -171,7 +173,6 @@ pub fn run_feasibility(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::models::{ConnectorDefinition, Persona, PersonaToolDefinition};
 
     fn test_persona() -> Persona {
         Persona {

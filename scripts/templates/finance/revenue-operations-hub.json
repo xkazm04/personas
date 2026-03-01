@@ -2,7 +2,7 @@
   "id": "revenue-operations-hub",
   "name": "Revenue Operations Hub",
   "description": "Processes Stripe webhook events (new subscriptions, cancellations, failed payments, refunds), updates an Airtable revenue tracker, sends personalized customer emails for payment failures, and posts daily revenue summaries.",
-  "icon": "DollarSign",
+  "icon": "TrendingUp",
   "color": "#22C55E",
   "category": [
     "finance"
@@ -123,7 +123,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://api.stripe.com/v1"
+        "api_base_url": "https://api.stripe.com/v1",
+        "role": "payment_processing",
+        "category": "finance"
       },
       {
         "name": "airtable",
@@ -160,7 +162,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://api.airtable.com/v0"
+        "api_base_url": "https://api.airtable.com/v0",
+        "role": "knowledge_base",
+        "category": "productivity"
       },
       {
         "name": "google_workspace",
@@ -197,7 +201,9 @@
           "gmail_send"
         ],
         "related_triggers": [],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://www.googleapis.com",
+        "role": "productivity_suite",
+        "category": "productivity"
       }
     ],
     "suggested_notification_channels": [

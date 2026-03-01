@@ -372,6 +372,298 @@ pub async fn system_health_check(
     Ok(SystemHealthReport { sections, all_ok })
 }
 
+// ── Per-section health checks (cascade loading) ────────────────────────────
+
+#[tauri::command]
+pub async fn health_check_local(
+    state: State<'_, Arc<AppState>>,
+) -> Result<HealthCheckSection, AppError> {
+    let mut local_items = Vec::new();
+
+    let active_engine = crate::db::repos::core::settings::get(&state.db, settings_keys::CLI_ENGINE)
+        .ok()
+        .flatten()
+        .unwrap_or_else(|| "claude_code".to_string());
+
+    struct EngineProbe {
+        id: &'static str,
+        label: &'static str,
+        setting_key: &'static str,
+        candidates: &'static [&'static str],
+    }
+
+    let engines = [
+        EngineProbe {
+            id: "claude_cli",
+            label: "Claude Code CLI",
+            setting_key: "claude_code",
+            candidates: if cfg!(target_os = "windows") {
+                &["claude", "claude.cmd", "claude.exe", "claude-code"]
+            } else {
+                &["claude", "claude-code"]
+            },
+        },
+        EngineProbe {
+            id: "codex_cli",
+            label: "Codex CLI",
+            setting_key: "codex_cli",
+            candidates: if cfg!(target_os = "windows") {
+                &["codex", "codex.cmd"]
+            } else {
+                &["codex"]
+            },
+        },
+        EngineProbe {
+            id: "gemini_cli",
+            label: "Gemini CLI",
+            setting_key: "gemini_cli",
+            candidates: if cfg!(target_os = "windows") {
+                &["gemini", "gemini.cmd"]
+            } else {
+                &["gemini"]
+            },
+        },
+    ];
+
+    for engine in &engines {
+        let is_active = active_engine == engine.setting_key;
+        let suffix = if is_active { " (active)" } else { "" };
+
+        let mut errors = Vec::new();
+        let mut detected_in_path = false;
+        let mut version_result: Option<(String, String)> = None;
+
+        for candidate in engine.candidates {
+            if command_exists_in_path(candidate) {
+                detected_in_path = true;
+            }
+            match command_version(candidate) {
+                Ok(version) => {
+                    version_result = Some(((*candidate).to_string(), version));
+                    break;
+                }
+                Err(err) => {
+                    errors.push(format!("{candidate}: {err}"));
+                }
+            }
+        }
+
+        if let Some((command_name, version)) = version_result {
+            local_items.push(HealthCheckItem {
+                id: engine.id.into(),
+                label: format!("{}{}", engine.label, suffix),
+                status: "ok".into(),
+                detail: Some(format!("{version} ({command_name})")),
+                installable: false,
+            });
+        } else if detected_in_path {
+            local_items.push(HealthCheckItem {
+                id: engine.id.into(),
+                label: format!("{}{}", engine.label, suffix),
+                status: if is_active { "warn" } else { "inactive" }.into(),
+                detail: Some(
+                    "CLI executable detected in PATH, but version probe failed. Try opening a new terminal session or reinstalling.".into(),
+                ),
+                installable: true,
+            });
+        } else {
+            local_items.push(HealthCheckItem {
+                id: engine.id.into(),
+                label: format!("{}{}", engine.label, suffix),
+                status: if is_active { "error" } else { "inactive" }.into(),
+                detail: Some(if is_active {
+                    "Not found. Click Install to set up, or select a different engine in Settings.".into()
+                } else {
+                    "Not installed (optional)".into()
+                }),
+                installable: true,
+            });
+        }
+    }
+
+    let node_candidates = ["node", "nodejs"];
+    let mut node_ok = None;
+
+    for candidate in node_candidates {
+        if let Ok(version) = command_version(candidate) {
+            node_ok = Some((candidate.to_string(), version));
+            break;
+        }
+    }
+
+    if let Some((command_name, version)) = node_ok {
+        local_items.push(HealthCheckItem {
+            id: "node".into(),
+            label: "Node.js".into(),
+            status: "ok".into(),
+            detail: Some(format!("{version} ({command_name})")),
+            installable: false,
+        });
+    } else {
+        local_items.push(HealthCheckItem {
+            id: "node".into(),
+            label: "Node.js".into(),
+            status: "warn".into(),
+            detail: Some(
+                "Not found — required for Claude CLI. Click Install to set up automatically."
+                    .into(),
+            ),
+            installable: true,
+        });
+    }
+
+    let sched_running = state.scheduler.is_running();
+    local_items.push(HealthCheckItem {
+        id: "scheduler".into(),
+        label: "Event Bus".into(),
+        status: if sched_running { "ok" } else { "warn" }.into(),
+        detail: Some(if sched_running {
+            "Running — processing events and triggers".into()
+        } else {
+            "Not started yet".into()
+        }),
+        installable: false,
+    });
+
+    Ok(HealthCheckSection {
+        id: "local".into(),
+        label: "Local Environment".into(),
+        items: local_items,
+    })
+}
+
+#[tauri::command]
+pub async fn health_check_agents(
+    state: State<'_, Arc<AppState>>,
+) -> Result<HealthCheckSection, AppError> {
+    let mut agent_items = Vec::new();
+
+    let ollama_key_configured = crate::db::repos::core::settings::get(&state.db, settings_keys::OLLAMA_API_KEY)
+        .ok()
+        .flatten()
+        .is_some_and(|k| !k.is_empty());
+
+    agent_items.push(HealthCheckItem {
+        id: "ollama_api_key".into(),
+        label: "Ollama Cloud API Key".into(),
+        status: if ollama_key_configured { "ok" } else { "inactive" }.into(),
+        detail: Some(if ollama_key_configured {
+            "Configured — free Ollama Cloud models available for all agents".into()
+        } else {
+            "Not configured (optional) — add a free API key to unlock Ollama Cloud models like Qwen3 Coder, GLM-5, and Kimi K2.5".into()
+        }),
+        installable: false,
+    });
+
+    let litellm_url_configured = crate::db::repos::core::settings::get(&state.db, settings_keys::LITELLM_BASE_URL)
+        .ok()
+        .flatten()
+        .is_some_and(|u| !u.is_empty());
+    let litellm_key_configured = crate::db::repos::core::settings::get(&state.db, settings_keys::LITELLM_MASTER_KEY)
+        .ok()
+        .flatten()
+        .is_some_and(|k| !k.is_empty());
+    let litellm_configured = litellm_url_configured && litellm_key_configured;
+
+    agent_items.push(HealthCheckItem {
+        id: "litellm_proxy".into(),
+        label: "LiteLLM Proxy".into(),
+        status: if litellm_configured { "ok" } else { "inactive" }.into(),
+        detail: Some(
+            if litellm_configured {
+                "Configured — LiteLLM proxy available for all agents".into()
+            } else if litellm_url_configured {
+                "Base URL set but master key missing — add master key to complete setup".into()
+            } else if litellm_key_configured {
+                "Master key set but base URL missing — add proxy URL to complete setup".into()
+            } else {
+                "Not configured (optional) — add a LiteLLM proxy URL and master key to route agents through your proxy".into()
+            },
+        ),
+        installable: false,
+    });
+
+    Ok(HealthCheckSection {
+        id: "agents".into(),
+        label: "Agents".into(),
+        items: agent_items,
+    })
+}
+
+#[tauri::command]
+pub async fn health_check_cloud(
+    state: State<'_, Arc<AppState>>,
+) -> Result<HealthCheckSection, AppError> {
+    let cloud_connected = state.cloud_client.lock().await.is_some();
+    let mut cloud_items = Vec::new();
+
+    cloud_items.push(HealthCheckItem {
+        id: "cloud_orchestrator".into(),
+        label: "Cloud Orchestrator".into(),
+        status: if cloud_connected { "ok" } else { "info" }.into(),
+        detail: Some(if cloud_connected {
+            "Connected — agents can run when this device is off".into()
+        } else {
+            "Not deployed — agents only run while this app is open".into()
+        }),
+        installable: false,
+    });
+
+    Ok(HealthCheckSection {
+        id: "cloud".into(),
+        label: "Cloud Deployment".into(),
+        items: cloud_items,
+    })
+}
+
+#[tauri::command]
+pub async fn health_check_account(
+    state: State<'_, Arc<AppState>>,
+) -> Result<HealthCheckSection, AppError> {
+    let auth = state.auth.lock().await;
+    let auth_resp = auth.to_response();
+    drop(auth);
+
+    let mut auth_items = Vec::new();
+
+    if auth_resp.is_authenticated {
+        let user_detail = auth_resp
+            .user
+            .as_ref()
+            .map(|u| {
+                let name = u.display_name.as_deref().unwrap_or(&u.email);
+                if auth_resp.is_offline {
+                    format!("{} (offline mode)", name)
+                } else {
+                    name.to_string()
+                }
+            })
+            .unwrap_or_else(|| "Signed in".into());
+
+        auth_items.push(HealthCheckItem {
+            id: "google_auth".into(),
+            label: "Google Account".into(),
+            status: if auth_resp.is_offline { "warn" } else { "ok" }.into(),
+            detail: Some(user_detail),
+            installable: false,
+        });
+    } else {
+        auth_items.push(HealthCheckItem {
+            id: "google_auth".into(),
+            label: "Google Account".into(),
+            status: "inactive".into(),
+            detail: Some("Not signed in — optional, enables sync and extended features".into()),
+            installable: false,
+        });
+    }
+
+    Ok(HealthCheckSection {
+        id: "account".into(),
+        label: "Account".into(),
+        items: auth_items,
+    })
+}
+
 #[tauri::command]
 pub async fn open_external_url(url: String) -> Result<(), AppError> {
     let trimmed = url.trim();

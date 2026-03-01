@@ -1,5 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Trash2, Radio, Loader2 } from 'lucide-react';
+import {
+  Plus, Trash2, Radio, Loader2,
+  CheckCircle2, XCircle, AlertTriangle, Webhook,
+  FileEdit, Rocket, Clock, Link, Zap,
+} from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import * as eventsApi from '@/api/events';
 import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscription';
@@ -16,6 +20,54 @@ const COMMON_EVENT_TYPES = [
   'webhook_received',
   'chain_completed',
 ];
+
+// ── Event type color/icon metadata ───────────────────────────────────
+interface EventTypeMeta {
+  Icon: typeof CheckCircle2;
+  /** Tailwind text color class */
+  text: string;
+  /** Tailwind bg tint class */
+  bg: string;
+  /** Tailwind border class */
+  border: string;
+}
+
+const EVENT_TYPE_META: Record<string, EventTypeMeta> = {
+  // Success events — green
+  build_complete:   { Icon: CheckCircle2,  text: 'text-emerald-400', bg: 'bg-emerald-500/12', border: 'border-emerald-500/20' },
+  test_passed:      { Icon: CheckCircle2,  text: 'text-emerald-400', bg: 'bg-emerald-500/12', border: 'border-emerald-500/20' },
+  chain_completed:  { Icon: Link,          text: 'text-emerald-400', bg: 'bg-emerald-500/12', border: 'border-emerald-500/20' },
+  deploy:           { Icon: Rocket,        text: 'text-emerald-400', bg: 'bg-emerald-500/12', border: 'border-emerald-500/20' },
+  // Error events — red
+  test_failed:      { Icon: XCircle,       text: 'text-red-400',     bg: 'bg-red-500/12',     border: 'border-red-500/20' },
+  error:            { Icon: XCircle,       text: 'text-red-400',     bg: 'bg-red-500/12',     border: 'border-red-500/20' },
+  // Alert events — amber
+  alert:            { Icon: AlertTriangle, text: 'text-amber-400',   bg: 'bg-amber-500/12',   border: 'border-amber-500/20' },
+  // Webhook events — blue
+  webhook_received: { Icon: Webhook,       text: 'text-blue-400',    bg: 'bg-blue-500/12',    border: 'border-blue-500/20' },
+  // Schedule events — amber/clock
+  schedule_fired:   { Icon: Clock,         text: 'text-amber-400',   bg: 'bg-amber-500/12',   border: 'border-amber-500/20' },
+  // File events — cyan
+  file_changed:     { Icon: FileEdit,      text: 'text-cyan-400',    bg: 'bg-cyan-500/12',    border: 'border-cyan-500/20' },
+};
+
+const DEFAULT_EVENT_META: EventTypeMeta = {
+  Icon: Zap, text: 'text-violet-400', bg: 'bg-violet-500/12', border: 'border-violet-500/20',
+};
+
+function EventTypeChip({ eventType }: { eventType: string }) {
+  const meta = EVENT_TYPE_META[eventType] ?? DEFAULT_EVENT_META;
+  const { Icon, text, bg, border } = meta;
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-mono border ${bg} ${text} ${border} truncate max-w-full`}
+      title={eventType}
+    >
+      <Icon className="w-3 h-3 flex-shrink-0" />
+      {eventType}
+    </span>
+  );
+}
 
 export function EventSubscriptionsPanel() {
   const personas = usePersonaStore((s) => s.personas);
@@ -96,8 +148,15 @@ export function EventSubscriptionsPanel() {
     }
   };
 
+  const isDuplicate = newPersonaId && newEventType.trim() && subscriptions.some(
+    (s) =>
+      s.persona_id === newPersonaId &&
+      s.event_type === newEventType.trim() &&
+      (s.source_filter ?? '') === (newSourceFilter.trim() || ''),
+  );
+
   const handleAdd = async () => {
-    if (!newPersonaId || !newEventType.trim()) return;
+    if (!newPersonaId || !newEventType.trim() || isDuplicate) return;
     setSaving(true);
     try {
       const created = await eventsApi.createSubscription({
@@ -206,11 +265,11 @@ export function EventSubscriptionsPanel() {
                 </button>
                 <button
                   onClick={handleAdd}
-                  disabled={!newPersonaId || !newEventType.trim() || saving}
+                  disabled={!newPersonaId || !newEventType.trim() || saving || !!isDuplicate}
                   className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary/15 text-primary border border-primary/25 hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {saving && <Loader2 className="w-3 h-3 animate-spin" />}
-                  Create Subscription
+                  {isDuplicate ? 'Already Subscribed' : 'Create Subscription'}
                 </button>
               </div>
             </div>
@@ -247,9 +306,9 @@ export function EventSubscriptionsPanel() {
                     <span className="text-sm text-foreground/85 truncate">
                       {personaName(sub.persona_id)}
                     </span>
-                    <span className="text-sm font-mono text-foreground/75 truncate">
-                      {sub.event_type}
-                    </span>
+                    <div className="truncate">
+                      <EventTypeChip eventType={sub.event_type} />
+                    </div>
                     <span className="text-sm text-muted-foreground/70 truncate">
                       {sub.source_filter ?? '\u2014'}
                     </span>

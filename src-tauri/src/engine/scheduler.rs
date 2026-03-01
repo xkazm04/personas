@@ -14,6 +14,10 @@ pub(crate) fn compute_next_from_config(cfg: &TriggerConfig, now: DateTime<Utc>) 
             let next = cron::next_fire_time(&schedule, now)?;
             Some(next.to_rfc3339())
         }
+        TriggerConfig::Schedule { interval_seconds: Some(secs), .. } => {
+            let next = now + Duration::seconds(*secs as i64);
+            Some(next.to_rfc3339())
+        }
         TriggerConfig::Polling { interval_seconds: Some(secs), .. } => {
             let next = now + Duration::seconds(*secs as i64);
             Some(next.to_rfc3339())

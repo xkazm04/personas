@@ -58,33 +58,22 @@ export function UsageDashboard() {
     };
   }, [days, selectedPersonaId, fetchToolUsage]);
 
-  // Pivot overTime data into wide format for AreaChart
-  const areaData = useMemo(() => {
-    if (!toolUsageOverTime.length) return [];
-
+  // Pivot overTime data into wide format for AreaChart + collect tool names
+  const { areaData, allToolNames } = useMemo(() => {
+    if (!toolUsageOverTime.length) return { areaData: [], allToolNames: [] as string[] };
     const dateMap = new Map<string, Record<string, number>>();
-
-    for (const row of toolUsageOverTime) {
-      if (!dateMap.has(row.date)) {
-        dateMap.set(row.date, {});
-      }
-      const entry = dateMap.get(row.date)!;
-      entry[row.tool_name] = (entry[row.tool_name] || 0) + row.invocations;
-    }
-
-    const sortedDates = Array.from(dateMap.keys()).sort();
-    return sortedDates.map((date) => ({
-      date,
-      ...dateMap.get(date),
-    }));
-  }, [toolUsageOverTime]);
-
-  const allToolNames = useMemo(() => {
     const names = new Set<string>();
     for (const row of toolUsageOverTime) {
       names.add(row.tool_name);
+      if (!dateMap.has(row.date)) dateMap.set(row.date, {});
+      const entry = dateMap.get(row.date)!;
+      entry[row.tool_name] = (entry[row.tool_name] || 0) + row.invocations;
     }
-    return Array.from(names);
+    const sortedDates = Array.from(dateMap.keys()).sort();
+    return {
+      areaData: sortedDates.map(date => ({ date, ...dateMap.get(date) })),
+      allToolNames: Array.from(names),
+    };
   }, [toolUsageOverTime]);
 
   // Pie chart data
@@ -223,7 +212,7 @@ export function UsageDashboard() {
               </div>
               <div className="text-center space-y-2.5">
                 <h3 className="text-xl font-bold text-foreground/90 tracking-tight">Your analytics dashboard</h3>
-                <p className="text-[13px] text-muted-foreground/80 leading-relaxed max-w-[280px] mx-auto">
+                <p className="text-xs text-muted-foreground/80 leading-relaxed max-w-[280px] mx-auto">
                   When your personas run and use tools, you'll see detailed charts showing
                   which tools are used most, usage trends, and breakdowns.
                 </p>
@@ -243,7 +232,7 @@ export function UsageDashboard() {
                     <span className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-black tracking-wider ${
                       done ? 'bg-emerald-500/20 text-emerald-400 shadow-inner' : 'bg-primary/10 text-muted-foreground/70'
                     }`}>{step}</span>
-                    <span className={`text-[13px] font-medium ${done ? 'text-emerald-400' : 'text-foreground/80'}`}>{label}</span>
+                    <span className={`text-xs font-medium ${done ? 'text-emerald-400' : 'text-foreground/80'}`}>{label}</span>
                     {done && <span className="ml-auto text-[11px] font-bold uppercase tracking-widest text-emerald-400/60 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">Done</span>}
                   </div>
                 ))}

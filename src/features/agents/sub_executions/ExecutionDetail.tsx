@@ -1,9 +1,12 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import type { DbPersonaExecution } from '@/lib/types/types';
-import { ChevronDown, ChevronRight, Clock, Calendar, FileText, AlertCircle, Search, ListTree, RotateCw, RefreshCw, Key, Zap, Settings, ArrowRight, Shield, Loader2, Brain, XCircle, AlertTriangle } from 'lucide-react';
+import { ChevronDown, ChevronRight, Clock, Calendar, FileText, AlertCircle, Search, ListTree, RotateCw, RefreshCw, Key, Zap, Settings, ArrowRight, Shield, Loader2, Brain, XCircle, AlertTriangle, Activity, Play } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatTimestamp, formatDuration, getStatusEntry, badgeClass, MEMORY_CATEGORY_COLORS } from '@/lib/utils/formatters';
 import { ExecutionInspector } from '@/features/agents/sub_executions/ExecutionInspector';
+import { TraceInspector } from '@/features/agents/sub_executions/TraceInspector';
+import { PipelineWaterfall } from '@/features/agents/sub_executions/PipelineWaterfall';
+import { ReplaySandbox } from '@/features/agents/sub_executions/ReplaySandbox';
 import { usePersonaStore } from '@/stores/personaStore';
 import { getExecutionLog } from '@/api/executions';
 import { listMemoriesByExecution } from '@/api/memories';
@@ -11,6 +14,7 @@ import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
 import type { LucideIcon } from 'lucide-react';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 import { isTerminalState } from '@/lib/execution/executionState';
+import { maskSensitiveJson, sanitizeErrorMessage } from '@/lib/utils/maskSensitive';
 import hljs from 'highlight.js/lib/core';
 import jsonLang from 'highlight.js/lib/languages/json';
 
@@ -70,12 +74,14 @@ function getErrorExplanation(errorMessage: string): { summary: string; guidance:
   return null;
 }
 
+import { sanitizeHljsHtml } from '@/lib/utils/sanitizeHtml';
+
 function HighlightedJsonBlock({ raw }: { raw: string | null }) {
   const html = useMemo(() => {
     if (!raw) return null;
     try {
       const pretty = JSON.stringify(JSON.parse(raw), null, 2);
-      return hljs.highlight(pretty, { language: 'json' }).value;
+      return sanitizeHljsHtml(hljs.highlight(pretty, { language: 'json' }).value);
     } catch {
       return null;
     }
@@ -106,7 +112,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
   const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
   const setEditorTab = usePersonaStore((s) => s.setEditorTab);
   const selectPersona = usePersonaStore((s) => s.selectPersona);
-  const [activeTab, setActiveTab] = useState<'detail' | 'inspector'>('detail');
+  const [activeTab, setActiveTab] = useState<'detail' | 'inspector' | 'trace' | 'pipeline' | 'replay'>('detail');
 
   const handleErrorAction = useCallback((action: ErrorAction) => {
     switch (action.navigate) {
@@ -124,6 +130,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
         break;
     }
   }, [execution.persona_id, setSidebarSection, setEditorTab, selectPersona]);
+  const [showRaw, setShowRaw] = useState(false);
   const [showInputData, setShowInputData] = useState(false);
   const [showOutputData, setShowOutputData] = useState(false);
   const [showLog, setShowLog] = useState(false);
@@ -157,7 +164,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
     setLogLoading(true);
     setLogError(null);
     try {
-      const content = await getExecutionLog(execution.id);
+      const content = await getExecutionLog(execution.id, execution.persona_id);
       setLogContent(content ?? 'Log file is empty or was not found.');
     } catch (err) {
       setLogError(err instanceof Error ? err.message : 'Failed to load log');
@@ -173,19 +180,19 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
   return (
     <div className="space-y-4">
       {/* Tab Switcher */}
-      {hasToolSteps && (
-        <div className="flex gap-1 p-1 rounded-xl bg-secondary/40 border border-primary/10 w-fit">
-          <button
-            onClick={() => setActiveTab('detail')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-              activeTab === 'detail'
-                ? 'bg-primary/15 text-foreground/90 border border-primary/25'
-                : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'
-            }`}
-          >
-            <ListTree className="w-3.5 h-3.5" />
-            Detail
-          </button>
+      <div className="flex gap-1 p-1 rounded-xl bg-secondary/40 border border-primary/10 w-fit">
+        <button
+          onClick={() => setActiveTab('detail')}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+            activeTab === 'detail'
+              ? 'bg-primary/15 text-foreground/90 border border-primary/25'
+              : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'
+          }`}
+        >
+          <ListTree className="w-3.5 h-3.5" />
+          Detail
+        </button>
+        {hasToolSteps && (
           <button
             onClick={() => setActiveTab('inspector')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
@@ -197,11 +204,52 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
             <Search className="w-3.5 h-3.5" />
             Inspector
           </button>
-        </div>
-      )}
+        )}
+        <button
+          onClick={() => setActiveTab('trace')}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+            activeTab === 'trace'
+              ? 'bg-primary/15 text-foreground/90 border border-primary/25'
+              : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'
+          }`}
+        >
+          <Activity className="w-3.5 h-3.5" />
+          Trace
+        </button>
+        <button
+          onClick={() => setActiveTab('pipeline')}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+            activeTab === 'pipeline'
+              ? 'bg-primary/15 text-foreground/90 border border-primary/25'
+              : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'
+          }`}
+        >
+          <Zap className="w-3.5 h-3.5" />
+          Pipeline
+        </button>
+        {isTerminalState(execution.status) && (
+          <button
+            onClick={() => setActiveTab('replay')}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+              activeTab === 'replay'
+                ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25'
+                : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'
+            }`}
+          >
+            <Play className="w-3.5 h-3.5" />
+            Replay
+          </button>
+        )}
+      </div>
 
-      {/* Inspector Tab */}
-      {activeTab === 'inspector' && hasToolSteps ? (
+      {/* Tab Content */}
+      {activeTab === 'replay' ? (
+        <ReplaySandbox execution={execution} />
+      ) : activeTab === 'pipeline' ? (
+        <PipelineWaterfall execution={execution} />
+      ) : activeTab === 'trace' ? (
+        <TraceInspector execution={execution} />
+      ) : activeTab === 'inspector' && hasToolSteps ? (
         <ExecutionInspector execution={execution} />
       ) : (
         <>
@@ -253,8 +301,27 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
             </div>
           </div>
 
+          {/* Masked / Raw toggle */}
+          {(execution.error_message || hasInputData || hasOutputData) && (
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowRaw(!showRaw)}
+                className={`flex items-center gap-1.5 px-2.5 py-1 text-[11px] rounded-lg border transition-colors ${
+                  showRaw
+                    ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                    : 'bg-secondary/30 text-muted-foreground/60 border-primary/10 hover:text-muted-foreground/80'
+                }`}
+                title={showRaw ? 'Sensitive values are visible' : 'Sensitive values are masked'}
+              >
+                <Shield className="w-3 h-3" />
+                {showRaw ? 'Raw' : 'Masked'}
+              </button>
+            </div>
+          )}
+
           {/* Error Message */}
           {execution.error_message && (() => {
+            const errorDisplay = showRaw ? execution.error_message : sanitizeErrorMessage(execution.error_message);
             const explanation = getErrorExplanation(execution.error_message);
             return (
               <div className="space-y-2">
@@ -297,7 +364,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-mono font-medium text-red-400 mb-1.5 uppercase tracking-wider">Error</div>
                       <pre className="text-sm text-red-300/80 whitespace-pre-wrap break-words font-mono">
-                        {execution.error_message}
+                        {errorDisplay}
                       </pre>
                     </div>
                   </div>
@@ -339,7 +406,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
                   >
-                    <HighlightedJsonBlock raw={execution.input_data} />
+                    <HighlightedJsonBlock raw={showRaw ? execution.input_data : maskSensitiveJson(execution.input_data) as string | null} />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -368,7 +435,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
                   >
-                    <HighlightedJsonBlock raw={execution.output_data} />
+                    <HighlightedJsonBlock raw={showRaw ? execution.output_data : maskSensitiveJson(execution.output_data) as string | null} />
                   </motion.div>
                 )}
               </AnimatePresence>
