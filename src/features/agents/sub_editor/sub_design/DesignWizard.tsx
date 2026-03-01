@@ -1,9 +1,10 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Sparkles, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { WIZARD_STEPS, compileWizardInstruction, getAnswerSummary } from './wizardSteps';
 import type { WizardAnswers } from './wizardSteps';
 import { WizardStepRenderer } from './WizardStepRenderer';
+import { WizardStepIndicator } from './WizardStepIndicator';
 
 interface DesignWizardProps {
   onComplete: (instruction: string) => void;
@@ -57,49 +58,10 @@ export function DesignWizard({ onComplete, onCancel }: DesignWizardProps) {
 
   return (
     <div className="space-y-4">
-      {/* Step indicator */}
-      <div className="flex items-center gap-1.5 px-1">
-        {WIZARD_STEPS.map((step, i) => {
-          const isActive = i === stepIndex;
-          const isComplete = i < stepIndex;
-
-          return (
-            <div key={step.id} className="flex items-center gap-1.5">
-              {i > 0 && (
-                <div
-                  className={`w-6 h-px transition-colors ${
-                    isComplete ? 'bg-violet-500/50' : 'bg-primary/10'
-                  }`}
-                />
-              )}
-              <button
-                type="button"
-                onClick={() => {
-                  if (i < stepIndex) {
-                    setDirection(-1);
-                    setStepIndex(i);
-                  }
-                }}
-                disabled={i > stepIndex}
-                className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm transition-all ${
-                  isActive
-                    ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25'
-                    : isComplete
-                    ? 'text-emerald-400/70 hover:bg-secondary/50 cursor-pointer'
-                    : 'text-muted-foreground/80 cursor-default'
-                }`}
-              >
-                {isComplete ? (
-                  <Check className="w-3 h-3" />
-                ) : (
-                  <span className="w-4 text-center font-mono">{i + 1}</span>
-                )}
-                <span className="hidden sm:inline">{step.title}</span>
-              </button>
-            </div>
-          );
-        })}
-      </div>
+      <WizardStepIndicator
+        stepIndex={stepIndex}
+        onGoToStep={(i) => { setDirection(-1); setStepIndex(i); }}
+      />
 
       {/* Step content */}
       <AnimatePresence mode="wait" custom={direction}>
