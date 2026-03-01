@@ -1,4 +1,5 @@
 import type { AdoptionRequirement, DesignAnalysisResult, StructuredPromptSection, SuggestedTrigger } from '@/lib/types/designTypes';
+import { sanitizeVariableValues, validateAllVariables } from '@/lib/utils/variableSanitizer';
 
 const VAR_PATTERN = /\{\{(\w+)\}\}/g;
 
@@ -28,6 +29,22 @@ export function validateVariables(
     }
   }
   return { valid: missing.length === 0, missing };
+}
+
+/**
+ * Validate all variables against their typed schemas.
+ * Returns per-field error messages in addition to missing-field checks.
+ */
+export function validateVariablesTyped(
+  requirements: AdoptionRequirement[],
+  values: Record<string, string>,
+): { valid: boolean; missing: string[]; errors: Record<string, string> } {
+  // Presence check (existing behavior)
+  const { missing } = validateVariables(requirements, values);
+  // Type-aware validation
+  const { errors } = validateAllVariables(requirements, values);
+  const allValid = missing.length === 0 && Object.keys(errors).length === 0;
+  return { valid: allValid, missing, errors };
 }
 
 /** Replace all {{key}} occurrences in a string with the provided values */
@@ -101,23 +118,27 @@ export function substituteVariables(
   design: DesignAnalysisResult,
   values: Record<string, string>,
 ): DesignAnalysisResult {
+  // Sanitize all values before substitution to prevent prompt injection
+  const requirements = design.adoption_requirements ?? [];
+  const sanitized = sanitizeVariableValues(requirements, values);
+
   const sp = design.structured_prompt;
   const substitutedSections: StructuredPromptSection[] = (sp.customSections ?? []).map((s) => ({
     ...s,
-    content: replaceVars(s.content, values),
+    content: replaceVars(s.content, sanitized),
   }));
 
   return {
     ...design,
     structured_prompt: {
-      identity: replaceVars(sp.identity, values),
-      instructions: replaceVars(sp.instructions, values),
-      toolGuidance: replaceVars(sp.toolGuidance, values),
-      examples: replaceVars(sp.examples, values),
-      errorHandling: replaceVars(sp.errorHandling, values),
+      identity: replaceVars(sp.identity, sanitized),
+      instructions: replaceVars(sp.instructions, sanitized),
+      toolGuidance: replaceVars(sp.toolGuidance, sanitized),
+      examples: replaceVars(sp.examples, sanitized),
+      errorHandling: replaceVars(sp.errorHandling, sanitized),
       customSections: substitutedSections,
     },
-    full_prompt_markdown: replaceVars(design.full_prompt_markdown, values),
-    summary: replaceVars(design.summary, values),
+    full_prompt_markdown: replaceVars(design.full_prompt_markdown, sanitized),
+    summary: replaceVars(design.summary, sanitized),
   };
 }

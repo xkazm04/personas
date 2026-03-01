@@ -52,10 +52,13 @@ pub async fn start_n8n_transform_background(
 
     let cancel_token = CancellationToken::new();
 
-    // Check for pre-emptive cancellation (race condition guard)
+    // Atomic check-and-insert: guard against duplicate transform_id AND
+    // concurrent transforms on the same session_id.
     {
         let mgr = job_state::manager();
-        let jobs = mgr.lock()?;
+        let mut jobs = mgr.lock()?;
+
+        // Check for pre-emptive cancellation (race condition guard)
         if let Some(existing) = jobs.get(&transform_id) {
             if existing.status == "running" {
                 return Err(AppError::Validation("Transform is already running".into()));
@@ -66,8 +69,36 @@ pub async fn start_n8n_transform_background(
                 }
             }
         }
-        drop(jobs);
-        mgr.insert_running(transform_id.clone(), cancel_token.clone(), N8nTransformExtra::default())?;
+
+        // Prevent concurrent transforms targeting the same session
+        if let Some(ref sid) = session_id {
+            let has_running = jobs.values().any(|job| {
+                job.status == "running"
+                    && job.extra.session_id.as_deref() == Some(sid.as_str())
+            });
+            if has_running {
+                return Err(AppError::Validation(
+                    "Another transform is already running for this session. Please wait or cancel it first.".into(),
+                ));
+            }
+        }
+
+        // Evict stale entries and insert the new running job
+        mgr.evict_stale(&mut jobs);
+        jobs.insert(
+            transform_id.clone(),
+            crate::background_job::JobEntry {
+                status: "running".into(),
+                error: None,
+                lines: Vec::new(),
+                cancel_token: Some(cancel_token.clone()),
+                created_at: std::time::Instant::now(),
+                extra: N8nTransformExtra {
+                    session_id: session_id.clone(),
+                    ..Default::default()
+                },
+            },
+        );
     }
 
     if cancel_token.is_cancelled() {
@@ -191,6 +222,9 @@ pub async fn continue_n8n_transform(
 ) -> Result<serde_json::Value, AppError> {
     let claude_session_id = get_n8n_transform_claude_session(&transform_id)
         .ok_or_else(|| AppError::NotFound("No Claude session found for this transform".into()))?;
+
+    // Reject if this transform is already running (double-submit guard)
+    job_state::manager().ensure_not_running(&transform_id)?;
 
     // Update job state
     set_n8n_transform_status(&app, &transform_id, "running", None);

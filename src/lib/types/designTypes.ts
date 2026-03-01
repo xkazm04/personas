@@ -107,7 +107,7 @@ export interface AdoptionRequirement {
   key: string;
   label: string;
   description: string;
-  type: "text" | "select" | "cron" | "url";
+  type: "text" | "select" | "cron" | "url" | "email";
   required: boolean;
   default_value?: string;
   options?: string[];

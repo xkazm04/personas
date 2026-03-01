@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Smile } from 'lucide-react';
 import { useClickOutside } from '@/hooks/utility/useClickOutside';
 import { IconSelector, EMOJI_PRESETS } from '@/features/shared/components/IconSelector';
+import { sanitizeIconUrl } from '@/lib/utils/sanitizeUrl';
 import type { ConnectorDefinition } from '@/lib/types/types';
 
 interface PopupIconSelectorProps {
@@ -23,7 +24,7 @@ export function PopupIconSelector({ value, onChange, connectors = [], size = 'sm
     setOpen(false);
   };
 
-  const isUrl = value?.startsWith('http');
+  const safeUrl = sanitizeIconUrl(value);
   const isEmoji = EMOJI_PRESETS.includes(value);
 
   return (
@@ -39,8 +40,8 @@ export function PopupIconSelector({ value, onChange, connectors = [], size = 'sm
         title="Choose icon"
       >
         {value ? (
-          isUrl ? (
-            <img src={value} alt="" className="w-5 h-5 rounded" />
+          safeUrl ? (
+            <img src={safeUrl} alt="" className="w-5 h-5 rounded" referrerPolicy="no-referrer" crossOrigin="anonymous" />
           ) : isEmoji ? (
             <span className="text-lg leading-none">{value}</span>
           ) : (
@@ -58,7 +59,7 @@ export function PopupIconSelector({ value, onChange, connectors = [], size = 'sm
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.97 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="absolute top-full mt-1 left-0 bg-background border border-primary/15 rounded-xl shadow-lg z-20 p-3 min-w-[260px]"
+            className="absolute top-full mt-1 left-0 bg-background border border-primary/15 rounded-xl shadow-lg z-50 p-3 min-w-[260px]"
           >
             <IconSelector
               value={value}

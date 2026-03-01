@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Loader2, AlertTriangle, Play } from 'lucide-react';
+import { Loader2, Play, FlaskConical, XCircle } from 'lucide-react';
 import { runPromptAbTest } from '@/api/observability';
+import { useToastStore } from '@/stores/toastStore';
 import type { PersonaPromptVersion } from '@/lib/bindings/PersonaPromptVersion';
 import type { PromptAbTestResult } from '@/lib/bindings/PromptAbTestResult';
 
@@ -15,6 +16,7 @@ export function AbTestPanel({ personaId, compareA, compareB }: AbTestPanelProps)
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<PromptAbTestResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const addToast = useToastStore((s) => s.addToast);
 
   const handleRun = async () => {
     if (!compareA || !compareB) return;
@@ -29,6 +31,7 @@ export function AbTestPanel({ personaId, compareA, compareB }: AbTestPanelProps)
         testInput.trim() || undefined,
       );
       setResult(res);
+      addToast('A/B test completed successfully', 'success');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -38,8 +41,21 @@ export function AbTestPanel({ personaId, compareA, compareB }: AbTestPanelProps)
 
   if (!compareA || !compareB) {
     return (
-      <div className="text-sm text-muted-foreground/60 text-center py-6">
-        Select two versions (A and B) to run an A/B test
+      <div className="flex flex-col items-center justify-center py-16 space-y-3">
+        <div className="w-12 h-12 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center">
+          <FlaskConical className="w-6 h-6 text-primary/30" />
+        </div>
+        <h4 className="text-sm font-medium text-foreground/70">A/B test your prompts</h4>
+        <p className="text-xs text-muted-foreground/50 text-center max-w-xs">
+          Compare two prompt versions head-to-head. See which one performs better on cost, speed, and output quality.
+        </p>
+        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground/40">
+          <span>Select</span>
+          <span className="font-mono bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded">A</span>
+          <span>&</span>
+          <span className="font-mono bg-violet-500/10 text-violet-400 px-1.5 py-0.5 rounded">B</span>
+          <span>versions to begin</span>
+        </div>
       </div>
     );
   }
@@ -74,9 +90,18 @@ export function AbTestPanel({ personaId, compareA, compareB }: AbTestPanelProps)
       </button>
 
       {error && (
-        <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-          <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-red-400">{error}</p>
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20 shadow-sm animate-in fade-in slide-in-from-top-2 duration-200">
+          <XCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1 space-y-1">
+            <h5 className="text-sm font-semibold text-red-400">A/B Test Failed</h5>
+            <p className="text-sm text-red-300/90 leading-relaxed">{error}</p>
+          </div>
+          <button
+            onClick={() => setError(null)}
+            className="text-red-400/50 hover:text-red-400 transition-colors p-1 rounded-lg hover:bg-red-500/10"
+          >
+            <XCircle className="w-4 h-4" />
+          </button>
         </div>
       )}
 

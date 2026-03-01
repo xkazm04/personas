@@ -36,6 +36,7 @@ pub mod trace;
 pub mod types;
 pub mod webhook;
 pub mod platform_rules;
+pub mod url_safety;
 
 use std::collections::HashMap;
 use std::path::PathBuf;

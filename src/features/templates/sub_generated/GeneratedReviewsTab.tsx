@@ -867,7 +867,7 @@ export default function GeneratedReviewsTab({
                 <th className="text-left text-sm font-medium text-muted-foreground/70 px-6 py-3 w-10 bg-secondary/80" />
                 <th className="text-left text-sm font-medium text-muted-foreground/70 px-4 py-3 bg-secondary/80">Template Name</th>
                 <th className="text-center text-sm font-medium text-muted-foreground/70 px-4 py-3 bg-secondary/80">Flows</th>
-                <th className="text-center text-sm font-medium text-muted-foreground/70 px-4 py-3 bg-secondary/80">Quality</th>
+                <th className="text-center text-sm font-medium text-muted-foreground/70 px-4 py-3 bg-secondary/80">Adoptions</th>
                 <th className="text-center text-sm font-medium text-muted-foreground/70 px-4 py-3 bg-secondary/80">Status</th>
                 <th className="text-right text-sm font-medium text-muted-foreground/70 px-6 py-3 w-28 bg-secondary/80" />
               </tr>
@@ -963,7 +963,14 @@ export default function GeneratedReviewsTab({
                       </td>
                       <td className="px-4 py-4 text-center">
                         <div className="flex justify-center">
-                          <DimensionRadial designResult={designResult} size={32} />
+                          {review.adoption_count > 0 ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300">
+                              <Download className="w-3.5 h-3.5" />
+                              {review.adoption_count}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-muted-foreground/40">--</span>
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-4 text-center">

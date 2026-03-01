@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import * as api from '@/api/tauriApi';
 import { getRetryChain } from '@/api/healing';
 import { formatTimestamp, formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
-import { FEATURED_TEMPLATES } from '@/lib/personas/templateCatalog';
+import { TEMPLATE_CATALOG } from '@/lib/personas/templateCatalog';
 import { useCopyToClipboard } from '@/hooks/utility/useCopyToClipboard';
 import { ExecutionComparison } from './ExecutionComparison';
 import { maskSensitiveJson, sanitizeErrorMessage } from '@/lib/utils/maskSensitive';
@@ -101,7 +101,7 @@ export function ExecutionList() {
 
   const sampleInput = useMemo(() => {
     if (!selectedPersona) return '{}';
-    const match = FEATURED_TEMPLATES.find(
+    const match = TEMPLATE_CATALOG.find(
       (t) => t.name === selectedPersona.name,
     );
     const data = match ? TEMPLATE_SAMPLE_INPUT[match.id] ?? {} : {};

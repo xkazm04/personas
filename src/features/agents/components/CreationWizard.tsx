@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizeUrl';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bot,
@@ -444,9 +445,9 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
                         style={{ borderLeftWidth: 3, borderLeftColor: color }}
                       >
                         {icon ? (
-                          icon.startsWith('http') ? (
-                            <img src={icon} alt="" className="w-8 h-8" />
-                          ) : (
+                          sanitizeIconUrl(icon) ? (
+                            <img src={sanitizeIconUrl(icon)!} alt="" className="w-8 h-8" referrerPolicy="no-referrer" crossOrigin="anonymous" />
+                          ) : isIconUrl(icon) ? null : (
                             <span className="text-2xl">{icon}</span>
                           )
                         ) : (

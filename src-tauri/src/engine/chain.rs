@@ -166,7 +166,7 @@ pub fn evaluate_chain_triggers(
                 );
 
                 // Mark trigger as fired
-                let _ = trigger_repo::mark_triggered(pool, &trigger.id, None);
+                let _ = trigger_repo::mark_triggered(pool, &trigger.id, None, trigger.next_trigger_at.as_deref());
             }
             Err(e) => {
                 tracing::error!(

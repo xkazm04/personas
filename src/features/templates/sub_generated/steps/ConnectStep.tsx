@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/ConnectorMeta';
 import { CredentialEditForm } from '@/features/vault/components/CredentialEditForm';
+import { useCredentialHealth } from '@/features/vault/hooks/useCredentialHealth';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useAdoptionWizard } from '../AdoptionWizardContext';
 import type { ConnectorDefinition, CredentialMetadata, CredentialTemplateField } from '@/lib/types/types';
@@ -159,7 +160,8 @@ function ComponentCard({
   onSwapConnector: (originalName: string, replacementName: string) => void;
   justCreated?: boolean;
 }) {
-  const hasCredential = !!selectedCredentialId;
+  const isVirtualConnector = connector.activeName === 'personas_messages';
+  const hasCredential = isVirtualConnector || !!selectedCredentialId;
   const matchingCreds = useMemo(
     () => findMatchingCredentials(connector.activeName, credentials),
     [connector.activeName, credentials],
@@ -218,30 +220,37 @@ function ComponentCard({
         />
       </div>
 
-      {/* Credential dropdown */}
-      <div>
-        <label className="text-[11px] font-medium text-muted-foreground/50 uppercase tracking-wider mb-1.5 block">
-          Credential
-        </label>
-        <select
-          value={selectedCredentialId ?? ''}
-          onChange={handleCredentialChange}
-          className={`w-full px-2.5 py-2 bg-background/50 border rounded-lg text-sm text-foreground/80 focus:outline-none focus:border-violet-500/30 transition-colors appearance-none cursor-pointer ${
-            justCreated
-              ? 'border-emerald-400/60 ring-2 ring-emerald-400/20'
-              : hasCredential ? 'border-emerald-500/15' : 'border-primary/10'
-          }`}
-          style={justCreated ? { transition: 'border-color 0.3s, box-shadow 0.3s' } : undefined}
-        >
-          <option value="">Select credential...</option>
-          {matchingCreds.map((cred) => (
-            <option key={cred.id} value={cred.id}>
-              {cred.name}
-            </option>
-          ))}
-          <option value="__create__">+ Create new credential</option>
-        </select>
-      </div>
+      {/* Credential dropdown or always-active badge */}
+      {connector.activeName === 'personas_messages' ? (
+        <div className="flex items-center gap-2 px-2.5 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+          <span className="text-sm text-emerald-300/80">Always active — no credentials needed</span>
+        </div>
+      ) : (
+        <div>
+          <label className="text-[11px] font-medium text-muted-foreground/50 uppercase tracking-wider mb-1.5 block">
+            Credential
+          </label>
+          <select
+            value={selectedCredentialId ?? ''}
+            onChange={handleCredentialChange}
+            className={`w-full px-2.5 py-2 bg-background/50 border rounded-lg text-sm text-foreground/80 focus:outline-none focus:border-violet-500/30 transition-colors appearance-none cursor-pointer ${
+              justCreated
+                ? 'border-emerald-400/60 ring-2 ring-emerald-400/20'
+                : hasCredential ? 'border-emerald-500/15' : 'border-primary/10'
+            }`}
+            style={justCreated ? { transition: 'border-color 0.3s, box-shadow 0.3s' } : undefined}
+          >
+            <option value="">Select credential...</option>
+            {matchingCreds.map((cred) => (
+              <option key={cred.id} value={cred.id}>
+                {cred.name}
+              </option>
+            ))}
+            <option value="__create__">+ Create new credential</option>
+          </select>
+        </div>
+      )}
     </div>
   );
 }
@@ -372,6 +381,24 @@ function InlineFormPanel({
 
   const credentialName = `${meta.label} credential`;
 
+  // Prefer built-in connector definition metadata over AI-generated instructions
+  const effectiveSetupUrl = (connectorDef?.metadata as Record<string, unknown>)?.docs_url as string | undefined
+    ?? setupUrl;
+  const effectiveSetupInstructions = connectorDef
+    ? undefined   // Built-in definitions have per-field helpText — suppress AI-generated instructions
+    : setupInstructions;
+
+  // Connection test — mirror vault ConnectorCredentialModal pattern
+  const health = useCredentialHealth(`connector:${connectorName}`);
+
+  const handleHealthcheck = useCallback(async (values: Record<string, string>) => {
+    await health.checkDesign(
+      `Test connection for ${meta.label} connector`,
+      { name: connectorName, label: meta.label, fields: inlineFields },
+      values,
+    );
+  }, [connectorName, meta.label, inlineFields, health.checkDesign]);
+
   const handleSave = useCallback(
     async (values: Record<string, string>) => {
       const store = usePersonaStore.getState();
@@ -406,9 +433,9 @@ function InlineFormPanel({
           </span>
         </div>
 
-        {setupUrl && (
+        {effectiveSetupUrl && (
           <a
-            href={setupUrl}
+            href={effectiveSetupUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 px-3 py-2 bg-amber-500/10 border border-amber-500/25 rounded-lg text-sm text-foreground/80 hover:bg-amber-500/15 transition-colors"
@@ -418,10 +445,10 @@ function InlineFormPanel({
           </a>
         )}
 
-        {setupInstructions && (
+        {effectiveSetupInstructions && (
           <div className="px-3 py-2 bg-secondary/40 border border-primary/8 rounded-lg">
             <p className="text-xs text-muted-foreground/70 whitespace-pre-line leading-relaxed">
-              {setupInstructions}
+              {effectiveSetupInstructions}
             </p>
           </div>
         )}
@@ -431,6 +458,12 @@ function InlineFormPanel({
             fields={inlineFields}
             onSave={handleSave}
             onCancel={onClose}
+            onHealthcheck={handleHealthcheck}
+            isHealthchecking={health.isHealthchecking}
+            healthcheckResult={health.result}
+            onValuesChanged={() => health.invalidate()}
+            saveDisabled={!health.result?.success}
+            saveDisabledReason="Run a successful connection test before saving."
           />
         ) : (
           <div className="text-sm text-muted-foreground/50 text-center py-3">
@@ -490,7 +523,7 @@ export function ConnectStep() {
     justCreatedTimerRef.current = setTimeout(() => setJustCreated(null), 1800);
   }, []);
   const configuredCount = useMemo(
-    () => requiredConnectors.filter((c) => connectorCredentialMap[c.activeName]).length,
+    () => requiredConnectors.filter((c) => c.activeName === 'personas_messages' || !!connectorCredentialMap[c.activeName]).length,
     [requiredConnectors, connectorCredentialMap],
   );
   const totalCount = requiredConnectors.length;
@@ -568,7 +601,7 @@ export function ConnectStep() {
 
       {/* Architecture Component Cards */}
       {componentConnectors.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3">
           {componentConnectors.map((connector) => (
             <ComponentCard
               key={connector.name}
@@ -597,7 +630,7 @@ export function ConnectStep() {
               <div className="flex-1 h-px bg-primary/8" />
             </div>
           )}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3">
             {standaloneConnectors.map((connector) => (
               <StandaloneConnectorTile
                 key={connector.name}

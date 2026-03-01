@@ -10,13 +10,13 @@ interface MarkdownRendererProps {
 
 const components: Components = {
   h1: ({ children }) => (
-    <h1 className="text-lg font-bold text-foreground mb-3 mt-5 pb-1.5 border-b border-primary/10">{children}</h1>
+    <h1 className="text-lg font-bold text-primary mb-3 mt-5 pb-1.5 border-b border-primary/20">{children}</h1>
   ),
   h2: ({ children }) => (
-    <h2 className="text-[15px] font-semibold text-foreground/85 mb-2.5 mt-4">{children}</h2>
+    <h2 className="text-[15px] font-semibold text-primary/90 mb-2.5 mt-4">{children}</h2>
   ),
   h3: ({ children }) => (
-    <h3 className="text-sm font-semibold text-foreground/75 mb-2 mt-3 tracking-wide uppercase">{children}</h3>
+    <h3 className="text-sm font-semibold text-accent mb-2 mt-3 tracking-wide">{children}</h3>
   ),
   p: ({ children }) => (
     <p className="text-sm text-foreground/90 mb-3 leading-relaxed">{children}</p>
@@ -77,7 +77,7 @@ const components: Components = {
   ),
   hr: () => <hr className="border-border/30 my-4" />,
   strong: ({ children }) => (
-    <strong className="font-semibold text-foreground/90">{children}</strong>
+    <strong className="font-bold text-foreground">{children}</strong>
   ),
   img: ({ src, alt }) => (
     <img src={src} alt={alt || ''} className="max-w-full h-auto rounded-lg my-2 border border-border/20" />

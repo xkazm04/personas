@@ -25,9 +25,12 @@ pub(crate) fn command_version(command: &str) -> Result<String, String> {
     {
         Ok(output) if output.status.success() => {
             let stdout = String::from_utf8_lossy(&output.stdout);
+            // Find the first line that looks like a version (contains a digit).
+            // CLI tools sometimes emit non-version output (e.g. update-check
+            // warnings) before or instead of the actual version string.
             let version = stdout
                 .lines()
-                .next()
+                .find(|line| line.chars().any(|c| c.is_ascii_digit()))
                 .unwrap_or("unknown")
                 .trim()
                 .to_string();

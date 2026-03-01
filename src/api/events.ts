@@ -15,6 +15,9 @@ export const listEvents = (limit?: number, projectId?: string) =>
     projectId: projectId ?? null,
   });
 
+export const listEventsInRange = (since: string, until: string) =>
+  invoke<PersonaEvent[]>("list_events_in_range", { since, until });
+
 export const listSubscriptions = (personaId: string) =>
   invoke<PersonaEventSubscription[]>("list_subscriptions", { personaId });
 

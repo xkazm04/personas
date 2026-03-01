@@ -9,7 +9,6 @@ import {
   Clock,
   AlertCircle,
   CheckCircle2,
-  Brain,
   Cpu,
   ArrowRight,
   Mail,
@@ -17,8 +16,13 @@ import {
 import { usePersonaStore } from '@/stores/personaStore';
 import { useAuthStore } from '@/stores/authStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
-import { useMemo, useEffect } from 'react';
-import { AreaChart, Area, ResponsiveContainer } from 'recharts';
+import { useMemo, useEffect, useState } from 'react';
+import { AreaChart, Area, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
+import { PersonaSelect } from '@/features/overview/sub_usage/DashboardFilters';
+import { getExecutionDashboard } from '@/api/observability';
+import type { DashboardDailyPoint } from '@/lib/bindings/DashboardDailyPoint';
+import { ChartTooltip } from '@/features/overview/sub_usage/charts/ChartTooltip';
+import { GRID_STROKE, AXIS_TICK_FILL } from '@/features/overview/sub_usage/charts/chartConstants';
 
 // ---------------------------------------------------------------------------
 // DashboardHome
@@ -31,19 +35,22 @@ export default function DashboardHome() {
   const globalExecutionsTotal = usePersonaStore((s) => s.globalExecutionsTotal);
   const pendingReviewCount = usePersonaStore((s) => s.pendingReviewCount);
   const unreadMessageCount = usePersonaStore((s) => s.unreadMessageCount);
-  const toolUsageOverTime = usePersonaStore((s) => s.toolUsageOverTime);
   const fetchGlobalExecutions = usePersonaStore((s) => s.fetchGlobalExecutions);
   const fetchPendingReviewCount = usePersonaStore((s) => s.fetchPendingReviewCount);
   const fetchUnreadMessageCount = usePersonaStore((s) => s.fetchUnreadMessageCount);
-  const fetchToolUsage = usePersonaStore((s) => s.fetchToolUsage);
   const setOverviewTab = usePersonaStore((s) => s.setOverviewTab);
+
+  const [selectedPersonaId, setSelectedPersonaId] = useState('');
+  const [dailyPoints, setDailyPoints] = useState<DashboardDailyPoint[]>([]);
 
   useEffect(() => {
     fetchGlobalExecutions(true);
     fetchPendingReviewCount();
     fetchUnreadMessageCount();
-    fetchToolUsage(14);
-  }, [fetchGlobalExecutions, fetchPendingReviewCount, fetchUnreadMessageCount, fetchToolUsage]);
+    getExecutionDashboard(14)
+      .then((data) => setDailyPoints(data.daily_points))
+      .catch(() => setDailyPoints([]));
+  }, [fetchGlobalExecutions, fetchPendingReviewCount, fetchUnreadMessageCount]);
 
   const stats = useMemo(() => {
     const successCount = globalExecutions.filter(e => e.status === 'completed').length;
@@ -51,30 +58,27 @@ export default function DashboardHome() {
       ? Math.round((successCount / globalExecutions.length) * 100)
       : 0;
 
+    let execs = globalExecutions;
+    if (selectedPersonaId) {
+      execs = execs.filter(e => e.persona_id === selectedPersonaId);
+    }
+
     return {
       successRate,
       activeAgents: personas.length,
-      recentExecs: globalExecutions.slice(0, 12)
+      recentExecs: execs.slice(0, 12),
     };
-  }, [globalExecutions, personas]);
+  }, [globalExecutions, personas, selectedPersonaId]);
 
-  // Pivot tool usage into simple sparkline data
-  const activityData = useMemo(() => {
-    if (!toolUsageOverTime.length) {
-      return Array.from({ length: 14 }).map(() => ({
-        val: 10 + Math.random() * 20
-      }));
-    }
-
-    const dayMap = new Map<string, number>();
-    for (const row of toolUsageOverTime) {
-      dayMap.set(row.date, (dayMap.get(row.date) || 0) + row.invocations);
-    }
-
-    return Array.from(dayMap.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([_, val]) => ({ val }));
-  }, [toolUsageOverTime]);
+  // Build chart data from execution dashboard daily points
+  const chartData = useMemo(() => {
+    if (!dailyPoints.length) return [];
+    return dailyPoints.map(p => ({
+      date: p.date,
+      traffic: p.total_executions,
+      errors: p.failed,
+    }));
+  }, [dailyPoints]);
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -84,6 +88,13 @@ export default function DashboardHome() {
   }, []);
 
   const displayName = user?.display_name || user?.email?.split('@')[0] || 'Operator';
+
+  // Chart totals for badges
+  const chartTotals = useMemo(() => {
+    const totalTraffic = chartData.reduce((s, d) => s + d.traffic, 0);
+    const totalErrors = chartData.reduce((s, d) => s + d.errors, 0);
+    return { totalTraffic, totalErrors };
+  }, [chartData]);
 
   // Header-level stat badges
   const headerBadges = (
@@ -110,7 +121,7 @@ export default function DashboardHome() {
         {globalExecutionsTotal}
       </button>
       <button
-        onClick={() => setOverviewTab('observability')}
+        onClick={() => setOverviewTab('analytics')}
         className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors hover:bg-violet-500/15 bg-violet-500/10 border-violet-500/20 text-violet-300"
       >
         <ShieldCheck className="w-3 h-3" />
@@ -159,40 +170,11 @@ export default function DashboardHome() {
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="flex -space-x-2">
-                {personas.slice(0, 5).map((p) => (
-                  <div
-                    key={p.id}
-                    className="w-8 h-8 rounded-full border-2 border-background bg-secondary flex items-center justify-center text-xs overflow-hidden"
-                    title={p.name}
-                  >
-                    {p.icon ? (
-                      <span className="text-lg">{p.icon}</span>
-                    ) : (
-                      <Brain className="w-4 h-4 text-muted-foreground" />
-                    )}
-                  </div>
-                ))}
-                {personas.length > 5 && (
-                  <div className="w-8 h-8 rounded-full border-2 border-background bg-secondary flex items-center justify-center text-[10px] font-bold text-muted-foreground">
-                    +{personas.length - 5}
-                  </div>
-                )}
-              </div>
-              <div className="h-8 w-px bg-primary/10 mx-1" />
-              <div className="flex flex-col items-end">
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">System Load</span>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <div className="flex gap-0.5">
-                    {[1, 2, 3, 4, 5].map(i => (
-                      <div key={i} className={`w-1 h-3 rounded-full ${i <= 2 ? 'bg-emerald-500/60' : 'bg-primary/10'}`} />
-                    ))}
-                  </div>
-                  <span className="text-xs font-mono text-emerald-400">Normal</span>
-                </div>
-              </div>
-            </div>
+            <PersonaSelect
+              value={selectedPersonaId}
+              onChange={setSelectedPersonaId}
+              personas={personas}
+            />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -251,43 +233,84 @@ export default function DashboardHome() {
               </div>
             </div>
 
-            {/* Side Column */}
+            {/* Side Column — Traffic & Errors Chart */}
             <div className="space-y-6">
-
-              {/* Activity Trend */}
               <div className="rounded-2xl border border-primary/10 bg-secondary/20 shadow-sm p-5 space-y-4 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl rounded-full pointer-events-none" />
+                <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 blur-3xl rounded-full pointer-events-none" />
                 <div className="flex items-center justify-between relative z-10">
                   <h3 className="text-xs font-bold uppercase tracking-widest text-foreground/80 flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                    <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400">
                       <TrendingUp className="w-3.5 h-3.5" />
                     </div>
-                    Usage Trend
+                    Traffic & Errors
                   </h3>
-                  <span className="text-[11px] font-black tracking-wide text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 shadow-sm">
-                    +12%
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-cyan-400" />
+                      <span className="text-[10px] text-muted-foreground/60">{chartTotals.totalTraffic}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-rose-400" />
+                      <span className="text-[10px] text-muted-foreground/60">{chartTotals.totalErrors}</span>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="h-28 w-full relative z-10">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={activityData}>
-                      <defs>
-                        <linearGradient id="colorVal" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4}/>
-                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <Area
-                        type="monotone"
-                        dataKey="val"
-                        stroke="hsl(var(--primary))"
-                        strokeWidth={2.5}
-                        fillOpacity={1}
-                        fill="url(#colorVal)"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
+                <div className="h-32 w-full relative z-10">
+                  {chartData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={chartData}>
+                        <defs>
+                          <linearGradient id="trafficGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.25} />
+                            <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                          </linearGradient>
+                          <linearGradient id="errorGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.25} />
+                            <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
+                        <XAxis
+                          dataKey="date"
+                          tick={{ fill: AXIS_TICK_FILL, fontSize: 9 }}
+                          tickFormatter={(v: string) => v.slice(5)}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          tick={{ fill: AXIS_TICK_FILL, fontSize: 9 }}
+                          width={24}
+                          axisLine={false}
+                          tickLine={false}
+                          allowDecimals={false}
+                        />
+                        <Tooltip content={<ChartTooltip />} />
+                        <Area
+                          type="monotone"
+                          dataKey="traffic"
+                          name="Traffic"
+                          stroke="#06b6d4"
+                          strokeWidth={2}
+                          fillOpacity={1}
+                          fill="url(#trafficGrad)"
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="errors"
+                          name="Errors"
+                          stroke="#f43f5e"
+                          strokeWidth={2}
+                          fillOpacity={1}
+                          fill="url(#errorGrad)"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <p className="text-xs text-muted-foreground/50">No execution data yet</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="pt-3 border-t border-primary/5 relative z-10">

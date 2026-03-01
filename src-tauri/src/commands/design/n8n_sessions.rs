@@ -7,6 +7,10 @@ use crate::db::repos::resources::n8n_sessions as repo;
 use crate::error::AppError;
 use crate::AppState;
 
+/// Maximum raw workflow JSON size allowed in session storage (10 MB),
+/// consistent with the transform payload limit in cli_runner.rs.
+const MAX_WORKFLOW_JSON_BYTES: usize = 10 * 1024 * 1024;
+
 #[tauri::command]
 pub async fn create_n8n_session(
     state: State<'_, Arc<AppState>>,
@@ -15,6 +19,12 @@ pub async fn create_n8n_session(
     step: String,
     status: String,
 ) -> Result<N8nTransformSession, AppError> {
+    if raw_workflow_json.len() > MAX_WORKFLOW_JSON_BYTES {
+        return Err(AppError::Validation(
+            "Workflow JSON too large (>10 MB). Use a smaller workflow export.".into(),
+        ));
+    }
+
     repo::create(
         &state.db,
         &CreateN8nSessionInput {

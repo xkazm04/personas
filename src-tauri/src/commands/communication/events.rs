@@ -21,6 +21,15 @@ pub fn list_events(
 }
 
 #[tauri::command]
+pub fn list_events_in_range(
+    state: State<'_, Arc<AppState>>,
+    since: String,
+    until: String,
+) -> Result<Vec<PersonaEvent>, AppError> {
+    repo::get_in_range(&state.db, &since, &until)
+}
+
+#[tauri::command]
 pub fn publish_event(
     app: AppHandle,
     state: State<'_, Arc<AppState>>,

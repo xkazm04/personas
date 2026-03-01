@@ -98,7 +98,7 @@ pub async fn poll_due_triggers(
                 tracing::warn!(trigger_id = %trigger.id, "Polling trigger missing 'url' in config");
                 // Still mark triggered to advance next_trigger_at
                 let next = sched_logic::compute_next_trigger_at(&trigger, now);
-                if let Err(e) = trigger_repo::mark_triggered(pool, &trigger.id, next) {
+                if let Err(e) = trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref()) {
                     tracing::error!(trigger_id = %trigger.id, "mark_triggered failed: {}", e);
                     record_mark_failure(&trigger.id);
                 } else {
@@ -107,6 +107,23 @@ pub async fn poll_due_triggers(
                 continue;
             }
         };
+
+        // SSRF protection: block private/internal IPs
+        if let Err(reason) = crate::engine::url_safety::validate_url_safety(&url) {
+            tracing::warn!(
+                trigger_id = %trigger.id,
+                url = %url,
+                "Polling trigger URL blocked (SSRF protection): {}", reason
+            );
+            let next = sched_logic::compute_next_trigger_at(&trigger, now);
+            if let Err(e) = trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref()) {
+                tracing::error!(trigger_id = %trigger.id, "mark_triggered failed: {}", e);
+                record_mark_failure(&trigger.id);
+            } else {
+                clear_backoff(&trigger.id);
+            }
+            continue;
+        }
 
         let headers: Vec<(String, String)> = cfg_headers
             .unwrap_or_default()
@@ -128,7 +145,7 @@ pub async fn poll_due_triggers(
                     "Polling HTTP request failed: {}", e
                 );
                 let next = sched_logic::compute_next_trigger_at(&trigger, now);
-                if let Err(me) = trigger_repo::mark_triggered(pool, &trigger.id, next) {
+                if let Err(me) = trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref()) {
                     tracing::error!(trigger_id = %trigger.id, "mark_triggered failed: {}", me);
                     record_mark_failure(&trigger.id);
                 } else {
@@ -147,7 +164,7 @@ pub async fn poll_due_triggers(
                     "Polling: failed to read response body: {}", e
                 );
                 let next = sched_logic::compute_next_trigger_at(&trigger, now);
-                if let Err(me) = trigger_repo::mark_triggered(pool, &trigger.id, next) {
+                if let Err(me) = trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref()) {
                     tracing::error!(trigger_id = %trigger.id, "mark_triggered failed: {}", me);
                     record_mark_failure(&trigger.id);
                 } else {
@@ -242,7 +259,7 @@ pub async fn poll_due_triggers(
             );
 
             // No content change — still advance the schedule so we don't re-poll immediately
-            if let Err(e) = trigger_repo::mark_triggered(pool, &trigger.id, next) {
+            if let Err(e) = trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref()) {
                 tracing::error!(trigger_id = %trigger.id, "mark_triggered failed: {}", e);
                 record_mark_failure(&trigger.id);
             } else {

@@ -14,6 +14,8 @@ pub struct N8nTransformExtra {
     pub questions: Option<serde_json::Value>,
     /// Streaming sections accumulated during section-by-section transform.
     pub sections: Vec<serde_json::Value>,
+    /// The session ID this transform belongs to (for concurrency guard).
+    pub session_id: Option<String>,
 }
 
 #[derive(Clone, Serialize)]

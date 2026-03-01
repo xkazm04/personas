@@ -2,10 +2,13 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   RotateCcw, ChevronDown, ChevronRight,
-  Shield, Archive, Beaker, Clock,
+  Shield, Archive, Beaker, Clock, Loader2, AlertTriangle, XCircle,
 } from 'lucide-react';
 import type { PersonaPromptVersion } from '@/lib/bindings/PersonaPromptVersion';
 import { TAG_STYLES, formatRelative } from './promptLabUtils';
+
+/** Identifies which button is currently loading on this version */
+export type VersionAction = 'promote' | 'archive' | 'unarchive' | 'rollback' | null;
 
 interface VersionItemProps {
   version: PersonaPromptVersion;
@@ -17,7 +20,11 @@ interface VersionItemProps {
   onRollback: () => void;
   onSetCompareA: () => void;
   onSetCompareB: () => void;
-  tagging: boolean;
+  /** Which action is in-flight for THIS version, or null if idle */
+  activeAction: VersionAction;
+  /** Inline error message for the last failed operation on this version */
+  actionError: string | null;
+  onDismissError: () => void;
 }
 
 export function VersionItem({
@@ -30,11 +37,35 @@ export function VersionItem({
   onRollback,
   onSetCompareA,
   onSetCompareB,
-  tagging,
+  activeAction,
+  actionError,
+  onDismissError,
 }: VersionItemProps) {
   const [showActions, setShowActions] = useState(false);
   const style = TAG_STYLES[version.tag] ?? TAG_STYLES.experimental!;
   const TagIcon = style.icon;
+
+  const actionBtn = (
+    action: VersionAction,
+    onClick: () => void,
+    icon: React.ReactNode,
+    label: string,
+    colorClasses: string,
+    testId: string,
+  ) => {
+    const isThis = activeAction === action;
+    return (
+      <button
+        onClick={(e) => { e.stopPropagation(); onClick(); }}
+        disabled={isThis}
+        data-testid={testId}
+        className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded-lg transition-colors disabled:opacity-70 ${colorClasses} ${isThis ? 'cursor-default' : 'cursor-pointer'}`}
+      >
+        {isThis ? <Loader2 className="w-3 h-3 animate-spin" /> : icon}
+        {label}
+      </button>
+    );
+  };
 
   return (
     <motion.div
@@ -108,45 +139,62 @@ export function VersionItem({
             className="overflow-hidden"
           >
             <div className="flex flex-wrap gap-1.5 px-3 pb-3 border-t border-primary/5 pt-2">
-              {version.tag !== 'production' && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onTag('production'); }}
-                  disabled={tagging}
-                  data-testid={`version-promote-${version.version_number}`}
-                  className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
-                >
-                  <Shield className="w-3 h-3" /> Promote to Production
-                </button>
+              {version.tag !== 'production' &&
+                actionBtn(
+                  'promote',
+                  () => onTag('production'),
+                  <Shield className="w-3 h-3" />,
+                  'Promote to Production',
+                  'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20',
+                  `version-promote-${version.version_number}`,
+                )
+              }
+              {version.tag !== 'archived' &&
+                actionBtn(
+                  'archive',
+                  () => onTag('archived'),
+                  <Archive className="w-3 h-3" />,
+                  'Archive',
+                  'bg-zinc-500/10 text-zinc-400 hover:bg-zinc-500/20',
+                  `version-archive-${version.version_number}`,
+                )
+              }
+              {version.tag === 'archived' &&
+                actionBtn(
+                  'unarchive',
+                  () => onTag('experimental'),
+                  <Beaker className="w-3 h-3" />,
+                  'Unarchive',
+                  'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20',
+                  `version-unarchive-${version.version_number}`,
+                )
+              }
+              {actionBtn(
+                'rollback',
+                () => onRollback(),
+                <RotateCcw className="w-3 h-3" />,
+                'Rollback to this',
+                'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20',
+                `version-rollback-${version.version_number}`,
               )}
-              {version.tag !== 'archived' && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onTag('archived'); }}
-                  disabled={tagging}
-                  data-testid={`version-archive-${version.version_number}`}
-                  className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-lg bg-zinc-500/10 text-zinc-400 hover:bg-zinc-500/20 transition-colors disabled:opacity-50"
-                >
-                  <Archive className="w-3 h-3" /> Archive
-                </button>
-              )}
-              {version.tag === 'archived' && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onTag('experimental'); }}
-                  disabled={tagging}
-                  data-testid={`version-unarchive-${version.version_number}`}
-                  className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors disabled:opacity-50"
-                >
-                  <Beaker className="w-3 h-3" /> Unarchive
-                </button>
-              )}
-              <button
-                onClick={(e) => { e.stopPropagation(); onRollback(); }}
-                disabled={tagging}
-                data-testid={`version-rollback-${version.version_number}`}
-                className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors disabled:opacity-50"
-              >
-                <RotateCcw className="w-3 h-3" /> Rollback to this
-              </button>
             </div>
+
+            {/* Inline error panel */}
+            {actionError && (
+              <div className="mx-3 mb-3 flex items-start gap-3 p-3 rounded-xl bg-red-500/10 border border-red-500/20 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
+                <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1 space-y-0.5">
+                  <p className="text-xs font-semibold text-red-400 uppercase tracking-tight">Operation Failed</p>
+                  <p className="text-xs text-red-300/90 leading-relaxed">{actionError}</p>
+                </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onDismissError(); }}
+                  className="text-red-400/40 hover:text-red-400 transition-colors p-1 rounded-lg hover:bg-red-500/10 flex-shrink-0"
+                >
+                  <XCircle className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

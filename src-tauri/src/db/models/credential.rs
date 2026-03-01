@@ -33,6 +33,7 @@ pub struct CreateCredentialInput {
     pub encrypted_data: String,
     pub iv: String,
     pub metadata: Option<String>,
+    pub session_encrypted_data: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -47,6 +48,7 @@ pub struct UpdateCredentialInput {
     #[serde(skip_deserializing, default)]
     pub iv: Option<String>,
     pub metadata: Option<Option<String>>,
+    pub session_encrypted_data: Option<String>,
 }
 
 // ============================================================================

@@ -237,6 +237,10 @@ export function useAdoptReducer() {
     update({ selectedUseCaseIds: toggleInSet(state.selectedUseCaseIds, id) });
   }, [update, state.selectedUseCaseIds]);
 
+  const selectAllUseCases = useCallback((ids: string[]) => {
+    update({ selectedUseCaseIds: new Set(ids) });
+  }, [update]);
+
   const toggleTool = useCallback((index: number) => {
     update({ selectedToolIndices: toggleInSet(state.selectedToolIndices, index) });
   }, [update, state.selectedToolIndices]);
@@ -393,6 +397,7 @@ export function useAdoptReducer() {
     ...({ setAdjustment: core.setAdjustment, draftUpdated: core.draftUpdated, draftJsonEdited: core.draftJsonEdited, setError: core.setError, clearError: core.clearError, goToStep: core.goToStep, reset: core.reset }),
     // Entity selection
     toggleUseCaseId,
+    selectAllUseCases,
     toggleTool,
     toggleTrigger,
     toggleConnector,

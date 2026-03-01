@@ -117,7 +117,7 @@ export function CredentialCard({
               }}
             >
               {connector?.icon_url ? (
-                <img src={connector.icon_url} alt={connector.label} className="w-4 h-4" />
+                <img src={connector.icon_url} alt={connector.label} className="w-4 h-4" referrerPolicy="no-referrer" crossOrigin="anonymous" />
               ) : connector ? (
                 <Plug className="w-4 h-4" style={{ color: connector.color }} />
               ) : (

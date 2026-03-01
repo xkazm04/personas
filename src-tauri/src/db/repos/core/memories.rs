@@ -318,6 +318,32 @@ pub fn get_stats(
     })
 }
 
+pub fn update_importance(pool: &DbPool, id: &str, importance: i32) -> Result<bool, AppError> {
+    let conn = pool.get()?;
+    let now = chrono::Utc::now().to_rfc3339();
+    let rows = conn.execute(
+        "UPDATE persona_memories SET importance = ?1, updated_at = ?2 WHERE id = ?3",
+        params![importance, now, id],
+    )?;
+    Ok(rows > 0)
+}
+
+pub fn batch_delete(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
+    if ids.is_empty() {
+        return Ok(0);
+    }
+    let conn = pool.get()?;
+    let placeholders: Vec<String> = (1..=ids.len()).map(|i| format!("?{}", i)).collect();
+    let sql = format!(
+        "DELETE FROM persona_memories WHERE id IN ({})",
+        placeholders.join(", ")
+    );
+    let params: Vec<&dyn rusqlite::types::ToSql> =
+        ids.iter().map(|id| id as &dyn rusqlite::types::ToSql).collect();
+    let rows = conn.execute(&sql, params.as_slice())?;
+    Ok(rows as i64)
+}
+
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     let conn = pool.get()?;
     let rows = conn.execute("DELETE FROM persona_memories WHERE id = ?1", params![id])?;

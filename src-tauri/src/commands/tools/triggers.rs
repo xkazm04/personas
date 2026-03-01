@@ -25,11 +25,76 @@ pub fn list_triggers(
     repo::get_by_persona_id(&state.db, &persona_id)
 }
 
+/// Validate that a config string, if non-empty, is valid JSON.
+fn validate_config_json(config: Option<&str>) -> Result<(), AppError> {
+    if let Some(c) = config {
+        let trimmed = c.trim();
+        if !trimmed.is_empty() {
+            serde_json::from_str::<serde_json::Value>(trimmed).map_err(|e| {
+                AppError::Validation(format!("Invalid config JSON: {}", e))
+            })?;
+        }
+    }
+    Ok(())
+}
+
+/// If the trigger is a polling type, validate that any configured URL does not
+/// point to a private/internal address (SSRF protection).
+fn validate_polling_url(trigger_type: &str, config: Option<&str>) -> Result<(), AppError> {
+    if trigger_type != "polling" {
+        return Ok(());
+    }
+    let url = config
+        .and_then(|c| serde_json::from_str::<serde_json::Value>(c).ok())
+        .and_then(|v| {
+            v.get("url")
+                .or(v.get("endpoint"))
+                .and_then(|u| u.as_str().map(String::from))
+        });
+    if let Some(u) = url {
+        if !u.is_empty() {
+            crate::engine::url_safety::validate_url_safety(&u)
+                .map_err(|reason| AppError::Validation(format!("Polling URL blocked: {}", reason)))?;
+        }
+    }
+    Ok(())
+}
+
+/// If the trigger is a chain type, extract source_persona_id from config and
+/// run cycle detection to prevent infinite execution loops.
+fn validate_chain_cycle(
+    pool: &crate::db::DbPool,
+    trigger_type: &str,
+    config: Option<&str>,
+    target_persona_id: &str,
+    exclude_trigger_id: Option<&str>,
+) -> Result<(), AppError> {
+    if trigger_type != "chain" {
+        return Ok(());
+    }
+    let source = config
+        .and_then(|c| serde_json::from_str::<serde_json::Value>(c).ok())
+        .and_then(|v| v.get("source_persona_id")?.as_str().map(String::from));
+    if let Some(src) = source {
+        chain::detect_chain_cycle(pool, &src, target_persona_id, exclude_trigger_id)?;
+    }
+    Ok(())
+}
+
 #[tauri::command]
 pub fn create_trigger(
     state: State<'_, Arc<AppState>>,
     input: CreateTriggerInput,
 ) -> Result<PersonaTrigger, AppError> {
+    validate_config_json(input.config.as_deref())?;
+    validate_polling_url(&input.trigger_type, input.config.as_deref())?;
+    validate_chain_cycle(
+        &state.db,
+        &input.trigger_type,
+        input.config.as_deref(),
+        &input.persona_id,
+        None,
+    )?;
     repo::create(&state.db, input)
 }
 
@@ -39,6 +104,16 @@ pub fn update_trigger(
     id: String,
     input: UpdateTriggerInput,
 ) -> Result<PersonaTrigger, AppError> {
+    validate_config_json(input.config.as_deref())?;
+    // For chain cycle detection and polling URL validation on update, we need
+    // the existing trigger's data to fill in fields not being changed.
+    if input.trigger_type.is_some() || input.config.is_some() {
+        let existing = repo::get_by_id(&state.db, &id)?;
+        let trigger_type = input.trigger_type.as_deref().unwrap_or(&existing.trigger_type);
+        let config = input.config.as_deref().or(existing.config.as_deref());
+        validate_polling_url(trigger_type, config)?;
+        validate_chain_cycle(&state.db, trigger_type, config, &existing.persona_id, Some(&id))?;
+    }
     repo::update(&state.db, &id, input)
 }
 
@@ -84,13 +159,30 @@ pub async fn validate_trigger(
     id: String,
 ) -> Result<TriggerValidationResult, AppError> {
     let trigger = repo::get_by_id(&state.db, &id)?;
-    let config: serde_json::Value = trigger
-        .config
-        .as_deref()
-        .and_then(|c| serde_json::from_str(c).ok())
-        .unwrap_or(serde_json::Value::Null);
 
     let mut checks: Vec<TriggerValidationCheck> = Vec::new();
+
+    // Parse config JSON, reporting malformed JSON as a validation failure
+    let config: serde_json::Value = match trigger.config.as_deref() {
+        Some(c) if !c.trim().is_empty() => match serde_json::from_str(c) {
+            Ok(v) => v,
+            Err(e) => {
+                checks.push(TriggerValidationCheck {
+                    label: "Config JSON".into(),
+                    passed: false,
+                    message: format!("Malformed JSON in config: {}", e),
+                });
+                // Return early — all downstream checks depend on valid config
+                checks.push(TriggerValidationCheck {
+                    label: "Target persona".into(),
+                    passed: true,
+                    message: "Skipped (config invalid)".into(),
+                });
+                return Ok(TriggerValidationResult { valid: false, checks });
+            }
+        },
+        _ => serde_json::Value::Null,
+    };
 
     match trigger.trigger_type.as_str() {
         "schedule" => {
@@ -166,47 +258,68 @@ pub async fn validate_trigger(
                         message: "Endpoint URL is empty".into(),
                     });
                 } else {
-                    match url::Url::parse(endpoint) {
-                        Ok(_) => {
-                            // Use HEAD only — never GET, which can trigger
-                            // side effects on OAuth callbacks, webhook confirmations, etc.
-                            let client = reqwest::Client::builder()
-                                .timeout(std::time::Duration::from_secs(5))
-                                .build()
-                                .unwrap_or_default();
-                            match client.head(endpoint).send().await {
-                                Ok(resp) => {
-                                    let status = resp.status().as_u16();
-                                    if status == 405 {
-                                        // Method Not Allowed — endpoint exists but rejects HEAD
-                                        checks.push(TriggerValidationCheck {
-                                            label: "Endpoint".into(),
-                                            passed: true,
-                                            message: "Reachable (HEAD not allowed, but server responded)".into(),
-                                        });
-                                    } else {
-                                        checks.push(TriggerValidationCheck {
-                                            label: "Endpoint".into(),
-                                            passed: true,
-                                            message: format!("Reachable (HTTP {})", status),
-                                        });
-                                    }
-                                }
-                                Err(e) => {
-                                    checks.push(TriggerValidationCheck {
-                                        label: "Endpoint".into(),
-                                        passed: false,
-                                        message: format!("Unreachable: {}", e),
-                                    });
-                                }
-                            }
-                        }
-                        Err(_) => {
+                    // SSRF protection: block private/internal IPs before making any request
+                    match crate::engine::url_safety::validate_url_safety(endpoint) {
+                        Err(reason) => {
                             checks.push(TriggerValidationCheck {
                                 label: "Endpoint".into(),
                                 passed: false,
-                                message: format!("Invalid URL: {}", endpoint),
+                                message: format!("Blocked: {}", reason),
                             });
+                        }
+                        Ok(()) => match url::Url::parse(endpoint) {
+                            Ok(_) => {
+                                // Use HEAD only — never GET, which can trigger
+                                // side effects on OAuth callbacks, webhook confirmations, etc.
+                                // Redirects disabled to prevent SSRF via redirect to internal IPs.
+                                let client = reqwest::Client::builder()
+                                    .timeout(std::time::Duration::from_secs(5))
+                                    .redirect(reqwest::redirect::Policy::none())
+                                    .build()
+                                    .unwrap_or_default();
+                                match client.head(endpoint).send().await {
+                                    Ok(resp) => {
+                                        let status = resp.status().as_u16();
+                                        if status == 405 {
+                                            checks.push(TriggerValidationCheck {
+                                                label: "Endpoint".into(),
+                                                passed: true,
+                                                message: "Reachable (HEAD not allowed, but server responded)".into(),
+                                            });
+                                        } else if (300..400).contains(&status) {
+                                            let location = resp.headers()
+                                                .get("location")
+                                                .and_then(|v| v.to_str().ok())
+                                                .unwrap_or("unknown");
+                                            checks.push(TriggerValidationCheck {
+                                                label: "Endpoint".into(),
+                                                passed: true,
+                                                message: format!("Reachable (HTTP {} redirect to {})", status, location),
+                                            });
+                                        } else {
+                                            checks.push(TriggerValidationCheck {
+                                                label: "Endpoint".into(),
+                                                passed: true,
+                                                message: format!("Reachable (HTTP {})", status),
+                                            });
+                                        }
+                                    }
+                                    Err(e) => {
+                                        checks.push(TriggerValidationCheck {
+                                            label: "Endpoint".into(),
+                                            passed: false,
+                                            message: format!("Unreachable: {}", e),
+                                        });
+                                    }
+                                }
+                            }
+                            Err(_) => {
+                                checks.push(TriggerValidationCheck {
+                                    label: "Endpoint".into(),
+                                    passed: false,
+                                    message: format!("Invalid URL: {}", endpoint),
+                                });
+                            }
                         }
                     }
                 }
@@ -466,7 +579,7 @@ fn format_dow(dow: &str) -> String {
         return "weekend".into();
     }
 
-    let names: Vec<&str> = parts
+    let names: Vec<String> = parts
         .iter()
         .filter_map(|p| {
             if p.contains('-') {
@@ -481,16 +594,15 @@ fn format_dow(dow: &str) -> String {
                 } else {
                     None
                 }
-                .map(|s| Box::leak(s.into_boxed_str()) as &str)
             } else {
                 let idx: usize = p.trim().parse().unwrap_or(8);
-                DAYS.get(idx).copied()
+                DAYS.get(idx).map(|d| d.to_string())
             }
         })
         .collect();
 
     if names.len() == 1 {
-        names[0].to_string()
+        names[0].clone()
     } else {
         names.join(", ")
     }

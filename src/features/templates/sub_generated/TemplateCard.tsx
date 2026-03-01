@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   MoreVertical,
   Download,
@@ -15,6 +15,8 @@ import {
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { deriveConnectorReadiness } from './ConnectorReadiness';
 import { DimensionRadial } from './DimensionRadial';
+import { TrustBadge } from './TrustBadge';
+import { verifyTemplate } from '@/lib/templates/templateVerification';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { DesignAnalysisResult, SuggestedTrigger } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
@@ -83,14 +85,23 @@ export function TemplateCard({
     ? deriveConnectorReadiness(designResult.suggested_connectors, installedConnectorNames, credentialServiceTypes)
     : [];
 
+  const verification = useMemo(() => verifyTemplate({
+    testCaseId: review.test_case_id,
+    testRunId: review.test_run_id,
+    designResultJson: review.design_result,
+  }), [review.test_case_id, review.test_run_id, review.design_result]);
+
   return (
     <div className="group rounded-xl border border-primary/10 bg-secondary/30 hover:bg-secondary/50 hover:border-primary/15 transition-all">
       {/* Header */}
       <div className="px-5 pt-5 pb-2.5 flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <h3 className="text-base font-semibold text-foreground/90 truncate">
-            {review.test_case_name}
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-base font-semibold text-foreground/90 truncate">
+              {review.test_case_name}
+            </h3>
+            <TrustBadge trustLevel={verification.trustLevel} compact />
+          </div>
           <p className="text-sm text-muted-foreground/70 mt-1 line-clamp-2 leading-relaxed">
             {review.instruction.length > 120
               ? review.instruction.slice(0, 120) + '...'

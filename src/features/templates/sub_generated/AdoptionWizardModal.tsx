@@ -19,6 +19,8 @@ import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types'
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { TransformProgress } from '@/features/shared/components/TransformProgress';
 import { DimensionRadial } from './DimensionRadial';
+import { TrustBadge } from './TrustBadge';
+import { SandboxWarningBanner } from './SandboxWarningBanner';
 import {
   WizardSidebar,
   ChooseStep,
@@ -149,6 +151,8 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
     designResult,
     completedSteps,
     requiredConnectors,
+    verification,
+    safetyScan,
     handleNext,
     cleanupAll,
   } = useAdoptionWizard();
@@ -191,7 +195,7 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
         return { label: 'Connect', icon: ArrowRight, disabled: false, variant: 'violet' };
       case 'connect': {
         const unconfigured = requiredConnectors.filter(
-          (c) => !state.connectorCredentialMap[c.activeName],
+          (c) => c.activeName !== 'personas_messages' && !state.connectorCredentialMap[c.activeName],
         ).length;
         return {
           label: unconfigured > 0 ? `Configure (${unconfigured} remaining)` : 'Configure',
@@ -212,13 +216,20 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
         return state.transforming
           ? { label: 'Generating...', icon: RefreshCw, disabled: true, variant: 'violet', spinning: true }
           : { label: 'Review Draft', icon: ArrowRight, disabled: !state.draft, variant: 'violet' };
-      case 'create':
+      case 'create': {
         if (state.created) {
           return { label: 'Done', icon: Check, disabled: false, variant: 'emerald' };
         }
+        const hasCriticalFindings = (safetyScan?.critical.length ?? 0) > 0;
         return state.confirming
           ? { label: 'Creating...', icon: RefreshCw, disabled: true, variant: 'emerald', spinning: true }
-          : { label: 'Create Persona', icon: Sparkles, disabled: !state.draft, variant: 'emerald' };
+          : {
+              label: hasCriticalFindings ? 'Blocked by Safety Scan' : 'Create Persona',
+              icon: Sparkles,
+              disabled: !state.draft || hasCriticalFindings,
+              variant: 'emerald',
+            };
+      }
       default:
         return null;
     }
@@ -266,6 +277,7 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
           </div>
 
           <div className="flex items-center gap-3">
+            <TrustBadge trustLevel={verification.trustLevel} />
             {designResult && <DimensionRadial designResult={designResult} size={28} />}
             <button
               onClick={handleClose}
@@ -294,6 +306,11 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
               Dismiss
             </button>
           </motion.div>
+        )}
+
+        {/* Sandbox warning for unverified templates */}
+        {verification.trustLevel !== 'verified' && state.step === 'choose' && (
+          <SandboxWarningBanner verification={verification} className="mx-6 mt-3" />
         )}
 
         {/* Main body: Sidebar + Content */}

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 
 /** The 9 design dimensions scored in reviews.rs `score_design_result()`. */
@@ -130,8 +130,55 @@ interface DimensionRadialProps {
   className?: string;
 }
 
+type TooltipPlacement = 'top' | 'bottom' | 'left' | 'right';
+
+/** Compute best placement by checking available space on each side. */
+function computePlacement(triggerRect: DOMRect): TooltipPlacement {
+  const spaceAbove = triggerRect.top;
+  const spaceBelow = window.innerHeight - triggerRect.bottom;
+  const spaceLeft = triggerRect.left;
+  const spaceRight = window.innerWidth - triggerRect.right;
+
+  // Prefer top, then bottom, then right, then left
+  const candidates: [TooltipPlacement, number][] = [
+    ['top', spaceAbove],
+    ['bottom', spaceBelow],
+    ['right', spaceRight],
+    ['left', spaceLeft],
+  ];
+
+  // Need at least 80px vertical or 160px horizontal for the tooltip to fit
+  const minVertical = 80;
+  const minHorizontal = 160;
+
+  for (const [dir, space] of candidates) {
+    if ((dir === 'top' || dir === 'bottom') && space >= minVertical) return dir;
+    if ((dir === 'left' || dir === 'right') && space >= minHorizontal) return dir;
+  }
+
+  // Fallback: pick whichever side has the most space
+  candidates.sort((a, b) => b[1] - a[1]);
+  return candidates[0]?.[0] ?? 'top';
+}
+
+/** CSS classes for positioning the tooltip relative to the trigger. */
+function placementClasses(placement: TooltipPlacement): string {
+  switch (placement) {
+    case 'top':
+      return 'bottom-full left-1/2 -translate-x-1/2 mb-2';
+    case 'bottom':
+      return 'top-full left-1/2 -translate-x-1/2 mt-2';
+    case 'left':
+      return 'right-full top-1/2 -translate-y-1/2 mr-2';
+    case 'right':
+      return 'left-full top-1/2 -translate-y-1/2 ml-2';
+  }
+}
+
 export function DimensionRadial({ designResult, size = 32, className = '' }: DimensionRadialProps) {
   const [hovered, setHovered] = useState(false);
+  const [placement, setPlacement] = useState<TooltipPlacement>('top');
+  const triggerRef = useRef<HTMLDivElement>(null);
 
   const dimensions = useMemo(() => evaluateDimensions(designResult), [designResult]);
   const filled = DIMENSIONS.filter((d) => dimensions[d]);
@@ -142,10 +189,19 @@ export function DimensionRadial({ designResult, size = 32, className = '' }: Dim
   const strokeWidth = size * 0.14;
   const r = (size - strokeWidth) / 2 - 1;
 
+  const handleMouseEnter = useCallback(() => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setPlacement(computePlacement(rect));
+    }
+    setHovered(true);
+  }, []);
+
   return (
     <div
+      ref={triggerRef}
       className={`relative inline-flex ${className}`}
-      onMouseEnter={() => setHovered(true)}
+      onMouseEnter={handleMouseEnter}
       onMouseLeave={() => setHovered(false)}
       data-testid="dimension-radial"
       data-filled={filled.length}
@@ -181,10 +237,11 @@ export function DimensionRadial({ designResult, size = 32, className = '' }: Dim
         </text>
       </svg>
 
-      {/* Tooltip */}
+      {/* Tooltip — collision-aware placement with fade+scale animation */}
       {hovered && (
         <div
-          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 px-3 py-2 rounded-lg bg-background border border-primary/20 shadow-xl text-xs whitespace-nowrap"
+          className={`absolute ${placementClasses(placement)} z-50 px-3 py-2 rounded-lg bg-background border border-primary/20 shadow-xl text-xs whitespace-nowrap`}
+          style={{ animation: 'tooltip-in 150ms ease-out both' }}
           data-testid="dimension-radial-tooltip"
         >
           {filled.length > 0 && (

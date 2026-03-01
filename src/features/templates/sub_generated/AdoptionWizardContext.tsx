@@ -16,12 +16,16 @@ import type { DesignAnalysisResult, ConnectorReadinessStatus } from '@/lib/types
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
+import type { TemplateVerification } from '@/lib/types/templateTypes';
+import type { ScanResult } from '@/lib/templates/personaSafetyScanner';
 import { usePersonaStore } from '@/stores/personaStore';
 import { parseJsonSafe } from '@/lib/utils/parseJson';
 import { deriveConnectorReadiness } from './ConnectorReadiness';
 import { getAdoptionRequirements } from './templateVariables';
 import { getArchitectureComponent } from '@/lib/credentials/connectorRoles';
 import { deriveRequirementsFromFlows } from './steps/ChooseStep';
+import { verifyTemplate } from '@/lib/templates/templateVerification';
+import { scanPersonaDraft } from '@/lib/templates/personaSafetyScanner';
 import type { RequiredConnector } from './steps/ConnectStep';
 import {
   useAdoptReducer,
@@ -76,6 +80,12 @@ interface AdoptionWizardContextType {
   liveCredentials: CredentialMetadata[];
   designResult: DesignAnalysisResult | null;
   connectorDefinitions: ConnectorDefinition[];
+
+  /** Template origin verification and sandbox policy */
+  verification: TemplateVerification;
+
+  /** Safety scan results for the current draft (null if no draft) */
+  safetyScan: ScanResult | null;
 
   // Async transform orchestration
   currentAdoptId: string | null;
@@ -163,9 +173,9 @@ export function AdoptionWizardProvider({
   // Pre-select all use case IDs on init
   useEffect(() => {
     if (useCaseFlows.length > 0 && state.selectedUseCaseIds.size === 0 && state.step === 'choose') {
-      for (const flow of useCaseFlows) wizard.toggleUseCaseId(flow.id);
+      wizard.selectAllUseCases(useCaseFlows.map((f) => f.id));
     }
-  }, [useCaseFlows, state.selectedUseCaseIds.size, state.step, wizard.toggleUseCaseId]);
+  }, [useCaseFlows, state.selectedUseCaseIds.size, state.step, wizard.selectAllUseCases]);
 
   // ── Derived data ──
 
@@ -233,6 +243,33 @@ export function AdoptionWizardProvider({
     return completed;
   }, [state.step, state.created]);
 
+  // ── Template verification ──
+
+  const verification = useMemo<TemplateVerification>(() => {
+    if (!review) {
+      return {
+        origin: 'unknown',
+        trustLevel: 'untrusted',
+        contentHash: null,
+        integrityValid: false,
+        sandboxPolicy: null,
+      };
+    }
+    return verifyTemplate({
+      testCaseId: review.test_case_id,
+      testRunId: review.test_run_id,
+      isDesignGenerated: !review.test_run_id.startsWith('seed-'),
+      designResultJson: review.design_result,
+    });
+  }, [review]);
+
+  // ── Safety scan ──
+
+  const safetyScan = useMemo<ScanResult | null>(() => {
+    if (!state.draft) return null;
+    return scanPersonaDraft(state.draft);
+  }, [state.draft]);
+
   // ── Step transition handler ──
 
   const handleNext = useCallback(() => {
@@ -287,6 +324,8 @@ export function AdoptionWizardProvider({
       liveCredentials,
       designResult,
       connectorDefinitions,
+      verification,
+      safetyScan,
       currentAdoptId: async.currentAdoptId,
       isRestoring: async.isRestoring,
       startTransform: async.startTransform,
@@ -310,6 +349,8 @@ export function AdoptionWizardProvider({
       liveCredentials,
       designResult,
       connectorDefinitions,
+      verification,
+      safetyScan,
       async,
       handleNext,
       handleCredentialCreated,

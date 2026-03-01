@@ -53,7 +53,7 @@ export function PopupColorPicker({ value, onChange, size = 'sm' }: PopupColorPic
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.97 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="absolute top-full mt-1 left-0 bg-background border border-primary/15 rounded-xl shadow-lg z-20 p-3 min-w-[280px]"
+            className="absolute top-full mt-1 left-0 bg-background border border-primary/15 rounded-xl shadow-lg z-50 p-3 min-w-[280px]"
           >
             <ColorPicker
               value={value}

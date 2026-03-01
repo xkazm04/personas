@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import PersonasPage from "@/features/personas/PersonasPage";
 import UpdateBanner from "@/features/shared/components/UpdateBanner";
 import { HealingToast } from "@/features/shared/components/HealingToast";
+import { ToastContainer } from "@/features/shared/components/ToastContainer";
 import { initAuthListener, useAuthStore } from "@/stores/authStore";
 import { registerKnowledgeMiddleware } from "@/lib/execution/knowledgeMiddleware";
 
@@ -21,6 +22,7 @@ export default function App() {
         <PersonasPage />
       </div>
       <HealingToast />
+      <ToastContainer />
     </div>
   );
 }

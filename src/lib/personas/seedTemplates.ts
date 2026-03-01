@@ -4,11 +4,10 @@
  *
  * Source of truth: templateCatalog.ts (single template catalog).
  */
-import { FEATURED_TEMPLATES, CATEGORY_TEMPLATES } from './templateCatalog';
+import { TEMPLATE_CATALOG } from './templateCatalog';
 import type { TemplateCatalogEntry } from '@/lib/types/templateTypes';
 
-const SEED_BUILTIN_RUN_ID = 'seed-builtin-v1';
-const SEED_CATEGORY_RUN_ID = 'seed-category-v1';
+const SEED_RUN_ID = 'seed-category-v1';
 
 export interface SeedReviewInput {
   test_case_id: string;
@@ -58,10 +57,7 @@ function templateToReviewInput(template: TemplateCatalogEntry, runId: string): S
 
 /** All seed templates that should be present in the Generated tab. */
 export function getSeedReviews(): SeedReviewInput[] {
-  return [
-    ...FEATURED_TEMPLATES.map((t) => templateToReviewInput(t, SEED_BUILTIN_RUN_ID)),
-    ...CATEGORY_TEMPLATES.map((t) => templateToReviewInput(t, SEED_CATEGORY_RUN_ID)),
-  ];
+  return TEMPLATE_CATALOG.map((t) => templateToReviewInput(t, SEED_RUN_ID));
 }
 
-export { SEED_BUILTIN_RUN_ID, SEED_CATEGORY_RUN_ID };
+export { SEED_RUN_ID };

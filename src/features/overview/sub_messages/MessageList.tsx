@@ -476,13 +476,7 @@ export default function MessageList() {
             <div className="space-y-5">
               <div>
                 <div className="text-xs font-mono text-muted-foreground/90 uppercase mb-2">Content</div>
-                {selectedMsg.content_type === 'markdown' ? (
-                  <MarkdownRenderer content={selectedMsg.content} className="text-sm" />
-                ) : (
-                  <div className="text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap">
-                    {selectedMsg.content}
-                  </div>
-                )}
+                <MarkdownRenderer content={selectedMsg.content} className="text-sm" />
               </div>
 
               {/* Delivery Status section */}

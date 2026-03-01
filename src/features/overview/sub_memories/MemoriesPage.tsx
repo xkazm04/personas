@@ -1,13 +1,13 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { Brain, Bot, Plus, Star, ChevronDown, ChevronUp } from 'lucide-react';
+import { Brain, Plus, ChevronDown, ChevronUp, Sparkles, Loader2, CheckCircle2, Trash2, AlertCircle, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
-import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
 import { MemoryRow } from '@/features/overview/sub_memories/MemoryCard';
 import { InlineAddMemoryForm } from '@/features/overview/sub_memories/CreateMemoryForm';
 import { MemoryFilterBar } from '@/features/overview/sub_memories/MemoryFilterBar';
 import { useVirtualList } from '@/hooks/utility/useVirtualList';
+import type { MemoryReviewResult } from '@/api/memories';
 
 type SortColumn = 'importance' | 'created_at';
 type SortDirection = 'asc' | 'desc';
@@ -18,9 +18,9 @@ export default function MemoriesPage() {
   const personas = usePersonaStore((s) => s.personas);
   const memories = usePersonaStore((s) => s.memories);
   const memoriesTotal = usePersonaStore((s) => s.memoriesTotal);
-  const backendStats = usePersonaStore((s) => s.memoryStats);
   const fetchMemories = usePersonaStore((s) => s.fetchMemories);
   const deleteMemory = usePersonaStore((s) => s.deleteMemory);
+  const reviewMemories = usePersonaStore((s) => s.reviewMemories);
 
   const [search, setSearch] = useState('');
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
@@ -28,6 +28,11 @@ export default function MemoriesPage() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [sort, setSort] = useState<SortState>({ column: 'created_at', direction: 'desc' });
   const [showAddForm, setShowAddForm] = useState(false);
+
+  // Review state
+  const [isReviewing, setIsReviewing] = useState(false);
+  const [reviewResult, setReviewResult] = useState<MemoryReviewResult | null>(null);
+  const [reviewError, setReviewError] = useState<string | null>(null);
 
   // Debounce search
   useEffect(() => {
@@ -85,38 +90,25 @@ export default function MemoriesPage() {
 
   const { parentRef: memoryListRef, virtualizer } = useVirtualList(sortedMemories, 48);
 
-  // ── Stats computation (from backend aggregates over full dataset) ──
-  const memoryStats = useMemo(() => {
-    if (!backendStats) {
-      return { total: 0, avgImportance: 0, topAgent: null, topAgentId: null, topAgentCount: 0, segments: [] };
+  // AI Review handler
+  const handleReview = useCallback(async () => {
+    setIsReviewing(true);
+    setReviewResult(null);
+    setReviewError(null);
+    try {
+      const result = await reviewMemories(selectedPersonaId || undefined);
+      setReviewResult(result);
+    } catch (err) {
+      setReviewError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsReviewing(false);
     }
+  }, [reviewMemories, selectedPersonaId]);
 
-    const { total, avg_importance, category_counts, agent_counts } = backendStats;
-
-    // Top agent (agent_counts is sorted DESC by backend)
-    const topEntry = agent_counts[0] as [string, number] | undefined;
-    const topAgentId = topEntry?.[0] ?? null;
-    const topAgentCount = topEntry?.[1] ?? 0;
-    const topAgent = topAgentId ? personaMap.get(topAgentId) : null;
-
-    // Category segments for stacked bar
-    const categoryHexColors: Record<string, string> = {
-      fact: '#3b82f6', preference: '#f59e0b', instruction: '#8b5cf6',
-      context: '#10b981', learned: '#06b6d4', custom: '#6b7280',
-    };
-    const catMap = new Map(category_counts);
-    const segments = ALL_MEMORY_CATEGORIES
-      .filter((cat) => (catMap.get(cat) || 0) > 0)
-      .map((cat) => ({
-        category: cat,
-        count: catMap.get(cat) || 0,
-        pct: total > 0 ? ((catMap.get(cat) || 0) / total) * 100 : 0,
-        color: categoryHexColors[cat] || '#6b7280',
-        label: MEMORY_CATEGORY_COLORS[cat]?.label ?? cat,
-      }));
-
-    return { total, avgImportance: avg_importance, topAgent, topAgentId, topAgentCount, segments };
-  }, [backendStats, personaMap]);
+  const closeReviewModal = useCallback(() => {
+    setReviewResult(null);
+    setReviewError(null);
+  }, []);
 
   return (
     <ContentBox>
@@ -126,17 +118,31 @@ export default function MemoriesPage() {
         title="Agent Memories"
         subtitle={`${memoriesTotal} memor${memoriesTotal !== 1 ? 'ies' : 'y'} stored by agents`}
         actions={
-          <button
-            onClick={() => setShowAddForm((v) => !v)}
-            className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border transition-all ${
-              showAddForm
-                ? 'bg-violet-500/30 text-violet-200 border-violet-500/40'
-                : 'bg-violet-500/20 text-violet-300 border-violet-500/30 hover:bg-violet-500/30'
-            }`}
-          >
-            <Plus className={`w-3.5 h-3.5 transition-transform ${showAddForm ? 'rotate-45' : ''}`} />
-            Add Memory
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleReview}
+              disabled={isReviewing || memoriesTotal === 0}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border transition-all bg-cyan-500/15 text-cyan-300 border-cyan-500/25 hover:bg-cyan-500/25 disabled:opacity-40"
+            >
+              {isReviewing ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="w-3.5 h-3.5" />
+              )}
+              {isReviewing ? 'Reviewing...' : 'Review with AI'}
+            </button>
+            <button
+              onClick={() => setShowAddForm((v) => !v)}
+              className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border transition-all ${
+                showAddForm
+                  ? 'bg-violet-500/30 text-violet-200 border-violet-500/40'
+                  : 'bg-violet-500/20 text-violet-300 border-violet-500/30 hover:bg-violet-500/30'
+              }`}
+            >
+              <Plus className={`w-3.5 h-3.5 transition-transform ${showAddForm ? 'rotate-45' : ''}`} />
+              Add Memory
+            </button>
+          </div>
         }
       >
         {/* Filter bar */}
@@ -161,100 +167,6 @@ export default function MemoriesPage() {
           <InlineAddMemoryForm onClose={() => setShowAddForm(false)} />
         )}
       </AnimatePresence>
-
-      {/* Stats Bar — always visible to show total knowledge base size */}
-      <div className="px-4 md:px-6 py-3 border-b border-primary/10 bg-secondary/20 flex-shrink-0">
-        <div className="flex items-center gap-6 flex-wrap">
-          {/* Total knowledge base count (global, not filtered) */}
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
-              <Brain className="w-3.5 h-3.5 text-violet-400" />
-            </div>
-            <div className="flex flex-col">
-              <AnimatePresence mode="wait">
-                <motion.span
-                  key={memoriesTotal}
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 8 }}
-                  transition={{ duration: 0.15 }}
-                  className="font-bold text-lg text-violet-400"
-                >
-                  {memoriesTotal}
-                </motion.span>
-              </AnimatePresence>
-              <span className="text-sm text-muted-foreground/80 -mt-1">total memories</span>
-            </div>
-          </div>
-
-          {/* Category stacked bar — only when there are memories */}
-          {memoryStats.total > 0 && (
-            <div className="flex-1 min-w-[120px] max-w-xs">
-              <div className="w-full h-1.5 rounded-full overflow-hidden flex bg-secondary/40">
-                {memoryStats.segments.map((seg) => (
-                  <div
-                    key={seg.category}
-                    className="h-full transition-all duration-300"
-                    style={{ width: `${seg.pct}%`, backgroundColor: seg.color }}
-                    title={`${seg.label}: ${seg.count}`}
-                  />
-                ))}
-              </div>
-              <div className="flex items-center gap-2 mt-1.5">
-                {memoryStats.segments.map((seg) => (
-                  <div key={seg.category} className="flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: seg.color }} />
-                    <span className="text-sm text-muted-foreground/80">{seg.label} {seg.count}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Top agent */}
-          {memoryStats.topAgent && (
-            <div className="flex items-center gap-2">
-              <div
-                className="w-7 h-7 rounded-lg flex items-center justify-center"
-                style={{
-                  background: `linear-gradient(135deg, ${memoryStats.topAgent.color}20, ${memoryStats.topAgent.color}40)`,
-                  border: `1px solid ${memoryStats.topAgent.color}50`,
-                }}
-              >
-                <Bot className="w-3.5 h-3.5" style={{ color: memoryStats.topAgent.color }} />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium text-foreground/90 truncate max-w-[80px]">{memoryStats.topAgent.name}</span>
-                <span className="text-sm text-muted-foreground/80 -mt-0.5">{memoryStats.topAgentCount} memories</span>
-              </div>
-            </div>
-          )}
-
-          {/* Avg importance */}
-          {memoryStats.total > 0 && (
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-                <Star className="w-3.5 h-3.5 text-amber-400" />
-              </div>
-              <div className="flex flex-col">
-                <AnimatePresence mode="wait">
-                  <motion.span
-                    key={memoryStats.avgImportance.toFixed(1)}
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 8 }}
-                    transition={{ duration: 0.15 }}
-                    className="font-bold text-lg text-amber-400"
-                  >
-                    {memoryStats.avgImportance.toFixed(1)}
-                  </motion.span>
-                </AnimatePresence>
-                <span className="text-sm text-muted-foreground/80 -mt-1">avg importance</span>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* Table */}
       <ContentBody flex>
@@ -340,6 +252,109 @@ export default function MemoriesPage() {
           </>
         )}
       </ContentBody>
+
+      {/* Review Results Modal */}
+      <AnimatePresence>
+        {(reviewResult || reviewError) && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={closeReviewModal}>
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-2xl mx-4 bg-background border border-primary/20 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-start justify-between p-5 border-b border-primary/10 flex-shrink-0">
+                <div className="flex-1 min-w-0 pr-4">
+                  <h3 className="text-sm font-semibold text-foreground/90 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-cyan-400" />
+                    AI Memory Review
+                  </h3>
+                  {reviewResult && (
+                    <p className="text-sm text-muted-foreground/80 mt-1">
+                      Reviewed {reviewResult.reviewed} memories
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={closeReviewModal}
+                  className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/90 hover:text-foreground/95 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="flex-1 overflow-y-auto p-5">
+                {reviewError ? (
+                  <div className="flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+                    <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-red-300">Review failed</p>
+                      <p className="text-sm text-red-400/70 mt-1">{reviewError}</p>
+                    </div>
+                  </div>
+                ) : reviewResult ? (
+                  <div className="space-y-4">
+                    {/* Summary badges */}
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="text-sm font-medium text-emerald-300">{reviewResult.updated} kept</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20">
+                        <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                        <span className="text-sm font-medium text-red-300">{reviewResult.deleted} pruned</span>
+                      </div>
+                    </div>
+
+                    {/* Details list */}
+                    {reviewResult.details.length > 0 && (
+                      <div className="space-y-1.5">
+                        {reviewResult.details.map((d) => (
+                          <div
+                            key={d.id}
+                            className={`flex items-start gap-3 px-3 py-2 rounded-lg border ${
+                              d.action === 'deleted'
+                                ? 'bg-red-500/5 border-red-500/15'
+                                : 'bg-emerald-500/5 border-emerald-500/15'
+                            }`}
+                          >
+                            <span className={`text-xs font-bold px-1.5 py-0.5 rounded-md flex-shrink-0 mt-0.5 ${
+                              d.score >= 7
+                                ? 'bg-emerald-500/15 text-emerald-400'
+                                : d.score >= 4
+                                  ? 'bg-amber-500/15 text-amber-400'
+                                  : 'bg-red-500/15 text-red-400'
+                            }`}>
+                              {d.score}/10
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <p className={`text-sm font-medium truncate ${
+                                d.action === 'deleted' ? 'text-foreground/50 line-through' : 'text-foreground/80'
+                              }`}>
+                                {d.title}
+                              </p>
+                              <p className="text-xs text-muted-foreground/70 mt-0.5">{d.reason}</p>
+                            </div>
+                            <span className={`text-xs font-medium flex-shrink-0 ${
+                              d.action === 'deleted' ? 'text-red-400/70' : 'text-emerald-400/70'
+                            }`}>
+                              {d.action}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
     </ContentBox>
   );

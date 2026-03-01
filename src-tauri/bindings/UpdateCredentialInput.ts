@@ -6,4 +6,4 @@ export type UpdateCredentialInput = { name: string | null, service_type: string 
  * skip_deserializing ensures this is always None from IPC input;
  * the command layer sets it from the encryption result.
  */
-iv: string | null, metadata: string | null | null, };
+iv: string | null, metadata: string | null | null, session_encrypted_data: string | null, };

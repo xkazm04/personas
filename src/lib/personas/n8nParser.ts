@@ -1,6 +1,7 @@
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import type { N8nWorkflow, N8nNode } from '@/lib/types/templateTypes';
 import { N8N_DEFINITION, resolveNodeType, classifyNodeRole } from './platformDefinitions';
+import { sanitizeName, sanitizeTextField } from '@/lib/utils/workflowSanitizer';
 
 function extractServiceName(nodeType: string): string {
   return resolveNodeType(N8N_DEFINITION, nodeType);
@@ -51,14 +52,15 @@ export function parseN8nWorkflow(json: unknown): DesignAnalysisResult {
     return {
       trigger_type: triggerType as 'manual' | 'schedule' | 'polling' | 'webhook',
       config: (node.parameters || {}) as Record<string, unknown>,
-      description: `${node.name} (from n8n ${node.type})`,
+      description: sanitizeTextField(`${node.name} (from n8n ${node.type})`, 500),
     };
   });
 
   const toolNames = actionNodes.map(node => {
     const service = extractServiceName(node.type);
     services.add(service);
-    return `${service}_${node.name.toLowerCase().replace(/\s+/g, '_')}`;
+    const safeName = sanitizeName(node.name).toLowerCase().replace(/\s+/g, '_');
+    return `${service}_${safeName}`;
   });
 
   const connectors = Array.from(services).map(service => ({
@@ -79,15 +81,15 @@ export function parseN8nWorkflow(json: unknown): DesignAnalysisResult {
       .map(t => t.index),
   }));
 
-  const nodeSequence = workflow.nodes.map(n => n.name).join(' \u2192 ');
-  const workflowName = workflow.name || 'Imported n8n Workflow';
+  const nodeSequence = workflow.nodes.map(n => sanitizeName(n.name)).join(' \u2192 ');
+  const workflowName = sanitizeName(workflow.name || 'Imported n8n Workflow', 200);
 
   return {
     structured_prompt: {
       identity: `You are an AI agent that orchestrates the "${workflowName}" workflow, originally designed in n8n.`,
-      instructions: `Execute the following workflow steps in order:\n${workflow.nodes.map((n, i) => `${i + 1}. ${n.name} (${extractServiceName(n.type)})`).join('\n')}\n\nFollow the data flow between steps, passing outputs from each step as inputs to the next.`,
+      instructions: `Execute the following workflow steps in order:\n${workflow.nodes.map((n, i) => `${i + 1}. ${sanitizeName(n.name)} (${extractServiceName(n.type)})`).join('\n')}\n\nFollow the data flow between steps, passing outputs from each step as inputs to the next.`,
       toolGuidance: actionNodes.length > 0
-        ? `Use the following tools in sequence: ${actionNodes.map(n => n.name).join(', ')}.`
+        ? `Use the following tools in sequence: ${actionNodes.map(n => sanitizeName(n.name)).join(', ')}.`
         : 'No specific tools required.',
       examples: '',
       errorHandling: 'If any step fails, log the error and attempt to continue with the remaining steps. Report all failures in your final output.',

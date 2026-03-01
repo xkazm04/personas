@@ -1,6 +1,7 @@
 pub mod cli_runner;
 pub mod confirmation;
 pub mod job_state;
+mod prompt_sanitizer;
 mod prompts;
 pub mod streaming;
 mod types;

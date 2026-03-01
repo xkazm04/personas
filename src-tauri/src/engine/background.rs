@@ -320,14 +320,13 @@ pub(crate) fn trigger_scheduler_tick(scheduler: &SchedulerState, pool: &DbPool) 
         // 3. Compute next trigger time first
         let next = sched_logic::compute_next_from_config(&cfg, now);
 
-        // 4. Advance the schedule BEFORE publishing the event.
-        // This prevents duplicate events when mark_triggered fails after
-        // a successful publish (the trigger stays "due" with stale
-        // next_trigger_at and get_due returns it again next tick).
-        match trigger_repo::mark_triggered(pool, &trigger.id, next) {
+        // 4. Atomically claim the trigger using compare-and-swap on next_trigger_at.
+        // If an overlapping tick already advanced the schedule, the CAS returns
+        // false (0 rows affected) and we skip to prevent double-fire.
+        match trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref()) {
             Ok(true) => {}
             Ok(false) => {
-                tracing::warn!(trigger_id = %trigger.id, "Trigger was deleted before mark_triggered, skipping");
+                tracing::debug!(trigger_id = %trigger.id, "Trigger already claimed by another tick, skipping");
                 continue;
             }
             Err(e) => {
