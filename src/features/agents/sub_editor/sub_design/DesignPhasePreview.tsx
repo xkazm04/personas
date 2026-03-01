@@ -1,7 +1,7 @@
 import { Send, Check, RefreshCw, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { DesignResultPreview } from '@/features/templates/sub_generated/DesignResultPreview';
-import { IntentResultExtras } from '@/features/agents/sub_editor/IntentResultExtras';
+import { IntentResultExtras } from './IntentResultExtras';
 
 import type { DesignAnalysisResult, IntentCompilationResult } from '@/lib/types/designTypes';
 import type { DbPersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
