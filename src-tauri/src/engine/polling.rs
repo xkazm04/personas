@@ -83,18 +83,18 @@ pub async fn poll_due_triggers(
             continue;
         }
 
-        let config: serde_json::Value = match trigger
-            .config
-            .as_deref()
-            .and_then(|c| serde_json::from_str(c).ok())
-        {
-            Some(c) => c,
-            None => continue,
+        // Parse config once — typed access replaces scattered json_extract calls
+        let cfg = trigger.parse_config();
+        let (cfg_url, cfg_headers, previous_hash) = match &cfg {
+            crate::db::models::TriggerConfig::Polling {
+                url, headers, content_hash, ..
+            } => (url.clone(), headers.clone(), content_hash.clone()),
+            _ => continue,
         };
 
-        let url = match config.get("url").and_then(|u| u.as_str()) {
-            Some(u) => u.to_string(),
-            None => {
+        let url = match cfg_url {
+            Some(u) if !u.is_empty() => u,
+            _ => {
                 tracing::warn!(trigger_id = %trigger.id, "Polling trigger missing 'url' in config");
                 // Still mark triggered to advance next_trigger_at
                 let next = sched_logic::compute_next_trigger_at(&trigger, now);
@@ -108,21 +108,10 @@ pub async fn poll_due_triggers(
             }
         };
 
-        // Extract optional headers from config
-        let headers: Vec<(String, String)> = config
-            .get("headers")
-            .and_then(|h| h.as_object())
-            .map(|obj| {
-                obj.iter()
-                    .filter_map(|(k, v)| v.as_str().map(|s| (k.clone(), s.to_string())))
-                    .collect()
-            })
-            .unwrap_or_default();
-
-        let previous_hash = config
-            .get("content_hash")
-            .and_then(|h| h.as_str())
-            .map(String::from);
+        let headers: Vec<(String, String)> = cfg_headers
+            .unwrap_or_default()
+            .into_iter()
+            .collect();
 
         // Make the HTTP request
         let mut req = http.get(&url);
@@ -176,60 +165,73 @@ pub async fn poll_due_triggers(
             None => true, // First poll — always fire
         };
 
-        // Update the stored content_hash in the trigger config
-        let mut updated_config = config.clone();
-        updated_config["content_hash"] = serde_json::Value::String(current_hash.clone());
-        if let Err(e) = trigger_repo::update(
-            pool,
-            &trigger.id,
-            crate::db::models::UpdateTriggerInput {
-                trigger_type: None,
-                config: Some(serde_json::to_string(&updated_config).unwrap_or_default()),
-                enabled: None,
-                next_trigger_at: None,
-            },
-        ) {
-            tracing::warn!(trigger_id = %trigger.id, "Failed to update content_hash: {}", e);
-        }
+        // Compute next schedule time up-front (needed for both paths)
+        let next = sched_logic::compute_next_trigger_at(&trigger, now);
 
         if content_changed {
-            // Build event payload
-            let event_type = sched_logic::trigger_event_type(&trigger);
-            let payload = serde_json::json!({
-                "url": url,
-                "status_code": status.as_u16(),
-                "content_changed": true,
-                "content_hash": current_hash,
-                "body_preview": &body[..body.len().min(2000)],
-            });
-
-            match event_repo::publish(
+            // Atomically update the content hash AND advance the schedule via CAS.
+            // If another poll cycle already updated the hash (race), the CAS returns
+            // false and we skip the event publish to prevent duplicates.
+            match trigger_repo::mark_triggered_with_hash(
                 pool,
-                CreatePersonaEventInput {
-                    event_type,
-                    source_type: "polling".into(),
-                    source_id: Some(trigger.id.clone()),
-                    target_persona_id: Some(trigger.persona_id.clone()),
-                    project_id: None,
-                    payload: Some(serde_json::to_string(&payload).unwrap_or_default()),
-                    use_case_id: trigger.use_case_id.clone(),
-                },
+                &trigger.id,
+                &current_hash,
+                previous_hash.as_deref(),
+                next,
             ) {
-                Ok(_) => {
-                    tracing::info!(
+                Ok(true) => {
+                    clear_backoff(&trigger.id);
+
+                    // CAS succeeded — safe to publish the event
+                    let event_type = sched_logic::trigger_event_type(&trigger);
+                    let payload = serde_json::json!({
+                        "url": url,
+                        "status_code": status.as_u16(),
+                        "content_changed": true,
+                        "content_hash": current_hash,
+                        "body_preview": &body[..body.len().min(2000)],
+                    });
+
+                    match event_repo::publish(
+                        pool,
+                        CreatePersonaEventInput {
+                            event_type,
+                            source_type: "polling".into(),
+                            source_id: Some(trigger.id.clone()),
+                            target_persona_id: Some(trigger.persona_id.clone()),
+                            project_id: None,
+                            payload: Some(serde_json::to_string(&payload).unwrap_or_default()),
+                            use_case_id: trigger.use_case_id.clone(),
+                        },
+                    ) {
+                        Ok(_) => {
+                            tracing::info!(
+                                trigger_id = %trigger.id,
+                                url = %url,
+                                "Polling: content changed, event published"
+                            );
+                            scheduler
+                                .triggers_fired
+                                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        }
+                        Err(e) => {
+                            tracing::error!(
+                                trigger_id = %trigger.id,
+                                "Polling: failed to publish event: {}", e
+                            );
+                        }
+                    }
+                }
+                Ok(false) => {
+                    // CAS failed — another cycle already updated the hash (or trigger was deleted)
+                    tracing::debug!(
                         trigger_id = %trigger.id,
-                        url = %url,
-                        "Polling: content changed, event published"
+                        "Polling: CAS failed (hash already updated), skipping duplicate event"
                     );
-                    scheduler
-                        .triggers_fired
-                        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                 }
                 Err(e) => {
-                    tracing::error!(
-                        trigger_id = %trigger.id,
-                        "Polling: failed to publish event: {}", e
-                    );
+                    tracing::error!(trigger_id = %trigger.id, "mark_triggered_with_hash failed: {}", e);
+                    record_mark_failure(&trigger.id);
                 }
             }
         } else {
@@ -238,15 +240,14 @@ pub async fn poll_due_triggers(
                 url = %url,
                 "Polling: no content change detected"
             );
-        }
 
-        // Advance next_trigger_at
-        let next = sched_logic::compute_next_trigger_at(&trigger, now);
-        if let Err(e) = trigger_repo::mark_triggered(pool, &trigger.id, next) {
-            tracing::error!(trigger_id = %trigger.id, "mark_triggered failed: {}", e);
-            record_mark_failure(&trigger.id);
-        } else {
-            clear_backoff(&trigger.id);
+            // No content change — still advance the schedule so we don't re-poll immediately
+            if let Err(e) = trigger_repo::mark_triggered(pool, &trigger.id, next) {
+                tracing::error!(trigger_id = %trigger.id, "mark_triggered failed: {}", e);
+                record_mark_failure(&trigger.id);
+            } else {
+                clear_backoff(&trigger.id);
+            }
         }
     }
 }

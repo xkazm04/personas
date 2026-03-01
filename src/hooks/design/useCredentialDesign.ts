@@ -52,13 +52,19 @@ export function useCredentialDesign() {
     fieldValues: Record<string, string>,
     healthcheckOverride?: Record<string, unknown> | null,
   ) => {
-    if (!flow.result) return;
+    // Snapshot result at invocation time so concurrent state changes
+    // (e.g. refine click, modal close) cannot silently invalidate it.
+    const snapshot = flow.result;
+    if (!snapshot || !snapshot.connector?.name) {
+      flow.setError('Design result is missing — please run the design again');
+      return;
+    }
 
     flow.setPhase('saving');
     try {
       // Create connector definition if it doesn't already exist
-      if (!flow.result.match_existing) {
-        const conn = flow.result.connector;
+      if (!snapshot.match_existing) {
+        const conn = snapshot.connector;
         await createConnectorDefinition({
           name: conn.name,
           label: conn.label,
@@ -70,15 +76,15 @@ export function useCredentialDesign() {
           events: JSON.stringify(conn.events || []),
           metadata: JSON.stringify({
             template_enabled: true,
-            setup_instructions: flow.result.setup_instructions,
-            summary: flow.result.summary,
+            setup_instructions: snapshot.setup_instructions,
+            summary: snapshot.summary,
           }),
           is_builtin: false,
         });
       }
 
       // Create the credential
-      const serviceType = flow.result.match_existing || flow.result.connector.name;
+      const serviceType = snapshot.match_existing || snapshot.connector.name;
       const credId = await createCredential({
         name: credentialName,
         service_type: serviceType,

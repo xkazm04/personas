@@ -12,6 +12,8 @@ pub struct N8nTransformExtra {
     pub draft: Option<serde_json::Value>,
     pub claude_session_id: Option<String>,
     pub questions: Option<serde_json::Value>,
+    /// Streaming sections accumulated during section-by-section transform.
+    pub sections: Vec<serde_json::Value>,
 }
 
 #[derive(Clone, Serialize)]
@@ -22,6 +24,8 @@ pub struct N8nTransformSnapshot {
     lines: Vec<String>,
     draft: Option<serde_json::Value>,
     questions: Option<serde_json::Value>,
+    /// Streaming sections accumulated during section-by-section transform.
+    sections: Vec<serde_json::Value>,
 }
 
 static N8N_JOBS: BackgroundJobManager<N8nTransformExtra> = BackgroundJobManager::new(
@@ -75,7 +79,26 @@ pub fn get_n8n_transform_snapshot_internal(transform_id: &str) -> Option<N8nTran
         lines: job.lines.clone(),
         draft: job.extra.draft.clone(),
         questions: job.extra.questions.clone(),
+        sections: job.extra.sections.clone(),
     })
+}
+
+/// Store a streaming section in the job state.
+/// (The frontend retrieves sections via snapshot polling, not direct events.)
+pub fn store_n8n_transform_section(
+    transform_id: &str,
+    section: serde_json::Value,
+) {
+    N8N_JOBS.update_extra(transform_id, |extra| {
+        extra.sections.push(section);
+    });
+}
+
+/// Clear streaming sections (called at start of new sectioned transform).
+pub fn clear_n8n_transform_sections(transform_id: &str) {
+    N8N_JOBS.update_extra(transform_id, |extra| {
+        extra.sections.clear();
+    });
 }
 
 pub fn set_n8n_transform_questions(transform_id: &str, questions: serde_json::Value) {

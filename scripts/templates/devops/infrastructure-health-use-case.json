@@ -2,7 +2,7 @@
   "id": "infrastructure-health-use-case",
   "name": "Infrastructure Health Use Case",
   "description": "Monitors CloudWatch metrics and alarms, posts infrastructure health summaries to Slack, creates Jira ops tickets for persistent issues, and tracks cost anomalies. Compiles weekly infrastructure health reports.",
-  "icon": "Server",
+  "icon": "ServerCog",
   "color": "#F97316",
   "category": [
     "devops"
@@ -150,7 +150,9 @@
           0,
           1
         ],
-        "api_base_url": "https://monitoring.{region}.amazonaws.com"
+        "api_base_url": "https://monitoring.{region}.amazonaws.com",
+        "role": "cloud_infra",
+        "category": "devops"
       },
       {
         "name": "slack",
@@ -174,7 +176,9 @@
           0,
           1
         ],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       },
       {
         "name": "jira",
@@ -222,7 +226,9 @@
           0,
           1
         ],
-        "api_base_url": "https://{domain}.atlassian.net/rest/api/3"
+        "api_base_url": "https://{domain}.atlassian.net/rest/api/3",
+        "role": "project_tracking",
+        "category": "development"
       }
     ],
     "suggested_notification_channels": [

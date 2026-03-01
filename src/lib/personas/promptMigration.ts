@@ -212,7 +212,7 @@ export function getSectionSummary(json: string | null): Record<string, string> {
   for (const key of STANDARD_SECTION_KEYS) {
     const value = parsed[key];
     if (value) {
-      result[SECTION_LABELS[key]] = value.slice(0, 80);
+      result[SECTION_LABELS[key]] = value;
     }
   }
   return result;

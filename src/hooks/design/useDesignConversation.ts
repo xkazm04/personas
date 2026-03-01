@@ -25,6 +25,10 @@ export function useDesignConversation(personaId: string | null) {
   const [activeConversation, setActiveConversation] = useState<DesignConversation | null>(null);
   const activeConvRef = useRef<DesignConversation | null>(null);
 
+  // Promise chain serializes all message appends to prevent read-modify-write
+  // races (e.g., AI question arriving while user answer is being written).
+  const appendQueueRef = useRef<Promise<void>>(Promise.resolve());
+
   // Keep ref in sync
   useEffect(() => {
     activeConvRef.current = activeConversation;
@@ -85,118 +89,94 @@ export function useDesignConversation(personaId: string | null) {
     }
   }, [personaId]);
 
-  /** Append a user message (feedback/answer) to the active conversation. */
-  const addUserMessage = useCallback(async (content: string, messageType: 'feedback' | 'answer') => {
-    const conv = activeConvRef.current;
-    if (!conv) return;
+  /**
+   * Serialize a message append through the queue. Reads the LATEST conversation
+   * state at write time (not at call time) to prevent read-modify-write races.
+   */
+  const enqueueAppend = useCallback((
+    buildMessage: (conv: DesignConversation) => {
+      message: DesignConversationMessage;
+      lastResult?: string;
+    },
+  ): void => {
+    const doAppend = async () => {
+      const conv = activeConvRef.current;
+      if (!conv) return;
 
-    const messages = parseConversationMessages(conv.messages);
-    messages.push({
-      role: 'user',
-      content,
-      messageType,
-      timestamp: new Date().toISOString(),
-    });
+      const { message, lastResult } = buildMessage(conv);
+      const messages = parseConversationMessages(conv.messages);
+      messages.push(message);
 
-    try {
-      const updated = await appendDesignConversationMessage(
-        conv.id,
-        JSON.stringify(messages),
-      );
-      setActiveConversation(updated);
-      setConversations((prev) =>
-        prev.map((c) => (c.id === updated.id ? updated : c))
-      );
-    } catch {
-      // Best-effort
-    }
+      try {
+        const updated = await appendDesignConversationMessage(
+          conv.id,
+          JSON.stringify(messages),
+          lastResult ?? null,
+        );
+        setActiveConversation(updated);
+        setConversations((prev) =>
+          prev.map((c) => (c.id === updated.id ? updated : c))
+        );
+      } catch {
+        // Best-effort
+      }
+    };
+    appendQueueRef.current = appendQueueRef.current.then(doAppend, doAppend);
   }, []);
+
+  /** Append a user message (feedback/answer) to the active conversation. */
+  const addUserMessage = useCallback((content: string, messageType: 'feedback' | 'answer') => {
+    enqueueAppend(() => ({
+      message: {
+        role: 'user',
+        content,
+        messageType,
+        timestamp: new Date().toISOString(),
+      },
+    }));
+  }, [enqueueAppend]);
 
   /** Record an AI question in the conversation. */
-  const addQuestionMessage = useCallback(async (question: DesignQuestion) => {
-    const conv = activeConvRef.current;
-    if (!conv) return;
-
-    const messages = parseConversationMessages(conv.messages);
-    const questionText = question.options
-      ? `${question.question}\n\nOptions: ${question.options.join(', ')}`
-      : question.question;
-
-    messages.push({
-      role: 'assistant',
-      content: questionText,
-      messageType: 'question',
-      timestamp: new Date().toISOString(),
+  const addQuestionMessage = useCallback((question: DesignQuestion) => {
+    enqueueAppend(() => {
+      const questionText = question.options
+        ? `${question.question}\n\nOptions: ${question.options.join(', ')}`
+        : question.question;
+      return {
+        message: {
+          role: 'assistant' as const,
+          content: questionText,
+          messageType: 'question' as const,
+          timestamp: new Date().toISOString(),
+        },
+      };
     });
-
-    try {
-      const updated = await appendDesignConversationMessage(
-        conv.id,
-        JSON.stringify(messages),
-      );
-      setActiveConversation(updated);
-      setConversations((prev) =>
-        prev.map((c) => (c.id === updated.id ? updated : c))
-      );
-    } catch {
-      // Best-effort
-    }
-  }, []);
+  }, [enqueueAppend]);
 
   /** Record an AI result in the conversation. */
-  const addResultMessage = useCallback(async (result: DesignAnalysisResult) => {
-    const conv = activeConvRef.current;
-    if (!conv) return;
-
-    const messages = parseConversationMessages(conv.messages);
-    messages.push({
-      role: 'assistant',
-      content: result.summary || 'Design generated',
-      messageType: 'result',
-      timestamp: new Date().toISOString(),
-    });
-
-    try {
-      const updated = await appendDesignConversationMessage(
-        conv.id,
-        JSON.stringify(messages),
-        JSON.stringify(result),
-      );
-      setActiveConversation(updated);
-      setConversations((prev) =>
-        prev.map((c) => (c.id === updated.id ? updated : c))
-      );
-    } catch {
-      // Best-effort
-    }
-  }, []);
+  const addResultMessage = useCallback((result: DesignAnalysisResult) => {
+    enqueueAppend(() => ({
+      message: {
+        role: 'assistant',
+        content: result.summary || 'Design generated',
+        messageType: 'result',
+        timestamp: new Date().toISOString(),
+      },
+      lastResult: JSON.stringify(result),
+    }));
+  }, [enqueueAppend]);
 
   /** Record an error in the conversation. */
-  const addErrorMessage = useCallback(async (errorText: string) => {
-    const conv = activeConvRef.current;
-    if (!conv) return;
-
-    const messages = parseConversationMessages(conv.messages);
-    messages.push({
-      role: 'assistant',
-      content: errorText,
-      messageType: 'error',
-      timestamp: new Date().toISOString(),
-    });
-
-    try {
-      const updated = await appendDesignConversationMessage(
-        conv.id,
-        JSON.stringify(messages),
-      );
-      setActiveConversation(updated);
-      setConversations((prev) =>
-        prev.map((c) => (c.id === updated.id ? updated : c))
-      );
-    } catch {
-      // Best-effort
-    }
-  }, []);
+  const addErrorMessage = useCallback((errorText: string) => {
+    enqueueAppend(() => ({
+      message: {
+        role: 'assistant',
+        content: errorText,
+        messageType: 'error',
+        timestamp: new Date().toISOString(),
+      },
+    }));
+  }, [enqueueAppend]);
 
   /** Mark the active conversation as completed (after applying design). */
   const completeConversation = useCallback(async () => {

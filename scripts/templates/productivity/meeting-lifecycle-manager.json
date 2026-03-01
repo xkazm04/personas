@@ -2,7 +2,7 @@
   "id": "meeting-lifecycle-manager",
   "name": "Meeting Lifecycle Manager",
   "description": "Monitors your Google Calendar for upcoming meetings. Sends prep reminders with agenda and attendee context 30 min before. Posts \"in meeting\" status to Slack. After meetings, prompts for notes and distributes action items via email.",
-  "icon": "Zap",
+  "icon": "Video",
   "color": "#7C3AED",
   "category": [
     "productivity"
@@ -144,7 +144,9 @@
           0,
           1
         ],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://www.googleapis.com",
+        "role": "productivity_suite",
+        "category": "productivity"
       },
       {
         "name": "slack",
@@ -175,7 +177,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

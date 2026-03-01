@@ -2,7 +2,7 @@
   "id": "finance-controller",
   "name": "Finance Controller",
   "description": "Syncs QuickBooks invoices and expenses to Google Sheets daily, detects overdue invoices and sends payment reminders via Gmail, flags unusual transactions for review, and posts weekly cash flow summaries to Slack.",
-  "icon": "DollarSign",
+  "icon": "Landmark",
   "color": "#22C55E",
   "category": [
     "finance"
@@ -153,7 +153,9 @@
           1,
           2
         ],
-        "api_base_url": "https://quickbooks.api.intuit.com/v3"
+        "api_base_url": "https://quickbooks.api.intuit.com/v3",
+        "role": "accounting",
+        "category": "finance"
       },
       {
         "name": "google_workspace",
@@ -203,7 +205,9 @@
           0,
           1
         ],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://www.googleapis.com",
+        "role": "productivity_suite",
+        "category": "productivity"
       },
       {
         "name": "slack",
@@ -242,7 +246,9 @@
         "related_triggers": [
           2
         ],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

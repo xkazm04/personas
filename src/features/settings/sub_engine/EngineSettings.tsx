@@ -46,7 +46,7 @@ export default function EngineSettings() {
       return;
     }
     setting.save();
-  }, [setting.value]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [setting.value]);
 
   // Load health status for each engine
   useEffect(() => {

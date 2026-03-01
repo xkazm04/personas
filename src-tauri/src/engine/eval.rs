@@ -312,6 +312,7 @@ pub const WEIGHT_PROTOCOL_COMPLIANCE: f64 = 0.2;
 
 /// Run all applicable strategies and combine into a composite result.
 /// Returns individual results plus the composite.
+#[allow(dead_code)]
 pub fn eval_composite(input: &EvalInput) -> CompositeEvalResult {
     let keyword = eval_keyword_match(input);
     let tool = eval_tool_accuracy(input);
@@ -360,6 +361,7 @@ pub fn eval_composite(input: &EvalInput) -> CompositeEvalResult {
 }
 
 /// Result of a composite evaluation: the combined score plus individual strategy results.
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CompositeEvalResult {

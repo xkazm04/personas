@@ -2,7 +2,7 @@
   "id": "survey-processor",
   "name": "Survey Processor",
   "description": "Polls Google Forms for new responses, processes and scores answers, adds structured records to Airtable, posts response summaries to Slack, and sends personalized thank-you/follow-up emails based on responses.",
-  "icon": "Zap",
+  "icon": "ClipboardList",
   "color": "#7C3AED",
   "category": [
     "productivity"
@@ -136,7 +136,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://www.googleapis.com",
+        "role": "productivity_suite",
+        "category": "productivity"
       },
       {
         "name": "airtable",
@@ -167,7 +169,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://api.airtable.com/v0"
+        "api_base_url": "https://api.airtable.com/v0",
+        "role": "knowledge_base",
+        "category": "productivity"
       },
       {
         "name": "slack",
@@ -198,7 +202,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

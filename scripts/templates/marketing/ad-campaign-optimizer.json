@@ -2,7 +2,7 @@
   "id": "ad-campaign-optimizer",
   "name": "Ad Campaign Optimizer",
   "description": "Pulls Google Ads campaign performance data, logs to Google Sheets, identifies underperforming ad groups, sends optimization recommendations to Slack, and emails a weekly performance report. Pauses ads that exceed cost-per-conversion thresholds.",
-  "icon": "Megaphone",
+  "icon": "Target",
   "color": "#D946EF",
   "category": [
     "marketing"
@@ -152,7 +152,9 @@
           0,
           1
         ],
-        "api_base_url": "https://googleads.googleapis.com"
+        "api_base_url": "https://googleads.googleapis.com",
+        "role": "advertising",
+        "category": "marketing"
       },
       {
         "name": "google_sheets",
@@ -200,7 +202,9 @@
           0,
           1
         ],
-        "api_base_url": "https://sheets.googleapis.com"
+        "api_base_url": "https://sheets.googleapis.com",
+        "role": "spreadsheet",
+        "category": "productivity"
       },
       {
         "name": "slack",
@@ -231,7 +235,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       },
       {
         "name": "google_workspace",
@@ -270,7 +276,9 @@
         "related_triggers": [
           1
         ],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://www.googleapis.com",
+        "role": "productivity_suite",
+        "category": "productivity"
       }
     ],
     "suggested_notification_channels": [

@@ -101,7 +101,7 @@ CREATE INDEX IF NOT EXISTS idx_pt_tool    ON persona_tools(tool_id);
 CREATE TABLE IF NOT EXISTS persona_triggers (
     id                TEXT PRIMARY KEY,
     persona_id        TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
-    trigger_type      TEXT NOT NULL CHECK(trigger_type IN ('manual', 'schedule', 'polling', 'webhook', 'chain')),
+    trigger_type      TEXT NOT NULL CHECK(trigger_type IN ('manual', 'schedule', 'polling', 'webhook', 'chain', 'event_listener')),
     config            TEXT,
     enabled           INTEGER NOT NULL DEFAULT 1,
     last_triggered_at TEXT,
@@ -158,6 +158,25 @@ CREATE TABLE IF NOT EXISTS persona_credentials (
     updated_at      TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_pc_service ON persona_credentials(service_type);
+
+-- ============================================================================
+-- Credential Fields (field-level storage)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS credential_fields (
+    id                TEXT PRIMARY KEY,
+    credential_id     TEXT NOT NULL REFERENCES persona_credentials(id) ON DELETE CASCADE,
+    field_key         TEXT NOT NULL,
+    encrypted_value   TEXT NOT NULL DEFAULT '',
+    iv                TEXT NOT NULL DEFAULT '',
+    field_type        TEXT NOT NULL DEFAULT 'text',
+    is_sensitive      INTEGER NOT NULL DEFAULT 1,
+    created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at        TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(credential_id, field_key)
+);
+CREATE INDEX IF NOT EXISTS idx_cf_credential ON credential_fields(credential_id);
+CREATE INDEX IF NOT EXISTS idx_cf_key        ON credential_fields(field_key);
 
 -- ============================================================================
 -- Credential Events
@@ -266,6 +285,7 @@ CREATE TABLE IF NOT EXISTS persona_events (
     source_id          TEXT,
     target_persona_id  TEXT,
     payload            TEXT,
+    payload_iv         TEXT,
     status             TEXT NOT NULL DEFAULT 'pending',
     error_message      TEXT,
     processed_at       TEXT,
@@ -810,6 +830,24 @@ CREATE TABLE IF NOT EXISTS lab_matrix_results (
 );
 CREATE INDEX IF NOT EXISTS idx_lab_matrix_results_run ON lab_matrix_results(run_id);
 
+-- ============================================================================
+-- Import Transactions (atomic persona import audit trail)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS import_transactions (
+    id              TEXT PRIMARY KEY,
+    session_id      TEXT,
+    persona_id      TEXT,
+    status          TEXT NOT NULL DEFAULT 'staged'
+                    CHECK(status IN ('staged','committed','rolled_back')),
+    entity_results  TEXT,
+    error_summary   TEXT,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_import_tx_session ON import_transactions(session_id);
+CREATE INDEX IF NOT EXISTS idx_import_tx_status  ON import_transactions(status);
+CREATE INDEX IF NOT EXISTS idx_import_tx_created ON import_transactions(created_at DESC);
+
 "#;
 
 /// Incremental migrations for columns added after the initial schema.
@@ -929,7 +967,7 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             "CREATE TABLE IF NOT EXISTS persona_triggers_new (
                 id                TEXT PRIMARY KEY,
                 persona_id        TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
-                trigger_type      TEXT NOT NULL CHECK(trigger_type IN ('manual', 'schedule', 'polling', 'webhook', 'chain')),
+                trigger_type      TEXT NOT NULL CHECK(trigger_type IN ('manual', 'schedule', 'polling', 'webhook', 'chain', 'event_listener')),
                 config            TEXT,
                 enabled           INTEGER NOT NULL DEFAULT 1,
                 last_triggered_at TEXT,
@@ -1162,6 +1200,47 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added workspace fields to persona_groups");
     }
 
+    // Add execution_traces table (Structured Execution Traces with Span Tree)
+    let has_execution_traces: bool = conn
+        .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='execution_traces'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_execution_traces {
+        conn.execute_batch(
+            "CREATE TABLE IF NOT EXISTS execution_traces (
+                id              TEXT PRIMARY KEY,
+                execution_id    TEXT NOT NULL,
+                trace_id        TEXT NOT NULL,
+                persona_id      TEXT NOT NULL,
+                chain_trace_id  TEXT,
+                spans           TEXT NOT NULL DEFAULT '[]',
+                total_duration_ms INTEGER,
+                created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_et_execution ON execution_traces(execution_id);
+            CREATE INDEX IF NOT EXISTS idx_et_persona   ON execution_traces(persona_id);
+            CREATE INDEX IF NOT EXISTS idx_et_chain     ON execution_traces(chain_trace_id);
+            CREATE INDEX IF NOT EXISTS idx_et_created   ON execution_traces(created_at DESC);"
+        )?;
+        tracing::info!("Created execution_traces table");
+    }
+
+    // Add adoption_count and last_adopted_at columns to persona_design_reviews
+    let has_adoption_count: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_design_reviews') WHERE name = 'adoption_count'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if !has_adoption_count {
+        conn.execute_batch(
+            "ALTER TABLE persona_design_reviews ADD COLUMN adoption_count INTEGER NOT NULL DEFAULT 0;
+             ALTER TABLE persona_design_reviews ADD COLUMN last_adopted_at TEXT;"
+        )?;
+        tracing::info!("Added adoption_count and last_adopted_at columns to persona_design_reviews");
+    }
+
     // Add unique index on test_case_name to prevent duplicate templates.
     // First clean up existing duplicates (keep newest per name), then create unique index.
     let has_unique_name_idx: bool = conn
@@ -1185,5 +1264,417 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Cleaned up duplicate design reviews and added unique index on test_case_name");
     }
 
+    // Add unique index on (persona_id, event_type, COALESCE(source_filter, ''))
+    // to prevent duplicate subscriptions that cause duplicate persona fires.
+    let has_pes_unique_idx: bool = conn
+        .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_pes_unique_sub'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_pes_unique_idx {
+        // Clean up existing duplicates first (keep newest per combo)
+        conn.execute_batch(
+            "DELETE FROM persona_event_subscriptions
+             WHERE id NOT IN (
+               SELECT id FROM (
+                 SELECT id,
+                        ROW_NUMBER() OVER (
+                          PARTITION BY persona_id, event_type, COALESCE(source_filter, '')
+                          ORDER BY created_at DESC
+                        ) AS rn
+                 FROM persona_event_subscriptions
+               ) WHERE rn = 1
+             );
+             CREATE UNIQUE INDEX IF NOT EXISTS idx_pes_unique_sub
+               ON persona_event_subscriptions(persona_id, event_type, COALESCE(source_filter, ''));"
+        )?;
+        tracing::info!("Cleaned up duplicate event subscriptions and added unique index");
+    }
+
+    // Add unique constraint on team connections to prevent duplicate edges and self-loops
+    let has_ptc_unique_idx: bool = conn
+        .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_ptc_unique_edge'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_ptc_unique_idx {
+        conn.execute_batch(
+            "DELETE FROM persona_team_connections
+             WHERE id NOT IN (
+               SELECT id FROM (
+                 SELECT id,
+                        ROW_NUMBER() OVER (
+                          PARTITION BY team_id, source_member_id, target_member_id
+                          ORDER BY created_at ASC
+                        ) AS rn
+                 FROM persona_team_connections
+               ) WHERE rn = 1
+             );
+             DELETE FROM persona_team_connections
+               WHERE source_member_id = target_member_id;
+             CREATE UNIQUE INDEX IF NOT EXISTS idx_ptc_unique_edge
+               ON persona_team_connections(team_id, source_member_id, target_member_id);"
+        )?;
+        tracing::info!("Cleaned up duplicate/self-loop team connections and added unique index");
+    }
+
+    // Replace unique index on (test_case_name) with (test_case_name, test_run_id)
+    // so that different review runs can each have their own results for the same template.
+    let has_old_name_only_idx: bool = conn
+        .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_pdr_unique_name'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if has_old_name_only_idx {
+        conn.execute_batch(
+            "DROP INDEX IF EXISTS idx_pdr_unique_name;
+             CREATE UNIQUE INDEX IF NOT EXISTS idx_pdr_unique_name_run
+               ON persona_design_reviews(test_case_name, test_run_id);"
+        )?;
+        tracing::info!("Replaced unique index on test_case_name with (test_case_name, test_run_id)");
+    }
+
+    // Ensure the composite index exists even for fresh installs that never had the old one
+    let has_composite_idx: bool = conn
+        .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_pdr_unique_name_run'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if !has_composite_idx {
+        conn.execute_batch(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_pdr_unique_name_run
+               ON persona_design_reviews(test_case_name, test_run_id);"
+        )?;
+    }
+
+    // Add category column to persona_design_reviews (Template category filtering)
+    let has_category: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_design_reviews') WHERE name = 'category'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_category {
+        conn.execute_batch("ALTER TABLE persona_design_reviews ADD COLUMN category TEXT;")?;
+        tracing::info!("Added category column to persona_design_reviews");
+    }
+
+    // Create credential_fields table for field-level credential storage.
+    // For existing databases, the table is added here; for new databases
+    // it's created by the base SCHEMA above.
+    let has_credential_fields: bool = conn
+        .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='credential_fields'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_credential_fields {
+        conn.execute_batch(
+            "CREATE TABLE IF NOT EXISTS credential_fields (
+                id                TEXT PRIMARY KEY,
+                credential_id     TEXT NOT NULL REFERENCES persona_credentials(id) ON DELETE CASCADE,
+                field_key         TEXT NOT NULL,
+                encrypted_value   TEXT NOT NULL DEFAULT '',
+                iv                TEXT NOT NULL DEFAULT '',
+                field_type        TEXT NOT NULL DEFAULT 'text',
+                is_sensitive      INTEGER NOT NULL DEFAULT 1,
+                created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at        TEXT NOT NULL DEFAULT (datetime('now')),
+                UNIQUE(credential_id, field_key)
+            );
+            CREATE INDEX IF NOT EXISTS idx_cf_credential ON credential_fields(credential_id);
+            CREATE INDEX IF NOT EXISTS idx_cf_key        ON credential_fields(field_key);"
+        )?;
+        tracing::info!("Created credential_fields table");
+    }
+
+    // Migrate existing blob credentials to field-level rows.
+    // This is idempotent: only credentials that have no field rows yet are split.
+    migrate_blob_credentials_to_fields(conn)?;
+
+    // ── Unified Reactions: add event_listener trigger type ───────────────
+    // Recreate persona_triggers with event_listener in the CHECK constraint,
+    // then copy all persona_event_subscriptions as event_listener triggers.
+    let trigger_sql: String = conn
+        .prepare("SELECT COALESCE(sql, '') FROM sqlite_master WHERE type='table' AND name='persona_triggers'")?
+        .query_row([], |row| row.get::<_, String>(0))
+        .unwrap_or_default();
+
+    if !trigger_sql.contains("'event_listener'") {
+        conn.execute_batch(
+            "CREATE TABLE IF NOT EXISTS persona_triggers_new (
+                id                TEXT PRIMARY KEY,
+                persona_id        TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+                trigger_type      TEXT NOT NULL CHECK(trigger_type IN ('manual', 'schedule', 'polling', 'webhook', 'chain', 'event_listener')),
+                config            TEXT,
+                enabled           INTEGER NOT NULL DEFAULT 1,
+                last_triggered_at TEXT,
+                next_trigger_at   TEXT,
+                use_case_id       TEXT,
+                created_at        TEXT NOT NULL,
+                updated_at        TEXT NOT NULL
+            );
+            INSERT INTO persona_triggers_new
+              SELECT id, persona_id, trigger_type, config, enabled,
+                     last_triggered_at, next_trigger_at, use_case_id,
+                     created_at, updated_at
+              FROM persona_triggers;
+            DROP TABLE persona_triggers;
+            ALTER TABLE persona_triggers_new RENAME TO persona_triggers;
+            CREATE INDEX IF NOT EXISTS idx_ptr_persona      ON persona_triggers(persona_id);
+            CREATE INDEX IF NOT EXISTS idx_ptr_next_trigger ON persona_triggers(next_trigger_at);
+            CREATE INDEX IF NOT EXISTS idx_ptr_enabled      ON persona_triggers(enabled);
+            CREATE INDEX IF NOT EXISTS idx_pt_use_case      ON persona_triggers(use_case_id);"
+        )?;
+        tracing::info!("Migrated persona_triggers to support 'event_listener' trigger type");
+    }
+
+    // Copy existing persona_event_subscriptions → event_listener triggers (idempotent).
+    // Only copies subscriptions that don't already have a matching event_listener trigger.
+    let sub_count: i64 = conn
+        .prepare(
+            "SELECT COUNT(*) FROM persona_event_subscriptions s
+             WHERE NOT EXISTS (
+               SELECT 1 FROM persona_triggers t
+               WHERE t.trigger_type = 'event_listener'
+                 AND t.persona_id = s.persona_id
+                 AND json_extract(t.config, '$.listen_event_type') = s.event_type
+                 AND COALESCE(json_extract(t.config, '$.source_filter'), '') = COALESCE(s.source_filter, '')
+             )"
+        )?
+        .query_row([], |row| row.get(0))
+        .unwrap_or(0);
+
+    if sub_count > 0 {
+        conn.execute_batch(
+            "INSERT INTO persona_triggers (id, persona_id, trigger_type, config, enabled, use_case_id, created_at, updated_at)
+             SELECT
+               lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(hex(randomblob(2)),2) || '-' || hex(randomblob(6))),
+               s.persona_id,
+               'event_listener',
+               json_object('listen_event_type', s.event_type, 'source_filter', s.source_filter),
+               s.enabled,
+               s.use_case_id,
+               s.created_at,
+               s.updated_at
+             FROM persona_event_subscriptions s
+             WHERE NOT EXISTS (
+               SELECT 1 FROM persona_triggers t
+               WHERE t.trigger_type = 'event_listener'
+                 AND t.persona_id = s.persona_id
+                 AND json_extract(t.config, '$.listen_event_type') = s.event_type
+                 AND COALESCE(json_extract(t.config, '$.source_filter'), '') = COALESCE(s.source_filter, '')
+             );"
+        )?;
+        tracing::info!("Copied {} event subscriptions to event_listener triggers", sub_count);
+    }
+
+    // ── Credential Audit Log (append-only compliance trail) ─────────────
+    let has_credential_audit_log: bool = conn
+        .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='credential_audit_log'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_credential_audit_log {
+        conn.execute_batch(
+            "CREATE TABLE IF NOT EXISTS credential_audit_log (
+                id              TEXT PRIMARY KEY,
+                credential_id   TEXT NOT NULL,
+                credential_name TEXT NOT NULL,
+                operation       TEXT NOT NULL,
+                persona_id      TEXT,
+                persona_name    TEXT,
+                detail          TEXT,
+                created_at      TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_cal_credential ON credential_audit_log(credential_id);
+            CREATE INDEX IF NOT EXISTS idx_cal_operation  ON credential_audit_log(operation);
+            CREATE INDEX IF NOT EXISTS idx_cal_created    ON credential_audit_log(created_at DESC);"
+        )?;
+        tracing::info!("Created credential_audit_log table");
+    }
+
+    // ── Encrypted event payloads: add payload_iv column ─────────────────
+    let has_payload_iv: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_events') WHERE name = 'payload_iv'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_payload_iv {
+        conn.execute_batch("ALTER TABLE persona_events ADD COLUMN payload_iv TEXT;")?;
+        tracing::info!("Added payload_iv column to persona_events for encrypted event payloads");
+    }
+
+    // ── Execution Knowledge Graph (cross-run learning) ───────────────
+    let has_execution_knowledge: bool = conn
+        .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='execution_knowledge'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_execution_knowledge {
+        conn.execute_batch(
+            "CREATE TABLE IF NOT EXISTS execution_knowledge (
+                id                  TEXT PRIMARY KEY,
+                persona_id          TEXT NOT NULL,
+                use_case_id         TEXT,
+                knowledge_type      TEXT NOT NULL
+                                    CHECK(knowledge_type IN ('tool_sequence','failure_pattern','cost_quality','data_flow','model_performance')),
+                pattern_key         TEXT NOT NULL,
+                pattern_data        TEXT NOT NULL DEFAULT '{}',
+                success_count       INTEGER NOT NULL DEFAULT 0,
+                failure_count       INTEGER NOT NULL DEFAULT 0,
+                avg_cost_usd        REAL NOT NULL DEFAULT 0.0,
+                avg_duration_ms     REAL NOT NULL DEFAULT 0.0,
+                confidence          REAL NOT NULL DEFAULT 0.0,
+                last_execution_id   TEXT,
+                created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at          TEXT NOT NULL DEFAULT (datetime('now')),
+                UNIQUE(persona_id, knowledge_type, pattern_key)
+            );
+            CREATE INDEX IF NOT EXISTS idx_ek_persona    ON execution_knowledge(persona_id);
+            CREATE INDEX IF NOT EXISTS idx_ek_type       ON execution_knowledge(knowledge_type);
+            CREATE INDEX IF NOT EXISTS idx_ek_confidence ON execution_knowledge(confidence DESC);
+            CREATE INDEX IF NOT EXISTS idx_ek_use_case   ON execution_knowledge(use_case_id);"
+        )?;
+        tracing::info!("Created execution_knowledge table");
+    }
+
     Ok(())
+}
+
+/// Split existing monolithic encrypted_data blobs into per-field rows.
+/// Only processes credentials that don't already have field rows (idempotent).
+/// Runs inside the caller's connection — the incremental migration context
+/// means this is already within a serialized startup sequence.
+fn migrate_blob_credentials_to_fields(conn: &Connection) -> Result<(), AppError> {
+    use crate::engine::crypto;
+    use std::collections::HashMap;
+
+    // Find credentials that have no field rows yet
+    let mut stmt = conn.prepare(
+        "SELECT c.id, c.encrypted_data, c.iv FROM persona_credentials c
+         WHERE NOT EXISTS (SELECT 1 FROM credential_fields cf WHERE cf.credential_id = c.id)"
+    )?;
+
+    let rows: Vec<(String, String, String)> = stmt
+        .query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))?
+        .filter_map(|r| r.ok())
+        .collect();
+
+    if rows.is_empty() {
+        return Ok(());
+    }
+
+    let now = chrono::Utc::now().to_rfc3339();
+    let mut insert_stmt = conn.prepare(
+        "INSERT OR IGNORE INTO credential_fields
+         (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)"
+    )?;
+
+    let mut total_fields = 0usize;
+
+    // Classify which field keys are typically non-sensitive (queryable)
+    const NON_SENSITIVE_KEYS: &[&str] = &[
+        "base_url", "url", "host", "hostname", "server",
+        "port", "database", "project", "organization", "org",
+        "workspace", "team", "region", "scope", "scopes",
+        "oauth_client_mode", "token_type",
+    ];
+
+    for (cred_id, encrypted_data, iv) in &rows {
+        // Decrypt the blob to get the JSON fields
+        let plaintext = if crypto::is_plaintext(iv) {
+            encrypted_data.clone()
+        } else {
+            match crypto::decrypt_from_db(encrypted_data, iv) {
+                Ok(pt) => pt,
+                Err(e) => {
+                    tracing::warn!(
+                        "Skipping field migration for credential {}: decrypt failed: {}",
+                        cred_id, e
+                    );
+                    continue;
+                }
+            }
+        };
+
+        let fields: HashMap<String, String> = match serde_json::from_str(&plaintext) {
+            Ok(f) => f,
+            Err(e) => {
+                tracing::warn!(
+                    "Skipping field migration for credential {}: invalid JSON: {}",
+                    cred_id, e
+                );
+                continue;
+            }
+        };
+
+        for (key, value) in &fields {
+            let field_id = uuid::Uuid::new_v4().to_string();
+            let is_sensitive = !NON_SENSITIVE_KEYS.contains(&key.to_lowercase().as_str());
+
+            let (enc_val, field_iv) = if is_sensitive && !value.is_empty() {
+                match crypto::encrypt_for_db(value) {
+                    Ok((ct, nonce)) => (ct, nonce),
+                    Err(e) => {
+                        tracing::warn!(
+                            "Failed to encrypt field '{}' for credential {}: {}",
+                            key, cred_id, e
+                        );
+                        continue;
+                    }
+                }
+            } else {
+                // Non-sensitive: store as plaintext for queryability
+                (value.clone(), String::new())
+            };
+
+            let field_type = classify_field_type(key);
+
+            insert_stmt.execute(rusqlite::params![
+                field_id,
+                cred_id,
+                key,
+                enc_val,
+                field_iv,
+                field_type,
+                is_sensitive as i32,
+                now,
+            ])?;
+            total_fields += 1;
+        }
+    }
+
+    if total_fields > 0 {
+        tracing::info!(
+            "Migrated {} credentials ({} total fields) from blob to field-level storage",
+            rows.len(),
+            total_fields
+        );
+    }
+
+    Ok(())
+}
+
+/// Classify a credential field key into a type hint.
+fn classify_field_type(key: &str) -> &'static str {
+    let lower = key.to_lowercase();
+    if lower.contains("url") || lower.contains("endpoint") || lower == "host" || lower == "server" {
+        "url"
+    } else if lower.contains("token") || lower.contains("key") || lower.contains("secret") || lower.contains("password") {
+        "secret"
+    } else if lower == "port" {
+        "number"
+    } else if lower.contains("email") || lower.contains("username") || lower.contains("user") {
+        "identity"
+    } else {
+        "text"
+    }
 }

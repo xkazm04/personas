@@ -6,7 +6,7 @@ import { translateHealthcheckMessage } from '@/features/vault/components/credent
 import { CredentialDesignModal } from '@/features/vault/components/CredentialDesignModal';
 import { parseDesignContext, mergeCredentialLink } from '@/features/shared/components/UseCasesList';
 import { UseCaseSubscriptions } from '@/features/agents/sub_editor/use-cases/UseCaseSubscriptions';
-import { updateUseCaseInContext } from '@/features/agents/sub_editor/use-cases/useCaseHelpers';
+import { updateUseCaseInContext, applyDesignContextMutation } from '@/features/agents/sub_editor/use-cases/useCaseHelpers';
 import { listTriggers, createTrigger, deleteTrigger } from '@/api/triggers';
 import { listSubscriptions, createSubscription, deleteSubscription } from '@/api/events';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
@@ -45,7 +45,6 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
   const credentials = usePersonaStore((s) => s.credentials);
   const fetchCredentials = usePersonaStore((s) => s.fetchCredentials);
   const healthcheckCredential = usePersonaStore((s) => s.healthcheckCredential);
-  const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
 
   const [statuses, setStatuses] = useState<ConnectorStatus[]>([]);
   const [linkingConnector, setLinkingConnector] = useState<string | null>(null);
@@ -150,10 +149,11 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
     );
     setLinkingConnector(null);
 
-    // Persist to persona's design_context
+    // Persist to persona's design_context (serialized to prevent races)
     if (selectedPersona) {
-      const newDesignContext = mergeCredentialLink(selectedPersona.design_context, connectorName, credentialId);
-      void applyPersonaOp(selectedPersona.id, { kind: 'UpdateDesignContext', design_context: newDesignContext });
+      void applyDesignContextMutation(selectedPersona.id, (ctx) =>
+        mergeCredentialLink(ctx, connectorName, credentialId),
+      );
     }
 
     void testConnector(connectorName, credentialId);
@@ -460,7 +460,6 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
 
 function UseCaseSubscriptionsSection() {
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
 
   const [dbTriggers, setDbTriggers] = useState<PersonaTrigger[]>([]);
   const [dbSubscriptions, setDbSubscriptions] = useState<PersonaEventSubscription[]>([]);
@@ -483,14 +482,14 @@ function UseCaseSubscriptionsSection() {
   const handleSubscriptionsChange = useCallback(
     (useCaseId: string, subs: UseCaseEventSubscription[]) => {
       if (!selectedPersona) return;
-      const newContext = updateUseCaseInContext(
-        selectedPersona.design_context,
-        useCaseId,
-        (uc) => ({ ...uc, event_subscriptions: subs.length > 0 ? subs : undefined }),
+      void applyDesignContextMutation(selectedPersona.id, (ctx) =>
+        updateUseCaseInContext(ctx, useCaseId, (uc) => ({
+          ...uc,
+          event_subscriptions: subs.length > 0 ? subs : undefined,
+        })),
       );
-      void applyPersonaOp(selectedPersona.id, { kind: 'UpdateDesignContext', design_context: newContext });
     },
-    [selectedPersona, applyPersonaOp],
+    [selectedPersona],
   );
 
   const handleActivateTrigger = useCallback(

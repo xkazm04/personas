@@ -1,6 +1,5 @@
-import React, { useState, useMemo, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { staggerContainer, staggerItem } from '@/features/templates/animationPresets';
+import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useClickOutside } from '@/hooks/utility/useClickOutside';
 import {
   FlaskConical,
@@ -27,6 +26,7 @@ import {
   Plug,
   Bell,
   Wrench,
+  TrendingUp,
 } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { usePersonaStore } from '@/stores/personaStore';
@@ -40,12 +40,19 @@ import { CreateTemplateModal } from './CreateTemplateModal';
 import { ADOPT_CONTEXT_KEY } from './useAdoptReducer';
 import AdoptionWizardModal from './AdoptionWizardModal';
 import { RebuildModal } from './RebuildModal';
+import { TemplatePreviewModal } from './TemplatePreviewModal';
 import { DimensionRadial } from './DimensionRadial';
+import { useModalStack } from './useModalStack';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-import type { DesignAnalysisResult, SuggestedTrigger } from '@/lib/types/designTypes';
+import type { DesignAnalysisResult, SuggestedTrigger, SuggestedConnector } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
+import { ConnectorCredentialModal } from '@/features/vault/components/ConnectorCredentialModal';
+import { CredentialTemplateForm } from '@/features/vault/components/CredentialTemplateForm';
+import { isGoogleOAuthConnector } from '@/lib/utils/connectors';
+import { testCredentialDesignHealthcheck } from '@/api/credentialDesign';
+import type { ConnectorMeta } from '@/features/shared/components/ConnectorMeta';
 
 // ============================================================================
 // Helpers
@@ -145,6 +152,191 @@ function RowActionMenu({
 }
 
 // ============================================================================
+// Connector Icon Button — clickable icon for adding credentials
+// ============================================================================
+
+function ConnectorIconButton({
+  connectorName,
+  meta,
+  isReady,
+  onAddCredential,
+}: {
+  connectorName: string;
+  meta: ConnectorMeta;
+  isReady: boolean;
+  onAddCredential: (connectorName: string) => void;
+}) {
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isReady) return;
+    onAddCredential(connectorName);
+  };
+
+  return (
+    <div
+      className="relative flex-shrink-0"
+      title={`${meta.label}${isReady ? '' : ' — click to add credential'}`}
+      data-testid={`connector-readiness-dot-${connectorName}`}
+    >
+      <div
+        onClick={handleClick}
+        className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+          isReady
+            ? ''
+            : 'grayscale hover:grayscale-0 cursor-pointer hover:ring-2 hover:ring-amber-500/30'
+        }`}
+        style={{ backgroundColor: `${meta.color}18` }}
+      >
+        <ConnectorIcon meta={meta} size="w-4 h-4" />
+      </div>
+      <span
+        className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full ${
+          isReady
+            ? 'bg-emerald-500'
+            : 'bg-amber-500/60 border border-dashed border-amber-500/30'
+        }`}
+      />
+    </div>
+  );
+}
+
+// ============================================================================
+// Catalog Credential Modal — wraps CredentialTemplateForm in a modal overlay
+// ============================================================================
+
+function CatalogCredentialModal({
+  connectorDefinition,
+  onSave,
+  onClose,
+}: {
+  connectorDefinition: ConnectorDefinition;
+  onSave: (values: Record<string, string>) => void;
+  onClose: () => void;
+}) {
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  const isGoogleTemplate = isGoogleOAuthConnector(connectorDefinition);
+
+  const effectiveTemplateFields = useMemo(() => {
+    const fields = connectorDefinition.fields ?? [];
+    if (isGoogleTemplate) {
+      return fields.filter(
+        (f) => !['client_id', 'client_secret', 'refresh_token', 'scopes'].includes(f.key),
+      );
+    }
+    return fields;
+  }, [connectorDefinition.fields, isGoogleTemplate]);
+
+  const [credentialName, setCredentialName] = useState(
+    `${connectorDefinition.label} Credential`,
+  );
+  const [isHealthchecking, setIsHealthchecking] = useState(false);
+  const [healthcheckResult, setHealthcheckResult] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
+  const [isAuthorizingOAuth, setIsAuthorizingOAuth] = useState(false);
+  const [oauthCompletedAt] = useState<string | null>(null);
+
+  // Close on Escape
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [onClose]);
+
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    if (e.target === overlayRef.current) onClose();
+  };
+
+  const handleHealthcheck = useCallback(
+    async (values: Record<string, string>) => {
+      setIsHealthchecking(true);
+      setHealthcheckResult(null);
+      try {
+        const result = await usePersonaStore
+          .getState()
+          .healthcheckCredentialPreview(connectorDefinition.name, values);
+        setHealthcheckResult(result);
+      } catch {
+        setHealthcheckResult({ success: false, message: 'Healthcheck failed' });
+      } finally {
+        setIsHealthchecking(false);
+      }
+    },
+    [connectorDefinition.name],
+  );
+
+  const handleDynamicHealthcheck = useCallback(
+    async (values: Record<string, string>) => {
+      setIsHealthchecking(true);
+      setHealthcheckResult(null);
+      try {
+        const result = await testCredentialDesignHealthcheck(
+          `Test connection for ${connectorDefinition.label} connector`,
+          {
+            name: connectorDefinition.name,
+            label: connectorDefinition.label,
+            fields: connectorDefinition.fields,
+          },
+          values,
+        );
+        setHealthcheckResult({ success: result.success, message: result.message });
+      } catch {
+        setHealthcheckResult({ success: false, message: 'Connection test failed' });
+      } finally {
+        setIsHealthchecking(false);
+      }
+    },
+    [connectorDefinition],
+  );
+
+  const handleOAuthConsent = useCallback((_values: Record<string, string>) => {
+    setIsAuthorizingOAuth(true);
+    // OAuth flow would be handled here for Google connectors
+  }, []);
+
+  return (
+    <div
+      ref={overlayRef}
+      onClick={handleOverlayClick}
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center"
+    >
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        className="max-w-2xl w-full mx-4 max-h-[85vh] overflow-y-auto"
+      >
+        <CredentialTemplateForm
+          selectedConnector={connectorDefinition}
+          credentialName={credentialName}
+          onCredentialNameChange={setCredentialName}
+          effectiveTemplateFields={effectiveTemplateFields}
+          isGoogleTemplate={isGoogleTemplate}
+          isAuthorizingOAuth={isAuthorizingOAuth}
+          oauthCompletedAt={oauthCompletedAt}
+          onCreateCredential={onSave}
+          onOAuthConsent={handleOAuthConsent}
+          onCancel={onClose}
+          onValuesChanged={() => {
+            setHealthcheckResult(null);
+          }}
+          onHealthcheck={
+            connectorDefinition.healthcheck_config ? handleHealthcheck : handleDynamicHealthcheck
+          }
+          isHealthchecking={isHealthchecking}
+          healthcheckResult={healthcheckResult}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
 // Expanded Row — Consolidated Layout (Summary + Rail → Hero Cards → Actions)
 // ============================================================================
 
@@ -155,6 +347,7 @@ function ExpandedRowContent({
   credentialServiceTypes,
   onViewFlows,
   onAdopt,
+  onTryIt,
 }: {
   review: PersonaDesignReview;
   designResult: DesignAnalysisResult | null;
@@ -162,6 +355,7 @@ function ExpandedRowContent({
   credentialServiceTypes: Set<string>;
   onViewFlows: () => void;
   onAdopt: () => void;
+  onTryIt: () => void;
 }) {
   const flows = parseJsonSafe<UseCaseFlow[]>(review.use_case_flows, []);
   const displayFlows = flows.length > 0
@@ -233,8 +427,8 @@ function ExpandedRowContent({
                     title={`${meta.label}${isReady ? '' : ' (needs setup)'}`}
                   >
                     <div
-                      className={`w-7 h-7 rounded-lg flex items-center justify-center transition-opacity ${
-                        isReady ? '' : 'opacity-30 grayscale'
+                      className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                        isReady ? '' : 'grayscale'
                       }`}
                       style={{ backgroundColor: `${meta.color}18` }}
                     >
@@ -373,13 +567,24 @@ function ExpandedRowContent({
 
       {/* ── Section C: Action Row ── */}
       <div className="flex items-center justify-between pt-1">
-        <button
-          onClick={onAdopt}
-          className="px-5 py-2.5 text-sm rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2"
-        >
-          <Download className="w-4 h-4" />
-          Adopt as Persona
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onAdopt}
+            className="px-5 py-2.5 text-sm rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            Adopt as Persona
+          </button>
+          {designResult && (
+            <button
+              onClick={onTryIt}
+              className="px-5 py-2.5 text-sm rounded-xl bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center gap-2"
+            >
+              <Play className="w-4 h-4" />
+              Try It
+            </button>
+          )}
+        </div>
         {displayFlows.length > 0 && (
           <button
             onClick={onViewFlows}
@@ -398,6 +603,13 @@ function ExpandedRowContent({
 // Main Component
 // ============================================================================
 
+type TemplateModal =
+  | { type: 'adopt'; review: PersonaDesignReview }
+  | { type: 'detail'; review: PersonaDesignReview }
+  | { type: 'rebuild'; review: PersonaDesignReview }
+  | { type: 'preview'; review: PersonaDesignReview }
+  | { type: 'create' };
+
 interface Props {
   isRunning: boolean;
   handleStartReview: () => void;
@@ -405,6 +617,7 @@ interface Props {
   connectorDefinitions?: ConnectorDefinition[];
   onPersonaCreated?: () => void;
   onViewFlows: (review: PersonaDesignReview) => void;
+  onTotalChange?: (total: number) => void;
 }
 
 export default function GeneratedReviewsTab({
@@ -414,15 +627,22 @@ export default function GeneratedReviewsTab({
   connectorDefinitions = [],
   onPersonaCreated,
   onViewFlows,
+  onTotalChange,
 }: Props) {
   const templateAdoptActive = usePersonaStore((s) => s.templateAdoptActive);
-  const gallery = useTemplateGallery();
+  const credentialServiceTypesArray = useMemo(
+    () => credentials.map((c) => c.service_type),
+    [credentials],
+  );
+  const gallery = useTemplateGallery(credentialServiceTypesArray);
+
+  // Report total count to parent
+  useEffect(() => {
+    onTotalChange?.(gallery.total);
+  }, [gallery.total, onTotalChange]);
 
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
-  const [adoptReview, setAdoptReview] = useState<PersonaDesignReview | null>(null);
-  const [showCreateTemplate, setShowCreateTemplate] = useState(false);
-  const [detailReview, setDetailReview] = useState<PersonaDesignReview | null>(null);
-  const [rebuildReview, setRebuildReview] = useState<PersonaDesignReview | null>(null);
+  const modals = useModalStack<TemplateModal>();
   const [isCleaningUp, setIsCleaningUp] = useState(false);
 
   const installedConnectorNames = useMemo(
@@ -434,13 +654,33 @@ export default function GeneratedReviewsTab({
     [credentials],
   );
 
-  const handleAdoptClick = (review: PersonaDesignReview) => {
-    setAdoptReview(review);
-  };
+  // ── Connector credential modal state ──
+  const [credentialModalTarget, setCredentialModalTarget] = useState<{
+    connectorName: string;
+    suggestedConnector: SuggestedConnector | null;
+    connectorDefinition: ConnectorDefinition | null;
+  } | null>(null);
 
-  const handleCloseAdopt = () => {
-    setAdoptReview(null);
-  };
+  const handleConnectorCredentialClick = useCallback(
+    (connectorName: string, suggestedConnector: SuggestedConnector | null, connDef: ConnectorDefinition | null) => {
+      setCredentialModalTarget({ connectorName, suggestedConnector, connectorDefinition: connDef });
+    },
+    [],
+  );
+
+  const handleCredentialSave = useCallback(
+    async (values: Record<string, string>) => {
+      if (!credentialModalTarget) return;
+      const meta = getConnectorMeta(credentialModalTarget.connectorName);
+      await usePersonaStore.getState().createCredential({
+        name: `${meta.label} credential`,
+        service_type: credentialModalTarget.connectorName,
+        data: values,
+      });
+      setCredentialModalTarget(null);
+    },
+    [credentialModalTarget],
+  );
 
   const handleDeleteReview = async (id: string) => {
     try {
@@ -464,7 +704,7 @@ export default function GeneratedReviewsTab({
   };
 
   const handlePersonaCreated = () => {
-    handleCloseAdopt();
+    modals.close('adopt');
     gallery.refresh();
     onPersonaCreated?.();
   };
@@ -477,14 +717,17 @@ export default function GeneratedReviewsTab({
         const parsed = JSON.parse(raw) as { templateName?: string };
         const match = gallery.items.find((r) => r.test_case_name === parsed.templateName);
         if (match) {
-          setAdoptReview(match);
+          modals.open({ type: 'adopt', review: match });
           return;
         }
+        // Template not found on current page — may have been deleted or is on another page.
+        // Do NOT fall through to gallery.items[0] which would open the wrong template.
+        console.warn(
+          `[ResumeAdoption] Template "${parsed.templateName}" not found in current gallery page. ` +
+          'The adoption may still be running in the background.',
+        );
       }
-    } catch { /* ignore */ }
-    if (gallery.items[0]) {
-      setAdoptReview(gallery.items[0]);
-    }
+    } catch { /* ignore parse errors */ }
   };
 
   // Loading state
@@ -507,7 +750,7 @@ export default function GeneratedReviewsTab({
         </p>
         <div className="flex gap-3">
           <button
-            onClick={() => setShowCreateTemplate(true)}
+            onClick={() => modals.open({ type: 'create' })}
             className="px-4 py-2 text-sm rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors flex items-center gap-2"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -523,10 +766,10 @@ export default function GeneratedReviewsTab({
           </button>
         </div>
         <CreateTemplateModal
-          isOpen={showCreateTemplate}
-          onClose={() => setShowCreateTemplate(false)}
+          isOpen={modals.isOpen('create')}
+          onClose={() => modals.close('create')}
           onTemplateCreated={() => {
-            setShowCreateTemplate(false);
+            modals.close('create');
             gallery.refresh();
             onPersonaCreated?.();
           }}
@@ -538,7 +781,7 @@ export default function GeneratedReviewsTab({
   return (
     <div className="flex flex-col h-full" style={{ minWidth: 960 }}>
       {/* Background adoption banner */}
-      {templateAdoptActive && !adoptReview && (
+      {templateAdoptActive && !modals.isOpen('adopt') && (
         <div className="mx-4 mt-3 mb-0">
           <button
             onClick={handleResumeAdoption}
@@ -566,14 +809,54 @@ export default function GeneratedReviewsTab({
         onSortDirChange={gallery.setSortDir}
         connectorFilter={gallery.connectorFilter}
         onConnectorFilterChange={gallery.setConnectorFilter}
+        categoryFilter={gallery.categoryFilter}
+        onCategoryFilterChange={gallery.setCategoryFilter}
         availableConnectors={gallery.availableConnectors}
+        availableCategories={gallery.availableCategories}
         total={gallery.total}
         page={gallery.page}
         perPage={gallery.perPage}
-        onNewTemplate={() => setShowCreateTemplate(true)}
+        onNewTemplate={() => modals.open({ type: 'create' })}
         onCleanupDuplicates={handleCleanupDuplicates}
         isCleaningUp={isCleaningUp}
+        coverageFilter={gallery.coverageFilter}
+        onCoverageFilterChange={gallery.setCoverageFilter}
       />
+
+      {/* Trending Carousel */}
+      {gallery.trendingTemplates.length > 0 && !gallery.search && gallery.connectorFilter.length === 0 && gallery.categoryFilter.length === 0 && (
+        <div className="px-4 py-3 border-b border-primary/10 flex-shrink-0">
+          <div className="flex items-center gap-2 mb-2.5">
+            <TrendingUp className="w-4 h-4 text-emerald-400/70" />
+            <span className="text-xs font-medium text-muted-foreground/70 uppercase tracking-wide">
+              Most Adopted This Week
+            </span>
+          </div>
+          <div className="flex gap-2.5 overflow-x-auto pb-1">
+            {gallery.trendingTemplates.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => {
+                  setExpandedRow(t.id);
+                  modals.open({ type: 'detail', review: t });
+                }}
+                className="flex-shrink-0 w-[200px] p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/12 hover:border-emerald-500/25 hover:bg-emerald-500/10 transition-all text-left group/trend"
+              >
+                <div className="text-sm font-medium text-foreground/80 group-hover/trend:text-emerald-300 truncate">
+                  {t.test_case_name}
+                </div>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-400/70">
+                    <Download className="w-2.5 h-2.5" />
+                    {t.adoption_count}
+                  </span>
+                  <DimensionRadial designResult={parseJsonSafe<DesignAnalysisResult | null>(t.design_result, null)} size={20} />
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Table */}
       <div className="flex-1 overflow-y-auto overflow-x-auto">
@@ -583,20 +866,13 @@ export default function GeneratedReviewsTab({
               <tr className="bg-background border-b border-primary/10" style={{ backgroundColor: 'hsl(var(--background))' }}>
                 <th className="text-left text-sm font-medium text-muted-foreground/70 px-6 py-3 w-10 bg-secondary/80" />
                 <th className="text-left text-sm font-medium text-muted-foreground/70 px-4 py-3 bg-secondary/80">Template Name</th>
-                <th className="text-left text-sm font-medium text-muted-foreground/70 px-4 py-3 bg-secondary/80">Connectors</th>
                 <th className="text-center text-sm font-medium text-muted-foreground/70 px-4 py-3 bg-secondary/80">Flows</th>
                 <th className="text-center text-sm font-medium text-muted-foreground/70 px-4 py-3 bg-secondary/80">Quality</th>
                 <th className="text-center text-sm font-medium text-muted-foreground/70 px-4 py-3 bg-secondary/80">Status</th>
                 <th className="text-right text-sm font-medium text-muted-foreground/70 px-6 py-3 w-28 bg-secondary/80" />
               </tr>
             </thead>
-            <AnimatePresence mode="popLayout">
-            <motion.tbody
-              key={`${gallery.search}-${gallery.connectorFilter.join(',')}-${gallery.page}`}
-              variants={staggerContainer}
-              initial="hidden"
-              animate="show"
-            >
+            <tbody>
               {gallery.items.map((review) => {
                 const isExpanded = expandedRow === review.id;
                 const connectors: string[] = parseJsonSafe(review.connectors_used, []);
@@ -617,9 +893,7 @@ export default function GeneratedReviewsTab({
 
                 return (
                   <React.Fragment key={review.id}>
-                    <motion.tr
-                      variants={staggerItem}
-                      layout="position"
+                    <tr
                       onClick={() => setExpandedRow(isExpanded ? null : review.id)}
                       className="group border-b border-primary/5 hover:bg-secondary/30 cursor-pointer transition-colors"
                       data-testid={`template-row-${review.id}`}
@@ -633,48 +907,48 @@ export default function GeneratedReviewsTab({
                       </td>
                       <td className="px-4 py-4">
                         <div>
-                          <span className="text-base font-semibold text-foreground/80 block">
-                            {review.test_case_name}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-base font-semibold text-foreground/80">
+                              {review.test_case_name}
+                            </span>
+                            {review.adoption_count > 0 && (
+                              <span
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono rounded bg-emerald-500/10 text-emerald-400/70 border border-emerald-500/15"
+                                title={`Adopted ${review.adoption_count} time${review.adoption_count !== 1 ? 's' : ''}`}
+                              >
+                                <Download className="w-2.5 h-2.5" />
+                                {review.adoption_count}
+                              </span>
+                            )}
+                          </div>
                           <span className="text-sm text-muted-foreground/60 block truncate max-w-[500px]">
                             {review.instruction.length > 100
                               ? review.instruction.slice(0, 100) + '...'
                               : review.instruction}
                           </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {connectors.map((c) => {
-                            const meta = getConnectorMeta(c);
-                            const status = readinessStatuses.find((s) => s.connector_name === c);
-                            const isReady = status?.health === 'ready';
-                            return (
-                              <div
-                                key={c}
-                                className="relative flex-shrink-0"
-                                title={`${meta.label}${isReady ? '' : ' (not configured)'}`}
-                                data-testid={`connector-readiness-dot-${c}`}
-                              >
-                                <div
-                                  className={`w-9 h-9 rounded-lg flex items-center justify-center transition-opacity ${
-                                    isReady ? '' : 'opacity-30 grayscale'
-                                  }`}
-                                  style={{ backgroundColor: `${meta.color}18` }}
-                                >
-                                  <ConnectorIcon meta={meta} size="w-5 h-5" />
-                                </div>
-                                {/* Readiness dot */}
-                                <span
-                                  className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full ${
-                                    isReady
-                                      ? 'bg-emerald-500'
-                                      : 'bg-amber-500/60 border border-dashed border-amber-500/30'
-                                  }`}
-                                />
-                              </div>
-                            );
-                          })}
+                          {/* Connector icons */}
+                          {connectors.length > 0 && (
+                            <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                              {connectors.map((c) => {
+                                const meta = getConnectorMeta(c);
+                                const status = readinessStatuses.find((s) => s.connector_name === c);
+                                const isReady = status?.health === 'ready';
+                                return (
+                                  <ConnectorIconButton
+                                    key={c}
+                                    connectorName={c}
+                                    meta={meta}
+                                    isReady={isReady}
+                                    onAddCredential={(name) => {
+                                      const sugConn = designResult?.suggested_connectors?.find((sc) => sc.name === name) ?? null;
+                                      const connDef = connectorDefinitions.find((d) => d.name === name) ?? null;
+                                      handleConnectorCredentialClick(name, sugConn, connDef);
+                                    }}
+                                  />
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-4 text-center">
@@ -712,7 +986,7 @@ export default function GeneratedReviewsTab({
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleAdoptClick(review);
+                              modals.open({ type: 'adopt', review });
                             }}
                             className="px-3.5 py-2 text-sm rounded-lg bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors inline-flex items-center gap-1.5"
                           >
@@ -722,22 +996,23 @@ export default function GeneratedReviewsTab({
                           <RowActionMenu
                             reviewId={review.id}
                             onDelete={handleDeleteReview}
-                            onViewDetails={() => setDetailReview(review)}
-                            onRebuild={() => setRebuildReview(review)}
+                            onViewDetails={() => modals.open({ type: 'detail', review })}
+                            onRebuild={() => modals.open({ type: 'rebuild', review })}
                           />
                         </div>
                       </td>
-                    </motion.tr>
+                    </tr>
                     {isExpanded && (
                       <tr>
-                        <td colSpan={7} className="px-6 py-4 bg-secondary/20 border-b border-primary/10">
+                        <td colSpan={6} className="px-6 py-4 bg-secondary/20 border-b border-primary/10">
                           <ExpandedRowContent
                             review={review}
                             designResult={designResult}
                             installedConnectorNames={installedConnectorNames}
                             credentialServiceTypes={credentialServiceTypes}
                             onViewFlows={() => onViewFlows(review)}
-                            onAdopt={() => handleAdoptClick(review)}
+                            onAdopt={() => modals.open({ type: 'adopt', review })}
+                            onTryIt={() => modals.open({ type: 'preview', review })}
                           />
                         </td>
                       </tr>
@@ -745,8 +1020,7 @@ export default function GeneratedReviewsTab({
                   </React.Fragment>
                 );
               })}
-            </motion.tbody>
-            </AnimatePresence>
+            </tbody>
           </table>
         ) : (
           <div className="flex items-center justify-center h-40 text-sm text-muted-foreground/60" style={{ minWidth: 960 }}>
@@ -764,22 +1038,26 @@ export default function GeneratedReviewsTab({
 
       {/* Detail Modal */}
       <TemplateDetailModal
-        isOpen={!!detailReview}
-        onClose={() => setDetailReview(null)}
-        review={detailReview}
-        onAdopt={handleAdoptClick}
+        isOpen={modals.isOpen('detail')}
+        onClose={() => modals.close('detail')}
+        review={modals.find('detail')?.review ?? null}
+        onAdopt={(review) => modals.open({ type: 'adopt', review })}
         onDelete={handleDeleteReview}
         onViewFlows={(review) => {
-          setDetailReview(null);
+          modals.close('detail');
           onViewFlows(review);
+        }}
+        onTryIt={(review) => {
+          modals.close('detail');
+          modals.open({ type: 'preview', review });
         }}
       />
 
       {/* Adoption Wizard Modal */}
       <AdoptionWizardModal
-        isOpen={!!adoptReview}
-        onClose={handleCloseAdopt}
-        review={adoptReview}
+        isOpen={modals.isOpen('adopt')}
+        onClose={() => modals.close('adopt')}
+        review={modals.find('adopt')?.review ?? null}
         credentials={credentials}
         connectorDefinitions={connectorDefinitions}
         onPersonaCreated={handlePersonaCreated}
@@ -787,27 +1065,55 @@ export default function GeneratedReviewsTab({
 
       {/* Create Template Modal */}
       <CreateTemplateModal
-        isOpen={showCreateTemplate}
-        onClose={() => setShowCreateTemplate(false)}
+        isOpen={modals.isOpen('create')}
+        onClose={() => modals.close('create')}
         onTemplateCreated={() => {
-          setShowCreateTemplate(false);
+          modals.close('create');
           gallery.refresh();
           onPersonaCreated?.();
         }}
       />
 
       {/* Rebuild Modal */}
-      {rebuildReview && (
+      {modals.isOpen('rebuild') && (
         <RebuildModal
-          isOpen={!!rebuildReview}
-          onClose={() => setRebuildReview(null)}
-          review={rebuildReview}
+          isOpen
+          onClose={() => modals.close('rebuild')}
+          review={modals.find('rebuild')!.review}
           onCompleted={() => {
-            setRebuildReview(null);
+            modals.close('rebuild');
             gallery.refresh();
           }}
         />
       )}
+
+      {/* Template Preview Modal */}
+      <TemplatePreviewModal
+        isOpen={modals.isOpen('preview')}
+        onClose={() => modals.close('preview')}
+        review={modals.find('preview')?.review ?? null}
+      />
+
+      {/* Connector Credential Modal — triggered from table connector icons */}
+      {credentialModalTarget && credentialModalTarget.connectorDefinition ? (
+        <CatalogCredentialModal
+          connectorDefinition={credentialModalTarget.connectorDefinition}
+          onSave={handleCredentialSave}
+          onClose={() => setCredentialModalTarget(null)}
+        />
+      ) : credentialModalTarget ? (
+        <ConnectorCredentialModal
+          connector={
+            credentialModalTarget.suggestedConnector ?? {
+              name: credentialModalTarget.connectorName,
+            }
+          }
+          connectorDefinition={undefined}
+          existingCredential={undefined}
+          onSave={handleCredentialSave}
+          onClose={() => setCredentialModalTarget(null)}
+        />
+      ) : null}
     </div>
   );
 }

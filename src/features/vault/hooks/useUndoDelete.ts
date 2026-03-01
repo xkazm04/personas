@@ -75,9 +75,9 @@ export function useUndoDelete({ onDelete, onError }: UseUndoDeleteOptions): Undo
     setUndoToast(null);
   }, [clearUndoTimer]);
 
-  // Cleanup timer on unmount
+  // Cleanup timer on unmount — mark cancelled so a racing interval tick won't fire onDelete
   useEffect(() => {
-    return () => { clearUndoTimer(); };
+    return () => { undoCancelledRef.current = true; clearUndoTimer(); };
   }, [clearUndoTimer]);
 
   return {

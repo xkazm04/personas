@@ -2,7 +2,7 @@
   "id": "search-quality-monitor",
   "name": "Search Quality Monitor",
   "description": "Monitors Algolia search analytics for zero-result queries, low-click-through searches, and trending search terms. Posts weekly search quality reports to Slack, creates Notion tickets for content gaps, and suggests index tuning.",
-  "icon": "Code",
+  "icon": "Search",
   "color": "#10B981",
   "category": [
     "development"
@@ -133,7 +133,9 @@
           0,
           1
         ],
-        "api_base_url": "https://analytics.algolia.com"
+        "api_base_url": "https://analytics.algolia.com",
+        "role": "search_engine",
+        "category": "search"
       },
       {
         "name": "slack",
@@ -173,7 +175,9 @@
           0,
           1
         ],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       },
       {
         "name": "notion",
@@ -204,7 +208,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://api.notion.com/v1"
+        "api_base_url": "https://api.notion.com/v1",
+        "role": "knowledge_base",
+        "category": "productivity"
       }
     ],
     "suggested_notification_channels": [

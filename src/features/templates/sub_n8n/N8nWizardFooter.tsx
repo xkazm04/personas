@@ -98,16 +98,21 @@ export function N8nWizardFooter({
   const nextAction = getNextAction();
 
   return (
-    <div className="flex items-center justify-between px-6 py-3 border-t border-primary/10 bg-secondary/10">
+    <div className="flex items-center justify-between px-6 py-4 border-t border-primary/10 bg-secondary/10">
+      {/* Left: ghost Back button */}
       <button
         onClick={onBack}
         disabled={!canGoBack}
-        className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-xl text-muted-foreground/70 hover:text-muted-foreground hover:bg-secondary/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         Back
       </button>
 
+      {/* Separator */}
+      <div className="w-px h-6 bg-primary/10 mx-2 flex-shrink-0" />
+
+      {/* Right: action group */}
       <div className="flex items-center gap-3">
         {/* Connector warning — shown on edit step when connectors are unmapped */}
         {step === 'edit' && connectorsMissing > 0 && (
@@ -124,7 +129,7 @@ export function N8nWizardFooter({
           </span>
         )}
 
-        {/* Test Persona button — shown on edit step */}
+        {/* Test Persona button — secondary action on edit step */}
         {step === 'edit' && onTest && (
           <button
             onClick={onTest}
@@ -160,14 +165,15 @@ export function N8nWizardFooter({
           </button>
         )}
 
+        {/* Primary CTA — filled background, bolder weight */}
         {nextAction && (
           <button
             onClick={onNext}
             disabled={nextAction.disabled}
-            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-xl border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
               nextAction.variant === 'emerald'
-                ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25 hover:bg-emerald-500/25'
-                : 'bg-violet-500/15 text-violet-300 border-violet-500/25 hover:bg-violet-500/25'
+                ? 'bg-emerald-500/25 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/35'
+                : 'bg-violet-500/25 text-violet-300 border-violet-500/30 hover:bg-violet-500/35'
             }`}
           >
             <nextAction.icon

@@ -14,6 +14,11 @@ interface HealingEventPayload {
   severity: string;
   suggested_fix: string | null;
   persona_name: string;
+  description?: string;
+  strategy?: string;
+  backoff_seconds?: number;
+  retry_number?: number;
+  max_retries?: number;
 }
 
 interface ToastItem {

@@ -3,7 +3,7 @@ import { usePersonaStore } from '@/stores/personaStore';
 import { usePersonaCompiler } from '@/hooks/design/usePersonaCompiler';
 import { useDesignConversation } from '@/hooks/design/useDesignConversation';
 import { useToggleSet } from '@/hooks/utility/useToggleSet';
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { DesignAnalysisResult, IntentCompilationResult } from '@/lib/types/designTypes';
 import { AnimatePresence } from 'framer-motion';
 import { PhaseIndicator } from '@/features/agents/sub_editor/PhaseIndicator';
 import { DesignPhasePanel } from '@/features/agents/sub_editor/DesignPhasePanel';
@@ -17,6 +17,7 @@ import { DesignConversationHistory } from '@/features/agents/sub_editor/DesignCo
 import type { DesignFilesSection } from '@/lib/types/frontendTypes';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { parseDesignContext, serializeDesignContext } from '@/features/shared/components/UseCasesList';
+import { applyDesignContextMutation } from '@/features/agents/sub_editor/use-cases/useCaseHelpers';
 import { parseConversationMessages } from '@/lib/types/designTypes';
 
 export function DesignTab() {
@@ -25,7 +26,6 @@ export function DesignTab() {
   const credentials = usePersonaStore((s) => s.credentials);
   const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
   const fetchConnectorDefinitions = usePersonaStore((s) => s.fetchConnectorDefinitions);
-  const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
   const autoStartDesignInstruction = usePersonaStore((s) => s.autoStartDesignInstruction);
   const setAutoStartDesignInstruction = usePersonaStore((s) => s.setAutoStartDesignInstruction);
 
@@ -41,8 +41,10 @@ export function DesignTab() {
     outputLines,
     result,
     error,
+    applyWarnings,
     question,
     compile,
+    compileIntent,
     cancel: cancelAnalysis,
     recompile,
     answerAndContinue,
@@ -70,6 +72,7 @@ export function DesignTab() {
   const prevPhaseRef = useRef(phase);
 
   const [instruction, setInstruction] = useState('');
+  const [intentMode, setIntentMode] = useState(false);
   const [designContext, setDesignContext] = useState<DesignFilesSection>({ files: [], references: [] });
   const [refinementMessage, setRefinementMessage] = useState('');
   const [selectedTools, handleToolToggle, setSelectedTools] = useToggleSet<string>();
@@ -197,13 +200,19 @@ export function DesignTab() {
 
   const handleStartAnalysis = async () => {
     if (!selectedPersona || !instruction.trim()) return;
+
+    if (intentMode) {
+      // Intent compiler mode — skip design files and conversations
+      compileIntent(selectedPersona.id, instruction.trim());
+      return;
+    }
+
     const hasContext = designContext.files.length > 0 || designContext.references.length > 0;
     if (hasContext) {
       // Merge the design files into the existing envelope, preserving other sections
-      const existing = parseDesignContext(selectedPersona.design_context);
-      await applyPersonaOp(selectedPersona.id, {
-        kind: 'UpdateDesignContext',
-        design_context: serializeDesignContext({ ...existing, designFiles: designContext }),
+      await applyDesignContextMutation(selectedPersona.id, (ctx) => {
+        const existing = parseDesignContext(ctx);
+        return serializeDesignContext({ ...existing, designFiles: designContext });
       });
     }
     // Create a new design conversation for this session
@@ -302,6 +311,8 @@ export function DesignTab() {
             phase={phase}
             error={error}
             onStartAnalysis={handleStartAnalysis}
+            intentMode={intentMode}
+            onIntentModeChange={setIntentMode}
           />
         )}
 
@@ -337,6 +348,7 @@ export function DesignTab() {
         {phase === 'preview' && result && (
           <DesignPhasePreview
             result={result}
+            intentResult={intentMode ? (result as IntentCompilationResult) : undefined}
             error={error}
             toolDefinitions={toolDefinitions}
             currentToolNames={currentToolNames}
@@ -363,7 +375,7 @@ export function DesignTab() {
         {phase === 'applying' && <DesignPhaseApplying />}
 
         {phase === 'applied' && (
-          <DesignPhaseApplied result={result} onReset={handleReset} />
+          <DesignPhaseApplied result={result} warnings={applyWarnings} onReset={handleReset} />
         )}
       </AnimatePresence>
     </div>

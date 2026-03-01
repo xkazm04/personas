@@ -261,13 +261,14 @@ function EventsSection({
             <span className="text-sm font-mono uppercase tracking-wider text-muted-foreground/80">Triggers</span>
             {readOnly && actualTriggers.length > 0 ? (
               actualTriggers.map((trigger) => {
-                const config = parseTriggerConfig(trigger.config);
+                const config = parseTriggerConfig(trigger.trigger_type, trigger.config);
+                const intervalSec = (config.type === 'schedule' || config.type === 'polling') ? config.interval_seconds : undefined;
                 return (
                   <div key={trigger.id} className="flex items-center gap-2.5 py-1">
                     <div className="flex-shrink-0">{triggerIcon(trigger.trigger_type as SuggestedTrigger['trigger_type'])}</div>
                     <span className={`text-sm capitalize truncate flex-1 ${trigger.enabled ? 'text-foreground/90' : 'text-muted-foreground/80'}`}>
                       {trigger.trigger_type}
-                      {config.interval_seconds ? ` (${config.interval_seconds}s)` : ''}
+                      {intervalSec ? ` (${intervalSec}s)` : ''}
                     </span>
                     {onTriggerEnabledToggle && (
                       <button

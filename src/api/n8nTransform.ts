@@ -6,6 +6,28 @@ import type { Persona } from "@/lib/bindings/Persona";
 // N8n Transform — types
 // ============================================================================
 
+export interface N8nTriggerDraft {
+  trigger_type: string;
+  config?: Record<string, unknown> | null;
+  description?: string | null;
+  use_case_id?: string | null;
+}
+
+export interface N8nToolDraft {
+  name: string;
+  category: string;
+  description: string;
+  requires_credential_type?: string | null;
+  input_schema?: Record<string, unknown> | null;
+  implementation_guide?: string | null;
+}
+
+export interface N8nConnectorRef {
+  name: string;
+  n8n_credential_type: string;
+  has_credential: boolean;
+}
+
 export interface N8nPersonaDraft {
   name: string | null;
   description: string | null;
@@ -18,6 +40,10 @@ export interface N8nPersonaDraft {
   max_turns: number | null;
   design_context: string | null;
   notification_channels?: string | null;
+  // Entity fields — populated by connector-aware transform
+  triggers?: N8nTriggerDraft[] | null;
+  tools?: N8nToolDraft[] | null;
+  required_connectors?: N8nConnectorRef[] | null;
 }
 
 export interface N8nTransformResult {
@@ -45,6 +71,34 @@ export interface N8nTransformSnapshot {
   lines: string[];
   draft: N8nPersonaDraft | null;
   questions: TransformQuestionResponse[] | null;
+  /** Streaming sections accumulated during section-by-section transform. */
+  sections: StreamingSection[];
+}
+
+// ============================================================================
+// Streaming Section Types
+// ============================================================================
+
+export type SectionKind =
+  | 'identity'
+  | 'prompt'
+  | 'tool'
+  | 'trigger'
+  | 'connector'
+  | 'design_context';
+
+export interface SectionValidation {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
+export interface StreamingSection {
+  kind: SectionKind;
+  index: number;
+  label: string;
+  data: Record<string, unknown>;
+  validation: SectionValidation;
 }
 
 // ============================================================================
@@ -85,8 +139,8 @@ export const clearN8nTransformSnapshot = (transformId: string) =>
 export const cancelN8nTransform = (transformId: string) =>
   invoke<void>("cancel_n8n_transform", { transformId });
 
-export const confirmN8nPersonaDraft = (draftJson: string) =>
-  invoke<{ persona: Persona }>("confirm_n8n_persona_draft", { draftJson });
+export const confirmN8nPersonaDraft = (draftJson: string, sessionId?: string | null) =>
+  invoke<{ persona: Persona }>("confirm_n8n_persona_draft", { draftJson, sessionId: sessionId ?? null });
 
 export const continueN8nTransform = (
   transformId: string,

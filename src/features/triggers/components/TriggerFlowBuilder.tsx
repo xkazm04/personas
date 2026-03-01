@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { TriggerChainLink } from "@/lib/bindings/TriggerChainLink";
+import { useTriggerOperations } from "@/features/triggers/hooks/useTriggerOperations";
 
 // ─── Constants ──────────────────────────────────────────────────────────
 const NODE_W = 160;
@@ -51,6 +52,14 @@ const CONDITION_COLORS: Record<string, string> = {
   jsonpath: "text-blue-400",
 };
 
+/** Hex stroke colors for SVG edges, keyed by condition type */
+const CONDITION_STROKE_HEX: Record<string, string> = {
+  success: "#34d399",
+  failure: "#f87171",
+  any: "#a1a1aa",
+  jsonpath: "#60a5fa",
+};
+
 // ─── Component ──────────────────────────────────────────────────────────
 export function TriggerFlowBuilder() {
   const fetchTriggerChains = usePersonaStore((s) => s.fetchTriggerChains);
@@ -58,8 +67,7 @@ export function TriggerFlowBuilder() {
   const triggerChains = usePersonaStore((s) => s.triggerChains);
   const webhookStatus = usePersonaStore((s) => s.webhookStatus);
   const personas = usePersonaStore((s) => s.personas);
-  const createTrigger = usePersonaStore((s) => s.createTrigger);
-  const deleteTrigger = usePersonaStore((s) => s.deleteTrigger);
+  const ops = useTriggerOperations("");
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedSource, setSelectedSource] = useState("");
@@ -142,35 +150,23 @@ export function TriggerFlowBuilder() {
   const handleAddChain = useCallback(async () => {
     if (!selectedSource || !selectedTarget || selectedSource === selectedTarget)
       return;
-    await createTrigger(selectedTarget, {
-      trigger_type: "chain",
-      config: {
-        source_persona_id: selectedSource,
-        event_type: "chain_triggered",
-        condition: { type: selectedCondition },
-        payload_forward: true,
-      },
-      enabled: true,
-    });
+    await ops.createChain(selectedSource, selectedTarget, selectedCondition);
     setShowAddModal(false);
     setSelectedSource("");
     setSelectedTarget("");
     setSelectedCondition("any");
-    fetchTriggerChains();
   }, [
     selectedSource,
     selectedTarget,
     selectedCondition,
-    createTrigger,
-    fetchTriggerChains,
+    ops,
   ]);
 
   const handleDeleteChain = useCallback(
     async (chain: TriggerChainLink) => {
-      await deleteTrigger(chain.target_persona_id, chain.trigger_id);
-      fetchTriggerChains();
+      await ops.removeChain(chain.trigger_id, chain.target_persona_id);
     },
-    [deleteTrigger, fetchTriggerChains],
+    [ops],
   );
 
   return (
@@ -225,30 +221,45 @@ export function TriggerFlowBuilder() {
               const x2 = toNode.x;
               const y2 = toNode.y + NODE_H / 2;
               const midX = (x1 + x2) / 2;
+              const pathD = `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`;
 
               const color = edge.enabled
                 ? CONDITION_COLORS[edge.conditionType] || "text-zinc-400"
                 : "text-zinc-600";
-              const strokeColor = color
-                .replace("text-", "")
-                .replace("-400", "");
+              const strokeHex = edge.enabled
+                ? CONDITION_STROKE_HEX[edge.conditionType] || "#a1a1aa"
+                : "#52525b";
 
               return (
                 <g key={edge.id}>
+                  {/* Base edge path */}
                   <path
-                    d={`M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`}
+                    d={pathD}
                     fill="none"
-                    stroke={`var(--color-${strokeColor})`}
+                    stroke={strokeHex}
                     strokeWidth={edge.enabled ? 2 : 1}
                     strokeDasharray={edge.enabled ? "none" : "4 4"}
-                    opacity={edge.enabled ? 0.6 : 0.3}
+                    opacity={edge.enabled ? 0.5 : 0.3}
                     className="transition-all duration-300"
                   />
+                  {/* Animated dash-flow overlay for enabled edges */}
+                  {edge.enabled && (
+                    <path
+                      d={pathD}
+                      fill="none"
+                      stroke={strokeHex}
+                      strokeWidth={2.5}
+                      strokeDasharray="8 6"
+                      strokeLinecap="round"
+                      className="animate-[dash-flow_1.2s_linear_infinite]"
+                      style={{ opacity: 0.7 }}
+                    />
+                  )}
                   {/* Arrow */}
                   <polygon
                     points={`${x2} ${y2}, ${x2 - 8} ${y2 - 4}, ${x2 - 8} ${y2 + 4}`}
-                    fill={`var(--color-${strokeColor})`}
-                    opacity={edge.enabled ? 0.6 : 0.3}
+                    fill={strokeHex}
+                    opacity={edge.enabled ? 0.7 : 0.3}
                   />
                   {/* Condition badge on edge */}
                   <foreignObject

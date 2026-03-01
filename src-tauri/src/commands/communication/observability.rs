@@ -3,7 +3,7 @@ use serde::Serialize;
 use tauri::State;
 use ts_rs::TS;
 
-use crate::db::models::{MetricsChartData, PersonaPromptVersion};
+use crate::db::models::{MetricsChartData, PersonaPromptVersion, PromptPerformanceData, ExecutionDashboardData};
 use crate::db::repos::execution::metrics as repo;
 use crate::error::AppError;
 use crate::AppState;
@@ -70,6 +70,36 @@ pub fn get_all_monthly_spend(
         })
     })?;
     Ok(rows.filter_map(|r| r.ok()).collect())
+}
+
+// =============================================================================
+// Prompt Performance Dashboard
+// =============================================================================
+
+/// Returns aggregated prompt performance data for a single persona,
+/// including daily metrics with percentiles, version markers, and anomalies.
+#[tauri::command]
+pub fn get_prompt_performance(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+    days: Option<i64>,
+) -> Result<PromptPerformanceData, AppError> {
+    repo::get_prompt_performance(&state.db, &persona_id, days.unwrap_or(30))
+}
+
+// =============================================================================
+// Execution Metrics Dashboard (global, cross-persona)
+// =============================================================================
+
+/// Returns aggregated dashboard data across all personas for the last N days,
+/// including daily time-series, latency percentiles, top-5 personas by cost,
+/// and cost anomaly detection.
+#[tauri::command]
+pub fn get_execution_dashboard(
+    state: State<'_, Arc<AppState>>,
+    days: Option<i64>,
+) -> Result<ExecutionDashboardData, AppError> {
+    repo::get_execution_dashboard(&state.db, days.unwrap_or(30))
 }
 
 // =============================================================================

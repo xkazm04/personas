@@ -180,6 +180,14 @@ pub async fn execute_team(
     use crate::db::repos::resources::tools as tool_repo;
     use tauri::Emitter;
 
+    // Reject if this team already has a running pipeline to prevent concurrent
+    // execution races (duplicate LLM calls, conflicting pipeline-status events).
+    if team_repo::has_running_pipeline(&state.db, &team_id)? {
+        return Err(AppError::Validation(
+            "This team already has a pipeline running. Wait for it to complete or cancel it first.".into(),
+        ));
+    }
+
     // Create pipeline run
     let run_id = team_repo::create_pipeline_run(&state.db, &team_id, input_data.as_deref())?;
 
@@ -198,49 +206,29 @@ pub async fn execute_team(
         return Ok(run_id);
     }
 
-    // Topological sort using Kahn's algorithm
+    // Topological sort via shared module — exclude feedback edges so the graph
+    // is a clean DAG. Feedback edges (e.g. reviewer→orchestrator) are intentional
+    // back-edges that should not affect execution order or data flow.
     let member_ids: Vec<String> = members.iter().map(|m| m.id.clone()).collect();
-    let mut in_degree: std::collections::HashMap<String, usize> =
-        member_ids.iter().map(|id| (id.clone(), 0)).collect();
-    let mut adjacency: std::collections::HashMap<String, Vec<String>> =
-        member_ids.iter().map(|id| (id.clone(), vec![])).collect();
-
-    for conn in &connections {
-        if let Some(deg) = in_degree.get_mut(&conn.target_member_id) {
-            *deg += 1;
-        }
-        if let Some(adj) = adjacency.get_mut(&conn.source_member_id) {
-            adj.push(conn.target_member_id.clone());
-        }
-    }
-
-    let mut queue: std::collections::VecDeque<String> = in_degree
+    let edges: Vec<(&str, &str)> = connections
         .iter()
-        .filter(|(_, &deg)| deg == 0)
-        .map(|(id, _)| id.clone())
+        .filter(|c| c.connection_type != "feedback")
+        .map(|c| (c.source_member_id.as_str(), c.target_member_id.as_str()))
         .collect();
+    let topo = crate::engine::topology_graph::NamedTopologyGraph::new(&member_ids, &edges);
+    let sort_result = topo.topological_sort();
 
-    let mut execution_order: Vec<String> = Vec::new();
-    while let Some(node_id) = queue.pop_front() {
-        execution_order.push(node_id.clone());
-        if let Some(neighbors) = adjacency.get(&node_id) {
-            for neighbor in neighbors {
-                if let Some(deg) = in_degree.get_mut(neighbor) {
-                    *deg -= 1;
-                    if *deg == 0 {
-                        queue.push_back(neighbor.clone());
-                    }
-                }
-            }
-        }
+    if sort_result.has_cycle() {
+        tracing::warn!(
+            team_id = %team_id,
+            cycle_nodes = ?sort_result.cycle_nodes,
+            "Pipeline contains a non-feedback cycle — cyclic nodes will be appended after acyclic ones",
+        );
     }
 
-    // If not all nodes are in the order, there's a cycle -- add remaining
-    for id in &member_ids {
-        if !execution_order.contains(id) {
-            execution_order.push(id.clone());
-        }
-    }
+    // Acyclic nodes in order, then any remaining cycle nodes appended at the end
+    let mut execution_order = sort_result.order;
+    execution_order.extend(sort_result.cycle_nodes);
 
     // Build initial node statuses
     let node_statuses: Vec<serde_json::Value> = members
@@ -275,13 +263,35 @@ pub async fn execute_team(
         }),
     );
 
+    // Set up cancellation flag
+    let cancelled = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    {
+        let mut map = state.active_pipeline_cancelled.lock().unwrap();
+        map.insert(run_id.clone(), cancelled.clone());
+    }
+
     // Clone what we need for the async task
     let db = state.db.clone();
     let engine = state.engine.clone();
     let run_id_clone = run_id.clone();
+    let pipeline_cancelled_map = state.active_pipeline_cancelled.clone();
+
+    // Build predecessor map from non-feedback edges so each node receives
+    // output from its actual predecessor(s) rather than a global last_output.
+    let predecessor_map: std::collections::HashMap<String, Vec<String>> = {
+        let mut map: std::collections::HashMap<String, Vec<String>> = std::collections::HashMap::new();
+        for c in &connections {
+            if c.connection_type != "feedback" {
+                map.entry(c.target_member_id.clone())
+                    .or_default()
+                    .push(c.source_member_id.clone());
+            }
+        }
+        map
+    };
 
     tokio::spawn(async move {
-        let mut last_output: Option<String> = input_data.clone();
+        let mut node_outputs: std::collections::HashMap<String, Option<String>> = std::collections::HashMap::new();
         let mut final_statuses = node_statuses.clone();
         let mut has_failure = false;
 
@@ -329,8 +339,22 @@ pub async fn execute_team(
             let tools =
                 tool_repo::get_tools_for_persona(&db, &member.persona_id).unwrap_or_default();
 
+            // Resolve input for this node: use predecessor output(s) if available,
+            // otherwise fall back to the pipeline-level input_data for root nodes.
+            let resolved_input = if let Some(preds) = predecessor_map.get(member_id) {
+                // Use the last predecessor's output that is available
+                preds
+                    .iter()
+                    .rev()
+                    .find_map(|pid| node_outputs.get(pid).and_then(|o| o.clone()))
+                    .or_else(|| input_data.clone())
+            } else {
+                // Root node (no non-feedback predecessors) — use pipeline input
+                input_data.clone()
+            };
+
             // Build input_data for this node
-            let node_input = last_output.as_ref().map(|output| {
+            let node_input = resolved_input.as_ref().map(|output| {
                 serde_json::json!({
                     "pipeline_input": output,
                     "pipeline_context": {
@@ -389,16 +413,35 @@ pub async fn execute_team(
                 continue;
             }
 
-            // Wait for execution to complete by polling
+            // Wait for execution to complete by polling (check cancellation each tick)
             let mut completed = false;
+            let mut was_cancelled = false;
             for _ in 0..600 {
                 tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+
+                // Check cancellation flag
+                if cancelled.load(std::sync::atomic::Ordering::Relaxed) {
+                    was_cancelled = true;
+                    // Cancel the underlying execution too
+                    let persona_id = Some(member.persona_id.clone());
+                    let _ = engine
+                        .cancel_execution(&exec.id, &db, persona_id.as_deref())
+                        .await;
+                    update_node_status(&mut final_statuses, member_id, &[
+                        ("status", serde_json::json!("cancelled")),
+                        ("error", serde_json::json!("Pipeline cancelled by user")),
+                    ]);
+                    has_failure = true;
+                    completed = true;
+                    break;
+                }
+
                 if let Ok(execution) =
                     crate::db::repos::execution::executions::get_by_id(&db, &exec.id)
                 {
                     match execution.status.as_str() {
                         "completed" => {
-                            last_output = execution.output_data.clone();
+                            node_outputs.insert(member_id.clone(), execution.output_data.clone());
                             update_node_status(&mut final_statuses, member_id, &[
                                 ("status", serde_json::json!("completed")),
                                 ("output", serde_json::json!(execution.output_data)),
@@ -428,6 +471,10 @@ pub async fn execute_team(
                 has_failure = true;
             }
 
+            if was_cancelled {
+                break;
+            }
+
             // Emit updated status
             let status_json = serde_json::to_string(&final_statuses).unwrap_or_default();
             let _ = team_repo::update_pipeline_run(
@@ -453,7 +500,13 @@ pub async fn execute_team(
         }
 
         // Finalize
-        let final_status = if has_failure { "failed" } else { "completed" };
+        let final_status = if cancelled.load(std::sync::atomic::Ordering::Relaxed) {
+            "cancelled"
+        } else if has_failure {
+            "failed"
+        } else {
+            "completed"
+        };
         let final_json = serde_json::to_string(&final_statuses).unwrap_or_default();
         let _ = team_repo::update_pipeline_run(
             &db,
@@ -471,9 +524,30 @@ pub async fn execute_team(
                 "node_statuses": final_statuses,
             }),
         );
+
+        // Clean up cancellation flag
+        if let Ok(mut map) = pipeline_cancelled_map.lock() {
+            map.remove(&run_id_clone);
+        }
     });
 
     Ok(run_id)
+}
+
+/// Cancel a running pipeline by setting its cancellation flag.
+#[tauri::command]
+pub fn cancel_pipeline(
+    state: State<'_, Arc<AppState>>,
+    run_id: String,
+) -> Result<bool, AppError> {
+    let map = state.active_pipeline_cancelled.lock().unwrap();
+    if let Some(flag) = map.get(&run_id) {
+        flag.store(true, std::sync::atomic::Ordering::Relaxed);
+        tracing::info!(run_id = %run_id, "Pipeline cancellation requested");
+        Ok(true)
+    } else {
+        Ok(false)
+    }
 }
 
 // ============================================================================

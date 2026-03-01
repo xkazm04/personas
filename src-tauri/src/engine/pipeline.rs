@@ -19,6 +19,7 @@ use serde::Serialize;
 // =============================================================================
 
 /// The ordered stages of the backend execution pipeline.
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum PipelineStage {
@@ -38,6 +39,7 @@ pub enum PipelineStage {
     Complete,
 }
 
+#[allow(dead_code)]
 impl PipelineStage {
     /// All stages in order.
     pub const ALL: &'static [PipelineStage] = &[
@@ -91,6 +93,7 @@ impl fmt::Display for PipelineStage {
 #[derive(Debug, Clone)]
 pub struct StageTrace {
     pub stage: PipelineStage,
+    #[allow(dead_code)]
     pub started_at: Instant,
     pub duration_ms: Option<u64>,
     pub error: Option<String>,

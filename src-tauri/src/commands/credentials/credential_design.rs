@@ -4,9 +4,12 @@ use std::collections::HashMap;
 use serde_json::json;
 use tauri::State;
 
+use crate::db::repos::resources::audit_log;
 use crate::db::repos::resources::connectors as connector_repo;
 use crate::engine::credential_design;
-use crate::engine::healthcheck::{resolve_template, validate_healthcheck_url};
+use crate::engine::healthcheck::{
+    resolve_template, validate_field_values, validate_healthcheck_url, validate_template_url,
+};
 use crate::error::AppError;
 use crate::AppState;
 
@@ -56,6 +59,17 @@ pub async fn start_credential_design(
         let mut guard = active_id.lock().unwrap();
         *guard = Some(design_id.clone());
     }
+
+    let truncated = if instruction.len() > 120 {
+        format!("{}…", &instruction[..120])
+    } else {
+        instruction.clone()
+    };
+    let _ = audit_log::insert(
+        &state.db, &design_id, "credential_design",
+        "design_started", None, None,
+        Some(&truncated),
+    );
 
     let design_id_clone = design_id.clone();
 
@@ -150,9 +164,14 @@ pub async fn test_credential_design_healthcheck(
         .and_then(|v| v.as_u64())
         .map(|v| v as u16);
 
+    // Pre-resolution SSRF defense: reject templates where user field values
+    // could control the target host (e.g. {{base_url}} in authority position)
+    validate_template_url(endpoint)?;
+    validate_field_values(&values_map)?;
+
     let resolved_endpoint = resolve_template(endpoint, &values_map);
 
-    // Validate the resolved URL to prevent SSRF via AI-generated endpoints
+    // Post-resolution SSRF defense: reject private/internal addresses
     validate_healthcheck_url(&resolved_endpoint)?;
 
     let client = reqwest::Client::builder()

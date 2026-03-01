@@ -68,22 +68,19 @@ export function useDesignReviews() {
   const seedDoneRef = useRef(false);
 
   // Seed built-in templates into the database on first mount
-  const seedBuiltinTemplates = useCallback(async (existingReviews: PersonaDesignReview[]) => {
+  const seedBuiltinTemplates = useCallback(async (_existingReviews: PersonaDesignReview[]) => {
     if (seedDoneRef.current) return;
     seedDoneRef.current = true;
 
     const seeds = getSeedReviews();
-    const existingIds = new Set(
-      existingReviews
-        .filter((r) => r.test_run_id?.startsWith('seed-'))
-        .map((r) => r.test_case_id),
-    );
 
-    const missing = seeds.filter((s) => !existingIds.has(s.test_case_id));
-    if (missing.length === 0) return;
+    // Upsert ALL seeds (not just missing) to backfill new fields like category.
+    // The backend uses ON CONFLICT DO UPDATE so this is safe — it preserves
+    // adoption_count and last_adopted_at while updating changed fields.
+    if (seeds.length === 0) return;
 
     try {
-      await Promise.all(missing.map((input) => api.importDesignReview(input)));
+      await Promise.all(seeds.map((input) => api.importDesignReview(input)));
       // Re-fetch to include seeded records
       const data = await api.listDesignReviews();
       setReviews(data);

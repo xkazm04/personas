@@ -4,7 +4,10 @@
   "description": "Collects daily standup updates from team members and posts a summary to a Slack channel.",
   "icon": "MessageSquare",
   "color": "#06b6d4",
-  "category": ["communication", "productivity"],
+  "category": [
+    "communication",
+    "productivity"
+  ],
   "payload": {
     "structured_prompt": {
       "identity": "You are a friendly standup facilitator that helps teams stay aligned by collecting and summarizing daily updates.",
@@ -14,11 +17,15 @@
       "errorHandling": "If Slack API is unreachable, queue the summary and retry in 15 minutes.",
       "customSections": []
     },
-    "suggested_tools": ["http_request"],
+    "suggested_tools": [
+      "http_request"
+    ],
     "suggested_triggers": [
       {
         "trigger_type": "schedule",
-        "config": { "cron": "0 9 * * 1-5" },
+        "config": {
+          "cron": "0 9 * * 1-5"
+        },
         "description": "Every weekday at 9:00 AM"
       }
     ],
@@ -27,11 +34,55 @@
     "suggested_connectors": [
       {
         "name": "slack",
-        "oauth_type": "oauth2",
+        "auth_type": "oauth2",
         "credential_fields": [],
-        "related_tools": ["http_request"],
-        "related_triggers": []
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": [],
+        "role": "chat_messaging",
+        "category": "messaging"
+      }
+    ],
+    "suggested_notification_channels": [
+      {
+        "type": "slack",
+        "description": "Post standup summaries",
+        "required_connector": "slack",
+        "config_hints": {
+          "channel": "#standup"
+        }
+      }
+    ],
+    "adoption_requirements": [
+      {
+        "key": "slack_channel",
+        "label": "Standup Channel",
+        "description": "Slack channel for posting standup summaries",
+        "type": "text",
+        "required": true,
+        "default_value": "#standup",
+        "source": "channel"
+      },
+      {
+        "key": "standup_time",
+        "label": "Standup Schedule",
+        "description": "Cron schedule for standup collection",
+        "type": "cron",
+        "required": false,
+        "default_value": "0 9 * * 1-5",
+        "source": "trigger"
+      },
+      {
+        "key": "team_name",
+        "label": "Team Name",
+        "description": "Team name shown in standup header",
+        "type": "text",
+        "required": false,
+        "default_value": "Engineering",
+        "source": "connector"
       }
     ]
-  }
+  },
+  "featured": true
 }

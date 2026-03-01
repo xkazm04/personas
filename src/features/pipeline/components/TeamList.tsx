@@ -2,8 +2,10 @@ import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Users, Trash2, ChevronRight, GitBranch } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { getTeamCounts } from '@/api/tauriApi';
+import { getTeamCounts, updateTeam } from '@/api/tauriApi';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
+import PipelineTemplateGallery from './PipelineTemplateGallery';
+import type { PipelineTemplate } from './PipelineTemplateGallery';
 
 export default function TeamList() {
   const teams = usePersonaStore((s) => s.teams);
@@ -56,6 +58,37 @@ export default function TeamList() {
     setNewDescription('');
     setNewColor('#6366f1');
     setShowCreate(false);
+  };
+
+  const handleAdoptTemplate = async (template: PipelineTemplate) => {
+    const blueprint = {
+      template_id: template.id,
+      nodes: template.nodes,
+      edges: template.edges,
+    };
+    const team = await createTeam({
+      name: template.name,
+      description: template.description,
+      color: template.color,
+      icon: template.icon,
+    });
+    if (team) {
+      // Store blueprint in team_config for canvas guidance
+      try {
+        await updateTeam(team.id, {
+          name: null,
+          description: null,
+          canvas_data: null,
+          team_config: JSON.stringify(blueprint),
+          icon: null,
+          color: null,
+          enabled: null,
+        });
+      } catch {
+        // Non-critical — team still created
+      }
+      selectTeam(team.id);
+    }
   };
 
   return (
@@ -258,24 +291,29 @@ export default function TeamList() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-center py-20"
+            className="text-center py-12"
           >
             <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
               <Users className="w-8 h-8 text-indigo-400/50" />
             </div>
             <h2 className="text-lg font-semibold text-foreground/90 mb-1">No teams yet</h2>
             <p className="text-sm text-muted-foreground/90 mb-6 max-w-sm mx-auto">
-              Create a team to connect multiple agents into automated pipelines
+              Start from a template below or create a blank team
             </p>
             <button
               onClick={() => setShowCreate(true)}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/25 transition-all"
             >
               <Plus className="w-4 h-4" />
-              <span className="text-sm font-medium">Create First Team</span>
+              <span className="text-sm font-medium">Create Blank Team</span>
             </button>
           </motion.div>
         )}
+
+        {/* Pipeline Template Gallery */}
+        <div className={teams.length > 0 ? 'mt-8' : 'mt-4'}>
+          <PipelineTemplateGallery onAdopt={handleAdoptTemplate} />
+        </div>
       </div>
       </div>
       </div>

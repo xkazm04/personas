@@ -75,6 +75,34 @@ export interface MigrationResult {
 export const migratePlaintextCredentials = () =>
   invoke<MigrationResult>("migrate_plaintext_credentials");
 
+// ── Field-level Credential Storage ────────────────────────────────────
+
+export interface CredentialFieldMeta {
+  id: string;
+  credentialId: string;
+  fieldKey: string;
+  fieldType: string;
+  isSensitive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const listCredentialFields = (credentialId: string) =>
+  invoke<CredentialFieldMeta[]>("list_credential_fields", { credentialId });
+
+export const updateCredentialField = (
+  credentialId: string,
+  fieldKey: string,
+  fieldValue: string,
+  isSensitive: boolean,
+) =>
+  invoke<boolean>("update_credential_field", {
+    credentialId,
+    fieldKey,
+    fieldValue,
+    isSensitive,
+  });
+
 // ── Credential Intelligence ───────────────────────────────────────────
 
 import type { CredentialAuditEntry } from "@/lib/bindings/CredentialAuditEntry";
@@ -85,6 +113,9 @@ export type { CredentialAuditEntry, CredentialUsageStats, CredentialDependent };
 
 export const getCredentialAuditLog = (credentialId: string, limit?: number) =>
   invoke<CredentialAuditEntry[]>("credential_audit_log", { credentialId, limit });
+
+export const getCredentialAuditLogGlobal = (limit?: number) =>
+  invoke<CredentialAuditEntry[]>("credential_audit_log_global", { limit });
 
 export const getCredentialUsageStats = (credentialId: string) =>
   invoke<CredentialUsageStats>("credential_usage_stats", { credentialId });

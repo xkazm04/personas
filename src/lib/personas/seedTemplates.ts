@@ -1,12 +1,11 @@
 /**
- * Seed Templates — converts BUILTIN_TEMPLATES into PersonaDesignReview
+ * Seed Templates — converts catalog entries into PersonaDesignReview
  * records for the Generated tab. Each template is inserted once (idempotent).
  *
- * Source of truth: builtinTemplates.ts (curated template set).
+ * Source of truth: templateCatalog.ts (single template catalog).
  */
-import { BUILTIN_TEMPLATES } from './builtinTemplates';
-import { CATEGORY_TEMPLATES } from './categoryTemplates';
-import type { BuiltinTemplate } from '@/lib/types/templateTypes';
+import { FEATURED_TEMPLATES, CATEGORY_TEMPLATES } from './templateCatalog';
+import type { TemplateCatalogEntry } from '@/lib/types/templateTypes';
 
 const SEED_BUILTIN_RUN_ID = 'seed-builtin-v1';
 const SEED_CATEGORY_RUN_ID = 'seed-category-v1';
@@ -24,9 +23,10 @@ export interface SeedReviewInput {
   use_case_flows: string | null;
   test_run_id: string;
   reviewed_at: string;
+  category: string | null;
 }
 
-function templateToReviewInput(template: BuiltinTemplate, runId: string): SeedReviewInput {
+function templateToReviewInput(template: TemplateCatalogEntry, runId: string): SeedReviewInput {
   const payload = template.payload as unknown as Record<string, unknown>;
   const connectors = Array.isArray(payload.suggested_connectors)
     ? (payload.suggested_connectors as Array<{ name: string }>).map((c) => c.name)
@@ -52,13 +52,14 @@ function templateToReviewInput(template: BuiltinTemplate, runId: string): SeedRe
     use_case_flows: flows ? JSON.stringify(flows) : null,
     test_run_id: runId,
     reviewed_at: new Date().toISOString(),
+    category: template.category?.[0] ?? null,
   };
 }
 
 /** All seed templates that should be present in the Generated tab. */
 export function getSeedReviews(): SeedReviewInput[] {
   return [
-    ...BUILTIN_TEMPLATES.map((t) => templateToReviewInput(t, SEED_BUILTIN_RUN_ID)),
+    ...FEATURED_TEMPLATES.map((t) => templateToReviewInput(t, SEED_BUILTIN_RUN_ID)),
     ...CATEGORY_TEMPLATES.map((t) => templateToReviewInput(t, SEED_CATEGORY_RUN_ID)),
   ];
 }

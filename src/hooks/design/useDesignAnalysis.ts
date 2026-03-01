@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import { startDesignAnalysis, refineDesign, cancelDesignAnalysis } from '@/api/tauriApi';
+import { startDesignAnalysis, refineDesign, cancelDesignAnalysis, compileFromIntent } from '@/api/design';
 import { createTrigger } from '@/api/triggers';
 import { createSubscription } from '@/api/events';
 import { usePersonaStore } from '@/stores/personaStore';
@@ -26,11 +26,13 @@ export function useDesignAnalysis() {
   const [outputLines, setOutputLines] = useState<string[]>([]);
   const [result, setResult] = useState<DesignAnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [applyWarnings, setApplyWarnings] = useState<string[]>([]);
   const [question, setQuestion] = useState<DesignQuestion | null>(null);
   const personaIdRef = useRef<string | null>(null);
   const designIdRef = useRef<string | null>(null);
   const conversationIdRef = useRef<string | null>(null);
   const unlistenersRef = useRef<UnlistenFn[]>([]);
+  const applyingRef = useRef(false);
 
   const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
   const refreshPersonas = usePersonaStore((s) => s.fetchPersonas);
@@ -105,6 +107,29 @@ export function useDesignAnalysis() {
     }
   }, [cleanup, setupDesignListeners]);
 
+  const startIntentCompilation = useCallback(async (personaId: string, intent: string) => {
+    cleanup();
+    setPhase('analyzing');
+    setOutputLines([]);
+    setResult(null);
+    setError(null);
+    setQuestion(null);
+    personaIdRef.current = personaId;
+    conversationIdRef.current = null;
+
+    const clientDesignId = crypto.randomUUID();
+    designIdRef.current = clientDesignId;
+
+    try {
+      await setupDesignListeners('Intent compilation failed', 'idle');
+      await compileFromIntent(personaId, intent, clientDesignId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to compile intent');
+      setPhase('idle');
+      cleanup();
+    }
+  }, [cleanup, setupDesignListeners]);
+
   const refineAnalysis = useCallback(async (feedback: string) => {
     if (!personaIdRef.current) return;
 
@@ -156,7 +181,8 @@ export function useDesignAnalysis() {
     selectedChannelIndices?: Set<number>;
     selectedSubscriptionIndices?: Set<number>;
   }) => {
-    if (!personaIdRef.current || !result) return;
+    if (!personaIdRef.current || !result || applyingRef.current) return;
+    applyingRef.current = true;
     const personaId = personaIdRef.current;
 
     setPhase('applying');
@@ -195,7 +221,8 @@ export function useDesignAnalysis() {
 
       await applyPersonaOp(personaId, { kind: 'ApplyDesignResult', updates });
 
-      // Create actual triggers for each selected suggestion
+      // Create actual triggers for each selected suggestion, collecting failures
+      const warnings: string[] = [];
       for (const trigger of filteredResult.suggested_triggers) {
         try {
           await createTrigger({
@@ -206,7 +233,7 @@ export function useDesignAnalysis() {
             use_case_id: null,
           });
         } catch {
-          // Individual trigger creation failure should not block the rest
+          warnings.push(`Trigger "${trigger.trigger_type}" failed to create`);
         }
       }
 
@@ -221,15 +248,18 @@ export function useDesignAnalysis() {
             use_case_id: null,
           });
         } catch {
-          // Individual subscription creation failure should not block the rest
+          warnings.push(`Subscription "${sub.event_type}" failed to create`);
         }
       }
 
       await refreshPersonas();
+      setApplyWarnings(warnings);
       setPhase('applied');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to apply design');
       setPhase('preview');
+    } finally {
+      applyingRef.current = false;
     }
   }, [result, applyPersonaOp, refreshPersonas]);
 
@@ -246,6 +276,7 @@ export function useDesignAnalysis() {
     setOutputLines([]);
     setResult(null);
     setError(null);
+    setApplyWarnings([]);
     setQuestion(null);
   }, [cleanup]);
 
@@ -254,8 +285,10 @@ export function useDesignAnalysis() {
     outputLines,
     result,
     error,
+    applyWarnings,
     question,
     startAnalysis,
+    startIntentCompilation,
     refineAnalysis,
     answerQuestion,
     cancelAnalysis,

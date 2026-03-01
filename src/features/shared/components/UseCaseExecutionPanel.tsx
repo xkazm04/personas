@@ -57,9 +57,13 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
   const dragStartY = useRef(0);
   const dragStartHeight = useRef(0);
 
+  const activeUseCaseId = usePersonaStore((s) => s.activeUseCaseId);
+
   const isThisPersonasExecution = executionPersonaId === personaId && personaId !== '';
-  const elapsedMs = useElapsedTimer(isExecuting && isThisPersonasExecution, 500);
+  const isThisUseCaseExecution = isThisPersonasExecution && activeUseCaseId === useCase.id;
+  const elapsedMs = useElapsedTimer(isExecuting && isThisUseCaseExecution, 500);
   const prevIsExecutingRef = useRef(isExecuting);
+  const wasOurExecutionRef = useRef(false);
 
   // Reset input when use case changes
   useEffect(() => {
@@ -69,22 +73,31 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
     setOutputLines([]);
   }, [useCase.id, buildFieldValues]);
 
-  // Sync store output
+  // Sync store output — scoped to use case, not just persona
   useEffect(() => {
-    if (isThisPersonasExecution && executionOutput.length > 0) {
+    if (isThisUseCaseExecution && executionOutput.length > 0) {
       setOutputLines(executionOutput);
-    } else if (!isThisPersonasExecution) {
+    } else if (!isThisUseCaseExecution) {
       setOutputLines([]);
     }
-  }, [executionOutput, isThisPersonasExecution]);
+  }, [executionOutput, isThisUseCaseExecution]);
 
-  // Detect execution completion
+  // Latch ownership while executing so completion fires even if the store
+  // clears executionPersonaId/activeUseCaseId before flipping isExecuting.
   useEffect(() => {
-    if (prevIsExecutingRef.current && !isExecuting && isThisPersonasExecution) {
+    if (isExecuting && isThisUseCaseExecution) {
+      wasOurExecutionRef.current = true;
+    }
+  }, [isExecuting, isThisUseCaseExecution]);
+
+  // Detect execution completion — checks isExecuting independently of ownership
+  useEffect(() => {
+    if (prevIsExecutingRef.current && !isExecuting && wasOurExecutionRef.current) {
+      wasOurExecutionRef.current = false;
       onExecutionFinished?.();
     }
     prevIsExecutingRef.current = isExecuting;
-  }, [isExecuting, isThisPersonasExecution, onExecutionFinished]);
+  }, [isExecuting, onExecutionFinished]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -190,7 +203,7 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
           <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded border ${modeBadge.bg} ${modeBadge.text} uppercase tracking-wider`}>
             {modeBadge.label}
           </span>
-          {isExecuting && isThisPersonasExecution && (
+          {isExecuting && isThisUseCaseExecution && (
             <div className="flex items-center gap-1.5 text-muted-foreground/60">
               <Clock className="w-3 h-3" />
               <span className="text-xs font-mono">{formatElapsed(elapsedMs)}</span>
@@ -249,15 +262,15 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
       {/* Execute/Stop button */}
       <div className="p-3 border-b border-primary/10">
         <button
-          onClick={isExecuting && isThisPersonasExecution ? handleStop : handleExecute}
+          onClick={isExecuting && isThisUseCaseExecution ? handleStop : handleExecute}
           className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${
-            isExecuting && isThisPersonasExecution
+            isExecuting && isThisUseCaseExecution
               ? 'bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/10'
               : 'bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/10'
           }`}
-          disabled={isExecuting && !isThisPersonasExecution}
+          disabled={isExecuting && !isThisUseCaseExecution}
         >
-          {isExecuting && isThisPersonasExecution ? (
+          {isExecuting && isThisUseCaseExecution ? (
             <>
               <Square className="w-4 h-4" />
               Stop Execution
@@ -272,7 +285,7 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
       </div>
 
       {/* Terminal */}
-      {isThisPersonasExecution && (isExecuting || outputLines.length > 0) && (
+      {((isExecuting && isThisUseCaseExecution) || outputLines.length > 0) && (
         <ExecutionTerminal
           lines={outputLines}
           isRunning={isExecuting}

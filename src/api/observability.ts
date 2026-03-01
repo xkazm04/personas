@@ -4,6 +4,8 @@ import type { MetricsChartData } from "@/lib/bindings/MetricsChartData";
 import type { MetricsSummary } from "@/lib/bindings/MetricsSummary";
 import type { PersonaPromptVersion } from "@/lib/bindings/PersonaPromptVersion";
 import type { PromptAbTestResult } from "@/lib/bindings/PromptAbTestResult";
+import type { PromptPerformanceData } from "@/lib/bindings/PromptPerformanceData";
+import type { ExecutionDashboardData } from "@/lib/bindings/ExecutionDashboardData";
 
 // ============================================================================
 // Observability
@@ -32,6 +34,25 @@ export const getPromptVersions = (personaId: string, limit?: number) =>
 
 export const getAllMonthlySpend = () =>
   invoke<Array<import('@/lib/bindings/PersonaMonthlySpend').PersonaMonthlySpend>>("get_all_monthly_spend");
+
+// ============================================================================
+// Prompt Performance Dashboard
+// ============================================================================
+
+export const getPromptPerformance = (personaId: string, days?: number) =>
+  invoke<PromptPerformanceData>("get_prompt_performance", {
+    personaId,
+    days: days ?? null,
+  });
+
+// ============================================================================
+// Execution Metrics Dashboard
+// ============================================================================
+
+export const getExecutionDashboard = (days?: number) =>
+  invoke<ExecutionDashboardData>("get_execution_dashboard", {
+    days: days ?? null,
+  });
 
 // ============================================================================
 // Prompt Lab

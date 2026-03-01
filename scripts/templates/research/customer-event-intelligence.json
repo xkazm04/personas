@@ -2,7 +2,7 @@
   "id": "customer-event-intelligence",
   "name": "Customer Event Intelligence",
   "description": "Receives Segment events via webhook, enriches user profiles with behavioral data, detects high-intent signals (pricing page visits, feature activation), notifies sales in Slack with context, and logs signal patterns in Notion.",
-  "icon": "Search",
+  "icon": "Radar",
   "color": "#06B6D4",
   "category": [
     "research"
@@ -130,7 +130,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://profiles.segment.com/v1"
+        "api_base_url": "https://profiles.segment.com/v1",
+        "role": "analytics",
+        "category": "analytics"
       },
       {
         "name": "slack",
@@ -159,7 +161,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       },
       {
         "name": "notion",
@@ -188,7 +192,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://api.notion.com/v1"
+        "api_base_url": "https://api.notion.com/v1",
+        "role": "knowledge_base",
+        "category": "productivity"
       }
     ],
     "suggested_notification_channels": [

@@ -2,7 +2,7 @@
   "id": "lead-capture-pipeline",
   "name": "Lead Capture Pipeline",
   "description": "Processes Typeform submissions in real-time, scores leads based on responses, adds them to Airtable with qualification status, sends personalized welcome emails, and notifies the sales team in Slack for hot leads.",
-  "icon": "TrendingUp",
+  "icon": "UserPlus",
   "color": "#6366F1",
   "category": [
     "sales"
@@ -146,7 +146,9 @@
           0,
           1
         ],
-        "api_base_url": "https://api.typeform.com"
+        "api_base_url": "https://api.typeform.com",
+        "role": "form_survey",
+        "category": "forms"
       },
       {
         "name": "airtable",
@@ -183,7 +185,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://api.airtable.com/v0"
+        "api_base_url": "https://api.airtable.com/v0",
+        "role": "knowledge_base",
+        "category": "productivity"
       },
       {
         "name": "google_workspace",
@@ -220,7 +224,9 @@
           "gmail_send"
         ],
         "related_triggers": [],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://www.googleapis.com",
+        "role": "productivity_suite",
+        "category": "productivity"
       },
       {
         "name": "slack",
@@ -249,7 +255,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

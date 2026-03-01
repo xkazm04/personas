@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { Search, Key, XCircle } from 'lucide-react';
+import { Search, Key, XCircle, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { CredentialList } from '@/features/vault/components/CredentialList';
@@ -8,17 +8,16 @@ import { CredentialPicker } from '@/features/vault/components/CredentialPicker';
 import { CredentialDesignModal } from '@/features/vault/components/CredentialDesignModal';
 import { CredentialTemplateForm } from '@/features/vault/components/CredentialTemplateForm';
 import { CredentialTypePicker } from '@/features/vault/components/CredentialTypePicker';
-import { McpServerForm } from '@/features/vault/components/credential-types/McpServerForm';
-import { CustomConnectionForm } from '@/features/vault/components/credential-types/CustomConnectionForm';
-import { DatabaseConnectionForm } from '@/features/vault/components/credential-types/DatabaseConnectionForm';
+import { CredentialSchemaForm, MCP_SCHEMA, CUSTOM_SCHEMA, DATABASE_SCHEMA } from '@/features/vault/components/credential-types/CredentialSchemaForm';
 import { CredentialDeleteDialog } from '@/features/vault/components/CredentialDeleteDialog';
 import { VaultStatusBadge } from '@/features/vault/components/VaultStatusBadge';
 import { useCredentialOAuth } from '@/features/vault/hooks/useCredentialOAuth';
 import { useUndoDelete } from '@/features/vault/hooks/useUndoDelete';
-import { useTemplateSelection } from '@/features/vault/hooks/useTemplateSelection';
+import { useCredentialViewFSM, type CredentialNavKey } from '@/features/vault/hooks/useCredentialViewFSM';
+import { useCredentialHealth } from '@/features/vault/hooks/useCredentialHealth';
+import type { ConnectorDefinition } from '@/lib/types/types';
 import * as api from '@/api/tauriApi';
 import type { VaultStatus } from '@/api/tauriApi';
-import { healthcheckCredentialPreview } from '@/api/credentials';
 
 export function CredentialManager() {
   const credentials = usePersonaStore((s) => s.credentials);
@@ -34,26 +33,63 @@ export function CredentialManager() {
   const [vault, setVault] = useState<VaultStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [credentialSearch, setCredentialSearch] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const template = useTemplateSelection(connectorDefinitions);
+  const { state: viewState, dispatch, navKey, navigateFromSidebar, filteredConnectors, catalogFormData } = useCredentialViewFSM(connectorDefinitions);
 
-  // Healthcheck state for catalog (from-template) flow
-  const [templateHcLoading, setTemplateHcLoading] = useState(false);
-  const [templateHcResult, setTemplateHcResult] = useState<{ success: boolean; message: string } | null>(null);
+  // Sync unified search to FSM when in catalog view
+  useEffect(() => {
+    if (viewState.view === 'catalog-browse') {
+      dispatch({ type: 'SET_CATALOG_SEARCH', search: credentialSearch });
+    }
+  }, [credentialSearch, viewState.view, dispatch]);
+
+  // Cmd/Ctrl+K keyboard shortcut to focus search
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  // ── Bidirectional sync: FSM <-> Zustand ──
+  // External navigation (Sidebar, ToolSelector, DesignModal) writes to Zustand; FSM reacts.
+  useEffect(() => {
+    const target: CredentialNavKey =
+      credentialView === 'credentials' ? 'credentials' :
+      credentialView === 'from-template' ? 'from-template' :
+      'add-new';
+    if (target !== navKey) {
+      navigateFromSidebar(target);
+    }
+  }, [credentialView]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // FSM navKey -> Zustand (for sidebar highlighting)
+  useEffect(() => {
+    setCredentialView(navKey);
+  }, [navKey, setCredentialView]);
+
+  // Healthcheck for catalog (from-template) flow
+  const selectedConnectorName = viewState.view === 'catalog-form' ? viewState.connector.name : null;
+  const templateHealthKey = `preview:${selectedConnectorName ?? '_none'}`;
+  const templateHealth = useCredentialHealth(templateHealthKey);
 
   const handleOAuthSuccess = useCallback(async ({ credentialData }: { credentialData: Record<string, string> }) => {
-    if (!template.selectedConnector) return;
-    const name = template.credentialName.trim() || `${template.selectedConnector.label} Credential`;
+    if (!catalogFormData) return;
+    const name = catalogFormData.credentialName.trim() || `${catalogFormData.connector.label} Credential`;
     await createCredential({
       name,
-      service_type: template.selectedConnector.name,
+      service_type: catalogFormData.connector.name,
       data: credentialData,
     });
     await fetchCredentials();
-    setCredentialView('credentials');
-    template.resetAll();
+    dispatch({ type: 'GO_LIST' });
     setCredentialSearch('');
-  }, [template.selectedConnector, template.credentialName, createCredential, fetchCredentials, setCredentialView, template.resetAll]);
+  }, [catalogFormData, createCredential, fetchCredentials, dispatch]);
 
   const handleOAuthError = useCallback((message: string) => {
     setError(message);
@@ -65,12 +101,11 @@ export function CredentialManager() {
   });
 
   // Wrap pickType to clear healthcheck state when switching connectors
-  const handlePickType = useCallback((connector: Parameters<typeof template.pickType>[0]) => {
-    setTemplateHcResult(null);
-    setTemplateHcLoading(false);
+  const handlePickType = useCallback((connector: ConnectorDefinition) => {
+    templateHealth.invalidate();
     oauth.reset();
-    template.pickType(connector);
-  }, [template.pickType, oauth]);
+    dispatch({ type: 'PICK_CONNECTOR', connector });
+  }, [dispatch, oauth, templateHealth.invalidate]);
 
   const undoDelete = useUndoDelete({
     onDelete: deleteCredential,
@@ -90,20 +125,19 @@ export function CredentialManager() {
   }, [fetchCredentials, fetchConnectorDefinitions]);
 
   const handleCreateCredential = async (values: Record<string, string>) => {
-    if (!template.selectedConnector) return;
+    if (!catalogFormData) return;
 
-    const name = template.credentialName.trim() || `${template.selectedConnector.label} Credential`;
+    const name = catalogFormData.credentialName.trim() || `${catalogFormData.connector.label} Credential`;
 
     try {
       setError(null);
       await createCredential({
         name,
-        service_type: template.selectedConnector.name,
+        service_type: catalogFormData.connector.name,
         data: values,
       });
       await fetchCredentials();
-      setCredentialView('credentials');
-      template.resetAll();
+      dispatch({ type: 'GO_LIST' });
       setCredentialSearch('');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to create credential');
@@ -117,26 +151,14 @@ export function CredentialManager() {
   }, [credentials, undoDelete.requestDelete]);
 
   const handleTemplateOAuthConsent = (values: Record<string, string>) => {
-    if (!template.selectedConnector) return;
+    if (!catalogFormData) return;
     setError(null);
-    oauth.startConsent(template.selectedConnector.name, values);
+    oauth.startConsent(catalogFormData.connector.name, values);
   };
 
   const handleTemplateHealthcheck = async (values: Record<string, string>) => {
-    if (!template.selectedConnector) return;
-    setTemplateHcLoading(true);
-    setTemplateHcResult(null);
-    try {
-      const result = await healthcheckCredentialPreview(
-        template.selectedConnector.name,
-        values,
-      );
-      setTemplateHcResult(result);
-    } catch (e) {
-      setTemplateHcResult({ success: false, message: e instanceof Error ? e.message : 'Test failed' });
-    } finally {
-      setTemplateHcLoading(false);
-    }
+    if (!catalogFormData) return;
+    await templateHealth.checkPreview(catalogFormData.connector.name, values);
   };
 
   if (loading) {
@@ -155,35 +177,39 @@ export function CredentialManager() {
         title="Credentials"
         subtitle={`${credentials.length} credential${credentials.length !== 1 ? 's' : ''} stored`}
         actions={vault ? <VaultStatusBadge vault={vault} onVaultRefresh={setVault} /> : undefined}
-      />
+      >
+        {(viewState.view === 'list' || viewState.view === 'catalog-browse') && (
+          <div className="relative mt-3">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/90" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={credentialSearch}
+              onChange={(e) => setCredentialSearch(e.target.value)}
+              placeholder={
+                viewState.view === 'catalog-browse'
+                  ? 'Search catalog by label, type, or category'
+                  : 'Search credentials by name, type, or connector'
+              }
+              className="w-full pl-9 pr-20 py-2 rounded-lg border border-primary/15 bg-secondary/25 text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+            {credentialSearch && (
+              <button
+                onClick={() => setCredentialSearch('')}
+                className="absolute right-12 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground/50 hover:text-foreground/80 transition-colors"
+                title="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] px-1.5 py-0.5 rounded border border-primary/15 bg-secondary/40 text-muted-foreground/40 font-mono pointer-events-none">
+              {navigator.platform?.includes('Mac') ? '⌘K' : 'Ctrl+K'}
+            </kbd>
+          </div>
+        )}
+      </ContentHeader>
 
       <ContentBody>
-
-      {credentialView === 'credentials' && (
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/90" />
-          <input
-            type="text"
-            value={credentialSearch}
-            onChange={(e) => setCredentialSearch(e.target.value)}
-            placeholder="Search credentials by name, type, or connector"
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-primary/15 bg-secondary/25 text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30"
-          />
-        </div>
-      )}
-
-      {credentialView === 'from-template' && template.templateMode === 'pick-type' && (
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/90" />
-          <input
-            type="text"
-            value={template.templateSearch}
-            onChange={(e) => template.setTemplateSearch(e.target.value)}
-            placeholder="Search catalog by label, type, or category"
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-primary/15 bg-secondary/25 text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30"
-          />
-        </div>
-      )}
 
       {error && (
         <div className="flex items-start gap-2.5 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-sm text-red-400">
@@ -199,7 +225,7 @@ export function CredentialManager() {
       )}
 
       <AnimatePresence mode="wait">
-        {credentialView === 'from-template' && template.templateMode === 'pick-type' && (
+        {viewState.view === 'catalog-browse' && (
           <motion.div
             key="picker"
             initial={{ opacity: 0, y: -10 }}
@@ -207,70 +233,68 @@ export function CredentialManager() {
             exit={{ opacity: 0, y: -10 }}
           >
             <CredentialPicker
-              connectors={template.filteredConnectors}
+              connectors={filteredConnectors}
               credentials={credentials}
               onPickType={handlePickType}
-              searchTerm={template.templateSearch}
+              searchTerm={credentialSearch}
             />
           </motion.div>
         )}
 
-        {credentialView === 'from-template' && template.templateMode === 'add-form' && template.selectedConnector && (
+        {viewState.view === 'catalog-form' && (
           <CredentialTemplateForm
-            selectedConnector={template.selectedConnector}
-            credentialName={template.credentialName}
-            onCredentialNameChange={template.setCredentialName}
-            effectiveTemplateFields={template.effectiveTemplateFields}
-            isGoogleTemplate={template.isGoogleTemplate}
+            selectedConnector={viewState.connector}
+            credentialName={viewState.credentialName}
+            onCredentialNameChange={(name) => dispatch({ type: 'SET_CREDENTIAL_NAME', name })}
+            effectiveTemplateFields={catalogFormData!.fields}
+            isGoogleTemplate={catalogFormData!.isGoogle}
             isAuthorizingOAuth={oauth.isAuthorizing}
             oauthCompletedAt={oauth.completedAt}
             onCreateCredential={handleCreateCredential}
             onOAuthConsent={handleTemplateOAuthConsent}
             onCancel={() => {
-              template.cancelForm();
+              dispatch({ type: 'CANCEL_FORM' });
               oauth.reset();
-              setTemplateHcResult(null);
+              templateHealth.invalidate();
             }}
             onValuesChanged={() => {
               if (oauth.completedAt) oauth.reset();
-              if (templateHcResult) setTemplateHcResult(null);
+              if (templateHealth.result) templateHealth.invalidate();
             }}
             onMcpComplete={() => {
               void fetchCredentials().catch(() => {});
               fetchConnectorDefinitions();
-              setCredentialView('credentials');
-              template.resetAll();
+              dispatch({ type: 'GO_LIST' });
             }}
             onHealthcheck={handleTemplateHealthcheck}
-            isHealthchecking={templateHcLoading}
-            healthcheckResult={templateHcResult}
+            isHealthchecking={templateHealth.isHealthchecking}
+            healthcheckResult={templateHealth.result}
           />
         )}
 
-        {credentialView === 'credentials' && (
+        {viewState.view === 'list' && (
           <CredentialList
             credentials={credentials}
             connectorDefinitions={connectorDefinitions}
             searchTerm={credentialSearch}
             onDelete={handleDeleteRequest}
-            onQuickStart={(connector) => {
-              setCredentialView('from-template');
-              handlePickType(connector);
-            }}
+            onGoToCatalog={() => dispatch({ type: 'GO_CATALOG' })}
+            onGoToAddNew={() => dispatch({ type: 'GO_ADD_NEW' })}
+            onQuickStart={(connector) => handlePickType(connector)}
           />
         )}
 
-        {credentialView === 'add-new' && (
+        {viewState.view === 'add-new' && (
           <CredentialTypePicker
-            onSelectApiTool={() => setCredentialView('add-api-tool')}
-            onSelectMcp={() => setCredentialView('add-mcp')}
-            onSelectCustom={() => setCredentialView('add-custom')}
-            onSelectDatabase={() => setCredentialView('add-database')}
-            onBack={() => setCredentialView('credentials')}
+            onSelectApiTool={() => dispatch({ type: 'GO_ADD_API_TOOL' })}
+            onSelectMcp={() => dispatch({ type: 'GO_ADD_MCP' })}
+            onSelectCustom={() => dispatch({ type: 'GO_ADD_CUSTOM' })}
+            onSelectDatabase={() => dispatch({ type: 'GO_ADD_DATABASE' })}
+            onBack={() => dispatch({ type: 'GO_LIST' })}
           />
         )}
 
-        {credentialView === 'add-api-tool' && (
+        {viewState.view === 'add-api-tool' && (
           <motion.div
             key="design-inline"
             initial={{ opacity: 0, y: -10 }}
@@ -281,34 +305,37 @@ export function CredentialManager() {
             <CredentialDesignModal
               open
               embedded
-              onClose={() => setCredentialView('add-new')}
+              onClose={() => dispatch({ type: 'GO_ADD_NEW' })}
               onComplete={() => {
                 void fetchCredentials().catch(() => {});
                 fetchConnectorDefinitions();
-                setCredentialView('credentials');
+                dispatch({ type: 'GO_LIST' });
               }}
             />
           </motion.div>
         )}
 
-        {credentialView === 'add-mcp' && (
-          <McpServerForm
-            onBack={() => setCredentialView('add-new')}
-            onComplete={() => setCredentialView('credentials')}
+        {viewState.view === 'add-mcp' && (
+          <CredentialSchemaForm
+            config={MCP_SCHEMA}
+            onBack={() => dispatch({ type: 'GO_ADD_NEW' })}
+            onComplete={() => dispatch({ type: 'GO_LIST' })}
           />
         )}
 
-        {credentialView === 'add-custom' && (
-          <CustomConnectionForm
-            onBack={() => setCredentialView('add-new')}
-            onComplete={() => setCredentialView('credentials')}
+        {viewState.view === 'add-custom' && (
+          <CredentialSchemaForm
+            config={CUSTOM_SCHEMA}
+            onBack={() => dispatch({ type: 'GO_ADD_NEW' })}
+            onComplete={() => dispatch({ type: 'GO_LIST' })}
           />
         )}
 
-        {credentialView === 'add-database' && (
-          <DatabaseConnectionForm
-            onBack={() => setCredentialView('add-new')}
-            onComplete={() => setCredentialView('credentials')}
+        {viewState.view === 'add-database' && (
+          <CredentialSchemaForm
+            config={DATABASE_SCHEMA}
+            onBack={() => dispatch({ type: 'GO_ADD_NEW' })}
+            onComplete={() => dispatch({ type: 'GO_LIST' })}
           />
         )}
       </AnimatePresence>

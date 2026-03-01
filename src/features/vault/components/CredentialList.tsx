@@ -1,11 +1,8 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Key, LayoutTemplate, Sparkles, Plug, ArrowRight } from 'lucide-react';
 import { CredentialCard } from '@/features/vault/components/CredentialCard';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
-import { toCredentialMetadata } from '@/lib/types/types';
-import { usePersonaStore } from '@/stores/personaStore';
-import * as api from '@/api/tauriApi';
 
 /** Well-known service names for quick-start buttons. Matched by connector `name`. */
 const QUICK_START_SERVICES = ['openai', 'slack', 'github', 'linear'] as const;
@@ -20,15 +17,12 @@ interface CredentialListProps {
   searchTerm?: string;
   onDelete: (id: string) => void;
   onQuickStart?: (connector: ConnectorDefinition) => void;
+  onGoToCatalog?: () => void;
+  onGoToAddNew?: () => void;
 }
 
-export function CredentialList({ credentials, connectorDefinitions, searchTerm, onDelete, onQuickStart }: CredentialListProps) {
-  const healthcheckCredential = usePersonaStore((s) => s.healthcheckCredential);
-  const healthcheckCredentialPreview = usePersonaStore((s) => s.healthcheckCredentialPreview);
-
+export function CredentialList({ credentials, connectorDefinitions, searchTerm, onDelete, onQuickStart, onGoToCatalog, onGoToAddNew }: CredentialListProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [healthchecking, setHealthchecking] = useState<string | null>(null);
-  const [healthcheckResults, setHealthcheckResults] = useState<Record<string, { success: boolean; message: string }>>({});
 
   const getConnectorForType = (type: string): ConnectorDefinition | undefined => {
     const exact = connectorDefinitions.find((c) => c.name === type);
@@ -60,61 +54,6 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
       || connector?.label.toLowerCase().includes(q)
     );
   });
-
-  const handleHealthcheck = useCallback(async (
-    credentialId: string,
-    fieldValues?: Record<string, string>,
-    serviceType?: string,
-  ) => {
-    setHealthchecking(credentialId);
-    try {
-      const result = fieldValues && serviceType
-        ? await healthcheckCredentialPreview(serviceType, fieldValues)
-        : await healthcheckCredential(credentialId);
-      setHealthcheckResults(prev => ({ ...prev, [credentialId]: result }));
-
-      if (!fieldValues) {
-        const targetCredential = credentials.find((c) => c.id === credentialId);
-        if (targetCredential) {
-          let parsedMetadata: Record<string, unknown> = {};
-          if (targetCredential.metadata) {
-            try {
-              parsedMetadata = JSON.parse(targetCredential.metadata) as Record<string, unknown>;
-            } catch {
-              parsedMetadata = {};
-            }
-          }
-
-          const nowIso = new Date().toISOString();
-          const nextMetadata: Record<string, unknown> = {
-            ...parsedMetadata,
-            healthcheck_last_success: result.success,
-            healthcheck_last_message: result.message,
-            healthcheck_last_tested_at: nowIso,
-          };
-          if (result.success) {
-            nextMetadata.healthcheck_last_success_at = nowIso;
-          }
-
-          const updatedRaw = await api.updateCredential(credentialId, {
-            name: null,
-            service_type: null,
-            encrypted_data: null,
-            iv: null,
-            metadata: JSON.stringify(nextMetadata),
-          });
-          const updated = toCredentialMetadata(updatedRaw);
-          usePersonaStore.setState((state) => ({
-            credentials: state.credentials.map((c) =>
-              c.id === credentialId ? updated : c,
-            ),
-          }));
-        }
-      }
-    } finally {
-      setHealthchecking(null);
-    }
-  }, [credentials, healthcheckCredential, healthcheckCredentialPreview]);
 
   const toggleExpand = (id: string) => {
     setExpandedId(prev => prev === id ? null : id);
@@ -154,9 +93,6 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
               isExpanded={expandedId === credential.id}
               onToggleExpand={() => toggleExpand(credential.id)}
               onDelete={onDelete}
-              onHealthcheck={handleHealthcheck}
-              isHealthchecking={healthchecking === credential.id}
-              healthcheckResult={healthcheckResults[credential.id] || null}
             />
           ))}
         </div>
@@ -187,7 +123,7 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
           <div className="grid grid-cols-2 gap-3">
             {/* Catalog path */}
             <button
-              onClick={() => usePersonaStore.getState().setCredentialView('from-template')}
+              onClick={() => onGoToCatalog?.()}
               className="group text-left p-4 rounded-xl border border-primary/15 bg-secondary/25 hover:bg-secondary/50 hover:border-primary/25 transition-all"
             >
               <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-3">
@@ -223,7 +159,7 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
 
             {/* AI design path */}
             <button
-              onClick={() => usePersonaStore.getState().setCredentialView('add-new')}
+              onClick={() => onGoToAddNew?.()}
               className="group text-left p-4 rounded-xl border border-primary/15 bg-secondary/25 hover:bg-secondary/50 hover:border-primary/25 transition-all"
             >
               <div className="w-9 h-9 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-3">

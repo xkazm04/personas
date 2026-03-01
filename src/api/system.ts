@@ -26,6 +26,16 @@ export interface SystemHealthReport {
 export const systemHealthCheck = () =>
   invoke<SystemHealthReport>("system_health_check");
 
+// Per-section health checks for cascade loading
+export const healthCheckLocal = () =>
+  invoke<HealthCheckSection>("health_check_local");
+export const healthCheckAgents = () =>
+  invoke<HealthCheckSection>("health_check_agents");
+export const healthCheckCloud = () =>
+  invoke<HealthCheckSection>("health_check_cloud");
+export const healthCheckAccount = () =>
+  invoke<HealthCheckSection>("health_check_account");
+
 export const openExternalUrl = (url: string) =>
   invoke<void>("open_external_url", { url });
 

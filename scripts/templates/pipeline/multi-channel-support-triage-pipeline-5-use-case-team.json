@@ -2,7 +2,7 @@
   "id": "multi-channel-support-triage-pipeline-5-use-case-team",
   "name": "Multi-Channel Support Triage Pipeline (5-Use Case Team)",
   "description": "**Use Case A — Email Support** (worker): Processes Zendesk email tickets, classifies and enriches.\n**Use Case B — Chat Support** (worker): Monitors Intercom conversations for handoff triggers.\n**Use Case C — Social Support** (worker): Tracks Twitter/X mentions via API for support requests.\n**Use Case D — Knowledge Use Case** (worker): Searches Notion KB and suggests responses for all channels.\n**Use Case E — Triage Coordinator** (orchestrator): Routes across channels, prevents duplicate handling, escalates VIP customers.",
-  "icon": "GitBranch",
+  "icon": "Route",
   "color": "#0EA5E9",
   "category": [
     "pipeline"
@@ -162,7 +162,9 @@
           0,
           5
         ],
-        "api_base_url": "https://{subdomain}.zendesk.com/api/v2"
+        "api_base_url": "https://{subdomain}.zendesk.com/api/v2",
+        "role": "support_ticketing",
+        "category": "support"
       },
       {
         "name": "intercom",
@@ -185,7 +187,9 @@
         "related_triggers": [
           1
         ],
-        "api_base_url": "https://api.intercom.io"
+        "api_base_url": "https://api.intercom.io",
+        "role": "crm",
+        "category": "crm"
       },
       {
         "name": "twitter",
@@ -208,7 +212,9 @@
         "related_triggers": [
           2
         ],
-        "api_base_url": "https://api.twitter.com/2"
+        "api_base_url": "https://api.twitter.com/2",
+        "role": "social_media",
+        "category": "social"
       },
       {
         "name": "notion",
@@ -245,7 +251,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://api.notion.com/v1"
+        "api_base_url": "https://api.notion.com/v1",
+        "role": "knowledge_base",
+        "category": "productivity"
       },
       {
         "name": "slack",
@@ -282,7 +290,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       },
       {
         "name": "google_workspace",
@@ -324,7 +334,9 @@
         "related_triggers": [
           4
         ],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://www.googleapis.com",
+        "role": "productivity_suite",
+        "category": "productivity"
       }
     ],
     "suggested_notification_channels": [

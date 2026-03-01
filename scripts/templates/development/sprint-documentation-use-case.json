@@ -2,7 +2,7 @@
   "id": "sprint-documentation-use-case",
   "name": "Sprint Documentation Use Case",
   "description": "At sprint close, reads all completed Jira issues, generates a structured Confluence sprint review page with acceptance criteria, screenshots links, and metrics. Posts the review link to Slack and archives the sprint board.",
-  "icon": "Code",
+  "icon": "FileText",
   "color": "#10B981",
   "category": [
     "development"
@@ -148,7 +148,9 @@
           0,
           1
         ],
-        "api_base_url": "https://{domain}.atlassian.net/rest/api/3"
+        "api_base_url": "https://{domain}.atlassian.net/rest/api/3",
+        "role": "project_tracking",
+        "category": "development"
       },
       {
         "name": "confluence",
@@ -188,7 +190,9 @@
           0,
           1
         ],
-        "api_base_url": "https://{domain}.atlassian.net/wiki/rest/api"
+        "api_base_url": "https://{domain}.atlassian.net/wiki/rest/api",
+        "role": "knowledge_base",
+        "category": "productivity"
       },
       {
         "name": "slack",
@@ -212,7 +216,9 @@
           0,
           1
         ],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

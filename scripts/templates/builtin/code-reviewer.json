@@ -4,7 +4,10 @@
   "description": "Automatically reviews pull requests for code quality, security issues, and best practices.",
   "icon": "GitPullRequest",
   "color": "#3b82f6",
-  "category": ["devops", "quality"],
+  "category": [
+    "devops",
+    "quality"
+  ],
   "payload": {
     "structured_prompt": {
       "identity": "You are an expert code reviewer with deep knowledge of software engineering best practices, security vulnerabilities, and performance optimization.",
@@ -14,15 +17,66 @@
       "errorHandling": "If unable to access the repository, report the access error and suggest manual review steps.",
       "customSections": []
     },
-    "suggested_tools": ["file_read", "http_request"],
+    "suggested_tools": [
+      "file_read",
+      "http_request"
+    ],
     "suggested_triggers": [
       {
         "trigger_type": "webhook",
-        "config": { "event": "pull_request" },
+        "config": {
+          "event": "pull_request"
+        },
         "description": "Triggered on new PR or PR update"
       }
     ],
     "full_prompt_markdown": "# Code Reviewer Agent\n\nAutomatically reviews PRs for quality and security.",
-    "summary": "Reviews code changes for quality, security, and best practices."
-  }
+    "summary": "Reviews code changes for quality, security, and best practices.",
+    "suggested_connectors": [
+      {
+        "name": "github",
+        "auth_type": "pat",
+        "credential_fields": [
+          {
+            "key": "token",
+            "label": "Personal Access Token",
+            "type": "password",
+            "required": true,
+            "helpText": "GitHub Settings > Developer Settings > Personal Access Tokens"
+          }
+        ],
+        "related_tools": [
+          "http_request"
+        ],
+        "role": "source_control",
+        "category": "development"
+      }
+    ],
+    "adoption_requirements": [
+      {
+        "key": "repo_url",
+        "label": "Repository URL",
+        "description": "GitHub repository to review PRs for",
+        "type": "url",
+        "required": true,
+        "source": "connector"
+      },
+      {
+        "key": "review_focus",
+        "label": "Review Focus",
+        "description": "Primary focus area for code reviews",
+        "type": "select",
+        "required": false,
+        "options": [
+          "Security",
+          "Performance",
+          "Code Quality",
+          "All"
+        ],
+        "default_value": "All",
+        "source": "connector"
+      }
+    ]
+  },
+  "featured": true
 }

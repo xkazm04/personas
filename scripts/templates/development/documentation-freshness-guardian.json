@@ -2,7 +2,7 @@
   "id": "documentation-freshness-guardian",
   "name": "Documentation Freshness Guardian",
   "description": "Scans Confluence pages for staleness (no edits in N days), checks if referenced APIs or tools still exist, notifies page owners via email, and posts a Slack digest of stale docs. Tracks update promises in memory.",
-  "icon": "Code",
+  "icon": "BookOpen",
   "color": "#10B981",
   "category": [
     "development"
@@ -127,7 +127,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://{domain}.atlassian.net/wiki/rest/api"
+        "api_base_url": "https://{domain}.atlassian.net/wiki/rest/api",
+        "role": "knowledge_base",
+        "category": "productivity"
       },
       {
         "name": "google_workspace",
@@ -165,7 +167,9 @@
           "gmail_search"
         ],
         "related_triggers": [],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://www.googleapis.com",
+        "role": "productivity_suite",
+        "category": "productivity"
       },
       {
         "name": "slack",
@@ -194,7 +198,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

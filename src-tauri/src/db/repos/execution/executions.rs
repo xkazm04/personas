@@ -225,35 +225,26 @@ pub fn create_retry(
     get_by_id(pool, &id)
 }
 
-/// Count consecutive recent failures for a persona (unbroken streak of 'failed' status).
-pub fn get_consecutive_failure_count(pool: &DbPool, persona_id: &str) -> Result<i64, AppError> {
+/// Count consecutive recent failures for a persona (unbroken streak of 'failed' status
+/// from the most recent execution backwards).
+pub fn get_consecutive_failure_count(pool: &DbPool, persona_id: &str) -> Result<u32, AppError> {
     let conn = pool.get()?;
-    // Count recent executions that are 'failed' until the first non-failed one
-    let count: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM (
-            SELECT status FROM persona_executions
-            WHERE persona_id = ?1
-            ORDER BY created_at DESC
-            LIMIT 20
-        ) sub
-        WHERE status = 'failed'
-        AND NOT EXISTS (
-            SELECT 1 FROM persona_executions e2
-            WHERE e2.persona_id = ?1
-            AND e2.status IN ('completed', 'running', 'queued')
-            AND e2.created_at > (
-                SELECT MIN(created_at) FROM (
-                    SELECT created_at FROM persona_executions
-                    WHERE persona_id = ?1 AND status = 'failed'
-                    ORDER BY created_at DESC
-                    LIMIT 1
-                )
-            )
-        )",
-        params![persona_id],
-        |row| row.get(0),
-    ).unwrap_or(0);
-    Ok(count)
+    let mut stmt = conn.prepare(
+        "SELECT status FROM persona_executions
+         WHERE persona_id = ?1
+         ORDER BY created_at DESC
+         LIMIT 20",
+    )?;
+    let statuses: Vec<String> = stmt
+        .query_map(params![persona_id], |row| row.get::<_, String>(0))?
+        .filter_map(|r| r.ok())
+        .collect();
+
+    let count = statuses
+        .iter()
+        .take_while(|s| s.as_str() == "failed")
+        .count();
+    Ok(count as u32)
 }
 
 /// Get the retry chain for an execution (all retries linked to the same original).

@@ -4,7 +4,10 @@
   "description": "Scans codebases for security vulnerabilities, dependency issues, and configuration weaknesses.",
   "icon": "Shield",
   "color": "#ef4444",
-  "category": ["security", "devops"],
+  "category": [
+    "security",
+    "devops"
+  ],
   "payload": {
     "structured_prompt": {
       "identity": "You are a security expert specializing in application security, OWASP vulnerabilities, and secure coding practices.",
@@ -14,15 +17,71 @@
       "errorHandling": "If a file cannot be read, note it as an unscanned area in the report.",
       "customSections": []
     },
-    "suggested_tools": ["file_read", "http_request"],
+    "suggested_tools": [
+      "file_read",
+      "http_request"
+    ],
     "suggested_triggers": [
       {
         "trigger_type": "schedule",
-        "config": { "cron": "0 2 * * 0" },
+        "config": {
+          "cron": "0 2 * * 0"
+        },
         "description": "Weekly security scan on Sundays at 2 AM"
       }
     ],
     "full_prompt_markdown": "# Security Auditor\n\nAutomated security vulnerability scanning.",
-    "summary": "Scans code for security vulnerabilities and configuration issues."
-  }
+    "summary": "Scans code for security vulnerabilities and configuration issues.",
+    "suggested_notification_channels": [
+      {
+        "type": "slack",
+        "description": "Alert on high and critical security findings",
+        "required_connector": "slack",
+        "config_hints": {
+          "channel": "#security"
+        }
+      }
+    ],
+    "adoption_requirements": [
+      {
+        "key": "scan_scope",
+        "label": "Scan Scope",
+        "description": "What areas to include in the security scan",
+        "type": "select",
+        "required": false,
+        "options": [
+          "Full codebase",
+          "Changed files only",
+          "Dependencies only"
+        ],
+        "default_value": "Full codebase",
+        "source": "connector"
+      },
+      {
+        "key": "severity_threshold",
+        "label": "Report Threshold",
+        "description": "Minimum severity level to include in reports",
+        "type": "select",
+        "required": false,
+        "options": [
+          "all",
+          "medium+",
+          "high+",
+          "critical only"
+        ],
+        "default_value": "medium+",
+        "source": "connector"
+      },
+      {
+        "key": "audit_schedule",
+        "label": "Audit Schedule",
+        "description": "When to run security scans",
+        "type": "cron",
+        "required": false,
+        "default_value": "0 2 * * 0",
+        "source": "trigger"
+      }
+    ]
+  },
+  "featured": true
 }

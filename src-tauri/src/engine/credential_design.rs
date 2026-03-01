@@ -34,7 +34,9 @@ pub fn build_credential_design_prompt(
     prompt.push_str(instruction);
     prompt.push_str("\n\n");
 
-    prompt.push_str(GOOGLE_OAUTH_PRIORITY_GUIDANCE);
+    if instruction_mentions_google(instruction) {
+        prompt.push_str(GOOGLE_OAUTH_PRIORITY_GUIDANCE);
+    }
 
     // Output schema
     prompt.push_str(CREDENTIAL_DESIGN_OUTPUT_SCHEMA);
@@ -95,6 +97,17 @@ pub fn extract_healthcheck_config_result(output: &str) -> Option<serde_json::Val
 // ============================================================================
 // Output Schema
 // ============================================================================
+
+/// Returns true if the instruction mentions Google-related services (case-insensitive).
+fn instruction_mentions_google(instruction: &str) -> bool {
+    let lower = instruction.to_lowercase();
+    const KEYWORDS: &[&str] = &[
+        "google", "gmail", "gcal", "gdrive", "gcloud",
+        "google calendar", "google drive", "google workspace",
+        "google sheets", "google docs", "google cloud",
+    ];
+    KEYWORDS.iter().any(|kw| lower.contains(kw))
+}
 
 const GOOGLE_OAUTH_PRIORITY_GUIDANCE: &str = r####"## Google OAuth Priority Guidance
 
@@ -279,13 +292,26 @@ mod tests {
     }
 
     #[test]
-    fn test_prompt_contains_google_oauth_guidance() {
+    fn test_prompt_contains_google_oauth_guidance_for_google() {
         let prompt = build_credential_design_prompt("Connect Gmail", &[]);
         assert!(prompt.contains("## Google OAuth Priority Guidance"));
         assert!(prompt.contains("Do NOT require a `redirect_uri` field in credentials"));
         assert!(prompt.contains("`refresh_token`"));
-        assert!(prompt.contains("broad baseline consent set spanning Gmail, Google Drive, and Google Calendar"));
-        assert!(prompt.contains("users can uncheck permissions"));
+    }
+
+    #[test]
+    fn test_prompt_omits_google_guidance_for_non_google() {
+        let prompt = build_credential_design_prompt("Connect to GitHub API", &[]);
+        assert!(!prompt.contains("## Google OAuth Priority Guidance"));
+    }
+
+    #[test]
+    fn test_google_heuristic_case_insensitive() {
+        assert!(instruction_mentions_google("connect GMAIL"));
+        assert!(instruction_mentions_google("Set up Google Drive"));
+        assert!(instruction_mentions_google("google calendar sync"));
+        assert!(!instruction_mentions_google("Connect to Slack"));
+        assert!(!instruction_mentions_google("GitHub personal access token"));
     }
 
     #[test]

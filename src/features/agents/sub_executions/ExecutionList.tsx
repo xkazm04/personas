@@ -1,12 +1,15 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
-import { ChevronDown, ChevronRight, RotateCw, Copy, Check, RefreshCw, Rocket, Play, Clock } from 'lucide-react';
+import { ChevronDown, ChevronRight, RotateCw, Copy, Check, RefreshCw, Rocket, Play, Clock, ArrowLeftRight, X, Shield } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as api from '@/api/tauriApi';
+import { getRetryChain } from '@/api/healing';
 import { formatTimestamp, formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
-import { BUILTIN_TEMPLATES } from '@/lib/personas/builtinTemplates';
+import { FEATURED_TEMPLATES } from '@/lib/personas/templateCatalog';
 import { useCopyToClipboard } from '@/hooks/utility/useCopyToClipboard';
+import { ExecutionComparison } from './ExecutionComparison';
+import { maskSensitiveJson, sanitizeErrorMessage } from '@/lib/utils/maskSensitive';
 
 /** Inline 48x16 SVG sparkline for cost trend. No charting library needed. */
 function CostSparkline({ costs }: { costs: number[] }) {
@@ -86,11 +89,19 @@ export function ExecutionList() {
   const [loading, setLoading] = useState(true);
   const prevIsExecutingRef = useRef(isExecuting);
 
+  const [showRaw, setShowRaw] = useState(false);
+
+  // Compare mode state
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareLeft, setCompareLeft] = useState<string | null>(null);
+  const [compareRight, setCompareRight] = useState<string | null>(null);
+  const [showComparison, setShowComparison] = useState(false);
+
   const personaId = selectedPersona?.id || '';
 
   const sampleInput = useMemo(() => {
     if (!selectedPersona) return '{}';
-    const match = BUILTIN_TEMPLATES.find(
+    const match = FEATURED_TEMPLATES.find(
       (t) => t.name === selectedPersona.name,
     );
     const data = match ? TEMPLATE_SAMPLE_INPUT[match.id] ?? {} : {};
@@ -128,6 +139,52 @@ export function ExecutionList() {
     prevIsExecutingRef.current = isExecuting;
   }, [isExecuting, personaId]);
 
+  // Auto-suggest retry comparison: when an execution with retries is expanded
+  const handleAutoCompareRetry = useCallback(async (executionId: string) => {
+    if (!personaId) return;
+    try {
+      const chain = await getRetryChain(executionId, personaId);
+      if (chain.length >= 2) {
+        // Compare original (first) vs latest retry (last)
+        setCompareLeft(chain[0]!.id);
+        setCompareRight(chain[chain.length - 1]!.id);
+        setCompareMode(true);
+      }
+    } catch {
+      // Silently ignore - chain may not exist
+    }
+  }, [personaId]);
+
+  const handleCompareSelect = (executionId: string) => {
+    if (!compareLeft) {
+      setCompareLeft(executionId);
+    } else if (!compareRight && executionId !== compareLeft) {
+      setCompareRight(executionId);
+    } else {
+      // Reset and start new selection
+      setCompareLeft(executionId);
+      setCompareRight(null);
+    }
+  };
+
+  const exitCompareMode = () => {
+    setCompareMode(false);
+    setCompareLeft(null);
+    setCompareRight(null);
+    setShowComparison(false);
+  };
+
+  const canCompare = compareLeft && compareRight && compareLeft !== compareRight;
+
+  const leftExec = useMemo(
+    () => executions.find(e => e.id === compareLeft) ?? null,
+    [executions, compareLeft],
+  );
+  const rightExec = useMemo(
+    () => executions.find(e => e.id === compareRight) ?? null,
+    [executions, compareRight],
+  );
+
   if (!selectedPersona) {
     return (
       <div className="flex items-center justify-center py-8 text-muted-foreground/80">
@@ -143,6 +200,10 @@ export function ExecutionList() {
   };
 
   const handleRowClick = (executionId: string) => {
+    if (compareMode) {
+      handleCompareSelect(executionId);
+      return;
+    }
     setExpandedId(expandedId === executionId ? null : executionId);
   };
 
@@ -154,13 +215,88 @@ export function ExecutionList() {
     );
   }
 
+  // Show comparison view
+  if (showComparison && leftExec && rightExec) {
+    return (
+      <div className="space-y-3">
+        <ExecutionComparison
+          left={leftExec}
+          right={rightExec}
+          onClose={exitCompareMode}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
-      <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
-        <span className="w-6 h-[2px] bg-gradient-to-r from-primary/50 to-accent/50 rounded-full" />
-        <Clock className="w-3.5 h-3.5" />
-        History
-      </h4>
+      <div className="flex items-center gap-2">
+        <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
+          <span className="w-6 h-[2px] bg-gradient-to-r from-primary/50 to-accent/50 rounded-full" />
+          <Clock className="w-3.5 h-3.5" />
+          History
+        </h4>
+        {executions.length > 0 && (
+          <button
+            onClick={() => setShowRaw(!showRaw)}
+            className={`ml-auto flex items-center gap-1 px-2 py-1 text-[11px] rounded-lg transition-colors ${
+              showRaw
+                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                : 'text-muted-foreground/50 hover:text-muted-foreground/70 border border-transparent'
+            }`}
+            title={showRaw ? 'Sensitive values are visible' : 'Sensitive values are masked'}
+          >
+            <Shield className="w-3 h-3" />
+            {showRaw ? 'Raw' : 'Masked'}
+          </button>
+        )}
+        {executions.length >= 2 && (
+          <button
+            onClick={() => compareMode ? exitCompareMode() : setCompareMode(true)}
+            className={`flex items-center gap-1 px-2 py-1 text-[11px] rounded-lg transition-colors ${
+              compareMode
+                ? 'bg-primary/15 text-primary/80 border border-primary/20'
+                : 'text-muted-foreground/50 hover:text-muted-foreground/70 border border-transparent'
+            }`}
+          >
+            {compareMode ? <X className="w-3 h-3" /> : <ArrowLeftRight className="w-3 h-3" />}
+            {compareMode ? 'Cancel' : 'Compare'}
+          </button>
+        )}
+      </div>
+
+      {/* Compare mode toolbar */}
+      {compareMode && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/15 rounded-xl text-sm">
+          <ArrowLeftRight className="w-3.5 h-3.5 text-primary/60 flex-shrink-0" />
+          <span className="text-muted-foreground/70">
+            {!compareLeft
+              ? 'Select the first execution to compare'
+              : !compareRight
+                ? 'Now select the second execution'
+                : 'Ready to compare'}
+          </span>
+          {compareLeft && (
+            <span className="ml-auto flex items-center gap-1.5">
+              <span className="text-xs font-mono text-indigo-400">#{compareLeft.slice(0, 8)}</span>
+              {compareRight && (
+                <>
+                  <span className="text-muted-foreground/40">vs</span>
+                  <span className="text-xs font-mono text-pink-400">#{compareRight.slice(0, 8)}</span>
+                </>
+              )}
+            </span>
+          )}
+          {canCompare && (
+            <button
+              onClick={() => setShowComparison(true)}
+              className="ml-2 px-2.5 py-1 text-xs font-medium rounded-lg bg-primary/15 text-primary/80 border border-primary/20 hover:bg-primary/25 transition-colors"
+            >
+              Compare
+            </button>
+          )}
+        </div>
+      )}
 
       {executions.length === 0 ? (
         <motion.div
@@ -190,18 +326,21 @@ export function ExecutionList() {
         <div className="overflow-hidden border border-primary/15 rounded-xl backdrop-blur-sm bg-secondary/40">
           {/* Header (desktop only) */}
           <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2.5 bg-primary/8 border-b border-primary/10 text-sm font-mono text-muted-foreground/80 uppercase tracking-wider">
-            <div className="col-span-2">Status</div>
+            {compareMode && <div className="col-span-1" />}
+            <div className={compareMode ? 'col-span-2' : 'col-span-2'}>Status</div>
             <div className="col-span-2">Duration</div>
-            <div className="col-span-3">Started</div>
+            <div className={compareMode ? 'col-span-2' : 'col-span-3'}>Started</div>
             <div className="col-span-2">Tokens</div>
-            <div className="col-span-3">Cost</div>
+            <div className={compareMode ? 'col-span-2' : 'col-span-3'}>Cost</div>
           </div>
 
           {/* Rows */}
           {executions.map((execution, execIdx) => {
-            const isExpanded = expandedId === execution.id;
+            const isExpanded = expandedId === execution.id && !compareMode;
+            const isCompareSelected = compareLeft === execution.id || compareRight === execution.id;
+            const compareLabel = compareLeft === execution.id ? 'A' : compareRight === execution.id ? 'B' : null;
 
-            const chevron = isExpanded ? (
+            const chevron = compareMode ? null : isExpanded ? (
               <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/80 flex-shrink-0" />
             ) : (
               <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/80 flex-shrink-0" />
@@ -232,9 +371,26 @@ export function ExecutionList() {
                 {/* Desktop table row (md+) */}
                 <motion.div
                   onClick={() => handleRowClick(execution.id)}
-                  className="hidden md:grid grid-cols-12 gap-4 px-4 py-3 bg-background/30 border-b border-primary/10 cursor-pointer hover:bg-secondary/20 transition-colors"
+                  className={`hidden md:grid grid-cols-12 gap-4 px-4 py-3 border-b border-primary/10 cursor-pointer transition-colors ${
+                    isCompareSelected
+                      ? 'bg-primary/10 border-l-2 border-l-primary/40'
+                      : 'bg-background/30 hover:bg-secondary/20'
+                  }`}
                 >
-                  <div className="col-span-2 flex items-center gap-2">
+                  {compareMode && (
+                    <div className="col-span-1 flex items-center">
+                      {compareLabel ? (
+                        <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold ${
+                          compareLabel === 'A' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-pink-500/20 text-pink-400 border border-pink-500/30'
+                        }`}>
+                          {compareLabel}
+                        </span>
+                      ) : (
+                        <span className="w-5 h-5 rounded-md border border-primary/15 bg-background/30" />
+                      )}
+                    </div>
+                  )}
+                  <div className={`${compareMode ? 'col-span-2' : 'col-span-2'} flex items-center gap-2`}>
                     {chevron}
                     {statusBadge}
                     {retryBadge}
@@ -242,7 +398,7 @@ export function ExecutionList() {
                   <div className="col-span-2 flex items-center">
                     {duration}
                   </div>
-                  <div className="col-span-3 text-sm text-foreground/90 flex items-center">
+                  <div className={`${compareMode ? 'col-span-2' : 'col-span-3'} text-sm text-foreground/90 flex items-center`}>
                     {formatTimestamp(execution.started_at)}
                   </div>
                   <div className="col-span-2 text-sm text-foreground/90 font-mono flex items-center">
@@ -250,25 +406,36 @@ export function ExecutionList() {
                     {' / '}
                     <span title="Output tokens">{formatTokens(execution.output_tokens)}</span>
                   </div>
-                  <div className="col-span-3 flex items-center gap-2">
+                  <div className={`${compareMode ? 'col-span-2' : 'col-span-3'} flex items-center gap-2`}>
                     <span className="text-sm text-foreground/90 font-mono">
                       ${execution.cost_usd.toFixed(4)}
                     </span>
-                    <CostSparkline
-                      costs={executions
-                        .slice(execIdx, Math.min(executions.length, execIdx + 10))
-                        .map((e) => e.cost_usd)
-                        .reverse()}
-                    />
+                    {!compareMode && (
+                      <CostSparkline
+                        costs={executions
+                          .slice(execIdx, Math.min(executions.length, execIdx + 10))
+                          .map((e) => e.cost_usd)
+                          .reverse()}
+                      />
+                    )}
                   </div>
                 </motion.div>
 
                 {/* Mobile card layout (<md) */}
                 <div
                   onClick={() => handleRowClick(execution.id)}
-                  className="flex md:hidden flex-col gap-1.5 px-4 py-3 bg-background/30 border-b border-primary/10 cursor-pointer hover:bg-secondary/20 transition-colors"
+                  className={`flex md:hidden flex-col gap-1.5 px-4 py-3 border-b border-primary/10 cursor-pointer transition-colors ${
+                    isCompareSelected ? 'bg-primary/10' : 'bg-background/30 hover:bg-secondary/20'
+                  }`}
                 >
                   <div className="flex items-center gap-2">
+                    {compareMode && compareLabel && (
+                      <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold ${
+                        compareLabel === 'A' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-pink-500/20 text-pink-400 border border-pink-500/30'
+                      }`}>
+                        {compareLabel}
+                      </span>
+                    )}
                     {chevron}
                     {statusBadge}
                     {retryBadge}
@@ -279,7 +446,7 @@ export function ExecutionList() {
                   </div>
                   {execution.error_message && (
                     <p className="text-sm text-red-400/70 truncate pl-5.5">
-                      {execution.error_message}
+                      {showRaw ? execution.error_message : sanitizeErrorMessage(execution.error_message)}
                     </p>
                   )}
                 </div>
@@ -339,18 +506,18 @@ export function ExecutionList() {
                           <div>
                             <span className="text-muted-foreground/90 text-sm font-mono uppercase">Input Data</span>
                             <pre className="mt-1 p-2 bg-background/50 border border-primary/10 rounded-lg text-sm text-foreground/80 font-mono overflow-x-auto">
-                              {execution.input_data}
+                              {showRaw ? execution.input_data : maskSensitiveJson(execution.input_data)}
                             </pre>
                           </div>
                         )}
                         {execution.error_message && (
                           <div>
                             <span className="text-red-400/70 text-sm font-mono uppercase">Error</span>
-                            <p className="mt-1 text-sm text-red-400/80">{execution.error_message}</p>
+                            <p className="mt-1 text-sm text-red-400/80">{showRaw ? execution.error_message : sanitizeErrorMessage(execution.error_message)}</p>
                           </div>
                         )}
-                        {/* Re-run button */}
-                        <div className="pt-1">
+                        {/* Action buttons */}
+                        <div className="flex items-center gap-2 pt-1">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -361,6 +528,18 @@ export function ExecutionList() {
                             <RotateCw className="w-3 h-3" />
                             Re-run with same input
                           </button>
+                          {execution.retry_count > 0 && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                void handleAutoCompareRetry(execution.id);
+                              }}
+                              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-cyan-500/10 text-cyan-400/80 border border-cyan-500/15 hover:bg-cyan-500/20 hover:text-cyan-400 transition-colors"
+                            >
+                              <ArrowLeftRight className="w-3 h-3" />
+                              Compare with original
+                            </button>
+                          )}
                         </div>
                       </div>
                     </motion.div>

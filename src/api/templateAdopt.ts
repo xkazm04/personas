@@ -32,6 +32,7 @@ export const startTemplateAdoptBackground = (
   adjustmentRequest?: string | null,
   previousDraftJson?: string | null,
   userAnswersJson?: string | null,
+  connectorSwapsJson?: string | null,
 ) =>
   invoke<TemplateAdoptStartResult>("start_template_adopt_background", {
     adoptId,
@@ -40,6 +41,7 @@ export const startTemplateAdoptBackground = (
     adjustmentRequest: adjustmentRequest ?? null,
     previousDraftJson: previousDraftJson ?? null,
     userAnswersJson: userAnswersJson ?? null,
+    connectorSwapsJson: connectorSwapsJson ?? null,
   });
 
 export const getTemplateAdoptSnapshot = (adoptId: string) =>
@@ -51,8 +53,20 @@ export const clearTemplateAdoptSnapshot = (adoptId: string) =>
 export const cancelTemplateAdopt = (adoptId: string) =>
   invoke<void>("cancel_template_adopt", { adoptId });
 
-export const confirmTemplateAdoptDraft = (draftJson: string) =>
-  invoke<{ persona: Persona }>("confirm_template_adopt_draft", { draftJson });
+export interface TemplateAdoptConfirmResult {
+  persona: Persona;
+  triggers_created: number;
+  tools_created: number;
+  connectors_needing_setup: string[];
+  entity_errors: Array<{ entity_type: string; entity_name: string; error: string }>;
+  import_transaction_id?: string;
+}
+
+export const confirmTemplateAdoptDraft = (draftJson: string, templateName?: string) =>
+  invoke<TemplateAdoptConfirmResult>("confirm_template_adopt_draft", {
+    draftJson,
+    templateName: templateName ?? null,
+  });
 
 export const generateTemplateAdoptQuestions = (
   templateName: string,

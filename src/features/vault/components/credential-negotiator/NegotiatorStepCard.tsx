@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ExternalLink,
   Check,
+  CheckCircle,
   ChevronDown,
   ChevronRight,
   Globe,
@@ -14,9 +15,20 @@ import {
   HelpCircle,
   Loader2,
   ClipboardPaste,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { openExternalUrl } from '@/api/tauriApi';
 import type { NegotiationStep } from '@/hooks/design/useCredentialNegotiator';
+
+/** Convert a snake_case field key to a human-friendly label. */
+function formatFieldLabel(key: string): string {
+  const ACRONYMS = new Set(['api', 'url', 'id', 'ssh', 'mcp', 'oauth', 'jwt', 'ip', 'uri']);
+  return key
+    .split('_')
+    .map((w) => (ACRONYMS.has(w.toLowerCase()) ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1)))
+    .join(' ');
+}
 
 const ACTION_ICONS: Record<string, typeof Globe> = {
   navigate: Globe,
@@ -65,6 +77,7 @@ export function NegotiatorStepCard({
 }: NegotiatorStepCardProps) {
   const [helpQuestion, setHelpQuestion] = useState('');
   const [showHelp, setShowHelp] = useState(false);
+  const [visibleFields, setVisibleFields] = useState<Set<string>>(new Set());
 
   const Icon = ACTION_ICONS[step.action_type] || Globe;
   const colorClasses = ACTION_COLORS[step.action_type] || ACTION_COLORS.navigate;
@@ -204,7 +217,7 @@ export function NegotiatorStepCard({
 
               {/* URL button */}
               {step.url && (
-                <motion.div variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}>
+                <motion.div variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }} className="space-y-1">
                   <button
                     onClick={handleOpenUrl}
                     className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-violet-500/10 border border-violet-500/20 text-violet-300 text-sm hover:bg-violet-500/20 transition-colors"
@@ -212,13 +225,13 @@ export function NegotiatorStepCard({
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
                     Open in browser
-                    <span className="text-violet-400/50 truncate max-w-[200px]">{step.url}</span>
                   </button>
+                  <p className="text-[11px] text-muted-foreground/50 font-mono truncate pl-0.5">{step.url}</p>
                 </motion.div>
               )}
 
-              {/* Waiting for */}
-              {step.wait_for && (
+              {/* Waiting for — hidden once step is completed */}
+              {step.wait_for && !isCompleted && (
                 <motion.div
                   variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}
                   className="flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20"
@@ -230,37 +243,53 @@ export function NegotiatorStepCard({
               )}
 
               {/* Capture fields */}
-              {step.field_fills && Object.entries(step.field_fills).map(([fieldKey, hint]) => (
-                <motion.div
-                  key={fieldKey}
-                  variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}
-                  className="space-y-1.5"
-                  data-testid={`negotiator-step-${stepIndex}-field-${fieldKey}`}
-                >
-                  <label className="text-sm text-foreground/80 font-medium">
-                    Paste: {fieldKey.replace(/_/g, ' ')}
-                  </label>
-                  <p className="text-sm text-muted-foreground/80">{hint}</p>
-                  <div className="flex gap-2">
-                    <input
-                      type="password"
-                      value={capturedValues[fieldKey] || ''}
-                      onChange={(e) => onCaptureValue(fieldKey, e.target.value)}
-                      placeholder={`Paste ${fieldKey.replace(/_/g, ' ')} here...`}
-                      className="flex-1 px-3 py-2 bg-background/50 border border-primary/15 rounded-lg text-foreground text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/40 transition-all font-mono"
-                      data-testid={`negotiator-step-${stepIndex}-field-${fieldKey}-input`}
-                    />
-                    <button
-                      onClick={() => handlePasteFromClipboard(fieldKey)}
-                      className="px-3 py-2 rounded-lg bg-secondary/60 border border-primary/15 text-muted-foreground/80 hover:text-foreground hover:bg-secondary transition-colors"
-                      title="Paste from clipboard"
-                      data-testid={`negotiator-step-${stepIndex}-field-${fieldKey}-paste-btn`}
-                    >
-                      <ClipboardPaste className="w-4 h-4" />
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
+              {step.field_fills && Object.entries(step.field_fills).map(([fieldKey, hint]) => {
+                const label = formatFieldLabel(fieldKey);
+                const isValueVisible = visibleFields.has(fieldKey);
+                return (
+                  <motion.div
+                    key={fieldKey}
+                    variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}
+                    className="space-y-1.5"
+                    data-testid={`negotiator-step-${stepIndex}-field-${fieldKey}`}
+                  >
+                    <label className="text-sm text-foreground/80 font-medium">
+                      Paste: {label}
+                    </label>
+                    <p className="text-sm text-muted-foreground/80">{hint}</p>
+                    <div className="flex gap-2">
+                      <input
+                        type={isValueVisible ? 'text' : 'password'}
+                        value={capturedValues[fieldKey] || ''}
+                        onChange={(e) => onCaptureValue(fieldKey, e.target.value)}
+                        placeholder={`Paste ${label} here...`}
+                        className="flex-1 px-3 py-2 bg-background/50 border border-primary/15 rounded-lg text-foreground text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/40 transition-all font-mono"
+                        data-testid={`negotiator-step-${stepIndex}-field-${fieldKey}-input`}
+                      />
+                      <button
+                        onClick={() => setVisibleFields((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(fieldKey)) next.delete(fieldKey); else next.add(fieldKey);
+                          return next;
+                        })}
+                        className="px-2.5 py-2 rounded-lg bg-secondary/60 border border-primary/15 text-muted-foreground/80 hover:text-foreground hover:bg-secondary transition-colors"
+                        title={isValueVisible ? 'Hide value' : 'Show value'}
+                        data-testid={`negotiator-step-${stepIndex}-field-${fieldKey}-eye-btn`}
+                      >
+                        {isValueVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                      <button
+                        onClick={() => handlePasteFromClipboard(fieldKey)}
+                        className="px-2.5 py-2 rounded-lg bg-secondary/60 border border-primary/15 text-muted-foreground/80 hover:text-foreground hover:bg-secondary transition-colors"
+                        title="Paste from clipboard"
+                        data-testid={`negotiator-step-${stepIndex}-field-${fieldKey}-paste-btn`}
+                      >
+                        <ClipboardPaste className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              })}
 
               {/* Help section */}
               <motion.div
@@ -340,7 +369,7 @@ export function NegotiatorStepCard({
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-sm"
                     data-testid={`negotiator-step-${stepIndex}-completed-badge`}
                   >
-                    <Check className="w-3 h-3" />
+                    <CheckCircle className="w-3 h-3" />
                     Completed
                   </span>
                 )}

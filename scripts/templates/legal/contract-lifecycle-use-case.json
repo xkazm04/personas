@@ -2,7 +2,7 @@
   "id": "contract-lifecycle-use-case",
   "name": "Contract Lifecycle Use Case",
   "description": "Tracks DocuSign envelope events (sent, viewed, signed, declined), updates Airtable contract tracker, posts Slack notifications on status changes, sends reminder emails for unsigned documents, and flags contracts approaching renewal.",
-  "icon": "Scale",
+  "icon": "FileSignature",
   "color": "#EF4444",
   "category": [
     "legal"
@@ -153,7 +153,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://www.docusign.net/restapi/v2.1"
+        "api_base_url": "https://www.docusign.net/restapi/v2.1",
+        "role": "e_signature",
+        "category": "legal"
       },
       {
         "name": "airtable",
@@ -190,7 +192,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://api.airtable.com/v0"
+        "api_base_url": "https://api.airtable.com/v0",
+        "role": "knowledge_base",
+        "category": "productivity"
       },
       {
         "name": "slack",
@@ -211,7 +215,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       },
       {
         "name": "google_workspace",
@@ -241,7 +247,9 @@
           "gmail_search"
         ],
         "related_triggers": [],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://www.googleapis.com",
+        "role": "productivity_suite",
+        "category": "productivity"
       }
     ],
     "suggested_notification_channels": [

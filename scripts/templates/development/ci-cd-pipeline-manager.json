@@ -2,7 +2,7 @@
   "id": "ci-cd-pipeline-manager",
   "name": "CI/CD Pipeline Manager",
   "description": "Manages the full GitLab CI/CD lifecycle: monitors pipeline status, posts Slack updates per stage, creates Jira deploy tickets for production releases, emails release notes to stakeholders, and tracks deployment frequency metrics.",
-  "icon": "Code",
+  "icon": "GitPullRequest",
   "color": "#10B981",
   "category": [
     "development"
@@ -149,7 +149,9 @@
           0,
           2
         ],
-        "api_base_url": "https://gitlab.com/api/v4"
+        "api_base_url": "https://gitlab.com/api/v4",
+        "role": "source_control",
+        "category": "development"
       },
       {
         "name": "slack",
@@ -170,7 +172,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       },
       {
         "name": "google_workspace",
@@ -207,7 +211,9 @@
           "gmail_send"
         ],
         "related_triggers": [],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://www.googleapis.com",
+        "role": "productivity_suite",
+        "category": "productivity"
       },
       {
         "name": "jira",
@@ -252,7 +258,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://{domain}.atlassian.net/rest/api/3"
+        "api_base_url": "https://{domain}.atlassian.net/rest/api/3",
+        "role": "project_tracking",
+        "category": "development"
       }
     ],
     "suggested_notification_channels": [

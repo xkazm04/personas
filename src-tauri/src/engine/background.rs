@@ -7,9 +7,10 @@ use tauri::{AppHandle, Emitter};
 
 use crate::db::models::{CreatePersonaEventInput, PersonaEvent, UpdateExecutionStatus};
 use crate::db::repos::communication::events as event_repo;
-use crate::db::repos::core::personas as persona_repo;
+use crate::db::repos::core::{personas as persona_repo, settings};
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::resources::{tools as tool_repo, triggers as trigger_repo};
+use crate::db::settings_keys;
 use crate::db::DbPool;
 use crate::engine::bus;
 use crate::engine::scheduler as sched_logic;
@@ -84,6 +85,7 @@ pub fn start_loops(
     app: AppHandle,
     pool: DbPool,
     engine: Arc<ExecutionEngine>,
+    rate_limiter: Arc<super::rate_limiter::RateLimiter>,
 ) -> tokio::sync::watch::Sender<bool> {
     scheduler.running.store(true, Ordering::Relaxed);
     tracing::info!("Scheduler starting via unified subscription model: event_bus (2s) + trigger_scheduler (5s) + polling (10s) + cleanup (3600s) + rotation (60s) + webhook server (port 9420)");
@@ -130,7 +132,7 @@ pub fn start_loops(
         let scheduler = scheduler.clone();
         async move {
             scheduler.webhook_alive.store(true, Ordering::Relaxed);
-            if let Err(e) = super::webhook::start_webhook_server(pool, webhook_shutdown_rx).await {
+            if let Err(e) = super::webhook::start_webhook_server(pool, rate_limiter, webhook_shutdown_rx).await {
                 tracing::error!("Webhook server failed: {}", e);
             }
             scheduler.webhook_alive.store(false, Ordering::Relaxed);
@@ -172,7 +174,8 @@ pub(crate) async fn event_bus_tick(
         // 2. Mark as processing
         let _ = event_repo::update_status(pool, &event.id, "processing", None);
 
-        // 3. Get matching subscriptions
+        // 3. Get matching subscriptions from legacy table AND event_listener triggers.
+        // Both paths are checked to handle pre-migration and post-migration states.
         let subs = match event_repo::get_subscriptions_by_event_type(pool, &event.event_type) {
             Ok(s) => s,
             Err(e) => {
@@ -188,8 +191,20 @@ pub(crate) async fn event_bus_tick(
             }
         };
 
-        // 4. Match event to subscriptions (pure logic)
-        let matches = bus::match_event(&event, &subs);
+        // 4. Match event to legacy subscriptions
+        let mut matches = bus::match_event(&event, &subs);
+
+        // 4b. Also match event_listener triggers (unified model).
+        // Deduplicate by persona_id to avoid double-fire when a subscription
+        // has been migrated to a trigger but the legacy row still exists.
+        if let Ok(listeners) = trigger_repo::get_event_listeners_for_event_type(pool, &event.event_type) {
+            let listener_matches = bus::match_event_listeners(&event, &listeners);
+            for lm in listener_matches {
+                if !matches.iter().any(|m| m.persona_id == lm.persona_id) {
+                    matches.push(lm);
+                }
+            }
+        }
 
         if matches.is_empty() {
             let _ = event_repo::update_status(pool, &event.id, "skipped", None);
@@ -210,20 +225,7 @@ pub(crate) async fn event_bus_tick(
                 }
             };
 
-            // 6. Check concurrency
-            if !engine
-                .has_capacity(&persona.id, persona.max_concurrent)
-                .await
-            {
-                tracing::warn!(
-                    persona_id = %persona.id,
-                    "Event bus: no capacity, skipping delivery"
-                );
-                any_failed = true;
-                continue;
-            }
-
-            // 7. Create execution record
+            // 6. Create execution record
             let exec = match exec_repo::create(
                 pool,
                 &persona.id,
@@ -240,26 +242,16 @@ pub(crate) async fn event_bus_tick(
                 }
             };
 
-            // 8. Update to running
-            super::persist_status_update(
-                pool,
-                Some(app),
-                &exec.id,
-                UpdateExecutionStatus {
-                    status: crate::engine::types::ExecutionState::Running,
-                    ..Default::default()
-                },
-            );
-
-            // 9. Get tools
+            // 7. Get tools
             let tools = tool_repo::get_tools_for_persona(pool, &persona.id)
                 .unwrap_or_default();
 
-            // 10. Parse input
+            // 8. Parse input
             let input_val: Option<serde_json::Value> =
                 m.payload.as_deref().and_then(|s| serde_json::from_str(s).ok());
 
-            // 11. Start execution
+            // 9. Start execution (admit() handles concurrency atomically —
+            //    no separate has_capacity check to avoid TOCTOU gap)
             if let Err(e) = engine
                 .start_execution(
                     app.clone(),
@@ -273,6 +265,18 @@ pub(crate) async fn event_bus_tick(
                 .await
             {
                 tracing::error!(execution_id = %exec.id, "Event bus: failed to start execution: {}", e);
+                // Mark the orphaned execution record as failed
+                super::persist_status_update(
+                    pool,
+                    Some(app),
+                    &exec.id,
+                    UpdateExecutionStatus {
+                        status: crate::engine::types::ExecutionState::Failed,
+                        error_message: Some(e.to_string()),
+                        ..Default::default()
+                    },
+                )
+                .await;
                 any_failed = true;
                 continue;
             }
@@ -305,12 +309,34 @@ pub(crate) fn trigger_scheduler_tick(scheduler: &SchedulerState, pool: &DbPool) 
     for trigger in triggers {
         // Skip polling triggers — they are handled by the PollingSubscription
         // which does HTTP content-hash diffing before deciding whether to fire.
-        if trigger.trigger_type == "polling" {
+        // Skip event_listener triggers — they are event-driven, not time-based.
+        if trigger.trigger_type == "polling" || trigger.trigger_type == "event_listener" {
             continue;
         }
 
         // 2. Parse config once; reuse for event_type, payload, and next schedule time
         let cfg = trigger.parse_config();
+
+        // 3. Compute next trigger time first
+        let next = sched_logic::compute_next_from_config(&cfg, now);
+
+        // 4. Advance the schedule BEFORE publishing the event.
+        // This prevents duplicate events when mark_triggered fails after
+        // a successful publish (the trigger stays "due" with stale
+        // next_trigger_at and get_due returns it again next tick).
+        match trigger_repo::mark_triggered(pool, &trigger.id, next) {
+            Ok(true) => {}
+            Ok(false) => {
+                tracing::warn!(trigger_id = %trigger.id, "Trigger was deleted before mark_triggered, skipping");
+                continue;
+            }
+            Err(e) => {
+                tracing::error!(trigger_id = %trigger.id, "Failed to mark trigger: {}", e);
+                continue;
+            }
+        }
+
+        // 5. Schedule advanced — now safe to publish the event
         let event_type = cfg.event_type().to_string();
         let payload = cfg.payload();
 
@@ -328,35 +354,27 @@ pub(crate) fn trigger_scheduler_tick(scheduler: &SchedulerState, pool: &DbPool) 
         ) {
             Ok(_) => {
                 tracing::debug!(trigger_id = %trigger.id, "Trigger fired, event published");
+                scheduler.triggers_fired.fetch_add(1, Ordering::Relaxed);
             }
             Err(e) => {
                 tracing::error!(trigger_id = %trigger.id, "Failed to publish trigger event: {}", e);
-                continue;
-            }
-        }
-
-        // 3. Compute next trigger time (reuses already-parsed config)
-        let next = sched_logic::compute_next_from_config(&cfg, now);
-
-        // 4. Mark triggered (returns false if trigger was deleted between get_due and now)
-        match trigger_repo::mark_triggered(pool, &trigger.id, next) {
-            Ok(true) => {
-                scheduler.triggers_fired.fetch_add(1, Ordering::Relaxed);
-            }
-            Ok(false) => {
-                tracing::warn!(trigger_id = %trigger.id, "Trigger was deleted before mark_triggered, skipping");
-            }
-            Err(e) => {
-                tracing::error!(trigger_id = %trigger.id, "Failed to mark trigger: {}", e);
             }
         }
     }
 }
 
 /// One tick of the cleanup subscription: delete old processed events.
+///
+/// Reads `event_retention_days` from app_settings (default 30 days).
 pub(crate) fn cleanup_tick(pool: &DbPool) {
-    match event_repo::cleanup(pool, Some(7)) {
-        Ok(n) if n > 0 => tracing::info!("Cleaned up {} old events", n),
+    let retention_days = settings::get(pool, settings_keys::EVENT_RETENTION_DAYS)
+        .ok()
+        .flatten()
+        .and_then(|v| v.parse::<i64>().ok())
+        .unwrap_or(30);
+
+    match event_repo::cleanup(pool, Some(retention_days)) {
+        Ok(n) if n > 0 => tracing::info!("Cleaned up {} old events (retention={}d)", n, retention_days),
         Ok(_) => {}
         Err(e) => tracing::error!("Event cleanup error: {}", e),
     }

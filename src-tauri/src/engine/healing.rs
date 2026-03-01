@@ -101,19 +101,43 @@ pub fn is_auto_fixable(category: &FailureCategory) -> bool {
 const MAX_BACKOFF_SECS: u64 = 300;
 /// Maximum timeout in milliseconds (30 minutes).
 const MAX_TIMEOUT_MS: u64 = 1_800_000;
+/// Maximum number of retries for a single execution chain.
+pub const MAX_RETRY_COUNT: i64 = 3;
 
 /// Produce a full [`HealingDiagnosis`] with a recommended action.
 ///
 /// `consecutive_failures` is the number of recent consecutive failures for the
 /// same persona — used to escalate backoff or switch from retry to manual issue.
+///
+/// `retry_count` is the number of retries already attempted for this specific
+/// execution chain. When it reaches [`MAX_RETRY_COUNT`], retryable actions
+/// escalate to [`HealingAction::CreateIssue`].
 pub fn diagnose(
     category: &FailureCategory,
     error: &str,
     current_timeout_ms: u64,
     consecutive_failures: u32,
+    retry_count: i64,
 ) -> HealingDiagnosis {
     match category {
         FailureCategory::RateLimit => {
+            if retry_count >= MAX_RETRY_COUNT {
+                return HealingDiagnosis {
+                    category: category.clone(),
+                    action: HealingAction::CreateIssue,
+                    title: "Rate limit retries exhausted".into(),
+                    description: format!(
+                        "Execution was rate-limited and {} retries have been exhausted. Manual investigation required. Error: {}",
+                        MAX_RETRY_COUNT,
+                        truncate(error, 200),
+                    ),
+                    severity: "high".into(),
+                    db_category: "external".into(),
+                    suggested_fix: Some(
+                        "Check API rate limits, consider reducing execution frequency or upgrading your plan.".into(),
+                    ),
+                };
+            }
             let delay = std::cmp::min(30u64.saturating_mul(1 << consecutive_failures), MAX_BACKOFF_SECS);
             HealingDiagnosis {
                 category: category.clone(),
@@ -144,8 +168,8 @@ pub fn diagnose(
             ),
         },
         FailureCategory::Timeout => {
-            if consecutive_failures >= 1 {
-                // Already retried once — escalate to manual issue
+            if consecutive_failures >= 1 || retry_count >= MAX_RETRY_COUNT {
+                // Already retried once or retry limit exhausted — escalate to manual issue
                 HealingDiagnosis {
                     category: category.clone(),
                     action: HealingAction::CreateIssue,
@@ -233,7 +257,12 @@ fn truncate(s: &str, max: usize) -> &str {
     if s.len() <= max {
         s
     } else {
-        &s[..max]
+        // Find the largest byte index <= max that is a valid char boundary
+        let mut end = max;
+        while end > 0 && !s.is_char_boundary(end) {
+            end -= 1;
+        }
+        &s[..end]
     }
 }
 
@@ -337,7 +366,7 @@ mod tests {
 
     #[test]
     fn test_diagnose_rate_limit_backoff() {
-        let d = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 0);
+        let d = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 0, 0);
         assert_eq!(d.action, HealingAction::RetryWithBackoff { delay_secs: 30 });
         assert_eq!(d.severity, "medium");
     }
@@ -345,14 +374,14 @@ mod tests {
     #[test]
     fn test_diagnose_rate_limit_escalating_backoff() {
         // consecutive_failures = 3 → 30 * 2^3 = 240
-        let d = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 3);
+        let d = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 3, 0);
         assert_eq!(
             d.action,
             HealingAction::RetryWithBackoff { delay_secs: 240 }
         );
 
         // consecutive_failures = 5 → 30 * 32 = 960 → capped at 300
-        let d2 = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 5);
+        let d2 = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 5, 0);
         assert_eq!(
             d2.action,
             HealingAction::RetryWithBackoff { delay_secs: 300 }
@@ -360,8 +389,20 @@ mod tests {
     }
 
     #[test]
+    fn test_diagnose_rate_limit_retries_exhausted() {
+        // retry_count = MAX_RETRY_COUNT → escalate to CreateIssue
+        let d = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 0, MAX_RETRY_COUNT);
+        assert_eq!(d.action, HealingAction::CreateIssue);
+        assert_eq!(d.severity, "high");
+
+        // retry_count > MAX_RETRY_COUNT → still CreateIssue
+        let d2 = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 0, MAX_RETRY_COUNT + 1);
+        assert_eq!(d2.action, HealingAction::CreateIssue);
+    }
+
+    #[test]
     fn test_diagnose_timeout_retry() {
-        let d = diagnose(&FailureCategory::Timeout, "timed out", 600_000, 0);
+        let d = diagnose(&FailureCategory::Timeout, "timed out", 600_000, 0, 0);
         assert_eq!(
             d.action,
             HealingAction::RetryWithTimeout {
@@ -373,7 +414,7 @@ mod tests {
     #[test]
     fn test_diagnose_timeout_max_cap() {
         // 1_200_000 * 2 = 2_400_000 → capped at 1_800_000
-        let d = diagnose(&FailureCategory::Timeout, "timed out", 1_200_000, 0);
+        let d = diagnose(&FailureCategory::Timeout, "timed out", 1_200_000, 0, 0);
         assert_eq!(
             d.action,
             HealingAction::RetryWithTimeout {
@@ -384,9 +425,16 @@ mod tests {
 
     #[test]
     fn test_diagnose_timeout_consecutive_creates_issue() {
-        let d = diagnose(&FailureCategory::Timeout, "timed out", 600_000, 1);
+        let d = diagnose(&FailureCategory::Timeout, "timed out", 600_000, 1, 0);
         assert_eq!(d.action, HealingAction::CreateIssue);
         assert_eq!(d.severity, "high");
+    }
+
+    #[test]
+    fn test_diagnose_timeout_retries_exhausted() {
+        // Even with consecutive_failures = 0, retry_count at limit should escalate
+        let d = diagnose(&FailureCategory::Timeout, "timed out", 600_000, 0, MAX_RETRY_COUNT);
+        assert_eq!(d.action, HealingAction::CreateIssue);
     }
 
     #[test]

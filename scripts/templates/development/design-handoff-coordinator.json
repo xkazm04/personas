@@ -2,7 +2,7 @@
   "id": "design-handoff-coordinator",
   "name": "Design Handoff Coordinator",
   "description": "Monitors Figma file version changes, extracts updated component names, creates or updates Linear tickets for the dev team with direct Figma links, and posts handoff summaries in the design Slack channel.",
-  "icon": "Code",
+  "icon": "Figma",
   "color": "#10B981",
   "category": [
     "development"
@@ -136,7 +136,9 @@
           0,
           1
         ],
-        "api_base_url": "https://api.figma.com"
+        "api_base_url": "https://api.figma.com",
+        "role": "design",
+        "category": "creativity"
       },
       {
         "name": "linear",
@@ -157,7 +159,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://api.linear.app/graphql"
+        "api_base_url": "https://api.linear.app/graphql",
+        "role": "project_tracking",
+        "category": "development"
       },
       {
         "name": "slack",
@@ -178,7 +182,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

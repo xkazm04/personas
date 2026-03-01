@@ -2,7 +2,7 @@
   "id": "support-escalation-engine",
   "name": "Support Escalation Engine",
   "description": "Monitors Freshdesk for tickets exceeding response time SLAs, escalates to Slack with full ticket context, logs escalation patterns in Notion, and emails the support lead with a daily escalation summary. Auto-prioritizes based on customer tier.",
-  "icon": "HeadphonesIcon",
+  "icon": "ArrowUpCircle",
   "color": "#14B8A6",
   "category": [
     "support"
@@ -144,7 +144,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://{domain}.freshdesk.com/api/v2"
+        "api_base_url": "https://{domain}.freshdesk.com/api/v2",
+        "role": "support_ticketing",
+        "category": "support"
       },
       {
         "name": "slack",
@@ -183,7 +185,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       },
       {
         "name": "notion",
@@ -215,7 +219,9 @@
           0,
           1
         ],
-        "api_base_url": "https://api.notion.com/v1"
+        "api_base_url": "https://api.notion.com/v1",
+        "role": "knowledge_base",
+        "category": "productivity"
       },
       {
         "name": "google_workspace",
@@ -254,7 +260,9 @@
         "related_triggers": [
           1
         ],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://www.googleapis.com",
+        "role": "productivity_suite",
+        "category": "productivity"
       }
     ],
     "suggested_notification_channels": [

@@ -1,7 +1,7 @@
 /// Canonical settings key constants for `app_settings` table.
 ///
 /// Use these instead of raw string literals to prevent typo-based key mismatches.
-
+///
 /// Ollama Cloud API key (free tier models like Qwen3, GLM-5, Kimi K2.5).
 pub const OLLAMA_API_KEY: &str = "ollama_api_key";
 
@@ -13,3 +13,7 @@ pub const LITELLM_MASTER_KEY: &str = "litellm_master_key";
 
 /// Active CLI engine: `"claude_code"`, `"codex_cli"`, or `"gemini_cli"`.
 pub const CLI_ENGINE: &str = "cli_engine";
+
+/// Event retention period in days. Events older than this are purged by the
+/// cleanup subscription. Default: 30.
+pub const EVENT_RETENTION_DAYS: &str = "event_retention_days";

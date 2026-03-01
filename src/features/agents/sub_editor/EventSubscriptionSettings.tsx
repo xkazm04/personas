@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Radio, Plus, Trash2, Loader2 } from 'lucide-react';
 import { listSubscriptions, createSubscription, updateSubscription, deleteSubscription } from '@/api/tauriApi';
 import { AccessibleToggle } from '@/features/shared/components/AccessibleToggle';
+import { FieldHint } from '@/features/shared/components/FieldHint';
 import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscription';
 
 interface EventSubscriptionSettingsProps {
@@ -144,6 +145,10 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
                 <div>
                   <label className="block text-sm font-mono text-muted-foreground/80 uppercase mb-1">
                     Event Type
+                    <FieldHint
+                      text="The type of system event that will trigger this persona to run."
+                      example="execution_completed"
+                    />
                   </label>
                   <select
                     value={newEventType}
@@ -161,6 +166,10 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
                 <div>
                   <label className="block text-sm font-mono text-muted-foreground/80 uppercase mb-1">
                     Source Filter <span className="normal-case">(optional)</span>
+                    <FieldHint
+                      text="Only trigger when the event source matches this filter. Supports exact persona IDs or glob patterns with * wildcards."
+                      example="persona-abc* or team-*"
+                    />
                   </label>
                   <input
                     type="text"

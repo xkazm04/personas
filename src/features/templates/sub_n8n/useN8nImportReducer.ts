@@ -1,7 +1,8 @@
 import { useReducer, useCallback } from 'react';
-import type { N8nPersonaDraft } from '@/api/n8nTransform';
+import type { N8nPersonaDraft, StreamingSection } from '@/api/n8nTransform';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
+import type { WorkflowPlatform } from '@/lib/personas/workflowDetector';
 
 // ── Wizard Steps ──
 
@@ -50,6 +51,8 @@ export interface N8nImportState {
   // Upload
   rawWorkflowJson: string;
   workflowName: string;
+  /** Detected source platform (n8n, zapier, make, github-actions) */
+  platform: WorkflowPlatform;
   error: string | null;
 
   // Parse / Analyze
@@ -79,6 +82,9 @@ export interface N8nImportState {
   draftJson: string;
   draftJsonError: string | null;
 
+  // Streaming sections (section-by-section transform)
+  streamingSections: StreamingSection[];
+
   // Draft validation / streaming test
   testStatus: 'idle' | 'running' | 'passed' | 'failed';
   testError: string | null;
@@ -96,6 +102,7 @@ const INITIAL_STATE: N8nImportState = {
   sessionId: null,
   rawWorkflowJson: '',
   workflowName: '',
+  platform: 'n8n',
   error: null,
   parsedResult: null,
   selectedToolIndices: new Set(),
@@ -113,6 +120,7 @@ const INITIAL_STATE: N8nImportState = {
   draft: null,
   draftJson: '',
   draftJsonError: null,
+  streamingSections: [],
   testStatus: 'idle',
   testError: null,
   testRunId: null,
@@ -125,7 +133,7 @@ const INITIAL_STATE: N8nImportState = {
 // ── Actions ──
 
 export type N8nImportAction =
-  | { type: 'FILE_PARSED'; workflowName: string; rawWorkflowJson: string; parsedResult: DesignAnalysisResult }
+  | { type: 'FILE_PARSED'; workflowName: string; rawWorkflowJson: string; parsedResult: DesignAnalysisResult; platform?: WorkflowPlatform }
   | { type: 'TOGGLE_TOOL'; index: number }
   | { type: 'TOGGLE_TRIGGER'; index: number }
   | { type: 'TOGGLE_CONNECTOR'; name: string }
@@ -136,6 +144,7 @@ export type N8nImportAction =
   | { type: 'TRANSFORM_STARTED'; transformId: string; subPhase?: TransformSubPhase }
   | { type: 'TRANSFORM_LINES'; lines: string[] }
   | { type: 'TRANSFORM_PHASE'; phase: CliRunPhase }
+  | { type: 'TRANSFORM_SECTIONS'; sections: StreamingSection[] }
   | { type: 'TRANSFORM_COMPLETED'; draft: N8nPersonaDraft }
   | { type: 'TRANSFORM_FAILED'; error: string }
   | { type: 'TRANSFORM_CANCELLED' }
@@ -155,8 +164,23 @@ export type N8nImportAction =
   | { type: 'GO_TO_STEP'; step: N8nWizardStep }
   | { type: 'RESTORE_CONTEXT'; workflowName: string; rawWorkflowJson: string; parsedResult: DesignAnalysisResult | null; transformId: string }
   | { type: 'SESSION_CREATED'; sessionId: string }
-  | { type: 'SESSION_LOADED'; sessionId: string; step: N8nWizardStep; workflowName: string; rawWorkflowJson: string; parsedResult: DesignAnalysisResult | null; draft: N8nPersonaDraft | null; questions: TransformQuestion[] | null; transformId: string | null; userAnswers: Record<string, string> | null }
+  | { type: 'SESSION_LOADED'; payload: SessionLoadedPayload }
   | { type: 'RESET' };
+
+/** Pre-computed payload for loading a saved session. Step routing and
+ *  sub-phase inference are computed by the caller (N8nSessionList). */
+export interface SessionLoadedPayload {
+  sessionId: string;
+  step: N8nWizardStep;
+  workflowName: string;
+  rawWorkflowJson: string;
+  parsedResult: DesignAnalysisResult | null;
+  draft: N8nPersonaDraft | null;
+  questions: TransformQuestion[] | null;
+  transformId: string | null;
+  userAnswers: Record<string, string>;
+  transformSubPhase: TransformSubPhase;
+}
 
 // ── Helpers ──
 
@@ -191,6 +215,7 @@ function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nIm
         workflowName: action.workflowName,
         rawWorkflowJson: action.rawWorkflowJson,
         parsedResult: action.parsedResult,
+        platform: action.platform ?? 'n8n',
         ...selections,
       };
     }
@@ -244,6 +269,7 @@ function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nIm
         snapshotEpoch: state.snapshotEpoch + 1,
         transformPhase: 'running',
         transformLines: [],
+        streamingSections: [],
         error: null,
       };
 
@@ -252,6 +278,9 @@ function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nIm
 
     case 'TRANSFORM_PHASE':
       return { ...state, transformPhase: action.phase };
+
+    case 'TRANSFORM_SECTIONS':
+      return { ...state, streamingSections: action.sections };
 
     case 'TRANSFORM_COMPLETED':
       return {
@@ -366,39 +395,21 @@ function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nIm
       return { ...state, sessionId: action.sessionId };
 
     case 'SESSION_LOADED': {
-      const selections = action.parsedResult ? initSelectionsFromResult(action.parsedResult) : {};
-      // Determine sub-phase based on loaded state
-      let subPhase: TransformSubPhase = 'idle';
-      if (action.step === 'transform') {
-        if (action.draft) {
-          subPhase = 'completed';
-        } else if (action.questions && action.questions.length > 0) {
-          subPhase = 'answering';
-        } else {
-          subPhase = 'idle';
-        }
-      }
-      // Restore saved answers, falling back to question defaults for any missing
-      const defaultAnswers = action.questions
-        ? action.questions.reduce<Record<string, string>>((acc, q) => {
-            if (q.default) acc[q.id] = q.default;
-            return acc;
-          }, {})
-        : {};
-      const restoredAnswers = { ...defaultAnswers, ...(action.userAnswers ?? {}) };
+      const p = action.payload;
+      const selections = p.parsedResult ? initSelectionsFromResult(p.parsedResult) : {};
       return {
         ...INITIAL_STATE,
-        sessionId: action.sessionId,
-        step: action.step,
-        workflowName: action.workflowName,
-        rawWorkflowJson: action.rawWorkflowJson,
-        parsedResult: action.parsedResult,
-        draft: action.draft,
-        draftJson: action.draft ? JSON.stringify(action.draft, null, 2) : '',
-        transformSubPhase: subPhase,
-        questions: action.questions,
-        userAnswers: restoredAnswers,
-        backgroundTransformId: action.transformId,
+        sessionId: p.sessionId,
+        step: p.step,
+        workflowName: p.workflowName,
+        rawWorkflowJson: p.rawWorkflowJson,
+        parsedResult: p.parsedResult,
+        draft: p.draft,
+        draftJson: p.draft ? JSON.stringify(p.draft, null, 2) : '',
+        transformSubPhase: p.transformSubPhase,
+        questions: p.questions,
+        userAnswers: p.userAnswers,
+        backgroundTransformId: p.transformId,
         ...selections,
       };
     }

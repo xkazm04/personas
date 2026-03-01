@@ -2,7 +2,7 @@
   "id": "cms-index-sync-use-case",
   "name": "CMS Index Sync Use Case",
   "description": "Watches Contentful webhooks for content publish/unpublish events, updates the Algolia search index accordingly, validates index consistency daily, and posts sync status to Slack. Handles partial failures with retry logic.",
-  "icon": "FileText",
+  "icon": "RefreshCw",
   "color": "#F59E0B",
   "category": [
     "content"
@@ -155,7 +155,9 @@
           0,
           1
         ],
-        "api_base_url": "https://cdn.contentful.com"
+        "api_base_url": "https://cdn.contentful.com",
+        "role": "cms",
+        "category": "cms"
       },
       {
         "name": "algolia",
@@ -195,7 +197,9 @@
           0,
           1
         ],
-        "api_base_url": "https://{appId}.algolia.net"
+        "api_base_url": "https://{appId}.algolia.net",
+        "role": "search_engine",
+        "category": "search"
       },
       {
         "name": "slack",
@@ -227,7 +231,9 @@
           0,
           1
         ],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

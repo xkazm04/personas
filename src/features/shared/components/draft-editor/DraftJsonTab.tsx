@@ -4,6 +4,7 @@ import hljs from 'highlight.js/lib/core';
 import json from 'highlight.js/lib/languages/json';
 import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import { normalizeDraftFromUnknown } from '@/features/templates/sub_n8n/n8nTypes';
+import { sanitizeHljsHtml } from '@/lib/utils/sanitizeHtml';
 
 hljs.registerLanguage('json', json);
 
@@ -49,7 +50,7 @@ export function DraftJsonTab({ draftJson, draftJsonError, disabled, onJsonChange
   // Highlighted HTML
   const highlightedHtml = useMemo(() => {
     try {
-      return hljs.highlight(draftJson, { language: 'json' }).value;
+      return sanitizeHljsHtml(hljs.highlight(draftJson, { language: 'json' }).value);
     } catch {
       // Fallback: escape and show plain
       return draftJson

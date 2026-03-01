@@ -137,6 +137,7 @@ fn handle_menu_event(app: &AppHandle, id: &str) {
                     app.clone(),
                     state.db.clone(),
                     state.engine.clone(),
+                    state.rate_limiter.clone(),
                 );
             }
             refresh_tray(app);

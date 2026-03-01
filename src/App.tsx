@@ -3,6 +3,10 @@ import PersonasPage from "@/features/personas/PersonasPage";
 import UpdateBanner from "@/features/shared/components/UpdateBanner";
 import { HealingToast } from "@/features/shared/components/HealingToast";
 import { initAuthListener, useAuthStore } from "@/stores/authStore";
+import { registerKnowledgeMiddleware } from "@/lib/execution/knowledgeMiddleware";
+
+// Register pipeline middleware once at module load
+registerKnowledgeMiddleware();
 
 export default function App() {
   useEffect(() => {

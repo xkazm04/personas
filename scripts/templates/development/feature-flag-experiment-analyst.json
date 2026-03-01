@@ -2,7 +2,7 @@
   "id": "feature-flag-experiment-analyst",
   "name": "Feature Flag & Experiment Analyst",
   "description": "Monitors PostHog feature flag changes and experiment results, posts summaries to Slack product channels, creates Linear follow-up tickets for winning experiment variants, and archives flags that haven't been modified in 30+ days.",
-  "icon": "Code",
+  "icon": "FlaskConical",
   "color": "#10B981",
   "category": [
     "development"
@@ -125,7 +125,9 @@
           0,
           1
         ],
-        "api_base_url": "https://app.posthog.com/api"
+        "api_base_url": "https://app.posthog.com/api",
+        "role": "feature_flags",
+        "category": "analytics"
       },
       {
         "name": "slack",
@@ -154,7 +156,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       },
       {
         "name": "linear",
@@ -183,7 +187,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://api.linear.app/graphql"
+        "api_base_url": "https://api.linear.app/graphql",
+        "role": "project_tracking",
+        "category": "development"
       }
     ],
     "suggested_notification_channels": [

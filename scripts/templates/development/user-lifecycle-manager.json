@@ -2,7 +2,7 @@
   "id": "user-lifecycle-manager",
   "name": "User Lifecycle Manager",
   "description": "Handles Clerk auth events (signup, email change, deletion), provisions user records in Supabase, sends onboarding email sequences via Gmail, and posts new user celebrations to Slack. Handles the full user lifecycle from sign-up to churn.",
-  "icon": "Code",
+  "icon": "UserCog",
   "color": "#10B981",
   "category": [
     "development"
@@ -142,7 +142,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://api.clerk.com/v1"
+        "api_base_url": "https://api.clerk.com/v1",
+        "role": "auth_identity",
+        "category": "auth"
       },
       {
         "name": "supabase",
@@ -171,7 +173,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://{project}.supabase.co/rest/v1"
+        "api_base_url": "https://{project}.supabase.co/rest/v1",
+        "role": "database",
+        "category": "database"
       },
       {
         "name": "slack",
@@ -192,7 +196,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       },
       {
         "name": "google_workspace",
@@ -229,7 +235,9 @@
           "gmail_send"
         ],
         "related_triggers": [],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://www.googleapis.com",
+        "role": "productivity_suite",
+        "category": "productivity"
       }
     ],
     "suggested_notification_channels": [

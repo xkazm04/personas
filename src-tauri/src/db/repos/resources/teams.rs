@@ -205,6 +205,8 @@ pub fn update(pool: &DbPool, id: &str, input: UpdateTeamInput) -> Result<Persona
 
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     let conn = pool.get()?;
+    // Clean up pipeline_runs which have no FK CASCADE on team_id
+    conn.execute("DELETE FROM pipeline_runs WHERE team_id = ?1", params![id])?;
     let rows = conn.execute("DELETE FROM persona_teams WHERE id = ?1", params![id])?;
     Ok(rows > 0)
 }
@@ -308,16 +310,19 @@ pub fn update_member(
 }
 
 pub fn remove_member(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    let conn = pool.get()?;
-    // Clean up connections that reference this member
-    conn.execute(
+    let mut conn = pool.get()?;
+    // Wrap in a transaction so connection cleanup and member deletion are atomic.
+    // Without this, a failed member DELETE leaves orphaned connections already gone.
+    let tx = conn.transaction().map_err(AppError::Database)?;
+    tx.execute(
         "DELETE FROM persona_team_connections WHERE source_member_id = ?1 OR target_member_id = ?1",
         params![id],
     )?;
-    let rows = conn.execute(
+    let rows = tx.execute(
         "DELETE FROM persona_team_members WHERE id = ?1",
         params![id],
     )?;
+    tx.commit().map_err(AppError::Database)?;
     Ok(rows > 0)
 }
 
@@ -347,11 +352,67 @@ pub fn create_connection(
     condition: Option<String>,
     label: Option<String>,
 ) -> Result<PersonaTeamConnection, AppError> {
+    // Reject self-loops — they break topological sort and are never valid in a DAG.
+    if source_member_id == target_member_id {
+        return Err(AppError::Validation(
+            "Self-loop not allowed: source and target must be different members".into(),
+        ));
+    }
+
+    let conn_type = connection_type.unwrap_or_else(|| "sequential".into());
+    let conn = pool.get()?;
+
+    // Check for duplicate edge
+    let exists: bool = conn
+        .query_row(
+            "SELECT COUNT(*) FROM persona_team_connections
+             WHERE team_id = ?1 AND source_member_id = ?2 AND target_member_id = ?3",
+            params![team_id, source_member_id, target_member_id],
+            |row| row.get::<_, i64>(0),
+        )
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if exists {
+        return Err(AppError::Validation(
+            "Duplicate connection: an edge between these members already exists".into(),
+        ));
+    }
+
+    // Cycle detection: reject non-feedback edges that would create a cycle.
+    // Feedback edges are intentional back-edges (e.g. reviewer → orchestrator)
+    // and are excluded from topological sort during execution.
+    if conn_type != "feedback" {
+        let existing = get_connections(pool, team_id)?;
+        // Collect all member IDs referenced by existing edges + the proposed edge
+        let mut member_set = std::collections::HashSet::new();
+        for e in &existing {
+            member_set.insert(e.source_member_id.clone());
+            member_set.insert(e.target_member_id.clone());
+        }
+        member_set.insert(source_member_id.to_string());
+        member_set.insert(target_member_id.to_string());
+        let member_ids: Vec<String> = member_set.into_iter().collect();
+
+        // Build edges: existing non-feedback edges + the proposed edge
+        let mut edges: Vec<(&str, &str)> = existing
+            .iter()
+            .filter(|e| e.connection_type != "feedback")
+            .map(|e| (e.source_member_id.as_str(), e.target_member_id.as_str()))
+            .collect();
+        edges.push((source_member_id, target_member_id));
+
+        let graph = crate::engine::topology_graph::NamedTopologyGraph::new(&member_ids, &edges);
+        if graph.has_cycle() {
+            return Err(AppError::Validation(
+                "This connection would create a cycle. Use connection_type \"feedback\" for intentional back-edges.".into(),
+            ));
+        }
+    }
+
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
-    let conn_type = connection_type.unwrap_or_else(|| "sequential".into());
 
-    let conn = pool.get()?;
     conn.execute(
         "INSERT INTO persona_team_connections
          (id, team_id, source_member_id, target_member_id, connection_type, condition, label, created_at)
@@ -396,6 +457,17 @@ pub fn delete_connection(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 // ============================================================================
 // Pipeline Runs
 // ============================================================================
+
+/// Returns `true` if the team has any pipeline run currently in "running" status.
+pub fn has_running_pipeline(pool: &DbPool, team_id: &str) -> Result<bool, AppError> {
+    let conn = pool.get()?;
+    let count: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM pipeline_runs WHERE team_id = ?1 AND status = 'running'",
+        params![team_id],
+        |row| row.get(0),
+    )?;
+    Ok(count > 0)
+}
 
 pub fn create_pipeline_run(
     pool: &DbPool,

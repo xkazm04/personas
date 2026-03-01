@@ -7,12 +7,20 @@ import { MarkdownRenderer } from '@/features/shared/components/MarkdownRenderer'
 import { parseDesignContext } from '@/features/shared/components/UseCasesList';
 import { translateHealthcheckMessage } from '@/features/vault/components/credential-design/CredentialDesignHelpers';
 import { extractProtocolCapabilities, countByType } from './edit/protocolParser';
+import { matchCredentialToConnector } from './edit/connectorMatching';
 import { usePersonaStore } from '@/stores/personaStore';
+
+export interface EntityError {
+  entity_type: string;
+  entity_name: string;
+  error: string;
+}
 
 export interface ConfirmResult {
   triggersCreated: number;
   toolsCreated: number;
   connectorsNeedingSetup: string[];
+  entityErrors: EntityError[];
 }
 
 interface N8nConfirmStepProps {
@@ -39,12 +47,9 @@ export function N8nConfirmStep({
   const [showPrompt, setShowPrompt] = useState(false);
 
   // Use draft entity fields if available, fall back to parser results
-  const draftObj = draft as unknown as Record<string, unknown>;
-  const draftTools = Array.isArray(draftObj.tools) ? draftObj.tools as { name: string; category: string; description: string; requires_credential_type?: string }[] : null;
-  const draftTriggers = Array.isArray(draftObj.triggers) ? draftObj.triggers as { trigger_type: string; description?: string }[] : null;
-  const draftConnectors = Array.isArray(draftObj.required_connectors)
-    ? draftObj.required_connectors as { name: string; n8n_credential_type: string; has_credential: boolean }[]
-    : null;
+  const draftTools = draft.tools ?? null;
+  const draftTriggers = draft.triggers ?? null;
+  const draftConnectors = draft.required_connectors ?? null;
 
   const selectedTools = parsedResult.suggested_tools.filter((_, i) => selectedToolIndices.has(i));
   const selectedTriggers = parsedResult.suggested_triggers.filter((_, i) => selectedTriggerIndices.has(i));
@@ -79,11 +84,8 @@ export function N8nConfirmStep({
       const credType = tool.requires_credential_type;
       // Check if linked via credential_links
       if (credentialLinks[credType]) return false;
-      // Check if any credential with matching service_type exists
-      const hasMatchingCred = credentials.some(
-        (c) => c.service_type === credType || c.name.toLowerCase().includes(credType.toLowerCase()),
-      );
-      return !hasMatchingCred;
+      // Check if any credential matches this connector
+      return !matchCredentialToConnector(credentials, credType);
     });
   }, [draftTools, credentialLinks, credentials]);
 
@@ -100,9 +102,8 @@ export function N8nConfirmStep({
     if (!draftConnectors) return [];
     return draftConnectors.map((c) => {
       const linked = credentialLinks[c.name];
-      const matchedCred = credentials.find(
-        (cr) => cr.service_type === c.name || cr.id === linked,
-      );
+      const linkedCred = linked ? credentials.find((cr) => cr.id === linked) : null;
+      const matchedCred = linkedCred ?? matchCredentialToConnector(credentials, c.name);
       const hasCredential = c.has_credential || !!linked || !!matchedCred;
       return {
         name: c.name,
@@ -160,6 +161,26 @@ export function N8nConfirmStep({
               {confirmResult.triggersCreated > 0 && confirmResult.toolsCreated > 0 ? ' + ' : ''}
               {confirmResult.toolsCreated > 0 ? `${confirmResult.toolsCreated} tool${confirmResult.toolsCreated !== 1 ? 's' : ''}` : ''}
             </motion.p>
+          )}
+          {confirmResult && confirmResult.entityErrors.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.38 }}
+              className="text-sm text-red-400/70 mb-2 space-y-1"
+            >
+              <div className="flex items-center gap-1.5 justify-center">
+                <XCircle className="w-3 h-3" />
+                <span>
+                  {confirmResult.entityErrors.length} {confirmResult.entityErrors.length === 1 ? 'entity' : 'entities'} failed
+                </span>
+              </div>
+              <div className="text-xs text-red-400/50 max-h-24 overflow-y-auto">
+                {confirmResult.entityErrors.map((e, i) => (
+                  <div key={i}>{e.entity_type} &lsquo;{e.entity_name}&rsquo;: {e.error}</div>
+                ))}
+              </div>
+            </motion.div>
           )}
           {confirmResult && confirmResult.connectorsNeedingSetup.length > 0 && (
             <motion.div
@@ -219,36 +240,36 @@ export function N8nConfirmStep({
             </div>
           </div>
 
-          {/* Entity summary grid — 6 cards */}
-          <div className="grid grid-cols-6 gap-2 mb-4">
-            <div className="px-2 py-2.5 rounded-xl bg-blue-500/5 border border-blue-500/10 text-center">
+          {/* Entity summary grid — 6 cards, responsive */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6 md:gap-2 mb-4">
+            <div className="px-2 py-3 rounded-xl bg-blue-500/5 border border-blue-500/10 text-center">
               <Wrench className="w-3.5 h-3.5 text-blue-400/60 mx-auto mb-1" />
-              <p className="text-base font-semibold text-foreground/80">{toolCount}</p>
+              <p className="text-base font-semibold text-foreground/80 tabular-nums">{toolCount}</p>
               <p className="text-sm text-muted-foreground/55 uppercase tracking-wider">Tools</p>
             </div>
-            <div className="px-2 py-2.5 rounded-xl bg-amber-500/5 border border-amber-500/10 text-center">
+            <div className="px-2 py-3 rounded-xl bg-amber-500/5 border border-amber-500/10 text-center">
               <Zap className="w-3.5 h-3.5 text-amber-400/60 mx-auto mb-1" />
-              <p className="text-base font-semibold text-foreground/80">{triggerCount}</p>
+              <p className="text-base font-semibold text-foreground/80 tabular-nums">{triggerCount}</p>
               <p className="text-sm text-muted-foreground/55 uppercase tracking-wider">Triggers</p>
             </div>
-            <div className="px-2 py-2.5 rounded-xl bg-emerald-500/5 border border-emerald-500/10 text-center">
+            <div className="px-2 py-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10 text-center">
               <Link className="w-3.5 h-3.5 text-emerald-400/60 mx-auto mb-1" />
-              <p className="text-base font-semibold text-foreground/80">{connectorCount}</p>
+              <p className="text-base font-semibold text-foreground/80 tabular-nums">{connectorCount}</p>
               <p className="text-sm text-muted-foreground/55 uppercase tracking-wider">Connectors</p>
             </div>
-            <div className="px-2 py-2.5 rounded-xl bg-rose-500/5 border border-rose-500/10 text-center">
+            <div className="px-2 py-3 rounded-xl bg-rose-500/5 border border-rose-500/10 text-center">
               <ShieldCheck className="w-3.5 h-3.5 text-rose-400/60 mx-auto mb-1" />
-              <p className="text-base font-semibold text-foreground/80">{reviewCount}</p>
+              <p className="text-base font-semibold text-foreground/80 tabular-nums">{reviewCount}</p>
               <p className="text-sm text-muted-foreground/55 uppercase tracking-wider">Reviews</p>
             </div>
-            <div className="px-2 py-2.5 rounded-xl bg-cyan-500/5 border border-cyan-500/10 text-center">
+            <div className="px-2 py-3 rounded-xl bg-cyan-500/5 border border-cyan-500/10 text-center">
               <Brain className="w-3.5 h-3.5 text-cyan-400/60 mx-auto mb-1" />
-              <p className="text-base font-semibold text-foreground/80">{memoryCount}</p>
+              <p className="text-base font-semibold text-foreground/80 tabular-nums">{memoryCount}</p>
               <p className="text-sm text-muted-foreground/55 uppercase tracking-wider">Memory</p>
             </div>
-            <div className="px-2 py-2.5 rounded-xl bg-orange-500/5 border border-orange-500/10 text-center">
+            <div className="px-2 py-3 rounded-xl bg-orange-500/5 border border-orange-500/10 text-center">
               <Activity className="w-3.5 h-3.5 text-orange-400/60 mx-auto mb-1" />
-              <p className="text-base font-semibold text-foreground/80">{eventCount}</p>
+              <p className="text-base font-semibold text-foreground/80 tabular-nums">{eventCount}</p>
               <p className="text-sm text-muted-foreground/55 uppercase tracking-wider">Events</p>
             </div>
           </div>
@@ -285,7 +306,7 @@ export function N8nConfirmStep({
                 <span
                   key={i}
                   className="px-2 py-0.5 text-sm font-mono rounded bg-amber-500/10 text-amber-400/60 border border-amber-500/15"
-                  title={t.description}
+                  title={t.description ?? undefined}
                 >
                   {t.trigger_type}
                 </span>

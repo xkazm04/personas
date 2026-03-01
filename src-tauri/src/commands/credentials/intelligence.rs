@@ -16,6 +16,15 @@ pub fn credential_audit_log(
     audit_log::get_by_credential(&state.db, &credential_id, limit.unwrap_or(50))
 }
 
+/// Get the global audit log across all credentials (security dashboard).
+#[tauri::command]
+pub fn credential_audit_log_global(
+    state: State<'_, Arc<AppState>>,
+    limit: Option<u32>,
+) -> Result<Vec<CredentialAuditEntry>, AppError> {
+    audit_log::get_all(&state.db, limit.unwrap_or(200))
+}
+
 /// Get aggregated usage statistics for a credential.
 #[tauri::command]
 pub fn credential_usage_stats(

@@ -37,6 +37,7 @@ struct DesignStatusEvent {
 
 /// Shared setup for design commands: generates a design ID, sets it as active,
 /// and spawns `run_design_analysis`.
+#[allow(clippy::too_many_arguments)]
 fn spawn_design_run(
     state: &AppState,
     app: tauri::AppHandle,
@@ -53,6 +54,18 @@ fn spawn_design_run(
     let design_id_clone = design_id.clone();
     let active_design_id = state.active_design_id.clone();
     let active_child_pid = state.active_design_child_pid.clone();
+
+    // Kill any existing design analysis child process before spawning a new one.
+    // Without this, rapid clicks on "Generate Design" spawn multiple concurrent
+    // CLI processes, but only the last PID is tracked — earlier ones become
+    // unkillable orphans that silently consume API credits.
+    {
+        let old_pid = state.active_design_child_pid.lock().unwrap().take();
+        if let Some(pid) = old_pid {
+            tracing::info!(pid = pid, "Killing previous design analysis before starting new one");
+            engine::kill_process(pid);
+        }
+    }
 
     {
         let mut guard = state.active_design_id.lock().unwrap();
@@ -190,6 +203,38 @@ pub fn cancel_design_analysis(
     }
 
     Ok(())
+}
+
+/// Compile a plain-language intent into a complete persona configuration.
+///
+/// Uses the same streaming infrastructure as `start_design_analysis` but with an
+/// extended prompt that also generates use cases, model recommendation, and test scenarios.
+#[tauri::command]
+pub async fn compile_from_intent(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    persona_id: String,
+    intent: String,
+    design_id: Option<String>,
+) -> Result<serde_json::Value, AppError> {
+    let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
+    let tools = tool_repo::get_all_definitions(&state.db)?;
+    let connectors = connector_repo::get_all(&state.db)?;
+
+    // Build the intent compilation prompt (extended output schema)
+    let intent_prompt = engine::intent_compiler::build_intent_prompt(
+        &persona, &tools, &connectors, &intent,
+    );
+
+    let model_profile = prompt::parse_model_profile(persona.model_profile.as_deref());
+    let cli_args = prompt::build_cli_args(Some(&persona), model_profile.as_ref());
+    let tool_names = tools.iter().map(|t| t.name.clone()).collect();
+    let connector_names = connectors.iter().map(|c| c.name.clone()).collect();
+
+    spawn_design_run(
+        &state, app, &persona_id, intent_prompt, cli_args,
+        tool_names, connector_names, design_id,
+    )
 }
 
 // ── Design analysis runner ──────────────────────────────────────

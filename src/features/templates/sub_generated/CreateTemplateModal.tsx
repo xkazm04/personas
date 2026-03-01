@@ -164,7 +164,7 @@ export function CreateTemplateModal({
     return () => {
       unlistenPromise.then((unlisten) => unlisten()).catch(() => {});
     };
-  }, [state.backgroundGenId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state.backgroundGenId]);
 
   // ── Actions ──
 

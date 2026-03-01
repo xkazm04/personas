@@ -143,10 +143,10 @@ export function PersonaPromptEditor() {
     () => lastSavedJsonRef.current !== null && JSON.stringify(sp) !== lastSavedJsonRef.current,
     [sp],
   );
-  const unregisterDirty = useEditorDirty('prompt', promptDirty, doSave);
-  useEffect(() => unregisterDirty, [unregisterDirty]);
+  const { isSaving, cancel: cancelPromptSave } = useDebouncedSave(doSave, promptDirty, [sp], 1000);
 
-  const isSaving = useDebouncedSave(doSave, promptDirty, [sp], 1000);
+  const unregisterDirty = useEditorDirty('prompt', promptDirty, doSave, cancelPromptSave);
+  useEffect(() => unregisterDirty, [unregisterDirty]);
 
   const updateField = useCallback((field: keyof Omit<StructuredPrompt, 'customSections'>, value: string) => {
     setSp((prev) => ({ ...prev, [field]: value }));
@@ -155,12 +155,11 @@ export function PersonaPromptEditor() {
   // Custom sections management
   const addCustomSection = useCallback(() => {
     setSp((prev) => {
-      const newSections = [...prev.customSections, { title: 'New Section', content: '' }];
-      return { ...prev, customSections: newSections };
+      setSelectedCustomIndex(prev.customSections.length);
+      return { ...prev, customSections: [...prev.customSections, { title: 'New Section', content: '' }] };
     });
-    setSelectedCustomIndex((sp.customSections ?? []).length);
     setActiveTab('custom');
-  }, [sp.customSections.length]);
+  }, []);
 
   const updateCustomSection = useCallback((index: number, field: 'title' | 'content', value: string) => {
     setSp((prev) => ({
@@ -172,14 +171,14 @@ export function PersonaPromptEditor() {
   }, []);
 
   const removeCustomSection = useCallback((index: number) => {
-    setSp((prev) => ({
-      ...prev,
-      customSections: prev.customSections.filter((_, i) => i !== index),
-    }));
-    if (selectedCustomIndex >= (sp.customSections.length - 1)) {
-      setSelectedCustomIndex(Math.max(0, sp.customSections.length - 2));
-    }
-  }, [selectedCustomIndex, sp.customSections.length]);
+    setSp((prev) => {
+      const newSections = prev.customSections.filter((_, i) => i !== index);
+      setSelectedCustomIndex((prevIdx) =>
+        prevIdx >= newSections.length ? Math.max(0, newSections.length - 1) : prevIdx,
+      );
+      return { ...prev, customSections: newSections };
+    });
+  }, []);
 
   // Build sidebar indicator state
   const sectionFilled = useMemo(() => ({

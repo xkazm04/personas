@@ -26,6 +26,7 @@ pub async fn start_scheduler(
         app,
         state.db.clone(),
         state.engine.clone(),
+        state.rate_limiter.clone(),
     );
 
     Ok(state.scheduler.stats())

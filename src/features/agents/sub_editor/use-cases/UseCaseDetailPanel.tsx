@@ -1,8 +1,8 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { Cpu, Bell, ChevronDown, Check, Play, Square, Loader2, ArrowRight, Hash, Send, Mail } from 'lucide-react';
+import { Cpu, Bell, ChevronDown, Check, Play, Square, Loader2, ArrowRight, Hash, Send, Mail, Link2 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useEditorDirty } from '@/features/agents/sub_editor/EditorDocument';
-import { getUseCaseById, updateUseCaseInContext } from '@/features/agents/sub_editor/use-cases/useCaseHelpers';
+import { getUseCaseById, updateUseCaseInContext, applyDesignContextMutation } from '@/features/agents/sub_editor/use-cases/useCaseHelpers';
 import { Listbox } from '@/features/shared/components/Listbox';
 import type { UseCaseItem } from '@/features/shared/components/UseCasesList';
 import type { NotificationChannel, NotificationChannelType, ModelProfile, ModelProvider } from '@/lib/types/frontendTypes';
@@ -36,6 +36,9 @@ const MODEL_OPTIONS: ModelOption[] = [
     base_url: OLLAMA_CLOUD_BASE_URL,
   })),
 ];
+
+/** Override-only model options (no __default__ entry) — used for grouped dropdown. */
+const OVERRIDE_OPTIONS = MODEL_OPTIONS.filter((o) => o.id !== '__default__');
 
 function profileToOptionId(mp: ModelProfile | undefined): string {
   if (!mp) return '__default__';
@@ -89,7 +92,6 @@ interface UseCaseDetailPanelProps {
 
 export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, connectorDefinitions: _connectorDefinitions }: UseCaseDetailPanelProps) {
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
   const isTestRunning = usePersonaStore((s) => s.isTestRunning);
   const testRunProgress = usePersonaStore((s) => s.testRunProgress);
   const startTest = usePersonaStore((s) => s.startTest);
@@ -98,21 +100,31 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
 
   const useCase = getUseCaseById(selectedPersona?.design_context, useCaseId);
   const [isDirty, setIsDirty] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  // Persist changes to design_context
+  // Persist changes to design_context (serialized to prevent read-modify-write races).
+  // Accepts either a static partial or a function that receives the latest use case
+  // state — use the functional form for derived updates (e.g. channel toggles) to
+  // avoid stale-closure data loss.
   const handleUpdate = useCallback(
-    async (partial: Partial<UseCaseItem>) => {
+    async (update: Partial<UseCaseItem> | ((uc: UseCaseItem) => Partial<UseCaseItem>)) => {
       if (!selectedPersona) return;
-      const newContext = updateUseCaseInContext(
-        selectedPersona.design_context,
-        useCaseId,
-        (uc) => ({ ...uc, ...partial }),
-      );
       setIsDirty(true);
-      await applyPersonaOp(selectedPersona.id, { kind: 'UpdateDesignContext', design_context: newContext });
-      setIsDirty(false);
+      setSaveError(null);
+      try {
+        await applyDesignContextMutation(selectedPersona.id, (ctx) =>
+          updateUseCaseInContext(ctx, useCaseId, (uc) => {
+            const partial = typeof update === 'function' ? update(uc) : update;
+            return { ...uc, ...partial };
+          }),
+        );
+        setIsDirty(false);
+      } catch (error) {
+        console.error('Failed to update use case:', error);
+        setSaveError(error instanceof Error ? error.message : 'Failed to save changes');
+      }
     },
-    [selectedPersona, useCaseId, applyPersonaOp],
+    [selectedPersona, useCaseId],
   );
 
   // Register dirty state with editor context
@@ -121,7 +133,7 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
   const stableSave = useCallback(async () => { await saveRef.current(); }, []);
   useEditorDirty('use-cases', isDirty, stableSave);
 
-  useEffect(() => { setIsDirty(false); }, [selectedPersona?.id]);
+  useEffect(() => { setIsDirty(false); setSaveError(null); }, [selectedPersona?.id]);
 
   // ── Model resolution ────────────────────────────────────────────
   const resolvedProfile = useMemo<ModelProfile>(() => {
@@ -143,10 +155,12 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
   }, [selectedPersona, modelConfig, useCaseId, startTest]);
 
   const handleCancelTest = useCallback(async () => {
-    if (testRunProgress) {
-      await cancelTest(testRunProgress.runId ?? '');
+    if (testRunProgress?.runId) {
+      await cancelTest(testRunProgress.runId);
     }
   }, [testRunProgress, cancelTest]);
+
+  const canCancel = !!testRunProgress?.runId;
 
   if (!useCase) {
     return (
@@ -158,8 +172,19 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
 
   const channels = useCase.notification_channels ?? [];
   const hasOverride = !!useCase.model_override;
-  const modelLabel = hasOverride ? profileToLabel(useCase.model_override) : 'Default';
   const hasPrompt = !!selectedPersona?.structured_prompt || !!selectedPersona?.system_prompt;
+
+  // Resolve persona default model label for display
+  const personaDefaultLabel = useMemo(() => {
+    if (!selectedPersona?.model_profile) return 'Sonnet';
+    try {
+      return profileToLabel(JSON.parse(selectedPersona.model_profile) as ModelProfile);
+    } catch {
+      return 'Sonnet';
+    }
+  }, [selectedPersona?.model_profile]);
+
+  const modelLabel = hasOverride ? profileToLabel(useCase.model_override) : personaDefaultLabel;
 
   const handleModelSelect = (opt: ModelOption) => {
     if (opt.id === '__default__') {
@@ -175,24 +200,26 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
   };
 
   const handleChannelToggle = (type: NotificationChannelType) => {
-    const existing = channels.find((c) => c.type === type);
-    let next: NotificationChannel[];
-    if (existing) {
-      next = channels.filter((c) => c.type !== type);
-    } else {
-      next = [...channels, { type, config: {}, enabled: true }];
-    }
-    handleUpdate({ notification_channels: next.length > 0 ? next : undefined });
+    // Functional updater reads channels from the latest store state, preventing
+    // stale-closure data loss when the user toggles multiple channels rapidly.
+    handleUpdate((uc) => {
+      const current = uc.notification_channels ?? [];
+      const exists = current.some((c) => c.type === type);
+      const next = exists
+        ? current.filter((c) => c.type !== type)
+        : [...current, { type, config: {}, enabled: true }];
+      return { notification_channels: next.length > 0 ? next : undefined };
+    });
   };
 
   return (
     <div className="flex items-center gap-2.5 flex-wrap">
-      {/* Model dropdown */}
+      {/* Model dropdown with provenance badge */}
       <Listbox
         ariaLabel="Select model"
         itemCount={MODEL_OPTIONS.length}
         onSelectFocused={(index) => handleModelSelect(MODEL_OPTIONS[index]!)}
-        className="min-w-[150px]"
+        className="min-w-[180px]"
         renderTrigger={({ isOpen, toggle }) => (
           <button
             type="button"
@@ -200,20 +227,59 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
             aria-expanded={isOpen}
             className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm font-medium border transition-all w-full ${
               hasOverride
-                ? 'bg-primary/10 border-primary/25 text-primary'
+                ? 'bg-amber-500/8 border-amber-500/20 text-foreground/90'
                 : 'bg-secondary/40 border-primary/10 text-muted-foreground/80 hover:border-primary/20'
             }`}
           >
             <Cpu className="w-3.5 h-3.5 flex-shrink-0" />
             <span className="flex-1 text-left truncate">{modelLabel}</span>
+            {/* Provenance badge */}
+            {hasOverride ? (
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/20 flex-shrink-0">
+                Override
+              </span>
+            ) : (
+              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-secondary/50 text-muted-foreground/60 border border-primary/8 flex-shrink-0 flex items-center gap-0.5">
+                <Link2 className="w-2.5 h-2.5" />
+                Inherited
+              </span>
+            )}
             <ChevronDown className={`w-3 h-3 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
           </button>
         )}
       >
         {({ close, focusIndex }) => (
-          <div className="py-1 max-h-48 overflow-y-auto">
-            {MODEL_OPTIONS.map((opt, i) => {
-              const isActive = opt.id === '__default__' ? !hasOverride : (hasOverride && profileToOptionId(useCase.model_override) === opt.id);
+          <div className="py-1 max-h-56 overflow-y-auto">
+            {/* Persona Default group */}
+            <div className="px-3 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">
+              Persona Default
+            </div>
+            <button
+              role="option"
+              aria-selected={!hasOverride}
+              onClick={() => { handleModelSelect(MODEL_OPTIONS[0]!); close(); }}
+              className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors ${
+                focusIndex === 0 ? 'bg-secondary/60' : 'hover:bg-secondary/40'
+              } ${!hasOverride ? 'text-primary' : 'text-foreground/80'}`}
+            >
+              <Link2 className="w-3 h-3 flex-shrink-0 text-muted-foreground/50" />
+              <span className="flex-1 text-left">
+                Use persona default
+                <span className="text-muted-foreground/50 ml-1.5">({personaDefaultLabel})</span>
+              </span>
+              {!hasOverride && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
+            </button>
+
+            {/* Divider */}
+            <div className="my-1 border-t border-primary/8" />
+
+            {/* Override options group */}
+            <div className="px-3 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-amber-400/50">
+              Override
+            </div>
+            {OVERRIDE_OPTIONS.map((opt, i) => {
+              const globalIndex = i + 1; // offset by 1 for the __default__ entry
+              const isActive = hasOverride && profileToOptionId(useCase.model_override) === opt.id;
               return (
                 <button
                   key={opt.id}
@@ -221,11 +287,11 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
                   aria-selected={isActive}
                   onClick={() => { handleModelSelect(opt); close(); }}
                   className={`flex items-center gap-2 w-full px-3 py-1.5 text-sm transition-colors ${
-                    focusIndex === i ? 'bg-secondary/60' : 'hover:bg-secondary/40'
-                  } ${isActive ? 'text-primary' : 'text-foreground/80'}`}
+                    focusIndex === globalIndex ? 'bg-secondary/60' : 'hover:bg-secondary/40'
+                  } ${isActive ? 'text-amber-400' : 'text-foreground/80'}`}
                 >
                   <span className="flex-1 text-left">{opt.label}</span>
-                  {isActive && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
+                  {isActive && <Check className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />}
                 </button>
               );
             })}
@@ -282,7 +348,9 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
       {isTestRunning ? (
         <button
           onClick={handleCancelTest}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors"
+          disabled={!canCancel}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          title={!canCancel ? 'Waiting for test to start...' : 'Stop test'}
         >
           <Square className="w-3.5 h-3.5" /> Stop
         </button>
@@ -308,6 +376,17 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
                 ? 'Testing...'
                 : testRunProgress.phase}
           </span>
+        </span>
+      )}
+
+      {/* Save error indicator */}
+      {saveError && (
+        <span
+          className="text-xs text-red-400/80 cursor-pointer hover:text-red-400 transition-colors"
+          title={saveError}
+          onClick={() => setSaveError(null)}
+        >
+          Save failed
         </span>
       )}
 

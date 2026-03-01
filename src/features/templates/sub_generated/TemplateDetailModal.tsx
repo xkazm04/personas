@@ -9,6 +9,7 @@ import {
   AlertTriangle,
   Clock,
   Lightbulb,
+  Play,
 } from 'lucide-react';
 import { PromptTabsPreview } from '@/features/shared/components/PromptTabsPreview';
 import { DesignConnectorGrid } from '@/features/shared/components/DesignConnectorGrid';
@@ -34,6 +35,7 @@ interface TemplateDetailModalProps {
   onAdopt: (review: PersonaDesignReview) => void;
   onDelete: (id: string) => void;
   onViewFlows: (review: PersonaDesignReview) => void;
+  onTryIt: (review: PersonaDesignReview) => void;
 }
 
 export function TemplateDetailModal({
@@ -43,6 +45,7 @@ export function TemplateDetailModal({
   onAdopt,
   onDelete,
   onViewFlows,
+  onTryIt,
 }: TemplateDetailModalProps) {
   const [activeTab, setActiveTab] = useState<DetailTab>('overview');
 
@@ -86,6 +89,12 @@ export function TemplateDetailModal({
                 {statusBadge.label}
               </span>
               <DimensionRadial designResult={designResult} />
+              {review.adoption_count > 0 && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-emerald-500/10 border border-emerald-500/15 text-emerald-400/70">
+                  <Download className="w-3 h-3" />
+                  {review.adoption_count} adopted
+                </span>
+              )}
               {review.had_references && (
                 <span className="text-xs text-violet-400/50 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-violet-400/40" />
@@ -158,6 +167,18 @@ export function TemplateDetailModal({
               <Download className="w-4 h-4" />
               Adopt as Persona
             </button>
+            {designResult && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onTryIt(review);
+                }}
+                className="px-4 py-2 text-sm rounded-xl bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center gap-2"
+              >
+                <Play className="w-4 h-4" />
+                Try It
+              </button>
+            )}
           </div>
           <button
             onClick={() => {

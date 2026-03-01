@@ -94,10 +94,9 @@ export function CredentialTemplateForm({
     }
   };
 
-  const hasHealthcheckConfig = selectedConnector.healthcheck_config != null;
   const healthcheckPassed = healthcheckResult?.success === true;
 
-  const requiresHealthcheck = hasHealthcheckConfig && !isGoogleTemplate;
+  const requiresHealthcheck = onHealthcheck != null && !isGoogleTemplate;
   const saveDisabled = isGoogleTemplate || (requiresHealthcheck && !healthcheckPassed);
   const saveDisabledReason = isGoogleTemplate
     ? 'Use Authorize with Google to create this credential.'

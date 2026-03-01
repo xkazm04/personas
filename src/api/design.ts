@@ -26,6 +26,9 @@ export const testDesignFeasibility = (designResult: string) =>
 export const cancelDesignAnalysis = () =>
   invoke<void>("cancel_design_analysis");
 
+export const compileFromIntent = (personaId: string, intent: string, designId?: string) =>
+  invoke<DesignStartResult>("compile_from_intent", { personaId, intent, designId: designId ?? null });
+
 // ============================================================================
 // Design Conversations
 // ============================================================================

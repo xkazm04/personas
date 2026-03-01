@@ -44,6 +44,9 @@ export interface OAuthPollingState<TStartArgs extends unknown[]> {
  * - Polling the session every 1500ms until success/error
  * - Managing isAuthorizing/completedAt/message/initialValues state
  * - Cleanup on unmount
+ *
+ * Uses an AbortController to ensure only one polling loop runs per session.
+ * Guards startConsent against concurrent re-entry via a ref.
  */
 export function useOAuthPolling<
   TStartArgs extends unknown[],
@@ -61,17 +64,30 @@ export function useOAuthPolling<
   const configRef = useRef(config);
   configRef.current = config;
 
+  // Ref-based guard so the stable startConsent callback sees current authorizing state
+  const isAuthorizingRef = useRef(false);
+
+  // AbortController for the current polling loop — aborted when a new session
+  // starts or on unmount so only one loop ever runs at a time.
+  const abortRef = useRef<AbortController | null>(null);
+
   // Poll for session completion
   useEffect(() => {
     if (!sessionId) return;
 
-    let cancelled = false;
+    // Abort any previous polling loop before starting a new one
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     let timer: number | null = null;
 
     const poll = async () => {
+      if (controller.signal.aborted) return;
+
       try {
         const result = await configRef.current.pollFn(sessionId);
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
 
         if (result.status === 'pending') {
           timer = window.setTimeout(poll, 1500);
@@ -80,6 +96,7 @@ export function useOAuthPolling<
 
         setSessionId(null);
         setIsAuthorizing(false);
+        isAuthorizingRef.current = false;
 
         if (result.status === 'success') {
           setInitialValues((prev) => configRef.current.extractValues(result, prev));
@@ -96,9 +113,10 @@ export function useOAuthPolling<
           message: result.error || `${configRef.current.label} authorization failed. Please try again.`,
         });
       } catch (err) {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         setSessionId(null);
         setIsAuthorizing(false);
+        isAuthorizingRef.current = false;
         setMessage({
           success: false,
           message: err instanceof Error ? err.message : 'Failed to check OAuth status.',
@@ -109,13 +127,21 @@ export function useOAuthPolling<
     poll();
 
     return () => {
-      cancelled = true;
+      controller.abort();
       if (timer) window.clearTimeout(timer);
     };
   }, [sessionId]);
 
   const startConsent = useCallback((...args: TStartArgs) => {
+    // Prevent concurrent re-entry (e.g. double-click). The ref is used instead
+    // of the state variable because this callback has stable identity ([] deps).
+    if (isAuthorizingRef.current) return;
+    isAuthorizingRef.current = true;
+
     const { startFn, label, startTimeoutMs = 12000 } = configRef.current;
+
+    // Abort any existing poll from a previous session
+    abortRef.current?.abort();
 
     setIsAuthorizing(true);
     setCompletedAt(null);
@@ -163,6 +189,7 @@ export function useOAuthPolling<
       .catch((err) => {
         setSessionId(null);
         setIsAuthorizing(false);
+        isAuthorizingRef.current = false;
         const detail = err instanceof Error ? err.message : typeof err === 'string' ? err : 'unknown error';
         setMessage({
           success: false,
@@ -172,6 +199,8 @@ export function useOAuthPolling<
   }, []);
 
   const reset = useCallback(() => {
+    abortRef.current?.abort();
+    isAuthorizingRef.current = false;
     setInitialValues({});
     setSessionId(null);
     setIsAuthorizing(false);

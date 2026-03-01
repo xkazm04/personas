@@ -2,7 +2,7 @@
   "id": "sheets-e-commerce-command-center",
   "name": "Sheets E-Commerce Command Center",
   "description": "Monitors Shopify for new orders, low inventory, and refund requests. Logs all orders to Google Sheets, sends Slack alerts for high-value orders and stock warnings, and generates daily sales digests.",
-  "icon": "TrendingUp",
+  "icon": "ShoppingCart",
   "color": "#6366F1",
   "category": [
     "sales"
@@ -124,7 +124,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://{store}.myshopify.com/admin/api/2024-01"
+        "api_base_url": "https://{store}.myshopify.com/admin/api/2024-01",
+        "role": "e_commerce",
+        "category": "e-commerce"
       },
       {
         "name": "slack",
@@ -145,7 +147,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       },
       {
         "name": "google_workspace",
@@ -184,7 +188,9 @@
         "related_triggers": [
           1
         ],
-        "api_base_url": "https://sheets.googleapis.com/v4/spreadsheets"
+        "api_base_url": "https://sheets.googleapis.com/v4/spreadsheets",
+        "role": "productivity_suite",
+        "category": "productivity"
       }
     ],
     "suggested_notification_channels": [

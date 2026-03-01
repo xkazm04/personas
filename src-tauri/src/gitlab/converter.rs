@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 use crate::db::models::{Persona, PersonaToolDefinition};
 use crate::db::repos::resources::{connectors as connector_repo, credentials as cred_repo};
@@ -64,24 +64,17 @@ pub fn resolve_credentials_for_gitlab(
             };
 
             if let Some(cred) = creds.first() {
-                let plaintext = if engine::crypto::is_plaintext(&cred.iv) {
-                    cred.encrypted_data.clone()
-                } else {
-                    match engine::crypto::decrypt_from_db(&cred.encrypted_data, &cred.iv) {
-                        Ok(pt) => pt,
-                        Err(e) => {
-                            tracing::error!(
-                                "Failed to decrypt credential '{}' for GitLab provisioning: {}",
-                                cred.name,
-                                e
-                            );
-                            continue;
-                        }
+                let fields = match cred_repo::get_decrypted_fields(pool, cred) {
+                    Ok(f) => f,
+                    Err(e) => {
+                        tracing::error!(
+                            "Failed to decrypt credential '{}' for GitLab provisioning: {}",
+                            cred.name,
+                            e
+                        );
+                        continue;
                     }
                 };
-
-                let fields: HashMap<String, String> =
-                    serde_json::from_str(&plaintext).unwrap_or_default();
                 let prefix = connector.name.to_uppercase().replace('-', "_");
 
                 for (field_key, field_val) in &fields {
@@ -203,7 +196,7 @@ pub fn persona_to_agents_md(
         for tool in tools {
             md.push_str(&format!("- **{}**: {}\n", tool.name, tool.description));
         }
-        md.push_str("\n");
+        md.push('\n');
     }
 
     md.push_str(&format!(

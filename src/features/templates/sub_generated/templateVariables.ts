@@ -42,7 +42,8 @@ function replaceVars(text: string, values: Record<string, string>): string {
  * Substitute {{key}} placeholders in all text fields of a DesignAnalysisResult.
  * Returns a NEW DesignAnalysisResult with variables replaced.
  */
-/** Filter a DesignAnalysisResult to only include user-selected entities */
+/** Filter a DesignAnalysisResult to only include user-selected entities.
+ *  When `connectorSwaps` is provided, swapped connectors are included and renamed. */
 export function filterDesignResult(
   design: DesignAnalysisResult,
   selections: {
@@ -52,12 +53,37 @@ export function filterDesignResult(
     selectedChannelIndices: Set<number>;
     selectedEventIndices: Set<number>;
   },
+  connectorSwaps?: Record<string, string>,
 ): DesignAnalysisResult {
+  // Build a reverse-swap map (replacement → original) so we can keep connectors
+  // whose original name was swapped out but whose replacement is now selected.
+  const reverseSwaps: Record<string, string> = {};
+  if (connectorSwaps) {
+    for (const [original, replacement] of Object.entries(connectorSwaps)) {
+      reverseSwaps[replacement] = original;
+    }
+  }
+
+  let filteredConnectors = design.suggested_connectors?.filter((c) => {
+    // Keep if directly selected, or if its swap replacement is selected
+    if (selections.selectedConnectorNames.has(c.name)) return true;
+    const replacement = connectorSwaps?.[c.name];
+    return replacement ? selections.selectedConnectorNames.has(replacement) : false;
+  });
+
+  // Apply swaps: rename original connector to its replacement
+  if (connectorSwaps && Object.keys(connectorSwaps).length > 0 && filteredConnectors) {
+    filteredConnectors = filteredConnectors.map((c) => {
+      const replacement = connectorSwaps[c.name];
+      return replacement ? { ...c, name: replacement } : c;
+    });
+  }
+
   return {
     ...design,
     suggested_tools: design.suggested_tools.filter((_, i) => selections.selectedToolIndices.has(i)),
     suggested_triggers: design.suggested_triggers.filter((_, i) => selections.selectedTriggerIndices.has(i)),
-    suggested_connectors: design.suggested_connectors?.filter((c) => selections.selectedConnectorNames.has(c.name)),
+    suggested_connectors: filteredConnectors,
     suggested_notification_channels: design.suggested_notification_channels?.filter((_, i) => selections.selectedChannelIndices.has(i)),
     suggested_event_subscriptions: design.suggested_event_subscriptions?.filter((_, i) => selections.selectedEventIndices.has(i)),
   };

@@ -4,7 +4,10 @@
   "description": "Generates and maintains technical documentation from source code analysis.",
   "icon": "FileText",
   "color": "#8b5cf6",
-  "category": ["documentation", "productivity"],
+  "category": [
+    "documentation",
+    "productivity"
+  ],
   "payload": {
     "structured_prompt": {
       "identity": "You are a technical writer who creates clear, comprehensive documentation from code analysis.",
@@ -14,7 +17,10 @@
       "errorHandling": "If source files are missing or unreadable, document what is available and note gaps.",
       "customSections": []
     },
-    "suggested_tools": ["file_read", "file_write"],
+    "suggested_tools": [
+      "file_read",
+      "file_write"
+    ],
     "suggested_triggers": [
       {
         "trigger_type": "manual",
@@ -23,6 +29,32 @@
       }
     ],
     "full_prompt_markdown": "# Documentation Writer\n\nGenerates technical docs from code.",
-    "summary": "Generates technical documentation from source code analysis."
-  }
+    "summary": "Generates technical documentation from source code analysis.",
+    "adoption_requirements": [
+      {
+        "key": "doc_format",
+        "label": "Documentation Format",
+        "description": "Output format for generated docs",
+        "type": "select",
+        "required": false,
+        "options": [
+          "Markdown",
+          "RST",
+          "HTML"
+        ],
+        "default_value": "Markdown",
+        "source": "connector"
+      },
+      {
+        "key": "output_dir",
+        "label": "Output Directory",
+        "description": "Where to write documentation files",
+        "type": "text",
+        "required": false,
+        "default_value": "./docs",
+        "source": "connector"
+      }
+    ]
+  },
+  "featured": true
 }

@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use axum::{
     body::Bytes,
-    extract::{Path, State as AxumState},
+    extract::{DefaultBodyLimit, Path, State as AxumState},
     http::{HeaderMap, StatusCode},
     response::IntoResponse,
     routing::{get, post},
@@ -18,6 +18,7 @@ use crate::db::models::CreatePersonaEventInput;
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::resources::triggers as trigger_repo;
 use crate::db::DbPool;
+use crate::engine::rate_limiter::{RateLimiter, WEBHOOK_TRIGGER_MAX, WEBHOOK_TRIGGER_WINDOW};
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -25,6 +26,7 @@ type HmacSha256 = Hmac<Sha256>;
 #[derive(Clone)]
 pub struct WebhookState {
     pub pool: DbPool,
+    pub rate_limiter: Arc<RateLimiter>,
 }
 
 /// Start the webhook HTTP server on port 9420.
@@ -32,14 +34,19 @@ pub struct WebhookState {
 /// Returns a shutdown sender — drop it (or send) to stop the server.
 pub async fn start_webhook_server(
     pool: DbPool,
+    rate_limiter: Arc<RateLimiter>,
     mut shutdown_rx: watch::Receiver<bool>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let state = WebhookState { pool };
+    let state = WebhookState { pool, rate_limiter };
+
+    // 1 MB body limit to prevent OOM DoS via oversized payloads
+    const MAX_BODY_BYTES: usize = 1024 * 1024;
 
     let app = Router::new()
         .route("/webhook/{trigger_id}", post(handle_webhook))
         .route("/webhook/{trigger_id}", get(webhook_info))
         .route("/health", get(health))
+        .layer(DefaultBodyLimit::max(MAX_BODY_BYTES))
         .with_state(Arc::new(state));
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 9420));
@@ -148,16 +155,40 @@ async fn handle_webhook(
         );
     }
 
-    // 3. Extract webhook secret from config and validate HMAC if configured
-    let config: serde_json::Value = trigger
-        .config
-        .as_deref()
-        .and_then(|c| serde_json::from_str(c).ok())
-        .unwrap_or(serde_json::Value::Null);
+    // 2b. Rate limit: max WEBHOOK_TRIGGER_MAX calls per trigger per minute
+    let rate_key = format!("webhook:{}", trigger_id);
+    if let Err(retry_after) = state.rate_limiter.check(&rate_key, WEBHOOK_TRIGGER_MAX, WEBHOOK_TRIGGER_WINDOW) {
+        tracing::warn!(
+            trigger_id = %trigger_id,
+            retry_after = retry_after,
+            "Webhook rate limited",
+        );
+        return (
+            StatusCode::TOO_MANY_REQUESTS,
+            Json(WebhookResponse {
+                accepted: false,
+                event_id: None,
+                error: Some(format!(
+                    "Rate limited: max {} webhook calls/minute per trigger. Retry after {}s",
+                    WEBHOOK_TRIGGER_MAX, retry_after
+                )),
+            }),
+        );
+    }
 
-    if let Some(secret) = config.get("webhook_secret").and_then(|s| s.as_str()) {
-        if !secret.is_empty() {
-            // Look for signature in common headers
+    // 3. Parse config once — typed access replaces manual JSON extraction
+    let cfg = trigger.parse_config();
+    let (webhook_secret, cfg_event_type) = match &cfg {
+        crate::db::models::TriggerConfig::Webhook {
+            webhook_secret, event_type, ..
+        } => (webhook_secret.clone(), event_type.clone()),
+        _ => (None, None),
+    };
+
+    // HMAC validation is mandatory. Webhook triggers must have a non-empty
+    // secret (enforced at creation time). Reject unsigned or secretless requests.
+    match webhook_secret {
+        Some(ref secret) if !secret.is_empty() => {
             let signature = headers
                 .get("x-hub-signature-256") // GitHub
                 .or_else(|| headers.get("x-signature-256")) // Generic
@@ -191,6 +222,22 @@ async fn handle_webhook(
                 }
             }
         }
+        _ => {
+            // No secret configured or empty — reject as misconfigured.
+            // Webhook triggers must have a non-empty secret.
+            tracing::warn!(
+                trigger_id = %trigger_id,
+                "Webhook trigger has no HMAC secret configured — rejecting request",
+            );
+            return (
+                StatusCode::FORBIDDEN,
+                Json(WebhookResponse {
+                    accepted: false,
+                    event_id: None,
+                    error: Some("Webhook trigger has no HMAC secret configured".into()),
+                }),
+            );
+        }
     }
 
     // 4. Parse body as JSON payload (or use raw string)
@@ -207,12 +254,8 @@ async fn handle_webhook(
         }
     };
 
-    // 5. Extract event_type from config or default
-    let event_type = config
-        .get("event_type")
-        .and_then(|e| e.as_str())
-        .unwrap_or("webhook_received")
-        .to_string();
+    // 5. Extract event_type from typed config or default
+    let event_type = cfg_event_type.unwrap_or_else(|| "webhook_received".to_string());
 
     // 6. Publish event to the event bus
     match event_repo::publish(

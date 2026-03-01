@@ -2,6 +2,7 @@ pub mod background;
 pub mod bus;
 pub mod chain;
 pub mod compiler;
+pub mod connector_strategy;
 pub mod credential_design;
 pub mod dispatch;
 pub mod credential_negotiator;
@@ -9,25 +10,32 @@ pub mod cron;
 pub mod crypto;
 pub mod design;
 pub mod eval;
+pub mod failover;
 pub mod google_oauth;
 pub mod healing;
 pub mod healthcheck;
+pub mod intent_compiler;
+pub mod knowledge;
 pub mod logger;
 pub mod optimizer;
 pub mod parser;
 pub mod pipeline;
 pub mod polling;
 pub mod topology;
+pub mod topology_graph;
 pub mod prompt;
 pub mod provider;
 pub mod queue;
+pub mod rate_limiter;
 pub mod rotation;
 pub mod runner;
 pub mod scheduler;
 pub mod subscription;
 pub mod test_runner;
+pub mod trace;
 pub mod types;
 pub mod webhook;
+pub mod platform_rules;
 
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -46,62 +54,122 @@ use crate::db::repos::resources::tools as tool_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
 
-use self::types::{ExecutionResult, ExecutionState, HealingEventPayload};
+use self::types::{ExecutionResult, ExecutionState, HealingEventPayload, QueueStatusEvent};
 
-use self::queue::ConcurrencyTracker;
+use self::queue::{AdmitResult, ConcurrencyTracker, ExecutionPriority};
 
-/// Try to write an execution status update to the DB. On failure, log at error
-/// level, retry once after 1 second, and if still failing emit a healing event
-/// so the user knows their execution result was lost.
-pub(crate) fn persist_status_update(
+/// Maximum retry attempts for DB status persistence.
+const PERSIST_MAX_RETRIES: u32 = 3;
+/// Initial backoff delay (doubles each retry: 200ms → 400ms → 800ms).
+const PERSIST_INITIAL_BACKOFF_MS: u64 = 200;
+
+/// Try to write an execution status update to the DB with exponential backoff.
+///
+/// On each failure, waits with `tokio::time::sleep` (non-blocking) and retries.
+/// After `PERSIST_MAX_RETRIES` failures, force-marks the execution as error
+/// (dead-letter) so it doesn't stay stuck in "running" forever, and emits a
+/// healing event so the user knows the original result was lost.
+pub(crate) async fn persist_status_update(
     pool: &DbPool,
     app: Option<&AppHandle>,
     exec_id: &str,
     update: UpdateExecutionStatus,
 ) {
-    if let Err(e) = exec_repo::update_status(pool, exec_id, update.clone()) {
-        tracing::error!(
-            execution_id = %exec_id,
-            error = %e,
-            "DB status update failed, retrying in 1s",
-        );
+    let mut last_err = None;
+    let mut backoff_ms = PERSIST_INITIAL_BACKOFF_MS;
 
-        std::thread::sleep(std::time::Duration::from_secs(1));
-
-        if let Err(e2) = exec_repo::update_status(pool, exec_id, update) {
-            tracing::error!(
-                execution_id = %exec_id,
-                error = %e2,
-                "DB status update failed on retry — execution result lost",
-            );
-
-            if let Some(app) = app {
-                let _ = app.emit(
-                    "healing-event",
-                    HealingEventPayload {
-                        issue_id: String::new(),
-                        persona_id: String::new(),
-                        execution_id: exec_id.into(),
-                        title: "Execution result lost: DB write failed".into(),
-                        action: "issue_created".into(),
-                        auto_fixed: false,
-                        severity: "critical".into(),
-                        suggested_fix: Some(format!(
-                            "Status update for execution {} could not be saved: {}",
-                            exec_id, e2,
-                        )),
-                        persona_name: String::new(),
-                    },
+    for attempt in 0..=PERSIST_MAX_RETRIES {
+        match exec_repo::update_status(pool, exec_id, update.clone()) {
+            Ok(()) => return,
+            Err(e) => {
+                tracing::error!(
+                    execution_id = %exec_id,
+                    attempt = attempt + 1,
+                    max_attempts = PERSIST_MAX_RETRIES + 1,
+                    error = %e,
+                    "DB status update failed",
                 );
+                last_err = Some(e);
+
+                if attempt < PERSIST_MAX_RETRIES {
+                    tokio::time::sleep(std::time::Duration::from_millis(backoff_ms)).await;
+                    backoff_ms *= 2;
+                }
             }
         }
+    }
+
+    // Dead-letter: all retries exhausted. Force-mark as error so the
+    // execution doesn't stay stuck in "running" state forever.
+    let err_msg = last_err
+        .as_ref()
+        .map(|e| format!("Status persist failed after {} retries: {}", PERSIST_MAX_RETRIES + 1, e))
+        .unwrap_or_else(|| "Status persist failed".into());
+
+    // Only attempt dead-letter if the original update wasn't already an error/failed state,
+    // to avoid infinite recursion.
+    if !matches!(update.status, ExecutionState::Failed) {
+        let dead_letter = exec_repo::update_status(
+            pool,
+            exec_id,
+            UpdateExecutionStatus {
+                status: ExecutionState::Failed,
+                error_message: Some(err_msg.clone()),
+                // Preserve any metrics from the original update
+                duration_ms: update.duration_ms,
+                input_tokens: update.input_tokens,
+                output_tokens: update.output_tokens,
+                cost_usd: update.cost_usd,
+                ..Default::default()
+            },
+        );
+        if let Err(e) = dead_letter {
+            tracing::error!(
+                execution_id = %exec_id,
+                error = %e,
+                "Dead-letter write also failed — execution stuck in running state",
+            );
+        }
+    }
+
+    if let Some(app) = app {
+        let _ = app.emit(
+            "healing-event",
+            HealingEventPayload {
+                issue_id: String::new(),
+                persona_id: String::new(),
+                execution_id: exec_id.into(),
+                title: "Execution result lost: DB write failed".into(),
+                action: "issue_created".into(),
+                auto_fixed: false,
+                severity: "critical".into(),
+                suggested_fix: Some(err_msg),
+                persona_name: String::new(),
+                description: None,
+                strategy: None,
+                backoff_seconds: None,
+                retry_number: None,
+                max_retries: None,
+            },
+        );
     }
 }
 
 /// Maximum consecutive failures before the circuit breaker trips.
 const CIRCUIT_BREAKER_THRESHOLD: u32 = 5;
-/// Maximum number of retries for a single execution chain.
-const MAX_RETRY_COUNT: i64 = 3;
+
+/// Saved execution context for queued executions. When a running slot opens,
+/// the engine uses this context to start the promoted execution.
+struct QueuedExecutionContext {
+    app: AppHandle,
+    pool: DbPool,
+    #[allow(dead_code)]
+    execution_id: String,
+    persona: Persona,
+    tools: Vec<PersonaToolDefinition>,
+    input_data: Option<serde_json::Value>,
+    continuation: Option<types::Continuation>,
+}
 
 /// The top-level execution engine. Stored in AppState via Arc.
 pub struct ExecutionEngine {
@@ -116,6 +184,10 @@ pub struct ExecutionEngine {
     cancelled_flags: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
     /// Log directory
     log_dir: PathBuf,
+    /// Per-provider circuit breaker for failover.
+    pub(crate) circuit_breaker: Arc<failover::ProviderCircuitBreaker>,
+    /// Saved contexts for queued executions, keyed by execution_id.
+    queued_contexts: Arc<Mutex<HashMap<String, QueuedExecutionContext>>>,
 }
 
 impl ExecutionEngine {
@@ -126,7 +198,14 @@ impl ExecutionEngine {
             child_pids: Arc::new(Mutex::new(HashMap::new())),
             cancelled_flags: Arc::new(Mutex::new(HashMap::new())),
             log_dir,
+            circuit_breaker: Arc::new(failover::ProviderCircuitBreaker::new()),
+            queued_contexts: Arc::new(Mutex::new(HashMap::new())),
         }
+    }
+
+    /// Returns the log directory root used by the execution engine.
+    pub fn log_dir(&self) -> &std::path::Path {
+        &self.log_dir
     }
 
     /// Mark any executions left in running/queued state as failed.
@@ -142,9 +221,10 @@ impl ExecutionEngine {
             Ok(stale) => {
                 let count = stale.len();
                 for exec in &stale {
-                    persist_status_update(
+                    // Startup recovery uses a direct sync DB call — no async retry
+                    // needed because there is no contention during app init.
+                    let _ = exec_repo::update_status(
                         pool,
-                        None,
                         &exec.id,
                         UpdateExecutionStatus {
                             status: ExecutionState::Failed,
@@ -173,7 +253,12 @@ impl ExecutionEngine {
             .has_capacity(persona_id, max_concurrent)
     }
 
-    /// Start an execution in a background tokio task.
+    /// Start an execution in a background tokio task, or enqueue it if
+    /// the persona's concurrency limit is reached.
+    ///
+    /// Returns `Ok(())` for both immediate start and successful enqueue.
+    /// Returns `Err` only for backpressure rejection (queue full).
+    #[allow(clippy::too_many_arguments)]
     pub async fn start_execution(
         &self,
         app: AppHandle,
@@ -184,16 +269,135 @@ impl ExecutionEngine {
         input_data: Option<serde_json::Value>,
         continuation: Option<types::Continuation>,
     ) -> Result<(), AppError> {
-        // Atomically check capacity and register in tracker
-        {
+        self.start_execution_with_priority(
+            app,
+            pool,
+            execution_id,
+            persona,
+            tools,
+            input_data,
+            continuation,
+            ExecutionPriority::Normal,
+        )
+        .await
+    }
+
+    /// Start or enqueue an execution with an explicit priority level.
+    #[allow(clippy::too_many_arguments)]
+    pub async fn start_execution_with_priority(
+        &self,
+        app: AppHandle,
+        pool: DbPool,
+        execution_id: String,
+        persona: Persona,
+        tools: Vec<PersonaToolDefinition>,
+        input_data: Option<serde_json::Value>,
+        continuation: Option<types::Continuation>,
+        priority: ExecutionPriority,
+    ) -> Result<(), AppError> {
+        // Atomically try to run or enqueue
+        let admit_result = {
             let mut tracker = self.tracker.lock().await;
-            if !tracker.try_add_running(&persona.id, &execution_id, persona.max_concurrent) {
-                return Err(AppError::Validation(format!(
-                    "Persona '{}' has reached max concurrent executions ({})",
-                    persona.name, persona.max_concurrent
-                )));
+            tracker.admit(
+                &persona.id,
+                &execution_id,
+                persona.max_concurrent,
+                priority,
+            )
+        };
+
+        match admit_result {
+            AdmitResult::Running => {
+                // Slot available — spawn the execution task immediately
+                self.spawn_execution_task(
+                    app, pool, execution_id, persona, tools, input_data, continuation,
+                )
+                .await;
+                Ok(())
+            }
+            AdmitResult::Queued { position } => {
+                let queue_depth = self.tracker.lock().await.queue_depth(&persona.id);
+                tracing::info!(
+                    persona_id = %persona.id,
+                    execution_id = %execution_id,
+                    position = position,
+                    queue_depth = queue_depth,
+                    "Execution queued (position {})", position,
+                );
+                // Emit queue status event to frontend
+                let _ = app.emit(
+                    "queue-status",
+                    QueueStatusEvent {
+                        execution_id: execution_id.clone(),
+                        persona_id: persona.id.clone(),
+                        action: "queued".into(),
+                        position: Some(position),
+                        queue_depth,
+                    },
+                );
+                // Store the execution context for when a slot opens
+                self.queued_contexts.lock().await.insert(
+                    execution_id.clone(),
+                    QueuedExecutionContext {
+                        app,
+                        pool,
+                        execution_id,
+                        persona,
+                        tools,
+                        input_data,
+                        continuation,
+                    },
+                );
+                Ok(())
+            }
+            AdmitResult::QueueFull { max_depth } => {
+                tracing::warn!(
+                    persona_id = %persona.id,
+                    execution_id = %execution_id,
+                    max_depth = max_depth,
+                    "Execution rejected: queue full",
+                );
+                Err(AppError::Validation(format!(
+                    "Persona '{}' execution queue is full ({} queued, {} running). Try again later.",
+                    persona.name, max_depth, persona.max_concurrent
+                )))
             }
         }
+    }
+
+    /// Internal: spawn the actual execution task for an admitted execution.
+    #[allow(clippy::too_many_arguments)]
+    async fn spawn_execution_task(
+        &self,
+        app: AppHandle,
+        pool: DbPool,
+        execution_id: String,
+        persona: Persona,
+        tools: Vec<PersonaToolDefinition>,
+        input_data: Option<serde_json::Value>,
+        continuation: Option<types::Continuation>,
+    ) {
+        // Update status to running (may have been queued before)
+        persist_status_update(
+            &pool,
+            Some(&app),
+            &execution_id,
+            UpdateExecutionStatus {
+                status: ExecutionState::Running,
+                ..Default::default()
+            },
+        )
+        .await;
+        let _ = app.emit(
+            "execution-status",
+            types::ExecutionStatusEvent {
+                execution_id: execution_id.clone(),
+                status: ExecutionState::Running,
+                error: None,
+                duration_ms: None,
+                cost_usd: None,
+            },
+        );
 
         // Create cancellation flag for this execution
         let cancelled = Arc::new(AtomicBool::new(false));
@@ -205,20 +409,32 @@ impl ExecutionEngine {
         let exec_id = execution_id.clone();
         let persona_id = persona.id.clone();
         let persona_timeout_ms = persona.timeout_ms;
+        let persona_max_concurrent = persona.max_concurrent;
         let log_dir = self.log_dir.clone();
         let pool_clone = pool.clone();
 
         // Clone AppHandle so the healing hook can emit events after run_execution
         let app_for_healing = app.clone();
+        let app_for_drain = app.clone();
+        let pool_for_drain = pool.clone();
 
         // Clone Arcs for the spawned task
         let tracker = self.tracker.clone();
         let tasks = self.tasks.clone();
         let child_pids = self.child_pids.clone();
         let cancelled_flags = self.cancelled_flags.clone();
+        let circuit_breaker = self.circuit_breaker.clone();
+        let queued_contexts = self.queued_contexts.clone();
 
         // Clone log_dir for potential healing retries (log_dir is moved into run_execution)
         let log_dir_for_retry = log_dir.clone();
+
+        // Extract chain_trace_id from input_data if present (chain trigger payloads embed it)
+        let chain_trace_id = input_data
+            .as_ref()
+            .and_then(|v| v.get("_chain_trace_id"))
+            .and_then(|t| t.as_str())
+            .map(String::from);
 
         // Spawn background task
         let handle = tokio::spawn(async move {
@@ -233,15 +449,12 @@ impl ExecutionEngine {
                 child_pids.clone(),
                 cancelled.clone(),
                 continuation,
+                chain_trace_id,
+                circuit_breaker.clone(),
             )
             .await;
 
             if cancelled.load(Ordering::Acquire) {
-                // Cancelled: write accumulated metrics to DB so cost/token
-                // tracking remains accurate. cancel_execution already wrote a
-                // bare status='cancelled'; this overwrites the zero-valued
-                // fields with whatever the runner collected before the process
-                // was killed (COALESCE in the SQL keeps existing non-NULL values).
                 persist_status_update(
                     &pool_clone,
                     Some(&app_for_healing),
@@ -257,7 +470,8 @@ impl ExecutionEngine {
                         tool_steps: result.tool_steps.clone(),
                         ..Default::default()
                     },
-                );
+                )
+                .await;
             } else {
                 handle_execution_result(
                     &pool_clone,
@@ -270,7 +484,9 @@ impl ExecutionEngine {
                     child_pids.clone(),
                     cancelled_flags.clone(),
                     log_dir_for_retry.clone(),
-                );
+                    circuit_breaker,
+                )
+                .await;
             }
 
             // Clean up tracker and task handle (always, regardless of cancellation)
@@ -280,12 +496,22 @@ impl ExecutionEngine {
                 .remove_running(&persona_id, &exec_id);
             tasks.lock().await.remove(&exec_id);
             cancelled_flags.lock().await.remove(&exec_id);
+
+            // Drain queue: promote next waiting execution for this persona
+            drain_and_start_next(
+                tracker,
+                tasks.clone(),
+                queued_contexts,
+                persona_id,
+                persona_max_concurrent,
+                app_for_drain,
+                pool_for_drain,
+            )
+            .await;
         });
 
         // Store the task handle
         self.tasks.lock().await.insert(execution_id, handle);
-
-        Ok(())
     }
 
     /// Cancel a running execution.
@@ -300,6 +526,29 @@ impl ExecutionEngine {
         pool: &DbPool,
         persona_id: Option<&str>,
     ) -> bool {
+        // 0. Check if execution is queued (not yet running) — just remove from queue
+        if let Some(pid) = persona_id {
+            let was_queued = self.tracker.lock().await.remove_queued(pid, execution_id);
+            if was_queued {
+                // Remove saved context
+                self.queued_contexts.lock().await.remove(execution_id);
+                // Write cancelled status to DB
+                persist_status_update(
+                    pool,
+                    None,
+                    execution_id,
+                    UpdateExecutionStatus {
+                        status: ExecutionState::Cancelled,
+                        error_message: Some("Cancelled while queued".into()),
+                        ..Default::default()
+                    },
+                )
+                .await;
+                tracing::info!(execution_id = %execution_id, "Cancelled queued execution");
+                return true;
+            }
+        }
+
         // 1. Set cancellation flag — tells the spawned task to write
         //    status='cancelled' with metrics instead of completed/failed
         if let Some(flag) = self.cancelled_flags.lock().await.get(execution_id) {
@@ -307,9 +556,6 @@ impl ExecutionEngine {
         }
 
         // 2. Write bare cancelled status to DB as a safety net.
-        //    The spawned task will overwrite this with metrics data if it
-        //    finishes in time. COALESCE in SQL means a later update with
-        //    real values will replace these defaults.
         persist_status_update(
             pool,
             None,
@@ -318,19 +564,16 @@ impl ExecutionEngine {
                 status: ExecutionState::Cancelled,
                 ..Default::default()
             },
-        );
+        )
+        .await;
 
         // 3. Kill the child OS process to stop API credit consumption.
-        //    Once killed, run_execution will return quickly with whatever
-        //    metrics were accumulated so far.
         if let Some(pid) = self.child_pids.lock().await.remove(execution_id) {
             tracing::info!(execution_id = %execution_id, pid = pid, "Killing child process");
             kill_process(pid);
         }
 
         // 4. Give the spawned task up to 5 seconds to finish writing metrics.
-        //    The process is dead so the runner should return almost immediately;
-        //    this timeout is just a safety net for edge cases.
         if let Some(handle) = self.tasks.lock().await.remove(execution_id) {
             match tokio::time::timeout(
                 std::time::Duration::from_secs(5),
@@ -346,11 +589,18 @@ impl ExecutionEngine {
                         execution_id = %execution_id,
                         "Cancel: task did not finish within grace period, aborting",
                     );
-                    // Timeout expired — the task handle was consumed by the
-                    // timeout future so we can't abort it, but since the
-                    // child process is dead, the runner's stdout reader will
-                    // hit EOF soon and the task will complete on its own.
-                    // The bare cancelled status from step 2 is already in DB.
+                    // The task may have spawned a new child process during the
+                    // grace period (e.g. chain retry). Kill it before the
+                    // JoinHandle is dropped to prevent orphaned OS processes
+                    // that continue consuming LLM API credits.
+                    if let Some(pid) = self.child_pids.lock().await.remove(execution_id) {
+                        tracing::info!(
+                            execution_id = %execution_id,
+                            pid = pid,
+                            "Killing child process spawned during grace period",
+                        );
+                        kill_process(pid);
+                    }
                 }
             }
         }
@@ -416,7 +666,8 @@ impl ExecutionEngine {
                 status: ExecutionState::Cancelled,
                 ..Default::default()
             },
-        );
+        )
+        .await;
 
         // 3. Clean up tracker
         if let Some(pid) = persona_id {
@@ -457,6 +708,17 @@ impl ExecutionEngine {
         let current_retry_count = exec_repo::get_by_id(pool, exec_id)
             .map(|e| e.retry_count)
             .unwrap_or(0);
+
+        if current_retry_count >= healing::MAX_RETRY_COUNT {
+            tracing::warn!(
+                persona_id = %persona_id,
+                retry_count = current_retry_count,
+                max = healing::MAX_RETRY_COUNT,
+                "Healing analysis: retry count exhausted, skipping retry",
+            );
+            return;
+        }
+
         let original_exec_id = exec_repo::get_by_id(pool, exec_id)
             .ok()
             .and_then(|e| e.retry_of_execution_id)
@@ -484,6 +746,7 @@ impl ExecutionEngine {
                     self.child_pids.clone(),
                     self.cancelled_flags.clone(),
                     self.log_dir.clone(),
+                    self.circuit_breaker.clone(),
                 );
             }
             healing::HealingAction::RetryWithTimeout { new_timeout_ms } => {
@@ -505,6 +768,7 @@ impl ExecutionEngine {
                     self.child_pids.clone(),
                     self.cancelled_flags.clone(),
                     self.log_dir.clone(),
+                    self.circuit_breaker.clone(),
                 );
             }
             healing::HealingAction::CreateIssue => {}
@@ -534,13 +798,204 @@ pub(crate) fn kill_process(pid: u32) {
 }
 
 // =============================================================================
+// Queue drain: promote next waiting execution when a slot opens
+// =============================================================================
+
+/// After an execution finishes and its running slot is freed, check if there's
+/// a queued execution waiting for this persona and start it.
+///
+/// Takes owned types and returns a boxed Send future so the function can be
+/// awaited inside `tokio::spawn` blocks (which require Send futures).
+#[allow(clippy::too_many_arguments)]
+fn drain_and_start_next(
+    tracker: Arc<Mutex<ConcurrencyTracker>>,
+    tasks: Arc<Mutex<HashMap<String, tokio::task::JoinHandle<()>>>>,
+    queued_contexts: Arc<Mutex<HashMap<String, QueuedExecutionContext>>>,
+    persona_id: String,
+    max_concurrent: i32,
+    app: AppHandle,
+    pool: DbPool,
+) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>> {
+    Box::pin(async move {
+    let persona_id = persona_id.as_str();
+    // Try to promote the next queued execution
+    let next = {
+        let mut t = tracker.lock().await;
+        t.drain_next(persona_id, max_concurrent)
+    };
+
+    if let Some(queued) = next {
+        let exec_id = queued.execution_id.clone();
+        let exec_id_for_tasks = exec_id.clone();
+
+        // Emit promoted event
+        let queue_depth = tracker.lock().await.queue_depth(persona_id);
+        let _ = app.emit(
+            "queue-status",
+            QueueStatusEvent {
+                execution_id: exec_id.clone(),
+                persona_id: persona_id.to_string(),
+                action: "promoted".into(),
+                position: None,
+                queue_depth,
+            },
+        );
+
+        tracing::info!(
+            persona_id = %persona_id,
+            execution_id = %exec_id,
+            "Queue: promoted execution to running slot",
+        );
+
+        // Retrieve the saved context
+        let ctx = queued_contexts.lock().await.remove(&exec_id);
+        if let Some(ctx) = ctx {
+            // Update status to running in DB
+            persist_status_update(
+                &pool,
+                Some(&app),
+                &exec_id,
+                UpdateExecutionStatus {
+                    status: ExecutionState::Running,
+                    ..Default::default()
+                },
+            )
+            .await;
+            let _ = app.emit(
+                "execution-status",
+                types::ExecutionStatusEvent {
+                    execution_id: exec_id.clone(),
+                    status: ExecutionState::Running,
+                    error: None,
+                    duration_ms: None,
+                    cost_usd: None,
+                },
+            );
+
+            // Spawn the actual execution — reuse the saved context.
+            // We build a mini execution task inline since we don't have &self here.
+            let persona = ctx.persona;
+            let persona_id_owned = persona.id.clone();
+            let persona_timeout_ms = persona.timeout_ms;
+            let persona_max_concurrent_inner = persona.max_concurrent;
+            let pool_clone = ctx.pool.clone();
+            let pool_for_drain = ctx.pool.clone();
+            let app_handle = ctx.app.clone();
+            let app_for_healing = ctx.app.clone();
+            let app_for_drain = ctx.app.clone();
+            let child_pids: Arc<Mutex<HashMap<String, u32>>> = Arc::new(Mutex::new(HashMap::new()));
+            let cancelled = Arc::new(AtomicBool::new(false));
+            let cancelled_flags: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>> =
+                Arc::new(Mutex::new(HashMap::new()));
+            cancelled_flags
+                .lock()
+                .await
+                .insert(exec_id.clone(), cancelled.clone());
+
+            let log_dir = std::env::temp_dir().join("personas").join("logs");
+            let log_dir_for_retry = log_dir.clone();
+
+            let chain_trace_id = ctx
+                .input_data
+                .as_ref()
+                .and_then(|v| v.get("_chain_trace_id"))
+                .and_then(|t| t.as_str())
+                .map(String::from);
+
+            let tracker_clone = tracker.clone();
+            let tasks_clone = tasks.clone();
+            let queued_contexts_clone = queued_contexts.clone();
+            let circuit_breaker = Arc::new(failover::ProviderCircuitBreaker::new());
+
+            let handle = tokio::spawn(async move {
+                let result = runner::run_execution(
+                    app_handle,
+                    pool_clone.clone(),
+                    exec_id.clone(),
+                    persona,
+                    ctx.tools,
+                    ctx.input_data,
+                    log_dir,
+                    child_pids.clone(),
+                    cancelled.clone(),
+                    ctx.continuation,
+                    chain_trace_id,
+                    circuit_breaker.clone(),
+                )
+                .await;
+
+                if cancelled.load(Ordering::Acquire) {
+                    persist_status_update(
+                        &pool_clone,
+                        Some(&app_for_healing),
+                        &exec_id,
+                        UpdateExecutionStatus {
+                            status: ExecutionState::Cancelled,
+                            error_message: Some("Cancelled by user".into()),
+                            duration_ms: Some(result.duration_ms as i64),
+                            log_file_path: result.log_file_path.clone(),
+                            input_tokens: Some(result.input_tokens as i64),
+                            output_tokens: Some(result.output_tokens as i64),
+                            cost_usd: Some(result.cost_usd),
+                            tool_steps: result.tool_steps.clone(),
+                            ..Default::default()
+                        },
+                    )
+                    .await;
+                } else {
+                    handle_execution_result(
+                        &pool_clone,
+                        &app_for_healing,
+                        &exec_id,
+                        &persona_id_owned,
+                        persona_timeout_ms,
+                        &result,
+                        tracker_clone.clone(),
+                        child_pids.clone(),
+                        cancelled_flags.clone(),
+                        log_dir_for_retry.clone(),
+                        circuit_breaker,
+                    )
+                    .await;
+                }
+
+                // Clean up
+                tracker_clone
+                    .lock()
+                    .await
+                    .remove_running(&persona_id_owned, &exec_id);
+                tasks_clone.lock().await.remove(&exec_id);
+
+                // Recursively drain next (owned types for Send safety)
+                drain_and_start_next(
+                    tracker_clone,
+                    tasks_clone.clone(),
+                    queued_contexts_clone,
+                    persona_id_owned,
+                    persona_max_concurrent_inner,
+                    app_for_drain,
+                    pool_for_drain,
+                )
+                .await;
+            });
+
+            tasks.lock().await.insert(exec_id_for_tasks, handle);
+        } else {
+            // Context was missing (e.g., cancelled while queued) — release the slot
+            tracker.lock().await.remove_running(persona_id, &exec_id);
+        }
+    }
+    }) // close Box::pin(async move { ... })
+}
+
+// =============================================================================
 // Extracted sub-functions for start_execution post-processing
 // =============================================================================
 
 /// Handle the result of a completed execution: write status, notify, enforce
 /// budget, evaluate chain triggers, and run healing/retry if needed.
 #[allow(clippy::too_many_arguments)]
-fn handle_execution_result(
+async fn handle_execution_result(
     pool: &DbPool,
     app: &AppHandle,
     exec_id: &str,
@@ -551,6 +1006,7 @@ fn handle_execution_result(
     child_pids: Arc<Mutex<HashMap<String, u32>>>,
     cancelled_flags: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
     log_dir: PathBuf,
+    circuit_breaker: Arc<failover::ProviderCircuitBreaker>,
 ) {
     let status = if result.success { ExecutionState::Completed } else { ExecutionState::Failed };
 
@@ -571,7 +1027,27 @@ fn handle_execution_result(
             cost_usd: Some(result.cost_usd),
             tool_steps: result.tool_steps.clone(),
         },
-    );
+    )
+    .await;
+
+    // Knowledge graph extraction — learn from every execution
+    {
+        let use_case_id = exec_repo::get_by_id(pool, exec_id)
+            .ok()
+            .and_then(|e| e.use_case_id);
+        knowledge::extract_and_persist(
+            pool,
+            exec_id,
+            persona_id,
+            use_case_id.as_deref(),
+            result.success,
+            result.cost_usd,
+            result.duration_ms as i64,
+            result.model_used.as_deref(),
+            result.tool_steps.as_deref(),
+            result.error.as_deref(),
+        );
+    }
 
     // OS Notification
     notify_execution(app, pool, persona_id, status.as_str(), result.duration_ms);
@@ -581,14 +1057,20 @@ fn handle_execution_result(
         check_budget_enforcement(pool, persona_id, exec_id);
     }
 
-    // Chain triggers — extract chain depth/visited from execution's input_data
+    // Chain triggers — extract chain depth/visited/trace_id from execution's input_data
     // (propagated via chain event payloads to prevent infinite cycles)
-    let (chain_depth, mut visited) = exec_repo::get_by_id(pool, exec_id)
-        .ok()
-        .and_then(|exec| exec.input_data)
-        .map(|input| chain::extract_chain_metadata(Some(&input)))
-        .unwrap_or_default();
+    let (chain_depth, mut visited, existing_chain_trace_id) =
+        exec_repo::get_by_id(pool, exec_id)
+            .ok()
+            .and_then(|exec| exec.input_data)
+            .map(|input| chain::extract_chain_metadata(Some(&input)))
+            .unwrap_or_default();
     visited.insert(persona_id.to_string());
+
+    // Use existing chain_trace_id if this execution is part of a chain,
+    // otherwise use this execution's trace_id as the root of a new chain trace
+    let chain_trace_id = existing_chain_trace_id
+        .or_else(|| result.trace_id.clone());
 
     chain::evaluate_chain_triggers(
         pool,
@@ -598,6 +1080,7 @@ fn handle_execution_result(
         exec_id,
         chain_depth,
         &visited,
+        chain_trace_id.as_deref(),
     );
 
     // Healing check for failed executions
@@ -613,6 +1096,7 @@ fn handle_execution_result(
             child_pids,
             cancelled_flags,
             log_dir,
+            circuit_breaker,
         );
     }
 
@@ -682,6 +1166,7 @@ fn evaluate_healing_and_retry(
     child_pids: Arc<Mutex<HashMap<String, u32>>>,
     cancelled_flags: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
     log_dir: PathBuf,
+    circuit_breaker: Arc<failover::ProviderCircuitBreaker>,
 ) {
     let consecutive = exec_repo::get_recent_failures(pool, persona_id, 5)
         .unwrap_or_default()
@@ -700,13 +1185,13 @@ fn evaluate_healing_and_retry(
 
     let kb_delay = resolve_service_knowledge_delay(pool, persona_id, &category);
 
-    let diagnosis = healing::diagnose(&category, error_str, timeout_ms, consecutive);
-
-    record_failure_to_knowledge_base(pool, persona_id, &category, &diagnosis);
-
     let current_retry_count = exec_repo::get_by_id(pool, exec_id)
         .map(|e| e.retry_count)
         .unwrap_or(0);
+
+    let diagnosis = healing::diagnose(&category, error_str, timeout_ms, consecutive, current_retry_count);
+
+    record_failure_to_knowledge_base(pool, persona_id, &category, &diagnosis);
 
     let issue = match healing_repo::create(
         pool,
@@ -724,7 +1209,7 @@ fn evaluate_healing_and_retry(
 
     let auto_fixed = healing::is_auto_fixable(&category)
         && consecutive < 3
-        && current_retry_count < MAX_RETRY_COUNT;
+        && current_retry_count < healing::MAX_RETRY_COUNT;
 
     // Fetch persona info for notifications
     let persona_for_heal = persona_repo::get_by_id(pool, persona_id).ok();
@@ -755,6 +1240,24 @@ fn evaluate_healing_and_retry(
         heal_channels,
     );
 
+    // Derive retry-specific storytelling fields
+    let (strategy, backoff_seconds) = if auto_fixed {
+        match &diagnosis.action {
+            healing::HealingAction::RetryWithBackoff { delay_secs } => {
+                let effective = kb_delay
+                    .map(|kb| std::cmp::max(kb, *delay_secs))
+                    .unwrap_or(*delay_secs);
+                (Some("Exponential backoff".to_string()), Some(effective))
+            }
+            healing::HealingAction::RetryWithTimeout { new_timeout_ms } => {
+                (Some(format!("Increased timeout to {}ms", new_timeout_ms)), Some(5u64))
+            }
+            _ => (None, None),
+        }
+    } else {
+        (Some("Manual investigation required".to_string()), None)
+    };
+
     let _ = app.emit(
         "healing-event",
         HealingEventPayload {
@@ -771,6 +1274,11 @@ fn evaluate_healing_and_retry(
             severity: diagnosis.severity.clone(),
             suggested_fix: diagnosis.suggested_fix.clone(),
             persona_name: heal_name,
+            description: Some(diagnosis.description.clone()),
+            strategy,
+            backoff_seconds,
+            retry_number: if auto_fixed { Some(current_retry_count + 1) } else { None },
+            max_retries: Some(healing::MAX_RETRY_COUNT),
         },
     );
 
@@ -788,6 +1296,7 @@ fn evaluate_healing_and_retry(
             child_pids,
             cancelled_flags,
             log_dir,
+            circuit_breaker,
         );
     }
 }
@@ -842,6 +1351,14 @@ fn check_circuit_breaker(
             severity: "critical".into(),
             suggested_fix: Some(cb_fix.into()),
             persona_name: persona_name.into(),
+            description: Some(format!(
+                "Agent disabled after {} consecutive failures. Investigation required.",
+                consecutive,
+            )),
+            strategy: Some("Persona disabled — manual intervention required".into()),
+            backoff_seconds: None,
+            retry_number: None,
+            max_retries: Some(healing::MAX_RETRY_COUNT),
         },
     );
 }
@@ -860,6 +1377,7 @@ fn spawn_healing_retry(
     child_pids: Arc<Mutex<HashMap<String, u32>>>,
     cancelled_flags: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
     log_dir: PathBuf,
+    circuit_breaker: Arc<failover::ProviderCircuitBreaker>,
 ) {
     let next_retry_count = current_retry_count + 1;
     let original_exec_id = exec_repo::get_by_id(pool, exec_id)
@@ -891,6 +1409,7 @@ fn spawn_healing_retry(
                 child_pids,
                 cancelled_flags,
                 log_dir,
+                circuit_breaker,
             );
         }
         healing::HealingAction::RetryWithTimeout { new_timeout_ms } => {
@@ -913,6 +1432,7 @@ fn spawn_healing_retry(
                 child_pids,
                 cancelled_flags,
                 log_dir,
+                circuit_breaker,
             );
         }
         _ => {}
@@ -945,6 +1465,7 @@ fn spawn_delayed_retry(
     child_pids: Arc<Mutex<HashMap<String, u32>>>,
     cancelled_flags: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
     log_dir: PathBuf,
+    circuit_breaker: Arc<failover::ProviderCircuitBreaker>,
 ) {
     tokio::spawn(async move {
         // 1. Sleep for the backoff delay
@@ -1038,7 +1559,8 @@ fn spawn_delayed_retry(
                 status: ExecutionState::Running,
                 ..Default::default()
             },
-        );
+        )
+        .await;
 
         // 9. Get tools for persona
         let tools = tool_repo::get_tools_for_persona(&pool, &persona_id)
@@ -1070,6 +1592,8 @@ fn spawn_delayed_retry(
             child_pids.clone(),
             cancelled.clone(),
             None, // no continuation for healing retries
+            None, // chain_trace_id — healing retries don't inherit chain context
+            circuit_breaker,
         )
         .await;
 
@@ -1092,7 +1616,8 @@ fn spawn_delayed_retry(
                     tool_steps: result.tool_steps.clone(),
                     ..Default::default()
                 },
-            );
+            )
+            .await;
         } else {
             let status = if result.success { ExecutionState::Completed } else { ExecutionState::Failed };
             persist_status_update(
@@ -1111,7 +1636,8 @@ fn spawn_delayed_retry(
                     cost_usd: Some(result.cost_usd),
                     tool_steps: result.tool_steps.clone(),
                 },
-            );
+            )
+            .await;
 
             // Emit status to frontend
             let _ = app.emit(

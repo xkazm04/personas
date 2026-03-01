@@ -2,7 +2,7 @@
   "id": "video-knowledge-base-builder",
   "name": "Video Knowledge Base Builder",
   "description": "Detects new Loom recordings shared via webhook, transcribes key points using the Loom API, creates structured Notion pages with timestamps and summaries, and posts the video with summary to relevant Slack channels.",
-  "icon": "FileText",
+  "icon": "Video",
   "color": "#F59E0B",
   "category": [
     "content"
@@ -127,7 +127,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://developer.loom.com"
+        "api_base_url": "https://developer.loom.com",
+        "role": "video_comms",
+        "category": "creativity"
       },
       {
         "name": "notion",
@@ -156,7 +158,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://api.notion.com/v1"
+        "api_base_url": "https://api.notion.com/v1",
+        "role": "knowledge_base",
+        "category": "productivity"
       },
       {
         "name": "slack",
@@ -185,7 +189,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

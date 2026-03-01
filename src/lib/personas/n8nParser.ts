@@ -1,47 +1,20 @@
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import type { N8nWorkflow, N8nNode } from '@/lib/types/templateTypes';
-
-const N8N_SERVICE_MAP: Record<string, string> = {
-  gmail: 'gmail',
-  slack: 'slack',
-  github: 'github',
-  postgres: 'postgres',
-  notion: 'notion',
-  webhook: 'webhook',
-  cron: 'schedule',
-  httprequest: 'http',
-  airtable: 'airtable',
-  googlesheets: 'google-sheets',
-  discord: 'discord',
-  jira: 'jira',
-  telegram: 'telegram',
-  twitter: 'twitter',
-  dropbox: 'dropbox',
-  mongodb: 'mongodb',
-  mysql: 'mysql',
-  redis: 'redis',
-  s3: 'aws-s3',
-  sqs: 'aws-sqs',
-  stripe: 'stripe',
-  twilio: 'twilio',
-  sendgrid: 'sendgrid',
-  openai: 'openai',
-};
+import { N8N_DEFINITION, resolveNodeType, classifyNodeRole } from './platformDefinitions';
 
 function extractServiceName(nodeType: string): string {
-  // e.g. "n8n-nodes-base.gmailTrigger" → "gmail"
-  const parts = nodeType.split('.');
-  const nodeName = parts[parts.length - 1] || nodeType;
-  const lower = nodeName.toLowerCase().replace(/trigger$/, '');
-
-  for (const [key, value] of Object.entries(N8N_SERVICE_MAP)) {
-    if (lower.startsWith(key) || lower === key) return value;
-  }
-  return lower;
+  return resolveNodeType(N8N_DEFINITION, nodeType);
 }
 
 function isTriggerNode(node: N8nNode): boolean {
-  return /trigger/i.test(node.type);
+  return classifyNodeRole(N8N_DEFINITION, node.type) === 'trigger';
+}
+
+function isValidNode(value: unknown): value is N8nNode {
+  if (!value || typeof value !== 'object') return false;
+  const obj = value as Record<string, unknown>;
+  return typeof obj.type === 'string' && obj.type.length > 0
+    && typeof obj.name === 'string' && obj.name.length > 0;
 }
 
 export function parseN8nWorkflow(json: unknown): DesignAnalysisResult {
@@ -49,10 +22,23 @@ export function parseN8nWorkflow(json: unknown): DesignAnalysisResult {
     throw new Error('Invalid n8n workflow: expected an object');
   }
 
-  const workflow = json as N8nWorkflow;
-  if (!Array.isArray(workflow.nodes) || workflow.nodes.length === 0) {
+  const raw = json as Record<string, unknown>;
+  if (!Array.isArray(raw.nodes) || raw.nodes.length === 0) {
     throw new Error('Invalid n8n workflow: no nodes found');
   }
+
+  const validNodes = raw.nodes.filter(isValidNode);
+  if (validNodes.length === 0) {
+    throw new Error('Invalid n8n workflow: no valid nodes found (nodes must have type and name)');
+  }
+
+  const workflow: N8nWorkflow = {
+    name: typeof raw.name === 'string' ? raw.name : undefined,
+    nodes: validNodes,
+    connections: (typeof raw.connections === 'object' && raw.connections !== null
+      ? raw.connections
+      : {}) as N8nWorkflow['connections'],
+  };
 
   const triggerNodes = workflow.nodes.filter(isTriggerNode);
   const actionNodes = workflow.nodes.filter(n => !isTriggerNode(n));

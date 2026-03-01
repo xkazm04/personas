@@ -23,8 +23,8 @@ import {
   Check,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { BUILTIN_TEMPLATES } from '@/lib/personas/builtinTemplates';
-import type { BuiltinTemplate } from '@/lib/types/templateTypes';
+import { FEATURED_TEMPLATES } from '@/lib/personas/templateCatalog';
+import type { TemplateCatalogEntry } from '@/lib/types/templateTypes';
 import { usePersonaStore } from '@/stores/personaStore';
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -50,14 +50,14 @@ function getIcon(iconName: string): LucideIcon {
   return ICON_MAP[iconName] || Sparkles;
 }
 
-export default function BuiltinTemplatesTab() {
+export default function TemplateCatalogEntrysTab() {
   const createPersona = usePersonaStore((s) => s.createPersona);
   const selectPersona = usePersonaStore((s) => s.selectPersona);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [creatingId, setCreatingId] = useState<string | null>(null);
   const [createdId, setCreatedId] = useState<string | null>(null);
 
-  const handleCreate = async (template: BuiltinTemplate) => {
+  const handleCreate = async (template: TemplateCatalogEntry) => {
     setCreatingId(template.id);
     try {
       const { payload } = template;
@@ -103,7 +103,7 @@ export default function BuiltinTemplatesTab() {
         initial="hidden"
         animate="show"
       >
-        {BUILTIN_TEMPLATES.map((template) => {
+        {FEATURED_TEMPLATES.map((template) => {
           const Icon = getIcon(template.icon);
           const isExpanded = expandedId === template.id;
           const isCreating = creatingId === template.id;

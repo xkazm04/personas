@@ -215,9 +215,9 @@ export function getAuthMethods(connector: ConnectorDefinition): ConnectorAuthMet
 
 // ── Navigation Types ───────────────────────────────────────────────────
 
-export type SidebarSection = "overview" | "personas" | "events" | "credentials" | "design-reviews" | "team" | "cloud" | "gitlab" | "settings";
+export type SidebarSection = "overview" | "personas" | "events" | "credentials" | "design-reviews" | "team" | "cloud" | "settings";
 export type EditorTab = "use-cases" | "prompt" | "lab" | "connectors" | "settings" | "design";
-export type OverviewTab = "home" | "system-check" | "executions" | "manual-review" | "messages" | "usage" | "events" | "observability" | "realtime" | "memories" | "budget";
+export type OverviewTab = "home" | "system-check" | "executions" | "manual-review" | "messages" | "usage" | "events" | "observability" | "analytics" | "realtime" | "memories" | "budget" | "knowledge";
 export type TemplateTab = "builtin" | "n8n" | "generated";
 export type CloudTab = "cloud" | "gitlab";
 export type SettingsTab = "account" | "appearance" | "notifications" | "engine";

@@ -5,7 +5,79 @@ use crate::db::models::{
     PersonaEventSubscription, UpdateEventSubscriptionInput,
 };
 use crate::db::DbPool;
+use crate::engine::crypto;
 use crate::error::AppError;
+
+// ============================================================================
+// Input Validation
+// ============================================================================
+
+/// Maximum payload size in bytes (64 KB).
+const MAX_PAYLOAD_BYTES: usize = 64 * 1024;
+
+/// Maximum length for event_type and source_type strings.
+const MAX_TYPE_LEN: usize = 128;
+
+/// Validate that `event_type` and `source_type` contain only safe characters:
+/// alphanumeric, underscore, hyphen, dot, colon, forward-slash.
+/// Must start with an alphanumeric or underscore character.
+fn is_safe_type_string(s: &str) -> bool {
+    if s.is_empty() {
+        return false;
+    }
+    let first = s.as_bytes()[0];
+    if !(first.is_ascii_alphanumeric() || first == b'_') {
+        return false;
+    }
+    s.bytes()
+        .all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-' || b == b'.' || b == b':' || b == b'/')
+}
+
+/// Validate and sanitize a `CreatePersonaEventInput` before publishing.
+fn validate_event_input(input: &CreatePersonaEventInput) -> Result<(), AppError> {
+    // -- event_type --
+    if input.event_type.is_empty() {
+        return Err(AppError::Validation("event_type must not be empty".into()));
+    }
+    if input.event_type.len() > MAX_TYPE_LEN {
+        return Err(AppError::Validation(format!(
+            "event_type exceeds maximum length of {MAX_TYPE_LEN} characters"
+        )));
+    }
+    if !is_safe_type_string(&input.event_type) {
+        return Err(AppError::Validation(
+            "event_type contains invalid characters; only alphanumeric, underscore, hyphen, dot, colon, and forward-slash are allowed".into(),
+        ));
+    }
+
+    // -- source_type --
+    if input.source_type.is_empty() {
+        return Err(AppError::Validation("source_type must not be empty".into()));
+    }
+    if input.source_type.len() > MAX_TYPE_LEN {
+        return Err(AppError::Validation(format!(
+            "source_type exceeds maximum length of {MAX_TYPE_LEN} characters"
+        )));
+    }
+    if !is_safe_type_string(&input.source_type) {
+        return Err(AppError::Validation(
+            "source_type contains invalid characters; only alphanumeric, underscore, hyphen, dot, colon, and forward-slash are allowed".into(),
+        ));
+    }
+
+    // -- payload size --
+    if let Some(ref payload) = input.payload {
+        if payload.len() > MAX_PAYLOAD_BYTES {
+            return Err(AppError::Validation(format!(
+                "payload exceeds maximum size of {} bytes ({} bytes provided)",
+                MAX_PAYLOAD_BYTES,
+                payload.len()
+            )));
+        }
+    }
+
+    Ok(())
+}
 
 /// Collect rows from a query, logging any row-mapping errors instead of silently dropping them.
 fn collect_rows<T>(
@@ -34,6 +106,23 @@ fn collect_rows<T>(
 // ============================================================================
 
 fn row_to_event(row: &Row) -> rusqlite::Result<PersonaEvent> {
+    let raw_payload: Option<String> = row.get("payload")?;
+    let payload_iv: Option<String> = row.get("payload_iv").unwrap_or(None);
+
+    // Decrypt payload if IV is present (encrypted at rest), otherwise return as-is
+    let payload = match (raw_payload, payload_iv) {
+        (Some(ct), Some(ref iv)) if !iv.is_empty() => {
+            match crypto::decrypt_from_db(&ct, iv) {
+                Ok(pt) => Some(pt),
+                Err(e) => {
+                    tracing::warn!("Failed to decrypt event payload: {}", e);
+                    Some(ct) // Fall back to raw value on decrypt failure
+                }
+            }
+        }
+        (p, _) => p, // Plaintext or no payload
+    };
+
     Ok(PersonaEvent {
         id: row.get("id")?,
         project_id: row.get("project_id")?,
@@ -41,7 +130,7 @@ fn row_to_event(row: &Row) -> rusqlite::Result<PersonaEvent> {
         source_type: row.get("source_type")?,
         source_id: row.get("source_id")?,
         target_persona_id: row.get("target_persona_id")?,
-        payload: row.get("payload")?,
+        payload,
         status: row.get("status")?,
         error_message: row.get("error_message")?,
         processed_at: row.get("processed_at")?,
@@ -68,15 +157,31 @@ fn row_to_subscription(row: &Row) -> rusqlite::Result<PersonaEventSubscription> 
 // ============================================================================
 
 pub fn publish(pool: &DbPool, input: CreatePersonaEventInput) -> Result<PersonaEvent, AppError> {
+    validate_event_input(&input)?;
+
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
     let project_id = input.project_id.unwrap_or_else(|| "default".into());
 
+    // Encrypt payload at rest if present
+    let (stored_payload, payload_iv) = match &input.payload {
+        Some(plaintext) if !plaintext.is_empty() => {
+            match crypto::encrypt_for_db(plaintext) {
+                Ok((ct, iv)) => (Some(ct), Some(iv)),
+                Err(e) => {
+                    tracing::warn!("Failed to encrypt event payload, storing plaintext: {}", e);
+                    (Some(plaintext.clone()), None)
+                }
+            }
+        }
+        other => (other.clone(), None),
+    };
+
     let conn = pool.get()?;
     conn.execute(
         "INSERT INTO persona_events
-         (id, project_id, event_type, source_type, source_id, target_persona_id, payload, use_case_id, status, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 'pending', ?9)",
+         (id, project_id, event_type, source_type, source_id, target_persona_id, payload, payload_iv, use_case_id, status, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'pending', ?10)",
         params![
             id,
             project_id,
@@ -84,7 +189,8 @@ pub fn publish(pool: &DbPool, input: CreatePersonaEventInput) -> Result<PersonaE
             input.source_type,
             input.source_id,
             input.target_persona_id,
-            input.payload,
+            stored_payload,
+            payload_iv,
             input.use_case_id,
             now,
         ],
@@ -268,8 +374,10 @@ pub fn create_subscription(
     let enabled = input.enabled.unwrap_or(true) as i32;
 
     let conn = pool.get()?;
-    conn.execute(
-        "INSERT INTO persona_event_subscriptions
+    // Use INSERT OR IGNORE to silently skip if an identical subscription exists
+    // (unique index on persona_id, event_type, COALESCE(source_filter, '')).
+    let rows = conn.execute(
+        "INSERT OR IGNORE INTO persona_event_subscriptions
          (id, persona_id, event_type, source_filter, enabled, use_case_id, created_at, updated_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
         params![
@@ -282,6 +390,18 @@ pub fn create_subscription(
             now,
         ],
     )?;
+
+    if rows == 0 {
+        // Duplicate exists — return the existing subscription
+        let existing = conn.query_row(
+            "SELECT * FROM persona_event_subscriptions
+             WHERE persona_id = ?1 AND event_type = ?2
+               AND COALESCE(source_filter, '') = COALESCE(?3, '')",
+            params![input.persona_id, input.event_type, input.source_filter],
+            row_to_subscription,
+        ).map_err(AppError::Database)?;
+        return Ok(existing);
+    }
 
     get_subscription_by_id(pool, &id)
 }
@@ -711,5 +831,119 @@ mod tests {
         let pool = init_test_db().unwrap();
         let deleted = delete_subscription(&pool, "nonexistent").unwrap();
         assert!(!deleted);
+    }
+
+    // ------------------------------------------------------------------
+    // Event validation tests
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn test_publish_rejects_empty_event_type() {
+        let pool = init_test_db().unwrap();
+        let result = publish(
+            &pool,
+            CreatePersonaEventInput {
+                event_type: "".into(),
+                source_type: "test".into(),
+                project_id: None,
+                source_id: None,
+                target_persona_id: None,
+                payload: None,
+                use_case_id: None,
+            },
+        );
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("event_type"));
+    }
+
+    #[test]
+    fn test_publish_rejects_invalid_event_type_chars() {
+        let pool = init_test_db().unwrap();
+        // Script injection attempt
+        let result = publish(
+            &pool,
+            CreatePersonaEventInput {
+                event_type: "<script>alert(1)</script>".into(),
+                source_type: "test".into(),
+                project_id: None,
+                source_id: None,
+                target_persona_id: None,
+                payload: None,
+                use_case_id: None,
+            },
+        );
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("invalid characters"));
+    }
+
+    #[test]
+    fn test_publish_rejects_oversized_payload() {
+        let pool = init_test_db().unwrap();
+        let large_payload = "x".repeat(MAX_PAYLOAD_BYTES + 1);
+        let result = publish(
+            &pool,
+            CreatePersonaEventInput {
+                event_type: "test_event".into(),
+                source_type: "test".into(),
+                project_id: None,
+                source_id: None,
+                target_persona_id: None,
+                payload: Some(large_payload),
+                use_case_id: None,
+            },
+        );
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("payload"));
+    }
+
+    #[test]
+    fn test_publish_accepts_valid_event_types() {
+        let pool = init_test_db().unwrap();
+        // All patterns used across the codebase
+        let valid_types = [
+            "file_changed",
+            "build_complete",
+            "trigger_fired",
+            "chain_triggered",
+            "persona_action",
+            "trigger:schedule",
+            "webhook_received",
+            "deploy",
+            "event_0",
+        ];
+        for et in valid_types {
+            let result = publish(
+                &pool,
+                CreatePersonaEventInput {
+                    event_type: et.into(),
+                    source_type: "test".into(),
+                    project_id: None,
+                    source_id: None,
+                    target_persona_id: None,
+                    payload: Some(r#"{"ok":true}"#.into()),
+                    use_case_id: None,
+                },
+            );
+            assert!(result.is_ok(), "event_type '{et}' should be accepted");
+        }
+    }
+
+    #[test]
+    fn test_publish_accepts_max_payload() {
+        let pool = init_test_db().unwrap();
+        let max_payload = "x".repeat(MAX_PAYLOAD_BYTES);
+        let result = publish(
+            &pool,
+            CreatePersonaEventInput {
+                event_type: "payload_test".into(),
+                source_type: "test".into(),
+                project_id: None,
+                source_id: None,
+                target_persona_id: None,
+                payload: Some(max_payload),
+                use_case_id: None,
+            },
+        );
+        assert!(result.is_ok(), "payload at exactly MAX_PAYLOAD_BYTES should be accepted");
     }
 }

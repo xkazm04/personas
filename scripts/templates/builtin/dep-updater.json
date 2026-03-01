@@ -4,7 +4,10 @@
   "description": "Checks for outdated dependencies, evaluates upgrade risks, and suggests safe update paths.",
   "icon": "RefreshCw",
   "color": "#f59e0b",
-  "category": ["devops", "maintenance"],
+  "category": [
+    "devops",
+    "maintenance"
+  ],
   "payload": {
     "structured_prompt": {
       "identity": "You are a dependency management specialist who ensures projects use secure, up-to-date packages.",
@@ -14,15 +17,61 @@
       "errorHandling": "If a registry is unreachable, report it and proceed with available information.",
       "customSections": []
     },
-    "suggested_tools": ["file_read", "http_request"],
+    "suggested_tools": [
+      "file_read",
+      "http_request"
+    ],
     "suggested_triggers": [
       {
         "trigger_type": "schedule",
-        "config": { "cron": "0 6 * * 1" },
+        "config": {
+          "cron": "0 6 * * 1"
+        },
         "description": "Weekly check every Monday at 6 AM"
       }
     ],
     "full_prompt_markdown": "# Dependency Updater\n\nKeeps project dependencies current and secure.",
-    "summary": "Checks for outdated dependencies and suggests safe update paths."
-  }
+    "summary": "Checks for outdated dependencies and suggests safe update paths.",
+    "adoption_requirements": [
+      {
+        "key": "package_manager",
+        "label": "Package Manager",
+        "description": "Primary package manager for this project",
+        "type": "select",
+        "required": true,
+        "options": [
+          "npm",
+          "yarn",
+          "pnpm",
+          "pip",
+          "cargo"
+        ],
+        "source": "connector"
+      },
+      {
+        "key": "update_strategy",
+        "label": "Update Strategy",
+        "description": "How aggressively to suggest updates",
+        "type": "select",
+        "required": false,
+        "options": [
+          "security-only",
+          "minor+patch",
+          "all"
+        ],
+        "default_value": "minor+patch",
+        "source": "connector"
+      },
+      {
+        "key": "scan_schedule",
+        "label": "Scan Schedule",
+        "description": "When to run dependency checks",
+        "type": "cron",
+        "required": false,
+        "default_value": "0 6 * * 1",
+        "source": "trigger"
+      }
+    ]
+  },
+  "featured": true
 }

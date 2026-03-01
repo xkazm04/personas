@@ -2,7 +2,7 @@
   "id": "engineering-workflow-orchestrator",
   "name": "Engineering Workflow Orchestrator",
   "description": "Syncs Linear issues with GitHub issues and branches. When a Linear ticket moves to \"In Progress\", creates a feature branch. When a PR is merged, moves the Linear ticket to \"Done\" and notifies the Slack channel. Generates weekly velocity reports.",
-  "icon": "Code",
+  "icon": "Workflow",
   "color": "#10B981",
   "category": [
     "development"
@@ -128,7 +128,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://api.linear.app/graphql"
+        "api_base_url": "https://api.linear.app/graphql",
+        "role": "project_tracking",
+        "category": "development"
       },
       {
         "name": "github",
@@ -167,7 +169,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://api.github.com"
+        "api_base_url": "https://api.github.com",
+        "role": "source_control",
+        "category": "development"
       },
       {
         "name": "slack",
@@ -199,7 +203,9 @@
           0,
           1
         ],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

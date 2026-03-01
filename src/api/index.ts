@@ -26,3 +26,4 @@ export * from "./testSuites";
 export * from "./lab";
 export * from "./negotiator";
 export * from "./rotation";
+export * from "./platformDefinitions";

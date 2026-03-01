@@ -233,36 +233,39 @@ mod tests {
     fn test_connector_crud() {
         let pool = init_test_db().unwrap();
 
-        // Create
+        // Count existing seeded connectors
+        let seeded_count = get_all(&pool).unwrap().len();
+
+        // Create a custom connector with a unique name (not colliding with builtins)
         let connector = create(
             &pool,
             CreateConnectorDefinitionInput {
-                name: "slack".into(),
-                label: "Slack".into(),
-                icon_url: Some("https://example.com/slack.png".into()),
+                name: "test-custom-crm".into(),
+                label: "Test CRM".into(),
+                icon_url: Some("https://example.com/crm.png".into()),
                 color: Some("#4A154B".into()),
-                category: Some("messaging".into()),
-                fields: r#"[{"name":"webhook_url","type":"string","required":true}]"#.into(),
+                category: Some("test-only".into()),
+                fields: r#"[{"name":"api_key","type":"string","required":true}]"#.into(),
                 healthcheck_config: None,
-                services: Some(r#"["send_message","read_channel"]"#.into()),
-                events: Some(r#"["message_received"]"#.into()),
+                services: Some(r#"["list_contacts","create_deal"]"#.into()),
+                events: Some(r#"["deal_closed"]"#.into()),
                 metadata: None,
                 is_builtin: Some(false),
             },
         )
         .unwrap();
-        assert_eq!(connector.name, "slack");
-        assert_eq!(connector.label, "Slack");
+        assert_eq!(connector.name, "test-custom-crm");
+        assert_eq!(connector.label, "Test CRM");
         assert_eq!(connector.color, "#4A154B");
-        assert_eq!(connector.category, "messaging");
+        assert_eq!(connector.category, "test-only");
         assert!(!connector.is_builtin);
 
         // Get by ID
         let fetched = get_by_id(&pool, &connector.id).unwrap();
-        assert_eq!(fetched.name, "slack");
+        assert_eq!(fetched.name, "test-custom-crm");
 
         // Get by name
-        let by_name = get_by_name(&pool, "slack").unwrap();
+        let by_name = get_by_name(&pool, "test-custom-crm").unwrap();
         assert!(by_name.is_some());
         assert_eq!(by_name.unwrap().id, connector.id);
 
@@ -270,13 +273,13 @@ mod tests {
         let missing = get_by_name(&pool, "nonexistent").unwrap();
         assert!(missing.is_none());
 
-        // Get by category
-        let by_cat = get_by_category(&pool, "messaging").unwrap();
+        // Get by category (unique test category)
+        let by_cat = get_by_category(&pool, "test-only").unwrap();
         assert_eq!(by_cat.len(), 1);
 
-        // List all (includes the seeded builtin Google Workspace connector)
+        // List all (includes all seeded builtin connectors + our new one)
         let all = get_all(&pool).unwrap();
-        assert_eq!(all.len(), 2);
+        assert_eq!(all.len(), seeded_count + 1);
 
         // Update
         let updated = update(
@@ -284,7 +287,7 @@ mod tests {
             &connector.id,
             UpdateConnectorDefinitionInput {
                 name: None,
-                label: Some("Slack Workspace".into()),
+                label: Some("Test CRM Pro".into()),
                 icon_url: None,
                 color: Some("#611F69".into()),
                 category: None,
@@ -296,9 +299,9 @@ mod tests {
             },
         )
         .unwrap();
-        assert_eq!(updated.label, "Slack Workspace");
+        assert_eq!(updated.label, "Test CRM Pro");
         assert_eq!(updated.color, "#611F69");
-        assert_eq!(updated.name, "slack"); // unchanged
+        assert_eq!(updated.name, "test-custom-crm"); // unchanged
 
         // Delete
         let deleted = delete(&pool, &connector.id).unwrap();

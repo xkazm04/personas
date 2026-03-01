@@ -176,6 +176,7 @@ impl ReactiveSubscription for RotationSubscription {
 
     async fn tick(&self) {
         super::rotation::evaluate_due_rotations(&self.pool).await;
+        super::rotation::evaluate_credential_events(&self.pool).await;
         super::rotation::detect_anomalies(&self.pool).await;
     }
 }

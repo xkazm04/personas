@@ -10,6 +10,7 @@ import {
   MousePointerClick,
   Radio,
   CircleDot,
+  Play,
 } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { deriveConnectorReadiness } from './ConnectorReadiness';
@@ -32,6 +33,7 @@ interface TemplateCardProps {
   onViewDetails: () => void;
   onDelete: () => void;
   onViewFlows: () => void;
+  onTryIt: () => void;
   installedConnectorNames: Set<string>;
   credentialServiceTypes: Set<string>;
 }
@@ -42,6 +44,7 @@ export function TemplateCard({
   onViewDetails,
   onDelete,
   onViewFlows,
+  onTryIt,
   installedConnectorNames,
   credentialServiceTypes,
 }: TemplateCardProps) {
@@ -225,16 +228,30 @@ export function TemplateCard({
 
       {/* Footer */}
       <div className="px-5 py-3.5 border-t border-primary/5 flex items-center justify-between">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onAdopt();
-          }}
-          className="px-3.5 py-2 text-sm rounded-lg bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors inline-flex items-center gap-1.5"
-        >
-          <Download className="w-3.5 h-3.5" />
-          Adopt
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onAdopt();
+            }}
+            className="px-3.5 py-2 text-sm rounded-lg bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors inline-flex items-center gap-1.5"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Adopt
+          </button>
+          {designResult && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onTryIt();
+              }}
+              className="px-3.5 py-2 text-sm rounded-lg bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors inline-flex items-center gap-1.5"
+            >
+              <Play className="w-3.5 h-3.5" />
+              Try It
+            </button>
+          )}
+        </div>
         <div className="flex items-center gap-2.5">
           {displayFlows.length > 0 && (
             <button

@@ -6,6 +6,7 @@ use crate::db::models::{
     CreateRotationPolicyInput, CredentialRotationEntry, CredentialRotationPolicy,
     UpdateRotationPolicyInput,
 };
+use crate::db::repos::resources::audit_log;
 use crate::db::repos::resources::rotation as rotation_repo;
 use crate::engine::rotation as rotation_engine;
 use crate::error::AppError;
@@ -78,5 +79,14 @@ pub async fn rotate_credential_now(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
 ) -> Result<String, AppError> {
-    rotation_engine::rotate_now(&state.db, &credential_id, "manual").await
+    let result = rotation_engine::rotate_now(&state.db, &credential_id, "manual").await;
+    let (op, detail) = match &result {
+        Ok(_) => ("credential_rotated", "manual rotation succeeded".to_string()),
+        Err(e) => ("credential_rotation_failed", format!("manual rotation failed: {}", e)),
+    };
+    let _ = audit_log::insert(
+        &state.db, &credential_id, &credential_id,
+        op, None, None, Some(&detail),
+    );
+    result
 }

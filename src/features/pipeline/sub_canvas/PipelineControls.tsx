@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Play, Loader2, Info } from 'lucide-react';
+import { Play, Loader2, Info, Bug } from 'lucide-react';
 
 interface NodeStatus {
   member_id: string;
@@ -11,8 +11,10 @@ interface NodeStatus {
 interface PipelineControlsProps {
   teamId: string;
   isRunning: boolean;
+  isDryRunActive: boolean;
   nodeStatuses: NodeStatus[];
   onExecute: () => void;
+  onDryRun: () => void;
   agentNames?: Record<string, string>;
 }
 
@@ -47,8 +49,10 @@ function getProgressText(statuses: NodeStatus[]): string {
 export default function PipelineControls({
   teamId: _teamId,
   isRunning,
+  isDryRunActive,
   nodeStatuses,
   onExecute,
+  onDryRun,
   agentNames = {},
 }: PipelineControlsProps) {
   const [hoveredDot, setHoveredDot] = useState<string | null>(null);
@@ -68,9 +72,9 @@ export default function PipelineControls({
         {/* Execute button */}
         <button
           onClick={onExecute}
-          disabled={isRunning}
+          disabled={isRunning || isDryRunActive}
           className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-            isRunning
+            isRunning || isDryRunActive
               ? 'bg-primary/10 text-muted-foreground cursor-not-allowed'
               : 'bg-indigo-500 text-foreground hover:bg-indigo-600 active:scale-95'
           }`}
@@ -83,9 +87,23 @@ export default function PipelineControls({
           ) : (
             <>
               <Play className="w-4 h-4" />
-              Execute Team
+              Execute
             </>
           )}
+        </button>
+
+        {/* Dry Run button */}
+        <button
+          onClick={onDryRun}
+          disabled={isRunning || isDryRunActive}
+          className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+            isRunning || isDryRunActive
+              ? 'bg-primary/10 text-muted-foreground cursor-not-allowed'
+              : 'bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-500/25 active:scale-95'
+          }`}
+        >
+          <Bug className="w-4 h-4" />
+          Dry Run
         </button>
 
         {/* Node status dots */}

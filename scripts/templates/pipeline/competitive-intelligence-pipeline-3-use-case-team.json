@@ -2,7 +2,7 @@
   "id": "competitive-intelligence-pipeline-3-use-case-team",
   "name": "Competitive Intelligence Pipeline (3-Use Case Team)",
   "description": "**Use Case A — Data Collectors** (worker, ×3 instances): Each monitors a different competitor via their public API, website, and social presence.\n**Use Case B — Analyst** (reviewer): Compares findings, identifies strategic implications, and cross-references with internal data from Notion.\n**Use Case C — Reporter** (worker): Compiles weekly intelligence briefings into Notion, emails executives, and posts key findings to Slack.",
-  "icon": "GitBranch",
+  "icon": "Eye",
   "color": "#0EA5E9",
   "category": [
     "pipeline"
@@ -122,7 +122,9 @@
           0,
           1
         ],
-        "api_base_url": "https://api.notion.com/v1"
+        "api_base_url": "https://api.notion.com/v1",
+        "role": "knowledge_base",
+        "category": "productivity"
       },
       {
         "name": "slack",
@@ -143,7 +145,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       },
       {
         "name": "google_workspace",
@@ -182,7 +186,9 @@
           "gmail_read"
         ],
         "related_triggers": [],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://www.googleapis.com",
+        "role": "productivity_suite",
+        "category": "productivity"
       }
     ],
     "suggested_notification_channels": [

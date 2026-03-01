@@ -81,7 +81,7 @@ describe("personaStore", () => {
       const { invoke } = await import("@tauri-apps/api/core");
       vi.mocked(invoke).mockRejectedValue(new Error("DB connection failed"));
 
-      await usePersonaStore.getState().fetchPersonas();
+      await expect(usePersonaStore.getState().fetchPersonas()).rejects.toThrow("DB connection failed");
 
       const state = usePersonaStore.getState();
       expect(state.error).toBe("DB connection failed");

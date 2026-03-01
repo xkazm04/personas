@@ -114,6 +114,21 @@ export interface AdoptState {
   connectorCredentialMap: Record<string, string>;
   inlineCredentialConnector: string | null;
 
+  // Connector swaps (Connect step — interchangeable connectors)
+  /** Original connector name → replacement connector name */
+  connectorSwaps: Record<string, string>;
+
+  // Persona preferences (Tune step)
+  notificationChannels: string[];
+  alertChannel: string;
+  alertSeverity: string;
+  requireApproval: boolean;
+  autoApproveSeverity: string;
+  reviewTimeout: string;
+  maxConcurrent: number;
+  timeoutMs: number;
+  maxBudgetUsd: number | null;
+
   // Transform (Build step)
   transforming: boolean;
   backgroundAdoptId: string | null;
@@ -152,6 +167,16 @@ const INITIAL_STATE: AdoptState = {
   questionGenerating: false,
   connectorCredentialMap: {},
   inlineCredentialConnector: null,
+  connectorSwaps: {},
+  notificationChannels: [],
+  alertChannel: '',
+  alertSeverity: 'warning_critical',
+  requireApproval: false,
+  autoApproveSeverity: 'info',
+  reviewTimeout: '24h',
+  maxConcurrent: 1,
+  timeoutMs: 420000,
+  maxBudgetUsd: null,
   transforming: false,
   backgroundAdoptId: null,
   adjustmentRequest: '',
@@ -224,6 +249,34 @@ export function useAdoptReducer() {
     update({ selectedConnectorNames: toggleInSet(state.selectedConnectorNames, name) });
   }, [update, state.selectedConnectorNames]);
 
+  const swapConnector = useCallback((originalName: string, replacementName: string) => {
+    const newSwaps = { ...state.connectorSwaps };
+    // Determine the previously active connector for this slot
+    const oldActive = state.connectorSwaps[originalName] || originalName;
+
+    // If reverting to the original, remove the swap entry entirely
+    if (originalName === replacementName) {
+      delete newSwaps[originalName];
+    } else {
+      newSwaps[originalName] = replacementName;
+    }
+
+    const newSelected = new Set(state.selectedConnectorNames);
+    newSelected.delete(oldActive);
+    newSelected.add(replacementName);
+
+    const newCredMap = { ...state.connectorCredentialMap };
+    if (oldActive !== replacementName) {
+      delete newCredMap[oldActive];
+    }
+
+    update({
+      connectorSwaps: newSwaps,
+      selectedConnectorNames: newSelected,
+      connectorCredentialMap: newCredMap,
+    });
+  }, [update, state.connectorSwaps, state.selectedConnectorNames, state.connectorCredentialMap]);
+
   const toggleChannel = useCallback((index: number) => {
     update({ selectedChannelIndices: toggleInSet(state.selectedChannelIndices, index) });
   }, [update, state.selectedChannelIndices]);
@@ -241,6 +294,12 @@ export function useAdoptReducer() {
   const updateTriggerConfig = useCallback((triggerIdx: number, config: Record<string, string>) => {
     update({ triggerConfigs: { ...state.triggerConfigs, [triggerIdx]: config } });
   }, [update, state.triggerConfigs]);
+
+  // ── Persona preferences (Tune step) ──
+
+  const updatePreference = useCallback((key: string, value: unknown) => {
+    update({ [key]: value } as Partial<AdoptState>);
+  }, [update]);
 
   // ── Connector credential mapping (Connect step) ──
 
@@ -337,10 +396,12 @@ export function useAdoptReducer() {
     toggleTool,
     toggleTrigger,
     toggleConnector,
+    swapConnector,
     toggleChannel,
     toggleEvent,
     updateVariable,
     updateTriggerConfig,
+    updatePreference,
     // Connector credential mapping
     setConnectorCredential,
     clearConnectorCredential,

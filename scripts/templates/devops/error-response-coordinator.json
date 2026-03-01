@@ -2,7 +2,7 @@
   "id": "error-response-coordinator",
   "name": "Error Response Coordinator",
   "description": "Receives Sentry error alerts, deduplicates and groups by root cause, creates GitHub issues with stack traces and reproduction context, and posts actionable summaries to Slack. Tracks recurring errors via memory.",
-  "icon": "Server",
+  "icon": "AlertTriangle",
   "color": "#F97316",
   "category": [
     "devops"
@@ -155,7 +155,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://sentry.io/api/0"
+        "api_base_url": "https://sentry.io/api/0",
+        "role": "error_monitoring",
+        "category": "monitoring"
       },
       {
         "name": "github",
@@ -192,7 +194,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://api.github.com"
+        "api_base_url": "https://api.github.com",
+        "role": "source_control",
+        "category": "development"
       },
       {
         "name": "slack",
@@ -229,7 +233,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

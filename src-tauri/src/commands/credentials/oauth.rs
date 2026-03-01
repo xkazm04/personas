@@ -13,8 +13,11 @@ use tokio::io::AsyncWriteExt;
 use tokio::io::AsyncReadExt;
 use tokio::net::TcpListener;
 use url::Url;
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 use std::sync::Arc;
+use crate::db::repos::resources::audit_log;
+use crate::engine::crypto::{EncryptedToken, SecureString};
 use crate::error::AppError;
 use crate::AppState;
 
@@ -37,8 +40,8 @@ enum OAuthCallbackOutcome {
 
 /// Token fields returned on a successful callback.
 struct OAuthCallbackTokens {
-    access_token: Option<String>,
-    refresh_token: Option<String>,
+    access_token: Option<SecureString>,
+    refresh_token: Option<SecureString>,
     scope: Option<String>,
     token_type: Option<String>,
     expires_in: Option<u64>,
@@ -51,9 +54,13 @@ struct OAuthCallbackTokens {
 ///
 /// The `exchange` closure receives `(code, redirect_uri)` and returns either
 /// `OAuthCallbackTokens` on success or an error string.
+///
+/// `expected_state` is validated against the `state` query parameter in the
+/// callback to prevent CSRF attacks (RFC 6749 §10.12).
 async fn run_oauth_callback_server<F, Fut>(
     listener: TcpListener,
     timeout_secs: u64,
+    expected_state: String,
     exchange: F,
 ) -> OAuthCallbackOutcome
 where
@@ -86,8 +93,15 @@ where
                     let code = url.query_pairs().find_map(|(k, v)| (k == "code").then(|| v.into_owned()));
                     let oauth_error = url.query_pairs().find_map(|(k, v)| (k == "error").then(|| v.into_owned()));
                     let error_desc = url.query_pairs().find_map(|(k, v)| (k == "error_description").then(|| v.into_owned()));
+                    let callback_state = url.query_pairs().find_map(|(k, v)| (k == "state").then(|| v.into_owned()));
 
-                    if let Some(err) = oauth_error {
+                    // Validate state parameter to prevent CSRF
+                    let state_valid = callback_state.as_deref() == Some(&expected_state);
+                    if !state_valid {
+                        OAuthCallbackOutcome::Error(
+                            "OAuth state mismatch — possible CSRF attack. Please retry the authorization.".into(),
+                        )
+                    } else if let Some(err) = oauth_error {
                         let msg = if let Some(desc) = error_desc {
                             format!("OAuth error: {} {}", err, desc).trim().to_string()
                         } else {
@@ -143,11 +157,11 @@ const DEFAULT_GOOGLE_OAUTH_SCOPES: &[&str] = &[
     "https://www.googleapis.com/auth/userinfo.email",
 ];
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Zeroize, ZeroizeOnDrop)]
 struct GoogleCredentialOAuthSession {
     status: String,
-    refresh_token: Option<String>,
-    access_token: Option<String>,
+    refresh_token: Option<EncryptedToken>,
+    access_token: Option<EncryptedToken>,
     scope: Option<String>,
     error: Option<String>,
     created_at: u64,
@@ -172,11 +186,37 @@ fn cleanup_google_oauth_sessions() {
     sessions.retain(|_, session| now.saturating_sub(session.created_at) <= GOOGLE_OAUTH_SESSION_TTL_SECS);
 }
 
+// ── Token encryption helpers ────────────────────────────────────
+
+/// Encrypt a `SecureString` token into an `EncryptedToken` for at-rest storage.
+/// Returns `None` (and logs the error) if encryption fails — fail-secure.
+fn encrypt_token(token: Option<SecureString>) -> Option<EncryptedToken> {
+    token.and_then(|t| match EncryptedToken::seal(t) {
+        Ok(enc) => Some(enc),
+        Err(e) => {
+            tracing::error!("Failed to encrypt OAuth token at rest: {}", e);
+            None
+        }
+    })
+}
+
+/// Decrypt an `EncryptedToken` into a short-lived `SecureString` for immediate
+/// serialization. The returned value is zeroized on drop.
+fn decrypt_token(token: &Option<EncryptedToken>) -> Option<SecureString> {
+    token.as_ref().and_then(|t| match t.unseal() {
+        Ok(s) => Some(s),
+        Err(e) => {
+            tracing::error!("Failed to decrypt OAuth token: {}", e);
+            None
+        }
+    })
+}
+
 // ── Commands ────────────────────────────────────────────────────
 
 #[tauri::command]
 pub async fn start_google_credential_oauth(
-    _state: State<'_, Arc<AppState>>,
+    state: State<'_, Arc<AppState>>,
     client_id: String,
     client_secret: String,
     connector_name: String,
@@ -227,6 +267,8 @@ pub async fn start_google_credential_oauth(
     scopes.sort();
     scopes.dedup();
 
+    let oauth_state = generate_oauth_state();
+
     let mut auth_url = Url::parse("https://accounts.google.com/o/oauth2/v2/auth")
         .map_err(|e| AppError::Internal(format!("Failed to build auth URL: {}", e)))?;
     {
@@ -237,20 +279,30 @@ pub async fn start_google_credential_oauth(
         query.append_pair("scope", &scopes.join(" "));
         query.append_pair("access_type", "offline");
         query.append_pair("prompt", "consent");
+        query.append_pair("state", &oauth_state);
     }
+
+    let _ = audit_log::insert(
+        &state.db, &session_id, &connector_name,
+        "oauth_initiated", None, None,
+        Some(&format!("google oauth for {}", connector_name)),
+    );
 
     let session_id_clone = session_id.clone();
     let client_id_clone = resolved_client_id.clone();
     let client_secret_clone = resolved_client_secret.clone();
+    let db_pool = state.db.clone();
+    let audit_connector = connector_name.clone();
 
     tokio::spawn(async move {
         let outcome = run_oauth_callback_server(
             listener,
             GOOGLE_OAUTH_SESSION_TTL_SECS,
+            oauth_state,
             |code_value, redir_uri| async move {
                 let tokens = exchange_google_oauth_code_for_tokens(
                     &client_id_clone,
-                    &client_secret_clone,
+                    client_secret_clone.expose_secret(),
                     &code_value,
                     &redir_uri,
                 )
@@ -275,21 +327,37 @@ pub async fn start_google_credential_oauth(
             match outcome {
                 OAuthCallbackOutcome::Success(tokens) => {
                     existing.status = "success".into();
-                    existing.refresh_token = tokens.refresh_token;
-                    existing.access_token = tokens.access_token;
+                    existing.refresh_token = encrypt_token(tokens.refresh_token);
+                    existing.access_token = encrypt_token(tokens.access_token);
                     existing.scope = tokens.scope;
+                    let _ = audit_log::insert(
+                        &db_pool, &session_id_clone, &audit_connector,
+                        "oauth_completed", None, None, Some("google oauth succeeded"),
+                    );
                 }
-                OAuthCallbackOutcome::Error(e) => {
+                OAuthCallbackOutcome::Error(ref e) => {
                     existing.status = "error".into();
-                    existing.error = Some(e);
+                    existing.error = Some(e.clone());
+                    let _ = audit_log::insert(
+                        &db_pool, &session_id_clone, &audit_connector,
+                        "oauth_failed", None, None, Some(e),
+                    );
                 }
                 OAuthCallbackOutcome::Timeout => {
                     existing.status = "error".into();
                     existing.error = Some("OAuth callback timed out".into());
+                    let _ = audit_log::insert(
+                        &db_pool, &session_id_clone, &audit_connector,
+                        "oauth_failed", None, None, Some("callback timed out"),
+                    );
                 }
-                OAuthCallbackOutcome::AcceptFailed(e) => {
+                OAuthCallbackOutcome::AcceptFailed(ref e) => {
                     existing.status = "error".into();
-                    existing.error = Some(e);
+                    existing.error = Some(e.clone());
+                    let _ = audit_log::insert(
+                        &db_pool, &session_id_clone, &audit_connector,
+                        "oauth_failed", None, None, Some(e),
+                    );
                 }
             }
         }
@@ -311,13 +379,17 @@ pub fn get_google_credential_oauth_status(
     cleanup_google_oauth_sessions();
     let mut sessions = google_oauth_sessions().lock().unwrap();
     if let Some(session) = sessions.get(&session_id) {
+        // Decrypt tokens into short-lived SecureStrings for serialization only
+        let decrypted_refresh = decrypt_token(&session.refresh_token);
+        let decrypted_access = decrypt_token(&session.access_token);
         let result = json!({
             "status": session.status,
-            "refresh_token": session.refresh_token,
-            "access_token": session.access_token,
+            "refresh_token": decrypted_refresh,
+            "access_token": decrypted_access,
             "scope": session.scope,
             "error": session.error,
         });
+        // decrypted_refresh / decrypted_access are zeroized on drop here
         // Remove completed sessions immediately so tokens don't linger in memory
         if session.status == "success" || session.status == "error" {
             sessions.remove(&session_id);
@@ -363,7 +435,7 @@ fn default_google_scopes_for_connector(connector_name: &str) -> Vec<String> {
 fn resolve_google_oauth_client_credentials(
     provided_client_id: String,
     provided_client_secret: String,
-) -> Result<(String, String, String), AppError> {
+) -> Result<(String, SecureString, String), AppError> {
     let provided_id = Some(provided_client_id)
         .as_deref()
         .map(str::trim)
@@ -376,16 +448,16 @@ fn resolve_google_oauth_client_credentials(
         .map(|v| v.to_string());
 
     if let (Some(id), Some(secret)) = (provided_id, provided_secret) {
-        return Ok((id, secret, "user_provided".into()));
+        return Ok((id, SecureString::new(secret), "user_provided".into()));
     }
 
     let (id, secret) = crate::engine::google_oauth::resolve_google_oauth_env_credentials()?;
-    Ok((id, secret, "app_managed".into()))
+    Ok((id, SecureString::new(secret), "app_managed".into()))
 }
 
 struct GoogleTokenExchangeResult {
-    refresh_token: Option<String>,
-    access_token: Option<String>,
+    refresh_token: Option<SecureString>,
+    access_token: Option<SecureString>,
     scope: Option<String>,
 }
 
@@ -429,8 +501,8 @@ async fn exchange_google_oauth_code_for_tokens(
         .map_err(|e| format!("Invalid token response JSON: {}", e))?;
 
     Ok(GoogleTokenExchangeResult {
-        refresh_token: value.get("refresh_token").and_then(|v| v.as_str()).map(|s| s.to_string()),
-        access_token: value.get("access_token").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        refresh_token: value.get("refresh_token").and_then(|v| v.as_str()).map(|s| SecureString::new(s.to_string())),
+        access_token: value.get("access_token").and_then(|v| v.as_str()).map(|s| SecureString::new(s.to_string())),
         scope: value.get("scope").and_then(|v| v.as_str()).map(|s| s.to_string()),
     })
 }
@@ -552,11 +624,110 @@ struct OidcDiscovery {
     code_challenge_methods_supported: Vec<String>,
 }
 
+/// Validate that a URL is safe for outbound requests (HTTPS, no private IPs).
+fn validate_issuer_url(raw: &str) -> Result<url::Url, String> {
+    let parsed = url::Url::parse(raw)
+        .map_err(|e| format!("Invalid issuer URL: {}", e))?;
+
+    if parsed.scheme() != "https" {
+        return Err("OIDC issuer must use HTTPS".into());
+    }
+
+    let host = parsed.host_str()
+        .ok_or_else(|| "OIDC issuer URL has no host".to_string())?;
+
+    // Block localhost hostnames
+    let lower = host.to_ascii_lowercase();
+    if lower == "localhost" || lower.ends_with(".localhost") {
+        return Err("OIDC issuer must not point to localhost".into());
+    }
+
+    // Block private / reserved IP ranges
+    if let Ok(ip) = host.parse::<std::net::IpAddr>() {
+        let is_private = match ip {
+            std::net::IpAddr::V4(v4) => {
+                v4.is_loopback()             // 127.0.0.0/8
+                || v4.is_private()           // 10/8, 172.16/12, 192.168/16
+                || v4.is_link_local()        // 169.254/16
+                || v4.is_broadcast()         // 255.255.255.255
+                || v4.is_unspecified()       // 0.0.0.0
+                || v4.octets()[0] == 100 && (v4.octets()[1] & 0xC0) == 64  // 100.64/10 (CGN)
+            }
+            std::net::IpAddr::V6(v6) => {
+                v6.is_loopback()             // ::1
+                || v6.is_unspecified()       // ::
+            }
+        };
+        if is_private {
+            return Err("OIDC issuer must not point to a private or reserved IP address".into());
+        }
+    }
+
+    Ok(parsed)
+}
+
+/// Extract an approximate registrable domain (last two labels) from a hostname.
+///
+/// This handles common TLDs (.com, .org, .io, .app, etc.) correctly.
+/// Multi-part public suffixes like .co.uk are not handled — for those,
+/// the base domain would be `co.uk` instead of `example.co.uk`. This is
+/// defence-in-depth alongside the HTTPS-only and SSRF-guard checks.
+fn base_domain(host: &str) -> &str {
+    if let Some(last_dot) = host.rfind('.') {
+        let before = &host[..last_dot];
+        if let Some(second_dot) = before.rfind('.') {
+            return &host[second_dot + 1..];
+        }
+    }
+    host
+}
+
+/// Verify a discovered endpoint URL belongs to the same registrable domain
+/// as the OIDC issuer and uses HTTPS. Prevents a tampered discovery response
+/// from redirecting OAuth flows to attacker-controlled servers.
+fn validate_endpoint_domain(
+    issuer: &url::Url,
+    endpoint_url: &str,
+    endpoint_name: &str,
+) -> Result<(), String> {
+    let endpoint = url::Url::parse(endpoint_url)
+        .map_err(|e| format!("OIDC {} is not a valid URL: {}", endpoint_name, e))?;
+
+    if endpoint.scheme() != "https" {
+        return Err(format!(
+            "OIDC {} must use HTTPS (got {})",
+            endpoint_name,
+            endpoint.scheme()
+        ));
+    }
+
+    let issuer_host = issuer
+        .host_str()
+        .ok_or_else(|| "OIDC issuer has no host".to_string())?;
+    let endpoint_host = endpoint
+        .host_str()
+        .ok_or_else(|| format!("OIDC {} has no host", endpoint_name))?;
+
+    let issuer_base = base_domain(issuer_host);
+    let endpoint_base = base_domain(endpoint_host);
+
+    if !issuer_base.eq_ignore_ascii_case(endpoint_base) {
+        return Err(format!(
+            "OIDC {} domain mismatch: issuer domain is '{}' but {} points to '{}'. \
+             Discovery response may have been tampered with.",
+            endpoint_name, issuer_host, endpoint_name, endpoint_host
+        ));
+    }
+
+    Ok(())
+}
+
 /// Fetch OIDC configuration from .well-known/openid-configuration.
 async fn discover_oidc(issuer_url: &str) -> Result<OidcDiscovery, String> {
+    let parsed = validate_issuer_url(issuer_url)?;
     let well_known = format!(
         "{}/.well-known/openid-configuration",
-        issuer_url.trim_end_matches('/')
+        parsed.as_str().trim_end_matches('/')
     );
     let resp = reqwest::Client::new()
         .get(&well_known)
@@ -573,14 +744,23 @@ async fn discover_oidc(issuer_url: &str) -> Result<OidcDiscovery, String> {
         ));
     }
 
-    resp.json::<OidcDiscovery>()
+    let discovery = resp
+        .json::<OidcDiscovery>()
         .await
-        .map_err(|e| format!("Invalid OIDC discovery JSON: {}", e))
+        .map_err(|e| format!("Invalid OIDC discovery JSON: {}", e))?;
+
+    // Validate that discovered endpoints belong to the same domain as the issuer.
+    // This prevents a tampered discovery response from redirecting authorization
+    // codes or client secrets to attacker-controlled servers.
+    validate_endpoint_domain(&parsed, &discovery.authorization_endpoint, "authorization_endpoint")?;
+    validate_endpoint_domain(&parsed, &discovery.token_endpoint, "token_endpoint")?;
+
+    Ok(discovery)
 }
 
-// ── PKCE ──────────────────────────────────────────────────────────
+// ── PKCE & State ─────────────────────────────────────────────────
 
-fn generate_pkce_pair() -> (String, String) {
+fn generate_pkce_pair() -> (SecureString, String) {
     use aes_gcm::aead::rand_core::{OsRng, RngCore};
     let mut verifier_bytes = [0u8; 32];
     OsRng.fill_bytes(&mut verifier_bytes);
@@ -590,34 +770,37 @@ fn generate_pkce_pair() -> (String, String) {
     hasher.update(code_verifier.as_bytes());
     let code_challenge = URL_SAFE_NO_PAD.encode(hasher.finalize());
 
-    (code_verifier, code_challenge)
+    (SecureString::new(code_verifier), code_challenge)
+}
+
+/// Generate a cryptographically random OAuth state parameter (RFC 6749 §10.12).
+fn generate_oauth_state() -> String {
+    use aes_gcm::aead::rand_core::{OsRng, RngCore};
+    let mut state_bytes = [0u8; 32];
+    OsRng.fill_bytes(&mut state_bytes);
+    URL_SAFE_NO_PAD.encode(state_bytes)
 }
 
 // ── Universal OAuth Sessions ─────────────────────────────────────
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Zeroize, ZeroizeOnDrop)]
 #[allow(dead_code)]
 struct OAuthSession {
     status: String,          // pending | success | error
     provider_id: String,
-    access_token: Option<String>,
-    refresh_token: Option<String>,
+    access_token: Option<EncryptedToken>,
+    refresh_token: Option<EncryptedToken>,
     scope: Option<String>,
     token_type: Option<String>,
     expires_in: Option<u64>,
+    #[zeroize(skip)]
     extra: Option<serde_json::Value>,
     error: Option<String>,
     created_at: u64,
-    // Internal fields (not serialized to frontend)
-    #[serde(skip)]
     token_url: String,
-    #[serde(skip)]
     client_id: String,
-    #[serde(skip)]
-    client_secret: Option<String>,
-    #[serde(skip)]
-    code_verifier: Option<String>,
-    #[serde(skip)]
+    client_secret: Option<SecureString>,
+    code_verifier: Option<SecureString>,
     redirect_uri: String,
 }
 
@@ -670,7 +853,7 @@ pub fn list_oauth_providers(
 #[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn start_oauth(
-    _state: State<'_, Arc<AppState>>,
+    state: State<'_, Arc<AppState>>,
     provider_id: String,
     client_id: String,
     client_secret: Option<String>,
@@ -681,6 +864,9 @@ pub async fn start_oauth(
     use_pkce: Option<bool>,
     extra_params: Option<HashMap<String, String>>,
 ) -> Result<serde_json::Value, AppError> {
+    // Wrap secret immediately so the bare String is dropped
+    let client_secret: Option<SecureString> = client_secret.map(SecureString::new);
+
     cleanup_oauth_sessions();
 
     // Resolve endpoints from provider registry, OIDC discovery, or custom
@@ -730,6 +916,9 @@ pub async fn start_oauth(
         (None, None)
     };
 
+    // Generate CSRF-protection state parameter
+    let oauth_state = generate_oauth_state();
+
     // Build authorization URL
     let mut auth_url = Url::parse(&resolved_auth_url)
         .map_err(|e| AppError::Internal(format!("Invalid authorize URL: {}", e)))?;
@@ -738,6 +927,7 @@ pub async fn start_oauth(
         query.append_pair("client_id", client_id.trim());
         query.append_pair("redirect_uri", &redirect_uri);
         query.append_pair("response_type", "code");
+        query.append_pair("state", &oauth_state);
         if !effective_scopes.is_empty() {
             query.append_pair("scope", &effective_scopes.join(" "));
         }
@@ -785,25 +975,34 @@ pub async fn start_oauth(
         });
     }
 
+    let _ = audit_log::insert(
+        &state.db, &session_id, &provider_id,
+        "oauth_initiated", None, None,
+        Some(&format!("universal oauth for provider '{}'", provider_id)),
+    );
+
     // Spawn TCP listener to wait for callback
     let sid = session_id.clone();
     let tok_url = resolved_token_url;
     let cid = client_id.clone();
     let csec = client_secret.clone();
     let cv = code_verifier;
+    let db_pool = state.db.clone();
+    let audit_provider = provider_id.clone();
 
     tokio::spawn(async move {
         let outcome = run_oauth_callback_server(
             listener,
             OAUTH_SESSION_TTL_SECS,
+            oauth_state,
             |code_value, redir_uri| async move {
                 let tokens = exchange_oauth_code(
                     &tok_url,
                     &cid,
-                    csec.as_deref(),
+                    csec.as_ref().map(|s| s.expose_secret()),
                     &code_value,
                     &redir_uri,
-                    cv.as_deref(),
+                    cv.as_ref().map(|s| s.expose_secret()),
                 )
                 .await?;
                 Ok(OAuthCallbackTokens {
@@ -823,24 +1022,40 @@ pub async fn start_oauth(
             match outcome {
                 OAuthCallbackOutcome::Success(tokens) => {
                     s.status = "success".into();
-                    s.access_token = tokens.access_token;
-                    s.refresh_token = tokens.refresh_token;
+                    s.access_token = encrypt_token(tokens.access_token);
+                    s.refresh_token = encrypt_token(tokens.refresh_token);
                     s.scope = tokens.scope;
                     s.token_type = tokens.token_type;
                     s.expires_in = tokens.expires_in;
                     s.extra = tokens.extra;
+                    let _ = audit_log::insert(
+                        &db_pool, &sid, &audit_provider,
+                        "oauth_completed", None, None, Some("universal oauth succeeded"),
+                    );
                 }
-                OAuthCallbackOutcome::Error(e) => {
+                OAuthCallbackOutcome::Error(ref e) => {
                     s.status = "error".into();
-                    s.error = Some(e);
+                    s.error = Some(e.clone());
+                    let _ = audit_log::insert(
+                        &db_pool, &sid, &audit_provider,
+                        "oauth_failed", None, None, Some(e),
+                    );
                 }
                 OAuthCallbackOutcome::Timeout => {
                     s.status = "error".into();
                     s.error = Some("OAuth callback timed out".into());
+                    let _ = audit_log::insert(
+                        &db_pool, &sid, &audit_provider,
+                        "oauth_failed", None, None, Some("callback timed out"),
+                    );
                 }
-                OAuthCallbackOutcome::AcceptFailed(e) => {
+                OAuthCallbackOutcome::AcceptFailed(ref e) => {
                     s.status = "error".into();
-                    s.error = Some(e);
+                    s.error = Some(e.clone());
+                    let _ = audit_log::insert(
+                        &db_pool, &sid, &audit_provider,
+                        "oauth_failed", None, None, Some(e),
+                    );
                 }
             }
         }
@@ -863,17 +1078,21 @@ pub fn get_oauth_status(
     cleanup_oauth_sessions();
     let mut sessions = oauth_sessions().lock().unwrap();
     if let Some(s) = sessions.get(&session_id) {
+        // Decrypt tokens into short-lived SecureStrings for serialization only
+        let decrypted_access = decrypt_token(&s.access_token);
+        let decrypted_refresh = decrypt_token(&s.refresh_token);
         let result = json!({
             "status": s.status,
             "provider_id": s.provider_id,
-            "access_token": s.access_token,
-            "refresh_token": s.refresh_token,
+            "access_token": decrypted_access,
+            "refresh_token": decrypted_refresh,
             "scope": s.scope,
             "token_type": s.token_type,
             "expires_in": s.expires_in,
             "extra": s.extra,
             "error": s.error,
         });
+        // decrypted_access / decrypted_refresh are zeroized on drop here
         // Remove completed sessions immediately so tokens don't linger in memory
         if s.status == "success" || s.status == "error" {
             sessions.remove(&session_id);
@@ -890,7 +1109,7 @@ pub fn get_oauth_status(
 /// Refresh an access token using a refresh token.
 #[tauri::command]
 pub async fn refresh_oauth_token(
-    _state: State<'_, Arc<AppState>>,
+    state: State<'_, Arc<AppState>>,
     provider_id: String,
     client_id: String,
     client_secret: Option<String>,
@@ -898,6 +1117,10 @@ pub async fn refresh_oauth_token(
     token_url: Option<String>,
     oidc_issuer: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
+    // Wrap secrets immediately so bare Strings are dropped
+    let client_secret = client_secret.map(SecureString::new);
+    let refresh_token = SecureString::new(refresh_token);
+
     let resolved_token_url = if let Some(provider) = find_provider(&provider_id) {
         provider.token_url.to_string()
     } else if let Some(url) = token_url.filter(|s| !s.is_empty()) {
@@ -916,10 +1139,10 @@ pub async fn refresh_oauth_token(
     let mut form_params = vec![
         ("client_id".to_string(), client_id),
         ("grant_type".to_string(), "refresh_token".to_string()),
-        ("refresh_token".to_string(), refresh_token),
+        ("refresh_token".to_string(), refresh_token.expose_secret().to_string()),
     ];
-    if let Some(secret) = client_secret {
-        form_params.push(("client_secret".to_string(), secret));
+    if let Some(ref secret) = client_secret {
+        form_params.push(("client_secret".to_string(), secret.expose_secret().to_string()));
     }
 
     let response = reqwest::Client::new()
@@ -934,6 +1157,11 @@ pub async fn refresh_oauth_token(
     if !response.status().is_success() {
         let status = response.status();
         let body = response.text().await.unwrap_or_else(|_| "<no body>".into());
+        let _ = audit_log::insert(
+            &state.db, &provider_id, &provider_id,
+            "token_refresh_failed", None, None,
+            Some(&format!("HTTP {}", status)),
+        );
         return Err(AppError::Internal(format!("Token refresh failed ({}): {}", status, body)));
     }
 
@@ -941,6 +1169,12 @@ pub async fn refresh_oauth_token(
         .json::<serde_json::Value>()
         .await
         .map_err(|e| AppError::Internal(format!("Invalid token refresh JSON: {}", e)))?;
+
+    let _ = audit_log::insert(
+        &state.db, &provider_id, &provider_id,
+        "token_refreshed", None, None,
+        Some(&format!("provider '{}'", provider_id)),
+    );
 
     Ok(json!({
         "access_token": value.get("access_token").and_then(|v| v.as_str()),
@@ -954,8 +1188,8 @@ pub async fn refresh_oauth_token(
 // ── Universal Token Exchange ─────────────────────────────────────
 
 struct OAuthTokenResult {
-    access_token: Option<String>,
-    refresh_token: Option<String>,
+    access_token: Option<SecureString>,
+    refresh_token: Option<SecureString>,
     scope: Option<String>,
     token_type: Option<String>,
     expires_in: Option<u64>,
@@ -1005,8 +1239,8 @@ async fn exchange_oauth_code(
         .map_err(|e| format!("Invalid token response JSON: {}", e))?;
 
     Ok(OAuthTokenResult {
-        access_token: value.get("access_token").and_then(|v| v.as_str()).map(|s| s.to_string()),
-        refresh_token: value.get("refresh_token").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        access_token: value.get("access_token").and_then(|v| v.as_str()).map(|s| SecureString::new(s.to_string())),
+        refresh_token: value.get("refresh_token").and_then(|v| v.as_str()).map(|s| SecureString::new(s.to_string())),
         scope: value.get("scope").and_then(|v| v.as_str()).map(|s| s.to_string()),
         token_type: value.get("token_type").and_then(|v| v.as_str()).map(|s| s.to_string()),
         expires_in: value.get("expires_in").and_then(|v| v.as_u64()),

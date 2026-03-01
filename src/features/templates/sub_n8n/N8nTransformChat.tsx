@@ -2,8 +2,10 @@ import { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, CheckCircle2, ChevronDown, KeyRound, Settings2, ShieldCheck, Brain, Bell } from 'lucide-react';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
+import type { StreamingSection } from '@/api/n8nTransform';
 import type { TransformQuestion, TransformSubPhase } from './useN8nImportReducer';
 import { TransformProgress } from '@/features/shared/components/TransformProgress';
+import { StreamingSections } from './StreamingSections';
 
 // Dimension category labels and icons
 const DIMENSION_LABELS: Record<string, { label: string; Icon: React.ComponentType<{ className?: string }> }> = {
@@ -31,6 +33,7 @@ interface N8nTransformChatProps {
   onAnswerUpdated: (questionId: string, answer: string) => void;
   transformPhase: CliRunPhase;
   transformLines: string[];
+  streamingSections: StreamingSection[];
   runId: string | null;
   isRestoring: boolean;
   onRetry: () => void;
@@ -44,6 +47,7 @@ export function N8nTransformChat({
   onAnswerUpdated,
   transformPhase,
   transformLines,
+  streamingSections,
   runId,
   isRestoring,
   onRetry,
@@ -67,6 +71,12 @@ export function N8nTransformChat({
           animate={{ opacity: 1, y: 0 }}
           className="space-y-4"
         >
+          {streamingSections.length > 0 && (
+            <StreamingSections
+              sections={streamingSections}
+              isStreaming={transformPhase === 'running'}
+            />
+          )}
           <TransformProgress
             phase={transformPhase}
             lines={transformLines}
@@ -221,7 +231,7 @@ export function N8nTransformChat({
         </AnimatePresence>
       )}
 
-      {/* Phase 3: Generating — show answer summary + transform progress */}
+      {/* Phase 3: Generating — show answer summary + streaming sections + progress */}
       {transformSubPhase === 'generating' && (
         <>
           {/* Answer summary bubble */}
@@ -251,6 +261,12 @@ export function N8nTransformChat({
               </div>
             </motion.div>
           )}
+
+          {/* Streaming sections — tools, triggers, connectors appear one-by-one */}
+          <StreamingSections
+            sections={streamingSections}
+            isStreaming={transformPhase === 'running'}
+          />
 
           <TransformProgress
             phase={transformPhase}

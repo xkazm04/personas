@@ -2,7 +2,7 @@
   "id": "incident-commander",
   "name": "Incident Commander",
   "description": "Ingests Datadog alerts via webhook, assesses severity using alert context and historical patterns, creates PagerDuty incidents for critical issues, posts status threads in Slack, and maintains an incident timeline. Auto-resolves alerts that self-heal.",
-  "icon": "Server",
+  "icon": "Siren",
   "color": "#F97316",
   "category": [
     "devops"
@@ -133,7 +133,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://api.datadoghq.com/api/v1"
+        "api_base_url": "https://api.datadoghq.com/api/v1",
+        "role": "incident_management",
+        "category": "monitoring"
       },
       {
         "name": "pagerduty",
@@ -170,7 +172,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://api.pagerduty.com"
+        "api_base_url": "https://api.pagerduty.com",
+        "role": "incident_management",
+        "category": "monitoring"
       },
       {
         "name": "slack",
@@ -207,7 +211,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

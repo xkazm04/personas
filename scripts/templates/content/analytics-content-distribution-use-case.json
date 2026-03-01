@@ -2,7 +2,7 @@
   "id": "analytics-content-distribution-use-case",
   "name": "Analytics Content Distribution Use Case",
   "description": "Detects new WordPress posts via the REST API, auto-schedules social media posts to Buffer with platform-optimized captions, checks Google Analytics performance after 48h, and adjusts future posting strategy based on engagement data.",
-  "icon": "FileText",
+  "icon": "BarChart3",
   "color": "#F59E0B",
   "category": [
     "content"
@@ -156,7 +156,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://{site}/wp-json/wp/v2"
+        "api_base_url": "https://{site}/wp-json/wp/v2",
+        "role": "cms",
+        "category": "cms"
       },
       {
         "name": "buffer",
@@ -179,7 +181,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://api.bufferapp.com/1"
+        "api_base_url": "https://api.bufferapp.com/1",
+        "role": "social_media",
+        "category": "social"
       },
       {
         "name": "google_analytics",
@@ -227,7 +231,9 @@
           1,
           2
         ],
-        "api_base_url": "https://analyticsdata.googleapis.com"
+        "api_base_url": "https://analyticsdata.googleapis.com",
+        "role": "analytics",
+        "category": "analytics"
       }
     ],
     "suggested_notification_channels": [

@@ -2,7 +2,111 @@ use rusqlite::{params, Row};
 
 use crate::db::models::{CreatePersonaInput, Persona, PersonaHealth, PersonaSummary, UpdatePersonaInput};
 use crate::db::DbPool;
+use crate::engine::crypto;
 use crate::error::AppError;
+
+// ── Model profile auth_token encryption helpers ─────────────────────────────
+
+/// Encrypt the `auth_token` field inside a model_profile JSON string before DB storage.
+/// Replaces `auth_token` with `auth_token_enc` (ciphertext) and `auth_token_iv` (nonce).
+/// Returns the modified JSON string. No-ops if auth_token is absent or empty.
+fn encrypt_model_profile(json: &str) -> Result<String, AppError> {
+    let mut val: serde_json::Value = serde_json::from_str(json)
+        .map_err(|e| AppError::Validation(format!("Invalid model_profile JSON: {}", e)))?;
+
+    let obj = match val.as_object_mut() {
+        Some(o) => o,
+        None => return Ok(json.to_string()),
+    };
+
+    let token = obj
+        .get("auth_token")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    if token.is_empty() {
+        return Ok(json.to_string());
+    }
+
+    let (ciphertext, nonce) = crypto::encrypt_for_db(&token)?;
+    obj.remove("auth_token");
+    obj.insert("auth_token_enc".into(), serde_json::Value::String(ciphertext));
+    obj.insert("auth_token_iv".into(), serde_json::Value::String(nonce));
+
+    serde_json::to_string(&val)
+        .map_err(|e| AppError::Internal(format!("Failed to serialize model_profile: {}", e)))
+}
+
+/// Decrypt the `auth_token_enc` field inside a model_profile JSON string back to `auth_token`.
+/// Used when returning a single persona for editing or engine execution.
+fn decrypt_model_profile(json: &str) -> String {
+    let mut val: serde_json::Value = match serde_json::from_str(json) {
+        Ok(v) => v,
+        Err(_) => return json.to_string(),
+    };
+
+    let obj = match val.as_object_mut() {
+        Some(o) => o,
+        None => return json.to_string(),
+    };
+
+    let enc = obj.get("auth_token_enc").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let iv = obj.get("auth_token_iv").and_then(|v| v.as_str()).unwrap_or("").to_string();
+
+    if enc.is_empty() || iv.is_empty() {
+        return json.to_string();
+    }
+
+    match crypto::decrypt_from_db(&enc, &iv) {
+        Ok(plaintext) => {
+            obj.remove("auth_token_enc");
+            obj.remove("auth_token_iv");
+            obj.insert("auth_token".into(), serde_json::Value::String(plaintext));
+            serde_json::to_string(&val).unwrap_or_else(|_| json.to_string())
+        }
+        Err(e) => {
+            tracing::warn!("Failed to decrypt model_profile auth_token: {}", e);
+            json.to_string()
+        }
+    }
+}
+
+/// Redact all auth token fields from a model_profile JSON string.
+/// Used when returning persona lists to avoid leaking tokens to the full store.
+fn redact_model_profile(json: &str) -> String {
+    let mut val: serde_json::Value = match serde_json::from_str(json) {
+        Ok(v) => v,
+        Err(_) => return json.to_string(),
+    };
+
+    let obj = match val.as_object_mut() {
+        Some(o) => o,
+        None => return json.to_string(),
+    };
+
+    obj.remove("auth_token");
+    obj.remove("auth_token_enc");
+    obj.remove("auth_token_iv");
+
+    serde_json::to_string(&val).unwrap_or_else(|_| json.to_string())
+}
+
+/// Encrypt the model_profile on a CreatePersonaInput if present.
+fn encrypt_input_profile(profile: &Option<String>) -> Result<Option<String>, AppError> {
+    match profile {
+        Some(ref json) if !json.trim().is_empty() => Ok(Some(encrypt_model_profile(json)?)),
+        other => Ok(other.clone()),
+    }
+}
+
+/// Encrypt the model_profile on an UpdatePersonaInput if present.
+fn encrypt_update_profile(profile: &Option<Option<String>>) -> Result<Option<Option<String>>, AppError> {
+    match profile {
+        Some(Some(ref json)) if !json.trim().is_empty() => Ok(Some(Some(encrypt_model_profile(json)?))),
+        other => Ok(other.clone()),
+    }
+}
 
 // ── Shared validation helpers ────────────────────────────────────────────────
 
@@ -35,6 +139,9 @@ fn validate_timeout_ms(v: i32) -> Result<(), AppError> {
 }
 
 fn validate_max_budget_usd(v: f64) -> Result<(), AppError> {
+    if v.is_nan() || v.is_infinite() {
+        return Err(AppError::Validation("max_budget_usd must be a finite number".into()));
+    }
     if v < 0.0 {
         return Err(AppError::Validation("max_budget_usd must be >= 0".into()));
     }
@@ -81,7 +188,20 @@ fn validate_notification_channels(channels_json: &str) -> Result<(), AppError> {
     Ok(())
 }
 
-fn row_to_persona(row: &Row) -> rusqlite::Result<Persona> {
+/// How to handle the model_profile auth_token when reading from DB.
+enum ProfileMode {
+    /// Decrypt the encrypted token back to plaintext (for detail/engine views).
+    Decrypt,
+    /// Remove all token fields (for list/sidebar views).
+    Redact,
+}
+
+fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Persona> {
+    let raw_profile: Option<String> = row.get("model_profile")?;
+    let model_profile = raw_profile.map(|json| match mode {
+        ProfileMode::Decrypt => decrypt_model_profile(&json),
+        ProfileMode::Redact => redact_model_profile(&json),
+    });
     Ok(Persona {
         id: row.get("id")?,
         project_id: row.get("project_id")?,
@@ -96,7 +216,7 @@ fn row_to_persona(row: &Row) -> rusqlite::Result<Persona> {
         timeout_ms: row.get("timeout_ms")?,
         notification_channels: row.get("notification_channels")?,
         last_design_result: row.get("last_design_result")?,
-        model_profile: row.get("model_profile")?,
+        model_profile,
         max_budget_usd: row.get("max_budget_usd")?,
         max_turns: row.get("max_turns")?,
         design_context: row.get("design_context")?,
@@ -106,10 +226,18 @@ fn row_to_persona(row: &Row) -> rusqlite::Result<Persona> {
     })
 }
 
+fn row_to_persona(row: &Row) -> rusqlite::Result<Persona> {
+    row_to_persona_with_mode(row, ProfileMode::Decrypt)
+}
+
+fn row_to_persona_redacted(row: &Row) -> rusqlite::Result<Persona> {
+    row_to_persona_with_mode(row, ProfileMode::Redact)
+}
+
 pub fn get_all(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare("SELECT * FROM personas ORDER BY created_at DESC")?;
-    let rows = stmt.query_map([], row_to_persona)?;
+    let rows = stmt.query_map([], row_to_persona_redacted)?;
     Ok(rows.filter_map(|r| r.ok()).collect())
 }
 
@@ -148,6 +276,8 @@ pub fn create(pool: &DbPool, input: CreatePersonaInput) -> Result<Persona, AppEr
         validate_notification_channels(channels_json)?;
     }
 
+    let encrypted_profile = encrypt_input_profile(&input.model_profile)?;
+
     let conn = pool.get()?;
     conn.execute(
         "INSERT INTO personas
@@ -159,7 +289,7 @@ pub fn create(pool: &DbPool, input: CreatePersonaInput) -> Result<Persona, AppEr
         params![
             id, project_id, input.name, input.description, input.system_prompt,
             input.structured_prompt, input.icon, input.color, enabled,
-            max_concurrent, timeout_ms, input.model_profile,
+            max_concurrent, timeout_ms, encrypted_profile,
             input.max_budget_usd, input.max_turns, input.design_context,
             input.group_id, input.notification_channels, now,
         ],
@@ -200,6 +330,9 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
         validate_notification_channels(channels_json)?;
     }
 
+    // Encrypt auth_token inside model_profile before storing
+    let encrypted_profile = encrypt_update_profile(&input.model_profile)?;
+
     let now = chrono::Utc::now().to_rfc3339();
     let conn = pool.get()?;
 
@@ -218,7 +351,7 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
     push_field!(input.timeout_ms, "timeout_ms", sets, param_idx);
     push_field!(input.notification_channels, "notification_channels", sets, param_idx);
     push_field!(input.last_design_result, "last_design_result", sets, param_idx);
-    push_field!(input.model_profile, "model_profile", sets, param_idx);
+    push_field!(encrypted_profile, "model_profile", sets, param_idx);
     push_field!(input.max_budget_usd, "max_budget_usd", sets, param_idx);
     push_field!(input.max_turns, "max_turns", sets, param_idx);
     push_field!(input.design_context, "design_context", sets, param_idx);
@@ -244,7 +377,7 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
     if let Some(v) = input.timeout_ms { param_values.push(Box::new(v)); }
     if let Some(ref v) = input.notification_channels { param_values.push(Box::new(v.clone())); }
     if let Some(ref v) = input.last_design_result { param_values.push(Box::new(v.clone())); }
-    if let Some(ref v) = input.model_profile { param_values.push(Box::new(v.clone())); }
+    if let Some(ref v) = encrypted_profile { param_values.push(Box::new(v.clone())); }
     if let Some(ref v) = input.max_budget_usd { param_values.push(Box::new(*v)); }
     if let Some(ref v) = input.max_turns { param_values.push(Box::new(*v)); }
     if let Some(ref v) = input.design_context { param_values.push(Box::new(v.clone())); }

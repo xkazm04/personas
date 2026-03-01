@@ -2,7 +2,7 @@
   "id": "multi-region-e-commerce-fulfillment-pipeline-4-use-case-team",
   "name": "Multi-Region E-Commerce Fulfillment Pipeline (4-Use Case Team)",
   "description": "**Use Case A — Order Router** (router): Receives Shopify orders, determines fulfillment warehouse by region.\n**Use Case B — Inventory Manager** (worker): Checks and reserves stock in Airtable, alerts on low inventory.\n**Use Case C — Shipping Coordinator** (worker): Creates shipping labels via ShipStation API, updates tracking.\n**Use Case D — Customer Communicator** (worker): Sends order confirmation, shipping, and delivery emails.",
-  "icon": "GitBranch",
+  "icon": "PackageCheck",
   "color": "#0EA5E9",
   "category": [
     "pipeline"
@@ -157,7 +157,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://{store}.myshopify.com/admin/api/2024-01"
+        "api_base_url": "https://{store}.myshopify.com/admin/api/2024-01",
+        "role": "e_commerce",
+        "category": "e-commerce"
       },
       {
         "name": "airtable",
@@ -188,7 +190,9 @@
         "related_triggers": [
           1
         ],
-        "api_base_url": "https://api.airtable.com/v0"
+        "api_base_url": "https://api.airtable.com/v0",
+        "role": "knowledge_base",
+        "category": "productivity"
       },
       {
         "name": "shipstation",
@@ -219,7 +223,9 @@
         "related_triggers": [
           2
         ],
-        "api_base_url": "https://ssapi.shipstation.com"
+        "api_base_url": "https://ssapi.shipstation.com",
+        "role": "e_commerce",
+        "category": "e-commerce"
       },
       {
         "name": "google_workspace",
@@ -261,7 +267,9 @@
         "related_triggers": [
           3
         ],
-        "api_base_url": "https://www.googleapis.com"
+        "api_base_url": "https://www.googleapis.com",
+        "role": "productivity_suite",
+        "category": "productivity"
       },
       {
         "name": "slack",
@@ -282,7 +290,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

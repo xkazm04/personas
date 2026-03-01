@@ -2,7 +2,7 @@
   "id": "weekly-planning-automator",
   "name": "Weekly Planning Automator",
   "description": "Reads your Notion project database every Monday, creates prioritized Todoist tasks from upcoming items, posts a weekly plan summary to Slack, and archives completed items in Notion at week's end.",
-  "icon": "Kanban",
+  "icon": "CalendarRange",
   "color": "#8B5CF6",
   "category": [
     "project-management"
@@ -142,7 +142,9 @@
           0,
           1
         ],
-        "api_base_url": "https://api.notion.com/v1"
+        "api_base_url": "https://api.notion.com/v1",
+        "role": "knowledge_base",
+        "category": "productivity"
       },
       {
         "name": "todoist",
@@ -174,7 +176,9 @@
           0,
           1
         ],
-        "api_base_url": "https://api.todoist.com/rest/v2"
+        "api_base_url": "https://api.todoist.com/rest/v2",
+        "role": "project_tracking",
+        "category": "productivity"
       },
       {
         "name": "slack",
@@ -206,7 +210,9 @@
           0,
           1
         ],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Upload, Search, Sparkles, Pencil, Check } from 'lucide-react';
 import { WIZARD_STEPS, STEP_META, type N8nWizardStep } from './useN8nImportReducer';
@@ -10,13 +11,39 @@ const STEP_ICONS: Record<N8nWizardStep, React.ComponentType<{ className?: string
   confirm: Check,
 };
 
+/** Estimated duration hints for long-running steps. */
+const STEP_DURATION_HINT: Partial<Record<N8nWizardStep, string>> = {
+  analyze: '~30s',
+  transform: '~60s',
+};
+
 interface N8nStepIndicatorProps {
   currentStep: N8nWizardStep;
+  /** True when the current step is actively processing (analyzing, transforming). */
+  processing?: boolean;
   className?: string;
 }
 
-export function N8nStepIndicator({ currentStep, className = '' }: N8nStepIndicatorProps) {
+export function N8nStepIndicator({ currentStep, processing = false, className = '' }: N8nStepIndicatorProps) {
   const activeIndex = STEP_META[currentStep].index;
+
+  // Elapsed timer — resets on step change or when processing starts/stops
+  const [elapsed, setElapsed] = useState(0);
+  const prevStepRef = useRef(currentStep);
+  useEffect(() => {
+    if (currentStep !== prevStepRef.current) {
+      setElapsed(0);
+      prevStepRef.current = currentStep;
+    }
+    if (!processing) {
+      setElapsed(0);
+      return;
+    }
+    const timer = setInterval(() => setElapsed((s) => s + 1), 1000);
+    return () => clearInterval(timer);
+  }, [processing, currentStep]);
+
+  const showTimer = processing && !!STEP_DURATION_HINT[currentStep];
 
   return (
     <div className={`flex items-center gap-1 px-2 py-3 ${className}`}>
@@ -25,6 +52,7 @@ export function N8nStepIndicator({ currentStep, className = '' }: N8nStepIndicat
         const Icon = STEP_ICONS[step];
         const isCompleted = i < activeIndex;
         const isActive = i === activeIndex;
+        const hint = STEP_DURATION_HINT[step];
 
         return (
           <div key={step} className="flex items-center gap-1 flex-1 last:flex-initial">
@@ -60,18 +88,29 @@ export function N8nStepIndicator({ currentStep, className = '' }: N8nStepIndicat
                 </motion.div>
               </div>
 
-              {/* Step label */}
-              <span
-                className={`text-sm font-medium truncate transition-colors duration-300 ${
-                  isActive
-                    ? 'text-violet-300'
-                    : isCompleted
-                      ? 'text-emerald-400/70'
-                      : 'text-muted-foreground/80'
-                }`}
-              >
-                {meta.label}
-              </span>
+              {/* Step label + timer */}
+              <div className="min-w-0">
+                <span
+                  className={`text-sm font-medium truncate transition-colors duration-300 block ${
+                    isActive
+                      ? 'text-violet-300'
+                      : isCompleted
+                        ? 'text-emerald-400/70'
+                        : 'text-muted-foreground/80'
+                  }`}
+                >
+                  {meta.label}
+                </span>
+                {isActive && showTimer && (
+                  <span className="text-[11px] font-mono text-muted-foreground/70 tabular-nums leading-none">
+                    {Math.floor(elapsed / 60)}:{(elapsed % 60).toString().padStart(2, '0')}
+                    <span className="ml-1 text-muted-foreground/40">{hint}</span>
+                  </span>
+                )}
+                {isActive && !showTimer && hint && (
+                  <span className="text-[11px] text-muted-foreground/40 leading-none">{hint}</span>
+                )}
+              </div>
             </div>
 
             {/* Connector line */}

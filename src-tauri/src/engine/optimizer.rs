@@ -107,21 +107,11 @@ pub fn analyze_pipeline(
     }
 }
 
-/// Parse "YYYY-MM-DD HH:MM:SS" to seconds since midnight (only for duration diff).
+/// Parse an RFC 3339 / ISO 8601 timestamp to Unix epoch seconds.
 fn parse_timestamp_secs(s: &str) -> Option<i64> {
-    // Format: "2024-01-15 10:30:45"
-    let parts: Vec<&str> = s.split(' ').collect();
-    if parts.len() < 2 {
-        return None;
-    }
-    let date_parts: Vec<i64> = parts[0].split('-').filter_map(|p| p.parse().ok()).collect();
-    let time_parts: Vec<i64> = parts[1].split(':').filter_map(|p| p.parse().ok()).collect();
-    if date_parts.len() < 3 || time_parts.len() < 3 {
-        return None;
-    }
-    // Approximate: days since epoch * 86400 + time-of-day seconds
-    let days = date_parts[0] * 365 + date_parts[1] * 30 + date_parts[2];
-    Some(days * 86400 + time_parts[0] * 3600 + time_parts[1] * 60 + time_parts[2])
+    chrono::DateTime::parse_from_rfc3339(s)
+        .ok()
+        .map(|dt| dt.timestamp())
 }
 
 fn compute_avg_duration(runs: &[PipelineRun]) -> f64 {
@@ -436,45 +426,16 @@ fn topological_order(
     connections: &[PersonaTeamConnection],
 ) -> Vec<String> {
     let member_ids: Vec<String> = members.iter().map(|m| m.id.clone()).collect();
-    let mut in_degree: HashMap<String, usize> = member_ids.iter().map(|id| (id.clone(), 0)).collect();
-    let mut adjacency: HashMap<String, Vec<String>> = member_ids.iter().map(|id| (id.clone(), vec![])).collect();
-
-    for conn in connections {
-        if let Some(deg) = in_degree.get_mut(&conn.target_member_id) {
-            *deg += 1;
-        }
-        if let Some(adj) = adjacency.get_mut(&conn.source_member_id) {
-            adj.push(conn.target_member_id.clone());
-        }
-    }
-
-    let mut queue: std::collections::VecDeque<String> = in_degree
+    let edges: Vec<(&str, &str)> = connections
         .iter()
-        .filter(|(_, &deg)| deg == 0)
-        .map(|(id, _)| id.clone())
+        .map(|c| (c.source_member_id.as_str(), c.target_member_id.as_str()))
         .collect();
 
-    let mut order = Vec::new();
-    while let Some(node) = queue.pop_front() {
-        order.push(node.clone());
-        if let Some(neighbors) = adjacency.get(&node) {
-            for neighbor in neighbors {
-                if let Some(deg) = in_degree.get_mut(neighbor) {
-                    *deg -= 1;
-                    if *deg == 0 {
-                        queue.push_back(neighbor.clone());
-                    }
-                }
-            }
-        }
-    }
+    let graph = super::topology_graph::NamedTopologyGraph::new(&member_ids, &edges);
+    let result = graph.topological_sort();
 
-    // Add any remaining (cycles)
-    for id in &member_ids {
-        if !order.contains(id) {
-            order.push(id.clone());
-        }
-    }
-
+    // Acyclic order followed by cycle nodes (preserves previous behavior)
+    let mut order = result.order;
+    order.extend(result.cycle_nodes);
     order
 }

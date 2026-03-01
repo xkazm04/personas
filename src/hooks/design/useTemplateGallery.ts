@@ -2,8 +2,12 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import {
   listDesignReviewsPaginated,
   listReviewConnectors,
+  listReviewCategories,
+  getTrendingTemplates,
+  backfillReviewCategories,
   type PaginatedReviewsResult,
   type ConnectorWithCount,
+  type CategoryWithCount,
 } from '@/api/reviews';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 
@@ -17,6 +21,8 @@ export interface UseTemplateGalleryReturn {
   setSearch: (s: string) => void;
   connectorFilter: string[];
   setConnectorFilter: (c: string[]) => void;
+  categoryFilter: string[];
+  setCategoryFilter: (c: string[]) => void;
   sortBy: string;
   setSortBy: (s: string) => void;
   sortDir: string;
@@ -25,12 +31,16 @@ export interface UseTemplateGalleryReturn {
   isLoading: boolean;
   refresh: () => void;
   availableConnectors: ConnectorWithCount[];
+  availableCategories: CategoryWithCount[];
+  trendingTemplates: PersonaDesignReview[];
+  coverageFilter: string;
+  setCoverageFilter: (f: string) => void;
 }
 
 const PER_PAGE = 10;
 const DEBOUNCE_MS = 300;
 
-export function useTemplateGallery(): UseTemplateGalleryReturn {
+export function useTemplateGallery(coverageServiceTypes?: string[]): UseTemplateGalleryReturn {
   const [items, setItems] = useState<PersonaDesignReview[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
@@ -40,7 +50,11 @@ export function useTemplateGallery(): UseTemplateGalleryReturn {
   const [sortBy, setSortBy] = useState('created_at');
   const [sortDir, setSortDir] = useState('desc');
   const [isLoading, setIsLoading] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
   const [availableConnectors, setAvailableConnectors] = useState<ConnectorWithCount[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<CategoryWithCount[]>([]);
+  const [trendingTemplates, setTrendingTemplates] = useState<PersonaDesignReview[]>([]);
+  const [coverageFilter, setCoverageFilter] = useState('all');
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -57,7 +71,7 @@ export function useTemplateGallery(): UseTemplateGalleryReturn {
   // Reset page on filter/sort change
   useEffect(() => {
     setPage(0);
-  }, [connectorFilter, sortBy, sortDir]);
+  }, [connectorFilter, categoryFilter, sortBy, sortDir, coverageFilter]);
 
   // Fetch paginated reviews
   const fetchIdRef = useRef(0);
@@ -68,10 +82,13 @@ export function useTemplateGallery(): UseTemplateGalleryReturn {
       const result: PaginatedReviewsResult = await listDesignReviewsPaginated({
         search: debouncedSearch || undefined,
         connectorFilter: connectorFilter.length > 0 ? connectorFilter : undefined,
+        categoryFilter: categoryFilter.length > 0 ? categoryFilter : undefined,
         sortBy,
         sortDir,
         page,
         perPage: PER_PAGE,
+        coverageFilter: coverageFilter !== 'all' ? coverageFilter : undefined,
+        coverageServiceTypes: coverageFilter !== 'all' && coverageServiceTypes ? coverageServiceTypes : undefined,
       });
       if (id === fetchIdRef.current) {
         setItems(result.items);
@@ -84,16 +101,24 @@ export function useTemplateGallery(): UseTemplateGalleryReturn {
         setIsLoading(false);
       }
     }
-  }, [debouncedSearch, connectorFilter, sortBy, sortDir, page]);
+  }, [debouncedSearch, connectorFilter, categoryFilter, sortBy, sortDir, page, coverageFilter, coverageServiceTypes]);
 
   useEffect(() => {
     fetchReviews();
   }, [fetchReviews]);
 
-  // Fetch available connectors once
+  // Fetch available connectors and trending templates once.
+  // Also run a one-shot backfill for any reviews missing a category.
   useEffect(() => {
+    backfillReviewCategories().catch(() => {});
     listReviewConnectors()
       .then(setAvailableConnectors)
+      .catch(() => {});
+    listReviewCategories()
+      .then(setAvailableCategories)
+      .catch(() => {});
+    getTrendingTemplates(8)
+      .then(setTrendingTemplates)
       .catch(() => {});
   }, []);
 
@@ -103,6 +128,12 @@ export function useTemplateGallery(): UseTemplateGalleryReturn {
     fetchReviews();
     listReviewConnectors()
       .then(setAvailableConnectors)
+      .catch(() => {});
+    listReviewCategories()
+      .then(setAvailableCategories)
+      .catch(() => {});
+    getTrendingTemplates(8)
+      .then(setTrendingTemplates)
       .catch(() => {});
   }, [fetchReviews]);
 
@@ -116,6 +147,8 @@ export function useTemplateGallery(): UseTemplateGalleryReturn {
     setSearch,
     connectorFilter,
     setConnectorFilter,
+    categoryFilter,
+    setCategoryFilter,
     sortBy,
     setSortBy,
     sortDir,
@@ -124,5 +157,9 @@ export function useTemplateGallery(): UseTemplateGalleryReturn {
     isLoading,
     refresh,
     availableConnectors,
+    availableCategories,
+    trendingTemplates,
+    coverageFilter,
+    setCoverageFilter,
   };
 }

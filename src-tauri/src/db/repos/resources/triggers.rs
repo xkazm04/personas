@@ -2,10 +2,10 @@ use rusqlite::{params, Row};
 
 use crate::db::models::{CreateTriggerInput, PersonaTrigger, UpdateTriggerInput};
 use crate::db::DbPool;
-use crate::engine::scheduler;
+use crate::engine::{chain, scheduler};
 use crate::error::AppError;
 
-const VALID_TRIGGER_TYPES: &[&str] = &["schedule", "polling", "webhook", "manual", "chain"];
+const VALID_TRIGGER_TYPES: &[&str] = &["schedule", "polling", "webhook", "manual", "chain", "event_listener"];
 const MIN_INTERVAL_SECONDS: i64 = 60;
 
 fn validate_trigger_type(trigger_type: &str) -> Result<(), AppError> {
@@ -19,7 +19,7 @@ fn validate_trigger_type(trigger_type: &str) -> Result<(), AppError> {
     Ok(())
 }
 
-fn validate_config(config: Option<&str>) -> Result<(), AppError> {
+fn validate_config(trigger_type: &str, config: Option<&str>) -> Result<(), AppError> {
     if let Some(config_str) = config {
         if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(config_str) {
             if let Some(interval) = parsed.get("interval_seconds") {
@@ -37,7 +37,25 @@ fn validate_config(config: Option<&str>) -> Result<(), AppError> {
                     }
                 }
             }
+
+            // Webhook triggers must have a non-empty HMAC secret to prevent
+            // unauthenticated payloads from triggering persona executions.
+            if trigger_type == "webhook" {
+                let secret = parsed
+                    .get("webhook_secret")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                if secret.trim().is_empty() {
+                    return Err(AppError::Validation(
+                        "Webhook triggers require a non-empty webhook_secret for HMAC authentication".into(),
+                    ));
+                }
+            }
         }
+    } else if trigger_type == "webhook" {
+        return Err(AppError::Validation(
+            "Webhook triggers require a config with a non-empty webhook_secret".into(),
+        ));
     }
     Ok(())
 }
@@ -95,7 +113,18 @@ pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaTrigger, AppError> {
 
 pub fn create(pool: &DbPool, input: CreateTriggerInput) -> Result<PersonaTrigger, AppError> {
     validate_trigger_type(&input.trigger_type)?;
-    validate_config(input.config.as_deref())?;
+    validate_config(&input.trigger_type, input.config.as_deref())?;
+
+    // Chain triggers: reject configurations that would create a cycle
+    if input.trigger_type == "chain" {
+        if let Some(ref config_str) = input.config {
+            if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(config_str) {
+                if let Some(source_id) = parsed.get("source_persona_id").and_then(|v| v.as_str()) {
+                    chain::detect_chain_cycle(pool, source_id, &input.persona_id, None)?;
+                }
+            }
+        }
+    }
 
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
@@ -134,12 +163,27 @@ pub fn update(
     if let Some(ref tt) = input.trigger_type {
         validate_trigger_type(tt)?;
     }
-    if let Some(ref cfg) = input.config {
-        validate_config(Some(cfg.as_str()))?;
-    }
 
     // Verify exists
-    get_by_id(pool, id)?;
+    let existing = get_by_id(pool, id)?;
+
+    let effective_type = input.trigger_type.as_deref().unwrap_or(&existing.trigger_type);
+
+    if let Some(ref cfg) = input.config {
+        validate_config(effective_type, Some(cfg.as_str()))?;
+    }
+
+    // Chain triggers: reject configurations that would create a cycle
+    if effective_type == "chain" {
+        let config_str = input.config.as_deref().or(existing.config.as_deref());
+        if let Some(cfg) = config_str {
+            if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(cfg) {
+                if let Some(source_id) = parsed.get("source_persona_id").and_then(|v| v.as_str()) {
+                    chain::detect_chain_cycle(pool, source_id, &existing.persona_id, Some(id))?;
+                }
+            }
+        }
+    }
 
     let now = chrono::Utc::now().to_rfc3339();
     let conn = pool.get()?;
@@ -178,6 +222,20 @@ pub fn update(
     let params_ref: Vec<&dyn rusqlite::types::ToSql> =
         param_values.iter().map(|p| p.as_ref()).collect();
     conn.execute(&sql, params_ref.as_slice())?;
+    drop(conn);
+
+    // Recompute next_trigger_at when trigger_type or config changed and the
+    // caller didn't explicitly supply a next_trigger_at value.
+    let schedule_changed = input.trigger_type.is_some() || input.config.is_some();
+    if schedule_changed && input.next_trigger_at.is_none() {
+        let updated = get_by_id(pool, id)?;
+        let next_at = scheduler::compute_next_trigger_at(&updated, chrono::Utc::now());
+        let conn2 = pool.get()?;
+        conn2.execute(
+            "UPDATE persona_triggers SET next_trigger_at = ?1, updated_at = ?2 WHERE id = ?3",
+            params![next_at, chrono::Utc::now().to_rfc3339(), id],
+        )?;
+    }
 
     get_by_id(pool, id)
 }
@@ -203,6 +261,24 @@ pub fn get_chain_triggers_for_source(
          ORDER BY created_at DESC",
     )?;
     let rows = stmt.query_map(params![source_persona_id], row_to_trigger)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+}
+
+/// Get enabled event_listener triggers whose listen_event_type matches the given event type.
+/// Uses SQL-level filtering with json_extract.
+pub fn get_event_listeners_for_event_type(
+    pool: &DbPool,
+    event_type: &str,
+) -> Result<Vec<PersonaTrigger>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT * FROM persona_triggers
+         WHERE trigger_type = 'event_listener'
+           AND enabled = 1
+           AND json_extract(config, '$.listen_event_type') = ?1
+         ORDER BY created_at DESC",
+    )?;
+    let rows = stmt.query_map(params![event_type], row_to_trigger)?;
     rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
 }
 
@@ -277,6 +353,7 @@ pub fn get_health_map(pool: &DbPool) -> Result<std::collections::HashMap<String,
 
 /// Single-query chain link resolution using SQL JOINs + json_extract.
 /// Returns (trigger_id, source_persona_id, source_name, target_persona_id, target_name, condition_type, enabled).
+#[allow(clippy::type_complexity)]
 pub fn get_chain_links(
     pool: &DbPool,
 ) -> Result<
@@ -328,6 +405,52 @@ pub fn mark_triggered(
          WHERE id = ?3",
         params![now, next_trigger_at, id],
     )?;
+    Ok(rows > 0)
+}
+
+/// Atomically update the content hash and advance the schedule in a single
+/// compare-and-swap (CAS) operation.
+///
+/// The WHERE clause checks that the stored content_hash still matches
+/// `expected_old_hash`. If another poll cycle already updated the hash,
+/// the CAS fails (returns `Ok(false)`) and the caller must NOT publish a
+/// duplicate event.
+///
+/// This prevents the race where event publish succeeds but the hash or
+/// schedule update fails, leaving stale state for the next cycle.
+pub fn mark_triggered_with_hash(
+    pool: &DbPool,
+    id: &str,
+    new_hash: &str,
+    expected_old_hash: Option<&str>,
+    next_trigger_at: Option<String>,
+) -> Result<bool, AppError> {
+    let now = chrono::Utc::now().to_rfc3339();
+    let conn = pool.get()?;
+
+    let rows = match expected_old_hash {
+        Some(old) => conn.execute(
+            "UPDATE persona_triggers
+             SET config = json_set(COALESCE(config, '{}'), '$.content_hash', ?1),
+                 last_triggered_at = ?2,
+                 next_trigger_at = ?3,
+                 updated_at = ?2
+             WHERE id = ?4
+               AND json_extract(config, '$.content_hash') = ?5",
+            params![new_hash, now, next_trigger_at, id, old],
+        )?,
+        None => conn.execute(
+            "UPDATE persona_triggers
+             SET config = json_set(COALESCE(config, '{}'), '$.content_hash', ?1),
+                 last_triggered_at = ?2,
+                 next_trigger_at = ?3,
+                 updated_at = ?2
+             WHERE id = ?4
+               AND json_extract(config, '$.content_hash') IS NULL",
+            params![new_hash, now, next_trigger_at, id],
+        )?,
+    };
+
     Ok(rows > 0)
 }
 

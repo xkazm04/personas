@@ -45,7 +45,7 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: '100%', opacity: 0 }}
       transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-      className="absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-primary/20 rounded-t-2xl shadow-2xl z-10 max-h-[45%] overflow-hidden flex flex-col"
+      className="absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-primary/20 rounded-t-2xl shadow-2xl z-10 max-h-[50%] overflow-hidden flex flex-col"
     >
       {/* Handle bar */}
       <div className="flex justify-center pt-2 pb-1">
@@ -77,9 +77,9 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3">
+      <div className="flex-1 overflow-y-auto px-5 py-3 space-y-2">
         {/* Metadata grid */}
-        <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
           <div>
             <span className="text-sm font-mono uppercase text-muted-foreground/80">Event ID</span>
             <p className="text-sm"><UuidLabel value={event.id} /></p>

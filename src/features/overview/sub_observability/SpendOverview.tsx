@@ -85,7 +85,7 @@ export function SummaryCard({ icon: Icon, label, numericValue, format, color, tr
             <div className={`w-9 h-9 rounded-xl border shadow-inner flex items-center justify-center ${iconCls}`}>
               <Icon className="w-4 h-4" />
             </div>
-            <span className="text-[13px] font-semibold text-muted-foreground/80 uppercase tracking-widest">{label}</span>
+            <span className="text-xs font-semibold text-muted-foreground/80 uppercase tracking-widest">{label}</span>
           </div>
           {sparklineData && sparklineData.length >= 2 && (
             <div className="opacity-60 group-hover:opacity-100 transition-opacity">
@@ -99,11 +99,11 @@ export function SummaryCard({ icon: Icon, label, numericValue, format, color, tr
           
           <div className="flex items-center gap-3 mt-2 min-h-[20px]">
             {trendDisplay ? (
-              <div className={`flex items-center gap-1 text-[13px] font-bold ${trendDisplay.trendColor} bg-background/50 px-1.5 py-0.5 rounded border border-primary/5`}>
+              <div className={`flex items-center gap-1 text-xs font-bold ${trendDisplay.trendColor} bg-background/50 px-1.5 py-0.5 rounded border border-primary/5`}>
                 <trendDisplay.TIcon className="w-3.5 h-3.5" />
                 <span>{trendDisplay.label}</span>
               </div>
-            ) : <span className="text-[13px] text-muted-foreground/50">—</span>}
+            ) : <span className="text-xs text-muted-foreground/50">—</span>}
             
             {subtitle && (
               <p className={`text-xs font-medium truncate ${subtitleColor || 'text-muted-foreground/70'}`}>

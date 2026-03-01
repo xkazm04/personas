@@ -19,7 +19,14 @@ export function SidebarPersonaCard({
 }) {
   const triggerCount = usePersonaStore((s) => s.personaTriggerCounts[persona.id]);
   const lastRun = usePersonaStore((s) => s.personaLastRun[persona.id]);
+  const health = usePersonaStore((s) => s.personaHealthMap[persona.id]);
   const connectors = useMemo(() => extractConnectorNames(persona), [persona]);
+
+  // Health indicator color
+  const healthColor = health?.status === 'failing' ? 'bg-red-400'
+    : health?.status === 'degraded' ? 'bg-amber-400'
+    : health?.status === 'healthy' ? 'bg-emerald-400'
+    : 'bg-muted-foreground/30';
 
   return (
     <button
@@ -58,8 +65,9 @@ export function SidebarPersonaCard({
         </span>
         <div
           className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-            persona.enabled ? 'bg-emerald-400' : 'bg-muted-foreground/30'
+            persona.enabled ? healthColor : 'bg-muted-foreground/30'
           }`}
+          title={persona.enabled ? (health?.status ?? 'unknown') : 'disabled'}
         />
         <span className="sr-only">{persona.enabled ? 'Active' : 'Inactive'}</span>
       </div>

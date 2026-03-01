@@ -91,10 +91,12 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
   }, [selectedPersona, modelConfig, useCaseId, startTest]);
 
   const handleCancel = useCallback(async () => {
-    if (testRunProgress) {
-      await cancelTest(testRunProgress.runId ?? '');
+    if (testRunProgress?.runId) {
+      await cancelTest(testRunProgress.runId);
     }
   }, [testRunProgress, cancelTest]);
+
+  const canCancel = !!testRunProgress?.runId;
 
   const hasPrompt = !!selectedPersona?.structured_prompt || !!selectedPersona?.system_prompt;
 
@@ -114,7 +116,9 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
           <>
             <button
               onClick={handleCancel}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium text-sm bg-red-500/80 hover:bg-red-500 text-foreground transition-all"
+              disabled={!canCancel}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium text-sm bg-red-500/80 hover:bg-red-500 text-foreground transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              title={!canCancel ? 'Waiting for test to start...' : 'Cancel test'}
             >
               <Square className="w-3.5 h-3.5" /> Cancel
             </button>

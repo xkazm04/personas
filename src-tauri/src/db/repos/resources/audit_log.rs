@@ -97,6 +97,36 @@ pub fn get_usage_stats(
     Ok(row)
 }
 
+/// Get all audit log entries across all credentials, newest first.
+pub fn get_all(
+    pool: &DbPool,
+    limit: u32,
+) -> Result<Vec<CredentialAuditEntry>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT id, credential_id, credential_name, operation, persona_id, persona_name, detail, created_at
+         FROM credential_audit_log
+         ORDER BY created_at DESC
+         LIMIT ?1",
+    )?;
+    let rows = stmt
+        .query_map(params![limit], |row| {
+            Ok(CredentialAuditEntry {
+                id: row.get(0)?,
+                credential_id: row.get(1)?,
+                credential_name: row.get(2)?,
+                operation: row.get(3)?,
+                persona_id: row.get(4)?,
+                persona_name: row.get(5)?,
+                detail: row.get(6)?,
+                created_at: row.get(7)?,
+            })
+        })?
+        .filter_map(|r| r.ok())
+        .collect();
+    Ok(rows)
+}
+
 /// Get personas that depend on a credential, determined two ways:
 /// 1. Tool → Connector → Credential link (structural dependency)
 /// 2. Audit log history (observed usage)

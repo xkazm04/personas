@@ -26,7 +26,7 @@ pub enum PromptDelivery {
 // =============================================================================
 
 /// Supported CLI engine backends.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum EngineKind {
     ClaudeCode,
     CodexCli,
@@ -44,6 +44,7 @@ impl EngineKind {
     }
 
     /// Serialize to the string stored in the settings DB.
+    #[allow(dead_code)]
     pub fn as_setting(&self) -> &'static str {
         match self {
             EngineKind::ClaudeCode => "claude_code",
@@ -64,6 +65,7 @@ impl EngineKind {
 /// - Build CLI arguments for execution and resume
 /// - Parse NDJSON stream output into unified `StreamLineType`
 /// - Configure environment variables for its API
+#[allow(dead_code)]
 pub trait CliProvider: Send + Sync {
     /// Human-readable engine name for error messages and UI.
     fn engine_name(&self) -> &'static str;

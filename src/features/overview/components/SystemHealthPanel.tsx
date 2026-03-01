@@ -21,7 +21,7 @@ import {
   FileWarning,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { systemHealthCheck, getCrashLogs, clearCrashLogs } from '@/api/tauriApi';
+import { healthCheckLocal, healthCheckAgents, healthCheckCloud, healthCheckAccount, getCrashLogs, clearCrashLogs } from '@/api/tauriApi';
 import type { HealthCheckSection, HealthCheckItem, CrashLogEntry } from '@/api/tauriApi';
 import { useAuthStore } from '@/stores/authStore';
 import { useAutoInstaller, type InstallState } from '@/hooks/utility/useAutoInstaller';
@@ -47,11 +47,12 @@ const SECTION_STYLES: Record<string, { badge: string; icon: string }> = {
 
 const DEFAULT_SECTION_STYLE = { badge: 'bg-violet-500/10', icon: 'text-violet-300' };
 
-const LOADING_PHASES = [
-  'Detecting local dependencies\u2026',
-  'Checking agent configuration\u2026',
-  'Checking cloud deployment status\u2026',
-  'Verifying account connectivity\u2026',
+/** Skeleton section stubs — rendered immediately while backend check runs. */
+const SKELETON_SECTIONS = [
+  { id: 'local', label: 'Local Environment' },
+  { id: 'agents', label: 'Agents' },
+  { id: 'cloud', label: 'Cloud Deployment' },
+  { id: 'account', label: 'Account' },
 ];
 
 // ── Helper Components ──────────────────────────────────────────────────────────
@@ -338,7 +339,6 @@ function CrashLogsSection() {
 export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
   const [sections, setSections] = useState<HealthCheckSection[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingPhase, setLoadingPhase] = useState(0);
   const [hasIssues, setHasIssues] = useState(false);
   const [ipcError, setIpcError] = useState(false);
   const prefersReducedMotion = useReducedMotion();
@@ -351,71 +351,81 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
   const runChecks = useCallback(() => {
     setLoading(true);
     setIpcError(false);
-    systemHealthCheck()
-      .then((report) => {
-        setSections(report.sections);
-        setHasIssues(!report.all_ok);
-        setLoading(false);
-      })
-      .catch(() => {
-        setIpcError(true);
-        setSections([
-          {
-            id: 'local',
-            label: 'Local Environment',
-            items: [
-              {
-                id: 'ipc',
-                label: 'Application Bridge',
-                status: 'error',
-                detail: 'The Tauri IPC bridge is not responding. The app may need to be rebuilt or restarted.',
-                installable: false,
-              },
-            ],
-          },
-          {
-            id: 'agents',
-            label: 'Agents',
-            items: [
-              { id: 'ollama_api_key', label: 'Ollama Cloud API Key', status: 'inactive', detail: 'Cannot check \u2014 IPC unavailable', installable: false },
-              { id: 'litellm_proxy', label: 'LiteLLM Proxy', status: 'inactive', detail: 'Cannot check \u2014 IPC unavailable', installable: false },
-            ],
-          },
-          {
-            id: 'cloud',
-            label: 'Cloud Deployment',
-            items: [
-              { id: 'cloud_orchestrator', label: 'Cloud Orchestrator', status: 'info', detail: 'Cannot check \u2014 IPC unavailable', installable: false },
-            ],
-          },
-          {
-            id: 'account',
-            label: 'Account',
-            items: [
-              { id: 'google_auth', label: 'Google Account', status: 'inactive', detail: 'Cannot check \u2014 IPC unavailable', installable: false },
-            ],
-          },
-        ]);
-        setHasIssues(true);
-        setLoading(false);
-      });
+    setSections([]);
+
+    const fallbackSection = (id: string, label: string, items: HealthCheckItem[]): HealthCheckSection => ({
+      id, label, items,
+    });
+
+    const ipcFallbacks: Record<string, HealthCheckSection> = {
+      local: fallbackSection('local', 'Local Environment', [
+        { id: 'ipc', label: 'Application Bridge', status: 'error', detail: 'The Tauri IPC bridge is not responding. The app may need to be rebuilt or restarted.', installable: false },
+      ]),
+      agents: fallbackSection('agents', 'Agents', [
+        { id: 'ollama_api_key', label: 'Ollama Cloud API Key', status: 'inactive', detail: 'Cannot check \u2014 IPC unavailable', installable: false },
+        { id: 'litellm_proxy', label: 'LiteLLM Proxy', status: 'inactive', detail: 'Cannot check \u2014 IPC unavailable', installable: false },
+      ]),
+      cloud: fallbackSection('cloud', 'Cloud Deployment', [
+        { id: 'cloud_orchestrator', label: 'Cloud Orchestrator', status: 'info', detail: 'Cannot check \u2014 IPC unavailable', installable: false },
+      ]),
+      account: fallbackSection('account', 'Account', [
+        { id: 'google_auth', label: 'Google Account', status: 'inactive', detail: 'Cannot check \u2014 IPC unavailable', installable: false },
+      ]),
+    };
+
+    const checks: Array<{ id: string; fn: () => Promise<HealthCheckSection> }> = [
+      { id: 'local', fn: healthCheckLocal },
+      { id: 'agents', fn: healthCheckAgents },
+      { id: 'cloud', fn: healthCheckCloud },
+      { id: 'account', fn: healthCheckAccount },
+    ];
+
+    let resolved = 0;
+    for (const check of checks) {
+      check.fn()
+        .then((section) => {
+          setSections((prev) => {
+            const next = prev.filter((s) => s.id !== section.id);
+            next.push(section);
+            next.sort((a, b) => {
+              const order = ['local', 'agents', 'cloud', 'account'];
+              return order.indexOf(a.id) - order.indexOf(b.id);
+            });
+            return next;
+          });
+        })
+        .catch(() => {
+          setIpcError(true);
+          setSections((prev) => {
+            const next = prev.filter((s) => s.id !== check.id);
+            next.push(ipcFallbacks[check.id]!);
+            next.sort((a, b) => {
+              const order = ['local', 'agents', 'cloud', 'account'];
+              return order.indexOf(a.id) - order.indexOf(b.id);
+            });
+            return next;
+          });
+          setHasIssues(true);
+        })
+        .finally(() => {
+          resolved++;
+          if (resolved === checks.length) {
+            setSections((final_sections) => {
+              const allOk = final_sections.every((s) =>
+                s.items.every((i) => i.status === 'ok' || i.status === 'info' || i.status === 'inactive')
+              );
+              setHasIssues(!allOk);
+              return final_sections;
+            });
+            setLoading(false);
+          }
+        });
+    }
   }, []);
 
   useEffect(() => {
     runChecks();
   }, [runChecks]);
-
-  useEffect(() => {
-    if (!loading) {
-      return;
-    }
-
-    const interval = window.setInterval(() => {
-      setLoadingPhase((prev) => (prev + 1) % LOADING_PHASES.length);
-    }, prefersReducedMotion ? 1800 : 1200);
-
-    return () => window.clearInterval(interval);
-  }, [loading, prefersReducedMotion]);
 
   useEffect(() => {
     if (!loading && !ipcError) {
@@ -452,6 +462,9 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
     claudeState.phase === 'downloading' ||
     claudeState.phase === 'installing';
 
+  // Map loaded section data by id for progressive rendering
+  const sectionMap = new Map(sections.map((s) => [s.id, s]));
+
   return (
     <ContentBox>
       <ContentHeader
@@ -473,246 +486,223 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
       />
 
       <ContentBody centered>
-        <div className="space-y-5">
-      {loading ? (
-        <div className="flex-1 min-h-0 flex flex-col gap-3">
-          <div className="flex items-center gap-2 px-1 text-sm text-muted-foreground/80 min-h-6">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <AnimatePresence mode="wait">
-              <motion.span
-                key={loadingPhase}
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.2 }}
-              >
-                {LOADING_PHASES[loadingPhase]}
-              </motion.span>
-            </AnimatePresence>
-            <span className="ml-1 inline-flex items-center gap-1">
-              {[0, 1, 2].map((dot) => (
-                <motion.span
-                  key={`dot-${dot}`}
-                  className="w-1.5 h-1.5 rounded-full bg-primary/35"
-                  animate={prefersReducedMotion ? { opacity: 0.5 } : { opacity: [0.25, 0.95, 0.25] }}
-                  transition={
-                    prefersReducedMotion
-                      ? { duration: 0 }
-                      : { duration: 1.2, repeat: Infinity, delay: dot * 0.25, ease: 'easeInOut' }
-                  }
-                />
-              ))}
-            </span>
-          </div>
+        <div className="space-y-4">
+          {/* 2x2 Grid — cards render immediately, items populate when data arrives */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+            {SKELETON_SECTIONS.map((stub, stubIdx) => {
+              const loaded = sectionMap.get(stub.id);
+              const SectionIcon = SECTION_ICONS[stub.id] || Monitor;
+              const sectionStyle = SECTION_STYLES[stub.id] ?? DEFAULT_SECTION_STYLE;
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
-            {[0, 1, 2, 3].map((idx) => (
-              <motion.div
-                key={`loading-${idx}`}
-                initial={{ opacity: 0.35, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.12, duration: prefersReducedMotion ? 0.2 : 0.45 }}
-                className="rounded-2xl border border-primary/5 bg-secondary/10 shadow-sm min-h-[240px] relative overflow-hidden flex flex-col"
-              >
-                <motion.div
-                  className="absolute inset-y-0 -left-1/2 w-[200%] bg-gradient-to-r from-transparent via-primary/5 to-transparent"
-                  animate={prefersReducedMotion ? { opacity: 0 } : { x: ['0%', '200%'] }}
-                  transition={
-                    prefersReducedMotion
-                      ? { duration: 0 }
-                      : { duration: 2, repeat: Infinity, ease: 'linear', delay: idx * 0.15 }
-                  }
-                />
-                <div className="px-5 py-4 border-b border-primary/5 flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-xl bg-primary/10" />
-                  <div className="h-4 w-24 rounded-md bg-primary/10" />
-                  <div className="ml-auto w-2 h-2 rounded-full bg-primary/10" />
-                </div>
-                <div className="px-5 py-4 space-y-4 flex-1">
-                  <div className="flex gap-3">
-                    <div className="w-4 h-4 rounded-full bg-primary/10 flex-shrink-0" />
-                    <div className="space-y-2 flex-1">
-                      <div className="h-3 w-3/4 rounded-md bg-primary/10" />
-                      <div className="h-2 w-1/2 rounded-md bg-primary/5" />
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <div className="w-4 h-4 rounded-full bg-primary/10 flex-shrink-0" />
-                    <div className="space-y-2 flex-1">
-                      <div className="h-3 w-4/5 rounded-md bg-primary/10" />
-                      <div className="h-2 w-2/3 rounded-md bg-primary/5" />
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="flex-1 min-h-0 overflow-y-auto pr-1">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
-          {sections.map((section, sectionIdx) => {
-            const SectionIcon = SECTION_ICONS[section.id] || Monitor;
-            const sectionStyle = SECTION_STYLES[section.id] ?? DEFAULT_SECTION_STYLE;
-            const isAccount = section.id === 'account';
-            const authItem = isAccount ? section.items.find((i) => i.id === 'google_auth') : null;
-            const showSignIn = isAccount && authItem?.status === 'inactive' && !ipcError;
-
-            return (
-              <motion.div
-                key={section.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: sectionIdx * 0.1, duration: 0.25 }}
-                className="rounded-2xl border border-primary/10 bg-secondary/20 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col min-h-[240px] group"
-              >
-                <div className="flex items-center gap-3 px-5 py-4 border-b border-primary/5 bg-background/30 group-hover:bg-background/50 transition-colors">
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center border shadow-inner ${sectionStyle.badge}`}>
-                    <SectionIcon className={`w-4 h-4 ${sectionStyle.icon}`} />
-                  </div>
-                  <span className="text-[13px] font-bold text-foreground/90 uppercase tracking-widest">
-                    {section.label}
-                  </span>
-                  <div className="ml-auto">
-                    <SectionStatusDot items={section.items} />
-                  </div>
-                </div>
-
-                <div className="divide-y divide-primary/5 flex-1 bg-gradient-to-b from-transparent to-black/[0.02]">
-                  {section.items.map((check) => (
-                    <div key={check.id} className="flex items-start gap-3 px-5 py-3 hover:bg-white/[0.02] transition-colors">
-                      {getStatusIcon(check.status)}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-foreground/80">{check.label}</p>
-                        {check.detail && (
-                          <p className="text-sm text-muted-foreground/80 break-words line-clamp-2">{check.detail}</p>
-                        )}
-
-                        {check.id === 'node' && check.installable && !ipcError && (
-                          <InstallButton
-                            checkId="node"
-                            status={check.status}
-                            installState={nodeState}
-                            onInstall={() => install('node')}
-                          />
-                        )}
-                        {check.id === 'claude_cli' && check.installable && !ipcError && (
-                          <InstallButton
-                            checkId="claude_cli"
-                            status={check.status}
-                            installState={claudeState}
-                            onInstall={() => install('claude_cli')}
-                          />
-                        )}
-                        {check.id === 'ollama_api_key' && !ipcError && (
-                          <button
-                            onClick={() => setShowOllamaPopup(true)}
-                            className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
-                          >
-                            <Key className="w-3 h-3" />
-                            {check.status === 'ok' ? 'Edit Key' : 'Configure'}
-                          </button>
-                        )}
-                        {check.id === 'litellm_proxy' && !ipcError && (
-                          <button
-                            onClick={() => setShowLiteLLMPopup(true)}
-                            className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-md bg-sky-500/10 text-sky-300 border border-sky-500/20 hover:bg-sky-500/20 transition-colors"
-                          >
-                            <Key className="w-3 h-3" />
-                            {check.status === 'ok' ? 'Edit Config' : 'Configure'}
-                          </button>
-                        )}
+              // Still loading — show card with real header + skeleton items
+              if (loading && !loaded) {
+                return (
+                  <motion.div
+                    key={stub.id}
+                    initial={{ opacity: 0.5, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: stubIdx * 0.08, duration: prefersReducedMotion ? 0.15 : 0.3 }}
+                    className="rounded-2xl border border-primary/10 bg-secondary/20 shadow-sm overflow-hidden flex flex-col min-h-[160px]"
+                  >
+                    <div className="flex items-center gap-3 px-5 py-4 border-b border-primary/5 bg-background/30">
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${sectionStyle.badge}`}>
+                        <SectionIcon className={`w-4 h-4 ${sectionStyle.icon}`} />
+                      </div>
+                      <span className="text-xs font-bold text-foreground/90 uppercase tracking-widest">
+                        {stub.label}
+                      </span>
+                      <div className="ml-auto">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground/50" />
                       </div>
                     </div>
-                  ))}
-
-                  {showSignIn && (
-                    <div className="px-4 py-2.5">
-                      <button
-                        onClick={handleSignIn}
-                        className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 transition-colors"
-                      >
-                        <Chrome className="w-3.5 h-3.5" />
-                        Sign in with Google
-                      </button>
+                    <div className="px-5 py-4 space-y-4 flex-1 relative overflow-hidden">
+                      <motion.div
+                        className="absolute inset-y-0 -left-1/2 w-[200%] bg-gradient-to-r from-transparent via-primary/5 to-transparent"
+                        animate={prefersReducedMotion ? { opacity: 0 } : { x: ['0%', '200%'] }}
+                        transition={
+                          prefersReducedMotion
+                            ? { duration: 0 }
+                            : { duration: 2, repeat: Infinity, ease: 'linear', delay: stubIdx * 0.15 }
+                        }
+                      />
+                      <div className="flex gap-3">
+                        <div className="w-4 h-4 rounded-full bg-primary/10 flex-shrink-0" />
+                        <div className="space-y-2 flex-1">
+                          <div className="h-3 w-3/4 rounded-md bg-primary/10" />
+                          <div className="h-2 w-1/2 rounded-md bg-primary/5" />
+                        </div>
+                      </div>
+                      <div className="flex gap-3">
+                        <div className="w-4 h-4 rounded-full bg-primary/10 flex-shrink-0" />
+                        <div className="space-y-2 flex-1">
+                          <div className="h-3 w-4/5 rounded-md bg-primary/10" />
+                          <div className="h-2 w-2/3 rounded-md bg-primary/5" />
+                        </div>
+                      </div>
                     </div>
-                  )}
-                </div>
-              </motion.div>
-            );
-          })}
+                  </motion.div>
+                );
+              }
+
+              // Data available — render real section
+              const section = loaded ?? { id: stub.id, label: stub.label, items: [] };
+              const isAccount = section.id === 'account';
+              const authItem = isAccount ? section.items.find((i) => i.id === 'google_auth') : null;
+              const showSignIn = isAccount && authItem?.status === 'inactive' && !ipcError;
+
+              return (
+                <motion.div
+                  key={section.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: stubIdx * 0.1, duration: 0.25 }}
+                  className="rounded-2xl border border-primary/10 bg-secondary/20 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col min-h-[160px] group"
+                >
+                  <div className="flex items-center gap-3 px-5 py-4 border-b border-primary/5 bg-background/30 group-hover:bg-background/50 transition-colors">
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${sectionStyle.badge}`}>
+                      <SectionIcon className={`w-4 h-4 ${sectionStyle.icon}`} />
+                    </div>
+                    <span className="text-xs font-bold text-foreground/90 uppercase tracking-widest">
+                      {section.label}
+                    </span>
+                    <div className="ml-auto">
+                      <SectionStatusDot items={section.items} />
+                    </div>
+                  </div>
+
+                  <div className="divide-y divide-primary/5 flex-1 bg-gradient-to-b from-transparent to-black/[0.02]">
+                    {section.items.map((check) => (
+                      <div key={check.id} className="flex items-start gap-3 px-5 py-3 hover:bg-white/[0.02] transition-colors">
+                        {getStatusIcon(check.status)}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-foreground/80">{check.label}</p>
+                          {check.detail && (
+                            <p className="text-sm text-muted-foreground/80 break-words line-clamp-2">{check.detail}</p>
+                          )}
+
+                          {check.id === 'node' && check.installable && !ipcError && (
+                            <InstallButton
+                              checkId="node"
+                              status={check.status}
+                              installState={nodeState}
+                              onInstall={() => install('node')}
+                            />
+                          )}
+                          {check.id === 'claude_cli' && check.installable && !ipcError && (
+                            <InstallButton
+                              checkId="claude_cli"
+                              status={check.status}
+                              installState={claudeState}
+                              onInstall={() => install('claude_cli')}
+                            />
+                          )}
+                          {check.id === 'ollama_api_key' && !ipcError && (
+                            <button
+                              onClick={() => setShowOllamaPopup(true)}
+                              className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+                            >
+                              <Key className="w-3 h-3" />
+                              {check.status === 'ok' ? 'Edit Key' : 'Configure'}
+                            </button>
+                          )}
+                          {check.id === 'litellm_proxy' && !ipcError && (
+                            <button
+                              onClick={() => setShowLiteLLMPopup(true)}
+                              className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-md bg-sky-500/10 text-sky-300 border border-sky-500/20 hover:bg-sky-500/20 transition-colors"
+                            >
+                              <Key className="w-3 h-3" />
+                              {check.status === 'ok' ? 'Edit Config' : 'Configure'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+
+                    {showSignIn && (
+                      <div className="px-4 py-2.5">
+                        <button
+                          onClick={handleSignIn}
+                          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 transition-colors"
+                        >
+                          <Chrome className="w-3.5 h-3.5" />
+                          Sign in with Google
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
-        </div>
-      )}
 
-      {import.meta.env.DEV && <CrashLogsSection />}
+          {import.meta.env.DEV && <CrashLogsSection />}
 
-      {hasIssues && !loading && (
-        <p className="text-sm text-amber-400/80">
-          {ipcError
-            ? 'The application bridge is not responding. Try restarting the app. You can still continue to explore the interface.'
-            : 'Some checks reported issues. You can still continue, but some features may not work correctly.'}
-        </p>
-      )}
+          {hasIssues && !loading && (
+            <p className="text-sm text-amber-400/80">
+              {ipcError
+                ? 'The application bridge is not responding. Try restarting the app. You can still continue to explore the interface.'
+                : 'Some checks reported issues. You can still continue, but some features may not work correctly.'}
+            </p>
+          )}
 
-      <div className="flex items-center gap-3">
-        {!loading && !ipcError && hasNodeIssue && hasClaudeIssue && (
-          <button
-            onClick={() => install('all')}
-            disabled={anyInstalling}
-            className="flex-1 px-4 py-2.5 text-sm font-medium rounded-xl bg-violet-500/10 text-violet-300 border border-violet-500/20 hover:bg-violet-500/20 transition-colors flex items-center justify-center gap-2 disabled:opacity-40"
-          >
-            <Download className="w-4 h-4" />
-            Install All Dependencies
-          </button>
-        )}
-        {onNext && (
-          <button
-            onClick={onNext}
-            disabled={loading}
-            className="flex-1 px-4 py-2.5 text-sm font-medium rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center justify-center gap-2 disabled:opacity-40"
-          >
-            Continue
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        )}
-      </div>
+          <div className="flex items-center gap-3">
+            {!loading && !ipcError && hasNodeIssue && hasClaudeIssue && (
+              <button
+                onClick={() => install('all')}
+                disabled={anyInstalling}
+                className="flex-1 px-4 py-2.5 text-sm font-medium rounded-xl bg-violet-500/10 text-violet-300 border border-violet-500/20 hover:bg-violet-500/20 transition-colors flex items-center justify-center gap-2 disabled:opacity-40"
+              >
+                <Download className="w-4 h-4" />
+                Install All Dependencies
+              </button>
+            )}
+            {onNext && (
+              <button
+                onClick={onNext}
+                disabled={loading}
+                className="flex-1 px-4 py-2.5 text-sm font-medium rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center justify-center gap-2 disabled:opacity-40"
+              >
+                Continue
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
+          </div>
 
-      <AnimatePresence>
-        {showOllamaPopup && (
-          <ConfigurationPopup
-            title="Ollama Cloud API Key"
-            subtitle="Optional — unlocks free cloud models (Qwen3 Coder, GLM-5, Kimi K2.5) for all agents."
-            accent="emerald"
-            fields={OLLAMA_FIELDS}
-            saveLabel="Save Key"
-            footerText={OLLAMA_FOOTER}
-            onClose={() => setShowOllamaPopup(false)}
-            onSaved={() => {
-              setShowOllamaPopup(false);
-              runChecks();
-            }}
-          />
-        )}
-      </AnimatePresence>
+          <AnimatePresence>
+            {showOllamaPopup && (
+              <ConfigurationPopup
+                title="Ollama Cloud API Key"
+                subtitle="Optional — unlocks free cloud models (Qwen3 Coder, GLM-5, Kimi K2.5) for all agents."
+                accent="emerald"
+                fields={OLLAMA_FIELDS}
+                saveLabel="Save Key"
+                footerText={OLLAMA_FOOTER}
+                onClose={() => setShowOllamaPopup(false)}
+                onSaved={() => {
+                  setShowOllamaPopup(false);
+                  runChecks();
+                }}
+              />
+            )}
+          </AnimatePresence>
 
-      <AnimatePresence>
-        {showLiteLLMPopup && (
-          <ConfigurationPopup
-            title="LiteLLM Proxy Configuration"
-            subtitle="Optional — route agents through your LiteLLM proxy for model management and cost tracking."
-            accent="sky"
-            fields={LITELLM_FIELDS}
-            saveLabel="Save Configuration"
-            footerText="These settings are stored locally and shared across all agents configured to use the LiteLLM provider."
-            onClose={() => setShowLiteLLMPopup(false)}
-            onSaved={() => {
-              setShowLiteLLMPopup(false);
-              runChecks();
-            }}
-          />
-        )}
-      </AnimatePresence>
+          <AnimatePresence>
+            {showLiteLLMPopup && (
+              <ConfigurationPopup
+                title="LiteLLM Proxy Configuration"
+                subtitle="Optional — route agents through your LiteLLM proxy for model management and cost tracking."
+                accent="sky"
+                fields={LITELLM_FIELDS}
+                saveLabel="Save Configuration"
+                footerText="These settings are stored locally and shared across all agents configured to use the LiteLLM provider."
+                onClose={() => setShowLiteLLMPopup(false)}
+                onSaved={() => {
+                  setShowLiteLLMPopup(false);
+                  runChecks();
+                }}
+              />
+            )}
+          </AnimatePresence>
         </div>
       </ContentBody>
     </ContentBox>

@@ -2,7 +2,7 @@
   "id": "customer-feedback-router",
   "name": "Customer Feedback Router",
   "description": "Captures new Intercom conversations, extracts feature requests and bug reports, creates Linear issues with proper labels, and posts a Slack summary. Deduplicates against existing Linear issues using agent memory.",
-  "icon": "HeadphonesIcon",
+  "icon": "MessageSquare",
   "color": "#14B8A6",
   "category": [
     "support"
@@ -133,7 +133,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://api.intercom.io"
+        "api_base_url": "https://api.intercom.io",
+        "role": "crm",
+        "category": "crm"
       },
       {
         "name": "slack",
@@ -162,7 +164,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       },
       {
         "name": "linear",
@@ -191,7 +195,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://api.linear.app/graphql"
+        "api_base_url": "https://api.linear.app/graphql",
+        "role": "project_tracking",
+        "category": "development"
       }
     ],
     "suggested_notification_channels": [

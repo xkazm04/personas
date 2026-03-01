@@ -1,13 +1,16 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronRight, Check, X, ClipboardCheck, CheckSquare, Square, AlertTriangle, ExternalLink } from 'lucide-react';
+import { Check, X, ClipboardCheck, CheckSquare, Square, AlertTriangle, ExternalLink } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { FilterBar } from '@/features/shared/components/FilterBar';
+import DetailModal from '@/features/overview/components/DetailModal';
+import { PersonaSelect } from '@/features/overview/sub_usage/DashboardFilters';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/types/frontendTypes';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { STATUS_COLORS } from '@/lib/utils/designTokens';
+import { useVirtualList } from '@/hooks/utility/useVirtualList';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -82,11 +85,14 @@ const FILTER_LABELS: Record<FilterStatus, string> = {
 
 export default function ManualReviewList() {
   const manualReviews = usePersonaStore((s) => s.manualReviews);
+  const personas = usePersonaStore((s) => s.personas);
   const fetchManualReviews = usePersonaStore((s) => s.fetchManualReviews);
   const updateManualReview = usePersonaStore((s) => s.updateManualReview);
 
   const [filter, setFilter] = useState<FilterStatus>('all');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [selectedReview, setSelectedReview] = useState<ManualReviewItem | null>(null);
+  const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
+  const [notes, setNotes] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmAction, setConfirmAction] = useState<ManualReviewStatus | null>(null);
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
@@ -106,11 +112,17 @@ export default function ManualReviewList() {
     return counts;
   }, [manualReviews]);
 
-  // Filter client-side
+  // Filter client-side by status and persona
   const filteredReviews = useMemo(() => {
-    if (filter === 'all') return manualReviews;
-    return manualReviews.filter((r) => r.status === filter);
-  }, [manualReviews, filter]);
+    let result = manualReviews;
+    if (filter !== 'all') {
+      result = result.filter((r) => r.status === filter);
+    }
+    if (selectedPersonaId) {
+      result = result.filter((r) => r.persona_id === selectedPersonaId);
+    }
+    return result;
+  }, [manualReviews, filter, selectedPersonaId]);
 
   // Pending reviews in the current filtered view (selectable)
   const selectablePendingIds = useMemo(
@@ -123,7 +135,14 @@ export default function ManualReviewList() {
     setSelectedIds(new Set());
     setConfirmAction(null);
     setBulkError(null);
-  }, [filter]);
+  }, [filter, selectedPersonaId]);
+
+  // Sync modal notes when opening a review
+  useEffect(() => {
+    if (selectedReview) {
+      setNotes(selectedReview.reviewer_notes || '');
+    }
+  }, [selectedReview]);
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
@@ -175,10 +194,21 @@ export default function ManualReviewList() {
     }
   }, [selectedIds, updateManualReview, manualReviews]);
 
+  const handleModalAction = useCallback(async (newStatus: ManualReviewStatus) => {
+    if (!selectedReview) return;
+    await updateManualReview(selectedReview.id, {
+      status: newStatus,
+      reviewer_notes: notes || undefined,
+    });
+    setSelectedReview(null);
+  }, [selectedReview, notes, updateManualReview]);
+
   const activeSelectionCount = useMemo(
     () => Array.from(selectedIds).filter((id) => selectablePendingIds.has(id)).length,
     [selectedIds, selectablePendingIds]
   );
+
+  const { parentRef: reviewListRef, virtualizer } = useVirtualList(filteredReviews, 44);
 
   return (
     <ContentBox>
@@ -201,24 +231,31 @@ export default function ManualReviewList() {
         badgeStyle="paren"
         layoutIdPrefix="review-filter"
         trailing={
-          selectablePendingIds.size > 0 ? (
-            <button
-              onClick={toggleSelectAll}
-              data-testid="review-select-all-btn"
-              className="ml-auto flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm text-muted-foreground/90 hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
-            >
-              {activeSelectionCount === selectablePendingIds.size ? (
-                <CheckSquare className="w-3.5 h-3.5" />
-              ) : (
-                <Square className="w-3.5 h-3.5" />
-              )}
-              Select all pending
-            </button>
-          ) : undefined
+          <div className="ml-auto flex items-center gap-2">
+            <PersonaSelect
+              value={selectedPersonaId}
+              onChange={setSelectedPersonaId}
+              personas={personas}
+            />
+            {selectablePendingIds.size > 0 && (
+              <button
+                onClick={toggleSelectAll}
+                data-testid="review-select-all-btn"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm text-muted-foreground/90 hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
+              >
+                {activeSelectionCount === selectablePendingIds.size ? (
+                  <CheckSquare className="w-3.5 h-3.5" />
+                ) : (
+                  <Square className="w-3.5 h-3.5" />
+                )}
+                Select all pending
+              </button>
+            )}
+          </div>
         }
       />
 
-      {/* Review list */}
+      {/* Review table */}
       <ContentBody flex>
         {filteredReviews.length === 0 ? (
           <div className="flex-1 flex items-center justify-center p-4 md:p-6">
@@ -231,23 +268,201 @@ export default function ManualReviewList() {
             </div>
           </div>
         ) : (
-          <div className="p-4 md:p-6 space-y-1.5">
-            <AnimatePresence initial={false}>
-              {filteredReviews.map((review) => (
-                <ReviewRow
-                  key={review.id}
-                  review={review}
-                  isExpanded={expandedId === review.id}
-                  onToggle={() => setExpandedId(expandedId === review.id ? null : review.id)}
-                  onAction={updateManualReview}
-                  isSelected={selectedIds.has(review.id)}
-                  onSelect={review.status === 'pending' ? () => toggleSelect(review.id) : undefined}
-                />
-              ))}
-            </AnimatePresence>
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <table className="w-full border-collapse">
+              <thead className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-primary/15">
+                <tr className="text-sm text-muted-foreground/80 uppercase tracking-wider">
+                  <th className="w-10 px-3 py-2.5 text-left font-medium">
+                    <span className="sr-only">Select</span>
+                  </th>
+                  <th className="px-3 py-2.5 text-left font-medium min-w-[120px]">Persona</th>
+                  <th className="px-3 py-2.5 text-left font-medium w-24">Severity</th>
+                  <th className="px-3 py-2.5 text-left font-medium">Content</th>
+                  <th className="px-3 py-2.5 text-left font-medium w-24">Status</th>
+                  <th className="px-3 py-2.5 text-right font-medium w-28">Created</th>
+                </tr>
+              </thead>
+            </table>
+            <div ref={reviewListRef} className="flex-1 overflow-y-auto">
+              <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+                <table className="w-full border-collapse">
+                  <tbody>
+                    {virtualizer.getVirtualItems().map((virtualRow) => {
+                      const review = filteredReviews[virtualRow.index]!;
+                      const status = STATUS_COLORS[review.status] ?? STATUS_COLORS.pending!;
+                      const statusLabel = STATUS_LABELS[review.status] ?? 'Pending';
+                      const isPending = review.status === 'pending';
+
+                      return (
+                        <tr
+                          key={review.id}
+                          onClick={() => setSelectedReview(review)}
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            transform: `translateY(${virtualRow.start}px)`,
+                            width: '100%',
+                            height: `${virtualRow.size}px`,
+                            display: 'table',
+                            tableLayout: 'fixed',
+                          }}
+                          className="hover:bg-white/[0.03] cursor-pointer transition-colors border-b border-primary/[0.06]"
+                        >
+                          {/* Checkbox */}
+                          <td className="w-10 px-3 py-2.5 align-middle">
+                            {isPending ? (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); toggleSelect(review.id); }}
+                                className="text-muted-foreground/80 hover:text-muted-foreground transition-colors flex-shrink-0"
+                              >
+                                {selectedIds.has(review.id) ? (
+                                  <CheckSquare className="w-3.5 h-3.5 text-primary" />
+                                ) : (
+                                  <Square className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+                            ) : (
+                              <div className="w-3.5" />
+                            )}
+                          </td>
+
+                          {/* Persona */}
+                          <td className="px-3 py-2.5 align-middle min-w-[120px]">
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-6 h-6 rounded-md flex items-center justify-center text-sm border border-primary/15 flex-shrink-0"
+                                style={{ backgroundColor: (review.persona_color || '#6366f1') + '15' }}
+                              >
+                                {review.persona_icon || '?'}
+                              </div>
+                              <span className="text-sm text-muted-foreground/80 truncate">
+                                {review.persona_name || 'Unknown'}
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* Severity */}
+                          <td className="px-3 py-2.5 align-middle w-24">
+                            <div className="flex items-center gap-1.5">
+                              <SeverityIndicator severity={review.severity} />
+                              <span className="text-sm text-muted-foreground/70">
+                                {SEVERITY_LABELS[review.severity] ?? 'Info'}
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* Content (truncated) */}
+                          <td className="px-3 py-2.5 align-middle">
+                            <span className="text-sm text-foreground/80 truncate block">
+                              {review.content.slice(0, 100)}
+                            </span>
+                          </td>
+
+                          {/* Status badge */}
+                          <td className="px-3 py-2.5 align-middle w-24">
+                            <span className={`inline-block px-2 py-0.5 rounded-md text-sm font-medium border ${status.bgColor} ${status.color} ${status.borderColor}`}>
+                              {statusLabel}
+                            </span>
+                          </td>
+
+                          {/* Created */}
+                          <td className="px-3 py-2.5 align-middle w-28 text-right">
+                            <span className="text-sm text-muted-foreground/80">
+                              {formatRelativeTime(review.created_at)}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
       </ContentBody>
+
+      {/* Detail modal */}
+      <AnimatePresence>
+        {selectedReview && (
+          <DetailModal
+            title={selectedReview.persona_name || 'Unknown Persona'}
+            subtitle={`${STATUS_LABELS[selectedReview.status] ?? 'Pending'} \u00b7 ${SEVERITY_LABELS[selectedReview.severity] ?? 'Info'} severity`}
+            onClose={() => setSelectedReview(null)}
+            actions={
+              selectedReview.status === 'pending' ? (
+                <>
+                  <button
+                    onClick={() => handleModalAction('approved')}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    Approve
+                  </button>
+                  <button
+                    onClick={() => handleModalAction('rejected')}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    Reject
+                  </button>
+                </>
+              ) : undefined
+            }
+          >
+            <div className="space-y-4">
+              {/* Content */}
+              <div>
+                <div className="text-sm font-mono text-muted-foreground/90 uppercase mb-1.5">Content</div>
+                <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">{selectedReview.content}</p>
+              </div>
+
+              {/* Reviewer notes textarea (pending items) */}
+              {selectedReview.status === 'pending' && (
+                <div>
+                  <div className="text-sm font-mono text-muted-foreground/90 uppercase mb-1.5">Reviewer Notes</div>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Add optional notes..."
+                    className="w-full h-20 text-sm bg-background/50 border border-primary/15 rounded-lg p-3 text-foreground/80 placeholder:text-muted-foreground/80 resize-none focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/30"
+                  />
+                </div>
+              )}
+
+              {/* Show reviewer notes for non-pending items */}
+              {selectedReview.status !== 'pending' && selectedReview.reviewer_notes && (
+                <div>
+                  <div className="text-sm font-mono text-muted-foreground/90 uppercase mb-1.5">Reviewer Notes</div>
+                  <p className="text-sm text-foreground/80 italic">{selectedReview.reviewer_notes}</p>
+                </div>
+              )}
+
+              {/* Metadata */}
+              <div className="flex items-center gap-4 text-sm text-muted-foreground/80 pt-2 border-t border-primary/10">
+                <span>ID: <span className="font-mono">{selectedReview.id}</span></span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const store = usePersonaStore.getState();
+                    store.selectPersona(selectedReview.persona_id);
+                    store.setEditorTab('use-cases');
+                    setSelectedReview(null);
+                  }}
+                  className="inline-flex items-center gap-1 text-blue-400/70 hover:text-blue-400 transition-colors"
+                  title={`View execution ${selectedReview.execution_id}`}
+                >
+                  View Execution
+                  <ExternalLink className="w-3 h-3" />
+                </button>
+                {selectedReview.resolved_at && (
+                  <span>Resolved: {new Date(selectedReview.resolved_at).toLocaleString()}</span>
+                )}
+              </div>
+            </div>
+          </DetailModal>
+        )}
+      </AnimatePresence>
 
       {/* Sticky bulk action bar */}
       <AnimatePresence>
@@ -334,187 +549,5 @@ export default function ManualReviewList() {
         )}
       </AnimatePresence>
     </ContentBox>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Review Row
-// ---------------------------------------------------------------------------
-
-function ReviewRow({
-  review,
-  isExpanded,
-  onToggle,
-  onAction,
-  isSelected,
-  onSelect,
-}: {
-  review: ManualReviewItem;
-  isExpanded: boolean;
-  onToggle: () => void;
-  onAction: (id: string, updates: { status?: string; reviewer_notes?: string }) => Promise<void>;
-  isSelected?: boolean;
-  onSelect?: () => void;
-}) {
-  const [notes, setNotes] = useState(review.reviewer_notes || '');
-  const status = STATUS_COLORS[review.status] ?? STATUS_COLORS.pending!;
-  const statusLabel = STATUS_LABELS[review.status] ?? 'Pending';
-
-  const handleAction = async (newStatus: ManualReviewStatus) => {
-    await onAction(review.id, {
-      status: newStatus,
-      reviewer_notes: notes || undefined,
-    });
-  };
-
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -4 }}
-      className="rounded-xl border border-primary/15 bg-secondary/20 hover:bg-secondary/30 transition-colors overflow-hidden"
-    >
-      {/* Main row */}
-      <div className="w-full flex items-center gap-3 px-3 py-2.5 text-left">
-        {/* Selection checkbox (pending only) */}
-        {onSelect ? (
-          <button
-            onClick={(e) => { e.stopPropagation(); onSelect(); }}
-            className="text-muted-foreground/80 hover:text-muted-foreground transition-colors flex-shrink-0"
-          >
-            {isSelected ? (
-              <CheckSquare className="w-3.5 h-3.5 text-primary" />
-            ) : (
-              <Square className="w-3.5 h-3.5" />
-            )}
-          </button>
-        ) : (
-          <div className="w-3.5 flex-shrink-0" />
-        )}
-
-        {/* Expand icon */}
-        <button onClick={onToggle} className="text-muted-foreground/80 flex-shrink-0">
-          {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-        </button>
-
-        {/* Clickable content area for expand/collapse */}
-        <button onClick={onToggle} className="flex-1 flex items-center gap-3 text-left min-w-0">
-          {/* Severity indicator (shape + label per WCAG 1.4.1) */}
-          <SeverityIndicator severity={review.severity} />
-
-          {/* Persona icon + name */}
-          <div className="flex items-center gap-2 min-w-[120px]">
-            <div
-              className="w-6 h-6 rounded-md flex items-center justify-center text-sm border border-primary/15"
-              style={{ backgroundColor: (review.persona_color || '#6366f1') + '15' }}
-            >
-              {review.persona_icon || '?'}
-            </div>
-            <span className="text-sm text-muted-foreground/80 truncate max-w-[80px]">
-              {review.persona_name || 'Unknown'}
-            </span>
-          </div>
-
-          {/* Content (used as title) */}
-          <span className="flex-1 text-sm text-foreground/80 truncate">
-            {review.content.slice(0, 100)}
-          </span>
-
-          {/* Status badge */}
-          <div className={`px-2 py-0.5 rounded-md text-sm font-medium border ${status.bgColor} ${status.color} ${status.borderColor}`}>
-            {statusLabel}
-          </div>
-
-          {/* Created */}
-          <span className="text-sm text-muted-foreground/80 min-w-[70px] text-right">
-            {formatRelativeTime(review.created_at)}
-          </span>
-        </button>
-      </div>
-
-      {/* Expanded detail */}
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            <div className="px-4 pb-3 pt-1 border-t border-primary/15 space-y-3">
-              {/* Content */}
-              <div>
-                <div className="text-sm font-mono text-muted-foreground/90 uppercase mb-1.5">Content</div>
-                <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">{review.content}</p>
-              </div>
-
-              {/* Reviewer notes */}
-              {review.status === 'pending' && (
-                <div>
-                  <div className="text-sm font-mono text-muted-foreground/90 uppercase mb-1.5">Reviewer Notes</div>
-                  <textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Add optional notes..."
-                    className="w-full h-20 text-sm bg-background/50 border border-primary/15 rounded-lg p-3 text-foreground/80 placeholder:text-muted-foreground/80 resize-none focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/30"
-                  />
-                </div>
-              )}
-
-              {/* Action buttons */}
-              {review.status === 'pending' && (
-                <div className="flex items-center gap-2 pt-1">
-                  <button
-                    onClick={() => handleAction('approved')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors"
-                  >
-                    <Check className="w-3.5 h-3.5" />
-                    Approve
-                  </button>
-                  <button
-                    onClick={() => handleAction('rejected')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                    Reject
-                  </button>
-                </div>
-              )}
-
-              {/* Show reviewer notes for non-pending reviews */}
-              {review.status !== 'pending' && review.reviewer_notes && (
-                <div>
-                  <div className="text-sm font-mono text-muted-foreground/90 uppercase mb-1.5">Reviewer Notes</div>
-                  <p className="text-sm text-foreground/80 italic">{review.reviewer_notes}</p>
-                </div>
-              )}
-
-              {/* Metadata */}
-              <div className="flex items-center gap-4 text-sm text-muted-foreground/80">
-                <span>ID: <span className="font-mono">{review.id}</span></span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const store = usePersonaStore.getState();
-                    store.selectPersona(review.persona_id);
-                    store.setEditorTab('use-cases');
-                  }}
-                  className="inline-flex items-center gap-1 text-blue-400/70 hover:text-blue-400 transition-colors"
-                  title={`View execution ${review.execution_id}`}
-                >
-                  View Execution
-                  <ExternalLink className="w-3 h-3" />
-                </button>
-                {review.resolved_at && (
-                  <span>Resolved: {new Date(review.resolved_at).toLocaleString()}</span>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
   );
 }

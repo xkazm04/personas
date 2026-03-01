@@ -25,6 +25,9 @@ function makeReview(overrides: Partial<PersonaDesignReview> = {}): PersonaDesign
     use_case_flows: null,
     reviewed_at: "2025-01-01T00:00:00Z",
     created_at: "2025-01-01T00:00:00Z",
+    adoption_count: 0,
+    last_adopted_at: null,
+    category: null,
     ...overrides,
   };
 }

@@ -2,7 +2,7 @@
   "id": "product-analytics-briefer",
   "name": "Product Analytics Briefer",
   "description": "Pulls key Mixpanel metrics daily, compares against goals and historical trends, generates plain-English insights, posts a morning analytics briefing to Slack, and maintains a Notion analytics log for longitudinal tracking.",
-  "icon": "Search",
+  "icon": "PieChart",
   "color": "#06B6D4",
   "category": [
     "research"
@@ -117,7 +117,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://mixpanel.com/api/2.0"
+        "api_base_url": "https://mixpanel.com/api/2.0",
+        "role": "analytics",
+        "category": "analytics"
       },
       {
         "name": "slack",
@@ -154,7 +156,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       },
       {
         "name": "notion",
@@ -183,7 +187,9 @@
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "https://api.notion.com/v1"
+        "api_base_url": "https://api.notion.com/v1",
+        "role": "knowledge_base",
+        "category": "productivity"
       }
     ],
     "suggested_notification_channels": [

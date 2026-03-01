@@ -1,5 +1,5 @@
-import { useState, useCallback, useMemo, type ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useCallback, useMemo, useEffect, useId, type ReactNode } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Components } from 'react-markdown';
@@ -241,23 +241,66 @@ function StepCard({
   );
 }
 
+// ── Persistence helpers ──────────────────────────────────────────
+
+/** Fast string hash for localStorage keys. */
+function simpleHash(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+  }
+  return hash.toString(36);
+}
+
+function readPersistedSteps(key: string): number[] {
+  try {
+    const saved = localStorage.getItem(key);
+    if (saved) return JSON.parse(saved) as number[];
+  } catch { /* ignore */ }
+  return [];
+}
+
 // ── Main component ──────────────────────────────────────────────
 
 export function InteractiveSetupInstructions({
   markdown,
   firstSetupUrl,
 }: InteractiveSetupInstructionsProps) {
-  const [isOpen, setIsOpen] = useState(false);
-
   const { preamble, steps } = useMemo(() => parseSteps(markdown), [markdown]);
   const hasSteps = steps.length > 0;
+
+  const storageKey = useMemo(() => `setup-steps-${simpleHash(markdown)}`, [markdown]);
+
+  // Default expanded when no persisted progress (first-time users)
+  const [isOpen, setIsOpen] = useState(() => readPersistedSteps(storageKey).length === 0);
 
   const {
     completedSteps,
     completedCount,
     totalSteps,
-    toggleStep,
+    toggleStep: rawToggle,
   } = useStepProgress(steps.length);
+
+  // Restore persisted step completions on mount
+  const [restored, setRestored] = useState(false);
+  useEffect(() => {
+    const saved = readPersistedSteps(storageKey);
+    saved.forEach((i) => rawToggle(i));
+    setRestored(true);
+  }, [storageKey]); // eslint-disable-line react-hooks/exhaustive-deps -- restore once on mount
+
+  // Persist whenever completedSteps changes (after initial restore)
+  useEffect(() => {
+    if (!restored) return;
+    try {
+      localStorage.setItem(storageKey, JSON.stringify([...completedSteps]));
+    } catch { /* quota exceeded — ignore */ }
+  }, [completedSteps, storageKey, restored]);
+
+  const toggleStep = rawToggle;
+
+  // Unique ID for SVG gradient to prevent collision across instances
+  const gradientId = useId();
 
   const handleOpenUrl = useCallback(async (url: string) => {
     try {
@@ -309,13 +352,13 @@ export function InteractiveSetupInstructions({
                 fill="none"
                 strokeWidth="2.5"
                 strokeLinecap="round"
-                stroke="url(#setup-ring-gradient)"
+                stroke={`url(#${gradientId})`}
                 strokeDasharray={2 * Math.PI * 9}
                 strokeDashoffset={totalSteps > 0 ? 2 * Math.PI * 9 * (1 - completedCount / totalSteps) : 2 * Math.PI * 9}
                 style={{ transition: 'stroke-dashoffset 0.3s ease-out' }}
               />
               <defs>
-                <linearGradient id="setup-ring-gradient" x1="0" y1="0" x2="1" y2="1">
+                <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
                   <stop offset="0%" style={{ stopColor: 'var(--color-primary)', stopOpacity: 0.6 }} />
                   <stop offset="100%" style={{ stopColor: 'rgb(16 185 129)', stopOpacity: 0.6 }} />
                 </linearGradient>
@@ -356,61 +399,67 @@ export function InteractiveSetupInstructions({
         </motion.div>
       </button>
 
-      {/* Expandable content */}
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.15 }}
-          className="px-4 pb-3"
-        >
-          {/* Preamble (non-step content before the numbered list) */}
-          {preamble && (
-            <div className="px-3 py-2 mb-2 bg-background/40 rounded-lg border border-primary/10">
-              <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
-                {preamble}
-              </ReactMarkdown>
-            </div>
-          )}
+      {/* Expandable content — animated height */}
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            key="setup-body"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pb-3">
+              {/* Preamble (non-step content before the numbered list) */}
+              {preamble && (
+                <div className="px-3 py-2 mb-2 bg-background/40 rounded-lg border border-primary/10">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+                    {preamble}
+                  </ReactMarkdown>
+                </div>
+              )}
 
-          {/* Interactive steps */}
-          {hasSteps ? (
-            <div className="space-y-0.5">
-              {steps.map((step, i) => (
-                <StepCard
-                  key={i}
-                  stepMarkdown={step}
-                  stepIndex={i}
-                  isCompleted={completedSteps.has(i)}
-                  onToggle={() => toggleStep(i)}
-                  components={components}
-                />
-              ))}
+              {/* Interactive steps */}
+              {hasSteps ? (
+                <div className="space-y-0.5">
+                  {steps.map((step, i) => (
+                    <StepCard
+                      key={i}
+                      stepMarkdown={step}
+                      stepIndex={i}
+                      isCompleted={completedSteps.has(i)}
+                      onToggle={() => toggleStep(i)}
+                      components={components}
+                    />
+                  ))}
 
-              {/* All-done message */}
-              {completedCount === totalSteps && totalSteps > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center gap-2 px-3 py-2 mt-1 rounded-lg bg-emerald-500/10 border border-emerald-500/15"
-                >
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-sm text-emerald-300/80">
-                    All steps complete — fill in the fields below and test your connection.
-                  </span>
-                </motion.div>
+                  {/* All-done message */}
+                  {completedCount === totalSteps && totalSteps > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex items-center gap-2 px-3 py-2 mt-1 rounded-lg bg-emerald-500/10 border border-emerald-500/15"
+                    >
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="text-sm text-emerald-300/80">
+                        All steps complete — fill in the fields below and test your connection.
+                      </span>
+                    </motion.div>
+                  )}
+                </div>
+              ) : (
+                /* Fallback: render as plain enhanced markdown when no numbered steps detected */
+                <div className="px-3 py-2 bg-background/40 rounded-lg border border-primary/10">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+                    {markdown}
+                  </ReactMarkdown>
+                </div>
               )}
             </div>
-          ) : (
-            /* Fallback: render as plain enhanced markdown when no numbered steps detected */
-            <div className="px-3 py-2 bg-background/40 rounded-lg border border-primary/10">
-              <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
-                {markdown}
-              </ReactMarkdown>
-            </div>
-          )}
-        </motion.div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

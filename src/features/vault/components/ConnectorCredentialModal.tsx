@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { X, Plug, ExternalLink, Check } from 'lucide-react';
 import { CredentialEditForm } from '@/features/vault/components/CredentialEditForm';
+import { useCredentialHealth } from '@/features/vault/hooks/useCredentialHealth';
 import type { SuggestedConnector } from '@/lib/types/designTypes';
 import type { ConnectorDefinition, CredentialMetadata, CredentialTemplateField } from '@/lib/types/types';
 
@@ -21,6 +22,7 @@ export function ConnectorCredentialModal({
 }: ConnectorCredentialModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const health = useCredentialHealth(`connector:${connector.name}`);
 
   // Close on Escape
   useEffect(() => {
@@ -85,6 +87,14 @@ export function ConnectorCredentialModal({
   const label = connectorDefinition?.label || connector.name;
   const category = connectorDefinition?.category;
 
+  const handleHealthcheck = useCallback(async (values: Record<string, string>) => {
+    await health.checkDesign(
+      `Test connection for ${label} connector`,
+      { name: connector.name, label, fields },
+      values,
+    );
+  }, [connector.name, label, fields, health.checkDesign]);
+
   return (
     <div
       ref={overlayRef}
@@ -97,7 +107,7 @@ export function ConnectorCredentialModal({
         aria-modal="true"
         aria-labelledby="connector-credential-title"
         onKeyDown={handleKeyDown}
-        className="bg-secondary/95 backdrop-blur-xl border border-primary/15 rounded-2xl shadow-2xl max-w-lg w-full mx-4 p-6 max-h-[85vh] overflow-y-auto"
+        className="bg-secondary/95 backdrop-blur-xl border border-primary/15 rounded-2xl shadow-2xl max-w-2xl w-full mx-4 p-6 max-h-[85vh] overflow-y-auto"
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
@@ -189,6 +199,12 @@ export function ConnectorCredentialModal({
             fields={fields}
             onSave={onSave}
             onCancel={onClose}
+            onHealthcheck={handleHealthcheck}
+            isHealthchecking={health.isHealthchecking}
+            healthcheckResult={health.result}
+            onValuesChanged={() => health.invalidate()}
+            saveDisabled={!health.result?.success}
+            saveDisabledReason="Run a successful connection test before saving."
           />
         ) : (
           <div className="text-center py-6">

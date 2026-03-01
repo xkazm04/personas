@@ -9,8 +9,17 @@ use crate::engine::healing::HealingAction;
 use crate::error::AppError;
 use crate::AppState;
 
-/// Maximum number of retries for a single execution chain (mirrors engine constant).
-const MAX_RETRY_COUNT: i64 = 3;
+use crate::engine::healing::MAX_RETRY_COUNT;
+
+/// Verify that the healing issue belongs to the expected persona.
+fn verify_healing_owner(issue: &PersonaHealingIssue, caller_persona_id: &str) -> Result<(), AppError> {
+    if issue.persona_id != caller_persona_id {
+        return Err(AppError::Auth(
+            "Healing issue does not belong to the specified persona".into(),
+        ));
+    }
+    Ok(())
+}
 
 #[tauri::command]
 pub fn list_healing_issues(
@@ -25,8 +34,11 @@ pub fn list_healing_issues(
 pub fn get_healing_issue(
     state: State<'_, Arc<AppState>>,
     id: String,
+    caller_persona_id: String,
 ) -> Result<PersonaHealingIssue, AppError> {
-    repo::get_by_id(&state.db, &id)
+    let issue = repo::get_by_id(&state.db, &id)?;
+    verify_healing_owner(&issue, &caller_persona_id)?;
+    Ok(issue)
 }
 
 #[tauri::command]
@@ -34,7 +46,10 @@ pub fn update_healing_status(
     state: State<'_, Arc<AppState>>,
     id: String,
     status: String,
+    caller_persona_id: String,
 ) -> Result<(), AppError> {
+    let issue = repo::get_by_id(&state.db, &id)?;
+    verify_healing_owner(&issue, &caller_persona_id)?;
     repo::update_status(&state.db, &id, &status)
 }
 
@@ -61,6 +76,9 @@ pub async fn run_healing_analysis(
     // multiple concurrent retries from a single scan.
     let mut retry_scheduled = false;
 
+    // Consecutive failure count is stable for a single scan — compute once.
+    let consecutive = exec_repo::get_consecutive_failure_count(pool, &persona_id)?;
+
     for exec in &failures {
         // Skip if a healing issue already exists for this execution
         if existing
@@ -76,8 +94,7 @@ pub async fn run_healing_analysis(
         let timeout_ms = exec.duration_ms.unwrap_or(600_000) as u64;
 
         let category = healing::classify_error(error, timed_out, session_limit);
-        let consecutive = failures.len() as u32;
-        let diagnosis = healing::diagnose(&category, error, timeout_ms, consecutive);
+        let diagnosis = healing::diagnose(&category, error, timeout_ms, consecutive, exec.retry_count);
 
         let issue = repo::create(
             pool,
@@ -130,7 +147,14 @@ pub async fn run_healing_analysis(
 pub fn get_retry_chain(
     state: State<'_, Arc<AppState>>,
     execution_id: String,
+    caller_persona_id: String,
 ) -> Result<Vec<PersonaExecution>, AppError> {
+    let execution = exec_repo::get_by_id(&state.db, &execution_id)?;
+    if execution.persona_id != caller_persona_id {
+        return Err(AppError::Auth(
+            "Execution does not belong to the specified persona".into(),
+        ));
+    }
     exec_repo::get_retry_chain(&state.db, &execution_id)
 }
 

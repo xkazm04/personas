@@ -2,7 +2,7 @@
   "id": "cross-platform-task-synchronizer",
   "name": "Cross-Platform Task Synchronizer",
   "description": "Keeps Asana tasks and GitHub issues in bidirectional sync. Status changes in either platform propagate to the other. Posts Slack summaries when tasks move between phases. Resolves sync conflicts intelligently using last-write-wins with human escalation.",
-  "icon": "Zap",
+  "icon": "ArrowLeftRight",
   "color": "#7C3AED",
   "category": [
     "productivity"
@@ -126,7 +126,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://app.asana.com/api/1.0"
+        "api_base_url": "https://app.asana.com/api/1.0",
+        "role": "project_tracking",
+        "category": "productivity"
       },
       {
         "name": "github",
@@ -149,7 +151,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://api.github.com"
+        "api_base_url": "https://api.github.com",
+        "role": "source_control",
+        "category": "development"
       },
       {
         "name": "slack",
@@ -172,7 +176,9 @@
         "related_triggers": [
           0
         ],
-        "api_base_url": "https://slack.com/api"
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
       }
     ],
     "suggested_notification_channels": [

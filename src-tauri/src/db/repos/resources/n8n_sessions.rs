@@ -122,14 +122,29 @@ pub fn update(
     get(pool, id)
 }
 
-/// Mark sessions stuck in 'transforming'/'analyzing' as 'failed'.
+/// Mark sessions stuck in 'transforming'/'analyzing' as 'failed' and return
+/// the `transform_id`s that were active so the caller can clear in-memory job
+/// state (dead cancellation tokens, expired status channels, etc.).
+///
 /// Sessions in 'awaiting_answers' are preserved — they have persisted questions
 /// and can resume without re-running the transform.
 /// Called at startup — their CLI processes died when the app last exited.
-pub fn recover_interrupted_sessions(pool: &DbPool) -> Result<u32, AppError> {
+pub fn recover_interrupted_sessions(pool: &DbPool) -> Result<Vec<String>, AppError> {
     let conn = pool.get()?;
+
+    // Collect transform_ids of sessions we're about to mark as failed
+    let mut stmt = conn.prepare(
+        "SELECT transform_id FROM n8n_transform_sessions
+         WHERE status IN ('transforming', 'analyzing')
+           AND transform_id IS NOT NULL",
+    )?;
+    let transform_ids: Vec<String> = stmt
+        .query_map([], |row| row.get(0))?
+        .filter_map(|r| r.ok())
+        .collect();
+
     let now = chrono::Utc::now().to_rfc3339();
-    let count = conn.execute(
+    conn.execute(
         "UPDATE n8n_transform_sessions
          SET status = 'failed',
              error = 'App closed during transform — click Retry to resume',
@@ -137,7 +152,7 @@ pub fn recover_interrupted_sessions(pool: &DbPool) -> Result<u32, AppError> {
          WHERE status IN ('transforming', 'analyzing')",
         params![now],
     )?;
-    Ok(count as u32)
+    Ok(transform_ids)
 }
 
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {

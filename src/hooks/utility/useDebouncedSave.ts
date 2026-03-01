@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * Debounces an async save function, firing `delay`ms after the last dep change.
@@ -8,7 +8,8 @@ import { useEffect, useRef, useState } from 'react';
  * @param isDirty  - when false the timer is never started (guards are pre-computed by caller)
  * @param deps     - dependency list that resets the debounce (same semantics as useEffect deps)
  * @param delay    - debounce delay in ms (default 800)
- * @returns isSaving - true while saveFn is executing
+ * @returns { isSaving, cancel } - isSaving is true while saveFn is executing;
+ *          cancel clears any pending debounce timer (call before a manual save to prevent races)
  */
 export function useDebouncedSave(
   saveFn: () => Promise<void>,
@@ -16,7 +17,7 @@ export function useDebouncedSave(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   deps: readonly any[],
   delay = 800,
-): boolean {
+): { isSaving: boolean; cancel: () => void } {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Always keep a ref to the latest saveFn to avoid stale closures in the timer
   const saveFnRef = useRef(saveFn);
@@ -24,10 +25,18 @@ export function useDebouncedSave(
 
   const [isSaving, setIsSaving] = useState(false);
 
+  const cancel = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
   useEffect(() => {
     if (!isDirty) return;
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(async () => {
+      timerRef.current = null;
       setIsSaving(true);
       await saveFnRef.current();
       setIsSaving(false);
@@ -35,8 +44,7 @@ export function useDebouncedSave(
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 
-  return isSaving;
+  return { isSaving, cancel };
 }
