@@ -146,6 +146,9 @@ export interface AdoptState {
   created: boolean;
   showEditInline: boolean;
   error: string | null;
+
+  // Auto-adoption
+  autoResolved: boolean;
 }
 
 const INITIAL_STATE: AdoptState = {
@@ -189,6 +192,7 @@ const INITIAL_STATE: AdoptState = {
   created: false,
   showEditInline: false,
   error: null,
+  autoResolved: false,
 };
 
 function prefillDefaults(questions: TransformQuestionResponse[]): Record<string, string> {
@@ -389,6 +393,10 @@ export function useAdoptReducer() {
     update({ step: 'build', templateName, designResultJson, backgroundAdoptId: adoptId, transforming: true, transformPhase: 'running' });
   }, [update]);
 
+  const setAutoResolved = useCallback((autoResolved: boolean) => {
+    update({ autoResolved });
+  }, [update]);
+
   return {
     state,
     canGoBack: core.canGoBack,
@@ -430,5 +438,6 @@ export function useAdoptReducer() {
     confirmCompleted,
     confirmFailed,
     restoreContext,
+    setAutoResolved,
   };
 }

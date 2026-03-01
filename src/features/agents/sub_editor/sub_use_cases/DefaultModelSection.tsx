@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { Cpu, ChevronDown, DollarSign } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { PersonaDraft } from '@/features/agents/sub_editor/PersonaDraft';
-import { ModelSelector } from '@/features/agents/sub_editor/model-config/ModelSelector';
-import type { CustomModelConfig } from '@/features/agents/sub_editor/model-config/ModelSelector';
+import { ModelSelector } from '@/features/agents/sub_editor/sub_model_config/ModelSelector';
+import type { CustomModelConfig } from '@/features/agents/sub_editor/sub_model_config/ModelSelector';
 import type { ModelProvider } from '@/lib/types/frontendTypes';
-import { isOllamaCloudValue, OLLAMA_CLOUD_PRESETS } from '@/features/agents/sub_editor/model-config/OllamaCloudPresets';
+import { isOllamaCloudValue, OLLAMA_CLOUD_PRESETS } from '@/features/agents/sub_editor/sub_model_config/OllamaCloudPresets';
 
 // ── Derive a human-readable label from the draft ────────────────────
 function resolveModelLabel(draft: PersonaDraft): { label: string; provider: string } {

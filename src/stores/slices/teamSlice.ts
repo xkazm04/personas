@@ -3,6 +3,9 @@ import type { PersonaStore } from "../storeTypes";
 import type { PersonaTeam } from "@/lib/bindings/PersonaTeam";
 import type { PersonaTeamMember } from "@/lib/bindings/PersonaTeamMember";
 import type { PersonaTeamConnection } from "@/lib/bindings/PersonaTeamConnection";
+import type { TeamMemory } from "@/lib/bindings/TeamMemory";
+import type { TeamMemoryStats } from "@/lib/bindings/TeamMemoryStats";
+import type { CreateTeamMemoryInput } from "@/lib/bindings/CreateTeamMemoryInput";
 import * as api from "@/api/tauriApi";
 
 export interface TeamSlice {
@@ -11,6 +14,9 @@ export interface TeamSlice {
   selectedTeamId: string | null;
   teamMembers: PersonaTeamMember[];
   teamConnections: PersonaTeamConnection[];
+  teamMemories: TeamMemory[];
+  teamMemoriesTotal: number;
+  teamMemoryStats: TeamMemoryStats | null;
 
   // Actions
   fetchTeams: () => Promise<void>;
@@ -23,6 +29,11 @@ export interface TeamSlice {
   createTeamConnection: (sourceMemberId: string, targetMemberId: string, connectionType?: string, condition?: string, label?: string) => Promise<PersonaTeamConnection | null>;
   deleteTeamConnection: (connectionId: string) => Promise<void>;
   updateTeamConnection: (connectionId: string, connectionType: string) => Promise<void>;
+  fetchTeamMemories: (teamId: string, category?: string, search?: string) => Promise<void>;
+  createTeamMemory: (input: CreateTeamMemoryInput) => Promise<TeamMemory | null>;
+  deleteTeamMemory: (id: string) => Promise<void>;
+  batchDeleteTeamMemories: (ids: string[]) => Promise<void>;
+  updateTeamMemoryImportance: (id: string, importance: number) => Promise<void>;
 }
 
 export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (set, get) => ({
@@ -30,6 +41,9 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
   selectedTeamId: null,
   teamMembers: [],
   teamConnections: [],
+  teamMemories: [],
+  teamMemoriesTotal: 0,
+  teamMemoryStats: null,
 
   fetchTeams: async () => {
     try {
@@ -41,7 +55,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
   },
 
   selectTeam: (teamId) => {
-    set({ selectedTeamId: teamId, teamMembers: [], teamConnections: [] });
+    set({ selectedTeamId: teamId, teamMembers: [], teamConnections: [], teamMemories: [], teamMemoriesTotal: 0, teamMemoryStats: null });
     if (teamId) get().fetchTeamDetails(teamId);
   },
 
@@ -52,6 +66,8 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
         api.listTeamConnections(teamId),
       ]);
       set({ teamMembers: members, teamConnections: connections });
+      // Also fetch team memories
+      get().fetchTeamMemories(teamId);
     } catch {
       // Silent fail
     }
@@ -79,7 +95,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
   deleteTeam: async (teamId) => {
     try {
       await api.deleteTeam(teamId);
-      if (get().selectedTeamId === teamId) set({ selectedTeamId: null, teamMembers: [], teamConnections: [] });
+      if (get().selectedTeamId === teamId) set({ selectedTeamId: null, teamMembers: [], teamConnections: [], teamMemories: [], teamMemoriesTotal: 0, teamMemoryStats: null });
       await get().fetchTeams();
     } catch {
       // Silent fail
@@ -196,6 +212,63 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
     } catch {
       // Rollback
       set({ teamConnections: prevConnections });
+    }
+  },
+
+  fetchTeamMemories: async (teamId, category, search) => {
+    try {
+      const [memories, total, stats] = await Promise.all([
+        api.listTeamMemories(teamId, undefined, category, search, 100),
+        api.getTeamMemoryCount(teamId, undefined, category),
+        api.getTeamMemoryStats(teamId),
+      ]);
+      set({ teamMemories: memories, teamMemoriesTotal: total, teamMemoryStats: stats });
+    } catch {
+      // Silent fail
+    }
+  },
+
+  createTeamMemory: async (input) => {
+    try {
+      const memory = await api.createTeamMemory(input);
+      // Refresh the list
+      const teamId = get().selectedTeamId;
+      if (teamId) get().fetchTeamMemories(teamId);
+      return memory;
+    } catch {
+      return null;
+    }
+  },
+
+  deleteTeamMemory: async (id) => {
+    const prev = get().teamMemories;
+    set({ teamMemories: prev.filter((m) => m.id !== id), teamMemoriesTotal: get().teamMemoriesTotal - 1 });
+    try {
+      await api.deleteTeamMemory(id);
+    } catch {
+      set({ teamMemories: prev, teamMemoriesTotal: get().teamMemoriesTotal + 1 });
+    }
+  },
+
+  batchDeleteTeamMemories: async (ids) => {
+    const prev = get().teamMemories;
+    set({ teamMemories: prev.filter((m) => !ids.includes(m.id)), teamMemoriesTotal: get().teamMemoriesTotal - ids.length });
+    try {
+      await api.batchDeleteTeamMemories(ids);
+    } catch {
+      set({ teamMemories: prev, teamMemoriesTotal: get().teamMemoriesTotal + ids.length });
+    }
+  },
+
+  updateTeamMemoryImportance: async (id, importance) => {
+    const prev = get().teamMemories;
+    set({
+      teamMemories: prev.map((m) => (m.id === id ? { ...m, importance } : m)),
+    });
+    try {
+      await api.updateTeamMemoryImportance(id, importance);
+    } catch {
+      set({ teamMemories: prev });
     }
   },
 });

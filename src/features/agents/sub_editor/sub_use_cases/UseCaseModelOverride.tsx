@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import { Cpu, Check, ChevronDown, Settings2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Listbox } from '@/features/shared/components/Listbox';
-import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 import type { UseCaseItem } from '@/features/shared/components/UseCasesList';
 import type { ModelProfile, ModelProvider } from '@/lib/types/frontendTypes';
 import {
   OLLAMA_CLOUD_PRESETS,
   OLLAMA_CLOUD_BASE_URL,
-} from '@/features/agents/sub_editor/model-config/OllamaCloudPresets';
+} from '@/features/agents/sub_editor/sub_model_config/OllamaCloudPresets';
+import { UseCaseModelOverrideForm } from './UseCaseModelOverrideForm';
 
 // ── Available model options ──────────────────────────────────────────
 
@@ -190,63 +189,11 @@ export function UseCaseModelOverride({ useCase, defaultModelProfile, onUpdate }:
       </div>
 
       {/* Custom model expanded config */}
-      <AnimatePresence>
-        {hasOverride && customExpanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            <div className="bg-secondary/30 border border-primary/10 rounded-xl p-3 space-y-2">
-              <div>
-                <label className="block text-sm font-medium text-foreground/80 mb-1">Provider</label>
-                <ThemedSelect
-                  value={customConfig.provider || 'anthropic'}
-                  onChange={(e) => handleCustomFieldChange('provider', e.target.value)}
-                  className="py-1.5"
-                >
-                  <option value="anthropic">Anthropic</option>
-                  <option value="ollama">Ollama (local)</option>
-                  <option value="litellm">LiteLLM (proxy)</option>
-                  <option value="custom">Custom URL</option>
-                </ThemedSelect>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-foreground/80 mb-1">Model Name</label>
-                <input
-                  type="text"
-                  value={customConfig.model || ''}
-                  onChange={(e) => handleCustomFieldChange('model', e.target.value)}
-                  placeholder="e.g. claude-sonnet-4-20250514"
-                  className="w-full px-3 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-foreground/80 mb-1">Base URL</label>
-                <input
-                  type="text"
-                  value={customConfig.base_url || ''}
-                  onChange={(e) => handleCustomFieldChange('base_url', e.target.value)}
-                  placeholder="http://localhost:11434"
-                  className="w-full px-3 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-foreground/80 mb-1">Auth Token</label>
-                <input
-                  type="password"
-                  value={customConfig.auth_token || ''}
-                  onChange={(e) => handleCustomFieldChange('auth_token', e.target.value)}
-                  placeholder="Bearer token"
-                  className="w-full px-3 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
-                />
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <UseCaseModelOverrideForm
+        visible={hasOverride && customExpanded}
+        customConfig={customConfig}
+        onFieldChange={handleCustomFieldChange}
+      />
     </div>
   );
 }

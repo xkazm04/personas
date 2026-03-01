@@ -5,7 +5,7 @@ import { Cpu, Power, PowerOff, Trash2, ChevronRight, Check, AlertTriangle } from
 import { usePersonaStore } from '@/stores/personaStore';
 import type { DbPersona } from '@/lib/types/types';
 import type { ModelProfile } from '@/lib/types/frontendTypes';
-import { profileToDropdownValue, OLLAMA_CLOUD_PRESETS, OLLAMA_CLOUD_BASE_URL } from '@/features/agents/sub_editor/model-config/OllamaCloudPresets';
+import { profileToDropdownValue, OLLAMA_CLOUD_PRESETS, OLLAMA_CLOUD_BASE_URL } from '@/features/agents/sub_editor/sub_model_config/OllamaCloudPresets';
 
 // ── Quick-switch model definitions ────────────────────────────────────
 

@@ -48,6 +48,13 @@ export interface SuggestedConnector {
   category?: string;
 }
 
+/** A step in the connector pipeline showing chronological service interactions */
+export interface ConnectorPipelineStep {
+  connector_name: string;  // matches suggested_connectors[].name
+  action_label: string;    // e.g. "Watch alerts", "Notify group"
+  order: number;           // 0-based chronological position
+}
+
 /** The JSON output schema from Claude design analysis */
 export interface DesignAnalysisResult {
   structured_prompt: {
@@ -68,6 +75,7 @@ export interface DesignAnalysisResult {
   feasibility?: DesignTestResult;
   suggested_event_subscriptions?: SuggestedEventSubscription[];
   adoption_requirements?: AdoptionRequirement[];
+  service_flow?: ConnectorPipelineStep[];
 }
 
 /** A notification channel suggestion from design analysis */

@@ -190,6 +190,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
 };
 
 export function getConnectorMeta(name: string): ConnectorMeta {
+  if (!name) return { label: 'Unknown', color: '#6B7280', iconUrl: null, Icon: Plug };
   if (CONNECTOR_META[name]) return CONNECTOR_META[name];
   const slug = name.toLowerCase().replace(/[_\s]/g, '');
   return { label: name, color: '#6B7280', iconUrl: `https://cdn.simpleicons.org/${slug}/9ca3af`, Icon: Plug };

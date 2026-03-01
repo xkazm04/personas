@@ -859,6 +859,109 @@ pub fn backfill_review_categories(
     Ok(serde_json::json!({ "total": uncategorized.len(), "updated": updated }))
 }
 
+/// Backfill `service_flow` for all reviews whose design_result is missing it
+/// or has it in the legacy string-array format.
+/// Converts `["Slack", "GitHub"]` → `[{ connector_name: "slack", action_label: "Slack", order: 0 }, ...]`
+/// and derives from `suggested_connectors` when no service_flow exists at all.
+#[tauri::command]
+pub fn backfill_service_flow(
+    state: State<'_, Arc<AppState>>,
+) -> Result<serde_json::Value, AppError> {
+    let reviews = repo::get_reviews_with_design_result(&state.db)?;
+    let mut updated = 0i64;
+    let mut skipped = 0i64;
+
+    for (id, design_result_json) in &reviews {
+        let mut result: serde_json::Value = match serde_json::from_str(design_result_json) {
+            Ok(v) => v,
+            Err(_) => continue,
+        };
+
+        let obj = match result.as_object_mut() {
+            Some(o) => o,
+            None => continue,
+        };
+
+        // Check current service_flow state
+        let needs_backfill = match obj.get("service_flow") {
+            None => true,
+            Some(serde_json::Value::Null) => true,
+            Some(serde_json::Value::Array(arr)) if arr.is_empty() => true,
+            Some(serde_json::Value::Array(arr)) => {
+                // Check if it's the old string[] format
+                arr.first().is_some_and(|v| v.is_string())
+            }
+            _ => false,
+        };
+
+        if !needs_backfill {
+            skipped += 1;
+            continue;
+        }
+
+        // Build new service_flow
+        let new_flow: Vec<serde_json::Value> = match obj.get("service_flow") {
+            Some(serde_json::Value::Array(arr)) if !arr.is_empty() && arr[0].is_string() => {
+                // Convert old string[] format
+                arr.iter()
+                    .enumerate()
+                    .filter_map(|(i, v)| {
+                        v.as_str().map(|name| {
+                            json!({
+                                "connector_name": name.to_lowercase().replace(' ', "_"),
+                                "action_label": name.to_string(),
+                                "order": i
+                            })
+                        })
+                    })
+                    .collect()
+            }
+            _ => {
+                // Derive from suggested_connectors
+                match obj.get("suggested_connectors").and_then(|v| v.as_array()) {
+                    Some(connectors) => connectors
+                        .iter()
+                        .enumerate()
+                        .filter_map(|(i, c)| {
+                            let name = c.get("name").and_then(|v| v.as_str())?;
+                            let label = c
+                                .get("role")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or(name);
+                            Some(json!({
+                                "connector_name": name,
+                                "action_label": label.to_string(),
+                                "order": i
+                            }))
+                        })
+                        .collect(),
+                    None => continue,
+                }
+            }
+        };
+
+        if new_flow.is_empty() {
+            continue;
+        }
+
+        obj.insert("service_flow".to_string(), serde_json::Value::Array(new_flow));
+
+        let updated_json = match serde_json::to_string(&result) {
+            Ok(j) => j,
+            Err(_) => continue,
+        };
+
+        if let Err(e) = repo::update_review_design_result(&state.db, id, &updated_json) {
+            tracing::warn!(id = %id, error = %e, "Failed to backfill service_flow");
+        } else {
+            updated += 1;
+        }
+    }
+
+    tracing::info!(total = reviews.len(), updated = updated, skipped = skipped, "Backfilled service_flow");
+    Ok(json!({ "total": reviews.len(), "updated": updated, "skipped": skipped }))
+}
+
 #[tauri::command]
 pub fn import_design_review(
     state: State<'_, Arc<AppState>>,

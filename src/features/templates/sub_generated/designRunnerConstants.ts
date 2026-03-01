@@ -7,6 +7,16 @@ export interface PredefinedTestCase {
   category?: string;
 }
 
+export interface CustomTemplateCase {
+  name: string;
+  instruction: string;
+  category?: string;
+  trigger?: string;
+  tools?: string;
+}
+
+export const MIN_INSTRUCTION_LENGTH = 50;
+
 export interface ParsedTemplate {
   id: string;
   name: string;
@@ -114,3 +124,6 @@ export const CATEGORY_COLORS: Record<string, string> = {
   Security: 'bg-rose-500/15 text-rose-300 border-rose-500/25',
   Pipeline: 'bg-sky-500/15 text-sky-300 border-sky-500/25',
 };
+
+export const TRIGGER_OPTIONS = ['schedule', 'polling', 'webhook', 'manual', 'event'] as const;
+export const CATEGORY_OPTIONS = Object.keys(CATEGORY_COLORS);

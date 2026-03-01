@@ -23,6 +23,16 @@ fn default_chain_condition_type() -> String {
     "any".into()
 }
 
+/// A single condition within a composite trigger.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CompositeCondition {
+    /// The event type to match.
+    pub event_type: String,
+    /// Optional wildcard source filter.
+    #[serde(default)]
+    pub source_filter: Option<String>,
+}
+
 /// Parsed, typed representation of a trigger's `config` JSON.
 ///
 /// Each variant carries only the fields that trigger type needs, making invalid
@@ -74,6 +84,56 @@ pub enum TriggerConfig {
         /// Optional wildcard source filter (e.g. "watcher-*").
         source_filter: Option<String>,
     },
+    /// Watches file system paths for changes (create, modify, delete, rename).
+    #[serde(rename = "file_watcher")]
+    FileWatcher {
+        /// Directories or files to watch.
+        watch_paths: Option<Vec<String>>,
+        /// Which FS events to react to: "create", "modify", "delete", "rename".
+        events: Option<Vec<String>>,
+        /// Watch subdirectories recursively.
+        recursive: Option<bool>,
+        /// Optional glob filter (e.g. "*.py", "*.rs").
+        glob_filter: Option<String>,
+        event_type: Option<String>,
+        payload: Option<serde_json::Value>,
+    },
+    /// Monitors clipboard content changes.
+    #[serde(rename = "clipboard")]
+    Clipboard {
+        /// What to watch for: "text", "image", or "any".
+        content_type: Option<String>,
+        /// Optional regex or substring to match against text content.
+        pattern: Option<String>,
+        /// Poll interval in seconds (min 2).
+        interval_seconds: Option<u64>,
+        event_type: Option<String>,
+        payload: Option<serde_json::Value>,
+    },
+    /// Monitors application focus / foreground window changes.
+    #[serde(rename = "app_focus")]
+    AppFocus {
+        /// Optional list of app executable names to filter (e.g. ["Code.exe", "chrome.exe"]).
+        app_names: Option<Vec<String>>,
+        /// Optional regex to match window titles.
+        title_pattern: Option<String>,
+        /// Poll interval in seconds (min 2).
+        interval_seconds: Option<u64>,
+        event_type: Option<String>,
+        payload: Option<serde_json::Value>,
+    },
+    /// Composite trigger: fires when multiple event conditions are met within a time window.
+    #[serde(rename = "composite")]
+    Composite {
+        /// Array of conditions that must be satisfied.
+        conditions: Option<Vec<CompositeCondition>>,
+        /// How to combine conditions: "all" (AND), "any" (OR), "sequence" (ordered).
+        operator: Option<String>,
+        /// Time window in seconds for all conditions to be met.
+        window_seconds: Option<u64>,
+        event_type: Option<String>,
+        payload: Option<serde_json::Value>,
+    },
     #[serde(rename = "unknown")]
     Unknown {
         event_type: Option<String>,
@@ -91,6 +151,10 @@ impl TriggerConfig {
             TriggerConfig::Chain { event_type, .. } => event_type.as_deref(),
             TriggerConfig::Manual { event_type, .. } => event_type.as_deref(),
             TriggerConfig::EventListener { listen_event_type, .. } => listen_event_type.as_deref(),
+            TriggerConfig::FileWatcher { event_type, .. } => event_type.as_deref(),
+            TriggerConfig::Clipboard { event_type, .. } => event_type.as_deref(),
+            TriggerConfig::AppFocus { event_type, .. } => event_type.as_deref(),
+            TriggerConfig::Composite { event_type, .. } => event_type.as_deref(),
             TriggerConfig::Unknown { event_type, .. } => event_type.as_deref(),
         };
         opt.unwrap_or("trigger_fired")
@@ -105,6 +169,10 @@ impl TriggerConfig {
             TriggerConfig::Chain { payload, .. } => payload.as_ref(),
             TriggerConfig::Manual { payload, .. } => payload.as_ref(),
             TriggerConfig::EventListener { .. } => None,
+            TriggerConfig::FileWatcher { payload, .. } => payload.as_ref(),
+            TriggerConfig::Clipboard { payload, .. } => payload.as_ref(),
+            TriggerConfig::AppFocus { payload, .. } => payload.as_ref(),
+            TriggerConfig::Composite { payload, .. } => payload.as_ref(),
             TriggerConfig::Unknown { payload, .. } => payload.as_ref(),
         };
         opt.map(|p| p.to_string())
@@ -215,6 +283,49 @@ impl PersonaTrigger {
                     .get("source_filter")
                     .and_then(|v| v.as_str())
                     .map(String::from),
+            },
+            "file_watcher" => TriggerConfig::FileWatcher {
+                watch_paths: val.get("watch_paths").and_then(|v| {
+                    v.as_array().map(|arr| {
+                        arr.iter().filter_map(|s| s.as_str().map(String::from)).collect()
+                    })
+                }),
+                events: val.get("events").and_then(|v| {
+                    v.as_array().map(|arr| {
+                        arr.iter().filter_map(|s| s.as_str().map(String::from)).collect()
+                    })
+                }),
+                recursive: val.get("recursive").and_then(|v| v.as_bool()),
+                glob_filter: val.get("glob_filter").and_then(|v| v.as_str()).map(String::from),
+                event_type,
+                payload,
+            },
+            "clipboard" => TriggerConfig::Clipboard {
+                content_type: val.get("content_type").and_then(|v| v.as_str()).map(String::from),
+                pattern: val.get("pattern").and_then(|v| v.as_str()).map(String::from),
+                interval_seconds: val.get("interval_seconds").and_then(|v| v.as_u64()),
+                event_type,
+                payload,
+            },
+            "app_focus" => TriggerConfig::AppFocus {
+                app_names: val.get("app_names").and_then(|v| {
+                    v.as_array().map(|arr| {
+                        arr.iter().filter_map(|s| s.as_str().map(String::from)).collect()
+                    })
+                }),
+                title_pattern: val.get("title_pattern").and_then(|v| v.as_str()).map(String::from),
+                interval_seconds: val.get("interval_seconds").and_then(|v| v.as_u64()),
+                event_type,
+                payload,
+            },
+            "composite" => TriggerConfig::Composite {
+                conditions: val.get("conditions").and_then(|v| {
+                    serde_json::from_value(v.clone()).ok()
+                }),
+                operator: val.get("operator").and_then(|v| v.as_str()).map(String::from),
+                window_seconds: val.get("window_seconds").and_then(|v| v.as_u64()),
+                event_type,
+                payload,
             },
             _ => TriggerConfig::Unknown { event_type, payload },
         }
@@ -366,5 +477,91 @@ mod tests {
             let cond = condition.unwrap();
             assert_eq!(cond.condition_type, "any");
         }
+    }
+
+    #[test]
+    fn test_parse_file_watcher_config() {
+        let t = make_trigger(
+            "file_watcher",
+            Some(r#"{"watch_paths":["/home/user/src","/tmp"],"events":["create","modify"],"recursive":true,"glob_filter":"*.py","event_type":"file_changed"}"#),
+        );
+        match t.parse_config() {
+            TriggerConfig::FileWatcher { watch_paths, events, recursive, glob_filter, event_type, .. } => {
+                assert_eq!(watch_paths.as_ref().map(|v| v.len()), Some(2));
+                assert_eq!(events.as_ref().map(|v| v.len()), Some(2));
+                assert_eq!(recursive, Some(true));
+                assert_eq!(glob_filter.as_deref(), Some("*.py"));
+                assert_eq!(event_type.as_deref(), Some("file_changed"));
+            }
+            other => panic!("Expected FileWatcher, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_parse_clipboard_config() {
+        let t = make_trigger(
+            "clipboard",
+            Some(r#"{"content_type":"text","pattern":"https?://","interval_seconds":5,"event_type":"clipboard_changed"}"#),
+        );
+        match t.parse_config() {
+            TriggerConfig::Clipboard { content_type, pattern, interval_seconds, event_type, .. } => {
+                assert_eq!(content_type.as_deref(), Some("text"));
+                assert_eq!(pattern.as_deref(), Some("https?://"));
+                assert_eq!(interval_seconds, Some(5));
+                assert_eq!(event_type.as_deref(), Some("clipboard_changed"));
+            }
+            other => panic!("Expected Clipboard, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_parse_app_focus_config() {
+        let t = make_trigger(
+            "app_focus",
+            Some(r#"{"app_names":["Code.exe","chrome.exe"],"title_pattern":".*\\.rs","interval_seconds":3,"event_type":"app_focused"}"#),
+        );
+        match t.parse_config() {
+            TriggerConfig::AppFocus { app_names, title_pattern, interval_seconds, event_type, .. } => {
+                assert_eq!(app_names.as_ref().map(|v| v.len()), Some(2));
+                assert_eq!(title_pattern.as_deref(), Some(".*\\.rs"));
+                assert_eq!(interval_seconds, Some(3));
+                assert_eq!(event_type.as_deref(), Some("app_focused"));
+            }
+            other => panic!("Expected AppFocus, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_parse_composite_config() {
+        let t = make_trigger(
+            "composite",
+            Some(r#"{"conditions":[{"event_type":"file_changed","source_filter":"watcher-*"},{"event_type":"build_complete"}],"operator":"all","window_seconds":300,"event_type":"composite_fired"}"#),
+        );
+        match t.parse_config() {
+            TriggerConfig::Composite { conditions, operator, window_seconds, event_type, .. } => {
+                let conds = conditions.unwrap();
+                assert_eq!(conds.len(), 2);
+                assert_eq!(conds[0].event_type, "file_changed");
+                assert_eq!(conds[0].source_filter.as_deref(), Some("watcher-*"));
+                assert_eq!(conds[1].event_type, "build_complete");
+                assert!(conds[1].source_filter.is_none());
+                assert_eq!(operator.as_deref(), Some("all"));
+                assert_eq!(window_seconds, Some(300));
+                assert_eq!(event_type.as_deref(), Some("composite_fired"));
+            }
+            other => panic!("Expected Composite, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_file_watcher_event_type_default() {
+        let t = make_trigger("file_watcher", Some(r#"{"watch_paths":[]}"#));
+        assert_eq!(t.parse_config().event_type(), "trigger_fired");
+    }
+
+    #[test]
+    fn test_composite_event_type_custom() {
+        let t = make_trigger("composite", Some(r#"{"event_type":"deploy_ready"}"#));
+        assert_eq!(t.parse_config().event_type(), "deploy_ready");
     }
 }

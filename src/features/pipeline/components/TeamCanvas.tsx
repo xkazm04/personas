@@ -34,6 +34,8 @@ import CanvasAssistant from '@/features/pipeline/sub_canvas/CanvasAssistant';
 import DryRunDebugger, { type DryRunState } from '@/features/pipeline/sub_canvas/DryRunDebugger';
 import AlignmentGuides, { computeAlignments, type AlignmentLine } from '@/features/pipeline/sub_canvas/AlignmentGuides';
 import ConnectionLegend from '@/features/pipeline/sub_canvas/ConnectionLegend';
+import TeamMemoryPanel from '@/features/pipeline/sub_teamMemory/TeamMemoryPanel';
+import TeamMemoryBadge from '@/features/pipeline/sub_teamMemory/TeamMemoryBadge';
 import { canvasDragState } from '@/features/pipeline/sub_canvas/teamConstants';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
@@ -62,6 +64,13 @@ export default function TeamCanvas() {
   const deleteTeamConnection = usePersonaStore((s) => s.deleteTeamConnection);
   const updateTeamConnection = usePersonaStore((s) => s.updateTeamConnection);
   const personas = usePersonaStore((s) => s.personas);
+  const teamMemories = usePersonaStore((s) => s.teamMemories);
+  const teamMemoriesTotal = usePersonaStore((s) => s.teamMemoriesTotal);
+  const teamMemoryStats = usePersonaStore((s) => s.teamMemoryStats);
+  const fetchTeamMemories = usePersonaStore((s) => s.fetchTeamMemories);
+  const createTeamMemory = usePersonaStore((s) => s.createTeamMemory);
+  const deleteTeamMemory = usePersonaStore((s) => s.deleteTeamMemory);
+  const updateTeamMemoryImportance = usePersonaStore((s) => s.updateTeamMemoryImportance);
 
   const [nodes, setNodes, onNodesChangeBase] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -91,6 +100,10 @@ export default function TeamCanvas() {
   // Alignment guides state
   const [alignmentLines, setAlignmentLines] = useState<AlignmentLine[]>([]);
   const [isDraggingNode, setIsDraggingNode] = useState(false);
+
+  // Team Memory state
+  const [memoryPanelOpen, setMemoryPanelOpen] = useState(false);
+  const [memoriesPulsing, setMemoriesPulsing] = useState(false);
 
   // Optimizer state
   const [analytics, setAnalytics] = useState<PipelineAnalytics | null>(null);
@@ -158,21 +171,32 @@ export default function TeamCanvas() {
       team_id: string;
       status: string;
       node_statuses: PipelineNodeStatus[];
+      memories_created?: number;
     }>('pipeline-status', (event) => {
       if (event.payload.team_id === selectedTeamId) {
         setPipelineNodeStatuses(event.payload.node_statuses);
         const isRunning = event.payload.status === 'running';
         setPipelineRunning(isRunning);
-        // Refresh analytics when pipeline completes
+
+        // Pulse badge when new memories are created during execution
+        if ((event.payload.memories_created ?? 0) > 0 && isRunning) {
+          setMemoriesPulsing(true);
+        }
+
+        // Refresh analytics and memories when pipeline completes
         if (!isRunning) {
-          setTimeout(fetchAnalytics, 500);
+          setTimeout(() => {
+            fetchAnalytics();
+            if (selectedTeamId) fetchTeamMemories(selectedTeamId);
+            setMemoriesPulsing(false);
+          }, 500);
         }
       }
     });
     return () => {
       unlisten.then((fn) => fn());
     };
-  }, [selectedTeamId, fetchAnalytics]);
+  }, [selectedTeamId, fetchAnalytics, fetchTeamMemories]);
 
   // Single-pass derivation of all nodes and edges from source data.
   // Replaces 5 separate useEffect hooks (base nodes, pipeline status,
@@ -726,6 +750,33 @@ export default function TeamCanvas() {
 
         {/* Connection Type Legend */}
         <ConnectionLegend />
+
+        {/* Team Memory Badge */}
+        <TeamMemoryBadge
+          count={teamMemoriesTotal}
+          isOpen={memoryPanelOpen}
+          isPulsing={memoriesPulsing}
+          onClick={() => setMemoryPanelOpen(true)}
+        />
+
+        {/* Team Memory Panel */}
+        <AnimatePresence>
+          {memoryPanelOpen && selectedTeamId && (
+            <TeamMemoryPanel
+              teamId={selectedTeamId}
+              memories={teamMemories}
+              total={teamMemoriesTotal}
+              stats={teamMemoryStats}
+              onClose={() => setMemoryPanelOpen(false)}
+              onDelete={deleteTeamMemory}
+              onImportanceChange={updateTeamMemoryImportance}
+              onCreate={createTeamMemory}
+              onFilter={(category, search) => {
+                if (selectedTeamId) fetchTeamMemories(selectedTeamId, category, search);
+              }}
+            />
+          )}
+        </AnimatePresence>
 
         {/* Canvas Assistant */}
         <CanvasAssistant

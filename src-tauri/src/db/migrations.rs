@@ -848,6 +848,30 @@ CREATE INDEX IF NOT EXISTS idx_import_tx_session ON import_transactions(session_
 CREATE INDEX IF NOT EXISTS idx_import_tx_status  ON import_transactions(status);
 CREATE INDEX IF NOT EXISTS idx_import_tx_created ON import_transactions(created_at DESC);
 
+-- ============================================================================
+-- Team Memories (cross-persona shared context for pipelines)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS team_memories (
+    id          TEXT PRIMARY KEY,
+    team_id     TEXT NOT NULL,
+    run_id      TEXT,
+    member_id   TEXT,
+    persona_id  TEXT,
+    title       TEXT NOT NULL,
+    content     TEXT NOT NULL,
+    category    TEXT NOT NULL DEFAULT 'observation',
+    importance  INTEGER NOT NULL DEFAULT 3,
+    tags        TEXT,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_tm_team       ON team_memories(team_id);
+CREATE INDEX IF NOT EXISTS idx_tm_run        ON team_memories(run_id);
+CREATE INDEX IF NOT EXISTS idx_tm_category   ON team_memories(category);
+CREATE INDEX IF NOT EXISTS idx_tm_importance ON team_memories(importance DESC);
+CREATE INDEX IF NOT EXISTS idx_tm_team_cat   ON team_memories(team_id, category);
+
 "#;
 
 /// Incremental migrations for columns added after the initial schema.

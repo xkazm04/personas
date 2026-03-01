@@ -86,6 +86,31 @@ pub struct RotationSubscription {
     pub pool: DbPool,
 }
 
+/// File watcher subscription: monitor file system for changes.
+pub struct FileWatcherSubscription {
+    pub pool: DbPool,
+    pub state: Arc<tokio::sync::Mutex<super::file_watcher::FileWatcherState>>,
+    pub tx: tokio::sync::mpsc::Sender<super::file_watcher::RawFsEvent>,
+    pub rx: Arc<tokio::sync::Mutex<tokio::sync::mpsc::Receiver<super::file_watcher::RawFsEvent>>>,
+}
+
+/// Clipboard monitor subscription: detect clipboard content changes.
+pub struct ClipboardSubscription {
+    pub pool: DbPool,
+    pub state: Arc<tokio::sync::Mutex<super::clipboard_monitor::ClipboardState>>,
+}
+
+/// App focus subscription: detect foreground application changes.
+pub struct AppFocusSubscription {
+    pub pool: DbPool,
+    pub state: Arc<tokio::sync::Mutex<super::app_focus::AppFocusState>>,
+}
+
+/// Composite trigger subscription: evaluate composite conditions against event stream.
+pub struct CompositeSubscription {
+    pub pool: DbPool,
+}
+
 // ---------------------------------------------------------------------------
 // Implementations
 // ---------------------------------------------------------------------------
@@ -178,6 +203,82 @@ impl ReactiveSubscription for RotationSubscription {
         super::rotation::evaluate_due_rotations(&self.pool).await;
         super::rotation::evaluate_credential_events(&self.pool).await;
         super::rotation::detect_anomalies(&self.pool).await;
+    }
+}
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for FileWatcherSubscription {
+    fn name(&self) -> &'static str {
+        "file_watcher"
+    }
+
+    fn interval(&self) -> Duration {
+        Duration::from_secs(2)
+    }
+
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(5)
+    }
+
+    async fn tick(&self) {
+        super::file_watcher::file_watcher_tick(&self.pool, &self.state, &self.tx, &self.rx).await;
+    }
+}
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for ClipboardSubscription {
+    fn name(&self) -> &'static str {
+        "clipboard"
+    }
+
+    fn interval(&self) -> Duration {
+        Duration::from_secs(3)
+    }
+
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(8)
+    }
+
+    async fn tick(&self) {
+        super::clipboard_monitor::clipboard_tick(&self.pool, &self.state).await;
+    }
+}
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for AppFocusSubscription {
+    fn name(&self) -> &'static str {
+        "app_focus"
+    }
+
+    fn interval(&self) -> Duration {
+        Duration::from_secs(3)
+    }
+
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(8)
+    }
+
+    async fn tick(&self) {
+        super::app_focus::app_focus_tick(&self.pool, &self.state).await;
+    }
+}
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for CompositeSubscription {
+    fn name(&self) -> &'static str {
+        "composite"
+    }
+
+    fn interval(&self) -> Duration {
+        Duration::from_secs(2)
+    }
+
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(3)
+    }
+
+    async fn tick(&self) {
+        super::composite::composite_tick(&self.pool);
     }
 }
 

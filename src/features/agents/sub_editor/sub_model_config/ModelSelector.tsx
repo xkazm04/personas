@@ -1,9 +1,9 @@
 import { Cpu, DollarSign, Check, Settings2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ModelProvider } from '@/lib/types/frontendTypes';
-import { OLLAMA_CLOUD_PRESETS, isOllamaCloudValue } from '@/features/agents/sub_editor/model-config/OllamaCloudPresets';
-import { OllamaApiKeyField } from '@/features/agents/sub_editor/model-config/OllamaApiKeyField';
-import { LiteLLMConfigField } from '@/features/agents/sub_editor/model-config/LiteLLMConfigField';
+import { OLLAMA_CLOUD_PRESETS, isOllamaCloudValue } from '@/features/agents/sub_editor/sub_model_config/OllamaCloudPresets';
+import { OllamaApiKeyField } from '@/features/agents/sub_editor/sub_model_config/OllamaApiKeyField';
+import { LiteLLMConfigField } from '@/features/agents/sub_editor/sub_model_config/LiteLLMConfigField';
 import { FieldHint } from '@/features/shared/components/FieldHint';
 import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 

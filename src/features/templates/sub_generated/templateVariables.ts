@@ -1,4 +1,4 @@
-import type { AdoptionRequirement, DesignAnalysisResult, StructuredPromptSection, SuggestedTrigger } from '@/lib/types/designTypes';
+import type { AdoptionRequirement, ConnectorPipelineStep, DesignAnalysisResult, StructuredPromptSection, SuggestedTrigger } from '@/lib/types/designTypes';
 import { sanitizeVariableValues, validateAllVariables } from '@/lib/utils/variableSanitizer';
 
 const VAR_PATTERN = /\{\{(\w+)\}\}/g;
@@ -96,6 +96,15 @@ export function filterDesignResult(
     });
   }
 
+  // Apply connector swaps to service_flow pipeline steps
+  let filteredPipeline: ConnectorPipelineStep[] | undefined = design.service_flow;
+  if (connectorSwaps && Object.keys(connectorSwaps).length > 0 && filteredPipeline) {
+    filteredPipeline = filteredPipeline.map((step) => {
+      const replacement = connectorSwaps[step.connector_name];
+      return replacement ? { ...step, connector_name: replacement } : step;
+    });
+  }
+
   return {
     ...design,
     suggested_tools: design.suggested_tools.filter((_, i) => selections.selectedToolIndices.has(i)),
@@ -103,6 +112,7 @@ export function filterDesignResult(
     suggested_connectors: filteredConnectors,
     suggested_notification_channels: design.suggested_notification_channels?.filter((_, i) => selections.selectedChannelIndices.has(i)),
     suggested_event_subscriptions: design.suggested_event_subscriptions?.filter((_, i) => selections.selectedEventIndices.has(i)),
+    service_flow: filteredPipeline,
   };
 }
 

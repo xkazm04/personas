@@ -19,6 +19,9 @@ export interface UiSlice {
   showCloudNudge: boolean;
   isCreatingPersona: boolean;
   autoStartDesignInstruction: string | null;
+  rebuildActive: boolean;
+  templateTestActive: boolean;
+  connectorTestActive: boolean;
 
   // Actions
   setSidebarSection: (section: SidebarSection) => void;
@@ -35,6 +38,9 @@ export interface UiSlice {
   setShowCloudNudge: (show: boolean) => void;
   setIsCreatingPersona: (creating: boolean) => void;
   setAutoStartDesignInstruction: (instruction: string | null) => void;
+  setRebuildActive: (active: boolean) => void;
+  setTemplateTestActive: (active: boolean) => void;
+  setConnectorTestActive: (active: boolean) => void;
 }
 
 export const createUiSlice: StateCreator<PersonaStore, [], [], UiSlice> = (set) => ({
@@ -53,6 +59,9 @@ export const createUiSlice: StateCreator<PersonaStore, [], [], UiSlice> = (set) 
   showCloudNudge: false,
   isCreatingPersona: false,
   autoStartDesignInstruction: null,
+  rebuildActive: false,
+  templateTestActive: false,
+  connectorTestActive: false,
 
   setSidebarSection: (section) => set({ sidebarSection: section }),
   setCredentialView: (view) => set({ credentialView: view }),
@@ -68,4 +77,7 @@ export const createUiSlice: StateCreator<PersonaStore, [], [], UiSlice> = (set) 
   setShowCloudNudge: (show) => set({ showCloudNudge: show }),
   setIsCreatingPersona: (creating) => set({ isCreatingPersona: creating }),
   setAutoStartDesignInstruction: (instruction) => set({ autoStartDesignInstruction: instruction }),
+  setRebuildActive: (active) => set({ rebuildActive: active }),
+  setTemplateTestActive: (active) => set({ templateTestActive: active }),
+  setConnectorTestActive: (active) => set({ connectorTestActive: active }),
 });

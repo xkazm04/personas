@@ -80,6 +80,53 @@ function ConfigSection({ trigger, credentialEventsList, detail }: Pick<TriggerDe
           )}
         </div>
       )}
+      {config.type === 'file_watcher' && (
+        <>
+          {config.watch_paths && config.watch_paths.length > 0 && (
+            <div>Paths: {config.watch_paths.map((p, i) => (
+              <code key={i} className="px-1.5 py-0.5 bg-background/50 border border-border/20 rounded text-sm font-mono mr-1">{p}</code>
+            ))}</div>
+          )}
+          {config.events && <div>Events: {config.events.join(', ')}</div>}
+          {config.recursive && <div>Recursive: yes</div>}
+          {config.glob_filter && <div>Filter: <code className="px-1.5 py-0.5 bg-background/50 border border-border/20 rounded text-sm font-mono">{config.glob_filter}</code></div>}
+        </>
+      )}
+      {config.type === 'clipboard' && (
+        <>
+          <div>Watches: {config.content_type || 'text'} content</div>
+          {config.pattern && <div>Pattern: <code className="px-1.5 py-0.5 bg-background/50 border border-border/20 rounded text-sm font-mono">{config.pattern}</code></div>}
+          {config.interval_seconds && <div>Poll: every {config.interval_seconds}s</div>}
+        </>
+      )}
+      {config.type === 'app_focus' && (
+        <>
+          {config.app_names && config.app_names.length > 0 && (
+            <div>Apps: {config.app_names.map((n, i) => (
+              <code key={i} className="px-1.5 py-0.5 bg-background/50 border border-border/20 rounded text-sm font-mono mr-1">{n}</code>
+            ))}</div>
+          )}
+          {config.title_pattern && <div>Title: <code className="px-1.5 py-0.5 bg-background/50 border border-border/20 rounded text-sm font-mono">{config.title_pattern}</code></div>}
+          {config.interval_seconds && <div>Poll: every {config.interval_seconds}s</div>}
+        </>
+      )}
+      {config.type === 'composite' && (
+        <>
+          <div>Operator: <span className="font-medium text-rose-400/80">{config.operator || 'all'}</span></div>
+          {config.window_seconds && <div>Window: {config.window_seconds}s</div>}
+          {config.conditions && config.conditions.length > 0 && (
+            <div className="space-y-0.5 mt-1">
+              {config.conditions.map((c, i) => (
+                <div key={i} className="flex items-center gap-1.5">
+                  <span className="text-rose-400/60 text-xs font-mono">{i + 1}.</span>
+                  <code className="px-1.5 py-0.5 bg-background/50 border border-border/20 rounded text-sm font-mono">{c.event_type}</code>
+                  {c.source_filter && <span className="text-muted-foreground/60">from {c.source_filter}</span>}
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

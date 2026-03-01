@@ -118,6 +118,11 @@ export default function Sidebar() {
   const pendingEventCount = usePersonaStore((s) => s.pendingEventCount);
   const fetchRecentEvents = usePersonaStore((s) => s.fetchRecentEvents);
   const n8nTransformActive = usePersonaStore((s) => s.n8nTransformActive);
+  const templateAdoptActive = usePersonaStore((s) => s.templateAdoptActive);
+  const rebuildActive = usePersonaStore((s) => s.rebuildActive);
+  const templateTestActive = usePersonaStore((s) => s.templateTestActive);
+  const isLabRunning = usePersonaStore((s) => s.isLabRunning);
+  const connectorTestActive = usePersonaStore((s) => s.connectorTestActive);
   const selectedTeamId = usePersonaStore((s) => s.selectedTeamId);
   const cloudTab = usePersonaStore((s) => s.cloudTab);
   const setCloudTab = usePersonaStore((s) => s.setCloudTab);
@@ -341,10 +346,16 @@ export default function Sidebar() {
                   {pendingReviewCount > 99 ? '99+' : pendingReviewCount}
                 </span>
               )}
-              {section.id === 'design-reviews' && n8nTransformActive && (
+              {section.id === 'design-reviews' && (n8nTransformActive || templateAdoptActive || rebuildActive || templateTestActive) && (
                 <span className="absolute -top-0.5 -right-0.5 z-20 w-4 h-4 flex items-center justify-center">
                   <span className="absolute inset-0 rounded-full bg-amber-500/40 animate-ping" />
                   <span className="relative w-2.5 h-2.5 rounded-full bg-amber-500 border border-amber-600/50" />
+                </span>
+              )}
+              {section.id === 'personas' && (isLabRunning || connectorTestActive) && (
+                <span className="absolute -top-0.5 -right-0.5 z-20 w-4 h-4 flex items-center justify-center">
+                  <span className="absolute inset-0 rounded-full bg-cyan-500/40 animate-ping" />
+                  <span className="relative w-2.5 h-2.5 rounded-full bg-cyan-500 border border-cyan-600/50" />
                 </span>
               )}
             </button>

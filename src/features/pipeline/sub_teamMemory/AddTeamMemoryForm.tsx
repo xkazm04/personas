@@ -1,0 +1,112 @@
+import { useState } from 'react';
+import { Plus, X } from 'lucide-react';
+import type { CreateTeamMemoryInput } from '@/lib/bindings/CreateTeamMemoryInput';
+
+const CATEGORIES = ['observation', 'decision', 'context', 'learning'] as const;
+
+interface AddTeamMemoryFormProps {
+  teamId: string;
+  onSubmit: (input: CreateTeamMemoryInput) => void;
+}
+
+export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFormProps) {
+  const [expanded, setExpanded] = useState(false);
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [category, setCategory] = useState<string>('observation');
+  const [importance, setImportance] = useState(5);
+
+  const handleSubmit = () => {
+    if (!title.trim() || !content.trim()) return;
+    onSubmit({
+      team_id: teamId,
+      run_id: null,
+      member_id: null,
+      persona_id: null,
+      title: title.trim(),
+      content: content.trim(),
+      category,
+      importance,
+      tags: 'manual',
+    });
+    setTitle('');
+    setContent('');
+    setCategory('observation');
+    setImportance(5);
+    setExpanded(false);
+  };
+
+  if (!expanded) {
+    return (
+      <button
+        className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs text-muted-foreground/70 hover:text-foreground/80 border border-dashed border-primary/10 hover:border-primary/20 rounded-lg transition-colors"
+        onClick={() => setExpanded(true)}
+      >
+        <Plus className="w-3 h-3" />
+        Add Memory
+      </button>
+    );
+  }
+
+  return (
+    <div className="border border-primary/15 rounded-lg p-2.5 space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium text-foreground/80">New Memory</span>
+        <button
+          className="p-0.5 rounded hover:bg-primary/10 text-muted-foreground/60"
+          onClick={() => setExpanded(false)}
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      <input
+        className="w-full text-xs bg-secondary/60 border border-primary/10 rounded-md px-2 py-1.5 text-foreground/90 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/30"
+        placeholder="Title..."
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+      />
+
+      <textarea
+        className="w-full text-xs bg-secondary/60 border border-primary/10 rounded-md px-2 py-1.5 text-foreground/90 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/30 resize-none"
+        placeholder="Content..."
+        rows={3}
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+      />
+
+      <div className="flex items-center gap-2">
+        <select
+          className="text-xs bg-secondary/60 border border-primary/10 rounded-md px-1.5 py-1 text-foreground/80 focus:outline-none"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+        >
+          {CATEGORIES.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+
+        <div className="flex items-center gap-1">
+          <span className="text-[10px] text-muted-foreground/50">Imp:</span>
+          <input
+            type="range"
+            min={1}
+            max={10}
+            value={importance}
+            onChange={(e) => setImportance(Number(e.target.value))}
+            className="w-14 h-1 accent-amber-500"
+          />
+          <span className="text-[10px] text-muted-foreground/60 w-3 text-right">{importance}</span>
+        </div>
+      </div>
+
+      <button
+        className="w-full text-xs py-1.5 rounded-md bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/25 transition-colors disabled:opacity-40"
+        disabled={!title.trim() || !content.trim()}
+        onClick={handleSubmit}
+      >
+        Save Memory
+      </button>
+    </div>
+  );
+}

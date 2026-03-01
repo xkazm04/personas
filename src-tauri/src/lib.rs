@@ -386,6 +386,8 @@ pub fn run() {
             commands::design::template_adopt::clear_template_generate_snapshot,
             commands::design::template_adopt::cancel_template_generate,
             commands::design::template_adopt::save_custom_template,
+            // Design — Team Synthesis
+            commands::design::team_synthesis::synthesize_team_from_templates,
             // Design — Platform Definitions
             commands::design::platform_definitions::list_platform_definitions,
             commands::design::platform_definitions::get_platform_definition,
@@ -396,6 +398,7 @@ pub fn run() {
             commands::design::reviews::list_review_categories,
             commands::design::reviews::cleanup_duplicate_reviews,
             commands::design::reviews::backfill_review_categories,
+            commands::design::reviews::backfill_service_flow,
             commands::design::reviews::get_trending_templates,
             commands::design::reviews::get_design_review,
             commands::design::reviews::delete_design_review,
@@ -516,6 +519,15 @@ pub fn run() {
             commands::teams::teams::get_pipeline_analytics,
             commands::teams::teams::suggest_topology,
             commands::teams::teams::suggest_topology_llm,
+            // Team Memories
+            commands::teams::team_memories::list_team_memories,
+            commands::teams::team_memories::create_team_memory,
+            commands::teams::team_memories::delete_team_memory,
+            commands::teams::team_memories::update_team_memory_importance,
+            commands::teams::team_memories::batch_delete_team_memories,
+            commands::teams::team_memories::get_team_memory_count,
+            commands::teams::team_memories::get_team_memory_stats,
+            commands::teams::team_memories::list_team_memories_by_run,
             // Tools
             commands::tools::tools::list_tool_definitions,
             commands::tools::tools::get_tool_definition,
@@ -585,6 +597,8 @@ pub fn run() {
             commands::infrastructure::gitlab::gitlab_list_agents,
             commands::infrastructure::gitlab::gitlab_undeploy_agent,
             commands::infrastructure::gitlab::gitlab_revoke_credentials,
+            // Notifications
+            notifications::send_app_notification,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

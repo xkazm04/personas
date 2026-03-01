@@ -93,6 +93,8 @@ interface TemplateSearchBarProps {
   onNewTemplate: () => void;
   onCleanupDuplicates?: () => void;
   isCleaningUp?: boolean;
+  onBackfillPipeline?: () => void;
+  isBackfillingPipeline?: boolean;
   coverageFilter?: string;
   onCoverageFilterChange?: (value: string) => void;
   // AI search
@@ -114,6 +116,17 @@ const SORT_OPTIONS = [
   { value: 'trending', label: 'Most Adopted', dir: 'desc' },
 ];
 
+// ── Category Role Groups ─────────────────────────────────────────
+
+const CATEGORY_ROLE_GROUPS: Array<{ role: string; label: string; categories: string[] }> = [
+  { role: 'software',    label: 'Software',         categories: ['development', 'devops', 'testing', 'quality'] },
+  { role: 'operations',  label: 'Operations',       categories: ['monitoring', 'security', 'maintenance', 'pipeline'] },
+  { role: 'business',    label: 'Business',          categories: ['sales', 'marketing', 'finance', 'hr', 'legal'] },
+  { role: 'content',     label: 'Content',           categories: ['content', 'documentation', 'research'] },
+  { role: 'customer',    label: 'Customer',          categories: ['support', 'communication', 'email'] },
+  { role: 'data',        label: 'Data & Analytics',  categories: ['data', 'productivity', 'project-management'] },
+];
+
 // ── Category Picker Modal ────────────────────────────────────────
 
 const CategoryPickerModal: FC<{
@@ -132,9 +145,25 @@ const CategoryPickerModal: FC<{
     return () => document.removeEventListener('keydown', handleKey);
   }, [onClose]);
 
-  const totalCount = useMemo(
-    () => categories.reduce((s, c) => s + c.count, 0),
-    [categories],
+  // Build a map of category name → count for quick lookup
+  const countMap = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const c of categories) m.set(c.name, c.count);
+    return m;
+  }, [categories]);
+
+  // Collect categories that don't appear in any role group
+  const groupedNames = useMemo(() => {
+    const s = new Set<string>();
+    for (const g of CATEGORY_ROLE_GROUPS) for (const c of g.categories) s.add(c);
+    return s;
+  }, []);
+
+  const ungrouped = useMemo(
+    () => categories
+      .filter((c) => !groupedNames.has(c.name))
+      .sort((a, b) => getCategoryMeta(a.name).label.localeCompare(getCategoryMeta(b.name).label)),
+    [categories, groupedNames],
   );
 
   return (
@@ -143,102 +172,100 @@ const CategoryPickerModal: FC<{
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
     >
-      <div className="bg-background border border-primary/15 rounded-2xl shadow-2xl w-full max-w-[780px] mx-4 overflow-hidden">
+      <div className="bg-background border border-primary/15 rounded-2xl shadow-2xl w-full max-w-[820px] mx-4 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10">
           <div>
             <h2 className="text-base font-semibold text-foreground/90">Filter by Category</h2>
             <p className="text-xs text-muted-foreground/60 mt-0.5">Select a category to filter templates</p>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/60 hover:text-foreground/80 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            {selectedCategory && (
+              <button
+                onClick={() => { onSelect(null); onClose(); }}
+                className="px-2.5 py-1 text-xs rounded-lg bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors"
+              >
+                All
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
-        {/* Grid */}
+        {/* Role-grouped columns */}
         <div className="p-5">
-          <div className="grid grid-cols-5 gap-3">
-            {/* "All" card */}
-            <button
-              onClick={() => { onSelect(null); onClose(); }}
-              className={`group relative flex flex-col items-center gap-2.5 p-4 rounded-xl border transition-all ${
-                selectedCategory === null
-                  ? 'bg-violet-500/15 border-violet-500/40 ring-1 ring-violet-500/20'
-                  : 'border-primary/10 hover:border-primary/25 hover:bg-secondary/40'
-              }`}
-            >
-              <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
-                  selectedCategory === null
-                    ? 'bg-violet-500/20'
-                    : 'bg-secondary/60 group-hover:bg-secondary/80'
-                }`}
-              >
-                <LayoutGrid className={`w-5 h-5 ${
-                  selectedCategory === null ? 'text-violet-400' : 'text-muted-foreground/70'
-                }`} />
-              </div>
-              <div className="text-center">
-                <div className={`text-xs font-medium leading-tight ${
-                  selectedCategory === null ? 'text-violet-300' : 'text-foreground/80'
-                }`}>
-                  All
-                </div>
-                <div className="text-[10px] text-muted-foreground/50 mt-0.5 tabular-nums">{totalCount}</div>
-              </div>
-              {selectedCategory === null && (
-                <div className="absolute top-2 right-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-violet-400" />
-                </div>
-              )}
-            </button>
+          <div className="flex gap-4">
+            {CATEGORY_ROLE_GROUPS.map((group) => {
+              // Only show categories that exist in the data (have a count) or are well-known
+              const groupCategories = group.categories
+                .map((name) => ({ name, meta: getCategoryMeta(name), count: countMap.get(name) ?? 0 }))
+                .sort((a, b) => a.meta.label.localeCompare(b.meta.label));
 
-            {categories.map((cat) => {
-              const meta = getCategoryMeta(cat.name);
-              const Icon = meta.icon;
-              const isSelected = selectedCategory === cat.name;
               return (
-                <button
-                  key={cat.name}
-                  onClick={() => { onSelect(isSelected ? null : cat.name); onClose(); }}
-                  className={`group relative flex flex-col items-center gap-2.5 p-4 rounded-xl border transition-all ${
-                    isSelected
-                      ? 'bg-violet-500/15 border-violet-500/40 ring-1 ring-violet-500/20'
-                      : 'border-primary/10 hover:border-primary/25 hover:bg-secondary/40'
-                  }`}
-                >
-                  <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
-                      isSelected ? '' : 'bg-secondary/60 group-hover:bg-secondary/80'
-                    }`}
-                    style={isSelected ? { backgroundColor: `${meta.color}25` } : undefined}
-                  >
-                    <Icon
-                      className={`w-5 h-5 transition-colors ${
-                        isSelected ? '' : 'text-muted-foreground/70 group-hover:text-foreground/70'
-                      }`}
-                      style={isSelected ? { color: meta.color } : undefined}
-                    />
+                <div key={group.role} className="flex-1 min-w-0">
+                  <div className="text-[11px] font-semibold text-muted-foreground/50 uppercase tracking-wider px-2 pb-2">
+                    {group.label}
                   </div>
-                  <div className="text-center">
-                    <div className={`text-xs font-medium leading-tight ${
-                      isSelected ? 'text-violet-300' : 'text-foreground/80'
-                    }`}>
-                      {meta.label}
-                    </div>
-                    <div className="text-[10px] text-muted-foreground/50 mt-0.5 tabular-nums">{cat.count}</div>
+                  <div className="flex flex-col gap-0.5">
+                    {groupCategories.map(({ name, meta, count }) => {
+                      const Icon = meta.icon;
+                      const isSelected = selectedCategory === name;
+                      return (
+                        <button
+                          key={name}
+                          onClick={() => { onSelect(isSelected ? null : name); onClose(); }}
+                          className={`flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-left text-xs transition-colors ${
+                            isSelected
+                              ? 'bg-violet-500/15 text-violet-300'
+                              : 'text-foreground/80 hover:bg-secondary/40'
+                          }`}
+                        >
+                          <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: meta.color }} />
+                          <span className="flex-1 truncate">{meta.label}</span>
+                          <span className="text-muted-foreground/40 tabular-nums">{count}</span>
+                        </button>
+                      );
+                    })}
                   </div>
-                  {isSelected && (
-                    <div className="absolute top-2 right-2">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-violet-400" />
-                    </div>
-                  )}
-                </button>
+                </div>
               );
             })}
+
+            {/* Catch-all column for ungrouped categories */}
+            {ungrouped.length > 0 && (
+              <div className="flex-1 min-w-0">
+                <div className="text-[11px] font-semibold text-muted-foreground/50 uppercase tracking-wider px-2 pb-2">
+                  Other
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  {ungrouped.map((cat) => {
+                    const meta = getCategoryMeta(cat.name);
+                    const Icon = meta.icon;
+                    const isSelected = selectedCategory === cat.name;
+                    return (
+                      <button
+                        key={cat.name}
+                        onClick={() => { onSelect(isSelected ? null : cat.name); onClose(); }}
+                        className={`flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-left text-xs transition-colors ${
+                          isSelected
+                            ? 'bg-violet-500/15 text-violet-300'
+                            : 'text-foreground/80 hover:bg-secondary/40'
+                        }`}
+                      >
+                        <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: meta.color }} />
+                        <span className="flex-1 truncate">{meta.label}</span>
+                        <span className="text-muted-foreground/40 tabular-nums">{cat.count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -469,6 +496,68 @@ function SortDropdown({
   );
 }
 
+// ── Admin Tools Dropdown (dev mode only) ─────────────────────────
+
+function AdminToolsDropdown({
+  onCleanupDuplicates,
+  isCleaningUp,
+  onBackfillPipeline,
+  isBackfillingPipeline,
+}: {
+  onCleanupDuplicates?: () => void;
+  isCleaningUp?: boolean;
+  onBackfillPipeline?: () => void;
+  isBackfillingPipeline?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative flex-shrink-0">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="p-2 rounded-lg border border-primary/10 hover:bg-primary/5 text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+        title="Admin tools"
+      >
+        <Wrench className="w-4 h-4" />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 z-50 min-w-[200px] py-1.5 bg-background border border-primary/20 rounded-lg shadow-2xl backdrop-blur-sm">
+          {onCleanupDuplicates && (
+            <button
+              onClick={() => { onCleanupDuplicates(); setOpen(false); }}
+              disabled={isCleaningUp}
+              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-amber-400/80 hover:bg-amber-500/10 transition-colors text-left disabled:opacity-50"
+            >
+              <Trash2 className={`w-4 h-4 ${isCleaningUp ? 'animate-spin' : ''}`} />
+              Deduplicate
+            </button>
+          )}
+          {onBackfillPipeline && (
+            <button
+              onClick={() => { onBackfillPipeline(); setOpen(false); }}
+              disabled={isBackfillingPipeline}
+              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-violet-400/80 hover:bg-violet-500/10 transition-colors text-left disabled:opacity-50"
+            >
+              <GitBranch className={`w-4 h-4 ${isBackfillingPipeline ? 'animate-spin' : ''}`} />
+              Backfill Pipelines
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main Component ───────────────────────────────────────────────
 
 export function TemplateSearchBar({
@@ -490,6 +579,8 @@ export function TemplateSearchBar({
   onNewTemplate,
   onCleanupDuplicates,
   isCleaningUp,
+  onBackfillPipeline,
+  isBackfillingPipeline,
   coverageFilter,
   onCoverageFilterChange,
   aiSearchMode,
@@ -748,17 +839,14 @@ export function TemplateSearchBar({
           </span>
         )}
 
-        {/* Cleanup duplicates */}
-        {onCleanupDuplicates && (
-          <button
-            onClick={onCleanupDuplicates}
-            disabled={isCleaningUp}
-            className="px-3 py-2 text-sm rounded-lg border border-amber-500/20 hover:bg-amber-500/10 text-amber-400/80 transition-colors flex items-center gap-1.5 disabled:opacity-50 flex-shrink-0"
-            title="Remove duplicate templates, keeping only the newest version of each"
-          >
-            <Trash2 className={`w-3.5 h-3.5 ${isCleaningUp ? 'animate-spin' : ''}`} />
-            Deduplicate
-          </button>
+        {/* Admin tools dropdown — dev mode only */}
+        {import.meta.env.VITE_DEVELOPMENT === 'true' && (onCleanupDuplicates || onBackfillPipeline) && (
+          <AdminToolsDropdown
+            onCleanupDuplicates={onCleanupDuplicates}
+            isCleaningUp={isCleaningUp}
+            onBackfillPipeline={onBackfillPipeline}
+            isBackfillingPipeline={isBackfillingPipeline}
+          />
         )}
 
         {/* Connector filter */}

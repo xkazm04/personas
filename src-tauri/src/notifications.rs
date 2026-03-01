@@ -145,6 +145,19 @@ pub fn notify_n8n_transform_completed(
 }
 
 // ---------------------------------------------------------------------------
+// Generic notification command — allows the frontend to trigger OS notifications
+// ---------------------------------------------------------------------------
+
+#[tauri::command]
+pub fn send_app_notification(
+    app: tauri::AppHandle,
+    title: String,
+    body: String,
+) {
+    send(&app, &title, &body);
+}
+
+// ---------------------------------------------------------------------------
 // Low-level send
 // ---------------------------------------------------------------------------
 

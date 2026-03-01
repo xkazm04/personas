@@ -232,6 +232,7 @@ export interface DesignContextData {
   credentialLinks?: Record<string, string>;
   useCases?: DesignUseCase[];
   summary?: string;
+  connectorPipeline?: import('@/lib/types/designTypes').ConnectorPipelineStep[];
 }
 
 // ── Flow Diagram Types ────────────────────────────────────────────────

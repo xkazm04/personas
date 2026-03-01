@@ -8,7 +8,7 @@ import type { ModelTestConfig } from '@/api/tests';
 import {
   OLLAMA_CLOUD_BASE_URL,
   OLLAMA_CLOUD_PRESETS,
-} from '@/features/agents/sub_editor/model-config/OllamaCloudPresets';
+} from '@/features/agents/sub_editor/sub_model_config/OllamaCloudPresets';
 
 function profileToModelConfig(mp: ModelProfile): ModelTestConfig | null {
   if (!mp.model && !mp.provider) return null;

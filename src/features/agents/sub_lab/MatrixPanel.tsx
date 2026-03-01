@@ -14,7 +14,7 @@ import type { ModelTestConfig } from '@/api/tests';
 import {
   OLLAMA_CLOUD_PRESETS,
   OLLAMA_CLOUD_BASE_URL,
-} from '@/features/agents/sub_editor/model-config/OllamaCloudPresets';
+} from '@/features/agents/sub_editor/sub_model_config/OllamaCloudPresets';
 
 interface ModelOption {
   id: string;
