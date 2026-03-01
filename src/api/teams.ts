@@ -129,3 +129,6 @@ export const getPipelineAnalytics = (teamId: string) =>
 
 export const suggestTopology = (query: string, teamId?: string) =>
   invoke<TopologyBlueprint>("suggest_topology", { query, teamId: teamId ?? null });
+
+export const suggestTopologyLlm = (query: string, teamId?: string) =>
+  invoke<TopologyBlueprint>("suggest_topology_llm", { query, teamId: teamId ?? null });

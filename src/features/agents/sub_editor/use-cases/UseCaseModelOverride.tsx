@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Cpu, Check, ChevronDown, Settings2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Listbox } from '@/features/shared/components/Listbox';
+import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 import type { UseCaseItem } from '@/features/shared/components/UseCasesList';
 import type { ModelProfile, ModelProvider } from '@/lib/types/frontendTypes';
 import {
@@ -201,16 +202,16 @@ export function UseCaseModelOverride({ useCase, defaultModelProfile, onUpdate }:
             <div className="bg-secondary/30 border border-primary/10 rounded-xl p-3 space-y-2">
               <div>
                 <label className="block text-sm font-medium text-foreground/80 mb-1">Provider</label>
-                <select
+                <ThemedSelect
                   value={customConfig.provider || 'anthropic'}
                   onChange={(e) => handleCustomFieldChange('provider', e.target.value)}
-                  className="w-full px-3 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+                  className="py-1.5"
                 >
                   <option value="anthropic">Anthropic</option>
                   <option value="ollama">Ollama (local)</option>
                   <option value="litellm">LiteLLM (proxy)</option>
                   <option value="custom">Custom URL</option>
-                </select>
+                </ThemedSelect>
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground/80 mb-1">Model Name</label>

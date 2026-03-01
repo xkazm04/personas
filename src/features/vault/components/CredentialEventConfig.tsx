@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Zap, Clock, Loader2, Timer, ShieldAlert, CalendarClock } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { CredentialTemplateEvent, DbCredentialEvent } from '@/lib/types/types';
+import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 
 function safeParseConfig(json: string | null | undefined): Record<string, unknown> {
   if (!json) return {};
@@ -368,10 +369,11 @@ function GenericPollingConfig({
       <div className="flex items-center gap-3">
         <Clock className="w-3.5 h-3.5 text-muted-foreground/80" />
         <label className="text-sm text-muted-foreground/90">Polling interval</label>
-        <select
+        <ThemedSelect
           value={pollingInterval}
           onChange={(e) => onUpdate({ pollingIntervalSeconds: parseInt(e.target.value) })}
-          className="px-2 py-1 bg-background/50 border border-border/30 rounded-lg text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
+          className="px-2 py-1 w-auto"
+          wrapperClassName="inline-block"
         >
           <option value={10}>10 seconds</option>
           <option value={30}>30 seconds</option>
@@ -379,7 +381,7 @@ function GenericPollingConfig({
           <option value={120}>2 minutes</option>
           <option value={300}>5 minutes</option>
           <option value={600}>10 minutes</option>
-        </select>
+        </ThemedSelect>
       </div>
       <div className="text-sm text-muted-foreground/80">
         Approx. {Math.round(86400 / pollingInterval).toLocaleString()} checks/day

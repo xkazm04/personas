@@ -2,13 +2,13 @@ import { Sliders, Zap, Sparkles, Bell, ShieldCheck, Gauge } from 'lucide-react';
 import { TriggerConfigPanel } from '../review/TriggerConfigPanel';
 import { ConfigureStep } from '@/features/shared/components/ConfigureStep';
 import { useAdoptionWizard } from '../AdoptionWizardContext';
+import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 
 // ── Shared styles ─────────────────────────────────────────────────────
 
 const sectionClass = 'rounded-xl border border-primary/10 bg-secondary/20 p-4';
 const sectionHeaderClass = 'flex items-center gap-2 mb-3';
 const sectionTitleClass = 'text-xs font-semibold uppercase tracking-wider text-muted-foreground/60';
-const selectClass = 'w-full px-2.5 py-1.5 bg-background/50 border border-primary/10 rounded-lg text-sm text-foreground/90 focus:outline-none focus:border-violet-500/30 transition-colors';
 const inputClass = 'w-full px-2.5 py-1.5 bg-background/50 border border-primary/10 rounded-lg text-sm text-foreground/90 placeholder-muted-foreground/30 focus:outline-none focus:border-violet-500/30 transition-colors';
 const labelClass = 'block text-sm font-medium text-foreground/80';
 const descClass = 'text-xs text-muted-foreground/50 mt-0.5';
@@ -87,16 +87,16 @@ export function TuneStep() {
                   {variable.description && <p className={descClass}>{variable.description}</p>}
 
                   {variable.type === 'select' && variable.options ? (
-                    <select
+                    <ThemedSelect
                       value={value}
                       onChange={(e) => wizard.updateVariable(variable.key, e.target.value)}
-                      className={`${selectClass} ${isEmpty ? '!border-red-500/30' : ''}`}
+                      className={`py-1.5 px-2.5 ${isEmpty ? '!border-red-500/30' : ''}`}
                     >
                       <option value="">Select...</option>
                       {variable.options.map((opt) => (
                         <option key={opt} value={opt}>{opt}</option>
                       ))}
-                    </select>
+                    </ThemedSelect>
                   ) : (
                     <input
                       type={variable.type === 'url' ? 'url' : 'text'}
@@ -162,15 +162,15 @@ export function TuneStep() {
           <div className={fieldClass}>
             <label className={labelClass}>Severity threshold</label>
             <p className={descClass}>Minimum severity to alert</p>
-            <select
+            <ThemedSelect
               value={alertSeverity}
               onChange={(e) => wizard.updatePreference('alertSeverity', e.target.value)}
-              className={selectClass}
+              className="py-1.5 px-2.5"
             >
               <option value="all">All events</option>
               <option value="warning_critical">Warning + Critical</option>
               <option value="critical_only">Critical only</option>
-            </select>
+            </ThemedSelect>
           </div>
         </div>
       </div>
@@ -206,31 +206,31 @@ export function TuneStep() {
           <div className={fieldClass}>
             <label className={labelClass}>Auto-approve</label>
             <p className={descClass}>Skip review for lower severity</p>
-            <select
+            <ThemedSelect
               value={autoApproveSeverity}
               onChange={(e) => wizard.updatePreference('autoApproveSeverity', e.target.value)}
-              className={selectClass}
+              className="py-1.5 px-2.5"
             >
               <option value="info">Info only</option>
               <option value="info_warning">Info + Warning</option>
               <option value="all">All (no review)</option>
-            </select>
+            </ThemedSelect>
           </div>
 
           {/* Timeout */}
           <div className={fieldClass}>
             <label className={labelClass}>Review timeout</label>
             <p className={descClass}>Auto-reject after timeout</p>
-            <select
+            <ThemedSelect
               value={reviewTimeout}
               onChange={(e) => wizard.updatePreference('reviewTimeout', e.target.value)}
-              className={selectClass}
+              className="py-1.5 px-2.5"
             >
               <option value="1h">1 hour</option>
               <option value="4h">4 hours</option>
               <option value="24h">24 hours</option>
               <option value="none">No timeout</option>
-            </select>
+            </ThemedSelect>
           </div>
         </div>
       </div>
@@ -261,17 +261,17 @@ export function TuneStep() {
           <div className={fieldClass}>
             <label className={labelClass}>Timeout per run</label>
             <p className={descClass}>Max execution time</p>
-            <select
+            <ThemedSelect
               value={String(timeoutMs)}
               onChange={(e) => wizard.updatePreference('timeoutMs', parseInt(e.target.value))}
-              className={selectClass}
+              className="py-1.5 px-2.5"
             >
               <option value="300000">5 minutes</option>
               <option value="900000">15 minutes</option>
               <option value="1800000">30 minutes</option>
               <option value="3600000">1 hour</option>
               <option value="0">No limit</option>
-            </select>
+            </ThemedSelect>
           </div>
 
           {/* Budget */}

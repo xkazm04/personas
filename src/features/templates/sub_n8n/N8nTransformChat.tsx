@@ -1,6 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, CheckCircle2, ChevronDown, KeyRound, Settings2, ShieldCheck, Brain, Bell } from 'lucide-react';
+import { Sparkles, CheckCircle2, KeyRound, Settings2, ShieldCheck, Brain, Bell } from 'lucide-react';
+import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import type { StreamingSection } from '@/api/n8nTransform';
 import type { TransformQuestion, TransformSubPhase } from './useN8nImportReducer';
@@ -151,21 +152,17 @@ export function N8nTransformChat({
                         )}
 
                         {q.type === 'select' && q.options && (
-                          <div className="relative">
-                            <select
-                              value={userAnswers[q.id] ?? q.default ?? ''}
-                              onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
-                              className="w-full px-3 py-2 text-sm rounded-lg border border-primary/15 bg-background/80 text-foreground/85 appearance-none cursor-pointer focus:outline-none focus:border-primary/30 transition-colors [&>option]:bg-[#14141f] [&>option]:text-foreground/85"
-                            >
-                              <option value="">Select...</option>
-                              {q.options.map((opt) => (
-                                <option key={opt} value={opt}>
-                                  {opt}
-                                </option>
-                              ))}
-                            </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground/80 pointer-events-none" />
-                          </div>
+                          <ThemedSelect
+                            value={userAnswers[q.id] ?? q.default ?? ''}
+                            onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
+                          >
+                            <option value="">Select...</option>
+                            {q.options.map((opt) => (
+                              <option key={opt} value={opt}>
+                                {opt}
+                              </option>
+                            ))}
+                          </ThemedSelect>
                         )}
 
                         {q.type === 'text' && (

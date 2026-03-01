@@ -68,13 +68,13 @@ function reducer(state: CredentialViewState, action: CredentialViewAction): Cred
     }
 
     case 'SET_CREDENTIAL_NAME':
-      if (state.view === 'catalog-form') {
+      if (state.view === 'catalog-form' && state.credentialName !== action.name) {
         return { ...state, credentialName: action.name };
       }
       return state;
 
     case 'SET_CATALOG_SEARCH':
-      if (state.view === 'catalog-browse') {
+      if (state.view === 'catalog-browse' && state.search !== action.search) {
         return { ...state, search: action.search };
       }
       return state;

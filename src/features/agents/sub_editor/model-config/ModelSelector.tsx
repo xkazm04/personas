@@ -5,6 +5,7 @@ import { OLLAMA_CLOUD_PRESETS, isOllamaCloudValue } from '@/features/agents/sub_
 import { OllamaApiKeyField } from '@/features/agents/sub_editor/model-config/OllamaApiKeyField';
 import { LiteLLMConfigField } from '@/features/agents/sub_editor/model-config/LiteLLMConfigField';
 import { FieldHint } from '@/features/shared/components/FieldHint';
+import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 
 // ── Provider brand colors ─────────────────────────────────────────────
 const PROVIDER_COLORS: Record<string, string> = {
@@ -167,16 +168,16 @@ export function ModelSelector({
                 <div className="space-y-3 pt-1">
                   <div>
                     <label className="block text-sm font-medium text-foreground/80 mb-1">Provider</label>
-                    <select
+                    <ThemedSelect
                       value={customConfig.selectedProvider}
                       onChange={(e) => customConfig.onProviderChange(e.target.value as ModelProvider)}
-                      className="w-full px-3 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+                      className="py-1.5"
                     >
                       <option value="anthropic">Anthropic</option>
                       <option value="ollama">Ollama (local)</option>
                       <option value="litellm">LiteLLM (proxy)</option>
                       <option value="custom">Custom URL</option>
-                    </select>
+                    </ThemedSelect>
                   </div>
 
                   {customConfig.selectedProvider !== 'anthropic' && (

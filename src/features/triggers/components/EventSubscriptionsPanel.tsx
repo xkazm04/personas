@@ -7,6 +7,7 @@ import {
 import { usePersonaStore } from '@/stores/personaStore';
 import * as eventsApi from '@/api/events';
 import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscription';
+import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 
 const COMMON_EVENT_TYPES = [
   'file_changed',
@@ -211,10 +212,10 @@ export function EventSubscriptionsPanel() {
                 {/* Persona select */}
                 <div>
                   <label className="block text-xs text-muted-foreground/80 mb-1">Agent</label>
-                  <select
+                  <ThemedSelect
                     value={newPersonaId}
                     onChange={(e) => setNewPersonaId(e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-sm bg-background/60 border border-border/40 rounded-lg text-foreground/90 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    className="py-1.5"
                   >
                     <option value="">Select agent...</option>
                     {personas.map((p) => (
@@ -222,7 +223,7 @@ export function EventSubscriptionsPanel() {
                         {p.name}
                       </option>
                     ))}
-                  </select>
+                  </ThemedSelect>
                 </div>
 
                 {/* Event type */}
