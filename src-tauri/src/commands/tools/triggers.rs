@@ -412,6 +412,180 @@ pub async fn validate_trigger(
                 message: "No configuration needed".into(),
             });
         }
+        "file_watcher" => {
+            if let Some(paths) = config.get("watch_paths").and_then(|v| v.as_array()) {
+                let valid_paths: Vec<_> = paths.iter()
+                    .filter_map(|p| p.as_str())
+                    .filter(|p| std::path::Path::new(p).exists())
+                    .collect();
+                let total = paths.len();
+                if total == 0 {
+                    checks.push(TriggerValidationCheck {
+                        label: "Watch paths".into(),
+                        passed: false,
+                        message: "No watch paths configured".into(),
+                    });
+                } else if valid_paths.len() == total {
+                    checks.push(TriggerValidationCheck {
+                        label: "Watch paths".into(),
+                        passed: true,
+                        message: format!("All {} path(s) exist", total),
+                    });
+                } else {
+                    checks.push(TriggerValidationCheck {
+                        label: "Watch paths".into(),
+                        passed: false,
+                        message: format!("{}/{} path(s) exist on disk", valid_paths.len(), total),
+                    });
+                }
+            } else {
+                checks.push(TriggerValidationCheck {
+                    label: "Watch paths".into(),
+                    passed: false,
+                    message: "No watch_paths configured".into(),
+                });
+            }
+            if let Some(events) = config.get("events").and_then(|v| v.as_array()) {
+                let valid_events = ["create", "modify", "delete", "rename"];
+                let all_valid = events.iter().all(|e| {
+                    e.as_str().map_or(false, |s| valid_events.contains(&s))
+                });
+                checks.push(TriggerValidationCheck {
+                    label: "Event types".into(),
+                    passed: all_valid,
+                    message: if all_valid {
+                        format!("{} event type(s) configured", events.len())
+                    } else {
+                        "Unknown event types (valid: create, modify, delete, rename)".into()
+                    },
+                });
+            }
+        }
+        "clipboard" => {
+            let ct = config.get("content_type").and_then(|v| v.as_str()).unwrap_or("text");
+            let valid_types = ["text", "image", "any"];
+            checks.push(TriggerValidationCheck {
+                label: "Content type".into(),
+                passed: valid_types.contains(&ct),
+                message: format!("Monitoring: {}", ct),
+            });
+            if let Some(pattern) = config.get("pattern").and_then(|v| v.as_str()) {
+                match regex::Regex::new(pattern) {
+                    Ok(_) => {
+                        checks.push(TriggerValidationCheck {
+                            label: "Pattern".into(),
+                            passed: true,
+                            message: format!("Valid regex: {}", pattern),
+                        });
+                    }
+                    Err(e) => {
+                        checks.push(TriggerValidationCheck {
+                            label: "Pattern".into(),
+                            passed: false,
+                            message: format!("Invalid regex: {}", e),
+                        });
+                    }
+                }
+            }
+        }
+        "app_focus" => {
+            checks.push(TriggerValidationCheck {
+                label: "App focus monitor".into(),
+                passed: cfg!(target_os = "windows"),
+                message: if cfg!(target_os = "windows") {
+                    "Windows platform supported".into()
+                } else {
+                    "App focus monitoring only supported on Windows".into()
+                },
+            });
+            if let Some(pattern) = config.get("title_pattern").and_then(|v| v.as_str()) {
+                match regex::Regex::new(pattern) {
+                    Ok(_) => {
+                        checks.push(TriggerValidationCheck {
+                            label: "Title pattern".into(),
+                            passed: true,
+                            message: format!("Valid regex: {}", pattern),
+                        });
+                    }
+                    Err(e) => {
+                        checks.push(TriggerValidationCheck {
+                            label: "Title pattern".into(),
+                            passed: false,
+                            message: format!("Invalid regex: {}", e),
+                        });
+                    }
+                }
+            }
+        }
+        "composite" => {
+            if let Some(conditions) = config.get("conditions").and_then(|v| v.as_array()) {
+                if conditions.len() < 2 {
+                    checks.push(TriggerValidationCheck {
+                        label: "Conditions".into(),
+                        passed: false,
+                        message: "Composite triggers require at least 2 conditions".into(),
+                    });
+                } else {
+                    let all_have_type = conditions.iter().all(|c| {
+                        c.get("event_type").and_then(|v| v.as_str()).map_or(false, |s| !s.is_empty())
+                    });
+                    checks.push(TriggerValidationCheck {
+                        label: "Conditions".into(),
+                        passed: all_have_type,
+                        message: if all_have_type {
+                            format!("{} conditions configured", conditions.len())
+                        } else {
+                            "All conditions must have a non-empty event_type".into()
+                        },
+                    });
+                }
+            } else {
+                checks.push(TriggerValidationCheck {
+                    label: "Conditions".into(),
+                    passed: false,
+                    message: "No conditions configured".into(),
+                });
+            }
+            if let Some(window) = config.get("window_seconds").and_then(|v| v.as_u64()) {
+                checks.push(TriggerValidationCheck {
+                    label: "Time window".into(),
+                    passed: window >= 5,
+                    message: if window >= 5 {
+                        format!("{}s window", window)
+                    } else {
+                        "Time window must be at least 5 seconds".into()
+                    },
+                });
+            } else {
+                checks.push(TriggerValidationCheck {
+                    label: "Time window".into(),
+                    passed: false,
+                    message: "No window_seconds configured".into(),
+                });
+            }
+            let op = config.get("operator").and_then(|v| v.as_str()).unwrap_or("all");
+            let valid_ops = ["all", "any", "sequence"];
+            checks.push(TriggerValidationCheck {
+                label: "Operator".into(),
+                passed: valid_ops.contains(&op),
+                message: format!("Operator: {}", op),
+            });
+        }
+        "event_listener" => {
+            if let Some(evt) = config.get("listen_event_type").and_then(|v| v.as_str()) {
+                checks.push(TriggerValidationCheck {
+                    label: "Event type".into(),
+                    passed: !evt.is_empty(),
+                    message: format!("Listening for: {}", evt),
+                });
+            } else {
+                checks.push(TriggerValidationCheck {
+                    label: "Event type".into(),
+                    passed: false,
+                    message: "No listen_event_type configured".into(),
+                });
+            }
+        }
         _ => {
             checks.push(TriggerValidationCheck {
                 label: "Trigger type".into(),

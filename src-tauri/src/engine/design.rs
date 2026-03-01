@@ -422,7 +422,10 @@ You MUST output your result as a single JSON code block. The JSON must conform t
 
 ```json
 {
-  "service_flow": ["Service1", "Service2", "Service3"],
+  "service_flow": [
+    { "connector_name": "connector_slug", "action_label": "Watch alerts", "order": 0 },
+    { "connector_name": "another_connector", "action_label": "Notify team", "order": 1 }
+  ],
   "structured_prompt": {
     "identity": "Who this persona is and its core purpose",
     "instructions": "Step-by-step instructions for the persona",
@@ -525,7 +528,7 @@ Important rules:
 3. Each connector MUST include `credential_fields` with at least one field
 4. Each connector MUST include `auth_type` matching its authentication method
 5. `file_read`/`file_write` are LOCAL filesystem only — for cloud storage use `http_request` with the appropriate connector
-6. `service_flow` must list the external services in data-pipeline order
+6. `service_flow` must list connector interactions in chronological data-pipeline order. Each entry has `connector_name` (matching a suggested_connectors name), `action_label` (short verb phrase like "Watch alerts" or "Create ticket"), and `order` (0-based position)
 7. `full_prompt_markdown` must be the complete, ready-to-use system prompt in markdown format
 8. Output ONLY the JSON block — no additional text before or after
 9. `use_case_flows` MUST contain 1-3 flow diagrams documenting the persona's primary workflows

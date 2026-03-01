@@ -5,4 +5,5 @@ pub mod n8n_sessions;
 pub mod rotation;
 pub mod teams;
 pub mod tools;
+pub mod team_memories;
 pub mod triggers;

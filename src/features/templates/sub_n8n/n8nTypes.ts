@@ -1,4 +1,4 @@
-import type { N8nPersonaDraft } from '@/api/tauriApi';
+import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import type { WorkflowPlatform } from '@/lib/personas/workflowDetector';
 import {

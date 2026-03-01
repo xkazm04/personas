@@ -1,5 +1,5 @@
 import type { ModelProfile, ModelProvider } from '@/lib/types/frontendTypes';
-import { profileToDropdownValue } from '@/features/agents/sub_editor/model-config/OllamaCloudPresets';
+import { profileToDropdownValue } from '@/features/agents/sub_editor/sub_model_config/OllamaCloudPresets';
 
 // ── Draft type for all editable persona fields ─────────────────────────
 

@@ -22,6 +22,7 @@ mod design_conversation;
 mod test_suite;
 mod platform_definition;
 mod knowledge;
+mod team_memory;
 
 pub use persona::*;
 pub use tool::*;
@@ -47,3 +48,4 @@ pub use design_conversation::*;
 pub use test_suite::*;
 pub use platform_definition::*;
 pub use knowledge::*;
+pub use team_memory::*;

@@ -103,6 +103,9 @@ export const cleanupDuplicateReviews = () =>
 export const backfillReviewCategories = () =>
   invoke<{ total: number; updated: number }>("backfill_review_categories");
 
+export const backfillServiceFlow = () =>
+  invoke<{ total: number; updated: number; skipped: number }>("backfill_service_flow");
+
 export const getTrendingTemplates = (limit?: number) =>
   invoke<PersonaDesignReview[]>("get_trending_templates", {
     limit: limit ?? null,

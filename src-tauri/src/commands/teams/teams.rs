@@ -2,10 +2,11 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::db::models::{
-    CreateTeamInput, PersonaTeam, PersonaTeamConnection, PersonaTeamMember, PipelineRun,
-    TeamCounts, UpdateTeamInput,
+    CreateTeamInput, CreateTeamMemoryInput, PersonaTeam, PersonaTeamConnection, PersonaTeamMember,
+    PipelineRun, TeamCounts, UpdateTeamInput,
 };
 use crate::db::repos::resources::teams as repo;
+use crate::db::repos::resources::team_memories as team_memories_repo;
 use crate::engine::optimizer::{self, PipelineAnalytics};
 use crate::engine::topology::{self, TopologyBlueprint};
 use crate::error::AppError;
@@ -294,6 +295,7 @@ pub async fn execute_team(
         let mut node_outputs: std::collections::HashMap<String, Option<String>> = std::collections::HashMap::new();
         let mut final_statuses = node_statuses.clone();
         let mut has_failure = false;
+        let mut memories_created: u32 = 0;
 
         for member_id in &execution_order {
             let member = match members.iter().find(|m| &m.id == member_id) {
@@ -335,6 +337,7 @@ pub async fn execute_team(
                     continue;
                 }
             };
+            let persona_name = persona.name.clone();
 
             let tools =
                 tool_repo::get_tools_for_persona(&db, &member.persona_id).unwrap_or_default();
@@ -353,16 +356,36 @@ pub async fn execute_team(
                 input_data.clone()
             };
 
+            // Load top 20 team memories by importance for context injection
+            let team_memories = team_memories_repo::get_for_injection(&db, &team_id, 20)
+                .unwrap_or_default();
+
+            let memory_context: Option<String> = if team_memories.is_empty() {
+                None
+            } else {
+                let entries: Vec<String> = team_memories.iter().map(|m| {
+                    format!("- [{}] {}: {}", m.category, m.title, m.content)
+                }).collect();
+                Some(format!(
+                    "## Team Memory Context\nShared memories from past runs:\n{}",
+                    entries.join("\n")
+                ))
+            };
+
             // Build input_data for this node
             let node_input = resolved_input.as_ref().map(|output| {
-                serde_json::json!({
+                let mut obj = serde_json::json!({
                     "pipeline_input": output,
                     "pipeline_context": {
                         "run_id": run_id_clone,
                         "member_id": member_id,
                         "role": member.role,
                     }
-                })
+                });
+                if let Some(ref ctx) = memory_context {
+                    obj["team_memory_context"] = serde_json::json!(ctx);
+                }
+                obj
             });
 
             // Create execution
@@ -446,6 +469,29 @@ pub async fn execute_team(
                                 ("status", serde_json::json!("completed")),
                                 ("output", serde_json::json!(execution.output_data)),
                             ]);
+
+                            // Auto-create team memory from node output
+                            if let Some(ref output_text) = execution.output_data {
+                                let truncated = if output_text.len() > 500 {
+                                    format!("{}...", &output_text[..500])
+                                } else {
+                                    output_text.clone()
+                                };
+                                if team_memories_repo::create(&db, CreateTeamMemoryInput {
+                                    team_id: team_id.clone(),
+                                    run_id: Some(run_id_clone.clone()),
+                                    member_id: Some(member_id.clone()),
+                                    persona_id: Some(member.persona_id.clone()),
+                                    title: format!("{} output (run {})", persona_name, &run_id_clone[..8]),
+                                    content: truncated,
+                                    category: Some("observation".into()),
+                                    importance: Some(3),
+                                    tags: Some(format!("auto,run:{}", &run_id_clone[..8])),
+                                }).is_ok() {
+                                    memories_created += 1;
+                                }
+                            }
+
                             completed = true;
                             break;
                         }
@@ -491,6 +537,7 @@ pub async fn execute_team(
                     "team_id": team_id,
                     "status": "running",
                     "node_statuses": final_statuses,
+                    "memories_created": memories_created,
                 }),
             );
 
@@ -522,6 +569,7 @@ pub async fn execute_team(
                 "team_id": team_id,
                 "status": final_status,
                 "node_statuses": final_statuses,
+                "memories_created": memories_created,
             }),
         );
 

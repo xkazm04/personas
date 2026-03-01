@@ -5,7 +5,10 @@ use crate::db::DbPool;
 use crate::engine::{chain, scheduler};
 use crate::error::AppError;
 
-const VALID_TRIGGER_TYPES: &[&str] = &["schedule", "polling", "webhook", "manual", "chain", "event_listener"];
+const VALID_TRIGGER_TYPES: &[&str] = &[
+    "schedule", "polling", "webhook", "manual", "chain", "event_listener",
+    "file_watcher", "clipboard", "app_focus", "composite",
+];
 const MIN_INTERVAL_SECONDS: i64 = 60;
 
 fn validate_trigger_type(trigger_type: &str) -> Result<(), AppError> {

@@ -101,6 +101,10 @@ interface AdoptionWizardContextType {
   handleCredentialCreated: () => void;
   handleSkipQuestions: () => void;
   updateDraft: (updater: (d: N8nPersonaDraft) => N8nPersonaDraft) => void;
+
+  // Auto-adoption
+  quickAdopt: () => void;
+  enterFullWizard: () => void;
 }
 
 const AdoptionWizardCtx = createContext<AdoptionWizardContextType | null>(null);
@@ -233,6 +237,29 @@ export function AdoptionWizardProvider({
 
   const liveCredentials = storeCredentials.length > 0 ? storeCredentials : credentials;
 
+  // ── Auto-resolve credentials ──
+  // When all required connectors have exactly one matching credential,
+  // auto-map them and flag autoResolved for the QuickAdoptConfirm path.
+  useEffect(() => {
+    if (state.step !== 'choose' || state.autoResolved || !requiredConnectors.length) return;
+
+    const autoMap: Record<string, string> = {};
+    for (const rc of requiredConnectors) {
+      const matches = liveCredentials.filter((c) => c.service_type === rc.activeName);
+      if (matches.length === 1) {
+        autoMap[rc.activeName] = matches[0]!.id;
+      } else {
+        // Zero or multiple matches — can't auto-resolve
+        return;
+      }
+    }
+    // All connectors matched exactly one credential
+    for (const [name, id] of Object.entries(autoMap)) {
+      wizard.setConnectorCredential(name, id);
+    }
+    wizard.setAutoResolved(true);
+  }, [requiredConnectors, liveCredentials, state.step, state.autoResolved, wizard]);
+
   const completedSteps = useMemo<Set<AdoptWizardStep>>(() => {
     const completed = new Set<AdoptWizardStep>();
     const currentIndex = ADOPT_STEP_META[state.step].index;
@@ -310,6 +337,20 @@ export function AdoptionWizardProvider({
     [state.draft, wizard],
   );
 
+  // ── Auto-adoption helpers ──
+
+  const quickAdopt = useCallback(() => {
+    wizard.goToStep('tune');
+    // Defer so step state updates before transform starts
+    setTimeout(() => {
+      void async.startTransform();
+    }, 0);
+  }, [wizard, async]);
+
+  const enterFullWizard = useCallback(() => {
+    wizard.setAutoResolved(false);
+  }, [wizard]);
+
   // ── Context value ──
 
   const value = useMemo<AdoptionWizardContextType>(
@@ -337,6 +378,8 @@ export function AdoptionWizardProvider({
       handleCredentialCreated,
       handleSkipQuestions,
       updateDraft,
+      quickAdopt,
+      enterFullWizard,
     }),
     [
       state,
@@ -356,6 +399,8 @@ export function AdoptionWizardProvider({
       handleCredentialCreated,
       handleSkipQuestions,
       updateDraft,
+      quickAdopt,
+      enterFullWizard,
     ],
   );
 

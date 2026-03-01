@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   CheckCircle2,
   Plug,
-  ExternalLink,
   AlertCircle,
   ChevronDown,
   Star,
@@ -11,11 +10,11 @@ import {
 } from 'lucide-react';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/ConnectorMeta';
 import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
-import { CredentialEditForm } from '@/features/vault/components/CredentialEditForm';
-import { useCredentialHealth } from '@/features/vault/hooks/useCredentialHealth';
-import { usePersonaStore } from '@/stores/personaStore';
+import { ConnectorPipeline } from '../ConnectorPipeline';
 import { useAdoptionWizard } from '../AdoptionWizardContext';
-import type { ConnectorDefinition, CredentialMetadata, CredentialTemplateField } from '@/lib/types/types';
+import type { ConnectorPipelineStep } from '@/lib/types/designTypes';
+import { InlineCredentialPanel } from './InlineCredentialPanel';
+import type { CredentialMetadata } from '@/lib/types/types';
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -44,13 +43,6 @@ function findMatchingCredentials(
   allCredentials: CredentialMetadata[],
 ): CredentialMetadata[] {
   return allCredentials.filter((c) => c.service_type === connectorName);
-}
-
-function findConnectorDefinition(
-  connectorName: string,
-  definitions: ConnectorDefinition[],
-): ConnectorDefinition | undefined {
-  return definitions.find((d) => d.name === connectorName);
 }
 
 // ── Connector Dropdown ─────────────────────────────────────────────────
@@ -149,6 +141,7 @@ function ComponentCard({
   onSetCredential,
   onClearCredential,
   onOpenInlineForm,
+  onOpenDesign,
   onSwapConnector,
   justCreated,
 }: {
@@ -158,6 +151,7 @@ function ComponentCard({
   onSetCredential: (connectorName: string, credentialId: string) => void;
   onClearCredential: (connectorName: string) => void;
   onOpenInlineForm: (connectorName: string) => void;
+  onOpenDesign: (connectorName: string) => void;
   onSwapConnector: (originalName: string, replacementName: string) => void;
   justCreated?: boolean;
 }) {
@@ -173,13 +167,15 @@ function ComponentCard({
       const val = e.target.value;
       if (val === '__create__') {
         onOpenInlineForm(connector.activeName);
+      } else if (val === '__design__') {
+        onOpenDesign(connector.activeName);
       } else if (val === '') {
         onClearCredential(connector.activeName);
       } else {
         onSetCredential(connector.activeName, val);
       }
     },
-    [connector.activeName, onSetCredential, onClearCredential, onOpenInlineForm],
+    [connector.activeName, onSetCredential, onClearCredential, onOpenInlineForm, onOpenDesign],
   );
 
   const handleConnectorSelect = useCallback(
@@ -191,26 +187,26 @@ function ComponentCard({
 
   return (
     <div
-      className={`rounded-xl border p-4 transition-all ${
+      className={`rounded-xl border p-3 transition-all ${
         hasCredential ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-primary/10 bg-secondary/20'
       }`}
     >
       {/* Role header */}
-      <div className="flex items-center gap-2.5 mb-3">
-        <div className="w-7 h-7 rounded-lg bg-violet-500/10 border border-violet-500/15 flex items-center justify-center flex-shrink-0">
-          <Box className="w-3.5 h-3.5 text-violet-400/70" />
+      <div className="flex items-center gap-2 mb-2.5">
+        <div className="w-6 h-6 rounded-lg bg-violet-500/10 border border-violet-500/15 flex items-center justify-center flex-shrink-0">
+          <Box className="w-3 h-3 text-violet-400/70" />
         </div>
-        <span className="text-sm font-semibold text-foreground/90 flex-1">{connector.roleLabel}</span>
+        <span className="text-xs font-semibold text-foreground/90 flex-1 truncate">{connector.roleLabel}</span>
         {hasCredential ? (
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
         ) : (
-          <AlertCircle className="w-4 h-4 text-amber-400/60 flex-shrink-0" />
+          <AlertCircle className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" />
         )}
       </div>
 
       {/* Connector selector */}
-      <div className="mb-3">
-        <label className="text-[11px] font-medium text-muted-foreground/50 uppercase tracking-wider mb-1.5 block">
+      <div className="mb-2.5">
+        <label className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider mb-1 block">
           Connector
         </label>
         <ConnectorDropdown
@@ -223,13 +219,13 @@ function ComponentCard({
 
       {/* Credential dropdown or always-active badge */}
       {connector.activeName === 'personas_messages' ? (
-        <div className="flex items-center gap-2 px-2.5 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-          <span className="text-sm text-emerald-300/80">Always active — no credentials needed</span>
+        <div className="flex items-center gap-1.5 px-2 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+          <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+          <span className="text-xs text-emerald-300/80">Always active</span>
         </div>
       ) : (
         <div>
-          <label className="text-[11px] font-medium text-muted-foreground/50 uppercase tracking-wider mb-1.5 block">
+          <label className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider mb-1 block">
             Credential
           </label>
           <ThemedSelect
@@ -249,6 +245,7 @@ function ComponentCard({
               </option>
             ))}
             <option value="__create__">+ Create new credential</option>
+            <option value="__design__">+ Design custom connector</option>
           </ThemedSelect>
         </div>
       )}
@@ -265,6 +262,7 @@ function StandaloneConnectorTile({
   onSetCredential,
   onClearCredential,
   onOpenInlineForm,
+  onOpenDesign,
   justCreated,
 }: {
   connector: RequiredConnector;
@@ -273,6 +271,7 @@ function StandaloneConnectorTile({
   onSetCredential: (connectorName: string, credentialId: string) => void;
   onClearCredential: (connectorName: string) => void;
   onOpenInlineForm: (connectorName: string) => void;
+  onOpenDesign: (connectorName: string) => void;
   justCreated?: boolean;
 }) {
   const meta = getConnectorMeta(connector.activeName);
@@ -287,29 +286,31 @@ function StandaloneConnectorTile({
       const val = e.target.value;
       if (val === '__create__') {
         onOpenInlineForm(connector.activeName);
+      } else if (val === '__design__') {
+        onOpenDesign(connector.activeName);
       } else if (val === '') {
         onClearCredential(connector.activeName);
       } else {
         onSetCredential(connector.activeName, val);
       }
     },
-    [connector.activeName, onSetCredential, onClearCredential, onOpenInlineForm],
+    [connector.activeName, onSetCredential, onClearCredential, onOpenInlineForm, onOpenDesign],
   );
 
   return (
     <div
-      className={`rounded-xl border p-3 transition-all ${
+      className={`rounded-xl border p-2.5 transition-all ${
         hasCredential ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-primary/10 bg-secondary/20'
       }`}
     >
-      <div className="flex items-center gap-2.5 mb-2">
+      <div className="flex items-center gap-2 mb-2">
         {hasCredential ? (
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
         ) : (
           <AlertCircle className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" />
         )}
         <ConnectorIcon meta={meta} size="w-4 h-4" />
-        <span className="text-sm font-medium text-foreground/90 flex-1 truncate">{meta.label}</span>
+        <span className="text-xs font-medium text-foreground/90 flex-1 truncate">{meta.label}</span>
       </div>
 
       <ThemedSelect
@@ -329,150 +330,9 @@ function StandaloneConnectorTile({
           </option>
         ))}
         <option value="__create__">+ Create new credential</option>
+        <option value="__design__">+ Design custom connector</option>
       </ThemedSelect>
     </div>
-  );
-}
-
-// ── Inline Form Panel ─────────────────────────────────────────────────
-
-function InlineFormPanel({
-  connectorName,
-  connectorDefinitions,
-  credentialFields,
-  setupUrl,
-  setupInstructions,
-  onSetCredential,
-  onCredentialCreated,
-  onSaveSuccess,
-  onClose,
-}: {
-  connectorName: string;
-  connectorDefinitions: ConnectorDefinition[];
-  credentialFields?: RequiredConnector['credential_fields'];
-  setupUrl?: string;
-  setupInstructions?: string;
-  onSetCredential: (connectorName: string, credentialId: string) => void;
-  onCredentialCreated: () => void;
-  onSaveSuccess?: (connectorName: string, credentialName: string) => void;
-  onClose: () => void;
-}) {
-  const meta = getConnectorMeta(connectorName);
-  const connectorDef = useMemo(
-    () => findConnectorDefinition(connectorName, connectorDefinitions),
-    [connectorName, connectorDefinitions],
-  );
-
-  const inlineFields: CredentialTemplateField[] = useMemo(() => {
-    if (connectorDef?.fields && connectorDef.fields.length > 0) {
-      return connectorDef.fields;
-    }
-    if (credentialFields && credentialFields.length > 0) {
-      return credentialFields.map((f) => ({
-        key: f.key,
-        label: f.label,
-        type: f.type as CredentialTemplateField['type'],
-        placeholder: f.placeholder,
-        helpText: f.helpText,
-        required: f.required,
-      }));
-    }
-    return [];
-  }, [connectorDef, credentialFields]);
-
-  const credentialName = `${meta.label} credential`;
-
-  // Prefer built-in connector definition metadata over AI-generated instructions
-  const effectiveSetupUrl = (connectorDef?.metadata as Record<string, unknown>)?.docs_url as string | undefined
-    ?? setupUrl;
-  const effectiveSetupInstructions = connectorDef
-    ? undefined   // Built-in definitions have per-field helpText — suppress AI-generated instructions
-    : setupInstructions;
-
-  // Connection test — mirror vault ConnectorCredentialModal pattern
-  const health = useCredentialHealth(`connector:${connectorName}`);
-
-  const handleHealthcheck = useCallback(async (values: Record<string, string>) => {
-    await health.checkDesign(
-      `Test connection for ${meta.label} connector`,
-      { name: connectorName, label: meta.label, fields: inlineFields },
-      values,
-    );
-  }, [connectorName, meta.label, inlineFields, health.checkDesign]);
-
-  const handleSave = useCallback(
-    async (values: Record<string, string>) => {
-      const store = usePersonaStore.getState();
-      const credId = await store.createCredential({
-        name: credentialName,
-        service_type: connectorName,
-        data: values,
-      });
-      if (credId) {
-        onCredentialCreated();
-        onSetCredential(connectorName, credId);
-        onSaveSuccess?.(connectorName, credentialName);
-        onClose();
-      }
-    },
-    [connectorName, credentialName, onCredentialCreated, onSetCredential, onSaveSuccess, onClose],
-  );
-
-  return (
-    <motion.div
-      initial={{ height: 0, opacity: 0 }}
-      animate={{ height: 'auto', opacity: 1 }}
-      exit={{ height: 0, opacity: 0 }}
-      transition={{ duration: 0.2, ease: 'easeInOut' }}
-      className="overflow-hidden"
-    >
-      <div className="rounded-xl border border-primary/15 bg-secondary/20 p-4 space-y-3">
-        <div className="flex items-center gap-2 mb-2">
-          <ConnectorIcon meta={meta} size="w-4 h-4" />
-          <span className="text-sm font-medium text-foreground/80">
-            New {meta.label} Credential
-          </span>
-        </div>
-
-        {effectiveSetupUrl && (
-          <a
-            href={effectiveSetupUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 px-3 py-2 bg-amber-500/10 border border-amber-500/25 rounded-lg text-sm text-foreground/80 hover:bg-amber-500/15 transition-colors"
-          >
-            <ExternalLink className="w-3.5 h-3.5 text-amber-400/70 flex-shrink-0" />
-            <span className="flex-1 truncate">Get your credentials</span>
-          </a>
-        )}
-
-        {effectiveSetupInstructions && (
-          <div className="px-3 py-2 bg-secondary/40 border border-primary/8 rounded-lg">
-            <p className="text-xs text-muted-foreground/70 whitespace-pre-line leading-relaxed">
-              {effectiveSetupInstructions}
-            </p>
-          </div>
-        )}
-
-        {inlineFields.length > 0 ? (
-          <CredentialEditForm
-            fields={inlineFields}
-            onSave={handleSave}
-            onCancel={onClose}
-            onHealthcheck={handleHealthcheck}
-            isHealthchecking={health.isHealthchecking}
-            healthcheckResult={health.result}
-            onValuesChanged={() => health.invalidate()}
-            saveDisabled={!health.result?.success}
-            saveDisabledReason="Run a successful connection test before saving."
-          />
-        ) : (
-          <div className="text-sm text-muted-foreground/50 text-center py-3">
-            No credential fields defined.
-          </div>
-        )}
-      </div>
-    </motion.div>
   );
 }
 
@@ -514,9 +374,22 @@ export function ConnectStep() {
   const onCredentialCreated = ctx.handleCredentialCreated;
   const onSwapConnector = ctx.wizard.swapConnector;
 
+  // Tracks whether the inline panel should open in design-query mode
+  const [inlineStartMode, setInlineStartMode] = useState<'pick' | 'design-query'>('pick');
+
   // Success bridge state: tracks which connector just had a credential created
   const [justCreated, setJustCreated] = useState<{ connector: string; credName: string } | null>(null);
   const justCreatedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleOpenInlineForm = useCallback((name: string) => {
+    setInlineStartMode('pick');
+    onSetInlineConnector(name);
+  }, [onSetInlineConnector]);
+
+  const handleOpenDesign = useCallback((name: string) => {
+    setInlineStartMode('design-query');
+    onSetInlineConnector(name);
+  }, [onSetInlineConnector]);
 
   const handleInlineSaveSuccess = useCallback((connName: string, credName: string) => {
     if (justCreatedTimerRef.current) clearTimeout(justCreatedTimerRef.current);
@@ -550,6 +423,19 @@ export function ConnectStep() {
     [requiredConnectors, inlineCredentialConnector],
   );
 
+  // ── Pipeline steps (reflecting connector swaps) ──
+  const pipelineSteps = useMemo<ConnectorPipelineStep[]>(() => {
+    const sf = ctx.designResult?.service_flow;
+    if (!Array.isArray(sf) || sf.length === 0) return [];
+    const swaps = ctx.state.connectorSwaps;
+    return sf
+      .filter((step) => step.connector_name)
+      .map((step) => {
+        const replacement = swaps[step.connector_name];
+        return replacement ? { ...step, connector_name: replacement } : step;
+      });
+  }, [ctx.designResult, ctx.state.connectorSwaps]);
+
   // ── Empty state ──
   if (requiredConnectors.length === 0) {
     return (
@@ -564,6 +450,11 @@ export function ConnectStep() {
 
   return (
     <div className="space-y-4">
+      {/* Service flow pipeline diagram */}
+      {pipelineSteps.length > 0 && (
+        <ConnectorPipeline steps={pipelineSteps} className="justify-center" />
+      )}
+
       {/* Progress rail */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
@@ -602,7 +493,13 @@ export function ConnectStep() {
 
       {/* Architecture Component Cards */}
       {componentConnectors.length > 0 && (
-        <div className="grid grid-cols-1 gap-3">
+        <div className={`grid gap-3 ${
+          componentConnectors.length === 1 ? 'grid-cols-1' :
+          componentConnectors.length === 2 ? 'grid-cols-2' :
+          componentConnectors.length === 3 ? 'grid-cols-3' :
+          componentConnectors.length === 4 ? 'grid-cols-4' :
+          'grid-cols-5'
+        }`}>
           {componentConnectors.map((connector) => (
             <ComponentCard
               key={connector.name}
@@ -611,7 +508,8 @@ export function ConnectStep() {
               selectedCredentialId={connectorCredentialMap[connector.activeName]}
               onSetCredential={onSetCredential}
               onClearCredential={onClearCredential}
-              onOpenInlineForm={(name) => onSetInlineConnector(name)}
+              onOpenInlineForm={handleOpenInlineForm}
+              onOpenDesign={handleOpenDesign}
               onSwapConnector={onSwapConnector!}
               justCreated={justCreated?.connector === connector.activeName}
             />
@@ -631,7 +529,13 @@ export function ConnectStep() {
               <div className="flex-1 h-px bg-primary/8" />
             </div>
           )}
-          <div className="grid grid-cols-1 gap-3">
+          <div className={`grid gap-3 ${
+            standaloneConnectors.length === 1 ? 'grid-cols-1' :
+            standaloneConnectors.length === 2 ? 'grid-cols-2' :
+            standaloneConnectors.length === 3 ? 'grid-cols-3' :
+            standaloneConnectors.length === 4 ? 'grid-cols-4' :
+            'grid-cols-5'
+          }`}>
             {standaloneConnectors.map((connector) => (
               <StandaloneConnectorTile
                 key={connector.name}
@@ -640,7 +544,8 @@ export function ConnectStep() {
                 selectedCredentialId={connectorCredentialMap[connector.activeName]}
                 onSetCredential={onSetCredential}
                 onClearCredential={onClearCredential}
-                onOpenInlineForm={(name) => onSetInlineConnector(name)}
+                onOpenInlineForm={handleOpenInlineForm}
+                onOpenDesign={handleOpenDesign}
                 justCreated={justCreated?.connector === connector.activeName}
               />
             ))}
@@ -648,16 +553,17 @@ export function ConnectStep() {
         </>
       )}
 
-      {/* Shared inline credential form (below grid) */}
+      {/* Shared inline credential panel (below grid) — Manual / Design / Auto */}
       <AnimatePresence initial={false}>
         {activeInlineConnector && (
-          <InlineFormPanel
-            key={activeInlineConnector.activeName}
+          <InlineCredentialPanel
+            key={`${activeInlineConnector.activeName}-${inlineStartMode}`}
             connectorName={activeInlineConnector.activeName}
             connectorDefinitions={connectorDefinitions}
             credentialFields={activeInlineConnector.credential_fields}
             setupUrl={activeInlineConnector.setup_url}
             setupInstructions={activeInlineConnector.setup_instructions}
+            initialMode={inlineStartMode}
             onSetCredential={onSetCredential}
             onCredentialCreated={onCredentialCreated}
             onSaveSuccess={handleInlineSaveSuccess}

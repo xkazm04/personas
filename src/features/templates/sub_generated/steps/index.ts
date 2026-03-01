@@ -4,3 +4,4 @@ export { ChooseStep, deriveRequirementsFromFlows } from './ChooseStep';
 export { ConnectStep } from './ConnectStep';
 export { TuneStep } from './TuneStep';
 export { CreateStep } from './CreateStep';
+export { QuickAdoptConfirm } from './QuickAdoptConfirm';

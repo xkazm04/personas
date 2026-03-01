@@ -1,18 +1,11 @@
-import { useState, useCallback, useRef } from 'react';
+import { useMemo } from 'react';
 import { X, Play, RotateCcw } from 'lucide-react';
 import { TerminalBody } from '@/features/shared/components/TerminalBody';
 import { DimensionRadial } from './DimensionRadial';
-import { useCorrelatedCliStream } from '@/hooks/execution/useCorrelatedCliStream';
-import { testN8nDraft } from '@/api/tests';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import { parseJsonSafe } from '@/lib/utils/parseJson';
-
-interface TemplatePreviewModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  review: PersonaDesignReview | null;
-}
+import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 
 /**
  * Build a minimal draft JSON from a DesignAnalysisResult to pass to testN8nDraft.
@@ -47,62 +40,56 @@ function buildDraftJson(designResult: DesignAnalysisResult, name: string): strin
   return JSON.stringify(draft, null, 2);
 }
 
+interface TemplatePreviewModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  review: PersonaDesignReview | null;
+  /** Externally managed stream state */
+  phase: CliRunPhase;
+  lines: string[];
+  error: string | null;
+  hasStarted: boolean;
+  onStartPreview: (reviewId: string, reviewName: string, draftJson: string) => void;
+  onRetryPreview: (draftJson: string) => void;
+}
+
 export function TemplatePreviewModal({
   isOpen,
   onClose,
   review,
+  phase,
+  lines,
+  error,
+  hasStarted,
+  onStartPreview,
+  onRetryPreview,
 }: TemplatePreviewModalProps) {
-  const [error, setError] = useState<string | null>(null);
-  const hasStartedRef = useRef(false);
+  const designResult = useMemo(
+    () => review ? parseJsonSafe<DesignAnalysisResult | null>(review.design_result, null) : null,
+    [review],
+  );
 
-  const stream = useCorrelatedCliStream({
-    outputEvent: 'n8n-test-output',
-    statusEvent: 'n8n-test-status',
-    idField: 'test_id',
-    onFailed: (msg) => setError(msg),
-  });
-
-  const designResult = review
-    ? parseJsonSafe<DesignAnalysisResult | null>(review.design_result, null)
-    : null;
-
-  const handleRun = useCallback(async () => {
+  const handleRun = () => {
     if (!review || !designResult) return;
-    setError(null);
-    const testId = crypto.randomUUID();
     const draftJson = buildDraftJson(designResult, review.test_case_name);
-    await stream.start(testId);
-    try {
-      await testN8nDraft(testId, draftJson);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to start preview');
-    }
-    hasStartedRef.current = true;
-  }, [review, designResult, stream]);
+    onStartPreview(review.id, review.test_case_name, draftJson);
+  };
 
-  const handleClose = useCallback(async () => {
-    await stream.reset();
-    setError(null);
-    hasStartedRef.current = false;
-    onClose();
-  }, [stream, onClose]);
-
-  const handleRetry = useCallback(async () => {
-    await stream.reset();
-    setError(null);
-    // Small delay for state to settle
-    setTimeout(() => handleRun(), 50);
-  }, [stream, handleRun]);
+  const handleRetry = () => {
+    if (!review || !designResult) return;
+    const draftJson = buildDraftJson(designResult, review.test_case_name);
+    onRetryPreview(draftJson);
+  };
 
   if (!isOpen || !review) return null;
 
-  const isRunning = stream.phase === 'running';
-  const isDone = stream.phase === 'completed' || stream.phase === 'failed';
+  const isRunning = phase === 'running';
+  const isDone = phase === 'completed' || phase === 'failed';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
       <div className="relative w-full max-w-5xl max-h-[85vh] bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden mx-4">
@@ -118,7 +105,7 @@ export function TemplatePreviewModal({
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <DimensionRadial designResult={designResult} size={36} />
-            <button onClick={handleClose} className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors">
+            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors">
               <X className="w-5 h-5 text-muted-foreground/70" />
             </button>
           </div>
@@ -126,7 +113,7 @@ export function TemplatePreviewModal({
 
         {/* Body */}
         <div className="flex-1 flex flex-col min-h-0">
-          {stream.phase === 'idle' && !hasStartedRef.current ? (
+          {phase === 'idle' && !hasStarted ? (
             /* Pre-run state */
             <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 py-12">
               <div className="w-16 h-16 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
@@ -159,7 +146,7 @@ export function TemplatePreviewModal({
             /* Terminal output */
             <div className="flex-1 flex flex-col min-h-0">
               <TerminalBody
-                lines={stream.lines}
+                lines={lines}
                 isRunning={isRunning}
                 flexFill
                 showCursor
@@ -172,7 +159,7 @@ export function TemplatePreviewModal({
         {/* Footer */}
         <div className="px-6 py-3 border-t border-primary/10 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2">
-            {stream.phase === 'idle' && hasStartedRef.current && (
+            {phase === 'idle' && hasStarted && (
               <span className="text-sm text-muted-foreground/50">Ready</span>
             )}
             {isRunning && (
@@ -181,10 +168,10 @@ export function TemplatePreviewModal({
                 Running...
               </span>
             )}
-            {stream.phase === 'completed' && (
+            {phase === 'completed' && (
               <span className="text-sm text-emerald-400/80">Completed</span>
             )}
-            {stream.phase === 'failed' && (
+            {phase === 'failed' && (
               <span className="text-sm text-red-400/80">
                 {error || 'Execution failed'}
               </span>
@@ -200,8 +187,13 @@ export function TemplatePreviewModal({
                 Run Again
               </button>
             )}
+            {isRunning && (
+              <span className="text-xs text-muted-foreground/40">
+                You can close — test will continue in background
+              </span>
+            )}
             <button
-              onClick={handleClose}
+              onClick={onClose}
               className="px-3.5 py-2 text-sm rounded-lg text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50 transition-colors"
             >
               Close

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { usePersonaStore } from "@/stores/personaStore";
+import { sendAppNotification } from "@/api/system";
 import type { LabMode, LabRunProgress } from "@/stores/slices/labSlice";
 
 interface LabStatusPayload {
@@ -36,6 +37,23 @@ function mapPayload(p: LabStatusPayload, mode: LabMode): LabRunProgress {
 
 const TERMINAL_PHASES = ["completed", "failed", "cancelled"];
 
+const MODE_LABELS: Record<LabMode, string> = {
+  arena: "Arena",
+  ab: "A/B Test",
+  eval: "Evaluation",
+  matrix: "Matrix",
+  versions: "Versions",
+};
+
+function notifyTerminal(mode: LabMode, phase: string) {
+  const label = MODE_LABELS[mode] ?? mode;
+  if (phase === "completed") {
+    sendAppNotification(`Lab ${label} Complete`, `${label} test finished successfully.`).catch(() => {});
+  } else if (phase === "failed") {
+    sendAppNotification(`Lab ${label} Failed`, `${label} test encountered an error.`).catch(() => {});
+  }
+}
+
 export function useLabEvents() {
   const setLabProgress = usePersonaStore((s) => s.setLabProgress);
   const finishLabRun = usePersonaStore((s) => s.finishLabRun);
@@ -50,7 +68,10 @@ export function useLabEvents() {
         await listen<LabStatusPayload>("lab-arena-status", (event) => {
           const progress = mapPayload(event.payload, "arena");
           setLabProgress(progress);
-          if (TERMINAL_PHASES.includes(event.payload.phase)) finishLabRun();
+          if (TERMINAL_PHASES.includes(event.payload.phase)) {
+            finishLabRun();
+            notifyTerminal("arena", event.payload.phase);
+          }
         }),
       );
 
@@ -59,7 +80,10 @@ export function useLabEvents() {
         await listen<LabStatusPayload>("lab-ab-status", (event) => {
           const progress = mapPayload(event.payload, "ab");
           setLabProgress(progress);
-          if (TERMINAL_PHASES.includes(event.payload.phase)) finishLabRun();
+          if (TERMINAL_PHASES.includes(event.payload.phase)) {
+            finishLabRun();
+            notifyTerminal("ab", event.payload.phase);
+          }
         }),
       );
 
@@ -68,7 +92,10 @@ export function useLabEvents() {
         await listen<LabStatusPayload>("lab-matrix-status", (event) => {
           const progress = mapPayload(event.payload, "matrix");
           setLabProgress(progress);
-          if (TERMINAL_PHASES.includes(event.payload.phase)) finishLabRun();
+          if (TERMINAL_PHASES.includes(event.payload.phase)) {
+            finishLabRun();
+            notifyTerminal("matrix", event.payload.phase);
+          }
         }),
       );
 
@@ -77,7 +104,10 @@ export function useLabEvents() {
         await listen<LabStatusPayload>("lab-eval-status", (event) => {
           const progress = mapPayload(event.payload, "eval");
           setLabProgress(progress);
-          if (TERMINAL_PHASES.includes(event.payload.phase)) finishLabRun();
+          if (TERMINAL_PHASES.includes(event.payload.phase)) {
+            finishLabRun();
+            notifyTerminal("eval", event.payload.phase);
+          }
         }),
       );
 

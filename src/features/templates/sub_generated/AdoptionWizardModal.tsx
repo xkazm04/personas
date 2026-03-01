@@ -27,6 +27,7 @@ import {
   ConnectStep,
   TuneStep,
   CreateStep,
+  QuickAdoptConfirm,
 } from './steps';
 import type { WizardSidebarStep } from './steps';
 import type { AdoptWizardStep } from './useAdoptReducer';
@@ -313,37 +314,43 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
           <SandboxWarningBanner verification={verification} className="mx-6 mt-3" />
         )}
 
-        {/* Main body: Sidebar + Content */}
-        <div className="flex flex-1 min-h-0">
-          <WizardSidebar
-            steps={SIDEBAR_STEPS}
-            currentStep={state.step}
-            completedSteps={completedSteps}
-            onStepClick={handleSidebarStepClick}
-            disabled={state.transforming || state.confirming}
-          />
-
-          {/* Content area */}
-          <div className="flex-1 overflow-y-auto min-h-0 p-6">
-            <AnimatePresence mode="wait">
-              {(state.step !== 'choose' || designResult) && (
-                <motion.div
-                  key={state.step}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.15 }}
-                  className={state.step === 'build' ? 'space-y-4' : undefined}
-                >
-                  <StepComponent />
-                </motion.div>
-              )}
-            </AnimatePresence>
+        {/* Main body: QuickAdopt or Sidebar + Content */}
+        {state.autoResolved && state.step === 'choose' ? (
+          <div className="flex-1 flex items-center justify-center min-h-0">
+            <QuickAdoptConfirm />
           </div>
-        </div>
+        ) : (
+          <div className="flex flex-1 min-h-0">
+            <WizardSidebar
+              steps={SIDEBAR_STEPS}
+              currentStep={state.step}
+              completedSteps={completedSteps}
+              onStepClick={handleSidebarStepClick}
+              disabled={state.transforming || state.confirming}
+            />
+
+            {/* Content area */}
+            <div className="flex-1 overflow-y-auto min-h-0 p-6">
+              <AnimatePresence mode="wait">
+                {(state.step !== 'choose' || designResult) && (
+                  <motion.div
+                    key={state.step}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.15 }}
+                    className={state.step === 'build' ? 'space-y-4' : undefined}
+                  >
+                    <StepComponent />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-3 border-t border-primary/10 bg-secondary/10 flex-shrink-0">
+        <div className={`flex items-center justify-between px-6 py-3 border-t border-primary/10 bg-secondary/10 flex-shrink-0${state.autoResolved && state.step === 'choose' ? ' hidden' : ''}`}>
           <BackButton
             state={state}
             onClose={handleClose}

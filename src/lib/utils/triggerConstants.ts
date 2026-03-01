@@ -1,4 +1,4 @@
-import { Clock, Webhook, Play, Zap, Link, RefreshCw, Radio } from 'lucide-react';
+import { Clock, Webhook, Play, Zap, Link, RefreshCw, Radio, FolderSearch, ClipboardPaste, AppWindow, Combine } from 'lucide-react';
 
 export interface TriggerTypeMeta {
   Icon: typeof Clock;
@@ -12,6 +12,10 @@ export const TRIGGER_TYPE_META: Record<string, TriggerTypeMeta> = {
   manual: { Icon: Play, color: 'text-emerald-400' },
   chain: { Icon: Link, color: 'text-purple-400' },
   event_listener: { Icon: Radio, color: 'text-cyan-400' },
+  file_watcher: { Icon: FolderSearch, color: 'text-orange-400' },
+  clipboard: { Icon: ClipboardPaste, color: 'text-pink-400' },
+  app_focus: { Icon: AppWindow, color: 'text-indigo-400' },
+  composite: { Icon: Combine, color: 'text-rose-400' },
 };
 
 export const DEFAULT_TRIGGER_META: TriggerTypeMeta = { Icon: Zap, color: 'text-purple-400' };
@@ -62,13 +66,55 @@ export interface EventListenerConfig {
   source_filter?: string;
 }
 
+export interface FileWatcherConfig {
+  type: 'file_watcher';
+  watch_paths?: string[];
+  events?: string[];
+  recursive?: boolean;
+  glob_filter?: string;
+  event_type?: string;
+}
+
+export interface ClipboardConfig {
+  type: 'clipboard';
+  content_type?: string;
+  pattern?: string;
+  interval_seconds?: number;
+  event_type?: string;
+}
+
+export interface AppFocusConfig {
+  type: 'app_focus';
+  app_names?: string[];
+  title_pattern?: string;
+  interval_seconds?: number;
+  event_type?: string;
+}
+
+export interface CompositeCondition {
+  event_type: string;
+  source_filter?: string;
+}
+
+export interface CompositeConfig {
+  type: 'composite';
+  conditions?: CompositeCondition[];
+  operator?: string;
+  window_seconds?: number;
+  event_type?: string;
+}
+
 export type TriggerConfig =
   | ScheduleConfig
   | PollingConfig
   | WebhookConfig
   | ChainConfig
   | ManualConfig
-  | EventListenerConfig;
+  | EventListenerConfig
+  | FileWatcherConfig
+  | ClipboardConfig
+  | AppFocusConfig
+  | CompositeConfig;
 
 /**
  * Parse a trigger's raw config JSON into a typed discriminated union.
@@ -119,6 +165,39 @@ export function parseTriggerConfig(
         type: 'event_listener',
         listen_event_type: raw.listen_event_type as string | undefined,
         source_filter: raw.source_filter as string | undefined,
+      };
+    case 'file_watcher':
+      return {
+        type: 'file_watcher',
+        watch_paths: raw.watch_paths as string[] | undefined,
+        events: raw.events as string[] | undefined,
+        recursive: raw.recursive as boolean | undefined,
+        glob_filter: raw.glob_filter as string | undefined,
+        event_type: raw.event_type as string | undefined,
+      };
+    case 'clipboard':
+      return {
+        type: 'clipboard',
+        content_type: raw.content_type as string | undefined,
+        pattern: raw.pattern as string | undefined,
+        interval_seconds: raw.interval_seconds as number | undefined,
+        event_type: raw.event_type as string | undefined,
+      };
+    case 'app_focus':
+      return {
+        type: 'app_focus',
+        app_names: raw.app_names as string[] | undefined,
+        title_pattern: raw.title_pattern as string | undefined,
+        interval_seconds: raw.interval_seconds as number | undefined,
+        event_type: raw.event_type as string | undefined,
+      };
+    case 'composite':
+      return {
+        type: 'composite',
+        conditions: raw.conditions as CompositeCondition[] | undefined,
+        operator: raw.operator as string | undefined,
+        window_seconds: raw.window_seconds as number | undefined,
+        event_type: raw.event_type as string | undefined,
       };
     case 'manual':
       return {

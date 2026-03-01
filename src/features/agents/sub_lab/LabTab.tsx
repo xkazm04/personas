@@ -1,7 +1,6 @@
 import { FlaskConical, GitBranch, Wand2, ArrowLeftRight, Grid3X3 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
-import { useLabEvents } from '@/hooks/lab/useLabEvents';
 import { ArenaPanel } from './ArenaPanel';
 import { AbPanel } from './AbPanel';
 import { MatrixPanel } from './MatrixPanel';
@@ -20,9 +19,6 @@ const modeTabs: Array<{ id: LabMode; label: string; icon: typeof FlaskConical }>
 export function LabTab() {
   const labMode = usePersonaStore((s) => s.labMode);
   const setLabMode = usePersonaStore((s) => s.setLabMode);
-
-  // Attach Tauri event listeners for lab progress
-  useLabEvents();
 
   return (
     <div className="space-y-4">

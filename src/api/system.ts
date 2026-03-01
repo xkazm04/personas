@@ -67,3 +67,10 @@ export const startSetupInstall = (target: string) =>
 
 export const cancelSetupInstall = () =>
   invoke<void>("cancel_setup_install");
+
+// ============================================================================
+// Notifications
+// ============================================================================
+
+export const sendAppNotification = (title: string, body: string) =>
+  invoke<void>("send_app_notification", { title, body });

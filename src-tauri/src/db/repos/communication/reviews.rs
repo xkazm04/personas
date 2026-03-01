@@ -502,6 +502,34 @@ pub fn update_review_category(pool: &DbPool, id: &str, category: &str) -> Result
     Ok(())
 }
 
+/// Get all reviews that have a design_result (for service_flow backfill).
+/// Returns (id, design_result) tuples.
+pub fn get_reviews_with_design_result(
+    pool: &DbPool,
+) -> Result<Vec<(String, String)>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT id, design_result FROM persona_design_reviews WHERE design_result IS NOT NULL",
+    )?;
+    let rows = stmt.query_map([], |row| {
+        Ok((
+            row.get::<_, String>(0)?,
+            row.get::<_, String>(1)?,
+        ))
+    })?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+}
+
+/// Update only the design_result JSON for a single review.
+pub fn update_review_design_result(pool: &DbPool, id: &str, design_result: &str) -> Result<(), AppError> {
+    let conn = pool.get()?;
+    conn.execute(
+        "UPDATE persona_design_reviews SET design_result = ?1 WHERE id = ?2",
+        params![design_result, id],
+    )?;
+    Ok(())
+}
+
 /// Delete duplicate reviews, keeping only the newest per test_case_name.
 /// Returns the number of rows deleted.
 pub fn cleanup_duplicate_reviews(pool: &DbPool) -> Result<i64, AppError> {

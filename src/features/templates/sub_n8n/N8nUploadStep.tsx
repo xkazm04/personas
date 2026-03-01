@@ -1,13 +1,12 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, FileJson, FileCode2, AlertCircle } from 'lucide-react';
+import { Upload, FileJson, FileCode2, AlertCircle, ChevronRight } from 'lucide-react';
 import { isSupportedFile, getAcceptedExtensions } from '@/lib/personas/workflowDetector';
-import { WorkflowThumbnail } from './WorkflowThumbnail';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 type FilePreview =
-  | { kind: 'valid'; fileName: string; fileSize: string; workflowName: string; nodeCount: number; platform?: string; rawJson?: string }
+  | { kind: 'valid'; fileName: string; fileSize: string; workflowName: string; nodeCount: number; platform?: string }
   | { kind: 'error'; fileName: string; message: string };
 
 function formatFileSize(bytes: number): string {
@@ -73,6 +72,7 @@ export function N8nUploadStep({ fileInputRef, onFileDrop }: N8nUploadStepProps) 
   const [preview, setPreview] = useState<FilePreview | null>(null);
   const proceedTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const mountedRef = useRef(true);
+  const validatedFileRef = useRef<File | null>(null);
 
   useEffect(() => {
     return () => {
@@ -84,6 +84,7 @@ export function N8nUploadStep({ fileInputRef, onFileDrop }: N8nUploadStepProps) 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    e.dataTransfer.dropEffect = 'copy';
   }, []);
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
@@ -102,6 +103,9 @@ export function N8nUploadStep({ fileInputRef, onFileDrop }: N8nUploadStepProps) 
     (file: File, proceed: () => void) => {
       // Clear any pending proceed timer
       if (proceedTimerRef.current) clearTimeout(proceedTimerRef.current);
+
+      // Clear previous file ref
+      validatedFileRef.current = null;
 
       // Synchronous pre-checks
       if (!isSupportedFile(file.name)) {
@@ -133,6 +137,7 @@ export function N8nUploadStep({ fileInputRef, onFileDrop }: N8nUploadStepProps) 
           }
 
           const workflowName = extractYamlName(content);
+          validatedFileRef.current = file;
           setPreview({
             kind: 'valid',
             fileName: file.name,
@@ -170,6 +175,7 @@ export function N8nUploadStep({ fileInputRef, onFileDrop }: N8nUploadStepProps) 
             ? json.title
             : 'Untitled Workflow';
 
+        validatedFileRef.current = file;
         setPreview({
           kind: 'valid',
           fileName: file.name,
@@ -177,7 +183,6 @@ export function N8nUploadStep({ fileInputRef, onFileDrop }: N8nUploadStepProps) 
           workflowName,
           nodeCount: count,
           platform,
-          rawJson: content,
         });
 
         // Auto-proceed after a brief recognition moment
@@ -217,6 +222,13 @@ export function N8nUploadStep({ fileInputRef, onFileDrop }: N8nUploadStepProps) 
     },
     [onFileDrop, validateAndPreview],
   );
+
+  const handleManualProceed = useCallback(() => {
+    const file = validatedFileRef.current;
+    if (file && preview?.kind === 'valid') {
+      onFileDrop?.(file);
+    }
+  }, [preview, onFileDrop]);
 
   const FileIcon = preview?.kind === 'valid' ? getFileIcon(preview.fileName) : FileJson;
 
@@ -299,27 +311,16 @@ export function N8nUploadStep({ fileInputRef, onFileDrop }: N8nUploadStepProps) 
             transition={{ duration: 0.2 }}
             data-testid="file-validation-preview"
             data-status={preview.kind}
+            onClick={preview.kind === 'valid' ? handleManualProceed : undefined}
             className={`mt-3 flex items-center gap-3 px-4 rounded-lg border ${
               preview.kind === 'valid'
-                ? 'border-primary/10 bg-zinc-900/50 py-2'
+                ? 'border-primary/10 bg-zinc-900/50 py-2 cursor-pointer hover:bg-zinc-800/60 transition-colors'
                 : 'border-red-400/40 bg-red-500/5 h-12'
             }`}
           >
             {preview.kind === 'valid' ? (
               <>
-                {preview.rawJson ? (
-                  <motion.div
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ type: 'spring', damping: 14, stiffness: 260, delay: 0.05 }}
-                    className="flex-shrink-0"
-                    data-testid="file-preview-thumbnail"
-                  >
-                    <WorkflowThumbnail rawWorkflowJson={preview.rawJson} />
-                  </motion.div>
-                ) : (
-                  <FileIcon className="w-4 h-4 text-violet-400 flex-shrink-0" data-testid="file-preview-icon" />
-                )}
+                <FileIcon className="w-4 h-4 text-violet-400 flex-shrink-0" data-testid="file-preview-icon" />
                 {preview.platform && (
                   <span className="text-[11px] font-mono uppercase px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-400/80 border border-violet-500/20 flex-shrink-0">
                     {preview.platform}
@@ -332,6 +333,7 @@ export function N8nUploadStep({ fileInputRef, onFileDrop }: N8nUploadStepProps) 
                   {preview.nodeCount > 0 && <>{preview.nodeCount} element{preview.nodeCount !== 1 ? 's' : ''} · </>}
                   {preview.fileSize}
                 </span>
+                <ChevronRight className="w-4 h-4 text-muted-foreground/60 flex-shrink-0 ml-auto" />
               </>
             ) : (
               <>

@@ -5,6 +5,7 @@ import { HealingToast } from "@/features/shared/components/HealingToast";
 import { ToastContainer } from "@/features/shared/components/ToastContainer";
 import { initAuthListener, useAuthStore } from "@/stores/authStore";
 import { registerKnowledgeMiddleware } from "@/lib/execution/knowledgeMiddleware";
+import { useLabEvents } from "@/hooks/lab/useLabEvents";
 
 // Register pipeline middleware once at module load
 registerKnowledgeMiddleware();
@@ -14,6 +15,9 @@ export default function App() {
     initAuthListener();
     useAuthStore.getState().initialize();
   }, []);
+
+  // Global lab event listeners — hoisted here so they survive tab navigation
+  useLabEvents();
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground">

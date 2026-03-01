@@ -57,13 +57,24 @@ pub struct DesignUseCase {
     pub event_subscriptions: Option<serde_json::Value>,
 }
 
+/// A step in the connector pipeline showing chronological service interactions.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ConnectorPipelineStep {
+    pub connector_name: String,
+    pub action_label: String,
+    pub order: i32,
+}
+
 /// Structured envelope for the `design_context` JSON column.
 ///
-/// Three independent sections:
+/// Independent sections:
 /// - `design_files` — files & references for the AI design prompt
 /// - `credential_links` — connector name → credential ID mappings
 /// - `use_cases` — structured workflow descriptions from design results
 /// - `summary` — optional human-readable summary (legacy compat)
+/// - `connector_pipeline` — chronological connector interaction sequence
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
@@ -76,6 +87,8 @@ pub struct DesignContextData {
     pub use_cases: Option<Vec<DesignUseCase>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub summary: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub connector_pipeline: Option<Vec<ConnectorPipelineStep>>,
 }
 
 impl DesignContextData {

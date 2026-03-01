@@ -1,7 +1,7 @@
 import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
-import { Zap, Eye, EyeOff, Copy, CheckCircle2, Clock, CalendarClock } from 'lucide-react';
+import { Zap, Eye, EyeOff, Copy, CheckCircle2, Clock, CalendarClock, Plus, X } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META } from '@/lib/utils/triggerConstants';
+import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, type CompositeCondition } from '@/lib/utils/triggerConstants';
 import { formatInterval } from '@/lib/utils/formatters';
 import { previewCronSchedule, type CronPreview } from '@/api/triggers';
 import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
@@ -184,6 +184,23 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
   const [copiedHmac, setCopiedHmac] = useState(false);
   const [listenEventType, setListenEventType] = useState('');
   const [sourceFilter, setSourceFilter] = useState('');
+  // File watcher state
+  const [watchPaths, setWatchPaths] = useState<string[]>(['']);
+  const [watchEvents, setWatchEvents] = useState<string[]>(['modify']);
+  const [watchRecursive, setWatchRecursive] = useState(true);
+  const [globFilter, setGlobFilter] = useState('');
+  // Clipboard state
+  const [clipboardContentType, setClipboardContentType] = useState('text');
+  const [clipboardPattern, setClipboardPattern] = useState('');
+  const [clipboardInterval, setClipboardInterval] = useState('5');
+  // App focus state
+  const [appNames, setAppNames] = useState<string[]>(['']);
+  const [titlePattern, setTitlePattern] = useState('');
+  const [appFocusInterval, setAppFocusInterval] = useState('3');
+  // Composite state
+  const [compositeConditions, setCompositeConditions] = useState<CompositeCondition[]>([{ event_type: '' }]);
+  const [compositeOperator, setCompositeOperator] = useState('all');
+  const [windowSeconds, setWindowSeconds] = useState('300');
   const [validationError, setValidationError] = useState<string | null>(null);
   const triggerTypeRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const cronDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -277,6 +294,45 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
       if (sourceFilter.trim()) {
         config.source_filter = sourceFilter.trim();
       }
+    } else if (triggerType === 'file_watcher') {
+      const paths = watchPaths.filter(p => p.trim());
+      if (paths.length === 0) {
+        setValidationError('At least one watch path is required.');
+        return;
+      }
+      setValidationError(null);
+      config.watch_paths = paths;
+      config.events = watchEvents;
+      config.recursive = watchRecursive;
+      if (globFilter.trim()) config.glob_filter = globFilter.trim();
+    } else if (triggerType === 'clipboard') {
+      setValidationError(null);
+      config.content_type = clipboardContentType;
+      if (clipboardPattern.trim()) config.pattern = clipboardPattern.trim();
+      const parsedInterval = parseInt(clipboardInterval);
+      config.interval_seconds = isNaN(parsedInterval) || parsedInterval < 2 ? 5 : parsedInterval;
+    } else if (triggerType === 'app_focus') {
+      setValidationError(null);
+      const names = appNames.filter(n => n.trim());
+      if (names.length > 0) config.app_names = names;
+      if (titlePattern.trim()) config.title_pattern = titlePattern.trim();
+      const parsedInterval = parseInt(appFocusInterval);
+      config.interval_seconds = isNaN(parsedInterval) || parsedInterval < 2 ? 3 : parsedInterval;
+    } else if (triggerType === 'composite') {
+      const validConditions = compositeConditions.filter(c => c.event_type.trim());
+      if (validConditions.length < 2) {
+        setValidationError('Composite triggers need at least 2 conditions.');
+        return;
+      }
+      const secs = parseInt(windowSeconds);
+      if (isNaN(secs) || secs < 5) {
+        setValidationError('Time window must be at least 5 seconds.');
+        return;
+      }
+      setValidationError(null);
+      config.conditions = validConditions;
+      config.operator = compositeOperator;
+      config.window_seconds = secs;
     }
 
     await onCreateTrigger(triggerType, config);
@@ -301,7 +357,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
           Trigger Type
         </label>
         <div
-          className="grid grid-cols-2 gap-2"
+          className="grid grid-cols-3 gap-2"
           role="radiogroup"
           aria-label="Trigger type"
         >
@@ -311,6 +367,10 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
             { type: 'polling', label: 'Polling', description: 'Check an endpoint' },
             { type: 'webhook', label: 'Webhook', description: 'HTTP webhook listener' },
             { type: 'event_listener', label: 'Event Listener', description: 'React to internal events' },
+            { type: 'file_watcher', label: 'File Watcher', description: 'React to file system changes' },
+            { type: 'clipboard', label: 'Clipboard', description: 'React to clipboard changes' },
+            { type: 'app_focus', label: 'App Focus', description: 'React to app focus changes' },
+            { type: 'composite', label: 'Composite', description: 'Multiple conditions + time window' },
           ] as const).map((option, index) => {
             const meta = TRIGGER_TYPE_META[option.type] || DEFAULT_TRIGGER_META;
             const Icon = meta.Icon;
@@ -327,7 +387,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
                 tabIndex={isSelected ? 0 : -1}
                 onClick={() => setTriggerType(option.type)}
                 onKeyDown={(e) => {
-                  const types = ['manual', 'schedule', 'polling', 'webhook', 'event_listener'] as const;
+                  const types = ['manual', 'schedule', 'polling', 'webhook', 'event_listener', 'file_watcher', 'clipboard', 'app_focus', 'composite'] as const;
                   let nextIndex = -1;
                   if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
                     e.preventDefault();
@@ -566,6 +626,276 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
               className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all"
             />
             <p className="text-sm text-muted-foreground/80 mt-1">Wildcard suffix supported (e.g. prod-*)</p>
+          </div>
+        </div>
+      )}
+
+      {/* ── File Watcher config ── */}
+      {triggerType === 'file_watcher' && (
+        <div className="space-y-3">
+          <div>
+            <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+              Watch Paths
+            </label>
+            {watchPaths.map((path, i) => (
+              <div key={i} className="flex items-center gap-1.5 mb-1.5">
+                <input
+                  type="text"
+                  value={path}
+                  onChange={(e) => {
+                    const updated = [...watchPaths];
+                    updated[i] = e.target.value;
+                    setWatchPaths(updated);
+                    if (validationError) setValidationError(null);
+                  }}
+                  placeholder="C:\Users\me\projects or /home/me/src"
+                  className={`flex-1 px-3 py-2 bg-background/50 border rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 transition-all ${
+                    validationError ? 'border-red-500/30' : 'border-primary/15 focus:ring-orange-400/40'
+                  }`}
+                />
+                {watchPaths.length > 1 && (
+                  <button type="button" onClick={() => setWatchPaths(watchPaths.filter((_, j) => j !== i))} className="p-1.5 text-muted-foreground/60 hover:text-red-400 transition-colors">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            ))}
+            <button type="button" onClick={() => setWatchPaths([...watchPaths, ''])} className="flex items-center gap-1 text-sm text-orange-400/80 hover:text-orange-400 transition-colors">
+              <Plus className="w-3.5 h-3.5" /> Add path
+            </button>
+            {validationError && <p className="text-sm text-red-400/80 mt-1">{validationError}</p>}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground/80 mb-1.5">File Events</label>
+            <div className="flex flex-wrap gap-1.5">
+              {(['create', 'modify', 'delete', 'rename'] as const).map((evt) => (
+                <button
+                  key={evt}
+                  type="button"
+                  onClick={() => setWatchEvents(prev => prev.includes(evt) ? prev.filter(e => e !== evt) : [...prev, evt])}
+                  className={`px-2.5 py-1 rounded-lg text-sm font-medium transition-all border ${
+                    watchEvents.includes(evt)
+                      ? 'bg-orange-500/15 text-orange-400 border-orange-500/30'
+                      : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:bg-secondary/50'
+                  }`}
+                >
+                  {evt}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={watchRecursive} onChange={(e) => setWatchRecursive(e.target.checked)} className="rounded border-primary/30" />
+              <span className="text-sm text-foreground/80">Watch subdirectories recursively</span>
+            </label>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+              Glob Filter <span className="text-muted-foreground/50">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={globFilter}
+              onChange={(e) => setGlobFilter(e.target.value)}
+              placeholder="e.g. *.py, *.{ts,tsx}, Dockerfile"
+              className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-orange-400/40 transition-all"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ── Clipboard config ── */}
+      {triggerType === 'clipboard' && (
+        <div className="space-y-3">
+          <div>
+            <label className="block text-sm font-medium text-foreground/80 mb-1.5">Content Type</label>
+            <div className="flex gap-1.5">
+              {(['text', 'image', 'any'] as const).map((ct) => (
+                <button
+                  key={ct}
+                  type="button"
+                  onClick={() => setClipboardContentType(ct)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all border capitalize ${
+                    clipboardContentType === ct
+                      ? 'bg-pink-500/15 text-pink-400 border-pink-500/30'
+                      : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:bg-secondary/50'
+                  }`}
+                >
+                  {ct}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+              Text Pattern <span className="text-muted-foreground/50">(optional regex)</span>
+            </label>
+            <input
+              type="text"
+              value={clipboardPattern}
+              onChange={(e) => setClipboardPattern(e.target.value)}
+              placeholder="e.g. https?://.* or error|exception"
+              className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-pink-400/40 transition-all"
+            />
+            <p className="text-sm text-muted-foreground/80 mt-1">Only fires when clipboard text matches this pattern</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+              Poll Interval (seconds)
+            </label>
+            <input
+              type="number"
+              value={clipboardInterval}
+              onChange={(e) => setClipboardInterval(e.target.value)}
+              min="2"
+              className="w-24 px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm focus:outline-none focus:ring-2 focus:ring-pink-400/40 transition-all"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ── App Focus config ── */}
+      {triggerType === 'app_focus' && (
+        <div className="space-y-3">
+          <div>
+            <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+              App Names <span className="text-muted-foreground/50">(optional filter)</span>
+            </label>
+            {appNames.map((name, i) => (
+              <div key={i} className="flex items-center gap-1.5 mb-1.5">
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => {
+                    const updated = [...appNames];
+                    updated[i] = e.target.value;
+                    setAppNames(updated);
+                  }}
+                  placeholder="e.g. Code.exe, chrome.exe, Figma.exe"
+                  className="flex-1 px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-indigo-400/40 transition-all"
+                />
+                {appNames.length > 1 && (
+                  <button type="button" onClick={() => setAppNames(appNames.filter((_, j) => j !== i))} className="p-1.5 text-muted-foreground/60 hover:text-red-400 transition-colors">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            ))}
+            <button type="button" onClick={() => setAppNames([...appNames, ''])} className="flex items-center gap-1 text-sm text-indigo-400/80 hover:text-indigo-400 transition-colors">
+              <Plus className="w-3.5 h-3.5" /> Add app
+            </button>
+            <p className="text-sm text-muted-foreground/80 mt-1">Leave empty to trigger on any app focus change</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+              Window Title Pattern <span className="text-muted-foreground/50">(optional regex)</span>
+            </label>
+            <input
+              type="text"
+              value={titlePattern}
+              onChange={(e) => setTitlePattern(e.target.value)}
+              placeholder="e.g. .*\\.rs$ or Project - Visual Studio"
+              className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-indigo-400/40 transition-all"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+              Poll Interval (seconds)
+            </label>
+            <input
+              type="number"
+              value={appFocusInterval}
+              onChange={(e) => setAppFocusInterval(e.target.value)}
+              min="2"
+              className="w-24 px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400/40 transition-all"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ── Composite config ── */}
+      {triggerType === 'composite' && (
+        <div className="space-y-3">
+          <div>
+            <label className="block text-sm font-medium text-foreground/80 mb-1.5">Conditions</label>
+            {compositeConditions.map((cond, i) => (
+              <div key={i} className="flex items-center gap-1.5 mb-1.5">
+                <input
+                  type="text"
+                  value={cond.event_type}
+                  onChange={(e) => {
+                    const updated = [...compositeConditions];
+                    updated[i] = { ...updated[i], event_type: e.target.value };
+                    setCompositeConditions(updated);
+                    if (validationError) setValidationError(null);
+                  }}
+                  placeholder="Event type (e.g. file_changed)"
+                  className={`flex-1 px-3 py-2 bg-background/50 border rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 transition-all ${
+                    validationError ? 'border-red-500/30' : 'border-primary/15 focus:ring-rose-400/40'
+                  }`}
+                />
+                <input
+                  type="text"
+                  value={cond.source_filter || ''}
+                  onChange={(e) => {
+                    const updated = [...compositeConditions];
+                    const existing = updated[i]!;
+                    updated[i] = { event_type: existing.event_type, source_filter: e.target.value || undefined };
+                    setCompositeConditions(updated);
+                  }}
+                  placeholder="Source filter (optional)"
+                  className="w-40 px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-rose-400/40 transition-all"
+                />
+                {compositeConditions.length > 1 && (
+                  <button type="button" onClick={() => setCompositeConditions(compositeConditions.filter((_, j) => j !== i))} className="p-1.5 text-muted-foreground/60 hover:text-red-400 transition-colors">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            ))}
+            <button type="button" onClick={() => setCompositeConditions([...compositeConditions, { event_type: '' }])} className="flex items-center gap-1 text-sm text-rose-400/80 hover:text-rose-400 transition-colors">
+              <Plus className="w-3.5 h-3.5" /> Add condition
+            </button>
+            {validationError && <p className="text-sm text-red-400/80 mt-1">{validationError}</p>}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground/80 mb-1.5">Operator</label>
+            <div className="flex gap-1.5">
+              {([
+                { value: 'all', label: 'ALL (AND)', desc: 'All conditions must match' },
+                { value: 'any', label: 'ANY (OR)', desc: 'At least one condition' },
+                { value: 'sequence', label: 'Sequence', desc: 'Conditions in order' },
+              ] as const).map((op) => (
+                <button
+                  key={op.value}
+                  type="button"
+                  onClick={() => setCompositeOperator(op.value)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
+                    compositeOperator === op.value
+                      ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                      : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:bg-secondary/50'
+                  }`}
+                  title={op.desc}
+                >
+                  {op.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+              Time Window (seconds)
+            </label>
+            <input
+              type="number"
+              value={windowSeconds}
+              onChange={(e) => { setWindowSeconds(e.target.value); if (validationError) setValidationError(null); }}
+              min="5"
+              placeholder="300"
+              className="w-32 px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm focus:outline-none focus:ring-2 focus:ring-rose-400/40 transition-all"
+            />
+            <p className="text-sm text-muted-foreground/80 mt-1">All conditions must be met within this time window</p>
           </div>
         </div>
       )}

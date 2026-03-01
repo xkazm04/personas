@@ -38,6 +38,10 @@ pub mod types;
 pub mod webhook;
 pub mod platform_rules;
 pub mod url_safety;
+pub mod file_watcher;
+pub mod clipboard_monitor;
+pub mod app_focus;
+pub mod composite;
 
 use std::collections::HashMap;
 use std::path::PathBuf;

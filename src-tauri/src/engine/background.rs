@@ -17,6 +17,8 @@ use crate::engine::scheduler as sched_logic;
 use crate::engine::subscription::{
     self, CleanupSubscription, EventBusSubscription, PollingSubscription,
     RotationSubscription, TriggerSchedulerSubscription,
+    FileWatcherSubscription, ClipboardSubscription, AppFocusSubscription,
+    CompositeSubscription,
 };
 use crate::engine::ExecutionEngine;
 
@@ -88,7 +90,7 @@ pub fn start_loops(
     rate_limiter: Arc<super::rate_limiter::RateLimiter>,
 ) -> tokio::sync::watch::Sender<bool> {
     scheduler.running.store(true, Ordering::Relaxed);
-    tracing::info!("Scheduler starting via unified subscription model: event_bus (2s) + trigger_scheduler (5s) + polling (10s) + cleanup (3600s) + rotation (60s) + webhook server (port 9420)");
+    tracing::info!("Scheduler starting via unified subscription model: event_bus (2s) + trigger_scheduler (5s) + polling (10s) + cleanup (3600s) + rotation (60s) + file_watcher (2s) + clipboard (3s) + app_focus (3s) + composite (2s) + webhook server (port 9420)");
 
     // Build the HTTP client for the polling subscription
     let http = reqwest::Client::builder()
@@ -96,6 +98,9 @@ pub fn start_loops(
         .user_agent("Personas-Polling/1.0")
         .build()
         .unwrap_or_default();
+
+    // File watcher state
+    let (fw_state, fw_tx, fw_rx) = super::file_watcher::create_file_watcher();
 
     // Assemble all reactive subscriptions
     let subscriptions: Vec<Box<dyn subscription::ReactiveSubscription>> = vec![
@@ -118,6 +123,27 @@ pub fn start_loops(
             pool: pool.clone(),
         }),
         Box::new(RotationSubscription {
+            pool: pool.clone(),
+        }),
+        Box::new(FileWatcherSubscription {
+            pool: pool.clone(),
+            state: fw_state,
+            tx: fw_tx,
+            rx: fw_rx,
+        }),
+        Box::new(ClipboardSubscription {
+            pool: pool.clone(),
+            state: Arc::new(tokio::sync::Mutex::new(
+                super::clipboard_monitor::ClipboardState::new(),
+            )),
+        }),
+        Box::new(AppFocusSubscription {
+            pool: pool.clone(),
+            state: Arc::new(tokio::sync::Mutex::new(
+                super::app_focus::AppFocusState::new(),
+            )),
+        }),
+        Box::new(CompositeSubscription {
             pool: pool.clone(),
         }),
     ];

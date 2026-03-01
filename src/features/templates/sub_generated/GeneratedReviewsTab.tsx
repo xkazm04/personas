@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { useClickOutside } from '@/hooks/utility/useClickOutside';
 import {
   FlaskConical,
@@ -13,25 +12,13 @@ import {
   Trash2,
   Eye,
   RefreshCw,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-  Clock,
-  Lightbulb,
   Workflow,
-  Webhook,
-  MousePointerClick,
-  Radio,
-  GitFork,
-  Plug,
-  Bell,
-  Wrench,
   TrendingUp,
 } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useTemplateGallery } from '@/hooks/design/useTemplateGallery';
-import { deleteDesignReview, cleanupDuplicateReviews } from '@/api/reviews';
+import { deleteDesignReview, cleanupDuplicateReviews, backfillServiceFlow } from '@/api/reviews';
 import { deriveConnectorReadiness } from './ConnectorReadiness';
 import { TemplateSearchBar } from './TemplateSearchBar';
 import { TemplatePagination } from './TemplatePagination';
@@ -40,11 +27,14 @@ import { CreateTemplateModal } from './CreateTemplateModal';
 import { ADOPT_CONTEXT_KEY } from './useAdoptReducer';
 import AdoptionWizardModal from './AdoptionWizardModal';
 import { RebuildModal } from './RebuildModal';
+import { ConnectorPipeline } from './ConnectorPipeline';
+import { useBackgroundRebuild } from '@/hooks/design/useBackgroundRebuild';
+import { useBackgroundPreview } from '@/hooks/design/useBackgroundPreview';
 import { TemplatePreviewModal } from './TemplatePreviewModal';
 import { DimensionRadial } from './DimensionRadial';
 import { useModalStack } from './useModalStack';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-import type { DesignAnalysisResult, SuggestedTrigger, SuggestedConnector } from '@/lib/types/designTypes';
+import type { ConnectorPipelineStep, DesignAnalysisResult, SuggestedConnector } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
@@ -59,24 +49,6 @@ import type { ConnectorMeta } from '@/features/shared/components/ConnectorMeta';
 // ============================================================================
 
 
-const TRIGGER_ICONS: Record<string, typeof Clock> = {
-  schedule: Clock,
-  webhook: Webhook,
-  manual: MousePointerClick,
-  polling: Radio,
-};
-
-const NODE_TYPE_DISPLAY: Record<string, {
-  Icon: typeof Clock;
-  color: string;
-  label: string;
-}> = {
-  action:    { Icon: Wrench,        color: 'text-blue-400 bg-blue-500/10 border-blue-500/15',       label: 'action' },
-  decision:  { Icon: GitFork,       color: 'text-amber-400 bg-amber-500/10 border-amber-500/15',    label: 'decision' },
-  connector: { Icon: Plug,          color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/15', label: 'connector' },
-  event:     { Icon: Radio,         color: 'text-violet-400 bg-violet-500/10 border-violet-500/15',  label: 'event' },
-  error:     { Icon: AlertTriangle, color: 'text-rose-400 bg-rose-500/10 border-rose-500/15',       label: 'error' },
-};
 
 // ============================================================================
 // Row Action Menu
@@ -99,7 +71,7 @@ function RowActionMenu({
   useClickOutside(menuRef, open, closeMenu);
 
   return (
-    <div ref={menuRef} className="relative">
+    <div ref={menuRef} className={`relative ${open ? 'z-20' : ''}`}>
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -111,7 +83,7 @@ function RowActionMenu({
         <MoreVertical className="w-4.5 h-4.5 text-muted-foreground/90" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 z-50 min-w-[180px] py-1.5 bg-background border border-primary/20 rounded-lg shadow-2xl backdrop-blur-sm">
+        <div className="absolute right-0 bottom-full mb-1 z-50 min-w-[180px] py-1.5 bg-background border border-primary/20 rounded-lg shadow-2xl backdrop-blur-sm">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -123,28 +95,32 @@ function RowActionMenu({
             <Eye className="w-4 h-4" />
             View Details
           </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setOpen(false);
-              onRebuild();
-            }}
-            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-blue-400 hover:bg-blue-500/10 transition-colors text-left"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Rebuild
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setOpen(false);
-              onDelete(reviewId);
-            }}
-            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors text-left"
-          >
-            <Trash2 className="w-4 h-4" />
-            Delete template
-          </button>
+          {import.meta.env.VITE_DEVELOPMENT === 'true' && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpen(false);
+                  onRebuild();
+                }}
+                className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-blue-400 hover:bg-blue-500/10 transition-colors text-left"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Rebuild
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpen(false);
+                  onDelete(reviewId);
+                }}
+                className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors text-left"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete template
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -343,17 +319,13 @@ function CatalogCredentialModal({
 function ExpandedRowContent({
   review,
   designResult,
-  installedConnectorNames,
-  credentialServiceTypes,
-  onViewFlows,
+  allConnectorsReady,
   onAdopt,
   onTryIt,
 }: {
   review: PersonaDesignReview;
   designResult: DesignAnalysisResult | null;
-  installedConnectorNames: Set<string>;
-  credentialServiceTypes: Set<string>;
-  onViewFlows: () => void;
+  allConnectorsReady: boolean;
   onAdopt: () => void;
   onTryIt: () => void;
 }) {
@@ -367,233 +339,58 @@ function ExpandedRowContent({
           : [];
       })();
 
-  const connectors: string[] = parseJsonSafe(review.connectors_used, []);
-  const suggestedTriggers: SuggestedTrigger[] = designResult?.suggested_triggers ?? [];
-
-  const readinessStatuses = designResult?.suggested_connectors
-    ? deriveConnectorReadiness(designResult.suggested_connectors, installedConnectorNames, credentialServiceTypes)
-    : [];
-
-  const eventCount = designResult?.suggested_event_subscriptions?.length ?? 0;
-  const channelCount = designResult?.suggested_notification_channels?.length ?? 0;
-
-  // Per-flow node type statistics for hero cards
-  const perFlowStats = useMemo(
-    () =>
-      displayFlows.map((flow) => {
-        const counts: Record<string, number> = {};
-        for (const node of flow.nodes) {
-          if (node.type !== 'start' && node.type !== 'end') {
-            counts[node.type] = (counts[node.type] ?? 0) + 1;
-          }
-        }
-        return counts;
-      }),
-    [displayFlows],
-  );
-
-  // Total human-in-loop decisions across all flows
-  const totalDecisions = useMemo(
-    () =>
-      displayFlows.reduce(
-        (sum, flow) => sum + flow.nodes.filter((n) => n.type === 'decision').length,
-        0,
-      ),
-    [displayFlows],
-  );
+  // Parse service_flow pipeline from designResult
+  const pipelineSteps: ConnectorPipelineStep[] = (() => {
+    const raw = designResult as unknown as Record<string, unknown> | null;
+    const sf = raw?.service_flow;
+    if (!Array.isArray(sf) || sf.length === 0) return [];
+    // Support new object format
+    if (typeof sf[0] === 'object' && sf[0] !== null && 'connector_name' in sf[0]) {
+      return sf as ConnectorPipelineStep[];
+    }
+    return [];
+  })();
 
   return (
-    <div className="space-y-3">
-      {/* ── Section A: Header bar — summary + metadata rail ── */}
-      <div className="flex items-start gap-4">
-        {/* Left: summary text */}
-        <p className="flex-1 min-w-0 text-sm text-foreground/80 leading-relaxed">
-          {designResult?.summary || review.instruction}
-        </p>
+    <div className="flex items-center justify-center gap-4 py-3 px-4">
+      {/* Connector pipeline diagram */}
+      {pipelineSteps.length > 0 && (
+        <ConnectorPipeline steps={pipelineSteps} />
+      )}
 
-        {/* Right: metadata rail */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {/* Connector icon cluster */}
-          {connectors.length > 0 && (
-            <div className="flex items-center gap-1">
-              {connectors.map((c) => {
-                const meta = getConnectorMeta(c);
-                const status = readinessStatuses.find((s) => s.connector_name === c);
-                const isReady = status?.health === 'ready';
-                return (
-                  <div
-                    key={c}
-                    className="relative flex-shrink-0"
-                    title={`${meta.label}${isReady ? '' : ' (needs setup)'}`}
-                  >
-                    <div
-                      className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
-                        isReady ? '' : 'grayscale'
-                      }`}
-                      style={{ backgroundColor: `${meta.color}18` }}
-                    >
-                      <ConnectorIcon meta={meta} size="w-4 h-4" />
-                    </div>
-                    <span
-                      className={`absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full ${
-                        isReady ? 'bg-emerald-500' : 'bg-amber-500/60'
-                      }`}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Divider */}
-          {connectors.length > 0 && suggestedTriggers.length > 0 && (
-            <div className="w-px h-5 bg-primary/10" />
-          )}
-
-          {/* Trigger pills */}
-          {suggestedTriggers.length > 0 && (
-            <div className="flex items-center gap-1">
-              {suggestedTriggers.map((trigger, i) => {
-                const TriggerIcon = TRIGGER_ICONS[trigger.trigger_type] ?? Clock;
-                return (
-                  <span
-                    key={i}
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono uppercase rounded bg-blue-500/8 text-blue-400/70 border border-blue-500/12"
-                    title={trigger.description}
-                  >
-                    <TriggerIcon className="w-2.5 h-2.5" />
-                    {trigger.trigger_type}
-                  </span>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Count badges */}
-          {eventCount > 0 && (
-            <span
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono rounded bg-rose-500/8 text-rose-400/70 border border-rose-500/12"
-              title={`${eventCount} event subscription${eventCount !== 1 ? 's' : ''}`}
-            >
-              <Radio className="w-2.5 h-2.5" />
-              {eventCount}
-            </span>
-          )}
-          {channelCount > 0 && (
-            <span
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono rounded bg-purple-500/8 text-purple-400/70 border border-purple-500/12"
-              title={`${channelCount} notification channel${channelCount !== 1 ? 's' : ''}`}
-            >
-              <Bell className="w-2.5 h-2.5" />
-              {channelCount}
-            </span>
-          )}
-          {totalDecisions > 0 && (
-            <span
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono rounded bg-amber-500/8 text-amber-400/70 border border-amber-500/12"
-              title={`${totalDecisions} human-in-loop decision${totalDecisions !== 1 ? 's' : ''}`}
-            >
-              <GitFork className="w-2.5 h-2.5" />
-              {totalDecisions}
-            </span>
-          )}
-
-          {/* Quality radial */}
-          <DimensionRadial designResult={designResult} size={36} className="flex-shrink-0" />
-        </div>
-      </div>
-
-      {/* ── Section B: Use Case Hero Cards ── */}
+      {/* Use case bullet list */}
       {displayFlows.length > 0 ? (
-        <div className="grid grid-cols-2 gap-3">
-          {displayFlows.map((flow, idx) => {
-            const stats = perFlowStats[idx] ?? {};
-            return (
-              <motion.button
-                key={flow.id}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05, duration: 0.2 }}
-                onClick={onViewFlows}
-                className="group/card text-left p-3.5 rounded-xl bg-secondary/25 border border-primary/8 hover:border-violet-500/20 hover:bg-violet-500/5 transition-all"
-              >
-                {/* Card header */}
-                <div className="flex items-start gap-2 mb-1.5">
-                  <Workflow className="w-3.5 h-3.5 text-violet-400/50 flex-shrink-0 mt-0.5" />
-                  <div className="min-w-0 flex-1">
-                    <span className="text-sm font-medium text-foreground/85 group-hover/card:text-violet-300 block truncate">
-                      {flow.name}
-                    </span>
-                    {flow.description && (
-                      <span className="text-xs text-muted-foreground/50 block line-clamp-2 leading-relaxed mt-0.5">
-                        {flow.description}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Separator */}
-                <div className="border-t border-primary/6 my-2" />
-
-                {/* Node type pills */}
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {Object.entries(stats).map(([type, count]) => {
-                    const display = NODE_TYPE_DISPLAY[type];
-                    if (!display) return null;
-                    const { Icon, color } = display;
-                    return (
-                      <span
-                        key={type}
-                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono rounded border ${color}`}
-                      >
-                        <Icon className="w-2.5 h-2.5" />
-                        {count} {display.label}{count !== 1 ? 's' : ''}
-                      </span>
-                    );
-                  })}
-                  {Object.keys(stats).length === 0 && (
-                    <span className="text-[10px] text-muted-foreground/30 italic">No steps</span>
-                  )}
-                </div>
-              </motion.button>
-            );
-          })}
-        </div>
+        <ul className="list-disc list-inside space-y-0.5">
+          {displayFlows.map((flow) => (
+            <li key={flow.id} className="text-sm text-foreground/80">
+              {flow.name}
+            </li>
+          ))}
+        </ul>
       ) : (
-        <div className="py-4 text-center text-sm text-muted-foreground/40 italic">
+        <div className="text-sm text-muted-foreground/40 italic">
           No use case flows defined
         </div>
       )}
 
-      {/* ── Section C: Action Row ── */}
-      <div className="flex items-center justify-between pt-1">
-        <div className="flex items-center gap-2">
+      {/* Action buttons */}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {allConnectorsReady && (
           <button
-            onClick={onAdopt}
-            className="px-5 py-2.5 text-sm rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2"
+            onClick={onTryIt}
+            className="px-3 py-2 text-sm rounded-lg bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 hover:bg-cyan-500/20 transition-colors inline-flex items-center gap-1.5"
           >
-            <Download className="w-4 h-4" />
-            Adopt as Persona
-          </button>
-          {designResult && (
-            <button
-              onClick={onTryIt}
-              className="px-5 py-2.5 text-sm rounded-xl bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center gap-2"
-            >
-              <Play className="w-4 h-4" />
-              Try It
-            </button>
-          )}
-        </div>
-        {displayFlows.length > 0 && (
-          <button
-            onClick={onViewFlows}
-            className="px-4 py-2 text-sm rounded-lg bg-violet-500/8 text-violet-400/70 hover:bg-violet-500/15 transition-colors inline-flex items-center gap-1.5"
-          >
-            <Workflow className="w-3.5 h-3.5" />
-            View {displayFlows.length} flow{displayFlows.length !== 1 ? 's' : ''}
+            <Play className="w-3.5 h-3.5" />
+            Try It
           </button>
         )}
+        <button
+          onClick={onAdopt}
+          className="px-3.5 py-2 text-sm rounded-lg bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors inline-flex items-center gap-1.5"
+        >
+          <Download className="w-3.5 h-3.5" />
+          Adopt
+        </button>
       </div>
     </div>
   );
@@ -644,6 +441,13 @@ export default function GeneratedReviewsTab({
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const modals = useModalStack<TemplateModal>();
   const [isCleaningUp, setIsCleaningUp] = useState(false);
+  const [isBackfillingPipeline, setIsBackfillingPipeline] = useState(false);
+
+  // Background rebuild state — persists across modal open/close
+  const rebuild = useBackgroundRebuild(() => gallery.refresh());
+
+  // Background preview state — persists across modal open/close
+  const preview = useBackgroundPreview();
 
   const installedConnectorNames = useMemo(
     () => new Set(connectorDefinitions.map((c) => c.name)),
@@ -703,6 +507,18 @@ export default function GeneratedReviewsTab({
     }
   };
 
+  const handleBackfillPipeline = async () => {
+    setIsBackfillingPipeline(true);
+    try {
+      await backfillServiceFlow();
+      gallery.refresh();
+    } catch (err) {
+      console.error('Failed to backfill service flow:', err);
+    } finally {
+      setIsBackfillingPipeline(false);
+    }
+  };
+
   const handlePersonaCreated = () => {
     modals.close('adopt');
     gallery.refresh();
@@ -740,7 +556,7 @@ export default function GeneratedReviewsTab({
   }
 
   // Empty state
-  if (gallery.total === 0 && !gallery.search && gallery.connectorFilter.length === 0) {
+  if (gallery.total === 0 && !gallery.search && gallery.connectorFilter.length === 0 && gallery.categoryFilter.length === 0 && gallery.coverageFilter === 'all' && !gallery.aiSearchActive) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 text-muted-foreground/80">
         <FlaskConical className="w-12 h-12 opacity-30" />
@@ -799,6 +615,54 @@ export default function GeneratedReviewsTab({
         </div>
       )}
 
+      {/* Background rebuild banner */}
+      {rebuild.isActive && !modals.isOpen('rebuild') && (
+        <div className="mx-4 mt-3 mb-0">
+          <button
+            onClick={() => {
+              const review = gallery.items.find((r) => r.id === rebuild.reviewId);
+              if (review) modals.open({ type: 'rebuild', review });
+            }}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-500/8 border border-blue-500/15 hover:bg-blue-500/12 transition-colors text-left"
+          >
+            <div className="w-7 h-7 rounded-lg bg-blue-500/15 flex items-center justify-center flex-shrink-0">
+              <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-sm font-medium text-blue-300 block">
+                Rebuilding: {rebuild.reviewName ?? 'template'}
+              </span>
+              <span className="text-xs text-muted-foreground/80">Click to view progress</span>
+            </div>
+            <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse flex-shrink-0" />
+          </button>
+        </div>
+      )}
+
+      {/* Background preview banner */}
+      {preview.isActive && !modals.isOpen('preview') && (
+        <div className="mx-4 mt-3 mb-0">
+          <button
+            onClick={() => {
+              const review = gallery.items.find((r) => r.id === preview.reviewId);
+              if (review) modals.open({ type: 'preview', review });
+            }}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-cyan-500/8 border border-cyan-500/15 hover:bg-cyan-500/12 transition-colors text-left"
+          >
+            <div className="w-7 h-7 rounded-lg bg-cyan-500/15 flex items-center justify-center flex-shrink-0">
+              <Play className="w-4 h-4 text-cyan-400 animate-pulse" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-sm font-medium text-cyan-300 block">
+                Testing: {preview.reviewName ?? 'template'}
+              </span>
+              <span className="text-xs text-muted-foreground/80">Click to view output</span>
+            </div>
+            <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse flex-shrink-0" />
+          </button>
+        </div>
+      )}
+
       {/* Search/Filter/Sort Bar */}
       <TemplateSearchBar
         search={gallery.search}
@@ -819,6 +683,8 @@ export default function GeneratedReviewsTab({
         onNewTemplate={() => modals.open({ type: 'create' })}
         onCleanupDuplicates={handleCleanupDuplicates}
         isCleaningUp={isCleaningUp}
+        onBackfillPipeline={handleBackfillPipeline}
+        isBackfillingPipeline={isBackfillingPipeline}
         coverageFilter={gallery.coverageFilter}
         onCoverageFilterChange={gallery.setCoverageFilter}
         aiSearchMode={gallery.aiSearchMode}
@@ -869,17 +735,16 @@ export default function GeneratedReviewsTab({
       )}
 
       {/* Table */}
-      <div className="flex-1 overflow-y-auto overflow-x-auto">
+      <div className="flex-1 flex flex-col overflow-x-auto">
         {gallery.items.length > 0 ? (
+          <div className="flex-1 overflow-y-auto">
           <table className="w-full" style={{ minWidth: 960 }}>
             <thead className="sticky top-0 z-10">
               <tr className="bg-background border-b border-primary/10" style={{ backgroundColor: 'hsl(var(--background))' }}>
                 <th className="text-left text-sm font-medium text-muted-foreground/70 px-6 py-3 w-10 bg-secondary/80" />
                 <th className="text-left text-sm font-medium text-muted-foreground/70 px-4 py-3 bg-secondary/80">Template Name</th>
-                <th className="text-center text-sm font-medium text-muted-foreground/70 px-4 py-3 bg-secondary/80">Flows</th>
                 <th className="text-center text-sm font-medium text-muted-foreground/70 px-4 py-3 bg-secondary/80">Adoptions</th>
-                <th className="text-center text-sm font-medium text-muted-foreground/70 px-4 py-3 bg-secondary/80">Status</th>
-                <th className="text-right text-sm font-medium text-muted-foreground/70 px-6 py-3 w-28 bg-secondary/80" />
+                <th className="text-right text-sm font-medium text-muted-foreground/70 px-6 py-3 w-10 bg-secondary/80" />
               </tr>
             </thead>
             <tbody>
@@ -893,13 +758,10 @@ export default function GeneratedReviewsTab({
                   ? deriveConnectorReadiness(designResult.suggested_connectors, installedConnectorNames, credentialServiceTypes)
                   : [];
 
-                const statusBadge = {
-                  passed: { Icon: CheckCircle2, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20', label: 'pass' },
-                  failed: { Icon: XCircle, color: 'text-red-400 bg-red-500/10 border-red-500/20', label: 'fail' },
-                  error: { Icon: AlertTriangle, color: 'text-amber-400 bg-amber-500/10 border-amber-500/20', label: 'error' },
-                }[review.status] || { Icon: Clock, color: 'text-muted-foreground bg-secondary/30 border-primary/10', label: review.status };
-
-                const StatusIcon = statusBadge.Icon;
+                const allConnectorsReady = connectors.length > 0 && connectors.every((c) => {
+                  const status = readinessStatuses.find((s) => s.connector_name === c);
+                  return status?.health === 'ready';
+                });
 
                 return (
                   <React.Fragment key={review.id}>
@@ -916,29 +778,47 @@ export default function GeneratedReviewsTab({
                         )}
                       </td>
                       <td className="px-4 py-4">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-base font-semibold text-foreground/80">
-                              {review.test_case_name}
-                            </span>
-                            {review.adoption_count > 0 && (
-                              <span
-                                className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono rounded bg-emerald-500/10 text-emerald-400/70 border border-emerald-500/15"
-                                title={`Adopted ${review.adoption_count} time${review.adoption_count !== 1 ? 's' : ''}`}
-                              >
-                                <Download className="w-2.5 h-2.5" />
-                                {review.adoption_count}
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-base font-semibold text-foreground/80">
+                                {review.test_case_name}
                               </span>
-                            )}
+                              {review.adoption_count > 0 && (
+                                <span
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono rounded bg-emerald-500/10 text-emerald-400/70 border border-emerald-500/15"
+                                  title={`Adopted ${review.adoption_count} time${review.adoption_count !== 1 ? 's' : ''}`}
+                                >
+                                  <Download className="w-2.5 h-2.5" />
+                                  {review.adoption_count}
+                                </span>
+                              )}
+                            </div>
+                            {/* Second line: instruction + clickable flow count */}
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-sm text-muted-foreground/60 truncate max-w-[400px]">
+                                {review.instruction.length > 80
+                                  ? review.instruction.slice(0, 80) + '...'
+                                  : review.instruction}
+                              </span>
+                              {flowCount > 0 && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onViewFlows(review);
+                                  }}
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] rounded bg-violet-500/10 text-violet-400/70 border border-violet-500/15 hover:bg-violet-500/20 transition-colors flex-shrink-0"
+                                  title="View flows"
+                                >
+                                  <Workflow className="w-2.5 h-2.5" />
+                                  {flowCount} flow{flowCount !== 1 ? 's' : ''}
+                                </button>
+                              )}
+                            </div>
                           </div>
-                          <span className="text-sm text-muted-foreground/60 block truncate max-w-[500px]">
-                            {review.instruction.length > 100
-                              ? review.instruction.slice(0, 100) + '...'
-                              : review.instruction}
-                          </span>
-                          {/* Connector icons */}
+                          {/* Connector icons — right side */}
                           {connectors.length > 0 && (
-                            <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
                               {connectors.map((c) => {
                                 const meta = getConnectorMeta(c);
                                 const status = readinessStatuses.find((s) => s.connector_name === c);
@@ -962,16 +842,6 @@ export default function GeneratedReviewsTab({
                         </div>
                       </td>
                       <td className="px-4 py-4 text-center">
-                        {flowCount > 0 ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300">
-                            <Workflow className="w-3.5 h-3.5" />
-                            {flowCount}
-                          </span>
-                        ) : (
-                          <span className="text-sm text-muted-foreground/40">--</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-4 text-center">
                         <div className="flex justify-center">
                           {review.adoption_count > 0 ? (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300">
@@ -983,53 +853,36 @@ export default function GeneratedReviewsTab({
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-4 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-full border ${statusBadge.color}`}
-                          >
-                            <StatusIcon className="w-3.5 h-3.5" />
-                            {statusBadge.label}
-                          </span>
-                          {review.suggested_adjustment && (
-                            <span title="Adjustment suggestion available">
-                              <Lightbulb className="w-4 h-4 text-amber-400/60" />
-                            </span>
-                          )}
-                        </div>
-                      </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              modals.open({ type: 'adopt', review });
-                            }}
-                            className="px-3.5 py-2 text-sm rounded-lg bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors inline-flex items-center gap-1.5"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                            Adopt
-                          </button>
-                          <RowActionMenu
-                            reviewId={review.id}
-                            onDelete={handleDeleteReview}
-                            onViewDetails={() => modals.open({ type: 'detail', review })}
-                            onRebuild={() => modals.open({ type: 'rebuild', review })}
-                          />
-                        </div>
+                        <RowActionMenu
+                          reviewId={review.id}
+                          onDelete={handleDeleteReview}
+                          onViewDetails={() => modals.open({ type: 'detail', review })}
+                          onRebuild={() => {
+                            // Reset rebuild state if starting a new rebuild (different review)
+                            if (rebuild.reviewId !== review.id || rebuild.phase === 'completed' || rebuild.phase === 'failed') {
+                              rebuild.resetRebuild();
+                            }
+                            modals.open({ type: 'rebuild', review });
+                          }}
+                        />
                       </td>
                     </tr>
                     {isExpanded && (
                       <tr>
-                        <td colSpan={6} className="px-6 py-4 bg-secondary/20 border-b border-primary/10">
+                        <td colSpan={4} className="border-b border-primary/10 bg-secondary/20">
                           <ExpandedRowContent
                             review={review}
                             designResult={designResult}
-                            installedConnectorNames={installedConnectorNames}
-                            credentialServiceTypes={credentialServiceTypes}
-                            onViewFlows={() => onViewFlows(review)}
+                            allConnectorsReady={allConnectorsReady}
                             onAdopt={() => modals.open({ type: 'adopt', review })}
-                            onTryIt={() => modals.open({ type: 'preview', review })}
+                            onTryIt={() => {
+                              // Reset preview state if switching to a different template
+                              if (preview.reviewId !== review.id || preview.phase === 'completed' || preview.phase === 'failed') {
+                                preview.resetPreview();
+                              }
+                              modals.open({ type: 'preview', review });
+                            }}
                           />
                         </td>
                       </tr>
@@ -1039,8 +892,9 @@ export default function GeneratedReviewsTab({
               })}
             </tbody>
           </table>
+          </div>
         ) : (
-          <div className="flex items-center justify-center h-40 text-sm text-muted-foreground/60" style={{ minWidth: 960 }}>
+          <div className="flex items-center justify-center flex-1 min-h-[200px] text-sm text-muted-foreground/60" style={{ minWidth: 960 }}>
             No templates match your search
           </div>
         )}
@@ -1065,6 +919,9 @@ export default function GeneratedReviewsTab({
           onViewFlows(review);
         }}
         onTryIt={(review) => {
+          if (preview.reviewId !== review.id || preview.phase === 'completed' || preview.phase === 'failed') {
+            preview.resetPreview();
+          }
           modals.close('detail');
           modals.open({ type: 'preview', review });
         }}
@@ -1097,10 +954,14 @@ export default function GeneratedReviewsTab({
           isOpen
           onClose={() => modals.close('rebuild')}
           review={modals.find('rebuild')!.review}
-          onCompleted={() => {
-            modals.close('rebuild');
-            gallery.refresh();
+          phase={rebuild.phase}
+          lines={rebuild.lines}
+          error={rebuild.error}
+          onStartRebuild={(dir) => {
+            const r = modals.find('rebuild')!.review;
+            rebuild.startRebuild(r.id, r.test_case_name, dir);
           }}
+          onCancel={() => rebuild.cancelCurrentRebuild()}
         />
       )}
 
@@ -1109,6 +970,12 @@ export default function GeneratedReviewsTab({
         isOpen={modals.isOpen('preview')}
         onClose={() => modals.close('preview')}
         review={modals.find('preview')?.review ?? null}
+        phase={preview.phase}
+        lines={preview.lines}
+        error={preview.error}
+        hasStarted={preview.hasStarted}
+        onStartPreview={(rId, rName, draftJson) => preview.startPreview(rId, rName, draftJson)}
+        onRetryPreview={(draftJson) => preview.retryPreview(draftJson)}
       />
 
       {/* Connector Credential Modal — triggered from table connector icons */}
