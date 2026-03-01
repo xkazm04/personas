@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { Zap, RefreshCw, AlertCircle, CheckCircle2, Clock, Loader2, Server, Bot } from 'lucide-react';
+import { Zap, RefreshCw, AlertCircle, CheckCircle2, Clock, Loader2, Server, Bot, Copy, Check } from 'lucide-react';
 import { useVirtualList } from '@/hooks/utility/useVirtualList';
 import hljs from 'highlight.js/lib/core';
 import json from 'highlight.js/lib/languages/json';
@@ -56,6 +56,7 @@ export default function EventLogList() {
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [copiedPayload, setCopiedPayload] = useState(false);
   const liveEventIds = useRef<Set<string>>(new Set());
 
   // Initial fetch for historical events
@@ -296,7 +297,7 @@ export default function EventLogList() {
           <DetailModal
             title={`Event: ${selectedEvent.event_type}`}
             subtitle={`Status: ${selectedEvent.status}`}
-            onClose={() => setSelectedEvent(null)}
+            onClose={() => { setSelectedEvent(null); setCopiedPayload(false); }}
           >
             <div className="space-y-4">
               {/* IDs & metadata */}
@@ -330,8 +331,36 @@ export default function EventLogList() {
               {/* Payload */}
               {selectedEvent.payload && (
                 <div>
-                  <span className="text-sm text-muted-foreground/80 block mb-1">Payload</span>
-                  <HighlightedJson raw={selectedEvent.payload} />
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm text-muted-foreground/80">Payload</span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(
+                          (() => { try { return JSON.stringify(JSON.parse(selectedEvent.payload!), null, 2); } catch { return selectedEvent.payload!; } })()
+                        ).then(() => {
+                          setCopiedPayload(true);
+                          setTimeout(() => setCopiedPayload(false), 2000);
+                        }).catch(() => {});
+                      }}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs text-muted-foreground/70 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
+                      title="Copy payload"
+                    >
+                      {copiedPayload ? (
+                        <>
+                          <Check className="w-3 h-3 text-emerald-400" />
+                          <span className="text-emerald-400">Copied</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3 h-3" />
+                          Copy
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <div className="rounded-xl border border-primary/10 bg-secondary/20 p-3 overflow-hidden">
+                    <HighlightedJson raw={selectedEvent.payload} />
+                  </div>
                 </div>
               )}
 

@@ -31,8 +31,8 @@ export function PersonaSettingsTab({
 }: PersonaSettingsTabProps) {
   return (
     <div className="max-w-3xl space-y-4">
-      {/* Identity */}
-      <div className="space-y-3">
+      {/* Identity — relative z-10 so icon/color picker popups render above cards below */}
+      <div className="space-y-3 relative z-10">
         <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
           <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
           Identity
@@ -110,13 +110,13 @@ export function PersonaSettingsTab({
                 <FieldHint
                   text="How long a single execution can run before being cancelled. Prevents stuck runs from consuming resources."
                   range="10–3600 seconds"
-                  example="300"
+                  example="1000"
                 />
               </label>
               <input
                 type="number"
                 value={Math.round(draft.timeout / 1000)}
-                onChange={(e) => patch({ timeout: (parseInt(e.target.value, 10) || 300) * 1000 })}
+                onChange={(e) => patch({ timeout: (parseInt(e.target.value, 10) || 1000) * 1000 })}
                 min={10}
                 step={10}
                 className="w-full px-3 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"

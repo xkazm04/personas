@@ -1,13 +1,9 @@
-import { useMemo, useRef, useEffect, useState, useCallback, useId, memo } from 'react';
+import { useMemo, useRef, useEffect, useState, useCallback, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
 import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
-import BusLane from './BusLane';
-import EventParticle from './EventParticle';
-import {
-  Mail, MessageSquare, Github, Calendar, CreditCard,
-  HardDrive, SquareKanban, Figma,
-} from 'lucide-react';
+
+// ── Types ────────────────────────────────────────────────────────
 
 interface PersonaInfo {
   id: string;
@@ -22,598 +18,487 @@ interface Props {
   onSelectEvent: (event: RealtimeEvent | null) => void;
 }
 
-interface NodePosition {
+interface SwarmNode {
   id: string;
   label: string;
   icon: string | null;
-  color: string | null;
+  color: string;
   x: number;
   y: number;
-  side: 'top' | 'bottom';
 }
 
-const PADDING_X = 40;
-const PADDING_Y = 36;
-const NODE_RADIUS = 22;
-const BUS_HEIGHT = 6;
-const MAX_LEGEND_ITEMS = 6;
+interface ProcessingInfo {
+  color: string;
+  durationMs: number;
+  startedAt: number;
+}
+
+interface ReturnFlow {
+  id: string;
+  fromX: number;
+  fromY: number;
+  toX: number;
+  toY: number;
+  color: string;
+  startedAt: number;
+}
+
+// ── Layout (viewBox 0–100) ───────────────────────────────────────
+
+const CX = 50;
+const CY = 50;
+const TOOL_RING_R = 42;
+const PERSONA_RING_R = 24;
+const TOOL_NODE_R = 3.5;
+const PERSONA_NODE_R = 4;
+const CORE_OUTER_R = 13;
+const CORE_INNER_R = 7;
+const PROGRESS_R = PERSONA_NODE_R + 1.8;
+const PROGRESS_CIRC = 2 * Math.PI * PROGRESS_R;
+
+const RETURN_FLOW_MS = 1800;
+
+// ── Default nodes ────────────────────────────────────────────────
+
+const DEFAULT_TOOLS = [
+  { id: 'def:gmail',     label: 'Gmail',     icon: null, color: '#ea4335' },
+  { id: 'def:slack',     label: 'Slack',     icon: null, color: '#611f69' },
+  { id: 'def:github',    label: 'GitHub',    icon: null, color: '#8b5cf6' },
+  { id: 'def:calendar',  label: 'Calendar',  icon: null, color: '#06b6d4' },
+  { id: 'def:jira',      label: 'Jira',      icon: null, color: '#0052cc' },
+  { id: 'def:drive',     label: 'Drive',     icon: null, color: '#34a853' },
+  { id: 'def:stripe',    label: 'Stripe',    icon: null, color: '#635bff' },
+  { id: 'def:figma',     label: 'Figma',     icon: null, color: '#f24e1e' },
+  { id: 'def:notion',    label: 'Notion',    icon: null, color: '#e0e0e0' },
+  { id: 'def:discord',   label: 'Discord',   icon: null, color: '#5865F2' },
+  { id: 'def:sentry',    label: 'Sentry',    icon: null, color: '#8456a6' },
+  { id: 'def:vercel',    label: 'Vercel',    icon: null, color: '#c8c8c8' },
+  { id: 'def:datadog',   label: 'Datadog',   icon: null, color: '#632CA6' },
+  { id: 'def:aws',       label: 'AWS',       icon: null, color: '#FF9900' },
+  { id: 'def:linear',    label: 'Linear',    icon: null, color: '#5E6AD2' },
+  { id: 'def:hubspot',   label: 'HubSpot',   icon: null, color: '#FF7A59' },
+];
+
+const DEFAULT_PERSONAS = [
+  { id: 'demo:inbox',    label: 'Inbox Triage',  icon: '📧', color: '#3b82f6' },
+  { id: 'demo:reviewer', label: 'Code Review',   icon: '🔍', color: '#8b5cf6' },
+  { id: 'demo:digest',   label: 'Slack Digest',  icon: '💬', color: '#06b6d4' },
+  { id: 'demo:router',   label: 'Task Router',   icon: '🔀', color: '#f59e0b' },
+  { id: 'demo:guard',    label: 'Deploy Guard',  icon: '🛡', color: '#10b981' },
+  { id: 'demo:reporter', label: 'Report Gen',    icon: '📊', color: '#ec4899' },
+];
 
 const EVENT_TYPE_LABELS: Record<string, string> = {
   webhook_received: 'Webhook',
   execution_completed: 'Execution',
-  persona_action: 'Persona Action',
+  persona_action: 'Action',
   credential_event: 'Credential',
-  task_created: 'Task Created',
-  test_event: 'Test Event',
+  task_created: 'Task',
+  test_event: 'Test',
   custom: 'Custom',
 };
 
-/** Default producer nodes shown when there are no real events (or for test flow). */
-const DEFAULT_PRODUCERS = [
-  { id: 'default:gmail', label: 'Gmail', icon: 'mail', color: '#ea4335' },
-  { id: 'default:slack', label: 'Slack', icon: 'slack', color: '#4a154b' },
-  { id: 'default:github', label: 'GitHub', icon: 'github', color: '#8b5cf6' },
-  { id: 'default:calendar', label: 'Calendar', icon: 'calendar', color: '#06b6d4' },
-];
+// ── Helpers ──────────────────────────────────────────────────────
 
-const DEFAULT_CONSUMERS = [
-  { id: 'default:jira', label: 'Jira', icon: 'jira', color: '#0052cc' },
-  { id: 'default:drive', label: 'Drive', icon: 'drive', color: '#34a853' },
-  { id: 'default:stripe', label: 'Stripe', icon: 'stripe', color: '#635bff' },
-  { id: 'default:figma', label: 'Figma', icon: 'figma', color: '#f24e1e' },
-];
+function distributeOnRing(
+  raw: { id: string; label: string; icon: string | null; color: string }[],
+  radius: number,
+  angleOffset = 0,
+): SwarmNode[] {
+  const count = raw.length;
+  if (count === 0) return [];
+  return raw.map((n, i) => {
+    const angle = angleOffset + (i * 2 * Math.PI) / count;
+    return { ...n, x: CX + radius * Math.cos(angle), y: CY + radius * Math.sin(angle) };
+  });
+}
 
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  mail: Mail,
-  slack: MessageSquare,
-  github: Github,
-  calendar: Calendar,
-  jira: SquareKanban,
-  drive: HardDrive,
-  stripe: CreditCard,
-  figma: Figma,
-};
+function iconChar(node: SwarmNode): string {
+  if (node.icon && node.icon.length <= 2) return node.icon;
+  return node.label[0]?.toUpperCase() ?? '?';
+}
 
-const NodeIcon = memo(function NodeIcon({ node }: { node: NodePosition }) {
-  const IconComp = node.icon ? ICON_MAP[node.icon] : null;
-  if (IconComp) {
-    return (
-      <foreignObject x={node.x - 8} y={node.y - 8} width={16} height={16}>
-        <IconComp className="w-4 h-4 text-white/80" />
-      </foreignObject>
-    );
-  }
-  return (
-    <text
-      x={node.x}
-      y={node.y}
-      textAnchor="middle"
-      dominantBaseline="central"
-      fill="white"
-      fontSize={12}
-      fontWeight="bold"
-      opacity={0.8}
-    >
-      {node.icon && node.icon.length <= 2 ? node.icon : (node.label[0]?.toUpperCase() ?? '?')}
-    </text>
-  );
-});
+function clampLabel(label: string, max: number): string {
+  return label.length > max ? label.slice(0, max - 1) + '\u2026' : label;
+}
+
+// ── Component ────────────────────────────────────────────────────
 
 export default function EventBusVisualization({ events, personas, onSelectEvent }: Props) {
   const uid = useId();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [dimensions, setDimensions] = useState({ width: 800, height: 400 });
 
-  // Responsive sizing — debounced via rAF to prevent resize thrashing
-  const dimensionsRef = useRef(dimensions);
-  const rafRef = useRef(0);
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const observer = new ResizeObserver(entries => {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = requestAnimationFrame(() => {
-        const entry = entries[0];
-        if (!entry) return;
-        const { width, height } = entry.contentRect;
-        if (width > 0 && height > 0) {
-          const w = Math.floor(width);
-          const h = Math.floor(height);
-          if (w !== dimensionsRef.current.width || h !== dimensionsRef.current.height) {
-            dimensionsRef.current = { width: w, height: h };
-            setDimensions({ width: w, height: h });
-          }
-        }
-      });
-    });
-    observer.observe(containerRef.current);
-    return () => { cancelAnimationFrame(rafRef.current); observer.disconnect(); };
-  }, []);
+  // ── Two rings ──────────────────────────────────────────────────
+  const toolNodes = useMemo(() => distributeOnRing(DEFAULT_TOOLS, TOOL_RING_R), []);
 
-  const { width, height } = dimensions;
-  const busY = height / 2;
-
-  // Build persona lookup
-  const personaMap = useMemo(() => {
-    const m = new Map<string, PersonaInfo>();
-    for (const p of personas) m.set(p.id, p);
-    return m;
+  const personaNodes = useMemo(() => {
+    const raw =
+      personas.length > 0
+        ? personas.slice(0, 12).map((p) => ({
+            id: p.id,
+            label: p.name,
+            icon: p.icon,
+            color: p.color ?? '#8b5cf6',
+          }))
+        : DEFAULT_PERSONAS;
+    const offset = Math.PI / Math.max(raw.length, 1);
+    return distributeOnRing(raw, PERSONA_RING_R, offset);
   }, [personas]);
 
-  // Compute producer and consumer nodes from events, falling back to defaults
-  const { producers, consumers } = useMemo(() => {
-    const sourceSet = new Map<string, { type: string; id: string | null }>();
-    const targetSet = new Set<string>();
-
-    for (const evt of events) {
-      const key = `${evt.source_type}:${evt.source_id ?? 'unknown'}`;
-      if (!sourceSet.has(key)) {
-        sourceSet.set(key, { type: evt.source_type, id: evt.source_id });
-      }
-      if (evt.target_persona_id) {
-        targetSet.add(evt.target_persona_id);
-      }
-    }
-
-    let producerArr: NodePosition[];
-    let consumerArr: NodePosition[];
-
-    if (sourceSet.size === 0) {
-      // Show default showcase nodes when no real events
-      producerArr = DEFAULT_PRODUCERS.map((d, i) => ({
-        id: d.id,
-        label: d.label,
-        icon: d.icon,
-        color: d.color,
-        x: PADDING_X + ((width - 2 * PADDING_X) / (DEFAULT_PRODUCERS.length + 1)) * (i + 1),
-        y: PADDING_Y + NODE_RADIUS,
-        side: 'top' as const,
-      }));
-      consumerArr = DEFAULT_CONSUMERS.map((d, i) => ({
-        id: d.id,
-        label: d.label,
-        icon: d.icon,
-        color: d.color,
-        x: PADDING_X + ((width - 2 * PADDING_X) / (DEFAULT_CONSUMERS.length + 1)) * (i + 1),
-        y: height - PADDING_Y - NODE_RADIUS,
-        side: 'bottom' as const,
-      }));
-    } else {
-      producerArr = [];
-      const sourceEntries = Array.from(sourceSet.entries()).slice(0, 8);
-      const pCount = Math.max(sourceEntries.length, 1);
-      sourceEntries.forEach(([key, val], i) => {
-        const persona = val.id ? personaMap.get(val.id) : null;
-        const sourceLabels: Record<string, string> = {
-          webhook: 'Webhook', execution: 'Execution', persona: 'Persona',
-          trigger: 'Trigger', system: 'System',
-        };
-        producerArr.push({
-          id: key,
-          label: persona?.name ?? sourceLabels[val.type] ?? val.type,
-          icon: persona?.icon ?? null,
-          color: persona?.color ?? null,
-          x: PADDING_X + ((width - 2 * PADDING_X) / (pCount + 1)) * (i + 1),
-          y: PADDING_Y + NODE_RADIUS,
-          side: 'top',
-        });
-      });
-
-      consumerArr = [];
-      const targetEntries = Array.from(targetSet).slice(0, 8);
-      const cCount = Math.max(targetEntries.length, 1);
-      targetEntries.forEach((pid, i) => {
-        const persona = personaMap.get(pid);
-        consumerArr.push({
-          id: pid,
-          label: persona?.name ?? pid.slice(0, 8),
-          icon: persona?.icon ?? null,
-          color: persona?.color ?? null,
-          x: PADDING_X + ((width - 2 * PADDING_X) / (cCount + 1)) * (i + 1),
-          y: height - PADDING_Y - NODE_RADIUS,
-          side: 'bottom',
-        });
-      });
-    }
-
-    return { producers: producerArr, consumers: consumerArr };
-  }, [events, personaMap, width, height]);
-
-  // Build position lookup for particles
-  const nodePositions = useMemo(() => {
+  // ── Position maps ──────────────────────────────────────────────
+  const toolPositionMap = useMemo(() => {
     const m = new Map<string, { x: number; y: number }>();
-    for (const p of producers) m.set(p.id, { x: p.x, y: p.y });
-    for (const c of consumers) m.set(c.id, { x: c.x, y: c.y });
+    for (const n of toolNodes) m.set(n.id, { x: n.x, y: n.y });
     return m;
-  }, [producers, consumers]);
+  }, [toolNodes]);
 
-  // Get source position for an event
-  const getSourcePos = useCallback((evt: RealtimeEvent) => {
-    const key = `${evt.source_type}:${evt.source_id ?? 'unknown'}`;
-    return nodePositions.get(key) ?? { x: width / 2, y: PADDING_Y + NODE_RADIUS };
-  }, [nodePositions, width]);
+  const personaPositionMap = useMemo(() => {
+    const m = new Map<string, { x: number; y: number }>();
+    for (const n of personaNodes) m.set(n.id, { x: n.x, y: n.y });
+    return m;
+  }, [personaNodes]);
 
-  // Get target position for an event
-  const getTargetPos = useCallback((evt: RealtimeEvent) => {
-    if (!evt.target_persona_id) return null;
-    return nodePositions.get(evt.target_persona_id) ?? null;
-  }, [nodePositions]);
-
-  // Derive active events, active node IDs, and seen types in a single pass
-  const { activeEvents, activeNodeIds, seenTypes } = useMemo(() => {
+  // ── Active events + seen types ─────────────────────────────────
+  const { activeEvents, seenTypes, inFlightCount } = useMemo(() => {
     const active: RealtimeEvent[] = [];
-    const nodeIds = new Set<string>();
     const types = new Set<string>();
     for (const e of events) {
       types.add(e.event_type);
-      if (e._phase !== 'done') {
-        active.push(e);
-        nodeIds.add(`${e.source_type}:${e.source_id ?? 'unknown'}`);
-        if (e.target_persona_id) nodeIds.add(e.target_persona_id);
-      }
+      if (e._phase !== 'done') active.push(e);
     }
-    return { activeEvents: active, activeNodeIds: nodeIds, seenTypes: [...types] };
+    return { activeEvents: active, seenTypes: [...types], inFlightCount: active.length };
   }, [events]);
 
-  // Ambient animated dots flowing across the bus (web-style visual)
-  const ambientDots = useMemo(() => {
-    const colors = ['#ea4335', '#4a154b', '#8b5cf6', '#06b6d4', '#0052cc', '#34a853', '#635bff', '#f24e1e'];
-    return Array.from({ length: 6 }, (_, i) => ({
-      color: colors[i % colors.length]!,
-      delay: i * 0.8,
-      duration: 2.5 + (i % 3) * 0.4,
-    }));
+  // ── Source / target helpers ────────────────────────────────────
+  const getSourcePos = useCallback(
+    (evt: RealtimeEvent) => {
+      if (evt.source_id) {
+        const p = toolPositionMap.get(evt.source_id) ?? toolPositionMap.get(`def:${evt.source_id}`);
+        if (p) return p;
+      }
+      const h = (evt.id.charCodeAt(0) + (evt.id.charCodeAt(1) || 0)) * 137.5;
+      const a = (h % 360) * (Math.PI / 180);
+      return { x: CX + TOOL_RING_R * Math.cos(a), y: CY + TOOL_RING_R * Math.sin(a) };
+    },
+    [toolPositionMap],
+  );
+
+  const getTargetPos = useCallback(
+    (evt: RealtimeEvent) => {
+      if (evt.target_persona_id) {
+        const pos = personaPositionMap.get(evt.target_persona_id);
+        if (pos) return pos;
+      }
+      // Assign to a deterministic persona node
+      const idx = evt.id.charCodeAt(0) % personaNodes.length;
+      const pn = personaNodes[idx];
+      return pn ? { x: pn.x, y: pn.y } : null;
+    },
+    [personaPositionMap, personaNodes],
+  );
+
+  // ── Processing state + return flows ────────────────────────────
+  const [processingSet, setProcessingSet] = useState<Map<string, ProcessingInfo>>(new Map());
+  const [returnFlows, setReturnFlows] = useState<ReturnFlow[]>([]);
+  const spawnedRef = useRef(new Set<string>());
+  const timeoutsRef = useRef<number[]>([]);
+
+  useEffect(() => () => { timeoutsRef.current.forEach(clearTimeout); }, []);
+
+  // Spawn processing + return flow when event reaches persona
+  useEffect(() => {
+    for (const evt of activeEvents) {
+      if (evt._phase !== 'delivering') continue;
+      if (spawnedRef.current.has(evt._animationId)) continue;
+      spawnedRef.current.add(evt._animationId);
+      if (spawnedRef.current.size > 200) spawnedRef.current.clear();
+
+      const color = EVENT_TYPE_HEX_COLORS[evt.event_type] ?? '#818cf8';
+      const tgt = getTargetPos(evt);
+      const src = getSourcePos(evt);
+      if (!tgt) continue;
+
+      // Resolve persona ID for processing indicator
+      const personaId = evt.target_persona_id
+        ?? personaNodes[evt.id.charCodeAt(0) % personaNodes.length]?.id
+        ?? 'unknown';
+
+      const durationMs = 1200 + Math.random() * 1800; // 1.2–3s
+
+      // Start circular progress on persona
+      setProcessingSet((prev) => {
+        const next = new Map(prev);
+        next.set(personaId, { color, durationMs, startedAt: Date.now() });
+        return next;
+      });
+
+      // After processing: remove indicator → spawn return particle
+      const tid = window.setTimeout(() => {
+        setProcessingSet((prev) => {
+          const next = new Map(prev);
+          next.delete(personaId);
+          return next;
+        });
+        setReturnFlows((prev) => [
+          ...prev,
+          { id: `ret-${evt._animationId}`, fromX: tgt.x, fromY: tgt.y, toX: src.x, toY: src.y, color, startedAt: Date.now() },
+        ]);
+      }, durationMs);
+      timeoutsRef.current.push(tid);
+    }
+  }, [activeEvents, getSourcePos, getTargetPos, personaNodes]);
+
+  // Prune finished return flows
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = Date.now();
+      setReturnFlows((prev) => {
+        const next = prev.filter((f) => now - f.startedAt < RETURN_FLOW_MS);
+        return next.length !== prev.length ? next : prev;
+      });
+    }, 300);
+    return () => clearInterval(timer);
   }, []);
 
-  // (renderNodeIcon extracted to NodeIcon component below)
+  // Are there any active flows? (used to light up connections)
+  const hasTraffic = activeEvents.length > 0 || returnFlows.length > 0 || processingSet.size > 0;
 
   return (
-    <div ref={containerRef} className="w-full h-full relative min-h-[280px]">
-      <svg
-        width={width}
-        height={height}
-        viewBox={`0 0 ${width} ${height}`}
-        className="absolute inset-0"
-      >
-        {/* Gradient definitions */}
+    <div className="w-full h-full relative min-h-[280px]">
+      <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
         <defs>
-          <linearGradient id={`${uid}-busGrad`} x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="rgba(6, 182, 212, 0)" />
-            <stop offset="15%" stopColor="rgba(6, 182, 212, 0.12)" />
-            <stop offset="50%" stopColor="rgba(168, 85, 247, 0.10)" />
-            <stop offset="85%" stopColor="rgba(6, 182, 212, 0.12)" />
-            <stop offset="100%" stopColor="rgba(6, 182, 212, 0)" />
-          </linearGradient>
-          <linearGradient id="busGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="rgba(139, 92, 246, 0)" />
-            <stop offset="15%" stopColor="rgba(139, 92, 246, 0.5)" />
-            <stop offset="50%" stopColor="rgba(139, 92, 246, 0.7)" />
-            <stop offset="85%" stopColor="rgba(139, 92, 246, 0.5)" />
-            <stop offset="100%" stopColor="rgba(139, 92, 246, 0)" />
-          </linearGradient>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
+          <filter id={`${uid}-glow`}>
+            <feGaussianBlur stdDeviation="1.5" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
-          <filter id="particleGlow">
-            <feGaussianBlur stdDeviation="2" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
+          <filter id={`${uid}-pGlow`}>
+            <feGaussianBlur stdDeviation="0.6" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
-          <clipPath id={`${uid}-busClip`}>
-            <rect
-              x={PADDING_X}
-              y={busY - BUS_HEIGHT * 2}
-              width={width - 2 * PADDING_X}
-              height={BUS_HEIGHT * 4}
-              rx={BUS_HEIGHT}
-            />
-          </clipPath>
+          <radialGradient id={`${uid}-coreGrad`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor={hasTraffic ? 'rgba(6,182,212,0.4)' : 'rgba(6,182,212,0.2)'} />
+            <stop offset="40%" stopColor={hasTraffic ? 'rgba(168,85,247,0.2)' : 'rgba(168,85,247,0.08)'} />
+            <stop offset="100%" stopColor="rgba(6,182,212,0)" />
+          </radialGradient>
         </defs>
 
-        {/* Connection lines from producer nodes to bus — with arrow tips */}
-        {producers.map(node => {
-          const isActive = activeNodeIds.has(node.id);
-          const nodeColor = node.color ?? '#8b5cf6';
-          return (
-            <g key={`conn-prod-${node.id}`}>
-              <line
-                x1={node.x}
-                y1={node.y + NODE_RADIUS}
-                x2={node.x}
-                y2={busY - BUS_HEIGHT * 2}
-                stroke={isActive ? `${nodeColor}50` : 'rgba(255,255,255,0.06)'}
-                strokeWidth={isActive ? 1.5 : 0.8}
-                strokeDasharray="4 4"
-                className="transition-all duration-500"
-              />
-              <polygon
-                points={`${node.x - 4},${busY - BUS_HEIGHT * 2 - 4} ${node.x},${busY - BUS_HEIGHT * 2} ${node.x + 4},${busY - BUS_HEIGHT * 2 - 4}`}
-                fill={isActive ? `${nodeColor}40` : 'rgba(255,255,255,0.08)'}
-              />
-              {/* Animated dot flowing from producer to bus */}
-              {isActive && (
-                <motion.circle
-                  r={2.5}
-                  fill={nodeColor}
-                  cx={node.x}
-                  filter="url(#particleGlow)"
-                  initial={{ cy: node.y + NODE_RADIUS, opacity: 0 }}
-                  animate={{ cy: [node.y + NODE_RADIUS, busY - BUS_HEIGHT * 2], opacity: [0, 0.9, 0.9, 0] }}
-                  transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 2.5, ease: 'linear' }}
-                />
-              )}
-            </g>
-          );
-        })}
-
-        {/* Connection lines from bus to consumer nodes */}
-        {consumers.map(node => {
-          const isActive = activeNodeIds.has(node.id);
-          const nodeColor = node.color ?? '#8b5cf6';
-          return (
-            <g key={`conn-cons-${node.id}`}>
-              <line
-                x1={node.x}
-                y1={busY + BUS_HEIGHT * 2}
-                x2={node.x}
-                y2={node.y - NODE_RADIUS}
-                stroke={isActive ? `${nodeColor}50` : 'rgba(255,255,255,0.06)'}
-                strokeWidth={isActive ? 1.5 : 0.8}
-                strokeDasharray="4 4"
-                className="transition-all duration-500"
-              />
-              <polygon
-                points={`${node.x - 4},${node.y - NODE_RADIUS + 4} ${node.x},${node.y - NODE_RADIUS} ${node.x + 4},${node.y - NODE_RADIUS + 4}`}
-                fill={isActive ? `${nodeColor}40` : 'rgba(255,255,255,0.08)'}
-              />
-              {/* Animated dot flowing from bus to consumer */}
-              {isActive && (
-                <motion.circle
-                  r={2.5}
-                  fill={nodeColor}
-                  cx={node.x}
-                  filter="url(#particleGlow)"
-                  initial={{ cy: busY + BUS_HEIGHT * 2, opacity: 0 }}
-                  animate={{ cy: [busY + BUS_HEIGHT * 2, node.y - NODE_RADIUS], opacity: [0, 0.9, 0.9, 0] }}
-                  transition={{ duration: 1.8, delay: 0.3, repeat: Infinity, repeatDelay: 2.5, ease: 'linear' }}
-                />
-              )}
-            </g>
-          );
-        })}
-
-        {/* Bus lane */}
-        <BusLane
-          x={PADDING_X}
-          y={busY}
-          width={width - 2 * PADDING_X}
-          height={BUS_HEIGHT}
-          isActive={activeEvents.length > 0}
+        {/* ═══ Central Core ═══ */}
+        <circle cx={CX} cy={CY} r={CORE_OUTER_R} fill={`url(#${uid}-coreGrad)`} />
+        <circle
+          cx={CX} cy={CY} r={CORE_INNER_R}
+          fill="rgba(255,255,255,0.03)"
+          stroke={hasTraffic ? 'rgba(6,182,212,0.4)' : 'rgba(6,182,212,0.15)'}
+          strokeWidth="0.4"
+          className="transition-all duration-700"
         />
+        {/* Slow idle pulse */}
+        <circle cx={CX} cy={CY} r={CORE_INNER_R + 2} fill="none" stroke="rgba(6,182,212,0.08)" strokeWidth="0.15">
+          <animate attributeName="r" values={`${CORE_INNER_R + 1};${CORE_INNER_R + 2.5};${CORE_INNER_R + 1}`} dur="5s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.12;0.03;0.12" dur="5s" repeatCount="indefinite" />
+        </circle>
+        <text x={CX} y={CY + 0.6} textAnchor="middle" dominantBaseline="middle" fill={hasTraffic ? 'rgba(6,182,212,0.8)' : 'rgba(6,182,212,0.4)'} fontSize="2.4" fontFamily="monospace" letterSpacing="0.15em" className="transition-all duration-700">
+          BUS
+        </text>
 
-        {/* Ambient flowing dots across the bus (web-style visual) */}
-        <g clipPath={`url(#${uid}-busClip)`}>
-          {ambientDots.map((dot, i) => (
-            <motion.circle
-              key={`ambient-${i}`}
-              r={2}
-              cy={busY}
-              fill={dot.color}
-              opacity={0.6}
-              filter="url(#particleGlow)"
-              initial={{ cx: PADDING_X - 10 }}
-              animate={{ cx: [PADDING_X - 10, width - PADDING_X + 10] }}
-              transition={{
-                duration: dot.duration,
-                delay: dot.delay,
-                repeat: Infinity,
-                repeatDelay: 1.5,
-                ease: 'linear',
-              }}
-            />
-          ))}
-        </g>
-
-        {/* Direction arrow on bus */}
-        <polygon
-          points={`${width - PADDING_X - 6},${busY - 4} ${width - PADDING_X},${busY} ${width - PADDING_X - 6},${busY + 4}`}
-          fill="rgba(6, 182, 212, 0.25)"
-        />
-
-        {/* Producer nodes — concentric circles (web style) */}
-        {producers.map(node => {
-          const isActive = activeNodeIds.has(node.id);
-          const nodeColor = node.color ?? '#6366f1';
-          return (
-            <g key={`node-prod-${node.id}`}>
-              {/* Outer glow ring */}
-              <circle
-                cx={node.x}
-                cy={node.y}
-                r={NODE_RADIUS}
-                fill={`${nodeColor}08`}
-                stroke={nodeColor}
-                strokeWidth={isActive ? 1.5 : 0.6}
-                opacity={isActive ? 0.9 : 0.5}
-                className="transition-all duration-500"
-              />
-              {/* Active glow halo */}
-              {isActive && (
-                <circle
-                  cx={node.x}
-                  cy={node.y}
-                  r={NODE_RADIUS + 4}
-                  fill="none"
-                  stroke={nodeColor}
-                  strokeWidth={0.5}
-                  opacity={0.2}
-                >
-                  <animate
-                    attributeName="opacity"
-                    values="0.1;0.3;0.1"
-                    dur="2s"
-                    repeatCount="indefinite"
-                  />
-                </circle>
-              )}
-              {/* Inner filled circle */}
-              <circle
-                cx={node.x}
-                cy={node.y}
-                r={NODE_RADIUS * 0.45}
-                fill={nodeColor}
-                opacity={0.85}
-              />
-              {/* Icon */}
-              <NodeIcon node={node} />
-            </g>
-          );
-        })}
-
-        {/* Consumer nodes — concentric circles (web style) */}
-        {consumers.map(node => {
-          const isActive = activeNodeIds.has(node.id);
-          const nodeColor = node.color ?? '#6366f1';
-          return (
-            <g key={`node-cons-${node.id}`}>
-              <circle
-                cx={node.x}
-                cy={node.y}
-                r={NODE_RADIUS}
-                fill={`${nodeColor}08`}
-                stroke={nodeColor}
-                strokeWidth={isActive ? 1.5 : 0.6}
-                opacity={isActive ? 0.9 : 0.5}
-                className="transition-all duration-500"
-              />
-              {isActive && (
-                <circle
-                  cx={node.x}
-                  cy={node.y}
-                  r={NODE_RADIUS + 4}
-                  fill="none"
-                  stroke={nodeColor}
-                  strokeWidth={0.5}
-                  opacity={0.2}
-                >
-                  <animate
-                    attributeName="opacity"
-                    values="0.1;0.3;0.1"
-                    dur="2s"
-                    repeatCount="indefinite"
-                  />
-                </circle>
-              )}
-              <circle
-                cx={node.x}
-                cy={node.y}
-                r={NODE_RADIUS * 0.45}
-                fill={nodeColor}
-                opacity={0.85}
-              />
-              <NodeIcon node={node} />
-            </g>
-          );
-        })}
-
-        {/* Event particles */}
-        {activeEvents.map(evt => (
-          <EventParticle
-            key={evt._animationId}
-            event={evt}
-            sourcePos={getSourcePos(evt)}
-            busY={busY}
-            targetPos={getTargetPos(evt)}
-            color={EVENT_TYPE_HEX_COLORS[evt.event_type] ?? '#818cf8'}
-            onClick={() => onSelectEvent(evt)}
-          />
+        {/* ═══ Outer Ring — Tool Nodes (static, quiet) ═══ */}
+        {toolNodes.map((node) => (
+          <g key={node.id} opacity={0.65}>
+            {/* Connection line */}
+            <line x1={node.x} y1={node.y} x2={CX} y2={CY} stroke="rgba(255,255,255,0.03)" strokeWidth="0.15" strokeDasharray="0.8 1.5" />
+            {/* Node */}
+            <circle cx={node.x} cy={node.y} r={TOOL_NODE_R} fill={`${node.color}18`} stroke={node.color} strokeWidth="0.2" />
+            <text x={node.x} y={node.y + 0.5} textAnchor="middle" dominantBaseline="middle" fill="rgba(255,255,255,0.7)" fontSize="2.4" fontFamily="monospace">
+              {iconChar(node)}
+            </text>
+            <text x={node.x} y={node.y + TOOL_NODE_R + 2.2} textAnchor="middle" fill="rgba(255,255,255,0.35)" fontSize="1.5" fontFamily="monospace">
+              {clampLabel(node.label, 9)}
+            </text>
+          </g>
         ))}
+
+        {/* ═══ Middle Ring — Persona Nodes (static + breathing) ═══ */}
+        {personaNodes.map((node, i) => {
+          const proc = processingSet.get(node.id);
+          return (
+            <g key={node.id}>
+              {/* Connection line */}
+              <line x1={node.x} y1={node.y} x2={CX} y2={CY} stroke={`${node.color}0a`} strokeWidth="0.2" strokeDasharray="1 2" />
+
+              {/* Subtle idle breathing */}
+              <circle cx={node.x} cy={node.y} r={PERSONA_NODE_R + 0.5} fill="none" stroke={node.color} strokeWidth="0.1" opacity={0.1}>
+                <animate attributeName="r" values={`${PERSONA_NODE_R + 0.3};${PERSONA_NODE_R + 1};${PERSONA_NODE_R + 0.3}`} dur={`${4 + (i % 2)}s`} repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0.1;0.02;0.1" dur={`${4 + (i % 2)}s`} repeatCount="indefinite" />
+              </circle>
+
+              {/* Node body */}
+              <circle cx={node.x} cy={node.y} r={PERSONA_NODE_R} fill={`${node.color}15`} stroke={node.color} strokeWidth="0.3" opacity={0.9} />
+              <circle cx={node.x} cy={node.y} r={PERSONA_NODE_R * 0.5} fill={node.color} opacity={0.55} />
+
+              {/* Icon */}
+              <text x={node.x} y={node.y + 0.5} textAnchor="middle" dominantBaseline="middle" fill="rgba(255,255,255,0.85)" fontSize={node.icon && node.icon.length <= 2 ? '3' : '2.6'} fontFamily="monospace">
+                {iconChar(node)}
+              </text>
+              {/* Label */}
+              <text x={node.x} y={node.y + PERSONA_NODE_R + 2.4} textAnchor="middle" fill="rgba(255,255,255,0.55)" fontSize="1.5" fontFamily="monospace" fontWeight="500">
+                {clampLabel(node.label, 10)}
+              </text>
+
+              {/* ── Circular progress arc (processing) ── */}
+              {proc && (
+                <g>
+                  {/* Track ring (dim background) */}
+                  <circle
+                    cx={node.x} cy={node.y} r={PROGRESS_R}
+                    fill="none" stroke={`${proc.color}20`} strokeWidth="0.5"
+                  />
+                  {/* Animated fill arc — dashoffset goes from full to 0 */}
+                  <motion.circle
+                    cx={node.x} cy={node.y} r={PROGRESS_R}
+                    fill="none"
+                    stroke={proc.color}
+                    strokeWidth="0.5"
+                    strokeLinecap="round"
+                    style={{
+                      strokeDasharray: PROGRESS_CIRC,
+                      transformOrigin: `${node.x}px ${node.y}px`,
+                      transform: `rotate(-90deg)`,
+                    }}
+                    initial={{ strokeDashoffset: PROGRESS_CIRC }}
+                    animate={{ strokeDashoffset: 0 }}
+                    transition={{ duration: proc.durationMs / 1000, ease: 'linear' }}
+                  />
+                  {/* Glow halo while processing */}
+                  <circle cx={node.x} cy={node.y} r={PERSONA_NODE_R + 0.5} fill="none" stroke={proc.color} strokeWidth="0.15" opacity={0.35}>
+                    <animate attributeName="opacity" values="0.35;0.1;0.35" dur="0.7s" repeatCount="indefinite" />
+                  </circle>
+                </g>
+              )}
+            </g>
+          );
+        })}
+
+        {/* ═══ Inbound Particles (tool → center → persona) ═══ */}
+        {activeEvents.map((evt) => {
+          const src = getSourcePos(evt);
+          const tgt = getTargetPos(evt);
+          const color = EVENT_TYPE_HEX_COLORS[evt.event_type] ?? '#818cf8';
+          const pColor = evt.status === 'failed' ? '#ef4444' : color;
+          const isDone = evt._phase === 'done';
+
+          let tx: number, ty: number;
+          switch (evt._phase) {
+            case 'entering': case 'on-bus':
+              tx = CX; ty = CY; break;
+            case 'delivering': default:
+              tx = tgt?.x ?? CX; ty = tgt?.y ?? CY;
+          }
+
+          return (
+            <g key={evt._animationId} onClick={() => onSelectEvent(evt)} style={{ cursor: 'pointer' }}>
+              <motion.circle
+                initial={{ cx: src.x, cy: src.y }}
+                animate={{ cx: tx, cy: ty, opacity: isDone ? 0 : 0.2 }}
+                transition={{ duration: 0.7, ease: 'easeInOut' }}
+                r={1.8} fill={pColor}
+              />
+              <motion.circle
+                initial={{ cx: src.x, cy: src.y }}
+                animate={{ cx: tx, cy: ty, opacity: isDone ? 0 : 1 }}
+                transition={{ duration: 0.6, ease: 'easeInOut' }}
+                r={1} fill={pColor} filter={`url(#${uid}-glow)`}
+              />
+              <motion.circle
+                initial={{ cx: src.x, cy: src.y }}
+                animate={{ cx: tx, cy: ty, opacity: isDone ? 0 : 0.9 }}
+                transition={{ duration: 0.6, ease: 'easeInOut' }}
+                r={0.35} fill="white"
+              />
+              {evt._phase === 'delivering' && (evt.status === 'completed' || evt.status === 'failed') && (
+                <motion.circle
+                  initial={{ r: 1, opacity: 0.5 }}
+                  animate={{ r: 4, opacity: 0 }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                  cx={tx} cy={ty} fill="none" stroke={pColor} strokeWidth={0.25}
+                />
+              )}
+            </g>
+          );
+        })}
+
+        {/* ═══ Return-Flow Particles (persona → center → tool) ═══ */}
+        <AnimatePresence>
+          {returnFlows.map((flow) => (
+            <motion.g key={flow.id} initial={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <motion.circle
+                r={1.4} fill={flow.color} opacity={0.15}
+                initial={{ cx: flow.fromX, cy: flow.fromY }}
+                animate={{ cx: [flow.fromX, CX, flow.toX], cy: [flow.fromY, CY, flow.toY] }}
+                transition={{ duration: RETURN_FLOW_MS / 1000, times: [0, 0.4, 1], ease: 'easeInOut' }}
+              />
+              <motion.circle
+                r={0.8} fill={flow.color} filter={`url(#${uid}-glow)`}
+                initial={{ cx: flow.fromX, cy: flow.fromY, opacity: 0.9 }}
+                animate={{ cx: [flow.fromX, CX, flow.toX], cy: [flow.fromY, CY, flow.toY], opacity: [0.9, 1, 0.7] }}
+                transition={{ duration: RETURN_FLOW_MS / 1000, times: [0, 0.4, 1], ease: 'easeInOut' }}
+              />
+              <motion.circle
+                r={0.3} fill="white"
+                initial={{ cx: flow.fromX, cy: flow.fromY }}
+                animate={{ cx: [flow.fromX, CX, flow.toX], cy: [flow.fromY, CY, flow.toY] }}
+                transition={{ duration: RETURN_FLOW_MS / 1000, times: [0, 0.4, 1], ease: 'easeInOut' }}
+              />
+              <motion.circle
+                cx={flow.toX} cy={flow.toY}
+                fill="none" stroke={flow.color} strokeWidth={0.2}
+                initial={{ r: 0.8, opacity: 0 }}
+                animate={{ r: 3.5, opacity: [0, 0.4, 0] }}
+                transition={{ duration: 0.5, delay: (RETURN_FLOW_MS / 1000) * 0.85, ease: 'easeOut' }}
+              />
+            </motion.g>
+          ))}
+        </AnimatePresence>
+
+        {/* ═══ Badges ═══ */}
+        {/* In-flight events (right) */}
+        <rect x={72} y={91} width={24} height={5} rx={2.5} fill="rgba(6,182,212,0.08)" stroke="rgba(6,182,212,0.15)" strokeWidth="0.3" />
+        <text x={84} y={93.8} textAnchor="middle" dominantBaseline="middle" fill={inFlightCount > 0 ? 'rgba(6,182,212,0.9)' : 'rgba(6,182,212,0.4)'} fontSize="2.2" fontFamily="monospace" letterSpacing="0.06em">
+          {inFlightCount} in-flight
+        </text>
+
+        {/* Agent count (left) */}
+        <rect x={4} y={91} width={24} height={5} rx={2.5} fill="rgba(168,85,247,0.08)" stroke="rgba(168,85,247,0.15)" strokeWidth="0.3" />
+        <text x={16} y={93.8} textAnchor="middle" dominantBaseline="middle" fill="rgba(168,85,247,0.6)" fontSize="2.2" fontFamily="monospace" letterSpacing="0.06em">
+          {personaNodes.length} agents
+        </text>
       </svg>
 
-      {/* Producer labels as HTML overlays */}
-      {producers.map(node => (
-        <div
-          key={`label-prod-${node.id}`}
-          className="absolute flex flex-col items-center pointer-events-none"
-          style={{
-            left: node.x - 40,
-            top: node.y - NODE_RADIUS - 6,
-            width: 80,
-            transform: 'translateY(-100%)',
-          }}
-        >
-          <span className="text-[11px] font-medium text-foreground/80 truncate max-w-[80px] text-center" title={node.label}>
-            {node.label}
-          </span>
-          <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/40 mt-0.5">
-            producer
-          </span>
-        </div>
-      ))}
-
-      {/* Consumer labels as HTML overlays */}
-      {consumers.map(node => (
-        <div
-          key={`label-cons-${node.id}`}
-          className="absolute flex flex-col items-center pointer-events-none"
-          style={{
-            left: node.x - 40,
-            top: node.y + NODE_RADIUS + 6,
-            width: 80,
-          }}
-        >
-          <span className="text-[11px] font-medium text-foreground/80 truncate max-w-[80px] text-center" title={node.label}>
-            {node.label}
-          </span>
-          <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/40 mt-0.5">
-            consumer
-          </span>
-        </div>
-      ))}
-
-      {/* Event type color legend */}
+      {/* ── Legend (only when traffic flowing) ── */}
       {seenTypes.length > 0 && (
-        <div className="absolute bottom-3 left-3 z-10 bg-background/80 backdrop-blur-sm border border-primary/10 rounded-lg px-3 py-2">
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 bg-background/80 backdrop-blur-sm border border-primary/10 rounded-lg px-3 py-2 flex items-center gap-3">
           <AnimatePresence initial={false}>
-            {seenTypes.slice(0, MAX_LEGEND_ITEMS).map((type) => (
+            {seenTypes.slice(0, 6).map((type) => (
               <motion.div
                 key={type}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -8 }}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ duration: 0.2 }}
-                className="flex items-center gap-2 py-0.5"
+                className="flex items-center gap-1.5"
               >
-                <div
-                  className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: EVENT_TYPE_HEX_COLORS[type] ?? '#818cf8' }}
-                />
-                <span className="text-sm font-mono text-muted-foreground/80">
-                  {EVENT_TYPE_LABELS[type] ?? type.replace(/_/g, ' ')}
-                </span>
+                <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: EVENT_TYPE_HEX_COLORS[type] ?? '#818cf8' }} />
+                <span className="text-[10px] font-mono text-muted-foreground/80">{EVENT_TYPE_LABELS[type] ?? type.replace(/_/g, ' ')}</span>
               </motion.div>
             ))}
           </AnimatePresence>
-          {seenTypes.length > MAX_LEGEND_ITEMS && (
-            <div className="text-sm font-mono text-muted-foreground/80 pt-0.5">
-              +{seenTypes.length - MAX_LEGEND_ITEMS} more
-            </div>
-          )}
         </div>
       )}
 
-      {/* Empty state overlay — centered message under the visualization */}
+      {/* ── Idle empty state ── */}
       {events.length === 0 && (
         <div className="absolute bottom-4 left-0 right-0 flex justify-center pointer-events-none">
           <div className="flex items-center gap-2 bg-background/60 backdrop-blur-sm border border-primary/10 rounded-lg px-4 py-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-            <span className="text-sm text-muted-foreground/80">
-              Waiting for events — click <span className="font-medium text-purple-300">Test Flow</span> to simulate traffic
+            <span className="w-1.5 h-1.5 rounded-full bg-brand-cyan/40" />
+            <span className="text-[11px] text-muted-foreground/60">
+              Idle — click <span className="font-medium text-purple-300/80">Test Flow</span> to simulate traffic
             </span>
           </div>
         </div>

@@ -2,7 +2,7 @@ import type { StateCreator } from "zustand";
 import type { PersonaStore } from "../storeTypes";
 import { errMsg } from "../storeTypes";
 import type { DbPersonaMemory } from "@/lib/types/types";
-import type { MemoryStats } from "@/api/memories";
+import type { MemoryStats, MemoryReviewResult } from "@/api/memories";
 import * as api from "@/api/tauriApi";
 
 export interface MemorySlice {
@@ -15,6 +15,7 @@ export interface MemorySlice {
   fetchMemories: (filters?: { persona_id?: string; category?: string; search?: string }) => Promise<void>;
   createMemory: (input: { persona_id: string; title: string; content: string; category: string; importance: number; tags: string[] }) => Promise<void>;
   deleteMemory: (id: string) => Promise<void>;
+  reviewMemories: (personaId?: string) => Promise<MemoryReviewResult>;
 }
 
 export const createMemorySlice: StateCreator<PersonaStore, [], [], MemorySlice> = (set) => ({
@@ -73,5 +74,13 @@ export const createMemorySlice: StateCreator<PersonaStore, [], [], MemorySlice> 
     } catch (err) {
       set({ error: errMsg(err, "Failed to delete memory") });
     }
+  },
+
+  reviewMemories: async (personaId?) => {
+    const result = await api.reviewMemoriesWithCli(personaId);
+    // Refresh memories list after review
+    const store = (await import("../personaStore")).usePersonaStore.getState();
+    await store.fetchMemories();
+    return result;
   },
 });

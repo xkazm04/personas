@@ -344,6 +344,8 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
   const prefersReducedMotion = useReducedMotion();
   const loginWithGoogle = useAuthStore((s) => s.loginWithGoogle);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const authLoading = useAuthStore((s) => s.isLoading);
+  const authError = useAuthStore((s) => s.error);
   const { nodeState, claudeState, install } = useAutoInstaller();
   const [showOllamaPopup, setShowOllamaPopup] = useState(false);
   const [showLiteLLMPopup, setShowLiteLLMPopup] = useState(false);
@@ -619,14 +621,22 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
                     ))}
 
                     {showSignIn && (
-                      <div className="px-4 py-2.5">
+                      <div className="px-4 py-2.5 space-y-1.5">
                         <button
                           onClick={handleSignIn}
-                          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 transition-colors"
+                          disabled={authLoading}
+                          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 transition-colors disabled:opacity-50"
                         >
-                          <Chrome className="w-3.5 h-3.5" />
-                          Sign in with Google
+                          {authLoading ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Chrome className="w-3.5 h-3.5" />
+                          )}
+                          {authLoading ? 'Signing in...' : 'Sign in with Google'}
                         </button>
+                        {authError && (
+                          <p className="text-xs text-red-400/80">{authError}</p>
+                        )}
                       </div>
                     )}
                   </div>

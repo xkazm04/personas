@@ -70,7 +70,7 @@ export function buildDraft(persona: { name: string; description?: string | null;
     icon: persona.icon || '',
     color: persona.color || '#8b5cf6',
     maxConcurrent: persona.max_concurrent || 1,
-    timeout: persona.timeout_ms || 300000,
+    timeout: persona.timeout_ms || 1000000,
     enabled: persona.enabled,
     selectedModel,
     selectedProvider: provider,

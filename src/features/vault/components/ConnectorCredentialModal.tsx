@@ -113,7 +113,7 @@ export function ConnectorCredentialModal({
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
             {connectorDefinition?.icon_url ? (
-              <img src={connectorDefinition.icon_url} alt={label} className="w-7 h-7" />
+              <img src={connectorDefinition.icon_url} alt={label} className="w-7 h-7" referrerPolicy="no-referrer" crossOrigin="anonymous" />
             ) : (
               <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Plug className="w-4 h-4 text-primary/60" />

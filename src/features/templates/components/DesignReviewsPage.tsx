@@ -5,7 +5,6 @@ import { useDesignReviews } from '@/hooks/design/useDesignReviews';
 import { usePersonaStore } from '@/stores/personaStore';
 import DesignReviewRunner from '@/features/templates/sub_generated/DesignReviewRunner';
 import GeneratedReviewsTab from '@/features/templates/sub_generated/GeneratedReviewsTab';
-import BuiltinTemplatesTab from '@/features/templates/sub_builtin/BuiltinTemplatesTab';
 import N8nImportTab from '@/features/templates/sub_n8n/N8nImportTab';
 import { ErrorBoundary } from '@/features/shared/components/ErrorBoundary';
 import ActivityDiagramModal from '@/features/triggers/components/ActivityDiagramModal';
@@ -151,7 +150,6 @@ export default function DesignReviewsPage() {
 
       {/* Tab content */}
       <ContentBody noPadding>
-        {activeTab === 'builtin' && <BuiltinTemplatesTab />}
         {activeTab === 'n8n' && (
           <ErrorBoundary name="n8n Import">
             <N8nImportTab />

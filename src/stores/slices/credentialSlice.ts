@@ -11,6 +11,7 @@ import {
   parseConnectorDefinition as parseConn,
 } from "@/lib/types/types";
 import * as api from "@/api/tauriApi";
+import { encryptWithSessionKey } from "@/lib/utils/crypto";
 
 export interface CredentialSlice {
   // State
@@ -21,7 +22,9 @@ export interface CredentialSlice {
   // Actions
   fetchCredentials: () => Promise<void>;
   createCredential: (input: { name: string; service_type: string; data: object }) => Promise<string | undefined>;
+  updateCredential: (id: string, input: { name?: string; service_type?: string; data?: object }) => Promise<void>;
   deleteCredential: (id: string) => Promise<void>;
+  updateCredentialField: (id: string, key: string, value: string, isSensitive: boolean) => Promise<void>;
   healthcheckCredential: (credentialId: string) => Promise<{ success: boolean; message: string }>;
   healthcheckCredentialPreview: (serviceType: string, fieldValues: Record<string, string>) => Promise<{ success: boolean; message: string }>;
   fetchConnectorDefinitions: () => Promise<void>;
@@ -62,12 +65,16 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
 
   createCredential: async (input) => {
     try {
+      // Encrypt the sensitive data payload before sending over IPC
+      const session_encrypted_data = await encryptWithSessionKey(JSON.stringify(input.data));
+      
       const created = await api.createCredential({
         name: input.name,
         service_type: input.service_type,
-        encrypted_data: JSON.stringify(input.data),
+        encrypted_data: "", // Sent as session_encrypted_data instead
         iv: "",
         metadata: null,
+        session_encrypted_data,
       });
       get().fetchCredentials();
       return created.id;
@@ -77,12 +84,48 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
     }
   },
 
+  updateCredential: async (id, input) => {
+    try {
+      let session_encrypted_data: string | undefined = undefined;
+      if (input.data) {
+        session_encrypted_data = await encryptWithSessionKey(JSON.stringify(input.data));
+      }
+
+      await api.updateCredential(id, {
+        name: input.name ?? null,
+        service_type: input.service_type ?? null,
+        encrypted_data: null,
+        iv: null,
+        metadata: null,
+        session_encrypted_data: session_encrypted_data ?? null,
+      });
+      get().fetchCredentials();
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to update credential") });
+    }
+  },
+
   deleteCredential: async (id) => {
     await api.deleteCredential(id);
     set((state) => ({
       credentials: state.credentials.filter((c) => c.id !== id),
       credentialEvents: state.credentialEvents.filter((e) => e.credential_id !== id),
     }));
+  },
+
+  updateCredentialField: async (id, key, value, isSensitive) => {
+    try {
+      let session_encrypted_value: string | undefined = undefined;
+      if (isSensitive) {
+        session_encrypted_value = await encryptWithSessionKey(value);
+      }
+
+      await api.updateCredentialField(id, key, value, isSensitive, session_encrypted_value);
+      // No need to fetch all credentials if we just updated one field, 
+      // but might be needed to refresh metadata if it's used somewhere.
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to update credential field") });
+    }
   },
 
   healthcheckCredential: async (credentialId) => {
@@ -96,7 +139,10 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
 
   healthcheckCredentialPreview: async (serviceType, fieldValues) => {
     try {
-      const result = await api.healthcheckCredentialPreview(serviceType, fieldValues);
+      // Encrypt field values before sending over IPC
+      const session_encrypted_data = await encryptWithSessionKey(JSON.stringify(fieldValues));
+      
+      const result = await api.healthcheckCredentialPreview(serviceType, {}, session_encrypted_data);
       return result;
     } catch (err) {
       return { success: false, message: errMsg(err, "Healthcheck failed") };

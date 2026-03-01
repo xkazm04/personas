@@ -56,13 +56,27 @@ const IPV4_RE = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d+)?\b/g;
 // Internal hostnames (*.internal, *.local, *.corp, ip-xxx-xxx patterns)
 const INTERNAL_HOST_RE = /\b[\w-]+\.(?:internal|local|corp|lan)\b/gi;
 
+// Email addresses
+const EMAIL_RE = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
+
+// Common secret patterns (API keys, tokens, etc.)
+// - Generic key:value pairs in text
+const INLINE_SECRET_RE =
+  /(api[-_]?key|apikey|secret|token|password|passwd|auth|authorization|credential|private[-_]?key|client[-_]?secret|access[-_]?key|access[-_]?token|refresh[-_]?token|bearer|dsn|connection[-_]?string|cookie|session[-_]?id)\s*[:=]\s*([a-zA-Z0-9\-_.~%]+)/gi;
+
+// - Common token prefixes (ghp_, sk_live_, etc)
+const PREFIXED_SECRET_RE = /\b(PMR?S|gh[pous]|AKIA|sk_live_|xox[baprs]-)[a-zA-Z0-9]{16,}\b/g;
+
 /**
- * Strip internal file paths, IP addresses, and internal hostnames from an
- * error message to prevent leaking deployment details in screenshots.
+ * Strip internal file paths, IP addresses, internal hostnames, emails,
+ * and potential secrets from a string to prevent leakage in plaintext storage.
  */
 export function sanitizeErrorMessage(msg: string): string {
   return msg
     .replace(FILE_PATH_RE, '[path]')
     .replace(IPV4_RE, '[ip]')
-    .replace(INTERNAL_HOST_RE, '[host]');
+    .replace(INTERNAL_HOST_RE, '[host]')
+    .replace(EMAIL_RE, '[email]')
+    .replace(INLINE_SECRET_RE, (_match, key) => `${key}: [secret]`)
+    .replace(PREFIXED_SECRET_RE, '[secret]');
 }

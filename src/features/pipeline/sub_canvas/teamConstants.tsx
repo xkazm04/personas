@@ -1,3 +1,5 @@
+import { sanitizeIconUrl } from '@/lib/utils/sanitizeUrl';
+
 export interface ConnectionTypeStyle {
   stroke: string;
   strokeWidth: number;
@@ -49,7 +51,7 @@ export const canvasDragState = { personaId: null as string | null };
 
 export function PersonaAvatar({ icon, color, size = 'md' }: PersonaAvatarProps) {
   const c = color || '#6366f1';
-  const isUrl = typeof icon === 'string' && icon.startsWith('http');
+  const safeUrl = sanitizeIconUrl(icon);
   const s = sizeClasses[size];
 
   return (
@@ -60,8 +62,8 @@ export function PersonaAvatar({ icon, color, size = 'md' }: PersonaAvatarProps) 
         borderColor: c + '30',
       }}
     >
-      {isUrl ? (
-        <img src={icon!} alt="" className={`${s.img} rounded object-cover`} />
+      {safeUrl ? (
+        <img src={safeUrl} alt="" className={`${s.img} rounded object-cover`} referrerPolicy="no-referrer" crossOrigin="anonymous" />
       ) : (
         <span className={s.text}>{icon || '\u{1F916}'}</span>
       )}

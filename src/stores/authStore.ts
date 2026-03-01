@@ -8,6 +8,18 @@ import type { AuthUser, AuthStateResponse } from "@/api/auth";
 export type { AuthUser, AuthStateResponse };
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Extract a human-readable message from Tauri IPC error objects ({error, kind}). */
+function extractError(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === "object" && err !== null && "error" in err)
+    return String((err as { error: unknown }).error);
+  return String(err);
+}
+
+// ---------------------------------------------------------------------------
 // Store
 // ---------------------------------------------------------------------------
 
@@ -67,7 +79,7 @@ export const useAuthStore = create<AuthState>()(
             }, 120_000);
           } catch (err) {
             clearLoginTimeout();
-            set({ isLoading: false, error: String(err) });
+            set({ isLoading: false, error: extractError(err) });
           }
         },
 
@@ -81,7 +93,7 @@ export const useAuthStore = create<AuthState>()(
               error: null,
             });
           } catch (err) {
-            set({ error: String(err) });
+            set({ error: extractError(err) });
           }
         },
       }),

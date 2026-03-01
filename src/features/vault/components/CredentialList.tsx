@@ -145,7 +145,7 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
                     title={c.label}
                   >
                     {c.icon_url ? (
-                      <img src={c.icon_url} alt={c.label} className="w-3 h-3" />
+                      <img src={c.icon_url} alt={c.label} className="w-3 h-3" referrerPolicy="no-referrer" crossOrigin="anonymous" />
                     ) : (
                       <Plug className="w-2.5 h-2.5" style={{ color: c.color }} />
                     )}
@@ -198,7 +198,7 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
                         style={{ backgroundColor: `${connector.color}15` }}
                       >
                         {connector.icon_url ? (
-                          <img src={connector.icon_url} alt={connector.label} className="w-3 h-3" />
+                          <img src={connector.icon_url} alt={connector.label} className="w-3 h-3" referrerPolicy="no-referrer" crossOrigin="anonymous" />
                         ) : (
                           <Plug className="w-2.5 h-2.5" style={{ color: connector.color }} />
                         )}

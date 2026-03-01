@@ -6,10 +6,60 @@ use aes_gcm::aead::{Aead, KeyInit, OsRng};
 use aes_gcm::{Aes256Gcm, Key, Nonce};
 use base64::engine::general_purpose::STANDARD as B64;
 use base64::Engine as _;
+use rsa::{pkcs8::{EncodePublicKey, LineEnding}, Oaep, RsaPrivateKey, RsaPublicKey};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 use crate::db::DbPool;
 use crate::error::AppError;
+
+// ---------------------------------------------------------------------------
+// Session Key Management (Asymmetric IPC Protection)
+// ---------------------------------------------------------------------------
+
+/// A session-specific RSA key pair used to encrypt sensitive data over the IPC bridge.
+/// Generated on startup and held only in memory.
+pub struct SessionKeyPair {
+    private_key: RsaPrivateKey,
+    public_key_pem: String,
+}
+
+impl SessionKeyPair {
+    /// Generate a new 2048-bit RSA key pair for the current session.
+    pub fn generate() -> Result<Self, CryptoError> {
+        let mut rng = OsRng;
+        let private_key = RsaPrivateKey::new(&mut rng, 2048)
+            .map_err(|e| CryptoError::KeyManagement(format!("RSA generation failed: {}", e)))?;
+        let public_key = RsaPublicKey::from(&private_key);
+        
+        let public_key_pem = public_key
+            .to_public_key_pem(LineEnding::LF)
+            .map_err(|e| CryptoError::KeyManagement(format!("RSA PEM export failed: {}", e)))?;
+
+        Ok(Self {
+            private_key,
+            public_key_pem,
+        })
+    }
+
+    /// Get the public key in PEM format (SPKI).
+    pub fn public_key_pem(&self) -> &str {
+        &self.public_key_pem
+    }
+
+    /// Decrypt a base64-encoded message that was encrypted with the session public key.
+    pub fn decrypt(&self, ciphertext_b64: &str) -> Result<String, CryptoError> {
+        let ciphertext = B64.decode(ciphertext_b64)
+            .map_err(|e| CryptoError::Decrypt(format!("Base64 decode failed: {}", e)))?;
+        
+        let padding = Oaep::new::<sha2::Sha256>();
+        let plaintext_bytes = self.private_key
+            .decrypt(padding, &ciphertext)
+            .map_err(|e| CryptoError::Decrypt(format!("RSA decryption failed: {}", e)))?;
+
+        String::from_utf8(plaintext_bytes)
+            .map_err(|e| CryptoError::Decrypt(format!("Invalid UTF-8 in decrypted data: {}", e)))
+    }
+}
 
 // ---------------------------------------------------------------------------
 // SecureString — zeroize-on-drop wrapper for in-memory secrets

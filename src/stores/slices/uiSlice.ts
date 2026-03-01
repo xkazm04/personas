@@ -40,7 +40,7 @@ export interface UiSlice {
 export const createUiSlice: StateCreator<PersonaStore, [], [], UiSlice> = (set) => ({
   sidebarSection: "overview" as SidebarSection,
   credentialView: "credentials",
-  templateTab: "builtin" as TemplateTab,
+  templateTab: "generated" as TemplateTab,
   editorTab: "use-cases" as EditorTab,
   cloudTab: "cloud" as CloudTab,
   settingsTab: "account" as SettingsTab,

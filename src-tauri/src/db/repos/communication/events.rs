@@ -299,6 +299,21 @@ pub fn get_recent(
     }
 }
 
+pub fn get_in_range(
+    pool: &DbPool,
+    since: &str,
+    until: &str,
+) -> Result<Vec<PersonaEvent>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT * FROM persona_events
+         WHERE created_at >= ?1 AND created_at <= ?2
+         ORDER BY created_at ASC",
+    )?;
+    let rows = stmt.query_map(params![since, until], row_to_event)?;
+    Ok(collect_rows(rows, "get_in_range"))
+}
+
 pub fn cleanup(pool: &DbPool, older_than_days: Option<i64>) -> Result<i64, AppError> {
     let days = older_than_days.unwrap_or(30);
     let conn = pool.get()?;

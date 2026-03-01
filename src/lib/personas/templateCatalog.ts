@@ -2,10 +2,11 @@
  * Template Catalog — single source of truth for all template JSON files.
  *
  * Uses Vite glob import to eagerly load every JSON under scripts/templates/,
- * excluding debug directories. Featured (builtin) templates are identified by
- * the `featured` flag in their JSON metadata.
+ * excluding debug directories. Also registers all built-in template IDs
+ * for origin verification.
  */
 import type { TemplateCatalogEntry } from '@/lib/types/templateTypes';
+import { registerBuiltinTemplates } from '@/lib/templates/templateVerification';
 
 const modules = import.meta.glob<TemplateCatalogEntry>(
   [
@@ -15,15 +16,8 @@ const modules = import.meta.glob<TemplateCatalogEntry>(
   { eager: true, import: 'default' },
 );
 
-/** Every template in the catalog (builtin + category). */
+/** Every template in the catalog. */
 export const TEMPLATE_CATALOG: TemplateCatalogEntry[] = Object.values(modules);
 
-/** Featured (builtin) templates — the curated starter set. */
-export const FEATURED_TEMPLATES: TemplateCatalogEntry[] = TEMPLATE_CATALOG.filter(
-  (t) => t.featured === true,
-);
-
-/** Non-featured (category) templates — everything else. */
-export const CATEGORY_TEMPLATES: TemplateCatalogEntry[] = TEMPLATE_CATALOG.filter(
-  (t) => !t.featured,
-);
+// Register all catalog templates as verified built-ins
+registerBuiltinTemplates(TEMPLATE_CATALOG.map((t) => t.id));

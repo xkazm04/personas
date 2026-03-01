@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useMemo } from 'react';
+import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizeUrl';
 import { motion } from 'framer-motion';
 import { Bot, Zap, Clock } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
@@ -120,9 +121,9 @@ export default function PersonaOverviewPage() {
                     <div className="relative group/health">
                       <div className={`rounded-lg ${ringClass}`}>
                         {persona.icon ? (
-                          persona.icon.startsWith('http') ? (
-                            <img src={persona.icon} alt="" className="w-8 h-8" />
-                          ) : (
+                          sanitizeIconUrl(persona.icon) ? (
+                            <img src={sanitizeIconUrl(persona.icon)!} alt="" className="w-8 h-8" referrerPolicy="no-referrer" crossOrigin="anonymous" />
+                          ) : isIconUrl(persona.icon) ? null : (
                             <span className="text-2xl leading-8 w-8 h-8 flex items-center justify-center">{persona.icon}</span>
                           )
                         ) : (

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizeUrl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, AlertCircle, ListChecks, FileText, Link, Settings, FlaskConical, Wand2, Cloud, LogIn, X } from 'lucide-react';
 import type { ModelProfile } from '@/lib/types/frontendTypes';
@@ -321,10 +322,11 @@ function PersonaEditorInner() {
     }
   };
 
+  const safeIconUrl = sanitizeIconUrl(selectedPersona.icon);
   const personaIcon = selectedPersona.icon ? (
-    selectedPersona.icon.startsWith('http') ? (
-      <img src={selectedPersona.icon} alt="" className="w-6 h-6 rounded" />
-    ) : (
+    safeIconUrl ? (
+      <img src={safeIconUrl} alt="" className="w-6 h-6 rounded" referrerPolicy="no-referrer" crossOrigin="anonymous" />
+    ) : isIconUrl(selectedPersona.icon) ? null : (
       <span className="text-2xl leading-none">{selectedPersona.icon}</span>
     )
   ) : (

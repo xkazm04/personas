@@ -52,16 +52,21 @@ export interface VaultStatus {
   plaintext: number;
 }
 
+export const getSessionPublicKey = () =>
+  invoke<string>("get_session_public_key");
+
 export const healthcheckCredential = (credentialId: string) =>
   invoke<HealthcheckResult>("healthcheck_credential", { credentialId });
 
 export const healthcheckCredentialPreview = (
   serviceType: string,
   fieldValues: Record<string, string>,
+  sessionEncryptedData?: string,
 ) =>
   invoke<HealthcheckResult>("healthcheck_credential_preview", {
     serviceType,
     fieldValues,
+    sessionEncryptedData,
   });
 
 export const vaultStatus = () =>
@@ -95,12 +100,14 @@ export const updateCredentialField = (
   fieldKey: string,
   fieldValue: string,
   isSensitive: boolean,
+  sessionEncryptedValue?: string,
 ) =>
   invoke<boolean>("update_credential_field", {
     credentialId,
     fieldKey,
     fieldValue,
     isSensitive,
+    sessionEncryptedValue,
   });
 
 // ── Credential Intelligence ───────────────────────────────────────────

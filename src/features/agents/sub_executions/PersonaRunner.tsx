@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { listen } from '@tauri-apps/api/event';
+import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizeUrl';
 import { useElapsedTimer } from '@/hooks';
 import { usePersonaStore } from '@/stores/personaStore';
 import { usePersonaExecution } from '@/hooks/execution/usePersonaExecution';
@@ -620,9 +621,9 @@ export function PersonaRunner() {
             data-testid="runner-empty-state"
           >
             {selectedPersona.icon ? (
-              selectedPersona.icon.startsWith('http') ? (
-                <img src={selectedPersona.icon} alt="" className="w-12 h-12 rounded-xl opacity-60" />
-              ) : (
+              sanitizeIconUrl(selectedPersona.icon) ? (
+                <img src={sanitizeIconUrl(selectedPersona.icon)!} alt="" className="w-12 h-12 rounded-xl opacity-60" referrerPolicy="no-referrer" crossOrigin="anonymous" />
+              ) : isIconUrl(selectedPersona.icon) ? null : (
                 <span className="text-4xl leading-none opacity-60">{selectedPersona.icon}</span>
               )
             ) : (

@@ -110,7 +110,7 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
                 }}
               >
                 {connector.icon_url ? (
-                  <img src={connector.icon_url} alt={connector.label} className="w-10 h-10" />
+                  <img src={connector.icon_url} alt={connector.label} className="w-10 h-10" referrerPolicy="no-referrer" crossOrigin="anonymous" />
                 ) : (
                   <Plug className="w-8 h-8" style={{ color: connector.color }} />
                 )}

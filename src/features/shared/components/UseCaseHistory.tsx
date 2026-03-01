@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { RotateCw, CheckCircle2, XCircle, AlertTriangle, Pause, Clock } from 'lucide-react';
+import { RotateCw, CheckCircle2, XCircle, AlertTriangle, Pause, Clock, Play } from 'lucide-react';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { listExecutionsForUseCase } from '@/api/executions';
 import { formatRelativeTime, formatDuration } from '@/lib/utils/formatters';
@@ -61,8 +61,21 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
 
   if (executions.length === 0) {
     return (
-      <div className="px-4 py-3 text-sm text-muted-foreground/40">
-        No executions yet for this use case.
+      <div className="flex flex-col items-center py-8 space-y-3">
+        <div className="w-10 h-10 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center">
+          <Clock className="w-5 h-5 text-primary/30" />
+        </div>
+        <h4 className="text-sm font-medium text-foreground/70">No executions yet</h4>
+        <p className="text-xs text-muted-foreground/50 text-center max-w-xs">
+          Run this use case to see execution history, timings, and costs here.
+        </p>
+        <button
+          onClick={() => onRerun('')}
+          className="mt-1 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
+        >
+          <Play className="w-3.5 h-3.5" />
+          Run this use case
+        </button>
       </div>
     );
   }

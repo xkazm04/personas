@@ -51,3 +51,30 @@ export const listMemoriesByExecution = (executionId: string) =>
 
 export const deleteMemory = (id: string) =>
   invoke<boolean>("delete_memory", { id });
+
+export const updateMemoryImportance = (id: string, importance: number) =>
+  invoke<boolean>("update_memory_importance", { id, importance });
+
+export const batchDeleteMemories = (ids: string[]) =>
+  invoke<number>("batch_delete_memories", { ids });
+
+export interface MemoryReviewDetail {
+  id: string;
+  title: string;
+  score: number;
+  reason: string;
+  action: 'kept' | 'deleted';
+}
+
+export interface MemoryReviewResult {
+  reviewed: number;
+  deleted: number;
+  updated: number;
+  details: MemoryReviewDetail[];
+}
+
+export const reviewMemoriesWithCli = (personaId?: string, threshold?: number) =>
+  invoke<MemoryReviewResult>("review_memories_with_cli", {
+    personaId: personaId ?? null,
+    threshold: threshold ?? null,
+  });

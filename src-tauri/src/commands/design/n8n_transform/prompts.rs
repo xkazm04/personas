@@ -1,4 +1,5 @@
 use super::cli_runner::truncate_utf8;
+use super::prompt_sanitizer::{sanitize_workflow_name, sanitize_json_payload, sanitize_free_text};
 use crate::engine::platform_rules;
 
 /// Wraps a persona-generation prompt with section-delimited output instructions.
@@ -292,18 +293,23 @@ pub fn build_n8n_transform_prompt(
     credentials_json: Option<&str>,
     user_answers_json: Option<&str>,
 ) -> String {
+    // Sanitize all untrusted workflow data before embedding in prompts
+    let workflow_name = sanitize_workflow_name(workflow_name);
+    let workflow_json = sanitize_json_payload(workflow_json);
+    let parser_result_json = sanitize_json_payload(parser_result_json);
+
     let platform = platform_rules::builtin_n8n();
     let credential_rules = platform.format_credential_rules_prompt();
     let platform_label = &platform.label;
 
     let adjustment_section = adjustment_request
         .filter(|a| !a.trim().is_empty())
-        .map(|a| format!("\nUser adjustment request:\n{}\n", a))
+        .map(|a| format!("\nUser adjustment request:\n{}\n", sanitize_free_text(a)))
         .unwrap_or_default();
 
     let previous_draft_section = previous_draft_json
         .filter(|d| !d.trim().is_empty())
-        .map(|d| format!("\nPrevious draft JSON to refine:\n{}\n", d))
+        .map(|d| format!("\nPrevious draft JSON to refine:\n{}\n", sanitize_json_payload(d)))
         .unwrap_or_default();
 
     let connectors_section = format_connector_section(connectors_json);
@@ -312,7 +318,7 @@ pub fn build_n8n_transform_prompt(
     let user_answers_section = user_answers_json
         .filter(|a| !a.trim().is_empty() && a.trim() != "{}")
         .map(|a| format!(
-            "\n## User Configuration Answers\nThe user has provided these answers to clarify the transformation. Honor these answers when generating the persona configuration:\n{}\n", a
+            "\n## User Configuration Answers\nThe user has provided these answers to clarify the transformation. Honor these answers when generating the persona configuration:\n{}\n", sanitize_json_payload(a)
         ))
         .unwrap_or_default();
 
@@ -369,13 +375,18 @@ pub fn build_n8n_unified_prompt(
     connectors_json: Option<&str>,
     credentials_json: Option<&str>,
 ) -> String {
+    // Sanitize all untrusted workflow data before embedding in prompts
+    let workflow_name = sanitize_workflow_name(workflow_name);
+    let parser_result_json = sanitize_json_payload(parser_result_json);
+
     let platform = platform_rules::builtin_n8n();
     let credential_rules = platform.format_credential_rules_prompt();
     let platform_label = &platform.label;
     let connectors_section = format_connector_section(connectors_json);
     let credentials_section = format_credential_section(credentials_json);
 
-    let workflow_preview = truncate_utf8(workflow_json, 5000);
+    let sanitized_workflow_json = sanitize_json_payload(workflow_json);
+    let workflow_preview = truncate_utf8(&sanitized_workflow_json, 5000);
 
     let credential_adaptation = build_credential_adaptation_rules();
     let protocol_docs = build_protocol_docs();

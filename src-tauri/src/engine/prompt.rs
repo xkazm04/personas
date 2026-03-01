@@ -55,11 +55,15 @@ pub fn assemble_prompt(
 ) -> String {
     let mut prompt = String::new();
 
+    // Context-aware variable substitution: replace {{variable}} in persona fields.
+    let name = replace_variables(&persona.name, persona, input_data);
+    let description = persona.description.as_ref().map(|d| replace_variables(d, persona, input_data));
+
     // Header
-    prompt.push_str(&format!("# Persona: {}\n\n", persona.name));
+    prompt.push_str(&format!("# Persona: {}\n\n", name));
 
     // Description
-    if let Some(ref desc) = persona.description {
+    if let Some(ref desc) = description {
         if !desc.is_empty() {
             prompt.push_str("## Description\n");
             prompt.push_str(desc);
@@ -73,14 +77,14 @@ pub fn assemble_prompt(
             // Identity
             if let Some(identity) = sp.get("identity").and_then(|v| v.as_str()) {
                 prompt.push_str("## Identity\n");
-                prompt.push_str(identity);
+                prompt.push_str(&replace_variables(identity, persona, input_data));
                 prompt.push_str("\n\n");
             }
 
             // Instructions
             if let Some(instructions) = sp.get("instructions").and_then(|v| v.as_str()) {
                 prompt.push_str("## Instructions\n");
-                prompt.push_str(instructions);
+                prompt.push_str(&replace_variables(instructions, persona, input_data));
                 prompt.push_str("\n\n");
             }
 
@@ -88,7 +92,7 @@ pub fn assemble_prompt(
             if let Some(tg) = sp.get("toolGuidance").and_then(|v| v.as_str()) {
                 if !tg.is_empty() {
                     prompt.push_str("## Tool Guidance\n");
-                    prompt.push_str(tg);
+                    prompt.push_str(&replace_variables(tg, persona, input_data));
                     prompt.push_str("\n\n");
                 }
             }
@@ -97,7 +101,7 @@ pub fn assemble_prompt(
             if let Some(examples) = sp.get("examples").and_then(|v| v.as_str()) {
                 if !examples.is_empty() {
                     prompt.push_str("## Examples\n");
-                    prompt.push_str(examples);
+                    prompt.push_str(&replace_variables(examples, persona, input_data));
                     prompt.push_str("\n\n");
                 }
             }
@@ -106,7 +110,7 @@ pub fn assemble_prompt(
             if let Some(eh) = sp.get("errorHandling").and_then(|v| v.as_str()) {
                 if !eh.is_empty() {
                     prompt.push_str("## Error Handling\n");
-                    prompt.push_str(eh);
+                    prompt.push_str(&replace_variables(eh, persona, input_data));
                     prompt.push_str("\n\n");
                 }
             }
@@ -124,7 +128,7 @@ pub fn assemble_prompt(
                         section.get("content").and_then(|v| v.as_str()),
                     ) {
                         prompt.push_str(&format!("## {}\n", name));
-                        prompt.push_str(content);
+                        prompt.push_str(&replace_variables(content, persona, input_data));
                         prompt.push_str("\n\n");
                     }
                 }
@@ -135,20 +139,20 @@ pub fn assemble_prompt(
                 if !ws.is_empty() {
                     prompt.push_str("## Web Search Research Prompt\n");
                     prompt.push_str("When performing web searches during this execution, use the following research guidance:\n\n");
-                    prompt.push_str(ws);
+                    prompt.push_str(&replace_variables(ws, persona, input_data));
                     prompt.push_str("\n\n");
                 }
             }
         } else {
             // Structured prompt failed to parse, fall back to system_prompt
             prompt.push_str("## Identity\n");
-            prompt.push_str(&persona.system_prompt);
+            prompt.push_str(&replace_variables(&persona.system_prompt, persona, input_data));
             prompt.push_str("\n\n");
         }
     } else {
         // No structured prompt, use system_prompt as identity
         prompt.push_str("## Identity\n");
-        prompt.push_str(&persona.system_prompt);
+        prompt.push_str(&replace_variables(&persona.system_prompt, persona, input_data));
         prompt.push_str("\n\n");
     }
 
@@ -265,6 +269,48 @@ pub fn assemble_prompt(
     prompt.push_str("Respond naturally and complete the task.\n");
 
     prompt
+}
+
+/// Replace {{variable}} placeholders in a string with values from input_data or magic variables.
+pub fn replace_variables(
+    text: &str,
+    persona: &Persona,
+    input_data: Option<&serde_json::Value>,
+) -> String {
+    use chrono::Datelike;
+    let now = chrono::Utc::now();
+    
+    // Define magic variables
+    let mut vars: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+    vars.insert("now".into(), now.to_rfc3339());
+    vars.insert("today".into(), now.format("%Y-%m-%d").to_string());
+    vars.insert("iso8601".into(), now.to_rfc3339());
+    vars.insert("weekday".into(), now.weekday().to_string());
+    vars.insert("project_id".into(), persona.project_id.clone());
+    vars.insert("persona_id".into(), persona.id.clone());
+    vars.insert("persona_name".into(), persona.name.clone());
+
+    // Add input_data variables if they are strings or numbers
+    if let Some(data) = input_data {
+        if let Some(obj) = data.as_object() {
+            for (k, v) in obj {
+                if let Some(s) = v.as_str() {
+                    vars.insert(k.clone(), s.to_string());
+                } else if let Some(n) = v.as_f64() {
+                    vars.insert(k.clone(), n.to_string());
+                } else if let Some(b) = v.as_bool() {
+                    vars.insert(k.clone(), b.to_string());
+                }
+            }
+        }
+    }
+
+    // Regex to find {{variable}}
+    let re = regex::Regex::new(r"\{\{([^}]+)\}\}").unwrap();
+    re.replace_all(text, |caps: &regex::Captures| {
+        let key = caps.get(1).unwrap().as_str().trim();
+        vars.get(key).cloned().unwrap_or_else(|| caps.get(0).unwrap().as_str().to_string())
+    }).to_string()
 }
 
 /// Platform-specific command and initial args for invoking the Claude CLI.
@@ -856,6 +902,43 @@ mod tests {
         // No persona-specific flags
         assert!(!args.args.contains(&"--max-budget-usd".to_string()));
         assert!(!args.args.contains(&"--max-turns".to_string()));
+    }
+
+    #[test]
+    fn test_variable_substitution() {
+        let persona = test_persona();
+        let input = serde_json::json!({
+            "task_name": "Review Code",
+            "priority_level": 1,
+            "is_urgent": true
+        });
+
+        // Test magic variables
+        let text = "ID: {{persona_id}}, Project: {{project_id}}, Name: {{persona_name}}";
+        let replaced = replace_variables(text, &persona, None);
+        assert_eq!(replaced, "ID: test-id, Project: proj-1, Name: Test Agent");
+
+        // Test date magic variables (just check they were replaced, format can vary slightly by OS/time)
+        let date_text = "Now: {{now}}, Today: {{today}}, Weekday: {{weekday}}";
+        let date_replaced = replace_variables(date_text, &persona, None);
+        assert!(!date_replaced.contains("{{now}}"));
+        assert!(!date_replaced.contains("{{today}}"));
+        assert!(!date_replaced.contains("{{weekday}}"));
+
+        // Test input data variables
+        let input_text = "Action: {{task_name}}, Level: {{priority_level}}, Urgent: {{is_urgent}}";
+        let input_replaced = replace_variables(input_text, &persona, Some(&input));
+        assert_eq!(input_replaced, "Action: Review Code, Level: 1, Urgent: true");
+
+        // Test non-existent variable (should remain as-is)
+        let missing_text = "Hello {{ghost}}";
+        let missing_replaced = replace_variables(missing_text, &persona, None);
+        assert_eq!(missing_replaced, "Hello {{ghost}}");
+
+        // Test trimming
+        let trim_text = "Value: {{  task_name  }}";
+        let trim_replaced = replace_variables(trim_text, &persona, Some(&input));
+        assert_eq!(trim_replaced, "Value: Review Code");
     }
 
     #[test]

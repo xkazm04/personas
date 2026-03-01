@@ -67,8 +67,8 @@ export function useDesignReviews() {
 
   const seedDoneRef = useRef(false);
 
-  // Seed built-in templates into the database on first mount
-  const seedBuiltinTemplates = useCallback(async (_existingReviews: PersonaDesignReview[]) => {
+  // Seed catalog templates into the database on first mount
+  const seedCatalogTemplates = useCallback(async (_existingReviews: PersonaDesignReview[]) => {
     if (seedDoneRef.current) return;
     seedDoneRef.current = true;
 
@@ -95,14 +95,14 @@ export function useDesignReviews() {
       try {
         const data = await api.listDesignReviews();
         setReviews(data);
-        await seedBuiltinTemplates(data);
+        await seedCatalogTemplates(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch reviews');
       } finally {
         setIsLoading(false);
       }
     })();
-  }, [seedBuiltinTemplates]);
+  }, [seedCatalogTemplates]);
 
   const startNewReview = useCallback(async (personaId?: string, testCases?: object[]) => {
     if (!personaId) {

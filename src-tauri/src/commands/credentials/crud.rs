@@ -20,10 +20,30 @@ pub fn list_credentials(
 }
 
 #[tauri::command]
+pub fn get_session_public_key(
+    state: State<'_, Arc<AppState>>,
+) -> String {
+    state.session_key.public_key_pem().to_string()
+}
+
+#[tauri::command]
 pub fn create_credential(
     state: State<'_, Arc<AppState>>,
-    input: CreateCredentialInput,
+    mut input: CreateCredentialInput,
 ) -> Result<PersonaCredential, AppError> {
+    // Decrypt session-encrypted data if provided (asymmetric IPC protection)
+    if let Some(encrypted) = input.session_encrypted_data.take() {
+        match state.session_key.decrypt(&encrypted) {
+            Ok(decrypted) => {
+                input.encrypted_data = decrypted;
+            }
+            Err(e) => {
+                tracing::error!("Failed to decrypt session-encrypted payload: {}", e);
+                return Err(AppError::Internal("Decryption failed".into()));
+            }
+        }
+    }
+
     // Parse plaintext JSON into field-level rows (the canonical storage path).
     let field_map: HashMap<String, String> =
         serde_json::from_str(&input.encrypted_data).unwrap_or_default();
@@ -33,6 +53,7 @@ pub fn create_credential(
     let db_input = CreateCredentialInput {
         encrypted_data: String::new(),
         iv: String::new(),
+        session_encrypted_data: None,
         ..input
     };
     let cred = repo::create(&state.db, db_input)?;
@@ -53,8 +74,21 @@ pub fn create_credential(
 pub fn update_credential(
     state: State<'_, Arc<AppState>>,
     id: String,
-    input: UpdateCredentialInput,
+    mut input: UpdateCredentialInput,
 ) -> Result<PersonaCredential, AppError> {
+    // Decrypt session-encrypted data if provided (asymmetric IPC protection)
+    if let Some(encrypted) = input.session_encrypted_data.take() {
+        match state.session_key.decrypt(&encrypted) {
+            Ok(decrypted) => {
+                input.encrypted_data = Some(decrypted);
+            }
+            Err(e) => {
+                tracing::error!("Failed to decrypt session-encrypted payload: {}", e);
+                return Err(AppError::Internal("Decryption failed".into()));
+            }
+        }
+    }
+
     let has_data_change = input.encrypted_data.is_some();
 
     // Parse plaintext fields for field-level storage
@@ -67,6 +101,7 @@ pub fn update_credential(
     let metadata_input = UpdateCredentialInput {
         encrypted_data: None,
         iv: None,
+        session_encrypted_data: None,
         ..input
     };
     let cred = repo::update(&state.db, &id, metadata_input)?;
@@ -195,8 +230,24 @@ pub async fn healthcheck_credential(
 pub async fn healthcheck_credential_preview(
     state: State<'_, Arc<AppState>>,
     service_type: String,
-    field_values: HashMap<String, String>,
+    mut field_values: HashMap<String, String>,
+    session_encrypted_data: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
+    // Decrypt session-encrypted data if provided (asymmetric IPC protection)
+    if let Some(encrypted) = session_encrypted_data {
+        match state.session_key.decrypt(&encrypted) {
+            Ok(decrypted) => {
+                if let Ok(decrypted_fields) = serde_json::from_str::<HashMap<String, String>>(&decrypted) {
+                    field_values.extend(decrypted_fields);
+                }
+            }
+            Err(e) => {
+                tracing::error!("Failed to decrypt session-encrypted payload: {}", e);
+                return Err(AppError::Internal("Decryption failed".into()));
+            }
+        }
+    }
+
     let result = crate::engine::healthcheck::run_healthcheck_with_fields(
         &state.db,
         &service_type,
@@ -269,9 +320,23 @@ pub fn update_credential_field(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
     field_key: String,
-    field_value: String,
+    mut field_value: String,
     is_sensitive: bool,
+    session_encrypted_value: Option<String>,
 ) -> Result<bool, AppError> {
+    // Decrypt session-encrypted value if provided (asymmetric IPC protection)
+    if let Some(encrypted) = session_encrypted_value {
+        match state.session_key.decrypt(&encrypted) {
+            Ok(decrypted) => {
+                field_value = decrypted;
+            }
+            Err(e) => {
+                tracing::error!("Failed to decrypt session-encrypted payload: {}", e);
+                return Err(AppError::Internal("Decryption failed".into()));
+            }
+        }
+    }
+
     repo::upsert_field(&state.db, &credential_id, &field_key, &field_value, is_sensitive)?;
 
     let cred = repo::get_by_id(&state.db, &credential_id)?;

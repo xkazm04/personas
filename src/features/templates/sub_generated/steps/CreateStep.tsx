@@ -16,6 +16,8 @@ import {
 import { DraftEditStep } from '@/features/shared/components/draft-editor/DraftEditStep';
 import { extractProtocolCapabilities } from '@/features/templates/sub_n8n/edit/protocolParser';
 import { useAdoptionWizard } from '../AdoptionWizardContext';
+import { SandboxWarningBanner } from '../SandboxWarningBanner';
+import { ScanResultsBanner } from '../ScanResultsBanner';
 import { N8nUseCasesTab } from '@/features/templates/sub_n8n/edit/N8nUseCasesTab';
 import { N8nEntitiesTab } from '@/features/templates/sub_n8n/edit/N8nEntitiesTab';
 
@@ -25,6 +27,8 @@ export function CreateStep() {
     wizard,
     designResult,
     readinessStatuses,
+    verification,
+    safetyScan,
     updateDraft,
     startTransform,
     cleanupAll,
@@ -351,6 +355,14 @@ export function CreateStep() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Safety scan results */}
+      <ScanResultsBanner result={safetyScan} scanning={false} />
+
+      {/* Sandbox notice on create step */}
+      {verification.trustLevel !== 'verified' && (
+        <SandboxWarningBanner verification={verification} />
+      )}
 
       {/* Confirmation hint */}
       {!created && (

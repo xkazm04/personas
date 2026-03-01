@@ -18,7 +18,7 @@ import {
   Activity,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { FEATURED_TEMPLATES } from '@/lib/personas/templateCatalog';
+import { TEMPLATE_CATALOG } from '@/lib/personas/templateCatalog';
 import type { TemplateCatalogEntry } from '@/lib/types/templateTypes';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -40,7 +40,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 function deriveCategories(): string[] {
   const counts = new Map<string, number>();
-  for (const t of FEATURED_TEMPLATES) {
+  for (const t of TEMPLATE_CATALOG) {
     for (const c of t.category) {
       counts.set(c, (counts.get(c) ?? 0) + 1);
     }
@@ -90,8 +90,8 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
   const filteredTemplates = useMemo(
     () =>
       activeFilter === 'all'
-        ? FEATURED_TEMPLATES
-        : FEATURED_TEMPLATES.filter((t) => t.category.includes(activeFilter)),
+        ? TEMPLATE_CATALOG
+        : TEMPLATE_CATALOG.filter((t) => t.category.includes(activeFilter)),
     [activeFilter],
   );
 

@@ -326,7 +326,7 @@ export function useN8nWizard() {
   );
 
   const handleContinueTransform = async () => {
-    if (!state.backgroundTransformId) return;
+    if (!state.backgroundTransformId || state.transforming) return;
 
     try {
       dispatch({ type: 'TRANSFORM_STARTED', transformId: state.backgroundTransformId, subPhase: 'generating' });

@@ -3,6 +3,7 @@ use rusqlite::params;
 use crate::db::models::{CredentialAuditEntry, CredentialDependent, CredentialUsageStats};
 use crate::db::DbPool;
 use crate::error::AppError;
+use crate::utils::sanitization::sanitize_secrets;
 
 // ---------------------------------------------------------------------------
 // Insert (append-only — no update or delete functions)
@@ -21,10 +22,14 @@ pub fn insert(
     let conn = pool.get()?;
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
+
+    // Sanitize detail field to prevent leaking secrets in audit log
+    let sanitized_detail = detail.map(sanitize_secrets);
+
     conn.execute(
         "INSERT INTO credential_audit_log (id, credential_id, credential_name, operation, persona_id, persona_name, detail, created_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-        params![id, credential_id, credential_name, operation, persona_id, persona_name, detail, now],
+        params![id, credential_id, credential_name, operation, persona_id, persona_name, sanitized_detail, now],
     )?;
     Ok(())
 }

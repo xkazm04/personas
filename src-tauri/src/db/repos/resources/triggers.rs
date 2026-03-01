@@ -392,18 +392,25 @@ pub fn get_chain_links(
     rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
 }
 
+/// Atomically claim a due trigger using compare-and-swap on `next_trigger_at`.
+///
+/// The WHERE clause checks that `next_trigger_at` still matches the value the
+/// caller read from `get_due`.  If a concurrent scheduler tick already advanced
+/// the schedule, this UPDATE touches 0 rows and returns `Ok(false)`, preventing
+/// double-fire.
 pub fn mark_triggered(
     pool: &DbPool,
     id: &str,
     next_trigger_at: Option<String>,
+    expected_next_trigger_at: Option<&str>,
 ) -> Result<bool, AppError> {
     let now = chrono::Utc::now().to_rfc3339();
     let conn = pool.get()?;
     let rows = conn.execute(
         "UPDATE persona_triggers
          SET last_triggered_at = ?1, next_trigger_at = ?2, updated_at = ?1
-         WHERE id = ?3",
-        params![now, next_trigger_at, id],
+         WHERE id = ?3 AND next_trigger_at IS ?4",
+        params![now, next_trigger_at, id, expected_next_trigger_at],
     )?;
     Ok(rows > 0)
 }
@@ -573,9 +580,9 @@ mod tests {
         assert_eq!(due.len(), 1);
         assert_eq!(due[0].id, trigger.id);
 
-        // Mark triggered with a future next_trigger_at
+        // Mark triggered with a future next_trigger_at (CAS: old value = past)
         let future = "2099-12-31T23:59:59+00:00";
-        mark_triggered(&pool, &trigger.id, Some(future.into())).unwrap();
+        mark_triggered(&pool, &trigger.id, Some(future.into()), Some(past)).unwrap();
 
         // Should no longer be due (next_trigger_at is in the future)
         let due_after = get_due(&pool, &now).unwrap();
@@ -599,7 +606,7 @@ mod tests {
         let pool = init_test_db().unwrap();
 
         // mark_triggered on a nonexistent ID should return Ok(false)
-        let result = mark_triggered(&pool, "nonexistent-id", None).unwrap();
+        let result = mark_triggered(&pool, "nonexistent-id", None, None).unwrap();
         assert!(!result);
     }
 

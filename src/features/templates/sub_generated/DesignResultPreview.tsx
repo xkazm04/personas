@@ -143,7 +143,7 @@ function ConnectorsSection({
               {/* Connector header */}
               <div className="flex items-center gap-2.5">
                 {item.connDef?.icon_url ? (
-                  <img src={item.connDef.icon_url} alt={item.connDef.label} className="w-6 h-6 flex-shrink-0 rounded" />
+                  <img src={item.connDef.icon_url} alt={item.connDef.label} className="w-6 h-6 flex-shrink-0 rounded" referrerPolicy="no-referrer" crossOrigin="anonymous" />
                 ) : isGeneral ? (
                   <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center">
                     <Wrench className="w-3.5 h-3.5 text-muted-foreground/90" />

@@ -121,7 +121,7 @@ export function CredentialTemplateForm({
           }}
         >
           {selectedConnector.icon_url ? (
-            <img src={selectedConnector.icon_url} alt={selectedConnector.label} className="w-5 h-5" />
+            <img src={selectedConnector.icon_url} alt={selectedConnector.label} className="w-5 h-5" referrerPolicy="no-referrer" crossOrigin="anonymous" />
           ) : (
             <Plug className="w-5 h-5" style={{ color: selectedConnector.color }} />
           )}

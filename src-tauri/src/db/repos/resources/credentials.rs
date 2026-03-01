@@ -9,6 +9,7 @@ use crate::db::models::{
 use crate::db::DbPool;
 use crate::engine::crypto;
 use crate::error::AppError;
+use crate::utils::sanitization::sanitize_secrets;
 
 // ============================================================================
 // Row Mappers
@@ -173,9 +174,13 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 pub fn update_metadata(pool: &DbPool, id: &str, metadata: Option<&str>) -> Result<(), AppError> {
     let now = chrono::Utc::now().to_rfc3339();
     let conn = pool.get()?;
+
+    // Sanitize metadata to prevent leaking secrets in plaintext column
+    let sanitized_metadata = metadata.map(sanitize_secrets);
+
     let rows = conn.execute(
         "UPDATE persona_credentials SET metadata = ?1, updated_at = ?2 WHERE id = ?3",
-        params![metadata, now, id],
+        params![sanitized_metadata, now, id],
     )?;
     if rows == 0 {
         return Err(AppError::NotFound(format!("Credential {id}")));
@@ -530,6 +535,7 @@ mod tests {
                 encrypted_data: "enc_data_abc".into(),
                 iv: "iv_123".into(),
                 metadata: Some("{\"email\": \"test@gmail.com\"}".into()),
+                session_encrypted_data: None,
             },
         )
         .unwrap();
@@ -565,6 +571,7 @@ mod tests {
                 encrypted_data: Some("enc_data_xyz".into()),
                 iv: Some("iv_456".into()),
                 metadata: Some(None),
+                session_encrypted_data: None,
             },
         )
         .unwrap();
@@ -598,6 +605,7 @@ mod tests {
                 encrypted_data: "enc_token".into(),
                 iv: "iv_evt".into(),
                 metadata: None,
+                session_encrypted_data: None,
             },
         )
         .unwrap();

@@ -5,6 +5,7 @@ use crate::db::repos::resources::connectors as connector_repo;
 use crate::db::repos::resources::credentials as cred_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
+use crate::utils::sanitization::sanitize_secrets;
 
 use super::connector_strategy;
 
@@ -161,16 +162,20 @@ async fn execute_healthcheck_request_with_strategy(
                     message: format!("Connection successful (HTTP {})", status.as_u16()),
                 })
             } else {
+                let msg = format!("Service returned HTTP {}", status.as_u16());
                 Ok(HealthcheckResult {
                     success: false,
-                    message: format!("Service returned HTTP {}", status.as_u16()),
+                    message: sanitize_secrets(&msg),
                 })
             }
         }
-        Err(e) => Ok(HealthcheckResult {
-            success: false,
-            message: format!("Connection failed: {}", e),
-        }),
+        Err(e) => {
+            let msg = format!("Connection failed: {}", e);
+            Ok(HealthcheckResult {
+                success: false,
+                message: sanitize_secrets(&msg),
+            })
+        }
     }
 }
 

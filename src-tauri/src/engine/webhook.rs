@@ -272,7 +272,7 @@ async fn handle_webhook(
     ) {
         Ok(event) => {
             // 7. Mark trigger as fired
-            let _ = trigger_repo::mark_triggered(&state.pool, &trigger_id, None);
+            let _ = trigger_repo::mark_triggered(&state.pool, &trigger_id, None, trigger.next_trigger_at.as_deref());
 
             tracing::info!(
                 trigger_id = %trigger_id,

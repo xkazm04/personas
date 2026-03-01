@@ -266,7 +266,7 @@ pub async fn execute_team(
     // Set up cancellation flag
     let cancelled = Arc::new(std::sync::atomic::AtomicBool::new(false));
     {
-        let mut map = state.active_pipeline_cancelled.lock().unwrap();
+        let mut map = state.active_pipeline_cancelled.lock().unwrap_or_else(|e| e.into_inner());
         map.insert(run_id.clone(), cancelled.clone());
     }
 
@@ -540,7 +540,7 @@ pub fn cancel_pipeline(
     state: State<'_, Arc<AppState>>,
     run_id: String,
 ) -> Result<bool, AppError> {
-    let map = state.active_pipeline_cancelled.lock().unwrap();
+    let map = state.active_pipeline_cancelled.lock().unwrap_or_else(|e| e.into_inner());
     if let Some(flag) = map.get(&run_id) {
         flag.store(true, std::sync::atomic::Ordering::Relaxed);
         tracing::info!(run_id = %run_id, "Pipeline cancellation requested");

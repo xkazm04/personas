@@ -35,7 +35,7 @@ export function IconSelector({ value, onChange, connectors = [], size = 'md' }: 
             }`}
             title={c.label}
           >
-            <img src={c.icon_url!} alt={c.label} className={s.img} />
+            <img src={c.icon_url!} alt={c.label} className={s.img} referrerPolicy="no-referrer" crossOrigin="anonymous" />
           </button>
         );
       })}

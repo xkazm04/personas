@@ -8,6 +8,7 @@ mod gitlab;
 mod logging;
 mod notifications;
 mod tray;
+mod utils;
 mod validation;
 
 use std::collections::HashMap;
@@ -51,6 +52,8 @@ pub struct AppState {
     pub gitlab_client: Arc<tokio::sync::Mutex<Option<Arc<gitlab::client::GitLabClient>>>>,
     /// Rate limiter for event publishing and webhook intake.
     pub rate_limiter: Arc<engine::rate_limiter::RateLimiter>,
+    /// Session-specific RSA key pair for encrypted IPC.
+    pub session_key: Arc<engine::crypto::SessionKeyPair>,
 }
 
 /// Hello world IPC command — verifies the Rust ↔ React bridge works.
@@ -63,6 +66,11 @@ fn greet(name: String) -> String {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Load .env file (project root) into process environment so that
+    // runtime env vars like SUPABASE_URL are available without needing
+    // them baked in at compile time.
+    dotenvy::dotenv().ok();
+
     logging::init();
 
     tracing::info!("Starting Personas Desktop v{}", env!("CARGO_PKG_VERSION"));
@@ -178,6 +186,7 @@ pub fn run() {
                 active_review_child_pids: Arc::new(Mutex::new(HashMap::new())),
                 gitlab_client: Arc::new(tokio::sync::Mutex::new(gitlab_client_opt)),
                 rate_limiter: Arc::new(engine::rate_limiter::RateLimiter::new()),
+                session_key: Arc::new(engine::crypto::SessionKeyPair::generate()?),
             });
             app.manage(state_arc.clone());
 
@@ -265,6 +274,9 @@ pub fn run() {
             commands::core::memories::list_memories_by_execution,
             commands::core::memories::create_memory,
             commands::core::memories::delete_memory,
+            commands::core::memories::update_memory_importance,
+            commands::core::memories::batch_delete_memories,
+            commands::core::memories::review_memories_with_cli,
             // Core — Import/Export
             commands::core::import_export::export_persona,
             commands::core::import_export::import_persona,
@@ -398,6 +410,7 @@ pub fn run() {
             commands::design::reviews::get_pending_review_count,
             // Credentials — CRUD
             commands::credentials::crud::list_credentials,
+            commands::credentials::crud::get_session_public_key,
             commands::credentials::crud::create_credential,
             commands::credentials::crud::update_credential,
             commands::credentials::crud::delete_credential,
@@ -449,6 +462,7 @@ pub fn run() {
             commands::credentials::rotation::rotate_credential_now,
             // Communication — Events
             commands::communication::events::list_events,
+            commands::communication::events::list_events_in_range,
             commands::communication::events::publish_event,
             commands::communication::events::list_subscriptions,
             commands::communication::events::create_subscription,
