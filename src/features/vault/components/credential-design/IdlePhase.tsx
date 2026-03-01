@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plug, Sparkles } from 'lucide-react';
+import { Plug, Sparkles, Bot } from 'lucide-react';
 import { QUICK_SERVICE_HINTS, HINT_COLORS } from '@/features/vault/components/credential-design/CredentialDesignHelpers';
 import type { ConnectorDefinition } from '@/lib/types/types';
 
@@ -7,6 +7,7 @@ interface IdlePhaseProps {
   instruction: string;
   onInstructionChange: (value: string) => void;
   onStart: () => void;
+  onAutoSetup?: () => void;
   onKeyDown: (e: React.KeyboardEvent) => void;
   showTemplates: boolean;
   onToggleTemplates: () => void;
@@ -22,6 +23,7 @@ export function IdlePhase({
   instruction,
   onInstructionChange,
   onStart,
+  onAutoSetup,
   onKeyDown,
   showTemplates,
   onToggleTemplates,
@@ -149,7 +151,17 @@ export function IdlePhase({
         autoFocus
         className="w-full px-4 py-3 bg-secondary/40 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all resize-none"
       />
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2.5">
+        {onAutoSetup && (
+          <button
+            onClick={onAutoSetup}
+            disabled={!instruction.trim()}
+            className="flex items-center gap-2 px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-cyan-600/20"
+          >
+            <Bot className="w-4 h-4" />
+            Auto-Setup
+          </button>
+        )}
         <button
           onClick={onStart}
           disabled={!instruction.trim()}

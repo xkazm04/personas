@@ -595,10 +595,15 @@ export default function TeamCanvas() {
   // Canvas Assistant state
   const [assistantApplying, setAssistantApplying] = useState(false);
 
-  // Canvas Assistant: suggest topology from natural language
+  // Canvas Assistant: suggest topology from natural language (LLM-powered with keyword fallback)
   const handleAssistantSuggest = useCallback(
     async (query: string) => {
-      return api.suggestTopology(query, selectedTeamId ?? undefined);
+      try {
+        return await api.suggestTopologyLlm(query, selectedTeamId ?? undefined);
+      } catch (err) {
+        console.warn('LLM topology failed, falling back to keyword-based:', err);
+        return api.suggestTopology(query, selectedTeamId ?? undefined);
+      }
     },
     [selectedTeamId],
   );

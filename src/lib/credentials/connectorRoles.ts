@@ -68,6 +68,54 @@ export const CONNECTOR_ROLES: ConnectorRole[] = [
   { role: 'hr_recruiting',       label: 'HR & Recruiting',      members: ['greenhouse'] },
 ];
 
+// ── Purpose groups: architectural-level categorisation of roles ────────
+
+export interface PurposeGroup {
+  purpose: string;
+  label: string;
+  roles: string[];
+}
+
+export const PURPOSE_GROUPS: PurposeGroup[] = [
+  { purpose: 'communication',        label: 'Communication',        roles: ['chat_messaging', 'email_delivery', 'sms'] },
+  { purpose: 'development',          label: 'Development',          roles: ['source_control', 'ci_cd', 'project_tracking', 'knowledge_base', 'design', 'feature_flags'] },
+  { purpose: 'infrastructure',       label: 'Infrastructure',       roles: ['hosting', 'cloud_infra', 'database', 'cloud_storage'] },
+  { purpose: 'monitoring_security',  label: 'Monitoring & Security', roles: ['error_monitoring', 'incident_management', 'uptime_monitoring', 'security_scanning'] },
+  { purpose: 'analytics_data',       label: 'Analytics & Data',     roles: ['analytics', 'spreadsheet'] },
+  { purpose: 'customer_facing',      label: 'Customer-Facing',      roles: ['crm', 'support_ticketing', 'social_media'] },
+  { purpose: 'content_cms',          label: 'Content & CMS',        roles: ['cms', 'search_engine', 'video_comms'] },
+  { purpose: 'finance_commerce',     label: 'Finance & Commerce',   roles: ['payment_processing', 'accounting', 'banking_fintech', 'e_commerce'] },
+  { purpose: 'scheduling_forms',     label: 'Scheduling & Forms',   roles: ['scheduling', 'form_survey'] },
+  { purpose: 'specialty',            label: 'Specialty',            roles: ['auth_identity', 'ai_platform', 'advertising', 'e_signature', 'hr_recruiting'] },
+];
+
+// Pre-computed lookup: connector name → purpose key
+const _connectorPurposeMap = new Map<string, string>();
+for (const pg of PURPOSE_GROUPS) {
+  for (const roleKey of pg.roles) {
+    const role = CONNECTOR_ROLES.find((r) => r.role === roleKey);
+    if (role) {
+      for (const member of role.members) {
+        if (!_connectorPurposeMap.has(member)) {
+          _connectorPurposeMap.set(member, pg.purpose);
+        }
+      }
+    }
+  }
+}
+
+/** Get the architectural purpose key for a connector */
+export function getPurposeForConnector(name: string): string | undefined {
+  return _connectorPurposeMap.get(name);
+}
+
+/** Get the purpose group definition for a connector */
+export function getPurposeGroupForConnector(name: string): PurposeGroup | undefined {
+  const purpose = _connectorPurposeMap.get(name);
+  if (!purpose) return undefined;
+  return PURPOSE_GROUPS.find((pg) => pg.purpose === purpose);
+}
+
 /** Get the role definition for a connector by name */
 export function getRoleForConnector(name: string): ConnectorRole | undefined {
   return CONNECTOR_ROLES.find((r) => r.members.includes(name));

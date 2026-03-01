@@ -586,3 +586,73 @@ pub fn suggest_topology(
 
     Ok(topology::suggest_topology(&query, &personas, &existing_member_ids))
 }
+
+/// LLM model for team building — needs reasoning for composition decisions.
+const TEAM_BUILDER_MODEL: &str = "claude-sonnet-4-6";
+const TEAM_BUILDER_TIMEOUT_SECS: u64 = 120;
+
+#[tauri::command]
+pub async fn suggest_topology_llm(
+    state: State<'_, Arc<AppState>>,
+    query: String,
+    team_id: Option<String>,
+) -> Result<TopologyBlueprint, AppError> {
+    use crate::commands::credentials::ai_artifact_flow::run_claude_prompt;
+    use crate::db::repos::communication::reviews as review_repo;
+    use crate::db::repos::core::personas as persona_repo;
+    use crate::engine::llm_topology;
+    use crate::engine::prompt;
+
+    let personas = persona_repo::get_all(&state.db)?;
+    let templates = review_repo::get_reviews(&state.db, None, Some(50))?;
+    let existing_member_ids: Vec<String> = if let Some(ref tid) = team_id {
+        repo::get_members(&state.db, tid)?
+            .iter()
+            .map(|m| m.persona_id.clone())
+            .collect()
+    } else {
+        vec![]
+    };
+
+    // Build prompt
+    let prompt_text = llm_topology::build_llm_topology_prompt(
+        &query,
+        &personas,
+        &templates,
+        &existing_member_ids,
+    );
+
+    // Build CLI args with sonnet model
+    let mut cli_args = prompt::build_cli_args(None, None);
+    cli_args.args.push("--model".to_string());
+    cli_args.args.push(TEAM_BUILDER_MODEL.to_string());
+    cli_args.args.push("--max-turns".to_string());
+    cli_args.args.push("1".to_string());
+
+    // Call Claude
+    let output_text = run_claude_prompt(
+        prompt_text,
+        &cli_args,
+        TEAM_BUILDER_TIMEOUT_SECS,
+        "Claude produced no output for team composition",
+    )
+    .await
+    .map_err(AppError::Internal)?;
+
+    // Parse response
+    let blueprint = llm_topology::parse_llm_topology_response(&output_text, &personas)
+        .ok_or_else(|| {
+            AppError::Internal("Failed to parse team composition from Claude output".into())
+        })?;
+
+    // Fallback to keyword-based if LLM returns empty members
+    if blueprint.members.is_empty() {
+        return Ok(topology::suggest_topology(
+            &query,
+            &personas,
+            &existing_member_ids,
+        ));
+    }
+
+    Ok(blueprint)
+}

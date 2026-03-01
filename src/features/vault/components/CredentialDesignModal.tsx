@@ -10,6 +10,7 @@ import { AnalyzingPhase } from '@/features/vault/components/credential-design/An
 import { PreviewPhase } from '@/features/vault/components/credential-design/PreviewPhase';
 import { DonePhase } from '@/features/vault/components/credential-design/DonePhase';
 import { ErrorPhase } from '@/features/vault/components/credential-design/ErrorPhase';
+import { AutoCredPanel } from '@/features/vault/sub_autoCred/AutoCredPanel';
 
 interface CredentialDesignModalProps {
   open: boolean;
@@ -28,6 +29,10 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
   const [showTemplates, setShowTemplates] = useState(false);
   const [templateSearch, setTemplateSearch] = useState('');
   const [expandedTemplateId, setExpandedTemplateId] = useState<string | null>(null);
+
+  // Auto-credential: when true, redirect to AutoCredPanel once design analysis completes
+  const [autoSetupPending, setAutoSetupPending] = useState(false);
+  const [autoSetupResult, setAutoSetupResult] = useState<CredentialDesignResult | null>(null);
 
   const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
   const fetchConnectorDefinitions = usePersonaStore((s) => s.fetchConnectorDefinitions);
@@ -76,6 +81,8 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
       setShowTemplates(false);
       setTemplateSearch('');
       setExpandedTemplateId(null);
+      setAutoSetupPending(false);
+      setAutoSetupResult(null);
       fetchConnectorDefinitions();
 
       if (initialInstruction?.trim()) {
@@ -85,9 +92,19 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
     }
   }, [open]);
 
+  // When design completes and auto-setup is pending, capture result and redirect
+  useEffect(() => {
+    if (autoSetupPending && orch.phase === 'preview' && orch.contextValue?.result) {
+      setAutoSetupResult(orch.contextValue.result);
+      setAutoSetupPending(false);
+    }
+  }, [autoSetupPending, orch.phase, orch.contextValue]);
+
   const handleClose = () => {
     if (orch.phase === 'analyzing') orch.cancel();
     if (orch.phase === 'done') onComplete();
+    setAutoSetupPending(false);
+    setAutoSetupResult(null);
     onClose();
   };
 
@@ -103,6 +120,13 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
       e.preventDefault();
       orch.start();
     }
+  };
+
+  /** Start design analysis with auto-setup flag */
+  const handleAutoSetup = () => {
+    if (!orch.instruction.trim()) return;
+    setAutoSetupPending(true);
+    orch.start();
   };
 
   if (!open) return null;
@@ -163,6 +187,20 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
     setShowTemplates(false);
   };
 
+  // ── Compute subtitle ──────────────────────────────────────────
+
+  const subtitle = autoSetupResult
+    ? `Auto-Setup: ${autoSetupResult.connector.label}`
+    : autoSetupPending && orch.phase === 'analyzing'
+    ? 'Designing credential for Auto-Setup...'
+    : orch.phase === 'idle' ? 'Describe the service to connect'
+    : orch.phase === 'analyzing' ? 'Analyzing your request...'
+    : orch.phase === 'preview' ? 'Review and save'
+    : orch.phase === 'saving' ? 'Saving...'
+    : orch.phase === 'done' ? 'Credential created'
+    : orch.phase === 'error' ? 'Something went wrong'
+    : '';
+
   // ── Render ──────────────────────────────────────────────────────
 
   return (
@@ -198,14 +236,7 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
             </div>
             <div>
               <h2 id="credential-design-title" className="text-sm font-semibold text-foreground">Design Credential</h2>
-              <p className="text-sm text-muted-foreground/90">
-                {orch.phase === 'idle' && 'Describe the service to connect'}
-                {orch.phase === 'analyzing' && 'Analyzing your request...'}
-                {orch.phase === 'preview' && 'Review and save'}
-                {orch.phase === 'saving' && 'Saving...'}
-                {orch.phase === 'done' && 'Credential created'}
-                {orch.phase === 'error' && 'Something went wrong'}
-              </p>
+              <p className="text-sm text-muted-foreground/90">{subtitle}</p>
             </div>
           </div>
           <button
@@ -218,6 +249,20 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
 
         {/* Body */}
         <div className="p-6 space-y-5">
+          {/* Auto-credential panel (takes over after design + auto-setup) */}
+          {autoSetupResult ? (
+            <AutoCredPanel
+              designResult={autoSetupResult}
+              onComplete={() => {
+                setAutoSetupResult(null);
+                onComplete();
+              }}
+              onCancel={() => {
+                setAutoSetupResult(null);
+                orch.resetAll();
+              }}
+            />
+          ) : (
           <AnimatePresence mode="wait">
             {orch.phase === 'idle' && (
               <IdlePhase
@@ -225,6 +270,7 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
                 instruction={orch.instruction}
                 onInstructionChange={orch.setInstruction}
                 onStart={() => orch.start()}
+                onAutoSetup={handleAutoSetup}
                 onKeyDown={handleKeyDown}
                 showTemplates={showTemplates}
                 onToggleTemplates={() => setShowTemplates((prev) => !prev)}
@@ -278,13 +324,16 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
                   const preserved = orch.instruction;
                   orch.resetAll();
                   orch.setInstruction(preserved);
+                  setAutoSetupPending(false);
                 }}
                 onStartOver={() => {
                   orch.resetAll();
+                  setAutoSetupPending(false);
                 }}
               />
             )}
           </AnimatePresence>
+          )}
         </div>
       </motion.div>
     </div>

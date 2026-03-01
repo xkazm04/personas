@@ -16,6 +16,7 @@ pub mod healing;
 pub mod healthcheck;
 pub mod intent_compiler;
 pub mod knowledge;
+pub mod llm_topology;
 pub mod logger;
 pub mod optimizer;
 pub mod parser;

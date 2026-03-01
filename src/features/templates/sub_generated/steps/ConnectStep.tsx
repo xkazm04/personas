@@ -10,6 +10,7 @@ import {
   Box,
 } from 'lucide-react';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/ConnectorMeta';
+import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 import { CredentialEditForm } from '@/features/vault/components/CredentialEditForm';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useAdoptionWizard } from '../AdoptionWizardContext';
@@ -223,10 +224,10 @@ function ComponentCard({
         <label className="text-[11px] font-medium text-muted-foreground/50 uppercase tracking-wider mb-1.5 block">
           Credential
         </label>
-        <select
+        <ThemedSelect
           value={selectedCredentialId ?? ''}
           onChange={handleCredentialChange}
-          className={`w-full px-2.5 py-2 bg-background/50 border rounded-lg text-sm text-foreground/80 focus:outline-none focus:border-violet-500/30 transition-colors appearance-none cursor-pointer ${
+          className={`px-2.5 ${
             justCreated
               ? 'border-emerald-400/60 ring-2 ring-emerald-400/20'
               : hasCredential ? 'border-emerald-500/15' : 'border-primary/10'
@@ -240,7 +241,7 @@ function ComponentCard({
             </option>
           ))}
           <option value="__create__">+ Create new credential</option>
-        </select>
+        </ThemedSelect>
       </div>
     </div>
   );
@@ -302,10 +303,10 @@ function StandaloneConnectorTile({
         <span className="text-sm font-medium text-foreground/90 flex-1 truncate">{meta.label}</span>
       </div>
 
-      <select
+      <ThemedSelect
         value={selectedCredentialId ?? ''}
         onChange={handleSelectChange}
-        className={`w-full px-2.5 py-1.5 bg-background/50 border rounded-lg text-sm text-foreground/80 focus:outline-none focus:border-violet-500/30 transition-colors appearance-none cursor-pointer ${
+        className={`py-1.5 px-2.5 ${
           justCreated
             ? 'border-emerald-400/60 ring-2 ring-emerald-400/20'
             : hasCredential ? 'border-emerald-500/15' : 'border-primary/10'
@@ -319,7 +320,7 @@ function StandaloneConnectorTile({
           </option>
         ))}
         <option value="__create__">+ Create new credential</option>
-      </select>
+      </ThemedSelect>
     </div>
   );
 }

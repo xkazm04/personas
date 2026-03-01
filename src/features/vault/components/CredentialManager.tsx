@@ -57,6 +57,11 @@ export function CredentialManager() {
   }, []);
 
   // ── Bidirectional sync: FSM <-> Zustand ──
+  // A ref tracks the last-seen navKey so we can tell whether a navKey change
+  // was caused by the Zustand→FSM sync (Effect 1) vs an internal dispatch,
+  // preventing the two effects from ping-ponging infinitely.
+  const prevNavKeyRef = useRef(navKey);
+
   // External navigation (Sidebar, ToolSelector, DesignModal) writes to Zustand; FSM reacts.
   useEffect(() => {
     const target: CredentialNavKey =
@@ -69,9 +74,15 @@ export function CredentialManager() {
   }, [credentialView]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // FSM navKey -> Zustand (for sidebar highlighting)
+  // Only sync when navKey actually changed since our last check.
   useEffect(() => {
-    setCredentialView(navKey);
-  }, [navKey, setCredentialView]);
+    if (navKey !== prevNavKeyRef.current) {
+      prevNavKeyRef.current = navKey;
+      if (navKey !== credentialView) {
+        setCredentialView(navKey);
+      }
+    }
+  }, [navKey, credentialView, setCredentialView]);
 
   // Healthcheck for catalog (from-template) flow
   const selectedConnectorName = viewState.view === 'catalog-form' ? viewState.connector.name : null;

@@ -14,6 +14,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import type { TriggerChainLink } from "@/lib/bindings/TriggerChainLink";
 import { useTriggerOperations } from "@/features/triggers/hooks/useTriggerOperations";
+import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 
 // ─── Constants ──────────────────────────────────────────────────────────
 const NODE_W = 160;
@@ -400,10 +401,9 @@ export function TriggerFlowBuilder() {
                 <label className="text-sm text-muted-foreground/90">
                   When this agent completes:
                 </label>
-                <select
+                <ThemedSelect
                   value={selectedSource}
                   onChange={(e) => setSelectedSource(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-secondary/40 border border-border/30 rounded-lg text-foreground/80 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                 >
                   <option value="">Select source agent...</option>
                   {personas.map((p) => (
@@ -411,7 +411,7 @@ export function TriggerFlowBuilder() {
                       {p.name}
                     </option>
                   ))}
-                </select>
+                </ThemedSelect>
               </div>
 
               {/* Condition */}
@@ -450,10 +450,9 @@ export function TriggerFlowBuilder() {
                 <label className="text-sm text-muted-foreground/90">
                   Trigger this agent:
                 </label>
-                <select
+                <ThemedSelect
                   value={selectedTarget}
                   onChange={(e) => setSelectedTarget(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-secondary/40 border border-border/30 rounded-lg text-foreground/80 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                 >
                   <option value="">Select target agent...</option>
                   {personas
@@ -463,7 +462,7 @@ export function TriggerFlowBuilder() {
                         {p.name}
                       </option>
                     ))}
-                </select>
+                </ThemedSelect>
               </div>
 
               {/* Actions */}
