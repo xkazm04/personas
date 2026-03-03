@@ -1,14 +1,13 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { FlaskConical, Play, Users } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { useDesignReviews } from '@/hooks/design/useDesignReviews';
 import { usePersonaStore } from '@/stores/personaStore';
-import DesignReviewRunner from '@/features/templates/sub_generated/DesignReviewRunner';
-import GeneratedReviewsTab from '@/features/templates/sub_generated/GeneratedReviewsTab';
+import { DesignReviewRunner, GeneratedReviewsTab, TeamSynthesisPanel } from '@/features/templates/sub_generated';
+import type { PredefinedTestCase } from '@/features/templates/sub_generated';
 import N8nImportTab from '@/features/templates/sub_n8n/N8nImportTab';
 import { ErrorBoundary } from '@/features/shared/components/ErrorBoundary';
 import ActivityDiagramModal from '@/features/triggers/components/ActivityDiagramModal';
-import { TeamSynthesisPanel } from '@/features/templates/sub_generated/TeamSynthesisPanel';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
@@ -31,6 +30,7 @@ export default function DesignReviewsPage() {
   } = useDesignReviews();
 
   const selectedPersonaId = usePersonaStore((s) => s.selectedPersonaId);
+  const personas = usePersonaStore((s) => s.personas);
   const credentials = usePersonaStore((s) => s.credentials);
   const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
   const activeTab = usePersonaStore((s) => s.templateTab);
@@ -39,18 +39,18 @@ export default function DesignReviewsPage() {
   const [diagramReview, setDiagramReview] = useState<PersonaDesignReview | null>(null);
   const [galleryTotal, setGalleryTotal] = useState<number | null>(null);
 
+  const selectedPersona = useMemo(
+    () => personas.find((p) => p.id === selectedPersonaId) ?? null,
+    [personas, selectedPersonaId],
+  );
+
   const handleStartReview = () => {
     setShowRunner(true);
   };
 
-  const handleRunnerStart = (options?: { customInstructions?: string[]; testCases?: Array<{ id: string; name: string; instruction: string; tools?: string; trigger?: string; category?: string }> }) => {
-    const testCases = options?.testCases
-      ?? options?.customInstructions?.map((instruction, i) => ({
-        id: `custom_${i}`,
-        name: `Custom Case ${i + 1}`,
-        instruction,
-      }));
-    startNewReview(selectedPersonaId ?? undefined, testCases);
+  const handleRunnerStart = (options?: { testCases?: PredefinedTestCase[] }) => {
+    if (!selectedPersonaId) return;
+    startNewReview(selectedPersonaId, options?.testCases);
   };
 
   const handleRunnerClose = () => {
@@ -123,6 +123,8 @@ export default function DesignReviewsPage() {
         isRunning={isRunning}
         result={runResult}
         runProgress={runProgress}
+        personaName={selectedPersona?.name}
+        personaDescription={selectedPersona?.description ?? undefined}
         onStart={handleRunnerStart}
         onCancel={cancelReview}
       />

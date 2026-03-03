@@ -267,6 +267,7 @@ pub mod providers {
     pub const OLLAMA: &str = "ollama";
     pub const LITELLM: &str = "litellm";
     pub const CUSTOM: &str = "custom";
+    pub const COPILOT: &str = "copilot";
 }
 
 // =============================================================================

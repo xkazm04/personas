@@ -6,6 +6,8 @@
  * - Prompt injection via user-provided variable values
  * - XSS through unsanitized template placeholders
  * - Malformed data breaking downstream logic (bad cron, invalid URL, etc.)
+ *
+ * Supported variable types: text, url, email, cron, select, number, json
  */
 
 import type { AdoptionRequirement } from '@/lib/types/designTypes';
@@ -23,6 +25,9 @@ const EMAIL_RE = /^[^\s@<>'"`;(){}[\]\\]+@[^\s@<>'"`;(){}[\]\\]+\.[a-zA-Z]{2,}$/
 
 /** Maximum length for any single variable value */
 const MAX_VALUE_LENGTH = 2000;
+
+/** Maximum length for JSON variable values (larger to accommodate structured data) */
+const MAX_JSON_VALUE_LENGTH = 10_000;
 
 // ── Prompt Injection Patterns ──────────────────────────────────────────
 // Mirrors workflowSanitizer.ts patterns, applied to individual variable values.
@@ -131,6 +136,39 @@ function validateText(value: string): VariableValidation {
   return { valid: true, error: '' };
 }
 
+function validateNumber(value: string): VariableValidation {
+  const trimmed = value.trim();
+  if (!trimmed) return { valid: true, error: '' };
+
+  if (!/^-?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(trimmed)) {
+    return { valid: false, error: 'Must be a valid number' };
+  }
+
+  const num = Number(trimmed);
+  if (!Number.isFinite(num)) {
+    return { valid: false, error: 'Number must be finite (not Infinity or NaN)' };
+  }
+
+  return { valid: true, error: '' };
+}
+
+function validateJson(value: string): VariableValidation {
+  const trimmed = value.trim();
+  if (!trimmed) return { valid: true, error: '' };
+
+  if (trimmed.length > MAX_JSON_VALUE_LENGTH) {
+    return { valid: false, error: `JSON must be ${MAX_JSON_VALUE_LENGTH} characters or fewer` };
+  }
+
+  try {
+    JSON.parse(trimmed);
+  } catch {
+    return { valid: false, error: 'Invalid JSON format' };
+  }
+
+  return { valid: true, error: '' };
+}
+
 // ── Public API ──────────────────────────────────────────────────────────
 
 /**
@@ -166,6 +204,10 @@ export function validateVariable(
       return validateEmail(trimmed);
     case 'select':
       return validateSelect(trimmed, requirement.options);
+    case 'number':
+      return validateNumber(trimmed);
+    case 'json':
+      return validateJson(trimmed);
     case 'text':
     default:
       return validateText(trimmed);
@@ -240,6 +282,10 @@ export function sanitizeVariableValue(
   // Truncate
   clean = clean.slice(0, MAX_VALUE_LENGTH);
 
+  // Strip ANSI escape sequences from all types
+  // eslint-disable-next-line no-control-regex
+  clean = clean.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '');
+
   // Type-specific normalization: structured types need minimal escaping
   // since their format is inherently constrained
   switch (type) {
@@ -258,6 +304,17 @@ export function sanitizeVariableValue(
     case 'email': {
       // Email is tightly formatted — just trim
       clean = clean.trim();
+      break;
+    }
+    case 'number': {
+      // Numbers are tightly constrained — trim and strip non-numeric noise
+      clean = clean.trim();
+      break;
+    }
+    case 'json': {
+      // JSON gets injection stripping but preserves structural characters
+      clean = clean.slice(0, MAX_JSON_VALUE_LENGTH);
+      clean = stripInjectionPatterns(clean);
       break;
     }
     case 'select': {
@@ -295,4 +352,24 @@ export function sanitizeVariableValues(
   }
 
   return sanitized;
+}
+
+// ── Display Sanitization (UI XSS prevention) ────────────────────────────
+
+/**
+ * Sanitize a variable value for safe rendering in the UI.
+ * Strips characters that could break out of HTML/React rendering contexts.
+ *
+ * Note: React already auto-escapes text content, so this is a defense-in-depth
+ * measure for cases where values flow into dangerouslySetInnerHTML or attributes.
+ */
+export function sanitizeForDisplay(value: string): string {
+  return value
+    // Strip zero-width/invisible Unicode
+    .replace(/[\u200b\u200c\u200d\u200e\u200f\ufeff\u2060-\u2064]/g, '')
+    // Strip ANSI escape codes
+    // eslint-disable-next-line no-control-regex
+    .replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '')
+    // Truncate for display (prevent DOM bloat from oversized values)
+    .slice(0, MAX_VALUE_LENGTH);
 }

@@ -39,6 +39,8 @@ interface N8nTransformChatProps {
   isRestoring: boolean;
   onRetry: () => void;
   onCancel: () => void;
+  /** Error message from the transform — shown inline when failed */
+  errorMessage?: string | null;
 }
 
 export function N8nTransformChat({
@@ -53,6 +55,7 @@ export function N8nTransformChat({
   isRestoring,
   onRetry,
   onCancel,
+  errorMessage,
 }: N8nTransformChatProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -272,6 +275,7 @@ export function N8nTransformChat({
             isRestoring={isRestoring}
             onRetry={onRetry}
             onCancel={onCancel}
+            errorMessage={errorMessage}
           />
         </>
       )}
@@ -285,6 +289,7 @@ export function N8nTransformChat({
           isRestoring={false}
           onRetry={onRetry}
           onCancel={onCancel}
+          errorMessage={errorMessage}
         />
       )}
 

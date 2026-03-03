@@ -962,6 +962,127 @@ pub fn backfill_service_flow(
     Ok(json!({ "total": reviews.len(), "updated": updated, "skipped": skipped }))
 }
 
+/// Backfill `related_tools` for each `suggested_connector` that is missing it.
+/// Matches tools from `suggested_tools` to connectors using name-prefix heuristic:
+/// e.g. tool `slack_send_message` matches connector `slack`.
+#[tauri::command]
+pub fn backfill_related_tools(
+    state: State<'_, Arc<AppState>>,
+) -> Result<serde_json::Value, AppError> {
+    let reviews = repo::get_reviews_with_design_result(&state.db)?;
+    let mut updated = 0i64;
+    let mut skipped = 0i64;
+
+    for (id, design_result_json) in &reviews {
+        let mut result: serde_json::Value = match serde_json::from_str(design_result_json) {
+            Ok(v) => v,
+            Err(_) => continue,
+        };
+
+        let obj = match result.as_object_mut() {
+            Some(o) => o,
+            None => continue,
+        };
+
+        // Collect all suggested_tools for matching
+        let all_tools: Vec<String> = obj
+            .get("suggested_tools")
+            .and_then(|v| v.as_array())
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                    .collect()
+            })
+            .unwrap_or_default();
+
+        if all_tools.is_empty() {
+            skipped += 1;
+            continue;
+        }
+
+        // Check if any connector is missing related_tools
+        let connectors = match obj.get("suggested_connectors").and_then(|v| v.as_array()) {
+            Some(arr) => arr.clone(),
+            None => {
+                skipped += 1;
+                continue;
+            }
+        };
+
+        let any_missing = connectors.iter().any(|c| {
+            match c.get("related_tools") {
+                None | Some(serde_json::Value::Null) => true,
+                Some(serde_json::Value::Array(arr)) if arr.is_empty() => true,
+                _ => false,
+            }
+        });
+
+        if !any_missing {
+            skipped += 1;
+            continue;
+        }
+
+        // Build enriched connectors
+        let mut enriched_connectors = connectors;
+        for conn in enriched_connectors.iter_mut() {
+            let needs_fill = match conn.get("related_tools") {
+                None | Some(serde_json::Value::Null) => true,
+                Some(serde_json::Value::Array(arr)) if arr.is_empty() => true,
+                _ => false,
+            };
+
+            if !needs_fill {
+                continue;
+            }
+
+            let connector_name = match conn.get("name").and_then(|v| v.as_str()) {
+                Some(n) => n.to_lowercase(),
+                None => continue,
+            };
+
+            // Match tools whose name starts with or contains the connector name
+            let matched: Vec<serde_json::Value> = all_tools
+                .iter()
+                .filter(|tool| {
+                    let t = tool.to_lowercase();
+                    t.starts_with(&connector_name)
+                        || t.starts_with(&format!("{}_", connector_name))
+                        || t.contains(&format!("_{}_", connector_name))
+                })
+                .map(|t| serde_json::Value::String(t.clone()))
+                .collect();
+
+            if !matched.is_empty() {
+                if let Some(obj) = conn.as_object_mut() {
+                    obj.insert(
+                        "related_tools".to_string(),
+                        serde_json::Value::Array(matched),
+                    );
+                }
+            }
+        }
+
+        obj.insert(
+            "suggested_connectors".to_string(),
+            serde_json::Value::Array(enriched_connectors),
+        );
+
+        let updated_json = match serde_json::to_string(&result) {
+            Ok(j) => j,
+            Err(_) => continue,
+        };
+
+        if let Err(e) = repo::update_review_design_result(&state.db, id, &updated_json) {
+            tracing::warn!(id = %id, error = %e, "Failed to backfill related_tools");
+        } else {
+            updated += 1;
+        }
+    }
+
+    tracing::info!(total = reviews.len(), updated = updated, skipped = skipped, "Backfilled related_tools");
+    Ok(json!({ "total": reviews.len(), "updated": updated, "skipped": skipped }))
+}
+
 #[tauri::command]
 pub fn import_design_review(
     state: State<'_, Arc<AppState>>,

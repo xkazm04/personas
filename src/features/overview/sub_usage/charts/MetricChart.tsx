@@ -1,5 +1,5 @@
 import { ResponsiveContainer } from 'recharts';
-import type { ReactElement, ReactNode } from 'react';
+import type { ComponentType, ReactElement, ReactNode, SVGProps } from 'react';
 
 interface MetricChartProps {
   title: string;
@@ -13,6 +13,12 @@ interface MetricChartProps {
   className?: string;
   /** Shown instead of the chart when provided and children is absent (empty state). */
   emptySlot?: ReactNode;
+  /** Optional Lucide icon rendered as a 24×24 rounded badge left of the title. */
+  icon?: ComponentType<SVGProps<SVGSVGElement> & { className?: string }>;
+  /** Colour token applied to the icon badge background/text (e.g. "cyan", "violet"). */
+  iconColor?: string;
+  /** When true, renders a shimmer skeleton in place of the chart. */
+  loading?: boolean;
 }
 
 /**
@@ -26,17 +32,38 @@ export function MetricChart({
   children,
   className,
   emptySlot,
+  icon: Icon,
+  iconColor = 'cyan',
+  loading = false,
 }: MetricChartProps) {
   return (
     <div className={`bg-secondary/30 border border-primary/10 rounded-xl p-4 ${className ?? ''}`}>
       <div className="mb-3">
-        <h3 className="text-sm font-medium text-foreground/90">{title}</h3>
+        <h3 className="text-xs font-bold uppercase tracking-widest text-foreground/80 flex items-center gap-2">
+          {Icon && (
+            <div
+              className={`p-1.5 rounded-lg bg-${iconColor}-500/10 text-${iconColor}-400`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+            </div>
+          )}
+          {title}
+        </h3>
         {insight && <p className="text-sm text-muted-foreground/80 mt-1">{insight}</p>}
       </div>
-      {emptySlot ?? (
-        <ResponsiveContainer width="100%" height={height}>
-          {children}
-        </ResponsiveContainer>
+      {loading ? (
+        <div
+          className="w-full rounded-lg bg-secondary/60 overflow-hidden"
+          style={{ height }}
+        >
+          <div className="h-full w-full animate-pulse bg-gradient-to-r from-transparent via-foreground/5 to-transparent" />
+        </div>
+      ) : (
+        emptySlot ?? (
+          <ResponsiveContainer width="100%" height={height}>
+            {children}
+          </ResponsiveContainer>
+        )
       )}
     </div>
   );

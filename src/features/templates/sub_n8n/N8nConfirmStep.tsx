@@ -5,7 +5,7 @@ import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import { MarkdownRenderer } from '@/features/shared/components/MarkdownRenderer';
 import { parseDesignContext } from '@/features/shared/components/UseCasesList';
-import { translateHealthcheckMessage } from '@/features/vault/components/credential-design/CredentialDesignHelpers';
+import { translateHealthcheckMessage } from '@/features/vault/sub_design/CredentialDesignHelpers';
 import { extractProtocolCapabilities, countByType } from './edit/protocolParser';
 import { matchCredentialToConnector } from './edit/connectorMatching';
 import { usePersonaStore } from '@/stores/personaStore';

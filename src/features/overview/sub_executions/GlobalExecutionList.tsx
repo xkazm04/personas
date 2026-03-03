@@ -3,12 +3,14 @@ import { Loader2, RefreshCw, BarChart3, Bot, Inbox } from 'lucide-react';
 import { useVirtualList } from '@/hooks/utility/useVirtualList';
 import { usePersonaStore } from '@/stores/personaStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
+import { FilterBar } from '@/features/shared/components/FilterBar';
 import { ExecutionMetricsDashboard } from './ExecutionMetricsDashboard';
 import { PersonaSelect } from '@/features/overview/sub_usage/DashboardFilters';
 import DetailModal from '@/features/overview/components/DetailModal';
 import { ExecutionDetail } from '@/features/agents/sub_executions/ExecutionDetail';
 import { formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import type { GlobalExecution } from '@/lib/types/types';
+import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -16,12 +18,12 @@ import type { GlobalExecution } from '@/lib/types/types';
 
 type FilterStatus = 'all' | 'running' | 'completed' | 'failed';
 
-const filterOptions: Array<{ id: FilterStatus; label: string }> = [
-  { id: 'all', label: 'All' },
-  { id: 'running', label: 'Running' },
-  { id: 'completed', label: 'Completed' },
-  { id: 'failed', label: 'Failed' },
-];
+const FILTER_LABELS: Record<FilterStatus, string> = {
+  all: 'All',
+  running: 'Running',
+  completed: 'Completed',
+  failed: 'Failed',
+};
 
 // ---------------------------------------------------------------------------
 // Component
@@ -35,27 +37,37 @@ export default function GlobalExecutionList() {
   const personas = usePersonaStore((s) => s.personas);
 
   const [filter, setFilter] = useState<FilterStatus>('all');
-  const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
+  const { selectedPersonaId, setSelectedPersonaId } = useOverviewFilters();
   const [selectedExec, setSelectedExec] = useState<GlobalExecution | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
 
-  // Client-side persona filter
-  const filteredExecutions = useMemo(() => {
+  // Client-side persona filter (used for badge counts across all tabs)
+  const personaFiltered = useMemo(() => {
     if (!selectedPersonaId) return globalExecutions;
     return globalExecutions.filter((e) => e.persona_id === selectedPersonaId);
   }, [globalExecutions, selectedPersonaId]);
 
   const statusCounts = useMemo(() => {
-    const counts: Record<FilterStatus, number> = { all: filteredExecutions.length, running: 0, completed: 0, failed: 0 };
-    for (const exec of filteredExecutions) {
+    const counts: Record<FilterStatus, number> = { all: personaFiltered.length, running: 0, completed: 0, failed: 0 };
+    for (const exec of personaFiltered) {
       if (exec.status === 'running' || exec.status === 'pending') counts.running++;
       else if (exec.status === 'completed') counts.completed++;
       else if (exec.status === 'failed') counts.failed++;
     }
     return counts;
-  }, [filteredExecutions]);
+  }, [personaFiltered]);
+
+  // Apply status filter for display
+  const filteredExecutions = useMemo(() => {
+    if (filter === 'all') return personaFiltered;
+    return personaFiltered.filter((e) =>
+      filter === 'running'
+        ? e.status === 'running' || e.status === 'pending'
+        : e.status === filter,
+    );
+  }, [personaFiltered, filter]);
 
   // Initial fetch and filter changes
   useEffect(() => {
@@ -153,33 +165,25 @@ export default function GlobalExecutionList() {
       ) : (
         <>
           {/* Filter bar */}
-          <div className="px-4 md:px-6 py-3 border-b border-primary/10 flex items-center gap-2 flex-shrink-0 flex-wrap">
-            {filterOptions.map((opt) => (
-              <button
-                key={opt.id}
-                onClick={() => setFilter(opt.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
-                  filter === opt.id
-                    ? 'bg-primary/15 text-primary border-primary/30'
-                    : 'bg-secondary/30 text-muted-foreground/80 border-primary/15 hover:text-muted-foreground hover:bg-secondary/50'
-                }`}
-              >
-                {opt.id === 'running' && statusCounts.running > 0 && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-                )}
-                {opt.label}
-                <span className="opacity-60">({statusCounts[opt.id]})</span>
-              </button>
-            ))}
-            <PersonaSelect
-              value={selectedPersonaId}
-              onChange={setSelectedPersonaId}
-              personas={personas}
-            />
-            <span className="ml-auto text-sm font-mono text-muted-foreground/80">
-              Showing {filteredExecutions.length} of {globalExecutionsTotal}
-            </span>
-          </div>
+          <FilterBar<FilterStatus>
+            options={(['all', 'running', 'completed', 'failed'] as FilterStatus[]).map((id) => ({
+              id,
+              label: FILTER_LABELS[id],
+              badge: statusCounts[id],
+            }))}
+            value={filter}
+            onChange={setFilter}
+            badgeStyle="paren"
+            layoutIdPrefix="execution-filter"
+            trailing={
+              <PersonaSelect
+                value={selectedPersonaId}
+                onChange={setSelectedPersonaId}
+                personas={personas}
+              />
+            }
+            summary={`Showing ${filteredExecutions.length} of ${globalExecutionsTotal}`}
+          />
 
           {/* Execution table */}
           <ContentBody flex>
@@ -236,6 +240,14 @@ export default function GlobalExecutionList() {
                   {virtualizer.getVirtualItems().map((virtualRow) => {
                     const exec = filteredExecutions[virtualRow.index]!;
                     const status = getStatusEntry(exec.status);
+                    const hoverAccent =
+                      exec.status === 'running' || exec.status === 'pending'
+                        ? 'hover:border-l-blue-400'
+                        : exec.status === 'completed'
+                          ? 'hover:border-l-emerald-400'
+                          : exec.status === 'failed'
+                            ? 'hover:border-l-red-400'
+                            : 'hover:border-l-amber-400';
                     return (
                       <div
                         key={exec.id}
@@ -255,7 +267,7 @@ export default function GlobalExecutionList() {
                           width: '100%',
                           height: `${virtualRow.size}px`,
                         }}
-                        className="flex items-center hover:bg-white/[0.03] cursor-pointer transition-colors border-b border-primary/[0.06]"
+                        className={`flex items-center cursor-pointer transition-colors border-b border-primary/[0.06] border-l-2 border-l-transparent hover:bg-white/[0.05] ${hoverAccent} ${virtualRow.index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
                       >
                         {/* Persona */}
                         <div className="flex items-center gap-2 px-4 w-[25%] min-w-0">
@@ -315,7 +327,7 @@ export default function GlobalExecutionList() {
                       onClick={handleLoadMore}
                       className="px-4 py-2 text-sm font-medium text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 rounded-lg border border-primary/15 transition-all"
                     >
-                      Load More ({globalExecutionsTotal - globalExecutionsOffset} remaining)
+                      Load More
                     </button>
                   </div>
                 )}

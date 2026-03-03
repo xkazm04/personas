@@ -1,12 +1,13 @@
 import { motion } from 'framer-motion';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Users, Radio, Brain, DollarSign, Cloud, Plus, LayoutTemplate, Monitor, Upload, List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu, Network, type LucideIcon } from 'lucide-react';
+import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Users, Radio, Brain, DollarSign, Cloud, Plus, LayoutTemplate, Monitor, Upload, List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu, Network, Database, type LucideIcon } from 'lucide-react';
 import { getVersion } from '@tauri-apps/api/app';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useAuthStore } from '@/stores/authStore';
 import type { SidebarSection, OverviewTab, TemplateTab, CloudTab, SettingsTab } from '@/lib/types/types';
 import GroupedAgentSidebar from '@/features/agents/components/GroupedAgentSidebar';
 import TeamDragPanel from '@/features/pipeline/components/TeamDragPanel';
+import { credentialNav, type CredentialNavKey } from '@/features/vault/hooks/useCredentialViewFSM';
 
 const sections: Array<{ id: SidebarSection; icon: typeof Bot; label: string }> = [
   { id: 'overview', icon: BarChart3, label: 'Overview' },
@@ -103,8 +104,7 @@ function SidebarSubNav({
 export default function Sidebar() {
   const sidebarSection = usePersonaStore((s) => s.sidebarSection);
   const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
-  const credentialView = usePersonaStore((s) => s.credentialView);
-  const setCredentialView = usePersonaStore((s) => s.setCredentialView);
+  const credentialView = useSyncExternalStore(credentialNav.subscribe, credentialNav.getSnapshot);
   const credentials = usePersonaStore((s) => s.credentials);
   const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
   const overviewTab = usePersonaStore((s) => s.overviewTab);
@@ -184,13 +184,20 @@ export default function Sidebar() {
   if (unreadMessageCount > 0) overviewBadges['messages'] = { count: unreadMessageCount, className: 'bg-blue-500/20 text-blue-400 border border-blue-500/30' };
   if (pendingEventCount > 0) overviewBadges['events'] = { count: pendingEventCount, className: 'bg-purple-500/20 text-purple-400 border border-purple-500/30' };
 
+  const dbCredCount = credentials.filter((c) => {
+    const def = connectorDefinitions.find((d) => d.name === c.service_type);
+    return def?.category === 'database';
+  }).length;
+
   const credentialBadges: Record<string, SubNavBadge> = {
     credentials: { count: credentials.length, className: 'bg-secondary/50 border border-primary/10 text-muted-foreground/90 font-normal' },
+    databases: { count: dbCredCount, className: 'bg-secondary/50 border border-primary/10 text-muted-foreground/90 font-normal' },
     'from-template': { count: templateCount, className: 'bg-secondary/50 border border-primary/10 text-muted-foreground/90 font-normal' },
   };
 
   const credentialItems: SubNavItem[] = [
     { id: 'credentials', label: 'Credentials', icon: Key },
+    { id: 'databases', label: 'Databases', icon: Database },
     { id: 'from-template', label: 'Catalog', icon: LayoutTemplate },
     { id: 'add-new', label: 'Add new', icon: Plus },
   ];
@@ -244,7 +251,7 @@ export default function Sidebar() {
           <SidebarSubNav
             items={credentialItems}
             activeId={credentialView}
-            onSelect={(id) => setCredentialView(id as typeof credentialView)}
+            onSelect={(id) => credentialNav.navigate(id as CredentialNavKey)}
             badges={credentialBadges}
           >
             {credentials.length === 0 && credentialView === 'credentials' && (

@@ -36,6 +36,10 @@ import upstash from '../../../scripts/connectors/builtin/upstash.json';
 import planetscale from '../../../scripts/connectors/builtin/planetscale.json';
 import dropbox from '../../../scripts/connectors/builtin/dropbox.json';
 import twilioSms from '../../../scripts/connectors/builtin/twilio-sms.json';
+import postgres from '../../../scripts/connectors/builtin/postgres.json';
+import mongodb from '../../../scripts/connectors/builtin/mongodb.json';
+import redis from '../../../scripts/connectors/builtin/redis.json';
+import duckdb from '../../../scripts/connectors/builtin/duckdb.json';
 
 export interface BuiltinConnectorDef {
   id: string;
@@ -92,4 +96,8 @@ export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   planetscale,
   dropbox,
   twilioSms,
+  postgres,
+  mongodb,
+  redis,
+  duckdb,
 ] as BuiltinConnectorDef[];

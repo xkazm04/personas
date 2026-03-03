@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Globe, Shield, ArrowRight, ExternalLink } from 'lucide-react';
 import type { CredentialDesignResult } from '@/hooks/design/useCredentialDesign';
+import { MarkdownRenderer } from '@/features/shared/components/MarkdownRenderer';
 import { buildConnectorContext } from './types';
 
 interface AutoCredConsentProps {
@@ -54,10 +55,11 @@ export function AutoCredConsent({ designResult, onConsent, onCancel }: AutoCredC
       {/* Setup instructions summary */}
       {designResult.setup_instructions && (
         <div className="p-3 rounded-lg border border-primary/10 bg-secondary/20">
-          <p className="text-xs font-medium text-muted-foreground/60 mb-1">Setup context from design analysis:</p>
-          <p className="text-sm text-muted-foreground/80 line-clamp-3">
-            {designResult.setup_instructions}
-          </p>
+          <p className="text-xs font-medium text-muted-foreground/60 mb-1.5">Setup context from design analysis:</p>
+          <MarkdownRenderer
+            content={designResult.setup_instructions}
+            className="[&_p]:text-sm [&_p]:text-muted-foreground/80 [&_p]:mb-1.5 [&_ul]:text-sm [&_ol]:text-sm [&_li]:text-muted-foreground/80 [&_code]:text-xs"
+          />
         </div>
       )}
 

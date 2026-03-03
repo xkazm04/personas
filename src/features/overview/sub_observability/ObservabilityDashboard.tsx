@@ -1,16 +1,22 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useMemo, useCallback, useState } from 'react';
 import { usePersonaStore, initHealingListener } from '@/stores/personaStore';
 import { DollarSign, Zap, CheckCircle, TrendingUp, TrendingDown, ArrowRight, RefreshCw, Stethoscope, CheckCircle2, X, AlertTriangle } from 'lucide-react';
-import { getAllMonthlySpend } from '@/api/observability';
+import { getPromptVersions } from '@/api/observability';
+import { selectBudgetWarnings, selectBudgetData } from '@/stores/slices/overviewSlice';
+import { getRotationHistory } from '@/api/rotation';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import HealingIssueModal from '@/features/overview/sub_observability/HealingIssueModal';
 import { DayRangePicker, PersonaSelect } from '@/features/overview/sub_usage/DashboardFilters';
-import type { DayRange } from '@/features/overview/sub_usage/DashboardFilters';
 import { SEVERITY_COLORS, HEALING_CATEGORY_COLORS, badgeClass } from '@/lib/utils/formatters';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 import { MetricsCharts } from '@/features/overview/sub_observability/MetricsCharts';
 import type { PieDataPoint } from '@/features/overview/sub_observability/MetricsCharts';
 import { SummaryCard } from '@/features/overview/sub_observability/SpendOverview';
+import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
+import type { ChartAnnotationRecord } from '@/features/overview/sub_observability/chartAnnotations';
+import { toChartDate } from '@/features/overview/sub_observability/chartAnnotations';
+
+const isDefined = <T,>(value: T | null | undefined): value is T => value != null;
 
 export default function ObservabilityDashboard() {
   const fetchObservabilityMetrics = usePersonaStore((s) => s.fetchObservabilityMetrics);
@@ -22,8 +28,16 @@ export default function ObservabilityDashboard() {
   const fetchHealingIssues = usePersonaStore((s) => s.fetchHealingIssues);
   const triggerHealing = usePersonaStore((s) => s.triggerHealing);
   const resolveHealingIssue = usePersonaStore((s) => s.resolveHealingIssue);
-  const [days, setDays] = useState<DayRange>(30);
-  const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
+  const credentials = usePersonaStore((s) => s.credentials);
+  const fetchCredentials = usePersonaStore((s) => s.fetchCredentials);
+  const setOverviewTab = usePersonaStore((s) => s.setOverviewTab);
+  const {
+    dayRange: days,
+    setDayRange: setDays,
+    selectedPersonaId,
+    setSelectedPersonaId,
+    setFailureDrilldownDate,
+  } = useOverviewFilters();
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<PersonaHealingIssue | null>(null);
   const [issueFilter, setIssueFilter] = useState<'all' | 'open' | 'auto-fixed'>('all');
@@ -32,33 +46,115 @@ export default function ObservabilityDashboard() {
     issues_created: number;
     auto_fixed: number;
   } | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [promptAnnotations, setPromptAnnotations] = useState<ChartAnnotationRecord[]>([]);
+  const [rotationAnnotations, setRotationAnnotations] = useState<ChartAnnotationRecord[]>([]);
 
-  // ── Budget warning state ──
-  const [budgetData, setBudgetData] = useState<Array<{ personaId: string; name: string; spend: number; budget: number | null }>>([]);
+  // ── Budget state (centralized) ──
+  const monthlySpend = usePersonaStore((s) => s.monthlySpend);
+  const budgetError = usePersonaStore((s) => s.monthlySpendError);
+  const fetchMonthlySpend = usePersonaStore((s) => s.fetchMonthlySpend);
 
-  const budgetWarnings = useMemo(() => {
-    return budgetData.filter((d) => d.budget && d.budget > 0 && d.spend >= d.budget * 0.8);
-  }, [budgetData]);
+  const budgetData = useMemo(() => selectBudgetData(monthlySpend), [monthlySpend]);
+  const budgetWarnings = useMemo(() => selectBudgetWarnings(monthlySpend), [monthlySpend]);
 
   const refreshAll = useCallback(() => {
     return Promise.all([
       fetchObservabilityMetrics(days, selectedPersonaId || undefined),
       fetchHealingIssues(),
-      getAllMonthlySpend().then((data) => {
-        setBudgetData(data.map((d) => ({ personaId: d.id, name: d.name, spend: d.spend, budget: d.max_budget_usd })));
-      }).catch(() => {}),
+      fetchMonthlySpend(),
     ]);
-  }, [days, selectedPersonaId, fetchObservabilityMetrics, fetchHealingIssues]);
+  }, [days, selectedPersonaId, fetchObservabilityMetrics, fetchHealingIssues, fetchMonthlySpend]);
 
   const handleRunAnalysis = useCallback(async () => {
     setAnalysisResult(null);
-    const result = await triggerHealing(selectedPersonaId || personas[0]?.id);
-    if (result) setAnalysisResult(result);
+    setAnalysisError(null);
+    try {
+      const result = await triggerHealing(selectedPersonaId || personas[0]?.id);
+      if (result) {
+        setAnalysisResult(result);
+      } else {
+        setAnalysisError('Healing analysis failed. Please try again.');
+      }
+    } catch (err) {
+      setAnalysisError(err instanceof Error ? err.message : 'Healing analysis failed');
+    }
   }, [triggerHealing, selectedPersonaId, personas]);
 
   useEffect(() => {
     initHealingListener();
   }, []);
+
+  useEffect(() => {
+    void fetchCredentials();
+  }, [fetchCredentials]);
+
+  useEffect(() => {
+    let active = true;
+    const loadPromptAnnotations = async () => {
+      const personaIds = selectedPersonaId ? [selectedPersonaId] : personas.map((p) => p.id).slice(0, 8);
+      if (personaIds.length === 0) {
+        if (active) setPromptAnnotations([]);
+        return;
+      }
+      try {
+        const byPersona = await Promise.all(
+          personaIds.map(async (personaId) => {
+            const versions = await getPromptVersions(personaId, 8);
+            return versions.map((version) => {
+              const date = toChartDate(version.created_at);
+              if (!date) return null;
+              return {
+                timestamp: version.created_at,
+                date,
+                label: `Prompt v${version.version_number} (${version.tag})`,
+                type: 'prompt' as const,
+                personaId,
+              };
+            }).filter(isDefined);
+          }),
+        );
+        if (active) setPromptAnnotations(byPersona.flat());
+      } catch {
+        if (active) setPromptAnnotations([]);
+      }
+    };
+    void loadPromptAnnotations();
+    return () => { active = false; };
+  }, [selectedPersonaId, personas]);
+
+  useEffect(() => {
+    let active = true;
+    const loadRotationAnnotations = async () => {
+      if (credentials.length === 0) {
+        if (active) setRotationAnnotations([]);
+        return;
+      }
+      try {
+        const byCredential = await Promise.all(
+          credentials.slice(0, 20).map(async (credential) => {
+            const history = await getRotationHistory(credential.id, 3);
+            return history.map((entry) => {
+              const date = toChartDate(entry.created_at);
+              if (!date) return null;
+              return {
+                timestamp: entry.created_at,
+                date,
+                label: `Rotation ${entry.status}${credential.name ? ` · ${credential.name}` : ''}`,
+                type: 'rotation' as const,
+                personaId: null,
+              };
+            }).filter(isDefined);
+          }),
+        );
+        if (active) setRotationAnnotations(byCredential.flat());
+      } catch {
+        if (active) setRotationAnnotations([]);
+      }
+    };
+    void loadRotationAnnotations();
+    return () => { active = false; };
+  }, [credentials]);
 
   useEffect(() => {
     refreshAll();
@@ -159,6 +255,34 @@ export default function ObservabilityDashboard() {
     return { issueCounts: counts, sortedFilteredIssues: sorted };
   }, [healingIssues, issueFilter]);
 
+  const chartAnnotations = useMemo<ChartAnnotationRecord[]>(() => {
+    const healingAnnotations = healingIssues
+      .map((issue) => {
+        const date = toChartDate(issue.created_at);
+        if (!date) return null;
+        return {
+          timestamp: issue.created_at,
+          date,
+          label: issue.is_circuit_breaker ? `Circuit breaker: ${issue.title}` : issue.title,
+          type: issue.is_circuit_breaker ? 'incident' as const : 'healing' as const,
+          personaId: issue.persona_id,
+        };
+      })
+      .filter(isDefined);
+
+    const merged = [...promptAnnotations, ...rotationAnnotations, ...healingAnnotations]
+      .filter((entry) => !selectedPersonaId || !entry.personaId || entry.personaId === selectedPersonaId)
+      .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+
+    const deduped = new Map<string, ChartAnnotationRecord>();
+    for (const entry of merged) {
+      const key = `${entry.date}:${entry.type}:${entry.label}`;
+      if (!deduped.has(key)) deduped.set(key, entry);
+    }
+    const values = [...deduped.values()];
+    return values.length > 24 ? values.slice(values.length - 24) : values;
+  }, [healingIssues, promptAnnotations, rotationAnnotations, selectedPersonaId]);
+
   return (
     <ContentBox>
       <ContentHeader
@@ -224,30 +348,42 @@ export default function ObservabilityDashboard() {
                 {budgetWarnings.length === 1 ? '1 persona' : `${budgetWarnings.length} personas`} approaching or exceeding budget
               </p>
               <div className="mt-1.5 flex flex-wrap gap-2">
-                {budgetWarnings.map((w) => {
-                  const ratio = w.budget! > 0 ? w.spend / w.budget! : 0;
-                  const exceeded = ratio >= 1;
-                  return (
+                {budgetWarnings.map((w) => (
                     <span
                       key={w.personaId}
                       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm border ${
-                        exceeded
+                        w.exceeded
                           ? 'bg-red-500/15 text-red-300 border-red-500/25'
                           : 'bg-amber-500/15 text-amber-300 border-amber-500/25'
                       }`}
                     >
                       {w.name}
                       <span className="font-mono text-sm opacity-80">
-                        ${w.spend.toFixed(2)} / ${w.budget!.toFixed(2)}
+                        ${w.spend.toFixed(2)} / ${w.budget.toFixed(2)}
                       </span>
-                      <span className={`font-mono text-sm font-bold ${exceeded ? 'text-red-400' : 'text-amber-400'}`}>
-                        {(ratio * 100).toFixed(0)}%
+                      <span className={`font-mono text-sm font-bold ${w.exceeded ? 'text-red-400' : 'text-amber-400'}`}>
+                        {(w.ratio * 100).toFixed(0)}%
                       </span>
                     </span>
-                  );
-                })}
+                ))}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Budget Fetch Error */}
+      {budgetError && (
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-amber-300">Budget data unavailable</p>
+              <p className="text-sm text-amber-400/70 mt-0.5">{budgetError}</p>
+            </div>
+            <button onClick={refreshAll} className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-lg bg-amber-500/15 border border-amber-500/25 text-amber-300 hover:bg-amber-500/25 transition-colors">
+              <RefreshCw className="w-3 h-3" /> Retry
+            </button>
           </div>
         </div>
       )}
@@ -261,7 +397,15 @@ export default function ObservabilityDashboard() {
       </div>
 
       {/* Charts */}
-      <MetricsCharts chartData={chartData} pieData={pieData} />
+      <MetricsCharts
+        chartData={chartData}
+        pieData={pieData}
+        annotations={chartAnnotations}
+        onFailureBarClick={(date) => {
+          setFailureDrilldownDate(date);
+          setOverviewTab('knowledge');
+        }}
+      />
 
       {/* Health Issues Section */}
       <div className="rounded-2xl border border-primary/10 bg-secondary/20 shadow-sm overflow-hidden flex flex-col">
@@ -311,6 +455,21 @@ export default function ObservabilityDashboard() {
             <button
               onClick={() => setAnalysisResult(null)}
               className="p-1 rounded hover:bg-cyan-500/20 text-cyan-400/50 hover:text-cyan-300 transition-colors"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+
+        {analysisError && !healingRunning && (
+          <div className="flex items-center justify-between px-5 py-2.5 bg-red-500/10 border-b border-red-500/20">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
+              <span className="text-sm text-red-300">{analysisError}</span>
+            </div>
+            <button
+              onClick={() => setAnalysisError(null)}
+              className="p-1 rounded hover:bg-red-500/20 text-red-400/50 hover:text-red-300 transition-colors"
             >
               <X className="w-3 h-3" />
             </button>
@@ -370,7 +529,7 @@ export default function ObservabilityDashboard() {
 
               const isAutoFixed = issue.auto_fixed;
 
-              const isCircuitBreaker = /circuit\s*breaker/i.test(issue.title);
+              const isCircuitBreaker = issue.is_circuit_breaker;
 
               return (
                 <div key={issue.id} className={`flex items-center gap-4 px-5 py-4 hover:bg-white/[0.03] transition-colors group cursor-pointer ${isAutoFixed ? 'opacity-70' : ''} ${isCircuitBreaker ? 'bg-red-500/5' : ''}`}>

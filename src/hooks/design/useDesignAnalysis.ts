@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { startDesignAnalysis, refineDesign, cancelDesignAnalysis, compileFromIntent } from '@/api/design';
 import { createTrigger } from '@/api/triggers';
@@ -43,6 +43,10 @@ export function useDesignAnalysis() {
     }
     unlistenersRef.current = [];
   }, []);
+
+  // Clean up Tauri event listeners on unmount to prevent stale callbacks
+  // from firing on unmounted components.
+  useEffect(() => cleanup, [cleanup]);
 
   const setupDesignListeners = useCallback(async (
     failureMessage: string,

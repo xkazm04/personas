@@ -1,0 +1,147 @@
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { usePersonaStore } from '@/stores/personaStore';
+import { sendAppNotification } from '@/api/system';
+import { parseDesignContext, mergeCredentialLink } from '@/features/shared/components/UseCasesList';
+import { applyDesignContextMutation } from '@/features/agents/sub_use_cases/useCaseHelpers';
+import type { ConnectorStatus } from './connectorTypes';
+
+export function useConnectorStatuses() {
+  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
+  const credentials = usePersonaStore((s) => s.credentials);
+  const fetchCredentials = usePersonaStore((s) => s.fetchCredentials);
+  const healthcheckCredential = usePersonaStore((s) => s.healthcheckCredential);
+  const setConnectorTestActive = usePersonaStore((s) => s.setConnectorTestActive);
+
+  const [statuses, setStatuses] = useState<ConnectorStatus[]>([]);
+  const [testingAll, setTestingAll] = useState(false);
+
+  const tools = selectedPersona?.tools ?? [];
+
+  const requiredCredTypes = useMemo(() => {
+    const types = new Set<string>();
+    for (const tool of tools) {
+      if (tool.requires_credential_type) types.add(tool.requires_credential_type);
+    }
+    return [...types];
+  }, [tools]);
+
+  const credentialLinks = useMemo(
+    () => parseDesignContext(selectedPersona?.design_context).credentialLinks ?? {},
+    [selectedPersona?.design_context],
+  );
+
+  // Build connector statuses
+  useEffect(() => {
+    if (requiredCredTypes.length === 0) { setStatuses([]); return; }
+    setStatuses((prev) =>
+      requiredCredTypes.map((credType) => {
+        const matchedCred = credentials.find((c) => c.service_type === credType);
+        const existing = prev.find((p) => p.name === credType);
+        const linkedCredId = credentialLinks[credType];
+        const linkedCred = linkedCredId ? credentials.find((c) => c.id === linkedCredId) : null;
+        return {
+          name: credType,
+          credentialId: existing?.credentialId ?? matchedCred?.id ?? linkedCred?.id ?? null,
+          credentialName: existing?.credentialName ?? matchedCred?.name ?? linkedCred?.name ?? null,
+          testing: existing?.testing ?? false,
+          result: existing?.result ?? null,
+        };
+      }),
+    );
+  }, [requiredCredTypes, credentials, credentialLinks]);
+
+  useEffect(() => { void fetchCredentials().catch(() => {}); }, [fetchCredentials]);
+
+  const autoTestedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    autoTestedRef.current.clear();
+  }, [selectedPersona?.id]);
+
+  const testConnector = useCallback(async (name: string, credentialId: string) => {
+    setStatuses((prev) =>
+      prev.map((s) => s.name === name ? { ...s, testing: true, result: null } : s),
+    );
+    try {
+      const result = await healthcheckCredential(credentialId);
+      setStatuses((prev) =>
+        prev.map((s) => s.name === name ? { ...s, testing: false, result } : s),
+      );
+    } catch (err) {
+      setStatuses((prev) =>
+        prev.map((s) =>
+          s.name === name
+            ? { ...s, testing: false, result: { success: false, message: err instanceof Error ? err.message : 'Healthcheck failed' } }
+            : s,
+        ),
+      );
+    }
+  }, [healthcheckCredential]);
+
+  // Auto-test when new status rows gain credentials
+  useEffect(() => {
+    for (const status of statuses) {
+      if (status.credentialId && !status.result && !status.testing && !autoTestedRef.current.has(status.name)) {
+        autoTestedRef.current.add(status.name);
+        void testConnector(status.name, status.credentialId);
+      }
+    }
+  }, [statuses, testConnector]);
+
+  const handleTestAll = async () => {
+    setTestingAll(true);
+    setConnectorTestActive(true);
+    const testable = statuses.filter((s) => s.credentialId);
+    try {
+      for (const status of testable) {
+        await testConnector(status.name, status.credentialId!);
+      }
+      const persona = selectedPersona?.name ?? 'Persona';
+      sendAppNotification(
+        'Connector Tests Complete',
+        `${persona}: All ${testable.length} connector tests finished.`,
+      ).catch(() => {});
+    } finally {
+      setTestingAll(false);
+      setConnectorTestActive(false);
+    }
+  };
+
+  const handleLinkCredential = useCallback(async (connectorName: string, credentialId: string, credentialName: string) => {
+    setStatuses((prev) =>
+      prev.map((s) =>
+        s.name === connectorName ? { ...s, credentialId, credentialName, result: null } : s,
+      ),
+    );
+    if (selectedPersona) {
+      try {
+        await applyDesignContextMutation(selectedPersona.id, (ctx) =>
+          mergeCredentialLink(ctx, connectorName, credentialId),
+        );
+      } catch (err) {
+        // Revert optimistic update — the link was never persisted
+        setStatuses((prev) =>
+          prev.map((s) =>
+            s.name === connectorName
+              ? { ...s, credentialId: null, credentialName: null, result: { success: false, message: `Link failed: ${err instanceof Error ? err.message : 'unknown error'}` } }
+              : s,
+          ),
+        );
+        return;
+      }
+    }
+    await testConnector(connectorName, credentialId);
+  }, [selectedPersona, testConnector]);
+
+  return {
+    statuses,
+    tools,
+    requiredCredTypes,
+    credentials,
+    testingAll,
+    fetchCredentials,
+    testConnector,
+    handleTestAll,
+    handleLinkCredential,
+  };
+}

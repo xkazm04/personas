@@ -30,6 +30,8 @@
     "summary": "Netlify web deployment platform with serverless functions and form handling.",
     "auth_type": "pat",
     "auth_type_label": "PAT",
-    "docs_url": "https://app.netlify.com/user/applications#personal-access-tokens"
+    "docs_url": "https://app.netlify.com/user/applications#personal-access-tokens",
+    "setup_guide": "1. Go to app.netlify.com/user/applications#personal-access-tokens\n2. Click 'New access token'\n3. Enter a description and click 'Generate token'\n4. Copy the token and paste it here",
+    "pricing_tier": "free"
   }
 }

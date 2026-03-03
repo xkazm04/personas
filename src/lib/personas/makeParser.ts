@@ -9,7 +9,7 @@
  */
 
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
-import { MAKE_DEFINITION, toServiceMap, classifyNodeRole } from './platformDefinitions';
+import { MAKE_DEFINITION, toServiceMap, classifyNodeRole, extractProtocolsFromNodes } from './platformDefinitions';
 
 interface MakeModule {
   module?: string;
@@ -136,6 +136,11 @@ export function parseMakeWorkflow(json: unknown): DesignAnalysisResult {
         .map((t) => t.index),
     }));
 
+  const protocol_capabilities = extractProtocolsFromNodes(
+    MAKE_DEFINITION,
+    flatModules.map((m) => m.module || m.type || ''),
+  );
+
   const workflowName = scenario.name || scenario.blueprint?.name || 'Imported Make Scenario';
   const moduleSequence = flatModules.map((m) => m.label || m.name || m.module || '?').join(' \u2192 ');
 
@@ -155,26 +160,37 @@ export function parseMakeWorkflow(json: unknown): DesignAnalysisResult {
     full_prompt_markdown: `# ${workflowName}\n\nWorkflow: ${moduleSequence}\n\nThis persona was imported from a Make scenario with ${flatModules.length} modules.`,
     summary: `Imported from Make scenario "${workflowName}" with ${flatModules.length} modules (${triggerModules.length} triggers, ${actionModules.length} actions).`,
     suggested_connectors: connectors,
+    protocol_capabilities: protocol_capabilities.length > 0 ? protocol_capabilities : undefined,
   };
 }
 
 /** Recursively flatten nested Make module structures */
 function flattenModules(modules: MakeModule[]): MakeModule[] {
   const result: MakeModule[] = [];
-  for (const mod of modules) {
-    result.push(mod);
-    // Make routers may contain nested route arrays
-    const record = mod as Record<string, unknown>;
-    if (Array.isArray(record.routes)) {
+  const visitedLists = new Set<unknown>();
+  const MAX_NESTED_DEPTH = 64;
+
+  const walk = (list: MakeModule[], depth: number) => {
+    if (depth > MAX_NESTED_DEPTH) return;
+    if (visitedLists.has(list)) return;
+    visitedLists.add(list);
+
+    for (const mod of list) {
+      result.push(mod);
+      const record = mod as Record<string, unknown>;
+      if (!Array.isArray(record.routes)) continue;
+
       for (const route of record.routes as Array<Record<string, unknown>>) {
         if (Array.isArray(route.flow)) {
-          result.push(...flattenModules(route.flow as MakeModule[]));
+          walk(route.flow as MakeModule[], depth + 1);
         }
         if (Array.isArray(route.modules)) {
-          result.push(...flattenModules(route.modules as MakeModule[]));
+          walk(route.modules as MakeModule[], depth + 1);
         }
       }
     }
-  }
+  };
+
+  walk(modules, 0);
   return result;
 }

@@ -80,7 +80,7 @@ export default function PersonaOverviewPage() {
               ref={(el) => { cardRefs.current[persona.id] = el; }}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ type: "spring", stiffness: 400, damping: 25, delay: i * 0.05 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25, delay: Math.min(i, 12) * 0.04 }}
               whileHover={{ y: -2, transition: { duration: 0.15 } }}
               onClick={() => selectPersona(persona.id)}
               onMouseEnter={() => handleMouseEnter(persona.id)}

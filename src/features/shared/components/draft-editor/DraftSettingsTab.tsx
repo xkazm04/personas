@@ -2,11 +2,11 @@ import { useMemo, useCallback } from 'react';
 import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import type { ModelProfile, NotificationChannel } from '@/lib/types/frontendTypes';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
-import { profileToDropdownValue, getOllamaPreset, OLLAMA_CLOUD_BASE_URL } from '@/features/agents/sub_editor/sub_model_config/OllamaCloudPresets';
-import { ModelSelector } from '@/features/agents/sub_editor/sub_model_config/ModelSelector';
+import { profileToDropdownValue, getOllamaPreset, OLLAMA_CLOUD_BASE_URL } from '@/features/agents/sub_model_config/OllamaCloudPresets';
+import { ModelSelector } from '@/features/agents/sub_model_config/ModelSelector';
 import { IconSelector } from '@/features/shared/components/IconSelector';
 import { ColorPicker } from '@/features/shared/components/ColorPicker';
-import { NotificationChannelSettings } from '@/features/agents/sub_editor/sub_connectors/NotificationChannelSettings';
+import { NotificationChannelSettings } from '@/features/agents/sub_connectors/NotificationChannelSettings';
 
 // ── model_profile ↔ dropdown value helpers ────────────────────────────
 

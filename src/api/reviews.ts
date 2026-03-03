@@ -106,6 +106,9 @@ export const backfillReviewCategories = () =>
 export const backfillServiceFlow = () =>
   invoke<{ total: number; updated: number; skipped: number }>("backfill_service_flow");
 
+export const backfillRelatedTools = () =>
+  invoke<{ total: number; updated: number; skipped: number }>("backfill_related_tools");
+
 export const getTrendingTemplates = (limit?: number) =>
   invoke<PersonaDesignReview[]>("get_trending_templates", {
     limit: limit ?? null,

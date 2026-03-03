@@ -35,6 +35,7 @@ export interface WizardReducerOptions<S extends WizardStateBase> {
 export interface WizardReducerCore<S extends WizardStateBase> {
   state: S;
   update: (patch: Partial<S>) => void;
+  updateFn: (fn: (prev: S) => S) => void;
   canGoBack: boolean;
   goBack: () => void;
   goToStep: (step: S['step']) => void;
@@ -57,6 +58,10 @@ export function useWizardReducer<S extends WizardStateBase>(
 
   const update = useCallback((patch: Partial<S>) => {
     setState((prev) => ({ ...prev, ...patch }));
+  }, []);
+
+  const updateFn = useCallback((fn: (prev: S) => S) => {
+    setState(fn);
   }, []);
 
   const goToStep = useCallback((step: S['step']) => {
@@ -97,6 +102,7 @@ export function useWizardReducer<S extends WizardStateBase>(
   return {
     state,
     update,
+    updateFn,
     canGoBack,
     goBack,
     goToStep,

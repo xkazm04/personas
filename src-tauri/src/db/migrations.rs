@@ -503,6 +503,7 @@ CREATE TABLE IF NOT EXISTS persona_healing_issues (
     execution_id TEXT,
     title       TEXT NOT NULL,
     description TEXT NOT NULL,
+    is_circuit_breaker INTEGER NOT NULL DEFAULT 0,
     severity    TEXT NOT NULL DEFAULT 'low',
     category    TEXT NOT NULL DEFAULT 'config',
     suggested_fix TEXT,
@@ -872,6 +873,63 @@ CREATE INDEX IF NOT EXISTS idx_tm_category   ON team_memories(category);
 CREATE INDEX IF NOT EXISTS idx_tm_importance ON team_memories(importance DESC);
 CREATE INDEX IF NOT EXISTS idx_tm_team_cat   ON team_memories(team_id, category);
 
+-- ============================================================================
+-- Playwright Procedures (saved browser automation scripts per connector)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS playwright_procedures (
+    id              TEXT PRIMARY KEY,
+    connector_name  TEXT NOT NULL,
+    procedure_json  TEXT NOT NULL,
+    field_keys      TEXT NOT NULL DEFAULT '[]',
+    is_active       INTEGER NOT NULL DEFAULT 1,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_pp_connector ON playwright_procedures(connector_name);
+CREATE INDEX IF NOT EXISTS idx_pp_active    ON playwright_procedures(connector_name, is_active);
+
+-- ============================================================================
+-- Database Schema Tables (user-defined focus tables per credential)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS db_schema_tables (
+    id              TEXT PRIMARY KEY,
+    credential_id   TEXT NOT NULL REFERENCES persona_credentials(id) ON DELETE CASCADE,
+    table_name      TEXT NOT NULL,
+    display_label   TEXT,
+    column_hints    TEXT,
+    is_favorite     INTEGER NOT NULL DEFAULT 0,
+    sort_order      INTEGER NOT NULL DEFAULT 0,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(credential_id, table_name)
+);
+CREATE INDEX IF NOT EXISTS idx_dst_credential ON db_schema_tables(credential_id);
+CREATE INDEX IF NOT EXISTS idx_dst_favorite   ON db_schema_tables(credential_id, is_favorite);
+
+-- ============================================================================
+-- Database Saved Queries (favorite queries per credential)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS db_saved_queries (
+    id              TEXT PRIMARY KEY,
+    credential_id   TEXT NOT NULL REFERENCES persona_credentials(id) ON DELETE CASCADE,
+    title           TEXT NOT NULL,
+    query_text      TEXT NOT NULL,
+    language        TEXT NOT NULL DEFAULT 'sql',
+    last_run_at     TEXT,
+    last_run_ok     INTEGER,
+    last_run_ms     INTEGER,
+    is_favorite     INTEGER NOT NULL DEFAULT 0,
+    sort_order      INTEGER NOT NULL DEFAULT 0,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_dsq_credential ON db_saved_queries(credential_id);
+CREATE INDEX IF NOT EXISTS idx_dsq_favorite   ON db_saved_queries(credential_id, is_favorite);
+CREATE INDEX IF NOT EXISTS idx_dsq_language   ON db_saved_queries(language);
+
 "#;
 
 /// Incremental migrations for columns added after the initial schema.
@@ -887,6 +945,18 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     if !has_tool_steps {
         conn.execute_batch("ALTER TABLE persona_executions ADD COLUMN tool_steps TEXT;")?;
         tracing::info!("Added tool_steps column to persona_executions");
+    }
+
+    // Add typed circuit-breaker flag to healing issues
+    let has_is_circuit_breaker: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_healing_issues') WHERE name = 'is_circuit_breaker'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_is_circuit_breaker {
+        conn.execute_batch("ALTER TABLE persona_healing_issues ADD COLUMN is_circuit_breaker INTEGER NOT NULL DEFAULT 0;")?;
+        tracing::info!("Added is_circuit_breaker column to persona_healing_issues");
     }
 
     // Add use_case_flows column to persona_design_reviews
@@ -1532,6 +1602,30 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     if !has_payload_iv {
         conn.execute_batch("ALTER TABLE persona_events ADD COLUMN payload_iv TEXT;")?;
         tracing::info!("Added payload_iv column to persona_events for encrypted event payloads");
+    }
+
+    // ── Playwright Procedures (saved browser automation for credential setup) ──
+    let has_playwright_procedures: bool = conn
+        .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='playwright_procedures'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_playwright_procedures {
+        conn.execute_batch(
+            "CREATE TABLE IF NOT EXISTS playwright_procedures (
+                id              TEXT PRIMARY KEY,
+                connector_name  TEXT NOT NULL,
+                procedure_json  TEXT NOT NULL,
+                field_keys      TEXT NOT NULL DEFAULT '[]',
+                is_active       INTEGER NOT NULL DEFAULT 1,
+                created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_pp_connector ON playwright_procedures(connector_name);
+            CREATE INDEX IF NOT EXISTS idx_pp_active    ON playwright_procedures(connector_name, is_active);"
+        )?;
+        tracing::info!("Created playwright_procedures table");
     }
 
     // ── Execution Knowledge Graph (cross-run learning) ───────────────

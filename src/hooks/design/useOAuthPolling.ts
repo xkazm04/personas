@@ -30,7 +30,10 @@ export interface OAuthPollingConfig<
 }
 
 export interface OAuthPollingState<TStartArgs extends unknown[]> {
-  initialValues: Record<string, string>;
+  /** Read current credential values (stored in a ref to avoid DevTools/Sentry exposure). */
+  getValues: () => Record<string, string>;
+  /** Monotonic counter incremented when values change — depend on this for re-renders. */
+  valuesVersion: number;
   isAuthorizing: boolean;
   completedAt: string | null;
   message: { success: boolean; message: string } | null;
@@ -54,7 +57,12 @@ export function useOAuthPolling<
 >(
   config: OAuthPollingConfig<TStartArgs, TPollResult>,
 ): OAuthPollingState<TStartArgs> {
-  const [initialValues, setInitialValues] = useState<Record<string, string>>({});
+  // Store credential values in a ref (not React state) to prevent exposure
+  // via React DevTools, Sentry error serialization, and error boundaries.
+  const valuesRef = useRef<Record<string, string>>({});
+  const [valuesVersion, setValuesVersion] = useState(0);
+  const getValues = useCallback(() => valuesRef.current, []);
+
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isAuthorizing, setIsAuthorizing] = useState(false);
   const [completedAt, setCompletedAt] = useState<string | null>(null);
@@ -70,6 +78,14 @@ export function useOAuthPolling<
   // AbortController for the current polling loop — aborted when a new session
   // starts or on unmount so only one loop ever runs at a time.
   const abortRef = useRef<AbortController | null>(null);
+  const startTimeoutRef = useRef<number | null>(null);
+
+  const clearStartTimeout = useCallback(() => {
+    if (startTimeoutRef.current !== null) {
+      window.clearTimeout(startTimeoutRef.current);
+      startTimeoutRef.current = null;
+    }
+  }, []);
 
   // Poll for session completion
   useEffect(() => {
@@ -99,7 +115,8 @@ export function useOAuthPolling<
         isAuthorizingRef.current = false;
 
         if (result.status === 'success') {
-          setInitialValues((prev) => configRef.current.extractValues(result, prev));
+          valuesRef.current = configRef.current.extractValues(result, valuesRef.current);
+          setValuesVersion((v) => v + 1);
           setCompletedAt(new Date().toLocaleTimeString());
           setMessage({
             success: true,
@@ -152,13 +169,15 @@ export function useOAuthPolling<
       ? Promise.race([
           startPromise,
           new Promise<never>((_, reject) => {
-            window.setTimeout(() => reject(new Error('OAuth session start timed out.')), startTimeoutMs);
+            clearStartTimeout();
+            startTimeoutRef.current = window.setTimeout(() => reject(new Error('OAuth session start timed out.')), startTimeoutMs);
           }),
         ])
       : startPromise;
 
     withTimeout
       .then(async (oauthStart) => {
+        clearStartTimeout();
         let opened = false;
         try {
           await openExternalUrl(oauthStart.auth_url);
@@ -187,6 +206,7 @@ export function useOAuthPolling<
         setSessionId(oauthStart.session_id);
       })
       .catch((err) => {
+        clearStartTimeout();
         setSessionId(null);
         setIsAuthorizing(false);
         isAuthorizingRef.current = false;
@@ -196,17 +216,25 @@ export function useOAuthPolling<
           message: `${configRef.current.label} authorization did not start: ${detail}`,
         });
       });
-  }, []);
+  }, [clearStartTimeout]);
 
   const reset = useCallback(() => {
+    clearStartTimeout();
     abortRef.current?.abort();
     isAuthorizingRef.current = false;
-    setInitialValues({});
+    valuesRef.current = {};
+    setValuesVersion((v) => v + 1);
     setSessionId(null);
     setIsAuthorizing(false);
     setCompletedAt(null);
     setMessage(null);
-  }, []);
+  }, [clearStartTimeout]);
 
-  return { initialValues, isAuthorizing, completedAt, message, startConsent, reset };
+  useEffect(() => {
+    return () => {
+      clearStartTimeout();
+    };
+  }, [clearStartTimeout]);
+
+  return { getValues, valuesVersion, isAuthorizing, completedAt, message, startConsent, reset };
 }

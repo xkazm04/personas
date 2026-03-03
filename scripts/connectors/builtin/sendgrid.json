@@ -30,6 +30,8 @@
     "summary": "SendGrid transactional and marketing email delivery at scale.",
     "auth_type": "api_key",
     "auth_type_label": "API Key",
-    "docs_url": "https://docs.sendgrid.com/ui/account-and-settings/api-keys"
+    "docs_url": "https://docs.sendgrid.com/ui/account-and-settings/api-keys",
+    "setup_guide": "1. Go to SendGrid → Settings → API Keys\n2. Click 'Create API Key'\n3. Name it and choose 'Full Access' or 'Restricted Access' with needed permissions\n4. Click 'Create & View' and copy the SG... key\n5. Paste it here (the key is only shown once)",
+    "pricing_tier": "free"
   }
 }

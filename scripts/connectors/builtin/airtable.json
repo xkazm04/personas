@@ -6,16 +6,40 @@
   "icon_url": "/icons/connectors/airtable.svg",
   "category": "productivity",
   "fields": [
-    { "key": "api_key", "label": "Personal Access Token", "type": "password", "required": true, "placeholder": "pat...", "helpText": "Generate at airtable.com/create/tokens" },
-    { "key": "base_id", "label": "Base ID", "type": "text", "required": false, "placeholder": "appXXXXXXXXXXXXXX", "helpText": "Optional: restrict to a specific base" }
+    {
+      "key": "api_key",
+      "label": "Personal Access Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "pat...",
+      "helpText": "Generate at airtable.com/create/tokens"
+    },
+    {
+      "key": "base_id",
+      "label": "Base ID",
+      "type": "text",
+      "required": false,
+      "placeholder": "appXXXXXXXXXXXXXX",
+      "helpText": "Optional: restrict to a specific base"
+    }
   ],
   "healthcheck_config": {
     "endpoint": "https://api.airtable.com/v0/meta/whoami",
     "method": "GET",
-    "headers": { "Authorization": "Bearer {{api_key}}" },
+    "headers": {
+      "Authorization": "Bearer {{api_key}}"
+    },
     "description": "Validates API key via whoami endpoint"
   },
   "services": [],
   "events": [],
-  "metadata": { "template_enabled": true, "summary": "Airtable spreadsheet-database for project tracking and data management.", "auth_type": "pat", "auth_type_label": "PAT", "docs_url": "https://airtable.com/create/tokens" }
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Airtable spreadsheet-database for project tracking and data management.",
+    "auth_type": "pat",
+    "auth_type_label": "PAT",
+    "docs_url": "https://airtable.com/create/tokens",
+    "setup_guide": "1. Go to airtable.com/create/tokens\n2. Click 'Create new token'\n3. Name your token and select the scopes and bases you need\n4. Click 'Create token' and copy the pat... value",
+    "pricing_tier": "free"
+  }
 }

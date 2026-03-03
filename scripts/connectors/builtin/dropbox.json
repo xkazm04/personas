@@ -30,6 +30,8 @@
     "summary": "Dropbox cloud storage for file sync, sharing, and collaboration.",
     "auth_type": "pat",
     "auth_type_label": "Access Token",
-    "docs_url": "https://www.dropbox.com/developers/apps"
+    "docs_url": "https://www.dropbox.com/developers/apps",
+    "setup_guide": "1. Go to dropbox.com/developers/apps\n2. Click 'Create app' or select an existing app\n3. Under the 'Settings' tab, find 'Generated access token'\n4. Click 'Generate' and copy the sl.u... token\n5. Paste the access token here",
+    "pricing_tier": "free"
   }
 }

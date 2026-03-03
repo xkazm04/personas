@@ -61,7 +61,7 @@ export function buildSidebarTree(
 
 // ── Model Configuration ────────────────────────────────────────────────
 
-export type ModelProvider = "anthropic" | "ollama" | "litellm" | "custom";
+export type ModelProvider = "anthropic" | "ollama" | "litellm" | "copilot" | "custom";
 
 export interface ModelProfile {
   model?: string;

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { startCredentialDesign, cancelCredentialDesign } from '@/api/tauriApi';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useAiArtifactFlow, defaultGetLine, buildResolveStatus } from './useAiArtifactFlow';
@@ -26,8 +26,11 @@ export interface CredentialDesignResult {
 
 export function useCredentialDesign() {
   const [savedCredentialId, setSavedCredentialId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const savingRef = useRef(false);
 
   const createConnectorDefinition = usePersonaStore((s) => s.createConnectorDefinition);
+  const deleteConnectorDefinition = usePersonaStore((s) => s.deleteConnectorDefinition);
   const createCredential = usePersonaStore((s) => s.createCredential);
 
   const flow = useAiArtifactFlow<string, CredentialDesignResult>({
@@ -52,6 +55,8 @@ export function useCredentialDesign() {
     fieldValues: Record<string, string>,
     healthcheckOverride?: Record<string, unknown> | null,
   ) => {
+    if (savingRef.current) return;
+
     // Snapshot result at invocation time so concurrent state changes
     // (e.g. refine click, modal close) cannot silently invalidate it.
     const snapshot = flow.result;
@@ -60,12 +65,15 @@ export function useCredentialDesign() {
       return;
     }
 
+    savingRef.current = true;
+    setIsSaving(true);
     flow.setPhase('saving');
+    let createdConnectorId: string | null = null;
     try {
       // Create connector definition if it doesn't already exist
       if (!snapshot.match_existing) {
         const conn = snapshot.connector;
-        await createConnectorDefinition({
+        const connector = await createConnectorDefinition({
           name: conn.name,
           label: conn.label,
           category: conn.category,
@@ -81,6 +89,7 @@ export function useCredentialDesign() {
           }),
           is_builtin: false,
         });
+        createdConnectorId = connector.id;
       }
 
       // Create the credential
@@ -94,12 +103,24 @@ export function useCredentialDesign() {
       setSavedCredentialId(credId ?? null);
       flow.setPhase('done');
     } catch (err) {
+      // Rollback: if we created a connector but credential creation failed,
+      // delete the orphan connector to avoid inconsistent state.
+      if (createdConnectorId) {
+        try {
+          await deleteConnectorDefinition(createdConnectorId);
+        } catch { /* rollback is best-effort */ }
+      }
       flow.setError(err instanceof Error ? err.message : 'Failed to save credential');
       flow.setPhase('preview');
+    } finally {
+      savingRef.current = false;
+      setIsSaving(false);
     }
-  }, [flow.result, flow.setPhase, flow.setError, createConnectorDefinition, createCredential]);
+  }, [flow.result, flow.setPhase, flow.setError, createConnectorDefinition, deleteConnectorDefinition, createCredential]);
 
   const reset = useCallback(() => {
+    savingRef.current = false;
+    setIsSaving(false);
     flow.reset();
     setSavedCredentialId(null);
   }, [flow.reset]);
@@ -112,16 +133,34 @@ export function useCredentialDesign() {
     flow.setPhase('preview');
   }, [flow.cleanup, flow.setLines, flow.setError, flow.setResult, flow.setPhase]);
 
+  /**
+   * Refine: restart the design stream with a new instruction while
+   * preserving the previous result as context for the backend prompt.
+   * Unlike `reset` + `start`, this does NOT clear `savedCredentialId`
+   * so the modal can still navigate to the credential created earlier.
+   */
+  const refine = useCallback(
+    (instruction: string) => {
+      // Transition back to analyzing — keep savedCredentialId intact
+      flow.setLines([]);
+      flow.setError(null);
+      flow.start(instruction);
+    },
+    [flow.setLines, flow.setError, flow.start],
+  );
+
   return {
     phase: flow.phase as CredentialDesignPhase,
     outputLines: flow.lines,
     result: flow.result,
     error: flow.error,
     savedCredentialId,
+    isSaving,
     start: flow.start,
     cancel,
     save,
     reset,
+    refine,
     loadTemplate,
   };
 }

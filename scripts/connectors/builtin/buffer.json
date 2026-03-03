@@ -6,15 +6,32 @@
   "icon_url": "/icons/connectors/buffer.svg",
   "category": "social",
   "fields": [
-    { "key": "access_token", "label": "Access Token", "type": "password", "required": true, "placeholder": "", "helpText": "From Buffer → Settings → Apps → Access Token" }
+    {
+      "key": "access_token",
+      "label": "Access Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "From Buffer → Settings → Apps → Access Token"
+    }
   ],
   "healthcheck_config": {
     "endpoint": "https://api.bufferapp.com/1/user.json",
     "method": "GET",
-    "headers": { "Authorization": "Bearer {{access_token}}" },
+    "headers": {
+      "Authorization": "Bearer {{access_token}}"
+    },
     "description": "Validates access token via Buffer user endpoint"
   },
   "services": [],
   "events": [],
-  "metadata": { "template_enabled": true, "summary": "Buffer social media management for scheduling and publishing.", "auth_type": "pat", "auth_type_label": "PAT", "docs_url": "https://buffer.com/developers/api" }
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Buffer social media management for scheduling and publishing.",
+    "auth_type": "pat",
+    "auth_type_label": "PAT",
+    "docs_url": "https://buffer.com/developers/api",
+    "setup_guide": "1. Go to buffer.com and sign in to your account\n2. Navigate to account.buffer.com/access-tokens\n3. Click 'Create Access Token'\n4. Copy the generated access token value",
+    "pricing_tier": "free"
+  }
 }

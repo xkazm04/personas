@@ -47,7 +47,15 @@ export function useN8nTest(
     if (testStreamPhase === 'completed') {
       dispatch({ type: 'TEST_PASSED' });
     }
-  }, [testStreamPhase, dispatch]);
+    if (testStreamPhase === 'failed') {
+      const fallbackMessage = testStreamLines[testStreamLines.length - 1] || 'Test execution failed.';
+      dispatch({ type: 'TEST_FAILED', error: fallbackMessage });
+      dispatch({
+        type: 'SET_ADJUSTMENT',
+        text: `Fix: The test execution failed with: ${fallbackMessage.slice(0, 200)}. Please adjust the persona to fix this issue.`,
+      });
+    }
+  }, [testStreamPhase, testStreamLines, dispatch]);
 
   return { startTestStream, resetTestStream };
 }

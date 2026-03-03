@@ -74,7 +74,8 @@ export function TestSuiteManager({
   }, [lastGeneratedScenarios, saveNameInput, createTestSuite, personaId, lastRunId]);
 
   const handleRemoveScenario = useCallback(async (suiteId: string, scenarioIndex: number) => {
-    const suite = testSuites.find((s) => s.id === suiteId);
+    const currentSuites = usePersonaStore.getState().testSuites;
+    const suite = currentSuites.find((s) => s.id === suiteId);
     if (!suite) return;
     try {
       const scenarios: TestSuiteScenario[] = JSON.parse(suite.scenarios);
@@ -83,7 +84,7 @@ export function TestSuiteManager({
     } catch {
       // Invalid JSON — skip
     }
-  }, [testSuites, updateTestSuite]);
+  }, [updateTestSuite]);
 
   const canSave = lastGeneratedScenarios && lastGeneratedScenarios.length > 0;
 

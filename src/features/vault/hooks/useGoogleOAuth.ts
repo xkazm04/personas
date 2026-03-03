@@ -12,7 +12,10 @@ export interface GoogleOAuthTokenData {
 export interface GoogleOAuthState {
   isAuthorizing: boolean;
   completedAt: string | null;
-  initialValues: Record<string, string>;
+  /** Read current OAuth values (stored in a ref to avoid DevTools exposure). */
+  getValues: () => Record<string, string>;
+  /** Monotonic counter incremented when values change. */
+  valuesVersion: number;
   startConsent: (connectorName: string, extraScopes?: string[]) => void;
   reset: () => void;
 }
@@ -83,7 +86,8 @@ export function useGoogleOAuth(options: UseGoogleOAuthOptions = {}): GoogleOAuth
   return {
     isAuthorizing: polling.isAuthorizing,
     completedAt: polling.completedAt,
-    initialValues: polling.initialValues,
+    getValues: polling.getValues,
+    valuesVersion: polling.valuesVersion,
     startConsent,
     reset: polling.reset,
   };

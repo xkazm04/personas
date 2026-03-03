@@ -25,9 +25,12 @@ export interface NodeRolePattern {
 }
 
 export interface ProtocolMapRule {
+  /** Human-readable description of matching node types (documentation only) */
   platformPattern: string;
   targetProtocol: 'user_message' | 'agent_memory' | 'manual_review' | 'emit_event';
   condition: string;
+  /** Concrete node-type substrings to match (same matching as nodeRoleClassification) */
+  nodePatterns: string[];
 }
 
 export interface PlatformDefinition {
@@ -79,6 +82,45 @@ export function classifyNodeRole(def: PlatformDefinition, nodeType: string): str
     }
   }
   return 'tool';
+}
+
+const PROTOCOL_LABELS: Record<ProtocolMapRule['targetProtocol'], string> = {
+  manual_review: 'Manual Review',
+  user_message: 'User Notifications',
+  agent_memory: 'Agent Memory',
+  emit_event: 'Event Emission',
+};
+
+/**
+ * Detect protocol capabilities from a list of workflow node types.
+ *
+ * Matches each node type against the platform's protocolMapRules.nodePatterns
+ * and returns deduplicated capabilities.  This is the primary (structured)
+ * detection layer; keyword-based prompt scanning is the fallback.
+ */
+export function extractProtocolsFromNodes(
+  def: PlatformDefinition,
+  nodeTypes: string[],
+): { type: ProtocolMapRule['targetProtocol']; label: string; context: string }[] {
+  const seen = new Set<string>();
+  const result: { type: ProtocolMapRule['targetProtocol']; label: string; context: string }[] = [];
+
+  for (const nodeType of nodeTypes) {
+    const lower = nodeType.toLowerCase();
+    for (const rule of def.protocolMapRules) {
+      if (seen.has(rule.targetProtocol)) continue;
+      if (rule.nodePatterns.some((p) => lower.includes(p.toLowerCase()))) {
+        seen.add(rule.targetProtocol);
+        result.push({
+          type: rule.targetProtocol,
+          label: PROTOCOL_LABELS[rule.targetProtocol],
+          context: rule.condition,
+        });
+      }
+    }
+  }
+
+  return result;
 }
 
 // ── Built-in definitions ────────────────────────────────────────
@@ -167,11 +209,10 @@ export const N8N_DEFINITION: PlatformDefinition = {
   ],
   excludedCredentialTypes: ['anthropicApi', 'openAiApi'],
   protocolMapRules: [
-    { platformPattern: 'Send email, post to Slack, modify database', targetProtocol: 'manual_review', condition: 'Node performs external side-effects' },
-    { platformPattern: 'Set variable, store data, extract information', targetProtocol: 'agent_memory', condition: 'Node captures or stores data' },
-    { platformPattern: 'Wait node, Approval node', targetProtocol: 'manual_review', condition: 'Node pauses for human confirmation' },
-    { platformPattern: 'Webhook output, Execute Workflow', targetProtocol: 'emit_event', condition: 'Node triggers downstream workflows' },
-    { platformPattern: 'Notification node, alert node', targetProtocol: 'user_message', condition: 'Node sends notifications' },
+    { platformPattern: 'Wait node, Approval node', targetProtocol: 'manual_review', condition: 'Node pauses for human confirmation', nodePatterns: ['wait', 'form', 'approval'] },
+    { platformPattern: 'Set variable, store data, extract information', targetProtocol: 'agent_memory', condition: 'Node captures or stores data', nodePatterns: ['set', 'spreadsheetfile', 'redis', 'postgres', 'mongodb', 'mysql'] },
+    { platformPattern: 'Webhook output, Execute Workflow', targetProtocol: 'emit_event', condition: 'Node triggers downstream workflows', nodePatterns: ['executeworkflow'] },
+    { platformPattern: 'Notification node, alert node', targetProtocol: 'user_message', condition: 'Node sends notifications', nodePatterns: ['sendemail', 'slack', 'telegram', 'discord', 'twilio'] },
   ],
   isBuiltin: true,
 };
@@ -240,11 +281,10 @@ export const ZAPIER_DEFINITION: PlatformDefinition = {
   ],
   excludedCredentialTypes: ['openai', 'chatgpt'],
   protocolMapRules: [
-    { platformPattern: 'Send email, post message', targetProtocol: 'manual_review', condition: 'Step performs external side-effects' },
-    { platformPattern: 'Formatter, lookup, search', targetProtocol: 'agent_memory', condition: 'Step processes or extracts data' },
-    { platformPattern: 'Delay step, approval step', targetProtocol: 'manual_review', condition: 'Step pauses for human confirmation' },
-    { platformPattern: 'Webhook output, trigger Zap', targetProtocol: 'emit_event', condition: 'Step triggers downstream Zaps' },
-    { platformPattern: 'Email notification, SMS alert', targetProtocol: 'user_message', condition: 'Step sends notifications' },
+    { platformPattern: 'Delay step, approval step', targetProtocol: 'manual_review', condition: 'Step pauses for human confirmation', nodePatterns: ['delay', 'approval'] },
+    { platformPattern: 'Formatter, lookup, search', targetProtocol: 'agent_memory', condition: 'Step processes or extracts data', nodePatterns: ['formatter', 'storage', 'lookup', 'digest'] },
+    { platformPattern: 'Webhook output, trigger Zap', targetProtocol: 'emit_event', condition: 'Step triggers downstream Zaps', nodePatterns: ['webhook'] },
+    { platformPattern: 'Email notification, SMS alert', targetProtocol: 'user_message', condition: 'Step sends notifications', nodePatterns: ['gmail', 'slack', 'email', 'sms', 'twilio'] },
   ],
   isBuiltin: true,
 };
@@ -311,10 +351,10 @@ export const MAKE_DEFINITION: PlatformDefinition = {
   ],
   excludedCredentialTypes: ['openai:*'],
   protocolMapRules: [
-    { platformPattern: 'Module creates, updates, or sends', targetProtocol: 'manual_review', condition: 'Module performs external side-effects' },
-    { platformPattern: 'Module reads, searches, transforms', targetProtocol: 'agent_memory', condition: 'Module processes or extracts data' },
-    { platformPattern: 'Webhook output, trigger scenario', targetProtocol: 'emit_event', condition: 'Module triggers downstream scenarios' },
-    { platformPattern: 'Email, Slack, notification modules', targetProtocol: 'user_message', condition: 'Module sends notifications' },
+    { platformPattern: 'Sleep, approval modules', targetProtocol: 'manual_review', condition: 'Module pauses for human confirmation', nodePatterns: ['sleep', 'approval'] },
+    { platformPattern: 'Module reads, searches, transforms', targetProtocol: 'agent_memory', condition: 'Module processes or extracts data', nodePatterns: ['setvar', 'datastore', 'json', 'csv', 'aggregate'] },
+    { platformPattern: 'Webhook output, trigger scenario', targetProtocol: 'emit_event', condition: 'Module triggers downstream scenarios', nodePatterns: ['webhook', 'http'] },
+    { platformPattern: 'Email, Slack, notification modules', targetProtocol: 'user_message', condition: 'Module sends notifications', nodePatterns: ['email', 'slack', 'telegram', 'sms'] },
   ],
   isBuiltin: true,
 };

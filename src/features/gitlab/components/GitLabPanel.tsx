@@ -47,6 +47,7 @@ export default function GitLabPanel() {
   const deployPersona = usePersonaStore((s) => s.gitlabDeployPersona);
   const fetchAgents = usePersonaStore((s) => s.gitlabFetchAgents);
   const undeployAgent = usePersonaStore((s) => s.gitlabUndeployAgent);
+  const clearError = usePersonaStore((s) => s.gitlabClearError);
 
   const isConnected = config?.isConnected ?? false;
 
@@ -154,8 +155,20 @@ export default function GitLabPanel() {
 
       {/* Error banner */}
       {error && (
-        <div className="px-6 py-3 border-t border-red-500/20 bg-red-500/10 text-red-400 text-sm">
-          {error}
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="px-6 py-3 border-t border-red-500/20 bg-red-500/10 text-red-400 text-sm flex items-start justify-between gap-3"
+        >
+          <span>{error}</span>
+          <button
+            type="button"
+            onClick={clearError}
+            aria-label="Dismiss error"
+            className="text-red-300/90 hover:text-red-200 transition-colors cursor-pointer"
+          >
+            x
+          </button>
         </div>
       )}
     </ContentBox>

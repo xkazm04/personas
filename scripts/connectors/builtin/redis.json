@@ -1,0 +1,68 @@
+{
+  "id": "builtin-redis",
+  "name": "redis",
+  "label": "Redis",
+  "color": "#DC382D",
+  "icon_url": "/icons/connectors/redis.svg",
+  "category": "database",
+  "fields": [
+    {
+      "key": "connection_url",
+      "label": "Connection URL",
+      "type": "password",
+      "required": true,
+      "placeholder": "redis://default:password@host:6379",
+      "helpText": "Redis connection URL (redis:// or rediss:// for TLS)"
+    },
+    {
+      "key": "host",
+      "label": "Host",
+      "type": "text",
+      "required": false,
+      "placeholder": "localhost",
+      "helpText": "Alternative: provide host/port/password separately"
+    },
+    {
+      "key": "port",
+      "label": "Port",
+      "type": "text",
+      "required": false,
+      "placeholder": "6379",
+      "helpText": "Redis port (default 6379)"
+    },
+    {
+      "key": "password",
+      "label": "Password",
+      "type": "password",
+      "required": false,
+      "placeholder": "",
+      "helpText": "Redis AUTH password"
+    }
+  ],
+  "healthcheck_config": null,
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Redis in-memory data store for caching, queues, sessions, and real-time pub/sub.",
+    "auth_type": "connection_string",
+    "auth_type_label": "Connection URL",
+    "docs_url": "https://redis.io/docs/latest/develop/connect/",
+    "setup_guide": "1. For Redis Cloud: go to app.redislabs.com → Database → Connect\n2. Copy the connection URL (redis://default:pass@host:port)\n3. Or provide host, port, and password separately\n4. Use rediss:// prefix for TLS connections",
+    "pricing_tier": "free",
+    "auth_variants": [
+      {
+        "id": "connection_url",
+        "label": "Connection URL",
+        "fields": ["connection_url"],
+        "auth_type_label": "Connection URL"
+      },
+      {
+        "id": "individual",
+        "label": "Individual Fields",
+        "fields": ["host", "port", "password"],
+        "auth_type_label": "Host/Port"
+      }
+    ]
+  }
+}

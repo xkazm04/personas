@@ -1,4 +1,4 @@
-import type { DesignAnalysisResult } from './designTypes';
+import type { AgentIR } from './designTypes';
 
 // ── Template Origin & Trust ──────────────────────────────────────────
 
@@ -69,7 +69,7 @@ export interface TemplateCatalogEntry {
   icon: string;
   color: string;
   category: string[];
-  payload: DesignAnalysisResult;
+  payload: AgentIR;
 }
 
 export interface N8nNode {

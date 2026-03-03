@@ -38,6 +38,8 @@
     "summary": "Neon serverless Postgres with branching, autoscaling, and bottomless storage.",
     "auth_type": "api_key",
     "auth_type_label": "API Key",
-    "docs_url": "https://neon.tech/docs/manage/api-keys"
+    "docs_url": "https://neon.tech/docs/manage/api-keys",
+    "setup_guide": "1. Go to console.neon.tech and sign in\n2. Navigate to Account settings → API Keys\n3. Click 'Create new API Key' and name it\n4. Copy the generated API key value",
+    "pricing_tier": "free"
   }
 }

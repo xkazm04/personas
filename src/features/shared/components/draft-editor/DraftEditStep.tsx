@@ -115,11 +115,16 @@ export function DraftEditStep({
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1 flex-shrink-0">
+      <div className="flex gap-1.5 overflow-x-auto pb-1 flex-shrink-0" role="tablist" aria-label="Draft edit tabs">
         {allTabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
+            role="tab"
+            id={`draft-tab-${tab.id}`}
+            aria-selected={activeTab === tab.id}
+            aria-controls={`draft-panel-${tab.id}`}
+            tabIndex={activeTab === tab.id ? 0 : -1}
             className={`flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-xl border transition-all whitespace-nowrap ${
               activeTab === tab.id
                 ? 'bg-violet-500/15 border-violet-500/30 text-violet-300'
@@ -138,6 +143,9 @@ export function DraftEditStep({
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
+            role="tabpanel"
+            id={`draft-panel-${activeTab}`}
+            aria-labelledby={`draft-tab-${activeTab}`}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}

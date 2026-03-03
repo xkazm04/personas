@@ -8,7 +8,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  * @param isDirty  - when false the timer is never started (guards are pre-computed by caller)
  * @param deps     - dependency list that resets the debounce (same semantics as useEffect deps)
  * @param delay    - debounce delay in ms (default 800)
- * @returns { isSaving, cancel } - isSaving is true while saveFn is executing;
+ * @returns { isSaving, lastError, cancel } - isSaving is true while saveFn is executing;
+ *          lastError holds the most recent save failure (cleared on next successful save);
  *          cancel clears any pending debounce timer (call before a manual save to prevent races)
  */
 export function useDebouncedSave(
@@ -17,13 +18,14 @@ export function useDebouncedSave(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   deps: readonly any[],
   delay = 800,
-): { isSaving: boolean; cancel: () => void } {
+): { isSaving: boolean; lastError: string | null; cancel: () => void } {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Always keep a ref to the latest saveFn to avoid stale closures in the timer
   const saveFnRef = useRef(saveFn);
   saveFnRef.current = saveFn;
 
   const [isSaving, setIsSaving] = useState(false);
+  const [lastError, setLastError] = useState<string | null>(null);
 
   const cancel = useCallback(() => {
     if (timerRef.current) {
@@ -38,13 +40,19 @@ export function useDebouncedSave(
     timerRef.current = setTimeout(async () => {
       timerRef.current = null;
       setIsSaving(true);
-      await saveFnRef.current();
-      setIsSaving(false);
+      try {
+        await saveFnRef.current();
+        setLastError(null);
+      } catch (err) {
+        setLastError(err instanceof Error ? err.message : 'Save failed');
+      } finally {
+        setIsSaving(false);
+      }
     }, delay);
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, deps);
 
-  return { isSaving, cancel };
+  return { isSaving, lastError, cancel };
 }

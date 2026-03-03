@@ -1,0 +1,299 @@
+import { useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Radar,
+  Loader2,
+  CheckCircle2,
+  AlertTriangle,
+  ArrowLeft,
+  Download,
+  Sparkles,
+} from "lucide-react";
+import { useCredentialForaging } from "@/hooks/design/useCredentialForaging";
+import { ForagingResultCard } from "./ForagingResultCard";
+
+interface ForagingPanelProps {
+  onComplete: () => void;
+  onBack: () => void;
+}
+
+export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
+  const forage = useCredentialForaging();
+
+  const handleImport = useCallback(() => {
+    forage.importSelected(onComplete);
+  }, [forage, onComplete]);
+
+  const importableCount = forage.scanResult
+    ? forage.scanResult.credentials.filter((c) => !c.already_imported).length
+    : 0;
+
+  return (
+    <motion.div
+      key="foraging"
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      className="space-y-4"
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground/70 hover:text-foreground/90 transition-colors"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          Back
+        </button>
+        {forage.phase === "results" && forage.scanResult && (
+          <span className="text-xs text-muted-foreground/50">
+            Scanned {forage.scanResult.scanned_sources.length} sources in{" "}
+            {forage.scanResult.scan_duration_ms}ms
+          </span>
+        )}
+      </div>
+
+      {/* Idle / Start state */}
+      <AnimatePresence mode="wait">
+        {forage.phase === "idle" && (
+          <motion.div
+            key="idle"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="rounded-xl border border-primary/15 bg-secondary/25 p-6 text-center space-y-4"
+          >
+            <div className="mx-auto w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500/20 to-cyan-500/20 flex items-center justify-center">
+              <Radar className="w-6 h-6 text-violet-400" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-foreground/90">
+                Credential Foraging
+              </h3>
+              <p className="text-xs text-muted-foreground/60 mt-1 max-w-sm mx-auto leading-relaxed">
+                Scan your filesystem for existing credentials — AWS profiles,
+                environment variables, .env files, Docker configs, SSH keys, and
+                more. Discovered credentials can be imported into your vault with
+                one click.
+              </p>
+            </div>
+            <button
+              onClick={forage.scan}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-500/15 text-violet-400 text-sm font-medium border border-violet-500/25 hover:bg-violet-500/25 transition-colors"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Start Scan
+            </button>
+            <div className="text-[10px] text-muted-foreground/40 space-y-0.5">
+              <p>Scans: ~/.aws, ~/.kube, env vars, .env, ~/.npmrc, Docker, GitHub CLI, SSH</p>
+              <p>No secrets are uploaded — scanning happens entirely on your machine.</p>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Scanning */}
+        {forage.phase === "scanning" && (
+          <motion.div
+            key="scanning"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="rounded-xl border border-violet-500/20 bg-violet-500/5 p-8 text-center space-y-3"
+          >
+            <Loader2 className="w-8 h-8 text-violet-400 animate-spin mx-auto" />
+            <p className="text-sm text-foreground/80">Scanning filesystem for credentials...</p>
+            <p className="text-xs text-muted-foreground/50">
+              Checking environment variables, config files, and dev tool credentials
+            </p>
+          </motion.div>
+        )}
+
+        {/* Results */}
+        {forage.phase === "results" && forage.scanResult && (
+          <motion.div
+            key="results"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="space-y-3"
+          >
+            {/* Summary bar */}
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-foreground/80">
+                  {forage.scanResult.credentials.length} credential
+                  {forage.scanResult.credentials.length !== 1 ? "s" : ""} found
+                </span>
+                {importableCount > 0 && (
+                  <span className="text-xs text-muted-foreground/50">
+                    {forage.selected.size} selected
+                  </span>
+                )}
+              </div>
+              {importableCount > 0 && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={forage.selectAll}
+                    className="text-[11px] text-violet-400/80 hover:text-violet-400 transition-colors"
+                  >
+                    All
+                  </button>
+                  <span className="text-muted-foreground/20">|</span>
+                  <button
+                    onClick={forage.selectNone}
+                    className="text-[11px] text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+                  >
+                    None
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Empty state */}
+            {forage.scanResult.credentials.length === 0 && (
+              <div className="rounded-xl border border-primary/15 bg-secondary/25 p-6 text-center">
+                <p className="text-sm text-muted-foreground/70">
+                  No credentials found on your filesystem.
+                </p>
+                <p className="text-xs text-muted-foreground/40 mt-1">
+                  Try setting environment variables like OPENAI_API_KEY or configure ~/.aws/credentials.
+                </p>
+              </div>
+            )}
+
+            {/* Credential cards */}
+            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+              {forage.scanResult.credentials.map((cred) => (
+                <ForagingResultCard
+                  key={cred.id}
+                  credential={cred}
+                  isSelected={forage.selected.has(cred.id)}
+                  isImporting={forage.importingIds.has(cred.id)}
+                  isImported={forage.imported.has(cred.id)}
+                  onToggle={() => forage.toggleSelect(cred.id)}
+                />
+              ))}
+            </div>
+
+            {/* Import button */}
+            {forage.selected.size > 0 && (
+              <button
+                onClick={handleImport}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-violet-500/15 text-violet-400 text-sm font-medium border border-violet-500/25 hover:bg-violet-500/25 transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Import {forage.selected.size} credential{forage.selected.size !== 1 ? "s" : ""} to vault
+              </button>
+            )}
+          </motion.div>
+        )}
+
+        {/* Importing */}
+        {forage.phase === "importing" && (
+          <motion.div
+            key="importing"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="space-y-3"
+          >
+            <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 p-4 text-center space-y-2">
+              <Loader2 className="w-6 h-6 text-violet-400 animate-spin mx-auto" />
+              <p className="text-sm text-foreground/80">
+                Importing credentials to vault...
+              </p>
+              <p className="text-xs text-muted-foreground/50">
+                {forage.imported.size} of {forage.selected.size} complete
+              </p>
+            </div>
+            {/* Show cards with importing state */}
+            {forage.scanResult && (
+              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                {forage.scanResult.credentials
+                  .filter((c) => forage.selected.has(c.id))
+                  .map((cred) => (
+                    <ForagingResultCard
+                      key={cred.id}
+                      credential={cred}
+                      isSelected={true}
+                      isImporting={forage.importingIds.has(cred.id)}
+                      isImported={forage.imported.has(cred.id)}
+                      onToggle={() => {}}
+                    />
+                  ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* Done */}
+        {forage.phase === "done" && (
+          <motion.div
+            key="done"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-center space-y-3"
+          >
+            <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
+            <div>
+              <p className="text-sm font-medium text-foreground/90">
+                {forage.imported.size} credential{forage.imported.size !== 1 ? "s" : ""} imported
+              </p>
+              {forage.error && (
+                <p className="text-xs text-amber-400/80 mt-1">{forage.error}</p>
+              )}
+            </div>
+            <div className="flex items-center justify-center gap-2">
+              <button
+                onClick={forage.scan}
+                className="text-xs text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+              >
+                Scan again
+              </button>
+              <span className="text-muted-foreground/20">|</span>
+              <button
+                onClick={onBack}
+                className="text-xs text-violet-400/80 hover:text-violet-400 transition-colors"
+              >
+                Back to vault
+              </button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Error */}
+        {forage.phase === "error" && (
+          <motion.div
+            key="error"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="rounded-xl border border-red-500/20 bg-red-500/5 p-6 text-center space-y-3"
+          >
+            <AlertTriangle className="w-8 h-8 text-red-400 mx-auto" />
+            <div>
+              <p className="text-sm font-medium text-foreground/90">Scan Failed</p>
+              <p className="text-xs text-red-400/70 mt-1">{forage.error}</p>
+            </div>
+            <div className="flex items-center justify-center gap-2">
+              <button
+                onClick={forage.scan}
+                className="text-xs text-violet-400/80 hover:text-violet-400 transition-colors"
+              >
+                Try again
+              </button>
+              <span className="text-muted-foreground/20">|</span>
+              <button
+                onClick={onBack}
+                className="text-xs text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+              >
+                Back
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}

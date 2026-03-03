@@ -5,7 +5,6 @@ import type { SidebarSection, EditorTab, TemplateTab, CloudTab, SettingsTab } fr
 export interface UiSlice {
   // State
   sidebarSection: SidebarSection;
-  credentialView: "credentials" | "from-template" | "add-new" | "add-api-tool" | "add-mcp" | "add-custom" | "add-database";
   templateTab: TemplateTab;
   editorTab: EditorTab;
   cloudTab: CloudTab;
@@ -25,7 +24,6 @@ export interface UiSlice {
 
   // Actions
   setSidebarSection: (section: SidebarSection) => void;
-  setCredentialView: (view: "credentials" | "from-template" | "add-new" | "add-api-tool" | "add-mcp" | "add-custom" | "add-database") => void;
   setTemplateTab: (tab: TemplateTab) => void;
   setEditorTab: (tab: EditorTab) => void;
   setCloudTab: (tab: CloudTab) => void;
@@ -45,7 +43,6 @@ export interface UiSlice {
 
 export const createUiSlice: StateCreator<PersonaStore, [], [], UiSlice> = (set) => ({
   sidebarSection: "overview" as SidebarSection,
-  credentialView: "credentials",
   templateTab: "generated" as TemplateTab,
   editorTab: "use-cases" as EditorTab,
   cloudTab: "cloud" as CloudTab,
@@ -64,7 +61,6 @@ export const createUiSlice: StateCreator<PersonaStore, [], [], UiSlice> = (set) 
   connectorTestActive: false,
 
   setSidebarSection: (section) => set({ sidebarSection: section }),
-  setCredentialView: (view) => set({ credentialView: view }),
   setTemplateTab: (tab) => set({ templateTab: tab }),
   setEditorTab: (tab) => set({ editorTab: tab }),
   setCloudTab: (tab) => set({ cloudTab: tab }),

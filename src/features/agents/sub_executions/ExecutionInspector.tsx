@@ -131,13 +131,20 @@ function ToolCallCard({ step }: { step: ToolCallStep }) {
 }
 
 function CostBreakdownBar({ model, inputTokens, outputTokens }: { model: string; inputTokens: number; outputTokens: number }) {
-  const { inputCost, outputCost, totalCost } = estimateCost(model, inputTokens, outputTokens);
+  const { inputCost, outputCost, totalCost, estimated } = estimateCost(model, inputTokens, outputTokens);
   const inputPct = totalCost > 0 ? (inputCost / totalCost) * 100 : 50;
   const outputPct = totalCost > 0 ? (outputCost / totalCost) * 100 : 50;
 
   return (
     <div className="space-y-2">
-      <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider">Cost Breakdown</div>
+      <div className="flex items-center gap-2">
+        <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider">Cost Breakdown</div>
+        {estimated && (
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400/80 font-medium">
+            Unknown model — no pricing data
+          </span>
+        )}
+      </div>
       <div className="flex items-center gap-3 text-sm font-mono">
         <span className="text-blue-400">Input: {formatCost(inputCost)}</span>
         <span className="text-muted-foreground/80">|</span>

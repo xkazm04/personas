@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Bot, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import type { CredentialDesignResult } from '@/hooks/design/useCredentialDesign';
 import { useAutoCredSession } from './useAutoCredSession';
+import { tauriPlaywrightAdapter } from './TauriPlaywrightAdapter';
 import { AutoCredConsent } from './AutoCredConsent';
 import { AutoCredBrowser } from './AutoCredBrowser';
 import { AutoCredReview } from './AutoCredReview';
@@ -14,7 +15,7 @@ interface AutoCredPanelProps {
 }
 
 export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPanelProps) {
-  const session = useAutoCredSession();
+  const session = useAutoCredSession({ adapter: tauriPlaywrightAdapter });
 
   // Initialize session when design result arrives
   useEffect(() => {

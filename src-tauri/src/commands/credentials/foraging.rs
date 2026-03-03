@@ -1,0 +1,826 @@
+//! Autonomous Credential Foraging Agent.
+//!
+//! Scans the local filesystem (~/.aws, ~/.kube, env vars, .env files, etc.)
+//! to proactively discover credentials the user already has configured.
+//! Returns a list of discovered credential sources that the user can
+//! selectively import into the vault.
+
+use std::collections::HashMap;
+use std::path::PathBuf;
+use std::sync::Arc;
+
+use serde::{Deserialize, Serialize};
+use tauri::State;
+
+use crate::AppState;
+
+// ── Types ──────────────────────────────────────────────────────────────
+
+/// A single discovered credential source on the filesystem.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ForagedCredential {
+    /// Unique key for this discovery (e.g. "aws:profile:default").
+    pub id: String,
+    /// Human-readable label.
+    pub label: String,
+    /// Service type matching a connector (e.g. "aws", "github", "openai").
+    pub service_type: String,
+    /// Where the credential was found.
+    pub source: ForageSource,
+    /// Discovered field values (keys may be masked for display).
+    pub fields: HashMap<String, String>,
+    /// Whether this credential already exists in the vault.
+    pub already_imported: bool,
+    /// Confidence level for the match.
+    pub confidence: ForageConfidence,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ForageSource {
+    AwsCredentials,
+    AwsConfig,
+    KubeConfig,
+    EnvVar,
+    DotEnv,
+    Npmrc,
+    DockerConfig,
+    GitHubCli,
+    SshKey,
+    GitConfig,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ForageConfidence {
+    High,
+    Medium,
+    Low,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ForagingScanResult {
+    pub credentials: Vec<ForagedCredential>,
+    pub scanned_sources: Vec<String>,
+    pub scan_duration_ms: u64,
+}
+
+// ── Known env-var patterns ─────────────────────────────────────────────
+
+/// Map of environment variable names → (service_type, field_key).
+const ENV_PATTERNS: &[(&str, &str, &str)] = &[
+    ("OPENAI_API_KEY", "openai", "api_key"),
+    ("ANTHROPIC_API_KEY", "anthropic", "api_key"),
+    ("GITHUB_TOKEN", "github", "api_key"),
+    ("GITHUB_PERSONAL_ACCESS_TOKEN", "github", "api_key"),
+    ("GH_TOKEN", "github", "api_key"),
+    ("SLACK_BOT_TOKEN", "slack", "bot_token"),
+    ("SLACK_TOKEN", "slack", "bot_token"),
+    ("DISCORD_BOT_TOKEN", "discord", "bot_token"),
+    ("DISCORD_TOKEN", "discord", "bot_token"),
+    ("SENDGRID_API_KEY", "sendgrid", "api_key"),
+    ("RESEND_API_KEY", "resend", "api_key"),
+    ("SENTRY_DSN", "sentry", "dsn"),
+    ("SENTRY_AUTH_TOKEN", "sentry", "auth_token"),
+    ("SUPABASE_URL", "supabase", "project_url"),
+    ("SUPABASE_KEY", "supabase", "api_key"),
+    ("SUPABASE_ANON_KEY", "supabase", "api_key"),
+    ("SUPABASE_SERVICE_ROLE_KEY", "supabase", "service_role_key"),
+    ("VERCEL_TOKEN", "vercel", "api_token"),
+    ("NETLIFY_AUTH_TOKEN", "netlify", "access_token"),
+    ("CLOUDFLARE_API_TOKEN", "cloudflare", "api_token"),
+    ("CF_API_TOKEN", "cloudflare", "api_token"),
+    ("LINEAR_API_KEY", "linear", "api_key"),
+    ("POSTHOG_API_KEY", "posthog", "api_key"),
+    ("MIXPANEL_TOKEN", "mixpanel", "project_token"),
+    ("NEON_API_KEY", "neon", "api_key"),
+    ("UPSTASH_REDIS_REST_TOKEN", "upstash", "rest_token"),
+    ("UPSTASH_REDIS_REST_URL", "upstash", "rest_url"),
+    ("HUBSPOT_ACCESS_TOKEN", "hubspot", "access_token"),
+    ("JIRA_API_TOKEN", "jira", "api_token"),
+    ("CONFLUENCE_API_TOKEN", "confluence", "api_token"),
+    ("CLICKUP_API_TOKEN", "clickup", "api_token"),
+    ("CIRCLECI_TOKEN", "circleci", "api_token"),
+    ("TELEGRAM_BOT_TOKEN", "telegram", "bot_token"),
+    ("TWILIO_ACCOUNT_SID", "twilio-sms", "account_sid"),
+    ("TWILIO_AUTH_TOKEN", "twilio-sms", "auth_token"),
+    ("AIRTABLE_API_KEY", "airtable", "api_key"),
+    ("AIRTABLE_PERSONAL_ACCESS_TOKEN", "airtable", "api_key"),
+    ("NOTION_TOKEN", "notion", "api_key"),
+    ("NOTION_API_KEY", "notion", "api_key"),
+    ("FIGMA_ACCESS_TOKEN", "figma", "access_token"),
+    ("PLANETSCALE_TOKEN", "planetscale", "service_token"),
+    ("AWS_ACCESS_KEY_ID", "aws", "access_key_id"),
+    ("AWS_SECRET_ACCESS_KEY", "aws", "secret_access_key"),
+    ("BUFFER_ACCESS_TOKEN", "buffer", "access_token"),
+    ("MONDAY_API_TOKEN", "monday", "api_token"),
+    ("CALENDLY_PERSONAL_TOKEN", "calendly", "personal_access_token"),
+    ("DROPBOX_ACCESS_TOKEN", "dropbox", "access_token"),
+    ("CONVEX_DEPLOY_KEY", "convex", "deploy_key"),
+    ("BETTERSTACK_API_TOKEN", "betterstack", "api_token"),
+    ("REDIS_URL", "redis", "connection_string"),
+    ("DATABASE_URL", "postgres", "connection_string"),
+    ("POSTGRES_URL", "postgres", "connection_string"),
+    ("MONGODB_URI", "mongodb", "connection_string"),
+    ("MONGO_URL", "mongodb", "connection_string"),
+];
+
+// ── Scanning logic ─────────────────────────────────────────────────────
+
+fn home_dir() -> Option<PathBuf> {
+    std::env::var("HOME")
+        .or_else(|_| std::env::var("USERPROFILE"))
+        .ok()
+        .map(PathBuf::from)
+}
+
+/// Mask a credential value for safe display (show first 4 and last 4 chars).
+fn mask_value(val: &str) -> String {
+    if val.len() <= 12 {
+        return "*".repeat(val.len().min(8));
+    }
+    format!("{}...{}", &val[..4], &val[val.len() - 4..])
+}
+
+/// Scan environment variables for known credential patterns.
+fn scan_env_vars() -> Vec<ForagedCredential> {
+    let mut results = Vec::new();
+    // Group env vars by service_type so we can merge fields.
+    let mut service_fields: HashMap<String, HashMap<String, String>> = HashMap::new();
+    let mut service_vars: HashMap<String, Vec<String>> = HashMap::new();
+
+    for &(env_key, service_type, field_key) in ENV_PATTERNS {
+        if let Ok(value) = std::env::var(env_key) {
+            if value.is_empty() {
+                continue;
+            }
+            service_fields
+                .entry(service_type.to_string())
+                .or_default()
+                .insert(field_key.to_string(), value);
+            service_vars
+                .entry(service_type.to_string())
+                .or_default()
+                .push(env_key.to_string());
+        }
+    }
+
+    for (service_type, fields) in service_fields {
+        let var_names = service_vars.get(&service_type).cloned().unwrap_or_default();
+        let label_suffix = if var_names.len() == 1 {
+            format!(" ({})", var_names[0])
+        } else {
+            format!(" ({} vars)", var_names.len())
+        };
+        let display_fields: HashMap<String, String> = fields
+            .iter()
+            .map(|(k, v)| (k.clone(), mask_value(v)))
+            .collect();
+
+        results.push(ForagedCredential {
+            id: format!("env:{}", service_type),
+            label: format!("{}{}", service_type, label_suffix),
+            service_type: service_type.clone(),
+            source: ForageSource::EnvVar,
+            fields: display_fields,
+            already_imported: false,
+            confidence: ForageConfidence::High,
+        });
+    }
+
+    results
+}
+
+/// Scan ~/.aws/credentials for AWS profiles.
+fn scan_aws_credentials() -> Vec<ForagedCredential> {
+    let mut results = Vec::new();
+    let Some(home) = home_dir() else { return results };
+    let path = home.join(".aws").join("credentials");
+
+    let content = match std::fs::read_to_string(&path) {
+        Ok(c) => c,
+        Err(_) => return results,
+    };
+
+    let mut current_profile: Option<String> = None;
+    let mut current_fields: HashMap<String, String> = HashMap::new();
+
+    let flush = |profile: &str, fields: &HashMap<String, String>, out: &mut Vec<ForagedCredential>| {
+        if fields.is_empty() {
+            return;
+        }
+        let display_fields: HashMap<String, String> = fields
+            .iter()
+            .map(|(k, v)| (k.clone(), mask_value(v)))
+            .collect();
+        out.push(ForagedCredential {
+            id: format!("aws:profile:{}", profile),
+            label: format!("AWS — {}", profile),
+            service_type: "aws".to_string(),
+            source: ForageSource::AwsCredentials,
+            fields: display_fields,
+            already_imported: false,
+            confidence: ForageConfidence::High,
+        });
+    };
+
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with('[') && trimmed.ends_with(']') {
+            // Flush previous profile
+            if let Some(ref profile) = current_profile {
+                flush(profile, &current_fields, &mut results);
+            }
+            current_profile = Some(trimmed[1..trimmed.len() - 1].to_string());
+            current_fields.clear();
+        } else if let Some(eq_pos) = trimmed.find('=') {
+            let key = trimmed[..eq_pos].trim().to_string();
+            let val = trimmed[eq_pos + 1..].trim().to_string();
+            if !val.is_empty() {
+                current_fields.insert(key, val);
+            }
+        }
+    }
+    // Flush last profile
+    if let Some(ref profile) = current_profile {
+        flush(profile, &current_fields, &mut results);
+    }
+
+    results
+}
+
+/// Scan ~/.kube/config for Kubernetes contexts.
+fn scan_kube_config() -> Vec<ForagedCredential> {
+    let mut results = Vec::new();
+    let Some(home) = home_dir() else { return results };
+    let path = home.join(".kube").join("config");
+
+    let content = match std::fs::read_to_string(&path) {
+        Ok(c) => c,
+        Err(_) => return results,
+    };
+
+    // Simple YAML context extraction — look for `- name:` under `contexts:`
+    let mut in_contexts = false;
+    let mut context_names = Vec::new();
+
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed == "contexts:" {
+            in_contexts = true;
+            continue;
+        }
+        if in_contexts {
+            if !line.starts_with(' ') && !line.starts_with('\t') && !trimmed.is_empty() {
+                break; // Left the contexts block
+            }
+            if trimmed.starts_with("- name:") {
+                let name = trimmed.trim_start_matches("- name:").trim().trim_matches('"');
+                context_names.push(name.to_string());
+            }
+        }
+    }
+
+    for name in context_names {
+        let mut fields = HashMap::new();
+        fields.insert("context".to_string(), name.clone());
+        results.push(ForagedCredential {
+            id: format!("kube:context:{}", name),
+            label: format!("Kubernetes — {}", name),
+            service_type: "kubernetes".to_string(),
+            source: ForageSource::KubeConfig,
+            fields,
+            already_imported: false,
+            confidence: ForageConfidence::Medium,
+        });
+    }
+
+    results
+}
+
+/// Scan .env files in common project locations.
+fn scan_dotenv_files() -> Vec<ForagedCredential> {
+    let mut results = Vec::new();
+
+    // Check current working directory
+    let cwd_env = PathBuf::from(".env");
+    if let Ok(content) = std::fs::read_to_string(&cwd_env) {
+        results.extend(parse_dotenv_content(&content, ".env (cwd)"));
+    }
+
+    // Also check ~/.env if it exists
+    if let Some(home) = home_dir() {
+        let home_env = home.join(".env");
+        if let Ok(content) = std::fs::read_to_string(&home_env) {
+            results.extend(parse_dotenv_content(&content, "~/.env"));
+        }
+    }
+
+    results
+}
+
+fn parse_dotenv_content(content: &str, source_label: &str) -> Vec<ForagedCredential> {
+    let mut results = Vec::new();
+
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+        let Some(eq_pos) = trimmed.find('=') else { continue };
+        let key = trimmed[..eq_pos].trim();
+        let val = trimmed[eq_pos + 1..].trim().trim_matches('"').trim_matches('\'');
+        if val.is_empty() {
+            continue;
+        }
+
+        // Match against known patterns
+        for &(env_key, service_type, field_key) in ENV_PATTERNS {
+            if key == env_key {
+                let mut fields = HashMap::new();
+                fields.insert(field_key.to_string(), mask_value(val));
+
+                results.push(ForagedCredential {
+                    id: format!("dotenv:{}:{}", source_label, key),
+                    label: format!("{} from {}", service_type, source_label),
+                    service_type: service_type.to_string(),
+                    source: ForageSource::DotEnv,
+                    fields,
+                    already_imported: false,
+                    confidence: ForageConfidence::High,
+                });
+                break;
+            }
+        }
+    }
+
+    results
+}
+
+/// Scan ~/.npmrc for auth tokens.
+fn scan_npmrc() -> Vec<ForagedCredential> {
+    let mut results = Vec::new();
+    let Some(home) = home_dir() else { return results };
+    let path = home.join(".npmrc");
+
+    let content = match std::fs::read_to_string(&path) {
+        Ok(c) => c,
+        Err(_) => return results,
+    };
+
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.contains("_authToken=") || trimmed.contains("_auth=") {
+            let mut fields = HashMap::new();
+            fields.insert("token".to_string(), mask_value(trimmed));
+            results.push(ForagedCredential {
+                id: "npmrc:token".to_string(),
+                label: "npm Registry Token".to_string(),
+                service_type: "npm".to_string(),
+                source: ForageSource::Npmrc,
+                fields,
+                already_imported: false,
+                confidence: ForageConfidence::Medium,
+            });
+            break; // Only report once
+        }
+    }
+
+    results
+}
+
+/// Scan ~/.docker/config.json for registry credentials.
+fn scan_docker_config() -> Vec<ForagedCredential> {
+    let mut results = Vec::new();
+    let Some(home) = home_dir() else { return results };
+    let path = home.join(".docker").join("config.json");
+
+    let content = match std::fs::read_to_string(&path) {
+        Ok(c) => c,
+        Err(_) => return results,
+    };
+
+    if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
+        if let Some(auths) = json.get("auths").and_then(|a| a.as_object()) {
+            for (registry, _auth) in auths {
+                let mut fields = HashMap::new();
+                fields.insert("registry".to_string(), registry.clone());
+                results.push(ForagedCredential {
+                    id: format!("docker:registry:{}", registry),
+                    label: format!("Docker — {}", registry),
+                    service_type: "docker".to_string(),
+                    source: ForageSource::DockerConfig,
+                    fields,
+                    already_imported: false,
+                    confidence: ForageConfidence::Medium,
+                });
+            }
+        }
+    }
+
+    results
+}
+
+/// Scan ~/.config/gh/hosts.yml for GitHub CLI tokens.
+fn scan_github_cli() -> Vec<ForagedCredential> {
+    let mut results = Vec::new();
+    let Some(home) = home_dir() else { return results };
+    let path = home.join(".config").join("gh").join("hosts.yml");
+
+    // On Windows, also check AppData
+    let win_path = home.join("AppData").join("Roaming").join("GitHub CLI").join("hosts.yml");
+
+    let content = match std::fs::read_to_string(&path) {
+        Ok(c) => c,
+        Err(_) => match std::fs::read_to_string(&win_path) {
+            Ok(c) => c,
+            Err(_) => return results,
+        },
+    };
+
+    // Simple YAML: look for "oauth_token:" lines
+    let mut current_host: Option<String> = None;
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if !line.starts_with(' ') && !line.starts_with('\t') && trimmed.ends_with(':') {
+            current_host = Some(trimmed.trim_end_matches(':').to_string());
+        } else if trimmed.starts_with("oauth_token:") {
+            let token = trimmed.trim_start_matches("oauth_token:").trim();
+            if !token.is_empty() {
+                let host = current_host.clone().unwrap_or_else(|| "github.com".to_string());
+                let mut fields = HashMap::new();
+                fields.insert("api_key".to_string(), mask_value(token));
+                results.push(ForagedCredential {
+                    id: format!("ghcli:{}", host),
+                    label: format!("GitHub CLI — {}", host),
+                    service_type: "github".to_string(),
+                    source: ForageSource::GitHubCli,
+                    fields,
+                    already_imported: false,
+                    confidence: ForageConfidence::High,
+                });
+            }
+        }
+    }
+
+    results
+}
+
+/// Scan ~/.ssh/ for SSH key files (detection only, no secret import).
+fn scan_ssh_keys() -> Vec<ForagedCredential> {
+    let mut results = Vec::new();
+    let Some(home) = home_dir() else { return results };
+    let ssh_dir = home.join(".ssh");
+
+    let entries = match std::fs::read_dir(&ssh_dir) {
+        Ok(e) => e,
+        Err(_) => return results,
+    };
+
+    for entry in entries.flatten() {
+        let name = entry.file_name().to_string_lossy().to_string();
+        // Only detect common key files (not the private keys themselves)
+        if name.ends_with(".pub") {
+            let key_name = name.trim_end_matches(".pub");
+            let mut fields = HashMap::new();
+            fields.insert("key_file".to_string(), format!("~/.ssh/{}", key_name));
+            results.push(ForagedCredential {
+                id: format!("ssh:key:{}", key_name),
+                label: format!("SSH Key — {}", key_name),
+                service_type: "ssh".to_string(),
+                source: ForageSource::SshKey,
+                fields,
+                already_imported: false,
+                confidence: ForageConfidence::Low,
+            });
+        }
+    }
+
+    results
+}
+
+/// Mark credentials that already exist in the vault.
+fn mark_existing(
+    results: &mut [ForagedCredential],
+    existing_service_types: &[String],
+) {
+    for cred in results.iter_mut() {
+        if existing_service_types.contains(&cred.service_type) {
+            cred.already_imported = true;
+        }
+    }
+}
+
+/// Deduplicate results — prefer higher confidence and env vars over dotenv.
+fn deduplicate(results: Vec<ForagedCredential>) -> Vec<ForagedCredential> {
+    let mut seen: HashMap<String, usize> = HashMap::new();
+    let mut deduped: Vec<ForagedCredential> = Vec::new();
+
+    for cred in results {
+        let key = format!("{}:{}", cred.service_type, cred.id);
+        if let Some(&idx) = seen.get(&key) {
+            // Keep higher confidence one
+            let existing_conf = match deduped[idx].confidence {
+                ForageConfidence::High => 3,
+                ForageConfidence::Medium => 2,
+                ForageConfidence::Low => 1,
+            };
+            let new_conf = match cred.confidence {
+                ForageConfidence::High => 3,
+                ForageConfidence::Medium => 2,
+                ForageConfidence::Low => 1,
+            };
+            if new_conf > existing_conf {
+                deduped[idx] = cred;
+            }
+        } else {
+            seen.insert(key, deduped.len());
+            deduped.push(cred);
+        }
+    }
+
+    deduped
+}
+
+// ── Tauri Commands ─────────────────────────────────────────────────────
+
+/// Scan the local filesystem for discoverable credentials.
+#[tauri::command]
+pub fn scan_credential_sources(
+    state: State<'_, Arc<AppState>>,
+) -> Result<ForagingScanResult, String> {
+    let start = std::time::Instant::now();
+
+    // Get existing credential service types to mark duplicates
+    let existing_types: Vec<String> =
+        match crate::db::repos::resources::credentials::get_all(&state.db) {
+            Ok(creds) => creds.iter().map(|c| c.service_type.clone()).collect(),
+            Err(_) => Vec::new(),
+        };
+
+    let mut scanned_sources = Vec::new();
+    let mut all_results = Vec::new();
+
+    // Scan each source
+    scanned_sources.push("Environment variables".to_string());
+    all_results.extend(scan_env_vars());
+
+    scanned_sources.push("~/.aws/credentials".to_string());
+    all_results.extend(scan_aws_credentials());
+
+    scanned_sources.push("~/.kube/config".to_string());
+    all_results.extend(scan_kube_config());
+
+    scanned_sources.push(".env files".to_string());
+    all_results.extend(scan_dotenv_files());
+
+    scanned_sources.push("~/.npmrc".to_string());
+    all_results.extend(scan_npmrc());
+
+    scanned_sources.push("~/.docker/config.json".to_string());
+    all_results.extend(scan_docker_config());
+
+    scanned_sources.push("GitHub CLI config".to_string());
+    all_results.extend(scan_github_cli());
+
+    scanned_sources.push("~/.ssh/".to_string());
+    all_results.extend(scan_ssh_keys());
+
+    mark_existing(&mut all_results, &existing_types);
+    let credentials = deduplicate(all_results);
+
+    let duration = start.elapsed();
+
+    Ok(ForagingScanResult {
+        credentials,
+        scanned_sources,
+        scan_duration_ms: duration.as_millis() as u64,
+    })
+}
+
+/// Import a foraged credential into the vault.
+/// Reads the actual (unmasked) value from the original source at import time.
+#[tauri::command]
+pub fn import_foraged_credential(
+    state: State<'_, Arc<AppState>>,
+    foraged_id: String,
+    credential_name: String,
+    service_type: String,
+) -> Result<serde_json::Value, String> {
+    // Re-read the actual values from the source
+    let fields = resolve_real_values(&foraged_id, &service_type)
+        .map_err(|e| format!("Failed to read credential values: {}", e))?;
+
+    if fields.is_empty() {
+        return Err("No credential values found at source. The credential may have been removed.".to_string());
+    }
+
+    // Create the credential in the vault
+    let input = crate::db::models::CreateCredentialInput {
+        name: credential_name.clone(),
+        service_type: service_type.clone(),
+        encrypted_data: String::new(),
+        iv: String::new(),
+        metadata: None,
+        session_encrypted_data: None,
+    };
+
+    let cred = crate::db::repos::resources::credentials::create(&state.db, input)
+        .map_err(|e| format!("Failed to create credential: {}", e))?;
+
+    // Save fields with encryption
+    crate::db::repos::resources::credentials::save_fields(&state.db, &cred.id, &fields)
+        .map_err(|e| {
+            // Rollback credential on field save failure
+            let _ = crate::db::repos::resources::credentials::delete(&state.db, &cred.id);
+            format!("Failed to save credential fields: {}", e)
+        })?;
+
+    // Audit log
+    let _ = crate::db::repos::resources::audit_log::insert(
+        &state.db,
+        &cred.id,
+        &credential_name,
+        "create",
+        None,
+        None,
+        Some("Imported via credential foraging"),
+    );
+
+    Ok(serde_json::json!({
+        "id": cred.id,
+        "name": cred.name,
+        "service_type": cred.service_type,
+        "field_count": fields.len(),
+    }))
+}
+
+/// Re-read the actual (unmasked) credential values from the original source.
+fn resolve_real_values(
+    foraged_id: &str,
+    _service_type: &str,
+) -> Result<HashMap<String, String>, String> {
+    let parts: Vec<&str> = foraged_id.splitn(3, ':').collect();
+    if parts.is_empty() {
+        return Err("Invalid foraged ID format".to_string());
+    }
+
+    match parts[0] {
+        "env" => {
+            // Re-read env vars for this service
+            let svc = parts.get(1).unwrap_or(&"");
+            let mut fields = HashMap::new();
+            for &(env_key, service_type, field_key) in ENV_PATTERNS {
+                if service_type == *svc {
+                    if let Ok(value) = std::env::var(env_key) {
+                        if !value.is_empty() {
+                            fields.insert(field_key.to_string(), value);
+                        }
+                    }
+                }
+            }
+            Ok(fields)
+        }
+        "aws" => {
+            // Re-read ~/.aws/credentials for the specific profile
+            let profile = parts.get(2).unwrap_or(&"default");
+            resolve_aws_profile(profile)
+        }
+        "dotenv" => {
+            // Re-read from .env file
+            let source = parts.get(1).unwrap_or(&"");
+            let key = parts.get(2).unwrap_or(&"");
+            resolve_dotenv_value(source, key)
+        }
+        "ghcli" => {
+            resolve_github_cli_token(parts.get(1).unwrap_or(&"github.com"))
+        }
+        "npmrc" => {
+            resolve_npmrc_token()
+        }
+        _ => Err(format!("Import not supported for source type: {}", parts[0])),
+    }
+}
+
+fn resolve_aws_profile(profile: &str) -> Result<HashMap<String, String>, String> {
+    let home = home_dir().ok_or("Cannot determine home directory")?;
+    let path = home.join(".aws").join("credentials");
+    let content = std::fs::read_to_string(&path)
+        .map_err(|e| format!("Cannot read ~/.aws/credentials: {}", e))?;
+
+    let mut in_profile = false;
+    let mut fields = HashMap::new();
+
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with('[') && trimmed.ends_with(']') {
+            let section = &trimmed[1..trimmed.len() - 1];
+            in_profile = section == profile;
+            if !in_profile && !fields.is_empty() {
+                break;
+            }
+        } else if in_profile {
+            if let Some(eq_pos) = trimmed.find('=') {
+                let key = trimmed[..eq_pos].trim();
+                let val = trimmed[eq_pos + 1..].trim();
+                if !val.is_empty() {
+                    // Map AWS credential keys to standard field names
+                    let field_key = match key {
+                        "aws_access_key_id" => "access_key_id",
+                        "aws_secret_access_key" => "secret_access_key",
+                        "aws_session_token" => "session_token",
+                        "region" => "region",
+                        other => other,
+                    };
+                    fields.insert(field_key.to_string(), val.to_string());
+                }
+            }
+        }
+    }
+
+    Ok(fields)
+}
+
+fn resolve_dotenv_value(source: &str, key: &str) -> Result<HashMap<String, String>, String> {
+    let path = if source.starts_with('~') {
+        let home = home_dir().ok_or("Cannot determine home directory")?;
+        home.join(source.trim_start_matches("~/"))
+    } else {
+        PathBuf::from(".env")
+    };
+
+    let content = std::fs::read_to_string(&path)
+        .map_err(|e| format!("Cannot read {}: {}", source, e))?;
+
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+        let Some(eq_pos) = trimmed.find('=') else { continue };
+        let k = trimmed[..eq_pos].trim();
+        let val = trimmed[eq_pos + 1..].trim().trim_matches('"').trim_matches('\'');
+        if k == key && !val.is_empty() {
+            // Find the matching service/field
+            for &(env_key, _svc, field_key) in ENV_PATTERNS {
+                if env_key == key {
+                    let mut fields = HashMap::new();
+                    fields.insert(field_key.to_string(), val.to_string());
+                    return Ok(fields);
+                }
+            }
+        }
+    }
+
+    Err(format!("Key {} not found in {}", key, source))
+}
+
+fn resolve_github_cli_token(host: &str) -> Result<HashMap<String, String>, String> {
+    let home = home_dir().ok_or("Cannot determine home directory")?;
+    let path = home.join(".config").join("gh").join("hosts.yml");
+    let win_path = home.join("AppData").join("Roaming").join("GitHub CLI").join("hosts.yml");
+
+    let content = std::fs::read_to_string(&path)
+        .or_else(|_| std::fs::read_to_string(&win_path))
+        .map_err(|e| format!("Cannot read GitHub CLI config: {}", e))?;
+
+    let mut current_host: Option<String> = None;
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if !line.starts_with(' ') && !line.starts_with('\t') && trimmed.ends_with(':') {
+            current_host = Some(trimmed.trim_end_matches(':').to_string());
+        } else if trimmed.starts_with("oauth_token:") {
+            let token = trimmed.trim_start_matches("oauth_token:").trim();
+            if let Some(ref h) = current_host {
+                if h == host && !token.is_empty() {
+                    let mut fields = HashMap::new();
+                    fields.insert("api_key".to_string(), token.to_string());
+                    return Ok(fields);
+                }
+            }
+        }
+    }
+
+    Err(format!("No token found for host {}", host))
+}
+
+fn resolve_npmrc_token() -> Result<HashMap<String, String>, String> {
+    let home = home_dir().ok_or("Cannot determine home directory")?;
+    let path = home.join(".npmrc");
+    let content = std::fs::read_to_string(&path)
+        .map_err(|e| format!("Cannot read ~/.npmrc: {}", e))?;
+
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if let Some(pos) = trimmed.find("_authToken=") {
+            let token = &trimmed[pos + 11..];
+            if !token.is_empty() {
+                let mut fields = HashMap::new();
+                fields.insert("token".to_string(), token.to_string());
+                return Ok(fields);
+            }
+        }
+    }
+
+    Err("No auth token found in ~/.npmrc".to_string())
+}

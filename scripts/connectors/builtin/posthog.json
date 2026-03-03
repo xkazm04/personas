@@ -6,14 +6,37 @@
   "icon_url": "/icons/connectors/posthog.svg",
   "category": "analytics",
   "fields": [
-    { "key": "personal_api_key", "label": "Personal API Key", "type": "password", "required": true, "placeholder": "phx_...", "helpText": "From PostHog → Settings → Personal API Keys" },
-    { "key": "project_api_key", "label": "Project API Key", "type": "password", "required": false, "placeholder": "phc_...", "helpText": "Optional: project token for event ingestion" },
-    { "key": "host", "label": "Host", "type": "url", "required": false, "placeholder": "https://us.posthog.com", "helpText": "Defaults to us.posthog.com. Use eu.posthog.com for EU cloud." }
+    {
+      "key": "personal_api_key",
+      "label": "Personal API Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "phx_...",
+      "helpText": "From PostHog → Settings → Personal API Keys"
+    },
+    {
+      "key": "project_api_key",
+      "label": "Project API Key",
+      "type": "password",
+      "required": false,
+      "placeholder": "phc_...",
+      "helpText": "Optional: project token for event ingestion"
+    },
+    {
+      "key": "host",
+      "label": "Host",
+      "type": "url",
+      "required": false,
+      "placeholder": "https://us.posthog.com",
+      "helpText": "Defaults to us.posthog.com. Use eu.posthog.com for EU cloud."
+    }
   ],
   "healthcheck_config": {
     "endpoint": "{{host|https://us.posthog.com}}/api/projects/",
     "method": "GET",
-    "headers": { "Authorization": "Bearer {{personal_api_key}}" },
+    "headers": {
+      "Authorization": "Bearer {{personal_api_key}}"
+    },
     "description": "Validates personal API key via projects endpoint"
   },
   "services": [],
@@ -24,9 +47,27 @@
     "auth_type": "api_key",
     "auth_type_label": "API Key",
     "docs_url": "https://posthog.com/docs/api",
+    "setup_guide": "1. Log in to PostHog and go to Settings → Personal API Keys\n2. Click 'Create personal API key' and name it\n3. Copy the phx_... key\n4. Optionally note your Project ID from Project Settings\n5. Paste the API key (and project ID if needed) here",
+    "pricing_tier": "free",
     "auth_variants": [
-      { "id": "personal", "label": "Personal API Key", "fields": ["personal_api_key", "host"], "auth_type_label": "API Key" },
-      { "id": "project", "label": "Project Key", "fields": ["project_api_key", "host"], "auth_type_label": "Project Key" }
+      {
+        "id": "personal",
+        "label": "Personal API Key",
+        "fields": [
+          "personal_api_key",
+          "host"
+        ],
+        "auth_type_label": "API Key"
+      },
+      {
+        "id": "project",
+        "label": "Project Key",
+        "fields": [
+          "project_api_key",
+          "host"
+        ],
+        "auth_type_label": "Project Key"
+      }
     ]
   }
 }

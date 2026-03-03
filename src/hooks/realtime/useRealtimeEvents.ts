@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { testEventFlow } from '@/api/tauriApi';
 import { useEventBusListener } from '@/hooks/realtime/useEventBusListener';
 import type { PersonaEvent } from '@/lib/bindings/PersonaEvent';
+import { useEventPhaseProgressor } from '@/hooks/realtime/useEventPhaseProgressor';
 
 // ── Color Map (derived from canonical EVENT_TYPE_COLORS) ──────────
 import { EVENT_TYPE_COLORS } from '@/lib/utils/formatters';
@@ -104,7 +105,15 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
   );
   const [testFlowLoading, setTestFlowLoading] = useState(false);
   const isPausedRef = useRef(isPaused);
+  const testFlowTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   isPausedRef.current = isPaused;
+
+  const clearPendingTestFlowTimeouts = useCallback(() => {
+    for (const timeoutId of testFlowTimeoutsRef.current) {
+      clearTimeout(timeoutId);
+    }
+    testFlowTimeoutsRef.current = [];
+  }, []);
 
   const stats = useMemo(() => computeStats(events), [events]);
 
@@ -126,49 +135,11 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
   }, []);
   const isConnected = useEventBusListener(handleBusEvent);
 
-  // Phase progression timer (entering -> on-bus -> delivering -> done)
-  // Prunes events 2s after reaching 'done' to avoid unbounded accumulation.
-  // Returns the same array reference when nothing changed to avoid re-renders.
-  // Stopped when paused to avoid ~10 wasted timer fires/sec.
-  useEffect(() => {
-    if (isPaused) return;
+  useEventPhaseProgressor({ active: !isPaused, setEvents });
 
-    const DONE_GRACE_MS = 2000;
-    const timer = setInterval(() => {
-      const now = Date.now();
-      setEvents((prev) => {
-        if (prev.length === 0) return prev;
-
-        let changed = false;
-        const updated: RealtimeEvent[] = [];
-        for (const e of prev) {
-          if (e._phase === 'done') {
-            if (now - e._phaseStartedAt < DONE_GRACE_MS) {
-              updated.push(e);
-            } else {
-              changed = true;
-            }
-            continue;
-          }
-          const elapsed = now - e._phaseStartedAt;
-          if (e._phase === 'entering' && elapsed > 400) {
-            updated.push({ ...e, _phase: 'on-bus', _phaseStartedAt: now });
-            changed = true;
-          } else if (e._phase === 'on-bus' && elapsed > 800) {
-            updated.push({ ...e, _phase: 'delivering', _phaseStartedAt: now });
-            changed = true;
-          } else if (e._phase === 'delivering' && elapsed > 600) {
-            updated.push({ ...e, _phase: 'done', _phaseStartedAt: now });
-            changed = true;
-          } else {
-            updated.push(e);
-          }
-        }
-        return changed ? updated : prev;
-      });
-    }, 100);
-    return () => clearInterval(timer);
-  }, [isPaused]);
+  useEffect(() => () => {
+    clearPendingTestFlowTimeouts();
+  }, [clearPendingTestFlowTimeouts]);
 
   const togglePause = useCallback(() => setIsPaused((p) => !p), []);
   const selectEvent = useCallback(
@@ -177,6 +148,7 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
   );
 
   const triggerTestFlow = useCallback(async () => {
+    clearPendingTestFlowTimeouts();
     setTestFlowLoading(true);
     try {
       // Fire the backend test event
@@ -196,7 +168,7 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
 
       for (let i = 0; i < 4; i++) {
         const src = simSources[i % simSources.length]!;
-        setTimeout(() => {
+        const timeoutId = setTimeout(() => {
           if (isPausedRef.current) return;
           const simEvent: RealtimeEvent = {
             id: `sim-${Date.now()}-${i}`,
@@ -219,11 +191,12 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
             return next.length > 200 ? next.slice(0, 200) : next;
           });
         }, i * 350);
+        testFlowTimeoutsRef.current.push(timeoutId);
       }
     } finally {
       setTestFlowLoading(false);
     }
-  }, []);
+  }, [clearPendingTestFlowTimeouts]);
 
   return {
     events,

@@ -16,13 +16,13 @@ import {
 import { usePersonaStore } from '@/stores/personaStore';
 import { useAuthStore } from '@/stores/authStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo, useEffect } from 'react';
 import { AreaChart, Area, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
 import { PersonaSelect } from '@/features/overview/sub_usage/DashboardFilters';
-import { getExecutionDashboard } from '@/api/observability';
-import type { DashboardDailyPoint } from '@/lib/bindings/DashboardDailyPoint';
 import { ChartTooltip } from '@/features/overview/sub_usage/charts/ChartTooltip';
 import { GRID_STROKE, AXIS_TICK_FILL } from '@/features/overview/sub_usage/charts/chartConstants';
+import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
+import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
 
 // ---------------------------------------------------------------------------
 // DashboardHome
@@ -40,28 +40,30 @@ export default function DashboardHome() {
   const fetchUnreadMessageCount = usePersonaStore((s) => s.fetchUnreadMessageCount);
   const setOverviewTab = usePersonaStore((s) => s.setOverviewTab);
 
-  const [selectedPersonaId, setSelectedPersonaId] = useState('');
-  const [dailyPoints, setDailyPoints] = useState<DashboardDailyPoint[]>([]);
+  const { selectedPersonaId, setSelectedPersonaId } = useOverviewFilters();
+  const executionDashboard = usePersonaStore((s) => s.executionDashboard);
+  const fetchExecutionDashboard = usePersonaStore((s) => s.fetchExecutionDashboard);
+
+  const dailyPoints = executionDashboard?.daily_points ?? [];
 
   useEffect(() => {
     fetchGlobalExecutions(true);
     fetchPendingReviewCount();
     fetchUnreadMessageCount();
-    getExecutionDashboard(14)
-      .then((data) => setDailyPoints(data.daily_points))
-      .catch(() => setDailyPoints([]));
-  }, [fetchGlobalExecutions, fetchPendingReviewCount, fetchUnreadMessageCount]);
+    fetchExecutionDashboard(14);
+  }, [fetchGlobalExecutions, fetchPendingReviewCount, fetchUnreadMessageCount, fetchExecutionDashboard]);
 
   const stats = useMemo(() => {
-    const successCount = globalExecutions.filter(e => e.status === 'completed').length;
-    const successRate = globalExecutions.length > 0
-      ? Math.round((successCount / globalExecutions.length) * 100)
-      : 0;
-
     let execs = globalExecutions;
     if (selectedPersonaId) {
       execs = execs.filter(e => e.persona_id === selectedPersonaId);
     }
+
+    const successCount = execs.filter(e => e.status === 'completed').length;
+    const successRate = Math.round(resolveMetricPercent(
+      SUCCESS_RATE_IDENTITIES.dashboardRecentExecutions,
+      { numerator: successCount, denominator: execs.length },
+    ));
 
     return {
       successRate,
@@ -99,41 +101,53 @@ export default function DashboardHome() {
   // Header-level stat badges
   const headerBadges = (
     <div className="flex items-center gap-2 flex-shrink-0">
-      <button
+      <motion.button
+        whileHover={{ scale: 1.05 }}
         onClick={() => setOverviewTab('messages')}
+        title={`${unreadMessageCount} unread messages`}
         className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors hover:bg-blue-500/15 bg-blue-500/10 border-blue-500/20 text-blue-300"
       >
         <Mail className="w-3 h-3" />
         {unreadMessageCount}
-      </button>
-      <button
+      </motion.button>
+      <motion.button
+        whileHover={{ scale: 1.05 }}
         onClick={() => setOverviewTab('manual-review')}
+        title={`${pendingReviewCount} pending reviews`}
         className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors hover:bg-amber-500/15 bg-amber-500/10 border-amber-500/20 text-amber-300"
       >
         <ClipboardCheck className="w-3 h-3" />
         {pendingReviewCount}
-      </button>
-      <button
-        onClick={() => setOverviewTab('executions')}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors hover:bg-emerald-500/15 bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
-      >
-        <Activity className="w-3 h-3" />
-        {globalExecutionsTotal}
-      </button>
-      <button
-        onClick={() => setOverviewTab('analytics')}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors hover:bg-violet-500/15 bg-violet-500/10 border-violet-500/20 text-violet-300"
-      >
-        <ShieldCheck className="w-3 h-3" />
-        {stats.successRate}%
-      </button>
-      <button
-        onClick={() => setOverviewTab('realtime')}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors hover:bg-rose-500/15 bg-rose-500/10 border-rose-500/20 text-rose-300"
-      >
-        <Cpu className="w-3 h-3" />
-        {stats.activeAgents}
-      </button>
+      </motion.button>
+      <div className="border-l border-primary/10 pl-2 ml-1 flex items-center gap-2">
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          onClick={() => setOverviewTab('executions')}
+          title={`${globalExecutionsTotal} total executions`}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors hover:bg-emerald-500/15 bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
+        >
+          <Activity className="w-3 h-3" />
+          {globalExecutionsTotal}
+        </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          onClick={() => setOverviewTab('analytics')}
+          title={`${stats.successRate}% success rate`}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors hover:bg-violet-500/15 bg-violet-500/10 border-violet-500/20 text-violet-300"
+        >
+          <ShieldCheck className="w-3 h-3" />
+          {stats.successRate}%
+        </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          onClick={() => setOverviewTab('realtime')}
+          title={`${stats.activeAgents} active agents`}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors hover:bg-rose-500/15 bg-rose-500/10 border-rose-500/20 text-rose-300"
+        >
+          <Cpu className="w-3 h-3" />
+          {stats.activeAgents}
+        </motion.button>
+      </div>
     </div>
   );
 

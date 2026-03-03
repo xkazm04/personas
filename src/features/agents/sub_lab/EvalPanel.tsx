@@ -14,7 +14,7 @@ import type { ModelTestConfig } from '@/api/tests';
 import {
   OLLAMA_CLOUD_PRESETS,
   OLLAMA_CLOUD_BASE_URL,
-} from '@/features/agents/sub_editor/sub_model_config/OllamaCloudPresets';
+} from '@/features/agents/sub_model_config/OllamaCloudPresets';
 
 interface ModelOption {
   id: string;
@@ -44,7 +44,7 @@ export function EvalPanel() {
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
   const promptVersions = usePersonaStore((s) => s.promptVersions);
   const evalRuns = usePersonaStore((s) => s.evalRuns);
-  const evalResults = usePersonaStore((s) => s.evalResults);
+  const evalResultsMap = usePersonaStore((s) => s.evalResultsMap);
   const isLabRunning = usePersonaStore((s) => s.isLabRunning);
   const fetchVersions = usePersonaStore((s) => s.fetchVersions);
   const fetchEvalRuns = usePersonaStore((s) => s.fetchEvalRuns);
@@ -358,7 +358,7 @@ export function EvalPanel() {
                               <span className="text-sm text-red-400">{run.error}</span>
                             </div>
                           )}
-                          <EvalResultsGrid results={evalResults} />
+                          <EvalResultsGrid results={evalResultsMap[run.id] ?? []} />
                         </div>
                       </motion.div>
                     )}

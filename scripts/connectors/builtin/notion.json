@@ -4,17 +4,35 @@
   "label": "Notion",
   "color": "#000000",
   "icon_url": "/icons/connectors/notion.svg",
-  "category": "productivity",
+  "category": "database",
   "fields": [
-    { "key": "api_key", "label": "Integration Token", "type": "password", "required": true, "placeholder": "ntn_...", "helpText": "Create an internal integration at notion.so/my-integrations" }
+    {
+      "key": "api_key",
+      "label": "Integration Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "ntn_...",
+      "helpText": "Create an internal integration at notion.so/my-integrations"
+    }
   ],
   "healthcheck_config": {
     "endpoint": "https://api.notion.com/v1/users/me",
     "method": "GET",
-    "headers": { "Authorization": "Bearer {{api_key}}", "Notion-Version": "2022-06-28" },
+    "headers": {
+      "Authorization": "Bearer {{api_key}}",
+      "Notion-Version": "2022-06-28"
+    },
     "description": "Validates integration token via users/me endpoint"
   },
   "services": [],
   "events": [],
-  "metadata": { "template_enabled": true, "summary": "Notion workspace for knowledge bases, wikis, and project management.", "auth_type": "pat", "auth_type_label": "PAT", "docs_url": "https://www.notion.so/my-integrations" }
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Notion workspace for knowledge bases, wikis, and project management.",
+    "auth_type": "pat",
+    "auth_type_label": "PAT",
+    "docs_url": "https://www.notion.so/my-integrations",
+    "setup_guide": "1. Go to notion.so/my-integrations\n2. Click 'New integration' and name it\n3. Select the workspace and set capabilities\n4. Click 'Submit' then copy the ntn_... internal integration token\n5. Share relevant Notion pages with the integration",
+    "pricing_tier": "free"
+  }
 }

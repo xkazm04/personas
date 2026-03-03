@@ -14,7 +14,7 @@ import type { ModelTestConfig } from '@/api/tests';
 import {
   OLLAMA_CLOUD_PRESETS,
   OLLAMA_CLOUD_BASE_URL,
-} from '@/features/agents/sub_editor/sub_model_config/OllamaCloudPresets';
+} from '@/features/agents/sub_model_config/OllamaCloudPresets';
 
 interface ModelOption {
   id: string;
@@ -43,7 +43,7 @@ const ALL_MODELS: ModelOption[] = [...ANTHROPIC_MODELS, ...OLLAMA_MODELS];
 export function MatrixPanel() {
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
   const matrixRuns = usePersonaStore((s) => s.matrixRuns);
-  const matrixResults = usePersonaStore((s) => s.matrixResults);
+  const matrixResultsMap = usePersonaStore((s) => s.matrixResultsMap);
   const isLabRunning = usePersonaStore((s) => s.isLabRunning);
   const fetchMatrixRuns = usePersonaStore((s) => s.fetchMatrixRuns);
   const startMatrix = usePersonaStore((s) => s.startMatrix);
@@ -298,7 +298,7 @@ export function MatrixPanel() {
                               <span className="text-sm text-red-400">{run.error}</span>
                             </div>
                           )}
-                          <MatrixResultsView run={run} results={matrixResults} />
+                          <MatrixResultsView run={run} results={matrixResultsMap[run.id] ?? []} />
                         </div>
                       </motion.div>
                     )}

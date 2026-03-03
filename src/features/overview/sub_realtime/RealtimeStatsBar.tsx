@@ -31,91 +31,91 @@ const AnimatedNumber = memo(function AnimatedNumber({ value, color }: { value: s
 
 export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlowLoading, onPause, onTestFlow }: Props) {
   return (
-    <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-b from-secondary/40 to-secondary/10 border-b border-primary/10 shadow-[0_1px_2px_rgba(0,0,0,0.1)] relative z-20">
+    <div className="flex items-center justify-between px-3 sm:px-4 md:px-6 py-3 md:py-4 bg-gradient-to-b from-secondary/40 to-secondary/10 border-b border-primary/10 shadow-[0_1px_2px_rgba(0,0,0,0.1)] relative z-20">
       {/* Stats */}
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-2 sm:gap-3 md:gap-6">
         {/* Connection status */}
-        <div className="flex items-center gap-2 bg-background/50 px-3 py-1.5 rounded-md border border-primary/5 shadow-inner">
+        <div className="flex items-center gap-1.5 sm:gap-2 bg-background/50 px-2 sm:px-3 py-1.5 rounded-md border border-primary/5 shadow-inner">
           <div className="relative flex h-2 w-2">
             {isConnected && !isPaused && (
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             )}
             <span className={`relative inline-flex rounded-full h-2 w-2 ${isPaused ? 'bg-amber-400' : isConnected ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
           </div>
-          <span className="text-[11px] font-bold text-foreground/80 uppercase tracking-widest">
+          <span className="text-[11px] font-bold text-foreground/80 uppercase tracking-widest hidden sm:inline">
             {isPaused ? 'Paused' : isConnected ? 'Live' : 'Offline'}
           </span>
           <span className="sr-only">Connection status: {isPaused ? 'Paused' : isConnected ? 'Live' : 'Disconnected'}</span>
         </div>
 
         {/* Events/min */}
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/20 shadow-sm flex items-center justify-center">
-            <Zap className="w-4 h-4 text-purple-400" />
+        <div className="flex items-center gap-1.5 md:gap-3" title="Events per minute">
+          <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/20 shadow-sm flex items-center justify-center">
+            <Zap className="w-3 h-3 md:w-4 md:h-4 text-purple-400" />
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={stats.eventsPerMinute} color="text-purple-400 text-[15px]" />
-            <span className="text-[11px] text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5">events/min</span>
+            <span className="text-[11px] text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">events/min</span>
           </div>
         </div>
 
-        <div className="w-px h-8 bg-primary/10" />
+        <div className="w-px h-6 md:h-8 bg-primary/10" />
 
         {/* Pending */}
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500/10 to-transparent border border-amber-500/20 shadow-sm flex items-center justify-center">
-            <Clock className="w-4 h-4 text-amber-400" />
+        <div className="flex items-center gap-1.5 md:gap-3" title="Pending">
+          <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg bg-gradient-to-br from-amber-500/10 to-transparent border border-amber-500/20 shadow-sm flex items-center justify-center">
+            <Clock className="w-3 h-3 md:w-4 md:h-4 text-amber-400" />
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={stats.pendingCount} color="text-amber-400 text-[15px]" />
-            <span className="text-[11px] text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5">pending</span>
+            <span className="text-[11px] text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">pending</span>
           </div>
         </div>
 
-        <div className="w-px h-8 bg-primary/10" />
+        <div className="w-px h-6 md:h-8 bg-primary/10" />
 
         {/* Success rate */}
-        <div className="flex items-center gap-3">
-          <div className={`w-8 h-8 rounded-lg border shadow-sm flex items-center justify-center bg-gradient-to-br ${
+        <div className="flex items-center gap-1.5 md:gap-3" title="Success rate">
+          <div className={`w-6 h-6 md:w-8 md:h-8 rounded-lg border shadow-sm flex items-center justify-center bg-gradient-to-br ${
             stats.successRate >= 90 ? 'from-emerald-500/10 to-transparent border-emerald-500/20' : 'from-red-500/10 to-transparent border-red-500/20'
           }`}>
-            <CheckCircle2 className={`w-4 h-4 ${stats.successRate >= 90 ? 'text-emerald-400' : 'text-red-400'}`} />
+            <CheckCircle2 className={`w-3 h-3 md:w-4 md:h-4 ${stats.successRate >= 90 ? 'text-emerald-400' : 'text-red-400'}`} />
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={`${stats.successRate}%`} color={stats.successRate >= 90 ? 'text-emerald-400 text-[15px]' : 'text-red-400 text-[15px]'} />
-            <span className="text-[11px] text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5">success</span>
+            <span className="text-[11px] text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">success</span>
           </div>
         </div>
 
-        <div className="w-px h-8 bg-primary/10 hidden sm:block" />
+        <div className="w-px h-6 md:h-8 bg-primary/10 hidden sm:block" />
 
-        {/* Total in window */}
-        <div className="hidden sm:flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/20 shadow-sm flex items-center justify-center">
-            <TrendingUp className="w-4 h-4 text-blue-400" />
+        {/* Total in window — hidden below sm */}
+        <div className="hidden sm:flex items-center gap-1.5 md:gap-3" title="Total in window">
+          <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/20 shadow-sm flex items-center justify-center">
+            <TrendingUp className="w-3 h-3 md:w-4 md:h-4 text-blue-400" />
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={stats.totalInWindow} color="text-blue-400 text-[15px]" />
-            <span className="text-[11px] text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5">in window</span>
+            <span className="text-[11px] text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">in window</span>
           </div>
         </div>
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         {/* Test Flow button */}
         <button
           onClick={onTestFlow}
           disabled={testFlowLoading}
           aria-label={testFlowLoading ? 'Testing flow...' : 'Test event flow'}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl bg-gradient-to-r from-purple-500/15 to-primary/15 border border-purple-500/25 text-purple-300 hover:from-purple-500/25 hover:to-primary/25 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+          className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 text-sm font-bold rounded-xl bg-gradient-to-r from-purple-500/15 to-primary/15 border border-purple-500/25 text-purple-300 hover:from-purple-500/25 hover:to-primary/25 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
         >
           {testFlowLoading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
             <Radio className="w-4 h-4" />
           )}
-          Test Flow
+          <span className="hidden sm:inline">Test Flow</span>
         </button>
 
         {/* Pause/Resume */}

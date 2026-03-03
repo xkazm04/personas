@@ -34,7 +34,7 @@ export default function N8nImportTab() {
     canGoBack,
     goBack,
     handleNext,
-    processFile,
+    processContent,
     handleTransform,
     handleCancelTransform,
     handleTestDraft,
@@ -97,7 +97,7 @@ export default function N8nImportTab() {
               <>
                 <N8nUploadStep
                   fileInputRef={fileInputRef}
-                  onFileDrop={processFile}
+                  onContentPaste={processContent}
                 />
                 <div className="mt-6">
                   <N8nSessionList
@@ -140,47 +140,60 @@ export default function N8nImportTab() {
                 isRestoring={isRestoring}
                 onRetry={() => void handleTransform()}
                 onCancel={() => void handleCancelTransform()}
+                errorMessage={state.error}
               />
             )}
 
             {state.step === 'edit' && state.draft && (
-              <N8nEditStep
-                draft={state.draft}
-                draftJson={state.draftJson}
-                draftJsonError={state.draftJsonError}
-                parsedResult={state.parsedResult!}
-                selectedToolIndices={state.selectedToolIndices}
-                selectedTriggerIndices={state.selectedTriggerIndices}
-                selectedConnectorNames={state.selectedConnectorNames}
-                adjustmentRequest={state.adjustmentRequest}
-                transforming={state.transforming}
-                disabled={state.transforming || state.confirming || state.created}
-                updateDraft={updateDraft}
-                onDraftUpdated={(d) => dispatch({ type: 'DRAFT_UPDATED', draft: d })}
-                onJsonEdited={(json, draft, error) => dispatch({ type: 'DRAFT_JSON_EDITED', json, draft, error })}
-                onAdjustmentChange={(text) => dispatch({ type: 'SET_ADJUSTMENT', text })}
-                onApplyAdjustment={() => void handleTransform()}
-                onGoToAnalyze={() => dispatch({ type: 'GO_TO_STEP', step: 'analyze' })}
-                onConnectorsMissingChange={setConnectorsMissing}
-                testPhase={state.testPhase}
-                testLines={state.testLines}
-                testRunId={state.testRunId}
-                onTestUseCase={() => void handleTestDraft()}
-                testingUseCaseId={state.testStatus === 'running' ? '__testing__' : null}
-              />
+              state.parsedResult ? (
+                <N8nEditStep
+                  draft={state.draft}
+                  draftJson={state.draftJson}
+                  draftJsonError={state.draftJsonError}
+                  parsedResult={state.parsedResult}
+                  selectedToolIndices={state.selectedToolIndices}
+                  selectedTriggerIndices={state.selectedTriggerIndices}
+                  selectedConnectorNames={state.selectedConnectorNames}
+                  adjustmentRequest={state.adjustmentRequest}
+                  transforming={state.transforming}
+                  disabled={state.transforming || state.confirming || state.created}
+                  updateDraft={updateDraft}
+                  onDraftUpdated={(d) => dispatch({ type: 'DRAFT_UPDATED', draft: d })}
+                  onJsonEdited={(json, draft, error) => dispatch({ type: 'DRAFT_JSON_EDITED', json, draft, error })}
+                  onAdjustmentChange={(text) => dispatch({ type: 'SET_ADJUSTMENT', text })}
+                  onApplyAdjustment={() => void handleTransform()}
+                  onGoToAnalyze={() => dispatch({ type: 'GO_TO_STEP', step: 'analyze' })}
+                  onConnectorsMissingChange={setConnectorsMissing}
+                  testPhase={state.testPhase}
+                  testLines={state.testLines}
+                  testRunId={state.testRunId}
+                  onTestUseCase={() => void handleTestDraft()}
+                  testingUseCaseId={state.testStatus === 'running' ? '__testing__' : null}
+                />
+              ) : (
+                <div className="rounded-xl border border-primary/15 bg-secondary/20 p-4 text-sm text-muted-foreground">
+                  Missing parser results for this session. Return to Analyze or restart import.
+                </div>
+              )
             )}
 
             {state.step === 'confirm' && state.draft && (
-              <N8nConfirmStep
-                draft={state.draft}
-                parsedResult={state.parsedResult!}
-                selectedToolIndices={state.selectedToolIndices}
-                selectedTriggerIndices={state.selectedTriggerIndices}
-                selectedConnectorNames={state.selectedConnectorNames}
-                created={state.created}
-                confirmResult={confirmResult}
-                onReset={handleReset}
-              />
+              state.parsedResult ? (
+                <N8nConfirmStep
+                  draft={state.draft}
+                  parsedResult={state.parsedResult}
+                  selectedToolIndices={state.selectedToolIndices}
+                  selectedTriggerIndices={state.selectedTriggerIndices}
+                  selectedConnectorNames={state.selectedConnectorNames}
+                  created={state.created}
+                  confirmResult={confirmResult}
+                  onReset={handleReset}
+                />
+              ) : (
+                <div className="rounded-xl border border-primary/15 bg-secondary/20 p-4 text-sm text-muted-foreground">
+                  Missing parser results for this session. Return to Analyze or restart import.
+                </div>
+              )
             )}
           </motion.div>
         </AnimatePresence>

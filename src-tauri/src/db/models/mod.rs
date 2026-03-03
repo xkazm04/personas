@@ -23,6 +23,7 @@ mod test_suite;
 mod platform_definition;
 mod knowledge;
 mod team_memory;
+mod db_schema;
 
 pub use persona::*;
 pub use tool::*;
@@ -49,3 +50,4 @@ pub use test_suite::*;
 pub use platform_definition::*;
 pub use knowledge::*;
 pub use team_memory::*;
+pub use db_schema::*;

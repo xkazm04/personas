@@ -1,0 +1,38 @@
+{
+  "id": "builtin-mongodb",
+  "name": "mongodb",
+  "label": "MongoDB",
+  "color": "#47A248",
+  "icon_url": "/icons/connectors/mongodb.svg",
+  "category": "database",
+  "fields": [
+    {
+      "key": "connection_string",
+      "label": "Connection String",
+      "type": "password",
+      "required": true,
+      "placeholder": "mongodb+srv://user:password@cluster.xxxxx.mongodb.net/dbname",
+      "helpText": "MongoDB connection URI from Atlas or your self-hosted instance"
+    },
+    {
+      "key": "database_name",
+      "label": "Database Name",
+      "type": "text",
+      "required": false,
+      "placeholder": "mydb",
+      "helpText": "Default database to connect to (can also be in connection string)"
+    }
+  ],
+  "healthcheck_config": null,
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "MongoDB document database with flexible schemas, aggregation pipelines, and Atlas cloud.",
+    "auth_type": "connection_string",
+    "auth_type_label": "Connection String",
+    "docs_url": "https://www.mongodb.com/docs/manual/reference/connection-string/",
+    "setup_guide": "1. For Atlas: go to cloud.mongodb.com → Database → Connect → Drivers\n2. Copy the connection string (mongodb+srv://...)\n3. Replace <password> with your database user password\n4. Optionally specify the default database name\n5. For self-hosted: use mongodb://user:pass@host:27017/dbname",
+    "pricing_tier": "free"
+  }
+}

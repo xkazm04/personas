@@ -113,6 +113,13 @@ export function useReplayTimeline(
   const toolSteps = useMemo(() => parseToolSteps(toolStepsJson), [toolStepsJson]);
   const allLines = useMemo(() => buildTimelineLines(logContent, totalMs), [logContent, totalMs]);
 
+  useEffect(() => {
+    setCurrentMs(0);
+    setIsPlaying(false);
+    setSpeed(1);
+    setForkPoint(null);
+  }, [toolStepsJson, logContent, totalMs]);
+
   // Derive visible lines at current position
   const visibleLines = useMemo(
     () => allLines.filter((l) => l.timestamp_ms <= currentMs),

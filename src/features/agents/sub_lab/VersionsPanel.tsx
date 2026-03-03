@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   GitBranch, ArrowLeftRight, Shield,
   Loader2, RotateCcw,
 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { VersionItem } from './VersionItem';
+import { VersionItem, type VersionAction } from './VersionItem';
 import { DiffViewer } from './DiffViewer';
 
 export function VersionsPanel() {
@@ -21,8 +21,9 @@ export function VersionsPanel() {
   const [compareAId, setCompareAId] = useState<string | null>(null);
   const [compareBId, setCompareBId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [tagging, setTagging] = useState(false);
   const [healthLoading, setHealthLoading] = useState(false);
+  const [activeActions, setActiveActions] = useState<Record<string, VersionAction>>({});
+  const [actionErrors, setActionErrors] = useState<Record<string, string | null>>({});
 
   const personaId = selectedPersona?.id;
 
@@ -43,17 +44,30 @@ export function VersionsPanel() {
     [promptVersions, compareBId],
   );
 
-  const handleTag = async (versionId: string, tag: string) => {
-    setTagging(true);
-    await tagVersion(versionId, tag);
-    setTagging(false);
-  };
+  const handleTag = useCallback(async (versionId: string, tag: string) => {
+    const action: VersionAction = tag === 'production' ? 'promote' : tag === 'archived' ? 'archive' : 'unarchive';
+    setActiveActions((p) => ({ ...p, [versionId]: action }));
+    setActionErrors((p) => ({ ...p, [versionId]: null }));
+    try {
+      await tagVersion(versionId, tag);
+    } catch (err) {
+      setActionErrors((p) => ({ ...p, [versionId]: err instanceof Error ? err.message : 'Operation failed' }));
+    } finally {
+      setActiveActions((p) => ({ ...p, [versionId]: null }));
+    }
+  }, [tagVersion]);
 
-  const handleRollback = async (versionId: string) => {
-    setTagging(true);
-    await rollbackVersion(versionId);
-    setTagging(false);
-  };
+  const handleRollback = useCallback(async (versionId: string) => {
+    setActiveActions((p) => ({ ...p, [versionId]: 'rollback' }));
+    setActionErrors((p) => ({ ...p, [versionId]: null }));
+    try {
+      await rollbackVersion(versionId);
+    } catch (err) {
+      setActionErrors((p) => ({ ...p, [versionId]: err instanceof Error ? err.message : 'Rollback failed' }));
+    } finally {
+      setActiveActions((p) => ({ ...p, [versionId]: null }));
+    }
+  }, [rollbackVersion]);
 
   const handleRefreshHealth = async () => {
     if (!personaId) return;
@@ -100,7 +114,9 @@ export function VersionsPanel() {
                 onRollback={() => void handleRollback(v.id)}
                 onSetCompareA={() => setCompareAId(compareAId === v.id ? null : v.id)}
                 onSetCompareB={() => setCompareBId(compareBId === v.id ? null : v.id)}
-                tagging={tagging}
+                activeAction={activeActions[v.id] ?? null}
+                actionError={actionErrors[v.id] ?? null}
+                onDismissError={() => setActionErrors((p) => ({ ...p, [v.id]: null }))}
               />
             ))}
           </div>

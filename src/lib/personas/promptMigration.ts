@@ -158,11 +158,14 @@ export function stringifyStructuredPrompt(sp: StructuredPrompt): string {
 
 // ── Rendering ──────────────────────────────────────────────────
 
+import { previewPrompt as tauriPreviewPrompt } from '@/api/design';
+
 /**
- * Render a StructuredPrompt to markdown, mirroring the Rust engine's
- * `assemble_prompt()` logic in `src-tauri/src/engine/prompt.rs`.
+ * Local-only rendering of structured prompt sections to markdown.
  *
- * Each non-empty section becomes a `## SectionName` heading.
+ * This is a lightweight fallback that only renders the prompt sections
+ * themselves (no tools, credentials, protocols, etc.). Use `previewPrompt`
+ * to get the full runtime-accurate preview from the Rust engine.
  */
 export function renderToMarkdown(sp: StructuredPrompt): string {
   const parts: string[] = [];
@@ -196,6 +199,31 @@ export function renderToMarkdown(sp: StructuredPrompt): string {
   }
 
   return parts.join('\n\n') + (parts.length ? '\n' : '');
+}
+
+/**
+ * Preview the full assembled prompt via the Rust engine.
+ *
+ * Calls the `preview_prompt` Tauri command which runs the same
+ * `assemble_prompt()` used at runtime, including tools, environment
+ * guidance, and communication protocols. Falls back to the local
+ * `renderToMarkdown` if the IPC call fails.
+ *
+ * @param personaId  — Persona to preview.
+ * @param sp         — Optional draft structured prompt (previews unsaved edits).
+ */
+export async function previewPrompt(
+  personaId: string,
+  sp?: StructuredPrompt | null,
+): Promise<string> {
+  try {
+    const spJson = sp ? JSON.stringify(sp) : null;
+    return await tauriPreviewPrompt(personaId, spJson);
+  } catch {
+    // Offline / error fallback — render locally from the draft if available
+    if (sp) return renderToMarkdown(sp);
+    return '';
+  }
 }
 
 // ── Section Summaries ──────────────────────────────────────────

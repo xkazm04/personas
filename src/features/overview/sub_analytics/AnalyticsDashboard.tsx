@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useMemo, useCallback, useState } from 'react';
 import { usePersonaStore, initHealingListener } from '@/stores/personaStore';
 import {
   DollarSign, Zap, CheckCircle, TrendingUp, RefreshCw,
@@ -6,19 +6,22 @@ import {
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  AreaChart, Area, PieChart, Pie, Cell,
+  AreaChart, Area, LineChart, Line, PieChart, Pie, Cell,
 } from 'recharts';
-import { getAllMonthlySpend } from '@/api/observability';
+import { selectBudgetWarnings } from '@/stores/slices/overviewSlice';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import HealingIssueModal from '@/features/overview/sub_observability/HealingIssueModal';
 import { DayRangePicker, PersonaSelect } from '@/features/overview/sub_usage/DashboardFilters';
-import type { DayRange } from '@/features/overview/sub_usage/DashboardFilters';
 import { MetricChart } from '@/features/overview/sub_usage/charts/MetricChart';
 import { ChartTooltip } from '@/features/overview/sub_usage/charts/ChartTooltip';
 import { CHART_COLORS, CHART_COLORS_PURPLE, GRID_STROKE, AXIS_TICK_FILL } from '@/features/overview/sub_usage/charts/chartConstants';
+import { pivotToolUsageOverTime } from '@/features/overview/sub_usage/charts/pivotToolUsage';
 import { SEVERITY_COLORS, HEALING_CATEGORY_COLORS, badgeClass } from '@/lib/utils/formatters';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 import type { PieDataPoint } from '@/features/overview/sub_observability/MetricsCharts';
+import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
+import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
+import type { MetricsChartPoint } from '@/lib/bindings/MetricsChartPoint';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -43,6 +46,10 @@ export default function AnalyticsDashboard() {
   const triggerHealing = usePersonaStore((s) => s.triggerHealing);
   const resolveHealingIssue = usePersonaStore((s) => s.resolveHealingIssue);
 
+  // ── Execution dashboard store (canonical metrics) ──
+  const executionDashboard = usePersonaStore((s) => s.executionDashboard);
+  const fetchExecutionDashboard = usePersonaStore((s) => s.fetchExecutionDashboard);
+
   // ── Tool usage store ──
   const toolUsageSummary = usePersonaStore((s) => s.toolUsageSummary);
   const toolUsageOverTime = usePersonaStore((s) => s.toolUsageOverTime);
@@ -50,9 +57,16 @@ export default function AnalyticsDashboard() {
 
   const personas = usePersonaStore((s) => s.personas);
 
+  const setOverviewTab = usePersonaStore((s) => s.setOverviewTab);
+
   // ── Shared filter state ──
-  const [days, setDays] = useState<DayRange>(30);
-  const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
+  const {
+    dayRange: days,
+    setDayRange: setDays,
+    selectedPersonaId,
+    setSelectedPersonaId,
+    setFailureDrilldownDate,
+  } = useOverviewFilters();
   const [autoRefresh, setAutoRefresh] = useState(false);
 
   // ── Healing state ──
@@ -64,24 +78,22 @@ export default function AnalyticsDashboard() {
     auto_fixed: number;
   } | null>(null);
 
-  // ── Budget state ──
-  const [budgetData, setBudgetData] = useState<Array<{ personaId: string; name: string; spend: number; budget: number | null }>>([]);
+  // ── Budget state (centralized) ──
+  const monthlySpend = usePersonaStore((s) => s.monthlySpend);
+  const fetchMonthlySpend = usePersonaStore((s) => s.fetchMonthlySpend);
 
-  const budgetWarnings = useMemo(() => {
-    return budgetData.filter((d) => d.budget && d.budget > 0 && d.spend >= d.budget * 0.8);
-  }, [budgetData]);
+  const budgetWarnings = useMemo(() => selectBudgetWarnings(monthlySpend), [monthlySpend]);
 
   // ── Data fetching ──
   const refreshAll = useCallback(() => {
     return Promise.all([
       fetchObservabilityMetrics(days, selectedPersonaId || undefined),
+      fetchExecutionDashboard(days),
       fetchToolUsage(days, selectedPersonaId || undefined),
       fetchHealingIssues(),
-      getAllMonthlySpend().then((data) => {
-        setBudgetData(data.map((d) => ({ personaId: d.id, name: d.name, spend: d.spend, budget: d.max_budget_usd })));
-      }).catch(() => {}),
+      fetchMonthlySpend(),
     ]);
-  }, [days, selectedPersonaId, fetchObservabilityMetrics, fetchToolUsage, fetchHealingIssues]);
+  }, [days, selectedPersonaId, fetchObservabilityMetrics, fetchExecutionDashboard, fetchToolUsage, fetchHealingIssues, fetchMonthlySpend]);
 
   useEffect(() => { initHealingListener(); }, []);
   useEffect(() => { refreshAll(); }, [refreshAll]);
@@ -104,26 +116,17 @@ export default function AnalyticsDashboard() {
     })),
   [backendChartData?.persona_breakdown, personas]);
 
-  const successRate = summary && summary.total_executions > 0
-    ? ((summary.successful_executions / summary.total_executions) * 100).toFixed(1)
-    : '0';
+  const successRate = resolveMetricPercent(
+    SUCCESS_RATE_IDENTITIES.analyticsSummary,
+    {
+      numerator: summary?.successful_executions ?? 0,
+      denominator: summary?.total_executions ?? 0,
+    },
+  ).toFixed(1);
 
   // ── Tool usage chart data ──
   const { areaData, allToolNames } = useMemo(() => {
-    if (!toolUsageOverTime.length) return { areaData: [], allToolNames: [] as string[] };
-    const dateMap = new Map<string, Record<string, number>>();
-    const names = new Set<string>();
-    for (const row of toolUsageOverTime) {
-      names.add(row.tool_name);
-      if (!dateMap.has(row.date)) dateMap.set(row.date, {});
-      const entry = dateMap.get(row.date)!;
-      entry[row.tool_name] = (entry[row.tool_name] || 0) + row.invocations;
-    }
-    const sortedDates = Array.from(dateMap.keys()).sort();
-    return {
-      areaData: sortedDates.map(date => ({ date, ...dateMap.get(date) })),
-      allToolNames: Array.from(names),
-    };
+    return pivotToolUsageOverTime(toolUsageOverTime);
   }, [toolUsageOverTime]);
 
   // Bar chart: horizontal bars for tool invocations
@@ -139,12 +142,32 @@ export default function AnalyticsDashboard() {
     [toolUsageSummary],
   );
 
+  // ── Execution dashboard derived data (latency + anomalies) ──
+  const latencyData = useMemo(() => {
+    if (!executionDashboard) return [];
+    return executionDashboard.daily_points.map((pt) => ({
+      date: pt.date,
+      p50: pt.p50_duration_ms,
+      p95: pt.p95_duration_ms,
+      p99: pt.p99_duration_ms,
+    }));
+  }, [executionDashboard]);
+
+  const costAnomalies = executionDashboard?.cost_anomalies ?? [];
+
   // ── Issue management ──
   const handleRunAnalysis = useCallback(async () => {
     setAnalysisResult(null);
     const result = await triggerHealing(selectedPersonaId || personas[0]?.id);
     if (result) setAnalysisResult(result);
   }, [triggerHealing, selectedPersonaId, personas]);
+
+  /** Navigate to the knowledge graph filtered to failure patterns on the clicked date. */
+  const handleFailureBarClick = useCallback((data: MetricsChartPoint) => {
+    if (!data.date || data.failed === 0) return;
+    setFailureDrilldownDate(data.date);
+    setOverviewTab('knowledge');
+  }, [setFailureDrilldownDate, setOverviewTab]);
 
   const { issueCounts, sortedFilteredIssues } = useMemo(() => {
     let open = 0, autoFixed = 0;
@@ -241,17 +264,36 @@ export default function AnalyticsDashboard() {
                     {budgetWarnings.length === 1 ? '1 persona' : `${budgetWarnings.length} personas`} approaching or exceeding budget
                   </p>
                   <div className="mt-1.5 flex flex-wrap gap-2">
-                    {budgetWarnings.map((w) => {
-                      const ratio = w.budget! > 0 ? w.spend / w.budget! : 0;
-                      const exceeded = ratio >= 1;
-                      return (
-                        <span key={w.personaId} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm border ${exceeded ? 'bg-red-500/15 text-red-300 border-red-500/25' : 'bg-amber-500/15 text-amber-300 border-amber-500/25'}`}>
+                    {budgetWarnings.map((w) => (
+                        <span key={w.personaId} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm border ${w.exceeded ? 'bg-red-500/15 text-red-300 border-red-500/25' : 'bg-amber-500/15 text-amber-300 border-amber-500/25'}`}>
                           {w.name}
-                          <span className="font-mono text-sm opacity-80">${w.spend.toFixed(2)} / ${w.budget!.toFixed(2)}</span>
-                          <span className={`font-mono text-sm font-bold ${exceeded ? 'text-red-400' : 'text-amber-400'}`}>{(ratio * 100).toFixed(0)}%</span>
+                          <span className="font-mono text-sm opacity-80">${w.spend.toFixed(2)} / ${w.budget.toFixed(2)}</span>
+                          <span className={`font-mono text-sm font-bold ${w.exceeded ? 'text-red-400' : 'text-amber-400'}`}>{(w.ratio * 100).toFixed(0)}%</span>
                         </span>
-                      );
-                    })}
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Cost anomaly alerts */}
+          {costAnomalies.length > 0 && (
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-amber-300">
+                    {costAnomalies.length} cost anomal{costAnomalies.length === 1 ? 'y' : 'ies'} detected
+                  </p>
+                  <div className="mt-1.5 flex flex-wrap gap-2">
+                    {costAnomalies.map((a, i) => (
+                      <span key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm border bg-amber-500/15 text-amber-300 border-amber-500/25">
+                        {new Date(a.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        <span className="font-mono text-sm opacity-80">${a.cost.toFixed(2)}</span>
+                        <span className="font-mono text-sm font-bold text-amber-400">{a.deviation_sigma.toFixed(1)}&sigma;</span>
+                      </span>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -286,7 +328,16 @@ export default function AnalyticsDashboard() {
                 <Tooltip content={<ChartTooltip />} cursor={false} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Bar dataKey="success" name="Successful" fill="#22c55e" radius={[2, 2, 0, 0]} />
-                <Bar dataKey="failed" name="Failed" fill="#ef4444" radius={[2, 2, 0, 0]} />
+                <Bar
+                  dataKey="failed"
+                  name="Failed"
+                  fill="#ef4444"
+                  radius={[2, 2, 0, 0]}
+                  cursor="pointer"
+                  onClick={(data: { payload?: MetricsChartPoint }) => {
+                    if (data.payload) handleFailureBarClick(data.payload);
+                  }}
+                />
               </BarChart>
             </MetricChart>
 
@@ -325,6 +376,22 @@ export default function AnalyticsDashboard() {
                 )} />
               </PieChart>
             </MetricChart>
+
+            {/* Latency Distribution (p50 / p95 / p99) — from execution dashboard */}
+            {latencyData.length > 0 && (
+              <MetricChart title="Latency (p50 / p95 / p99)" height={180}>
+                <LineChart data={latencyData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
+                  <XAxis dataKey="date" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => new Date(v + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
+                  <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}s` : `${Math.round(v)}ms`} />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Legend iconType="circle" iconSize={6} wrapperStyle={{ fontSize: 10 }} />
+                  <Line type="monotone" dataKey="p50" name="p50" stroke="#3b82f6" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="p95" name="p95" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
+                  <Line type="monotone" dataKey="p99" name="p99" stroke="#ef4444" strokeWidth={1} dot={false} strokeDasharray="2 2" />
+                </LineChart>
+              </MetricChart>
+            )}
           </div>
 
           {/* Tool Invocations — full width horizontal bar */}

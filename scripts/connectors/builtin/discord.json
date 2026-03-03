@@ -30,6 +30,8 @@
     "summary": "Discord bot integration for server messaging, moderation, and notifications.",
     "auth_type": "bot_token",
     "auth_type_label": "Bot Token",
-    "docs_url": "https://discord.com/developers/applications"
+    "docs_url": "https://discord.com/developers/applications",
+    "setup_guide": "1. Go to discord.com/developers/applications\n2. Click 'New Application' or select an existing one\n3. Go to the 'Bot' section in the sidebar\n4. Click 'Reset Token' (or 'Add Bot' first if needed)\n5. Copy the bot token and paste it here",
+    "pricing_tier": "free"
   }
 }

@@ -1,13 +1,13 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { MessageSquare, CheckCheck, RefreshCw, Trash2, Send, AlertCircle, Clock, CheckCircle2, Loader2, ExternalLink, Check, X, Copy } from 'lucide-react';
-import { listen } from '@tauri-apps/api/event';
 import { usePersonaStore } from '@/stores/personaStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { FilterBar } from '@/features/shared/components/FilterBar';
 import { MarkdownRenderer } from '@/features/shared/components/MarkdownRenderer';
 import DetailModal from '@/features/overview/components/DetailModal';
 import { PersonaSelect } from '@/features/overview/sub_usage/DashboardFilters';
+import { useMessageCreatedListener } from '@/hooks/realtime/useMessageCreatedListener';
 import type { PersonaMessage } from '@/lib/types/types';
 import type { PersonaMessage as RawPersonaMessage } from '@/lib/bindings/PersonaMessage';
 import type { PersonaMessageDelivery } from '@/lib/bindings/PersonaMessageDelivery';
@@ -78,6 +78,8 @@ export default function MessageList() {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fetchUnreadMessageCountRef = useRef(fetchUnreadMessageCount);
+  fetchUnreadMessageCountRef.current = fetchUnreadMessageCount;
 
   useEffect(() => {
     return () => {
@@ -102,30 +104,27 @@ export default function MessageList() {
     return () => { active = false; };
   }, [fetchMessages]);
 
-  // Listen for real-time message-created events from Tauri backend
-  useEffect(() => {
-    const unlisten = listen<RawPersonaMessage>('message-created', (event) => {
-      const raw = event.payload;
-      const allPersonas = usePersonaStore.getState().personas;
-      const p = allPersonas.find((persona) => persona.id === raw.persona_id);
-      const enriched: PersonaMessage = {
-        ...raw,
-        persona_name: p?.name,
-        persona_icon: p?.icon ?? undefined,
-        persona_color: p?.color ?? undefined,
+  const handleMessageCreated = useCallback((raw: RawPersonaMessage) => {
+    const allPersonas = usePersonaStore.getState().personas;
+    const p = allPersonas.find((persona) => persona.id === raw.persona_id);
+    const enriched: PersonaMessage = {
+      ...raw,
+      persona_name: p?.name,
+      persona_icon: p?.icon ?? undefined,
+      persona_color: p?.color ?? undefined,
+    };
+    usePersonaStore.setState((state) => {
+      const exists = state.messages.some((m) => m.id === enriched.id);
+      if (exists) return state;
+      return {
+        messages: [enriched, ...state.messages],
+        messagesTotal: state.messagesTotal + 1,
       };
-      usePersonaStore.setState((state) => {
-        const exists = state.messages.some((m) => m.id === enriched.id);
-        if (exists) return state;
-        return {
-          messages: [enriched, ...state.messages],
-          messagesTotal: state.messagesTotal + 1,
-        };
-      });
-      fetchUnreadMessageCount();
     });
-    return () => { unlisten.then((fn) => fn()); };
-  }, [fetchUnreadMessageCount]);
+    fetchUnreadMessageCountRef.current();
+  }, []);
+
+  useMessageCreatedListener(handleMessageCreated);
 
   // Client-side filtering (filter + persona)
   const filteredMessages = useMemo(() => {

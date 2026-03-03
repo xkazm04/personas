@@ -1,19 +1,16 @@
 /**
- * Extracts protocol capabilities (manual reviews, user messages, agent memory,
- * events) from a persona's system_prompt and structured_prompt text.
+ * Keyword-based fallback for extracting protocol capabilities from prompt text.
  *
- * These capabilities are embedded as protocol message instructions in the prompt,
- * not as separate DB entities. This parser surfaces them for display in the
- * Edit and Confirm steps of the n8n wizard.
+ * The primary detection layer is `extractProtocolsFromNodes` in
+ * `platformDefinitions.ts`, which classifies raw workflow nodes by type
+ * patterns.  This module serves as a **fallback** for LLM-generated prompts
+ * that lack structured protocol signals (i.e. no `protocol_capabilities`
+ * field on the AgentIR).
  */
 
-export type ProtocolType = 'manual_review' | 'user_message' | 'agent_memory' | 'emit_event';
-
-export interface ProtocolCapability {
-  type: ProtocolType;
-  label: string;
-  context: string;
-}
+// Re-export canonical types from designTypes
+export type { ProtocolType, ProtocolCapability } from '@/lib/types/designTypes';
+import type { ProtocolType, ProtocolCapability } from '@/lib/types/designTypes';
 
 interface ProtocolPattern {
   type: ProtocolType;
@@ -58,15 +55,23 @@ interface CustomSection {
 }
 
 /**
- * Extract protocol capabilities from system_prompt and structured_prompt.
+ * Extract protocol capabilities, preferring structured data over keyword scan.
  *
- * Scans for keyword patterns in the prompt text and custom sections to identify
- * which protocol message types the persona uses.
+ * If `structuredCapabilities` are provided (from the parser's node-type
+ * classification), they are returned directly.  Otherwise, falls back to
+ * scanning the prompt text for keyword patterns.
  */
 export function extractProtocolCapabilities(
   systemPrompt: string | null | undefined,
   structuredPrompt: Record<string, unknown> | null | undefined,
+  structuredCapabilities?: ProtocolCapability[],
 ): ProtocolCapability[] {
+  // ── Primary: use structured capabilities from parser when available ──
+  if (structuredCapabilities && structuredCapabilities.length > 0) {
+    return structuredCapabilities;
+  }
+
+  // ── Fallback: keyword-based scan of prompt text ──
   const capabilities: ProtocolCapability[] = [];
   const fullText = (systemPrompt ?? '').toLowerCase();
 

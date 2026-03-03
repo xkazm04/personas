@@ -30,6 +30,8 @@
     "summary": "HubSpot CRM for contacts, deals, marketing automation, and sales pipelines.",
     "auth_type": "pat",
     "auth_type_label": "PAT",
-    "docs_url": "https://developers.hubspot.com/docs/api/private-apps"
+    "docs_url": "https://developers.hubspot.com/docs/api/private-apps",
+    "setup_guide": "1. Go to HubSpot → Settings → Integrations → Private Apps\n2. Click 'Create a private app'\n3. Name it and select the scopes you need\n4. Click 'Create app' then copy the pat-... access token",
+    "pricing_tier": "paid"
   }
 }

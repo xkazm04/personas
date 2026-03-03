@@ -97,6 +97,7 @@ export default function ManualReviewList() {
   const [confirmAction, setConfirmAction] = useState<ManualReviewStatus | null>(null);
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
   const [bulkError, setBulkError] = useState<string | null>(null);
+  const [isModalProcessing, setIsModalProcessing] = useState(false);
 
   // Always fetch all reviews so we can compute counts client-side
   useEffect(() => {
@@ -195,13 +196,18 @@ export default function ManualReviewList() {
   }, [selectedIds, updateManualReview, manualReviews]);
 
   const handleModalAction = useCallback(async (newStatus: ManualReviewStatus) => {
-    if (!selectedReview) return;
-    await updateManualReview(selectedReview.id, {
-      status: newStatus,
-      reviewer_notes: notes || undefined,
-    });
-    setSelectedReview(null);
-  }, [selectedReview, notes, updateManualReview]);
+    if (!selectedReview || isModalProcessing) return;
+    setIsModalProcessing(true);
+    try {
+      await updateManualReview(selectedReview.id, {
+        status: newStatus,
+        reviewer_notes: notes || undefined,
+      });
+      setSelectedReview(null);
+    } finally {
+      setIsModalProcessing(false);
+    }
+  }, [selectedReview, notes, updateManualReview, isModalProcessing]);
 
   const activeSelectionCount = useMemo(
     () => Array.from(selectedIds).filter((id) => selectablePendingIds.has(id)).length,
@@ -292,6 +298,12 @@ export default function ManualReviewList() {
                       const status = STATUS_COLORS[review.status] ?? STATUS_COLORS.pending!;
                       const statusLabel = STATUS_LABELS[review.status] ?? 'Pending';
                       const isPending = review.status === 'pending';
+                      const hoverAccent =
+                        review.status === 'approved'
+                          ? 'hover:border-l-emerald-400'
+                          : review.status === 'rejected'
+                            ? 'hover:border-l-red-400'
+                            : 'hover:border-l-amber-400';
 
                       return (
                         <tr
@@ -306,7 +318,7 @@ export default function ManualReviewList() {
                             display: 'table',
                             tableLayout: 'fixed',
                           }}
-                          className="hover:bg-white/[0.03] cursor-pointer transition-colors border-b border-primary/[0.06]"
+                          className={`cursor-pointer transition-colors border-b border-primary/[0.06] border-l-2 border-l-transparent hover:bg-white/[0.05] ${hoverAccent} ${virtualRow.index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
                         >
                           {/* Checkbox */}
                           <td className="w-10 px-3 py-2.5 align-middle">
@@ -394,17 +406,19 @@ export default function ManualReviewList() {
                 <>
                   <button
                     onClick={() => handleModalAction('approved')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors"
+                    disabled={isModalProcessing}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Check className="w-3.5 h-3.5" />
-                    Approve
+                    {isModalProcessing ? 'Processing…' : 'Approve'}
                   </button>
                   <button
                     onClick={() => handleModalAction('rejected')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors"
+                    disabled={isModalProcessing}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <X className="w-3.5 h-3.5" />
-                    Reject
+                    {isModalProcessing ? 'Processing…' : 'Reject'}
                   </button>
                 </>
               ) : undefined

@@ -29,61 +29,6 @@ export interface PlaywrightAdapter {
   ): Promise<ExtractedValues>;
 }
 
-// ── Default stub adapter (simulates browser session) ────────────────────
-
-const stubAdapter: PlaywrightAdapter = {
-  async run(ctx, onLog, signal) {
-    const log = (message: string, type: BrowserLogEntry['type'] = 'info') =>
-      onLog({ ts: Date.now(), message, type });
-
-    log('Initializing Playwright MCP session...', 'info');
-
-    await delay(600, signal);
-    log(`Navigating to ${ctx.docsUrl ?? ctx.connector.label + ' dashboard'}`, 'action');
-
-    await delay(1200, signal);
-    log('Page loaded — scanning for credential creation form', 'info');
-
-    await delay(800, signal);
-    if (ctx.setupInstructions) {
-      log('Following setup instructions from design analysis', 'info');
-    }
-
-    for (const field of ctx.fields) {
-      await delay(500, signal);
-      log(`Looking for "${field.label}" input field`, 'action');
-      await delay(400, signal);
-      log(`Found field: ${field.label}${field.required ? ' (required)' : ''}`, 'info');
-    }
-
-    await delay(1000, signal);
-    log('Clicking "Generate" / "Create" button', 'action');
-
-    await delay(1500, signal);
-    log('Extracting generated credential values...', 'action');
-
-    const values: ExtractedValues = {};
-    for (const field of ctx.fields) {
-      values[field.key] = field.type === 'password'
-        ? `extracted_${field.key}_••••••`
-        : `extracted_${field.key}_value`;
-    }
-
-    log('Extraction complete — ready for review', 'info');
-    return values;
-  },
-};
-
-function delay(ms: number, signal: AbortSignal): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(resolve, ms);
-    signal.addEventListener('abort', () => {
-      clearTimeout(timer);
-      reject(new DOMException('Aborted', 'AbortError'));
-    });
-  });
-}
-
 // ── Hook ────────────────────────────────────────────────────────────────
 
 interface UseAutoCredSessionOptions {
@@ -91,7 +36,7 @@ interface UseAutoCredSessionOptions {
 }
 
 export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
-  const adapter = options?.adapter ?? stubAdapter;
+  const adapter = options?.adapter ?? null;
   const abortRef = useRef<AbortController | null>(null);
 
   const createCredential = usePersonaStore((s) => s.createCredential);
@@ -106,9 +51,11 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
   const [error, setError] = useState<string | null>(null);
   const [healthResult, setHealthResult] = useState<{ success: boolean; message: string } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const savingRef = useRef(false);
 
   /** Initialize a session from a design result */
   const init = useCallback((result: CredentialDesignResult) => {
+    savingRef.current = false;
     setDesignResult(result);
     setPhase('consent');
     setLogs([]);
@@ -122,6 +69,13 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
   /** User consented — start browser automation */
   const startBrowser = useCallback(async () => {
     if (!designResult) return;
+
+    if (!adapter) {
+      setError('Auto-Setup requires the Playwright MCP adapter. No adapter is configured — please set up credentials manually.');
+      setPhase('error');
+      return;
+    }
+
     setPhase('browser');
     setLogs([]);
     setError(null);
@@ -173,7 +127,8 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
 
   /** Save the credential */
   const save = useCallback(async () => {
-    if (!designResult) return;
+    if (!designResult || savingRef.current) return;
+    savingRef.current = true;
     setIsSaving(true);
     setPhase('saving');
     try {
@@ -188,12 +143,14 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
       setError(err instanceof Error ? err.message : 'Failed to save credential');
       setPhase('error');
     } finally {
+      savingRef.current = false;
       setIsSaving(false);
     }
   }, [designResult, credentialName, extractedValues, createCredential, fetchCredentials]);
 
   /** Reset entire session */
   const reset = useCallback(() => {
+    savingRef.current = false;
     cancelBrowser();
     setPhase('consent');
     setDesignResult(null);

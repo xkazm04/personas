@@ -536,6 +536,7 @@ Important rules:
 11. Flow node types: "start", "end", "action", "decision", "connector" (set `connector` to slug), "event", "error"
 12. Flow edges use `variant`: "yes"/"no" for decision branches, "error" for error paths
 13. Each connector SHOULD include `role` (functional purpose, e.g. "chat_messaging", "project_tracking") and `category` (broad grouping, e.g. "messaging", "development") to support interchangeable connector swapping
+14. Each connector MUST include `related_tools` listing the specific tool names from `suggested_tools` that this connector uses (e.g. connector "slack" should list ["slack_send_message", "slack_list_channels"])
 
 ## Clarification Questions
 

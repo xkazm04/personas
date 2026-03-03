@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useEffect, useMemo, useCallback } from 'react';
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -9,10 +9,11 @@ import {
   TrendingUp, AlertTriangle, ArrowUpRight,
   Loader2, X,
 } from 'lucide-react';
-import { getExecutionDashboard } from '@/api/observability';
-import type { ExecutionDashboardData } from '@/lib/bindings/ExecutionDashboardData';
+import { usePersonaStore } from '@/stores/personaStore';
 import type { DashboardCostAnomaly } from '@/lib/bindings/DashboardCostAnomaly';
 import { CHART_COLORS, GRID_STROKE, AXIS_TICK_FILL } from '@/features/overview/sub_usage/charts/chartConstants';
+import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
+import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -31,7 +32,6 @@ const TIME_WINDOWS: Array<{ value: TimeWindow; label: string }> = [
 // ---------------------------------------------------------------------------
 
 const fmtCost = (v: number) => v < 0.01 ? '<$0.01' : `$${v.toFixed(2)}`;
-const fmtPct = (v: number) => `${(v * 100).toFixed(1)}%`;
 const fmtMs = (v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}s` : `${Math.round(v)}ms`;
 const fmtDate = (d: string) => {
   const dt = new Date(d + 'T00:00:00');
@@ -145,23 +145,15 @@ interface ExecutionMetricsDashboardProps {
 }
 
 export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboardProps) {
-  const [days, setDays] = useState<TimeWindow>(7);
-  const [data, setData] = useState<ExecutionDashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { dayRange, setDayRange } = useOverviewFilters();
+  const data = usePersonaStore((s) => s.executionDashboard);
+  const loading = usePersonaStore((s) => s.executionDashboardLoading);
+  const error = usePersonaStore((s) => s.executionDashboardError);
+  const fetchExecutionDashboard = usePersonaStore((s) => s.fetchExecutionDashboard);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await getExecutionDashboard(days);
-      setData(result);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
-    } finally {
-      setLoading(false);
-    }
-  }, [days]);
+  const days: TimeWindow = dayRange === 90 ? 30 : dayRange;
+
+  const load = useCallback(() => fetchExecutionDashboard(days), [fetchExecutionDashboard, days]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -228,6 +220,14 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
     [data],
   );
 
+  const overallSuccessRatePct = useMemo(
+    () => resolveMetricPercent(
+      SUCCESS_RATE_IDENTITIES.executionDashboardSummary,
+      { ratio: data?.overall_success_rate ?? 0 },
+    ),
+    [data],
+  );
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
@@ -270,7 +270,7 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
             {TIME_WINDOWS.map((tw) => (
               <button
                 key={tw.value}
-                onClick={() => setDays(tw.value)}
+                onClick={() => setDayRange(tw.value)}
                 className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
                   days === tw.value
                     ? 'bg-background text-foreground shadow-sm border border-primary/20'
@@ -296,7 +296,7 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <SummaryCard icon={Zap} label="Total Executions" value={data.total_executions.toLocaleString()} color="blue" />
         <SummaryCard icon={DollarSign} label="Total Cost" value={fmtCost(data.total_cost)} color="violet" />
-        <SummaryCard icon={CheckCircle} label="Success Rate" value={fmtPct(data.overall_success_rate)} color="emerald" />
+        <SummaryCard icon={CheckCircle} label="Success Rate" value={`${overallSuccessRatePct.toFixed(1)}%`} color="emerald" />
         <SummaryCard icon={Clock} label="Avg Latency" value={fmtMs(data.avg_latency_ms)} color="amber" />
       </div>
 

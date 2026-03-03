@@ -29,7 +29,11 @@ export function usePersonaExecution() {
     // Pipeline: trace stream_output on first output line
     if (!streamTracedRef.current && store.pipelineTrace) {
       streamTracedRef.current = true;
-      store.pipelineTrace = traceStage(store.pipelineTrace, 'stream_output');
+      usePersonaStore.setState((state) => ({
+        pipelineTrace: state.pipelineTrace
+          ? traceStage(state.pipelineTrace, 'stream_output')
+          : null,
+      }));
     }
     store.appendExecutionOutput(line);
   }, []);
@@ -49,11 +53,15 @@ export function usePersonaExecution() {
     const store = usePersonaStore.getState();
     // Pipeline: trace finalize_status
     if (store.pipelineTrace) {
-      store.pipelineTrace = traceStage(store.pipelineTrace, 'finalize_status', {
-        status,
-        durationMs: payload['duration_ms'] ?? null,
-        costUsd: payload['cost_usd'] ?? null,
-      });
+      usePersonaStore.setState((state) => ({
+        pipelineTrace: state.pipelineTrace
+          ? traceStage(state.pipelineTrace, 'finalize_status', {
+            status,
+            durationMs: payload['duration_ms'] ?? null,
+            costUsd: payload['cost_usd'] ?? null,
+          })
+          : null,
+      }));
     }
     const error = payload['error'];
     if (typeof error === 'string' && error) {

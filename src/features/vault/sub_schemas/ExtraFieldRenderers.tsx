@@ -1,0 +1,132 @@
+import { useCallback } from 'react';
+import { Plus, Trash2 } from 'lucide-react';
+import type { ExtraFieldDef } from './schemaFormTypes';
+
+export function ExtraFieldRenderer({
+  def,
+  state,
+  setState,
+}: {
+  def: ExtraFieldDef;
+  state: Record<string, unknown>;
+  setState: React.Dispatch<React.SetStateAction<Record<string, unknown>>>;
+}) {
+  switch (def.kind) {
+    case 'textarea':
+      return (
+        <>
+          <div className="border-t border-primary/8" />
+          <div>
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/50 mb-3">
+              {def.sectionTitle}
+            </h4>
+            <textarea
+              value={(state[def.key] as string) ?? ''}
+              onChange={(e) => setState((prev) => ({ ...prev, [def.key]: e.target.value }))}
+              placeholder={def.placeholder}
+              rows={def.rows ?? 4}
+              className="w-full px-3 py-2 bg-background/50 border border-border/50 rounded-xl text-foreground text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all placeholder-muted-foreground/30 resize-y"
+            />
+            {def.helpText && <p className="mt-1 text-xs text-muted-foreground/60">{def.helpText}</p>}
+          </div>
+        </>
+      );
+
+    case 'checkbox':
+      return (
+        <label className="flex items-center gap-2 mt-2.5 cursor-pointer group">
+          <input
+            type="checkbox"
+            checked={(state[def.key] as boolean) ?? false}
+            onChange={(e) => setState((prev) => ({ ...prev, [def.key]: e.target.checked }))}
+            className="w-3.5 h-3.5 rounded border-border/50 bg-background/50 text-primary focus:ring-primary/40"
+          />
+          <span className="text-xs text-muted-foreground/70 group-hover:text-muted-foreground/90 transition-colors">
+            {def.label}
+          </span>
+        </label>
+      );
+
+    case 'key-value-list':
+      return <KeyValueListField def={def} state={state} setState={setState} />;
+  }
+}
+
+function KeyValueListField({
+  def,
+  state,
+  setState,
+}: {
+  def: Extract<ExtraFieldDef, { kind: 'key-value-list' }>;
+  state: Record<string, unknown>;
+  setState: React.Dispatch<React.SetStateAction<Record<string, unknown>>>;
+}) {
+  const pairs = (state[def.key] as { key: string; value: string }[]) ?? [];
+
+  const update = useCallback(
+    (next: { key: string; value: string }[]) => setState((prev) => ({ ...prev, [def.key]: next })),
+    [def.key, setState],
+  );
+
+  return (
+    <>
+      <div className="border-t border-primary/8" />
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/50">
+            {def.sectionTitle}
+          </h4>
+          <button
+            onClick={() => update([...pairs, { key: '', value: '' }])}
+            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg border transition-colors ${
+              def.addButtonClass ?? 'text-primary hover:text-primary/80 bg-primary/10 hover:bg-primary/15 border-primary/20'
+            }`}
+          >
+            <Plus className="w-3 h-3" />
+            {def.addLabel ?? 'Add'}
+          </button>
+        </div>
+
+        {pairs.length === 0 && (
+          <p className="text-xs text-muted-foreground/40 italic">{def.emptyMessage ?? 'None configured.'}</p>
+        )}
+
+        <div className="space-y-2">
+          {pairs.map((pair, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <input
+                type="text"
+                value={pair.key}
+                onChange={(e) => {
+                  const next = [...pairs];
+                  next[i] = { ...pair, key: e.target.value };
+                  update(next);
+                }}
+                placeholder="KEY"
+                className="flex-1 px-2.5 py-1.5 bg-background/50 border border-border/50 rounded-lg text-xs text-foreground font-mono focus:outline-none focus:ring-2 focus:ring-primary/40 placeholder-muted-foreground/30"
+              />
+              <span className="text-muted-foreground/30">=</span>
+              <input
+                type="text"
+                value={pair.value}
+                onChange={(e) => {
+                  const next = [...pairs];
+                  next[i] = { ...pair, value: e.target.value };
+                  update(next);
+                }}
+                placeholder="value"
+                className="flex-1 px-2.5 py-1.5 bg-background/50 border border-border/50 rounded-lg text-xs text-foreground font-mono focus:outline-none focus:ring-2 focus:ring-primary/40 placeholder-muted-foreground/30"
+              />
+              <button
+                onClick={() => update(pairs.filter((_, j) => j !== i))}
+                className="p-1 text-muted-foreground/40 hover:text-red-400 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}

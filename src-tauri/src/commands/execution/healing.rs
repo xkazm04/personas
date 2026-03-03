@@ -101,6 +101,7 @@ pub async fn run_healing_analysis(
             &persona_id,
             &diagnosis.title,
             &diagnosis.description,
+            diagnosis.title.to_ascii_lowercase().contains("circuit breaker"),
             Some(&diagnosis.severity),
             Some(&diagnosis.db_category),
             Some(&exec.id),

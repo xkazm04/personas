@@ -29,6 +29,11 @@ export const cancelDesignAnalysis = () =>
 export const compileFromIntent = (personaId: string, intent: string, designId?: string) =>
   invoke<DesignStartResult>("compile_from_intent", { personaId, intent, designId: designId ?? null });
 
+/** Assemble the full runtime prompt via the Rust engine.
+ *  Pass `structuredPromptJson` to preview an unsaved draft without persisting. */
+export const previewPrompt = (personaId: string, structuredPromptJson?: string | null) =>
+  invoke<string>("preview_prompt", { personaId, structuredPromptJson: structuredPromptJson ?? null });
+
 // ============================================================================
 // Design Conversations
 // ============================================================================

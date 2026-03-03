@@ -30,6 +30,8 @@
     "summary": "Resend modern email API for developers with React Email support.",
     "auth_type": "api_key",
     "auth_type_label": "API Key",
-    "docs_url": "https://resend.com/docs/api-reference/introduction"
+    "docs_url": "https://resend.com/docs/api-reference/introduction",
+    "setup_guide": "1. Go to resend.com/api-keys and sign in\n2. Click 'Create API Key'\n3. Give it a name and select the appropriate domain/permissions\n4. Copy the re_... API key value",
+    "pricing_tier": "free"
   }
 }

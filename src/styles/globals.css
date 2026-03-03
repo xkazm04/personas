@@ -86,10 +86,20 @@ input[type="number"] {
   to { opacity: 1; transform: scale(1); }
 }
 
+@keyframes expand-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .animate-float { animation: float 5s ease-in-out infinite; }
 .animate-pulse-slow { animation: pulse-slow 4s ease-in-out infinite; }
 .animate-shimmer { animation: shimmer 2s ease-in-out infinite; }
 .animate-spin-slow { animation: spin-slow 30s linear infinite; }
+.animate-expand-in { animation: expand-in 150ms ease-out both; }
+
+.duration-snap { transition-duration: 150ms; }
+.duration-flow { transition-duration: 250ms; }
+.duration-ease { transition-duration: 400ms; }
 
 /* Terminal cursor blink */
 @keyframes blink-caret {
@@ -245,3 +255,12 @@ input[type="number"] {
 .json-highlight .hljs-literal { color: #fca5a5; }
 .json-highlight .hljs-punctuation { color: #71717a; }
 .json-highlight .hljs-comment { color: #52525b; font-style: italic; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse,
+  .animate-spin,
+  .animate-pulse-slow,
+  .animate-spin-slow {
+    animation: none !important;
+  }
+}

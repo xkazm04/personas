@@ -17,6 +17,7 @@ const MAX_TERMINAL_LINES = 5000;
 const MAX_LINE_LENGTH = 4096;
 /** Maximum total bytes tracked across all terminal lines (~10 MB). */
 const MAX_TOTAL_BYTES = 10 * 1024 * 1024;
+const OUTPUT_TRUNCATION_NOTICE = "[SYSTEM] Output truncated - 10MB limit reached. Execution continues in background.";
 
 // ---------------------------------------------------------------------------
 // Batched terminal output – accumulates lines and flushes once per microtask
@@ -29,6 +30,7 @@ interface TerminalBatch {
 }
 
 const batch: TerminalBatch = { lines: [], bytes: 0, scheduled: false };
+let truncationNoticeShown = false;
 
 /** Captured Zustand set – assigned once inside `createExecutionSlice`. */
 let _sliceSet: Parameters<StateCreator<PersonaStore, [], [], ExecutionSlice>>[0] | null = null;
@@ -45,14 +47,31 @@ function flushTerminalBatch() {
   _sliceSet((state) => {
     // Enforce total byte budget
     if (state.executionOutputBytes >= MAX_TOTAL_BYTES) {
+      if (!truncationNoticeShown) {
+        truncationNoticeShown = true;
+        const nextOutput = state.executionOutput.concat(OUTPUT_TRUNCATION_NOTICE);
+        return {
+          executionOutput: nextOutput.length > MAX_TERMINAL_LINES
+            ? nextOutput.slice(nextOutput.length - MAX_TERMINAL_LINES)
+            : nextOutput,
+        };
+      }
       return {};
     }
 
     const newBytes = Math.min(state.executionOutputBytes + bytesToFlush, MAX_TOTAL_BYTES);
     const combined = state.executionOutput.concat(linesToFlush);
-    const output = combined.length > MAX_TERMINAL_LINES
+    let output = combined.length > MAX_TERMINAL_LINES
       ? combined.slice(combined.length - MAX_TERMINAL_LINES)
       : combined;
+
+    if (newBytes >= MAX_TOTAL_BYTES && !truncationNoticeShown) {
+      truncationNoticeShown = true;
+      output = output.concat(OUTPUT_TRUNCATION_NOTICE);
+      if (output.length > MAX_TERMINAL_LINES) {
+        output = output.slice(output.length - MAX_TERMINAL_LINES);
+      }
+    }
 
     return { executionOutput: output, executionOutputBytes: newBytes };
   });
@@ -123,6 +142,7 @@ export const createExecutionSlice: StateCreator<PersonaStore, [], [], ExecutionS
     let trace = createPipelineTrace('pending');
     trace = traceStage(trace, 'initiate', { personaId });
 
+    truncationNoticeShown = false;
     set({ isExecuting: true, executionOutput: [], executionOutputBytes: 0, error: null, executionPersonaId: personaId, activeUseCaseId: useCaseId ?? null, pipelineTrace: trace });
     try {
       // Pipeline: validate + create_record + spawn_engine happen in Tauri command
@@ -144,7 +164,7 @@ export const createExecutionSlice: StateCreator<PersonaStore, [], [], ExecutionS
     } catch (err) {
       trace = traceStage(trace, 'validate', undefined, String(err));
       trace = completeTrace(trace);
-      set({ error: errMsg(err, "Failed to execute persona"), isExecuting: false, activeUseCaseId: null, pipelineTrace: trace });
+      set({ error: errMsg(err, "Failed to execute persona"), isExecuting: false, executionPersonaId: null, activeUseCaseId: null, pipelineTrace: trace });
       return null;
     }
   },
@@ -163,7 +183,7 @@ export const createExecutionSlice: StateCreator<PersonaStore, [], [], ExecutionS
       // Always reset execution state regardless of API success/failure.
       // Event listeners may already be torn down (disconnect() called before
       // cancel), so we cannot rely on finishExecution from the backend event.
-      set({ isExecuting: false, activeExecutionId: null, activeUseCaseId: null, queuePosition: null, queueDepth: null });
+      set({ isExecuting: false, activeExecutionId: null, executionPersonaId: null, activeUseCaseId: null, queuePosition: null, queueDepth: null });
       const personaId = get().selectedPersona?.id;
       if (personaId) get().fetchExecutions(personaId);
     }
@@ -215,6 +235,7 @@ export const createExecutionSlice: StateCreator<PersonaStore, [], [], ExecutionS
     batch.lines = [];
     batch.bytes = 0;
     batch.scheduled = false;
+    truncationNoticeShown = false;
     set({ executionOutput: [], executionOutputBytes: 0, activeExecutionId: null, isExecuting: false, executionPersonaId: null, activeUseCaseId: null, pipelineTrace: null, queuePosition: null, queueDepth: null });
   },
 
