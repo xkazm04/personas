@@ -351,6 +351,7 @@ pub fn run() {
             commands::design::analysis::test_design_feasibility,
             commands::design::analysis::cancel_design_analysis,
             commands::design::analysis::compile_from_intent,
+            commands::design::analysis::preview_prompt,
             // Design — Conversations
             commands::design::conversations::list_design_conversations,
             commands::design::conversations::get_design_conversation,
@@ -399,6 +400,7 @@ pub fn run() {
             commands::design::reviews::cleanup_duplicate_reviews,
             commands::design::reviews::backfill_review_categories,
             commands::design::reviews::backfill_service_flow,
+            commands::design::reviews::backfill_related_tools,
             commands::design::reviews::get_trending_templates,
             commands::design::reviews::get_design_review,
             commands::design::reviews::delete_design_review,
@@ -457,6 +459,13 @@ pub fn run() {
             commands::credentials::oauth::start_oauth,
             commands::credentials::oauth::get_oauth_status,
             commands::credentials::oauth::refresh_oauth_token,
+            // Credentials — Auto-Credential Browser
+            commands::credentials::auto_cred_browser::start_auto_cred_browser,
+            commands::credentials::auto_cred_browser::save_playwright_procedure,
+            commands::credentials::auto_cred_browser::get_playwright_procedure,
+            // Credentials — Foraging
+            commands::credentials::foraging::scan_credential_sources,
+            commands::credentials::foraging::import_foraged_credential,
             // Credentials — Rotation
             commands::credentials::rotation::list_rotation_policies,
             commands::credentials::rotation::create_rotation_policy,
@@ -465,6 +474,16 @@ pub fn run() {
             commands::credentials::rotation::get_rotation_history,
             commands::credentials::rotation::get_rotation_status,
             commands::credentials::rotation::rotate_credential_now,
+            // Credentials — Database Schema & Queries
+            commands::credentials::db_schema::list_db_schema_tables,
+            commands::credentials::db_schema::create_db_schema_table,
+            commands::credentials::db_schema::update_db_schema_table,
+            commands::credentials::db_schema::delete_db_schema_table,
+            commands::credentials::db_schema::list_db_saved_queries,
+            commands::credentials::db_schema::create_db_saved_query,
+            commands::credentials::db_schema::update_db_saved_query,
+            commands::credentials::db_schema::delete_db_saved_query,
+            commands::credentials::db_schema::execute_db_query,
             // Communication — Events
             commands::communication::events::list_events,
             commands::communication::events::list_events_in_range,
@@ -542,6 +561,7 @@ pub fn run() {
             commands::tools::tools::get_tool_usage_summary,
             commands::tools::tools::get_tool_usage_over_time,
             commands::tools::tools::get_tool_usage_by_persona,
+            commands::tools::tools::invoke_tool_direct,
             // Tools — Triggers
             commands::tools::triggers::list_all_triggers,
             commands::tools::triggers::list_triggers,

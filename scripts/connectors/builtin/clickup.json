@@ -6,15 +6,32 @@
   "icon_url": "/icons/connectors/clickup.svg",
   "category": "productivity",
   "fields": [
-    { "key": "api_key", "label": "API Key", "type": "password", "required": true, "placeholder": "pk_...", "helpText": "From ClickUp Settings → Apps → API Token" }
+    {
+      "key": "api_key",
+      "label": "API Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "pk_...",
+      "helpText": "From ClickUp Settings → Apps → API Token"
+    }
   ],
   "healthcheck_config": {
     "endpoint": "https://api.clickup.com/api/v2/user",
     "method": "GET",
-    "headers": { "Authorization": "{{api_key}}" },
+    "headers": {
+      "Authorization": "{{api_key}}"
+    },
     "description": "Validates API key via user endpoint"
   },
   "services": [],
   "events": [],
-  "metadata": { "template_enabled": true, "summary": "ClickUp project management with tasks, docs, goals, and time tracking.", "auth_type": "pat", "auth_type_label": "PAT", "docs_url": "https://clickup.com/api/developer-portal/authentication" }
+  "metadata": {
+    "template_enabled": true,
+    "summary": "ClickUp project management with tasks, docs, goals, and time tracking.",
+    "auth_type": "pat",
+    "auth_type_label": "PAT",
+    "docs_url": "https://clickup.com/api/developer-portal/authentication",
+    "setup_guide": "1. Go to app.clickup.com and sign in\n2. Click your avatar → Settings → Apps\n3. Under 'API Token', click 'Generate' or copy existing token\n4. Paste the pk_... token value here",
+    "pricing_tier": "free"
+  }
 }

@@ -217,9 +217,10 @@ pub fn build_failover_chain(
 
     // 3. Cross-provider failover: add alternate providers
     let alternates = match primary {
-        EngineKind::ClaudeCode => vec![EngineKind::GeminiCli, EngineKind::CodexCli],
-        EngineKind::GeminiCli => vec![EngineKind::ClaudeCode, EngineKind::CodexCli],
-        EngineKind::CodexCli => vec![EngineKind::ClaudeCode, EngineKind::GeminiCli],
+        EngineKind::ClaudeCode => vec![EngineKind::GeminiCli, EngineKind::CodexCli, EngineKind::CopilotCli],
+        EngineKind::GeminiCli => vec![EngineKind::ClaudeCode, EngineKind::CodexCli, EngineKind::CopilotCli],
+        EngineKind::CodexCli => vec![EngineKind::ClaudeCode, EngineKind::GeminiCli, EngineKind::CopilotCli],
+        EngineKind::CopilotCli => vec![EngineKind::ClaudeCode, EngineKind::GeminiCli, EngineKind::CodexCli],
     };
 
     for alt in alternates {

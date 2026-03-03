@@ -28,6 +28,8 @@
     "summary": "Telegram bot for messaging, notifications, and group automation.",
     "auth_type": "bot_token",
     "auth_type_label": "Bot Token",
-    "docs_url": "https://core.telegram.org/bots/api"
+    "docs_url": "https://core.telegram.org/bots/api",
+    "setup_guide": "1. Open Telegram and search for @BotFather\n2. Send /newbot and follow the prompts to name your bot\n3. BotFather will give you a token like 123456:ABC-DEF...\n4. Copy the bot token and paste it here",
+    "pricing_tier": "free"
   }
 }

@@ -124,6 +124,8 @@ export interface TransformProgressProps {
   isRestoring?: boolean;
   onRetry?: () => void;
   onCancel?: () => void;
+  /** Specific error message to display when phase is 'failed' */
+  errorMessage?: string | null;
   // analysis mode
   isRunning?: boolean;
 }
@@ -136,6 +138,7 @@ export function TransformProgress({
   isRestoring,
   onRetry,
   onCancel,
+  errorMessage,
   isRunning = false,
 }: TransformProgressProps) {
   const terminalRef = useRef<HTMLDivElement>(null);
@@ -358,17 +361,19 @@ export function TransformProgress({
 
           {phase === 'failed' && (
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-red-500/15 border border-red-500/25 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-red-500/15 border border-red-500/25 flex items-center justify-center flex-shrink-0">
                 <AlertCircle className="w-6 h-6 text-red-400" />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-red-400">Transformation failed</p>
-                <p className="text-sm text-red-400/60 mt-0.5">Check the output below for details.</p>
+                <p className="text-sm text-red-400/60 mt-0.5">
+                  {errorMessage || 'Check the output below for details.'}
+                </p>
               </div>
               {onRetry && (
                 <button
                   onClick={onRetry}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border border-violet-500/25 text-violet-300 hover:bg-violet-500/15 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border border-violet-500/25 text-violet-300 hover:bg-violet-500/15 transition-colors flex-shrink-0"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                   Retry

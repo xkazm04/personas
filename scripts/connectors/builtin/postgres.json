@@ -1,0 +1,92 @@
+{
+  "id": "builtin-postgres",
+  "name": "postgres",
+  "label": "PostgreSQL",
+  "color": "#336791",
+  "icon_url": "/icons/connectors/postgres.svg",
+  "category": "database",
+  "fields": [
+    {
+      "key": "connection_string",
+      "label": "Connection String",
+      "type": "password",
+      "required": true,
+      "placeholder": "postgresql://user:password@host:5432/dbname",
+      "helpText": "Full PostgreSQL connection URI including credentials"
+    },
+    {
+      "key": "host",
+      "label": "Host",
+      "type": "text",
+      "required": false,
+      "placeholder": "localhost",
+      "helpText": "Alternative: provide host/port/db separately instead of connection string"
+    },
+    {
+      "key": "port",
+      "label": "Port",
+      "type": "text",
+      "required": false,
+      "placeholder": "5432",
+      "helpText": "PostgreSQL port (default 5432)"
+    },
+    {
+      "key": "database",
+      "label": "Database",
+      "type": "text",
+      "required": false,
+      "placeholder": "mydb",
+      "helpText": "Database name"
+    },
+    {
+      "key": "username",
+      "label": "Username",
+      "type": "text",
+      "required": false,
+      "placeholder": "postgres",
+      "helpText": "Database user"
+    },
+    {
+      "key": "password",
+      "label": "Password",
+      "type": "password",
+      "required": false,
+      "placeholder": "",
+      "helpText": "Database password"
+    },
+    {
+      "key": "ssl_mode",
+      "label": "SSL Mode",
+      "type": "text",
+      "required": false,
+      "placeholder": "prefer",
+      "helpText": "SSL mode: disable, allow, prefer, require, verify-ca, verify-full"
+    }
+  ],
+  "healthcheck_config": null,
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "PostgreSQL open-source relational database with advanced SQL, JSONB, and extensibility.",
+    "auth_type": "connection_string",
+    "auth_type_label": "Connection String",
+    "docs_url": "https://www.postgresql.org/docs/current/libpq-connect.html",
+    "setup_guide": "1. Obtain your PostgreSQL connection details from your hosting provider or local setup\n2. Either provide the full connection string (postgresql://user:pass@host:5432/db)\n3. Or fill in host, port, database, username, and password separately\n4. Set SSL mode if connecting to a remote server",
+    "pricing_tier": "free",
+    "auth_variants": [
+      {
+        "id": "connection_string",
+        "label": "Connection String",
+        "fields": ["connection_string"],
+        "auth_type_label": "Connection String"
+      },
+      {
+        "id": "individual",
+        "label": "Individual Fields",
+        "fields": ["host", "port", "database", "username", "password", "ssl_mode"],
+        "auth_type_label": "Host/Port"
+      }
+    ]
+  }
+}

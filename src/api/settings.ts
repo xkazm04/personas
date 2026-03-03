@@ -9,3 +9,6 @@ export const getAppSetting = (key: string) =>
 
 export const setAppSetting = (key: string, value: string) =>
   invoke<void>("set_app_setting", { key, value });
+
+export const deleteAppSetting = (key: string) =>
+  invoke<boolean>("delete_app_setting", { key });

@@ -6,16 +6,20 @@ import { usePersonaStore } from '@/stores/personaStore';
 import { ContentHeader } from '@/features/shared/components/ContentLayout';
 import { AccessibleToggle } from '@/features/shared/components/AccessibleToggle';
 import type { PersonaDraft } from './PersonaDraft';
+import { useEffectivePersona } from './useEffectivePersona';
 
 interface PersonaEditorHeaderProps {
+  draft: PersonaDraft;
+  baseline: PersonaDraft;
   patch: (updates: Partial<PersonaDraft>) => void;
   setBaseline: React.Dispatch<React.SetStateAction<PersonaDraft>>;
 }
 
-export function PersonaEditorHeader({ patch, setBaseline }: PersonaEditorHeaderProps) {
+export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: PersonaEditorHeaderProps) {
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
   const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
   const credentials = usePersonaStore((s) => s.credentials);
+  const effective = useEffectivePersona(draft, baseline);
   const [showReadinessTooltip, setShowReadinessTooltip] = useState(false);
 
   const readiness = useMemo(() => {
@@ -48,41 +52,41 @@ export function PersonaEditorHeader({ patch, setBaseline }: PersonaEditorHeaderP
     } catch { /* store.error already set */ }
   }, [selectedPersona, readiness, applyPersonaOp, patch, setBaseline]);
 
-  if (!selectedPersona) return null;
+  if (!effective) return null;
 
-  const safeIconUrl = sanitizeIconUrl(selectedPersona.icon);
-  const personaIcon = selectedPersona.icon ? (
+  const safeIconUrl = sanitizeIconUrl(effective.icon);
+  const personaIcon = effective.icon ? (
     safeIconUrl ? (
       <img src={safeIconUrl} alt="" className="w-6 h-6 rounded" referrerPolicy="no-referrer" crossOrigin="anonymous" />
-    ) : isIconUrl(selectedPersona.icon) ? null : (
-      <span className="text-2xl leading-none">{selectedPersona.icon}</span>
+    ) : isIconUrl(effective.icon) ? null : (
+      <span className="text-2xl leading-none">{effective.icon}</span>
     )
   ) : (
     <div
       className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold"
-      style={{ backgroundColor: `${selectedPersona.color || '#6B7280'}20`, border: `1px solid ${selectedPersona.color || '#6B7280'}40`, color: selectedPersona.color || '#6B7280' }}
+      style={{ backgroundColor: `${effective.color || '#6B7280'}20`, border: `1px solid ${effective.color || '#6B7280'}40`, color: effective.color || '#6B7280' }}
     >
-      {selectedPersona.name.charAt(0).toUpperCase()}
+      {effective.name.charAt(0).toUpperCase()}
     </div>
   );
 
   return (
     <ContentHeader
       icon={personaIcon}
-      title={selectedPersona.name}
-      subtitle={selectedPersona.description || undefined}
+      title={effective.name}
+      subtitle={effective.description || undefined}
       actions={
         <div className="relative flex items-center gap-2 flex-shrink-0">
-          <span className={`text-sm font-medium transition-colors ${selectedPersona.enabled ? 'text-emerald-400' : 'text-muted-foreground/80'}`}>
-            {selectedPersona.enabled ? 'Active' : 'Off'}
+          <span className={`text-sm font-medium transition-colors ${effective.enabled ? 'text-emerald-400' : 'text-muted-foreground/80'}`}>
+            {effective.enabled ? 'Active' : 'Off'}
           </span>
           <AccessibleToggle
-            checked={selectedPersona.enabled}
+            checked={effective.enabled}
             onChange={handleHeaderToggle}
-            label={`${selectedPersona.enabled ? 'Disable' : 'Enable'} ${selectedPersona.name}`}
-            disabled={!selectedPersona.enabled && !readiness.canEnable}
+            label={`${effective.enabled ? 'Disable' : 'Enable'} ${effective.name}`}
+            disabled={!effective.enabled && !readiness.canEnable}
             size="lg"
-            className={selectedPersona.enabled ? 'shadow-[0_0_12px_rgba(16,185,129,0.25)]' : ''}
+            className={effective.enabled ? 'shadow-[0_0_12px_rgba(16,185,129,0.25)]' : ''}
           />
           <AnimatePresence>
             {showReadinessTooltip && readiness.reasons.length > 0 && (

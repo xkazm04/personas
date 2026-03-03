@@ -222,7 +222,7 @@ export type TemplateTab = "n8n" | "generated";
 export type CloudTab = "cloud" | "gitlab";
 export type SettingsTab = "account" | "appearance" | "notifications" | "engine";
 
-export type CliEngine = "claude_code" | "codex_cli" | "gemini_cli";
+export type CliEngine = "claude_code" | "codex_cli" | "gemini_cli" | "copilot_cli";
 
 // ── Analytics Types ────────────────────────────────────────────────────
 

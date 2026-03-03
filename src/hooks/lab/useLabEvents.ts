@@ -60,63 +60,47 @@ export function useLabEvents() {
   const unlistenRef = useRef<UnlistenFn[]>([]);
 
   useEffect(() => {
+    let active = true;
+
     const setup = async () => {
       const listeners: UnlistenFn[] = [];
-
-      // Arena events
-      listeners.push(
-        await listen<LabStatusPayload>("lab-arena-status", (event) => {
-          const progress = mapPayload(event.payload, "arena");
+      const register = async (eventName: string, mode: LabMode) => {
+        const unlisten = await listen<LabStatusPayload>(eventName, (event) => {
+          const progress = mapPayload(event.payload, mode);
           setLabProgress(progress);
           if (TERMINAL_PHASES.includes(event.payload.phase)) {
             finishLabRun();
-            notifyTerminal("arena", event.payload.phase);
+            notifyTerminal(mode, event.payload.phase);
           }
-        }),
-      );
+        });
 
-      // A/B events
-      listeners.push(
-        await listen<LabStatusPayload>("lab-ab-status", (event) => {
-          const progress = mapPayload(event.payload, "ab");
-          setLabProgress(progress);
-          if (TERMINAL_PHASES.includes(event.payload.phase)) {
-            finishLabRun();
-            notifyTerminal("ab", event.payload.phase);
-          }
-        }),
-      );
+        if (!active) {
+          unlisten();
+          return;
+        }
 
-      // Matrix events
-      listeners.push(
-        await listen<LabStatusPayload>("lab-matrix-status", (event) => {
-          const progress = mapPayload(event.payload, "matrix");
-          setLabProgress(progress);
-          if (TERMINAL_PHASES.includes(event.payload.phase)) {
-            finishLabRun();
-            notifyTerminal("matrix", event.payload.phase);
-          }
-        }),
-      );
+        listeners.push(unlisten);
+      };
 
-      // Eval events
-      listeners.push(
-        await listen<LabStatusPayload>("lab-eval-status", (event) => {
-          const progress = mapPayload(event.payload, "eval");
-          setLabProgress(progress);
-          if (TERMINAL_PHASES.includes(event.payload.phase)) {
-            finishLabRun();
-            notifyTerminal("eval", event.payload.phase);
-          }
-        }),
-      );
+      await Promise.all([
+        register("lab-arena-status", "arena"),
+        register("lab-ab-status", "ab"),
+        register("lab-matrix-status", "matrix"),
+        register("lab-eval-status", "eval"),
+      ]);
+
+      if (!active) {
+        listeners.forEach((unlisten) => unlisten());
+        return;
+      }
 
       unlistenRef.current = listeners;
     };
 
-    setup();
+    void setup();
 
     return () => {
+      active = false;
       unlistenRef.current.forEach((fn) => fn());
       unlistenRef.current = [];
     };

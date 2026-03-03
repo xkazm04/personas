@@ -1,0 +1,52 @@
+{
+  "id": "builtin-duckdb",
+  "name": "duckdb",
+  "label": "DuckDB",
+  "color": "#FFC107",
+  "icon_url": "/icons/connectors/duckdb.svg",
+  "category": "database",
+  "fields": [
+    {
+      "key": "database_path",
+      "label": "Database Path",
+      "type": "text",
+      "required": true,
+      "placeholder": "/path/to/data.duckdb",
+      "helpText": "File path to the DuckDB database (or :memory: for in-memory)"
+    },
+    {
+      "key": "motherduck_token",
+      "label": "MotherDuck Token",
+      "type": "password",
+      "required": false,
+      "placeholder": "eyJ...",
+      "helpText": "Optional: MotherDuck service token for cloud-hosted DuckDB"
+    }
+  ],
+  "healthcheck_config": null,
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "DuckDB embedded analytical database for OLAP workloads, Parquet, CSV, and JSON.",
+    "auth_type": "file_path",
+    "auth_type_label": "Database Path",
+    "docs_url": "https://duckdb.org/docs/connect/overview",
+    "setup_guide": "1. Provide the file path to your .duckdb database file\n2. Use :memory: for an in-memory database\n3. For MotherDuck cloud: provide your service token from app.motherduck.com\n4. DuckDB can also query Parquet/CSV files directly via SQL",
+    "pricing_tier": "free",
+    "auth_variants": [
+      {
+        "id": "local",
+        "label": "Local File",
+        "fields": ["database_path"],
+        "auth_type_label": "Database Path"
+      },
+      {
+        "id": "motherduck",
+        "label": "MotherDuck Cloud",
+        "fields": ["database_path", "motherduck_token"],
+        "auth_type_label": "MotherDuck Token"
+      }
+    ]
+  }
+}

@@ -61,6 +61,10 @@ export function DesignInput({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dragCounterRef = useRef(0);
+  const designContextRef = useRef(designContext);
+  designContextRef.current = designContext;
+  const onDesignContextChangeRef = useRef(onDesignContextChange);
+  onDesignContextChangeRef.current = onDesignContextChange;
 
   // Auto-grow textarea
   const handleTextareaInput = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -83,9 +87,12 @@ export function DesignInput({
       const autoType = detectFileType(file.name, content);
 
       if (autoType !== 'other') {
-        onDesignContextChange({
-          ...designContext,
-          files: [...(designContext?.files ?? []), { name: file.name, content, type: autoType }],
+        // Read latest context from ref to avoid stale closure when
+        // multiple FileReader.onload callbacks fire concurrently.
+        const ctx = designContextRef.current;
+        onDesignContextChangeRef.current({
+          ...ctx,
+          files: [...(ctx?.files ?? []), { name: file.name, content, type: autoType }],
         });
       } else {
         setPendingFile({ name: file.name, content });
@@ -93,7 +100,7 @@ export function DesignInput({
       }
     };
     reader.readAsText(file);
-  }, [designContext, onDesignContextChange]);
+  }, []);
 
   // File handling
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {

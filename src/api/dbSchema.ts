@@ -1,0 +1,95 @@
+import { invoke } from '@tauri-apps/api/core';
+
+// ── Types ──────────────────────────────────────────────────────────────
+
+export interface DbSchemaTable {
+  id: string;
+  credential_id: string;
+  table_name: string;
+  display_label: string | null;
+  column_hints: string | null;
+  is_favorite: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbSavedQuery {
+  id: string;
+  credential_id: string;
+  title: string;
+  query_text: string;
+  language: string;
+  last_run_at: string | null;
+  last_run_ok: boolean | null;
+  last_run_ms: number | null;
+  is_favorite: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface QueryResult {
+  columns: string[];
+  rows: unknown[][];
+  row_count: number;
+  duration_ms: number;
+  truncated: boolean;
+}
+
+// ── Schema Tables ──────────────────────────────────────────────────────
+
+export const listDbSchemaTables = (credentialId: string) =>
+  invoke<DbSchemaTable[]>('list_db_schema_tables', { credentialId });
+
+export const createDbSchemaTable = (
+  credentialId: string,
+  tableName: string,
+  displayLabel?: string | null,
+  columnHints?: string | null,
+) => invoke<DbSchemaTable>('create_db_schema_table', { credentialId, tableName, displayLabel, columnHints });
+
+export const updateDbSchemaTable = (
+  id: string,
+  updates: {
+    tableName?: string;
+    displayLabel?: string;
+    columnHints?: string;
+    isFavorite?: boolean;
+    sortOrder?: number;
+  },
+) => invoke<DbSchemaTable>('update_db_schema_table', { id, ...updates });
+
+export const deleteDbSchemaTable = (id: string) =>
+  invoke<boolean>('delete_db_schema_table', { id });
+
+// ── Saved Queries ──────────────────────────────────────────────────────
+
+export const listDbSavedQueries = (credentialId: string) =>
+  invoke<DbSavedQuery[]>('list_db_saved_queries', { credentialId });
+
+export const createDbSavedQuery = (
+  credentialId: string,
+  title: string,
+  queryText: string,
+  language?: string,
+) => invoke<DbSavedQuery>('create_db_saved_query', { credentialId, title, queryText, language });
+
+export const updateDbSavedQuery = (
+  id: string,
+  updates: {
+    title?: string;
+    queryText?: string;
+    language?: string;
+    isFavorite?: boolean;
+    sortOrder?: number;
+  },
+) => invoke<DbSavedQuery>('update_db_saved_query', { id, ...updates });
+
+export const deleteDbSavedQuery = (id: string) =>
+  invoke<boolean>('delete_db_saved_query', { id });
+
+// ── Query Execution ────────────────────────────────────────────────────
+
+export const executeDbQuery = (credentialId: string, queryText: string) =>
+  invoke<QueryResult>('execute_db_query', { credentialId, queryText });

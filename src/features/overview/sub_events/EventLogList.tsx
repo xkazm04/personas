@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { Zap, RefreshCw, AlertCircle, CheckCircle2, Clock, Loader2, Server, Bot, Copy, Check } from 'lucide-react';
 import { useVirtualList } from '@/hooks/utility/useVirtualList';
@@ -16,6 +16,7 @@ import DetailModal from '@/features/overview/components/DetailModal';
 import { PersonaSelect } from '@/features/overview/sub_usage/DashboardFilters';
 import type { PersonaEvent } from '@/lib/types/types';
 import { sanitizeHljsHtml } from '@/lib/utils/sanitizeHtml';
+import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
 
 type EventFilter = 'all' | 'pending' | 'completed' | 'failed';
 
@@ -49,15 +50,15 @@ export default function EventLogList() {
   const recentEvents = usePersonaStore((s) => s.recentEvents);
   const pendingEventCount = usePersonaStore((s) => s.pendingEventCount);
   const fetchRecentEvents = usePersonaStore((s) => s.fetchRecentEvents);
+  const pushRecentEvent = usePersonaStore((s) => s.pushRecentEvent);
   const personas = usePersonaStore((s) => s.personas);
 
   const [filter, setFilter] = useState<EventFilter>('all');
   const [selectedEvent, setSelectedEvent] = useState<PersonaEvent | null>(null);
-  const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
+  const { selectedPersonaId, setSelectedPersonaId } = useOverviewFilters();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [copiedPayload, setCopiedPayload] = useState(false);
-  const liveEventIds = useRef<Set<string>>(new Set());
 
   // Initial fetch for historical events
   useEffect(() => {
@@ -80,22 +81,8 @@ export default function EventLogList() {
 
   // Listen to Tauri event-bus for push updates
   const handleBusEvent = useCallback((evt: PersonaEvent) => {
-    liveEventIds.current.add(evt.id);
-    // Trim to prevent unbounded growth
-    if (liveEventIds.current.size > 250) {
-      const entries = [...liveEventIds.current];
-      liveEventIds.current = new Set(entries.slice(-200));
-    }
-    usePersonaStore.setState((state) => {
-      const exists = state.recentEvents.some((e: PersonaEvent) => e.id === evt.id);
-      if (exists) return state;
-      const next = [evt, ...state.recentEvents].slice(0, 200);
-      return {
-        recentEvents: next,
-        pendingEventCount: next.filter((e: PersonaEvent) => e.status === 'pending').length,
-      };
-    });
-  }, []);
+    pushRecentEvent(evt, 200);
+  }, [pushRecentEvent]);
   useEventBusListener(handleBusEvent);
 
   const filteredEvents = useMemo(() => {
@@ -201,13 +188,21 @@ export default function EventLogList() {
                     const statusStyle = EVENT_STATUS_COLORS[event.status] ?? defaultStatus;
                     const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-muted-foreground';
                     const targetPersona = getPersona(event.target_persona_id);
+                    const hoverAccent =
+                      event.status === 'processing'
+                        ? 'hover:border-l-blue-400'
+                        : event.status === 'completed' || event.status === 'processed'
+                          ? 'hover:border-l-emerald-400'
+                          : event.status === 'failed'
+                            ? 'hover:border-l-red-400'
+                            : 'hover:border-l-amber-400';
 
                     return (
                       <tr
                         key={event.id}
                         data-testid={`event-row-${event.id}`}
                         onClick={() => setSelectedEvent(event)}
-                        className="hover:bg-white/[0.03] cursor-pointer transition-colors border-b border-primary/5"
+                        className={`cursor-pointer transition-colors border-b border-primary/5 border-l-2 border-l-transparent hover:bg-white/[0.05] ${hoverAccent} ${virtualRow.index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
                         style={{
                           position: 'absolute',
                           top: 0,

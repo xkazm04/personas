@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { listEventsInRange } from '@/api/events';
 import type { RealtimeEvent, AnimationPhase } from '@/hooks/realtime/useRealtimeEvents';
 import type { PersonaEvent } from '@/lib/bindings/PersonaEvent';
+import { useEventPhaseProgressor } from '@/hooks/realtime/useEventPhaseProgressor';
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -46,13 +47,6 @@ export interface UseTimelineReplayReturn extends TimelineReplayState {
 }
 
 // ── Constants ──────────────────────────────────────────────────────
-
-const PHASE_DURATIONS: Record<AnimationPhase, number> = {
-  entering: 400,
-  'on-bus': 800,
-  delivering: 600,
-  done: 2000,
-};
 
 const TICK_INTERVAL = 50; // ms between replay ticks
 
@@ -100,41 +94,7 @@ export function useTimelineReplay(): UseTimelineReplayReturn {
     return count;
   }, [active, historicalEvents, rangeStart, cursorMs]);
 
-  // ── Phase progression for replay events ──────────────────────────
-  useEffect(() => {
-    if (!active) return;
-    const timer = setInterval(() => {
-      const now = Date.now();
-      setReplayEvents((prev) => {
-        if (prev.length === 0) return prev;
-        let changed = false;
-        const updated: RealtimeEvent[] = [];
-        for (const e of prev) {
-          const elapsed = now - e._phaseStartedAt;
-          if (e._phase === 'done') {
-            if (elapsed < PHASE_DURATIONS.done) {
-              updated.push(e);
-            } else {
-              changed = true; // prune
-            }
-            continue;
-          }
-          const dur = PHASE_DURATIONS[e._phase];
-          if (elapsed > dur) {
-            const nextPhase: AnimationPhase =
-              e._phase === 'entering' ? 'on-bus' :
-              e._phase === 'on-bus' ? 'delivering' : 'done';
-            updated.push({ ...e, _phase: nextPhase, _phaseStartedAt: now });
-            changed = true;
-          } else {
-            updated.push(e);
-          }
-        }
-        return changed ? updated : prev;
-      });
-    }, 100);
-    return () => clearInterval(timer);
-  }, [active]);
+  useEventPhaseProgressor({ active, setEvents: setReplayEvents });
 
   // ── Replay tick loop ─────────────────────────────────────────────
   const tick = useCallback(() => {

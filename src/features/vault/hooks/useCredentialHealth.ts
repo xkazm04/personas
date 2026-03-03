@@ -1,8 +1,9 @@
-import { useCallback, useReducer, useEffect } from 'react';
+import { useCallback } from 'react';
 import * as credApi from '@/api/credentials';
 import { testCredentialDesignHealthcheck, type CredentialDesignHealthcheckResult } from '@/api/credentialDesign';
 import { toCredentialMetadata } from '@/lib/types/types';
 import { usePersonaStore } from '@/stores/personaStore';
+import { createModuleCache, useModuleSubscription } from '@/hooks/utility/useModuleSubscription';
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -14,43 +15,31 @@ export interface HealthResult {
   lastSuccessfulTestAt?: string | null;
 }
 
-// ── Shared module-level cache ─────────────────────────────────────────
+// ── Shared module-level caches ───────────────────────────────────────
 
-const resultCache = new Map<string, HealthResult>();
+const resultCache = createModuleCache<string, HealthResult>();
 const loadingKeys = new Set<string>();
-const subscribers = new Set<() => void>();
-
-function notify() {
-  for (const cb of subscribers) cb();
-}
 
 // ── Hook ──────────────────────────────────────────────────────────────
 
 /**
  * Unified credential health service.
  *
- * All healthcheck results are cached in a shared `Map<string, HealthResult>`
+ * All healthcheck results are cached in a shared `ModuleCache<string, HealthResult>`
  * so that any component reading the same key sees the same data without
  * redundant API calls. Pass a stable `key` — typically a credentialId for
  * stored credentials, or a prefix like `preview:<serviceType>` / `design`
  * for transient healthchecks.
  */
 export function useCredentialHealth(key: string) {
-  const [, rerender] = useReducer((c: number) => c + 1, 0);
-
-  useEffect(() => {
-    subscribers.add(rerender);
-    return () => { subscribers.delete(rerender); };
-  }, [rerender]);
-
-  const result = resultCache.get(key) ?? null;
+  const result = useModuleSubscription(resultCache, key) ?? null;
   const isHealthchecking = loadingKeys.has(key);
 
   /** Generic async check: sets loading, runs fn, caches result. */
   const check = useCallback(async (fn: () => Promise<HealthResult>) => {
     loadingKeys.add(key);
     resultCache.delete(key);
-    notify();
+    resultCache.notify();
     try {
       const r = await fn();
       resultCache.set(key, r);
@@ -61,7 +50,7 @@ export function useCredentialHealth(key: string) {
       });
     } finally {
       loadingKeys.delete(key);
-      notify();
+      resultCache.notify();
     }
   }, [key]);
 
@@ -140,13 +129,13 @@ export function useCredentialHealth(key: string) {
   const setResult = useCallback((r: HealthResult | null) => {
     if (r) resultCache.set(key, r);
     else resultCache.delete(key);
-    notify();
+    resultCache.notify();
   }, [key]);
 
   /** Clear the cached result for this key. */
   const invalidate = useCallback(() => {
     resultCache.delete(key);
-    notify();
+    resultCache.notify();
   }, [key]);
 
   return {
@@ -174,5 +163,5 @@ export function isHealthChecking(key: string): boolean {
 export function resetHealthCache() {
   resultCache.clear();
   loadingKeys.clear();
-  notify();
+  resultCache.notify();
 }

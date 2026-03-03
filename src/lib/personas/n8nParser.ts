@@ -1,6 +1,6 @@
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import type { N8nWorkflow, N8nNode } from '@/lib/types/templateTypes';
-import { N8N_DEFINITION, resolveNodeType, classifyNodeRole } from './platformDefinitions';
+import { N8N_DEFINITION, resolveNodeType, classifyNodeRole, extractProtocolsFromNodes } from './platformDefinitions';
 import { sanitizeName, sanitizeTextField } from '@/lib/utils/workflowSanitizer';
 
 function extractServiceName(nodeType: string): string {
@@ -84,6 +84,11 @@ export function parseN8nWorkflow(json: unknown): DesignAnalysisResult {
   const nodeSequence = workflow.nodes.map(n => sanitizeName(n.name)).join(' \u2192 ');
   const workflowName = sanitizeName(workflow.name || 'Imported n8n Workflow', 200);
 
+  const protocol_capabilities = extractProtocolsFromNodes(
+    N8N_DEFINITION,
+    workflow.nodes.map((n) => n.type),
+  );
+
   return {
     structured_prompt: {
       identity: `You are an AI agent that orchestrates the "${workflowName}" workflow, originally designed in n8n.`,
@@ -100,5 +105,6 @@ export function parseN8nWorkflow(json: unknown): DesignAnalysisResult {
     full_prompt_markdown: `# ${workflowName}\n\nWorkflow: ${nodeSequence}\n\nThis persona was imported from an n8n workflow with ${workflow.nodes.length} nodes.`,
     summary: `Imported from n8n workflow "${workflowName}" with ${workflow.nodes.length} nodes (${triggerNodes.length} triggers, ${actionNodes.length} actions).`,
     suggested_connectors: connectors,
+    protocol_capabilities: protocol_capabilities.length > 0 ? protocol_capabilities : undefined,
   };
 }

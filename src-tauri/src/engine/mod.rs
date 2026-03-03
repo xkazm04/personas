@@ -33,6 +33,7 @@ pub mod runner;
 pub mod scheduler;
 pub mod subscription;
 pub mod test_runner;
+pub mod tool_runner;
 pub mod trace;
 pub mod types;
 pub mod webhook;
@@ -42,6 +43,7 @@ pub mod file_watcher;
 pub mod clipboard_monitor;
 pub mod app_focus;
 pub mod composite;
+pub mod db_query;
 
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -1204,6 +1206,7 @@ fn evaluate_healing_and_retry(
         persona_id,
         &diagnosis.title,
         &diagnosis.description,
+        diagnosis.title.to_ascii_lowercase().contains("circuit breaker"),
         Some(&diagnosis.severity),
         Some(&diagnosis.db_category),
         Some(exec_id),
@@ -1340,6 +1343,7 @@ fn check_circuit_breaker(
             "Persona disabled after {} consecutive failures. Re-enable manually after investigating the root cause.",
             consecutive,
         ),
+        true,
         Some("critical"),
         Some("config"),
         Some(exec_id),

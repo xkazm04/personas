@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getAppSetting, setAppSetting } from '@/api/settings';
+import { deleteAppSetting, getAppSetting, setAppSetting } from '@/api/settings';
 
 interface UseAppSettingResult {
   value: string;
@@ -38,6 +38,8 @@ export function useAppSetting(key: string, defaultValue = ''): UseAppSettingResu
     const trimmed = value.trim();
     if (trimmed) {
       await setAppSetting(key, trimmed);
+    } else {
+      await deleteAppSetting(key);
     }
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);

@@ -13,6 +13,7 @@ pub struct PersonaHealingIssue {
     pub execution_id: Option<String>,
     pub title: String,
     pub description: String,
+    pub is_circuit_breaker: bool,
     pub severity: String,
     pub category: String,
     pub suggested_fix: Option<String>,

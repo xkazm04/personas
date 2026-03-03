@@ -6,15 +6,34 @@
   "icon_url": "/icons/connectors/github.svg",
   "category": "development",
   "fields": [
-    { "key": "personal_access_token", "label": "Personal Access Token", "type": "password", "required": true, "placeholder": "ghp_...", "helpText": "Generate at github.com/settings/tokens with required scopes" }
+    {
+      "key": "personal_access_token",
+      "label": "Personal Access Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "ghp_...",
+      "helpText": "Generate at github.com/settings/tokens with required scopes"
+    }
   ],
   "healthcheck_config": {
     "endpoint": "https://api.github.com/user",
     "method": "GET",
-    "headers": { "Authorization": "Bearer {{personal_access_token}}", "Accept": "application/vnd.github+json", "User-Agent": "personas-desktop" },
+    "headers": {
+      "Authorization": "Bearer {{personal_access_token}}",
+      "Accept": "application/vnd.github+json",
+      "User-Agent": "personas-desktop"
+    },
     "description": "Validates PAT via GitHub user endpoint"
   },
   "services": [],
   "events": [],
-  "metadata": { "template_enabled": true, "summary": "GitHub for repositories, issues, pull requests, and CI/CD.", "auth_type": "pat", "auth_type_label": "PAT", "docs_url": "https://github.com/settings/tokens" }
+  "metadata": {
+    "template_enabled": true,
+    "summary": "GitHub for repositories, issues, pull requests, and CI/CD.",
+    "auth_type": "pat",
+    "auth_type_label": "PAT",
+    "docs_url": "https://github.com/settings/tokens",
+    "setup_guide": "1. Go to github.com/settings/tokens?type=beta for fine-grained tokens\n2. Click 'Generate new token', set expiration and repository access\n3. Select required permissions: Contents (read), Issues (read/write), Pull requests (read/write)\n4. Click 'Generate token' and copy the github_pat_... value",
+    "pricing_tier": "free"
+  }
 }

@@ -29,3 +29,6 @@ export * from "./negotiator";
 export * from "./rotation";
 export * from "./platformDefinitions";
 export * from "./teamSynthesis";
+export * from "./autoCredBrowser";
+export * from "./foraging";
+export * from "./dbSchema";

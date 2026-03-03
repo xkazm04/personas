@@ -31,6 +31,12 @@ const ENGINES: EngineOption[] = [
     description: "Google's Gemini agent. Free tier available with 1M token context window.",
     contextFile: 'GEMINI.md',
   },
+  {
+    id: 'copilot_cli',
+    name: 'Copilot CLI',
+    description: "GitHub Copilot's coding agent. Free GPT 5 mini tier. Requires GitHub Copilot subscription.",
+    contextFile: 'COPILOT.md',
+  },
 ];
 
 export default function EngineSettings() {
@@ -62,6 +68,8 @@ export default function EngineSettings() {
           statusMap['codex_cli'] = { status: item.status, detail: item.detail ?? undefined };
         } else if (item.id === 'gemini_cli') {
           statusMap['gemini_cli'] = { status: item.status, detail: item.detail ?? undefined };
+        } else if (item.id === 'copilot_cli') {
+          statusMap['copilot_cli'] = { status: item.status, detail: item.detail ?? undefined };
         }
       }
       setHealthStatus(statusMap);

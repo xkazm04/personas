@@ -11,6 +11,7 @@ fn row_to_healing_issue(row: &Row) -> rusqlite::Result<PersonaHealingIssue> {
         execution_id: row.get("execution_id")?,
         title: row.get("title")?,
         description: row.get("description")?,
+        is_circuit_breaker: row.get::<_, i32>("is_circuit_breaker")? != 0,
         severity: row.get("severity")?,
         category: row.get("category")?,
         suggested_fix: row.get("suggested_fix")?,
@@ -84,6 +85,7 @@ pub fn create(
     persona_id: &str,
     title: &str,
     description: &str,
+    is_circuit_breaker: bool,
     severity: Option<&str>,
     category: Option<&str>,
     execution_id: Option<&str>,
@@ -100,18 +102,20 @@ pub fn create(
     let now = chrono::Utc::now().to_rfc3339();
     let severity = severity.unwrap_or("low");
     let category = category.unwrap_or("config");
+    let is_circuit_breaker = if is_circuit_breaker { 1 } else { 0 };
 
     let conn = pool.get()?;
     conn.execute(
         "INSERT INTO persona_healing_issues
-         (id, persona_id, execution_id, title, description, severity, category, suggested_fix, auto_fixed, status, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 0, 'open', ?9)",
+         (id, persona_id, execution_id, title, description, is_circuit_breaker, severity, category, suggested_fix, auto_fixed, status, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 0, 'open', ?10)",
         params![
             id,
             persona_id,
             execution_id,
             title,
             description,
+            is_circuit_breaker,
             severity,
             category,
             suggested_fix,
@@ -315,6 +319,7 @@ mod tests {
             &persona.id,
             "Prompt too long",
             "The system prompt exceeds 8000 tokens and causes timeouts.",
+            false,
             Some("high"),
             Some("prompt"),
             None,
@@ -334,6 +339,7 @@ mod tests {
             &persona.id,
             "Missing API key",
             "Credential for OpenAI is not configured.",
+            false,
             None, // defaults to "low"
             None, // defaults to "config"
             None,

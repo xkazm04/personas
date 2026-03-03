@@ -17,7 +17,7 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
   const sev = SEVERITY_COLORS[issue.severity] ?? defaultSev;
   const cat = HEALING_CATEGORY_COLORS[issue.category] ?? defaultCat;
   const isAutoFixed = issue.auto_fixed;
-  const isCircuitBreaker = /circuit\s*breaker/i.test(issue.title);
+  const isCircuitBreaker = issue.is_circuit_breaker;
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);

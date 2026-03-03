@@ -32,7 +32,15 @@ pub async fn run_healthcheck(
 
     let fields = cred_repo::get_decrypted_fields(pool, &cred)?;
 
-    let (connector, hc_config) = resolve_connector_healthcheck(pool, &cred.service_type)?;
+    let (connector, hc_config) = resolve_connector_healthcheck(pool, &cred.service_type, Some(&fields))?;
+
+    // If the matched variant says to skip healthcheck, return success
+    if hc_config.skip {
+        return Ok(HealthcheckResult {
+            success: true,
+            message: "Connection type does not support HTTP healthcheck — credentials stored".into(),
+        });
+    }
 
     // Resolve auth token via connector strategy
     let strategy = connector_strategy::registry().get(&cred.service_type, connector.metadata.as_deref());
@@ -46,16 +54,28 @@ pub async fn run_healthcheck_with_fields(
     service_type: &str,
     fields: &HashMap<String, String>,
 ) -> Result<HealthcheckResult, AppError> {
-    let (connector, hc_config) = resolve_connector_healthcheck(pool, service_type)?;
+    let (connector, hc_config) = resolve_connector_healthcheck(pool, service_type, Some(fields))?;
+
+    // If the matched variant says to skip healthcheck, return success
+    if hc_config.skip {
+        return Ok(HealthcheckResult {
+            success: true,
+            message: "Connection type does not support HTTP healthcheck — credentials stored".into(),
+        });
+    }
+
     let strategy = connector_strategy::registry().get(service_type, connector.metadata.as_deref());
     let token = strategy.resolve_auth_token(connector.metadata.as_deref(), fields).await?;
 
     execute_healthcheck_request_with_strategy(strategy, &hc_config, fields, token).await
 }
 
+/// Try to find a matching auth_variant for the given fields and return its
+/// healthcheck_config if present.  Falls back to the connector-level config.
 fn resolve_connector_healthcheck(
     pool: &DbPool,
     service_type: &str,
+    fields: Option<&HashMap<String, String>>,
 ) -> Result<(crate::db::models::ConnectorDefinition, HealthcheckConfig), AppError> {
     let connectors = connector_repo::get_all(pool)?;
     let connector = connectors
@@ -73,6 +93,14 @@ fn resolve_connector_healthcheck(
         }
     };
 
+    // ── Try per-variant healthcheck first ──────────────────────────────
+    if let (Some(flds), Some(meta_json)) = (fields, connector.metadata.as_deref()) {
+        if let Some(hc) = resolve_variant_healthcheck(meta_json, flds) {
+            return Ok((connector, hc));
+        }
+    }
+
+    // ── Fall back to connector-level healthcheck config ────────────────
     let hc_config = match &connector.healthcheck_config {
         Some(json_str) => parse_healthcheck_config(json_str),
         None => None,
@@ -80,6 +108,80 @@ fn resolve_connector_healthcheck(
     .ok_or_else(|| AppError::Validation("No healthcheck configured for this connector".into()))?;
 
     Ok((connector, hc_config))
+}
+
+/// Match the supplied field values to an auth_variant and return its
+/// variant-specific healthcheck config if present.
+fn resolve_variant_healthcheck(
+    metadata_json: &str,
+    fields: &HashMap<String, String>,
+) -> Option<HealthcheckConfig> {
+    let meta: serde_json::Value = serde_json::from_str(metadata_json).ok()?;
+    let variants = meta.get("auth_variants")?.as_array()?;
+    if variants.is_empty() {
+        return None;
+    }
+
+    // Score each variant: how many of its declared fields have non-empty values
+    let mut best: Option<(&serde_json::Value, usize)> = None;
+    for v in variants {
+        let vf = match v.get("fields").and_then(|f| f.as_array()) {
+            Some(a) => a,
+            None => continue,
+        };
+        let filled = vf.iter().filter(|k| {
+            k.as_str()
+                .map(|s| fields.get(s).map_or(false, |val| !val.is_empty()))
+                .unwrap_or(false)
+        }).count();
+        if filled == 0 { continue; }
+        // Prefer the variant where ALL declared fields are filled
+        if filled == vf.len() {
+            // Exact match — check for variant-level healthcheck
+            if v.get("healthcheck_skip").and_then(|s| s.as_bool()).unwrap_or(false) {
+                return Some(HealthcheckConfig {
+                    endpoint: String::new(),
+                    method: None,
+                    headers: HashMap::new(),
+                    body: None,
+                    skip: true,
+                });
+            }
+            if let Some(hc_val) = v.get("healthcheck_config") {
+                if let Some(hc_str) = serde_json::to_string(hc_val).ok() {
+                    return parse_healthcheck_config(&hc_str);
+                }
+            }
+            // Variant matched but has no variant-level healthcheck — fall through
+            // to connector-level config.
+            return None;
+        }
+        // Track partial best match
+        match &best {
+            Some((_, score)) if filled <= *score => {}
+            _ => { best = Some((v, filled)); }
+        }
+    }
+
+    // If no exact match, try best partial match
+    if let Some((v, _)) = best {
+        if v.get("healthcheck_skip").and_then(|s| s.as_bool()).unwrap_or(false) {
+            return Some(HealthcheckConfig {
+                endpoint: String::new(),
+                method: None,
+                headers: HashMap::new(),
+                body: None,
+                skip: true,
+            });
+        }
+        if let Some(hc_val) = v.get("healthcheck_config") {
+            if let Some(hc_str) = serde_json::to_string(hc_val).ok() {
+                return parse_healthcheck_config(&hc_str);
+            }
+        }
+    }
+
+    None
 }
 
 /// Execute a healthcheck request using a connector strategy for auth dispatch.
@@ -196,8 +298,29 @@ pub(crate) fn resolve_template(template: &str, values: &HashMap<String, String>)
 /// private network addresses into the host position.
 ///
 /// Allowed: `https://api.example.com/v1/{{resource_id}}`
+/// Allowed: `{{project_url}}/rest/v1/` (entire URL from field — validated post-resolution)
 /// Blocked: `https://{{base_url}}/api`, `{{scheme}}://api.example.com`
 pub(crate) fn validate_template_url(template: &str) -> Result<(), AppError> {
+    // If the template starts with `{{` and the placeholder spans past the `://`
+    // position, the entire URL origin comes from a field value
+    // (e.g. `{{project_url}}/rest/v1/`).  This is legitimate for connectors that
+    // store full URLs as fields.  Post-resolution validation
+    // (`validate_healthcheck_url`) will still catch SSRF on the resolved URL.
+    //
+    // But `{{scheme}}://host` is NOT allowed — the placeholder only controls the
+    // scheme, so we check if `://` appears INSIDE or after the closing `}}`.
+    if template.starts_with("{{") {
+        if let Some(close) = template.find("}}") {
+            let after_close = &template[close + 2..];
+            // If `://` is NOT the first thing after the placeholder close,
+            // the placeholder encompasses the scheme+host (safe pattern).
+            if !after_close.starts_with("://") {
+                return Ok(());
+            }
+            // Otherwise falls through: `{{scheme}}://host` is still blocked.
+        }
+    }
+
     // Find the scheme separator
     let after_scheme = match template.find("://") {
         Some(idx) => {
@@ -242,29 +365,35 @@ pub(crate) fn validate_template_url(template: &str) -> Result<(), AppError> {
 /// resolution into targeting internal services.
 ///
 /// Blocks values containing:
-/// - Full URL schemes (`://`) that could override template structure
 /// - IP addresses in private, loopback, or link-local ranges
 /// - Known internal hostnames (localhost, .local, .internal)
+///
+/// Note: URL-type field values (containing `://`) are allowed because many
+/// connectors legitimately store full URLs (e.g. Supabase `project_url`).
+/// Post-resolution validation via `validate_healthcheck_url` catches SSRF on
+/// the final resolved URL.
 pub(crate) fn validate_field_values(
     values: &HashMap<String, String>,
 ) -> Result<(), AppError> {
     for (key, value) in values {
         let lower = value.to_lowercase();
 
-        // Block values that contain a URL scheme — could override template structure
-        if lower.contains("://") {
-            return Err(AppError::Validation(format!(
-                "Field '{}' contains a URL scheme — field values must not contain full URLs",
-                key
-            )));
-        }
+        // If the value is a URL, extract the host portion for private-IP checks
+        let check_target = if let Some(after_scheme) = lower.find("://").map(|i| &value[i + 3..]) {
+            let host_end = after_scheme.find('/').unwrap_or(after_scheme.len());
+            let authority = &after_scheme[..host_end];
+            // Strip port if present
+            authority.split(':').next().unwrap_or(authority).to_string()
+        } else {
+            // Non-URL value: check the whole value
+            value.split(&[':', '/', '?', '#'][..])
+                .next()
+                .unwrap_or(value)
+                .to_string()
+        };
 
-        // Block private/internal IP addresses embedded in values
-        let host_part = value
-            .split(&[':', '/', '?', '#'][..])
-            .next()
-            .unwrap_or(value);
-        if let Ok(ip) = host_part.parse::<IpAddr>() {
+        // Block private/internal IP addresses
+        if let Ok(ip) = check_target.parse::<IpAddr>() {
             if is_private_ip(&ip) {
                 return Err(AppError::Validation(format!(
                     "Field '{}' contains a private or internal network address ({})",
@@ -274,12 +403,11 @@ pub(crate) fn validate_field_values(
         }
 
         // Block known internal hostnames
-        if lower == "localhost"
-            || lower.starts_with("localhost:")
-            || lower.starts_with("localhost/")
-            || lower.ends_with(".local")
-            || lower.ends_with(".internal")
-            || lower.contains("metadata.google.internal")
+        let ct_lower = check_target.to_lowercase();
+        if ct_lower == "localhost"
+            || ct_lower.ends_with(".local")
+            || ct_lower.ends_with(".internal")
+            || ct_lower.contains("metadata.google.internal")
         {
             return Err(AppError::Validation(format!(
                 "Field '{}' contains a private or internal hostname",
@@ -399,6 +527,8 @@ struct HealthcheckConfig {
     method: Option<String>,
     headers: HashMap<String, String>,
     body: Option<String>,
+    /// When true, skip HTTP healthcheck entirely (e.g. pooler connection strings).
+    skip: bool,
 }
 
 fn parse_healthcheck_config(json: &str) -> Option<HealthcheckConfig> {
@@ -435,6 +565,7 @@ fn parse_healthcheck_config(json: &str) -> Option<HealthcheckConfig> {
         method,
         headers,
         body,
+        skip: false,
     })
 }
 
@@ -575,6 +706,13 @@ mod tests {
     }
 
     #[test]
+    fn test_template_allows_full_url_from_field() {
+        // When the entire URL comes from a field value (e.g. Supabase project_url)
+        assert!(validate_template_url("{{project_url}}/rest/v1/").is_ok());
+        assert!(validate_template_url("{{base_url}}/api/v1/me").is_ok());
+    }
+
+    #[test]
     fn test_template_allows_placeholders_in_query() {
         assert!(validate_template_url("https://api.example.com/v1?key={{api_key}}").is_ok());
     }
@@ -608,7 +746,14 @@ mod tests {
     }
 
     #[test]
-    fn test_field_values_blocks_url_scheme() {
+    fn test_field_values_allows_public_urls() {
+        let mut values = HashMap::new();
+        values.insert("project_url".into(), "https://xxxx.supabase.co".into());
+        assert!(validate_field_values(&values).is_ok());
+    }
+
+    #[test]
+    fn test_field_values_blocks_private_url() {
         let mut values = HashMap::new();
         values.insert("base_url".into(), "http://169.254.169.254/latest".into());
         assert!(validate_field_values(&values).is_err());
@@ -678,10 +823,17 @@ mod tests {
     }
 
     #[test]
-    fn test_ssrf_via_field_value_with_scheme() {
-        // Attack: field value contains full URL to override path context
+    fn test_ssrf_via_field_value_with_private_url() {
+        // Attack: field value contains a URL targeting cloud metadata
         let mut values = HashMap::new();
-        values.insert("path".into(), "http://169.254.169.254/latest/meta-data/".into());
+        values.insert("url".into(), "http://169.254.169.254/latest/meta-data/".into());
+        assert!(validate_field_values(&values).is_err());
+    }
+
+    #[test]
+    fn test_ssrf_via_localhost_url() {
+        let mut values = HashMap::new();
+        values.insert("url".into(), "http://localhost:8080/admin".into());
         assert!(validate_field_values(&values).is_err());
     }
 
@@ -697,6 +849,73 @@ mod tests {
         assert!(validate_field_values(&values).is_ok());
 
         let resolved = resolve_template("https://api.example.com/{{path}}", &values);
+        assert!(validate_healthcheck_url(&resolved).is_ok());
+    }
+
+    // ---- Variant healthcheck resolution tests ----
+
+    #[test]
+    fn test_variant_healthcheck_exact_match() {
+        let meta = r#"{"auth_variants":[
+            {"id":"anon","fields":["project_url","anon_key"],
+             "healthcheck_config":{"endpoint":"{{project_url}}/rest/v1/","method":"GET","headers":{"apikey":"{{anon_key}}"}}},
+            {"id":"service_role","fields":["project_url","service_role_key"],
+             "healthcheck_config":{"endpoint":"{{project_url}}/rest/v1/","method":"GET","headers":{"apikey":"{{service_role_key}}"}}}
+        ]}"#;
+
+        // Anon variant match
+        let mut fields = HashMap::new();
+        fields.insert("project_url".into(), "https://xxx.supabase.co".into());
+        fields.insert("anon_key".into(), "eyJ_test".into());
+        let hc = resolve_variant_healthcheck(meta, &fields).unwrap();
+        assert!(hc.headers.contains_key("apikey"));
+        assert!(hc.headers["apikey"].contains("anon_key"));
+
+        // Service role variant match
+        let mut fields2 = HashMap::new();
+        fields2.insert("project_url".into(), "https://xxx.supabase.co".into());
+        fields2.insert("service_role_key".into(), "eyJ_admin".into());
+        let hc2 = resolve_variant_healthcheck(meta, &fields2).unwrap();
+        assert!(hc2.headers["apikey"].contains("service_role_key"));
+    }
+
+    #[test]
+    fn test_variant_healthcheck_skip() {
+        let meta = r#"{"auth_variants":[
+            {"id":"pooler","fields":["pooler_url"],"healthcheck_skip":true}
+        ]}"#;
+
+        let mut fields = HashMap::new();
+        fields.insert("pooler_url".into(), "postgresql://xxx".into());
+        let hc = resolve_variant_healthcheck(meta, &fields).unwrap();
+        assert!(hc.skip);
+    }
+
+    #[test]
+    fn test_variant_healthcheck_no_match_returns_none() {
+        let meta = r#"{"auth_variants":[
+            {"id":"anon","fields":["project_url","anon_key"],
+             "healthcheck_config":{"endpoint":"test","method":"GET","headers":{}}}
+        ]}"#;
+
+        let mut fields = HashMap::new();
+        fields.insert("something_else".into(), "value".into());
+        assert!(resolve_variant_healthcheck(meta, &fields).is_none());
+    }
+
+    #[test]
+    fn test_supabase_full_healthcheck_flow() {
+        // Simulate the full Supabase anon key healthcheck template resolution
+        let template = "{{project_url}}/rest/v1/";
+        assert!(validate_template_url(template).is_ok());
+
+        let mut values = HashMap::new();
+        values.insert("project_url".into(), "https://xxxx.supabase.co".into());
+        values.insert("anon_key".into(), "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9".into());
+        assert!(validate_field_values(&values).is_ok());
+
+        let resolved = resolve_template(template, &values);
+        assert_eq!(resolved, "https://xxxx.supabase.co/rest/v1/");
         assert!(validate_healthcheck_url(&resolved).is_ok());
     }
 }

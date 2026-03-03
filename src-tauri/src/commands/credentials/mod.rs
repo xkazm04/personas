@@ -1,9 +1,12 @@
 pub mod ai_artifact_flow;
+pub mod auto_cred_browser;
 pub mod crud;
 pub mod credential_design;
+pub mod foraging;
 pub mod intelligence;
 pub mod negotiator;
 pub mod oauth;
 pub mod connectors;
 pub mod rotation;
 mod shared;
+pub mod db_schema;

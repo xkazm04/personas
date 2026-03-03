@@ -73,9 +73,11 @@ export const createTestSlice: StateCreator<PersonaStore, [], [], TestSlice> = (s
   cancelTest: async (runId) => {
     try {
       await api.cancelTestRun(runId);
-      set({ isTestRunning: false, testRunProgress: null });
+      set({ testRunProgress: null });
     } catch (err) {
       set({ error: errMsg(err, "Failed to cancel test run") });
+    } finally {
+      set({ isTestRunning: false });
     }
   },
 

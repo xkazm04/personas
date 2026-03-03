@@ -117,7 +117,10 @@ export function GitLabDeployModal({
         className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-orange-500/15 border border-orange-500/25 text-orange-400 hover:bg-orange-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {isDeploying ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
+          <span role="status" aria-live="polite" className="inline-flex items-center gap-2">
+            <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin" />
+            <span className="sr-only">Deploying persona to GitLab...</span>
+          </span>
         ) : (
           <Rocket className="w-4 h-4" />
         )}

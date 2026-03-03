@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
 import { DollarSign, AlertTriangle, TrendingUp, Loader2, RefreshCw } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
-import * as api from '@/api/tauriApi';
+import { selectMonthlySpendMap, selectTotalMonthlySpend } from '@/stores/slices/overviewSlice';
 
 function formatUsd(value: number): string {
   if (value < 0.01) return '$0.00';
@@ -57,38 +58,21 @@ function budgetProgressDetail(spend: number, budget: number | null): { text: str
 export default function BudgetSettingsPage() {
   const personas = usePersonaStore((s) => s.personas);
   const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
-  const [monthlySpend, setMonthlySpend] = useState<Record<string, number>>({});
+  const monthlySpendData = usePersonaStore((s) => s.monthlySpend);
+  const loading = usePersonaStore((s) => s.monthlySpendLoading);
+  const fetchError = usePersonaStore((s) => s.monthlySpendError);
+  const fetchMonthlySpend = usePersonaStore((s) => s.fetchMonthlySpend);
   const [editingBudgets, setEditingBudgets] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState<string | null>(null);
   const [savingBudgetId, setSavingBudgetId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [savedBudgetId, setSavedBudgetId] = useState<string | null>(null);
 
-  const fetchSpend = useCallback(async () => {
-    setLoading(true);
-    setFetchError(null);
-    try {
-      const data = await api.getAllMonthlySpend();
-      const map: Record<string, number> = {};
-      for (const d of data) {
-        map[d.id] = d.spend ?? 0;
-      }
-      setMonthlySpend(map);
-    } catch (err) {
-      console.error('Failed to fetch monthly spend:', err);
-      setFetchError('Failed to load monthly spend. Try again.');
-      setMonthlySpend({});
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    fetchSpend();
-  }, [fetchSpend]);
+    fetchMonthlySpend();
+  }, [fetchMonthlySpend]);
 
-  const totalSpend = Object.values(monthlySpend).reduce((sum, v) => sum + v, 0);
+  const monthlySpend = useMemo(() => selectMonthlySpendMap(monthlySpendData), [monthlySpendData]);
+  const totalSpend = useMemo(() => selectTotalMonthlySpend(monthlySpendData), [monthlySpendData]);
 
   const handleBudgetChange = (personaId: string, value: string) => {
     setEditingBudgets((prev) => ({ ...prev, [personaId]: value }));
@@ -138,7 +122,7 @@ export default function BudgetSettingsPage() {
             {fetchError}
           </div>
           <button
-            onClick={fetchSpend}
+            onClick={fetchMonthlySpend}
             disabled={loading}
             className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/25 px-2.5 py-1 text-sm text-red-200 hover:bg-red-500/10 disabled:opacity-50 transition-colors"
           >
@@ -235,10 +219,22 @@ export default function BudgetSettingsPage() {
 
               {/* Progress Bar */}
               {budget && budget > 0 && (
-                <div className="h-2 rounded-full overflow-hidden bg-secondary/60 border border-primary/10">
+                <div className="relative h-2 rounded-full overflow-hidden bg-secondary/60 border border-primary/10">
+                  <motion.div
+                    className={`h-full rounded-full ${progressBarColor(spend, budget)}`}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${ratio * 100}%` }}
+                    transition={{ duration: 0.6, ease: 'easeOut' }}
+                  />
+                  {/* 80% warning threshold marker */}
                   <div
-                    className={`h-full rounded-full transition-all ${progressBarColor(spend, budget)}`}
-                    style={{ width: `${ratio * 100}%` }}
+                    className="absolute top-0 bottom-0 w-px border-l border-dashed border-amber-400/50"
+                    style={{ left: '80%' }}
+                  />
+                  {/* 100% exceeded threshold marker */}
+                  <div
+                    className="absolute top-0 bottom-0 w-px bg-red-400/50"
+                    style={{ left: '100%' }}
                   />
                 </div>
               )}

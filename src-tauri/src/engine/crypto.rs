@@ -46,18 +46,54 @@ impl SessionKeyPair {
         &self.public_key_pem
     }
 
-    /// Decrypt a base64-encoded message that was encrypted with the session public key.
+    /// Decrypt a hybrid-encrypted message.
+    ///
+    /// Format: `base64(rsa_encrypted_aes_key).base64(12-byte-iv || aes-gcm-ciphertext)`
+    ///
+    /// Falls back to plain RSA decryption for legacy payloads (no `.` separator).
     pub fn decrypt(&self, ciphertext_b64: &str) -> Result<String, CryptoError> {
-        let ciphertext = B64.decode(ciphertext_b64)
-            .map_err(|e| CryptoError::Decrypt(format!("Base64 decode failed: {}", e)))?;
-        
-        let padding = Oaep::new::<sha2::Sha256>();
-        let plaintext_bytes = self.private_key
-            .decrypt(padding, &ciphertext)
-            .map_err(|e| CryptoError::Decrypt(format!("RSA decryption failed: {}", e)))?;
+        if let Some(dot_pos) = ciphertext_b64.find('.') {
+            // ── Hybrid mode: RSA-wrapped AES key + AES-GCM payload ──
+            let rsa_part = &ciphertext_b64[..dot_pos];
+            let aes_part = &ciphertext_b64[dot_pos + 1..];
 
-        String::from_utf8(plaintext_bytes)
-            .map_err(|e| CryptoError::Decrypt(format!("Invalid UTF-8 in decrypted data: {}", e)))
+            // 1. RSA-decrypt the AES key (32 bytes)
+            let encrypted_aes_key = B64.decode(rsa_part)
+                .map_err(|e| CryptoError::Decrypt(format!("Base64 decode (RSA part) failed: {}", e)))?;
+            let padding = Oaep::new::<sha2::Sha256>();
+            let raw_aes_key = self.private_key
+                .decrypt(padding, &encrypted_aes_key)
+                .map_err(|e| CryptoError::Decrypt(format!("RSA decryption of AES key failed: {}", e)))?;
+
+            // 2. Split IV (12 bytes) from AES ciphertext
+            let iv_and_ciphertext = B64.decode(aes_part)
+                .map_err(|e| CryptoError::Decrypt(format!("Base64 decode (AES part) failed: {}", e)))?;
+            if iv_and_ciphertext.len() < 13 {
+                return Err(CryptoError::Decrypt("AES payload too short".into()));
+            }
+            let (iv_bytes, aes_ciphertext) = iv_and_ciphertext.split_at(12);
+
+            // 3. AES-256-GCM decrypt
+            let aes_key = Key::<Aes256Gcm>::from_slice(&raw_aes_key);
+            let cipher = Aes256Gcm::new(aes_key);
+            let nonce = Nonce::from_slice(iv_bytes);
+            let plaintext_bytes = cipher.decrypt(nonce, aes_ciphertext)
+                .map_err(|e| CryptoError::Decrypt(format!("AES-GCM decryption failed: {}", e)))?;
+
+            String::from_utf8(plaintext_bytes)
+                .map_err(|e| CryptoError::Decrypt(format!("Invalid UTF-8 in decrypted data: {}", e)))
+        } else {
+            // ── Legacy mode: plain RSA (small payloads only) ──
+            let ciphertext = B64.decode(ciphertext_b64)
+                .map_err(|e| CryptoError::Decrypt(format!("Base64 decode failed: {}", e)))?;
+            let padding = Oaep::new::<sha2::Sha256>();
+            let plaintext_bytes = self.private_key
+                .decrypt(padding, &ciphertext)
+                .map_err(|e| CryptoError::Decrypt(format!("RSA decryption failed: {}", e)))?;
+
+            String::from_utf8(plaintext_bytes)
+                .map_err(|e| CryptoError::Decrypt(format!("Invalid UTF-8 in decrypted data: {}", e)))
+        }
     }
 }
 

@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Network, TrendingUp, AlertTriangle, Cpu, ArrowRight, RefreshCw, ChevronDown } from 'lucide-react';
+import { Network, AlertTriangle, Cpu, ArrowRight, RefreshCw, ChevronDown, TrendingUp, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
 import { getKnowledgeSummary, listExecutionKnowledge } from '@/api/knowledge';
@@ -7,6 +7,8 @@ import type { KnowledgeGraphSummary } from '@/lib/bindings/KnowledgeGraphSummary
 import type { ExecutionKnowledge } from '@/lib/bindings/ExecutionKnowledge';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
+import { OverviewStatCard } from '@/features/overview/sub_observability/OverviewStatCard';
+import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
 
 // ── Knowledge type config ─────────────────────────────────────────
 const KNOWLEDGE_TYPES: Record<string, { label: string; color: string; icon: typeof Network }> = {
@@ -26,29 +28,6 @@ function formatDuration(ms: number): string {
 function formatCost(usd: number): string {
   if (usd < 0.01) return `$${usd.toFixed(4)}`;
   return `$${usd.toFixed(2)}`;
-}
-
-// ── Stat Card ─────────────────────────────────────────────────────
-function StatCard({ label, value, sub, color }: {
-  label: string;
-  value: string | number;
-  sub?: string;
-  color: string;
-}) {
-  const colorMap: Record<string, string> = {
-    emerald: 'from-emerald-500/15 to-emerald-500/5 border-emerald-500/20',
-    red: 'from-red-500/15 to-red-500/5 border-red-500/20',
-    blue: 'from-blue-500/15 to-blue-500/5 border-blue-500/20',
-    violet: 'from-violet-500/15 to-violet-500/5 border-violet-500/20',
-    primary: 'from-primary/15 to-primary/5 border-primary/20',
-  };
-  return (
-    <div className={`rounded-xl border bg-gradient-to-br ${colorMap[color] ?? colorMap.primary} p-4 space-y-1`}>
-      <div className="text-2xl font-bold text-foreground/90 tracking-tight">{value}</div>
-      <div className="text-sm font-medium text-foreground/70">{label}</div>
-      {sub && <div className="text-xs text-muted-foreground/60">{sub}</div>}
-    </div>
-  );
 }
 
 // ── Knowledge Row ─────────────────────────────────────────────────
@@ -167,6 +146,16 @@ export default function KnowledgeGraphDashboard() {
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  const { failureDrilldownDate, setFailureDrilldownDate } = useOverviewFilters();
+
+  // When arriving from an observability failure drilldown, auto-set the type filter
+  useEffect(() => {
+    if (failureDrilldownDate) {
+      setSelectedType('failure_pattern');
+    }
+  }, [failureDrilldownDate]);
 
   const personaMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -176,6 +165,7 @@ export default function KnowledgeGraphDashboard() {
 
   const fetchData = async () => {
     setLoading(true);
+    setFetchError(null);
     try {
       const [s, e] = await Promise.all([
         getKnowledgeSummary(selectedPersonaId ?? undefined),
@@ -185,8 +175,10 @@ export default function KnowledgeGraphDashboard() {
       ]);
       setSummary(s);
       setEntries(e);
-    } catch {
-      // Fail silently — empty state will show
+    } catch (err) {
+      setFetchError(err instanceof Error ? err.message : 'Failed to load knowledge graph data');
+      setSummary(null);
+      setEntries([]);
     } finally {
       setLoading(false);
     }
@@ -194,7 +186,22 @@ export default function KnowledgeGraphDashboard() {
 
   useEffect(() => { fetchData(); }, [selectedPersonaId, selectedType]);
 
-  const allEntries = selectedPersonaId ? entries : (summary?.top_patterns ?? []);
+  const rawEntries = selectedPersonaId ? entries : (summary?.top_patterns ?? []);
+
+  // When drilldown is active, filter to patterns with failures updated on or after the target date
+  const allEntries = useMemo(() => {
+    if (!failureDrilldownDate) return rawEntries;
+    return rawEntries.filter((entry) => {
+      if (entry.failure_count === 0) return false;
+      const entryDate = entry.updated_at.slice(0, 10);
+      return entryDate >= failureDrilldownDate;
+    });
+  }, [rawEntries, failureDrilldownDate]);
+
+  const dismissDrilldown = () => {
+    setFailureDrilldownDate(null);
+    setSelectedType(null);
+  };
 
   return (
     <ContentBox>
@@ -219,23 +226,29 @@ export default function KnowledgeGraphDashboard() {
           {/* Stat cards */}
           {summary && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <StatCard label="Total Patterns" value={summary.total_entries} color="primary" />
-              <StatCard
+              <OverviewStatCard icon={Network} label="Total Patterns" numericValue={summary.total_entries} format={(n) => String(Math.round(n))} color="primary" />
+              <OverviewStatCard
+                icon={ArrowRight}
                 label="Tool Sequences"
-                value={summary.tool_sequence_count}
-                sub="Learned tool chains"
+                numericValue={summary.tool_sequence_count}
+                format={(n) => String(Math.round(n))}
+                subtitle="Learned tool chains"
                 color="emerald"
               />
-              <StatCard
+              <OverviewStatCard
+                icon={AlertTriangle}
                 label="Failure Patterns"
-                value={summary.failure_pattern_count}
-                sub="Known error signatures"
+                numericValue={summary.failure_pattern_count}
+                format={(n) => String(Math.round(n))}
+                subtitle="Known error signatures"
                 color="red"
               />
-              <StatCard
+              <OverviewStatCard
+                icon={Cpu}
                 label="Model Insights"
-                value={summary.model_performance_count}
-                sub="Performance by model"
+                numericValue={summary.model_performance_count}
+                format={(n) => String(Math.round(n))}
+                subtitle="Performance by model"
                 color="violet"
               />
             </div>
@@ -256,7 +269,12 @@ export default function KnowledgeGraphDashboard() {
 
             <ThemedSelect
               value={selectedType ?? ''}
-              onChange={(e) => setSelectedType(e.target.value || null)}
+              onChange={(e) => {
+                setSelectedType(e.target.value || null);
+                if (failureDrilldownDate && e.target.value !== 'failure_pattern') {
+                  setFailureDrilldownDate(null);
+                }
+              }}
               className="py-1.5"
             >
               <option value="">All Types</option>
@@ -266,8 +284,48 @@ export default function KnowledgeGraphDashboard() {
             </ThemedSelect>
           </div>
 
+          {/* Failure drilldown banner */}
+          {failureDrilldownDate && (
+            <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-red-300">
+                    Failure drill-down: {new Date(failureDrilldownDate + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                  </p>
+                  <p className="text-xs text-red-400/70 mt-0.5">
+                    Showing failure patterns active on or after this date.
+                    {allEntries.length === 0 && !loading && ' No matching patterns found — try selecting a specific persona above.'}
+                  </p>
+                </div>
+                <button
+                  onClick={dismissDrilldown}
+                  className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-lg bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors"
+                >
+                  <X className="w-3 h-3" /> Clear
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Entries list */}
-          {loading ? (
+          {fetchError && !loading ? (
+            <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-red-300">Knowledge data unavailable</p>
+                  <p className="text-sm text-red-400/70 mt-0.5">{fetchError}</p>
+                </div>
+                <button
+                  onClick={fetchData}
+                  className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-lg bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors"
+                >
+                  <RefreshCw className="w-3 h-3" /> Retry
+                </button>
+              </div>
+            </div>
+          ) : loading ? (
             <div className="flex items-center justify-center py-12">
               <RefreshCw className="w-5 h-5 animate-spin text-primary/40" />
             </div>

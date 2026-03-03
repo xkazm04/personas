@@ -142,7 +142,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             label: "Notion",
             color: "#000000",
             icon_url: "/icons/connectors/notion.svg",
-            category: "productivity",
+            category: "database",
             fields: r#"[{"key":"api_key","label":"Integration Token","type":"password","required":true,"placeholder":"ntn_...","helpText":"Create an internal integration at notion.so/my-integrations"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.notion.com/v1/users/me","method":"GET","headers":{"Authorization":"Bearer {{api_key}}","Notion-Version":"2022-06-28"},"description":"Validates integration token via users/me endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Notion workspace for knowledge bases, wikis, and project management.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://www.notion.so/my-integrations","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@notionhq/mcp-server","transport":"stdio","suggested_env":{"NOTION_TOKEN":"","OPENAI_API_KEY":""}}]}"#),
@@ -187,9 +187,9 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#3ECF8E",
             icon_url: "/icons/connectors/supabase.svg",
             category: "database",
-            fields: r#"[{"key":"project_url","label":"Project URL","type":"url","required":true,"placeholder":"https://xxxx.supabase.co","helpText":"From Supabase Dashboard → Settings → API"},{"key":"anon_key","label":"Anon / Public Key","type":"password","required":true,"placeholder":"eyJ...","helpText":"The anon key for client-side access"},{"key":"service_role_key","label":"Service Role Key","type":"password","required":false,"placeholder":"eyJ...","helpText":"Optional: for server-side admin access (bypasses RLS)"},{"key":"pooler_url","label":"Pooler Connection String","type":"password","required":false,"placeholder":"postgresql://postgres.xxxx:...","helpText":"Optional: Supavisor pooler URL for direct database access"}]"#,
-            healthcheck_config: Some(r#"{"endpoint":"{{project_url}}/rest/v1/","method":"GET","headers":{"apikey":"{{anon_key}}","Authorization":"Bearer {{anon_key}}"},"description":"Validates Supabase connection via REST endpoint"}"#),
-            metadata: Some(r#"{"template_enabled":true,"summary":"Supabase open-source Firebase alternative with Postgres, auth, and realtime.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://supabase.com/dashboard/project/_/settings/api","auth_variants":[{"id":"anon","label":"Anon Key","fields":["project_url","anon_key"],"auth_type_label":"API Key"},{"id":"service_role","label":"Service Role","fields":["project_url","anon_key","service_role_key"],"auth_type_label":"Service Role"},{"id":"pooler","label":"Pooler URL","fields":["project_url","anon_key","pooler_url"],"auth_type_label":"Connection String"}],"auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@supabase/mcp-server-supabase","transport":"stdio","suggested_env":{"SUPABASE_ACCESS_TOKEN":""}}]}"#),
+            fields: r#"[{"key":"project_url","label":"Project URL","type":"url","required":true,"placeholder":"https://xxxx.supabase.co","helpText":"From Supabase Dashboard → Settings → API"},{"key":"anon_key","label":"Anon / Public Key","type":"password","required":true,"placeholder":"eyJ...","helpText":"The anon key for client-side access"},{"key":"service_role_key","label":"Service Role Key","type":"password","required":false,"placeholder":"eyJ...","helpText":"For server-side admin access (bypasses RLS)"},{"key":"pooler_url","label":"Pooler Connection String","type":"password","required":false,"placeholder":"postgresql://postgres.xxxx:...","helpText":"Supavisor pooler URL for direct database access"}]"#,
+            healthcheck_config: Some(r#"{"endpoint":"{{project_url}}/rest/v1/","method":"GET","headers":{"apikey":"{{anon_key}}","Authorization":"Bearer {{anon_key}}"},"description":"Validates Supabase connection via REST endpoint with anon key"}"#),
+            metadata: Some(r#"{"template_enabled":true,"summary":"Supabase open-source Firebase alternative with Postgres, auth, and realtime.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://supabase.com/dashboard/project/_/settings/api","auth_variants":[{"id":"anon","label":"Anon Key","fields":["project_url","anon_key"],"auth_type_label":"API Key","healthcheck_config":{"endpoint":"{{project_url}}/rest/v1/","method":"GET","headers":{"apikey":"{{anon_key}}","Authorization":"Bearer {{anon_key}}"}}},{"id":"service_role","label":"Service Role","fields":["project_url","service_role_key"],"auth_type_label":"Service Role","healthcheck_config":{"endpoint":"{{project_url}}/rest/v1/","method":"GET","headers":{"apikey":"{{service_role_key}}","Authorization":"Bearer {{service_role_key}}"}}},{"id":"pooler","label":"Pooler URL","fields":["pooler_url"],"auth_type_label":"Connection String","healthcheck_skip":true}],"auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@supabase/mcp-server-supabase","transport":"stdio","suggested_env":{"SUPABASE_ACCESS_TOKEN":""}}]}"#),
         },
         BuiltinConnector {
             id: "builtin-sentry",
@@ -479,6 +479,50 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             metadata: Some(r#"{"template_enabled":true,"summary":"Dropbox cloud storage for file sync, sharing, and collaboration.","auth_type":"pat","auth_type_label":"Access Token","docs_url":"https://www.dropbox.com/developers/apps","auth_methods":[{"id":"pat","label":"Access Token","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
+            id: "builtin-postgres",
+            name: "postgres",
+            label: "PostgreSQL",
+            color: "#336791",
+            icon_url: "/icons/connectors/postgres.svg",
+            category: "database",
+            fields: r#"[{"key":"connection_string","label":"Connection String","type":"password","required":true,"placeholder":"postgresql://user:password@host:5432/dbname","helpText":"Full PostgreSQL connection URI including credentials"},{"key":"host","label":"Host","type":"text","required":false,"placeholder":"localhost","helpText":"Alternative: provide host/port/db separately instead of connection string"},{"key":"port","label":"Port","type":"text","required":false,"placeholder":"5432","helpText":"PostgreSQL port (default 5432)"},{"key":"database","label":"Database","type":"text","required":false,"placeholder":"mydb","helpText":"Database name"},{"key":"username","label":"Username","type":"text","required":false,"placeholder":"postgres","helpText":"Database user"},{"key":"password","label":"Password","type":"password","required":false,"placeholder":"","helpText":"Database password"},{"key":"ssl_mode","label":"SSL Mode","type":"text","required":false,"placeholder":"prefer","helpText":"SSL mode: disable, allow, prefer, require, verify-ca, verify-full"}]"#,
+            healthcheck_config: None,
+            metadata: Some(r#"{"template_enabled":true,"summary":"PostgreSQL open-source relational database with advanced SQL, JSONB, and extensibility.","auth_type":"connection_string","auth_type_label":"Connection String","docs_url":"https://www.postgresql.org/docs/current/libpq-connect.html","auth_variants":[{"id":"connection_string","label":"Connection String","fields":["connection_string"],"auth_type_label":"Connection String"},{"id":"individual","label":"Individual Fields","fields":["host","port","database","username","password","ssl_mode"],"auth_type_label":"Host/Port"}],"auth_methods":[{"id":"connection_string","label":"Connection String","type":"credential","is_default":true}]}"#),
+        },
+        BuiltinConnector {
+            id: "builtin-mongodb",
+            name: "mongodb",
+            label: "MongoDB",
+            color: "#47A248",
+            icon_url: "/icons/connectors/mongodb.svg",
+            category: "database",
+            fields: r#"[{"key":"connection_string","label":"Connection String","type":"password","required":true,"placeholder":"mongodb+srv://user:password@cluster.xxxxx.mongodb.net/dbname","helpText":"MongoDB connection URI from Atlas or your self-hosted instance"},{"key":"database_name","label":"Database Name","type":"text","required":false,"placeholder":"mydb","helpText":"Default database to connect to (can also be in connection string)"}]"#,
+            healthcheck_config: None,
+            metadata: Some(r#"{"template_enabled":true,"summary":"MongoDB document database with flexible schemas, aggregation pipelines, and Atlas cloud.","auth_type":"connection_string","auth_type_label":"Connection String","docs_url":"https://www.mongodb.com/docs/manual/reference/connection-string/","auth_methods":[{"id":"connection_string","label":"Connection String","type":"credential","is_default":true}]}"#),
+        },
+        BuiltinConnector {
+            id: "builtin-redis",
+            name: "redis",
+            label: "Redis",
+            color: "#DC382D",
+            icon_url: "/icons/connectors/redis.svg",
+            category: "database",
+            fields: r#"[{"key":"connection_url","label":"Connection URL","type":"password","required":true,"placeholder":"redis://default:password@host:6379","helpText":"Redis connection URL (redis:// or rediss:// for TLS)"},{"key":"host","label":"Host","type":"text","required":false,"placeholder":"localhost","helpText":"Alternative: provide host/port/password separately"},{"key":"port","label":"Port","type":"text","required":false,"placeholder":"6379","helpText":"Redis port (default 6379)"},{"key":"password","label":"Password","type":"password","required":false,"placeholder":"","helpText":"Redis AUTH password"}]"#,
+            healthcheck_config: None,
+            metadata: Some(r#"{"template_enabled":true,"summary":"Redis in-memory data store for caching, queues, sessions, and real-time pub/sub.","auth_type":"connection_string","auth_type_label":"Connection URL","docs_url":"https://redis.io/docs/latest/develop/connect/","auth_variants":[{"id":"connection_url","label":"Connection URL","fields":["connection_url"],"auth_type_label":"Connection URL"},{"id":"individual","label":"Individual Fields","fields":["host","port","password"],"auth_type_label":"Host/Port"}],"auth_methods":[{"id":"connection_url","label":"Connection URL","type":"credential","is_default":true}]}"#),
+        },
+        BuiltinConnector {
+            id: "builtin-duckdb",
+            name: "duckdb",
+            label: "DuckDB",
+            color: "#FFC107",
+            icon_url: "/icons/connectors/duckdb.svg",
+            category: "database",
+            fields: r#"[{"key":"database_path","label":"Database Path","type":"text","required":true,"placeholder":"/path/to/data.duckdb","helpText":"File path to the DuckDB database (or :memory: for in-memory)"},{"key":"motherduck_token","label":"MotherDuck Token","type":"password","required":false,"placeholder":"eyJ...","helpText":"Optional: MotherDuck service token for cloud-hosted DuckDB"}]"#,
+            healthcheck_config: None,
+            metadata: Some(r#"{"template_enabled":true,"summary":"DuckDB embedded analytical database for OLAP workloads, Parquet, CSV, and JSON.","auth_type":"file_path","auth_type_label":"Database Path","docs_url":"https://duckdb.org/docs/connect/overview","auth_variants":[{"id":"local","label":"Local File","fields":["database_path"],"auth_type_label":"Database Path"},{"id":"motherduck","label":"MotherDuck Cloud","fields":["database_path","motherduck_token"],"auth_type_label":"MotherDuck Token"}],"auth_methods":[{"id":"file_path","label":"Database Path","type":"credential","is_default":true}]}"#),
+        },
+        BuiltinConnector {
             id: "builtin-twilio-sms",
             name: "twilio_sms",
             label: "Twilio",
@@ -502,12 +546,12 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
                     c.healthcheck_config, "[]", "[]", c.metadata, now],
         )?;
 
-        // Update existing rows to refresh fields/metadata on app upgrade
+        // Update existing rows to refresh fields/metadata/category on app upgrade
         conn.execute(
             "UPDATE connector_definitions
-             SET label = ?1, icon_url = ?2, fields = ?3, healthcheck_config = ?4, metadata = ?5, updated_at = ?6
-             WHERE name = ?7 AND is_builtin = 1",
-            params![c.label, c.icon_url, c.fields, c.healthcheck_config, c.metadata, now, c.name],
+             SET label = ?1, icon_url = ?2, fields = ?3, healthcheck_config = ?4, metadata = ?5, category = ?6, updated_at = ?7
+             WHERE name = ?8 AND is_builtin = 1",
+            params![c.label, c.icon_url, c.fields, c.healthcheck_config, c.metadata, c.category, now, c.name],
         )?;
     }
 

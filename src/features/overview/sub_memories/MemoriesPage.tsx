@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Brain, Plus, ChevronDown, ChevronUp, Sparkles, Loader2, CheckCircle2, Trash2, AlertCircle, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
@@ -25,7 +25,7 @@ export default function MemoriesPage() {
   const [search, setSearch] = useState('');
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const latestFilterRequestRef = useRef(0);
   const [sort, setSort] = useState<SortState>({ column: 'created_at', direction: 'desc' });
   const [showAddForm, setShowAddForm] = useState(false);
 
@@ -34,20 +34,20 @@ export default function MemoriesPage() {
   const [reviewResult, setReviewResult] = useState<MemoryReviewResult | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
 
-  // Debounce search
+  // Debounce all filter changes together to avoid mixed-parameter races
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 300);
-    return () => clearTimeout(timer);
-  }, [search]);
+    const requestId = ++latestFilterRequestRef.current;
+    const timer = setTimeout(() => {
+      if (requestId !== latestFilterRequestRef.current) return;
+      fetchMemories({
+        persona_id: selectedPersonaId || undefined,
+        category: selectedCategory || undefined,
+        search: search || undefined,
+      });
+    }, 300);
 
-  // Fetch on filter change (search is server-side)
-  useEffect(() => {
-    fetchMemories({
-      persona_id: selectedPersonaId || undefined,
-      category: selectedCategory || undefined,
-      search: debouncedSearch || undefined,
-    });
-  }, [fetchMemories, selectedPersonaId, selectedCategory, debouncedSearch]);
+    return () => clearTimeout(timer);
+  }, [fetchMemories, selectedPersonaId, selectedCategory, search]);
 
   // Build persona lookup
   const personaMap = useMemo(() => {
@@ -58,7 +58,7 @@ export default function MemoriesPage() {
     return map;
   }, [personas]);
 
-  const hasFilters = !!selectedPersonaId || !!selectedCategory || !!debouncedSearch;
+  const hasFilters = !!selectedPersonaId || !!selectedCategory || !!search;
 
   const clearFilters = useCallback(() => {
     setSearch('');
@@ -197,25 +197,25 @@ export default function MemoriesPage() {
               <span className="w-[70px] text-sm font-mono uppercase text-muted-foreground/80 flex-shrink-0">Category</span>
               <button
                 onClick={() => toggleSort('importance')}
-                className={`w-[60px] flex items-center gap-0.5 text-sm font-mono uppercase flex-shrink-0 transition-colors ${sort.column === 'importance' ? 'text-foreground/90' : 'text-muted-foreground/80 hover:text-muted-foreground'}`}
+                className={`w-[60px] flex items-center gap-0.5 text-sm font-mono uppercase flex-shrink-0 transition-colors rounded-md px-1.5 py-0.5 hover:bg-secondary/30 ${sort.column === 'importance' ? 'text-foreground/90 font-semibold border-b-2 border-primary/40' : 'text-muted-foreground/80 hover:text-muted-foreground'}`}
               >
                 Priority
                 {sort.column === 'importance' ? (
-                  sort.direction === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+                  sort.direction === 'asc' ? <ChevronUp className="w-3 h-3 transition-transform duration-200" /> : <ChevronDown className="w-3 h-3 transition-transform duration-200" />
                 ) : (
-                  <ChevronDown className="w-3 h-3 opacity-30" />
+                  <ChevronDown className="w-3 h-3 opacity-30 transition-transform duration-200" />
                 )}
               </button>
               <span className="w-[120px] text-sm font-mono uppercase text-muted-foreground/80 flex-shrink-0">Tags</span>
               <button
                 onClick={() => toggleSort('created_at')}
-                className={`w-[60px] flex items-center justify-end gap-0.5 text-sm font-mono uppercase flex-shrink-0 transition-colors ${sort.column === 'created_at' ? 'text-foreground/90' : 'text-muted-foreground/80 hover:text-muted-foreground'}`}
+                className={`w-[60px] flex items-center justify-end gap-0.5 text-sm font-mono uppercase flex-shrink-0 transition-colors rounded-md px-1.5 py-0.5 hover:bg-secondary/30 ${sort.column === 'created_at' ? 'text-foreground/90 font-semibold border-b-2 border-primary/40' : 'text-muted-foreground/80 hover:text-muted-foreground'}`}
               >
                 Created
                 {sort.column === 'created_at' ? (
-                  sort.direction === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+                  sort.direction === 'asc' ? <ChevronUp className="w-3 h-3 transition-transform duration-200" /> : <ChevronDown className="w-3 h-3 transition-transform duration-200" />
                 ) : (
-                  <ChevronDown className="w-3 h-3 opacity-30" />
+                  <ChevronDown className="w-3 h-3 opacity-30 transition-transform duration-200" />
                 )}
               </button>
               <span className="w-[32px] flex-shrink-0" />

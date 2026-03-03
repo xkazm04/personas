@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 
 // ── Types ───────────────────────────────────────────────────────
@@ -71,6 +71,10 @@ export function useTauriStream<TResult>(
     }
     unlistenersRef.current = [];
   }, []);
+
+  // Clean up Tauri event listeners on unmount to prevent stale callbacks
+  // from firing on unmounted components.
+  useEffect(() => cleanup, [cleanup]);
 
   const start = useCallback(async (invokeBackend: () => Promise<unknown>) => {
     cleanup();

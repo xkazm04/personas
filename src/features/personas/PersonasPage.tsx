@@ -5,7 +5,7 @@ import Sidebar from '@/features/shared/components/Sidebar';
 import OverviewPage from '@/features/overview/components/OverviewPage';
 import PersonaEditor from '@/features/agents/sub_editor/PersonaEditor';
 import { EventsPage } from '@/features/triggers/components/EventsPage';
-import { CredentialManager } from '@/features/vault/components/CredentialManager';
+import { CredentialManager } from '@/features/vault/sub_manager/CredentialManager';
 import PersonaOverviewPage from '@/features/agents/components/PersonaOverviewPage';
 import DesignReviewsPage from '@/features/templates/components/DesignReviewsPage';
 import TeamCanvas from '@/features/pipeline/components/TeamCanvas';

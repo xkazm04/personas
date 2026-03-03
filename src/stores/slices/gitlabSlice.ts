@@ -66,6 +66,7 @@ export interface GitLabSlice {
   ) => Promise<number>;
   gitlabFetchAgents: (projectId: number) => Promise<void>;
   gitlabUndeployAgent: (projectId: number, agentId: string) => Promise<void>;
+  gitlabClearError: () => void;
 }
 
 export const createGitLabSlice: StateCreator<PersonaStore, [], [], GitLabSlice> = (set) => ({
@@ -165,5 +166,9 @@ export const createGitLabSlice: StateCreator<PersonaStore, [], [], GitLabSlice> 
     } catch (err) {
       set({ gitlabError: translateGitLabError(err) });
     }
+  },
+
+  gitlabClearError: () => {
+    set({ gitlabError: null });
   },
 });

@@ -97,9 +97,21 @@ export interface CloudSlice {
   cloudCancel: (executionId: string) => Promise<boolean>;
   cloudFetchOAuthStatus: () => Promise<void>;
   cloudStartOAuth: () => Promise<CloudOAuthAuthorizeResponse | null>;
+  cloudCancelPendingOAuth: () => void;
   cloudCompleteOAuth: (code: string, state: string) => Promise<void>;
   cloudRefreshOAuth: () => Promise<void>;
   cloudDisconnectOAuth: () => Promise<void>;
+  cloudClearError: () => void;
+}
+
+const PENDING_OAUTH_TIMEOUT_MS = 10 * 60 * 1000;
+let pendingOAuthTimeoutRef: ReturnType<typeof setTimeout> | null = null;
+
+function clearPendingOAuthTimeout() {
+  if (pendingOAuthTimeoutRef) {
+    clearTimeout(pendingOAuthTimeoutRef);
+    pendingOAuthTimeoutRef = null;
+  }
 }
 
 export const createCloudSlice: StateCreator<PersonaStore, [], [], CloudSlice> = (set, get) => ({
@@ -163,6 +175,7 @@ export const createCloudSlice: StateCreator<PersonaStore, [], [], CloudSlice> = 
   cloudDisconnectAction: async () => {
     try {
       await cloudDisconnect();
+      clearPendingOAuthTimeout();
       set({
         cloudConfig: null,
         cloudStatus: null,
@@ -205,7 +218,11 @@ export const createCloudSlice: StateCreator<PersonaStore, [], [], CloudSlice> = 
   cloudStartOAuth: async () => {
     try {
       const result = await cloudOAuthAuthorize();
+      clearPendingOAuthTimeout();
       set({ cloudPendingOAuthState: result.state });
+      pendingOAuthTimeoutRef = setTimeout(() => {
+        set({ cloudPendingOAuthState: null });
+      }, PENDING_OAUTH_TIMEOUT_MS);
       return result;
     } catch (err) {
       set({ cloudError: translateCloudError(err) });
@@ -213,9 +230,15 @@ export const createCloudSlice: StateCreator<PersonaStore, [], [], CloudSlice> = 
     }
   },
 
+  cloudCancelPendingOAuth: () => {
+    clearPendingOAuthTimeout();
+    set({ cloudPendingOAuthState: null });
+  },
+
   cloudCompleteOAuth: async (code: string, state: string) => {
     try {
       await cloudOAuthCallback(code, state);
+      clearPendingOAuthTimeout();
       set({ cloudPendingOAuthState: null });
       await get().cloudFetchOAuthStatus();
     } catch (err) {
@@ -235,9 +258,14 @@ export const createCloudSlice: StateCreator<PersonaStore, [], [], CloudSlice> = 
   cloudDisconnectOAuth: async () => {
     try {
       await cloudOAuthDisconnect();
+      clearPendingOAuthTimeout();
       set({ cloudOAuthStatus: null });
     } catch (err) {
       set({ cloudError: translateCloudError(err) });
     }
+  },
+
+  cloudClearError: () => {
+    set({ cloudError: null });
   },
 });

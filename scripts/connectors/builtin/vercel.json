@@ -30,6 +30,8 @@
     "summary": "Vercel frontend deployment platform with serverless functions and edge network.",
     "auth_type": "pat",
     "auth_type_label": "PAT",
-    "docs_url": "https://vercel.com/account/tokens"
+    "docs_url": "https://vercel.com/account/tokens",
+    "setup_guide": "1. Go to vercel.com/account/tokens\n2. Click 'Create' to generate a new token\n3. Name it and select the scope (full account or specific team)\n4. Click 'Create Token' and copy the value\n5. Paste the token here",
+    "pricing_tier": "free"
   }
 }

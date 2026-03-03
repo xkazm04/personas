@@ -16,6 +16,7 @@ export * from "./execution/useCorrelatedCliStream";
 
 // Realtime hooks
 export * from "./realtime/useRealtimeEvents";
+export * from "./realtime/useMessageCreatedListener";
 
 // Lab hooks
 export * from "./lab/useLabEvents";

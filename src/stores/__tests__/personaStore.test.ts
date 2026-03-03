@@ -135,16 +135,14 @@ describe("personaStore", () => {
       expect(usePersonaStore.getState().error).toBeNull();
     });
 
-    it("setCredentialView updates view", () => {
-      usePersonaStore.getState().setCredentialView("add-new");
-      expect(usePersonaStore.getState().credentialView).toBe("add-new");
-    });
   });
 
   describe("execution actions", () => {
-    it("appendExecutionOutput appends lines", () => {
+    it("appendExecutionOutput appends lines", async () => {
       usePersonaStore.getState().appendExecutionOutput("Line 1");
       usePersonaStore.getState().appendExecutionOutput("Line 2");
+
+      await new Promise<void>((resolve) => queueMicrotask(resolve));
 
       expect(usePersonaStore.getState().executionOutput).toEqual(["Line 1", "Line 2"]);
     });

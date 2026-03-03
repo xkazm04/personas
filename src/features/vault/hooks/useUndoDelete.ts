@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import type { DeleteConfirmState, UndoToastState } from '@/features/vault/components/CredentialDeleteDialog';
+import type { DeleteConfirmState, UndoToastState } from '@/features/vault/sub_card/CredentialDeleteDialog';
 import * as api from '@/api/tauriApi';
 import type { CredentialMetadata } from '@/lib/types/types';
 
@@ -43,12 +43,16 @@ export function useUndoDelete({ onDelete, onError }: UseUndoDeleteOptions): Undo
     if (!deleteConfirm) return;
     const { credential } = deleteConfirm;
     setDeleteConfirm(null);
+
+    // Cancel any in-flight timer BEFORE resetting the flag. This prevents a
+    // racing interval tick from seeing undoCancelledRef as false and firing
+    // onDelete for the previous credential.
+    undoCancelledRef.current = true;
+    clearUndoTimer();
     undoCancelledRef.current = false;
 
     let remaining = 5;
     setUndoToast({ credentialId: credential.id, credentialName: credential.name, remaining });
-
-    clearUndoTimer();
     undoTimerRef.current = setInterval(() => {
       remaining -= 1;
       if (remaining <= 0 || undoCancelledRef.current) {

@@ -68,6 +68,57 @@ export function useN8nWizard() {
 
   // ── Handlers ──
 
+  /** Core content processing — shared by file upload, paste, and URL fetch paths. */
+  const processContent = useCallback(
+    (content: string, sourceName: string) => {
+      console.log('[n8n-wizard] processContent called:', sourceName, content.length, 'bytes');
+      try {
+        if (!content || content.trim().length === 0) {
+          dispatch({ type: 'SET_ERROR', error: 'Content is empty.' });
+          return;
+        }
+
+        let parseResult;
+        try {
+          parseResult = parseWorkflowFile(content, sourceName);
+        } catch (parseErr) {
+          console.error('[n8n-wizard] parseWorkflowFile threw:', parseErr);
+          dispatch({
+            type: 'SET_ERROR',
+            error: `Failed to analyze workflow: ${parseErr instanceof Error ? parseErr.message : 'unknown error'}`,
+          });
+          return;
+        }
+
+        const { detection, result, workflowName: wfName, rawJson } = parseResult;
+        console.log('[n8n-wizard] parsed OK:', detection.platform, wfName);
+
+        removeSession();
+        clearPersistedContext();
+        void resetTransformStream();
+        setIsRestoring(false);
+
+        dispatch({
+          type: 'FILE_PARSED',
+          workflowName: wfName,
+          rawWorkflowJson: rawJson,
+          parsedResult: result,
+          platform: detection.platform,
+        });
+        console.log('[n8n-wizard] FILE_PARSED dispatched → step should be analyze');
+
+        void createSession(wfName, rawJson).catch(() => {});
+      } catch (err) {
+        console.error('[n8n-wizard] processContent outer catch:', err);
+        dispatch({
+          type: 'SET_ERROR',
+          error: err instanceof Error ? err.message : 'Failed to parse workflow content.',
+        });
+      }
+    },
+    [dispatch, removeSession, clearPersistedContext, resetTransformStream, setIsRestoring, createSession],
+  );
+
   const processFile = useCallback(
     (file: File) => {
       try {
@@ -83,50 +134,8 @@ export function useN8nWizard() {
 
         const reader = new FileReader();
         reader.onload = (e) => {
-          try {
-            const content = e.target?.result as string;
-            if (!content || content.length === 0) {
-              dispatch({ type: 'SET_ERROR', error: 'File is empty.' });
-              return;
-            }
-
-            let parseResult;
-            try {
-              parseResult = parseWorkflowFile(content, file.name);
-            } catch (parseErr) {
-              dispatch({
-                type: 'SET_ERROR',
-                error: `Failed to analyze workflow: ${parseErr instanceof Error ? parseErr.message : 'unknown error'}`,
-              });
-              return;
-            }
-
-            const { detection, result, workflowName: wfName, rawJson } = parseResult;
-
-            // Close the previous session (if any) to prevent orphaned DB rows
-            removeSession();
-
-            // Clear stale restore state before loading new file
-            clearPersistedContext();
-            void resetTransformStream();
-            setIsRestoring(false);
-
-            dispatch({
-              type: 'FILE_PARSED',
-              workflowName: wfName,
-              rawWorkflowJson: rawJson,
-              parsedResult: result,
-              platform: detection.platform,
-            });
-
-            // Create persistent session — auto-sync will push parserResult
-            void createSession(wfName, rawJson).catch(() => {});
-          } catch (err) {
-            dispatch({
-              type: 'SET_ERROR',
-              error: err instanceof Error ? err.message : 'Failed to parse workflow file.',
-            });
-          }
+          const content = e.target?.result as string;
+          processContent(content, file.name);
         };
         reader.onerror = () => dispatch({ type: 'SET_ERROR', error: 'Failed to read the file.' });
         reader.readAsText(file);
@@ -137,7 +146,7 @@ export function useN8nWizard() {
         });
       }
     },
-    [dispatch, removeSession, clearPersistedContext, resetTransformStream, setIsRestoring, createSession],
+    [dispatch, processContent],
   );
 
   const handleTransform = async () => {
@@ -386,6 +395,7 @@ export function useN8nWizard() {
 
     // Handlers
     processFile,
+    processContent,
     handleTransform,
     handleCancelTransform,
     handleTestDraft,

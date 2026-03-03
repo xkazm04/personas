@@ -76,10 +76,11 @@ export function CloudConnectionForm({
         className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-indigo-500 text-foreground hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
       >
         {isConnecting ? (
-          <>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Connecting...
-          </>
+          <span role="status" aria-live="polite" className="inline-flex items-center gap-2">
+            <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin" />
+            <span>Connecting...</span>
+            <span className="sr-only">Connecting to cloud orchestrator...</span>
+          </span>
         ) : (
           'Connect'
         )}

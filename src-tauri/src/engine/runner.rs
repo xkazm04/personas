@@ -887,6 +887,9 @@ fn resolve_global_provider_settings(pool: &DbPool, profile: &mut ModelProfile) {
             apply_global_setting(pool, &mut profile.base_url, settings_keys::LITELLM_BASE_URL);
             apply_global_setting(pool, &mut profile.auth_token, settings_keys::LITELLM_MASTER_KEY);
         }
+        Some(providers::COPILOT) => {
+            apply_global_setting(pool, &mut profile.auth_token, settings_keys::COPILOT_GITHUB_TOKEN);
+        }
         _ => {}
     }
 }
@@ -919,7 +922,7 @@ fn default_result() -> ExecutionResult {
 ///
 /// Each credential field is mapped to an env var: `{CONNECTOR_NAME_UPPER}_{FIELD_KEY_UPPER}`.
 /// For OAuth credentials with a refresh_token, automatically refreshes the access_token.
-async fn resolve_credential_env_vars(
+pub(crate) async fn resolve_credential_env_vars(
     pool: &DbPool,
     tools: &[PersonaToolDefinition],
     persona_id: &str,
@@ -1023,7 +1026,7 @@ async fn resolve_credential_env_vars(
 
 /// Decrypt and inject all fields from a connector's first credential as env vars.
 /// Returns true if credentials were found and injected.
-async fn inject_connector_credentials(
+pub(crate) async fn inject_connector_credentials(
     pool: &DbPool,
     connector: &crate::db::models::ConnectorDefinition,
     env_vars: &mut Vec<(String, String)>,
@@ -1123,7 +1126,7 @@ async fn try_refresh_oauth_token(
 /// Decrypt a single credential and inject its fields as env vars.
 /// For OAuth credentials, automatically refreshes expired access tokens.
 #[allow(clippy::too_many_arguments)]
-async fn inject_credential(
+pub(crate) async fn inject_credential(
     pool: &DbPool,
     cred: &crate::db::models::PersonaCredential,
     connector_name: &str,

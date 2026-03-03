@@ -38,6 +38,8 @@
     "summary": "Upstash serverless Redis and Kafka for low-latency data at the edge.",
     "auth_type": "api_token",
     "auth_type_label": "REST Token",
-    "docs_url": "https://upstash.com/docs/redis/features/restapi"
+    "docs_url": "https://upstash.com/docs/redis/features/restapi",
+    "setup_guide": "1. Log in to console.upstash.com\n2. Select your Redis database (or create one)\n3. Go to Details → REST API section\n4. Copy the REST URL and REST Token\n5. Paste both values here",
+    "pricing_tier": "free"
   }
 }

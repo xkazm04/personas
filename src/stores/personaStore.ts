@@ -27,6 +27,7 @@ import { createTestSlice } from "./slices/testSlice";
 import { createLabSlice } from "./slices/labSlice";
 import { createCloudSlice } from "./slices/cloudSlice";
 import { createGitLabSlice } from "./slices/gitlabSlice";
+import { createDatabaseSlice } from "./slices/databaseSlice";
 
 // ── Store ──────────────────────────────────────────────────────────────
 
@@ -51,12 +52,12 @@ export const usePersonaStore = create<PersonaStore>()(
         ...createLabSlice(...a),
         ...createCloudSlice(...a),
         ...createGitLabSlice(...a),
+        ...createDatabaseSlice(...a),
       }),
       {
         name: "persona-ui-state",
         partialize: (state) => ({
           sidebarSection: state.sidebarSection,
-          credentialView: state.credentialView,
           selectedPersonaId: state.selectedPersonaId,
           overviewTab: state.overviewTab,
           editorTab: state.editorTab,

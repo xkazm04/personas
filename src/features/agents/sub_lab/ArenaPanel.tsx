@@ -15,7 +15,7 @@ import type { ModelTestConfig } from '@/api/tests';
 import {
   OLLAMA_CLOUD_PRESETS,
   OLLAMA_CLOUD_BASE_URL,
-} from '@/features/agents/sub_editor/sub_model_config/OllamaCloudPresets';
+} from '@/features/agents/sub_model_config/OllamaCloudPresets';
 
 interface ModelOption {
   id: string;
@@ -44,7 +44,7 @@ const ALL_MODELS: ModelOption[] = [...ANTHROPIC_MODELS, ...OLLAMA_MODELS];
 export function ArenaPanel() {
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
   const arenaRuns = usePersonaStore((s) => s.arenaRuns);
-  const arenaResults = usePersonaStore((s) => s.arenaResults);
+  const arenaResultsMap = usePersonaStore((s) => s.arenaResultsMap);
   const isLabRunning = usePersonaStore((s) => s.isLabRunning);
   const fetchArenaRuns = usePersonaStore((s) => s.fetchArenaRuns);
   const startArena = usePersonaStore((s) => s.startArena);
@@ -307,8 +307,17 @@ export function ArenaPanel() {
 
               return (
                 <div key={run.id} className="border border-primary/10 rounded-xl overflow-hidden">
-                  <button
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={isExpanded}
                     onClick={() => setExpandedRunId(isExpanded ? null : run.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setExpandedRunId(isExpanded ? null : run.id);
+                      }
+                    }}
                     className="w-full flex items-center gap-3 px-4 py-3 bg-background/30 hover:bg-secondary/20 transition-colors text-left"
                   >
                     {isExpanded
@@ -346,7 +355,7 @@ export function ArenaPanel() {
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
-                  </button>
+                  </div>
 
                   <AnimatePresence>
                     {isExpanded && (
@@ -363,7 +372,7 @@ export function ArenaPanel() {
                               <span className="text-sm text-red-400">{run.error}</span>
                             </div>
                           )}
-                          <ArenaResultsView results={arenaResults} />
+                          <ArenaResultsView results={arenaResultsMap[run.id] ?? []} />
                         </div>
                       </motion.div>
                     )}

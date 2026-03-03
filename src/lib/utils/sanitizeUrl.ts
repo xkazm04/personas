@@ -43,6 +43,36 @@ export function sanitizeIconUrl(url: string | null | undefined): string | null {
   return parsed.href;
 }
 
+/** Allowed protocols for URLs opened via the OS shell (Tauri open). */
+const SAFE_EXTERNAL_PROTOCOLS = new Set(['https:', 'http:']);
+
+/**
+ * Validate a URL before passing it to the Tauri shell open handler.
+ * Only allows http/https protocols to prevent file://, custom-scheme://,
+ * or other OS-level handlers from being triggered by AI-generated content.
+ * Returns the sanitized URL string if safe, or `null` if blocked.
+ */
+export function sanitizeExternalUrl(url: string | null | undefined): string | null {
+  if (!url || typeof url !== 'string') return null;
+
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    return null;
+  }
+
+  if (!SAFE_EXTERNAL_PROTOCOLS.has(parsed.protocol)) return null;
+
+  // Block URLs with credentials embedded
+  if (parsed.username || parsed.password) return null;
+
+  return parsed.href;
+}
+
 /**
  * Check whether a string looks like an external image URL (starts with http/https).
  * Use `sanitizeIconUrl` to validate before rendering.

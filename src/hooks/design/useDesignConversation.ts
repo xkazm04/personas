@@ -105,6 +105,10 @@ export function useDesignConversation(personaId: string | null) {
 
       const { message, lastResult } = buildMessage(conv);
       const messages = parseConversationMessages(conv.messages);
+      if (!messages) {
+        console.warn('[design-conversation] Skipping append: conversation messages JSON is corrupt. Existing history preserved.');
+        return;
+      }
       messages.push(message);
 
       try {
@@ -180,6 +184,9 @@ export function useDesignConversation(personaId: string | null) {
 
   /** Mark the active conversation as completed (after applying design). */
   const completeConversation = useCallback(async () => {
+    // Drain the append queue so the final result message is persisted first.
+    await appendQueueRef.current;
+
     const conv = activeConvRef.current;
     if (!conv) return;
 

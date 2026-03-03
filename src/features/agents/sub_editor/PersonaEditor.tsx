@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
 import { ContentBox } from '@/features/shared/components/ContentLayout';
-import { PersonaPromptEditor } from '@/features/agents/sub_editor/sub_prompt/PersonaPromptEditor';
-import { PersonaSettingsTab } from '@/features/agents/sub_editor/sub_settings/PersonaSettingsTab';
-import { PersonaUseCasesTab } from '@/features/agents/sub_editor/sub_use_cases/PersonaUseCasesTab';
-import { PersonaConnectorsTab } from '@/features/agents/sub_editor/sub_connectors/PersonaConnectorsTab';
-import { DesignTab } from '@/features/agents/sub_editor/sub_design/DesignTab';
+import { PersonaPromptEditor } from '@/features/agents/sub_prompt/PersonaPromptEditor';
+import { PersonaSettingsTab } from '@/features/agents/sub_settings/PersonaSettingsTab';
+import { PersonaUseCasesTab } from '@/features/agents/sub_use_cases/PersonaUseCasesTab';
+import { PersonaConnectorsTab } from '@/features/agents/sub_connectors/PersonaConnectorsTab';
+import { DesignTab } from '@/features/agents/sub_design/DesignTab';
 import { LabTab } from '@/features/agents/sub_lab/LabTab';
 import { type PersonaDraft, buildDraft } from '@/features/agents/sub_editor/PersonaDraft';
 import { EditorDirtyProvider, useEditorDirtyState } from '@/features/agents/sub_editor/EditorDocument';
@@ -39,6 +40,7 @@ function PersonaEditorInner() {
   const [baseline, setBaseline] = useState<PersonaDraft>(draft);
   const prevPersonaIdRef = useRef(selectedPersona?.id);
   const dirtyRef = useRef(false);
+  const isSwitchingRef = useRef(false);
 
   useEffect(() => {
     if (selectedPersona && !pendingPersonaId) {
@@ -99,20 +101,26 @@ function PersonaEditorInner() {
   };
 
   const handleSaveAndSwitch = async () => {
+    if (isSwitchingRef.current) return;
+    isSwitchingRef.current = true;
     cancelAllDebouncedSaves();
-    try { await saveAllTabs(); } catch { return; }
-    const target = pendingPersonaId;
-    setPendingPersonaId(null);
-    dirtyRef.current = false;
-    clearAllDirty();
-    if (target !== null) usePersonaStore.getState().selectPersona(target);
+    try {
+      try { await saveAllTabs(); } catch { return; }
+      const target = pendingPersonaId;
+      setPendingPersonaId(null);
+      dirtyRef.current = false;
+      clearAllDirty();
+      if (target !== null) usePersonaStore.getState().selectPersona(target);
+    } finally {
+      isSwitchingRef.current = false;
+    }
   };
 
   const changedSections = allDirtyTabs.map((t) => t.charAt(0).toUpperCase() + t.slice(1));
 
   return (
     <ContentBox>
-      <PersonaEditorHeader patch={patch} setBaseline={setBaseline} />
+      <PersonaEditorHeader draft={draft} baseline={baseline} patch={patch} setBaseline={setBaseline} />
 
       <UnsavedChangesBanner
         visible={!!pendingPersonaId}
@@ -127,19 +135,29 @@ function PersonaEditorInner() {
       <CloudNudgeBanner />
 
       <div className="flex-1 overflow-y-auto p-4">
-        {editorTab === 'use-cases' && <PersonaUseCasesTab draft={draft} patch={patch} modelDirty={modelDirty} credentials={credentials} connectorDefinitions={connectorDefinitions} />}
-        {editorTab === 'prompt' && <PersonaPromptEditor />}
-        {editorTab === 'lab' && <LabTab />}
-        {editorTab === 'connectors' && <PersonaConnectorsTab onMissingCountChange={setConnectorsMissing} />}
-        {editorTab === 'design' && <DesignTab />}
-        {editorTab === 'settings' && (
-          <PersonaSettingsTab
-            draft={draft} patch={patch} isDirty={isDirty} changedSections={changedSections}
-            connectorDefinitions={connectorDefinitions} showDeleteConfirm={showDeleteConfirm}
-            setShowDeleteConfirm={setShowDeleteConfirm} isSaving={isSaving}
-            onDelete={async () => { await deletePersona(selectedPersona.id); setShowDeleteConfirm(false); }}
-          />
-        )}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={editorTab}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.15 }}
+          >
+            {editorTab === 'use-cases' && <PersonaUseCasesTab draft={draft} patch={patch} modelDirty={modelDirty} credentials={credentials} connectorDefinitions={connectorDefinitions} />}
+            {editorTab === 'prompt' && <PersonaPromptEditor />}
+            {editorTab === 'lab' && <LabTab />}
+            {editorTab === 'connectors' && <PersonaConnectorsTab onMissingCountChange={setConnectorsMissing} />}
+            {editorTab === 'design' && <DesignTab />}
+            {editorTab === 'settings' && (
+              <PersonaSettingsTab
+                draft={draft} patch={patch} isDirty={isDirty} changedSections={changedSections}
+                connectorDefinitions={connectorDefinitions} showDeleteConfirm={showDeleteConfirm}
+                setShowDeleteConfirm={setShowDeleteConfirm} isSaving={isSaving}
+                onDelete={async () => { await deletePersona(selectedPersona.id); setShowDeleteConfirm(false); }}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </ContentBox>
   );

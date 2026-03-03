@@ -68,7 +68,7 @@ export function AutoCredBrowser({ designResult, logs, onCancel }: AutoCredBrowse
           return (
             <div key={i} className={`flex items-start gap-2 ${color}`}>
               <Icon className="w-3 h-3 mt-0.5 shrink-0" />
-              <span className="text-muted-foreground/40 select-none shrink-0">
+              <span className="text-muted-foreground/60 select-none shrink-0">
                 {new Date(entry.ts).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
               </span>
               <span>{entry.message}</span>
@@ -76,7 +76,7 @@ export function AutoCredBrowser({ designResult, logs, onCancel }: AutoCredBrowse
           );
         })}
         {logs.length === 0 && (
-          <div className="text-muted-foreground/40 text-center py-8">
+          <div className="text-muted-foreground/60 text-center py-8">
             Waiting for browser session to start...
           </div>
         )}

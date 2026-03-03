@@ -5,8 +5,8 @@ import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import type { PersonaCredential } from '@/lib/types/types';
 import { usePersonaStore } from '@/stores/personaStore';
-import { translateHealthcheckMessage } from '@/features/vault/components/credential-design/CredentialDesignHelpers';
-import { CredentialDesignModal } from '@/features/vault/components/CredentialDesignModal';
+import { translateHealthcheckMessage } from '@/features/vault/sub_design/CredentialDesignHelpers';
+import { CredentialDesignModal } from '@/features/vault/sub_design/CredentialDesignModal';
 import { rankCredentialsForConnector } from './connectorMatching';
 import {
   useConnectorStatuses,

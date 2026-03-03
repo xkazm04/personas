@@ -58,3 +58,17 @@ export const getToolUsageOverTime = (since: string, personaId?: string) =>
 
 export const getToolUsageByPersona = (since: string) =>
   invoke<PersonaUsageSummary[]>("get_tool_usage_by_persona", { since });
+
+// ── Direct Tool Invocation ──────────────────────────────────────────────
+
+export interface ToolInvocationResult {
+  success: boolean;
+  output: string;
+  error: string | null;
+  duration_ms: number;
+  tool_name: string;
+  tool_type: string;
+}
+
+export const invokeToolDirect = (toolId: string, personaId: string, inputJson: string) =>
+  invoke<ToolInvocationResult>("invoke_tool_direct", { toolId, personaId, inputJson });

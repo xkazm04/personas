@@ -7,10 +7,11 @@ import {
   PieChart, Pie, Cell, AreaChart, Area,
 } from 'recharts';
 import { DayRangePicker, PersonaSelect } from '@/features/overview/sub_usage/DashboardFilters';
-import type { DayRange } from '@/features/overview/sub_usage/DashboardFilters';
 import { CHART_COLORS, GRID_STROKE, AXIS_TICK_FILL } from '@/features/overview/sub_usage/charts/chartConstants';
 import { ChartTooltip } from '@/features/overview/sub_usage/charts/ChartTooltip';
 import { MetricChart } from '@/features/overview/sub_usage/charts/MetricChart';
+import { pivotToolUsageOverTime } from '@/features/overview/sub_usage/charts/pivotToolUsage';
+import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -36,8 +37,12 @@ export function UsageDashboard() {
   const personas = usePersonaStore((s) => s.personas);
   const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
 
-  const [days, setDays] = useState<DayRange>(30);
-  const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
+  const {
+    dayRange: days,
+    setDayRange: setDays,
+    selectedPersonaId,
+    setSelectedPersonaId,
+  } = useOverviewFilters();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -59,22 +64,10 @@ export function UsageDashboard() {
   }, [days, selectedPersonaId, fetchToolUsage]);
 
   // Pivot overTime data into wide format for AreaChart + collect tool names
-  const { areaData, allToolNames } = useMemo(() => {
-    if (!toolUsageOverTime.length) return { areaData: [], allToolNames: [] as string[] };
-    const dateMap = new Map<string, Record<string, number>>();
-    const names = new Set<string>();
-    for (const row of toolUsageOverTime) {
-      names.add(row.tool_name);
-      if (!dateMap.has(row.date)) dateMap.set(row.date, {});
-      const entry = dateMap.get(row.date)!;
-      entry[row.tool_name] = (entry[row.tool_name] || 0) + row.invocations;
-    }
-    const sortedDates = Array.from(dateMap.keys()).sort();
-    return {
-      areaData: sortedDates.map(date => ({ date, ...dateMap.get(date) })),
-      allToolNames: Array.from(names),
-    };
-  }, [toolUsageOverTime]);
+  const { areaData, allToolNames } = useMemo(
+    () => pivotToolUsageOverTime(toolUsageOverTime),
+    [toolUsageOverTime],
+  );
 
   // Pie chart data
   const pieData = useMemo(
@@ -185,9 +178,9 @@ export function UsageDashboard() {
         subtitle={<>{toolUsageSummary.length} tool{toolUsageSummary.length !== 1 ? 's' : ''} &middot; {pieTotal.toLocaleString()} invocation{pieTotal !== 1 ? 's' : ''}</>}
       />
 
-      {/* Filter bar */}
-      <div className="px-4 md:px-6 py-3 border-b border-primary/10 flex items-center gap-4 flex-wrap flex-shrink-0">
-        <PersonaSelect value={selectedPersonaId || ''} onChange={(v) => setSelectedPersonaId(v || null)} personas={personas} />
+      {/* Filter bar — matches shared FilterBar container styling */}
+      <div className="px-4 md:px-6 py-3 border-b border-primary/10 flex items-center gap-2 flex-shrink-0">
+        <PersonaSelect value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />
         <DayRangePicker value={days} onChange={setDays} />
       </div>
 

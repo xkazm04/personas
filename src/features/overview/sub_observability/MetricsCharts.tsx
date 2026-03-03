@@ -1,11 +1,12 @@
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  AreaChart, Area, PieChart, Pie, Cell, Legend,
+  AreaChart, Area, PieChart, Pie, Cell, Legend, ReferenceLine,
 } from 'recharts';
 import { CHART_COLORS_PURPLE, GRID_STROKE, AXIS_TICK_FILL } from '@/features/overview/sub_usage/charts/chartConstants';
 import { ChartTooltip } from '@/features/overview/sub_usage/charts/ChartTooltip';
 import { MetricChart } from '@/features/overview/sub_usage/charts/MetricChart';
 import type { MetricsChartPoint } from '@/lib/bindings/MetricsChartPoint';
+import type { ChartAnnotationRecord } from '@/features/overview/sub_observability/chartAnnotations';
 
 export interface PieDataPoint {
   name: string;
@@ -16,9 +17,26 @@ export interface PieDataPoint {
 export interface MetricsChartsProps {
   chartData: MetricsChartPoint[];
   pieData: PieDataPoint[];
+  annotations?: ChartAnnotationRecord[];
+  /** Called when a failure bar is clicked with the date string (YYYY-MM-DD). */
+  onFailureBarClick?: (date: string) => void;
 }
 
-export function MetricsCharts({ chartData, pieData }: MetricsChartsProps) {
+function annotationColor(type: ChartAnnotationRecord['type']): string {
+  switch (type) {
+    case 'prompt': return '#8b5cf6';
+    case 'rotation': return '#f59e0b';
+    case 'incident': return '#ef4444';
+    case 'healing':
+    default:
+      return '#06b6d4';
+  }
+}
+
+export function MetricsCharts({ chartData, pieData, annotations = [], onFailureBarClick }: MetricsChartsProps) {
+  const chartDates = new Set(chartData.map((point) => point.date));
+  const visibleAnnotations = annotations.filter((annotation) => chartDates.has(annotation.date));
+
   return (
     <div className="space-y-6">
       {/* Charts Row 1 */}
@@ -31,6 +49,24 @@ export function MetricsCharts({ chartData, pieData }: MetricsChartsProps) {
             <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => `$${v}`} />
             <Tooltip content={<ChartTooltip />} />
             <Area type="monotone" dataKey="cost" stroke="#6366f1" fill="url(#costGradient)" strokeWidth={2} />
+            {visibleAnnotations.map((annotation, index) => (
+              <ReferenceLine
+                key={`cost-annotation-${annotation.date}-${annotation.type}-${index}`}
+                x={annotation.date}
+                stroke={annotationColor(annotation.type)}
+                strokeDasharray="4 4"
+                strokeOpacity={0.65}
+                label={({ viewBox }) => {
+                  if (!viewBox) return null;
+                  return (
+                    <g>
+                      <title>{`${annotation.label} • ${new Date(annotation.timestamp).toLocaleString()}`}</title>
+                      <circle cx={viewBox.x} cy={viewBox.y - 6} r={2.2} fill={annotationColor(annotation.type)} />
+                    </g>
+                  );
+                }}
+              />
+            ))}
             <defs>
               <linearGradient id="costGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#6366f1" stopOpacity={0.3} />
@@ -72,7 +108,34 @@ export function MetricsCharts({ chartData, pieData }: MetricsChartsProps) {
           <Tooltip content={<ChartTooltip />} cursor={false} />
           <Legend wrapperStyle={{ fontSize: 11 }} />
           <Bar dataKey="success" name="Successful" fill="#22c55e" radius={[2, 2, 0, 0]} />
-          <Bar dataKey="failed" name="Failed" fill="#ef4444" radius={[2, 2, 0, 0]} />
+          <Bar
+            dataKey="failed"
+            name="Failed"
+            fill="#ef4444"
+            radius={[2, 2, 0, 0]}
+            cursor={onFailureBarClick ? 'pointer' : undefined}
+            onClick={onFailureBarClick ? (data: { payload?: MetricsChartPoint }) => {
+              if (data.payload?.date && data.payload.failed > 0) onFailureBarClick(data.payload.date);
+            } : undefined}
+          />
+          {visibleAnnotations.map((annotation, index) => (
+            <ReferenceLine
+              key={`health-annotation-${annotation.date}-${annotation.type}-${index}`}
+              x={annotation.date}
+              stroke={annotationColor(annotation.type)}
+              strokeDasharray="4 4"
+              strokeOpacity={0.65}
+              label={({ viewBox }) => {
+                if (!viewBox) return null;
+                return (
+                  <g>
+                    <title>{`${annotation.label} • ${new Date(annotation.timestamp).toLocaleString()}`}</title>
+                    <circle cx={viewBox.x} cy={viewBox.y - 6} r={2.2} fill={annotationColor(annotation.type)} />
+                  </g>
+                );
+              }}
+            />
+          ))}
         </BarChart>
       </MetricChart>
     </div>

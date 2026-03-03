@@ -1,4 +1,5 @@
 import { useEffect, useReducer } from 'react';
+import { createModuleCache } from '@/hooks/utility/useModuleSubscription';
 
 /**
  * Module-level shared ticker that fires every 60 seconds.
@@ -9,19 +10,18 @@ import { useEffect, useReducer } from 'react';
  * auto-stops when the last one unregisters.
  */
 
-const subscribers = new Set<() => void>();
+const tickerCache = createModuleCache<string, never>();
 let tickerTimer: number | null = null;
 
 function ensureTicker() {
   if (tickerTimer !== null) return;
   tickerTimer = window.setInterval(() => {
-    for (const fn of subscribers) fn();
+    tickerCache.notify();
   }, 60_000);
 }
 
-function unregister(fn: () => void) {
-  subscribers.delete(fn);
-  if (subscribers.size === 0 && tickerTimer !== null) {
+function stopTickerIfEmpty() {
+  if (tickerCache.subscriberCount === 0 && tickerTimer !== null) {
     clearInterval(tickerTimer);
     tickerTimer = null;
   }
@@ -37,9 +37,12 @@ export function useRotationTicker(): number {
   const [tick, bump] = useReducer((c: number) => c + 1, 0);
 
   useEffect(() => {
-    subscribers.add(bump);
+    const unsub = tickerCache.subscribe(bump);
     ensureTicker();
-    return () => unregister(bump);
+    return () => {
+      unsub();
+      stopTickerIfEmpty();
+    };
   }, []);
 
   return tick;

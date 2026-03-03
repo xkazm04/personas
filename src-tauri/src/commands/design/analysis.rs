@@ -517,3 +517,26 @@ pub fn extract_display_text(line: &str) -> Option<String> {
         Some(line.to_string())
     }
 }
+
+// ── Preview prompt ─────────────────────────────────────────────
+
+/// Return the fully assembled prompt markdown for a persona, exactly as the
+/// runtime engine would build it.  Accepts an optional `structured_prompt_json`
+/// override so the editor can preview unsaved drafts without persisting first.
+#[tauri::command]
+pub fn preview_prompt(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+    structured_prompt_json: Option<String>,
+) -> Result<String, AppError> {
+    let mut persona = persona_repo::get_by_id(&state.db, &persona_id)?;
+
+    // Apply the draft override when provided
+    if let Some(ref sp_json) = structured_prompt_json {
+        persona.structured_prompt = Some(sp_json.clone());
+    }
+
+    let tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
+
+    Ok(prompt::assemble_prompt(&persona, &tools, None, None, None))
+}

@@ -13,6 +13,24 @@ import type { PersonaPromptVersion } from "@/lib/bindings/PersonaPromptVersion";
 import type { ModelTestConfig } from "@/api/tests";
 import * as api from "@/api/tauriApi";
 
+const LAB_RUN_MAX_DURATION_MS = 30 * 60 * 1000;
+let labRunSafetyTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+function clearLabRunSafetyTimeout() {
+  if (labRunSafetyTimeoutId) {
+    clearTimeout(labRunSafetyTimeoutId);
+    labRunSafetyTimeoutId = null;
+  }
+}
+
+function scheduleLabRunSafetyTimeout(onTimeout: () => void) {
+  clearLabRunSafetyTimeout();
+  labRunSafetyTimeoutId = setTimeout(() => {
+    labRunSafetyTimeoutId = null;
+    onTimeout();
+  }, LAB_RUN_MAX_DURATION_MS);
+}
+
 export type LabMode = "arena" | "ab" | "matrix" | "eval" | "versions";
 
 export interface LabRunProgress {
@@ -43,7 +61,7 @@ export interface LabSlice {
 
   // Arena
   arenaRuns: LabArenaRun[];
-  arenaResults: LabArenaResult[];
+  arenaResultsMap: Record<string, LabArenaResult[]>;
   fetchArenaRuns: (personaId: string) => Promise<void>;
   startArena: (personaId: string, models: ModelTestConfig[], useCaseFilter?: string) => Promise<string | null>;
   cancelArena: (runId: string) => Promise<void>;
@@ -52,7 +70,7 @@ export interface LabSlice {
 
   // A/B
   abRuns: LabAbRun[];
-  abResults: LabAbResult[];
+  abResultsMap: Record<string, LabAbResult[]>;
   fetchAbRuns: (personaId: string) => Promise<void>;
   startAb: (personaId: string, versionAId: string, versionBId: string, models: ModelTestConfig[], useCaseFilter?: string, testInput?: string) => Promise<string | null>;
   cancelAb: (runId: string) => Promise<void>;
@@ -61,7 +79,7 @@ export interface LabSlice {
 
   // Matrix
   matrixRuns: LabMatrixRun[];
-  matrixResults: LabMatrixResult[];
+  matrixResultsMap: Record<string, LabMatrixResult[]>;
   fetchMatrixRuns: (personaId: string) => Promise<void>;
   startMatrix: (personaId: string, instruction: string, models: ModelTestConfig[], useCaseFilter?: string) => Promise<string | null>;
   cancelMatrix: (runId: string) => Promise<void>;
@@ -71,7 +89,7 @@ export interface LabSlice {
 
   // Eval
   evalRuns: LabEvalRun[];
-  evalResults: LabEvalResult[];
+  evalResultsMap: Record<string, LabEvalResult[]>;
   fetchEvalRuns: (personaId: string) => Promise<void>;
   startEval: (personaId: string, versionIds: string[], models: ModelTestConfig[], useCaseFilter?: string, testInput?: string) => Promise<string | null>;
   cancelEval: (runId: string) => Promise<void>;
@@ -97,6 +115,7 @@ export const createLabSlice: StateCreator<PersonaStore, [], [], LabSlice> = (set
   labProgress: null,
   setLabProgress: (p) => set({ labProgress: p }),
   finishLabRun: () => {
+    clearLabRunSafetyTimeout();
     set({ isLabRunning: false });
     const personaId = get().selectedPersona?.id;
     if (personaId) {
@@ -109,7 +128,7 @@ export const createLabSlice: StateCreator<PersonaStore, [], [], LabSlice> = (set
 
   // Arena
   arenaRuns: [],
-  arenaResults: [],
+  arenaResultsMap: {},
   fetchArenaRuns: async (personaId) => {
     try {
       const runs = await api.labListArenaRuns(personaId);
@@ -119,11 +138,15 @@ export const createLabSlice: StateCreator<PersonaStore, [], [], LabSlice> = (set
     }
   },
   startArena: async (personaId, models, useCaseFilter) => {
-    set({ isLabRunning: true, labProgress: null, arenaResults: [], error: null });
+    set({ isLabRunning: true, labProgress: null, error: null });
+    scheduleLabRunSafetyTimeout(() => {
+      set({ isLabRunning: false, labProgress: null });
+    });
     try {
       const run = await api.labStartArena(personaId, models, useCaseFilter);
       return run.id;
     } catch (err) {
+      clearLabRunSafetyTimeout();
       set({ error: errMsg(err, "Failed to start arena test"), isLabRunning: false });
       return null;
     }
@@ -131,15 +154,17 @@ export const createLabSlice: StateCreator<PersonaStore, [], [], LabSlice> = (set
   cancelArena: async (runId) => {
     try {
       await api.labCancelArena(runId);
-      set({ isLabRunning: false, labProgress: null });
     } catch (err) {
       set({ error: errMsg(err, "Failed to cancel arena test") });
+    } finally {
+      clearLabRunSafetyTimeout();
+      set({ isLabRunning: false, labProgress: null });
     }
   },
   fetchArenaResults: async (runId) => {
     try {
       const results = await api.labGetArenaResults(runId);
-      set({ arenaResults: results });
+      set((state) => ({ arenaResultsMap: { ...state.arenaResultsMap, [runId]: results } }));
     } catch (err) {
       set({ error: errMsg(err, "Failed to fetch arena results") });
     }
@@ -147,7 +172,10 @@ export const createLabSlice: StateCreator<PersonaStore, [], [], LabSlice> = (set
   deleteArenaRun: async (runId) => {
     try {
       await api.labDeleteArenaRun(runId);
-      set((state) => ({ arenaRuns: state.arenaRuns.filter((r) => r.id !== runId) }));
+      set((state) => {
+        const { [runId]: _, ...rest } = state.arenaResultsMap;
+        return { arenaRuns: state.arenaRuns.filter((r) => r.id !== runId), arenaResultsMap: rest };
+      });
     } catch (err) {
       set({ error: errMsg(err, "Failed to delete arena run") });
     }
@@ -155,7 +183,7 @@ export const createLabSlice: StateCreator<PersonaStore, [], [], LabSlice> = (set
 
   // A/B
   abRuns: [],
-  abResults: [],
+  abResultsMap: {},
   fetchAbRuns: async (personaId) => {
     try {
       const runs = await api.labListAbRuns(personaId);
@@ -165,11 +193,15 @@ export const createLabSlice: StateCreator<PersonaStore, [], [], LabSlice> = (set
     }
   },
   startAb: async (personaId, versionAId, versionBId, models, useCaseFilter, testInput) => {
-    set({ isLabRunning: true, labProgress: null, abResults: [], error: null });
+    set({ isLabRunning: true, labProgress: null, error: null });
+    scheduleLabRunSafetyTimeout(() => {
+      set({ isLabRunning: false, labProgress: null });
+    });
     try {
       const run = await api.labStartAb(personaId, versionAId, versionBId, models, useCaseFilter, testInput);
       return run.id;
     } catch (err) {
+      clearLabRunSafetyTimeout();
       set({ error: errMsg(err, "Failed to start A/B test"), isLabRunning: false });
       return null;
     }
@@ -177,15 +209,17 @@ export const createLabSlice: StateCreator<PersonaStore, [], [], LabSlice> = (set
   cancelAb: async (runId) => {
     try {
       await api.labCancelAb(runId);
-      set({ isLabRunning: false, labProgress: null });
     } catch (err) {
       set({ error: errMsg(err, "Failed to cancel A/B test") });
+    } finally {
+      clearLabRunSafetyTimeout();
+      set({ isLabRunning: false, labProgress: null });
     }
   },
   fetchAbResults: async (runId) => {
     try {
       const results = await api.labGetAbResults(runId);
-      set({ abResults: results });
+      set((state) => ({ abResultsMap: { ...state.abResultsMap, [runId]: results } }));
     } catch (err) {
       set({ error: errMsg(err, "Failed to fetch A/B results") });
     }
@@ -193,7 +227,10 @@ export const createLabSlice: StateCreator<PersonaStore, [], [], LabSlice> = (set
   deleteAbRun: async (runId) => {
     try {
       await api.labDeleteAbRun(runId);
-      set((state) => ({ abRuns: state.abRuns.filter((r) => r.id !== runId) }));
+      set((state) => {
+        const { [runId]: _, ...rest } = state.abResultsMap;
+        return { abRuns: state.abRuns.filter((r) => r.id !== runId), abResultsMap: rest };
+      });
     } catch (err) {
       set({ error: errMsg(err, "Failed to delete A/B run") });
     }
@@ -201,7 +238,7 @@ export const createLabSlice: StateCreator<PersonaStore, [], [], LabSlice> = (set
 
   // Matrix
   matrixRuns: [],
-  matrixResults: [],
+  matrixResultsMap: {},
   fetchMatrixRuns: async (personaId) => {
     try {
       const runs = await api.labListMatrixRuns(personaId);
@@ -211,11 +248,15 @@ export const createLabSlice: StateCreator<PersonaStore, [], [], LabSlice> = (set
     }
   },
   startMatrix: async (personaId, instruction, models, useCaseFilter) => {
-    set({ isLabRunning: true, labProgress: null, matrixResults: [], error: null });
+    set({ isLabRunning: true, labProgress: null, error: null });
+    scheduleLabRunSafetyTimeout(() => {
+      set({ isLabRunning: false, labProgress: null });
+    });
     try {
       const run = await api.labStartMatrix(personaId, instruction, models, useCaseFilter);
       return run.id;
     } catch (err) {
+      clearLabRunSafetyTimeout();
       set({ error: errMsg(err, "Failed to start matrix test"), isLabRunning: false });
       return null;
     }
@@ -223,15 +264,17 @@ export const createLabSlice: StateCreator<PersonaStore, [], [], LabSlice> = (set
   cancelMatrix: async (runId) => {
     try {
       await api.labCancelMatrix(runId);
-      set({ isLabRunning: false, labProgress: null });
     } catch (err) {
       set({ error: errMsg(err, "Failed to cancel matrix test") });
+    } finally {
+      clearLabRunSafetyTimeout();
+      set({ isLabRunning: false, labProgress: null });
     }
   },
   fetchMatrixResults: async (runId) => {
     try {
       const results = await api.labGetMatrixResults(runId);
-      set({ matrixResults: results });
+      set((state) => ({ matrixResultsMap: { ...state.matrixResultsMap, [runId]: results } }));
     } catch (err) {
       set({ error: errMsg(err, "Failed to fetch matrix results") });
     }
@@ -239,7 +282,10 @@ export const createLabSlice: StateCreator<PersonaStore, [], [], LabSlice> = (set
   deleteMatrixRun: async (runId) => {
     try {
       await api.labDeleteMatrixRun(runId);
-      set((state) => ({ matrixRuns: state.matrixRuns.filter((r) => r.id !== runId) }));
+      set((state) => {
+        const { [runId]: _, ...rest } = state.matrixResultsMap;
+        return { matrixRuns: state.matrixRuns.filter((r) => r.id !== runId), matrixResultsMap: rest };
+      });
     } catch (err) {
       set({ error: errMsg(err, "Failed to delete matrix run") });
     }
@@ -259,7 +305,7 @@ export const createLabSlice: StateCreator<PersonaStore, [], [], LabSlice> = (set
 
   // Eval
   evalRuns: [],
-  evalResults: [],
+  evalResultsMap: {},
   fetchEvalRuns: async (personaId) => {
     try {
       const runs = await api.labListEvalRuns(personaId);
@@ -269,11 +315,15 @@ export const createLabSlice: StateCreator<PersonaStore, [], [], LabSlice> = (set
     }
   },
   startEval: async (personaId, versionIds, models, useCaseFilter, testInput) => {
-    set({ isLabRunning: true, labProgress: null, evalResults: [], error: null });
+    set({ isLabRunning: true, labProgress: null, error: null });
+    scheduleLabRunSafetyTimeout(() => {
+      set({ isLabRunning: false, labProgress: null });
+    });
     try {
       const run = await api.labStartEval(personaId, versionIds, models, useCaseFilter, testInput);
       return run.id;
     } catch (err) {
+      clearLabRunSafetyTimeout();
       set({ error: errMsg(err, "Failed to start eval test"), isLabRunning: false });
       return null;
     }
@@ -281,15 +331,17 @@ export const createLabSlice: StateCreator<PersonaStore, [], [], LabSlice> = (set
   cancelEval: async (runId) => {
     try {
       await api.labCancelEval(runId);
-      set({ isLabRunning: false, labProgress: null });
     } catch (err) {
       set({ error: errMsg(err, "Failed to cancel eval test") });
+    } finally {
+      clearLabRunSafetyTimeout();
+      set({ isLabRunning: false, labProgress: null });
     }
   },
   fetchEvalResults: async (runId) => {
     try {
       const results = await api.labGetEvalResults(runId);
-      set({ evalResults: results });
+      set((state) => ({ evalResultsMap: { ...state.evalResultsMap, [runId]: results } }));
     } catch (err) {
       set({ error: errMsg(err, "Failed to fetch eval results") });
     }
@@ -297,7 +349,10 @@ export const createLabSlice: StateCreator<PersonaStore, [], [], LabSlice> = (set
   deleteEvalRun: async (runId) => {
     try {
       await api.labDeleteEvalRun(runId);
-      set((state) => ({ evalRuns: state.evalRuns.filter((r) => r.id !== runId) }));
+      set((state) => {
+        const { [runId]: _, ...rest } = state.evalResultsMap;
+        return { evalRuns: state.evalRuns.filter((r) => r.id !== runId), evalResultsMap: rest };
+      });
     } catch (err) {
       set({ error: errMsg(err, "Failed to delete eval run") });
     }

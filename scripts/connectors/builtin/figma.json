@@ -30,6 +30,8 @@
     "summary": "Figma collaborative design tool for UI/UX, prototyping, and design systems.",
     "auth_type": "pat",
     "auth_type_label": "PAT",
-    "docs_url": "https://www.figma.com/developers/api"
+    "docs_url": "https://www.figma.com/developers/api",
+    "setup_guide": "1. Open Figma and go to Settings (click your avatar)\n2. Scroll to 'Personal Access Tokens'\n3. Click 'Generate new token' and name it\n4. Copy the figd_... token and paste it here",
+    "pricing_tier": "free"
   }
 }

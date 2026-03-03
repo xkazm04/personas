@@ -200,9 +200,18 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
   const [processingSet, setProcessingSet] = useState<Map<string, ProcessingInfo>>(new Map());
   const [returnFlows, setReturnFlows] = useState<ReturnFlow[]>([]);
   const spawnedRef = useRef(new Set<string>());
-  const timeoutsRef = useRef<number[]>([]);
+  const timeoutByAnimationIdRef = useRef(new Map<string, number>());
 
-  useEffect(() => () => { timeoutsRef.current.forEach(clearTimeout); }, []);
+  const clearTrackedTimeouts = useCallback(() => {
+    for (const timeoutId of timeoutByAnimationIdRef.current.values()) {
+      clearTimeout(timeoutId);
+    }
+    timeoutByAnimationIdRef.current.clear();
+  }, []);
+
+  useEffect(() => () => {
+    clearTrackedTimeouts();
+  }, [clearTrackedTimeouts]);
 
   // Spawn processing + return flow when event reaches persona
   useEffect(() => {
@@ -210,7 +219,10 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
       if (evt._phase !== 'delivering') continue;
       if (spawnedRef.current.has(evt._animationId)) continue;
       spawnedRef.current.add(evt._animationId);
-      if (spawnedRef.current.size > 200) spawnedRef.current.clear();
+      if (spawnedRef.current.size > 200) {
+        spawnedRef.current.clear();
+        clearTrackedTimeouts();
+      }
 
       const color = EVENT_TYPE_HEX_COLORS[evt.event_type] ?? '#818cf8';
       const tgt = getTargetPos(evt);
@@ -232,20 +244,25 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
       });
 
       // After processing: remove indicator → spawn return particle
-      const tid = window.setTimeout(() => {
+      const animationId = evt._animationId;
+      const timeoutId = window.setTimeout(() => {
+        timeoutByAnimationIdRef.current.delete(animationId);
         setProcessingSet((prev) => {
           const next = new Map(prev);
           next.delete(personaId);
           return next;
         });
-        setReturnFlows((prev) => [
-          ...prev,
-          { id: `ret-${evt._animationId}`, fromX: tgt.x, fromY: tgt.y, toX: src.x, toY: src.y, color, startedAt: Date.now() },
-        ]);
+        setReturnFlows((prev) => {
+          const next = [
+            ...prev,
+            { id: `ret-${animationId}`, fromX: tgt.x, fromY: tgt.y, toX: src.x, toY: src.y, color, startedAt: Date.now() },
+          ];
+          return next.length > 50 ? next.slice(next.length - 50) : next;
+        });
       }, durationMs);
-      timeoutsRef.current.push(tid);
+      timeoutByAnimationIdRef.current.set(animationId, timeoutId);
     }
-  }, [activeEvents, getSourcePos, getTargetPos, personaNodes]);
+  }, [activeEvents, clearTrackedTimeouts, getSourcePos, getTargetPos, personaNodes]);
 
   // Prune finished return flows
   useEffect(() => {

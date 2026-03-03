@@ -2,11 +2,13 @@ import { useRef, useCallback } from 'react';
 import * as api from '@/api/tauriApi';
 import type { GoogleCredentialOAuthStatusResult } from '@/api/tauriApi';
 import { useOAuthPolling } from './useOAuthPolling';
-import { OAUTH_FIELD } from '@/features/vault/components/credential-design/CredentialDesignHelpers';
+import { OAUTH_FIELD } from '@/features/vault/sub_design/CredentialDesignHelpers';
 
 export interface OAuthConsentState {
-  /** Initial credential field values produced by the OAuth flow (refresh_token, scopes, etc.) */
-  initialValues: Record<string, string>;
+  /** Read current credential values (stored in a ref to avoid DevTools/Sentry exposure). */
+  getValues: () => Record<string, string>;
+  /** Monotonic counter incremented when values change — depend on this for re-renders. */
+  valuesVersion: number;
   /** Whether an OAuth authorization is in progress */
   isAuthorizing: boolean;
   /** Localized time string when consent was completed, or null */
@@ -53,7 +55,8 @@ export function useOAuthConsent(): OAuthConsentState {
   );
 
   return {
-    initialValues: polling.initialValues,
+    getValues: polling.getValues,
+    valuesVersion: polling.valuesVersion,
     isAuthorizing: polling.isAuthorizing,
     completedAt: polling.completedAt,
     message: polling.message,

@@ -118,18 +118,24 @@ export function useDesignReviews() {
     countersRef.current = { passed: 0, failed: 0, errored: 0 };
 
     try {
-      // Listen for review status events
+      // Clean up any previous listener
       if (unlistenRef.current) {
         unlistenRef.current();
+        unlistenRef.current = null;
       }
+
+      // Start the run FIRST to get the authoritative run_id.  This prevents
+      // stale events from a previous run latching currentRunId to the wrong
+      // value.  Any events emitted during the invoke round-trip are buffered
+      // by Tauri and delivered once the listener is registered below.
+      const result = await api.startDesignReviewRun(personaId, testCases ?? []);
+      currentRunId.current = result.run_id;
+
       unlistenRef.current = await listen<ReviewStatusPayload>('design-review-status', (event) => {
         const { status, test_case_name, test_case_index, total, run_id, error_message, elapsed_ms } = event.payload;
 
-        // Filter out events from other runs. The first event may arrive before
-        // startDesignReviewRun returns, so accept it and latch the run_id.
-        if (currentRunId.current === null) {
-          currentRunId.current = run_id;
-        } else if (run_id !== currentRunId.current) {
+        // Only process events for the current run
+        if (run_id !== currentRunId.current) {
           return;
         }
 
@@ -189,9 +195,6 @@ export function useDesignReviews() {
           ]);
         }
       });
-
-      const result = await api.startDesignReviewRun(personaId, testCases ?? []);
-      currentRunId.current = result.run_id;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start review run');
       setIsRunning(false);

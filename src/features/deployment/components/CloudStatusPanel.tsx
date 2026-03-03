@@ -14,8 +14,9 @@ export interface CloudStatusPanelProps {
 export function CloudStatusPanel({ status, isLoading, onRefresh }: CloudStatusPanelProps) {
   if (!status && isLoading) {
     return (
-      <div className="flex items-center justify-center py-12 text-muted-foreground/90">
-        <Loader2 className="w-5 h-5 animate-spin" />
+      <div role="status" aria-live="polite" className="flex items-center justify-center py-12 text-muted-foreground/90">
+        <Loader2 aria-hidden="true" className="w-5 h-5 animate-spin" />
+        <span className="sr-only">Loading cloud status...</span>
       </div>
     );
   }

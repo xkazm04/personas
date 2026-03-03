@@ -2,12 +2,12 @@
  * Unified workflow parser that detects the platform and routes to
  * the appropriate platform-specific parser.
  *
- * All parsers output the same DesignAnalysisResult type, enabling
+ * All parsers output the same AgentIR type, enabling
  * the rest of the import wizard to work identically regardless of source.
  */
 
 import yaml from 'js-yaml';
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { AgentIR } from '@/lib/types/designTypes';
 import {
   detectWorkflowPlatform,
   type WorkflowPlatform,
@@ -22,7 +22,7 @@ export interface WorkflowParseResult {
   /** The detected platform */
   detection: DetectionResult;
   /** The parsed analysis result (same type for all platforms) */
-  result: DesignAnalysisResult;
+  result: AgentIR;
   /** The workflow name extracted from the file */
   workflowName: string;
   /** Serialized JSON representation of the parsed content */
@@ -77,7 +77,7 @@ export function parseWorkflowFile(content: string, fileName: string): WorkflowPa
   const detection = detectWorkflowPlatform(parsed, ext);
 
   // Route to platform-specific parser
-  let result: DesignAnalysisResult;
+  let result: AgentIR;
   switch (detection.platform) {
     case 'n8n':
       result = parseN8nWorkflow(parsed);
@@ -109,7 +109,7 @@ export function parseWorkflowFile(content: string, fileName: string): WorkflowPa
 /**
  * Try multiple parsers when platform is unknown.
  */
-function tryParsers(parsed: Record<string, unknown>): DesignAnalysisResult {
+function tryParsers(parsed: Record<string, unknown>): AgentIR {
   const errors: string[] = [];
 
   // Try n8n first

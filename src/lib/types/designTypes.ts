@@ -76,7 +76,18 @@ export interface DesignAnalysisResult {
   suggested_event_subscriptions?: SuggestedEventSubscription[];
   adoption_requirements?: AdoptionRequirement[];
   service_flow?: ConnectorPipelineStep[];
+  /** Protocol capabilities detected from workflow node types (structured) */
+  protocol_capabilities?: ProtocolCapability[];
 }
+
+/**
+ * Universal intermediate representation (IR) for agent specifications.
+ *
+ * Multiple frontends (design chat, workflow import, template catalog, batch generation)
+ * converge on this schema, and downstream passes (scoring, safety scan, variable
+ * substitution, adoption, and compilation to runtime drafts) operate over it.
+ */
+export type AgentIR = DesignAnalysisResult;
 
 /** A notification channel suggestion from design analysis */
 export interface SuggestedNotificationChannel {
@@ -91,6 +102,19 @@ export interface SuggestedTrigger {
   trigger_type: "manual" | "schedule" | "polling" | "webhook";
   config: Record<string, unknown>;
   description: string;
+}
+
+// ── Protocol Capabilities ─────────────────────────────────────────
+
+/** Protocol message types an agent can use */
+export type ProtocolType = 'manual_review' | 'user_message' | 'agent_memory' | 'emit_event';
+
+/** A detected protocol capability with provenance context */
+export interface ProtocolCapability {
+  type: ProtocolType;
+  label: string;
+  /** How the capability was detected (node type match, keyword scan, etc.) */
+  context: string;
 }
 
 /** Phase of the design analysis lifecycle */
@@ -115,7 +139,7 @@ export interface AdoptionRequirement {
   key: string;
   label: string;
   description: string;
-  type: "text" | "select" | "cron" | "url" | "email";
+  type: "text" | "select" | "cron" | "url" | "email" | "number" | "json";
   required: boolean;
   default_value?: string;
   options?: string[];
@@ -195,12 +219,14 @@ export interface DesignConversation {
   updatedAt: string;
 }
 
-/** Helper to parse the messages JSON string from a DesignConversation */
-export function parseConversationMessages(messagesJson: string): DesignConversationMessage[] {
+/** Helper to parse the messages JSON string from a DesignConversation.
+ *  Returns null when the JSON is corrupt/unparseable so callers can
+ *  distinguish "no messages" from "parse failure" and avoid overwriting. */
+export function parseConversationMessages(messagesJson: string): DesignConversationMessage[] | null {
   try {
     return JSON.parse(messagesJson) as DesignConversationMessage[];
   } catch {
-    return [];
+    return null;
   }
 }
 

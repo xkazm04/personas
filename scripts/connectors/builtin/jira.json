@@ -47,6 +47,8 @@
     "summary": "Jira issue tracking and project management for agile software teams.",
     "auth_type": "basic_api_token",
     "auth_type_label": "API Token",
-    "docs_url": "https://id.atlassian.com/manage-profile/security/api-tokens"
+    "docs_url": "https://id.atlassian.com/manage-profile/security/api-tokens",
+    "setup_guide": "1. Go to id.atlassian.com/manage-profile/security/api-tokens\n2. Click 'Create API token' and give it a label\n3. Copy the generated token\n4. Enter your Atlassian email, the API token, and your Jira domain (e.g. your-company.atlassian.net)",
+    "pricing_tier": "paid"
   }
 }

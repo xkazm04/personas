@@ -1,6 +1,6 @@
-import { useState, useCallback, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { useGoogleOAuth } from '@/features/vault/hooks/useGoogleOAuth';
-import { OAUTH_FIELD } from '@/features/vault/components/credential-design/CredentialDesignHelpers';
+import { OAUTH_FIELD } from '@/features/vault/sub_design/CredentialDesignHelpers';
 
 export interface CredentialOAuthResult {
   credentialData: Record<string, string>;
@@ -19,11 +19,9 @@ export interface CredentialOAuthState {
 }
 
 export function useCredentialOAuth({ onSuccess, onError }: UseCredentialOAuthOptions): CredentialOAuthState {
-  const [pendingValues, setPendingValues] = useState<Record<string, string> | null>(null);
-
-  // Use refs so the callbacks passed to useGoogleOAuth don't cause re-renders
-  const pendingValuesRef = useRef(pendingValues);
-  pendingValuesRef.current = pendingValues;
+  // Store pending values (which may contain client_secret) in a ref to avoid
+  // exposure via React DevTools, Sentry, and error boundary serialization.
+  const pendingValuesRef = useRef<Record<string, string> | null>(null);
   const onSuccessRef = useRef(onSuccess);
   onSuccessRef.current = onSuccess;
   const onErrorRef = useRef(onError);
@@ -51,23 +49,27 @@ export function useCredentialOAuth({ onSuccess, onError }: UseCredentialOAuthOpt
         [OAUTH_FIELD.CLIENT_MODE]: 'app_managed',
       };
 
-      setPendingValues(null);
+      pendingValuesRef.current = null;
       onSuccessRef.current({ credentialData });
     },
-    onError: (msg) => onErrorRef.current(msg),
+    onError: (msg) => {
+      // Clear pending values containing client_secret on error
+      pendingValuesRef.current = null;
+      onErrorRef.current(msg);
+    },
   });
 
   const startConsent = useCallback((connectorName: string, values: Record<string, string>) => {
     const extraScopes = values.scopes?.trim()
       ? values.scopes.trim().split(/\s+/)
       : undefined;
-    setPendingValues(values);
+    pendingValuesRef.current = values;
     googleOAuth.startConsent(connectorName, extraScopes);
   }, [googleOAuth.startConsent]);
 
   const reset = useCallback(() => {
     googleOAuth.reset();
-    setPendingValues(null);
+    pendingValuesRef.current = null;
   }, [googleOAuth.reset]);
 
   return {

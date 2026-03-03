@@ -6,16 +6,40 @@
   "icon_url": "/icons/connectors/sentry.svg",
   "category": "monitoring",
   "fields": [
-    { "key": "auth_token", "label": "Auth Token", "type": "password", "required": true, "placeholder": "sntrys_...", "helpText": "Generate at sentry.io/settings/auth-tokens/" },
-    { "key": "organization_slug", "label": "Organization Slug", "type": "text", "required": true, "placeholder": "my-org", "helpText": "Your Sentry organization slug from the URL" }
+    {
+      "key": "auth_token",
+      "label": "Auth Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "sntrys_...",
+      "helpText": "Generate at sentry.io/settings/auth-tokens/"
+    },
+    {
+      "key": "organization_slug",
+      "label": "Organization Slug",
+      "type": "text",
+      "required": true,
+      "placeholder": "my-org",
+      "helpText": "Your Sentry organization slug from the URL"
+    }
   ],
   "healthcheck_config": {
     "endpoint": "https://sentry.io/api/0/organizations/{{organization_slug}}/",
     "method": "GET",
-    "headers": { "Authorization": "Bearer {{auth_token}}" },
+    "headers": {
+      "Authorization": "Bearer {{auth_token}}"
+    },
     "description": "Validates auth token via organization endpoint"
   },
   "services": [],
   "events": [],
-  "metadata": { "template_enabled": true, "summary": "Sentry application monitoring for errors, performance, and session replay.", "auth_type": "pat", "auth_type_label": "PAT", "docs_url": "https://docs.sentry.io/api/guides/create-auth-token/" }
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Sentry application monitoring for errors, performance, and session replay.",
+    "auth_type": "pat",
+    "auth_type_label": "PAT",
+    "docs_url": "https://docs.sentry.io/api/guides/create-auth-token/",
+    "setup_guide": "1. Go to sentry.io/settings/auth-tokens/\n2. Click 'Create New Token'\n3. Select the required scopes and click 'Create Token'\n4. Copy the sntrys_... token and your organization slug from the URL\n5. Paste both values here",
+    "pricing_tier": "free"
+  }
 }

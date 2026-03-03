@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   listDesignReviewsPaginated,
   listReviewConnectors,
@@ -14,11 +14,11 @@ import { smartSearchTemplates } from '@/api/smartSearch';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 
 export interface UseTemplateGalleryReturn {
-  items: PersonaDesignReview[];
+  allItems: PersonaDesignReview[];
   total: number;
-  page: number;
-  totalPages: number;
-  perPage: number;
+  hasMore: boolean;
+  isFetchingMore: boolean;
+  fetchMore: () => void;
   search: string;
   setSearch: (s: string) => void;
   connectorFilter: string[];
@@ -29,12 +29,12 @@ export interface UseTemplateGalleryReturn {
   setSortBy: (s: string) => void;
   sortDir: string;
   setSortDir: (d: string) => void;
-  setPage: (p: number) => void;
   isLoading: boolean;
   refresh: () => void;
   availableConnectors: ConnectorWithCount[];
   availableCategories: CategoryWithCount[];
   trendingTemplates: PersonaDesignReview[];
+  readyTemplates: PersonaDesignReview[];
   coverageFilter: string;
   setCoverageFilter: (f: string) => void;
   // AI search
@@ -48,70 +48,63 @@ export interface UseTemplateGalleryReturn {
   aiCliLog: string[];
 }
 
-const PER_PAGE = 10;
-const DEBOUNCE_MS = 300;
+const PER_PAGE = 50;
+const DEBOUNCE_MS = 150;
 
 export function useTemplateGallery(coverageServiceTypes?: string[]): UseTemplateGalleryReturn {
-  const [items, setItems] = useState<PersonaDesignReview[]>([]);
+  const [allItems, setAllItems] = useState<PersonaDesignReview[]>([]);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(0);
   const [search, setSearchRaw] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [connectorFilter, setConnectorFilter] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState('created_at');
   const [sortDir, setSortDir] = useState('desc');
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
   const [availableConnectors, setAvailableConnectors] = useState<ConnectorWithCount[]>([]);
   const [availableCategories, setAvailableCategories] = useState<CategoryWithCount[]>([]);
   const [trendingTemplates, setTrendingTemplates] = useState<PersonaDesignReview[]>([]);
+  const [readyTemplates, setReadyTemplates] = useState<PersonaDesignReview[]>([]);
   const [coverageFilter, setCoverageFilter] = useState('all');
 
   // AI search state
   const [aiSearchMode, setAiSearchMode] = useState(false);
   const [aiSearchLoading, setAiSearchLoading] = useState(false);
   const [aiSearchRationale, setAiSearchRationale] = useState('');
-  // When true, AI results are currently displayed (suppress keyword fetch)
   const [aiSearchActive, setAiSearchActive] = useState(false);
   const [aiCliLog, setAiCliLog] = useState<string[]>([]);
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const aiSearchIdRef = useRef(0);
+  const fetchIdRef = useRef(0);
+  const currentPageRef = useRef(0);
 
-  // In AI mode: no debounce, just update the raw value.
-  // In keyword mode: debounce as before.
+  // In AI mode: no debounce. In keyword mode: debounce as before.
   const setSearch = useCallback((value: string) => {
     setSearchRaw(value);
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
 
-    // In AI mode, don't trigger keyword search on typing.
-    // Also, if AI results are active and user clears, reset to keyword.
     if (aiSearchMode) {
       if (!value.trim()) {
         setAiSearchActive(false);
         setAiSearchRationale('');
         setDebouncedSearch('');
-        setPage(0);
       }
       return;
     }
 
     debounceTimer.current = setTimeout(() => {
       setDebouncedSearch(value);
-      setPage(0);
     }, DEBOUNCE_MS);
   }, [aiSearchMode]);
 
-  // Reset page on filter/sort change
-  useEffect(() => {
-    setPage(0);
-  }, [connectorFilter, categoryFilter, sortBy, sortDir, coverageFilter]);
-
-  // Fetch paginated reviews — only runs when NOT showing AI results
-  const fetchIdRef = useRef(0);
-  const fetchReviews = useCallback(async () => {
+  // Fetch a specific page, optionally appending to existing items
+  const fetchPage = useCallback(async (pageNum: number, append: boolean) => {
     const id = ++fetchIdRef.current;
-    setIsLoading(true);
+    if (pageNum === 0) setIsLoading(true);
+    else setIsFetchingMore(true);
+
     try {
       const result: PaginatedReviewsResult = await listDesignReviewsPaginated({
         search: debouncedSearch || undefined,
@@ -119,33 +112,44 @@ export function useTemplateGallery(coverageServiceTypes?: string[]): UseTemplate
         categoryFilter: categoryFilter.length > 0 ? categoryFilter : undefined,
         sortBy,
         sortDir,
-        page,
+        page: pageNum,
         perPage: PER_PAGE,
         coverageFilter: coverageFilter !== 'all' ? coverageFilter : undefined,
         coverageServiceTypes: coverageFilter !== 'all' && coverageServiceTypes ? coverageServiceTypes : undefined,
       });
-      if (id === fetchIdRef.current) {
-        setItems(result.items);
-        setTotal(result.total);
-      }
+      if (id !== fetchIdRef.current) return;
+      setTotal(result.total);
+      setAllItems(prev => append ? [...prev, ...result.items] : result.items);
     } catch (err) {
       console.error('Failed to fetch paginated reviews:', err);
     } finally {
       if (id === fetchIdRef.current) {
         setIsLoading(false);
+        setIsFetchingMore(false);
       }
     }
-  }, [debouncedSearch, connectorFilter, categoryFilter, sortBy, sortDir, page, coverageFilter, coverageServiceTypes]);
+  }, [debouncedSearch, connectorFilter, categoryFilter, sortBy, sortDir, coverageFilter, coverageServiceTypes]);
 
-  // Only run keyword fetch when AI results are NOT active
+  // Reset and fetch page 0 when filters/search/sort change (only when AI not active)
   useEffect(() => {
     if (!aiSearchActive) {
-      fetchReviews();
+      currentPageRef.current = 0;
+      fetchPage(0, false);
     }
-  }, [fetchReviews, aiSearchActive]);
+  }, [fetchPage, aiSearchActive]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch available connectors and trending templates once.
-  // Also run a one-shot backfill for any reviews missing a category.
+  // Fetch more: load the next page and append
+  const fetchMore = useCallback(() => {
+    if (isFetchingMore || isLoading || aiSearchActive) return;
+    if (allItems.length >= total) return;
+    const nextPage = currentPageRef.current + 1;
+    currentPageRef.current = nextPage;
+    fetchPage(nextPage, true);
+  }, [isFetchingMore, isLoading, aiSearchActive, allItems.length, total, fetchPage]);
+
+  const hasMore = allItems.length < total;
+
+  // Fetch available connectors, categories, and trending templates once.
   useEffect(() => {
     backfillReviewCategories().catch(() => {});
     listReviewConnectors()
@@ -157,9 +161,22 @@ export function useTemplateGallery(coverageServiceTypes?: string[]): UseTemplate
     getTrendingTemplates(8)
       .then(setTrendingTemplates)
       .catch(() => {});
-  }, []);
+    // Fetch "ready to deploy" templates (top 6 with full coverage)
+    if (coverageServiceTypes && coverageServiceTypes.length > 0) {
+      listDesignReviewsPaginated({
+        sortBy: 'trending',
+        sortDir: 'desc',
+        page: 0,
+        perPage: 6,
+        coverageFilter: 'full',
+        coverageServiceTypes,
+      })
+        .then((r) => setReadyTemplates(r.items))
+        .catch(() => {});
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // AI search: fire-and-forget background call, update UI when result arrives
+  // AI search: fire-and-forget background call
   const triggerAiSearch = useCallback((query: string) => {
     if (!query.trim() || query.trim().length < 5) return;
 
@@ -168,40 +185,34 @@ export function useTemplateGallery(coverageServiceTypes?: string[]): UseTemplate
     setAiSearchRationale('');
     setAiCliLog([]);
 
-    // Run in background — don't block
     (async () => {
       try {
         const result = await smartSearchTemplates(query.trim());
-
-        // Stale check: if another search was triggered, discard this result
         if (searchId !== aiSearchIdRef.current) return;
 
-        // Capture CLI log for debugging display
         if (result.cliLog?.length) {
           setAiCliLog(result.cliLog);
         }
 
         if (result.rankedIds.length === 0) {
           setAiSearchRationale(result.rationale || 'No matching templates found.');
-          setItems([]);
+          setAllItems([]);
           setTotal(0);
           setAiSearchActive(true);
           setAiSearchLoading(false);
           return;
         }
 
-        // Fetch each review by ID, preserve ranked order
         const reviews = await Promise.all(
           result.rankedIds.map((id) =>
             getDesignReview(id).catch(() => null),
           ),
         );
 
-        // Stale check again
         if (searchId !== aiSearchIdRef.current) return;
 
         const ordered = reviews.filter((r): r is PersonaDesignReview => r !== null);
-        setItems(ordered);
+        setAllItems(ordered);
         setTotal(ordered.length);
         setAiSearchActive(true);
         setAiSearchRationale(result.rationale);
@@ -211,7 +222,6 @@ export function useTemplateGallery(coverageServiceTypes?: string[]): UseTemplate
         const errMsg = err instanceof Error ? err.message : String(err);
         setAiSearchRationale(`AI search failed: ${errMsg}`);
         setAiSearchActive(false);
-        // Let the normal keyword fetch run
       } finally {
         if (searchId === aiSearchIdRef.current) {
           setAiSearchLoading(false);
@@ -228,11 +238,10 @@ export function useTemplateGallery(coverageServiceTypes?: string[]): UseTemplate
     setAiCliLog([]);
   }, []);
 
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(total / PER_PAGE)), [total]);
-
   const refresh = useCallback(() => {
     if (aiSearchActive) return;
-    fetchReviews();
+    currentPageRef.current = 0;
+    fetchPage(0, false);
     listReviewConnectors()
       .then(setAvailableConnectors)
       .catch(() => {});
@@ -242,14 +251,14 @@ export function useTemplateGallery(coverageServiceTypes?: string[]): UseTemplate
     getTrendingTemplates(8)
       .then(setTrendingTemplates)
       .catch(() => {});
-  }, [fetchReviews, aiSearchActive]);
+  }, [fetchPage, aiSearchActive]);
 
   return {
-    items,
+    allItems,
     total,
-    page,
-    totalPages,
-    perPage: PER_PAGE,
+    hasMore,
+    isFetchingMore,
+    fetchMore,
     search,
     setSearch,
     connectorFilter,
@@ -260,12 +269,12 @@ export function useTemplateGallery(coverageServiceTypes?: string[]): UseTemplate
     setSortBy,
     sortDir,
     setSortDir,
-    setPage,
     isLoading,
     refresh,
     availableConnectors,
     availableCategories,
     trendingTemplates,
+    readyTemplates,
     coverageFilter,
     setCoverageFilter,
     // AI search

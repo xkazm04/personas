@@ -13,10 +13,33 @@ interface DetailModalProps {
 export default function DetailModal({ title, subtitle, onClose, actions, children }: DetailModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+
+  const getFocusable = useCallback(() => {
+    if (!dialogRef.current) return [] as HTMLElement[];
+    return Array.from(dialogRef.current.querySelectorAll<HTMLElement>(
+      'button:not([data-focus-sentinel]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"]):not([data-focus-sentinel])',
+    ));
+  }, []);
+
+  const focusFirst = useCallback(() => {
+    const focusable = getFocusable();
+    focusable[0]?.focus();
+  }, [getFocusable]);
+
+  const focusLast = useCallback(() => {
+    const focusable = getFocusable();
+    focusable[focusable.length - 1]?.focus();
+  }, [getFocusable]);
 
   // Auto-focus close button on mount
   useEffect(() => {
+    returnFocusRef.current = document.activeElement as HTMLElement | null;
     closeButtonRef.current?.focus();
+    return () => {
+      returnFocusRef.current?.focus();
+      returnFocusRef.current = null;
+    };
   }, []);
 
   // Escape key handler
@@ -68,6 +91,15 @@ export default function DetailModal({ title, subtitle, onClose, actions, childre
         className="relative w-full max-w-5xl mx-4 bg-background border border-primary/20 rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
+        <button
+          type="button"
+          data-focus-sentinel
+          tabIndex={0}
+          onFocus={focusLast}
+          className="sr-only"
+          aria-hidden="true"
+        />
+
         {/* Header */}
         <div className="flex items-start justify-between p-5 border-b border-primary/10 flex-shrink-0">
           <div className="flex-1 min-w-0 pr-4">
@@ -97,6 +129,15 @@ export default function DetailModal({ title, subtitle, onClose, actions, childre
             {actions}
           </div>
         )}
+
+        <button
+          type="button"
+          data-focus-sentinel
+          tabIndex={0}
+          onFocus={focusFirst}
+          className="sr-only"
+          aria-hidden="true"
+        />
       </motion.div>
     </div>
   );

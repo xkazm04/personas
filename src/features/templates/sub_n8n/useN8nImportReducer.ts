@@ -1,6 +1,6 @@
 import { useReducer, useCallback } from 'react';
 import type { N8nPersonaDraft, StreamingSection } from '@/api/n8nTransform';
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { AgentIR } from '@/lib/types/designTypes';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import type { WorkflowPlatform } from '@/lib/personas/workflowDetector';
 
@@ -17,11 +17,11 @@ export const WIZARD_STEPS: readonly N8nWizardStep[] = [
 ] as const;
 
 export const STEP_META: Record<N8nWizardStep, { label: string; index: number }> = {
-  upload:    { label: 'Upload',    index: 0 },
-  analyze:   { label: 'Analyze',   index: 1 },
+  upload:    { label: 'Detect',    index: 0 },
+  analyze:   { label: 'Parse',     index: 1 },
   transform: { label: 'Transform', index: 2 },
-  edit:      { label: 'Edit',      index: 3 },
-  confirm:   { label: 'Confirm',   index: 4 },
+  edit:      { label: 'Optimize',  index: 3 },
+  confirm:   { label: 'Link',      index: 4 },
 };
 
 // ── Transform Sub-Phases ──
@@ -56,7 +56,7 @@ export interface N8nImportState {
   error: string | null;
 
   // Parse / Analyze
-  parsedResult: DesignAnalysisResult | null;
+  parsedResult: AgentIR | null;
   selectedToolIndices: Set<number>;
   selectedTriggerIndices: Set<number>;
   selectedConnectorNames: Set<string>;
@@ -133,7 +133,7 @@ const INITIAL_STATE: N8nImportState = {
 // ── Actions ──
 
 export type N8nImportAction =
-  | { type: 'FILE_PARSED'; workflowName: string; rawWorkflowJson: string; parsedResult: DesignAnalysisResult; platform?: WorkflowPlatform }
+  | { type: 'FILE_PARSED'; workflowName: string; rawWorkflowJson: string; parsedResult: AgentIR; platform?: WorkflowPlatform }
   | { type: 'TOGGLE_TOOL'; index: number }
   | { type: 'TOGGLE_TRIGGER'; index: number }
   | { type: 'TOGGLE_CONNECTOR'; name: string }
@@ -162,7 +162,7 @@ export type N8nImportAction =
   | { type: 'SET_ERROR'; error: string }
   | { type: 'CLEAR_ERROR' }
   | { type: 'GO_TO_STEP'; step: N8nWizardStep }
-  | { type: 'RESTORE_CONTEXT'; workflowName: string; rawWorkflowJson: string; parsedResult: DesignAnalysisResult | null; transformId: string }
+  | { type: 'RESTORE_CONTEXT'; workflowName: string; rawWorkflowJson: string; parsedResult: AgentIR | null; transformId: string }
   | { type: 'SESSION_CREATED'; sessionId: string }
   | { type: 'SESSION_LOADED'; payload: SessionLoadedPayload }
   | { type: 'RESET' };
@@ -174,7 +174,7 @@ export interface SessionLoadedPayload {
   step: N8nWizardStep;
   workflowName: string;
   rawWorkflowJson: string;
-  parsedResult: DesignAnalysisResult | null;
+  parsedResult: AgentIR | null;
   draft: N8nPersonaDraft | null;
   questions: TransformQuestion[] | null;
   transformId: string | null;
@@ -191,7 +191,7 @@ function toggleInSet<T>(set: Set<T>, value: T): Set<T> {
   return next;
 }
 
-function initSelectionsFromResult(result: DesignAnalysisResult): {
+function initSelectionsFromResult(result: AgentIR): {
   selectedToolIndices: Set<number>;
   selectedTriggerIndices: Set<number>;
   selectedConnectorNames: Set<string>;

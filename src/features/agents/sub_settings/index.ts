@@ -1,0 +1,1 @@
+export { PersonaSettingsTab } from './PersonaSettingsTab';

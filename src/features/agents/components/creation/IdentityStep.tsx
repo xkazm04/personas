@@ -1,0 +1,321 @@
+import { useState, useCallback } from 'react';
+import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizeUrl';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Bot,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Sparkles,
+  Wand2,
+} from 'lucide-react';
+import { usePersonaStore } from '@/stores/personaStore';
+import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
+import { IconSelector } from '@/features/shared/components/IconSelector';
+import { ColorPicker } from '@/features/shared/components/ColorPicker';
+import type { BuilderState } from './types';
+import { toDesignContext, generateSystemPrompt, generateSummary } from './builderReducer';
+
+interface IdentityStepProps {
+  builderState: BuilderState;
+  onBack: () => void;
+  draftPersonaId?: string | null;
+}
+
+function deriveName(intent: string): string {
+  const trimmed = intent.trim();
+  if (!trimmed) return '';
+  const short = trimmed.slice(0, 30);
+  const atWord = short.lastIndexOf(' ');
+  const base = atWord > 10 ? short.slice(0, atWord) : short;
+  return trimmed.length > base.length ? base + '...' : base;
+}
+
+function deriveNameFromState(state: BuilderState): string {
+  const firstUc = state.useCases.find((uc) => uc.title.trim());
+  if (firstUc) return firstUc.title.trim();
+  if (state.intent.trim()) return deriveName(state.intent);
+  return '';
+}
+
+function deriveDescription(state: BuilderState): string {
+  if (state.intent.trim()) return state.intent.trim().slice(0, 200);
+  const descs = state.useCases.filter((uc) => uc.description.trim()).map((uc) => uc.description.trim());
+  if (descs.length > 0) return descs.join('; ').slice(0, 200);
+  return '';
+}
+
+const pageTransition = { duration: 0.35, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] };
+
+export function IdentityStep({ builderState, onBack, draftPersonaId }: IdentityStepProps) {
+  const createPersona = usePersonaStore((s) => s.createPersona);
+  const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
+  const selectPersona = usePersonaStore((s) => s.selectPersona);
+  const movePersonaToGroup = usePersonaStore((s) => s.movePersonaToGroup);
+  const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
+  const setEditorTab = usePersonaStore((s) => s.setEditorTab);
+  const setAutoStartDesignInstruction = usePersonaStore((s) => s.setAutoStartDesignInstruction);
+  const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
+  const groups = usePersonaStore((s) => s.groups);
+
+  const [name, setName] = useState(deriveNameFromState(builderState));
+  const [description, setDescription] = useState(deriveDescription(builderState));
+  const [icon, setIcon] = useState('');
+  const [color, setColor] = useState('#8b5cf6');
+  const [groupId, setGroupId] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [enhanceWithAI, setEnhanceWithAI] = useState(false);
+
+  const summary = generateSummary(builderState);
+
+  const canSubmit = name.trim().length > 0;
+
+  const handleCreate = useCallback(async () => {
+    const agentName = name.trim() || deriveNameFromState(builderState) || 'New Agent';
+    if (isCreating) return;
+    setIsCreating(true);
+
+    try {
+      const designContext = toDesignContext(builderState);
+      const systemPrompt = generateSystemPrompt(builderState);
+
+      let personaId: string;
+
+      if (draftPersonaId) {
+        // Update existing draft persona instead of creating a new one
+        await applyPersonaOp(draftPersonaId, {
+          kind: 'ApplyDesignResult',
+          updates: {
+            name: agentName,
+            description: description.trim() || builderState.intent.trim().slice(0, 200) || undefined,
+            system_prompt: systemPrompt,
+            icon: icon || undefined,
+            color,
+            design_context: JSON.stringify(designContext),
+          },
+        });
+        personaId = draftPersonaId;
+      } else {
+        const persona = await createPersona({
+          name: agentName,
+          description: description.trim() || builderState.intent.trim().slice(0, 200) || undefined,
+          system_prompt: systemPrompt,
+          icon: icon || undefined,
+          color,
+          design_context: JSON.stringify(designContext),
+        });
+        personaId = persona.id;
+      }
+
+      if (groupId) {
+        await movePersonaToGroup(personaId, groupId);
+      }
+
+      setSidebarSection('personas');
+      selectPersona(personaId);
+
+      if (enhanceWithAI && builderState.intent.trim().length >= 10) {
+        setAutoStartDesignInstruction(builderState.intent.trim());
+        setEditorTab('design');
+      } else {
+        setEditorTab('use-cases');
+      }
+    } catch (err) {
+      console.error('Failed to create persona:', err);
+    } finally {
+      setIsCreating(false);
+    }
+  }, [
+    name, description, icon, color, groupId, builderState, isCreating, enhanceWithAI,
+    draftPersonaId, createPersona, applyPersonaOp, movePersonaToGroup, selectPersona,
+    setSidebarSection, setEditorTab, setAutoStartDesignInstruction,
+  ]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 40 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -40 }}
+      transition={pageTransition}
+      className="flex flex-col gap-5 max-w-xl w-full px-6"
+    >
+      {/* Header */}
+      <div>
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex items-center gap-1 text-sm text-muted-foreground/70 hover:text-muted-foreground mb-2 transition-colors"
+        >
+          <ChevronLeft className="w-3.5 h-3.5" />
+          Back
+        </button>
+        <h2 className="text-lg font-semibold text-foreground/90">New Agent</h2>
+        <p className="text-sm text-muted-foreground/90 mt-1">
+          Set a name and identity for your agent.
+        </p>
+      </div>
+
+      {/* Summary badge */}
+      {summary && (
+        <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-primary/15 bg-secondary/30">
+          <Sparkles className="w-4 h-4 text-primary/60 flex-shrink-0" />
+          <span className="text-sm text-foreground/70">{summary}</span>
+        </div>
+      )}
+
+      {/* Name */}
+      <div>
+        <label className="block text-sm font-medium text-foreground/80 mb-1.5">Name</label>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Agent name"
+          autoFocus
+          className="w-full px-3 py-2 bg-secondary/40 border border-primary/15 rounded-lg text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+        />
+      </div>
+
+      {/* Description */}
+      <div>
+        <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+          Description <span className="text-muted-foreground/50 font-normal">(optional)</span>
+        </label>
+        <input
+          type="text"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Short description"
+          className="w-full px-3 py-2 bg-secondary/40 border border-primary/15 rounded-lg text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+        />
+      </div>
+
+      {/* Advanced: Icon, Color, Group */}
+      <div>
+        <button
+          type="button"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground/70 hover:text-muted-foreground transition-colors"
+        >
+          {showAdvanced ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+          Customize appearance
+          <span className="text-muted-foreground/40">(optional)</span>
+        </button>
+
+        <AnimatePresence>
+          {showAdvanced && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div className="mt-3 space-y-4 p-4 bg-secondary/30 border border-primary/10 rounded-xl">
+                {/* Preview */}
+                <div
+                  className="flex items-center gap-3 p-3 rounded-lg border border-primary/10 bg-background/40"
+                  style={{ borderLeftWidth: 3, borderLeftColor: color }}
+                >
+                  {icon ? (
+                    sanitizeIconUrl(icon) ? (
+                      <img src={sanitizeIconUrl(icon)!} alt="" className="w-8 h-8" referrerPolicy="no-referrer" crossOrigin="anonymous" />
+                    ) : isIconUrl(icon) ? null : (
+                      <span className="text-2xl">{icon}</span>
+                    )
+                  ) : (
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: color + '20' }}>
+                      <Bot className="w-4 h-4" style={{ color }} />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground/85 truncate">
+                      {name.trim() || deriveNameFromState(builderState) || 'Agent Name'}
+                    </p>
+                    <p className="text-xs text-muted-foreground/60 truncate">
+                      {description.trim() || 'Description'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-foreground/70 mb-2">Icon</label>
+                    <IconSelector value={icon} onChange={setIcon} connectors={connectorDefinitions} size="sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-foreground/70 mb-2">Color</label>
+                    <ColorPicker value={color} onChange={setColor} size="sm" />
+                  </div>
+                </div>
+
+                {groups.length > 0 && (
+                  <div>
+                    <label className="block text-xs font-medium text-foreground/70 mb-1.5">Group</label>
+                    <ThemedSelect
+                      value={groupId}
+                      onChange={(e) => setGroupId(e.target.value)}
+                    >
+                      <option value="">No group</option>
+                      {groups.map((g) => (
+                        <option key={g.id} value={g.id}>{g.name}</option>
+                      ))}
+                    </ThemedSelect>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* AI Enhancement toggle */}
+      {builderState.intent.trim().length >= 10 && (
+        <label className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-primary/12 bg-secondary/20 cursor-pointer hover:bg-secondary/30 transition-colors">
+          <input
+            type="checkbox"
+            checked={enhanceWithAI}
+            onChange={(e) => setEnhanceWithAI(e.target.checked)}
+            className="rounded border-primary/30 text-primary focus:ring-primary/40"
+          />
+          <div>
+            <p className="text-sm font-medium text-foreground/80 flex items-center gap-1.5">
+              <Wand2 className="w-3.5 h-3.5 text-primary/60" />
+              Enhance with AI after creation
+            </p>
+            <p className="text-xs text-muted-foreground/50">
+              AI will analyze your intent and refine the agent's prompt, tools, and triggers
+            </p>
+          </div>
+        </label>
+      )}
+
+      {/* Submit */}
+      <button
+        type="button"
+        onClick={handleCreate}
+        disabled={!canSubmit || isCreating}
+        className={`w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all ${
+          canSubmit && !isCreating
+            ? 'bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99]'
+            : 'bg-secondary/40 text-muted-foreground/50 cursor-not-allowed'
+        }`}
+      >
+        {isCreating ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : enhanceWithAI ? (
+          <Wand2 className="w-4 h-4" />
+        ) : (
+          <Sparkles className="w-4 h-4" />
+        )}
+        {isCreating
+          ? 'Creating...'
+          : enhanceWithAI
+            ? 'Create & Enhance with AI'
+            : 'Create Agent'}
+      </button>
+    </motion.div>
+  );
+}

@@ -11,8 +11,11 @@ pub const LITELLM_BASE_URL: &str = "litellm_base_url";
 /// LiteLLM proxy master authentication key (`sk-...`).
 pub const LITELLM_MASTER_KEY: &str = "litellm_master_key";
 
-/// Active CLI engine: `"claude_code"`, `"codex_cli"`, or `"gemini_cli"`.
+/// Active CLI engine: `"claude_code"`, `"codex_cli"`, `"gemini_cli"`, or `"copilot_cli"`.
 pub const CLI_ENGINE: &str = "cli_engine";
+
+/// GitHub token for Copilot CLI authentication (GITHUB_TOKEN env var).
+pub const COPILOT_GITHUB_TOKEN: &str = "copilot_github_token";
 
 /// Event retention period in days. Events older than this are purged by the
 /// cleanup subscription. Default: 30.

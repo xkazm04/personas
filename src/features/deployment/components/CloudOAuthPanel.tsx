@@ -7,6 +7,7 @@ export interface CloudOAuthPanelProps {
   setOauthCode: (v: string) => void;
   onStartOAuth: () => void;
   onCompleteOAuth: () => void;
+  onCancelOAuth: () => void;
   onRefreshOAuth: () => void;
   onDisconnectOAuth: () => void;
 }
@@ -18,6 +19,7 @@ export function CloudOAuthPanel({
   setOauthCode,
   onStartOAuth,
   onCompleteOAuth,
+  onCancelOAuth,
   onRefreshOAuth,
   onDisconnectOAuth,
 }: CloudOAuthPanelProps) {
@@ -43,27 +45,46 @@ export function CloudOAuthPanel({
           />
         </div>
 
-        <button
-          onClick={onCompleteOAuth}
-          disabled={!oauthCode.trim()}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-indigo-500 text-foreground hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
-        >
-          Complete Authorization
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onCompleteOAuth}
+            disabled={!oauthCode.trim()}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-indigo-500 text-foreground hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+          >
+            Complete Authorization
+          </button>
+          <button
+            onClick={onCancelOAuth}
+            className="px-4 py-2 text-sm font-medium rounded-lg bg-secondary/40 border border-primary/15 text-foreground/90 hover:text-foreground/95 hover:border-primary/25 transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+        </div>
       </div>
     );
   }
 
   // State: connected
   if (oauthStatus?.connected) {
+    const isExpired = oauthStatus.isExpired === true;
     return (
       <div className="space-y-6">
-        <div className="flex items-center gap-3 p-4 rounded-lg bg-emerald-500/5 border border-emerald-500/15">
-          <ShieldCheck className="w-5 h-5 text-emerald-400" />
+        <div className={`flex items-center gap-3 p-4 rounded-lg ${isExpired ? 'bg-amber-500/10 border border-amber-500/25' : 'bg-emerald-500/5 border border-emerald-500/15'}`}>
+          <ShieldCheck className={`w-5 h-5 ${isExpired ? 'text-amber-400' : 'text-emerald-400'}`} />
           <div>
-            <p className="text-sm font-medium text-emerald-400">Anthropic Account Connected</p>
+            <p className={`text-sm font-medium ${isExpired ? 'text-amber-300' : 'text-emerald-400'}`}>
+              {isExpired ? 'Anthropic Token Expired' : 'Anthropic Account Connected'}
+            </p>
           </div>
         </div>
+
+        {isExpired && (
+          <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/25">
+            <p className="text-sm text-amber-200/90 leading-relaxed">
+              This OAuth token has expired{oauthStatus.expiresAt ? ` (expired ${new Date(oauthStatus.expiresAt).toLocaleString()})` : ''}. Refresh now to restore cloud execution access.
+            </p>
+          </div>
+        )}
 
         {/* Scopes */}
         {oauthStatus.scopes && oauthStatus.scopes.length > 0 && (

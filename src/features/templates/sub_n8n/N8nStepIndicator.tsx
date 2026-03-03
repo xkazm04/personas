@@ -11,6 +11,14 @@ const STEP_ICONS: Record<N8nWizardStep, React.ComponentType<{ className?: string
   confirm: Check,
 };
 
+const STEP_LABELS: Record<N8nWizardStep, string> = {
+  upload: 'Upload',
+  analyze: 'Analyze',
+  transform: 'Transform',
+  edit: 'Review',
+  confirm: 'Confirm',
+};
+
 /** Estimated duration hints for long-running steps. */
 const STEP_DURATION_HINT: Partial<Record<N8nWizardStep, string>> = {
   analyze: '~30s',
@@ -46,16 +54,23 @@ export function N8nStepIndicator({ currentStep, processing = false, className = 
   const showTimer = processing && !!STEP_DURATION_HINT[currentStep];
 
   return (
-    <div className={`flex items-center gap-1 px-2 py-3 ${className}`}>
+    <nav className={`flex items-center gap-1 px-2 py-3 ${className}`} role="navigation" aria-label="Import wizard progress">
+      <div className="flex items-center gap-1 w-full" role="list" aria-label="Wizard steps">
       {WIZARD_STEPS.map((step, i) => {
-        const meta = STEP_META[step];
         const Icon = STEP_ICONS[step];
+        const label = STEP_LABELS[step];
         const isCompleted = i < activeIndex;
         const isActive = i === activeIndex;
         const hint = STEP_DURATION_HINT[step];
+        const statusText = isCompleted ? 'completed' : isActive ? 'in progress' : 'upcoming';
 
         return (
-          <div key={step} className="flex items-center gap-1 flex-1 last:flex-initial">
+          <div
+            key={step}
+            className="flex items-center gap-1 flex-1 last:flex-initial"
+            role="listitem"
+            aria-current={isActive ? 'step' : undefined}
+          >
             <div className="flex items-center gap-2 min-w-0">
               {/* Step circle */}
               <div className="relative flex items-center justify-center">
@@ -90,6 +105,9 @@ export function N8nStepIndicator({ currentStep, processing = false, className = 
 
               {/* Step label + timer */}
               <div className="min-w-0">
+                <span className="sr-only">
+                  {`Step ${i + 1} of ${WIZARD_STEPS.length}: ${label} (${statusText})`}
+                </span>
                 <span
                   className={`text-sm font-medium truncate transition-colors duration-300 block ${
                     isActive
@@ -99,16 +117,16 @@ export function N8nStepIndicator({ currentStep, processing = false, className = 
                         : 'text-muted-foreground/80'
                   }`}
                 >
-                  {meta.label}
+                  {label}
                 </span>
                 {isActive && showTimer && (
-                  <span className="text-[11px] font-mono text-muted-foreground/70 tabular-nums leading-none">
+                  <span className="text-xs font-mono text-muted-foreground/90 tabular-nums leading-none">
                     {Math.floor(elapsed / 60)}:{(elapsed % 60).toString().padStart(2, '0')}
                     <span className="ml-1 text-muted-foreground/40">{hint}</span>
                   </span>
                 )}
                 {isActive && !showTimer && hint && (
-                  <span className="text-[11px] text-muted-foreground/40 leading-none">{hint}</span>
+                  <span className="text-xs text-muted-foreground/90 leading-none">{hint}</span>
                 )}
               </div>
             </div>
@@ -126,6 +144,7 @@ export function N8nStepIndicator({ currentStep, processing = false, className = 
           </div>
         );
       })}
-    </div>
+      </div>
+    </nav>
   );
 }

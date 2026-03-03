@@ -1,5 +1,6 @@
 pub mod claude;
 pub mod codex;
+pub mod copilot;
 pub mod gemini;
 
 use crate::db::DbPool;
@@ -31,6 +32,7 @@ pub enum EngineKind {
     ClaudeCode,
     CodexCli,
     GeminiCli,
+    CopilotCli,
 }
 
 impl EngineKind {
@@ -39,6 +41,7 @@ impl EngineKind {
         match s {
             "codex_cli" => EngineKind::CodexCli,
             "gemini_cli" => EngineKind::GeminiCli,
+            "copilot_cli" => EngineKind::CopilotCli,
             _ => EngineKind::ClaudeCode,
         }
     }
@@ -50,6 +53,7 @@ impl EngineKind {
             EngineKind::ClaudeCode => "claude_code",
             EngineKind::CodexCli => "codex_cli",
             EngineKind::GeminiCli => "gemini_cli",
+            EngineKind::CopilotCli => "copilot_cli",
         }
     }
 }
@@ -133,6 +137,7 @@ pub fn resolve_provider(kind: EngineKind) -> Box<dyn CliProvider> {
         EngineKind::ClaudeCode => Box::new(claude::ClaudeProvider),
         EngineKind::CodexCli => Box::new(codex::CodexProvider),
         EngineKind::GeminiCli => Box::new(gemini::GeminiProvider),
+        EngineKind::CopilotCli => Box::new(copilot::CopilotProvider),
     }
 }
 

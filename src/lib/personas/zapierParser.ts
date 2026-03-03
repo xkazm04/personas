@@ -8,7 +8,7 @@
  */
 
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
-import { ZAPIER_DEFINITION, toServiceMap, classifyNodeRole } from './platformDefinitions';
+import { ZAPIER_DEFINITION, toServiceMap, classifyNodeRole, extractProtocolsFromNodes } from './platformDefinitions';
 
 interface ZapierStep {
   app?: string;
@@ -118,6 +118,11 @@ export function parseZapierWorkflow(json: unknown): DesignAnalysisResult {
         .map((t) => t.index),
     }));
 
+  const protocol_capabilities = extractProtocolsFromNodes(
+    ZAPIER_DEFINITION,
+    allSteps.map((s) => s.app || s.action || ''),
+  );
+
   const workflowName = zap.title || zap.name || 'Imported Zapier Zap';
   const stepSequence = allSteps.map((s) => s.label || s.action || s.app || '?').join(' \u2192 ');
 
@@ -137,5 +142,6 @@ export function parseZapierWorkflow(json: unknown): DesignAnalysisResult {
     full_prompt_markdown: `# ${workflowName}\n\nWorkflow: ${stepSequence}\n\nThis persona was imported from a Zapier Zap with ${allSteps.length} steps.`,
     summary: `Imported from Zapier Zap "${workflowName}" with ${allSteps.length} steps (${triggerSteps.length} triggers, ${actionSteps.length} actions).`,
     suggested_connectors: connectors,
+    protocol_capabilities: protocol_capabilities.length > 0 ? protocol_capabilities : undefined,
   };
 }

@@ -20,14 +20,14 @@ export const CONNECTOR_ROLES: ConnectorRole[] = [
   { role: 'source_control',      label: 'Source Control',       members: ['github', 'gitlab'] },
   { role: 'ci_cd',               label: 'CI/CD',                members: ['circleci', 'gitlab'] },
   { role: 'project_tracking',    label: 'Project Tracking',     members: ['jira', 'linear', 'clickup', 'monday_com', 'asana', 'trello', 'todoist'] },
-  { role: 'knowledge_base',      label: 'Knowledge Base',       members: ['notion', 'confluence', 'airtable', 'coda'] },
+  { role: 'knowledge_base',      label: 'Knowledge Base',       members: ['confluence', 'airtable', 'coda'] },
   { role: 'design',              label: 'Design',               members: ['figma'] },
   { role: 'feature_flags',       label: 'Feature Flags',        members: ['launchdarkly', 'posthog'] },
 
   // ── Infrastructure ────────────────────────────────────────────
   { role: 'hosting',             label: 'Hosting & Deploy',     members: ['vercel', 'netlify', 'cloudflare'] },
   { role: 'cloud_infra',         label: 'Cloud Infrastructure', members: ['aws', 'firebase'] },
-  { role: 'database',            label: 'Database',             members: ['supabase', 'neon', 'convex', 'planetscale', 'upstash', 'postgres_proxy'] },
+  { role: 'database',            label: 'Database',             members: ['supabase', 'neon', 'convex', 'planetscale', 'upstash', 'postgres_proxy', 'postgres', 'mongodb', 'redis', 'duckdb', 'notion'] },
   { role: 'cloud_storage',       label: 'Cloud Storage',        members: ['dropbox'] },
 
   // ── Monitoring & Security ─────────────────────────────────────
@@ -79,7 +79,8 @@ export interface PurposeGroup {
 export const PURPOSE_GROUPS: PurposeGroup[] = [
   { purpose: 'communication',        label: 'Communication',        roles: ['chat_messaging', 'email_delivery', 'sms'] },
   { purpose: 'development',          label: 'Development',          roles: ['source_control', 'ci_cd', 'project_tracking', 'knowledge_base', 'design', 'feature_flags'] },
-  { purpose: 'infrastructure',       label: 'Infrastructure',       roles: ['hosting', 'cloud_infra', 'database', 'cloud_storage'] },
+  { purpose: 'infrastructure',       label: 'Infrastructure',       roles: ['hosting', 'cloud_infra', 'cloud_storage'] },
+  { purpose: 'data',                 label: 'Data',                 roles: ['database'] },
   { purpose: 'monitoring_security',  label: 'Monitoring & Security', roles: ['error_monitoring', 'incident_management', 'uptime_monitoring', 'security_scanning'] },
   { purpose: 'analytics_data',       label: 'Analytics & Data',     roles: ['analytics', 'spreadsheet'] },
   { purpose: 'customer_facing',      label: 'Customer-Facing',      roles: ['crm', 'support_ticketing', 'social_media'] },

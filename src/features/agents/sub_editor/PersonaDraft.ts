@@ -1,5 +1,5 @@
 import type { ModelProfile, ModelProvider } from '@/lib/types/frontendTypes';
-import { profileToDropdownValue } from '@/features/agents/sub_editor/sub_model_config/OllamaCloudPresets';
+import { profileToDropdownValue } from '@/features/agents/sub_model_config/OllamaCloudPresets';
 
 // ── Draft type for all editable persona fields ─────────────────────────
 
@@ -69,8 +69,8 @@ export function buildDraft(persona: { name: string; description?: string | null;
     description: persona.description || '',
     icon: persona.icon || '',
     color: persona.color || '#8b5cf6',
-    maxConcurrent: persona.max_concurrent || 1,
-    timeout: persona.timeout_ms || 1000000,
+    maxConcurrent: persona.max_concurrent ?? 1,
+    timeout: persona.timeout_ms ?? 1000000,
     enabled: persona.enabled,
     selectedModel,
     selectedProvider: provider,

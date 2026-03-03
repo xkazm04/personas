@@ -2,8 +2,10 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::db::models::{CreateToolDefinitionInput, PersonaTool, PersonaToolDefinition, UpdateToolDefinitionInput};
+use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::execution::tool_usage;
 use crate::db::repos::resources::tools as repo;
+use crate::engine::tool_runner::{self, ToolInvocationResult};
 use crate::error::AppError;
 use crate::AppState;
 
@@ -116,4 +118,16 @@ pub fn get_tool_usage_by_persona(
     since: String,
 ) -> Result<Vec<serde_json::Value>, AppError> {
     tool_usage::get_usage_by_persona(&state.db, &since)
+}
+
+#[tauri::command]
+pub async fn invoke_tool_direct(
+    state: State<'_, Arc<AppState>>,
+    tool_id: String,
+    persona_id: String,
+    input_json: String,
+) -> Result<ToolInvocationResult, AppError> {
+    let tool = repo::get_definition_by_id(&state.db, &tool_id)?;
+    let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
+    tool_runner::invoke_tool_direct(&state.db, &tool, &persona_id, &persona.name, &input_json).await
 }

@@ -30,6 +30,8 @@
     "summary": "Slack workspace messaging for channels, DMs, and workflow notifications.",
     "auth_type": "bot_token",
     "auth_type_label": "Bot Token",
-    "docs_url": "https://api.slack.com/authentication/token-types"
+    "docs_url": "https://api.slack.com/authentication/token-types",
+    "setup_guide": "1. Go to api.slack.com/apps and create a new app (or select existing)\n2. Go to 'OAuth & Permissions' in the sidebar\n3. Add the bot token scopes your integration needs\n4. Click 'Install to Workspace' and authorize\n5. Copy the xoxb-... Bot User OAuth Token and paste it here",
+    "pricing_tier": "free"
   }
 }
