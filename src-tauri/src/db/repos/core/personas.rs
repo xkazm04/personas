@@ -212,6 +212,7 @@ fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Pe
         icon: row.get("icon")?,
         color: row.get("color")?,
         enabled: row.get::<_, i32>("enabled")? != 0,
+        sensitive: row.get::<_, i32>("sensitive")? != 0,
         max_concurrent: row.get("max_concurrent")?,
         timeout_ms: row.get("timeout_ms")?,
         notification_channels: row.get("notification_channels")?,
@@ -269,6 +270,7 @@ pub fn create(pool: &DbPool, input: CreatePersonaInput) -> Result<Persona, AppEr
     let now = chrono::Utc::now().to_rfc3339();
     let project_id = input.project_id.unwrap_or_else(|| "default".into());
     let enabled = input.enabled.unwrap_or(true) as i32;
+    let sensitive = 0i32;
     let max_concurrent = input.max_concurrent.unwrap_or(1);
     let timeout_ms = input.timeout_ms.unwrap_or(300_000);
 
@@ -282,13 +284,13 @@ pub fn create(pool: &DbPool, input: CreatePersonaInput) -> Result<Persona, AppEr
     conn.execute(
         "INSERT INTO personas
          (id, project_id, name, description, system_prompt, structured_prompt,
-          icon, color, enabled, max_concurrent, timeout_ms,
+          icon, color, enabled, sensitive, max_concurrent, timeout_ms,
           model_profile, max_budget_usd, max_turns, design_context, group_id,
           notification_channels, created_at, updated_at)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?18)",
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?19)",
         params![
             id, project_id, input.name, input.description, input.system_prompt,
-            input.structured_prompt, input.icon, input.color, enabled,
+            input.structured_prompt, input.icon, input.color, enabled, sensitive,
             max_concurrent, timeout_ms, encrypted_profile,
             input.max_budget_usd, input.max_turns, input.design_context,
             input.group_id, input.notification_channels, now,
@@ -347,6 +349,7 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
     push_field!(input.icon, "icon", sets, param_idx);
     push_field!(input.color, "color", sets, param_idx);
     push_field!(input.enabled, "enabled", sets, param_idx);
+    push_field!(input.sensitive, "sensitive", sets, param_idx);
     push_field!(input.max_concurrent, "max_concurrent", sets, param_idx);
     push_field!(input.timeout_ms, "timeout_ms", sets, param_idx);
     push_field!(input.notification_channels, "notification_channels", sets, param_idx);
@@ -373,6 +376,7 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
     if let Some(ref v) = input.icon { param_values.push(Box::new(v.clone())); }
     if let Some(ref v) = input.color { param_values.push(Box::new(v.clone())); }
     if let Some(v) = input.enabled { param_values.push(Box::new(v as i32)); }
+    if let Some(v) = input.sensitive { param_values.push(Box::new(v as i32)); }
     if let Some(v) = input.max_concurrent { param_values.push(Box::new(v)); }
     if let Some(v) = input.timeout_ms { param_values.push(Box::new(v)); }
     if let Some(ref v) = input.notification_channels { param_values.push(Box::new(v.clone())); }

@@ -1,16 +1,14 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { Key, Wrench, Zap, Pencil, BarChart3, RotateCw, Tag, X, Plus, Copy, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { CredentialEventConfig } from '@/features/vault/sub_features/CredentialEventConfig';
 import { CredentialIntelligence } from '@/features/vault/sub_features/CredentialIntelligence';
 import { CredentialRotationSection } from '@/features/vault/sub_features/CredentialRotationSection';
-import { getCredentialTags, buildMetadataWithTags, getTagStyle, SUGGESTED_TAGS } from '@/features/vault/utils/credentialTags';
+import { getTagStyle } from '@/features/vault/utils/credentialTags';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import type { RotationStatus } from '@/api/rotation';
 import type { HealthResult } from '@/features/vault/hooks/useCredentialHealth';
-import * as credApi from '@/api/credentials';
-import { toCredentialMetadata } from '@/lib/types/types';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useCredentialTags } from '@/features/vault/hooks/useCredentialTags';
 
 type ExpandedSection = 'services' | 'events' | 'intelligence' | 'rotation' | null;
 
@@ -40,63 +38,22 @@ export function CredentialCardDetails({
   onStartEditing,
 }: CredentialCardDetailsProps) {
   const [expandedSection, setExpandedSection] = useState<ExpandedSection>(null);
-  const [tagInput, setTagInput] = useState('');
-  const [showTagInput, setShowTagInput] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [copiedCredentialId, setCopiedCredentialId] = useState(false);
-  const tagInputRef = useRef<HTMLInputElement>(null);
-  const copiedCredentialIdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const currentTags = getCredentialTags(credential);
-
-  const persistTags = useCallback(async (nextTags: string[]) => {
-    const metadata = buildMetadataWithTags(credential, nextTags);
-    try {
-      const updatedRaw = await credApi.updateCredential(credential.id, {
-        name: null,
-        service_type: null,
-        encrypted_data: null,
-        metadata,
-      });
-      const updated = toCredentialMetadata(updatedRaw);
-      usePersonaStore.setState((s) => ({
-        credentials: s.credentials.map((c) => (c.id === credential.id ? updated : c)),
-      }));
-    } catch { /* best-effort */ }
-  }, [credential]);
-
-  const addTag = useCallback((tag: string) => {
-    const trimmed = tag.trim().toLowerCase();
-    if (!trimmed || currentTags.includes(trimmed)) return;
-    persistTags([...currentTags, trimmed]);
-    setTagInput('');
-    setShowSuggestions(false);
-  }, [currentTags, persistTags]);
-
-  const removeTag = useCallback((tag: string) => {
-    persistTags(currentTags.filter((t) => t !== tag));
-  }, [currentTags, persistTags]);
-
-  const filteredSuggestions = SUGGESTED_TAGS.filter(
-    (s) => !currentTags.includes(s) && s.includes(tagInput.toLowerCase()),
-  );
-
-  const copyCredentialId = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(credential.id);
-      setCopiedCredentialId(true);
-      if (copiedCredentialIdTimerRef.current) clearTimeout(copiedCredentialIdTimerRef.current);
-      copiedCredentialIdTimerRef.current = setTimeout(() => setCopiedCredentialId(false), 1500);
-    } catch {
-      // Clipboard access denied.
-    }
-  }, [credential.id]);
-
-  useEffect(() => {
-    return () => {
-      if (copiedCredentialIdTimerRef.current) clearTimeout(copiedCredentialIdTimerRef.current);
-    };
-  }, []);
+  const {
+    currentTags,
+    tagInput,
+    showTagInput,
+    showSuggestions,
+    filteredSuggestions,
+    tagInputRef,
+    copiedCredentialId,
+    addTag,
+    removeTag,
+    copyCredentialId,
+    startTagInput,
+    onTagInputChange,
+    onTagInputKeyDown,
+    onTagInputBlur,
+  } = useCredentialTags(credential);
 
   return (
     <div className="space-y-3">
@@ -150,12 +107,9 @@ export function CredentialCardDetails({
               ref={tagInputRef}
               type="text"
               value={tagInput}
-              onChange={(e) => { setTagInput(e.target.value); setShowSuggestions(true); }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && tagInput.trim()) { addTag(tagInput); }
-                if (e.key === 'Escape') { setShowTagInput(false); setTagInput(''); setShowSuggestions(false); }
-              }}
-              onBlur={() => { setTimeout(() => { setShowTagInput(false); setTagInput(''); setShowSuggestions(false); }, 150); }}
+              onChange={(e) => onTagInputChange(e.target.value)}
+              onKeyDown={(e) => onTagInputKeyDown(e.key)}
+              onBlur={onTagInputBlur}
               autoFocus
               placeholder="Add tag..."
               className="w-20 text-[10px] px-1.5 py-0.5 rounded border border-primary/20 bg-background/50 text-foreground/80 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/30"
@@ -176,7 +130,7 @@ export function CredentialCardDetails({
           </div>
         ) : (
           <button
-            onClick={() => { setShowTagInput(true); setTimeout(() => tagInputRef.current?.focus(), 0); }}
+            onClick={startTagInput}
             className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors"
             title="Add tag"
           >

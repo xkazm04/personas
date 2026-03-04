@@ -233,6 +233,7 @@ export interface DesignContextData {
   useCases?: DesignUseCase[];
   summary?: string;
   connectorPipeline?: import('@/lib/types/designTypes').ConnectorPipelineStep[];
+  watchedTables?: Record<string, string[]>;
 }
 
 // ── Flow Diagram Types ────────────────────────────────────────────────

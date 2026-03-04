@@ -21,6 +21,7 @@ interface ComparedPoint extends PromptPerformancePoint {
 interface PerformanceChartsProps {
   data: PromptPerformanceData;
   compareMode: boolean;
+  compareDeltaMode: boolean;
   comparedData: ComparedPoint[] | null;
   compALabel: string;
   compBLabel: string;
@@ -30,16 +31,87 @@ interface PerformanceChartsProps {
 export type { ComparedPoint };
 
 export function PerformanceCharts({
-  data, compareMode, comparedData, compALabel, compBLabel, productionBaseline,
+  data, compareMode, compareDeltaMode, comparedData, compALabel, compBLabel, productionBaseline,
 }: PerformanceChartsProps) {
+  const toDeltaPercent = (a: number | null, b: number | null): number | null => {
+    if (a == null || b == null || a === 0) return null;
+    return ((b - a) / Math.abs(a)) * 100;
+  };
+
+  const deltaSeries = comparedData?.map((p) => ({
+    date: p.date,
+    costDeltaPct: toDeltaPercent(p.costA, p.costB),
+    latencyDeltaPct: toDeltaPercent(p.latencyA, p.latencyB),
+    errorDeltaPct: toDeltaPercent(p.errorA, p.errorB),
+  })) ?? [];
+
+  const heatmapDates = deltaSeries.slice(-14);
+  const heatRows = [
+    { key: 'costDeltaPct' as const, label: 'Cost' },
+    { key: 'latencyDeltaPct' as const, label: 'Latency' },
+    { key: 'errorDeltaPct' as const, label: 'Error rate' },
+  ];
+
+  const deltaCellClass = (delta: number | null) => {
+    if (delta == null) return 'bg-secondary/20 text-muted-foreground/40 border-primary/10';
+    if (delta <= -15) return 'bg-emerald-500/30 text-emerald-200 border-emerald-500/40';
+    if (delta < 0) return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+    if (delta < 15) return 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+    return 'bg-red-500/25 text-red-200 border-red-500/35';
+  };
+
+  const fmtDelta = (v: number | null) => (v == null ? '—' : `${v > 0 ? '+' : ''}${v.toFixed(1)}%`);
+
   return (
     <div className="grid grid-cols-2 gap-4">
+      {compareMode && compareDeltaMode && comparedData && (
+        <div className="col-span-2 bg-secondary/30 border border-primary/10 rounded-xl p-4">
+          <h4 className="text-xs font-medium text-foreground/80 mb-3 uppercase tracking-wider">
+            Comparison Delta Heatmap ({compALabel} to {compBLabel})
+          </h4>
+          <div className="space-y-2 overflow-x-auto">
+            {heatRows.map((row) => (
+              <div key={row.key} className="flex items-center gap-1.5 min-w-max">
+                <div className="w-20 text-xs text-muted-foreground/70">{row.label}</div>
+                {heatmapDates.map((point) => {
+                  const value = point[row.key];
+                  return (
+                    <div
+                      key={`${row.key}-${point.date}`}
+                      title={`${fmtDate(point.date)}: ${fmtDelta(value)}`}
+                      className={`w-[52px] h-7 rounded border text-[10px] font-medium flex items-center justify-center ${deltaCellClass(value)}`}
+                    >
+                      {fmtDelta(value)}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* 1) Cost per Execution */}
       <div className="bg-secondary/30 border border-primary/10 rounded-xl p-4">
         <h4 className="text-xs font-medium text-foreground/80 mb-3 uppercase tracking-wider">Cost per Execution</h4>
         <ResponsiveContainer width="100%" height={200}>
-          {compareMode && comparedData ? (
-            <LineChart data={comparedData}>
+          {compareMode && comparedData && compareDeltaMode ? (
+            <AreaChart data={deltaSeries} syncId="perf-sync">
+              <defs>
+                <linearGradient id="deltaCostGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#ec4899" stopOpacity={0.28} />
+                  <stop offset="100%" stopColor="#ec4899" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={fmtDate} />
+              <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => `${v.toFixed(0)}%`} />
+              <Tooltip content={<DashTooltip formatter={(v) => `${v.toFixed(1)}%`} />} />
+              <ReferenceLine y={0} stroke="rgba(148,163,184,0.55)" strokeDasharray="4 2" />
+              <Area type="monotone" dataKey="costDeltaPct" name="Cost Delta" stroke="#ec4899" fill="url(#deltaCostGrad)" strokeWidth={2} connectNulls />
+            </AreaChart>
+          ) : compareMode && comparedData ? (
+            <LineChart data={comparedData} syncId="perf-sync">
               <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
               <XAxis dataKey="date" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={fmtDate} />
               <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => fmtCost(v)} />
@@ -55,7 +127,7 @@ export function PerformanceCharts({
               ))}
             </LineChart>
           ) : (
-            <AreaChart data={data.daily_points}>
+            <AreaChart data={data.daily_points} syncId="perf-sync">
               <defs>
                 <linearGradient id="costGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#6366f1" stopOpacity={0.3} />
@@ -82,8 +154,23 @@ export function PerformanceCharts({
       <div className="bg-secondary/30 border border-primary/10 rounded-xl p-4">
         <h4 className="text-xs font-medium text-foreground/80 mb-3 uppercase tracking-wider">Latency Distribution</h4>
         <ResponsiveContainer width="100%" height={200}>
-          {compareMode && comparedData ? (
-            <LineChart data={comparedData}>
+          {compareMode && comparedData && compareDeltaMode ? (
+            <AreaChart data={deltaSeries} syncId="perf-sync">
+              <defs>
+                <linearGradient id="deltaLatencyGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#6366f1" stopOpacity={0.28} />
+                  <stop offset="100%" stopColor="#6366f1" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={fmtDate} />
+              <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => `${v.toFixed(0)}%`} />
+              <Tooltip content={<DashTooltip formatter={(v) => `${v.toFixed(1)}%`} />} />
+              <ReferenceLine y={0} stroke="rgba(148,163,184,0.55)" strokeDasharray="4 2" />
+              <Area type="monotone" dataKey="latencyDeltaPct" name="Latency Delta" stroke="#6366f1" fill="url(#deltaLatencyGrad)" strokeWidth={2} connectNulls />
+            </AreaChart>
+          ) : compareMode && comparedData ? (
+            <LineChart data={comparedData} syncId="perf-sync">
               <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
               <XAxis dataKey="date" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={fmtDate} />
               <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={fmtMs} />
@@ -93,7 +180,7 @@ export function PerformanceCharts({
               <Line type="monotone" dataKey="latencyB" name={compBLabel} stroke={COMPARE_B_COLOR} strokeWidth={2} dot={false} connectNulls />
             </LineChart>
           ) : (
-            <LineChart data={data.daily_points}>
+            <LineChart data={data.daily_points} syncId="perf-sync">
               <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
               <XAxis dataKey="date" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={fmtDate} />
               <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={fmtMs} />
@@ -111,8 +198,23 @@ export function PerformanceCharts({
       <div className="bg-secondary/30 border border-primary/10 rounded-xl p-4">
         <h4 className="text-xs font-medium text-foreground/80 mb-3 uppercase tracking-wider">Error Rate Trend</h4>
         <ResponsiveContainer width="100%" height={200}>
-          {compareMode && comparedData ? (
-            <LineChart data={comparedData}>
+          {compareMode && comparedData && compareDeltaMode ? (
+            <AreaChart data={deltaSeries} syncId="perf-sync">
+              <defs>
+                <linearGradient id="deltaErrorGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#ef4444" stopOpacity={0.28} />
+                  <stop offset="100%" stopColor="#ef4444" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={fmtDate} />
+              <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => `${v.toFixed(0)}%`} />
+              <Tooltip content={<DashTooltip formatter={(v) => `${v.toFixed(1)}%`} />} />
+              <ReferenceLine y={0} stroke="rgba(148,163,184,0.55)" strokeDasharray="4 2" />
+              <Area type="monotone" dataKey="errorDeltaPct" name="Error Delta" stroke="#ef4444" fill="url(#deltaErrorGrad)" strokeWidth={2} connectNulls />
+            </AreaChart>
+          ) : compareMode && comparedData ? (
+            <LineChart data={comparedData} syncId="perf-sync">
               <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
               <XAxis dataKey="date" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={fmtDate} />
               <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => fmtPct(v)} domain={[0, 'auto']} />
@@ -125,7 +227,7 @@ export function PerformanceCharts({
               ))}
             </LineChart>
           ) : (
-            <AreaChart data={data.daily_points}>
+            <AreaChart data={data.daily_points} syncId="perf-sync">
               <defs>
                 <linearGradient id="errorGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#ef4444" stopOpacity={0.3} />
@@ -149,7 +251,7 @@ export function PerformanceCharts({
       <div className="bg-secondary/30 border border-primary/10 rounded-xl p-4">
         <h4 className="text-xs font-medium text-foreground/80 mb-3 uppercase tracking-wider">Token Efficiency</h4>
         <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={data.daily_points}>
+          <BarChart data={data.daily_points} syncId="perf-sync">
             <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
             <XAxis dataKey="date" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={fmtDate} />
             <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} />

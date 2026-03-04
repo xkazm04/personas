@@ -122,7 +122,17 @@ export function useDesignConversation(personaId: string | null) {
           prev.map((c) => (c.id === updated.id ? updated : c))
         );
       } catch {
-        // Best-effort
+        // Preserve the appended message in-memory even when persistence fails.
+        const fallback: DesignConversation = {
+          ...conv,
+          messages: JSON.stringify(messages),
+          lastResult: lastResult ?? conv.lastResult,
+          updatedAt: new Date().toISOString(),
+        };
+        setActiveConversation(fallback);
+        setConversations((prev) =>
+          prev.map((c) => (c.id === fallback.id ? fallback : c))
+        );
       }
     };
     appendQueueRef.current = appendQueueRef.current.then(doAppend, doAppend);
@@ -204,6 +214,10 @@ export function useDesignConversation(personaId: string | null) {
 
   /** Resume a previous conversation. */
   const resumeConversation = useCallback(async (conversation: DesignConversation) => {
+    // Prevent queued appends from a previous conversation from being written
+    // into the newly resumed one.
+    await appendQueueRef.current;
+
     // Mark existing active conversation as abandoned if different
     const current = activeConvRef.current;
     if (current && current.id !== conversation.id) {

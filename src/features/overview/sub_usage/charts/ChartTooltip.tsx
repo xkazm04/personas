@@ -1,3 +1,5 @@
+import { metricUnitForKey, type MetricUnit } from '@/features/overview/sub_usage/charts/chartConstants';
+
 interface TooltipPayloadEntry {
   name: string;
   value: number;
@@ -5,14 +7,36 @@ interface TooltipPayloadEntry {
   dataKey: string;
 }
 
+type TooltipValueFormatter = (value: number, unit: MetricUnit) => string;
+
+const defaultNumberFormatter = new Intl.NumberFormat();
+
+const defaultFormatter: TooltipValueFormatter = (value, unit) => {
+  if (!Number.isFinite(value)) return '--';
+  switch (unit) {
+    case 'usd':
+      return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(value);
+    case 'ms':
+      return `${defaultNumberFormatter.format(value)} ms`;
+    case 'tokens':
+      return `${defaultNumberFormatter.format(value)} tokens`;
+    case 'percent':
+      return `${defaultNumberFormatter.format(value)}%`;
+    default:
+      return defaultNumberFormatter.format(value);
+  }
+};
+
 export function ChartTooltip({
   active,
   payload,
   label,
+  formatter = defaultFormatter,
 }: {
   active?: boolean;
   payload?: TooltipPayloadEntry[];
   label?: string;
+  formatter?: TooltipValueFormatter;
 }) {
   if (!active || !payload || payload.length === 0) return null;
   return (
@@ -25,7 +49,7 @@ export function ChartTooltip({
             style={{ backgroundColor: entry.color }}
           />
           <span className="text-foreground/90">{entry.name}:</span>
-          <span className="text-foreground font-medium">{entry.value}</span>
+          <span className="text-foreground font-medium">{formatter(entry.value, metricUnitForKey(entry.dataKey))}</span>
         </div>
       ))}
     </div>

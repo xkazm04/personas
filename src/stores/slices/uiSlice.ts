@@ -1,10 +1,11 @@
 import type { StateCreator } from "zustand";
 import type { PersonaStore } from "../storeTypes";
-import type { SidebarSection, EditorTab, TemplateTab, CloudTab, SettingsTab } from "@/lib/types/types";
+import type { SidebarSection, HomeTab, EditorTab, TemplateTab, CloudTab, SettingsTab } from "@/lib/types/types";
 
 export interface UiSlice {
   // State
   sidebarSection: SidebarSection;
+  homeTab: HomeTab;
   templateTab: TemplateTab;
   editorTab: EditorTab;
   cloudTab: CloudTab;
@@ -24,6 +25,7 @@ export interface UiSlice {
 
   // Actions
   setSidebarSection: (section: SidebarSection) => void;
+  setHomeTab: (tab: HomeTab) => void;
   setTemplateTab: (tab: TemplateTab) => void;
   setEditorTab: (tab: EditorTab) => void;
   setCloudTab: (tab: CloudTab) => void;
@@ -42,7 +44,8 @@ export interface UiSlice {
 }
 
 export const createUiSlice: StateCreator<PersonaStore, [], [], UiSlice> = (set) => ({
-  sidebarSection: "overview" as SidebarSection,
+  sidebarSection: "home" as SidebarSection,
+  homeTab: "welcome" as HomeTab,
   templateTab: "generated" as TemplateTab,
   editorTab: "use-cases" as EditorTab,
   cloudTab: "cloud" as CloudTab,
@@ -61,6 +64,7 @@ export const createUiSlice: StateCreator<PersonaStore, [], [], UiSlice> = (set) 
   connectorTestActive: false,
 
   setSidebarSection: (section) => set({ sidebarSection: section }),
+  setHomeTab: (tab) => set({ homeTab: tab }),
   setTemplateTab: (tab) => set({ templateTab: tab }),
   setEditorTab: (tab) => set({ editorTab: tab }),
   setCloudTab: (tab) => set({ cloudTab: tab }),

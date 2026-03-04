@@ -55,6 +55,11 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
   const [saving, setSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  const agentId = 'memory-persona';
+  const titleId = 'memory-title';
+  const contentId = 'memory-content';
+  const tagsId = 'memory-tags';
+
   const canSave = personaId && title.trim() && content.trim();
 
   // Auto-close after showing success
@@ -101,12 +106,19 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
         )}
       </AnimatePresence>
 
-      <div className="space-y-4">
+      <form
+        className="space-y-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void handleSave();
+        }}
+      >
         {/* Row 1: Agent + Category side by side */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5 block">Agent</label>
+            <label htmlFor={agentId} className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5 block">Agent</label>
             <ThemedSelect
+              id={agentId}
               value={personaId}
               onChange={(e) => setPersonaId(e.target.value)}
             >
@@ -116,8 +128,8 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
             </ThemedSelect>
           </div>
 
-          <div>
-            <label className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5 block">Category</label>
+          <fieldset>
+            <legend className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5">Category</legend>
             <div className="flex items-center gap-1.5 flex-wrap">
               {ALL_MEMORY_CATEGORIES.map((cat) => {
                 const defaultColors = { label: cat, bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/20' };
@@ -128,6 +140,7 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
                     key={cat}
                     type="button"
                     onClick={() => setCategory(cat)}
+                    aria-pressed={isActive}
                     className={`px-2 py-1 text-sm font-mono uppercase rounded-md border transition-all ${
                       isActive
                         ? `${colors.bg} ${colors.text} ${colors.border} ring-1 ring-offset-1 ring-offset-background ${colors.border.replace('border-', 'ring-')}`
@@ -139,16 +152,18 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
                 );
               })}
             </div>
-          </div>
+          </fieldset>
         </div>
 
         {/* Row 2: Title */}
         <div>
-          <label className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5 block">Title</label>
+          <label htmlFor={titleId} className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5 block">Title</label>
           <input
+            id={titleId}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Always use metric units"
+            aria-required="true"
             className="w-full px-3 py-2 text-sm bg-background/60 border border-primary/15 rounded-lg outline-none focus:border-violet-500/40 text-foreground/80 placeholder:text-muted-foreground/80"
             autoFocus
           />
@@ -156,28 +171,31 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
 
         {/* Row 3: Content */}
         <div>
-          <label className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5 block">Content</label>
+          <label htmlFor={contentId} className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5 block">Content</label>
           <textarea
+            id={contentId}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Describe what the agent should remember..."
             rows={3}
+            aria-required="true"
             className="w-full px-3 py-2 text-sm bg-background/60 border border-primary/15 rounded-lg outline-none focus:border-violet-500/40 text-foreground/80 placeholder:text-muted-foreground/80 resize-none"
           />
         </div>
 
         {/* Row 4: Importance + Tags side by side */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5 block">Importance</label>
+          <fieldset>
+            <legend className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5">Importance</legend>
             <InteractiveImportanceDots value={importance} onChange={setImportance} />
-          </div>
+          </fieldset>
 
           <div>
-            <label className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5 block">
+            <label htmlFor={tagsId} className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5 block">
               Tags <span className="normal-case text-muted-foreground/80">(comma-separated)</span>
             </label>
             <input
+              id={tagsId}
               value={tagsInput}
               onChange={(e) => setTagsInput(e.target.value)}
               placeholder="e.g. units, formatting, output"
@@ -196,15 +214,14 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
             Cancel
           </button>
           <button
-            type="button"
-            onClick={handleSave}
+            type="submit"
             disabled={!canSave || saving}
             className="px-4 py-1.5 text-sm font-medium rounded-lg bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           >
             {saving ? 'Saving...' : 'Save Memory'}
           </button>
         </div>
-      </div>
+      </form>
     </motion.div>
   );
 }

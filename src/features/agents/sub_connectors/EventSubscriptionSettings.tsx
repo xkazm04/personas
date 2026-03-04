@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Radio, Plus, Trash2, Loader2 } from 'lucide-react';
 import { listSubscriptions, createSubscription, updateSubscription, deleteSubscription } from '@/api/tauriApi';
 import { AccessibleToggle } from '@/features/shared/components/AccessibleToggle';
 import { SectionCard } from '@/features/shared/components/SectionCard';
 import { SectionHeader } from '@/features/shared/components/SectionHeader';
+import EmptyState from '@/features/shared/components/EmptyState';
 import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscription';
 import { AddSubscriptionForm } from './AddSubscriptionForm';
 
@@ -15,6 +17,10 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
   const [subscriptions, setSubscriptions] = useState<PersonaEventSubscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
+
+  const activeCount = subscriptions.filter((s) => s.enabled).length;
 
   useEffect(() => {
     let cancelled = false;
@@ -26,20 +32,50 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
     return () => { cancelled = true; };
   }, [personaId]);
 
+  useEffect(() => {
+    if (!confirmingDeleteId) return;
+
+    const timer = setTimeout(() => setConfirmingDeleteId(null), 2000);
+    const onPointerDown = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target?.closest(`[data-sub-delete="${confirmingDeleteId}"]`)) {
+        setConfirmingDeleteId(null);
+      }
+    };
+
+    window.addEventListener('pointerdown', onPointerDown);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('pointerdown', onPointerDown);
+    };
+  }, [confirmingDeleteId]);
+
   const handleToggle = async (sub: PersonaEventSubscription) => {
     try {
-      const updated = await updateSubscription(sub.id, { enabled: !sub.enabled, event_type: null, source_filter: null });
+      setError(null);
+      const updated = await updateSubscription(sub.id, {
+        enabled: !sub.enabled,
+        event_type: sub.event_type,
+        source_filter: sub.source_filter,
+      });
       setSubscriptions((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
     } catch (e) {
+      setError('Failed to toggle subscription');
       console.error('Failed to toggle subscription:', e);
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteSubscription(id);
+      setError(null);
+      const deleted = await deleteSubscription(id);
+      if (!deleted) {
+        setError('Delete failed. Subscription may still exist.');
+        return;
+      }
       setSubscriptions((prev) => prev.filter((s) => s.id !== id));
     } catch (e) {
+      setError('Failed to delete subscription');
       console.error('Failed to delete subscription:', e);
     }
   };
@@ -66,10 +102,15 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
         className="mb-5"
         icon={<Radio className="w-3.5 h-3.5" />}
         label="Event Subscriptions"
-        trailing={<span className="text-sm text-muted-foreground/80">{subscriptions.length} active</span>}
+        trailing={<span className="text-sm text-muted-foreground/80">{activeCount} active</span>}
       />
 
       <div className="space-y-3">
+        {error && (
+          <div className="px-3 py-2 rounded-lg border border-red-500/20 bg-red-500/10 text-sm text-red-400/80">
+            {error}
+          </div>
+        )}
         {loading ? (
           <div className="flex items-center justify-center py-4 text-muted-foreground/80">
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -77,9 +118,14 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
         ) : (
           <>
             {subscriptions.length === 0 && !showAddForm && (
-              <p className="text-sm text-muted-foreground/80 py-2">
-                No event subscriptions. Add one to trigger this persona on events.
-              </p>
+              <EmptyState
+                icon={Radio}
+                title="No event subscriptions yet"
+                subtitle="Add a subscription to trigger this persona when matching events arrive."
+                iconContainerClassName="bg-cyan-500/10 border-cyan-500/20"
+                iconColor="text-cyan-400/75"
+                className="py-4"
+              />
             )}
 
             {subscriptions.map((sub) => (
@@ -106,10 +152,40 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
                   size="sm"
                 />
                 <button
-                  onClick={() => handleDelete(sub.id)}
-                  className="p-1 text-muted-foreground/80 hover:text-red-400 transition-colors"
+                  onClick={() => {
+                    if (confirmingDeleteId === sub.id) {
+                      void handleDelete(sub.id);
+                      setConfirmingDeleteId(null);
+                      return;
+                    }
+                    setConfirmingDeleteId(sub.id);
+                  }}
+                  data-sub-delete={sub.id}
+                  className="p-1 text-muted-foreground/80 hover:text-red-400 transition-colors focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none focus-visible:rounded-xl"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <AnimatePresence mode="wait" initial={false}>
+                    {confirmingDeleteId === sub.id ? (
+                      <motion.span
+                        key="confirm"
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: [1, 1.04, 1] }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ duration: 0.2 }}
+                        className="text-xs font-semibold text-red-400"
+                      >
+                        Confirm?
+                      </motion.span>
+                    ) : (
+                      <motion.span
+                        key="trash"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
                 </button>
               </SectionCard>
             ))}
@@ -122,7 +198,7 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
             ) : (
               <button
                 onClick={() => setShowAddForm(true)}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-primary/15 hover:border-primary/40 text-sm text-muted-foreground/80 hover:text-primary/80 transition-all w-full"
+                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-primary/15 hover:border-primary/40 text-sm text-muted-foreground/80 hover:text-primary/80 transition-all w-full focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none focus-visible:rounded-xl"
               >
                 <Plus className="w-4 h-4" />
                 Add Subscription

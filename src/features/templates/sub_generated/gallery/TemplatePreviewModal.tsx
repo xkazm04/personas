@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { X, Play, RotateCcw } from 'lucide-react';
 import { TerminalBody } from '@/features/shared/components/TerminalBody';
 import { DimensionRadial } from '../shared/DimensionRadial';
+import { BaseModal } from '../shared/BaseModal';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import { parseJsonSafe } from '@/lib/utils/parseJson';
@@ -87,16 +88,17 @@ export function TemplatePreviewModal({
   const isDone = phase === 'completed' || phase === 'failed';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-
-      {/* Modal */}
-      <div className="relative w-full max-w-5xl max-h-[85vh] bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden mx-4">
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      titleId="template-preview-title"
+      maxWidthClass="max-w-5xl"
+      panelClassName="max-h-[85vh] bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+    >
         {/* Header */}
         <div className="px-6 py-4 border-b border-primary/10 flex items-center justify-between gap-4 flex-shrink-0">
           <div className="min-w-0 flex-1">
-            <h2 className="text-lg font-semibold text-foreground/90 truncate">
+            <h2 id="template-preview-title" className="text-lg font-semibold text-foreground/90 truncate">
               Preview: {review.test_case_name}
             </h2>
             <p className="text-sm text-muted-foreground/60 mt-0.5">
@@ -200,7 +202,6 @@ export function TemplatePreviewModal({
             </button>
           </div>
         </div>
-      </div>
-    </div>
+    </BaseModal>
   );
 }

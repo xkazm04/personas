@@ -27,10 +27,13 @@ interface ContentBoxProps {
 }
 
 export function ContentBox({ children, minWidth = 960 }: ContentBoxProps) {
+  // Use responsive min-width classes for the default 960, inline style for custom overrides
+  const isDefault = minWidth === 960;
+  
   return (
     <div
-      className="flex-1 min-h-0 flex flex-col w-full overflow-hidden"
-      style={minWidth > 0 ? { minWidth: `${minWidth}px` } : undefined}
+      className={`flex-1 min-h-0 flex flex-col w-full overflow-hidden ${isDefault ? 'min-w-[960px] 2xl:min-w-[1200px]' : ''}`}
+      style={!isDefault && minWidth > 0 ? { minWidth: `${minWidth}px` } : undefined}
     >
       {children}
     </div>

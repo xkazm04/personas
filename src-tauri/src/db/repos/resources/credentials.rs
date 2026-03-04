@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use rusqlite::{params, Row};
+use rusqlite::{params, OptionalExtension, Row};
 
 use crate::db::models::{
     CreateCredentialEventInput, CreateCredentialInput, CredentialEvent, CredentialField,
@@ -186,6 +186,75 @@ pub fn update_metadata(pool: &DbPool, id: &str, metadata: Option<&str>) -> Resul
         return Err(AppError::NotFound(format!("Credential {id}")));
     }
     Ok(())
+}
+
+/// Atomically merge a metadata patch into the current credential metadata.
+///
+/// - Reads current metadata inside a transaction
+/// - Applies shallow key-level patch semantics
+/// - `null` values remove keys
+/// - Sanitizes before persisting
+/// - Returns the updated credential row
+pub fn patch_metadata_atomic(
+    pool: &DbPool,
+    id: &str,
+    patch: serde_json::Map<String, serde_json::Value>,
+) -> Result<PersonaCredential, AppError> {
+    let mut conn = pool.get()?;
+    let tx = conn.transaction()?;
+
+    let current_raw: Option<String> = tx
+        .query_row(
+            "SELECT metadata FROM persona_credentials WHERE id = ?1",
+            params![id],
+            |row| row.get::<_, Option<String>>(0),
+        )
+        .optional()?
+        .flatten();
+
+    // Ensure credential exists before applying patch
+    if current_raw.is_none() {
+        let exists: Option<String> = tx
+            .query_row(
+                "SELECT id FROM persona_credentials WHERE id = ?1",
+                params![id],
+                |row| row.get(0),
+            )
+            .optional()?;
+        if exists.is_none() {
+            return Err(AppError::NotFound(format!("Credential {id}")));
+        }
+    }
+
+    let mut base_obj = current_raw
+        .as_deref()
+        .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+        .and_then(|v| v.as_object().cloned())
+        .unwrap_or_default();
+
+    for (key, value) in patch {
+        if value.is_null() {
+            base_obj.remove(&key);
+        } else {
+            base_obj.insert(key, value);
+        }
+    }
+
+    let next_meta_json = serde_json::Value::Object(base_obj);
+    let next_meta_str = serde_json::to_string(&next_meta_json)?;
+    let sanitized_meta = sanitize_secrets(&next_meta_str);
+    let now = chrono::Utc::now().to_rfc3339();
+
+    let updated_rows = tx.execute(
+        "UPDATE persona_credentials SET metadata = ?1, updated_at = ?2 WHERE id = ?3",
+        params![sanitized_meta, now, id],
+    )?;
+    if updated_rows == 0 {
+        return Err(AppError::NotFound(format!("Credential {id}")));
+    }
+
+    tx.commit()?;
+    get_by_id(pool, id)
 }
 
 pub fn mark_used(pool: &DbPool, id: &str) -> Result<(), AppError> {

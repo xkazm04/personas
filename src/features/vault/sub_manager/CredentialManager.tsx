@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { Search, Key, X, RotateCw, Loader2, CheckCircle2, HeartPulse, AlertTriangle, Clock, XCircle } from 'lucide-react';
+import { Search, Key, X, RotateCw, Loader2, CheckCircle2, HeartPulse } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { VaultErrorBanner } from '@/features/vault/sub_card/VaultErrorBanner';
@@ -15,6 +15,7 @@ import { VaultStatusBadge } from '@/features/vault/sub_card/VaultStatusBadge';
 import { CatalogAutoSetup } from '@/features/vault/sub_autoCred/CatalogAutoSetup';
 import { ForagingPanel } from '@/features/vault/sub_foraging/ForagingPanel';
 import { DatabaseListView } from '@/features/vault/sub_databases/DatabaseListView';
+import { BulkHealthcheckSummary } from '@/features/vault/sub_manager/BulkHealthcheckSummary';
 import { useCredentialOAuth } from '@/features/vault/hooks/useCredentialOAuth';
 import { useUndoDelete } from '@/features/vault/hooks/useUndoDelete';
 import { useCredentialViewFSM } from '@/features/vault/hooks/useCredentialViewFSM';
@@ -32,10 +33,14 @@ export function CredentialManager() {
   const fetchConnectorDefinitions = usePersonaStore((s) => s.fetchConnectorDefinitions);
   const createCredential = usePersonaStore((s) => s.createCredential);
   const deleteCredential = usePersonaStore((s) => s.deleteCredential);
+  const globalError = usePersonaStore((s) => s.error);
+  const setGlobalError = usePersonaStore((s) => s.setError);
 
   const [loading, setLoading] = useState(true);
   const [vault, setVault] = useState<VaultStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const bannerError = error ?? globalError;
+
   const [credentialSearch, setCredentialSearch] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -67,26 +72,28 @@ export function CredentialManager() {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
-  // Healthcheck for catalog (from-template) flow
-  const selectedConnectorName = viewState.view === 'catalog-form' ? viewState.connector.name : null;
-  const templateHealthKey = `preview:${selectedConnectorName ?? '_none'}`;
-  const templateHealth = useCredentialHealth(templateHealthKey);
+  // Healthcheck for catalog (from-template) flow.
+  // Preview mode manages ephemeral key lifecycle internally.
+  const templateHealth = useCredentialHealth({
+    mode: 'preview',
+    serviceType: viewState.view === 'catalog-form' ? viewState.connector.name : null,
+  });
 
   const handleOAuthSuccess = useCallback(async ({ credentialData }: { credentialData: Record<string, string> }) => {
     if (!catalogFormData) return;
     const name = catalogFormData.credentialName.trim() || `${catalogFormData.connector.label} Credential`;
-    const createdId = await createCredential({
-      name,
-      service_type: catalogFormData.connector.name,
-      data: credentialData,
-    });
-    if (!createdId) {
+    try {
+      await createCredential({
+        name,
+        service_type: catalogFormData.connector.name,
+        data: credentialData,
+      });
+      await fetchCredentials();
+      dispatch({ type: 'GO_LIST' });
+      setCredentialSearch('');
+    } catch {
       setError('Failed to save OAuth credential');
-      return;
     }
-    await fetchCredentials();
-    dispatch({ type: 'GO_LIST' });
-    setCredentialSearch('');
   }, [catalogFormData, createCredential, fetchCredentials, dispatch]);
 
   const handleOAuthError = useCallback((message: string) => {
@@ -100,10 +107,9 @@ export function CredentialManager() {
 
   // Wrap pickType to clear healthcheck state when switching connectors
   const handlePickType = useCallback((connector: ConnectorDefinition) => {
-    templateHealth.invalidate();
     oauth.reset();
-    dispatch({ type: 'PICK_CONNECTOR', connector });
-  }, [dispatch, oauth, templateHealth.invalidate]);
+    dispatch({ type: 'PICK_CONNECTOR', connector, parentSearch: credentialSearch });
+  }, [credentialSearch, dispatch, oauth]);
 
   const undoDelete = useUndoDelete({
     onDelete: deleteCredential,
@@ -128,18 +134,18 @@ export function CredentialManager() {
     const name = catalogFormData.credentialName.trim() || `${catalogFormData.connector.label} Credential`;
 
     setError(null);
-    const createdId = await createCredential({
-      name,
-      service_type: catalogFormData.connector.name,
-      data: values,
-    });
-    if (!createdId) {
+    try {
+      await createCredential({
+        name,
+        service_type: catalogFormData.connector.name,
+        data: values,
+      });
+      await fetchCredentials();
+      dispatch({ type: 'GO_LIST' });
+      setCredentialSearch('');
+    } catch {
       setError('Failed to create credential');
-      return;
     }
-    await fetchCredentials();
-    dispatch({ type: 'GO_LIST' });
-    setCredentialSearch('');
   };
 
   const handleDeleteRequest = useCallback(async (credentialId: string) => {
@@ -313,97 +319,18 @@ export function CredentialManager() {
 
       <ContentBody>
 
-      {error && (
-        <VaultErrorBanner message={error} onDismiss={() => setError(null)} variant="banner" />
+      {bannerError && (
+        <VaultErrorBanner
+          message={bannerError}
+          onDismiss={() => {
+            setError(null);
+            setGlobalError(null);
+          }}
+          variant="banner"
+        />
       )}
 
-      {/* Bulk Healthcheck Summary Dashboard */}
-      <AnimatePresence>
-        {bulk.summary && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            <div className="rounded-xl border border-primary/15 bg-secondary/30 p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold uppercase tracking-widest text-foreground/80 flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-violet-500/10 text-violet-400">
-                    <HeartPulse className="w-3.5 h-3.5" />
-                  </div>
-                  Healthcheck Results
-                </h4>
-                <button
-                  onClick={bulk.dismiss}
-                  className="p-1 hover:bg-secondary/60 rounded-lg transition-colors"
-                  title="Dismiss"
-                >
-                  <X className="w-3.5 h-3.5 text-muted-foreground/60" />
-                </button>
-              </div>
-
-              {/* Stats row */}
-              <div className="flex items-center gap-4 text-sm">
-                <span className="flex items-center gap-1.5 text-emerald-400">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  {bulk.summary.passed} passed
-                </span>
-                {bulk.summary.failed > 0 && (
-                  <span className="flex items-center gap-1.5 text-red-400">
-                    <XCircle className="w-3.5 h-3.5" />
-                    {bulk.summary.failed} failed
-                  </span>
-                )}
-                <span className="text-muted-foreground/60">
-                  {bulk.summary.total} total
-                </span>
-              </div>
-
-              {/* Needs attention */}
-              {bulk.summary.needsAttention.length > 0 && (
-                <div className="space-y-1.5">
-                  <div className="text-xs font-medium text-red-400/80 flex items-center gap-1.5">
-                    <AlertTriangle className="w-3 h-3" /> Needs Attention
-                  </div>
-                  {bulk.summary.needsAttention.map((r) => (
-                    <div
-                      key={r.credentialId}
-                      className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-red-500/5 border border-red-500/10 text-sm"
-                    >
-                      <span className="text-foreground/80 truncate">{r.credentialName}</span>
-                      <span className="text-red-400/70 text-xs truncate max-w-[200px]" title={r.message}>
-                        {r.message}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Slowest responses */}
-              {bulk.summary.slowest.length > 0 && (
-                <div className="space-y-1.5">
-                  <div className="text-xs font-medium text-muted-foreground/60 flex items-center gap-1.5">
-                    <Clock className="w-3 h-3" /> Slowest Responses
-                  </div>
-                  <div className="flex items-center gap-3 text-sm text-muted-foreground/80">
-                    {bulk.summary.slowest.map((r) => (
-                      <span key={r.credentialId} className="flex items-center gap-1">
-                        <span className={`w-1.5 h-1.5 rounded-full ${r.success ? 'bg-emerald-400' : 'bg-red-400'}`} />
-                        <span className="truncate max-w-[120px]">{r.credentialName}</span>
-                        <span className="text-xs text-muted-foreground/50 font-mono">
-                          {r.durationMs < 1000 ? `${Math.round(r.durationMs)}ms` : `${(r.durationMs / 1000).toFixed(1)}s`}
-                        </span>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <BulkHealthcheckSummary summary={bulk.summary} onDismiss={bulk.dismiss} />
 
       <AnimatePresence mode="wait">
         {viewState.view === 'catalog-browse' && (

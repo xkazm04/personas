@@ -31,7 +31,7 @@ function RadioCardGroup({
             className={`px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all ${
               active
                 ? 'bg-primary/12 border-primary/30 text-primary ring-1 ring-primary/20'
-                : 'bg-secondary/30 border-primary/10 text-muted-foreground/70 hover:bg-secondary/50 hover:text-foreground/80'
+                : 'bg-secondary/30 border-primary/12 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/90'
             }`}
           >
             {opt.label}

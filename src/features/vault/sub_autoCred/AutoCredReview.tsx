@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, XCircle, RefreshCw, Loader2, Save, Database } from 'lucide-react';
+import { CheckCircle2, XCircle, RefreshCw, Loader2, Save, Database, Plug, AlertTriangle } from 'lucide-react';
 import type { CredentialDesignResult } from '@/hooks/design/useCredentialDesign';
 import type { ExtractedValues } from './types';
 import { buildConnectorContext } from './types';
@@ -19,6 +19,7 @@ interface AutoCredReviewProps {
   onRetry: () => void;
   onCancel: () => void;
   isSaving: boolean;
+  isPartial?: boolean;
 }
 
 export function AutoCredReview({
@@ -33,6 +34,7 @@ export function AutoCredReview({
   onRetry,
   onCancel,
   isSaving,
+  isPartial = false,
 }: AutoCredReviewProps) {
   const ctx = buildConnectorContext(designResult);
   const isDev = import.meta.env.DEV;
@@ -71,7 +73,9 @@ export function AutoCredReview({
         <div
           className="w-10 h-10 rounded-xl border flex items-center justify-center shrink-0"
           style={{ backgroundColor: `${designResult.connector.color}15`, borderColor: `${designResult.connector.color}30` }}
-        />
+        >
+          <Plug className="w-5 h-5" style={{ color: designResult.connector.color }} />
+        </div>
         <div>
           <h3 className="text-sm font-semibold text-foreground">
             Review Extracted Credentials
@@ -81,6 +85,19 @@ export function AutoCredReview({
           </p>
         </div>
       </div>
+
+      {/* Partial extraction warning */}
+      {isPartial && (
+        <div className="flex items-start gap-2.5 p-3 rounded-lg border border-amber-500/20 bg-amber-500/5">
+          <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-amber-400">Partial Extraction</p>
+            <p className="text-xs text-muted-foreground/70 mt-0.5">
+              Some fields could not be filled automatically. Please complete the missing fields manually before saving.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Credential name */}
       <div className="space-y-1.5">
@@ -95,21 +112,26 @@ export function AutoCredReview({
 
       {/* Field values */}
       <div className="space-y-2.5">
-        {ctx.fields.map((field) => (
-          <FieldCaptureRow
-            key={field.key}
-            source="auto"
-            mode="confirming"
-            label={field.label}
-            value={extractedValues[field.key] ?? ''}
-            onChange={(nextValue) => onValueChange(field.key, nextValue)}
-            placeholder={field.placeholder ?? ''}
-            required={field.required}
-            helpText={field.helpText}
-            inputType={field.type === 'password' ? 'password' : 'text'}
-            allowCopy
-          />
-        ))}
+        {ctx.fields.map((field) => {
+          const isEmpty = !(extractedValues[field.key] ?? '').trim();
+          const isMissing = isPartial && isEmpty && field.required;
+          return (
+            <div key={field.key} className={isMissing ? 'ring-1 ring-amber-500/30 rounded-lg' : ''}>
+              <FieldCaptureRow
+                source="auto"
+                mode="confirming"
+                label={isMissing ? `${field.label} (missing)` : field.label}
+                value={extractedValues[field.key] ?? ''}
+                onChange={(nextValue) => onValueChange(field.key, nextValue)}
+                placeholder={field.placeholder ?? ''}
+                required={field.required}
+                helpText={field.helpText}
+                inputType={field.type === 'password' ? 'password' : 'text'}
+                allowCopy
+              />
+            </div>
+          );
+        })}
       </div>
 
       {/* Healthcheck */}

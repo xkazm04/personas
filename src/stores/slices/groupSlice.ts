@@ -34,8 +34,8 @@ export const createGroupSlice: StateCreator<PersonaStore, [], [], GroupSlice> = 
     try {
       const groups = await api.listGroups();
       set({ groups });
-    } catch {
-      // Silent fail
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to fetch groups") });
     }
   },
 

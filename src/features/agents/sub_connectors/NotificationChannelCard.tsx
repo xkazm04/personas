@@ -65,7 +65,7 @@ export function NotificationChannelCard({
         const isEmpty = enabled && hasValidationErrors && !config[field.key]?.trim();
         return (
           <div key={field.key}>
-            <label className="block text-sm font-mono text-muted-foreground/80 uppercase mb-1">{field.label}</label>
+            <label className="block text-sm font-medium text-foreground/80 mb-1">{field.label}</label>
             <input
               type="text"
               value={config[field.key] || ''}
@@ -79,7 +79,7 @@ export function NotificationChannelCard({
 
       {/* Credential picker */}
       <div>
-        <label className="block text-sm font-mono text-muted-foreground/80 uppercase mb-1">Credential</label>
+        <label className="block text-sm font-medium text-foreground/80 mb-1">Credential</label>
         <CredentialPicker
           credentials={matchingCredentials}
           selectedId={credentialId}

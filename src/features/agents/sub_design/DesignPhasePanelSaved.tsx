@@ -81,6 +81,7 @@ export function DesignPhasePanelSaved({
             Update Design
           </button>
         </div>
+        <p className="text-[10px] text-muted-foreground/60 px-1">Press Enter to submit, Shift+Enter for new line.</p>
       </div>
     </>
   );

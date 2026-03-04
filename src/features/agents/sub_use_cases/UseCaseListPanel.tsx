@@ -1,5 +1,6 @@
-import { Cpu, Bell } from 'lucide-react';
+import { Cpu, Bell, ListChecks } from 'lucide-react';
 import type { UseCaseItem } from '@/features/shared/components/UseCasesList';
+import EmptyState from '@/features/shared/components/EmptyState';
 
 const CATEGORY_STYLES: Record<string, { bg: string; text: string }> = {
   notification:   { bg: 'bg-rose-500/10 border-rose-500/15',   text: 'text-rose-400/70' },
@@ -19,9 +20,13 @@ interface UseCaseListPanelProps {
 export function UseCaseListPanel({ useCases, selectedId, onSelect }: UseCaseListPanelProps) {
   if (useCases.length === 0) {
     return (
-      <div className="text-center py-8 text-sm text-muted-foreground/60">
-        No use cases defined yet.
-      </div>
+      <EmptyState
+        icon={ListChecks}
+        title="No use cases defined yet"
+        subtitle="Create or import use cases to configure execution behavior for this persona."
+        iconContainerClassName="bg-violet-500/10 border-violet-500/20"
+        iconColor="text-violet-400/75"
+      />
     );
   }
 

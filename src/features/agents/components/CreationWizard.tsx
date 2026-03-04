@@ -1,4 +1,4 @@
-import { useState, useReducer } from 'react';
+import { useState, useReducer, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Blocks, MessageCircle } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
@@ -17,15 +17,44 @@ const pageTransition = { duration: 0.35, ease: [0.22, 1, 0.36, 1] as [number, nu
 
 export default function CreationWizard({ canCancel }: CreationWizardProps) {
   const setIsCreatingPersona = usePersonaStore((s) => s.setIsCreatingPersona);
+  const deletePersona = usePersonaStore((s) => s.deletePersona);
 
   const [step, setStep] = useState<WizardStep>('entry');
   const [entryMode, setEntryMode] = useState<EntryMode>('build');
   const [builderState, dispatch] = useReducer(builderReducer, INITIAL_BUILDER_STATE);
   const [draftPersonaId, setDraftPersonaId] = useState<string | null>(null);
+  const cleanupDraftOnUnmountRef = useRef(true);
+  const latestDraftPersonaIdRef = useRef<string | null>(null);
+  const latestStepRef = useRef<WizardStep>('entry');
 
-  const handleCancel = () => {
+  useEffect(() => {
+    latestDraftPersonaIdRef.current = draftPersonaId;
+  }, [draftPersonaId]);
+
+  useEffect(() => {
+    latestStepRef.current = step;
+  }, [step]);
+
+  const handleCancel = useCallback(async () => {
+    if (draftPersonaId) {
+      try {
+        await deletePersona(draftPersonaId);
+      } catch {
+        // Best-effort cleanup for abandoned drafts.
+      }
+      setDraftPersonaId(null);
+    }
     setIsCreatingPersona(false);
-  };
+  }, [deletePersona, draftPersonaId, setIsCreatingPersona]);
+
+  useEffect(() => {
+    return () => {
+      if (!cleanupDraftOnUnmountRef.current) return;
+      const currentDraftId = latestDraftPersonaIdRef.current;
+      if (!currentDraftId || latestStepRef.current !== 'entry') return;
+      void deletePersona(currentDraftId).catch(() => {});
+    };
+  }, [deletePersona]);
 
   const handleContinue = () => {
     setStep('identity');
@@ -60,25 +89,43 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
                 <div className="flex border border-primary/15 rounded-xl overflow-hidden shrink-0">
                   <button
                     onClick={() => setEntryMode('build')}
-                    className={`flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
-                      entryMode === 'build'
-                        ? 'bg-primary/10 text-foreground/90'
-                        : 'text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/30'
-                    }`}
+                    className="relative flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium"
                   >
-                    <Blocks className="w-3.5 h-3.5" />
-                    Build
+                    {entryMode === 'build' && (
+                      <motion.div
+                        layoutId="wizard-mode-pill"
+                        className="absolute inset-0 bg-primary/10 rounded-xl"
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      />
+                    )}
+                    <span className={`relative z-10 flex items-center gap-2 transition-colors ${
+                      entryMode === 'build'
+                        ? 'text-foreground/90'
+                        : 'text-muted-foreground/70 hover:text-muted-foreground'
+                    }`}>
+                      <Blocks className="w-3.5 h-3.5" />
+                      Build
+                    </span>
                   </button>
                   <button
                     onClick={() => setEntryMode('chat')}
-                    className={`flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
+                    className={`relative flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
                       entryMode === 'chat'
-                        ? 'bg-primary/10 text-foreground/90'
-                        : 'text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/30'
+                        ? 'text-foreground/90'
+                        : 'text-muted-foreground/70 hover:text-muted-foreground'
                     }`}
                   >
-                    <MessageCircle className="w-3.5 h-3.5" />
-                    Chat
+                    {entryMode === 'chat' && (
+                      <motion.div
+                        layoutId="wizard-mode-pill"
+                        className="absolute inset-0 bg-primary/10 rounded-xl"
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      />
+                    )}
+                    <span className="relative z-10 flex items-center gap-2">
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      Chat
+                    </span>
                   </button>
                 </div>
               </div>
@@ -94,7 +141,10 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
                     transition={{ duration: 0.15 }}
                     className="border border-primary/10 rounded-xl overflow-hidden bg-background/30"
                   >
-                    <ChatCreator onCancel={canCancel ? handleCancel : undefined} />
+                    <ChatCreator
+                      onCancel={canCancel ? () => { void handleCancel(); } : undefined}
+                      onDraftPersonaIdChange={(id) => setDraftPersonaId(id)}
+                    />
                   </motion.div>
                 ) : (
                   <motion.div
@@ -108,7 +158,7 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
                       state={builderState}
                       dispatch={dispatch}
                       onContinue={handleContinue}
-                      onCancel={canCancel ? handleCancel : undefined}
+                      onCancel={canCancel ? () => { void handleCancel(); } : undefined}
                       draftPersonaId={draftPersonaId}
                       setDraftPersonaId={setDraftPersonaId}
                     />
@@ -123,7 +173,7 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -40 }}
               transition={pageTransition}
-              className="flex items-start justify-center p-6"
+              className="p-6"
             >
               <IdentityStep
                 builderState={builderState}

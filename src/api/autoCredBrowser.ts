@@ -23,6 +23,7 @@ export interface AutoCredBrowserResult {
   session_id: string;
   extracted_values: Record<string, string>;
   procedure_log: string;
+  partial: boolean;
 }
 
 export async function startAutoCredBrowser(request: AutoCredBrowserRequest): Promise<AutoCredBrowserResult> {

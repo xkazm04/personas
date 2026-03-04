@@ -33,10 +33,14 @@ export const MODEL_OPTIONS: ModelOption[] = [
 /** Override-only model options (no __default__ entry) -- used for grouped dropdown. */
 export const OVERRIDE_OPTIONS = MODEL_OPTIONS.filter((o) => o.id !== '__default__');
 
+function isMatchingProvider(option: ModelOption, profile: ModelProfile): boolean {
+  return option.provider === profile.provider || (!profile.provider && option.provider === 'anthropic');
+}
+
 export function profileToOptionId(mp: ModelProfile | undefined): string {
   if (!mp) return '__default__';
   const match = MODEL_OPTIONS.find(
-    (o) => o.id !== '__default__' && o.model === mp.model && (o.provider === mp.provider || (!mp.provider && o.provider === 'anthropic')),
+    (o) => o.id !== '__default__' && o.model === mp.model && isMatchingProvider(o, mp),
   );
   return match?.id ?? '__default__';
 }
@@ -44,7 +48,7 @@ export function profileToOptionId(mp: ModelProfile | undefined): string {
 export function profileToLabel(mp: ModelProfile | undefined): string {
   if (!mp) return 'Default';
   const opt = MODEL_OPTIONS.find(
-    (o) => o.id !== '__default__' && o.model === mp.model && (o.provider === mp.provider || (!mp.provider && o.provider === 'anthropic')),
+    (o) => o.id !== '__default__' && o.model === mp.model && isMatchingProvider(o, mp),
   );
   return opt?.label ?? mp.model ?? 'Custom';
 }

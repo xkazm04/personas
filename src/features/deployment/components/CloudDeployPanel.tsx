@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Cloud, Wifi, WifiOff } from 'lucide-react';
+import { Cloud } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
+import { ConnectionStatusBadge } from '@/features/shared/components/ConnectionStatusBadge';
+import { PanelTabBar } from '@/features/shared/components/PanelTabBar';
+import { ErrorBanner } from '@/features/shared/components/ErrorBanner';
 import { CloudConnectionForm } from '@/features/deployment/components/CloudConnectionForm';
 import { CloudStatusPanel } from '@/features/deployment/components/CloudStatusPanel';
 import { CloudOAuthPanel } from '@/features/deployment/components/CloudOAuthPanel';
@@ -33,6 +36,7 @@ export default function CloudDeployPanel() {
   const [url, setUrl] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [oauthCode, setOauthCode] = useState('');
+  const [oauthStartUrl, setOauthStartUrl] = useState<string | null>(null);
 
   const config = usePersonaStore((s) => s.cloudConfig);
   const isConnecting = usePersonaStore((s) => s.cloudIsConnecting);
@@ -84,35 +88,35 @@ export default function CloudDeployPanel() {
 
   const handleDisconnect = async () => {
     await disconnect();
+    setUrl('');
+    setApiKey('');
+    setOauthStartUrl(null);
     setActiveTab('connection');
+  };
+
+  const handleCancelOAuth = async () => {
+    await cancelPendingOAuth();
+    setOauthStartUrl(null);
+  };
+
+  const handleDisconnectOAuth = async () => {
+    await disconnectOAuth();
+    setOauthStartUrl(null);
   };
 
   const handleStartOAuth = async () => {
     const result = await startOAuth();
-    if (result?.authUrl) {
-      window.open(result.authUrl, '_blank');
-    }
+    setOauthStartUrl(result?.authUrl ?? null);
   };
 
   const handleCompleteOAuth = async () => {
     if (!oauthCode.trim() || !pendingOAuthState) return;
     await completeOAuth(oauthCode.trim(), pendingOAuthState);
     setOauthCode('');
+    setOauthStartUrl(null);
   };
 
   // ---------- render helpers ----------
-
-  const connectionBadge = isConnected ? (
-    <span className="flex items-center gap-1.5 text-sm px-2 py-0.5 rounded-md border bg-emerald-500/10 border-emerald-500/20 text-emerald-400">
-      <Wifi className="w-3 h-3" />
-      Connected
-    </span>
-  ) : (
-    <span className="flex items-center gap-1.5 text-sm px-2 py-0.5 rounded-md border bg-red-500/10 border-red-500/20 text-red-400">
-      <WifiOff className="w-3 h-3" />
-      Disconnected
-    </span>
-  );
 
   return (
     <ContentBox>
@@ -120,82 +124,56 @@ export default function CloudDeployPanel() {
         icon={<Cloud className="w-5 h-5 text-indigo-400" />}
         iconColor="indigo"
         title="Cloud Execution"
-        actions={connectionBadge}
+        actions={<ConnectionStatusBadge connected={isConnected} isBusy={isConnecting} />}
       >
-        {/* Tab bar */}
-        <div className="flex gap-0 mt-4 -mb-5 -mx-4 md:-mx-6 border-t border-primary/10">
-          {TABS.map((tab) => {
-            const disabled = tab.disabledWhenOffline && !isConnected;
-            const active = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                disabled={disabled}
-                onClick={() => setActiveTab(tab.id)}
-                className={`
-                  px-5 py-2.5 text-sm font-medium transition-colors relative
-                  ${active
-                    ? 'text-foreground/90 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-indigo-500'
-                    : 'text-muted-foreground/90 hover:text-foreground/95'}
-                  ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
-                `}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
+        <PanelTabBar
+          tabs={TABS.map((tab) => ({ ...tab, disabled: tab.disabledWhenOffline && !isConnected }))}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          activeUnderlineClass="after:bg-indigo-500"
+          idPrefix="cloud-deploy"
+        />
       </ContentHeader>
 
       {/* Tab content */}
       <ContentBody>
-        {activeTab === 'connection' && <CloudConnectionForm
-          isConnected={isConnected}
-          config={config}
-          url={url}
-          setUrl={setUrl}
-          apiKey={apiKey}
-          setApiKey={setApiKey}
-          isConnecting={isConnecting}
-          onConnect={handleConnect}
-          onDisconnect={handleDisconnect}
-        />}
-        {activeTab === 'status' && isConnected && <CloudStatusPanel
-          status={status}
-          isLoading={isLoadingStatus}
-          onRefresh={fetchStatus}
-        />}
-        {activeTab === 'oauth' && isConnected && <CloudOAuthPanel
-          oauthStatus={oauthStatus}
-          pendingOAuthState={pendingOAuthState}
-          oauthCode={oauthCode}
-          setOauthCode={setOauthCode}
-          onStartOAuth={handleStartOAuth}
-          onCompleteOAuth={handleCompleteOAuth}
-          onCancelOAuth={cancelPendingOAuth}
-          onRefreshOAuth={refreshOAuth}
-          onDisconnectOAuth={disconnectOAuth}
-        />}
+        <div
+          role="tabpanel"
+          id={`cloud-deploy-panel-${activeTab}`}
+          aria-labelledby={`cloud-deploy-tab-${activeTab}`}
+        >
+          {activeTab === 'connection' && <CloudConnectionForm
+            isConnected={isConnected}
+            config={config}
+            url={url}
+            setUrl={setUrl}
+            apiKey={apiKey}
+            setApiKey={setApiKey}
+            isConnecting={isConnecting}
+            onConnect={handleConnect}
+            onDisconnect={handleDisconnect}
+          />}
+          {activeTab === 'status' && isConnected && <CloudStatusPanel
+            status={status}
+            isLoading={isLoadingStatus}
+            onRefresh={fetchStatus}
+          />}
+          {activeTab === 'oauth' && isConnected && <CloudOAuthPanel
+            oauthStatus={oauthStatus}
+            pendingOAuthState={pendingOAuthState}
+            oauthCode={oauthCode}
+            setOauthCode={setOauthCode}
+            oauthStartUrl={oauthStartUrl}
+            onStartOAuth={handleStartOAuth}
+            onCompleteOAuth={handleCompleteOAuth}
+            onCancelOAuth={handleCancelOAuth}
+            onRefreshOAuth={refreshOAuth}
+            onDisconnectOAuth={handleDisconnectOAuth}
+          />}
+        </div>
       </ContentBody>
 
-      {/* Error banner */}
-      {error && (
-        <div
-          role="alert"
-          aria-live="assertive"
-          className="px-6 py-3 border-t border-red-500/20 bg-red-500/10 text-red-400 text-sm flex items-start justify-between gap-3"
-        >
-          <span>{error}</span>
-          <button
-            type="button"
-            onClick={clearError}
-            aria-label="Dismiss error"
-            className="text-red-300/90 hover:text-red-200 transition-colors cursor-pointer"
-          >
-            x
-          </button>
-        </div>
-      )}
+      {error && <ErrorBanner message={error} onDismiss={clearError} />}
     </ContentBox>
   );
 }

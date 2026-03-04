@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Plug, DollarSign } from 'lucide-react';
+import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
 import { getAuthMethods } from '@/lib/types/types';
 import { getAuthBadgeClasses, getAuthIcon } from '@/features/vault/utils/authMethodStyles';
@@ -234,7 +235,7 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
                 }}
               >
                 {connector.icon_url ? (
-                  <img src={connector.icon_url} alt={connector.label} className="w-10 h-10" referrerPolicy="no-referrer" crossOrigin="anonymous" />
+                  <ThemedConnectorIcon url={connector.icon_url} label={connector.label} color={connector.color} size="w-10 h-10" />
                 ) : (
                   <Plug className="w-8 h-8" style={{ color: connector.color }} />
                 )}

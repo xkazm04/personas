@@ -163,7 +163,8 @@ export default function KnowledgeGraphDashboard() {
     return map;
   }, [personas]);
 
-  const fetchData = async () => {
+  const fetchData = async (isActive: () => boolean = () => true) => {
+    if (!isActive()) return;
     setLoading(true);
     setFetchError(null);
     try {
@@ -173,18 +174,25 @@ export default function KnowledgeGraphDashboard() {
           ? listExecutionKnowledge(selectedPersonaId, selectedType ?? undefined, 100)
           : Promise.resolve([]),
       ]);
+      if (!isActive()) return;
       setSummary(s);
       setEntries(e);
     } catch (err) {
+      if (!isActive()) return;
       setFetchError(err instanceof Error ? err.message : 'Failed to load knowledge graph data');
       setSummary(null);
       setEntries([]);
     } finally {
+      if (!isActive()) return;
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchData(); }, [selectedPersonaId, selectedType]);
+  useEffect(() => {
+    let active = true;
+    void fetchData(() => active);
+    return () => { active = false; };
+  }, [selectedPersonaId, selectedType]);
 
   const rawEntries = selectedPersonaId ? entries : (summary?.top_patterns ?? []);
 
@@ -212,7 +220,7 @@ export default function KnowledgeGraphDashboard() {
         subtitle={`${summary?.total_entries ?? 0} patterns learned from execution history`}
         actions={
           <button
-            onClick={fetchData}
+            onClick={() => { void fetchData(); }}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary/40 border border-primary/10 text-sm text-foreground/70 hover:text-foreground/90 hover:bg-secondary/60 transition-colors"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -318,7 +326,7 @@ export default function KnowledgeGraphDashboard() {
                   <p className="text-sm text-red-400/70 mt-0.5">{fetchError}</p>
                 </div>
                 <button
-                  onClick={fetchData}
+                  onClick={() => { void fetchData(); }}
                   className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-lg bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors"
                 >
                   <RefreshCw className="w-3 h-3" /> Retry

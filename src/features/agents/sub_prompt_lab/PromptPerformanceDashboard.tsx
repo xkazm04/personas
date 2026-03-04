@@ -20,6 +20,7 @@ export function PromptPerformanceDashboard({
   const [error, setError] = useState<string | null>(null);
   const [days, setDays] = useState<number>(30);
   const [compareMode, setCompareMode] = useState(false);
+  const [compareDeltaMode, setCompareDeltaMode] = useState(false);
   const [compareA, setCompareA] = useState<number | null>(null);
   const [compareB, setCompareB] = useState<number | null>(null);
 
@@ -144,6 +145,17 @@ export function PromptPerformanceDashboard({
             <option value="">Version B</option>
             {versionNumbers.map(n => <option key={n} value={n}>v{n}</option>)}
           </ThemedSelect>
+          <button
+            type="button"
+            onClick={() => setCompareDeltaMode((prev) => !prev)}
+            className={`ml-auto px-2 py-1 rounded-md border text-xs font-medium transition-colors ${
+              compareDeltaMode
+                ? 'bg-primary/15 border-primary/30 text-primary'
+                : 'bg-secondary/30 border-primary/10 text-muted-foreground/70 hover:bg-secondary/45'
+            }`}
+          >
+            Delta view
+          </button>
         </div>
       )}
 
@@ -160,6 +172,7 @@ export function PromptPerformanceDashboard({
       <PerformanceCharts
         data={data}
         compareMode={compareMode}
+        compareDeltaMode={compareDeltaMode}
         comparedData={comparedData}
         compALabel={compALabel}
         compBLabel={compBLabel}

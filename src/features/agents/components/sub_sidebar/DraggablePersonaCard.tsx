@@ -34,8 +34,8 @@ export function SidebarPersonaCard({
       onContextMenu={onContextMenu}
       className={`w-full text-left px-3 py-1.5 rounded-lg transition-all mb-0.5 ${
         isSelected
-          ? 'bg-primary/10 border-l-2 border-l-primary border-y border-r border-y-primary/20 border-r-primary/20'
-          : 'border-l-2 border-transparent hover:bg-primary/5'
+          ? 'bg-primary/10 border border-primary/20 border-l-2 border-l-primary'
+          : 'border border-transparent border-l-2 border-l-transparent hover:bg-primary/5'
       }`}
     >
       {/* Connector icons row */}

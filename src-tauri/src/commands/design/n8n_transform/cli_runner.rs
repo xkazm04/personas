@@ -692,9 +692,15 @@ pub async fn run_claude_prompt_text_inner(
         }
     })?;
 
+    // Spawn stdin writing in a separate task to prevent deadlock.
+    // Writing stdin inline can block if the child process buffer is full,
+    // causing a deadlock when we then try to read stdout synchronously.
     if let Some(mut stdin) = child.stdin.take() {
-        let _ = stdin.write_all(prompt_text.as_bytes()).await;
-        let _ = stdin.shutdown().await;
+        let prompt_bytes = prompt_text.into_bytes();
+        tokio::spawn(async move {
+            let _ = stdin.write_all(&prompt_bytes).await;
+            let _ = stdin.shutdown().await;
+        });
     }
 
     let stderr = child.stderr.take().ok_or_else(|| "Missing stderr pipe".to_string())?;

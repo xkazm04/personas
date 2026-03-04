@@ -1,4 +1,6 @@
 import { RefreshCw, Loader2 } from 'lucide-react';
+import { motion, useMotionValueEvent, useSpring, useTransform } from 'framer-motion';
+import { useMemo, useState } from 'react';
 
 export interface CloudStatusPanelProps {
   status: {
@@ -63,8 +65,18 @@ export function CloudStatusPanel({ status, isLoading, onRefresh }: CloudStatusPa
           Activity
         </h3>
         <div className="grid grid-cols-2 gap-3">
-          <StatCard label="Queue Length" value={status.queueLength} />
-          <StatCard label="Active Executions" value={status.activeExecutions} />
+          <ActivityGauge
+            label="Queue Length"
+            value={status.queueLength}
+            tone="violet"
+            maxHint={10}
+          />
+          <ActivityGauge
+            label="Active Executions"
+            value={status.activeExecutions}
+            tone="blue"
+            maxHint={Math.max(5, status.workerCounts.executing + status.workerCounts.idle)}
+          />
         </div>
       </div>
 
@@ -114,11 +126,73 @@ function WorkerBadge({ label, count, color }: { label: string; count: number; co
   );
 }
 
-function StatCard({ label, value }: { label: string; value: number }) {
+function ActivityGauge({
+  label,
+  value,
+  tone,
+  maxHint,
+}: {
+  label: string;
+  value: number;
+  tone: 'violet' | 'blue';
+  maxHint: number;
+}) {
+  const safeMax = useMemo(() => {
+    const baseline = Math.max(1, maxHint, value);
+    return Math.ceil(baseline / 5) * 5;
+  }, [maxHint, value]);
+
+  const progressTarget = Math.min(1, Math.max(0, value / safeMax));
+  const spring = useSpring(progressTarget, { stiffness: 180, damping: 22, mass: 0.55 });
+  const arcLength = 157;
+  const dashOffset = useTransform(spring, (p) => arcLength * (1 - p));
+
+  const [displayValue, setDisplayValue] = useState(value);
+  useMotionValueEvent(spring, 'change', (p) => {
+    setDisplayValue(Math.round(p * safeMax));
+  });
+
+  const toneClasses =
+    tone === 'violet'
+      ? {
+          glow: 'shadow-[0_0_22px_rgba(139,92,246,0.24)]',
+          fg: 'stroke-violet-400',
+          text: 'text-violet-300',
+        }
+      : {
+          glow: 'shadow-[0_0_22px_rgba(59,130,246,0.24)]',
+          fg: 'stroke-blue-400',
+          text: 'text-blue-300',
+        };
+
   return (
     <div className="p-3 rounded-lg bg-secondary/30 border border-primary/10">
-      <p className="text-sm text-muted-foreground/90">{label}</p>
-      <p className="text-xl font-semibold text-foreground/80 mt-1">{value}</p>
+      <p className="text-sm text-muted-foreground/90 mb-2">{label}</p>
+      <div className="relative h-24 rounded-md bg-gradient-to-b from-secondary/40 to-secondary/10 border border-primary/10 overflow-hidden">
+        <div className={`absolute inset-0 pointer-events-none ${toneClasses.glow}`} />
+        <svg viewBox="0 0 120 70" className="w-full h-full" role="img" aria-label={`${label} gauge`}>
+          <path
+            d="M 10 60 A 50 50 0 0 1 110 60"
+            fill="none"
+            className="stroke-primary/20"
+            strokeWidth="10"
+            strokeLinecap="round"
+          />
+          <motion.path
+            d="M 10 60 A 50 50 0 0 1 110 60"
+            fill="none"
+            className={toneClasses.fg}
+            strokeWidth="10"
+            strokeLinecap="round"
+            strokeDasharray={arcLength}
+            style={{ strokeDashoffset: dashOffset }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-end pb-2">
+          <div className={`text-xl font-semibold ${toneClasses.text}`}>{displayValue}</div>
+          <div className="text-[10px] text-muted-foreground/60">of {safeMax}</div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,7 +1,69 @@
+import { useEffect, useState } from 'react';
 import { Radio, Trash2, Zap } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscription';
 import { SectionCard } from '@/features/shared/components/SectionCard';
+
+function InlineDeleteButton({
+  id,
+  onConfirm,
+}: {
+  id: string;
+  onConfirm: () => void;
+}) {
+  const [confirming, setConfirming] = useState(false);
+
+  useEffect(() => {
+    if (!confirming) return;
+    const timer = setTimeout(() => setConfirming(false), 2000);
+    const onPointerDown = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target?.closest(`[data-inline-delete="${id}"]`)) {
+        setConfirming(false);
+      }
+    };
+    window.addEventListener('pointerdown', onPointerDown);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('pointerdown', onPointerDown);
+    };
+  }, [confirming, id]);
+
+  return (
+    <button
+      onClick={() => {
+        if (confirming) {
+          onConfirm();
+          setConfirming(false);
+          return;
+        }
+        setConfirming(true);
+      }}
+      data-inline-delete={id}
+      className="p-1 text-muted-foreground/70 hover:text-red-400 transition-colors"
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        {confirming ? (
+          <motion.span
+            key="confirm"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: [1, 1.04, 1] }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.2 }}
+            className="text-xs font-semibold text-red-400"
+          >
+            Confirm?
+          </motion.span>
+        ) : (
+          <motion.span key="icon" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <Trash2 className="w-3 h-3" />
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </button>
+  );
+}
 
 interface UseCaseActiveTriggersProps {
   triggers: PersonaTrigger[];
@@ -38,12 +100,7 @@ export function UseCaseActiveTriggers({ triggers, onDelete }: UseCaseActiveTrigg
             {trigger.enabled ? 'active' : 'disabled'}
           </span>
           {onDelete && (
-            <button
-              onClick={() => onDelete(trigger.id)}
-              className="p-1 text-muted-foreground/70 hover:text-red-400 transition-colors"
-            >
-              <Trash2 className="w-3 h-3" />
-            </button>
+            <InlineDeleteButton id={`trigger-${trigger.id}`} onConfirm={() => onDelete(trigger.id)} />
           )}
         </SectionCard>
       ))}
@@ -86,12 +143,7 @@ export function UseCaseActiveSubscriptions({ subscriptions, onDelete }: UseCaseA
             {sub.enabled ? 'active' : 'disabled'}
           </span>
           {onDelete && (
-            <button
-              onClick={() => onDelete(sub.id)}
-              className="p-1 text-muted-foreground/70 hover:text-red-400 transition-colors"
-            >
-              <Trash2 className="w-3 h-3" />
-            </button>
+            <InlineDeleteButton id={`subscription-${sub.id}`} onConfirm={() => onDelete(sub.id)} />
           )}
         </SectionCard>
       ))}

@@ -20,6 +20,9 @@ export const createCredential = (input: CreateCredentialInput) =>
 export const updateCredential = (id: string, input: UpdateCredentialInput) =>
   invoke<PersonaCredential>("update_credential", { id, input });
 
+export const patchCredentialMetadata = (credentialId: string, patch: Record<string, unknown>) =>
+  invoke<PersonaCredential>("patch_credential_metadata", { id: credentialId, patch });
+
 export const deleteCredential = (id: string) =>
   invoke<boolean>("delete_credential", { id });
 

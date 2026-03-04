@@ -35,7 +35,10 @@ export function useDebouncedSave(
   }, []);
 
   useEffect(() => {
-    if (!isDirty) return;
+    if (!isDirty) {
+      cancel();
+      return;
+    }
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(async () => {
       timerRef.current = null;
@@ -52,7 +55,7 @@ export function useDebouncedSave(
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, deps);
+  }, [isDirty, cancel, ...deps]);
 
   return { isSaving, lastError, cancel };
 }

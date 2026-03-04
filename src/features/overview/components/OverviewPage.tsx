@@ -10,7 +10,6 @@ import EventLogList from '@/features/overview/sub_events/EventLogList';
 import MemoriesPage from '@/features/overview/sub_memories/MemoriesPage';
 import RealtimeVisualizerPage from '@/features/overview/sub_realtime/RealtimeVisualizerPage';
 import BudgetSettingsPage from '@/features/overview/sub_budget/BudgetSettingsPage';
-import { SystemHealthPanel } from '@/features/overview/components/SystemHealthPanel';
 import KnowledgeGraphDashboard from '@/features/overview/sub_knowledge/KnowledgeGraphDashboard';
 import { OverviewFilterProvider } from '@/features/overview/components/OverviewFilterContext';
 
@@ -37,7 +36,6 @@ export default function OverviewPage() {
         className="flex-1 min-h-0 flex flex-col overflow-hidden"
       >
         {overviewTab === 'home' ? <DashboardHome /> :
-        overviewTab === 'system-check' ? <SystemHealthPanel /> :
         overviewTab === 'executions' ? <GlobalExecutionList /> :
         overviewTab === 'manual-review' ? <ManualReviewList /> :
         overviewTab === 'messages' ? <MessageList /> :

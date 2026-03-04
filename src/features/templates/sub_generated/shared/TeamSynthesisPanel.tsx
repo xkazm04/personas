@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { X, Sparkles, Users, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react';
 import { synthesizeTeamFromTemplates } from '@/api/teamSynthesis';
 import type { TeamSynthesisResult } from '@/api/teamSynthesis';
+import { BaseModal } from './BaseModal';
 
 interface TeamSynthesisPanelProps {
   isOpen: boolean;
@@ -43,10 +44,12 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
-
-      <div className="relative w-full max-w-lg bg-background border border-primary/15 rounded-2xl shadow-2xl overflow-hidden mx-4">
+    <BaseModal
+      isOpen={isOpen}
+      onClose={handleClose}
+      titleId="team-synthesis-title"
+      maxWidthClass="max-w-lg"
+    >
         {/* Header */}
         <div className="px-6 py-4 border-b border-primary/10 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -54,7 +57,7 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
               <Users className="w-4.5 h-4.5 text-violet-400" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-foreground/90">Synthesize Team</h2>
+              <h2 id="team-synthesis-title" className="text-sm font-semibold text-foreground/90">Synthesize Team</h2>
               <p className="text-xs text-muted-foreground/60">
                 AI selects templates and assembles a connected team
               </p>
@@ -154,7 +157,6 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
             </button>
           )}
         </div>
-      </div>
-    </div>
+    </BaseModal>
   );
 }

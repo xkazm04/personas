@@ -1,5 +1,14 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { Trophy, Target, FileText, Shield, DollarSign, Clock } from 'lucide-react';
+import {
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  Radar,
+  RadarChart,
+  ResponsiveContainer,
+  Tooltip,
+} from 'recharts';
 import type { LabEvalResult } from '@/lib/bindings/LabEvalResult';
 import { compositeScore, scoreColor } from './labUtils';
 
@@ -29,6 +38,12 @@ interface VersionAggregate extends CellAggregate {
  * Each cell shows the composite score for that version×model pair.
  */
 export function EvalResultsGrid({ results }: Props) {
+  const [celebrateWinnerId, setCelebrateWinnerId] = useState<string | null>(null);
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const radarPalette = useMemo(
+    () => ['#60A5FA', '#A78BFA', '#34D399', '#F59E0B', '#FB7185', '#22D3EE'],
+    [],
+  );
   const { versionAggs, versions, models, grid, winnerId } = useMemo(() => {
     const versionMap = new Map<string, LabEvalResult[]>();
     const modelSet = new Set<string>();
@@ -102,6 +117,27 @@ export function EvalResultsGrid({ results }: Props) {
     };
   }, [results]);
 
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => setReducedMotion(mediaQuery.matches);
+    update();
+    mediaQuery.addEventListener('change', update);
+    return () => mediaQuery.removeEventListener('change', update);
+  }, []);
+
+  useEffect(() => {
+    if (reducedMotion) {
+      setCelebrateWinnerId(null);
+      return;
+    }
+    if (!winnerId) return;
+    setCelebrateWinnerId(winnerId);
+    const timer = window.setTimeout(() => {
+      setCelebrateWinnerId((prev) => (prev === winnerId ? null : prev));
+    }, 900);
+    return () => window.clearTimeout(timer);
+  }, [winnerId, reducedMotion]);
+
   if (results.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground/80 text-sm" data-testid="eval-results-empty">
@@ -109,6 +145,19 @@ export function EvalResultsGrid({ results }: Props) {
       </div>
     );
   }
+
+  const radarVersions = versionAggs.slice(0, 4);
+  const radarData = [
+    { metric: 'Tool Accuracy', key: 'avgToolAccuracy' },
+    { metric: 'Output Quality', key: 'avgOutputQuality' },
+    { metric: 'Protocol Compliance', key: 'avgProtocolCompliance' },
+  ].map((row) => {
+    const values: Record<string, number | string> = { metric: row.metric };
+    for (const agg of radarVersions) {
+      values[agg.versionId] = (agg[row.key as keyof VersionAggregate] as number) ?? 0;
+    }
+    return values;
+  });
 
   return (
     <div className="space-y-6" data-testid="eval-results-grid">
@@ -129,7 +178,9 @@ export function EvalResultsGrid({ results }: Props) {
                 key={agg.versionId}
                 data-testid={`eval-version-card-${agg.versionNumber}`}
                 className={`rounded-xl border p-4 space-y-3 ${
-                  isWinner ? 'bg-primary/5 border-primary/20' : 'bg-background/30 border-primary/10'
+                  isWinner
+                    ? `bg-primary/5 border-primary/20 ${celebrateWinnerId === agg.versionId ? 'ring-1 ring-primary/20 shadow-[0_0_14px_rgba(99,102,241,0.18)]' : ''}`
+                    : 'bg-background/30 border-primary/10'
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -138,7 +189,7 @@ export function EvalResultsGrid({ results }: Props) {
                   </span>
                   {isWinner && (
                     <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-sm font-medium bg-primary/15 text-primary border border-primary/20">
-                      <Trophy className="w-3 h-3" /> Winner
+                      <Trophy className="w-3 h-3 animate-[pulse_3s_ease-in-out_infinite] motion-reduce:animate-none" /> Winner
                     </span>
                   )}
                 </div>
@@ -178,6 +229,61 @@ export function EvalResultsGrid({ results }: Props) {
           })}
         </div>
       </div>
+
+      {/* Multi-dimension comparison radar */}
+      {radarVersions.length >= 2 && (
+        <div className="space-y-2">
+          <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
+            <span className="w-6 h-[2px] bg-gradient-to-r from-primary/40 to-accent/40 rounded-full" />
+            Model Performance Radar
+          </h4>
+          <div className="border border-primary/10 rounded-xl bg-background/20 p-3">
+            <div className="h-[260px]" data-testid="eval-radar-chart">
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart data={radarData} outerRadius="72%">
+                  <PolarGrid stroke="rgba(148, 163, 184, 0.25)" />
+                  <PolarAngleAxis dataKey="metric" tick={{ fill: 'rgba(226,232,240,0.85)', fontSize: 12 }} />
+                  <PolarRadiusAxis domain={[0, 100]} tick={{ fill: 'rgba(148,163,184,0.75)', fontSize: 10 }} />
+                  <Tooltip
+                    formatter={(value: number | string | undefined) => [value ?? 0, 'Score']}
+                    contentStyle={{
+                      background: 'rgba(10, 14, 24, 0.92)',
+                      border: '1px solid rgba(99, 102, 241, 0.25)',
+                      borderRadius: 10,
+                      color: '#e2e8f0',
+                    }}
+                  />
+                  {radarVersions.map((agg, idx) => (
+                    <Radar
+                      key={agg.versionId}
+                      name={`v${agg.versionNumber}`}
+                      dataKey={agg.versionId}
+                      stroke={radarPalette[idx % radarPalette.length]}
+                      fill={radarPalette[idx % radarPalette.length]}
+                      fillOpacity={0.16}
+                      strokeWidth={2}
+                    />
+                  ))}
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {radarVersions.map((agg, idx) => (
+                <span
+                  key={agg.versionId}
+                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs border border-primary/10 bg-secondary/20 text-foreground/80"
+                >
+                  <span
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: radarPalette[idx % radarPalette.length] }}
+                  />
+                  v{agg.versionNumber}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Version × Model matrix grid */}
       <div className="space-y-2">

@@ -60,6 +60,7 @@ export interface PartialPersonaUpdate {
   icon?: string | null;
   color?: string | null;
   enabled?: boolean;
+  sensitive?: boolean;
   max_concurrent?: number;
   timeout_ms?: number;
   notification_channels?: string;
@@ -110,6 +111,7 @@ export interface UpdateSettingsOp {
   icon?: string | null;
   color?: string | null;
   enabled?: boolean;
+  sensitive?: boolean;
   max_concurrent?: number;
   timeout_ms?: number;
 }
@@ -168,7 +170,7 @@ export function operationToPartial(op: PersonaOperation): PartialPersonaUpdate {
     case 'UpdateSettings':
       return {
         name: op.name, description: op.description, icon: op.icon, color: op.color,
-        enabled: op.enabled, max_concurrent: op.max_concurrent, timeout_ms: op.timeout_ms,
+        enabled: op.enabled, sensitive: op.sensitive, max_concurrent: op.max_concurrent, timeout_ms: op.timeout_ms,
       };
     case 'UpdateDesignContext':
       return { design_context: op.design_context };
@@ -194,6 +196,7 @@ export function buildUpdateInput(partial: PartialPersonaUpdate): UpdatePersonaIn
     name: partial.name ?? null,
     system_prompt: partial.system_prompt ?? null,
     enabled: partial.enabled !== undefined ? partial.enabled : null,
+    sensitive: partial.sensitive !== undefined ? partial.sensitive : null,
     max_concurrent: partial.max_concurrent ?? null,
     timeout_ms: partial.timeout_ms ?? null,
     notification_channels: partial.notification_channels ?? null,

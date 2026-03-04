@@ -1,7 +1,10 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Key, LayoutTemplate, Sparkles, Plug, ArrowRight, ChevronDown, Tag, X } from 'lucide-react';
+import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { CredentialCard } from '@/features/vault/sub_card/CredentialCard';
+import { CredentialPlaygroundModal } from '@/features/vault/sub_playground/CredentialPlaygroundModal';
+import { SchemaManagerModal } from '@/features/vault/sub_databases/SchemaManagerModal';
 import { collectAllTags, getCredentialTags, getTagStyle } from '@/features/vault/utils/credentialTags';
 import { computeHealthScore } from '@/features/vault/utils/credentialHealthScore';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
@@ -49,7 +52,7 @@ interface CredentialListProps {
 }
 
 export function CredentialList({ credentials, connectorDefinitions, searchTerm, onDelete, onQuickStart, onGoToCatalog, onGoToAddNew }: CredentialListProps) {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [healthFilter, setHealthFilter] = useState<HealthFilter>('all');
   const [sortKey, setSortKey] = useState<SortKey>('name');
@@ -57,6 +60,22 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
 
   const allTags = useMemo(() => collectAllTags(credentials), [credentials]);
   const hasFilters = selectedTags.length > 0 || healthFilter !== 'all';
+
+  const connectorMap = useMemo(() => {
+    const map = new Map<string, ConnectorDefinition>();
+    for (const connector of connectorDefinitions) {
+      map.set(connector.name, connector);
+    }
+    return map;
+  }, [connectorDefinitions]);
+
+  const googleFallbackConnector = useMemo(
+    () => connectorDefinitions.find((c) => {
+      const metadata = (c.metadata ?? {}) as Record<string, unknown>;
+      return metadata.oauth_type === 'google' || c.name === 'google_workspace_oauth_template';
+    }),
+    [connectorDefinitions],
+  );
 
   const toggleTag = useCallback((tag: string) => {
     setSelectedTags((prev) =>
@@ -77,8 +96,8 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
-  const getConnectorForType = (type: string): ConnectorDefinition | undefined => {
-    const exact = connectorDefinitions.find((c) => c.name === type);
+  const getConnectorForType = useCallback((type: string): ConnectorDefinition | undefined => {
+    const exact = connectorMap.get(type);
     if (exact) return exact;
 
     const normalizedType = type.toLowerCase();
@@ -88,14 +107,11 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
       || normalizedType === 'google_calendar'
       || normalizedType === 'google_drive'
     ) {
-      return connectorDefinitions.find((c) => {
-        const metadata = (c.metadata ?? {}) as Record<string, unknown>;
-        return metadata.oauth_type === 'google' || c.name === 'google_workspace_oauth_template';
-      });
+      return googleFallbackConnector;
     }
 
     return undefined;
-  };
+  }, [connectorMap, googleFallbackConnector]);
 
   const filteredCredentials = useMemo(() => {
     let result = credentials;
@@ -159,11 +175,12 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
     });
 
     return sorted;
-  }, [credentials, searchTerm, selectedTags, healthFilter, sortKey, connectorDefinitions]);
+  }, [credentials, searchTerm, selectedTags, healthFilter, sortKey, getConnectorForType]);
 
-  const toggleExpand = (id: string) => {
-    setExpandedId(prev => prev === id ? null : id);
-  };
+  // Resolve selected credential + connector for modal
+  const selectedCredential = selectedId ? credentials.find((c) => c.id === selectedId) : undefined;
+  const selectedConnector = selectedCredential ? getConnectorForType(selectedCredential.service_type) : undefined;
+  const selectedIsDatabase = selectedConnector?.category === 'database';
 
   const grouped = useMemo(() => {
     // When sorting is active (not name), skip category grouping for cleaner results
@@ -180,7 +197,7 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
     return Object.entries(groups)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([cat, items]) => ({ category: cat, items }));
-  }, [filteredCredentials, connectorDefinitions, sortKey]);
+  }, [filteredCredentials, sortKey, getConnectorForType]);
 
   // Only show filter bar when there are credentials
   const showFilterBar = credentials.length > 0 && (allTags.length > 0 || credentials.length > 3);
@@ -314,8 +331,7 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
               key={credential.id}
               credential={credential}
               connector={connector}
-              isExpanded={expandedId === credential.id}
-              onToggleExpand={() => toggleExpand(credential.id)}
+              onSelect={() => setSelectedId(credential.id)}
               onDelete={onDelete}
             />
           ))}
@@ -369,7 +385,7 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
                     title={c.label}
                   >
                     {c.icon_url ? (
-                      <img src={c.icon_url} alt={c.label} className="w-3 h-3" referrerPolicy="no-referrer" crossOrigin="anonymous" />
+                      <ThemedConnectorIcon url={c.icon_url} label={c.label} color={c.color} size="w-3 h-3" />
                     ) : (
                       <Plug className="w-2.5 h-2.5" style={{ color: c.color }} />
                     )}
@@ -422,7 +438,7 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
                         style={{ backgroundColor: `${connector.color}15` }}
                       >
                         {connector.icon_url ? (
-                          <img src={connector.icon_url} alt={connector.label} className="w-3 h-3" referrerPolicy="no-referrer" crossOrigin="anonymous" />
+                          <ThemedConnectorIcon url={connector.icon_url} label={connector.label} color={connector.color} size="w-3 h-3" />
                         ) : (
                           <Plug className="w-2.5 h-2.5" style={{ color: connector.color }} />
                         )}
@@ -435,6 +451,23 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
             );
           })()}
         </motion.div>
+      )}
+
+      {/* Credential detail modal */}
+      {selectedCredential && selectedIsDatabase && (
+        <SchemaManagerModal
+          credential={selectedCredential}
+          connector={selectedConnector}
+          onClose={() => setSelectedId(null)}
+        />
+      )}
+      {selectedCredential && !selectedIsDatabase && (
+        <CredentialPlaygroundModal
+          credential={selectedCredential}
+          connector={selectedConnector}
+          onClose={() => setSelectedId(null)}
+          onDelete={onDelete}
+        />
       )}
     </motion.div>
   );

@@ -1,15 +1,16 @@
 import { motion } from 'framer-motion';
-import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
-import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Users, Radio, Brain, DollarSign, Cloud, Plus, LayoutTemplate, Monitor, Upload, List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu, Network, Database, type LucideIcon } from 'lucide-react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Users, Radio, Brain, DollarSign, Cloud, Plus, LayoutTemplate, Monitor, Upload, List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu, Network, Database, Home, Compass, type LucideIcon } from 'lucide-react';
 import { getVersion } from '@tauri-apps/api/app';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useAuthStore } from '@/stores/authStore';
-import type { SidebarSection, OverviewTab, TemplateTab, CloudTab, SettingsTab } from '@/lib/types/types';
+import type { SidebarSection, HomeTab, OverviewTab, TemplateTab, CloudTab, SettingsTab } from '@/lib/types/types';
 import GroupedAgentSidebar from '@/features/agents/components/GroupedAgentSidebar';
 import TeamDragPanel from '@/features/pipeline/components/TeamDragPanel';
-import { credentialNav, type CredentialNavKey } from '@/features/vault/hooks/useCredentialViewFSM';
+import { useCredentialNav, type CredentialNavKey } from '@/features/vault/hooks/CredentialNavContext';
 
 const sections: Array<{ id: SidebarSection; icon: typeof Bot; label: string }> = [
+  { id: 'home', icon: Home, label: 'Home' },
   { id: 'overview', icon: BarChart3, label: 'Overview' },
   { id: 'personas', icon: Bot, label: 'Agents' },
   { id: 'events', icon: Zap, label: 'Events' },
@@ -104,9 +105,11 @@ function SidebarSubNav({
 export default function Sidebar() {
   const sidebarSection = usePersonaStore((s) => s.sidebarSection);
   const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
-  const credentialView = useSyncExternalStore(credentialNav.subscribe, credentialNav.getSnapshot);
+  const { currentKey: credentialView, navigate } = useCredentialNav();
   const credentials = usePersonaStore((s) => s.credentials);
   const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
+  const homeTab = usePersonaStore((s) => s.homeTab);
+  const setHomeTab = usePersonaStore((s) => s.setHomeTab);
   const overviewTab = usePersonaStore((s) => s.overviewTab);
   const setOverviewTab = usePersonaStore((s) => s.setOverviewTab);
   const templateTab = usePersonaStore((s) => s.templateTab);
@@ -164,9 +167,13 @@ export default function Sidebar() {
     setSidebarSection('personas');
   };
 
+  const homeItems: Array<{ id: HomeTab; icon: typeof Activity; label: string }> = [
+    { id: 'welcome', icon: Compass, label: 'Welcome' },
+    { id: 'system-check', icon: Monitor, label: 'System Check' },
+  ];
+
   const overviewItems: Array<{ id: OverviewTab; icon: typeof Activity; label: string }> = [
     { id: 'home', icon: LayoutDashboard, label: 'Dashboard' },
-    { id: 'system-check', icon: Monitor, label: 'System Check' },
     { id: 'executions', icon: Activity, label: 'Executions' },
     { id: 'manual-review', icon: ClipboardCheck, label: 'Manual Review' },
     { id: 'messages', icon: MessageSquare, label: 'Messages' },
@@ -221,6 +228,16 @@ export default function Sidebar() {
 
   const renderLevel2 = () => {
     switch (sidebarSection) {
+      case 'home':
+        return (
+          <SidebarSubNav
+            items={homeItems}
+            activeId={homeTab}
+            onSelect={(id) => setHomeTab(id as HomeTab)}
+            variant="overview"
+          />
+        );
+
       case 'overview':
         return (
           <SidebarSubNav
@@ -251,7 +268,7 @@ export default function Sidebar() {
           <SidebarSubNav
             items={credentialItems}
             activeId={credentialView}
-            onSelect={(id) => credentialNav.navigate(id as CredentialNavKey)}
+            onSelect={(id) => navigate(id as CredentialNavKey)}
             badges={credentialBadges}
           >
             {credentials.length === 0 && credentialView === 'credentials' && (

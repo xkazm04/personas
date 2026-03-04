@@ -84,7 +84,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   clickup:            { label: 'ClickUp',            color: '#7B68EE', iconUrl: 'https://cdn.simpleicons.org/clickup/7B68EE',         Icon: CheckSquare },
   asana:              { label: 'Asana',              color: '#F06A6A', iconUrl: 'https://cdn.simpleicons.org/asana/F06A6A',            Icon: CheckSquare },
   trello:             { label: 'Trello',             color: '#0052CC', iconUrl: 'https://cdn.simpleicons.org/trello/0052CC',           Icon: Kanban },
-  monday_com:         { label: 'Monday.com',         color: '#6C3AEF', iconUrl: 'https://cdn.simpleicons.org/mondaydotcom/6C3AEF',    Icon: Kanban },
+  monday_com:         { label: 'Monday.com',         color: '#6C3AEF', iconUrl: '/icons/connectors/monday.svg',                        Icon: Kanban },
   todoist:            { label: 'Todoist',            color: '#E44332', iconUrl: 'https://cdn.simpleicons.org/todoist/E44332',          Icon: ListTodo },
 
   // ── Knowledge & Productivity ──────────────────────────────────
@@ -100,7 +100,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   vercel:             { label: 'Vercel',             color: '#000000', iconUrl: 'https://cdn.simpleicons.org/vercel/f0f0f0',           Icon: Triangle },
   netlify:            { label: 'Netlify',            color: '#00C7B7', iconUrl: 'https://cdn.simpleicons.org/netlify/00C7B7',          Icon: Globe },
   cloudflare:         { label: 'Cloudflare',         color: '#F38020', iconUrl: 'https://cdn.simpleicons.org/cloudflare/F38020',       Icon: Shield },
-  aws:                { label: 'AWS',                color: '#FF9900', iconUrl: 'https://cdn.simpleicons.org/amazonaws/FF9900',        Icon: Cloud },
+  aws:                { label: 'AWS',                color: '#FF9900', iconUrl: '/icons/connectors/aws.svg',                            Icon: Cloud },
   firebase:           { label: 'Firebase',           color: '#DD2C00', iconUrl: 'https://cdn.simpleicons.org/firebase/DD2C00',         Icon: Flame },
 
   // ── Database ──────────────────────────────────────────────────
@@ -112,19 +112,19 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   sentry:             { label: 'Sentry',             color: '#362D59', iconUrl: 'https://cdn.simpleicons.org/sentry/f0f0f0',           Icon: AlertTriangle },
   datadog:            { label: 'Datadog',            color: '#632CA6', iconUrl: 'https://cdn.simpleicons.org/datadog/632CA6',          Icon: Activity },
   pagerduty:          { label: 'PagerDuty',          color: '#06AC38', iconUrl: 'https://cdn.simpleicons.org/pagerduty/06AC38',        Icon: Bell },
-  uptime_robot:       { label: 'Uptime Robot',       color: '#3BD671', iconUrl: 'https://cdn.simpleicons.org/uptimerobot/3BD671',     Icon: MonitorCheck },
+  uptime_robot:       { label: 'Uptime Robot',       color: '#3BD671', iconUrl: '/icons/connectors/uptimerobot.svg',                    Icon: MonitorCheck },
   snyk:               { label: 'Snyk',               color: '#4C4A73', iconUrl: 'https://cdn.simpleicons.org/snyk/f0f0f0',             Icon: Shield },
 
   // ── Analytics ─────────────────────────────────────────────────
   mixpanel:           { label: 'Mixpanel',           color: '#7856FF', iconUrl: 'https://cdn.simpleicons.org/mixpanel/7856FF',         Icon: BarChart3 },
   posthog:            { label: 'PostHog',            color: '#1D4AFF', iconUrl: 'https://cdn.simpleicons.org/posthog/1D4AFF',          Icon: BarChart },
-  amplitude:          { label: 'Amplitude',          color: '#003E82', iconUrl: 'https://cdn.simpleicons.org/amplitude/f0f0f0',        Icon: BarChart },
-  segment:            { label: 'Segment',            color: '#52BD95', iconUrl: 'https://cdn.simpleicons.org/segment/52BD95',          Icon: BarChart },
+  amplitude:          { label: 'Amplitude',          color: '#003E82', iconUrl: '/icons/connectors/amplitude.svg',                      Icon: BarChart },
+  segment:            { label: 'Segment',            color: '#52BD95', iconUrl: '/icons/connectors/segment.svg',                        Icon: BarChart },
 
   // ── Email & SMS ───────────────────────────────────────────────
   sendgrid:           { label: 'SendGrid',           color: '#1A82E2', iconUrl: '/icons/connectors/sendgrid.svg',                       Icon: Send },
   mailchimp:          { label: 'Mailchimp',          color: '#FFE01B', iconUrl: 'https://cdn.simpleicons.org/mailchimp/FFE01B',        Icon: Mail },
-  twilio:             { label: 'Twilio',             color: '#F22F46', iconUrl: 'https://cdn.simpleicons.org/twilio/F22F46',           Icon: Phone },
+  twilio:             { label: 'Twilio',             color: '#F22F46', iconUrl: '/icons/connectors/twilio.svg',                         Icon: Phone },
 
   // ── CRM ───────────────────────────────────────────────────────
   hubspot:            { label: 'HubSpot',            color: '#FF7A59', iconUrl: 'https://cdn.simpleicons.org/hubspot/FF7A59',          Icon: Users },
@@ -132,7 +132,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
 
   // ── Support ───────────────────────────────────────────────────
   zendesk:            { label: 'Zendesk',            color: '#03363D', iconUrl: 'https://cdn.simpleicons.org/zendesk/f0f0f0',          Icon: LifeBuoy },
-  freshdesk:          { label: 'Freshdesk',          color: '#00A656', iconUrl: 'https://cdn.simpleicons.org/freshdesk/00A656',        Icon: Headphones },
+  freshdesk:          { label: 'Freshdesk',          color: '#00A656', iconUrl: null,                                                   Icon: Headphones },
 
   // ── Social ────────────────────────────────────────────────────
   buffer:             { label: 'Buffer',             color: '#231F20', iconUrl: 'https://cdn.simpleicons.org/buffer/f0f0f0',           Icon: Share2 },
@@ -147,7 +147,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   paddle:             { label: 'Paddle',             color: '#FDDD35', iconUrl: 'https://cdn.simpleicons.org/paddle/FDDD35',           Icon: CreditCard },
   quickbooks:         { label: 'QuickBooks',         color: '#2CA01C', iconUrl: 'https://cdn.simpleicons.org/quickbooks/2CA01C',       Icon: Calculator },
   xero:               { label: 'Xero',               color: '#13B5EA', iconUrl: 'https://cdn.simpleicons.org/xero/13B5EA',            Icon: Calculator },
-  plaid:              { label: 'Plaid',              color: '#111111', iconUrl: 'https://cdn.simpleicons.org/plaid/f0f0f0',             Icon: Link },
+  plaid:              { label: 'Plaid',              color: '#111111', iconUrl: null,                                                    Icon: Link },
 
   // ── Scheduling ────────────────────────────────────────────────
   calendly:           { label: 'Calendly',           color: '#006BFF', iconUrl: 'https://cdn.simpleicons.org/calendly/006BFF',         Icon: Calendar },
@@ -164,10 +164,10 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   loom:               { label: 'Loom',               color: '#625DF5', iconUrl: 'https://cdn.simpleicons.org/loom/625DF5',             Icon: Video },
 
   // ── Feature Flags ─────────────────────────────────────────────
-  launchdarkly:       { label: 'LaunchDarkly',       color: '#3DD6F5', iconUrl: 'https://cdn.simpleicons.org/launchdarkly/3DD6F5',     Icon: Flag },
+  launchdarkly:       { label: 'LaunchDarkly',       color: '#3DD6F5', iconUrl: '/icons/connectors/launchdarkly.svg',                   Icon: Flag },
 
   // ── Legal & Signatures ────────────────────────────────────────
-  docusign:           { label: 'DocuSign',           color: '#FFCC22', iconUrl: 'https://cdn.simpleicons.org/docusign/FFCC22',         Icon: FileSignature },
+  docusign:           { label: 'DocuSign',           color: '#FFCC22', iconUrl: '/icons/connectors/docusign.svg',                       Icon: FileSignature },
 
   // ── Auth & Identity ───────────────────────────────────────────
   clerk:              { label: 'Clerk',              color: '#6C47FF', iconUrl: 'https://cdn.simpleicons.org/clerk/6C47FF',            Icon: KeyRound },
@@ -176,7 +176,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   greenhouse:         { label: 'Greenhouse',         color: '#24A47F', iconUrl: null,                                                   Icon: Sprout },
 
   // ── AI ────────────────────────────────────────────────────────
-  openai:             { label: 'OpenAI',             color: '#412991', iconUrl: 'https://cdn.simpleicons.org/openai/f0f0f0',           Icon: Bot },
+  openai:             { label: 'OpenAI',             color: '#412991', iconUrl: '/icons/connectors/openai.svg',                         Icon: Bot },
   replicate:          { label: 'Replicate',          color: '#3D3D3D', iconUrl: '/icons/connectors/replicate.svg',                      Icon: Bot },
 
   // ── Cloud Storage ─────────────────────────────────────────────
@@ -187,20 +187,86 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
 
   // ── Generic ───────────────────────────────────────────────────
   http:               { label: 'HTTP / REST',        color: '#3B82F6', iconUrl: null,                                                   Icon: Globe },
+
+  // ── Built-in ─────────────────────────────────────────────────
+  'in-app-messaging': { label: 'In-app Messaging',   color: '#10B981', iconUrl: null,                                                   Icon: Bell },
 };
 
 export function getConnectorMeta(name: string): ConnectorMeta {
   if (!name) return { label: 'Unknown', color: '#6B7280', iconUrl: null, Icon: Plug };
   if (CONNECTOR_META[name]) return CONNECTOR_META[name];
-  const slug = name.toLowerCase().replace(/[_\s]/g, '');
-  return { label: name, color: '#6B7280', iconUrl: `https://cdn.simpleicons.org/${slug}/9ca3af`, Icon: Plug };
+  return { label: name, color: '#6B7280', iconUrl: null, Icon: Plug };
+}
+
+/**
+ * Render a connector icon as a themed mask-image (local SVGs) or plain img (remote CDN).
+ *
+ * Local SVGs use `fill="currentColor"` so we render them via CSS `mask-image`
+ * with `backgroundColor` set to the brand color — this keeps them readable on
+ * any theme because the color never relies on the SVG's own fill.
+ *
+ * Shared across ConnectorMeta and vault components via `ThemedConnectorIcon`.
+ */
+const isLocalSvg = (url: string) => url.startsWith('/') && url.endsWith('.svg');
+
+export function ThemedConnectorIcon({
+  url,
+  label,
+  color,
+  size = 'w-3.5 h-3.5',
+  onError,
+}: {
+  url: string;
+  label: string;
+  color: string;
+  size?: string;
+  onError?: () => void;
+}) {
+  if (isLocalSvg(url)) {
+    return (
+      <span
+        role="img"
+        aria-label={label}
+        className={`${size} inline-block shrink-0`}
+        style={{
+          maskImage: `url(${url})`,
+          maskSize: 'contain',
+          maskRepeat: 'no-repeat',
+          maskPosition: 'center',
+          WebkitMaskImage: `url(${url})`,
+          WebkitMaskSize: 'contain',
+          WebkitMaskRepeat: 'no-repeat',
+          WebkitMaskPosition: 'center',
+          backgroundColor: color,
+        }}
+      />
+    );
+  }
+  return (
+    <img
+      src={url}
+      alt={label}
+      className={size}
+      onError={onError}
+      referrerPolicy="no-referrer"
+      crossOrigin="anonymous"
+    />
+  );
 }
 
 export function ConnectorIcon({ meta, size = 'w-3.5 h-3.5' }: { meta: ConnectorMeta; size?: string }) {
   const [imgFailed, setImgFailed] = useState(false);
   const FallbackIcon = meta.Icon;
   if (meta.iconUrl && !imgFailed) {
-    return <img src={meta.iconUrl} alt={meta.label} className={size} onError={() => setImgFailed(true)} referrerPolicy="no-referrer" crossOrigin="anonymous" />;
+    return (
+      <ThemedConnectorIcon
+        url={meta.iconUrl}
+        label={meta.label}
+        color={meta.color}
+        size={size}
+        onError={() => setImgFailed(true)}
+      />
+    );
   }
   return <FallbackIcon className={size} style={{ color: meta.color }} />;
 }

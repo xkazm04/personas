@@ -1,19 +1,32 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
 import { ContentBox } from '@/features/shared/components/ContentLayout';
-import { PersonaPromptEditor } from '@/features/agents/sub_prompt/PersonaPromptEditor';
-import { PersonaSettingsTab } from '@/features/agents/sub_settings/PersonaSettingsTab';
-import { PersonaUseCasesTab } from '@/features/agents/sub_use_cases/PersonaUseCasesTab';
-import { PersonaConnectorsTab } from '@/features/agents/sub_connectors/PersonaConnectorsTab';
-import { DesignTab } from '@/features/agents/sub_design/DesignTab';
-import { LabTab } from '@/features/agents/sub_lab/LabTab';
 import { type PersonaDraft, buildDraft } from '@/features/agents/sub_editor/PersonaDraft';
 import { EditorDirtyProvider, useEditorDirtyState } from '@/features/agents/sub_editor/EditorDocument';
 import { useEditorSave } from '@/features/agents/sub_editor/useEditorSave';
 import { UnsavedChangesBanner, DesignNudgeBanner, CloudNudgeBanner } from '@/features/agents/sub_editor/EditorBanners';
 import { EditorTabBar } from '@/features/agents/sub_editor/EditorTabBar';
 import { PersonaEditorHeader } from '@/features/agents/sub_editor/PersonaEditorHeader';
+
+const PersonaPromptEditor = lazy(() =>
+  import('@/features/agents/sub_prompt/PersonaPromptEditor').then((m) => ({ default: m.PersonaPromptEditor })),
+);
+const PersonaSettingsTab = lazy(() =>
+  import('@/features/agents/sub_settings/PersonaSettingsTab').then((m) => ({ default: m.PersonaSettingsTab })),
+);
+const PersonaUseCasesTab = lazy(() =>
+  import('@/features/agents/sub_use_cases/PersonaUseCasesTab').then((m) => ({ default: m.PersonaUseCasesTab })),
+);
+const PersonaConnectorsTab = lazy(() =>
+  import('@/features/agents/sub_connectors/PersonaConnectorsTab').then((m) => ({ default: m.PersonaConnectorsTab })),
+);
+const DesignTab = lazy(() =>
+  import('@/features/agents/sub_design/DesignTab').then((m) => ({ default: m.DesignTab })),
+);
+const LabTab = lazy(() =>
+  import('@/features/agents/sub_lab/LabTab').then((m) => ({ default: m.LabTab })),
+);
 
 export default function PersonaEditor() {
   return (
@@ -143,19 +156,21 @@ function PersonaEditorInner() {
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.15 }}
           >
-            {editorTab === 'use-cases' && <PersonaUseCasesTab draft={draft} patch={patch} modelDirty={modelDirty} credentials={credentials} connectorDefinitions={connectorDefinitions} />}
-            {editorTab === 'prompt' && <PersonaPromptEditor />}
-            {editorTab === 'lab' && <LabTab />}
-            {editorTab === 'connectors' && <PersonaConnectorsTab onMissingCountChange={setConnectorsMissing} />}
-            {editorTab === 'design' && <DesignTab />}
-            {editorTab === 'settings' && (
-              <PersonaSettingsTab
-                draft={draft} patch={patch} isDirty={isDirty} changedSections={changedSections}
-                connectorDefinitions={connectorDefinitions} showDeleteConfirm={showDeleteConfirm}
-                setShowDeleteConfirm={setShowDeleteConfirm} isSaving={isSaving}
-                onDelete={async () => { await deletePersona(selectedPersona.id); setShowDeleteConfirm(false); }}
-              />
-            )}
+            <Suspense fallback={<div className="py-10 text-sm text-muted-foreground/70">Loading tab...</div>}>
+              {editorTab === 'use-cases' && <PersonaUseCasesTab draft={draft} patch={patch} modelDirty={modelDirty} credentials={credentials} connectorDefinitions={connectorDefinitions} />}
+              {editorTab === 'prompt' && <PersonaPromptEditor />}
+              {editorTab === 'lab' && <LabTab />}
+              {editorTab === 'connectors' && <PersonaConnectorsTab onMissingCountChange={setConnectorsMissing} />}
+              {editorTab === 'design' && <DesignTab />}
+              {editorTab === 'settings' && (
+                <PersonaSettingsTab
+                  draft={draft} patch={patch} isDirty={isDirty} changedSections={changedSections}
+                  connectorDefinitions={connectorDefinitions} showDeleteConfirm={showDeleteConfirm}
+                  setShowDeleteConfirm={setShowDeleteConfirm} isSaving={isSaving}
+                  onDelete={async () => { await deletePersona(selectedPersona.id); setShowDeleteConfirm(false); }}
+                />
+              )}
+            </Suspense>
           </motion.div>
         </AnimatePresence>
       </div>

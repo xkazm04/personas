@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { Clock, Trash2, ChevronRight, RefreshCw, RotateCcw } from 'lucide-react';
 import { listN8nSessions, deleteN8nSession, getN8nSession } from '@/api/n8nTransform';
 import type { N8nTransformSession } from '@/lib/bindings/N8nTransformSession';
@@ -45,14 +46,16 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
   const [sessions, setSessions] = useState<N8nTransformSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchSessions = async () => {
     try {
       setLoading(true);
+      setError(null);
       const result = await listN8nSessions();
       setSessions(result);
     } catch {
-      // Silently fail — list might be empty
+      setError('Failed to load previous imports. Please retry.');
     } finally {
       setLoading(false);
     }
@@ -68,8 +71,9 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
     try {
       await deleteN8nSession(id);
       setSessions((prev) => prev.filter((s) => s.id !== id));
+      setError(null);
     } catch {
-      // ignore
+      setError('Failed to delete session. Please retry.');
     } finally {
       setDeletingId(null);
     }
@@ -77,35 +81,24 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
 
   const handleLoad = async (session: N8nTransformSession) => {
     try {
+      setError(null);
       const full = await getN8nSession(session.id);
+      const parseErrors: string[] = [];
 
-      let parsedResult: DesignAnalysisResult | null = null;
-      if (full.parser_result) {
+      const parseJsonField = <T,>(raw: string | null, label: string): T | null => {
+        if (!raw) return null;
         try {
-          parsedResult = JSON.parse(full.parser_result) as DesignAnalysisResult;
-        } catch { /* ignore */ }
-      }
+          return JSON.parse(raw) as T;
+        } catch {
+          parseErrors.push(label);
+          return null;
+        }
+      };
 
-      let draft: N8nPersonaDraft | null = null;
-      if (full.draft_json) {
-        try {
-          draft = JSON.parse(full.draft_json) as N8nPersonaDraft;
-        } catch { /* ignore */ }
-      }
-
-      let questions: TransformQuestion[] | null = null;
-      if (full.questions_json) {
-        try {
-          questions = JSON.parse(full.questions_json) as TransformQuestion[];
-        } catch { /* ignore */ }
-      }
-
-      let rawUserAnswers: Record<string, string> | null = null;
-      if (full.user_answers) {
-        try {
-          rawUserAnswers = JSON.parse(full.user_answers) as Record<string, string>;
-        } catch { /* ignore */ }
-      }
+      const parsedResult = parseJsonField<DesignAnalysisResult>(full.parser_result, 'parser results');
+      const draft = parseJsonField<N8nPersonaDraft>(full.draft_json, 'draft');
+      const questions = parseJsonField<TransformQuestion[]>(full.questions_json, 'questions');
+      const rawUserAnswers = parseJsonField<Record<string, string>>(full.user_answers, 'saved answers');
 
       const transformId = full.transform_id ?? null;
 
@@ -165,9 +158,12 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
         transformId,
         userAnswers,
         transformSubPhase: subPhase,
+        recoveryWarning: parseErrors.length > 0
+          ? `Session partially restored. Could not recover ${parseErrors.join(', ')}.`
+          : null,
       });
     } catch {
-      // ignore
+      setError('Failed to load session. Please retry.');
     }
   };
 
@@ -179,11 +175,11 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
     );
   }
 
-  if (sessions.length === 0) return null;
+  if (sessions.length === 0 && !error) return null;
 
   // Only show non-confirmed sessions (in-progress/failed)
   const activeSessions = sessions.filter((s) => s.status !== 'confirmed');
-  if (activeSessions.length === 0) return null;
+  if (activeSessions.length === 0 && !error) return null;
 
   return (
     <div className="space-y-3">
@@ -197,13 +193,32 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
       </div>
 
       <div className="space-y-1.5">
-        {activeSessions.map((session) => {
+        {error && (
+          <div
+            className="flex items-center justify-between gap-3 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2"
+            aria-live="polite"
+          >
+            <p className="text-sm text-red-400/80">{error}</p>
+            <button
+              type="button"
+              onClick={() => void fetchSessions()}
+              className="px-3 py-1.5 text-sm rounded-lg border border-red-500/20 bg-red-500/10 text-red-300 hover:bg-red-500/20 transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {activeSessions.map((session, i) => {
           const interrupted = isInterruptedSession(session);
           const statusKey = interrupted ? 'interrupted' : session.status;
           const style = STATUS_STYLES[statusKey] ?? STATUS_STYLES.draft!;
           return (
-            <div
+            <motion.div
               key={session.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.04, duration: 0.2 }}
               role="button"
               tabIndex={0}
               onClick={() => void handleLoad(session)}
@@ -250,7 +265,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
                   <ChevronRight className="w-4 h-4 text-muted-foreground/80 group-hover:text-muted-foreground" />
                 )}
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>

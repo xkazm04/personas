@@ -14,6 +14,7 @@ import {
 import { PromptTabsPreview } from '@/features/shared/components/PromptTabsPreview';
 import { DesignConnectorGrid } from '@/features/shared/components/DesignConnectorGrid';
 import { DimensionRadial } from '../shared/DimensionRadial';
+import { BaseModal } from '../shared/BaseModal';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
@@ -68,16 +69,17 @@ export function TemplateDetailModal({
   const StatusIcon = statusBadge.Icon;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-
-      {/* Modal */}
-      <div className="relative w-full max-w-4xl max-h-[85vh] bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden mx-4">
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      titleId="template-detail-title"
+      maxWidthClass="max-w-4xl"
+      panelClassName="max-h-[85vh] bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+    >
         {/* Header */}
         <div className="px-6 py-4 border-b border-primary/10 flex items-start justify-between gap-4 flex-shrink-0">
           <div className="min-w-0 flex-1">
-            <h2 className="text-lg font-semibold text-foreground/90 truncate">
+            <h2 id="template-detail-title" className="text-lg font-semibold text-foreground/90 truncate">
               {review.test_case_name}
             </h2>
             <p className="text-sm text-muted-foreground/70 mt-1 line-clamp-2">
@@ -191,8 +193,7 @@ export function TemplateDetailModal({
             Delete
           </button>
         </div>
-      </div>
-    </div>
+    </BaseModal>
   );
 }
 

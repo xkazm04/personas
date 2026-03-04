@@ -21,13 +21,39 @@ interface AddSubscriptionFormProps {
 export function AddSubscriptionForm({ onAdd, onCancel }: AddSubscriptionFormProps) {
   const [newEventType, setNewEventType] = useState('');
   const [newSourceFilter, setNewSourceFilter] = useState('');
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const sanitizeSourceFilter = (value: string): string => {
+    // Normalize visually-similar unicode and collapse wildcard runs.
+    return value.normalize('NFKC').trim().replace(/\*{2,}/g, '*');
+  };
+
+  const validateSourceFilter = (value: string): string | null => {
+    if (!value) return null;
+    if (value === '*') return 'A global wildcard (*) is too broad. Use a scoped prefix such as team-*.';
+    if (value.length > 120) return 'Source filter is too long (max 120 chars).';
+    if (/\*\*/.test(value)) return 'Double wildcard (**) is not allowed.';
+    if (/\?/.test(value)) return 'Question-mark wildcards are not allowed.';
+    if (!/^[a-zA-Z0-9_:\-*.]+$/.test(value)) return 'Only letters, numbers, _, -, :, ., and * are allowed.';
+    if (value.startsWith('.') || value.endsWith('.')) return 'Source filter cannot start or end with a dot.';
+    if (/\.\.|::|:\.|\.:(?=.)/.test(value)) return 'Source filter contains an invalid separator sequence.';
+    if (value.split('*').length - 1 > 3) return 'At most 3 wildcard characters are allowed.';
+    return null;
+  };
 
   const handleAdd = async () => {
     if (!newEventType) return;
+    const sourceFilter = sanitizeSourceFilter(newSourceFilter);
+    const error = validateSourceFilter(sourceFilter);
+    if (error) {
+      setValidationError(error);
+      return;
+    }
+    setValidationError(null);
     setSaving(true);
     try {
-      await onAdd(newEventType, newSourceFilter.trim());
+      await onAdd(newEventType, sourceFilter);
       setNewEventType('');
       setNewSourceFilter('');
     } finally {
@@ -38,7 +64,7 @@ export function AddSubscriptionForm({ onAdd, onCancel }: AddSubscriptionFormProp
   return (
     <div className="border border-primary/15 rounded-xl p-2.5 space-y-2 bg-secondary/30">
       <div>
-        <label className="block text-sm font-mono text-muted-foreground/80 uppercase mb-1">
+        <label className="block text-sm font-medium text-foreground/80 mb-1">
           Event Type
           <FieldHint
             text="The type of system event that will trigger this persona to run."
@@ -57,8 +83,8 @@ export function AddSubscriptionForm({ onAdd, onCancel }: AddSubscriptionFormProp
         </ThemedSelect>
       </div>
       <div>
-        <label className="block text-sm font-mono text-muted-foreground/80 uppercase mb-1">
-          Source Filter <span className="normal-case">(optional)</span>
+        <label className="block text-sm font-medium text-foreground/80 mb-1">
+          Source Filter <span className="text-muted-foreground/80">(optional)</span>
           <FieldHint
             text="Only trigger when the event source matches this filter. Supports exact persona IDs or glob patterns with * wildcards."
             example="persona-abc* or team-*"
@@ -67,10 +93,16 @@ export function AddSubscriptionForm({ onAdd, onCancel }: AddSubscriptionFormProp
         <input
           type="text"
           value={newSourceFilter}
-          onChange={(e) => setNewSourceFilter(e.target.value)}
+          onChange={(e) => {
+            setNewSourceFilter(e.target.value);
+            if (validationError) setValidationError(null);
+          }}
           placeholder="e.g. persona-id or glob pattern"
           className={INPUT_FIELD}
         />
+        {validationError && (
+          <p className="mt-1 text-xs text-red-400/80">{validationError}</p>
+        )}
       </div>
       <div className="flex items-center gap-2 pt-1">
         <button

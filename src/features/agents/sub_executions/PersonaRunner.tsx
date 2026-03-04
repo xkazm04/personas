@@ -4,6 +4,8 @@ import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizeUrl';
 import { useElapsedTimer } from '@/hooks';
 import { usePersonaStore } from '@/stores/personaStore';
 import { usePersonaExecution } from '@/hooks/execution/usePersonaExecution';
+import { useAiHealingStream } from '@/hooks/execution/useAiHealingStream';
+import { TerminalStrip } from '@/features/shared/components/TerminalStrip';
 import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, Timer, DollarSign, RotateCw, Wrench, Zap, Brain, Cpu, CheckCheck, AlertTriangle, ShieldAlert, ExternalLink } from 'lucide-react';
 import { classifyLine, parseSummaryLine } from '@/lib/utils/terminalColors';
 import { formatElapsed, getStatusEntry } from '@/lib/utils/formatters';
@@ -86,6 +88,8 @@ function detectPhaseFromLine(line: string, hasSeenTools: boolean): string | null
       if (line.startsWith('Execution started') || line.startsWith('Cloud execution started')) return 'initializing';
       return hasSeenTools ? 'responding' : 'thinking';
   }
+
+  return null;
 }
 
 export function PersonaRunner() {
@@ -127,6 +131,10 @@ export function PersonaRunner() {
 
   // Healing notification state — inline cards between output and retry
   const [healingNotification, setHealingNotification] = useState<HealingEventPayload | null>(null);
+
+  // AI self-healing (dev-mode only)
+  const aiHealing = useAiHealingStream(personaId);
+  const [showHealingLog, setShowHealingLog] = useState(false);
 
   // Resizable + fullscreen terminal state
   const [terminalHeight, setTerminalHeight] = useState(400);
@@ -609,6 +617,28 @@ export function PersonaRunner() {
         )}
       </AnimatePresence>
 
+      {/* AI Self-Healing Strip (dev-mode only) */}
+      {import.meta.env.VITE_DEVELOPMENT === 'true' && aiHealing.phase !== 'idle' && (
+        <TerminalStrip
+          lastLine={aiHealing.lastLine}
+          lines={aiHealing.lines}
+          isRunning={
+            aiHealing.phase === 'started' ||
+            aiHealing.phase === 'diagnosing' ||
+            aiHealing.phase === 'applying'
+          }
+          isExpanded={showHealingLog}
+          onToggle={() => setShowHealingLog((v) => !v)}
+          counters={
+            <AiHealingCounters
+              phase={aiHealing.phase}
+              fixCount={aiHealing.fixesApplied.length}
+              shouldRetry={aiHealing.shouldRetry}
+            />
+          }
+        />
+      )}
+
       {/* Coached empty state — shown when no execution output is visible */}
       <AnimatePresence>
         {!(isThisPersonasExecution && (isExecuting || outputLines.length > 0)) && (
@@ -919,5 +949,52 @@ function HealingCard({
         )}
       </div>
     </motion.div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// AI Healing Counters — phase badge + fix count for TerminalStrip
+// ---------------------------------------------------------------------------
+
+function AiHealingCounters({
+  phase,
+  fixCount,
+  shouldRetry,
+}: {
+  phase: string;
+  fixCount: number;
+  shouldRetry: boolean;
+}) {
+  const label = (() => {
+    switch (phase) {
+      case 'started':
+        return 'AI Healing started';
+      case 'diagnosing':
+        return 'Diagnosing...';
+      case 'applying':
+        return `Applying ${fixCount} fix${fixCount !== 1 ? 'es' : ''}...`;
+      case 'completed':
+        return fixCount > 0
+          ? `${fixCount} fix${fixCount !== 1 ? 'es' : ''} applied${shouldRetry ? ' — retrying' : ''}`
+          : 'No fixes needed';
+      case 'failed':
+        return 'Healing failed';
+      default:
+        return '';
+    }
+  })();
+
+  const dotColor =
+    phase === 'completed'
+      ? 'bg-emerald-400'
+      : phase === 'failed'
+        ? 'bg-red-400'
+        : 'bg-violet-400 animate-pulse';
+
+  return (
+    <span className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+      <span className={`inline-block w-1.5 h-1.5 rounded-full ${dotColor}`} />
+      {label}
+    </span>
   );
 }

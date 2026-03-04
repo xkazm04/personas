@@ -93,3 +93,24 @@ export const deleteDbSavedQuery = (id: string) =>
 
 export const executeDbQuery = (credentialId: string, queryText: string) =>
   invoke<QueryResult>('execute_db_query', { credentialId, queryText });
+
+// ── Schema Introspection ──────────────────────────────────────────────
+
+export const introspectDbTables = (credentialId: string) =>
+  invoke<QueryResult>('introspect_db_tables', { credentialId });
+
+export const introspectDbColumns = (credentialId: string, tableName: string) =>
+  invoke<QueryResult>('introspect_db_columns', { credentialId, tableName });
+
+// ── Query Debug (AI-assisted) ─────────────────────────────────────────
+
+export const startQueryDebug = (
+  credentialId: string,
+  queryText: string,
+  errorContext: string | null,
+  serviceType: string,
+  debugId: string,
+) => invoke<void>('start_query_debug', { credentialId, queryText, errorContext, serviceType, debugId });
+
+export const cancelQueryDebug = (debugId: string) =>
+  invoke<void>('cancel_query_debug', { debugId });

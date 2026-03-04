@@ -4,7 +4,12 @@ import {
   Upload, FileJson, FileCode2, AlertCircle, ChevronRight,
   ClipboardPaste, Link2, Loader2,
 } from 'lucide-react';
-import { isSupportedFile, getAcceptedExtensions } from '@/lib/personas/workflowDetector';
+import {
+  isSupportedFile,
+  getAcceptedExtensions,
+  countElements,
+  detectPlatformLabel,
+} from '@/lib/personas/workflowDetector';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_PASTE_LENGTH = 5 * 1024 * 1024; // 5MB text
@@ -27,29 +32,6 @@ function getFileIcon(fileName: string) {
     return FileCode2;
   }
   return FileJson;
-}
-
-/** Count workflow elements for the preview card. */
-function countElements(json: Record<string, unknown>): { count: number; label: string } {
-  if (Array.isArray(json.nodes)) return { count: json.nodes.length, label: 'node' };
-  if (Array.isArray(json.steps)) return { count: json.steps.length, label: 'step' };
-  if (json.trigger && Array.isArray(json.actions)) return { count: (json.actions as unknown[]).length + 1, label: 'step' };
-  if (json.blueprint && typeof json.blueprint === 'object') {
-    const bp = json.blueprint as Record<string, unknown>;
-    if (Array.isArray(bp.flow)) return { count: bp.flow.length, label: 'module' };
-  }
-  if (Array.isArray(json.flow)) return { count: json.flow.length, label: 'module' };
-  if (Array.isArray(json.modules)) return { count: json.modules.length, label: 'module' };
-  if (json.jobs && typeof json.jobs === 'object') return { count: Object.keys(json.jobs).length, label: 'job' };
-  return { count: 0, label: 'element' };
-}
-
-function detectPlatformLabel(json: Record<string, unknown>): string {
-  if (Array.isArray(json.nodes)) return 'n8n';
-  if (Array.isArray(json.steps) || (json.trigger && Array.isArray(json.actions))) return 'Zapier';
-  if (json.blueprint || Array.isArray(json.flow) || Array.isArray(json.modules)) return 'Make';
-  if (json.jobs && typeof json.jobs === 'object') return 'GitHub Actions';
-  return 'Workflow';
 }
 
 /** Derive a filename hint from a URL for parseWorkflowFile extension detection. */
@@ -88,12 +70,12 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
   const [mode, setMode] = useState<ImportMode>('file');
   const [isDragging, setIsDragging] = useState(false);
   const [preview, setPreview] = useState<FilePreview | null>(null);
-  const proceedTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const mountedRef = useRef(true);
   const validatedFileRef = useRef<File | null>(null);
   const validationGenerationRef = useRef(0);
   const activeReaderRef = useRef<FileReader | null>(null);
   const validatedContentRef = useRef<string | null>(null);
+  const validatedUrlRef = useRef<{ content: string; sourceName: string } | null>(null);
 
   // Keep callback in a ref so setTimeout closures always call the latest version
   const onContentPasteRef = useRef(onContentPaste);
@@ -109,9 +91,9 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
   const [urlPreview, setUrlPreview] = useState<FilePreview | null>(null);
 
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
       mountedRef.current = false;
-      if (proceedTimerRef.current) clearTimeout(proceedTimerRef.current);
       if (activeReaderRef.current?.readyState === FileReader.LOADING) {
         activeReaderRef.current.abort();
       }
@@ -158,7 +140,6 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
   const validateAndPreview = useCallback(
     (file: File) => {
       const generation = ++validationGenerationRef.current;
-      if (proceedTimerRef.current) clearTimeout(proceedTimerRef.current);
       if (activeReaderRef.current?.readyState === FileReader.LOADING) {
         activeReaderRef.current.abort();
       }
@@ -202,9 +183,6 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
             kind: 'valid', fileName: file.name, fileSize: formatFileSize(file.size),
             workflowName: workflowName || 'GitHub Actions Workflow', nodeCount: 0, platform: 'GitHub Actions',
           });
-          proceedTimerRef.current = setTimeout(() => {
-            if (mountedRef.current && generation === validationGenerationRef.current) forwardContent();
-          }, 600);
           return;
         }
 
@@ -227,9 +205,6 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
         validatedFileRef.current = file;
         validatedContentRef.current = content;
         setPreview({ kind: 'valid', fileName: file.name, fileSize: formatFileSize(file.size), workflowName, nodeCount: count, platform });
-        proceedTimerRef.current = setTimeout(() => {
-          if (mountedRef.current && generation === validationGenerationRef.current) forwardContent();
-        }, 600);
       };
       reader.onerror = () => {
         if (!mountedRef.current || generation !== validationGenerationRef.current) return;
@@ -315,6 +290,7 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
 
     setUrlFetching(true);
     setUrlPreview(null);
+    validatedUrlRef.current = null;
 
     try {
       const rawUrl = resolveRawUrl(trimmed);
@@ -355,11 +331,7 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
         kind: 'valid', fileName: sourceName, fileSize: formatFileSize(text.length),
         workflowName, nodeCount: count, platform,
       });
-
-      // Auto-import after brief preview
-      setTimeout(() => {
-        if (mountedRef.current) onContentPaste?.(text.trim(), sourceName);
-      }, 600);
+      validatedUrlRef.current = { content: text.trim(), sourceName };
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown fetch error';
       setUrlPreview({ kind: 'error', fileName: 'url', message: msg.includes('timeout') ? 'Request timed out (15s).' : `Fetch failed: ${msg}` });
@@ -367,6 +339,12 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
       if (mountedRef.current) setUrlFetching(false);
     }
   }, [urlValue, onContentPaste]);
+
+  const handleUrlImport = useCallback(() => {
+    const validated = validatedUrlRef.current;
+    if (!validated) return;
+    onContentPaste?.(validated.content, validated.sourceName);
+  }, [onContentPaste]);
 
   // ── Render ──
 
@@ -410,16 +388,25 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
           >
             <motion.div
               onClick={() => fileInputRef.current?.click()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  fileInputRef.current?.click();
+                }
+              }}
               onDragOver={handleDragOver}
               onDragEnter={handleDragEnter}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
+              role="button"
+              tabIndex={0}
+              aria-label="Drop workflow file or click to browse"
               data-testid="n8n-upload-dropzone"
               className={`relative flex flex-col items-center justify-center gap-4 p-12 rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200 ${
                 isDragging
                   ? 'border-violet-400/60 bg-violet-500/10 scale-[1.01]'
                   : 'border-primary/15 bg-secondary/20 hover:border-primary/30 hover:bg-secondary/30'
-              }`}
+              } focus-visible:ring-2 focus-visible:ring-violet-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
             >
               <motion.div
                 animate={isDragging ? { scale: 1.1, y: -4 } : { scale: 1, y: 0 }}
@@ -449,6 +436,17 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
               />
             </motion.div>
             <PreviewCard preview={preview} FileIcon={FileIcon} onClick={preview?.kind === 'valid' ? handleManualProceed : undefined} />
+            {preview?.kind === 'valid' && (
+              <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="mt-3 flex flex-col items-start gap-1.5">
+                <button
+                  onClick={handleManualProceed}
+                  className="px-5 py-2.5 text-sm font-semibold rounded-xl bg-violet-500 text-white hover:bg-violet-400 transition-colors"
+                >
+                  Continue
+                </button>
+                <p className="text-xs text-muted-foreground/60">Press Enter or click to continue</p>
+              </motion.div>
+            )}
           </motion.div>
         )}
 
@@ -475,6 +473,7 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
                   setPasteText(e.target.value);
                   validatePastedContent(e.target.value);
                 }}
+                aria-label="Workflow JSON content"
                 placeholder='Paste your exported workflow JSON here...\n\nExample: {"nodes": [...], "connections": {...}}'
                 className="w-full h-48 px-4 py-3 bg-transparent text-sm font-mono text-foreground/80 placeholder:text-muted-foreground/40 resize-none outline-none"
                 spellCheck={false}
@@ -527,6 +526,7 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
                   value={urlValue}
                   onChange={(e) => { setUrlValue(e.target.value); setUrlPreview(null); }}
                   onKeyDown={(e) => { if (e.key === 'Enter' && !urlFetching) void handleUrlFetch(); }}
+                  aria-label="Workflow URL"
                   placeholder="https://raw.githubusercontent.com/.../workflow.json"
                   className="flex-1 px-3 py-2 rounded-lg bg-background/50 border border-primary/15 text-sm text-foreground/80 placeholder:text-muted-foreground/40 outline-none focus:border-violet-500/40 transition-colors"
                   data-testid="url-input"
@@ -559,8 +559,19 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
             <PreviewCard
               preview={urlPreview}
               FileIcon={FileJson}
-              onClick={urlPreview?.kind === 'valid' ? () => onContentPaste?.(urlValue.trim(), fileNameFromUrl(urlValue)) : undefined}
+              onClick={urlPreview?.kind === 'valid' ? handleUrlImport : undefined}
             />
+            {urlPreview?.kind === 'valid' && (
+              <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="mt-3 flex flex-col items-start gap-1.5">
+                <button
+                  onClick={handleUrlImport}
+                  className="px-5 py-2.5 text-sm font-semibold rounded-xl bg-violet-500 text-white hover:bg-violet-400 transition-colors"
+                >
+                  Continue
+                </button>
+                <p className="text-xs text-muted-foreground/60">Press Enter or click to continue</p>
+              </motion.div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -574,11 +585,11 @@ function PlatformLabels() {
   return (
     <div className="flex items-center gap-4 text-sm text-muted-foreground/80">
       <span className="flex items-center gap-1.5"><FileJson className="w-3.5 h-3.5" /> n8n</span>
-      <span className="text-primary/20">|</span>
+      <span className="text-primary/20" aria-hidden="true">|</span>
       <span className="flex items-center gap-1.5"><FileJson className="w-3.5 h-3.5" /> Zapier</span>
-      <span className="text-primary/20">|</span>
+      <span className="text-primary/20" aria-hidden="true">|</span>
       <span className="flex items-center gap-1.5"><FileJson className="w-3.5 h-3.5" /> Make</span>
-      <span className="text-primary/20">|</span>
+      <span className="text-primary/20" aria-hidden="true">|</span>
       <span className="flex items-center gap-1.5"><FileCode2 className="w-3.5 h-3.5" /> GitHub Actions</span>
     </div>
   );
@@ -605,6 +616,14 @@ function PreviewCard({
           data-testid="file-validation-preview"
           data-status={preview.kind}
           onClick={onClick}
+          onKeyDown={(e) => {
+            if ((e.key === 'Enter' || e.key === ' ') && onClick) {
+              e.preventDefault();
+              onClick();
+            }
+          }}
+          role={onClick ? 'button' : undefined}
+          tabIndex={onClick ? 0 : -1}
           className={`mt-3 flex items-center gap-3 px-4 rounded-lg border ${
             preview.kind === 'valid'
               ? 'border-primary/10 bg-zinc-900/50 py-2 cursor-pointer hover:bg-zinc-800/60 transition-colors'
@@ -640,6 +659,12 @@ function PreviewCard({
 
 /** Quick extraction of `name:` from YAML content without full parsing */
 function extractYamlName(content: string): string | null {
-  const match = content.match(/^name:\s*['"]?(.+?)['"]?\s*$/m);
-  return match?.[1] ?? null;
+  // Supports both top-level and indented/nested `name:` fields.
+  const topLevelMatch = content.match(/^\s*name\s*:\s*['"]?(.+?)['"]?\s*$/m);
+  if (topLevelMatch?.[1]) return topLevelMatch[1];
+
+  // Common nested form in workflow metadata blocks.
+  const metadataBlock = content.match(/^[ \t]*metadata\s*:\s*([\s\S]*?)(?:^\S|\Z)/m)?.[1] ?? '';
+  const metadataName = metadataBlock.match(/^[ \t]+name\s*:\s*['"]?(.+?)['"]?\s*$/m);
+  return metadataName?.[1] ?? null;
 }

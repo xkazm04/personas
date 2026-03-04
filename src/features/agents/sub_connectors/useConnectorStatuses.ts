@@ -14,6 +14,7 @@ export function useConnectorStatuses() {
 
   const [statuses, setStatuses] = useState<ConnectorStatus[]>([]);
   const [testingAll, setTestingAll] = useState(false);
+  const inFlightTestsRef = useRef<Set<string>>(new Set());
 
   const tools = selectedPersona?.tools ?? [];
 
@@ -56,32 +57,42 @@ export function useConnectorStatuses() {
 
   useEffect(() => {
     autoTestedRef.current.clear();
+    inFlightTestsRef.current.clear();
   }, [selectedPersona?.id]);
 
-  const testConnector = useCallback(async (name: string, credentialId: string) => {
+  const updateStatus = useCallback((name: string, updates: Partial<ConnectorStatus>) => {
     setStatuses((prev) =>
-      prev.map((s) => s.name === name ? { ...s, testing: true, result: null } : s),
+      prev.map((status) => (status.name === name ? { ...status, ...updates } : status)),
     );
+  }, []);
+
+  const testConnector = useCallback(async (name: string, credentialId: string) => {
+    if (inFlightTestsRef.current.has(name)) return;
+    inFlightTestsRef.current.add(name);
+    updateStatus(name, { testing: true, result: null });
     try {
       const result = await healthcheckCredential(credentialId);
-      setStatuses((prev) =>
-        prev.map((s) => s.name === name ? { ...s, testing: false, result } : s),
-      );
+      updateStatus(name, { testing: false, result });
     } catch (err) {
-      setStatuses((prev) =>
-        prev.map((s) =>
-          s.name === name
-            ? { ...s, testing: false, result: { success: false, message: err instanceof Error ? err.message : 'Healthcheck failed' } }
-            : s,
-        ),
-      );
+      updateStatus(name, {
+        testing: false,
+        result: { success: false, message: err instanceof Error ? err.message : 'Healthcheck failed' },
+      });
+    } finally {
+      inFlightTestsRef.current.delete(name);
     }
-  }, [healthcheckCredential]);
+  }, [healthcheckCredential, updateStatus]);
 
   // Auto-test when new status rows gain credentials
   useEffect(() => {
     for (const status of statuses) {
-      if (status.credentialId && !status.result && !status.testing && !autoTestedRef.current.has(status.name)) {
+      if (
+        status.credentialId
+        && !status.result
+        && !status.testing
+        && !autoTestedRef.current.has(status.name)
+        && !inFlightTestsRef.current.has(status.name)
+      ) {
         autoTestedRef.current.add(status.name);
         void testConnector(status.name, status.credentialId);
       }

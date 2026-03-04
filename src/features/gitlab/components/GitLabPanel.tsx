@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
-import { GitBranch, Wifi, WifiOff } from 'lucide-react';
+import { GitBranch } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
+import { ConnectionStatusBadge } from '@/features/shared/components/ConnectionStatusBadge';
+import { PanelTabBar } from '@/features/shared/components/PanelTabBar';
+import { ErrorBanner } from '@/features/shared/components/ErrorBanner';
 import { GitLabConnectionForm } from '@/features/gitlab/components/GitLabConnectionForm';
 import { GitLabAgentList } from '@/features/gitlab/components/GitLabAgentList';
 import { GitLabDeployModal } from '@/features/gitlab/components/GitLabDeployModal';
@@ -74,103 +77,64 @@ export default function GitLabPanel() {
     usePersonaStore.setState({ gitlabSelectedProjectId: id });
   };
 
-  const connectionBadge = isConnected ? (
-    <span className="flex items-center gap-1.5 text-sm px-2 py-0.5 rounded-md border bg-emerald-500/10 border-emerald-500/20 text-emerald-400">
-      <Wifi className="w-3 h-3" />
-      Connected
-    </span>
-  ) : (
-    <span className="flex items-center gap-1.5 text-sm px-2 py-0.5 rounded-md border bg-red-500/10 border-red-500/20 text-red-400">
-      <WifiOff className="w-3 h-3" />
-      Disconnected
-    </span>
-  );
-
   return (
     <ContentBox>
       <ContentHeader
-        icon={<GitBranch className="w-5 h-5 text-orange-400" />}
+        icon={<GitBranch className="w-5 h-5 text-amber-400" />}
         iconColor="amber"
         title="GitLab Integration"
         subtitle="Deploy personas as GitLab Duo Agents"
-        actions={connectionBadge}
+        actions={<ConnectionStatusBadge connected={isConnected} isBusy={isConnecting} />}
       >
-        {/* Tab bar */}
-        <div className="flex gap-0 mt-4 -mb-5 -mx-4 md:-mx-6 border-t border-primary/10">
-          {TABS.map((tab) => {
-            const disabled = tab.disabledWhenOffline && !isConnected;
-            const active = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                disabled={disabled}
-                onClick={() => setActiveTab(tab.id)}
-                className={`
-                  px-5 py-2.5 text-sm font-medium transition-colors relative
-                  ${active
-                    ? 'text-foreground/90 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-orange-500'
-                    : 'text-muted-foreground/90 hover:text-foreground/95'}
-                  ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
-                `}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
+        <PanelTabBar
+          tabs={TABS.map((tab) => ({ ...tab, disabled: tab.disabledWhenOffline && !isConnected }))}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          activeUnderlineClass="after:bg-orange-500"
+          idPrefix="gitlab-deploy"
+        />
       </ContentHeader>
 
       {/* Tab content */}
       <ContentBody>
-        {activeTab === 'connection' && (
-          <GitLabConnectionForm
-            isConnected={isConnected}
-            username={config?.username ?? ''}
-            token={token}
-            setToken={setToken}
-            isConnecting={isConnecting}
-            onConnect={handleConnect}
-            onDisconnect={handleDisconnect}
-          />
-        )}
-        {activeTab === 'deploy' && isConnected && (
-          <GitLabDeployModal
-            projects={projects}
-            personas={personas.map((p) => ({ id: p.id, name: p.name, icon: p.icon }))}
-            selectedProjectId={selectedProjectId}
-            onSelectProject={handleSelectProject}
-            onFetchProjects={fetchProjects}
-            onDeploy={deployPersona}
-          />
-        )}
-        {activeTab === 'agents' && isConnected && (
-          <GitLabAgentList
-            projectId={selectedProjectId}
-            agents={agents}
-            onFetchAgents={fetchAgents}
-            onUndeploy={undeployAgent}
-          />
-        )}
+        <div
+          role="tabpanel"
+          id={`gitlab-deploy-panel-${activeTab}`}
+          aria-labelledby={`gitlab-deploy-tab-${activeTab}`}
+        >
+          {activeTab === 'connection' && (
+            <GitLabConnectionForm
+              isConnected={isConnected}
+              username={config?.username ?? ''}
+              token={token}
+              setToken={setToken}
+              isConnecting={isConnecting}
+              onConnect={handleConnect}
+              onDisconnect={handleDisconnect}
+            />
+          )}
+          {activeTab === 'deploy' && isConnected && (
+            <GitLabDeployModal
+              projects={projects}
+              personas={personas.map((p) => ({ id: p.id, name: p.name, icon: p.icon }))}
+              selectedProjectId={selectedProjectId}
+              onSelectProject={handleSelectProject}
+              onFetchProjects={fetchProjects}
+              onDeploy={deployPersona}
+            />
+          )}
+          {activeTab === 'agents' && isConnected && (
+            <GitLabAgentList
+              projectId={selectedProjectId}
+              agents={agents}
+              onFetchAgents={fetchAgents}
+              onUndeploy={undeployAgent}
+            />
+          )}
+        </div>
       </ContentBody>
 
-      {/* Error banner */}
-      {error && (
-        <div
-          role="alert"
-          aria-live="assertive"
-          className="px-6 py-3 border-t border-red-500/20 bg-red-500/10 text-red-400 text-sm flex items-start justify-between gap-3"
-        >
-          <span>{error}</span>
-          <button
-            type="button"
-            onClick={clearError}
-            aria-label="Dismiss error"
-            className="text-red-300/90 hover:text-red-200 transition-colors cursor-pointer"
-          >
-            x
-          </button>
-        </div>
-      )}
+      {error && <ErrorBanner message={error} onDismiss={clearError} />}
     </ContentBox>
   );
 }

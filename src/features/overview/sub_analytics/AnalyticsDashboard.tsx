@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useCallback, useState } from 'react';
+import { useEffect, useMemo, useCallback, useRef, useState } from 'react';
 import { usePersonaStore, initHealingListener } from '@/stores/personaStore';
 import {
   DollarSign, Zap, CheckCircle, TrendingUp, RefreshCw,
@@ -77,6 +77,9 @@ export default function AnalyticsDashboard() {
     issues_created: number;
     auto_fixed: number;
   } | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const refreshInFlightRef = useRef<Promise<void> | null>(null);
+  const refreshQueuedRef = useRef(false);
 
   // ── Budget state (centralized) ──
   const monthlySpend = usePersonaStore((s) => s.monthlySpend);
@@ -95,13 +98,39 @@ export default function AnalyticsDashboard() {
     ]);
   }, [days, selectedPersonaId, fetchObservabilityMetrics, fetchExecutionDashboard, fetchToolUsage, fetchHealingIssues, fetchMonthlySpend]);
 
+  const refreshAllSafe = useCallback(async () => {
+    if (refreshInFlightRef.current) {
+      refreshQueuedRef.current = true;
+      await refreshInFlightRef.current;
+      return;
+    }
+
+    const run = (async () => {
+      do {
+        refreshQueuedRef.current = false;
+        await refreshAll();
+      } while (refreshQueuedRef.current);
+    })();
+
+    refreshInFlightRef.current = run;
+    try {
+      await run;
+    } finally {
+      if (refreshInFlightRef.current === run) {
+        refreshInFlightRef.current = null;
+      }
+    }
+  }, [refreshAll]);
+
   useEffect(() => { initHealingListener(); }, []);
-  useEffect(() => { refreshAll(); }, [refreshAll]);
+  useEffect(() => { void refreshAllSafe(); }, [refreshAllSafe]);
   useEffect(() => {
     if (!autoRefresh) return;
-    const interval = setInterval(refreshAll, 30000);
+    const interval = setInterval(() => {
+      void refreshAllSafe();
+    }, 30000);
     return () => clearInterval(interval);
-  }, [autoRefresh, refreshAll]);
+  }, [autoRefresh, refreshAllSafe]);
 
   // ── Observability metrics ──
   const summary = observabilityMetrics?.summary;
@@ -158,8 +187,19 @@ export default function AnalyticsDashboard() {
   // ── Issue management ──
   const handleRunAnalysis = useCallback(async () => {
     setAnalysisResult(null);
-    const result = await triggerHealing(selectedPersonaId || personas[0]?.id);
-    if (result) setAnalysisResult(result);
+    setAnalysisError(null);
+    const targetPersonaId = selectedPersonaId || personas[0]?.id;
+    if (!targetPersonaId) {
+      setAnalysisError('No persona available for analysis. Create a persona first.');
+      return;
+    }
+
+    try {
+      const result = await triggerHealing(targetPersonaId);
+      if (result) setAnalysisResult(result);
+    } catch (err) {
+      setAnalysisError(err instanceof Error ? err.message : 'Failed to run analysis. Please retry.');
+    }
   }, [triggerHealing, selectedPersonaId, personas]);
 
   /** Navigate to the knowledge graph filtered to failure patterns on the clicked date. */
@@ -210,7 +250,7 @@ export default function AnalyticsDashboard() {
               <TrendingUp className="w-3 h-3" />{summary?.active_personas || 0}
             </span>
             <button
-              onClick={refreshAll}
+              onClick={() => { void refreshAllSafe(); }}
               className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
               title="Refresh"
             >
@@ -247,7 +287,7 @@ export default function AnalyticsDashboard() {
                   <p className="text-sm font-medium text-red-300">Metrics unavailable</p>
                   <p className="text-sm text-red-400/70 mt-0.5">{observabilityError}</p>
                 </div>
-                <button onClick={refreshAll} className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-lg bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors">
+                <button onClick={() => { void refreshAllSafe(); }} className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-lg bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors">
                   <RefreshCw className="w-3 h-3" /> Retry
                 </button>
               </div>
@@ -446,6 +486,18 @@ export default function AnalyticsDashboard() {
                   </span>
                 </div>
                 <button onClick={() => setAnalysisResult(null)} className="p-1 rounded hover:bg-cyan-500/20 text-cyan-400/50 hover:text-cyan-300 transition-colors">
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+
+            {analysisError && !healingRunning && (
+              <div className="flex items-center justify-between px-5 py-2.5 bg-red-500/10 border-b border-red-500/20">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
+                  <span className="text-sm text-red-300">{analysisError}</span>
+                </div>
+                <button onClick={() => setAnalysisError(null)} className="p-1 rounded hover:bg-red-500/20 text-red-400/60 hover:text-red-300 transition-colors">
                   <X className="w-3 h-3" />
                 </button>
               </div>

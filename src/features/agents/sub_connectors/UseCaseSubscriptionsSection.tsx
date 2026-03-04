@@ -14,9 +14,15 @@ import type { UseCaseEventSubscription } from '@/features/shared/components/UseC
 
 export function UseCaseSubscriptionsSection() {
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
+  const selectedPersonaIdRef = useRef<string | null>(selectedPersona?.id ?? null);
+
+  useEffect(() => {
+    selectedPersonaIdRef.current = selectedPersona?.id ?? null;
+  }, [selectedPersona?.id]);
 
   const [dbTriggers, setDbTriggers] = useState<PersonaTrigger[]>([]);
   const [dbSubscriptions, setDbSubscriptions] = useState<PersonaEventSubscription[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const contextData = useMemo(
     () => parseDesignContext(selectedPersona?.design_context),
@@ -27,6 +33,9 @@ export function UseCaseSubscriptionsSection() {
   // Fetch DB-backed triggers and subscriptions.
   // A cancelled flag discards stale responses when personaId changes mid-flight.
   useEffect(() => {
+    setDbTriggers([]);
+    setDbSubscriptions([]);
+    setError(null);
     if (!selectedPersona) return;
     let cancelled = false;
     listTriggers(selectedPersona.id)
@@ -41,10 +50,30 @@ export function UseCaseSubscriptionsSection() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [activatingTriggers, setActivatingTriggers] = useState<Set<string>>(() => new Set());
   const [activatingSubscriptions, setActivatingSubscriptions] = useState<Set<string>>(() => new Set());
+  const triggerControllersRef = useRef<Map<string, AbortController>>(new Map());
+  const subscriptionControllersRef = useRef<Map<string, AbortController>>(new Map());
   const activatingTriggersRef = useRef(activatingTriggers);
   activatingTriggersRef.current = activatingTriggers;
   const activatingSubscriptionsRef = useRef(activatingSubscriptions);
   activatingSubscriptionsRef.current = activatingSubscriptions;
+
+  useEffect(() => {
+    return () => {
+      triggerControllersRef.current.forEach((controller) => controller.abort());
+      triggerControllersRef.current.clear();
+      subscriptionControllersRef.current.forEach((controller) => controller.abort());
+      subscriptionControllersRef.current.clear();
+    };
+  }, []);
+
+  useEffect(() => {
+    triggerControllersRef.current.forEach((controller) => controller.abort());
+    triggerControllersRef.current.clear();
+    subscriptionControllersRef.current.forEach((controller) => controller.abort());
+    subscriptionControllersRef.current.clear();
+    setActivatingTriggers(new Set());
+    setActivatingSubscriptions(new Set());
+  }, [selectedPersona?.id]);
 
   const handleSubscriptionsChange = useCallback(
     (useCaseId: string, subs: UseCaseEventSubscription[]) => {
@@ -62,21 +91,28 @@ export function UseCaseSubscriptionsSection() {
   const handleActivateTrigger = useCallback(
     async (useCaseId: string, triggerType: string, config?: Record<string, unknown>) => {
       if (!selectedPersona) return;
+      const personaIdAtStart = selectedPersona.id;
       const key = `${useCaseId}:${triggerType}`;
       if (activatingTriggersRef.current.has(key)) return;
+      const controller = new AbortController();
+      triggerControllersRef.current.set(key, controller);
       setActivatingTriggers((prev) => new Set(prev).add(key));
       try {
         const created = await createTrigger({
-          persona_id: selectedPersona.id,
+          persona_id: personaIdAtStart,
           trigger_type: triggerType,
           config: config ? JSON.stringify(config) : null,
           enabled: true,
           use_case_id: useCaseId,
         });
+        if (controller.signal.aborted || selectedPersonaIdRef.current !== personaIdAtStart) return;
         setDbTriggers((prev) => [...prev, created]);
       } catch (e) {
+        if (controller.signal.aborted) return;
         console.error('Failed to create trigger:', e);
       } finally {
+        triggerControllersRef.current.delete(key);
+        if (controller.signal.aborted || selectedPersonaIdRef.current !== personaIdAtStart) return;
         setActivatingTriggers((prev) => {
           const next = new Set(prev);
           next.delete(key);
@@ -99,21 +135,28 @@ export function UseCaseSubscriptionsSection() {
   const handleActivateSubscription = useCallback(
     async (useCaseId: string, eventType: string, sourceFilter?: string) => {
       if (!selectedPersona) return;
+      const personaIdAtStart = selectedPersona.id;
       const key = `${useCaseId}:${eventType}:${sourceFilter ?? ''}`;
       if (activatingSubscriptionsRef.current.has(key)) return;
+      const controller = new AbortController();
+      subscriptionControllersRef.current.set(key, controller);
       setActivatingSubscriptions((prev) => new Set(prev).add(key));
       try {
         const created = await createSubscription({
-          persona_id: selectedPersona.id,
+          persona_id: personaIdAtStart,
           event_type: eventType,
           source_filter: sourceFilter ?? null,
           enabled: true,
           use_case_id: useCaseId,
         });
+        if (controller.signal.aborted || selectedPersonaIdRef.current !== personaIdAtStart) return;
         setDbSubscriptions((prev) => [...prev, created]);
       } catch (e) {
+        if (controller.signal.aborted) return;
         console.error('Failed to create subscription:', e);
       } finally {
+        subscriptionControllersRef.current.delete(key);
+        if (controller.signal.aborted || selectedPersonaIdRef.current !== personaIdAtStart) return;
         setActivatingSubscriptions((prev) => {
           const next = new Set(prev);
           next.delete(key);
@@ -126,9 +169,15 @@ export function UseCaseSubscriptionsSection() {
 
   const handleDeleteSubscription = useCallback(async (subId: string) => {
     try {
-      await deleteSubscription(subId);
+      setError(null);
+      const deleted = await deleteSubscription(subId);
+      if (!deleted) {
+        setError('Delete failed. Subscription may still exist.');
+        return;
+      }
       setDbSubscriptions((prev) => prev.filter((s) => s.id !== subId));
     } catch (e) {
+      setError('Failed to delete subscription');
       console.error('Failed to delete subscription:', e);
     }
   }, []);
@@ -161,6 +210,12 @@ export function UseCaseSubscriptionsSection() {
         )}
       />
 
+      {error && (
+        <div className="px-3 py-2 rounded-lg border border-red-500/20 bg-red-500/10 text-sm text-red-400/80">
+          {error}
+        </div>
+      )}
+
       <div className="space-y-2">
         {useCases.map((uc) => {
           const ucTriggers = dbTriggers.filter((t) => t.use_case_id === uc.id);
@@ -173,7 +228,8 @@ export function UseCaseSubscriptionsSection() {
             <SectionCard key={uc.id} size="md" className="overflow-hidden">
               <button
                 onClick={() => setExpandedId(isExpanded ? null : uc.id)}
-                className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left hover:bg-secondary/30 transition-colors"
+                aria-expanded={isExpanded}
+                className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left hover:bg-secondary/30 transition-colors focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none focus-visible:rounded-xl"
               >
                 <ChevronDown className={`w-3 h-3 text-muted-foreground/50 transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
                 <span className="text-sm font-medium text-foreground/80 flex-1 truncate">{uc.title}</span>

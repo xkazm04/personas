@@ -80,6 +80,27 @@ export default function N8nImportTab() {
         </motion.div>
       )}
 
+      {state.sessionWarning && (
+        <motion.div
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mx-6 mt-3 flex items-start gap-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20"
+          aria-live="polite"
+        >
+          <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm text-amber-300 font-medium">Partial Session Restore</p>
+            <p className="text-sm text-amber-200/90 mt-0.5">{state.sessionWarning}</p>
+          </div>
+          <button
+            onClick={() => dispatch({ type: 'CLEAR_SESSION_WARNING' })}
+            className="text-amber-300/70 hover:text-amber-200 text-sm"
+          >
+            Dismiss
+          </button>
+        </motion.div>
+      )}
+
       {/* Step content */}
       <div className={`flex-1 min-h-0 ${state.step === 'edit' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
         <AnimatePresence mode="wait" custom={direction}>

@@ -31,6 +31,7 @@ export interface OverviewSlice {
   globalExecutions: GlobalExecution[];
   globalExecutionsTotal: number;
   globalExecutionsOffset: number;
+  globalExecutionsWarning: string | null;
 
   // State — reviews
   manualReviews: ManualReviewItem[];
@@ -118,6 +119,7 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
   globalExecutions: [],
   globalExecutionsTotal: 0,
   globalExecutionsOffset: 0,
+  globalExecutionsWarning: null,
   manualReviews: [],
   manualReviewsTotal: 0,
   pendingReviewCount: 0,
@@ -145,6 +147,7 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
 
       const { personas } = get();
       let anyAtLimit = false;
+      const failedPersonaNames: string[] = [];
       const allExecs = await Promise.all(
         personas.map(async (p) => {
           try {
@@ -152,6 +155,7 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
             if (execs.length >= currentPerPersonaLimit) anyAtLimit = true;
             return enrichWithPersona(execs, [p]);
           } catch {
+            failedPersonaNames.push(p.name);
             return [];
           }
         }),
@@ -165,6 +169,9 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
         // Signal hasMore: offset < total only when some persona may have more rows
         globalExecutionsTotal: merged.length + (anyAtLimit ? 1 : 0),
         globalExecutionsOffset: merged.length,
+        globalExecutionsWarning: failedPersonaNames.length > 0
+          ? `Execution data is incomplete. Failed to load ${failedPersonaNames.length} persona${failedPersonaNames.length === 1 ? '' : 's'}: ${failedPersonaNames.join(', ')}`
+          : null,
       });
     } catch (err) {
       set({ error: errMsg(err, "Failed to fetch global executions") });

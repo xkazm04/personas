@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Table2, Code2, Terminal } from 'lucide-react';
+import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { TablesTab } from './tabs/TablesTab';
@@ -23,6 +24,8 @@ interface SchemaManagerModalProps {
 
 export function SchemaManagerModal({ credential, connector, onClose }: SchemaManagerModalProps) {
   const [activeTab, setActiveTab] = useState<SchemaTab>('tables');
+  // Track which tabs have been visited — mount lazily, keep mounted
+  const [visited, setVisited] = useState<Set<SchemaTab>>(() => new Set(['tables']));
   const fetchDbSchemaTables = usePersonaStore((s) => s.fetchDbSchemaTables);
   const fetchDbSavedQueries = usePersonaStore((s) => s.fetchDbSavedQueries);
 
@@ -74,7 +77,7 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
               style={{ backgroundColor: `${color}15` }}
             >
               {iconUrl ? (
-                <img src={iconUrl} alt="" className="w-5 h-5 object-contain" />
+                <ThemedConnectorIcon url={iconUrl} label={credential.name} color={color} size="w-5 h-5" />
               ) : (
                 <div className="w-5 h-5 rounded" style={{ backgroundColor: color }} />
               )}
@@ -103,7 +106,7 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => { setVisited((prev) => new Set([...prev, tab.id])); setActiveTab(tab.id); }}
                   className={`relative flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium transition-colors ${
                     isActive
                       ? 'text-foreground/90'
@@ -124,16 +127,22 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
             })}
           </div>
 
-          {/* Content */}
-          <div className="flex-1 min-h-0 overflow-y-auto">
-            {activeTab === 'tables' && (
-              <TablesTab credentialId={credential.id} />
+          {/* Content — lazy mount on first visit, keep mounted to preserve state */}
+          <div className="flex-1 min-h-0 relative">
+            {visited.has('tables') && (
+              <div className={`absolute inset-0 overflow-y-auto ${activeTab === 'tables' ? '' : 'hidden'}`}>
+                <TablesTab credentialId={credential.id} serviceType={credential.service_type} />
+              </div>
             )}
-            {activeTab === 'queries' && (
-              <QueriesTab credentialId={credential.id} language={queryLanguage} />
+            {visited.has('queries') && (
+              <div className={`absolute inset-0 overflow-y-auto ${activeTab === 'queries' ? '' : 'hidden'}`}>
+                <QueriesTab credentialId={credential.id} language={queryLanguage} serviceType={credential.service_type} />
+              </div>
             )}
-            {activeTab === 'console' && (
-              <ConsoleTab credentialId={credential.id} language={queryLanguage} />
+            {visited.has('console') && (
+              <div className={`absolute inset-0 overflow-y-auto ${activeTab === 'console' ? '' : 'hidden'}`}>
+                <ConsoleTab credentialId={credential.id} language={queryLanguage} />
+              </div>
             )}
           </div>
         </motion.div>

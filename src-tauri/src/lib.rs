@@ -341,6 +341,7 @@ pub fn run() {
             commands::execution::healing::run_healing_analysis,
             commands::execution::healing::get_retry_chain,
             commands::execution::healing::list_healing_knowledge,
+            commands::execution::healing::trigger_ai_healing,
             // Execution — Knowledge Graph
             commands::execution::knowledge::list_execution_knowledge,
             commands::execution::knowledge::get_knowledge_injection,
@@ -420,6 +421,7 @@ pub fn run() {
             commands::credentials::crud::get_session_public_key,
             commands::credentials::crud::create_credential,
             commands::credentials::crud::update_credential,
+            commands::credentials::crud::patch_credential_metadata,
             commands::credentials::crud::delete_credential,
             commands::credentials::crud::list_credential_events,
             commands::credentials::crud::list_all_credential_events,
@@ -484,6 +486,19 @@ pub fn run() {
             commands::credentials::db_schema::update_db_saved_query,
             commands::credentials::db_schema::delete_db_saved_query,
             commands::credentials::db_schema::execute_db_query,
+            commands::credentials::db_schema::introspect_db_tables,
+            commands::credentials::db_schema::introspect_db_columns,
+            // Credentials — Query Debug (AI-assisted)
+            commands::credentials::query_debug::start_query_debug,
+            commands::credentials::query_debug::cancel_query_debug,
+            // Credentials — API Proxy
+            commands::credentials::api_proxy::execute_api_request,
+            commands::credentials::api_proxy::parse_api_definition,
+            commands::credentials::api_proxy::save_api_definition,
+            commands::credentials::api_proxy::load_api_definition,
+            // Credentials — MCP Tools
+            commands::credentials::mcp_tools::list_mcp_tools,
+            commands::credentials::mcp_tools::execute_mcp_tool,
             // Communication — Events
             commands::communication::events::list_events,
             commands::communication::events::list_events_in_range,

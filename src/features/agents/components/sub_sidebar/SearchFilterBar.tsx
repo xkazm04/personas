@@ -137,7 +137,21 @@ export function SearchFilterBar({
   onClear,
 }: SearchFilterBarProps) {
   const [showFilters, setShowFilters] = useState(false);
+  const [localSearch, setLocalSearch] = useState(filters.search);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setLocalSearch(filters.search);
+  }, [filters.search]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (localSearch !== filters.search) {
+        onSearchChange(localSearch);
+      }
+    }, 200);
+    return () => window.clearTimeout(timer);
+  }, [localSearch, filters.search, onSearchChange]);
 
   // Auto-expand filters when a non-search filter is active
   useEffect(() => {
@@ -155,14 +169,17 @@ export function SearchFilterBar({
           <input
             ref={inputRef}
             type="text"
-            value={filters.search}
-            onChange={(e) => onSearchChange(e.target.value)}
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
             placeholder="Search agents..."
             className="flex-1 min-w-0 text-sm bg-transparent border-none outline-none text-foreground/90 placeholder:text-muted-foreground/40"
           />
-          {filters.search && (
+          {localSearch && (
             <button
-              onClick={() => onSearchChange('')}
+              onClick={() => {
+                setLocalSearch('');
+                onSearchChange('');
+              }}
               className="p-0.5 rounded hover:bg-secondary/60"
             >
               <X className="w-3 h-3 text-muted-foreground/60" />

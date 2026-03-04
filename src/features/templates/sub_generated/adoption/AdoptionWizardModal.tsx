@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import { useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-import { TransformProgress } from '@/features/shared/components/TransformProgress';
 import { DimensionRadial } from '../shared/DimensionRadial';
 import { TrustBadge } from '../shared/TrustBadge';
 import { SandboxWarningBanner } from '../shared/SandboxWarningBanner';
@@ -26,6 +25,7 @@ import {
   ChooseStep,
   ConnectStep,
   TuneStep,
+  BuildStep,
   CreateStep,
   QuickAdoptConfirm,
 } from './steps';
@@ -36,6 +36,7 @@ import {
   useAdoptionWizard,
 } from './AdoptionWizardContext';
 import { useTemplateMotion } from '@/features/templates/animationPresets';
+import { BaseModal } from '../shared/BaseModal';
 
 // ── Types ──
 
@@ -68,49 +69,6 @@ const STEP_COMPONENTS: Record<AdoptWizardStep, React.ComponentType> = {
   build: BuildStep,
   create: CreateStep,
 };
-
-// ── Build step (inline — needs transform progress) ─────────────────────
-
-function BuildStep() {
-  const { state, wizard, currentAdoptId, isRestoring, startTransform, cancelTransform } = useAdoptionWizard();
-
-  return (
-    <div className="space-y-4">
-      <TransformProgress
-        phase={state.transformPhase}
-        lines={state.transformLines}
-        runId={currentAdoptId}
-        isRestoring={isRestoring}
-        onRetry={() => void startTransform()}
-        onCancel={() => void cancelTransform()}
-      />
-
-      {state.transforming && (
-        <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-blue-500/5 border border-blue-500/10">
-          <Sparkles className="w-4 h-4 text-blue-400/60 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-blue-300/60 leading-relaxed">
-            You can close this dialog — processing will continue in the background.
-            Re-open the wizard to check progress.
-          </p>
-        </div>
-      )}
-
-      {state.draft && !state.transforming && (
-        <div className="space-y-2">
-          <label className="text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider">
-            Request adjustments (optional)
-          </label>
-          <textarea
-            value={state.adjustmentRequest}
-            onChange={(e) => wizard.setAdjustment(e.target.value)}
-            placeholder="Example: Change the schedule to run at 9 AM, remove ClickUp integration, add Slack notifications"
-            className="w-full h-20 p-3 rounded-xl border border-primary/15 bg-background/40 text-sm text-foreground/75 resize-y placeholder-muted-foreground/30"
-          />
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ── Back button ────────────────────────────────────────────────────────
 
@@ -159,8 +117,6 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
     handleNext,
     cleanupAll,
   } = useAdoptionWizard();
-
-  const backdropRef = useRef<HTMLDivElement>(null);
 
   // ── Close handler ──
 
@@ -251,21 +207,19 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
   const StepComponent = STEP_COMPONENTS[state.step];
 
   return (
-    <div
-      ref={backdropRef}
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      onClick={(e) => { if (e.target === backdropRef.current) handleClose(); }}
+    <BaseModal
+      isOpen
+      onClose={handleClose}
+      titleId="adoption-wizard-title"
+      maxWidthClass="max-w-[1400px]"
+      panelClassName="h-[92vh] bg-background border border-primary/15 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
     >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-
-      {/* Full-screen modal */}
       <motion.div
         initial={{ opacity: 0, scale: 0.97, y: 8 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.97, y: 8 }}
         transition={MOTION.smooth.framer}
-        className="relative w-[95vw] max-w-[1400px] h-[92vh] bg-background border border-primary/15 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+        className="relative h-full overflow-hidden flex flex-col"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-3.5 border-b border-primary/10 flex-shrink-0">
@@ -274,7 +228,7 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
               <Download className="w-4.5 h-4.5 text-violet-400" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-foreground/90">Adopt Template</h2>
+              <h2 id="adoption-wizard-title" className="text-sm font-semibold text-foreground/90">Adopt Template</h2>
               <p className="text-sm text-muted-foreground/90">{state.templateName}</p>
             </div>
           </div>
@@ -383,7 +337,7 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
           </div>
         </div>
       </motion.div>
-    </div>
+    </BaseModal>
   );
 }
 

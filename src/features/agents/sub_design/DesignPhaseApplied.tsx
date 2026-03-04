@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { Check, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
@@ -11,6 +12,11 @@ interface DesignPhaseAppliedProps {
 
 export function DesignPhaseApplied({ result, warnings = [], onReset }: DesignPhaseAppliedProps) {
   const hasWarnings = warnings.length > 0;
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    containerRef.current?.focus();
+  }, []);
 
   return (
     <motion.div
@@ -20,6 +26,8 @@ export function DesignPhaseApplied({ result, warnings = [], onReset }: DesignPha
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.2 }}
       className="flex flex-col items-center py-8 gap-5"
+      ref={containerRef}
+      tabIndex={-1}
     >
       {/* Animated success checkmark */}
       <div className="relative">

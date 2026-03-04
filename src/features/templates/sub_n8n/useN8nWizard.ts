@@ -1,11 +1,10 @@
 import { useCallback, useRef, useEffect, useState } from 'react';
-import { parseWorkflowFile } from '@/lib/personas/workflowParser';
-import { isSupportedFile } from '@/lib/personas/workflowDetector';
 import {
   cancelN8nTransform,
   clearN8nTransformSnapshot,
   confirmN8nPersonaDraft,
   continueN8nTransform,
+  getN8nTransformSnapshot,
   startN8nTransformBackground,
 } from '@/api/n8nTransform';
 import { testN8nDraft } from '@/api/tests';
@@ -18,6 +17,7 @@ import { useN8nImportReducer, STEP_META } from './useN8nImportReducer';
 import { useN8nSession } from './useN8nSession';
 import { useN8nTransform } from './useN8nTransform';
 import { useN8nTest } from './useN8nTest';
+import { useWorkflowImport } from './useWorkflowImport';
 import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import type { ConfirmResult } from './N8nConfirmStep';
 
@@ -36,6 +36,7 @@ export function useN8nWizard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const prevStepRef = useRef(STEP_META[state.step].index);
   const confirmingRef = useRef(false);
+  const transformLockRef = useRef(false);
   const [confirmResult, setConfirmResult] = useState<ConfirmResult | null>(null);
   const [connectorsMissing, setConnectorsMissing] = useState(0);
 
@@ -66,91 +67,21 @@ export function useN8nWizard() {
   const { resetTransformStream, setIsRestoring } = transform;
   const { resetTestStream } = test;
 
+  const { processContent, processFile } = useWorkflowImport({
+    dispatch,
+    removeSession,
+    clearPersistedContext,
+    resetTransformStream,
+    setIsRestoring,
+    createSession,
+  });
+
   // ── Handlers ──
 
-  /** Core content processing — shared by file upload, paste, and URL fetch paths. */
-  const processContent = useCallback(
-    (content: string, sourceName: string) => {
-      console.log('[n8n-wizard] processContent called:', sourceName, content.length, 'bytes');
-      try {
-        if (!content || content.trim().length === 0) {
-          dispatch({ type: 'SET_ERROR', error: 'Content is empty.' });
-          return;
-        }
-
-        let parseResult;
-        try {
-          parseResult = parseWorkflowFile(content, sourceName);
-        } catch (parseErr) {
-          console.error('[n8n-wizard] parseWorkflowFile threw:', parseErr);
-          dispatch({
-            type: 'SET_ERROR',
-            error: `Failed to analyze workflow: ${parseErr instanceof Error ? parseErr.message : 'unknown error'}`,
-          });
-          return;
-        }
-
-        const { detection, result, workflowName: wfName, rawJson } = parseResult;
-        console.log('[n8n-wizard] parsed OK:', detection.platform, wfName);
-
-        removeSession();
-        clearPersistedContext();
-        void resetTransformStream();
-        setIsRestoring(false);
-
-        dispatch({
-          type: 'FILE_PARSED',
-          workflowName: wfName,
-          rawWorkflowJson: rawJson,
-          parsedResult: result,
-          platform: detection.platform,
-        });
-        console.log('[n8n-wizard] FILE_PARSED dispatched → step should be analyze');
-
-        void createSession(wfName, rawJson).catch(() => {});
-      } catch (err) {
-        console.error('[n8n-wizard] processContent outer catch:', err);
-        dispatch({
-          type: 'SET_ERROR',
-          error: err instanceof Error ? err.message : 'Failed to parse workflow content.',
-        });
-      }
-    },
-    [dispatch, removeSession, clearPersistedContext, resetTransformStream, setIsRestoring, createSession],
-  );
-
-  const processFile = useCallback(
-    (file: File) => {
-      try {
-        if (!isSupportedFile(file.name)) {
-          dispatch({ type: 'SET_ERROR', error: 'Unsupported file type. Accepts .json (n8n, Zapier, Make) or .yml/.yaml (GitHub Actions).' });
-          return;
-        }
-
-        if (file.size > 5 * 1024 * 1024) {
-          dispatch({ type: 'SET_ERROR', error: 'File is too large (max 5MB). Please use a smaller workflow export.' });
-          return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const content = e.target?.result as string;
-          processContent(content, file.name);
-        };
-        reader.onerror = () => dispatch({ type: 'SET_ERROR', error: 'Failed to read the file.' });
-        reader.readAsText(file);
-      } catch (err) {
-        dispatch({
-          type: 'SET_ERROR',
-          error: `Unexpected error: ${err instanceof Error ? err.message : 'unknown error'}`,
-        });
-      }
-    },
-    [dispatch, processContent],
-  );
-
   const handleTransform = async () => {
-    if (!state.parsedResult || !state.rawWorkflowJson || state.transforming || state.confirming) return;
+    if (!state.parsedResult || !state.rawWorkflowJson || state.transforming || state.confirming || transformLockRef.current) return;
+
+    transformLockRef.current = true;
 
     try {
       const transformId =
@@ -214,6 +145,8 @@ export function useN8nWizard() {
         type: 'TRANSFORM_FAILED',
         error: err instanceof Error ? err.message : 'Failed to generate transformation draft.',
       });
+    } finally {
+      transformLockRef.current = false;
     }
   };
 
@@ -286,24 +219,46 @@ export function useN8nWizard() {
   };
 
   const handleCancelTransform = async () => {
+    const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
     try {
       const transformId = state.backgroundTransformId || transform.currentTransformId;
       if (transformId) {
-        try {
-          await cancelN8nTransform(transformId);
-        } catch {
-          void clearN8nTransformSnapshot(transformId).catch(() => {});
+        await cancelN8nTransform(transformId);
+
+        let stopped = false;
+        for (let i = 0; i < 6; i += 1) {
+          try {
+            const snapshot = await getN8nTransformSnapshot(transformId);
+            if (!snapshot || (snapshot.status !== 'running' && snapshot.status !== 'awaiting_answers')) {
+              stopped = true;
+              break;
+            }
+          } catch {
+            // Snapshot no longer available is treated as stopped.
+            stopped = true;
+            break;
+          }
+          await delay(250);
         }
+
+        if (!stopped) {
+          dispatch({ type: 'SET_ERROR', error: 'Unable to confirm transform cancellation. Please wait and try again.' });
+          return;
+        }
+
+        void clearN8nTransformSnapshot(transformId).catch(() => {});
       }
       clearPersistedContext();
       void resetTransformStream();
       setIsRestoring(false);
       setN8nTransformActive(false);
       dispatch({ type: 'TRANSFORM_CANCELLED' });
-    } catch {
-      setIsRestoring(false);
-      setN8nTransformActive(false);
-      dispatch({ type: 'TRANSFORM_CANCELLED' });
+    } catch (err) {
+      dispatch({
+        type: 'SET_ERROR',
+        error: err instanceof Error ? err.message : 'Failed to cancel transform. Please try again.',
+      });
     }
   };
 
@@ -335,7 +290,13 @@ export function useN8nWizard() {
   );
 
   const handleContinueTransform = async () => {
-    if (!state.backgroundTransformId || state.transforming) return;
+    if (!state.backgroundTransformId || state.transforming || transformLockRef.current) return;
+    if (!state.sessionId) {
+      dispatch({ type: 'SET_ERROR', error: 'Transform session is missing. Please restart the import flow.' });
+      return;
+    }
+
+    transformLockRef.current = true;
 
     try {
       dispatch({ type: 'TRANSFORM_STARTED', transformId: state.backgroundTransformId, subPhase: 'generating' });
@@ -357,6 +318,8 @@ export function useN8nWizard() {
         type: 'TRANSFORM_FAILED',
         error: err instanceof Error ? err.message : 'Failed to continue transformation.',
       });
+    } finally {
+      transformLockRef.current = false;
     }
   };
 

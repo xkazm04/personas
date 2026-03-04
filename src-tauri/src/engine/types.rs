@@ -352,6 +352,7 @@ impl EphemeralPersona {
             icon: None,
             color: None,
             enabled: false,
+            sensitive: false,
             max_concurrent: 1,
             timeout_ms: 30_000,
             notification_channels: None,
@@ -456,4 +457,29 @@ pub struct HealingEventPayload {
     /// Maximum retry attempts allowed.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_retries: Option<i64>,
+}
+
+/// AI healing output line emitted to frontend (streamed per line).
+#[derive(Debug, Clone, Serialize)]
+#[allow(dead_code)] // Type documents the event shape; events emitted via json!()
+pub struct AiHealingOutputEvent {
+    pub execution_id: String,
+    pub persona_id: String,
+    pub line: String,
+}
+
+/// AI healing status change emitted to frontend.
+#[derive(Debug, Clone, Serialize)]
+#[allow(dead_code)] // Type documents the event shape; events emitted via json!()
+pub struct AiHealingStatusEvent {
+    pub execution_id: String,
+    pub persona_id: String,
+    /// "started" | "diagnosing" | "applying" | "completed" | "failed"
+    pub phase: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub diagnosis: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fixes_applied: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub should_retry: Option<bool>,
 }

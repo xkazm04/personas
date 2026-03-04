@@ -11,6 +11,7 @@ export interface PersonaDraft {
   maxConcurrent: number;
   timeout: number;
   enabled: boolean;
+  sensitive: boolean;
   selectedModel: string;
   selectedProvider: ModelProvider;
   baseUrl: string;
@@ -24,7 +25,7 @@ export interface PersonaDraft {
 
 /** Fields that belong to the Settings tab (name, appearance, limits). */
 export const SETTINGS_KEYS = [
-  'name', 'description', 'icon', 'color', 'maxConcurrent', 'timeout', 'enabled',
+  'name', 'description', 'icon', 'color', 'maxConcurrent', 'timeout', 'enabled', 'sensitive',
 ] as const satisfies readonly (keyof PersonaDraft)[];
 
 /** Fields that belong to the Model / Provider tab. */
@@ -46,7 +47,7 @@ export function draftChanged(
   return keys.some((k) => draft[k] !== baseline[k]);
 }
 
-export function buildDraft(persona: { name: string; description?: string | null; icon?: string | null; color?: string | null; max_concurrent?: number | null; timeout_ms?: number | null; enabled: boolean; model_profile?: string | null; max_budget_usd?: number | null; max_turns?: number | null }): PersonaDraft {
+export function buildDraft(persona: { name: string; description?: string | null; icon?: string | null; color?: string | null; max_concurrent?: number | null; timeout_ms?: number | null; enabled: boolean; sensitive?: boolean; model_profile?: string | null; max_budget_usd?: number | null; max_turns?: number | null }): PersonaDraft {
   let selectedModel = '';
   let provider: ModelProvider = 'anthropic';
   let baseUrl = '';
@@ -72,6 +73,7 @@ export function buildDraft(persona: { name: string; description?: string | null;
     maxConcurrent: persona.max_concurrent ?? 1,
     timeout: persona.timeout_ms ?? 1000000,
     enabled: persona.enabled,
+    sensitive: persona.sensitive ?? false,
     selectedModel,
     selectedProvider: provider,
     baseUrl,

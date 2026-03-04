@@ -17,6 +17,7 @@ import type { ChartAnnotationRecord } from '@/features/overview/sub_observabilit
 import { toChartDate } from '@/features/overview/sub_observability/chartAnnotations';
 
 const isDefined = <T,>(value: T | null | undefined): value is T => value != null;
+const ANNOTATION_FETCH_DEBOUNCE_MS = 250;
 
 export default function ObservabilityDashboard() {
   const fetchObservabilityMetrics = usePersonaStore((s) => s.fetchObservabilityMetrics);
@@ -91,69 +92,79 @@ export default function ObservabilityDashboard() {
 
   useEffect(() => {
     let active = true;
-    const loadPromptAnnotations = async () => {
-      const personaIds = selectedPersonaId ? [selectedPersonaId] : personas.map((p) => p.id).slice(0, 8);
-      if (personaIds.length === 0) {
-        if (active) setPromptAnnotations([]);
-        return;
-      }
-      try {
-        const byPersona = await Promise.all(
-          personaIds.map(async (personaId) => {
-            const versions = await getPromptVersions(personaId, 8);
-            return versions.map((version) => {
-              const date = toChartDate(version.created_at);
-              if (!date) return null;
-              return {
-                timestamp: version.created_at,
-                date,
-                label: `Prompt v${version.version_number} (${version.tag})`,
-                type: 'prompt' as const,
-                personaId,
-              };
-            }).filter(isDefined);
-          }),
-        );
-        if (active) setPromptAnnotations(byPersona.flat());
-      } catch {
-        if (active) setPromptAnnotations([]);
-      }
+    const timeoutId = setTimeout(() => {
+      const loadPromptAnnotations = async () => {
+        const personaIds = selectedPersonaId ? [selectedPersonaId] : personas.map((p) => p.id).slice(0, 8);
+        if (personaIds.length === 0) {
+          if (active) setPromptAnnotations([]);
+          return;
+        }
+        try {
+          const byPersona = await Promise.all(
+            personaIds.map(async (personaId) => {
+              const versions = await getPromptVersions(personaId, 8);
+              return versions.map((version) => {
+                const date = toChartDate(version.created_at);
+                if (!date) return null;
+                return {
+                  timestamp: version.created_at,
+                  date,
+                  label: `Prompt v${version.version_number} (${version.tag})`,
+                  type: 'prompt' as const,
+                  personaId,
+                };
+              }).filter(isDefined);
+            }),
+          );
+          if (active) setPromptAnnotations(byPersona.flat());
+        } catch {
+          if (active) setPromptAnnotations([]);
+        }
+      };
+      void loadPromptAnnotations();
+    }, ANNOTATION_FETCH_DEBOUNCE_MS);
+    return () => {
+      active = false;
+      clearTimeout(timeoutId);
     };
-    void loadPromptAnnotations();
-    return () => { active = false; };
   }, [selectedPersonaId, personas]);
 
   useEffect(() => {
     let active = true;
-    const loadRotationAnnotations = async () => {
-      if (credentials.length === 0) {
-        if (active) setRotationAnnotations([]);
-        return;
-      }
-      try {
-        const byCredential = await Promise.all(
-          credentials.slice(0, 20).map(async (credential) => {
-            const history = await getRotationHistory(credential.id, 3);
-            return history.map((entry) => {
-              const date = toChartDate(entry.created_at);
-              if (!date) return null;
-              return {
-                timestamp: entry.created_at,
-                date,
-                label: `Rotation ${entry.status}${credential.name ? ` · ${credential.name}` : ''}`,
-                type: 'rotation' as const,
-                personaId: null,
-              };
-            }).filter(isDefined);
-          }),
-        );
-        if (active) setRotationAnnotations(byCredential.flat());
-      } catch {
-        if (active) setRotationAnnotations([]);
-      }
+    const timeoutId = setTimeout(() => {
+      const loadRotationAnnotations = async () => {
+        if (credentials.length === 0) {
+          if (active) setRotationAnnotations([]);
+          return;
+        }
+        try {
+          const byCredential = await Promise.all(
+            credentials.slice(0, 20).map(async (credential) => {
+              const history = await getRotationHistory(credential.id, 3);
+              return history.map((entry) => {
+                const date = toChartDate(entry.created_at);
+                if (!date) return null;
+                return {
+                  timestamp: entry.created_at,
+                  date,
+                  label: `Rotation ${entry.status}${credential.name ? ` · ${credential.name}` : ''}`,
+                  type: 'rotation' as const,
+                  personaId: null,
+                };
+              }).filter(isDefined);
+            }),
+          );
+          if (active) setRotationAnnotations(byCredential.flat());
+        } catch {
+          if (active) setRotationAnnotations([]);
+        }
+      };
+      void loadRotationAnnotations();
+    }, ANNOTATION_FETCH_DEBOUNCE_MS);
+    return () => {
+      active = false;
+      clearTimeout(timeoutId);
     };
-    void loadRotationAnnotations();
-    return () => { active = false; };
   }, [credentials]);
 
   useEffect(() => {

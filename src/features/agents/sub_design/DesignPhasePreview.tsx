@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { Send, Check, RefreshCw, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { DesignResultPreview } from '@/features/templates/sub_generated';
@@ -55,6 +56,19 @@ export function DesignPhasePreview({
   onDiscard,
   onSendRefinement,
 }: DesignPhasePreviewProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+
+  useEffect(() => {
+    containerRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (!confirmDiscard) return;
+    const timer = setTimeout(() => setConfirmDiscard(false), 3000);
+    return () => clearTimeout(timer);
+  }, [confirmDiscard]);
+
   return (
     <motion.div
       key="preview"
@@ -63,6 +77,8 @@ export function DesignPhasePreview({
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.15 }}
       className="space-y-4"
+      ref={containerRef}
+      tabIndex={-1}
     >
       <DesignResultPreview
         result={result}
@@ -120,10 +136,21 @@ export function DesignPhasePreview({
           Refine
         </button>
         <button
-          onClick={onDiscard}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm text-muted-foreground hover:text-foreground/95 transition-colors"
+          onClick={() => {
+            if (confirmDiscard) {
+              setConfirmDiscard(false);
+              onDiscard();
+              return;
+            }
+            setConfirmDiscard(true);
+          }}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition-colors ${
+            confirmDiscard
+              ? 'text-red-400 hover:text-red-300'
+              : 'text-muted-foreground hover:text-foreground/95'
+          }`}
         >
-          Discard
+          {confirmDiscard ? 'Confirm discard?' : 'Discard'}
         </button>
       </div>
 
@@ -154,6 +181,7 @@ export function DesignPhasePreview({
           Send
         </button>
       </div>
+      <p className="text-[10px] text-muted-foreground/60 px-1">Press Enter to submit, Shift+Enter for new line.</p>
     </motion.div>
   );
 }

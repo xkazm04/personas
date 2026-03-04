@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { CheckCircle2, Plug, AlertCircle, ExternalLink, Wrench } from 'lucide-react';
+import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { DesignCheckbox } from './DesignCheckbox';
 import { SECTION_LABEL } from './helpers';
 import type { DesignAnalysisResult, SuggestedConnector } from '@/lib/types/designTypes';
@@ -73,7 +74,7 @@ export function ConnectorsSection({
               {/* Connector header */}
               <div className="flex items-center gap-2.5">
                 {item.connDef?.icon_url ? (
-                  <img src={item.connDef.icon_url} alt={item.connDef.label} className="w-6 h-6 flex-shrink-0 rounded" referrerPolicy="no-referrer" crossOrigin="anonymous" />
+                  <ThemedConnectorIcon url={item.connDef.icon_url} label={item.connDef.label} color={item.connDef.color} size="w-6 h-6 flex-shrink-0 rounded" />
                 ) : isGeneral ? (
                   <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center">
                     <Wrench className="w-3.5 h-3.5 text-muted-foreground/90" />

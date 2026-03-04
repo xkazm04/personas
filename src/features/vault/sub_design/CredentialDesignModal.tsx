@@ -3,7 +3,7 @@ import { X, Sparkles, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCredentialDesignOrchestrator } from '@/features/vault/sub_design/useCredentialDesignOrchestrator';
 import { usePersonaStore } from '@/stores/personaStore';
-import { credentialNav } from '@/features/vault/hooks/useCredentialViewFSM';
+import { useCredentialNav } from '@/features/vault/hooks/CredentialNavContext';
 import type { CredentialDesignResult } from '@/hooks/design/useCredentialDesign';
 import { MOTION_TIMING } from '@/features/templates/animationPresets';
 import { CredentialDesignProvider } from '@/features/vault/sub_design/CredentialDesignContext';
@@ -25,6 +25,7 @@ interface CredentialDesignModalProps {
 export function CredentialDesignModal({ open, embedded = false, initialInstruction, onClose, onComplete }: CredentialDesignModalProps) {
   const orch = useCredentialDesignOrchestrator();
   const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
+  const { navigate } = useCredentialNav();
 
   // Template UI state (local to the modal)
   const [showTemplates, setShowTemplates] = useState(false);
@@ -130,7 +131,7 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
     onComplete();
     onClose();
     setSidebarSection('credentials');
-    credentialNav.navigate('credentials');
+    navigate('credentials');
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

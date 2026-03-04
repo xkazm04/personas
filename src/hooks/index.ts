@@ -18,6 +18,9 @@ export * from "./execution/useCorrelatedCliStream";
 export * from "./realtime/useRealtimeEvents";
 export * from "./realtime/useMessageCreatedListener";
 
+// Database hooks
+export * from "./database/useTableIntrospection";
+
 // Lab hooks
 export * from "./lab/useLabEvents";
 

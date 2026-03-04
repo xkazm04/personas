@@ -39,6 +39,7 @@ export function CreateStep() {
   const {
     draft,
     created,
+    partialEntityErrors,
     showEditInline,
     confirming,
     draftJson,
@@ -156,6 +157,28 @@ export function CreateStep() {
             <AlertTriangle className="w-3 h-3" />
             Configure connector{connectorsNeedingSetup.length !== 1 ? 's' : ''}:{' '}
             {connectorsNeedingSetup.map((s) => s.connector_name).join(', ')}
+          </motion.div>
+        )}
+        {partialEntityErrors.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.38 }}
+            className="mx-auto max-w-xl text-left rounded-xl border border-amber-500/25 bg-amber-500/10 p-3 mb-3"
+          >
+            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-amber-300/90 mb-2">
+              <AlertTriangle className="w-3.5 h-3.5" />
+              Partial Setup Issues
+            </div>
+            <div className="space-y-1.5">
+              {partialEntityErrors.map((entry, idx) => (
+                <div key={`${entry.entity_type}-${entry.entity_name}-${idx}`} className="text-xs text-amber-100/85">
+                  <span className="font-medium">{entry.entity_type}</span>{' '}
+                  <span className="text-amber-100">"{entry.entity_name}"</span>
+                  <span className="text-amber-200/80">: {entry.error}</span>
+                </div>
+              ))}
+            </div>
           </motion.div>
         )}
         <motion.div

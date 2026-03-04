@@ -73,11 +73,29 @@ export const CHANNEL_TYPES: Array<{
   { type: 'email',    label: 'Email',    configFields: [{ key: 'to', label: 'To Address', placeholder: 'user@example.com' }] },
 ];
 
-// ── Builder Component (connector + credential) ─────────────────────
+// ── Component Roles ─────────────────────────────────────────────────
+
+export type ComponentRole = 'retrieve' | 'store' | 'act' | 'notify';
+
+export const COMPONENT_ROLES: Array<{
+  role: ComponentRole;
+  label: string;
+  description: string;
+}> = [
+  { role: 'retrieve', label: 'Retrieve',  description: 'Fetch data from sources' },
+  { role: 'store',    label: 'Store',     description: 'Save and organize data' },
+  { role: 'act',      label: 'Act',       description: 'Execute actions' },
+  { role: 'notify',   label: 'Notify',    description: 'Send alerts & messages' },
+];
+
+// ── Builder Component (role + connector + credential) ───────────────
 
 export interface BuilderComponent {
+  id: string;
+  role: ComponentRole;
   connectorName: string;
   credentialId: string | null;
+  watchedTables?: string[];
 }
 
 // ── Builder State ───────────────────────────────────────────────────
@@ -95,9 +113,42 @@ export interface BuilderState {
 export const INITIAL_BUILDER_STATE: BuilderState = {
   intent: '',
   useCases: [],
-  components: [],
+  components: [
+    { id: 'default_notify', role: 'notify', connectorName: 'in-app-messaging', credentialId: null },
+  ],
   globalTrigger: null,
   channels: [],
   errorStrategy: 'halt',
   reviewPolicy: 'never',
 };
+
+// ── Credential Coverage ─────────────────────────────────────────────
+
+export type CoverageStatus = 'full' | 'partial' | 'none';
+
+export interface CredentialCoverage {
+  total: number;
+  matched: number;
+  status: CoverageStatus;
+}
+
+// ── Dry Run ─────────────────────────────────────────────────────────
+
+export interface DryRunIssue {
+  id: string;
+  severity: 'error' | 'warning' | 'info';
+  description: string;
+  proposal: DryRunProposal | null;
+  resolved: boolean;
+}
+
+export interface DryRunProposal {
+  label: string;
+  actions: import('./builderReducer').BuilderAction[];
+}
+
+export interface DryRunResult {
+  status: 'ready' | 'partial' | 'blocked';
+  capabilities: string[];
+  issues: DryRunIssue[];
+}

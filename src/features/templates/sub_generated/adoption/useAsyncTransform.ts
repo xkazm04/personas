@@ -38,6 +38,15 @@ import { ADOPT_CONTEXT_KEY, ADOPT_CONTEXT_MAX_AGE_MS } from './useAdoptReducer';
 // when the wizard unmounts and remounts while a confirm is pending.
 const inflight = new Set<string>();
 
+async function waitForPersonaInStore(personaId: string, attempts = 10, delayMs = 50): Promise<boolean> {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const exists = usePersonaStore.getState().personas.some((persona) => persona.id === personaId);
+    if (exists) return true;
+    await new Promise<void>((resolve) => setTimeout(resolve, delayMs));
+  }
+  return false;
+}
+
 // ── Types ──
 
 interface WizardActions {
@@ -53,6 +62,7 @@ interface WizardActions {
   confirmFailed: (error: string) => void;
   restoreContext: (templateName: string, designResultJson: string, adoptId: string) => void;
   setAdjustment: (text: string) => void;
+  updatePreference: (key: string, value: unknown) => void;
   draftUpdated: (draft: N8nPersonaDraft) => void;
   reset: () => void;
   setError: (error: string) => void;
@@ -81,6 +91,7 @@ export function useAsyncTransform({
   const selectPersona = usePersonaStore((s) => s.selectPersona);
   const setTemplateAdoptActive = usePersonaStore((s) => s.setTemplateAdoptActive);
   const confirmingRef = useRef(false);
+  const transformStartingRef = useRef(false);
   const [isRestoring, setIsRestoring] = useState(false);
 
   // ── CLI stream ──
@@ -140,13 +151,18 @@ export function useAsyncTransform({
     (draft: N8nPersonaDraft) => {
       try {
         wizard.transformCompleted(normalizeDraft(draft));
-      } catch {
-        wizard.transformCompleted(draft);
+      } catch (err) {
+        try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
+        wizard.transformFailed(
+          err instanceof Error
+            ? `Draft normalization failed: ${err.message}`
+            : 'Draft normalization failed. Please retry adoption.',
+        );
       }
       setIsRestoring(false);
       setTemplateAdoptActive(false);
     },
-    [wizard.transformCompleted, setTemplateAdoptActive],
+    [wizard.transformCompleted, wizard.transformFailed, setTemplateAdoptActive],
   );
 
   const handleSnapshotCompletedNoDraft = useCallback(() => {
@@ -205,11 +221,13 @@ export function useAsyncTransform({
   // ── Async handlers ──
 
   const startTransform = useCallback(async () => {
-    if (state.transforming || state.confirming) return;
+    if (transformStartingRef.current || state.transforming || state.confirming) return;
     if (!state.designResult || !state.designResultJson?.trim()) {
       wizard.setError('Template has no design data. Cannot adopt.');
       return;
     }
+
+    transformStartingRef.current = true;
 
     const filtered = filterDesignResult(
       state.designResult,
@@ -305,6 +323,8 @@ export function useAsyncTransform({
       try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
       void resetAdoptStream();
       wizard.transformFailed(err instanceof Error ? err.message : 'Failed to start template adoption.');
+    } finally {
+      transformStartingRef.current = false;
     }
   }, [state, wizard, startAdoptStream, resetAdoptStream, setTemplateAdoptActive]);
 
@@ -381,8 +401,12 @@ export function useAsyncTransform({
       }
 
       const response = await confirmTemplateAdoptDraft(stringifyDraft(normalized), reviewTestCaseName);
+      wizard.updatePreference('partialEntityErrors', response.entity_errors ?? []);
       await fetchPersonas();
-      selectPersona(response.persona.id);
+      const personaAvailable = await waitForPersonaInStore(response.persona.id);
+      if (personaAvailable) {
+        selectPersona(response.persona.id);
+      }
 
       if (response.entity_errors?.length) {
         const failedNames = response.entity_errors.map((e) => `${e.entity_type} "${e.entity_name}"`).join(', ');

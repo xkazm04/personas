@@ -123,6 +123,27 @@ pub fn delete_db_saved_query(
 }
 
 // ============================================================================
+// Schema Introspection
+// ============================================================================
+
+#[tauri::command]
+pub async fn introspect_db_tables(
+    state: State<'_, Arc<AppState>>,
+    credential_id: String,
+) -> Result<QueryResult, AppError> {
+    crate::engine::db_query::introspect_tables(&state.db, &credential_id).await
+}
+
+#[tauri::command]
+pub async fn introspect_db_columns(
+    state: State<'_, Arc<AppState>>,
+    credential_id: String,
+    table_name: String,
+) -> Result<QueryResult, AppError> {
+    crate::engine::db_query::introspect_columns(&state.db, &credential_id, &table_name).await
+}
+
+// ============================================================================
 // Query Execution
 // ============================================================================
 

@@ -7,7 +7,7 @@
 //! Progress events are emitted to the frontend so the UI can display a live
 //! log of browser actions.
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -55,6 +55,45 @@ pub struct AutoCredBrowserResult {
     pub session_id: String,
     pub extracted_values: serde_json::Value,
     pub procedure_log: String,
+    /// True when values were salvaged via partial extraction (not all fields found).
+    pub partial: bool,
+}
+
+/// Structured error info serialized as JSON in the Err(String) variant.
+#[derive(Debug, Serialize)]
+pub struct AutoCredErrorInfo {
+    pub kind: String,
+    pub message: String,
+    pub guidance: String,
+    pub retryable: bool,
+    pub context: Option<SessionContext>,
+}
+
+/// Last-mile context captured during the browser session.
+#[derive(Debug, Clone, Serialize, Default)]
+pub struct SessionContext {
+    pub last_url: Option<String>,
+    pub last_actions: Vec<String>,
+    pub tool_call_count: u32,
+    pub duration_secs: Option<f64>,
+    pub had_waiting_prompt: bool,
+}
+
+fn structured_error(
+    kind: &str,
+    message: &str,
+    guidance: &str,
+    retryable: bool,
+    ctx: Option<SessionContext>,
+) -> String {
+    serde_json::to_string(&AutoCredErrorInfo {
+        kind: kind.to_string(),
+        message: message.to_string(),
+        guidance: guidance.to_string(),
+        retryable,
+        context: ctx,
+    })
+    .unwrap_or_else(|_| message.to_string())
 }
 
 /// Build the prompt for Claude to drive Playwright and extract credentials.
@@ -169,14 +208,21 @@ pub async fn start_auto_cred_browser(
         "message": format!("Starting browser automation for {}...", request.connector_label),
     }));
 
+    // Collect field keys for partial extraction fallback
+    let field_keys: Vec<String> = request.fields.iter().map(|f| f.key.clone()).collect();
+
     let app_clone = app.clone();
     let sid = session_id.clone();
+
+    // Session context accumulator — shared with the streaming callback
+    let ctx_acc = Arc::new(Mutex::new(SessionContext::default()));
+    let ctx_ref = Arc::clone(&ctx_acc);
 
     let result = spawn_claude_and_collect(
         &cli_args,
         prompt,
         BROWSER_TIMEOUT_SECS,
-        |line_type, _raw| {
+        |line_type, raw| {
             match line_type {
                 StreamLineType::SystemInit { model, .. } => {
                     let _ = app_clone.emit(PROGRESS_EVENT, json!({
@@ -188,8 +234,14 @@ pub async fn start_auto_cred_browser(
                 StreamLineType::AssistantText { text } => {
                     let trimmed = text.trim();
                     if !trimmed.is_empty() {
-                        // Check for waiting/user-action messages
-                        let msg_type = if trimmed.starts_with("WAITING:") { "warning" } else { "action" };
+                        let msg_type = if trimmed.starts_with("WAITING:") {
+                            if let Ok(mut ctx) = ctx_ref.lock() {
+                                ctx.had_waiting_prompt = true;
+                            }
+                            "warning"
+                        } else {
+                            "action"
+                        };
                         let _ = app_clone.emit(PROGRESS_EVENT, json!({
                             "session_id": sid,
                             "type": msg_type,
@@ -204,8 +256,32 @@ pub async fn start_auto_cred_browser(
                         "mcp__playwright__browser_click" => "Clicking element...",
                         "mcp__playwright__browser_type" => "Typing text...",
                         "mcp__playwright__browser_wait_for_navigation" => "Waiting for page load...",
-                        _ => &format!("Tool: {}", tool_name),
+                        _ => "Working...",
                     };
+
+                    // Track context
+                    if let Ok(mut ctx) = ctx_ref.lock() {
+                        ctx.tool_call_count += 1;
+                        // Keep last 5 actions
+                        if ctx.last_actions.len() >= 5 {
+                            ctx.last_actions.remove(0);
+                        }
+                        ctx.last_actions.push(action.to_string());
+
+                        // Extract URL from navigate tool calls
+                        if tool_name == "mcp__playwright__browser_navigate" {
+                            if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(raw) {
+                                if let Some(url) = parsed
+                                    .pointer("/tool_use/input/url")
+                                    .or_else(|| parsed.pointer("/input/url"))
+                                    .and_then(|v| v.as_str())
+                                {
+                                    ctx.last_url = Some(url.to_string());
+                                }
+                            }
+                        }
+                    }
+
                     let _ = app_clone.emit(PROGRESS_EVENT, json!({
                         "session_id": sid,
                         "type": "action",
@@ -213,6 +289,11 @@ pub async fn start_auto_cred_browser(
                     }));
                 }
                 StreamLineType::Result { duration_ms, total_cost_usd, .. } => {
+                    if let Some(ms) = duration_ms {
+                        if let Ok(mut ctx) = ctx_ref.lock() {
+                            ctx.duration_secs = Some(*ms as f64 / 1000.0);
+                        }
+                    }
                     let mut msg = "Browser session complete".to_string();
                     if let Some(ms) = duration_ms {
                         let secs = *ms as f64 / 1000.0;
@@ -235,14 +316,31 @@ pub async fn start_auto_cred_browser(
     )
     .await;
 
+    // Snapshot the accumulated session context
+    let session_ctx = ctx_acc.lock().ok().map(|g| g.clone());
+
     match result {
         Err(error_msg) => {
+            // Classify the spawn error
+            let (kind, guidance, retryable) = if error_msg.contains("CLI not found") {
+                ("cli_not_found", "Install Claude CLI from https://docs.anthropic.com/en/docs/claude-code", false)
+            } else if error_msg.contains("timed out after") {
+                ("timeout", "The browser session exceeded 5 minutes. The page may require manual interaction or the service is slow. Try again or set up manually.", true)
+            } else if error_msg.contains("conflicting CLAUDECODE") {
+                ("env_conflict", "Restart the app to clear the environment conflict, then try again.", false)
+            } else if error_msg.contains("exited with error") {
+                ("cli_error", "Claude CLI encountered an error. Check that your API key is valid and you have available credits.", true)
+            } else {
+                ("spawn_failed", "Could not start the Claude CLI process. Verify it is installed and accessible.", false)
+            };
+
+            let err = structured_error(kind, &error_msg, guidance, retryable, session_ctx);
             let _ = app.emit(STATUS_EVENT, json!({
                 "session_id": session_id,
                 "status": "failed",
-                "error": error_msg,
+                "error": &err,
             }));
-            Err(error_msg)
+            Err(err)
         }
         Ok(spawn_result) => {
             // Try to extract JSON from the output
@@ -256,21 +354,47 @@ pub async fn start_auto_cred_browser(
                         session_id,
                         extracted_values: values,
                         procedure_log,
+                        partial: false,
                     })
                 }
                 None => {
-                    let err = "Failed to extract credential values from browser session output.";
-                    let _ = app.emit(STATUS_EVENT, json!({
-                        "session_id": session_id,
-                        "status": "failed",
-                        "error": err,
-                    }));
-                    tracing::warn!(
-                        session_id = %session_id,
-                        output_len = spawn_result.text_output.len(),
-                        "Failed to extract auto-cred browser result"
-                    );
-                    Err(err.to_string())
+                    // Attempt partial extraction before giving up
+                    if let Some(partial_values) = extract_partial_values(&spawn_result.text_output, &field_keys) {
+                        tracing::info!(
+                            session_id = %session_id,
+                            found_keys = ?partial_values.as_object().map(|m| m.len()).unwrap_or(0),
+                            "Partial extraction recovered some values"
+                        );
+                        let _ = app.emit(STATUS_EVENT, json!({
+                            "session_id": session_id,
+                            "status": "completed",
+                        }));
+                        Ok(AutoCredBrowserResult {
+                            session_id,
+                            extracted_values: partial_values,
+                            procedure_log: String::new(),
+                            partial: true,
+                        })
+                    } else {
+                        let err = structured_error(
+                            "extraction_failed",
+                            "Failed to extract credential values from browser session output.",
+                            "The browser completed but couldn't produce the expected credentials. The service may require manual steps (CAPTCHA, 2FA, paid plan). Try setting up manually.",
+                            true,
+                            session_ctx,
+                        );
+                        let _ = app.emit(STATUS_EVENT, json!({
+                            "session_id": session_id,
+                            "status": "failed",
+                            "error": &err,
+                        }));
+                        tracing::warn!(
+                            session_id = %session_id,
+                            output_len = spawn_result.text_output.len(),
+                            "Failed to extract auto-cred browser result"
+                        );
+                        Err(err)
+                    }
                 }
             }
         }
@@ -339,6 +463,69 @@ fn build_playwright_mcp_config() -> String {
     let config_path = temp_dir.join("personas_playwright_mcp.json");
     let _ = std::fs::write(&config_path, serde_json::to_string_pretty(&config).unwrap());
     config_path.to_string_lossy().to_string()
+}
+
+/// Best-effort partial extraction: scan text for any field values even without
+/// a proper `extracted_values` JSON block.
+fn extract_partial_values(text: &str, field_keys: &[String]) -> Option<serde_json::Value> {
+    let mut found = serde_json::Map::new();
+
+    // Strategy 1: Find any JSON objects and check for matching keys
+    for line in text.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with('{') {
+            if let Ok(obj) = serde_json::from_str::<serde_json::Value>(trimmed) {
+                if let Some(map) = obj.as_object() {
+                    for key in field_keys {
+                        if found.contains_key(key) {
+                            continue;
+                        }
+                        if let Some(val) = map.get(key) {
+                            if let Some(s) = val.as_str() {
+                                if !s.is_empty() {
+                                    found.insert(
+                                        key.clone(),
+                                        serde_json::Value::String(s.to_string()),
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Strategy 2: Look for "key": "value" patterns in the full text
+    for key in field_keys {
+        if found.contains_key(key) {
+            continue;
+        }
+        let pattern = format!("\"{}\"", key);
+        if let Some(pos) = text.find(&pattern) {
+            let after = &text[pos + pattern.len()..];
+            if let Some(colon_pos) = after.find(':') {
+                let value_area = after[colon_pos + 1..].trim_start();
+                if value_area.starts_with('"') {
+                    if let Some(end_quote) = value_area[1..].find('"') {
+                        let val = &value_area[1..1 + end_quote];
+                        if !val.is_empty() {
+                            found.insert(
+                                key.clone(),
+                                serde_json::Value::String(val.to_string()),
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if found.is_empty() {
+        None
+    } else {
+        Some(serde_json::Value::Object(found))
+    }
 }
 
 /// Extract the JSON result from Claude's text output.

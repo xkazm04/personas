@@ -53,6 +53,7 @@ export function CredentialEditForm({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [showTestHint, setShowTestHint] = useState(false);
   const [vault, setVault] = useState<VaultStatus | null>(null);
 
@@ -65,25 +66,60 @@ export function CredentialEditForm({
     setValues((prev) => ({ ...prev, ...initialValues }));
   }, [initialValues]);
 
+  const validateField = useCallback((field: CredentialTemplateField, value: string): string | null => {
+    const trimmed = value.trim();
+    if (field.required && !trimmed) {
+      return `${field.label} is required`;
+    }
+    if (trimmed && field.type === 'url') {
+      try {
+        const parsed = new URL(trimmed);
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+          return `${field.label} must use http or https`;
+        }
+      } catch {
+        return `${field.label} must be a valid URL`;
+      }
+    }
+    return null;
+  }, []);
+
   const handleChange = useCallback((key: string, value: string) => {
     setValues(prev => ({ ...prev, [key]: value }));
     onValuesChanged?.(key, value);
-    if (errors[key]) {
-      setErrors(prev => {
+    if (touched[key]) {
+      const field = fields.find((f) => f.key === key);
+      if (!field) return;
+      const nextError = validateField(field, value);
+      setErrors((prev) => {
         const next = { ...prev };
-        delete next[key];
+        if (nextError) next[key] = nextError;
+        else delete next[key];
         return next;
       });
     }
-  }, [errors, onValuesChanged]);
+  }, [onValuesChanged, touched, fields, validateField]);
+
+  const handleBlur = useCallback((key: string) => {
+    const field = fields.find((f) => f.key === key);
+    if (!field) return;
+    setTouched((prev) => ({ ...prev, [key]: true }));
+    const nextError = validateField(field, values[key] ?? '');
+    setErrors((prev) => {
+      const next = { ...prev };
+      if (nextError) next[key] = nextError;
+      else delete next[key];
+      return next;
+    });
+  }, [fields, values, validateField]);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     for (const field of fields) {
-      if (field.required && !values[field.key]?.trim()) {
-        newErrors[field.key] = `${field.label} is required`;
-      }
+      const maybeError = validateField(field, values[field.key] ?? '');
+      if (maybeError) newErrors[field.key] = maybeError;
     }
+    setTouched(Object.fromEntries(fields.map((f) => [f.key, true])));
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -122,11 +158,12 @@ export function CredentialEditForm({
               label={field.label}
               value={values[field.key] || ''}
               onChange={(nextValue) => handleChange(field.key, nextValue)}
+              onBlur={() => handleBlur(field.key)}
               placeholder={field.placeholder}
               required={field.required}
               helpText={field.helpText}
-              error={errors[field.key]}
-              inputType={field.type === 'select' ? 'select' : field.type === 'password' ? 'password' : 'text'}
+              error={touched[field.key] ? errors[field.key] : undefined}
+              inputType={field.type === 'select' ? 'select' : field.type === 'password' ? 'password' : field.type === 'url' ? 'url' : 'text'}
               options={field.options}
               allowCopy
             />

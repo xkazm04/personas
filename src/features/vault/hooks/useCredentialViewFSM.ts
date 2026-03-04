@@ -2,14 +2,15 @@ import { useReducer, useCallback, useMemo, useEffect } from 'react';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { getAuthMethods } from '@/lib/types/types';
 import { isGoogleOAuthConnector } from '@/lib/utils/connectors';
+import { useCredentialNav, type CredentialNavKey } from './CredentialNavContext';
 
 // ── Discriminated union: each state carries exactly the data it needs ──
 
 export type CredentialViewState =
   | { view: 'list' }
   | { view: 'catalog-browse'; search: string }
-  | { view: 'catalog-form'; connector: ConnectorDefinition; credentialName: string }
-  | { view: 'catalog-auto-setup'; connector: ConnectorDefinition }
+  | { view: 'catalog-form'; connector: ConnectorDefinition; credentialName: string; parentSearch: string }
+  | { view: 'catalog-auto-setup'; connector: ConnectorDefinition; parentSearch: string }
   | { view: 'add-new' }
   | { view: 'add-api-tool' }
   | { view: 'add-mcp' }
@@ -23,7 +24,7 @@ export type CredentialViewState =
 export type CredentialViewAction =
   | { type: 'GO_LIST' }
   | { type: 'GO_CATALOG' }
-  | { type: 'PICK_CONNECTOR'; connector: ConnectorDefinition }
+  | { type: 'PICK_CONNECTOR'; connector: ConnectorDefinition; parentSearch: string }
   | { type: 'GO_AUTO_SETUP'; connector: ConnectorDefinition }
   | { type: 'SET_CREDENTIAL_NAME'; name: string }
   | { type: 'SET_CATALOG_SEARCH'; search: string }
@@ -37,8 +38,6 @@ export type CredentialViewAction =
   | { type: 'GO_DATABASES' };
 
 // ── Nav key for sidebar highlighting ──
-
-export type CredentialNavKey = 'credentials' | 'from-template' | 'add-new' | 'databases';
 
 export function getNavKey(state: CredentialViewState): CredentialNavKey {
   switch (state.view) {
@@ -60,24 +59,6 @@ export function getNavKey(state: CredentialViewState): CredentialNavKey {
   }
 }
 
-// ── Module-level nav bridge ──
-// Allows sibling components (e.g. Sidebar) to read the FSM-derived navKey
-// and trigger navigation without Zustand, using useSyncExternalStore.
-
-type NavListener = () => void;
-let _currentKey: CredentialNavKey = 'credentials';
-let _navigateFn: ((key: CredentialNavKey) => void) | null = null;
-const _navListeners = new Set<NavListener>();
-
-export const credentialNav = {
-  subscribe: (listener: NavListener): (() => void) => {
-    _navListeners.add(listener);
-    return () => { _navListeners.delete(listener); };
-  },
-  getSnapshot: (): CredentialNavKey => _currentKey,
-  navigate: (key: CredentialNavKey): void => { _navigateFn?.(key); },
-};
-
 // ── Reducer ──
 
 function reducer(state: CredentialViewState, action: CredentialViewAction): CredentialViewState {
@@ -92,11 +73,20 @@ function reducer(state: CredentialViewState, action: CredentialViewAction): Cred
       const methods = getAuthMethods(action.connector);
       const defaultMethod = methods.find((m) => m.is_default) ?? methods[0];
       const name = `${action.connector.label} ${defaultMethod?.label ?? 'Credential'}`;
-      return { view: 'catalog-form', connector: action.connector, credentialName: name };
+      return {
+        view: 'catalog-form',
+        connector: action.connector,
+        credentialName: name,
+        parentSearch: action.parentSearch,
+      };
     }
 
     case 'GO_AUTO_SETUP':
-      return { view: 'catalog-auto-setup', connector: action.connector };
+      return {
+        view: 'catalog-auto-setup',
+        connector: action.connector,
+        parentSearch: state.view === 'catalog-form' ? state.parentSearch : '',
+      };
 
     case 'SET_CREDENTIAL_NAME':
       if (state.view === 'catalog-form' && state.credentialName !== action.name) {
@@ -112,7 +102,7 @@ function reducer(state: CredentialViewState, action: CredentialViewAction): Cred
 
     case 'CANCEL_FORM':
       if (state.view === 'catalog-form' || state.view === 'catalog-auto-setup') {
-        return { view: 'catalog-browse', search: '' };
+        return { view: 'catalog-browse', search: state.parentSearch || '' };
       }
       return { view: 'list' };
 
@@ -145,6 +135,7 @@ const INITIAL_STATE: CredentialViewState = { view: 'list' };
 
 export function useCredentialViewFSM(connectorDefinitions: ConnectorDefinition[]) {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
+  const nav = useCredentialNav();
 
   const navKey = getNavKey(state);
 
@@ -166,18 +157,15 @@ export function useCredentialViewFSM(connectorDefinitions: ConnectorDefinition[]
     }
   }, []);
 
-  // Sync navKey + navigateFromSidebar to the module-level bridge
+  // Sync FSM navigation handler and nav key to context.
   useEffect(() => {
-    _navigateFn = navigateFromSidebar;
-    return () => { _navigateFn = null; };
-  }, [navigateFromSidebar]);
+    nav.setNavigateHandler(navigateFromSidebar);
+    return () => { nav.setNavigateHandler(null); };
+  }, [navigateFromSidebar, nav]);
 
   useEffect(() => {
-    if (navKey !== _currentKey) {
-      _currentKey = navKey;
-      _navListeners.forEach((l) => l());
-    }
-  }, [navKey]);
+    nav.setCurrentKey(navKey);
+  }, [nav, navKey]);
 
   // Derived: filtered connectors (only available in catalog-browse)
   const filteredConnectors = useMemo(() => {

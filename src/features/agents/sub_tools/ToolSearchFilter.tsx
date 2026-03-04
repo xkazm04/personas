@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { Search, LayoutGrid, List, X } from 'lucide-react';
 
 interface ToolSearchFilterProps {
@@ -75,16 +76,23 @@ export function ToolSearchFilter({
           <button
             key={category}
             onClick={() => { onCategoryChange(category); onSearchChange(''); }}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-sm font-medium transition-all ${
+            className={`relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-sm font-medium transition-all ${
               selectedCategory === category
-                ? 'bg-primary text-foreground shadow-lg shadow-primary/20'
+                ? 'text-foreground shadow-lg shadow-primary/20'
                 : 'bg-secondary/40 text-muted-foreground/80 hover:bg-secondary/60 hover:text-foreground/95 border border-primary/15'
             }`}
           >
-            {category}
+            {selectedCategory === category && (
+              <motion.div
+                layoutId="tool-category-pill"
+                className="absolute inset-0 rounded-xl bg-primary"
+                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+              />
+            )}
+            <span className="relative z-10">{category}</span>
             <span className={`text-sm px-1.5 py-0.5 rounded-full font-bold ${
               selectedCategory === category
-                ? 'bg-primary/20 text-foreground/80'
+                ? 'relative z-10 bg-foreground/15 text-foreground/90'
                 : 'bg-muted/30 text-muted-foreground/80'
             }`}>
               {categoryCounts.get(category) ?? 0}

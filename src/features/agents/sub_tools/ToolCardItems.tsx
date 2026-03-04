@@ -12,6 +12,54 @@ export interface ToolDef {
   requires_credential_type?: string | null;
 }
 
+function ToolCheckbox({
+  toolName,
+  checked,
+  disabled,
+  justToggled,
+  size,
+  onToggle,
+}: {
+  toolName: string;
+  checked: boolean;
+  disabled: boolean;
+  justToggled: boolean;
+  size: 'sm' | 'md';
+  onToggle: () => void;
+}) {
+  const classes = size === 'md'
+    ? 'w-5 h-5 rounded-md'
+    : 'w-4 h-4 rounded-md';
+  const checkClass = size === 'md' ? 'w-3 h-3' : 'w-2.5 h-2.5';
+
+  return (
+    <motion.div
+      role="checkbox"
+      aria-checked={checked}
+      aria-label={toolName}
+      aria-disabled={disabled ? true : undefined}
+      tabIndex={disabled ? -1 : 0}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (!disabled) onToggle();
+      }}
+      onKeyDown={(e) => {
+        if ((e.key === ' ' || e.key === 'Enter') && !disabled) {
+          e.preventDefault();
+          onToggle();
+        }
+      }}
+      animate={justToggled ? { scale: [1, 1.3, 1] } : undefined}
+      transition={{ duration: 0.3 }}
+      className={`flex-shrink-0 border flex items-center justify-center mt-0.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${classes} ${
+        checked ? 'bg-primary border-primary' : 'bg-background/50 border-primary/15'
+      }`}
+    >
+      {checked && <Check className={`${checkClass} text-foreground`} />}
+    </motion.div>
+  );
+}
+
 export function ToolCard({
   tool,
   isAssigned,
@@ -45,20 +93,9 @@ export function ToolCard({
 
   return (
     <motion.div
-      role="checkbox"
-      aria-checked={isAssigned}
-      aria-label={tool.name}
-      aria-disabled={missingCredential ? true : undefined}
-      tabIndex={0}
       whileHover={missingCredential ? undefined : { scale: 1.02 }}
       whileTap={missingCredential ? undefined : { scale: 0.98 }}
       onClick={() => !missingCredential && onToggle(tool.id, tool.name, isAssigned)}
-      onKeyDown={(e: React.KeyboardEvent) => {
-        if ((e.key === ' ' || e.key === 'Enter') && !missingCredential) {
-          e.preventDefault();
-          onToggle(tool.id, tool.name, isAssigned);
-        }
-      }}
       className={`p-3 rounded-2xl border backdrop-blur-sm transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
         missingCredential
           ? 'bg-secondary/20 border-primary/10 opacity-60 cursor-not-allowed'
@@ -68,15 +105,14 @@ export function ToolCard({
       }`}
     >
       <div className="flex items-start gap-3">
-        <motion.div
-          animate={justToggledId === tool.id ? { scale: [1, 1.3, 1] } : {}}
-          transition={{ duration: 0.3 }}
-          className={`flex-shrink-0 w-5 h-5 rounded-md border flex items-center justify-center mt-0.5 transition-colors ${
-            isAssigned ? 'bg-primary border-primary' : 'bg-background/50 border-primary/15'
-          }`}
-        >
-          {isAssigned && <Check className="w-3 h-3 text-foreground" />}
-        </motion.div>
+        <ToolCheckbox
+          toolName={tool.name}
+          checked={isAssigned}
+          disabled={missingCredential}
+          justToggled={justToggledId === tool.id}
+          size="md"
+          onToggle={() => onToggle(tool.id, tool.name, isAssigned)}
+        />
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <h4 className="font-medium text-foreground text-sm truncate">{tool.name}</h4>
@@ -180,17 +216,7 @@ export function GroupedToolRow({
   return (
     <div>
       <div
-        role="checkbox"
-        aria-checked={isAssigned}
-        aria-label={tool.name}
-        tabIndex={0}
         onClick={() => !missingCredential && onToggle(tool.id, tool.name, isAssigned)}
-        onKeyDown={(e: React.KeyboardEvent) => {
-          if ((e.key === ' ' || e.key === 'Enter') && !missingCredential) {
-            e.preventDefault();
-            onToggle(tool.id, tool.name, isAssigned);
-          }
-        }}
         className={`flex items-center gap-3 px-4 py-2.5 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40 ${
           missingCredential
             ? 'opacity-50 cursor-not-allowed'
@@ -199,15 +225,14 @@ export function GroupedToolRow({
               : 'hover:bg-secondary/30 cursor-pointer'
         }`}
       >
-        <motion.div
-          animate={justToggledId === tool.id ? { scale: [1, 1.3, 1] } : {}}
-          transition={{ duration: 0.3 }}
-          className={`flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-colors ${
-            isAssigned ? 'bg-primary border-primary' : 'bg-background/50 border-primary/15'
-          }`}
-        >
-          {isAssigned && <Check className="w-2.5 h-2.5 text-foreground" />}
-        </motion.div>
+        <ToolCheckbox
+          toolName={tool.name}
+          checked={isAssigned}
+          disabled={missingCredential}
+          justToggled={justToggledId === tool.id}
+          size="sm"
+          onToggle={() => onToggle(tool.id, tool.name, isAssigned)}
+        />
         <div className="flex-1 min-w-0">
           <span className="text-sm text-foreground/80">{tool.name}</span>
           {tool.description && (

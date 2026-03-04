@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Key, ChevronDown, ChevronRight, Plug, RotateCw, Lock } from 'lucide-react';
+import { Trash2, Key, Plug, RotateCw, Lock } from 'lucide-react';
+import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { RotationInsightBadge } from '@/features/vault/sub_card/RotationInsightBadge';
 import type { CredentialMetadata, ConnectorDefinition, ConnectorAuthMethod } from '@/lib/types/types';
 import { getAuthMethods } from '@/lib/types/types';
@@ -30,31 +31,29 @@ function getAdoptedAuthMethod(credential: CredentialMetadata, connector: Connect
 export interface CredentialCardHeaderProps {
   credential: CredentialMetadata;
   connector: ConnectorDefinition | undefined;
-  isExpanded: boolean;
   effectiveHealthcheckResult: HealthResult | null;
   rotationStatus: RotationStatus | null;
   rotationCountdown: string | null;
-  onToggle: () => void;
+  onSelect: () => void;
   onDelete: (id: string) => void;
 }
 
 export function CredentialCardHeader({
   credential,
   connector,
-  isExpanded,
   effectiveHealthcheckResult,
   rotationStatus,
   rotationCountdown,
-  onToggle,
+  onSelect,
   onDelete,
 }: CredentialCardHeaderProps) {
   return (
-    <button
-      type="button"
-      aria-expanded={isExpanded}
-      aria-controls={`cred-body-${credential.id}`}
-      className="w-full px-3 py-2.5 cursor-pointer hover:bg-secondary/50 transition-colors text-left focus-visible:ring-2 focus-visible:ring-violet-500/40 focus-visible:ring-inset focus-visible:outline-none rounded-t-2xl"
-      onClick={onToggle}
+    <div
+      role="button"
+      tabIndex={0}
+      className="w-full px-3 py-2.5 cursor-pointer hover:bg-secondary/50 transition-colors text-left focus-visible:ring-2 focus-visible:ring-violet-500/40 focus-visible:ring-inset focus-visible:outline-none rounded-lg"
+      onClick={onSelect}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(); } }}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -66,7 +65,7 @@ export function CredentialCardHeader({
             }}
           >
             {connector?.icon_url ? (
-              <img src={connector.icon_url} alt={connector.label} className="w-4 h-4" referrerPolicy="no-referrer" crossOrigin="anonymous" />
+              <ThemedConnectorIcon url={connector.icon_url} label={connector.label} color={connector.color} size="w-4 h-4" />
             ) : connector ? (
               <Plug className="w-4 h-4" style={{ color: connector.color }} />
             ) : (
@@ -112,14 +111,9 @@ export function CredentialCardHeader({
           >
             <Trash2 className="w-4 h-4 text-red-400/70" />
           </button>
-          {isExpanded ? (
-            <ChevronDown aria-hidden="true" className="w-4 h-4 text-muted-foreground/80" />
-          ) : (
-            <ChevronRight aria-hidden="true" className="w-4 h-4 text-muted-foreground/80" />
-          )}
         </div>
       </div>
-    </button>
+    </div>
   );
 }
 

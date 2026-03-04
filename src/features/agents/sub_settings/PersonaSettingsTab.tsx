@@ -134,6 +134,19 @@ export function PersonaSettingsTab({
               size="md"
             />
           </div>
+
+          <div className="flex items-center justify-between py-1">
+            <div>
+              <span className="text-sm font-medium text-foreground/80">Sensitive Preview</span>
+              <p className="text-sm text-muted-foreground/70">Mask hover preview details until revealed.</p>
+            </div>
+            <AccessibleToggle
+              checked={draft.sensitive}
+              onChange={() => patch({ sensitive: !draft.sensitive })}
+              label="Sensitive Preview"
+              size="md"
+            />
+          </div>
         </div>
       </div>
 

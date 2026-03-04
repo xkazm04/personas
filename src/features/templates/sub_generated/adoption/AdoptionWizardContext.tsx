@@ -22,7 +22,7 @@ import type { ScanResult } from '@/lib/templates/personaSafetyScanner';
 import { usePersonaStore } from '@/stores/personaStore';
 import { parseJsonSafe } from '@/lib/utils/parseJson';
 import { deriveConnectorReadiness } from '../shared/ConnectorReadiness';
-import { getAdoptionRequirements } from './templateVariables';
+import { getAdoptionRequirements, validateVariables } from './templateVariables';
 import { getArchitectureComponent } from '@/lib/credentials/connectorRoles';
 import { deriveRequirementsFromFlows } from './steps/ChooseStep';
 import { verifyTemplate } from '@/lib/templates/templateVerification';
@@ -342,18 +342,30 @@ export function AdoptionWizardProvider({
   // ── Auto-adoption helpers ──
 
   const quickAdoptingRef = useRef(false);
+  const quickAdoptPendingRef = useRef(false);
 
   const quickAdopt = useCallback(() => {
     if (quickAdoptingRef.current) return;
+
+    const validation = validateVariables(adoptionRequirements, state.variableValues);
+    if (!validation.valid) {
+      wizard.goToStep('tune');
+      wizard.setError(`Fill required fields before quick adopt: ${validation.missing.join(', ')}`);
+      return;
+    }
+
     quickAdoptingRef.current = true;
+    quickAdoptPendingRef.current = true;
     wizard.goToStep('tune');
-    // Defer so step state updates before transform starts
-    setTimeout(() => {
-      void async.startTransform().finally(() => {
-        quickAdoptingRef.current = false;
-      });
-    }, 0);
-  }, [wizard, async]);
+  }, [wizard, async, adoptionRequirements, state.variableValues]);
+
+  useEffect(() => {
+    if (!quickAdoptPendingRef.current || state.step !== 'tune') return;
+    quickAdoptPendingRef.current = false;
+    void async.startTransform().finally(() => {
+      quickAdoptingRef.current = false;
+    });
+  }, [state.step, async.startTransform]);
 
   const enterFullWizard = useCallback(() => {
     wizard.setAutoResolved(false);

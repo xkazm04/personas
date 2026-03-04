@@ -1,5 +1,4 @@
-import { useState, useRef, useCallback, useMemo } from 'react';
-import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizeUrl';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Bot, Zap, Clock } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
@@ -9,24 +8,7 @@ import { formatRelativeTime } from '@/lib/utils/formatters';
 import { extractConnectorNames } from '@/lib/personas/utils';
 import PersonaHoverPreview from './PersonaHoverPreview';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
-
-type HealthLevel = 'healthy' | 'degraded' | 'failing' | 'dormant';
-
-/** Map backend health status to ring CSS class */
-const HEALTH_RING_CLASS: Record<HealthLevel, string> = {
-  healthy: 'ring-2 ring-emerald-400/40',
-  degraded: 'border-2 border-dashed border-amber-400/40',
-  failing: 'ring-2 ring-red-400/50',
-  dormant: 'border-2 border-dashed border-muted-foreground/15',
-};
-
-const HEALTH_DOT_COLOR: Record<string, string> = {
-  completed: 'bg-emerald-400',
-  failed: 'bg-red-400',
-  error: 'bg-red-400',
-  cancelled: 'bg-amber-400',
-  running: 'bg-blue-400',
-};
+import { PersonaHealthIndicator } from './PersonaHealthIndicator';
 
 export default function PersonaOverviewPage() {
   const personas = usePersonaStore(s => s.personas);
@@ -44,6 +26,8 @@ export default function PersonaOverviewPage() {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cardRefs = useRef<Record<string, HTMLElement | null>>({});
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   const handleMouseEnter = useCallback((personaId: string) => {
     if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
@@ -56,6 +40,61 @@ export default function PersonaOverviewPage() {
     setHoveredId(null);
   }, []);
 
+  useEffect(() => {
+    const validIds = new Set(personas.map((p) => p.id));
+    Object.keys(cardRefs.current).forEach((id) => {
+      if (!validIds.has(id)) delete cardRefs.current[id];
+    });
+    if (hoveredId && !validIds.has(hoveredId)) {
+      setHoveredId(null);
+    }
+    setActiveIndex((prev) => (personas.length === 0 ? 0 : Math.min(prev, personas.length - 1)));
+  }, [personas, hoveredId]);
+
+  const getGridColumns = useCallback((): number => {
+    const grid = gridRef.current;
+    if (!grid) return 1;
+    const columns = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length;
+    return Math.max(1, columns);
+  }, []);
+
+  const focusCardAt = useCallback((index: number) => {
+    const persona = personas[index];
+    if (!persona) return;
+    setActiveIndex(index);
+    cardRefs.current[persona.id]?.focus();
+  }, [personas]);
+
+  const handleCardKeyDown = useCallback((e: React.KeyboardEvent, index: number) => {
+    if (personas.length === 0) return;
+    const cols = getGridColumns();
+    let nextIndex = index;
+    switch (e.key) {
+      case 'ArrowRight':
+        nextIndex = Math.min(personas.length - 1, index + 1);
+        break;
+      case 'ArrowLeft':
+        nextIndex = Math.max(0, index - 1);
+        break;
+      case 'ArrowDown':
+        nextIndex = Math.min(personas.length - 1, index + cols);
+        break;
+      case 'ArrowUp':
+        nextIndex = Math.max(0, index - cols);
+        break;
+      case 'Home':
+        nextIndex = 0;
+        break;
+      case 'End':
+        nextIndex = personas.length - 1;
+        break;
+      default:
+        return;
+    }
+    e.preventDefault();
+    focusCardAt(nextIndex);
+  }, [personas, getGridColumns, focusCardAt]);
+
   return (
     <ContentBox>
       <ContentHeader
@@ -66,7 +105,7 @@ export default function PersonaOverviewPage() {
       />
 
       <ContentBody>
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+      <div ref={gridRef} role="grid" aria-label="Agent overview" className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
         {personas.map((persona, i) => {
           const connectors = extractConnectorNames(persona);
           const triggerCount = triggerCounts[persona.id];
@@ -83,8 +122,12 @@ export default function PersonaOverviewPage() {
               transition={{ type: "spring", stiffness: 400, damping: 25, delay: Math.min(i, 12) * 0.04 }}
               whileHover={{ y: -2, transition: { duration: 0.15 } }}
               onClick={() => selectPersona(persona.id)}
+              onFocus={() => setActiveIndex(i)}
+              onKeyDown={(e) => handleCardKeyDown(e, i)}
               onMouseEnter={() => handleMouseEnter(persona.id)}
               onMouseLeave={handleMouseLeave}
+              tabIndex={i === activeIndex ? 0 : -1}
+              role="gridcell"
               data-testid={`persona-card-${persona.id}`}
               className="text-left p-4 rounded-xl border border-primary/10 bg-secondary/30 hover:bg-secondary/50 hover:border-primary/20 transition-all group"
               style={groupColor ? {
@@ -112,42 +155,7 @@ export default function PersonaOverviewPage() {
               )}
 
               <div className="flex items-center gap-3 mb-2">
-                {/* Icon with health ring */}
-                {(() => {
-                  const healthStatus = (health?.status ?? 'dormant') as HealthLevel;
-                  const ringClass = HEALTH_RING_CLASS[healthStatus] ?? HEALTH_RING_CLASS.dormant;
-                  const statuses = health?.recentStatuses;
-                  return (
-                    <div className="relative group/health">
-                      <div className={`rounded-lg ${ringClass}`}>
-                        {persona.icon ? (
-                          sanitizeIconUrl(persona.icon) ? (
-                            <img src={sanitizeIconUrl(persona.icon)!} alt="" className="w-8 h-8" referrerPolicy="no-referrer" crossOrigin="anonymous" />
-                          ) : isIconUrl(persona.icon) ? null : (
-                            <span className="text-2xl leading-8 w-8 h-8 flex items-center justify-center">{persona.icon}</span>
-                          )
-                        ) : (
-                          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: (persona.color || '#8b5cf6') + '20' }}>
-                            <Bot className="w-4 h-4" style={{ color: persona.color || '#8b5cf6' }} />
-                          </div>
-                        )}
-                      </div>
-                      {/* Health tooltip on hover */}
-                      {statuses && statuses.length > 0 && (
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/health:flex items-center gap-1 px-2 py-1.5 rounded-lg bg-popover border border-primary/15 shadow-lg z-20 whitespace-nowrap">
-                          {statuses.map((s, si) => (
-                            <div
-                              key={si}
-                              className={`w-2 h-2 rounded-full ${HEALTH_DOT_COLOR[s] ?? 'bg-muted-foreground/30'}`}
-                              title={s}
-                            />
-                          ))}
-                          <span className="text-sm text-muted-foreground/90 ml-1">last {statuses.length}</span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
+                <PersonaHealthIndicator persona={persona} health={health} />
                 <div className="flex items-center gap-1.5">
                   <div className={`w-2 h-2 rounded-full ${persona.enabled ? 'bg-emerald-400' : 'bg-muted-foreground/20'}`} />
                   <span className={`text-sm font-medium px-1.5 py-0.5 rounded-md ${persona.enabled ? 'text-emerald-400 bg-emerald-500/10' : 'text-muted-foreground/80 bg-muted-foreground/10'}`}>

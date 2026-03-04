@@ -37,7 +37,14 @@ export function PhaseIndicator({ phase }: PhaseIndicatorProps) {
   if (phase === 'idle') return null;
 
   return (
-    <div className="flex items-center gap-1 px-1 py-1">
+    <div
+      className="flex items-center gap-1 px-1 py-1"
+      role="progressbar"
+      aria-label="Design phase progress"
+      aria-valuemin={1}
+      aria-valuemax={STAGES.length}
+      aria-valuenow={activeIndex + 1}
+    >
       {STAGES.map((stage, i) => {
         const isCompleted = i < activeIndex;
         const isActive = i === activeIndex;
@@ -60,7 +67,6 @@ export function PhaseIndicator({ phase }: PhaseIndicatorProps) {
                   />
                 )}
                 <motion.div
-                  layoutId="phase-dot-highlight"
                   className={`w-2 h-2 rounded-full transition-colors duration-300 ${
                     isActive
                       ? phase === 'awaiting-input'
@@ -71,7 +77,7 @@ export function PhaseIndicator({ phase }: PhaseIndicatorProps) {
                         : 'bg-secondary/40'
                   }`}
                   {...(isActive && {
-                    animate: {},
+                    layoutId: 'phase-dot-highlight',
                     layout: true,
                   })}
                 />

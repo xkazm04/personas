@@ -28,6 +28,7 @@ import { createLabSlice } from "./slices/labSlice";
 import { createCloudSlice } from "./slices/cloudSlice";
 import { createGitLabSlice } from "./slices/gitlabSlice";
 import { createDatabaseSlice } from "./slices/databaseSlice";
+import { AUTH_LOGIN_EVENT } from "./authStore";
 
 // ── Store ──────────────────────────────────────────────────────────────
 
@@ -58,6 +59,7 @@ export const usePersonaStore = create<PersonaStore>()(
         name: "persona-ui-state",
         partialize: (state) => ({
           sidebarSection: state.sidebarSection,
+          homeTab: state.homeTab,
           selectedPersonaId: state.selectedPersonaId,
           overviewTab: state.overviewTab,
           editorTab: state.editorTab,
@@ -69,6 +71,19 @@ export const usePersonaStore = create<PersonaStore>()(
     { name: "persona-store" },
   ),
 );
+
+// ── Auth Bridge ───────────────────────────────────────────────────────
+
+let authBridgeAttached = false;
+function initAuthBridgeListener() {
+  if (authBridgeAttached || typeof window === "undefined") return;
+  authBridgeAttached = true;
+  window.addEventListener(AUTH_LOGIN_EVENT, () => {
+    usePersonaStore.getState().cloudInitialize();
+  });
+}
+
+initAuthBridgeListener();
 
 // ── Healing Listener ───────────────────────────────────────────────────
 

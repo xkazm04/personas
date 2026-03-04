@@ -32,6 +32,7 @@ import {
 } from './useCreateTemplateReducer';
 import type { PersistedCreateTemplateContext } from './useCreateTemplateReducer';
 import { WizardStepper } from '@/features/shared/components/WizardStepper';
+import { BaseModal } from '../shared/BaseModal';
 
 // ── Helpers ──
 
@@ -310,23 +311,19 @@ export function CreateTemplateModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-      {/* Backdrop */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={handleClose}
-      />
-
-      {/* Modal */}
+    <BaseModal
+      isOpen={isOpen}
+      onClose={handleClose}
+      titleId="create-template-title"
+      maxWidthClass="max-w-3xl"
+      panelClassName="max-h-[85vh] bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+    >
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-        className="relative w-full max-w-3xl max-h-[85vh] bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+        className="relative h-full flex flex-col overflow-hidden"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 flex-shrink-0">
@@ -335,7 +332,7 @@ export function CreateTemplateModal({
               <Wand2 className="w-4 h-4 text-violet-400" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-foreground/80">Create Template</h2>
+              <h2 id="create-template-title" className="text-base font-semibold text-foreground/80">Create Template</h2>
               <p className="text-sm text-muted-foreground/80">Design a reusable persona template with AI</p>
             </div>
           </div>
@@ -512,6 +509,6 @@ export function CreateTemplateModal({
           </div>
         </div>
       </motion.div>
-    </div>
+    </BaseModal>
   );
 }

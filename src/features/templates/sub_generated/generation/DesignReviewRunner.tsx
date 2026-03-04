@@ -120,6 +120,18 @@ export default function DesignReviewRunner({
     }
   }, [lines]);
 
+  useEffect(() => {
+    if (!terminalRef.current) return;
+    const el = terminalRef.current;
+    const observer = new ResizeObserver(() => {
+      if (shouldAutoScroll.current) {
+        el.scrollTop = el.scrollHeight;
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   // Reset animation start index when a new run begins
   useEffect(() => {
     if (isRunning) {

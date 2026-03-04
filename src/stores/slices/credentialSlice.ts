@@ -21,7 +21,7 @@ export interface CredentialSlice {
 
   // Actions
   fetchCredentials: () => Promise<void>;
-  createCredential: (input: { name: string; service_type: string; data: object }) => Promise<string | undefined>;
+  createCredential: (input: { name: string; service_type: string; data: object }) => Promise<string>;
   updateCredential: (id: string, input: { name?: string; service_type?: string; data?: object }) => Promise<void>;
   deleteCredential: (id: string) => Promise<void>;
   updateCredentialField: (id: string, key: string, value: string, isSensitive: boolean) => Promise<void>;
@@ -56,7 +56,7 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
     try {
       const raw = await api.listCredentials();
       const credentials = raw.map(toCredMeta);
-      set({ credentials });
+      set({ credentials, error: null });
     } catch (err) {
       set({ error: errMsg(err, "Failed to fetch credentials") });
       throw err;
@@ -76,11 +76,12 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
         metadata: null,
         session_encrypted_data,
       });
-      get().fetchCredentials();
+      await get().fetchCredentials();
+      set({ error: null });
       return created.id;
     } catch (err) {
       set({ error: errMsg(err, "Failed to create credential") });
-      return undefined;
+      throw err;
     }
   },
 
@@ -99,7 +100,8 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
         metadata: null,
         session_encrypted_data: session_encrypted_data ?? null,
       });
-      get().fetchCredentials();
+      await get().fetchCredentials();
+      set({ error: null });
     } catch (err) {
       set({ error: errMsg(err, "Failed to update credential") });
     }
@@ -110,6 +112,7 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
     set((state) => ({
       credentials: state.credentials.filter((c) => c.id !== id),
       credentialEvents: state.credentialEvents.filter((e) => e.credential_id !== id),
+      error: null,
     }));
   },
 
@@ -123,6 +126,7 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
       await api.updateCredentialField(id, key, value, isSensitive, session_encrypted_value);
       // No need to fetch all credentials if we just updated one field, 
       // but might be needed to refresh metadata if it's used somewhere.
+      set({ error: null });
     } catch (err) {
       set({ error: errMsg(err, "Failed to update credential field") });
     }
@@ -153,7 +157,7 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
     try {
       const raw = await api.listConnectors();
       const connectorDefinitions = raw.map(parseConn);
-      set({ connectorDefinitions });
+      set({ connectorDefinitions, error: null });
     } catch (err) {
       set({ error: errMsg(err, "Failed to fetch connector definitions") });
     }
@@ -175,7 +179,7 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
         is_builtin: input.is_builtin ?? null,
       });
       const connector = parseConn(raw);
-      set((state) => ({ connectorDefinitions: [...state.connectorDefinitions, connector] }));
+      set((state) => ({ connectorDefinitions: [...state.connectorDefinitions, connector], error: null }));
       return connector;
     } catch (err) {
       set({ error: errMsg(err, "Failed to create connector") });
@@ -185,9 +189,14 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
 
   deleteConnectorDefinition: async (id) => {
     try {
-      await api.deleteConnector(id);
+      const deleted = await api.deleteConnector(id);
+      if (!deleted) {
+        set({ error: 'Failed to delete connector' });
+        return;
+      }
       set((state) => ({
         connectorDefinitions: state.connectorDefinitions.filter((c) => c.id !== id),
+        error: null,
       }));
     } catch (err) {
       set({ error: errMsg(err, "Failed to delete connector") });
@@ -197,7 +206,7 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
   fetchCredentialEvents: async () => {
     try {
       const allEvents = await api.listAllCredentialEvents();
-      set({ credentialEvents: allEvents });
+      set({ credentialEvents: allEvents, error: null });
     } catch (err) {
       set({ error: errMsg(err, "Failed to fetch credential events") });
     }
@@ -212,6 +221,7 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
         config: input.config ? JSON.stringify(input.config) : null,
         enabled: null,
       });
+      set({ error: null });
       get().fetchCredentialEvents();
     } catch (err) {
       set({ error: errMsg(err, "Failed to create credential event") });
@@ -231,6 +241,7 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
         credentialEvents: state.credentialEvents.map((e) =>
           e.id === id ? updated : e,
         ),
+        error: null,
       }));
     } catch (err) {
       set({ error: errMsg(err, 'Failed to update credential event') });
@@ -242,6 +253,7 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
       await api.deleteCredentialEvent(id);
       set((state) => ({
         credentialEvents: state.credentialEvents.filter((e) => e.id !== id),
+        error: null,
       }));
     } catch (err) {
       set({ error: errMsg(err, "Failed to delete credential event") });

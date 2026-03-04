@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import type { DbPersona } from '@/lib/types/types';
 import type { ModelProfile } from '@/lib/types/frontendTypes';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
@@ -112,6 +112,7 @@ export function usePersonaFilters(
   lastRunMap: Record<string, string | null>,
 ) {
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
+  const smartTagCacheRef = useRef(new Map<string, { fingerprint: string; tags: SmartTag[] }>());
 
   const setSearch = useCallback((search: string) => setFilters(f => ({ ...f, search })), []);
   const setStatus = useCallback((status: StatusFilter) => setFilters(f => ({ ...f, status: f.status === status ? 'all' : status })), []);
@@ -132,7 +133,20 @@ export function usePersonaFilters(
   const smartTagsMap = useMemo(() => {
     const map: Record<string, SmartTag[]> = {};
     for (const p of personas) {
-      map[p.id] = generateSmartTags(p, healthMap[p.id], lastRunMap[p.id]);
+      const health = healthMap[p.id];
+      const lastRun = lastRunMap[p.id];
+      const connectorFingerprint = extractConnectorNames(p, 10).join('|').toLowerCase();
+      const fingerprint = `${connectorFingerprint}::${health?.status ?? 'none'}::${lastRun ?? 'never'}`;
+
+      const cached = smartTagCacheRef.current.get(p.id);
+      if (cached && cached.fingerprint === fingerprint) {
+        map[p.id] = cached.tags;
+        continue;
+      }
+
+      const tags = generateSmartTags(p, health, lastRun);
+      smartTagCacheRef.current.set(p.id, { fingerprint, tags });
+      map[p.id] = tags;
     }
     return map;
   }, [personas, healthMap, lastRunMap]);

@@ -1,7 +1,7 @@
 import type { NotificationChannel } from '@/lib/types/frontendTypes';
 import type { DesignContextData, DesignUseCase } from '@/lib/types/frontendTypes';
 import type { ConnectorPipelineStep, DesignAnalysisResult } from '@/lib/types/designTypes';
-import type { BuilderState, BuilderUseCase, BuilderComponent, TriggerPreset } from './types';
+import type { BuilderState, BuilderUseCase, BuilderComponent, TriggerPreset, ComponentRole, CredentialCoverage, CoverageStatus } from './types';
 import { INITIAL_BUILDER_STATE, TRIGGER_PRESETS, ERROR_STRATEGIES, REVIEW_POLICIES } from './types';
 
 // ── Actions ─────────────────────────────────────────────────────────
@@ -12,21 +12,23 @@ export type BuilderAction =
   | { type: 'ADD_USE_CASE_WITH_DATA'; payload: { title: string; description: string; category?: string } }
   | { type: 'UPDATE_USE_CASE'; payload: { id: string; updates: Partial<BuilderUseCase> } }
   | { type: 'REMOVE_USE_CASE'; payload: string }
-  | { type: 'ADD_COMPONENT'; payload: string }
-  | { type: 'REMOVE_COMPONENT'; payload: string }
-  | { type: 'SET_COMPONENT_CREDENTIAL'; payload: { connectorName: string; credentialId: string | null } }
+  | { type: 'ADD_COMPONENT'; payload: { role: ComponentRole; connectorName: string; credentialId: string | null } }
+  | { type: 'REMOVE_COMPONENT'; payload: string } // component id
+  | { type: 'AUTO_MATCH_CREDENTIALS'; payload: { credentials: Array<{ id: string; service_type: string }> } }
+  | { type: 'UPDATE_COMPONENT_CREDENTIAL'; payload: { componentId: string; credentialId: string | null } }
   | { type: 'SET_GLOBAL_TRIGGER'; payload: TriggerPreset | null }
   | { type: 'TOGGLE_CHANNEL'; payload: NotificationChannel }
   | { type: 'UPDATE_CHANNEL'; payload: { index: number; config: Record<string, string> } }
   | { type: 'SET_ERROR_STRATEGY'; payload: string }
   | { type: 'SET_REVIEW_POLICY'; payload: string }
+  | { type: 'SET_WATCHED_TABLES'; payload: { componentId: string; tables: string[] } }
   | { type: 'APPLY_DESIGN_RESULT'; payload: DesignAnalysisResult }
   | { type: 'RESET' };
 
 let nextId = 1;
 
-function makeUseCaseId(): string {
-  return `uc_${Date.now()}_${nextId++}`;
+function makeId(prefix: string): string {
+  return `${prefix}_${Date.now()}_${nextId++}`;
 }
 
 // ── Design result mapping helpers ───────────────────────────────────
@@ -44,15 +46,24 @@ function matchTriggerPreset(triggerType: string, cron?: string): TriggerPreset |
   return null;
 }
 
+/** Map a suggested connector role string to our ComponentRole */
+function inferRole(sc: { role?: string; category?: string; name: string }): ComponentRole {
+  const r = (sc.role ?? sc.category ?? '').toLowerCase();
+  if (r.includes('retriev') || r.includes('fetch') || r.includes('input') || r.includes('source')) return 'retrieve';
+  if (r.includes('stor') || r.includes('database') || r.includes('save') || r.includes('persist')) return 'store';
+  if (r.includes('notif') || r.includes('alert') || r.includes('message')) return 'notify';
+  return 'act'; // default
+}
+
 function applyDesignResult(state: BuilderState, result: DesignAnalysisResult): BuilderState {
   let next = { ...state };
 
-  // Use cases: derive from summary/instructions if no explicit use cases
+  // Use cases
   const instructions = result.structured_prompt?.instructions;
   if (instructions && state.useCases.length === 0) {
     const lines = instructions.split('\n').filter((l) => l.trim().startsWith('-') || l.trim().startsWith('*'));
     const newCases: BuilderUseCase[] = lines.slice(0, 5).map((line) => ({
-      id: makeUseCaseId(),
+      id: makeId('uc'),
       title: line.replace(/^[\s\-*]+/, '').slice(0, 80),
       description: '',
       category: 'automation',
@@ -73,12 +84,17 @@ function applyDesignResult(state: BuilderState, result: DesignAnalysisResult): B
     }
   }
 
-  // Connectors: merge suggested_connectors with existing components
+  // Connectors → components with inferred roles
   if (result.suggested_connectors?.length) {
     const existingNames = new Set(next.components.map((c) => c.connectorName));
     const newComponents: BuilderComponent[] = result.suggested_connectors
       .filter((sc) => !existingNames.has(sc.name))
-      .map((sc) => ({ connectorName: sc.name, credentialId: null }));
+      .map((sc) => ({
+        id: makeId('comp'),
+        role: inferRole(sc),
+        connectorName: sc.name,
+        credentialId: null,
+      }));
     next = { ...next, components: [...next.components, ...newComponents] };
   }
 
@@ -95,7 +111,7 @@ function applyDesignResult(state: BuilderState, result: DesignAnalysisResult): B
     next = { ...next, channels: [...next.channels, ...newChannels] };
   }
 
-  // Summary → intent (if empty)
+  // Summary → intent
   if (!next.intent.trim() && result.summary) {
     next = { ...next, intent: result.summary };
   }
@@ -116,7 +132,7 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
         useCases: [
           ...state.useCases,
           {
-            id: makeUseCaseId(),
+            id: makeId('uc'),
             title: '',
             description: '',
             category: 'automation',
@@ -132,7 +148,7 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
         useCases: [
           ...state.useCases,
           {
-            id: makeUseCaseId(),
+            id: makeId('uc'),
             title: action.payload.title,
             description: action.payload.description,
             category: action.payload.category || 'automation',
@@ -157,35 +173,73 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
       };
 
     case 'ADD_COMPONENT': {
-      const name = action.payload;
-      if (state.components.some((c) => c.connectorName === name)) return state;
+      const { role, connectorName, credentialId } = action.payload;
+      // Prevent duplicate credential under same role
+      if (credentialId && state.components.some(
+        (c) => c.role === role && c.credentialId === credentialId,
+      )) return state;
+      // Prevent duplicate connector (no credential) under same role
+      if (!credentialId && state.components.some(
+        (c) => c.role === role && c.connectorName === connectorName && !c.credentialId,
+      )) return state;
       return {
         ...state,
-        components: [...state.components, { connectorName: name, credentialId: null }],
+        components: [
+          ...state.components,
+          { id: makeId('comp'), role, connectorName, credentialId },
+        ],
       };
     }
 
     case 'REMOVE_COMPONENT':
       return {
         ...state,
-        components: state.components.filter((c) => c.connectorName !== action.payload),
+        components: state.components.filter((c) => c.id !== action.payload),
       };
 
-    case 'SET_COMPONENT_CREDENTIAL':
+    case 'AUTO_MATCH_CREDENTIALS': {
+      const { credentials } = action.payload;
       return {
         ...state,
-        components: state.components.map((c) =>
-          c.connectorName === action.payload.connectorName
-            ? { ...c, credentialId: action.payload.credentialId }
-            : c,
+        components: state.components.map((comp) => {
+          if (comp.credentialId) return comp;
+          const match = credentials.find((c) => c.service_type === comp.connectorName);
+          return match ? { ...comp, credentialId: match.id } : comp;
+        }),
+      };
+    }
+
+    case 'SET_WATCHED_TABLES': {
+      const { componentId, tables } = action.payload;
+      return {
+        ...state,
+        components: state.components.map((comp) =>
+          comp.id === componentId
+            ? { ...comp, watchedTables: tables.length > 0 ? tables : undefined }
+            : comp,
         ),
       };
+    }
+
+    case 'UPDATE_COMPONENT_CREDENTIAL': {
+      const { componentId, credentialId } = action.payload;
+      return {
+        ...state,
+        components: state.components.map((comp) =>
+          comp.id === componentId
+            ? { ...comp, credentialId, watchedTables: credentialId !== comp.credentialId ? undefined : comp.watchedTables }
+            : comp,
+        ),
+      };
+    }
 
     case 'SET_GLOBAL_TRIGGER':
       return { ...state, globalTrigger: action.payload };
 
     case 'TOGGLE_CHANNEL': {
-      const existing = state.channels.findIndex((c) => c.type === action.payload.type);
+      const existing = state.channels.findIndex(
+        (c) => c.type === action.payload.type && (c.credential_id ?? '') === (action.payload.credential_id ?? ''),
+      );
       return {
         ...state,
         channels: existing >= 0
@@ -251,7 +305,7 @@ export function toDesignContext(state: BuilderState): DesignContextData {
   const connectorPipeline: ConnectorPipelineStep[] = state.components.map(
     (comp, i) => ({
       connector_name: comp.connectorName,
-      action_label: `Use ${comp.connectorName}`,
+      action_label: `[${comp.role}] ${comp.connectorName}`,
       order: i,
     }),
   );
@@ -263,10 +317,18 @@ export function toDesignContext(state: BuilderState): DesignContextData {
     }
   }
 
+  const watchedTables: Record<string, string[]> = {};
+  for (const comp of state.components) {
+    if (comp.watchedTables && comp.watchedTables.length > 0) {
+      watchedTables[comp.connectorName] = comp.watchedTables;
+    }
+  }
+
   return {
     useCases: useCases.length > 0 ? useCases : undefined,
     connectorPipeline: connectorPipeline.length > 0 ? connectorPipeline : undefined,
     credentialLinks: Object.keys(credentialLinks).length > 0 ? credentialLinks : undefined,
+    watchedTables: Object.keys(watchedTables).length > 0 ? watchedTables : undefined,
     summary: state.intent.trim() || generateSummary(state) || undefined,
   };
 }
@@ -285,7 +347,16 @@ export function generateSystemPrompt(state: BuilderState): string {
 
   if (state.components.length > 0) {
     lines.push('');
-    lines.push(`## Connectors: ${state.components.map((c) => c.connectorName).join(', ')}`);
+    lines.push(`## Components: ${state.components.map((c) => `${c.connectorName} (${c.role})`).join(', ')}`);
+  }
+
+  const dbComponents = state.components.filter((c) => c.watchedTables && c.watchedTables.length > 0);
+  if (dbComponents.length > 0) {
+    lines.push('');
+    lines.push('## Database Tables');
+    for (const comp of dbComponents) {
+      lines.push(`- **${comp.connectorName}**: ${comp.watchedTables!.join(', ')}`);
+    }
   }
 
   const errorLabel = ERROR_STRATEGIES.find((e) => e.value === state.errorStrategy)?.description;
@@ -321,5 +392,24 @@ export function generateSummary(state: BuilderState): string {
     parts.push(state.channels.map((c) => c.type).join(', '));
   }
 
-  return parts.join(' · ');
+  return parts.join(' \u00b7 ');
+}
+
+// ── Credential Coverage ─────────────────────────────────────────
+
+const BUILTIN_CONNECTORS = new Set(['in-app-messaging', 'http']);
+
+export function computeCredentialCoverage(components: BuilderComponent[]): CredentialCoverage {
+  const needsCred = components.filter((c) => !BUILTIN_CONNECTORS.has(c.connectorName));
+  const total = needsCred.length;
+  const matched = needsCred.filter((c) => c.credentialId !== null).length;
+  const status: CoverageStatus =
+    total === 0 ? 'none' : matched === total ? 'full' : matched > 0 ? 'partial' : 'none';
+  return { total, matched, status };
+}
+
+export function computeRoleCoverage(components: BuilderComponent[], role: ComponentRole): CoverageStatus {
+  const roleComps = components.filter((c) => c.role === role && !BUILTIN_CONNECTORS.has(c.connectorName));
+  if (roleComps.length === 0) return 'none';
+  return roleComps.every((c) => c.credentialId !== null) ? 'full' : roleComps.some((c) => c.credentialId !== null) ? 'partial' : 'none';
 }

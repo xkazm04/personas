@@ -170,3 +170,49 @@ pub fn list_healing_knowledge(
         None => repo::get_all_knowledge(&state.db),
     }
 }
+
+/// Manually trigger AI healing for a failed execution (dev-mode only).
+///
+/// Resumes the original Claude session as a chained execution. The healing
+/// runs in the background and emits `ai-healing-status` events to the frontend.
+/// Requires the original execution to have a `claude_session_id`.
+#[tauri::command]
+pub async fn trigger_ai_healing(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    execution_id: String,
+) -> Result<serde_json::Value, AppError> {
+    // Only available in dev mode
+    if !cfg!(debug_assertions) && std::env::var("VITE_DEVELOPMENT").as_deref() != Ok("true") {
+        return Err(AppError::Internal("AI healing is only available in development mode".into()));
+    }
+
+    let pool = &state.db;
+    let execution = exec_repo::get_by_id(pool, &execution_id)?;
+
+    let session_id = execution.claude_session_id.ok_or_else(|| {
+        AppError::Internal("Cannot heal: no Claude session ID on this execution".into())
+    })?;
+
+    let error_str = execution.error_message.as_deref().unwrap_or("Unknown error");
+    let timed_out = error_str.contains("timed out");
+    let session_limit = error_str.contains("Session limit");
+    let category = healing::classify_error(error_str, timed_out, session_limit);
+
+    // Delegate to the engine which spawns the healing chain as a background task.
+    // The engine handles execution record creation, running, and fix application.
+    state.engine.start_healing_chain(
+        &app,
+        pool,
+        &execution_id,
+        &execution.persona_id,
+        &session_id,
+        error_str,
+        &format!("{:?}", category),
+    );
+
+    Ok(serde_json::json!({
+        "status": "started",
+        "message": "AI healing chain started — watch ai-healing-status events for progress",
+    }))
+}

@@ -15,6 +15,7 @@ function makePersona(overrides: Partial<Persona> = {}): Persona {
     icon: null,
     color: null,
     enabled: true,
+    sensitive: false,
     max_concurrent: 1,
     timeout_ms: 60000,
     notification_channels: null,

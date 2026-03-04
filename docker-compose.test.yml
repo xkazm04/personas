@@ -1,0 +1,48 @@
+# Docker services for database submodule integration tests.
+#
+# Usage:
+#   docker compose -f docker-compose.test.yml up -d
+#   UPSTASH_TEST_URL=http://localhost:8079 UPSTASH_TEST_TOKEN=test_token_123 \
+#     cargo test -- --ignored
+#   docker compose -f docker-compose.test.yml down
+#
+services:
+  # Redis instance backing the Upstash emulator
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  # Serverless Redis HTTP — Upstash REST API emulator
+  # https://github.com/hiett/serverless-redis-http
+  upstash-emulator:
+    image: hiett/serverless-redis-http:latest
+    ports:
+      - "8079:80"
+    environment:
+      SRH_MODE: env
+      SRH_TOKEN: test_token_123
+      SRH_CONNECTION_STRING: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # Plain Postgres for Neon SQL parsing tests (no HTTP proxy emulation)
+  neon-postgres:
+    image: postgres:17
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: test_db
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_pass
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d test_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 5

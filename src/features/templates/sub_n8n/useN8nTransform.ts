@@ -8,6 +8,7 @@ import {
 import type { N8nPersonaDraft, StreamingSection, SectionKind, SectionValidation } from '@/api/n8nTransform';
 import {
   normalizeDraft,
+  normalizeDraftFromUnknown,
   N8N_TRANSFORM_CONTEXT_KEY,
   TRANSFORM_CONTEXT_MAX_AGE_MS,
   type PersistedTransformContext,
@@ -132,12 +133,19 @@ export function useN8nTransform(
 
   const handleSnapshotDraft = useCallback(
     (draft: N8nPersonaDraft) => {
-      let completedDraft: N8nPersonaDraft;
-      try {
-        completedDraft = normalizeDraft(draft);
-      } catch {
-        completedDraft = draft;
+      const normalized = normalizeDraftFromUnknown(draft);
+      if (!normalized || !normalized.system_prompt.trim()) {
+        setIsRestoring(false);
+        setN8nTransformActive(false);
+        clearPersistedContext();
+        dispatch({
+          type: 'TRANSFORM_FAILED',
+          error: 'Transform output was invalid. Please retry or refine your request.',
+        });
+        return;
       }
+
+      let completedDraft = normalizeDraft(normalized);
       // Apply a random color if the transform didn't set one
       if (!completedDraft.color || completedDraft.color === '#8b5cf6') {
         completedDraft = {
@@ -197,13 +205,16 @@ export function useN8nTransform(
           context: typeof q.context === 'string' ? q.context : undefined,
         }));
 
+      // CLI process has stopped — waiting for user input, not actively running
+      setN8nTransformActive(false);
+
       if (mapped.length > 0) {
         dispatch({ type: 'QUESTIONS_GENERATED', questions: mapped });
       } else {
         dispatch({ type: 'QUESTIONS_FAILED', error: '' });
       }
     },
-    [dispatch],
+    [dispatch, setN8nTransformActive],
   );
 
   const handleSnapshotSections = useCallback(

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { getConnectorMeta } from '@/features/shared/components/ConnectorMeta';
-import { credentialNav } from '@/features/vault/hooks/useCredentialViewFSM';
+import { useCredentialNav } from '@/features/vault/hooks/CredentialNavContext';
 
 export function useToolSelectorState() {
   const selectedPersona = usePersonaStore((state) => state.selectedPersona);
@@ -15,6 +15,7 @@ export function useToolSelectorState() {
   const toolUsageSummary = usePersonaStore((state) => state.toolUsageSummary);
   const fetchToolUsage = usePersonaStore((state) => state.fetchToolUsage);
   const connectorDefinitions = usePersonaStore((state) => state.connectorDefinitions);
+  const { navigate } = useCredentialNav();
 
   const credentialLabel = useCallback((credType: string): string => {
     const connector = connectorDefinitions.find((c) => c.name === credType);
@@ -144,8 +145,8 @@ export function useToolSelectorState() {
 
   const handleAddCredential = useCallback(() => {
     setSidebarSection('credentials');
-    credentialNav.navigate('add-new');
-  }, [setSidebarSection]);
+    navigate('add-new');
+  }, [setSidebarSection, navigate]);
 
   return {
     selectedPersona,

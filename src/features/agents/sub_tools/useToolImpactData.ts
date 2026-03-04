@@ -117,7 +117,10 @@ export function useToolImpactData(): Map<string, ToolImpactData> {
       if (toolNames.length === 0) continue;
 
       // Cost attribution: distribute execution cost equally across tools
-      const costPerTool = toolNames.length > 0 ? exec.cost_usd / toolNames.length : 0;
+      const executionCost = typeof exec.cost_usd === 'number' && Number.isFinite(exec.cost_usd)
+        ? exec.cost_usd
+        : 0;
+      const costPerTool = toolNames.length > 0 ? executionCost / toolNames.length : 0;
 
       for (const toolName of toolNames) {
         // Use case references
