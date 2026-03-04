@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS personas (
     icon                    TEXT,
     color                   TEXT,
     enabled                 INTEGER NOT NULL DEFAULT 1,
+    sensitive               INTEGER NOT NULL DEFAULT 0,
     max_concurrent          INTEGER NOT NULL DEFAULT 1,
     timeout_ms              INTEGER NOT NULL DEFAULT 300000,
     notification_channels   TEXT,
@@ -1602,6 +1603,18 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     if !has_payload_iv {
         conn.execute_batch("ALTER TABLE persona_events ADD COLUMN payload_iv TEXT;")?;
         tracing::info!("Added payload_iv column to persona_events for encrypted event payloads");
+    }
+
+    // ── Persona sensitivity flag for hover-preview masking ─────────────
+    let has_sensitive_flag: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('personas') WHERE name = 'sensitive'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_sensitive_flag {
+        conn.execute_batch("ALTER TABLE personas ADD COLUMN sensitive INTEGER NOT NULL DEFAULT 0;")?;
+        tracing::info!("Added sensitive column to personas");
     }
 
     // ── Playwright Procedures (saved browser automation for credential setup) ──

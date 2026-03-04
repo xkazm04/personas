@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import {
   MoreVertical,
   Download,
@@ -56,31 +56,24 @@ export function TemplateCard({
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!menuOpen) return;
-    const close = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    };
-    window.addEventListener('click', close);
-    return () => window.removeEventListener('click', close);
-  }, [menuOpen]);
+  const parsedData = useMemo(() => {
+    const connectors = parseJsonSafe<string[]>(review.connectors_used, []);
+    const triggerTypes = parseJsonSafe<string[]>(review.trigger_types, []);
+    const designResult = parseJsonSafe<DesignAnalysisResult | null>(review.design_result, null);
+    const flows = parseJsonSafe<UseCaseFlow[]>(review.use_case_flows, []);
+    const displayFlows = flows.length > 0
+      ? flows
+      : (() => {
+          const raw = designResult as unknown as Record<string, unknown> | null;
+          return raw?.use_case_flows
+            ? parseJsonSafe<UseCaseFlow[]>(JSON.stringify(raw.use_case_flows), [])
+            : [];
+        })();
 
-  const connectors: string[] = parseJsonSafe(review.connectors_used, []);
-  const triggerTypes: string[] = parseJsonSafe(review.trigger_types, []);
-  const designResult = parseJsonSafe<DesignAnalysisResult | null>(review.design_result, null);
-  const flows = parseJsonSafe<UseCaseFlow[]>(review.use_case_flows, []);
+    return { connectors, triggerTypes, designResult, displayFlows };
+  }, [review.connectors_used, review.trigger_types, review.design_result, review.use_case_flows]);
 
-  // Fallback: try extracting flows from design_result if not stored at top level
-  const displayFlows = flows.length > 0
-    ? flows
-    : (() => {
-        const raw = designResult as unknown as Record<string, unknown> | null;
-        return raw?.use_case_flows
-          ? parseJsonSafe<UseCaseFlow[]>(JSON.stringify(raw.use_case_flows), [])
-          : [];
-      })();
+  const { connectors, triggerTypes, designResult, displayFlows } = parsedData;
 
   const suggestedTriggers: SuggestedTrigger[] = designResult?.suggested_triggers ?? [];
 
@@ -113,6 +106,7 @@ export function TemplateCard({
           </p>
         </div>
         <div ref={menuRef} className="relative flex-shrink-0">
+          {menuOpen && <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />}
           <button
             onClick={(e) => {
               e.stopPropagation();

@@ -6,8 +6,9 @@ import type {
   BrowserLogEntry,
   ExtractedValues,
   AutoCredConnectorContext,
+  AutoCredErrorInfo,
 } from './types';
-import { buildConnectorContext } from './types';
+import { buildConnectorContext, parseAutoCredError } from './types';
 
 /**
  * Playwright MCP adapter interface.
@@ -26,7 +27,7 @@ export interface PlaywrightAdapter {
     ctx: AutoCredConnectorContext,
     onLog: (entry: BrowserLogEntry) => void,
     signal: AbortSignal,
-  ): Promise<ExtractedValues>;
+  ): Promise<{ values: ExtractedValues; partial: boolean }>;
 }
 
 // ── Hook ────────────────────────────────────────────────────────────────
@@ -48,7 +49,8 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
   const [logs, setLogs] = useState<BrowserLogEntry[]>([]);
   const [extractedValues, setExtractedValues] = useState<ExtractedValues>({});
   const [credentialName, setCredentialName] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<AutoCredErrorInfo | null>(null);
+  const [isPartial, setIsPartial] = useState(false);
   const [healthResult, setHealthResult] = useState<{ success: boolean; message: string } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const savingRef = useRef(false);
@@ -62,6 +64,7 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
     setExtractedValues({});
     setCredentialName(`${result.connector.label} Credential`);
     setError(null);
+    setIsPartial(false);
     setHealthResult(null);
     setIsSaving(false);
   }, []);
@@ -71,7 +74,13 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
     if (!designResult) return;
 
     if (!adapter) {
-      setError('Auto-Setup requires the Playwright MCP adapter. No adapter is configured — please set up credentials manually.');
+      setError({
+        kind: 'spawn_failed',
+        message: 'No adapter configured',
+        guidance: 'Auto-Setup requires the Playwright MCP adapter. Please set up credentials manually.',
+        retryable: false,
+        context: null,
+      });
       setPhase('error');
       return;
     }
@@ -79,25 +88,28 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
     setPhase('browser');
     setLogs([]);
     setError(null);
+    setIsPartial(false);
 
     const ctrl = new AbortController();
     abortRef.current = ctrl;
 
     try {
       const ctx = buildConnectorContext(designResult);
-      const values = await adapter.run(
+      const { values, partial } = await adapter.run(
         ctx,
         (entry) => setLogs((prev) => [...prev, entry]),
         ctrl.signal,
       );
       setExtractedValues(values);
+      setIsPartial(partial);
       setPhase('review');
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') {
         setPhase('consent');
         return;
       }
-      setError(err instanceof Error ? err.message : 'Browser session failed');
+      const raw = err instanceof Error ? err.message : 'Browser session failed';
+      setError(parseAutoCredError(raw));
       setPhase('error');
     }
   }, [designResult, adapter]);
@@ -140,7 +152,7 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
       await fetchCredentials();
       setPhase('done');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save credential');
+      setError(parseAutoCredError(err instanceof Error ? err.message : 'Failed to save credential'));
       setPhase('error');
     } finally {
       savingRef.current = false;
@@ -158,6 +170,7 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
     setExtractedValues({});
     setCredentialName('');
     setError(null);
+    setIsPartial(false);
     setHealthResult(null);
     setIsSaving(false);
   }, [cancelBrowser]);
@@ -169,6 +182,7 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
     extractedValues,
     credentialName,
     error,
+    isPartial,
     healthResult,
     isSaving,
 

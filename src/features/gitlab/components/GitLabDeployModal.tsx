@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Loader2, Rocket, Check, ExternalLink, ShieldCheck, KeyRound } from 'lucide-react';
 import type { GitLabProject, GitLabDeployResult } from '@/api/gitlab';
 import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
@@ -24,13 +24,16 @@ export function GitLabDeployModal({
   const [provisionCredentials, setProvisionCredentials] = useState(false);
   const [isDeploying, setIsDeploying] = useState(false);
   const [result, setResult] = useState<GitLabDeployResult | null>(null);
+  const deployingRef = useRef(false);
 
   useEffect(() => {
     onFetchProjects();
   }, [onFetchProjects]);
 
   const handleDeploy = async () => {
+    if (deployingRef.current) return;
     if (!selectedPersonaId || !selectedProjectId) return;
+    deployingRef.current = true;
     setIsDeploying(true);
     setResult(null);
     try {
@@ -40,6 +43,7 @@ export function GitLabDeployModal({
       // Error handled by store
     } finally {
       setIsDeploying(false);
+      deployingRef.current = false;
     }
   };
 
@@ -47,8 +51,9 @@ export function GitLabDeployModal({
     <div className="space-y-4">
       {/* Project picker */}
       <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1.5">Target Project</label>
+        <label htmlFor="target-project" className="block text-sm font-medium text-foreground/80 mb-1.5">Target Project</label>
         <ThemedSelect
+          id="target-project"
           value={selectedProjectId ?? ''}
           onChange={(e) => onSelectProject(Number(e.target.value))}
         >
@@ -63,8 +68,9 @@ export function GitLabDeployModal({
 
       {/* Persona picker */}
       <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1.5">Persona to Deploy</label>
+        <label htmlFor="deploy-persona" className="block text-sm font-medium text-foreground/80 mb-1.5">Persona to Deploy</label>
         <ThemedSelect
+          id="deploy-persona"
           value={selectedPersonaId}
           onChange={(e) => setSelectedPersonaId(e.target.value)}
         >
@@ -146,13 +152,15 @@ export function GitLabDeployModal({
                 </p>
               )}
               {result.webUrl && (
-                <button
-                  onClick={() => window.open(result.webUrl!, '_blank')}
+                <a
+                  href={result.webUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="mt-2 flex items-center gap-1.5 text-sm text-orange-400 hover:text-orange-300"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   View in GitLab
-                </button>
+                </a>
               )}
             </div>
           </div>

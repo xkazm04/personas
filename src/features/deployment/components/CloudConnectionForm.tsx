@@ -1,4 +1,5 @@
 import { Wifi, Loader2 } from 'lucide-react';
+import { DEPLOYMENT_TOKENS } from './deploymentTokens';
 
 export interface CloudConnectionFormProps {
   isConnected: boolean;
@@ -25,8 +26,8 @@ export function CloudConnectionForm({
 }: CloudConnectionFormProps) {
   if (isConnected) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-3 p-4 rounded-lg bg-emerald-500/5 border border-emerald-500/15">
+      <div className={DEPLOYMENT_TOKENS.panelSpacing}>
+        <div className={`flex items-center gap-3 p-4 ${DEPLOYMENT_TOKENS.cardRadius} ${DEPLOYMENT_TOKENS.connectedBg} border ${DEPLOYMENT_TOKENS.connectedBorder}`}>
           <Wifi className="w-5 h-5 text-emerald-400" />
           <div>
             <p className="text-sm font-medium text-emerald-400">Connected</p>
@@ -47,26 +48,28 @@ export function CloudConnectionForm({
   }
 
   return (
-    <div className="space-y-5 max-w-md">
+    <div className={`max-w-md ${DEPLOYMENT_TOKENS.panelSpacing}`}>
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-muted-foreground/80">Orchestrator URL</label>
+        <label htmlFor="orchestrator-url" className="text-sm font-medium text-muted-foreground/80">Orchestrator URL</label>
         <input
+          id="orchestrator-url"
           type="text"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://your-orchestrator.example.com"
-          className="w-full px-3 py-2 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground/80 placeholder:text-muted-foreground/80 focus:outline-none focus:border-indigo-500/40 transition-colors"
+          className={`w-full px-3 py-2 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground/80 placeholder:text-muted-foreground/80 focus:outline-none focus:border-indigo-500/40 transition-colors ${isConnecting ? 'border-indigo-500/35 bg-indigo-500/5' : ''}`}
         />
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-muted-foreground/80">API Key</label>
+        <label htmlFor="cloud-api-key" className="text-sm font-medium text-muted-foreground/80">API Key</label>
         <input
+          id="cloud-api-key"
           type="password"
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
           placeholder="Enter API key"
-          className="w-full px-3 py-2 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground/80 placeholder:text-muted-foreground/80 focus:outline-none focus:border-indigo-500/40 transition-colors"
+          className={`w-full px-3 py-2 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground/80 placeholder:text-muted-foreground/80 focus:outline-none focus:border-indigo-500/40 transition-colors ${isConnecting ? 'border-indigo-500/35 bg-indigo-500/5' : ''}`}
         />
       </div>
 

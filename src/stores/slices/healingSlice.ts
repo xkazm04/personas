@@ -37,7 +37,7 @@ export const createHealingSlice: StateCreator<PersonaStore, [], [], HealingSlice
     set({ healingRunning: true });
     try {
       const result = await api.runHealingAnalysis(personaId);
-      const issues = await api.listHealingIssues(personaId);
+      const issues = await api.listHealingIssues();
       set({ healingIssues: issues, healingRunning: false });
       return { failures_analyzed: result.failures_analyzed, issues_created: result.issues_created, auto_fixed: result.auto_fixed };
     } catch (err) {

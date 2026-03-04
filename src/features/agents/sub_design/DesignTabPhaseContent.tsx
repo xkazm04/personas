@@ -100,7 +100,7 @@ export function DesignTabPhaseContent({
   onDeleteConversation,
 }: DesignTabPhaseContentProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" aria-live="polite" aria-atomic="true">
       <PhaseIndicator phase={phase} />
 
       {/* Conversation history -- always visible in idle phase */}

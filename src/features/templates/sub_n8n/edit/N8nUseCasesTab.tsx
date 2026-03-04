@@ -5,10 +5,10 @@ import { parseDesignContext, type UseCaseItem } from '@/features/shared/componen
 import { extractProtocolCapabilities, type ProtocolType } from './protocolParser';
 
 const CAPABILITY_STYLES: Record<ProtocolType, { Icon: React.ComponentType<{ className?: string }>; bg: string; text: string }> = {
-  manual_review: { Icon: ShieldCheck, bg: 'bg-rose-500/8 border-rose-500/15', text: 'text-rose-400/70' },
-  user_message:  { Icon: Bell,        bg: 'bg-amber-500/8 border-amber-500/15', text: 'text-amber-400/70' },
-  agent_memory:  { Icon: Brain,       bg: 'bg-cyan-500/8 border-cyan-500/15', text: 'text-cyan-400/70' },
-  emit_event:    { Icon: Radio,       bg: 'bg-violet-500/8 border-violet-500/15', text: 'text-violet-400/70' },
+  manual_review: { Icon: ShieldCheck, bg: 'bg-rose-500/10 border-rose-500/15', text: 'text-rose-400/70' },
+  user_message:  { Icon: Bell,        bg: 'bg-amber-500/10 border-amber-500/15', text: 'text-amber-400/70' },
+  agent_memory:  { Icon: Brain,       bg: 'bg-cyan-500/10 border-cyan-500/15', text: 'text-cyan-400/70' },
+  emit_event:    { Icon: Radio,       bg: 'bg-violet-500/10 border-violet-500/15', text: 'text-violet-400/70' },
 };
 
 const MODE_BADGE: Record<string, { label: string; bg: string; text: string }> = {
@@ -66,14 +66,14 @@ export function N8nUseCasesTab({
       {/* Use cases list */}
       <div className="flex-1 min-h-0 overflow-y-auto space-y-5">
         {useCases.length === 0 ? (
-          <div className="text-center py-8 space-y-2">
-            <ListChecks className="w-5 h-5 text-muted-foreground/40 mx-auto" />
-            <p className="text-sm text-muted-foreground/60">
+          <div className="text-center py-12 space-y-2">
+            <ListChecks className="w-10 h-10 text-muted-foreground/40 mx-auto" />
+            <p className="text-sm font-medium text-muted-foreground/60">
               {draft.design_context
                 ? 'No structured use cases found in design context.'
                 : 'No use cases generated yet.'}
             </p>
-            <p className="text-sm text-muted-foreground/40">
+            <p className="text-xs text-muted-foreground/60">
               Use the adjustment input below to request use case generation.
             </p>
           </div>
@@ -104,11 +104,11 @@ export function N8nUseCasesTab({
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-sm font-semibold text-foreground/95">{uc.title}</p>
                             {uc.category && catStyle && (
-                              <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded border ${catStyle.bg} ${catStyle.text} uppercase tracking-wider`}>
+                              <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded-lg border ${catStyle.bg} ${catStyle.text} uppercase tracking-wider`}>
                                 {uc.category.replace('-', ' ')}
                               </span>
                             )}
-                            <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded border ${modeBadge.bg} ${modeBadge.text} uppercase tracking-wider`}>
+                            <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded-lg border ${modeBadge.bg} ${modeBadge.text} uppercase tracking-wider`}>
                               {modeBadge.label}
                             </span>
                           </div>

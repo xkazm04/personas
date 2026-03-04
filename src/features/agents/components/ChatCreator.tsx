@@ -18,37 +18,13 @@ import {
 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useDesignAnalysis } from '@/hooks/design/useDesignAnalysis';
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import { deriveName, calcCompleteness } from './designUtils';
 
 interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: number;
-}
-
-/** Derive a short agent name from the user's intent. */
-function deriveName(intent: string): string {
-  const trimmed = intent.trim();
-  if (!trimmed) return 'New Agent';
-  const short = trimmed.slice(0, 30);
-  const atWord = short.lastIndexOf(' ');
-  const base = atWord > 10 ? short.slice(0, atWord) : short;
-  return trimmed.length > base.length ? base + '...' : base;
-}
-
-/** Calculate persona completeness based on design result fields. */
-function calcCompleteness(result: DesignAnalysisResult | null): number {
-  if (!result) return 0;
-  let filled = 0;
-  const total = 6;
-  if (result.structured_prompt?.identity) filled++;
-  if (result.structured_prompt?.instructions) filled++;
-  if (result.full_prompt_markdown) filled++;
-  if (result.suggested_tools.length > 0) filled++;
-  if (result.suggested_triggers.length > 0) filled++;
-  if (result.summary) filled++;
-  return Math.round((filled / total) * 100);
 }
 
 /** Completeness ring SVG. */
@@ -84,9 +60,10 @@ function CompletenessRing({ percent }: { percent: number }) {
 
 interface ChatCreatorProps {
   onCancel?: () => void;
+  onDraftPersonaIdChange?: (id: string | null) => void;
 }
 
-export function ChatCreator({ onCancel }: ChatCreatorProps) {
+export function ChatCreator({ onCancel, onDraftPersonaIdChange }: ChatCreatorProps) {
   const createPersona = usePersonaStore((s) => s.createPersona);
   const selectPersona = usePersonaStore((s) => s.selectPersona);
   const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
@@ -102,6 +79,7 @@ export function ChatCreator({ onCancel }: ChatCreatorProps) {
   const threadRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const accumulatedIntentRef = useRef('');
+  const isCreatingRef = useRef(false);
 
   const completeness = calcCompleteness(design.result);
   const isThinking = design.phase === 'analyzing' || design.phase === 'refining';
@@ -112,6 +90,13 @@ export function ChatCreator({ onCancel }: ChatCreatorProps) {
       threadRef.current.scrollTop = threadRef.current.scrollHeight;
     }
   }, [messages, isThinking, design.result]);
+
+  // Release synchronous create lock once draft persona exists.
+  useEffect(() => {
+    if (draftPersonaId) {
+      isCreatingRef.current = false;
+    }
+  }, [draftPersonaId]);
 
   // When design result arrives, add an assistant message summarizing it
   useEffect(() => {
@@ -155,6 +140,7 @@ export function ChatCreator({ onCancel }: ChatCreatorProps) {
   }, [design.phase, design.question]);
 
   const handleSend = useCallback(async () => {
+    if (isCreatingRef.current) return;
     const text = input.trim();
     if (!text || isThinking) return;
 
@@ -176,6 +162,7 @@ export function ChatCreator({ onCancel }: ChatCreatorProps) {
 
     if (!draftPersonaId) {
       // First message: create draft persona then start intent compilation
+      isCreatingRef.current = true;
       try {
         const persona = await createPersona({
           name: deriveName(text),
@@ -183,8 +170,10 @@ export function ChatCreator({ onCancel }: ChatCreatorProps) {
           system_prompt: 'You are a helpful AI assistant.',
         });
         setDraftPersonaId(persona.id);
+        onDraftPersonaIdChange?.(persona.id);
         await design.startIntentCompilation(persona.id, text);
       } catch (err) {
+        isCreatingRef.current = false;
         setMessages((prev) => [...prev, {
           id: crypto.randomUUID(),
           role: 'assistant',
@@ -213,10 +202,11 @@ export function ChatCreator({ onCancel }: ChatCreatorProps) {
       setSidebarSection('personas');
       selectPersona(draftPersonaId);
       setEditorTab('use-cases');
+      onDraftPersonaIdChange?.(null);
     } catch {
       setIsActivating(false);
     }
-  }, [draftPersonaId, design, isActivating, selectPersona, setSidebarSection, setEditorTab]);
+  }, [draftPersonaId, design, isActivating, selectPersona, setSidebarSection, setEditorTab, onDraftPersonaIdChange]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -486,7 +476,7 @@ export function ChatCreator({ onCancel }: ChatCreatorProps) {
       </div>
 
       {/* Cancel */}
-      {onCancel && !draftPersonaId && (
+      {onCancel && (
         <div className="px-4 py-2 border-t border-primary/10">
           <button
             onClick={onCancel}

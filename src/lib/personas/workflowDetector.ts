@@ -145,4 +145,28 @@ export function isSupportedFile(filename: string): boolean {
   return lower.endsWith('.json') || lower.endsWith('.yml') || lower.endsWith('.yaml');
 }
 
+/** Count workflow elements for preview cards and quick validation UX. */
+export function countElements(json: Record<string, unknown>): { count: number; label: string } {
+  if (Array.isArray(json.nodes)) return { count: json.nodes.length, label: 'node' };
+  if (Array.isArray(json.steps)) return { count: json.steps.length, label: 'step' };
+  if (json.trigger && Array.isArray(json.actions)) return { count: (json.actions as unknown[]).length + 1, label: 'step' };
+  if (json.blueprint && typeof json.blueprint === 'object') {
+    const bp = json.blueprint as Record<string, unknown>;
+    if (Array.isArray(bp.flow)) return { count: bp.flow.length, label: 'module' };
+  }
+  if (Array.isArray(json.flow)) return { count: json.flow.length, label: 'module' };
+  if (Array.isArray(json.modules)) return { count: json.modules.length, label: 'module' };
+  if (json.jobs && typeof json.jobs === 'object') return { count: Object.keys(json.jobs).length, label: 'job' };
+  return { count: 0, label: 'element' };
+}
+
+/** Render-friendly platform label for preview summaries. */
+export function detectPlatformLabel(json: Record<string, unknown>): string {
+  if (Array.isArray(json.nodes)) return 'n8n';
+  if (Array.isArray(json.steps) || (json.trigger && Array.isArray(json.actions))) return 'Zapier';
+  if (json.blueprint || Array.isArray(json.flow) || Array.isArray(json.modules)) return 'Make';
+  if (json.jobs && typeof json.jobs === 'object') return 'GitHub Actions';
+  return 'Workflow';
+}
+
 export { PLATFORM_LABELS };

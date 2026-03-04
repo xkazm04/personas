@@ -119,6 +119,20 @@ pub fn update_credential(
 }
 
 #[tauri::command]
+pub fn patch_credential_metadata(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    patch: serde_json::Value,
+) -> Result<PersonaCredential, AppError> {
+    let patch_obj = patch
+        .as_object()
+        .cloned()
+        .ok_or_else(|| AppError::Validation("metadata patch must be a JSON object".into()))?;
+
+    repo::patch_metadata_atomic(&state.db, &id, patch_obj)
+}
+
+#[tauri::command]
 pub fn delete_credential(
     state: State<'_, Arc<AppState>>,
     id: String,

@@ -1,6 +1,7 @@
-import { ListChecks, Plug, Clock, Bell, ShieldAlert, UserCheck, FileText } from 'lucide-react';
+import { ListChecks, Plug, Clock, ShieldAlert, UserCheck, FileText } from 'lucide-react';
 import type { BuilderState } from './types';
-import { generateSummary } from './builderReducer';
+import { COMPONENT_ROLES } from './types';
+import { generateSummary, computeCredentialCoverage } from './builderReducer';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 
 interface BuilderPreviewProps {
@@ -10,10 +11,10 @@ interface BuilderPreviewProps {
 function PreviewRow({ icon, label, value, muted }: { icon: React.ReactNode; label: string; value: React.ReactNode; muted?: boolean }) {
   return (
     <div className="flex items-start gap-2">
-      <span className="text-muted-foreground/50 mt-0.5 shrink-0">{icon}</span>
+      <span className="text-muted-foreground/60 mt-0.5 shrink-0">{icon}</span>
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider">{label}</p>
-        <div className={`text-xs ${muted ? 'text-muted-foreground/40 italic' : 'text-foreground/75'}`}>
+        <p className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-wider">{label}</p>
+        <div className={`text-xs ${muted ? 'text-muted-foreground/55 italic' : 'text-foreground/80'}`}>
           {value}
         </div>
       </div>
@@ -27,7 +28,7 @@ export function BuilderPreview({ state }: BuilderPreviewProps) {
 
   return (
     <div className="sticky top-0 space-y-3">
-      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 px-1">
+      <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60 px-1">
         Preview
       </p>
 
@@ -36,7 +37,7 @@ export function BuilderPreview({ state }: BuilderPreviewProps) {
         {summary ? (
           <p className="text-xs font-medium text-foreground/70">{summary}</p>
         ) : (
-          <p className="text-xs text-muted-foreground/30 italic">Start building to see a preview</p>
+          <p className="text-xs text-muted-foreground/50 italic">Start building to see a preview</p>
         )}
 
         {/* Intent */}
@@ -66,23 +67,39 @@ export function BuilderPreview({ state }: BuilderPreviewProps) {
           muted={filledUseCases.length === 0}
         />
 
-        {/* Components */}
+        {/* Components by role */}
         <PreviewRow
           icon={<Plug className="w-3 h-3" />}
           label="Components"
           value={
             state.components.length > 0 ? (
-              <div className="flex flex-wrap gap-1 mt-0.5">
-                {state.components.map((comp) => {
-                  const meta = getConnectorMeta(comp.connectorName);
+              <div className="space-y-1 mt-0.5">
+                {COMPONENT_ROLES.filter(({ role }) =>
+                  state.components.some((c) => c.role === role),
+                ).map(({ role, label }) => (
+                  <div key={role}>
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground/55">{label}: </span>
+                    {state.components.filter((c) => c.role === role).map((comp) => {
+                      const meta = getConnectorMeta(comp.connectorName);
+                      return (
+                        <span key={comp.id} className="inline-flex items-center gap-0.5 px-1 py-0.5 bg-secondary/40 rounded text-[11px] mr-0.5">
+                          <ConnectorIcon meta={meta} size="w-2.5 h-2.5" />
+                          {meta.label}
+                        </span>
+                      );
+                    })}
+                  </div>
+                ))}
+                {(() => {
+                  const cov = computeCredentialCoverage(state.components);
+                  if (cov.total === 0) return null;
+                  const color = cov.status === 'full' ? 'text-emerald-400' : cov.status === 'partial' ? 'text-amber-400' : 'text-muted-foreground/55';
                   return (
-                    <span key={comp.connectorName} className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-secondary/40 rounded text-[10px]">
-                      <ConnectorIcon meta={meta} size="w-2.5 h-2.5" />
-                      {meta.label}
-                      {comp.credentialId && <span className="text-primary/50">*</span>}
-                    </span>
+                    <p className={`text-[10px] mt-1 ${color}`}>
+                      Credentials: {cov.matched}/{cov.total} covered
+                    </p>
                   );
-                })}
+                })()}
               </div>
             ) : (
               'None'
@@ -98,15 +115,6 @@ export function BuilderPreview({ state }: BuilderPreviewProps) {
           value={state.globalTrigger?.label ?? 'Manual only'}
           muted={!state.globalTrigger}
         />
-
-        {/* Channels */}
-        {state.channels.length > 0 && (
-          <PreviewRow
-            icon={<Bell className="w-3 h-3" />}
-            label="Notifications"
-            value={state.channels.map((c) => c.type).join(', ')}
-          />
-        )}
 
         {/* Policies */}
         {(state.errorStrategy !== 'halt' || state.reviewPolicy !== 'never') && (

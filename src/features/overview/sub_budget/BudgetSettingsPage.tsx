@@ -183,6 +183,7 @@ export default function BudgetSettingsPage() {
           const budget = persona.max_budget_usd;
           const status = budgetStatus(spend, budget);
           const ratio = budget && budget > 0 ? Math.min(spend / budget, 1) : 0;
+          const ratioPercent = Math.round(ratio * 100);
           const progress = budgetProgressDetail(spend, budget);
           const isEditing = editingBudgets[persona.id] !== undefined;
           const editValue = isEditing ? editingBudgets[persona.id] : (budget?.toString() ?? '');
@@ -219,13 +220,21 @@ export default function BudgetSettingsPage() {
 
               {/* Progress Bar */}
               {budget && budget > 0 && (
-                <div className="relative h-2 rounded-full overflow-hidden bg-secondary/60 border border-primary/10">
+                <div
+                  role="progressbar"
+                  aria-label="Monthly budget usage"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={ratioPercent}
+                  className="relative h-2 rounded-full overflow-hidden bg-secondary/60 border border-primary/10"
+                >
                   <motion.div
                     className={`h-full rounded-full ${progressBarColor(spend, budget)}`}
                     initial={{ width: 0 }}
                     animate={{ width: `${ratio * 100}%` }}
                     transition={{ duration: 0.6, ease: 'easeOut' }}
                   />
+                  <span className="sr-only">{ratioPercent}% monthly budget used</span>
                   {/* 80% warning threshold marker */}
                   <div
                     className="absolute top-0 bottom-0 w-px border-l border-dashed border-amber-400/50"

@@ -108,6 +108,8 @@ export const useAuthStore = create<AuthState>()(
   ),
 );
 
+export const AUTH_LOGIN_EVENT = "personas:auth-login";
+
 // ---------------------------------------------------------------------------
 // Event listener
 // ---------------------------------------------------------------------------
@@ -137,11 +139,11 @@ export function initAuthListener() {
       isLoading: false,
     });
 
-    // When user becomes authenticated, auto-initialize cloud connection
+    // When user becomes authenticated, notify persona store to initialize cloud connection.
     if (state.is_authenticated && !prev.isAuthenticated) {
-      import("@/stores/personaStore").then(({ usePersonaStore }) => {
-        usePersonaStore.getState().cloudInitialize();
-      });
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent(AUTH_LOGIN_EVENT));
+      }
     }
   });
 }

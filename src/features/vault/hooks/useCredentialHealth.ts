@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import * as credApi from '@/api/credentials';
 import { testCredentialDesignHealthcheck, type CredentialDesignHealthcheckResult } from '@/api/credentialDesign';
 import { toCredentialMetadata } from '@/lib/types/types';
@@ -15,10 +15,27 @@ export interface HealthResult {
   lastSuccessfulTestAt?: string | null;
 }
 
+type CredentialHealthPreviewTarget = {
+  mode: 'preview';
+  serviceType?: string | null;
+};
+
+type CredentialHealthTarget = string | CredentialHealthPreviewTarget;
+
 // ── Shared module-level caches ───────────────────────────────────────
 
 const resultCache = createModuleCache<string, HealthResult>();
-const loadingKeys = new Set<string>();
+const loadingRefCounts = new Map<string, number>();
+
+function beginLoading(key: string) {
+  loadingRefCounts.set(key, (loadingRefCounts.get(key) ?? 0) + 1);
+}
+
+function endLoading(key: string) {
+  const next = (loadingRefCounts.get(key) ?? 0) - 1;
+  if (next <= 0) loadingRefCounts.delete(key);
+  else loadingRefCounts.set(key, next);
+}
 
 // ── Hook ──────────────────────────────────────────────────────────────
 
@@ -27,17 +44,41 @@ const loadingKeys = new Set<string>();
  *
  * All healthcheck results are cached in a shared `ModuleCache<string, HealthResult>`
  * so that any component reading the same key sees the same data without
- * redundant API calls. Pass a stable `key` — typically a credentialId for
- * stored credentials, or a prefix like `preview:<serviceType>` / `design`
- * for transient healthchecks.
+ * redundant API calls. Pass either:
+ * - a credential ID string for stored credentials, or
+ * - `{ mode: 'preview', serviceType }` for ephemeral preview checks.
  */
-export function useCredentialHealth(key: string) {
+export function useCredentialHealth(target: CredentialHealthTarget) {
+  const targetMode = typeof target === 'string' ? 'stored' : target.mode;
+  const key = useMemo(() => {
+    if (typeof target === 'string') return target;
+    return `preview:${target.serviceType ?? '_none'}`;
+  }, [target]);
+
+  const previousPreviewKeyRef = useRef<string | null>(null);
+
+  // Preview health entries are ephemeral; clear old keys when switching connector.
+  useEffect(() => {
+    if (targetMode !== 'preview') return;
+    const prevKey = previousPreviewKeyRef.current;
+    if (prevKey && prevKey !== key) {
+      resultCache.delete(prevKey);
+    }
+    previousPreviewKeyRef.current = key;
+    resultCache.notify();
+
+    return () => {
+      resultCache.delete(key);
+      resultCache.notify();
+    };
+  }, [key, targetMode]);
+
   const result = useModuleSubscription(resultCache, key) ?? null;
-  const isHealthchecking = loadingKeys.has(key);
+  const isHealthchecking = (loadingRefCounts.get(key) ?? 0) > 0;
 
   /** Generic async check: sets loading, runs fn, caches result. */
   const check = useCallback(async (fn: () => Promise<HealthResult>) => {
-    loadingKeys.add(key);
+    beginLoading(key);
     resultCache.delete(key);
     resultCache.notify();
     try {
@@ -49,7 +90,7 @@ export function useCredentialHealth(key: string) {
         message: e instanceof Error ? e.message : 'Healthcheck failed',
       });
     } finally {
-      loadingKeys.delete(key);
+      endLoading(key);
       resultCache.notify();
     }
   }, [key]);
@@ -66,25 +107,15 @@ export function useCredentialHealth(key: string) {
       const credentials = usePersonaStore.getState().credentials;
       const cred = credentials.find((c) => c.id === key);
       if (cred) {
-        let parsed: Record<string, unknown> = {};
-        if (cred.metadata) {
-          try { parsed = JSON.parse(cred.metadata) as Record<string, unknown>; } catch { /* */ }
-        }
         const nowIso = new Date().toISOString();
-        const next: Record<string, unknown> = {
-          ...parsed,
+        const patch: Record<string, unknown> = {
           healthcheck_last_success: hcResult.success,
           healthcheck_last_message: hcResult.message,
           healthcheck_last_tested_at: nowIso,
         };
-        if (hcResult.success) next.healthcheck_last_success_at = nowIso;
+        if (hcResult.success) patch.healthcheck_last_success_at = nowIso;
 
-        const updatedRaw = await credApi.updateCredential(key, {
-          name: null,
-          service_type: null,
-          encrypted_data: null,
-          metadata: JSON.stringify(next),
-        });
+        const updatedRaw = await credApi.patchCredentialMetadata(key, patch);
         const updated = toCredentialMetadata(updatedRaw);
         usePersonaStore.setState((s) => ({
           credentials: s.credentials.map((c) => (c.id === key ? updated : c)),
@@ -157,11 +188,11 @@ export function getHealthResult(key: string): HealthResult | null {
 }
 
 export function isHealthChecking(key: string): boolean {
-  return loadingKeys.has(key);
+  return (loadingRefCounts.get(key) ?? 0) > 0;
 }
 
 export function resetHealthCache() {
   resultCache.clear();
-  loadingKeys.clear();
+  loadingRefCounts.clear();
   resultCache.notify();
 }

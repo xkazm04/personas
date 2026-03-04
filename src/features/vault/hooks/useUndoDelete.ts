@@ -22,6 +22,7 @@ export function useUndoDelete({ onDelete, onError }: UseUndoDeleteOptions): Undo
   const [undoToast, setUndoToast] = useState<UndoToastState | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const undoCancelledRef = useRef(false);
+  const pendingDeleteRef = useRef<{ credentialId: string; credentialName: string } | null>(null);
 
   const clearUndoTimer = useCallback(() => {
     if (undoTimerRef.current) {
@@ -33,9 +34,9 @@ export function useUndoDelete({ onDelete, onError }: UseUndoDeleteOptions): Undo
   const requestDelete = useCallback(async (credential: CredentialMetadata) => {
     try {
       const events = await api.listCredentialEvents(credential.id);
-      setDeleteConfirm({ credential, eventCount: events.length });
+      setDeleteConfirm({ credential, eventCount: events.length, eventCountVerified: true });
     } catch {
-      setDeleteConfirm({ credential, eventCount: 0 });
+      setDeleteConfirm({ credential, eventCount: 0, eventCountVerified: false });
     }
   }, []);
 
@@ -43,6 +44,16 @@ export function useUndoDelete({ onDelete, onError }: UseUndoDeleteOptions): Undo
     if (!deleteConfirm) return;
     const { credential } = deleteConfirm;
     setDeleteConfirm(null);
+
+    const previousPending = pendingDeleteRef.current;
+    if (previousPending) {
+      // User confirmed a second deletion while one countdown was active.
+      // Commit the older confirmed deletion immediately before replacing toast state.
+      onDelete(previousPending.credentialId).catch((err: unknown) => {
+        onError(err instanceof Error ? err.message : 'Failed to delete credential');
+      });
+      pendingDeleteRef.current = null;
+    }
 
     // Cancel any in-flight timer BEFORE resetting the flag. This prevents a
     // racing interval tick from seeing undoCancelledRef as false and firing
@@ -52,6 +63,7 @@ export function useUndoDelete({ onDelete, onError }: UseUndoDeleteOptions): Undo
     undoCancelledRef.current = false;
 
     let remaining = 5;
+    pendingDeleteRef.current = { credentialId: credential.id, credentialName: credential.name };
     setUndoToast({ credentialId: credential.id, credentialName: credential.name, remaining });
     undoTimerRef.current = setInterval(() => {
       remaining -= 1;
@@ -62,6 +74,7 @@ export function useUndoDelete({ onDelete, onError }: UseUndoDeleteOptions): Undo
             onError(err instanceof Error ? err.message : 'Failed to delete credential');
           });
         }
+        pendingDeleteRef.current = null;
         setUndoToast(null);
       } else {
         setUndoToast((prev) => prev ? { ...prev, remaining } : null);
@@ -76,12 +89,17 @@ export function useUndoDelete({ onDelete, onError }: UseUndoDeleteOptions): Undo
   const undo = useCallback(() => {
     undoCancelledRef.current = true;
     clearUndoTimer();
+    pendingDeleteRef.current = null;
     setUndoToast(null);
   }, [clearUndoTimer]);
 
   // Cleanup timer on unmount — mark cancelled so a racing interval tick won't fire onDelete
   useEffect(() => {
-    return () => { undoCancelledRef.current = true; clearUndoTimer(); };
+    return () => {
+      undoCancelledRef.current = true;
+      pendingDeleteRef.current = null;
+      clearUndoTimer();
+    };
   }, [clearUndoTimer]);
 
   return {

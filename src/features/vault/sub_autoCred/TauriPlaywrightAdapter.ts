@@ -15,7 +15,7 @@ export class TauriPlaywrightAdapter implements PlaywrightAdapter {
     ctx: AutoCredConnectorContext,
     onLog: (entry: BrowserLogEntry) => void,
     signal: AbortSignal,
-  ): Promise<ExtractedValues> {
+  ): Promise<{ values: ExtractedValues; partial: boolean }> {
     const sessionId = crypto.randomUUID();
 
     // Check for saved procedure
@@ -89,7 +89,7 @@ export class TauriPlaywrightAdapter implements PlaywrightAdapter {
         (values as Record<string, string>).__procedure_log = result.procedure_log;
       }
 
-      return values;
+      return { values, partial: result.partial ?? false };
     } finally {
       signal.removeEventListener('abort', abortHandler);
       unlisten();

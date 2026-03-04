@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import { TerminalHeader } from '@/features/shared/components/TerminalHeader';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
@@ -11,6 +12,8 @@ interface CliOutputPanelProps {
   idleText?: string;
   waitingText?: string;
   maxHeightClassName?: string;
+  /** Optional TerminalStrip rendered below the header for healing/background processes */
+  healingStrip?: ReactNode;
 }
 
 export default function CliOutputPanel({
@@ -20,6 +23,7 @@ export default function CliOutputPanel({
   idleText = 'No CLI output yet.',
   waitingText = 'Waiting for Claude CLI output…',
   maxHeightClassName = 'max-h-64',
+  healingStrip,
 }: CliOutputPanelProps) {
   const { copied, copy: copyToClipboard } = useCopyToClipboard();
 
@@ -36,6 +40,8 @@ export default function CliOutputPanel({
         copied={copied}
         label={runId ? runId.slice(0, 8) : undefined}
       />
+
+      {healingStrip}
 
       <div className={`${maxHeightClassName} overflow-y-auto px-4 py-3 font-mono text-sm leading-5 space-y-0.5`}>
         {phase === 'idle' && lines.length === 0 ? (

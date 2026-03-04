@@ -14,3 +14,24 @@ export const GRID_STROKE = 'rgba(255,255,255,0.06)';
 export const AXIS_TICK_FILL = 'rgba(255,255,255,0.4)';
 
 export const CHART_HEIGHT = { sm: 160, md: 200, lg: 240 } as const;
+
+export type MetricUnit = 'count' | 'tokens' | 'usd' | 'ms' | 'percent';
+
+export const METRIC_UNITS_BY_KEY: Record<string, MetricUnit> = {
+  cost: 'usd',
+  spend: 'usd',
+  p50: 'ms',
+  p95: 'ms',
+  p99: 'ms',
+  latency: 'ms',
+  duration_ms: 'ms',
+  successRate: 'percent',
+  tokens: 'tokens',
+  token_count: 'tokens',
+  input_tokens: 'tokens',
+  output_tokens: 'tokens',
+};
+
+export function metricUnitForKey(dataKey: string): MetricUnit {
+  return METRIC_UNITS_BY_KEY[dataKey] ?? 'count';
+}

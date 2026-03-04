@@ -104,12 +104,13 @@ export function DesignPhasePanel({
                   className="w-full min-h-[100px] max-h-[200px] bg-background/50 border border-violet-500/15 rounded-xl px-3 py-2.5 text-sm text-foreground font-sans resize-y focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/40 transition-all placeholder-muted-foreground/30"
                   disabled={phase !== 'idle'}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
                       if (instruction.trim()) onStartAnalysis();
                     }
                   }}
                 />
+                <p className="text-[10px] text-muted-foreground/60 px-1">Press Enter to submit, Shift+Enter for new line.</p>
                 <p className="text-xs text-muted-foreground/50 px-1">
                   The compiler will generate a complete configuration: prompt, tools, triggers, use cases, model recommendation, and test scenarios.
                 </p>

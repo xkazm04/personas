@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef, memo } from 'react';
 import { ListChecks, Wrench, ChevronDown, ChevronRight } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
@@ -14,6 +14,9 @@ import { ToolRunnerPanel } from '@/features/agents/sub_tool_runner/ToolRunnerPan
 import type { PersonaDraft } from '@/features/agents/sub_editor/PersonaDraft';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { SectionHeader } from '@/features/shared/components/SectionHeader';
+import EmptyState from '@/features/shared/components/EmptyState';
+
+const MemoUseCaseRow = memo(UseCaseRow);
 
 interface PersonaUseCasesTabProps {
   draft: PersonaDraft;
@@ -47,6 +50,18 @@ export function PersonaUseCasesTab({ draft, patch, modelDirty, credentials, conn
     () => useCases.find((uc) => uc.id === selectedUseCaseId) ?? null,
     [useCases, selectedUseCaseId],
   );
+
+  const historyExpandedMap = useMemo(() => {
+    const map = new Map<string, boolean>();
+    for (const id of expandedHistoryIds) map.set(id, true);
+    return map;
+  }, [expandedHistoryIds]);
+
+  const configExpandedMap = useMemo(() => {
+    const map = new Map<string, boolean>();
+    for (const id of expandedConfigIds) map.set(id, true);
+    return map;
+  }, [expandedConfigIds]);
 
   const handleExecute = useCallback((useCaseId: string, _sampleInput?: Record<string, unknown>) => {
     setSelectedUseCaseId(useCaseId);
@@ -104,15 +119,13 @@ export function PersonaUseCasesTab({ draft, patch, modelDirty, credentials, conn
 
       {/* Use Cases Section */}
       {useCases.length === 0 ? (
-        <div className="text-center py-8 space-y-2">
-          <ListChecks className="w-5 h-5 text-muted-foreground/40 mx-auto" />
-          <p className="text-sm text-muted-foreground/60">
-            No use cases defined for this persona.
-          </p>
-          <p className="text-sm text-muted-foreground/40">
-            Import from an n8n workflow or use the Design Wizard to generate use cases.
-          </p>
-        </div>
+        <EmptyState
+          icon={ListChecks}
+          title="No use cases defined for this persona"
+          subtitle="Import from an n8n workflow or use the Design Wizard to generate use cases."
+          iconContainerClassName="bg-violet-500/10 border-violet-500/20"
+          iconColor="text-violet-400/75"
+        />
       ) : (
         <div className="space-y-4">
           {/* Header */}
@@ -124,7 +137,7 @@ export function PersonaUseCasesTab({ draft, patch, modelDirty, credentials, conn
           {/* Use case rows */}
           <div className="space-y-2">
             {useCases.map((uc, i) => (
-              <UseCaseRow
+              <MemoUseCaseRow
                 key={uc.id || i}
                 useCase={uc}
                 index={i}
@@ -132,7 +145,7 @@ export function PersonaUseCasesTab({ draft, patch, modelDirty, credentials, conn
                 isActive={isExecuting && selectedUseCaseId === uc.id}
                 onExecute={handleExecute}
                 onToggleHistory={handleToggleHistory}
-                historyExpanded={expandedHistoryIds.has(uc.id)}
+                historyExpanded={historyExpandedMap.get(uc.id) === true}
                 historyContent={
                   <UseCaseHistory
                     personaId={personaId}
@@ -142,7 +155,7 @@ export function PersonaUseCasesTab({ draft, patch, modelDirty, credentials, conn
                   />
                 }
                 onToggleConfig={handleToggleConfig}
-                configExpanded={expandedConfigIds.has(uc.id)}
+                configExpanded={configExpandedMap.get(uc.id) === true}
                 configContent={
                   <UseCaseDetailPanel
                     useCaseId={uc.id}
@@ -161,7 +174,8 @@ export function PersonaUseCasesTab({ draft, patch, modelDirty, credentials, conn
         <div className="rounded-xl border border-primary/10 bg-secondary/10 overflow-hidden">
           <button
             onClick={() => setToolRunnerOpen(!toolRunnerOpen)}
-            className="w-full flex items-center gap-2 px-3.5 py-2.5 text-left hover:bg-secondary/20 transition-colors"
+            aria-expanded={toolRunnerOpen}
+            className="w-full flex items-center gap-2 px-3.5 py-2.5 text-left hover:bg-secondary/20 transition-colors focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none focus-visible:rounded-xl"
           >
             {toolRunnerOpen ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50" />}
             <Wrench className="w-3.5 h-3.5 text-muted-foreground/80" />

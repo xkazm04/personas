@@ -23,6 +23,8 @@ export function usePersonaTests() {
   const unlistenRef = useRef<UnlistenFn[]>([]);
 
   useEffect(() => {
+    let cancelled = false;
+
     const setup = async () => {
       const unlisten = await listen<TestRunStatusPayload>(
         "test-run-status",
@@ -50,12 +52,18 @@ export function usePersonaTests() {
         },
       );
 
+      if (cancelled) {
+        unlisten();
+        return;
+      }
+
       unlistenRef.current = [unlisten];
     };
 
     setup();
 
     return () => {
+      cancelled = true;
       unlistenRef.current.forEach((fn) => fn());
       unlistenRef.current = [];
     };

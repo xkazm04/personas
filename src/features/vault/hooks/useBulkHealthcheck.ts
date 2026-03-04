@@ -40,6 +40,15 @@ export function useBulkHealthcheck() {
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const cancelRef = useRef(false);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      cancelRef.current = true;
+    };
+  }, []);
 
   // Subscribe to bulk summary cache for re-renders
   useModuleCacheSubscription(bulkSummaryCache as never);
@@ -48,8 +57,10 @@ export function useBulkHealthcheck() {
   const run = useCallback(async (credentials: CredentialMetadata[]) => {
     if (credentials.length === 0) return;
     cancelRef.current = false;
-    setIsRunning(true);
-    setProgress({ done: 0, total: credentials.length });
+    if (mountedRef.current) {
+      setIsRunning(true);
+      setProgress({ done: 0, total: credentials.length });
+    }
 
     const results: BulkResult[] = [];
     let doneCount = 0;
@@ -72,27 +83,17 @@ export function useBulkHealthcheck() {
             success = hcResult.success;
             message = hcResult.message;
 
-            // Persist healthcheck metadata (same logic as useCredentialHealth.checkStored)
-            let parsed: Record<string, unknown> = {};
-            if (cred.metadata) {
-              try { parsed = JSON.parse(cred.metadata) as Record<string, unknown>; } catch { /* */ }
-            }
+            // Persist healthcheck metadata via atomic patch (avoids stale overwrites)
             const nowIso = new Date().toISOString();
-            const next: Record<string, unknown> = {
-              ...parsed,
+            const patch: Record<string, unknown> = {
               healthcheck_last_success: hcResult.success,
               healthcheck_last_message: hcResult.message,
               healthcheck_last_tested_at: nowIso,
             };
-            if (hcResult.success) next.healthcheck_last_success_at = nowIso;
+            if (hcResult.success) patch.healthcheck_last_success_at = nowIso;
 
             try {
-              const updatedRaw = await credApi.updateCredential(cred.id, {
-                name: null,
-                service_type: null,
-                encrypted_data: null,
-                metadata: JSON.stringify(next),
-              });
+              const updatedRaw = await credApi.patchCredentialMetadata(cred.id, patch);
               const updated = toCredentialMetadata(updatedRaw);
               usePersonaStore.setState((s) => ({
                 credentials: s.credentials.map((c) => (c.id === cred.id ? updated : c)),
@@ -113,7 +114,9 @@ export function useBulkHealthcheck() {
           durationMs,
         });
         doneCount++;
-        setProgress({ done: doneCount, total: credentials.length });
+        if (mountedRef.current) {
+          setProgress({ done: doneCount, total: credentials.length });
+        }
       }
     };
 
@@ -137,12 +140,12 @@ export function useBulkHealthcheck() {
       completedAt: new Date().toISOString(),
     };
 
-    bulkSummaryCache.set('latest', bulkSummary);
-    bulkSummaryCache.notify();
-    setIsRunning(false);
+    if (mountedRef.current) {
+      bulkSummaryCache.set('latest', bulkSummary);
+      bulkSummaryCache.notify();
+      setIsRunning(false);
+    }
 
-    // Refresh credentials to pick up healthcheck metadata updates
-    void usePersonaStore.getState().fetchCredentials();
   }, []);
 
   const cancel = useCallback(() => {

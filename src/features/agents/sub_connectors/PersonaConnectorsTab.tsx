@@ -3,6 +3,7 @@ import { Link, CheckCircle2, AlertCircle, Loader2, RefreshCw, AlertTriangle } fr
 import { usePersonaStore } from '@/stores/personaStore';
 import { CredentialDesignModal } from '@/features/vault/sub_design/CredentialDesignModal';
 import { SectionHeader } from '@/features/shared/components/SectionHeader';
+import EmptyState from '@/features/shared/components/EmptyState';
 import { ToolsSection } from './ToolsSection';
 import { ConnectorStatusCard } from './ConnectorStatusCard';
 import { UseCaseSubscriptionsSection } from './UseCaseSubscriptionsSection';
@@ -131,9 +132,13 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
       )}
 
       {requiredCredTypes.length === 0 && tools.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground/60 text-sm">
-          No tools or connectors configured for this persona.
-        </div>
+        <EmptyState
+          icon={Link}
+          title="No tools or connectors configured"
+          subtitle="Add tools to your persona or link connectors to unlock automations."
+          iconContainerClassName="bg-cyan-500/10 border-cyan-500/20"
+          iconColor="text-cyan-400/75"
+        />
       )}
 
       {/* Event Subscriptions per use case */}

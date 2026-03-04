@@ -1,8 +1,10 @@
 import { RefreshCw, ExternalLink, Shield, ShieldCheck, ShieldX } from 'lucide-react';
+import { DEPLOYMENT_TOKENS } from './deploymentTokens';
 
 export interface CloudOAuthPanelProps {
   oauthStatus: { connected: boolean; scopes: string[] | null; expiresAt: string | null; isExpired: boolean | null } | null;
   pendingOAuthState: string | null;
+  oauthStartUrl: string | null;
   oauthCode: string;
   setOauthCode: (v: string) => void;
   onStartOAuth: () => void;
@@ -15,6 +17,7 @@ export interface CloudOAuthPanelProps {
 export function CloudOAuthPanel({
   oauthStatus,
   pendingOAuthState,
+  oauthStartUrl,
   oauthCode,
   setOauthCode,
   onStartOAuth,
@@ -26,17 +29,28 @@ export function CloudOAuthPanel({
   // State: waiting for callback
   if (pendingOAuthState) {
     return (
-      <div className="space-y-5 max-w-md">
+      <div className={`max-w-md ${DEPLOYMENT_TOKENS.panelSpacing}`}>
         <div className="p-4 rounded-lg bg-indigo-500/5 border border-indigo-500/15">
           <p className="text-sm text-foreground/80 leading-relaxed">
-            A browser window should have opened for authorization. After approving access,
-            paste the authorization code below to complete the connection.
+            Open the authorization window, approve access, then paste the code below to complete the connection.
           </p>
+          {oauthStartUrl && (
+            <a
+              href={oauthStartUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-indigo-300 hover:text-indigo-200"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              Open authorization window
+            </a>
+          )}
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-muted-foreground/80">Authorization Code</label>
+          <label htmlFor="oauth-code" className="text-sm font-medium text-muted-foreground/80">Authorization Code</label>
           <input
+            id="oauth-code"
             type="text"
             value={oauthCode}
             onChange={(e) => setOauthCode(e.target.value)}
@@ -68,8 +82,8 @@ export function CloudOAuthPanel({
   if (oauthStatus?.connected) {
     const isExpired = oauthStatus.isExpired === true;
     return (
-      <div className="space-y-6">
-        <div className={`flex items-center gap-3 p-4 rounded-lg ${isExpired ? 'bg-amber-500/10 border border-amber-500/25' : 'bg-emerald-500/5 border border-emerald-500/15'}`}>
+      <div className={DEPLOYMENT_TOKENS.panelSpacing}>
+        <div className={`flex items-center gap-3 p-4 ${DEPLOYMENT_TOKENS.cardRadius} ${isExpired ? 'bg-amber-500/10 border border-amber-500/25' : `${DEPLOYMENT_TOKENS.connectedBg} border ${DEPLOYMENT_TOKENS.connectedBorder}`}`}>
           <ShieldCheck className={`w-5 h-5 ${isExpired ? 'text-amber-400' : 'text-emerald-400'}`} />
           <div>
             <p className={`text-sm font-medium ${isExpired ? 'text-amber-300' : 'text-emerald-400'}`}>
@@ -89,7 +103,7 @@ export function CloudOAuthPanel({
         {/* Scopes */}
         {oauthStatus.scopes && oauthStatus.scopes.length > 0 && (
           <div>
-            <h3 className="text-sm font-medium text-muted-foreground/90 uppercase tracking-wider mb-2">
+            <h3 className={`text-sm font-medium text-muted-foreground/90 uppercase tracking-wider ${DEPLOYMENT_TOKENS.sectionHeadingGap}`}>
               Scopes
             </h3>
             <div className="flex flex-wrap gap-2">
@@ -108,7 +122,7 @@ export function CloudOAuthPanel({
         {/* Expiry */}
         {oauthStatus.expiresAt && (
           <div>
-            <h3 className="text-sm font-medium text-muted-foreground/90 uppercase tracking-wider mb-2">
+            <h3 className={`text-sm font-medium text-muted-foreground/90 uppercase tracking-wider ${DEPLOYMENT_TOKENS.sectionHeadingGap}`}>
               Expires
             </h3>
             <p className="text-sm text-foreground/90">
@@ -140,7 +154,7 @@ export function CloudOAuthPanel({
 
   // State: not connected
   return (
-    <div className="space-y-5 max-w-md">
+    <div className={`max-w-md ${DEPLOYMENT_TOKENS.panelSpacing}`}>
       <div className="flex flex-col items-center text-center py-8">
         <Shield className="w-10 h-10 text-muted-foreground/80 mb-4" />
         <p className="text-sm text-muted-foreground/80 leading-relaxed">
@@ -154,8 +168,19 @@ export function CloudOAuthPanel({
         className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-sm font-medium rounded-lg bg-indigo-500 text-foreground hover:bg-indigo-600 transition-colors cursor-pointer"
       >
         <ExternalLink className="w-4 h-4" />
-        Connect Anthropic Account
+        {oauthStartUrl ? 'Refresh Authorization Link' : 'Connect Anthropic Account'}
       </button>
+      {oauthStartUrl && (
+        <a
+          href={oauthStartUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-sm font-medium rounded-lg bg-indigo-500/10 border border-indigo-500/25 text-indigo-300 hover:bg-indigo-500/15 transition-colors"
+        >
+          <ExternalLink className="w-4 h-4" />
+          Open Authorization Window
+        </a>
+      )}
     </div>
   );
 }

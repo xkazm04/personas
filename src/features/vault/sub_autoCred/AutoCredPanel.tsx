@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bot, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { Bot, Loader2, CheckCircle2, XCircle, AlertTriangle, Clock, Globe, ChevronDown, ChevronUp, Wrench } from 'lucide-react';
 import type { CredentialDesignResult } from '@/hooks/design/useCredentialDesign';
+import type { AutoCredErrorInfo } from './types';
 import { useAutoCredSession } from './useAutoCredSession';
 import { tauriPlaywrightAdapter } from './TauriPlaywrightAdapter';
 import { AutoCredConsent } from './AutoCredConsent';
@@ -16,12 +17,17 @@ interface AutoCredPanelProps {
 
 export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPanelProps) {
   const session = useAutoCredSession({ adapter: tauriPlaywrightAdapter });
+  const fieldsHash = useMemo(() => {
+    return designResult.connector.fields
+      .map((f) => `${f.key}:${f.type}:${f.required ? '1' : '0'}`)
+      .join('|');
+  }, [designResult.connector.fields]);
 
   // Initialize session when design result arrives
   useEffect(() => {
     session.init(designResult);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [designResult.connector.name]);
+  }, [designResult.connector.name, fieldsHash]);
 
   const handleCancel = () => {
     session.reset();
@@ -71,6 +77,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
             onRetry={session.startBrowser}
             onCancel={handleCancel}
             isSaving={session.isSaving}
+            isPartial={session.isPartial}
           />
         )}
 
@@ -112,39 +119,140 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
           </motion.div>
         )}
 
-        {session.phase === 'error' && (
-          <motion.div
+        {session.phase === 'error' && session.error && (
+          <AutoCredErrorDisplay
             key="error"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center justify-center py-10 gap-4"
-          >
-            <div className="w-14 h-14 rounded-full bg-red-500/15 flex items-center justify-center">
-              <XCircle className="w-7 h-7 text-red-400" />
-            </div>
-            <div className="text-center">
-              <p className="text-base font-semibold text-foreground">Auto-Setup Failed</p>
-              <p className="text-sm text-red-400/80 mt-1 max-w-md">
-                {session.error ?? 'An unexpected error occurred during the browser session.'}
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={handleCancel}
-                className="px-4 py-2 text-sm text-muted-foreground/70 hover:text-foreground rounded-lg hover:bg-secondary/40 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={session.startBrowser}
-                className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-sm font-medium transition-colors"
-              >
-                Retry
-              </button>
-            </div>
-          </motion.div>
+            error={session.error}
+            onRetry={session.startBrowser}
+            onCancel={handleCancel}
+          />
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+// ── Error kind display config ────────────────────────────────────
+
+const ERROR_KIND_CONFIG: Record<string, { label: string; badgeClass: string; icon: typeof XCircle }> = {
+  cli_not_found: { label: 'CLI Not Found', badgeClass: 'bg-red-500/15 text-red-400 border-red-500/25', icon: XCircle },
+  spawn_failed: { label: 'Spawn Failed', badgeClass: 'bg-red-500/15 text-red-400 border-red-500/25', icon: XCircle },
+  timeout: { label: 'Timeout', badgeClass: 'bg-amber-500/15 text-amber-400 border-amber-500/25', icon: Clock },
+  env_conflict: { label: 'Env Conflict', badgeClass: 'bg-orange-500/15 text-orange-400 border-orange-500/25', icon: AlertTriangle },
+  cli_error: { label: 'CLI Error', badgeClass: 'bg-red-500/15 text-red-400 border-red-500/25', icon: Wrench },
+  extraction_failed: { label: 'Extraction Failed', badgeClass: 'bg-amber-500/15 text-amber-400 border-amber-500/25', icon: AlertTriangle },
+};
+
+// ── Categorized error display ────────────────────────────────────
+
+function AutoCredErrorDisplay({
+  error,
+  onRetry,
+  onCancel,
+}: {
+  error: AutoCredErrorInfo;
+  onRetry: () => void;
+  onCancel: () => void;
+}) {
+  const [contextOpen, setContextOpen] = useState(false);
+  const config = ERROR_KIND_CONFIG[error.kind] ?? ERROR_KIND_CONFIG.cli_error!;
+  const Icon = config!.icon;
+  const ctx = error.context;
+
+  return (
+    <motion.div
+      key="error"
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="space-y-4"
+    >
+      {/* Error header */}
+      <div className="flex items-start gap-3 p-4 rounded-xl border border-red-500/15 bg-red-500/5">
+        <div className="w-10 h-10 rounded-full bg-red-500/15 flex items-center justify-center shrink-0">
+          <Icon className="w-5 h-5 text-red-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-semibold text-foreground">Auto-Setup Failed</p>
+            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${config!.badgeClass}`}>
+              {config!.label}
+            </span>
+          </div>
+          <p className="text-sm text-foreground/70 mt-1">
+            {error.guidance}
+          </p>
+        </div>
+      </div>
+
+      {/* What happened — expandable context */}
+      {ctx && (ctx.tool_call_count > 0 || ctx.last_url || ctx.duration_secs) && (
+        <div className="rounded-lg border border-primary/10 bg-secondary/15 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setContextOpen((v) => !v)}
+            className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-medium text-muted-foreground/70 hover:text-muted-foreground/90 transition-colors"
+          >
+            <span>What happened</span>
+            {contextOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+          {contextOpen && (
+            <div className="px-4 pb-3 space-y-2 text-xs text-muted-foreground/70">
+              {ctx.duration_secs != null && (
+                <div className="flex items-center gap-2">
+                  <Clock className="w-3 h-3 shrink-0" />
+                  <span>Session ran for {ctx.duration_secs.toFixed(1)}s</span>
+                </div>
+              )}
+              {ctx.tool_call_count > 0 && (
+                <div className="flex items-center gap-2">
+                  <Wrench className="w-3 h-3 shrink-0" />
+                  <span>{ctx.tool_call_count} browser action{ctx.tool_call_count !== 1 ? 's' : ''} performed</span>
+                </div>
+              )}
+              {ctx.last_url && (
+                <div className="flex items-center gap-2">
+                  <Globe className="w-3 h-3 shrink-0" />
+                  <span className="truncate">Last URL: {ctx.last_url}</span>
+                </div>
+              )}
+              {ctx.had_waiting_prompt && (
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-3 h-3 shrink-0 text-amber-400/70" />
+                  <span>A login/CAPTCHA prompt was encountered</span>
+                </div>
+              )}
+              {ctx.last_actions.length > 0 && (
+                <div className="mt-1 pt-1 border-t border-primary/8">
+                  <p className="text-muted-foreground/50 mb-1">Last actions:</p>
+                  <ul className="space-y-0.5 pl-4">
+                    {ctx.last_actions.map((action, i) => (
+                      <li key={i} className="list-disc text-muted-foreground/60">{action}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="flex gap-3 justify-center">
+        <button
+          onClick={onCancel}
+          className="px-4 py-2 text-sm text-muted-foreground/70 hover:text-foreground rounded-lg hover:bg-secondary/40 transition-colors"
+        >
+          {error.retryable ? 'Cancel' : 'Set Up Manually'}
+        </button>
+        {error.retryable && (
+          <button
+            onClick={onRetry}
+            className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-sm font-medium transition-colors"
+          >
+            Retry
+          </button>
+        )}
+      </div>
+    </motion.div>
   );
 }

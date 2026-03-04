@@ -10,3 +10,6 @@ pub mod connectors;
 pub mod rotation;
 mod shared;
 pub mod db_schema;
+pub mod api_proxy;
+pub mod mcp_tools;
+pub mod query_debug;

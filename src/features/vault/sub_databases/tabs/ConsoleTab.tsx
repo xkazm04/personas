@@ -5,6 +5,16 @@ import { SqlEditor } from '../SqlEditor';
 import { QueryResultTable } from '../QueryResultTable';
 import type { QueryResult } from '@/api/dbSchema';
 
+/** Extract a human-readable error message from a Tauri IPC error. */
+function extractErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === 'object' && err !== null && 'error' in err) {
+    return String((err as Record<string, unknown>).error);
+  }
+  if (typeof err === 'string') return err;
+  try { return JSON.stringify(err); } catch { return 'Unknown error'; }
+}
+
 interface ConsoleTabProps {
   credentialId: string;
   language: string;
@@ -42,7 +52,7 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
         return [{ query: text, timestamp: Date.now() }, ...filtered].slice(0, 10);
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(extractErrorMessage(err));
     } finally {
       setExecuting(false);
     }

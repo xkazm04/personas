@@ -37,18 +37,18 @@ export function DesignQuestionPanel({
       <TransformProgress mode="analysis" lines={outputLines} isRunning={false} />
 
       {/* Question card */}
-      <div className="bg-gradient-to-br from-purple-500/10 via-primary/5 to-transparent border border-purple-500/20 rounded-xl p-5 space-y-4">
+      <div className="bg-gradient-to-br from-accent/10 via-primary/5 to-transparent border border-accent/25 rounded-[var(--radius-interactive)] p-5 space-y-4">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-purple-500/15 border border-purple-500/25 flex items-center justify-center">
-            <MessageCircleQuestion className="w-4 h-4 text-purple-400" />
+          <div className="w-7 h-7 rounded-[var(--radius-secondary)] bg-accent/10 border border-accent/25 flex items-center justify-center">
+            <MessageCircleQuestion className="w-4 h-4 text-accent" />
           </div>
-          <span className="text-sm font-semibold text-purple-300">Clarification Needed</span>
+          <span className="text-sm font-semibold text-accent">Clarification Needed</span>
         </div>
 
         <p className="text-sm text-foreground/80 leading-relaxed">{question.question}</p>
 
         {question.context && (
-          <p className="text-sm text-muted-foreground/90 italic border-l-2 border-purple-500/20 pl-3">
+          <p className="text-sm text-muted-foreground/90 italic border-l-2 border-accent/25 pl-3">
             {question.context}
           </p>
         )}
@@ -63,7 +63,7 @@ export function DesignQuestionPanel({
                   setQuestionAnswer('');
                   onAnswerQuestion(option);
                 }}
-                className="px-3.5 py-2 rounded-lg text-sm font-medium bg-purple-500/10 text-purple-300 border border-purple-500/20 hover:bg-purple-500/20 hover:border-purple-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                className="px-3.5 py-2 rounded-[var(--radius-secondary)] text-sm font-medium bg-accent/10 text-accent border border-accent/25 hover:bg-accent/20 hover:border-accent/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
               >
                 {option}
               </button>
@@ -84,7 +84,7 @@ export function DesignQuestionPanel({
             value={questionAnswer}
             onChange={(e) => setQuestionAnswer(e.target.value)}
             placeholder="Type a custom answer..."
-            className="flex-1 min-h-[48px] max-h-[100px] bg-background/50 border border-primary/15 rounded-xl px-3 py-2 text-sm text-foreground font-sans resize-y focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500/30 transition-all placeholder-muted-foreground/30"
+            className="flex-1 min-h-[48px] max-h-[100px] bg-background/50 border border-primary/15 rounded-[var(--radius-interactive)] px-3 py-2 text-sm text-foreground font-sans resize-y focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/30 transition-all placeholder-muted-foreground/30"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -106,13 +106,14 @@ export function DesignQuestionPanel({
             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
               !questionAnswer.trim()
                 ? 'bg-secondary/40 text-muted-foreground/80 cursor-not-allowed'
-                : 'bg-purple-500/15 text-purple-300 border border-purple-500/25 hover:bg-purple-500/25'
+                : 'bg-accent/15 text-accent border border-accent/25 hover:bg-accent/25'
             }`}
           >
             <Send className="w-3.5 h-3.5" />
             Answer
           </button>
         </div>
+        <p className="text-[10px] text-muted-foreground/60">Press Enter to submit, Shift+Enter for new line.</p>
       </div>
 
       {/* Cancel */}

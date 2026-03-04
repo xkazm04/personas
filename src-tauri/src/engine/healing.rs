@@ -18,6 +18,7 @@ pub enum FailureCategory {
 pub enum HealingAction {
     RetryWithBackoff { delay_secs: u64 },
     RetryWithTimeout { new_timeout_ms: u64 },
+    AiHealing,
     CreateIssue,
 }
 

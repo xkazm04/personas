@@ -52,6 +52,7 @@ export function PersonaTestsTab() {
   const isTestRunning = usePersonaStore((s) => s.isTestRunning);
   const testRunProgress = usePersonaStore((s) => s.testRunProgress);
   const activeTestResults = usePersonaStore((s) => s.activeTestResults);
+  const activeTestResultsRunId = usePersonaStore((s) => s.activeTestResultsRunId);
   const fetchTestRuns = usePersonaStore((s) => s.fetchTestRuns);
   const startTest = usePersonaStore((s) => s.startTest);
   const cancelTest = usePersonaStore((s) => s.cancelTest);
@@ -501,7 +502,14 @@ export function PersonaTestsTab() {
                               <span className="text-sm text-red-400">{run.error}</span>
                             </div>
                           )}
-                          <TestComparisonTable results={activeTestResults} />
+                          {activeTestResultsRunId === run.id ? (
+                            <TestComparisonTable results={activeTestResults} />
+                          ) : (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground/80">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Loading results...
+                            </div>
+                          )}
                         </div>
                       </motion.div>
                     )}

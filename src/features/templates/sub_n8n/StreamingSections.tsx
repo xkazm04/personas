@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   CheckCircle2,
@@ -79,7 +80,7 @@ function SectionDetail({ section }: { section: StreamingSection }) {
 
 // ── Single section row ──
 
-function SectionRow({
+const SectionRow = memo(function SectionRow({
   section,
   isLatest,
 }: {
@@ -119,7 +120,20 @@ function SectionRow({
       </div>
     </motion.div>
   );
-}
+}, (prev, next) => {
+  if (prev.isLatest !== next.isLatest) return false;
+  if (prev.section !== next.section) {
+    return (
+      prev.section.kind === next.section.kind
+      && prev.section.index === next.section.index
+      && prev.section.label === next.section.label
+      && prev.section.validation.valid === next.section.validation.valid
+      && prev.section.validation.errors.join('|') === next.section.validation.errors.join('|')
+      && prev.section.validation.warnings.join('|') === next.section.validation.warnings.join('|')
+    );
+  }
+  return true;
+});
 
 // ── Main component ──
 

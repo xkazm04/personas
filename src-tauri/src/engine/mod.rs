@@ -13,6 +13,7 @@ pub mod eval;
 pub mod failover;
 pub mod google_oauth;
 pub mod healing;
+pub mod ai_healing;
 pub mod healthcheck;
 pub mod intent_compiler;
 pub mod knowledge;
@@ -44,6 +45,9 @@ pub mod clipboard_monitor;
 pub mod app_focus;
 pub mod composite;
 pub mod db_query;
+pub mod api_proxy;
+pub mod api_definition;
+pub mod mcp_tools;
 
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -779,8 +783,36 @@ impl ExecutionEngine {
                     self.circuit_breaker.clone(),
                 );
             }
-            healing::HealingAction::CreateIssue => {}
+            healing::HealingAction::AiHealing | healing::HealingAction::CreateIssue => {}
         }
+    }
+
+    /// Start a chained AI healing execution that resumes the original Claude
+    /// session to diagnose and fix the failure.  Dev-mode only.
+    pub fn start_healing_chain(
+        &self,
+        app: &AppHandle,
+        pool: &DbPool,
+        execution_id: &str,
+        persona_id: &str,
+        session_id: &str,
+        error_message: &str,
+        category_str: &str,
+    ) {
+        spawn_healing_chain(
+            pool.clone(),
+            app.clone(),
+            execution_id.to_string(),
+            persona_id.to_string(),
+            session_id.to_string(),
+            error_message.to_string(),
+            category_str.to_string(),
+            self.tracker.clone(),
+            self.child_pids.clone(),
+            self.cancelled_flags.clone(),
+            self.log_dir.clone(),
+            self.circuit_breaker.clone(),
+        );
     }
 }
 
@@ -1301,12 +1333,43 @@ fn evaluate_healing_and_retry(
             current_retry_count,
             kb_delay,
             &diagnosis,
-            tracker,
-            child_pids,
-            cancelled_flags,
-            log_dir,
-            circuit_breaker,
+            tracker.clone(),
+            child_pids.clone(),
+            cancelled_flags.clone(),
+            log_dir.clone(),
+            circuit_breaker.clone(),
         );
+    }
+
+    // ── AI Healing (dev-mode only) ───────────────────────────────────
+    // When rule-based healing can't resolve the issue, resume the original
+    // Claude session as a chained execution to diagnose and fix.
+    if cfg!(debug_assertions) || std::env::var("VITE_DEVELOPMENT").as_deref() == Ok("true") {
+        let exec_state_str = if result.success { "incomplete" } else { "failed" };
+        if ai_healing::should_trigger_ai_healing(&category, exec_state_str, consecutive) {
+            // Need a session ID to resume — if the original CLI never initialized, skip
+            if let Some(ref session_id) = result.claude_session_id {
+                spawn_healing_chain(
+                    pool.clone(),
+                    app.clone(),
+                    exec_id.to_string(),
+                    persona_id.to_string(),
+                    session_id.clone(),
+                    result.error.clone().unwrap_or_default(),
+                    format!("{:?}", category),
+                    tracker,
+                    child_pids,
+                    cancelled_flags,
+                    log_dir,
+                    circuit_breaker,
+                );
+            } else {
+                tracing::info!(
+                    "AI healing: no session ID for {}, skipping chain resume",
+                    exec_id,
+                );
+            }
+        }
     }
 }
 
@@ -1452,6 +1515,274 @@ fn spawn_healing_retry(
 // =============================================================================
 // Healing Executor: autonomous retry spawning
 // =============================================================================
+
+/// Spawn a chained healing execution that resumes the original Claude session.
+///
+/// Instead of building a new prompt from scratch, this resumes the failed
+/// session via `--resume <session_id>` so the healer has full context of what
+/// the original CLI attempted. The healing execution is tracked as a linked
+/// execution record, visible in the execution list.
+#[allow(clippy::too_many_arguments)]
+fn spawn_healing_chain(
+    pool: DbPool,
+    app: AppHandle,
+    original_exec_id: String,
+    persona_id: String,
+    session_id: String,
+    error_message: String,
+    category_str: String,
+    tracker: Arc<Mutex<ConcurrencyTracker>>,
+    child_pids: Arc<Mutex<HashMap<String, u32>>>,
+    cancelled_flags: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
+    log_dir: PathBuf,
+    circuit_breaker: Arc<failover::ProviderCircuitBreaker>,
+) {
+    tokio::spawn(async move {
+        // Brief delay to let the original execution finalize
+        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+
+        tracing::info!(
+            persona_id = %persona_id,
+            original_exec_id = %original_exec_id,
+            "AI healing: starting chained healing execution (session resume)",
+        );
+
+        // 1. Load persona fresh from DB
+        let mut persona = match persona_repo::get_by_id(&pool, &persona_id) {
+            Ok(p) => p,
+            Err(e) => {
+                tracing::error!("AI healing: failed to load persona: {}", e);
+                return;
+            }
+        };
+
+        if !persona.enabled {
+            tracing::warn!("AI healing: persona disabled, skipping");
+            return;
+        }
+
+        // 2. Force Claude Opus model for healing
+        persona.model_profile = Some(r#"{"model":"claude-opus-4-6"}"#.to_string());
+
+        // 3. Build healing input data
+        let healing_input = ai_healing::build_healing_input(&error_message, &category_str);
+
+        // 4. Create healing execution record (linked to original)
+        let retry_count = exec_repo::get_by_id(&pool, &original_exec_id)
+            .map(|e| e.retry_count)
+            .unwrap_or(0);
+        let exec = match exec_repo::create_retry(
+            &pool,
+            &persona_id,
+            &original_exec_id,
+            retry_count + 1,
+        ) {
+            Ok(e) => e,
+            Err(e) => {
+                tracing::error!("AI healing: failed to create execution record: {}", e);
+                return;
+            }
+        };
+
+        let exec_id = exec.id.clone();
+
+        // Emit started status
+        let _ = app.emit(
+            "ai-healing-status",
+            serde_json::json!({
+                "execution_id": original_exec_id,
+                "persona_id": persona_id,
+                "phase": "started",
+                "healing_execution_id": exec_id,
+            }),
+        );
+
+        // 5. Check capacity and register in tracker
+        {
+            let mut t = tracker.lock().await;
+            if !t.try_add_running(&persona_id, &exec_id, persona.max_concurrent) {
+                tracing::warn!("AI healing: no capacity, skipping");
+                let _ = app.emit(
+                    "ai-healing-status",
+                    serde_json::json!({
+                        "execution_id": original_exec_id,
+                        "persona_id": persona_id,
+                        "phase": "failed",
+                    }),
+                );
+                return;
+            }
+        }
+
+        // 6. Update to running
+        persist_status_update(
+            &pool,
+            Some(&app),
+            &exec_id,
+            UpdateExecutionStatus {
+                status: ExecutionState::Running,
+                ..Default::default()
+            },
+        )
+        .await;
+
+        // 7. Get tools for persona
+        let tools = tool_repo::get_tools_for_persona(&pool, &persona_id)
+            .unwrap_or_default();
+
+        // 8. Create cancellation flag
+        let cancelled = Arc::new(AtomicBool::new(false));
+        cancelled_flags
+            .lock()
+            .await
+            .insert(exec_id.clone(), cancelled.clone());
+
+        // Emit diagnosing phase
+        let _ = app.emit(
+            "ai-healing-status",
+            serde_json::json!({
+                "execution_id": original_exec_id,
+                "persona_id": persona_id,
+                "phase": "diagnosing",
+                "healing_execution_id": exec_id,
+            }),
+        );
+
+        // 9. Run the execution, resuming the original session
+        let result = runner::run_execution(
+            app.clone(),
+            pool.clone(),
+            exec_id.clone(),
+            persona,
+            tools,
+            Some(healing_input), // healing instructions as input_data
+            log_dir,
+            child_pids.clone(),
+            cancelled.clone(),
+            Some(types::Continuation::SessionResume(session_id)),
+            None, // no chain_trace_id
+            circuit_breaker,
+        )
+        .await;
+
+        // 10. Write final status
+        let status = if cancelled.load(Ordering::Acquire) {
+            ExecutionState::Cancelled
+        } else if result.success {
+            ExecutionState::Completed
+        } else {
+            ExecutionState::Failed
+        };
+
+        persist_status_update(
+            &pool,
+            Some(&app),
+            &exec_id,
+            UpdateExecutionStatus {
+                status,
+                output_data: result.output.clone(),
+                error_message: result.error.clone(),
+                duration_ms: Some(result.duration_ms as i64),
+                log_file_path: result.log_file_path.clone(),
+                execution_flows: result.execution_flows.clone(),
+                input_tokens: Some(result.input_tokens as i64),
+                output_tokens: Some(result.output_tokens as i64),
+                cost_usd: Some(result.cost_usd),
+                tool_steps: result.tool_steps.clone(),
+            },
+        )
+        .await;
+
+        let _ = app.emit(
+            "execution-status",
+            types::ExecutionStatusEvent {
+                execution_id: exec_id.clone(),
+                status,
+                error: result.error.clone(),
+                duration_ms: Some(result.duration_ms),
+                cost_usd: Some(result.cost_usd),
+            },
+        );
+
+        // 11. Process healing output: parse fixes and apply to DB
+        let _ = app.emit(
+            "ai-healing-status",
+            serde_json::json!({
+                "execution_id": original_exec_id,
+                "persona_id": persona_id,
+                "phase": "applying",
+                "healing_execution_id": exec_id,
+            }),
+        );
+
+        match ai_healing::process_healing_result(&pool, &persona_id, &result).await {
+            Ok(heal_result) => {
+                tracing::info!(
+                    "AI healing completed for {}: {} fixes, retry={}",
+                    original_exec_id,
+                    heal_result.fixes_applied.len(),
+                    heal_result.should_retry,
+                );
+
+                let _ = app.emit(
+                    "ai-healing-status",
+                    serde_json::json!({
+                        "execution_id": original_exec_id,
+                        "persona_id": persona_id,
+                        "phase": "completed",
+                        "healing_execution_id": exec_id,
+                        "diagnosis": heal_result.diagnosis,
+                        "fixes_applied": heal_result.fixes_applied.iter()
+                            .map(|f| f.description.clone())
+                            .collect::<Vec<_>>(),
+                        "should_retry": heal_result.should_retry,
+                    }),
+                );
+
+                // If fixes were applied and retry is recommended, schedule
+                // a fresh retry of the original task (not another heal)
+                if heal_result.should_retry && !heal_result.fixes_applied.is_empty() {
+                    tracing::info!(
+                        "AI healing: scheduling retry after {} fixes applied",
+                        heal_result.fixes_applied.len(),
+                    );
+                    spawn_delayed_retry(
+                        2, // short delay after AI fixes
+                        None,
+                        pool.clone(),
+                        app.clone(),
+                        persona_id.clone(),
+                        original_exec_id.clone(),
+                        retry_count + 1,
+                        tracker.clone(),
+                        child_pids.clone(),
+                        cancelled_flags.clone(),
+                        // log_dir was moved into runner, use a fresh path
+                        std::env::temp_dir().join("personas-logs"),
+                        // circuit_breaker was moved, create a fresh ref
+                        Arc::new(failover::ProviderCircuitBreaker::new()),
+                    );
+                }
+            }
+            Err(e) => {
+                tracing::warn!("AI healing: failed to process result: {}", e);
+                let _ = app.emit(
+                    "ai-healing-status",
+                    serde_json::json!({
+                        "execution_id": original_exec_id,
+                        "persona_id": persona_id,
+                        "phase": "failed",
+                    }),
+                );
+            }
+        }
+
+        // 12. Cleanup
+        tracker.lock().await.remove_running(&persona_id, &exec_id);
+        cancelled_flags.lock().await.remove(&exec_id);
+        crate::tray::refresh_tray(&app);
+    });
+}
 
 /// Spawn a delayed retry execution for a failed persona.
 ///
@@ -1779,7 +2110,7 @@ fn record_failure_to_knowledge_base(
     let recommended_delay = match &diagnosis.action {
         healing::HealingAction::RetryWithBackoff { delay_secs } => Some(*delay_secs as i64),
         healing::HealingAction::RetryWithTimeout { .. } => None,
-        healing::HealingAction::CreateIssue => return,
+        healing::HealingAction::AiHealing | healing::HealingAction::CreateIssue => return,
     };
 
     let tools = match tool_repo::get_tools_for_persona(pool, persona_id) {

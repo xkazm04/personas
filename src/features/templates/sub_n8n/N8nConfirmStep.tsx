@@ -8,6 +8,7 @@ import { parseDesignContext } from '@/features/shared/components/UseCasesList';
 import { translateHealthcheckMessage } from '@/features/vault/sub_design/CredentialDesignHelpers';
 import { extractProtocolCapabilities, countByType } from './edit/protocolParser';
 import { matchCredentialToConnector } from './edit/connectorMatching';
+import { buildConnectorRailItems } from './edit/connectorHealth';
 import { usePersonaStore } from '@/stores/personaStore';
 
 export interface EntityError {
@@ -89,30 +90,10 @@ export function N8nConfirmStep({
     });
   }, [draftTools, credentialLinks, credentials]);
 
-  // Connector health statuses for the rail
-  type ConnectorHealth = 'ready' | 'missing' | 'failed';
-  interface ConnectorRailItem {
-    name: string;
-    health: ConnectorHealth;
-    credentialName: string | null;
-    errorMessage: string | null;
-  }
-
-  const connectorRailItems = useMemo((): ConnectorRailItem[] => {
-    if (!draftConnectors) return [];
-    return draftConnectors.map((c) => {
-      const linked = credentialLinks[c.name];
-      const linkedCred = linked ? credentials.find((cr) => cr.id === linked) : null;
-      const matchedCred = linkedCred ?? matchCredentialToConnector(credentials, c.name);
-      const hasCredential = c.has_credential || !!linked || !!matchedCred;
-      return {
-        name: c.name,
-        health: hasCredential ? 'ready' as const : 'missing' as const,
-        credentialName: matchedCred?.name ?? (linked ? linked : null),
-        errorMessage: null,
-      };
-    });
-  }, [draftConnectors, credentialLinks, credentials]);
+  const connectorRailItems = useMemo(
+    () => buildConnectorRailItems(draftConnectors, credentialLinks, credentials),
+    [draftConnectors, credentialLinks, credentials],
+  );
 
   const readyConnectorCount = connectorRailItems.filter((c) => c.health === 'ready').length;
 

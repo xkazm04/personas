@@ -140,7 +140,7 @@ export function deriveOutcome(
   if (phase === 'awaiting-input' && question) {
     return { kind: 'question', question };
   }
-  if (error && (phase === 'idle' || phase === 'preview')) {
+  if (error) {
     return { kind: 'error', error };
   }
   return null;

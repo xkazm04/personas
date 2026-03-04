@@ -23,9 +23,9 @@ export function useEditorSave({ draft, baseline, setBaseline, pendingPersonaId }
   const modelDirty = draftChanged(draft, baseline, MODEL_KEYS);
 
   const handleSaveSettings = useCallback(async () => {
-    if (settingsSaveInFlightRef.current) {
+    while (settingsSaveInFlightRef.current) {
       await settingsSaveInFlightRef.current;
-      return;
+      if (!draftChanged(draft, baseline, SETTINGS_KEYS)) return;
     }
 
     const savePromise = (async () => {
@@ -39,8 +39,9 @@ export function useEditorSave({ draft, baseline, setBaseline, pendingPersonaId }
       max_concurrent: draft.maxConcurrent,
       timeout_ms: draft.timeout,
       enabled: draft.enabled,
+      sensitive: draft.sensitive,
     });
-    setBaseline((prev) => ({ ...prev, name: draft.name, description: draft.description, icon: draft.icon, color: draft.color, maxConcurrent: draft.maxConcurrent, timeout: draft.timeout, enabled: draft.enabled }));
+    setBaseline((prev) => ({ ...prev, name: draft.name, description: draft.description, icon: draft.icon, color: draft.color, maxConcurrent: draft.maxConcurrent, timeout: draft.timeout, enabled: draft.enabled, sensitive: draft.sensitive }));
     })();
 
     settingsSaveInFlightRef.current = savePromise;
@@ -51,12 +52,12 @@ export function useEditorSave({ draft, baseline, setBaseline, pendingPersonaId }
         settingsSaveInFlightRef.current = null;
       }
     }
-  }, [selectedPersona, applyPersonaOp, draft, setBaseline]);
+  }, [selectedPersona, applyPersonaOp, draft, baseline, setBaseline]);
 
   const saveModelSettings = useCallback(async () => {
-    if (modelSaveInFlightRef.current) {
+    while (modelSaveInFlightRef.current) {
       await modelSaveInFlightRef.current;
-      return;
+      if (!draftChanged(draft, baseline, MODEL_KEYS)) return;
     }
 
     const savePromise = (async () => {
@@ -108,7 +109,7 @@ export function useEditorSave({ draft, baseline, setBaseline, pendingPersonaId }
         modelSaveInFlightRef.current = null;
       }
     }
-  }, [selectedPersona, applyPersonaOp, draft, setBaseline]);
+  }, [selectedPersona, applyPersonaOp, draft, baseline, setBaseline]);
 
   const { isSaving: isSavingSettings } = useTabSection({
     tab: 'settings',
@@ -116,7 +117,7 @@ export function useEditorSave({ draft, baseline, setBaseline, pendingPersonaId }
     save: handleSaveSettings,
     mode: 'debounced',
     delay: 800,
-    deps: [draft.name, draft.description, draft.icon, draft.color, draft.maxConcurrent, draft.timeout, draft.enabled],
+    deps: [draft.name, draft.description, draft.icon, draft.color, draft.maxConcurrent, draft.timeout, draft.enabled, draft.sensitive],
     enabled: !!selectedPersona && !pendingPersonaId,
   });
 

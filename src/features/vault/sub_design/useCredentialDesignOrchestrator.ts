@@ -129,7 +129,24 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
     [oauth.valuesVersion, universalOAuth.valuesVersion, negotiatorValues],
   );
 
-  const canSaveCredential = isSaveReady(
+  const hasFieldValidationErrors = useMemo(() => {
+    return effectiveFields.some((field) => {
+      const value = mergedOAuthValues[field.key] ?? '';
+      const trimmed = value.trim();
+      if (field.required && !trimmed) return true;
+      if (trimmed && field.type === 'url') {
+        try {
+          const parsed = new URL(trimmed);
+          return !['http:', 'https:'].includes(parsed.protocol);
+        } catch {
+          return true;
+        }
+      }
+      return false;
+    });
+  }, [effectiveFields, mergedOAuthValues]);
+
+  const canSaveCredential = !hasFieldValidationErrors && isSaveReady(
     flow,
     mergedOAuthValues,
     health.result?.success === true,

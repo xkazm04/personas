@@ -18,7 +18,7 @@ export interface MemorySlice {
   reviewMemories: (personaId?: string) => Promise<MemoryReviewResult>;
 }
 
-export const createMemorySlice: StateCreator<PersonaStore, [], [], MemorySlice> = (set) => ({
+export const createMemorySlice: StateCreator<PersonaStore, [], [], MemorySlice> = (set, get) => ({
   memories: [],
   memoriesTotal: 0,
   memoryStats: null,
@@ -79,8 +79,7 @@ export const createMemorySlice: StateCreator<PersonaStore, [], [], MemorySlice> 
   reviewMemories: async (personaId?) => {
     const result = await api.reviewMemoriesWithCli(personaId);
     // Refresh memories list after review
-    const store = (await import("../personaStore")).usePersonaStore.getState();
-    await store.fetchMemories();
+    await get().fetchMemories();
     return result;
   },
 });

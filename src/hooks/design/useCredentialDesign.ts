@@ -100,7 +100,7 @@ export function useCredentialDesign() {
         data: fieldValues,
       });
 
-      setSavedCredentialId(credId ?? null);
+      setSavedCredentialId(credId);
       flow.setPhase('done');
     } catch (err) {
       // Rollback: if we created a connector but credential creation failed,
@@ -141,6 +141,7 @@ export function useCredentialDesign() {
    */
   const refine = useCallback(
     (instruction: string) => {
+      if (savingRef.current) return;
       // Transition back to analyzing — keep savedCredentialId intact
       flow.setLines([]);
       flow.setError(null);

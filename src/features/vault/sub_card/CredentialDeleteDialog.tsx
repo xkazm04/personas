@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef } from 'react';
 import { AlertTriangle, Undo2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { CredentialMetadata } from '@/lib/types/types';
@@ -5,6 +6,7 @@ import type { CredentialMetadata } from '@/lib/types/types';
 export interface DeleteConfirmState {
   credential: CredentialMetadata;
   eventCount: number;
+  eventCountVerified?: boolean;
 }
 
 export interface UndoToastState {
@@ -28,6 +30,47 @@ export function CredentialDeleteDialog({
   undoToast,
   onUndo,
 }: CredentialDeleteDialogProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
+
+  const handleDialogKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key !== 'Tab' || !dialogRef.current) return;
+
+    const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    );
+    if (focusable.length === 0) return;
+
+    const first = focusable[0]!;
+    const last = focusable[focusable.length - 1]!;
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+      return;
+    }
+    if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!deleteConfirm) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancelDelete();
+    };
+    window.addEventListener('keydown', onKeyDown);
+
+    const timer = setTimeout(() => {
+      cancelButtonRef.current?.focus();
+    }, 20);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [deleteConfirm, onCancelDelete]);
+
   return (
     <>
       {/* Delete Confirmation Dialog */}
@@ -45,6 +88,11 @@ export function CredentialDeleteDialog({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
+              ref={dialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="delete-dialog-title"
+              onKeyDown={handleDialogKeyDown}
               className="fixed inset-0 z-50 flex items-center justify-center p-4"
             >
               <div className="bg-background border border-primary/15 rounded-2xl shadow-2xl w-full max-w-sm p-5 space-y-4">
@@ -53,7 +101,7 @@ export function CredentialDeleteDialog({
                     <AlertTriangle className="w-5 h-5 text-red-400" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-foreground/90">Delete Credential</h3>
+                    <h3 id="delete-dialog-title" className="text-sm font-semibold text-foreground/90">Delete Credential</h3>
                     <p className="text-sm text-muted-foreground/90 mt-1">This action cannot be undone after the undo window expires.</p>
                   </div>
                 </div>
@@ -75,10 +123,16 @@ export function CredentialDeleteDialog({
                       </span>
                     </div>
                   )}
+                  {deleteConfirm.eventCountVerified === false && (
+                    <div className="text-xs text-amber-300/90">
+                      Could not verify event trigger count. Deletion may impact active automations.
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-end gap-2 pt-1">
                   <button
+                    ref={cancelButtonRef}
                     onClick={onCancelDelete}
                     className="px-4 py-2 text-sm text-muted-foreground/80 hover:text-foreground/95 rounded-lg hover:bg-secondary/40 transition-colors"
                   >

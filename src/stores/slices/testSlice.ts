@@ -25,6 +25,7 @@ export interface TestSlice {
   // State
   testRuns: PersonaTestRun[];
   activeTestResults: PersonaTestResult[];
+  activeTestResultsRunId: string | null;
   isTestRunning: boolean;
   testRunProgress: TestRunProgress | null;
   testSuites: PersonaTestSuite[];
@@ -46,6 +47,7 @@ export interface TestSlice {
 export const createTestSlice: StateCreator<PersonaStore, [], [], TestSlice> = (set, get) => ({
   testRuns: [],
   activeTestResults: [],
+  activeTestResultsRunId: null,
   isTestRunning: false,
   testRunProgress: null,
   testSuites: [],
@@ -60,7 +62,13 @@ export const createTestSlice: StateCreator<PersonaStore, [], [], TestSlice> = (s
   },
 
   startTest: async (personaId, models, useCaseFilter, suiteId) => {
-    set({ isTestRunning: true, testRunProgress: null, activeTestResults: [], error: null });
+    set({
+      isTestRunning: true,
+      testRunProgress: null,
+      activeTestResults: [],
+      activeTestResultsRunId: null,
+      error: null,
+    });
     try {
       const run = await api.startTestRun(personaId, models, useCaseFilter, suiteId);
       return run.id;
@@ -82,9 +90,14 @@ export const createTestSlice: StateCreator<PersonaStore, [], [], TestSlice> = (s
   },
 
   fetchTestResults: async (testRunId) => {
+    set({ activeTestResultsRunId: testRunId });
     try {
       const results = await api.getTestResults(testRunId);
-      set({ activeTestResults: results });
+      set((state) => (
+        state.activeTestResultsRunId === testRunId
+          ? { activeTestResults: results }
+          : {}
+      ));
     } catch (err) {
       set({ error: errMsg(err, "Failed to fetch test results") });
     }

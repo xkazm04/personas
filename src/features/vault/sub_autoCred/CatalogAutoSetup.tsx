@@ -1,6 +1,7 @@
 import { useCallback, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plug, ArrowLeft, Sparkles } from 'lucide-react';
+import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import type { CredentialDesignResult } from '@/hooks/design/useCredentialDesign';
 import { useCredentialDesign } from '@/hooks/design/useCredentialDesign';
@@ -121,7 +122,7 @@ export function CatalogAutoSetup({ connector, onComplete, onCancel }: CatalogAut
           }}
         >
           {connector.icon_url ? (
-            <img src={connector.icon_url} alt={connector.label} className="w-5 h-5" referrerPolicy="no-referrer" crossOrigin="anonymous" />
+            <ThemedConnectorIcon url={connector.icon_url} label={connector.label} color={connector.color} size="w-5 h-5" />
           ) : (
             <Plug className="w-5 h-5" style={{ color: connector.color }} />
           )}

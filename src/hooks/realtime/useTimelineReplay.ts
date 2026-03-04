@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { listEventsInRange } from '@/api/events';
 import type { RealtimeEvent, AnimationPhase } from '@/hooks/realtime/useRealtimeEvents';
 import type { PersonaEvent } from '@/lib/bindings/PersonaEvent';
@@ -49,6 +49,7 @@ export interface UseTimelineReplayReturn extends TimelineReplayState {
 // ── Constants ──────────────────────────────────────────────────────
 
 const TICK_INTERVAL = 50; // ms between replay ticks
+const MAX_REPLAY_EVENTS = 5000;
 
 // ── Hook ───────────────────────────────────────────────────────────
 
@@ -63,6 +64,7 @@ export function useTimelineReplay(): UseTimelineReplayReturn {
   const [cursorMs, setCursorMs] = useState(0);
   const [rangeStart, setRangeStart] = useState(0);
   const [rangeEnd, setRangeEnd] = useState(0);
+  const [emittedCount, setEmittedCount] = useState(0);
 
   const totalMs = rangeEnd - rangeStart || 1;
 
@@ -82,17 +84,17 @@ export function useTimelineReplay(): UseTimelineReplayReturn {
   useEffect(() => { speedRef.current = speed; }, [speed]);
   useEffect(() => { eventsRef.current = historicalEvents; }, [historicalEvents]);
 
-  // Emitted count derived from nextEventIdxRef — we track via cursor position
-  const emittedCount = useMemo(() => {
-    if (!active || historicalEvents.length === 0) return 0;
-    const cursorTime = rangeStart + cursorMs;
-    let count = 0;
-    for (const e of historicalEvents) {
-      if (new Date(e.created_at).getTime() <= cursorTime) count++;
-      else break; // events are sorted ASC
+  const findFirstAfter = useCallback((events: PersonaEvent[], cursorTime: number) => {
+    let lo = 0;
+    let hi = events.length;
+    while (lo < hi) {
+      const mid = Math.floor((lo + hi) / 2);
+      const evtTime = new Date(events[mid]!.created_at).getTime();
+      if (evtTime <= cursorTime) lo = mid + 1;
+      else hi = mid;
     }
-    return count;
-  }, [active, historicalEvents, rangeStart, cursorMs]);
+    return lo;
+  }, []);
 
   useEventPhaseProgressor({ active, setEvents: setReplayEvents });
 
@@ -135,6 +137,7 @@ export function useTimelineReplay(): UseTimelineReplayReturn {
       nextEventIdxRef.current++;
       emitted++;
     }
+    setEmittedCount(nextEventIdxRef.current);
 
     // Stop at the end
     if (newCursor >= rangeEndRef.current - rangeStartRef.current) {
@@ -174,10 +177,16 @@ export function useTimelineReplay(): UseTimelineReplayReturn {
 
     try {
       const events = await listEventsInRange(start, end);
+      const sorted = [...events].sort(
+        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+      );
+      const limited = sorted.length > MAX_REPLAY_EVENTS
+        ? sorted.slice(sorted.length - MAX_REPLAY_EVENTS)
+        : sorted;
       const startMs = new Date(start).getTime();
       const endMs = now.getTime();
 
-      setHistoricalEvents(events);
+      setHistoricalEvents(limited);
       setRangeStart(startMs);
       setRangeEnd(endMs);
       rangeStartRef.current = startMs;
@@ -185,6 +194,7 @@ export function useTimelineReplay(): UseTimelineReplayReturn {
       setCursorMs(0);
       cursorRef.current = 0;
       nextEventIdxRef.current = 0;
+      setEmittedCount(0);
       setReplayEvents([]);
       setActive(true);
       setPlaying(false);
@@ -200,6 +210,7 @@ export function useTimelineReplay(): UseTimelineReplayReturn {
     setReplayEvents([]);
     setHistoricalEvents([]);
     setCursorMs(0);
+    setEmittedCount(0);
     cursorRef.current = 0;
     nextEventIdxRef.current = 0;
   }, []);
@@ -210,6 +221,7 @@ export function useTimelineReplay(): UseTimelineReplayReturn {
       cursorRef.current = 0;
       setCursorMs(0);
       nextEventIdxRef.current = 0;
+      setEmittedCount(0);
       setReplayEvents([]);
     }
     setPlaying((p) => !p);
@@ -230,15 +242,11 @@ export function useTimelineReplay(): UseTimelineReplayReturn {
     // Recompute nextEventIdx — find first event after cursor
     const cursorTime = rangeStartRef.current + ms;
     const events = eventsRef.current;
-    let idx = 0;
-    while (idx < events.length) {
-      const evtTime = new Date(events[idx]!.created_at).getTime();
-      if (evtTime > cursorTime) break;
-      idx++;
-    }
+    const idx = findFirstAfter(events, cursorTime);
     nextEventIdxRef.current = idx;
+    setEmittedCount(idx);
     setReplayEvents([]); // clear current particles on seek
-  }, []);
+  }, [findFirstAfter]);
 
   return {
     active,

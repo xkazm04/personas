@@ -5,7 +5,7 @@ import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 
 type FieldCaptureSource = 'schema' | 'negotiator' | 'auto';
 type FieldCaptureMode = 'readonly' | 'editable' | 'confirming';
-type FieldInputType = 'text' | 'password' | 'select';
+type FieldInputType = 'text' | 'password' | 'url' | 'select';
 
 interface FieldCaptureRowProps {
   source: FieldCaptureSource;
@@ -13,6 +13,7 @@ interface FieldCaptureRowProps {
   label: string;
   value: string;
   onChange?: (value: string) => void;
+  onBlur?: () => void;
   placeholder?: string;
   required?: boolean;
   hint?: string;
@@ -37,6 +38,7 @@ export function FieldCaptureRow({
   label,
   value,
   onChange,
+  onBlur,
   placeholder,
   required,
   hint,
@@ -159,6 +161,7 @@ export function FieldCaptureRow({
         <ThemedSelect
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
+          onBlur={onBlur}
           disabled={!isEditable}
           className={`rounded-xl ${error ? 'border-red-500/50' : ''}`}
         >
@@ -169,9 +172,10 @@ export function FieldCaptureRow({
         </ThemedSelect>
       ) : (
         <input
-          type={isSecret && !isVisible ? 'password' : 'text'}
+          type={isSecret && !isVisible ? 'password' : inputType === 'url' ? 'url' : 'text'}
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
+          onBlur={onBlur}
           disabled={!isEditable}
           placeholder={placeholder}
           className={`w-full px-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all placeholder-muted-foreground/30 disabled:opacity-70 disabled:cursor-not-allowed ${SOURCE_ACCENT[source]} ${error ? 'border-red-500/50' : valueClass}`}

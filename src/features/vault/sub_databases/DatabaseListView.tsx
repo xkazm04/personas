@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Database, Search } from 'lucide-react';
+import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { usePersonaStore } from '@/stores/personaStore';
 import { DatabaseCard } from './DatabaseCard';
 import { SchemaManagerModal } from './SchemaManagerModal';
@@ -130,7 +131,7 @@ export function DatabaseListView({ onBack: _onBack }: DatabaseListViewProps) {
                 >
                   <span className="flex items-center gap-1.5">
                     {group.connector?.icon_url ? (
-                      <img src={group.connector.icon_url} alt="" className="w-3.5 h-3.5 object-contain" />
+                      <ThemedConnectorIcon url={group.connector.icon_url} label={group.connector.label} color={group.connector.color} size="w-3.5 h-3.5" />
                     ) : null}
                     {group.label}
                     <span className="text-muted-foreground/40">({group.credentials.length})</span>

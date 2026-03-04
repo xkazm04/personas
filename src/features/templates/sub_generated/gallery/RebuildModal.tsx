@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { RefreshCw, X, Loader2, CheckCircle2, XCircle, Square } from 'lucide-react';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { RebuildPhase } from '@/hooks/design/useBackgroundRebuild';
+import { BaseModal } from '../shared/BaseModal';
 
 interface RebuildModalProps {
   isOpen: boolean;
@@ -46,10 +47,13 @@ export function RebuildModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-
-      <div className="relative w-full max-w-2xl max-h-[80vh] bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden mx-4">
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      titleId="rebuild-modal-title"
+      maxWidthClass="max-w-2xl"
+      panelClassName="max-h-[80vh] bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+    >
         {/* Header */}
         <div className="px-6 py-4 border-b border-primary/10 flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
@@ -57,7 +61,7 @@ export function RebuildModal({
               <RefreshCw className={`w-4 h-4 text-blue-400 ${displayPhase === 'processing' ? 'animate-spin' : ''}`} />
             </div>
             <div className="min-w-0">
-              <h2 className="text-sm font-semibold text-foreground/90 truncate">
+              <h2 id="rebuild-modal-title" className="text-sm font-semibold text-foreground/90 truncate">
                 Rebuild Template
               </h2>
               <p className="text-xs text-muted-foreground/60 truncate">
@@ -215,7 +219,6 @@ export function RebuildModal({
             </button>
           )}
         </div>
-      </div>
-    </div>
+    </BaseModal>
   );
 }

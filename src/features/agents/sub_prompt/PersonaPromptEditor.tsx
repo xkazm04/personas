@@ -14,6 +14,7 @@ import { CustomSectionsPanel } from './CustomSectionsPanel';
 import type { SubTab, SidebarEntry } from './PromptSectionSidebar';
 
 import type { ModelProfile } from '@/lib/types/frontendTypes';
+import { parseJsonSafe } from '@/lib/utils/parseJson';
 
 const STANDARD_TABS: SidebarEntry[] = [
   { key: 'identity', label: 'Identity', Icon: User },
@@ -32,10 +33,8 @@ export function PersonaPromptEditor() {
 
   const isAnthropic = useMemo(() => {
     if (!selectedPersona?.model_profile) return true;
-    try {
-      const mp: ModelProfile = JSON.parse(selectedPersona.model_profile);
-      return !mp.provider || mp.provider === 'anthropic';
-    } catch { return true; }
+    const mp = parseJsonSafe<ModelProfile | null>(selectedPersona.model_profile, null);
+    return !mp?.provider || mp.provider === 'anthropic';
   }, [selectedPersona?.model_profile]);
 
   const visibleTabs = useMemo(() => {
@@ -43,6 +42,7 @@ export function PersonaPromptEditor() {
   }, [isAnthropic]);
 
   const [sp, setSp] = useState<StructuredPrompt>(createEmptyStructuredPrompt());
+  const [promptDirty, setPromptDirty] = useState(false);
   const [showSaved, setShowSaved] = useState(false);
   const [selectedCustomIndex, setSelectedCustomIndex] = useState(0);
 
@@ -59,6 +59,7 @@ export function PersonaPromptEditor() {
   useEffect(() => {
     if (!selectedPersona) {
       setSp(createEmptyStructuredPrompt());
+      setPromptDirty(false);
       personaIdRef.current = null;
       lastLoadedPromptRef.current = null;
       lastSavedJsonRef.current = null;
@@ -74,13 +75,23 @@ export function PersonaPromptEditor() {
     personaIdRef.current = selectedPersona.id;
     lastLoadedPromptRef.current = currentPromptRaw;
     const parsed = parseStructuredPrompt(currentPromptRaw);
-    if (parsed) { setSp(parsed); lastSavedJsonRef.current = JSON.stringify(parsed); return; }
+    if (parsed) {
+      setSp(parsed);
+      setPromptDirty(false);
+      lastSavedJsonRef.current = JSON.stringify(parsed);
+      return;
+    }
     if (selectedPersona.system_prompt) {
       const migrated = migratePromptToStructured(selectedPersona.system_prompt);
-      setSp(migrated); lastSavedJsonRef.current = JSON.stringify(migrated); return;
+      setSp(migrated);
+      setPromptDirty(false);
+      lastSavedJsonRef.current = JSON.stringify(migrated);
+      return;
     }
     const empty = createEmptyStructuredPrompt();
-    setSp(empty); lastSavedJsonRef.current = JSON.stringify(empty);
+    setSp(empty);
+    setPromptDirty(false);
+    lastSavedJsonRef.current = JSON.stringify(empty);
   }, [selectedPersona]);
 
   const doSave = useCallback(async () => {
@@ -96,15 +107,12 @@ export function PersonaPromptEditor() {
       });
       lastSavedJsonRef.current = jsonStr;
       lastLoadedPromptRef.current = jsonStr;
+      setPromptDirty(false);
       setShowSaved(true);
       setTimeout(() => setShowSaved(false), 2000);
     } catch (error) { console.error('Failed to save structured prompt:', error); }
   }, [applyPersonaOp]);
 
-  const promptDirty = useMemo(
-    () => lastSavedJsonRef.current !== null && JSON.stringify(sp) !== lastSavedJsonRef.current,
-    [sp],
-  );
   const { isSaving } = useTabSection({
     tab: 'prompt',
     isDirty: promptDirty,
@@ -116,6 +124,7 @@ export function PersonaPromptEditor() {
 
   const updateField = useCallback((field: keyof Omit<StructuredPrompt, 'customSections'>, value: string) => {
     setSp((prev) => ({ ...prev, [field]: value }));
+    setPromptDirty(true);
   }, []);
 
   const addCustomSection = useCallback(() => {
@@ -123,6 +132,7 @@ export function PersonaPromptEditor() {
       setSelectedCustomIndex(prev.customSections.length);
       return { ...prev, customSections: [...prev.customSections, { title: 'New Section', content: '' }] };
     });
+    setPromptDirty(true);
     setActiveTab('custom');
   }, []);
 
@@ -131,6 +141,7 @@ export function PersonaPromptEditor() {
       ...prev,
       customSections: prev.customSections.map((s, i) => i === index ? { ...s, [field]: value } : s),
     }));
+    setPromptDirty(true);
   }, []);
 
   const removeCustomSection = useCallback((index: number) => {
@@ -141,6 +152,7 @@ export function PersonaPromptEditor() {
       );
       return { ...prev, customSections: newSections };
     });
+    setPromptDirty(true);
   }, []);
 
   const sectionFilled = useMemo(() => ({

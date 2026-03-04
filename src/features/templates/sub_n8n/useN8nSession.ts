@@ -91,6 +91,8 @@ export function useN8nSession(
   const lastSyncedSliceRef = useRef<DbSlice | null>(null);
   const dbTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestStateRef = useRef(state);
+  latestStateRef.current = state;
 
   // ── Auto-sync to SQLite (debounced) ──
 
@@ -107,17 +109,23 @@ export function useN8nSession(
     if (dbTimerRef.current) clearTimeout(dbTimerRef.current);
     dbTimerRef.current = setTimeout(() => {
       dbTimerRef.current = null;
-      lastSyncedSliceRef.current = currentSlice;
-      void updateN8nSession(id, {
-        step: currentSlice.step,
-        status: currentSlice.status,
-        parserResult: currentSlice.parserResult,
-        draftJson: currentSlice.draftJson,
-        questionsJson: currentSlice.questionsJson,
-        userAnswers: currentSlice.userAnswers,
-        transformId: currentSlice.transformId,
-        error: currentSlice.error,
-      }).catch(() => {});
+      void (async () => {
+        try {
+          await updateN8nSession(id, {
+            step: currentSlice.step,
+            status: currentSlice.status,
+            parserResult: currentSlice.parserResult,
+            draftJson: currentSlice.draftJson,
+            questionsJson: currentSlice.questionsJson,
+            userAnswers: currentSlice.userAnswers,
+            transformId: currentSlice.transformId,
+            error: currentSlice.error,
+          });
+          lastSyncedSliceRef.current = currentSlice;
+        } catch {
+          // Keep lastSyncedSliceRef unchanged so a future state change retries sync.
+        }
+      })();
     }, DB_SYNC_DELAY);
 
     return () => {
@@ -182,8 +190,44 @@ export function useN8nSession(
 
   useEffect(() => {
     return () => {
-      if (dbTimerRef.current) clearTimeout(dbTimerRef.current);
-      if (lsTimerRef.current) clearTimeout(lsTimerRef.current);
+      const current = latestStateRef.current;
+
+      if (dbTimerRef.current) {
+        clearTimeout(dbTimerRef.current);
+        dbTimerRef.current = null;
+        if (current.sessionId) {
+          const currentSlice = deriveDbSlice(current);
+          void updateN8nSession(current.sessionId, {
+            step: currentSlice.step,
+            status: currentSlice.status,
+            parserResult: currentSlice.parserResult,
+            draftJson: currentSlice.draftJson,
+            questionsJson: currentSlice.questionsJson,
+            userAnswers: currentSlice.userAnswers,
+            transformId: currentSlice.transformId,
+            error: currentSlice.error,
+          }).catch(() => {});
+        }
+      }
+
+      if (lsTimerRef.current) {
+        clearTimeout(lsTimerRef.current);
+        lsTimerRef.current = null;
+        if (current.transforming && current.backgroundTransformId && current.rawWorkflowJson && current.parsedResult) {
+          try {
+            const context: PersistedTransformContext = {
+              transformId: current.backgroundTransformId,
+              workflowName: current.workflowName || 'Imported Workflow',
+              rawWorkflowJson: current.rawWorkflowJson,
+              parsedResult: current.parsedResult,
+              savedAt: Date.now(),
+            };
+            window.localStorage.setItem(N8N_TRANSFORM_CONTEXT_KEY, JSON.stringify(context));
+          } catch {
+            // ignore flush failures on unmount
+          }
+        }
+      }
     };
   }, []);
 

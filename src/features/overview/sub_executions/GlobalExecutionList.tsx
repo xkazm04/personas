@@ -33,6 +33,7 @@ export default function GlobalExecutionList() {
   const globalExecutions = usePersonaStore((s) => s.globalExecutions);
   const globalExecutionsTotal = usePersonaStore((s) => s.globalExecutionsTotal);
   const globalExecutionsOffset = usePersonaStore((s) => s.globalExecutionsOffset);
+  const globalExecutionsWarning = usePersonaStore((s) => s.globalExecutionsWarning);
   const fetchGlobalExecutions = usePersonaStore((s) => s.fetchGlobalExecutions);
   const personas = usePersonaStore((s) => s.personas);
 
@@ -184,6 +185,12 @@ export default function GlobalExecutionList() {
             }
             summary={`Showing ${filteredExecutions.length} of ${globalExecutionsTotal}`}
           />
+
+          {globalExecutionsWarning && (
+            <div className="mx-4 md:mx-6 mt-3 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-sm text-amber-300/90" role="status" aria-live="polite">
+              {globalExecutionsWarning}
+            </div>
+          )}
 
           {/* Execution table */}
           <ContentBody flex>

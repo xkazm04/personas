@@ -1,0 +1,567 @@
+import type { ApiEndpoint } from '@/api/apiProxy';
+
+// ── Catalog-bundled API endpoints ────────────────────────────────────
+// Curated 5-10 most useful endpoints per connector, sourced from
+// official OpenAPI specs. These are merged with user-uploaded specs
+// in the API Explorer tab.
+
+type EP = ApiEndpoint;
+
+const p = (name: string, location: string, required: boolean, schema_type: string | null = 'string', description: string | null = null) =>
+  ({ name, location, required, schema_type, description });
+
+const pathP = (name: string, desc: string | null = null) => p(name, 'path', true, 'string', desc);
+const queryP = (name: string, required = false, desc: string | null = null) => p(name, 'query', required, 'string', desc);
+
+const ep = (method: string, path: string, summary: string, params: EP['parameters'] = [], tags: string[] = [], request_body: EP['request_body'] = null, description: string | null = null): EP =>
+  ({ method, path, summary, description, parameters: params, request_body, tags });
+
+const jsonBody = (required = true): EP['request_body'] =>
+  ({ content_type: 'application/json', schema_json: null, required });
+
+// ── GitHub ───────────────────────────────────────────────────────────
+
+const github: EP[] = [
+  ep('GET', '/user', 'Get authenticated user', [], ['Users']),
+  ep('GET', '/user/repos', 'List repositories for authenticated user', [
+    queryP('sort', false, 'created, updated, pushed, full_name'),
+    queryP('per_page', false, 'Results per page (max 100)'),
+  ], ['Repos']),
+  ep('GET', '/repos/{owner}/{repo}', 'Get a repository', [
+    pathP('owner'), pathP('repo'),
+  ], ['Repos']),
+  ep('GET', '/repos/{owner}/{repo}/issues', 'List issues', [
+    pathP('owner'), pathP('repo'),
+    queryP('state', false, 'open, closed, all'),
+    queryP('per_page'),
+  ], ['Issues']),
+  ep('POST', '/repos/{owner}/{repo}/issues', 'Create an issue', [
+    pathP('owner'), pathP('repo'),
+  ], ['Issues'], jsonBody(), 'Body: { "title": "...", "body": "...", "labels": [] }'),
+  ep('GET', '/repos/{owner}/{repo}/pulls', 'List pull requests', [
+    pathP('owner'), pathP('repo'),
+    queryP('state', false, 'open, closed, all'),
+  ], ['Pull Requests']),
+  ep('GET', '/repos/{owner}/{repo}/commits', 'List commits', [
+    pathP('owner'), pathP('repo'),
+    queryP('per_page'),
+  ], ['Commits']),
+  ep('GET', '/repos/{owner}/{repo}/actions/runs', 'List workflow runs', [
+    pathP('owner'), pathP('repo'),
+  ], ['Actions']),
+];
+
+// ── Slack ────────────────────────────────────────────────────────────
+
+const slack: EP[] = [
+  ep('POST', '/chat.postMessage', 'Send a message to a channel', [], ['Chat'], jsonBody(), 'Body: { "channel": "C01...", "text": "Hello!" }'),
+  ep('GET', '/conversations.list', 'List channels', [
+    queryP('types', false, 'public_channel, private_channel, mpim, im'),
+    queryP('limit', false, 'Max items (default 100)'),
+  ], ['Conversations']),
+  ep('GET', '/conversations.history', 'Get messages from a channel', [
+    queryP('channel', true, 'Channel ID'),
+    queryP('limit', false, 'Max messages'),
+  ], ['Conversations']),
+  ep('GET', '/users.list', 'List workspace users', [
+    queryP('limit'),
+  ], ['Users']),
+  ep('GET', '/users.info', 'Get user info', [
+    queryP('user', true, 'User ID'),
+  ], ['Users']),
+  ep('POST', '/conversations.create', 'Create a channel', [], ['Conversations'], jsonBody(), 'Body: { "name": "new-channel" }'),
+  ep('POST', '/reactions.add', 'Add a reaction', [], ['Reactions'], jsonBody(), 'Body: { "channel": "C01...", "name": "thumbsup", "timestamp": "..." }'),
+];
+
+// ── Discord ──────────────────────────────────────────────────────────
+
+const discord: EP[] = [
+  ep('GET', '/users/@me', 'Get current user', [], ['Users']),
+  ep('GET', '/users/@me/guilds', 'List current user guilds', [], ['Users']),
+  ep('GET', '/guilds/{guild_id}/channels', 'List guild channels', [
+    pathP('guild_id'),
+  ], ['Guilds']),
+  ep('POST', '/channels/{channel_id}/messages', 'Create message', [
+    pathP('channel_id'),
+  ], ['Messages'], jsonBody(), 'Body: { "content": "Hello!" }'),
+  ep('GET', '/channels/{channel_id}/messages', 'Get channel messages', [
+    pathP('channel_id'),
+    queryP('limit', false, 'Max messages (1-100)'),
+  ], ['Messages']),
+  ep('GET', '/guilds/{guild_id}/members', 'List guild members', [
+    pathP('guild_id'),
+    queryP('limit', false, 'Max members (1-1000)'),
+  ], ['Members']),
+];
+
+// ── Cloudflare ───────────────────────────────────────────────────────
+
+const cloudflare: EP[] = [
+  ep('GET', '/user/tokens/verify', 'Verify API token', [], ['User']),
+  ep('GET', '/zones', 'List zones', [
+    queryP('name', false, 'Zone name filter'),
+    queryP('per_page', false, 'Results per page'),
+  ], ['Zones']),
+  ep('GET', '/zones/{zone_id}/dns_records', 'List DNS records', [
+    pathP('zone_id'),
+    queryP('type', false, 'DNS record type (A, CNAME, etc.)'),
+  ], ['DNS']),
+  ep('POST', '/zones/{zone_id}/dns_records', 'Create DNS record', [
+    pathP('zone_id'),
+  ], ['DNS'], jsonBody(), 'Body: { "type": "A", "name": "example.com", "content": "1.2.3.4" }'),
+  ep('GET', '/accounts', 'List accounts', [], ['Accounts']),
+  ep('GET', '/zones/{zone_id}/analytics/dashboard', 'Get zone analytics', [
+    pathP('zone_id'),
+  ], ['Analytics']),
+];
+
+// ── Vercel ───────────────────────────────────────────────────────────
+
+const vercel: EP[] = [
+  ep('GET', '/v2/user', 'Get current user', [], ['User']),
+  ep('GET', '/v9/projects', 'List projects', [
+    queryP('limit'),
+  ], ['Projects']),
+  ep('GET', '/v13/deployments', 'List deployments', [
+    queryP('projectId', false, 'Filter by project'),
+    queryP('limit'),
+  ], ['Deployments']),
+  ep('GET', '/v9/projects/{idOrName}', 'Get project', [
+    pathP('idOrName', 'Project ID or name'),
+  ], ['Projects']),
+  ep('GET', '/v5/domains', 'List domains', [], ['Domains']),
+  ep('GET', '/v1/edge-config', 'List edge configs', [], ['Edge Config']),
+];
+
+// ── Netlify ──────────────────────────────────────────────────────────
+
+const netlify: EP[] = [
+  ep('GET', '/api/v1/user', 'Get current user', [], ['User']),
+  ep('GET', '/api/v1/sites', 'List sites', [], ['Sites']),
+  ep('GET', '/api/v1/sites/{site_id}', 'Get site', [
+    pathP('site_id'),
+  ], ['Sites']),
+  ep('GET', '/api/v1/sites/{site_id}/deploys', 'List deploys', [
+    pathP('site_id'),
+  ], ['Deploys']),
+  ep('GET', '/api/v1/sites/{site_id}/forms', 'List forms', [
+    pathP('site_id'),
+  ], ['Forms']),
+  ep('GET', '/api/v1/{account_slug}/builds', 'List builds', [
+    pathP('account_slug'),
+  ], ['Builds']),
+];
+
+// ── HubSpot ──────────────────────────────────────────────────────────
+
+const hubspot: EP[] = [
+  ep('GET', '/crm/v3/objects/contacts', 'List contacts', [
+    queryP('limit', false, 'Max results'),
+    queryP('properties', false, 'Comma-separated properties'),
+  ], ['CRM']),
+  ep('POST', '/crm/v3/objects/contacts', 'Create contact', [], ['CRM'], jsonBody(), 'Body: { "properties": { "email": "...", "firstname": "..." } }'),
+  ep('GET', '/crm/v3/objects/deals', 'List deals', [
+    queryP('limit'),
+  ], ['CRM']),
+  ep('POST', '/crm/v3/objects/deals', 'Create deal', [], ['CRM'], jsonBody(), 'Body: { "properties": { "dealname": "...", "amount": "..." } }'),
+  ep('GET', '/crm/v3/objects/companies', 'List companies', [
+    queryP('limit'),
+  ], ['CRM']),
+  ep('GET', '/crm/v3/owners', 'List owners', [], ['CRM']),
+  ep('POST', '/crm/v3/objects/contacts/search', 'Search contacts', [], ['CRM'], jsonBody(), 'Body: { "filterGroups": [...], "limit": 10 }'),
+];
+
+// ── Sentry ───────────────────────────────────────────────────────────
+
+const sentry: EP[] = [
+  ep('GET', '/organizations/{organization_slug}/', 'Get organization', [
+    pathP('organization_slug'),
+  ], ['Organizations']),
+  ep('GET', '/organizations/{organization_slug}/projects/', 'List projects', [
+    pathP('organization_slug'),
+  ], ['Projects']),
+  ep('GET', '/projects/{organization_slug}/{project_slug}/issues/', 'List issues', [
+    pathP('organization_slug'), pathP('project_slug'),
+    queryP('query', false, 'Search query'),
+  ], ['Issues']),
+  ep('GET', '/organizations/{organization_slug}/events/', 'List events', [
+    pathP('organization_slug'),
+  ], ['Events']),
+  ep('PUT', '/organizations/{organization_slug}/issues/{issue_id}/', 'Update issue', [
+    pathP('organization_slug'), pathP('issue_id'),
+  ], ['Issues'], jsonBody(), 'Body: { "status": "resolved" }'),
+  ep('GET', '/projects/{organization_slug}/{project_slug}/stats/', 'Get project stats', [
+    pathP('organization_slug'), pathP('project_slug'),
+  ], ['Projects']),
+];
+
+// ── PostHog ──────────────────────────────────────────────────────────
+
+const posthog: EP[] = [
+  ep('GET', '/api/projects/', 'List projects', [], ['Projects']),
+  ep('GET', '/api/projects/{id}/events/', 'List events', [
+    pathP('id', 'Project ID'),
+    queryP('limit'),
+  ], ['Events']),
+  ep('POST', '/api/projects/{id}/query/', 'Run HogQL query', [
+    pathP('id', 'Project ID'),
+  ], ['Query'], jsonBody(), 'Body: { "query": { "kind": "HogQLQuery", "query": "SELECT ..." } }'),
+  ep('GET', '/api/projects/{id}/feature_flags/', 'List feature flags', [
+    pathP('id', 'Project ID'),
+  ], ['Feature Flags']),
+  ep('GET', '/api/projects/{id}/insights/', 'List insights', [
+    pathP('id', 'Project ID'),
+  ], ['Insights']),
+  ep('GET', '/api/projects/{id}/persons/', 'List persons', [
+    pathP('id', 'Project ID'),
+  ], ['Persons']),
+];
+
+// ── SendGrid ─────────────────────────────────────────────────────────
+
+const sendgrid: EP[] = [
+  ep('POST', '/v3/mail/send', 'Send email', [], ['Mail'], jsonBody(), 'Body: { "personalizations": [{"to":[{"email":"..."}]}], "from":{"email":"..."}, "subject":"...", "content":[{"type":"text/plain","value":"..."}] }'),
+  ep('GET', '/v3/scopes', 'List access scopes', [], ['Auth']),
+  ep('GET', '/v3/templates', 'List templates', [
+    queryP('generations', false, 'legacy or dynamic'),
+  ], ['Templates']),
+  ep('GET', '/v3/marketing/contacts', 'List marketing contacts', [], ['Marketing']),
+  ep('GET', '/v3/stats', 'Get global send stats', [
+    queryP('start_date', true, 'YYYY-MM-DD'),
+  ], ['Stats']),
+  ep('GET', '/v3/suppression/bounces', 'List bounces', [], ['Suppressions']),
+];
+
+// ── Twilio SMS ───────────────────────────────────────────────────────
+
+const twilio_sms: EP[] = [
+  ep('POST', '/2010-04-01/Accounts/{AccountSid}/Messages.json', 'Send SMS', [
+    pathP('AccountSid'),
+  ], ['Messages'], jsonBody(), 'Body (form): To=+1234567890&From=+0987654321&Body=Hello'),
+  ep('GET', '/2010-04-01/Accounts/{AccountSid}/Messages.json', 'List messages', [
+    pathP('AccountSid'),
+    queryP('PageSize', false, 'Results per page'),
+  ], ['Messages']),
+  ep('GET', '/2010-04-01/Accounts/{AccountSid}/Messages/{MessageSid}.json', 'Get message', [
+    pathP('AccountSid'), pathP('MessageSid'),
+  ], ['Messages']),
+  ep('GET', '/2010-04-01/Accounts/{AccountSid}.json', 'Get account', [
+    pathP('AccountSid'),
+  ], ['Account']),
+  ep('GET', '/2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers.json', 'List phone numbers', [
+    pathP('AccountSid'),
+  ], ['Phone Numbers']),
+];
+
+// ── Jira ─────────────────────────────────────────────────────────────
+
+const jira: EP[] = [
+  ep('GET', '/rest/api/3/myself', 'Get current user', [], ['Users']),
+  ep('GET', '/rest/api/3/search', 'Search issues (JQL)', [
+    queryP('jql', true, 'JQL query string'),
+    queryP('maxResults', false, 'Max results'),
+  ], ['Search']),
+  ep('POST', '/rest/api/3/issue', 'Create issue', [], ['Issues'], jsonBody(), 'Body: { "fields": { "project": {"key":"PROJ"}, "summary": "...", "issuetype": {"name":"Task"} } }'),
+  ep('GET', '/rest/api/3/issue/{issueIdOrKey}', 'Get issue', [
+    pathP('issueIdOrKey'),
+  ], ['Issues']),
+  ep('PUT', '/rest/api/3/issue/{issueIdOrKey}', 'Update issue', [
+    pathP('issueIdOrKey'),
+  ], ['Issues'], jsonBody(), 'Body: { "fields": { "summary": "Updated" } }'),
+  ep('GET', '/rest/api/3/project', 'List projects', [], ['Projects']),
+  ep('GET', '/rest/api/3/issue/{issueIdOrKey}/transitions', 'Get transitions', [
+    pathP('issueIdOrKey'),
+  ], ['Issues']),
+];
+
+// ── Confluence ───────────────────────────────────────────────────────
+
+const confluence: EP[] = [
+  ep('GET', '/wiki/rest/api/space', 'List spaces', [
+    queryP('limit'),
+  ], ['Spaces']),
+  ep('GET', '/wiki/rest/api/content', 'List content', [
+    queryP('spaceKey', false, 'Space key filter'),
+    queryP('type', false, 'page or blogpost'),
+  ], ['Content']),
+  ep('POST', '/wiki/rest/api/content', 'Create content', [], ['Content'], jsonBody(), 'Body: { "type": "page", "title": "...", "space": {"key":"..."}, "body": {"storage":{"value":"...","representation":"storage"}} }'),
+  ep('GET', '/wiki/rest/api/content/{id}', 'Get content by ID', [
+    pathP('id'),
+    queryP('expand', false, 'body.storage, version, etc.'),
+  ], ['Content']),
+  ep('GET', '/wiki/rest/api/search', 'Search content (CQL)', [
+    queryP('cql', true, 'CQL query string'),
+  ], ['Search']),
+  ep('GET', '/wiki/rest/api/content/{id}/child/page', 'List child pages', [
+    pathP('id'),
+  ], ['Content']),
+];
+
+// ── CircleCI ─────────────────────────────────────────────────────────
+
+const circleci: EP[] = [
+  ep('GET', '/me', 'Get current user', [], ['User']),
+  ep('GET', '/project/{project-slug}/pipeline', 'List pipelines', [
+    pathP('project-slug', 'e.g. gh/owner/repo'),
+  ], ['Pipelines']),
+  ep('POST', '/project/{project-slug}/pipeline', 'Trigger pipeline', [
+    pathP('project-slug'),
+  ], ['Pipelines'], jsonBody(), 'Body: { "branch": "main", "parameters": {} }'),
+  ep('GET', '/pipeline/{pipeline-id}/workflow', 'List workflows', [
+    pathP('pipeline-id'),
+  ], ['Workflows']),
+  ep('GET', '/workflow/{id}/job', 'List jobs in workflow', [
+    pathP('id', 'Workflow ID'),
+  ], ['Jobs']),
+  ep('GET', '/project/{project-slug}', 'Get project', [
+    pathP('project-slug'),
+  ], ['Projects']),
+];
+
+// ── Figma ────────────────────────────────────────────────────────────
+
+const figma: EP[] = [
+  ep('GET', '/v1/me', 'Get current user', [], ['Users']),
+  ep('GET', '/v1/files/{key}', 'Get file', [
+    pathP('key', 'File key'),
+  ], ['Files']),
+  ep('GET', '/v1/files/{key}/comments', 'List comments', [
+    pathP('key', 'File key'),
+  ], ['Comments']),
+  ep('POST', '/v1/files/{key}/comments', 'Post comment', [
+    pathP('key', 'File key'),
+  ], ['Comments'], jsonBody(), 'Body: { "message": "...", "client_meta": {"x":0,"y":0} }'),
+  ep('GET', '/v1/images/{key}', 'Export images', [
+    pathP('key', 'File key'),
+    queryP('ids', true, 'Comma-separated node IDs'),
+    queryP('format', false, 'jpg, png, svg, pdf'),
+  ], ['Images']),
+  ep('GET', '/v1/teams/{team_id}/projects', 'List team projects', [
+    pathP('team_id'),
+  ], ['Teams']),
+  ep('GET', '/v1/projects/{project_id}/files', 'List project files', [
+    pathP('project_id'),
+  ], ['Projects']),
+];
+
+// ── Supabase ─────────────────────────────────────────────────────────
+
+const supabase: EP[] = [
+  ep('GET', '/v1/projects', 'List projects', [], ['Projects']),
+  ep('POST', '/v1/projects', 'Create project', [], ['Projects'], jsonBody(), 'Body: { "name": "...", "organization_id": "...", "db_pass": "...", "region": "us-east-1" }'),
+  ep('GET', '/v1/projects/{ref}', 'Get project', [
+    pathP('ref', 'Project reference ID'),
+  ], ['Projects']),
+  ep('GET', '/v1/projects/{ref}/functions', 'List edge functions', [
+    pathP('ref'),
+  ], ['Functions']),
+  ep('GET', '/v1/organizations', 'List organizations', [], ['Organizations']),
+  ep('GET', '/v1/projects/{ref}/api-keys', 'Get API keys', [
+    pathP('ref'),
+  ], ['Projects']),
+];
+
+// ── Neon ─────────────────────────────────────────────────────────────
+
+const neon: EP[] = [
+  ep('GET', '/projects', 'List projects', [], ['Projects']),
+  ep('POST', '/projects', 'Create project', [], ['Projects'], jsonBody(), 'Body: { "project": { "name": "...", "region_id": "aws-us-east-1" } }'),
+  ep('GET', '/projects/{project_id}', 'Get project', [
+    pathP('project_id'),
+  ], ['Projects']),
+  ep('GET', '/projects/{project_id}/branches', 'List branches', [
+    pathP('project_id'),
+  ], ['Branches']),
+  ep('POST', '/projects/{project_id}/branches', 'Create branch', [
+    pathP('project_id'),
+  ], ['Branches'], jsonBody(), 'Body: { "branch": { "name": "dev" }, "endpoints": [{"type":"read_write"}] }'),
+  ep('GET', '/projects/{project_id}/endpoints', 'List endpoints', [
+    pathP('project_id'),
+  ], ['Endpoints']),
+  ep('GET', '/projects/{project_id}/databases', 'List databases', [
+    pathP('project_id'),
+    pathP('branch_id'),
+  ], ['Databases']),
+];
+
+// ── ClickUp ──────────────────────────────────────────────────────────
+
+const clickup: EP[] = [
+  ep('GET', '/user', 'Get current user', [], ['User']),
+  ep('GET', '/team', 'List workspaces', [], ['Teams']),
+  ep('GET', '/team/{team_id}/space', 'List spaces', [
+    pathP('team_id'),
+  ], ['Spaces']),
+  ep('GET', '/space/{space_id}/list', 'List lists in space', [
+    pathP('space_id'),
+  ], ['Lists']),
+  ep('GET', '/list/{list_id}/task', 'List tasks', [
+    pathP('list_id'),
+  ], ['Tasks']),
+  ep('POST', '/list/{list_id}/task', 'Create task', [
+    pathP('list_id'),
+  ], ['Tasks'], jsonBody(), 'Body: { "name": "...", "description": "..." }'),
+  ep('GET', '/task/{task_id}', 'Get task', [
+    pathP('task_id'),
+  ], ['Tasks']),
+];
+
+// ── Resend ───────────────────────────────────────────────────────────
+
+const resend: EP[] = [
+  ep('POST', '/emails', 'Send email', [], ['Emails'], jsonBody(), 'Body: { "from": "you@example.com", "to": ["user@example.com"], "subject": "...", "html": "<p>...</p>" }'),
+  ep('GET', '/emails/{email_id}', 'Get email', [
+    pathP('email_id'),
+  ], ['Emails']),
+  ep('GET', '/domains', 'List domains', [], ['Domains']),
+  ep('POST', '/domains', 'Add domain', [], ['Domains'], jsonBody(), 'Body: { "name": "example.com" }'),
+  ep('GET', '/api-keys', 'List API keys', [], ['API Keys']),
+  ep('GET', '/audiences', 'List audiences', [], ['Audiences']),
+];
+
+// ── Mixpanel ─────────────────────────────────────────────────────────
+
+const mixpanel: EP[] = [
+  ep('GET', '/app/me', 'Get current user (service account)', [], ['Auth']),
+  ep('POST', '/import', 'Import events', [
+    queryP('project_id', true, 'Project ID'),
+  ], ['Ingestion'], jsonBody(), 'Body: [{ "event": "...", "properties": { "distinct_id": "...", "time": 123 } }]'),
+  ep('POST', '/engage#profile-set', 'Set user profile', [
+    queryP('project_id', true),
+  ], ['Profiles'], jsonBody(), 'Body: [{ "$distinct_id": "...", "$set": { "name": "..." } }]'),
+  ep('GET', '/api/2.0/export', 'Export raw events', [
+    queryP('from_date', true, 'YYYY-MM-DD'),
+    queryP('to_date', true, 'YYYY-MM-DD'),
+    queryP('project_id', true),
+  ], ['Export']),
+  ep('GET', '/api/2.0/engage', 'Query user profiles', [
+    queryP('project_id', true),
+  ], ['Profiles']),
+];
+
+// ── Twilio Segment ───────────────────────────────────────────────────
+
+const twilio_segment: EP[] = [
+  ep('GET', '/sources', 'List sources', [], ['Sources']),
+  ep('GET', '/sources/{sourceId}', 'Get source', [
+    pathP('sourceId'),
+  ], ['Sources']),
+  ep('GET', '/destinations', 'List destinations', [], ['Destinations']),
+  ep('GET', '/catalog/sources', 'List source catalog', [], ['Catalog']),
+  ep('GET', '/catalog/destinations', 'List destination catalog', [], ['Catalog']),
+  ep('GET', '/spaces', 'List spaces', [], ['Spaces']),
+];
+
+// ── PlanetScale ──────────────────────────────────────────────────────
+
+const planetscale: EP[] = [
+  ep('GET', '/v1/organizations', 'List organizations', [], ['Organizations']),
+  ep('GET', '/v1/organizations/{name}/databases', 'List databases', [
+    pathP('name', 'Organization name'),
+  ], ['Databases']),
+  ep('GET', '/v1/organizations/{name}/databases/{db_name}/branches', 'List branches', [
+    pathP('name'), pathP('db_name'),
+  ], ['Branches']),
+  ep('POST', '/v1/organizations/{name}/databases/{db_name}/branches', 'Create branch', [
+    pathP('name'), pathP('db_name'),
+  ], ['Branches'], jsonBody(), 'Body: { "name": "feature-branch", "parent_branch": "main" }'),
+  ep('GET', '/v1/organizations/{name}/databases/{db_name}/deploy-requests', 'List deploy requests', [
+    pathP('name'), pathP('db_name'),
+  ], ['Deploy Requests']),
+];
+
+// ── Notion (community spec) ─────────────────────────────────────────
+
+const notion: EP[] = [
+  ep('GET', '/v1/users/me', 'Get current user', [], ['Users']),
+  ep('POST', '/v1/search', 'Search pages and databases', [], ['Search'], jsonBody(), 'Body: { "query": "...", "filter": { "property": "object", "value": "page" } }'),
+  ep('POST', '/v1/databases/{database_id}/query', 'Query database', [
+    pathP('database_id'),
+  ], ['Databases'], jsonBody(), 'Body: { "filter": {...}, "sorts": [...] }'),
+  ep('POST', '/v1/pages', 'Create page', [], ['Pages'], jsonBody(), 'Body: { "parent": {"database_id":"..."}, "properties": {...} }'),
+  ep('GET', '/v1/pages/{page_id}', 'Get page', [
+    pathP('page_id'),
+  ], ['Pages']),
+  ep('PATCH', '/v1/pages/{page_id}', 'Update page', [
+    pathP('page_id'),
+  ], ['Pages'], jsonBody(), 'Body: { "properties": {...} }'),
+  ep('GET', '/v1/blocks/{block_id}/children', 'List block children', [
+    pathP('block_id'),
+  ], ['Blocks']),
+];
+
+// ── Calendly (community spec) ────────────────────────────────────────
+
+const calendly: EP[] = [
+  ep('GET', '/users/me', 'Get current user', [], ['Users']),
+  ep('GET', '/event_types', 'List event types', [
+    queryP('user', true, 'User URI'),
+  ], ['Event Types']),
+  ep('GET', '/scheduled_events', 'List scheduled events', [
+    queryP('user', true, 'User URI'),
+    queryP('min_start_time', false, 'ISO 8601'),
+    queryP('max_start_time', false, 'ISO 8601'),
+  ], ['Events']),
+  ep('GET', '/scheduled_events/{uuid}/invitees', 'List invitees', [
+    pathP('uuid', 'Event UUID'),
+  ], ['Events']),
+  ep('GET', '/organizations/{uuid}/memberships', 'List org memberships', [
+    pathP('uuid', 'Organization UUID'),
+  ], ['Organizations']),
+];
+
+// ── Telegram Bot API (community spec) ────────────────────────────────
+
+const telegram: EP[] = [
+  ep('POST', '/getMe', 'Get bot info', [], ['Bot']),
+  ep('POST', '/sendMessage', 'Send message', [], ['Messages'], jsonBody(), 'Body: { "chat_id": 123, "text": "Hello!" }'),
+  ep('POST', '/getUpdates', 'Get updates (long polling)', [], ['Updates'], jsonBody(), 'Body: { "offset": 0, "limit": 100, "timeout": 30 }'),
+  ep('POST', '/sendPhoto', 'Send photo', [], ['Messages'], jsonBody(), 'Body: { "chat_id": 123, "photo": "https://..." }'),
+  ep('POST', '/getChat', 'Get chat info', [], ['Chat'], jsonBody(), 'Body: { "chat_id": 123 }'),
+  ep('POST', '/getChatMemberCount', 'Get member count', [], ['Chat'], jsonBody(), 'Body: { "chat_id": 123 }'),
+];
+
+// ── Buffer (community spec) ─────────────────────────────────────────
+
+const buffer: EP[] = [
+  ep('GET', '/1/user.json', 'Get user', [], ['User']),
+  ep('GET', '/1/profiles.json', 'List profiles', [], ['Profiles']),
+  ep('GET', '/1/profiles/{id}/updates/pending.json', 'List pending updates', [
+    pathP('id', 'Profile ID'),
+  ], ['Updates']),
+  ep('POST', '/1/updates/create.json', 'Create update', [], ['Updates'], jsonBody(), 'Body: { "text": "...", "profile_ids": ["..."] }'),
+  ep('GET', '/1/profiles/{id}/schedules.json', 'Get posting schedule', [
+    pathP('id', 'Profile ID'),
+  ], ['Schedules']),
+];
+
+// ── Export ────────────────────────────────────────────────────────────
+
+export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
+  github,
+  slack,
+  discord,
+  cloudflare,
+  vercel,
+  netlify,
+  hubspot,
+  sentry,
+  posthog,
+  sendgrid,
+  twilio_sms,
+  jira,
+  confluence,
+  circleci,
+  figma,
+  supabase,
+  neon,
+  clickup,
+  resend,
+  mixpanel,
+  twilio_segment,
+  planetscale,
+  notion,
+  calendly,
+  telegram,
+  buffer,
+};

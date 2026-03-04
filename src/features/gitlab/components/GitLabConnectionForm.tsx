@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Loader2, LogIn, LogOut, ExternalLink } from 'lucide-react';
+import { DEPLOYMENT_TOKENS } from '@/features/deployment/components/deploymentTokens';
 
 interface GitLabConnectionFormProps {
   isConnected: boolean;
@@ -24,8 +25,8 @@ export function GitLabConnectionForm({
 
   if (isConnected) {
     return (
-      <div className="space-y-4">
-        <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
+      <div className={DEPLOYMENT_TOKENS.panelSpacing}>
+        <div className={`p-4 ${DEPLOYMENT_TOKENS.cardRadius} ${DEPLOYMENT_TOKENS.connectedBg} border ${DEPLOYMENT_TOKENS.connectedBorder}`}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center">
               <span className="text-lg font-bold text-emerald-400">
@@ -51,27 +52,31 @@ export function GitLabConnectionForm({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="p-4 rounded-xl bg-secondary/30 border border-primary/10">
-        <h3 className="text-sm font-medium text-foreground/90 mb-2">Personal Access Token</h3>
+    <div className={DEPLOYMENT_TOKENS.panelSpacing}>
+      <div className={`p-4 ${DEPLOYMENT_TOKENS.cardRadius} bg-secondary/30 border border-primary/10`}>
+        <h3 className={`text-sm font-medium text-foreground/90 ${DEPLOYMENT_TOKENS.sectionHeadingGap}`}>Personal Access Token</h3>
         <p className="text-sm text-muted-foreground/70 mb-3">
           Create a token at{' '}
-          <button
-            onClick={() => window.open('https://gitlab.com/-/user_settings/personal_access_tokens', '_blank')}
+          <a
+            href="https://gitlab.com/-/user_settings/personal_access_tokens"
+            target="_blank"
+            rel="noopener noreferrer"
             className="text-orange-400 hover:text-orange-300 inline-flex items-center gap-1"
           >
             GitLab Settings <ExternalLink className="w-3 h-3" />
-          </button>
+          </a>
           {' '}with <code className="text-sm px-1 py-0.5 bg-secondary/50 rounded">api</code> scope.
         </p>
 
         <div className="relative">
+          <label htmlFor="gitlab-token" className="sr-only">GitLab personal access token</label>
           <input
+            id="gitlab-token"
             type={showToken ? 'text' : 'password'}
             value={token}
             onChange={(e) => setToken(e.target.value)}
             placeholder="glpat-xxxxxxxxxxxxxxxxxxxx"
-            className="w-full px-3 py-2 pr-16 rounded-lg border border-primary/15 bg-background text-sm text-foreground/90 placeholder:text-muted-foreground/40 focus:outline-none focus:border-orange-500/40"
+            className={`w-full px-3 py-2 pr-16 rounded-lg border border-primary/15 bg-background text-sm text-foreground/90 placeholder:text-muted-foreground/40 focus:outline-none focus:border-orange-500/40 ${isConnecting ? 'border-orange-500/35 bg-orange-500/5' : ''}`}
             onKeyDown={(e) => e.key === 'Enter' && onConnect()}
           />
           <button

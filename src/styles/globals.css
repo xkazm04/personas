@@ -22,6 +22,14 @@
   --color-brand-amber: #fbbf24;
   --color-brand-rose: #f43f5e;
 
+  /* Dark-enough button background for white text — overridden per theme */
+  --color-btn-primary: #2563eb;
+
+  --radius-container: 1rem;
+  --radius-interactive: 0.75rem;
+  --radius-secondary: 0.5rem;
+  --radius-pill: 9999px;
+
   --font-sans: var(--font-geist-sans, ui-sans-serif, system-ui, sans-serif);
   --font-mono: var(--font-geist-mono, ui-monospace, monospace);
 }
@@ -137,6 +145,7 @@ input[type="number"] {
   --color-border: #164e63;
   --color-brand-cyan: #22d3ee;
   --color-brand-purple: #0ea5e9;
+  --color-btn-primary: #0e7490;
 }
 
 /* Dark: Bronze */
@@ -149,6 +158,7 @@ input[type="number"] {
   --color-border: #78350f;
   --color-brand-cyan: #f59e0b;
   --color-brand-amber: #fbbf24;
+  --color-btn-primary: #92400e;
 }
 
 /* Dark: Frost */
@@ -161,6 +171,7 @@ input[type="number"] {
   --color-border: #334155;
   --color-brand-cyan: #cbd5e1;
   --color-brand-purple: #94a3b8;
+  --color-btn-primary: #475569;
 }
 
 /* Dark: Purple */
@@ -173,6 +184,7 @@ input[type="number"] {
   --color-border: #4c1d95;
   --color-brand-purple: #c084fc;
   --color-brand-cyan: #8b5cf6;
+  --color-btn-primary: #6d28d9;
 }
 
 /* Dark: Pink */
@@ -185,6 +197,7 @@ input[type="number"] {
   --color-border: #831843;
   --color-brand-rose: #f472b6;
   --color-brand-purple: #db2777;
+  --color-btn-primary: #9d174d;
 }
 
 /* Dark: Red */
@@ -197,6 +210,7 @@ input[type="number"] {
   --color-border: #7f1d1d;
   --color-brand-rose: #f87171;
   --color-brand-amber: #f97316;
+  --color-btn-primary: #b91c1c;
 }
 
 /* Light — warm paper-like palette */
@@ -217,6 +231,7 @@ input[type="number"] {
   --color-brand-emerald: #059669;
   --color-brand-amber: #b45309;
   --color-brand-rose: #be123c;
+  --color-btn-primary: #1e40af;
 }
 
 [data-theme="light"] * {

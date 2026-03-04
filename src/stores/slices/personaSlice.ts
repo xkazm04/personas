@@ -87,18 +87,27 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
     try {
       const persona = await api.getPersona(id);
       if (seq !== fetchDetailSeq) return; // superseded by a newer request
-      // Assemble PersonaWithDetails from multiple IPC calls
-      const [allTools, triggers, subscriptions] = await Promise.all([
+      // Assemble PersonaWithDetails from multiple IPC calls.
+      // Triggers/subscriptions are non-critical and should not block editor load.
+      const [allToolsResult, triggersResult, subscriptionsResult] = await Promise.allSettled([
         api.listToolDefinitions(),
         api.listTriggers(id),
         api.listSubscriptions(id),
       ]);
       if (seq !== fetchDetailSeq) return; // superseded by a newer request
+
+      if (allToolsResult.status !== 'fulfilled') {
+        throw allToolsResult.reason;
+      }
+
+      const triggers = triggersResult.status === 'fulfilled' ? triggersResult.value : [];
+      const subscriptions = subscriptionsResult.status === 'fulfilled' ? subscriptionsResult.value : [];
+
       // Find tools assigned to this persona (cross-reference with persona_tools)
       // For now, use all tool definitions — actual assignment filtering can be refined
       const detail: PersonaWithDetails = {
         ...persona,
-        tools: allTools,
+        tools: allToolsResult.value,
         triggers,
         subscriptions,
       };

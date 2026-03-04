@@ -46,6 +46,14 @@ function findMatchingCredentials(
   return allCredentials.filter((c) => c.service_type === connectorName);
 }
 
+function gridColsClass(count: number): string {
+  if (count <= 1) return 'grid-cols-1';
+  if (count === 2) return 'grid-cols-2';
+  if (count === 3) return 'grid-cols-3';
+  if (count === 4) return 'grid-cols-4';
+  return 'grid-cols-5';
+}
+
 // ── Connector Dropdown ─────────────────────────────────────────────────
 
 function ConnectorDropdown({
@@ -300,7 +308,7 @@ function StandaloneConnectorTile({
 
   return (
     <div
-      className={`rounded-xl border p-2.5 transition-all ${MOTION.smooth.css} ${
+      className={`rounded-xl border p-3 transition-all ${MOTION.smooth.css} ${
         hasCredential ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-primary/10 bg-secondary/20'
       }`}
     >
@@ -311,7 +319,7 @@ function StandaloneConnectorTile({
           <AlertCircle className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" />
         )}
         <ConnectorIcon meta={meta} size="w-4 h-4" />
-        <span className="text-xs font-medium text-foreground/90 flex-1 truncate">{meta.label}</span>
+        <span className="text-xs font-semibold text-foreground/90 flex-1 truncate">{meta.label}</span>
       </div>
 
       <ThemedSelect
@@ -395,7 +403,13 @@ export function ConnectStep() {
   const handleInlineSaveSuccess = useCallback((connName: string, credName: string) => {
     if (justCreatedTimerRef.current) clearTimeout(justCreatedTimerRef.current);
     setJustCreated({ connector: connName, credName });
-    justCreatedTimerRef.current = setTimeout(() => setJustCreated(null), 1800);
+    justCreatedTimerRef.current = setTimeout(() => setJustCreated(null), 1500);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (justCreatedTimerRef.current) clearTimeout(justCreatedTimerRef.current);
+    };
   }, []);
   const configuredCount = useMemo(
     () => requiredConnectors.filter((c) => c.activeName === 'personas_messages' || !!connectorCredentialMap[c.activeName]).length,
@@ -494,13 +508,7 @@ export function ConnectStep() {
 
       {/* Architecture Component Cards */}
       {componentConnectors.length > 0 && (
-        <div className={`grid gap-3 ${
-          componentConnectors.length === 1 ? 'grid-cols-1' :
-          componentConnectors.length === 2 ? 'grid-cols-2' :
-          componentConnectors.length === 3 ? 'grid-cols-3' :
-          componentConnectors.length === 4 ? 'grid-cols-4' :
-          'grid-cols-5'
-        }`}>
+        <div className={`grid gap-3 ${gridColsClass(componentConnectors.length)}`}>
           {componentConnectors.map((connector) => (
             <ComponentCard
               key={connector.name}
@@ -531,11 +539,7 @@ export function ConnectStep() {
             </div>
           )}
           <div className={`grid gap-3 ${
-            standaloneConnectors.length === 1 ? 'grid-cols-1' :
-            standaloneConnectors.length === 2 ? 'grid-cols-2' :
-            standaloneConnectors.length === 3 ? 'grid-cols-3' :
-            standaloneConnectors.length === 4 ? 'grid-cols-4' :
-            'grid-cols-5'
+            gridColsClass(standaloneConnectors.length)
           }`}>
             {standaloneConnectors.map((connector) => (
               <StandaloneConnectorTile

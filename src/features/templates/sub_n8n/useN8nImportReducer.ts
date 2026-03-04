@@ -3,6 +3,7 @@ import type { N8nPersonaDraft, StreamingSection } from '@/api/n8nTransform';
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import type { WorkflowPlatform } from '@/lib/personas/workflowDetector';
+import { normalizeDraftFromUnknown } from './n8nTypes';
 
 // ── Wizard Steps ──
 
@@ -54,6 +55,7 @@ export interface N8nImportState {
   /** Detected source platform (n8n, zapier, make, github-actions) */
   platform: WorkflowPlatform;
   error: string | null;
+  sessionWarning: string | null;
 
   // Parse / Analyze
   parsedResult: AgentIR | null;
@@ -104,6 +106,7 @@ const INITIAL_STATE: N8nImportState = {
   workflowName: '',
   platform: 'n8n',
   error: null,
+  sessionWarning: null,
   parsedResult: null,
   selectedToolIndices: new Set(),
   selectedTriggerIndices: new Set(),
@@ -161,6 +164,7 @@ export type N8nImportAction =
   | { type: 'TEST_FAILED'; error: string }
   | { type: 'SET_ERROR'; error: string }
   | { type: 'CLEAR_ERROR' }
+  | { type: 'CLEAR_SESSION_WARNING' }
   | { type: 'GO_TO_STEP'; step: N8nWizardStep }
   | { type: 'RESTORE_CONTEXT'; workflowName: string; rawWorkflowJson: string; parsedResult: AgentIR | null; transformId: string }
   | { type: 'SESSION_CREATED'; sessionId: string }
@@ -180,6 +184,7 @@ export interface SessionLoadedPayload {
   transformId: string | null;
   userAnswers: Record<string, string>;
   transformSubPhase: TransformSubPhase;
+  recoveryWarning?: string | null;
 }
 
 // ── Helpers ──
@@ -235,6 +240,7 @@ function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nIm
     case 'QUESTIONS_GENERATED':
       return {
         ...state,
+        transforming: false,
         transformSubPhase: 'answering',
         questions: action.questions,
         // Pre-fill default answers
@@ -248,6 +254,7 @@ function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nIm
       // Stay on transform step — user can still generate with defaults
       return {
         ...state,
+        transforming: false,
         transformSubPhase: 'answering',
         questions: null,
         error: action.error || null,
@@ -283,6 +290,15 @@ function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nIm
       return { ...state, streamingSections: action.sections };
 
     case 'TRANSFORM_COMPLETED':
+      if (!normalizeDraftFromUnknown(action.draft) || !action.draft.system_prompt?.trim()) {
+        return {
+          ...state,
+          transforming: false,
+          transformSubPhase: 'failed',
+          transformPhase: 'failed',
+          error: 'Transform output was invalid. Please retry or refine your request.',
+        };
+      }
       return {
         ...state,
         step: 'edit',
@@ -374,6 +390,9 @@ function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nIm
     case 'CLEAR_ERROR':
       return { ...state, error: null };
 
+    case 'CLEAR_SESSION_WARNING':
+      return { ...state, sessionWarning: null };
+
     case 'GO_TO_STEP':
       return { ...state, step: action.step, error: null };
 
@@ -410,6 +429,7 @@ function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nIm
         questions: p.questions,
         userAnswers: p.userAnswers,
         backgroundTransformId: p.transformId,
+        sessionWarning: p.recoveryWarning ?? null,
         ...selections,
       };
     }

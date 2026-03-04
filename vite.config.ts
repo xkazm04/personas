@@ -10,6 +10,16 @@ export default defineConfig(async () => ({
 
   build: {
     sourcemap: "hidden",
+    chunkSizeWarningLimit: 5500,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "react-vendor": ["react", "react-dom", "zustand"],
+          "ui-vendor": ["framer-motion", "lucide-react"],
+          "tauri-vendor": ["@tauri-apps/api/core", "@tauri-apps/api/event"],
+        },
+      },
+    },
   },
 
   resolve: {

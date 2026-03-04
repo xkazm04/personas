@@ -195,12 +195,77 @@ function tokenizeRedis(text: string): Token[] {
   return tokens;
 }
 
+function tokenizeJson(text: string): Token[] {
+  const tokens: Token[] = [];
+  let i = 0;
+  while (i < text.length) {
+    const ch = text[i]!;
+
+    // Whitespace
+    if (/\s/.test(ch)) {
+      let ws = '';
+      while (i < text.length && /\s/.test(text[i]!)) { ws += text[i]!; i++; }
+      tokens.push({ type: 'text', value: ws });
+      continue;
+    }
+
+    // Strings
+    if (ch === '"') {
+      let str = '"';
+      i++;
+      while (i < text.length && text[i] !== '"') {
+        if (text[i] === '\\' && i + 1 < text.length) { str += text[i]! + text[i + 1]!; i += 2; }
+        else { str += text[i]!; i++; }
+      }
+      if (i < text.length) { str += '"'; i++; }
+      // Check if this is a key (followed by colon)
+      let j = i;
+      while (j < text.length && /\s/.test(text[j]!)) j++;
+      tokens.push({ type: j < text.length && text[j] === ':' ? 'keyword' : 'string', value: str });
+      continue;
+    }
+
+    // Numbers
+    if (/[-\d]/.test(ch)) {
+      let num = '';
+      if (ch === '-') { num += ch; i++; }
+      while (i < text.length && /[\d.eE+-]/.test(text[i]!)) { num += text[i]!; i++; }
+      tokens.push({ type: 'number', value: num });
+      continue;
+    }
+
+    // Keywords: true, false, null
+    if (/[tfn]/.test(ch)) {
+      const rest = text.slice(i);
+      const match = rest.match(/^(true|false|null)\b/);
+      if (match) {
+        tokens.push({ type: 'function', value: match[1]! });
+        i += match[1]!.length;
+        continue;
+      }
+    }
+
+    // Structural characters
+    if ('{}[]:,'.includes(ch)) {
+      tokens.push({ type: 'operator', value: ch });
+      i++;
+      continue;
+    }
+
+    tokens.push({ type: 'text', value: ch });
+    i++;
+  }
+  return tokens;
+}
+
 function tokenize(text: string, language: string): Token[] {
   switch (language) {
+    case 'json':
+      return tokenizeJson(text);
     case 'redis':
       return tokenizeRedis(text);
     case 'mongodb':
-      return tokenizeSql(text); // MongoDB queries use a JS-like syntax, but SQL tokenizer works reasonably well
+      return tokenizeSql(text);
     default:
       return tokenizeSql(text);
   }

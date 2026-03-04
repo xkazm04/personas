@@ -1,7 +1,7 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Zap, CheckCircle2, XCircle, TrendingUp } from 'lucide-react';
+import { Activity, Zap, CheckCircle2, XCircle, TrendingUp, EyeOff, Eye } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 
@@ -44,9 +44,56 @@ function Sparkline({ data }: { data: number[] }) {
 
 export default function PersonaHoverPreview({ personaId, triggerCount, anchorRef, visible }: PersonaHoverPreviewProps) {
   const healthMap = usePersonaStore(s => s.personaHealthMap);
+  const personas = usePersonaStore((s) => s.personas);
   const health: PersonaHealth | undefined = healthMap[personaId];
+  const persona = useMemo(() => personas.find((p) => p.id === personaId), [personas, personaId]);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const [isRevealed, setIsRevealed] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const isSensitive = Boolean(persona?.sensitive);
+
+  useEffect(() => {
+    if (!visible) {
+      setIsRevealed(false);
+      return;
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Alt') {
+        setIsRevealed(true);
+      }
+    };
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (event.key === 'Alt') {
+        setIsRevealed(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
+  }, [visible]);
+
+  useEffect(() => {
+    setIsRevealed(false);
+  }, [personaId]);
+
+  const isMasked = isSensitive && !isRevealed;
+
+  const modelLabel = useMemo(() => {
+    const raw = persona?.model_profile;
+    if (!raw) return 'Opus';
+    try {
+      const parsed = JSON.parse(raw) as { model?: string; provider?: string };
+      if (parsed.model && parsed.provider) {
+        return `${parsed.provider}:${parsed.model}`;
+      }
+      return parsed.model ?? 'Custom';
+    } catch {
+      return raw;
+    }
+  }, [persona?.model_profile]);
 
   // Position calculation
   const updatePosition = useCallback(() => {
@@ -106,9 +153,37 @@ export default function PersonaHoverPreview({ personaId, triggerCount, anchorRef
           style={{ top: pos.top, left: pos.left }}
           data-testid={`persona-hover-preview-${personaId}`}
         >
-          {!health ? (
-            <div className="flex items-center justify-center py-4">
-              <span className="text-sm text-muted-foreground/80">No data</span>
+          {isMasked ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-amber-300/90">
+                <EyeOff className="w-3.5 h-3.5" />
+                <span className="text-sm font-medium">Sensitive Preview Hidden</span>
+              </div>
+              <p className="text-sm text-muted-foreground/75">Details are masked for this persona.</p>
+              <div className="text-sm text-muted-foreground/65 flex items-center gap-1.5">
+                <Eye className="w-3.5 h-3.5" />
+                Hold <span className="font-mono text-foreground/80">Alt</span> to reveal
+              </div>
+            </div>
+          ) : !health ? (
+            <div className="space-y-2.5 py-1">
+              <p className="text-sm text-muted-foreground/80 line-clamp-3">
+                {persona?.description?.trim() || 'No description yet.'}
+              </p>
+
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span
+                  className="text-[10px] font-mono px-1.5 py-0.5 rounded-md border bg-primary/5 border-primary/15 text-muted-foreground/80 max-w-[170px] truncate"
+                  title={modelLabel}
+                >
+                  {modelLabel}
+                </span>
+                <span
+                  className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${persona?.enabled ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400/80' : 'bg-secondary/40 border-primary/15 text-muted-foreground/70'}`}
+                >
+                  {persona?.enabled ? 'Enabled' : 'Disabled'}
+                </span>
+              </div>
             </div>
           ) : (
             <div className="space-y-3">

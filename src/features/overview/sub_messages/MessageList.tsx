@@ -33,6 +33,15 @@ const FILTER_LABELS: Record<FilterType, string> = {
   high: 'High Priority',
 };
 
+const COLUMN_WIDTHS = {
+  persona: '180px',
+  priority: '90px',
+  status: '70px',
+  created: '100px',
+} as const;
+
+const GRID_TEMPLATE_COLUMNS = `${COLUMN_WIDTHS.persona} minmax(0,1fr) ${COLUMN_WIDTHS.priority} ${COLUMN_WIDTHS.status} ${COLUMN_WIDTHS.created}`;
+
 // ---------------------------------------------------------------------------
 // Delivery status config
 // ---------------------------------------------------------------------------
@@ -293,87 +302,87 @@ export default function MessageList() {
           </div>
         ) : (
           <div ref={parentRef} className="flex-1 overflow-y-auto">
-            <table className="w-full border-collapse">
-              <thead className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm">
-                <tr className="border-b border-primary/10">
-                  <th className="text-left text-[11px] text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5 w-[180px]">Persona</th>
-                  <th className="text-left text-[11px] text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Title</th>
-                  <th className="text-left text-[11px] text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5 w-[90px]">Priority</th>
-                  <th className="text-center text-[11px] text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5 w-[70px]">Status</th>
-                  <th className="text-right text-[11px] text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5 w-[100px]">Created</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td colSpan={5} style={{ padding: 0, border: 'none' }}>
-                    <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
-                      {virtualizer.getVirtualItems().map((virtualRow) => {
-                        const message = filteredMessages[virtualRow.index]!;
-                        const priority = priorityConfig[message.priority] ?? defaultPriority;
-                        return (
-                          <div
-                            key={message.id}
-                            role="row"
-                            onClick={() => handleRowClick(message)}
-                            style={{
-                              position: 'absolute',
-                              top: 0,
-                              transform: `translateY(${virtualRow.start}px)`,
-                              width: '100%',
-                              height: `${virtualRow.size}px`,
-                            }}
-                            className="flex items-center hover:bg-white/[0.03] cursor-pointer transition-colors border-b border-primary/[0.06]"
-                          >
-                            {/* Persona */}
-                            <div className="flex items-center gap-2 px-4 w-[180px] flex-shrink-0">
-                              <div
-                                className="w-6 h-6 rounded-md flex items-center justify-center text-sm border border-primary/15 flex-shrink-0"
-                                style={{ backgroundColor: (message.persona_color || '#6366f1') + '15' }}
-                              >
-                                {message.persona_icon || '?'}
-                              </div>
-                              <span className="text-sm text-muted-foreground/80 truncate">
-                                {message.persona_name || 'Unknown'}
-                              </span>
-                            </div>
+            <div role="grid" aria-rowcount={filteredMessages.length} aria-colcount={5} className="w-full">
+              <div
+                role="row"
+                className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-primary/10 grid"
+                style={{ gridTemplateColumns: GRID_TEMPLATE_COLUMNS }}
+              >
+                <div role="columnheader" className="text-left text-[11px] text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Persona</div>
+                <div role="columnheader" className="text-left text-[11px] text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Title</div>
+                <div role="columnheader" className="text-left text-[11px] text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Priority</div>
+                <div role="columnheader" className="text-center text-[11px] text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Status</div>
+                <div role="columnheader" className="text-right text-[11px] text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Created</div>
+              </div>
 
-                            {/* Title */}
-                            <div className="flex-1 px-4 min-w-0">
-                              <span className={`text-sm truncate block ${message.is_read ? 'text-foreground/80' : 'text-foreground/90 font-medium'}`}>
-                                {message.title || message.content.slice(0, 80)}
-                              </span>
-                            </div>
+              <div role="rowgroup" style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+                {virtualizer.getVirtualItems().map((virtualRow) => {
+                  const message = filteredMessages[virtualRow.index]!;
+                  const priority = priorityConfig[message.priority] ?? defaultPriority;
+                  return (
+                    <div
+                      key={message.id}
+                      role="row"
+                      tabIndex={0}
+                      onClick={() => handleRowClick(message)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          handleRowClick(message);
+                        }
+                      }}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        transform: `translateY(${virtualRow.start}px)`,
+                        width: '100%',
+                        height: `${virtualRow.size}px`,
+                        gridTemplateColumns: GRID_TEMPLATE_COLUMNS,
+                      }}
+                      className="grid items-center hover:bg-white/[0.03] cursor-pointer transition-colors border-b border-primary/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
+                    >
+                      <div role="gridcell" className="flex items-center gap-2 px-4 min-w-0">
+                        <div
+                          className="w-6 h-6 rounded-md flex items-center justify-center text-sm border border-primary/15 flex-shrink-0"
+                          style={{ backgroundColor: (message.persona_color || '#6366f1') + '15' }}
+                        >
+                          {message.persona_icon || '?'}
+                        </div>
+                        <span className="text-sm text-muted-foreground/80 truncate">
+                          {message.persona_name || 'Unknown'}
+                        </span>
+                      </div>
 
-                            {/* Priority */}
-                            <div className="px-4 w-[90px] flex-shrink-0">
-                              <span className={`inline-flex px-2 py-0.5 rounded-md text-xs font-medium border ${priority.bgColor} ${priority.color} ${priority.borderColor}`}>
-                                {priority.label}
-                              </span>
-                            </div>
+                      <div role="gridcell" className="px-4 min-w-0">
+                        <span className={`text-sm truncate block ${message.is_read ? 'text-foreground/80' : 'text-foreground/90 font-medium'}`}>
+                          {message.title || message.content.slice(0, 80)}
+                        </span>
+                      </div>
 
-                            {/* Status (read/unread dot) */}
-                            <div className="px-4 w-[70px] flex-shrink-0 flex justify-center">
-                              {!message.is_read ? (
-                                <div className="w-2.5 h-2.5 rounded-full bg-blue-500" title="Unread" />
-                              ) : (
-                                <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/20" title="Read" />
-                              )}
-                            </div>
+                      <div role="gridcell" className="px-4">
+                        <span className={`inline-flex px-2 py-0.5 rounded-md text-xs font-medium border ${priority.bgColor} ${priority.color} ${priority.borderColor}`}>
+                          {priority.label}
+                        </span>
+                      </div>
 
-                            {/* Created */}
-                            <div className="px-4 w-[100px] flex-shrink-0 text-right">
-                              <span className="text-xs text-muted-foreground/80">
-                                {formatRelativeTime(message.created_at)}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
+                      <div role="gridcell" className="px-4 flex justify-center">
+                        {!message.is_read ? (
+                          <div className="w-2.5 h-2.5 rounded-full bg-blue-500" title="Unread" aria-label="Unread message" />
+                        ) : (
+                          <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/20" title="Read" aria-hidden="true" />
+                        )}
+                      </div>
+
+                      <div role="gridcell" className="px-4 text-right">
+                        <span className="text-xs text-muted-foreground/80">
+                          {formatRelativeTime(message.created_at)}
+                        </span>
+                      </div>
                     </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                  );
+                })}
+              </div>
+            </div>
 
             {/* Load More */}
             {remaining > 0 && (

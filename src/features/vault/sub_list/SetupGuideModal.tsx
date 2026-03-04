@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ExternalLink, Plug } from 'lucide-react';
+import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { openExternalUrl } from '@/api/tauriApi';
 import type { ConnectorDefinition } from '@/lib/types/types';
 
@@ -65,7 +66,7 @@ export function SetupGuideModal({ connector, onClose }: SetupGuideModalProps) {
               }}
             >
               {connector.icon_url ? (
-                <img src={connector.icon_url} alt={connector.label} className="w-5 h-5" referrerPolicy="no-referrer" crossOrigin="anonymous" />
+                <ThemedConnectorIcon url={connector.icon_url} label={connector.label} color={connector.color} size="w-5 h-5" />
               ) : (
                 <Plug className="w-5 h-5" style={{ color: connector.color }} />
               )}

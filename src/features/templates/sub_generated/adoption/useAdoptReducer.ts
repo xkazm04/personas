@@ -5,6 +5,12 @@ import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import { useWizardReducer } from '@/hooks/useWizardReducer';
 import { getAdoptionRequirements, getDefaultValues } from './templateVariables';
 
+export interface AdoptEntityError {
+  entity_type: string;
+  entity_name: string;
+  error: string;
+}
+
 // ── Persistence ──
 
 export const ADOPT_CONTEXT_KEY = 'template-adopt-context-v1';
@@ -144,6 +150,7 @@ export interface AdoptState {
   // Create step
   confirming: boolean;
   created: boolean;
+  partialEntityErrors: AdoptEntityError[];
   showEditInline: boolean;
   error: string | null;
 
@@ -190,6 +197,7 @@ const INITIAL_STATE: AdoptState = {
   draftJsonError: null,
   confirming: false,
   created: false,
+  partialEntityErrors: [],
   showEditInline: false,
   error: null,
   autoResolved: false,

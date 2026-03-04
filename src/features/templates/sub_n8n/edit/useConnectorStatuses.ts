@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { mergeCredentialLink } from '@/features/shared/components/UseCasesList';
 import { matchCredentialToConnector } from './connectorMatching';
+import { buildConnectorRailItems } from './connectorHealth';
 import type { N8nPersonaDraft } from '@/api/n8nTransform';
+import type { CredentialMetadata } from '@/lib/types/types';
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -71,6 +73,39 @@ export function useConnectorStatuses({
   const [designInstruction, setDesignInstruction] = useState('');
   const [testingAll, setTestingAll] = useState(false);
   const [linkingConnector, setLinkingConnector] = useState<string | null>(null);
+  const autoTestedRef = useRef<Set<string>>(new Set());
+  const inFlightTestsRef = useRef<Set<string>>(new Set());
+
+  const credentialLinks = useMemo(() => {
+    const links: Record<string, string> = {};
+    for (const [connectorName, linked] of Object.entries(manualLinks ?? {})) {
+      links[connectorName] = linked.id;
+    }
+    return links;
+  }, [manualLinks]);
+
+  const connectorRailItems = useMemo(
+    () => buildConnectorRailItems(connectors, credentialLinks, credentials),
+    [connectors, credentialLinks, credentials],
+  );
+
+  const credentialsByServiceType = useMemo(() => {
+    const map = new Map<string, CredentialMetadata>();
+    for (const cred of credentials) {
+      if (!map.has(cred.service_type)) {
+        map.set(cred.service_type, cred);
+      }
+    }
+    return map;
+  }, [credentials]);
+
+  const updateStatus = useCallback((connectorName: string, updates: Partial<ConnectorStatus>) => {
+    setStatuses((prev) =>
+      prev.map((status) =>
+        status.name === connectorName ? { ...status, ...updates } : status,
+      ),
+    );
+  }, []);
 
   // Build connector statuses from draft + store data + manual links
   useEffect(() => {
@@ -80,7 +115,12 @@ export function useConnectorStatuses({
     }
     setStatuses((prev) =>
       connectors.map((conn) => {
-        const matchedCred = matchCredentialToConnector(credentials, conn.name);
+        const rail = connectorRailItems.find((item) => item.name === conn.name);
+        const linkedCredentialId = credentialLinks[conn.name];
+        const linkedCredential = linkedCredentialId
+          ? credentials.find((credential) => credential.id === linkedCredentialId)
+          : null;
+        const matchedCred = credentialsByServiceType.get(conn.name) ?? matchCredentialToConnector(credentials, conn.name);
         const matchedDef = connectorDefinitions.find((c) => c.name === conn.name);
         const existing = prev.find((p) => p.name === conn.name);
         const manual = manualLinks?.[conn.name];
@@ -88,15 +128,15 @@ export function useConnectorStatuses({
         return {
           name: conn.name,
           n8nType: conn.n8n_credential_type,
-          credentialId: existing?.credentialId ?? manual?.id ?? matchedCred?.id ?? null,
-          credentialName: existing?.credentialName ?? manual?.name ?? matchedCred?.name ?? null,
+          credentialId: existing?.credentialId ?? manual?.id ?? linkedCredentialId ?? matchedCred?.id ?? null,
+          credentialName: existing?.credentialName ?? manual?.name ?? linkedCredential?.name ?? rail?.credentialName ?? matchedCred?.name ?? null,
           hasConnectorDef: !!matchedDef,
           testing: existing?.testing ?? false,
           result: existing?.result ?? null,
         };
       }),
     );
-  }, [connectors, credentials, connectorDefinitions, manualLinks]);
+  }, [connectors, connectorRailItems, credentialLinks, credentials, credentialsByServiceType, connectorDefinitions, manualLinks]);
 
   // Fetch credentials and connector definitions on mount
   useEffect(() => {
@@ -104,36 +144,38 @@ export function useConnectorStatuses({
     void fetchConnectorDefinitions();
   }, [fetchCredentials, fetchConnectorDefinitions]);
 
+  const testConnector = useCallback(async (connectorName: string, credentialId: string) => {
+    if (inFlightTestsRef.current.has(connectorName)) return;
+    inFlightTestsRef.current.add(connectorName);
+    updateStatus(connectorName, { testing: true, result: null });
+    try {
+      const result = await healthcheckCredential(credentialId);
+      updateStatus(connectorName, { testing: false, result });
+    } catch (err) {
+      updateStatus(connectorName, {
+        testing: false,
+        result: { success: false, message: err instanceof Error ? err.message : 'Healthcheck failed' },
+      });
+    } finally {
+      inFlightTestsRef.current.delete(connectorName);
+    }
+  }, [healthcheckCredential, updateStatus]);
+
   // Auto-test connectors that have a credential but no result yet
-  const hasAutoTestedRef = useState<Set<string>>(() => new Set())[0];
   useEffect(() => {
     for (const status of statuses) {
-      if (status.credentialId && !status.result && !status.testing && !hasAutoTestedRef.has(status.name)) {
-        hasAutoTestedRef.add(status.name);
+      if (
+        status.credentialId
+        && !status.result
+        && !status.testing
+        && !autoTestedRef.current.has(status.name)
+        && !inFlightTestsRef.current.has(status.name)
+      ) {
+        autoTestedRef.current.add(status.name);
         void testConnector(status.name, status.credentialId);
       }
     }
-  }, [statuses]);
-
-  const testConnector = useCallback(async (connectorName: string, credentialId: string) => {
-    setStatuses((prev) =>
-      prev.map((s) => s.name === connectorName ? { ...s, testing: true, result: null } : s),
-    );
-    try {
-      const result = await healthcheckCredential(credentialId);
-      setStatuses((prev) =>
-        prev.map((s) => s.name === connectorName ? { ...s, testing: false, result } : s),
-      );
-    } catch (err) {
-      setStatuses((prev) =>
-        prev.map((s) =>
-          s.name === connectorName
-            ? { ...s, testing: false, result: { success: false, message: err instanceof Error ? err.message : 'Healthcheck failed' } }
-            : s,
-        ),
-      );
-    }
-  }, [healthcheckCredential]);
+  }, [statuses, testConnector]);
 
   const handleTestAll = useCallback(async () => {
     setTestingAll(true);

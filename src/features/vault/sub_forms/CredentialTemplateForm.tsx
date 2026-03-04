@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Plug, Server, Bot, ArrowLeft, ChevronDown, ChevronRight } from 'lucide-react';
+import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CredentialEditForm } from '@/features/vault/sub_forms/CredentialEditForm';
 import { McpPrefilledForm } from '@/features/vault/sub_schemas/McpPrefilledForm';
@@ -136,7 +137,7 @@ export function CredentialTemplateForm({
           }}
         >
           {selectedConnector.icon_url ? (
-            <img src={selectedConnector.icon_url} alt={selectedConnector.label} className="w-5 h-5" referrerPolicy="no-referrer" crossOrigin="anonymous" />
+            <ThemedConnectorIcon url={selectedConnector.icon_url} label={selectedConnector.label} color={selectedConnector.color} size="w-5 h-5" />
           ) : (
             <Plug className="w-5 h-5" style={{ color: selectedConnector.color }} />
           )}

@@ -77,13 +77,15 @@ export function GitLabAgentList({
           </div>
           <div className="flex items-center gap-1.5">
             {agent.webUrl && (
-              <button
-                onClick={() => window.open(agent.webUrl!, '_blank')}
+              <a
+                href={agent.webUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="p-1.5 rounded-md hover:bg-secondary/50 text-muted-foreground/60 hover:text-foreground/80 transition-colors"
                 title="Open in GitLab"
               >
                 <ExternalLink className="w-4 h-4" />
-              </button>
+              </a>
             )}
             <button
               onClick={() => onUndeploy(projectId, agent.id)}

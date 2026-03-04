@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
 import type { ConnectorDefinition } from '@/lib/types/types';
+import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 
 export const EMOJI_PRESETS = ['\u{1F916}', '\u{1F9E0}', '\u{26A1}', '\u{1F527}', '\u{1F4E7}', '\u{1F4CA}', '\u{1F6E1}\u{FE0F}', '\u{1F50D}'];
 
@@ -35,7 +36,7 @@ export function IconSelector({ value, onChange, connectors = [], size = 'md' }: 
             }`}
             title={c.label}
           >
-            <img src={c.icon_url!} alt={c.label} className={s.img} referrerPolicy="no-referrer" crossOrigin="anonymous" />
+            <ThemedConnectorIcon url={c.icon_url!} label={c.label} color={c.color} size={s.img} />
           </button>
         );
       })}

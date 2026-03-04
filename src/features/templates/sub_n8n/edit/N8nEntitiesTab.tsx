@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Link, CheckCircle2, AlertCircle, XCircle, Activity, Loader2, Plus, RefreshCw, ChevronDown, Star, Wrench, Zap } from 'lucide-react';
+import { Link, CheckCircle2, AlertCircle, XCircle, Activity, Loader2, Plus, RefreshCw, ChevronDown, Star, Wrench, Zap, ListChecks } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
@@ -121,8 +121,14 @@ export function N8nEntitiesTab({
 
   if (isEmpty) {
     return (
-      <div className="text-center py-8 text-muted-foreground/80 text-sm">
-        No entities selected. Go back to the Analyze step to select tools and triggers.
+      <div className="text-center py-12 space-y-2">
+        <ListChecks className="w-10 h-10 text-muted-foreground/40 mx-auto" />
+        <p className="text-sm font-medium text-muted-foreground/60">
+          No entities selected.
+        </p>
+        <p className="text-xs text-muted-foreground/60">
+          Go back to the Analyze step to select tools and triggers.
+        </p>
       </div>
     );
   }
@@ -198,7 +204,7 @@ export function N8nEntitiesTab({
 
       {/* ── General Tools (no connector required) ── */}
       {hasGeneralTools && (
-        <div className="bg-secondary/20 border border-primary/10 rounded-2xl p-4">
+        <div className="bg-secondary/20 border border-primary/10 rounded-xl p-4">
           <h5 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider mb-2.5">
             <Wrench className="w-3 h-3" />
             General Tools ({generalTools.length})
@@ -219,7 +225,7 @@ export function N8nEntitiesTab({
 
       {/* ── Triggers ── */}
       {hasTriggers && (
-        <div className="bg-secondary/20 border border-primary/10 rounded-2xl p-4">
+        <div className="bg-secondary/20 border border-primary/10 rounded-xl p-4">
           <h5 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider mb-2.5">
             <Zap className="w-3 h-3" />
             Triggers ({triggerItems.length})
@@ -227,7 +233,7 @@ export function N8nEntitiesTab({
           <div className="space-y-1.5">
             {triggerItems.map((trigger, i) => (
               <div key={i} className="flex items-center gap-2 text-sm text-foreground/90">
-                <span className="px-1.5 py-0.5 text-sm font-mono rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                <span className="px-1.5 py-0.5 text-sm font-mono rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
                   {trigger.trigger_type}
                 </span>
                 <span className="truncate">{trigger.description}</span>
@@ -239,7 +245,7 @@ export function N8nEntitiesTab({
 
       {/* Embedded credential design modal */}
       {cs.designOpen && (
-        <div className="mt-4 border border-violet-500/20 rounded-2xl">
+        <div className="mt-4 border border-violet-500/20 rounded-xl">
           <CredentialDesignModal
             open={cs.designOpen}
             embedded

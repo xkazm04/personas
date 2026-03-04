@@ -41,6 +41,8 @@ export function useDesignTabState() {
     setConversationId,
   } = usePersonaCompiler();
 
+  const prevPersonaIdRef = useRef<string | null>(null);
+
   const {
     conversations,
     activeConversationId,
@@ -81,12 +83,48 @@ export function useDesignTabState() {
   }, [phase, question, result, error, addQuestionMessage, addResultMessage, addErrorMessage]);
 
   useEffect(() => {
-    if (autoStartDesignInstruction && selectedPersona && phase === 'idle') {
-      setInstruction(autoStartDesignInstruction);
+    if (!autoStartDesignInstruction || !selectedPersona || phase !== 'idle') return;
+
+    const instructionText = autoStartDesignInstruction.trim();
+    if (!instructionText) {
       setAutoStartDesignInstruction(null);
-      compile(selectedPersona.id, autoStartDesignInstruction);
+      return;
     }
-  }, [autoStartDesignInstruction, selectedPersona, phase, setAutoStartDesignInstruction, compile]);
+
+    let cancelled = false;
+    const startAutoDesign = async () => {
+      setInstruction(instructionText);
+      setAutoStartDesignInstruction(null);
+
+      const hasContext = designContext.files.length > 0 || designContext.references.length > 0;
+      if (hasContext) {
+        await applyDesignContextMutation(selectedPersona.id, (ctx) => {
+          const existing = parseDesignContext(ctx);
+          return serializeDesignContext({ ...existing, designFiles: designContext });
+        });
+      }
+
+      const conv = await startConversation(instructionText);
+      if (cancelled) return;
+      const convId = conv?.id ?? null;
+      setConversationId(convId);
+      compile(selectedPersona.id, instructionText, convId);
+    };
+
+    void startAutoDesign();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    autoStartDesignInstruction,
+    selectedPersona,
+    phase,
+    setAutoStartDesignInstruction,
+    designContext,
+    startConversation,
+    setConversationId,
+    compile,
+  ]);
 
   const savedDesignResult = useMemo<DesignAnalysisResult | null>(() => {
     const parsed = parseJsonOrDefault<DesignAnalysisResult | null>(selectedPersona?.last_design_result, null);
@@ -104,6 +142,22 @@ export function useDesignTabState() {
     const ctx = parseDesignContext(selectedPersona?.design_context);
     setDesignContext(ctx.designFiles ?? { files: [], references: [] });
   }, [selectedPersona?.id]);
+
+  useEffect(() => {
+    const currentPersonaId = selectedPersona?.id ?? null;
+    if (prevPersonaIdRef.current === null) {
+      prevPersonaIdRef.current = currentPersonaId;
+      return;
+    }
+    if (prevPersonaIdRef.current !== currentPersonaId) {
+      reset();
+      clearActive();
+      setInstruction('');
+      setIntentMode(false);
+      setRefinementMessage('');
+    }
+    prevPersonaIdRef.current = currentPersonaId;
+  }, [selectedPersona?.id, reset, clearActive]);
 
   const resultId = result ? `${result.summary}-${result.suggested_tools.length}` : null;
   useEffect(() => {

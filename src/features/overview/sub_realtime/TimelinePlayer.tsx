@@ -95,6 +95,7 @@ const ActiveTimelineBar = memo(function ActiveTimelineBar({
 }: Props) {
   const trackRef = useRef<HTMLDivElement>(null);
   const fraction = totalMs > 0 ? cursorMs / totalMs : 0;
+  const percent = Math.round(fraction * 100);
 
   const eventTimestamps = useMemo(
     () => historicalEvents.map((e) => new Date(e.created_at).getTime()),
@@ -126,6 +127,32 @@ const ActiveTimelineBar = memo(function ActiveTimelineBar({
     onSetSpeed(next);
   }, [speed, onSetSpeed]);
 
+  const handleSliderKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    const step = 0.01;
+    switch (e.key) {
+      case 'ArrowLeft':
+      case 'ArrowDown':
+        e.preventDefault();
+        onSeek(Math.max(0, fraction - step));
+        break;
+      case 'ArrowRight':
+      case 'ArrowUp':
+        e.preventDefault();
+        onSeek(Math.min(1, fraction + step));
+        break;
+      case 'Home':
+        e.preventDefault();
+        onSeek(0);
+        break;
+      case 'End':
+        e.preventDefault();
+        onSeek(1);
+        break;
+      default:
+        break;
+    }
+  }, [fraction, onSeek]);
+
   const cursorTime = rangeStart + cursorMs;
 
   return (
@@ -140,8 +167,15 @@ const ActiveTimelineBar = memo(function ActiveTimelineBar({
       <div
         ref={trackRef}
         className="relative h-1.5 w-full cursor-pointer group"
+        role="slider"
+        tabIndex={0}
+        aria-label="Timeline position"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={percent}
         onClick={handleTrackClick}
         onMouseMove={handleTrackDrag}
+        onKeyDown={handleSliderKeyDown}
       >
         {/* Track background */}
         <div className="absolute inset-0 bg-primary/5" />
@@ -171,6 +205,7 @@ const ActiveTimelineBar = memo(function ActiveTimelineBar({
         {/* Play/Pause */}
         <button
           onClick={onTogglePlay}
+          aria-label={playing ? 'Pause replay' : 'Play replay'}
           className="flex items-center justify-center w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 transition-all active:scale-[0.93]"
         >
           {playing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" />}
@@ -179,6 +214,7 @@ const ActiveTimelineBar = memo(function ActiveTimelineBar({
         {/* Reset */}
         <button
           onClick={() => onSeek(0)}
+          aria-label="Reset timeline"
           className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/5 border border-primary/10 text-muted-foreground/50 hover:text-foreground/70 hover:bg-primary/10 transition-all active:scale-[0.93]"
           title="Reset to start"
         >
@@ -190,11 +226,12 @@ const ActiveTimelineBar = memo(function ActiveTimelineBar({
         {/* Speed selector */}
         <button
           onClick={cycleSpeed}
+          aria-label="Cycle playback speed"
           className="flex items-center gap-1 px-2 py-1 rounded-lg bg-purple-500/8 border border-purple-500/15 text-purple-300/80 hover:bg-purple-500/15 transition-all text-[11px] font-bold tracking-wide active:scale-[0.97]"
           title="Cycle playback speed"
         >
           <Gauge className="w-3 h-3" />
-          {speed}x
+          <span aria-live="polite">{speed}x</span>
         </button>
 
         <div className="w-px h-5 bg-primary/10" />
@@ -230,6 +267,7 @@ const ActiveTimelineBar = memo(function ActiveTimelineBar({
         {/* Exit replay */}
         <button
           onClick={onExitReplay}
+          aria-label="Exit replay"
           className="flex items-center justify-center w-7 h-7 rounded-lg bg-red-500/8 border border-red-500/15 text-red-400/60 hover:text-red-400 hover:bg-red-500/15 transition-all active:scale-[0.93]"
           title="Exit replay"
         >

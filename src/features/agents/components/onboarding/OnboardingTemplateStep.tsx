@@ -115,25 +115,39 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm pb-3 flex gap-1.5 flex-wrap">
           <button
             onClick={() => setActiveFilter('all')}
-            className={`px-2.5 py-1 text-sm font-medium rounded-lg border transition-colors ${
+            className={`relative px-2.5 py-1 text-sm font-medium rounded-lg border transition-colors ${
               activeFilter === 'all'
-                ? 'bg-primary/10 border-primary/25 text-foreground/80'
+                ? 'border-primary/25 text-foreground/80'
                 : 'border-primary/8 text-muted-foreground/45 hover:text-muted-foreground hover:border-primary/15'
             }`}
           >
-            All
+            {activeFilter === 'all' && (
+              <motion.div
+                layoutId="template-filter-pill"
+                className="absolute inset-0 bg-primary/10 rounded-lg"
+                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+              />
+            )}
+            <span className="relative z-10">All</span>
           </button>
           {FILTER_CATEGORIES.map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveFilter(cat)}
-              className={`px-2.5 py-1 text-sm font-medium rounded-lg border transition-colors ${
+              className={`relative px-2.5 py-1 text-sm font-medium rounded-lg border transition-colors ${
                 activeFilter === cat
-                  ? 'bg-primary/10 border-primary/25 text-foreground/80'
+                  ? 'border-primary/25 text-foreground/80'
                   : 'border-primary/8 text-muted-foreground/45 hover:text-muted-foreground hover:border-primary/15'
               }`}
             >
-              {CATEGORY_LABELS[cat] ?? cat}
+              {activeFilter === cat && (
+                <motion.div
+                  layoutId="template-filter-pill"
+                  className="absolute inset-0 bg-primary/10 rounded-lg"
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                />
+              )}
+              <span className="relative z-10">{CATEGORY_LABELS[cat] ?? cat}</span>
             </button>
           ))}
         </div>
