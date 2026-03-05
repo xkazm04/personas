@@ -33,6 +33,10 @@ pub struct AppState {
     /// PID of the CLI child process for the active credential design/negotiation.
     /// Used to kill the process when the user cancels.
     pub active_credential_design_child_pid: Arc<Mutex<Option<u32>>>,
+    /// Tracks the currently active automation design ID.
+    pub active_automation_design_id: Arc<Mutex<Option<String>>>,
+    /// PID of the CLI child process for the active automation design.
+    pub active_automation_design_child_pid: Arc<Mutex<Option<u32>>>,
     /// Authentication state (Supabase OAuth).
     pub auth: Arc<tokio::sync::Mutex<commands::infrastructure::auth::AuthStateInner>>,
     /// Cloud orchestrator HTTP client (None when not connected).
@@ -177,6 +181,8 @@ pub fn run() {
                 active_design_child_pid: Arc::new(Mutex::new(None)),
                 active_credential_design_id: Arc::new(Mutex::new(None)),
                 active_credential_design_child_pid: Arc::new(Mutex::new(None)),
+                active_automation_design_id: Arc::new(Mutex::new(None)),
+                active_automation_design_child_pid: Arc::new(Mutex::new(None)),
                 auth: auth.clone(),
                 cloud_client: Arc::new(tokio::sync::Mutex::new(cloud_client_opt)),
                 cloud_exec_ids: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
@@ -499,6 +505,26 @@ pub fn run() {
             // Credentials — MCP Tools
             commands::credentials::mcp_tools::list_mcp_tools,
             commands::credentials::mcp_tools::execute_mcp_tool,
+            // Recipes — CRUD & Linking
+            commands::recipes::crud::list_recipes,
+            commands::recipes::crud::get_recipe,
+            commands::recipes::crud::create_recipe,
+            commands::recipes::crud::update_recipe,
+            commands::recipes::crud::delete_recipe,
+            commands::recipes::crud::link_recipe_to_persona,
+            commands::recipes::crud::unlink_recipe_from_persona,
+            commands::recipes::crud::get_persona_recipes,
+            commands::recipes::crud::execute_recipe,
+            commands::recipes::crud::get_credential_recipes,
+            commands::recipes::crud::start_recipe_generation,
+            commands::recipes::crud::cancel_recipe_generation,
+            commands::recipes::crud::get_use_case_recipes,
+            commands::recipes::crud::promote_use_case_to_recipe,
+            commands::recipes::crud::get_recipe_versions,
+            commands::recipes::crud::start_recipe_versioning,
+            commands::recipes::crud::cancel_recipe_versioning,
+            commands::recipes::crud::accept_recipe_version,
+            commands::recipes::crud::revert_recipe_version,
             // Communication — Events
             commands::communication::events::list_events,
             commands::communication::events::list_events_in_range,
@@ -577,6 +603,29 @@ pub fn run() {
             commands::tools::tools::get_tool_usage_over_time,
             commands::tools::tools::get_tool_usage_by_persona,
             commands::tools::tools::invoke_tool_direct,
+            // Tools — Automations
+            commands::tools::automations::list_automations,
+            commands::tools::automations::get_automation,
+            commands::tools::automations::create_automation,
+            commands::tools::automations::update_automation,
+            commands::tools::automations::delete_automation,
+            commands::tools::automations::trigger_automation,
+            commands::tools::automations::test_automation_webhook,
+            commands::tools::automations::get_automation_runs,
+            // Tools — Automation Design (AI)
+            commands::tools::automation_design::start_automation_design,
+            commands::tools::automation_design::cancel_automation_design,
+            // Tools — n8n Platform
+            commands::tools::n8n_platform::n8n_list_workflows,
+            commands::tools::n8n_platform::n8n_activate_workflow,
+            commands::tools::n8n_platform::n8n_deactivate_workflow,
+            commands::tools::n8n_platform::n8n_create_workflow,
+            commands::tools::n8n_platform::n8n_trigger_webhook,
+            // Tools — GitHub Platform
+            commands::tools::github_platform::github_list_repos,
+            commands::tools::github_platform::github_check_permissions,
+            // Tools — Deploy Automation
+            commands::tools::deploy_automation::deploy_automation,
             // Tools — Triggers
             commands::tools::triggers::list_all_triggers,
             commands::tools::triggers::list_triggers,
