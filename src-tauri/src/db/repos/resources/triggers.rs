@@ -468,31 +468,10 @@ pub fn mark_triggered_with_hash(
 mod tests {
     use super::*;
     use crate::db::init_test_db;
-    use crate::db::models::CreatePersonaInput;
+    use crate::db::repos::test_fixtures;
 
     fn create_test_persona(pool: &DbPool) -> crate::db::models::Persona {
-        crate::db::repos::core::personas::create(
-            pool,
-            CreatePersonaInput {
-                name: "Trigger Test Agent".into(),
-                system_prompt: "You handle triggers.".into(),
-                project_id: None,
-                description: None,
-                structured_prompt: None,
-                icon: None,
-                color: None,
-                enabled: Some(true),
-                max_concurrent: None,
-                timeout_ms: None,
-                model_profile: None,
-                max_budget_usd: None,
-                max_turns: None,
-                design_context: None,
-                group_id: None,
-                notification_channels: None,
-            },
-        )
-        .unwrap()
+        test_fixtures::create_test_persona(pool, "Trigger Test Agent", "You handle triggers.")
     }
 
     #[test]

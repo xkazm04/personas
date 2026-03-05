@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Send, MessageCircleQuestion } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { TransformProgress } from '@/features/shared/components/TransformProgress';
@@ -23,6 +23,31 @@ export function DesignQuestionPanel({
   onCancelAnalysis,
 }: DesignQuestionPanelProps) {
   const [questionAnswer, setQuestionAnswer] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    textareaRef.current?.focus();
+  }, [question.question]);
+
+  useEffect(() => {
+    const options = question.options ?? [];
+    if (options.length === 0) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName.toLowerCase();
+      if (tag === 'input' || tag === 'textarea') return;
+      const idx = Number(event.key) - 1;
+      if (idx >= 0 && idx < Math.min(4, options.length)) {
+        event.preventDefault();
+        setQuestionAnswer('');
+        onAnswerQuestion(options[idx]!);
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [question.options, onAnswerQuestion]);
 
   return (
     <motion.div
@@ -65,7 +90,10 @@ export function DesignQuestionPanel({
                 }}
                 className="px-3.5 py-2 rounded-[var(--radius-secondary)] text-sm font-medium bg-accent/10 text-accent border border-accent/25 hover:bg-accent/20 hover:border-accent/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
               >
-                {option}
+                <span>{option}</span>
+                {i < 4 && (
+                  <span className="ml-2 text-sm border border-accent/30 rounded px-1 text-accent/70">{i + 1}</span>
+                )}
               </button>
             ))}
           </div>
@@ -81,12 +109,13 @@ export function DesignQuestionPanel({
         {/* Free-text input */}
         <div className="flex items-end gap-2">
           <textarea
+            ref={textareaRef}
             value={questionAnswer}
             onChange={(e) => setQuestionAnswer(e.target.value)}
             placeholder="Type a custom answer..."
             className="flex-1 min-h-[48px] max-h-[100px] bg-background/50 border border-primary/15 rounded-[var(--radius-interactive)] px-3 py-2 text-sm text-foreground font-sans resize-y focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/30 transition-all placeholder-muted-foreground/30"
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
+              if (e.key === 'Enter' && e.ctrlKey) {
                 e.preventDefault();
                 if (questionAnswer.trim()) {
                   onAnswerQuestion(questionAnswer.trim());
@@ -113,7 +142,7 @@ export function DesignQuestionPanel({
             Answer
           </button>
         </div>
-        <p className="text-[10px] text-muted-foreground/60">Press Enter to submit, Shift+Enter for new line.</p>
+        <p className="text-sm text-muted-foreground">Ctrl+Enter to submit</p>
       </div>
 
       {/* Cancel */}

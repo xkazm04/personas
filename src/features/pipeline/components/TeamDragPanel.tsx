@@ -22,7 +22,7 @@ export default function TeamDragPanel() {
 
   return (
     <div>
-      <div className="text-[10px] font-mono text-muted-foreground/60 uppercase tracking-widest px-1 mb-2">
+      <div className="text-sm font-mono text-muted-foreground/60 uppercase tracking-widest px-1 mb-2">
         Drag to canvas
       </div>
       <div className="space-y-0.5">
@@ -36,11 +36,11 @@ export default function TeamDragPanel() {
           >
             <GripVertical className="w-3 h-3 text-muted-foreground/30 group-hover:text-muted-foreground/50 shrink-0" />
             <PersonaAvatar icon={p.icon} color={p.color} size="sm" />
-            <span className="text-xs font-medium text-muted-foreground/90 truncate flex-1">
+            <span className="text-sm font-medium text-muted-foreground/90 truncate flex-1">
               {p.name}
             </span>
             {memberPersonaIds.has(p.id) && (
-              <span className="text-[10px] font-mono text-emerald-400/50 shrink-0">
+              <span className="text-sm font-mono text-emerald-400/50 shrink-0">
                 added
               </span>
             )}
@@ -48,7 +48,7 @@ export default function TeamDragPanel() {
         ))}
       </div>
       {personas.length === 0 && (
-        <div className="text-center py-6 text-xs text-muted-foreground/60">
+        <div className="text-center py-6 text-sm text-muted-foreground/60">
           No agents created yet
         </div>
       )}

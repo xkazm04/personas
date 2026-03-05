@@ -158,7 +158,7 @@ export function ToolCard({
             {hasImpact && (
               <button
                 onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
-                className="ml-auto inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs text-muted-foreground/60 hover:text-muted-foreground/90 hover:bg-primary/5 border border-transparent hover:border-primary/10 transition-all"
+                className="ml-auto inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-sm text-muted-foreground/60 hover:text-muted-foreground/90 hover:bg-primary/5 border border-transparent hover:border-primary/10 transition-all"
                 title={expanded ? 'Hide impact analysis' : 'Show impact analysis'}
               >
                 Impact
@@ -248,7 +248,7 @@ export function GroupedToolRow({
         {hasImpact && (
           <button
             onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
-            className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-xs text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-primary/5 transition-all flex-shrink-0"
+            className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-sm text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-primary/5 transition-all flex-shrink-0"
             title={expanded ? 'Hide impact' : 'Show impact'}
           >
             <motion.span

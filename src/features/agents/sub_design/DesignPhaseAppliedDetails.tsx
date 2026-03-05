@@ -80,7 +80,7 @@ export function DesignPhaseAppliedDetails({ result, onReset }: DesignPhaseApplie
           {stats.map((s) => (
             <span
               key={s.label}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-mono bg-secondary/50 border border-primary/10 text-muted-foreground/80"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm font-mono bg-secondary/50 border border-primary/10 text-muted-foreground/80"
             >
               <span className="text-foreground/90 font-semibold">{s.count}</span>
               {s.label}
@@ -96,7 +96,7 @@ export function DesignPhaseAppliedDetails({ result, onReset }: DesignPhaseApplie
         transition={{ delay: 0.4 }}
         className="w-full max-w-sm"
       >
-        <p className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-widest mb-2 text-center">
+        <p className="text-sm font-mono text-muted-foreground/50 uppercase tracking-widest mb-2 text-center">
           Next steps
         </p>
         <div className="space-y-1.5">
@@ -124,7 +124,7 @@ export function DesignPhaseAppliedDetails({ result, onReset }: DesignPhaseApplie
                   <div className="text-sm font-medium text-foreground/85 group-hover:text-foreground/95 transition-colors">
                     {step.title}
                   </div>
-                  <div className="text-xs text-muted-foreground/60">
+                  <div className="text-sm text-muted-foreground/60">
                     {step.description}
                   </div>
                 </div>

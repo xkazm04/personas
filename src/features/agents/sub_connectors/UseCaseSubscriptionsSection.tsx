@@ -234,10 +234,10 @@ export function UseCaseSubscriptionsSection() {
                 <ChevronDown className={`w-3 h-3 text-muted-foreground/50 transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
                 <span className="text-sm font-medium text-foreground/80 flex-1 truncate">{uc.title}</span>
                 {activeCount > 0 && (
-                  <span className="text-xs text-cyan-400/70">{activeCount} active</span>
+                  <span className="text-sm text-cyan-400/70">{activeCount} active</span>
                 )}
                 {activeCount === 0 && suggestedSubCount > 0 && (
-                  <span className="text-xs text-amber-400/70">{suggestedSubCount} suggested</span>
+                  <span className="text-sm text-amber-400/70">{suggestedSubCount} suggested</span>
                 )}
               </button>
 

@@ -700,13 +700,6 @@ pub async fn run_execution(
         );
     }
 
-    // Wait for process to exit
-    let exit_status = child.wait().await;
-    let duration_ms = start_time.elapsed().as_millis() as u64;
-
-    // Unregister child PID (process has exited)
-    child_pids.lock().await.remove(&execution_id);
-
     // Check timeout
     let timed_out = stream_result.is_err();
     if timed_out {
@@ -720,6 +713,13 @@ pub async fn run_execution(
             },
         );
     }
+
+    // Wait for process to exit (after timeout kill, if applicable)
+    let exit_status = child.wait().await;
+    let duration_ms = start_time.elapsed().as_millis() as u64;
+
+    // Unregister child PID (process has exited)
+    child_pids.lock().await.remove(&execution_id);
 
     let exit_code = exit_status.map(|s| s.code().unwrap_or(-1)).unwrap_or(-1);
 

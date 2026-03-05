@@ -209,13 +209,13 @@ function MetricDeltaCard({
   const pct = pctChange(leftVal, rightVal);
   return (
     <div className="bg-secondary/30 border border-primary/10 rounded-xl px-3 py-2.5 space-y-1">
-      <div className="text-[10px] uppercase tracking-wider text-muted-foreground/60 font-mono">{label}</div>
+      <div className="text-sm uppercase tracking-wider text-muted-foreground/60 font-mono">{label}</div>
       <div className="flex items-center gap-3">
         <span className="text-sm font-mono text-foreground/80">{format(leftVal)}</span>
         <span className="text-muted-foreground/40">→</span>
         <span className="text-sm font-mono text-foreground/80">{format(rightVal)}</span>
       </div>
-      <div className={`flex items-center gap-1 text-xs font-mono ${deltaColor(pct, lowerIsBetter)}`}>
+      <div className={`flex items-center gap-1 text-sm font-mono ${deltaColor(pct, lowerIsBetter)}`}>
         {deltaIcon(pct)}
         {fmtPct(pct)}
       </div>
@@ -253,18 +253,18 @@ function ToolTimelineComparison({
                   <Hash className="w-3 h-3 text-primary/50 flex-shrink-0" />
                   <span className="font-mono text-foreground/80 truncate">{l.tool_name}</span>
                   {l.duration_ms != null && (
-                    <span className="ml-auto text-xs font-mono text-muted-foreground/60">{formatDuration(l.duration_ms)}</span>
+                    <span className="ml-auto text-sm font-mono text-muted-foreground/60">{formatDuration(l.duration_ms)}</span>
                   )}
                 </>
               ) : (
-                <span className="text-muted-foreground/30 text-xs">—</span>
+                <span className="text-muted-foreground/30 text-sm">—</span>
               )}
             </div>
 
             {/* Delta badge */}
             <div className="w-16 text-center">
               {durDelta != null ? (
-                <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+                <span className={`text-sm font-mono px-1.5 py-0.5 rounded ${
                   Math.abs(durDelta) < 500 ? 'text-muted-foreground/50'
                     : durDelta < 0 ? 'text-emerald-400 bg-emerald-500/10'
                       : 'text-amber-400 bg-amber-500/10'
@@ -272,7 +272,7 @@ function ToolTimelineComparison({
                   {durDelta > 0 ? '+' : ''}{formatDuration(durDelta)}
                 </span>
               ) : l && r ? (
-                <span className="text-muted-foreground/30 text-xs">—</span>
+                <span className="text-muted-foreground/30 text-sm">—</span>
               ) : null}
             </div>
 
@@ -283,11 +283,11 @@ function ToolTimelineComparison({
                   <Hash className="w-3 h-3 text-primary/50 flex-shrink-0" />
                   <span className="font-mono text-foreground/80 truncate">{r.tool_name}</span>
                   {r.duration_ms != null && (
-                    <span className="ml-auto text-xs font-mono text-muted-foreground/60">{formatDuration(r.duration_ms)}</span>
+                    <span className="ml-auto text-sm font-mono text-muted-foreground/60">{formatDuration(r.duration_ms)}</span>
                   )}
                 </>
               ) : (
-                <span className="text-muted-foreground/30 text-xs">—</span>
+                <span className="text-muted-foreground/30 text-sm">—</span>
               )}
             </div>
           </div>
@@ -349,7 +349,7 @@ function OutputDiffSection({
         {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
         Terminal Output Diff
         {diff.length > 0 && (
-          <span className="text-xs text-muted-foreground/50">
+          <span className="text-sm text-muted-foreground/50">
             ({diff.filter(d => d.type !== 'same').length} differences)
           </span>
         )}
@@ -371,7 +371,7 @@ function OutputDiffSection({
             ) : diff.length === 0 ? (
               <p className="text-sm text-muted-foreground/50 py-3">No log data available</p>
             ) : (
-              <div className="max-h-64 overflow-y-auto rounded-lg border border-primary/10 bg-background/50 p-2 font-mono text-xs">
+              <div className="max-h-64 overflow-y-auto rounded-lg border border-primary/10 bg-background/50 p-2 font-mono text-sm">
                 {diff.map((d, i) => (
                   <div
                     key={i}
@@ -419,9 +419,9 @@ function JsonDiffSection({
         {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
         {label}
         {diffs.length > 0 ? (
-          <span className="text-xs text-amber-400/70">{diffs.length} diff{diffs.length > 1 ? 's' : ''}</span>
+          <span className="text-sm text-amber-400/70">{diffs.length} diff{diffs.length > 1 ? 's' : ''}</span>
         ) : (
-          <span className="text-xs text-muted-foreground/40">identical</span>
+          <span className="text-sm text-muted-foreground/40">identical</span>
         )}
       </button>
 
@@ -438,7 +438,7 @@ function JsonDiffSection({
             ) : (
               <div className="space-y-1.5 max-h-48 overflow-y-auto">
                 {diffs.map((d, i) => (
-                  <div key={i} className="grid grid-cols-[auto_1fr_1fr] gap-2 text-xs font-mono items-start">
+                  <div key={i} className="grid grid-cols-[auto_1fr_1fr] gap-2 text-sm font-mono items-start">
                     <span className="text-muted-foreground/50 py-1">{d.path}</span>
                     <div className="px-2 py-1 rounded bg-red-500/5 text-red-400/80 break-all">{d.left}</div>
                     <div className="px-2 py-1 rounded bg-emerald-500/5 text-emerald-400/80 break-all">{d.right}</div>
@@ -483,7 +483,7 @@ export function ExecutionComparison({ left, right, onClose }: ExecutionCompariso
       <div className="bg-primary/5 border border-primary/15 rounded-xl p-3">
         <div className="flex items-center gap-2 mb-2">
           <Zap className="w-3.5 h-3.5 text-primary/60" />
-          <span className="text-xs font-medium text-foreground/70 uppercase tracking-wider">What Changed</span>
+          <span className="text-sm font-medium text-foreground/70 uppercase tracking-wider">What Changed</span>
         </div>
         <ul className="space-y-1">
           {whatChanged.map((change, i) => (
@@ -499,25 +499,25 @@ export function ExecutionComparison({ left, right, onClose }: ExecutionCompariso
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-secondary/30 border border-primary/10 rounded-xl px-3 py-2">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-mono uppercase text-muted-foreground/50">Left</span>
-            <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${badgeClass(leftStatus)}`}>{leftStatus.label}</span>
+            <span className="text-sm font-mono uppercase text-muted-foreground/50">Left</span>
+            <span className={`px-1.5 py-0.5 rounded text-sm font-medium ${badgeClass(leftStatus)}`}>{leftStatus.label}</span>
             {left.retry_count > 0 && (
-              <span className="text-xs text-cyan-400 font-mono">retry #{left.retry_count}</span>
+              <span className="text-sm text-cyan-400 font-mono">retry #{left.retry_count}</span>
             )}
           </div>
-          <div className="text-xs text-muted-foreground/60 font-mono">#{left.id.slice(0, 8)}</div>
-          <div className="text-xs text-muted-foreground/40 mt-0.5">{formatTimestamp(left.started_at)}</div>
+          <div className="text-sm text-muted-foreground/60 font-mono">#{left.id.slice(0, 8)}</div>
+          <div className="text-sm text-muted-foreground/40 mt-0.5">{formatTimestamp(left.started_at)}</div>
         </div>
         <div className="bg-secondary/30 border border-primary/10 rounded-xl px-3 py-2">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-mono uppercase text-muted-foreground/50">Right</span>
-            <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${badgeClass(rightStatus)}`}>{rightStatus.label}</span>
+            <span className="text-sm font-mono uppercase text-muted-foreground/50">Right</span>
+            <span className={`px-1.5 py-0.5 rounded text-sm font-medium ${badgeClass(rightStatus)}`}>{rightStatus.label}</span>
             {right.retry_count > 0 && (
-              <span className="text-xs text-cyan-400 font-mono">retry #{right.retry_count}</span>
+              <span className="text-sm text-cyan-400 font-mono">retry #{right.retry_count}</span>
             )}
           </div>
-          <div className="text-xs text-muted-foreground/60 font-mono">#{right.id.slice(0, 8)}</div>
-          <div className="text-xs text-muted-foreground/40 mt-0.5">{formatTimestamp(right.started_at)}</div>
+          <div className="text-sm text-muted-foreground/60 font-mono">#{right.id.slice(0, 8)}</div>
+          <div className="text-sm text-muted-foreground/40 mt-0.5">{formatTimestamp(right.started_at)}</div>
         </div>
       </div>
 
@@ -554,7 +554,7 @@ export function ExecutionComparison({ left, right, onClose }: ExecutionCompariso
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Hash className="w-3.5 h-3.5 text-primary/50" />
-            <span className="text-xs font-medium text-foreground/70 uppercase tracking-wider">Tool Call Timeline</span>
+            <span className="text-sm font-medium text-foreground/70 uppercase tracking-wider">Tool Call Timeline</span>
           </div>
           <ToolTimelineComparison stepsLeft={stepsLeft} stepsRight={stepsRight} />
         </div>

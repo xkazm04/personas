@@ -47,7 +47,7 @@ export function WizardStepper({ steps, currentIndex }: WizardStepperProps) {
                   />
                 )}
                 <motion.div
-                  className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors relative z-10 ${
+                  className={`w-5 h-5 rounded-full flex items-center justify-center text-sm font-bold transition-colors relative z-10 ${
                     isCompleted
                       ? 'bg-emerald-500/40 text-emerald-200'
                       : isActive
@@ -71,7 +71,7 @@ export function WizardStepper({ steps, currentIndex }: WizardStepperProps) {
       </div>
 
       {/* Active step label below */}
-      <span className="text-[11px] text-muted-foreground/70 font-medium">
+      <span className="text-sm text-muted-foreground/70 font-medium">
         {steps[currentIndex]?.label}
       </span>
     </div>

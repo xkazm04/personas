@@ -15,6 +15,7 @@ import type { PersonaDraft } from '@/features/agents/sub_editor/PersonaDraft';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { SectionHeader } from '@/features/shared/components/SectionHeader';
 import EmptyState from '@/features/shared/components/EmptyState';
+import { LinkedRecipesSection } from '@/features/recipes/sub_list/LinkedRecipesSection';
 
 const MemoUseCaseRow = memo(UseCaseRow);
 
@@ -168,6 +169,9 @@ export function PersonaUseCasesTab({ draft, patch, modelDirty, credentials, conn
           </div>
         </div>
       )}
+
+      {/* Linked Recipes */}
+      <LinkedRecipesSection personaId={personaId} />
 
       {/* Direct Tool Testing */}
       {(selectedPersona?.tools?.length ?? 0) > 0 && (

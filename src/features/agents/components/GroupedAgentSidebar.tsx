@@ -308,9 +308,14 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
         {/* Drag overlay */}
         <DragOverlay>
           {activePersona && (
-            <div className="opacity-80 pointer-events-none">
+            <motion.div
+              className="opacity-85 pointer-events-none"
+              initial={{ rotate: 0, scale: 1 }}
+              animate={{ rotate: 2, scale: 1.01 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 24 }}
+            >
               <SidebarPersonaCard persona={activePersona} isSelected={false} onClick={() => {}} />
-            </div>
+            </motion.div>
           )}
           {activeGroup && (
             <div className="opacity-80 pointer-events-none rounded-xl border border-primary/20 bg-secondary/40 px-3 py-2 flex items-center gap-2">
@@ -327,7 +332,7 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
           <p>No agents match your filters</p>
           <button
             onClick={clearFilters}
-            className="mt-2 text-xs text-primary/70 hover:text-primary transition-colors"
+            className="mt-2 text-sm text-primary/70 hover:text-primary transition-colors"
           >
             Clear all filters
           </button>

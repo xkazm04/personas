@@ -54,7 +54,7 @@ export function BackgroundBanners({
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-sm font-medium text-violet-300 block">Template adoption in progress</span>
-              <span className="text-xs text-muted-foreground/80">Click to view progress</span>
+              <span className="text-sm text-muted-foreground/80">Click to view progress</span>
             </div>
             <div className="w-2 h-2 rounded-full bg-violet-400 animate-pulse flex-shrink-0" />
           </button>
@@ -75,7 +75,7 @@ export function BackgroundBanners({
               <span className="text-sm font-medium text-blue-300 block">
                 Rebuilding: {rebuildReviewName ?? 'template'}
               </span>
-              <span className="text-xs text-muted-foreground/80">Click to view progress</span>
+              <span className="text-sm text-muted-foreground/80">Click to view progress</span>
             </div>
             <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse flex-shrink-0" />
           </button>
@@ -96,7 +96,7 @@ export function BackgroundBanners({
               <span className="text-sm font-medium text-cyan-300 block">
                 Testing: {previewReviewName ?? 'template'}
               </span>
-              <span className="text-xs text-muted-foreground/80">Click to view output</span>
+              <span className="text-sm text-muted-foreground/80">Click to view output</span>
             </div>
             <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse flex-shrink-0" />
           </button>

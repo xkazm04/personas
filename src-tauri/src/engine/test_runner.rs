@@ -230,8 +230,8 @@ pub async fn run_test(
                 ));
             }
 
-            // Write result to DB
-            let _ = repo::create_result(
+            // Write result to DB. Persistence failures are fatal for run integrity.
+            if let Err(e) = repo::create_result(
                 &pool,
                 &CreateTestResultInput {
                     test_run_id: run_id.clone(),
@@ -254,7 +254,36 @@ pub async fn run_test(
                     duration_ms: scores.duration_ms,
                     error_message: scores.error_message.clone(),
                 },
-            );
+            ) {
+                let msg = format!("Failed to persist test result: {e}");
+                let _ = repo::update_run_status(
+                    &pool,
+                    &run_id,
+                    "failed",
+                    Some(scenario_count as i32),
+                    None,
+                    None,
+                    Some(msg.as_str()),
+                );
+                let _ = app.emit(
+                    "test-run-status",
+                    TestRunStatusEvent {
+                        run_id: run_id.clone(),
+                        phase: "failed".into(),
+                        scenarios_count: Some(scenario_count),
+                        current: Some(current),
+                        total: Some(total),
+                        model_id: Some(model.id.clone()),
+                        scenario_name: Some(scenario.name.clone()),
+                        status: Some("error".into()),
+                        scores: None,
+                        summary: None,
+                        error: Some(msg),
+                        scenarios: None,
+                    },
+                );
+                return;
+            }
 
             // Emit progress
             let _ = app.emit(

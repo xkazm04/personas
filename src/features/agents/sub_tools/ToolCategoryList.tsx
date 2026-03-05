@@ -1,4 +1,4 @@
-import { Check, CheckCircle, AlertCircle } from 'lucide-react';
+import { Check, CheckCircle, AlertCircle, Search, Wrench } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { ToolCard, GroupedToolRow } from './ToolCardItems';
 import type { ToolDef } from './ToolCardItems';
@@ -16,6 +16,9 @@ interface ToolCategoryListProps {
   justToggledId: string | null;
   isSearching: boolean;
   searchQuery: string;
+  assignedCount: number;
+  onClearSearch: () => void;
+  onBrowseTools: () => void;
   onToggleTool: (toolId: string, toolName: string, isAssigned: boolean) => void;
   onBulkToggle: (tools: ToolDef[], allAssigned: boolean) => void;
   onAddCredential: () => void;
@@ -24,8 +27,37 @@ interface ToolCategoryListProps {
 export function ToolCategoryList({
   viewMode, filteredTools, connectorGroups, assignedToolIds,
   credentialTypeSet, credentialLabel, usageByTool, impactDataMap, justToggledId,
-  isSearching, searchQuery, onToggleTool, onBulkToggle, onAddCredential,
+  isSearching, assignedCount, onClearSearch, onBrowseTools, onToggleTool, onBulkToggle, onAddCredential,
 }: ToolCategoryListProps) {
+  const showSearchEmpty = filteredTools.length === 0 && isSearching;
+  const showUnassignedEmpty = filteredTools.length === 0 && !isSearching && assignedCount === 0;
+
+  const emptyState = showSearchEmpty ? (
+    <div className="py-16 flex flex-col items-center justify-center text-center">
+      <Search className="w-10 h-10 text-muted-foreground/50 mb-3" />
+      <p className="text-sm text-muted-foreground">No tools matching query</p>
+      <button
+        onClick={onClearSearch}
+        className="mt-3 text-sm px-2.5 py-1 rounded-md border border-primary/20 text-primary/80 hover:bg-primary/10 transition-colors"
+      >
+        Clear filter
+      </button>
+    </div>
+  ) : showUnassignedEmpty ? (
+    <div className="py-16 flex flex-col items-center justify-center text-center">
+      <Wrench className="w-10 h-10 text-muted-foreground/50 mb-3" />
+      <p className="text-sm text-muted-foreground">No tools assigned yet</p>
+      <button
+        onClick={onBrowseTools}
+        className="mt-3 text-sm px-2.5 py-1 rounded-md border border-primary/15 text-muted-foreground/80 hover:text-foreground/80 hover:bg-secondary/40 transition-colors"
+      >
+        Browse available tools
+      </button>
+    </div>
+  ) : filteredTools.length === 0 ? (
+    <div className="text-center py-8 text-muted-foreground/80 text-sm">No tools available</div>
+  ) : null;
+
   if (viewMode === 'grid') {
     return (
       <>
@@ -50,11 +82,7 @@ export function ToolCategoryList({
             );
           })}
         </div>
-        {filteredTools.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground/80 text-sm">
-            {isSearching ? `No tools matching "${searchQuery.trim()}"` : 'No tools found in this category'}
-          </div>
-        )}
+        {emptyState}
       </>
     );
   }
@@ -79,11 +107,7 @@ export function ToolCategoryList({
           />
         ))}
       </div>
-      {filteredTools.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground/80 text-sm">
-          {isSearching ? `No tools matching "${searchQuery.trim()}"` : 'No tools available'}
-        </div>
-      )}
+      {emptyState}
     </>
   );
 }

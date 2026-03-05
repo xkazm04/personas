@@ -99,12 +99,12 @@ export function GitLabDeployModal({
                 Provision API credentials
               </span>
             </div>
-            <p className="text-xs text-muted-foreground/70 mt-1">
+            <p className="text-sm text-muted-foreground/70 mt-1">
               Securely push this persona&apos;s tool credentials to the GitLab project as
               masked CI/CD variables. The agent will access them as environment variables at runtime.
             </p>
             {provisionCredentials && (
-              <div className="mt-2 flex items-start gap-1.5 text-xs text-amber-400/80">
+              <div className="mt-2 flex items-start gap-1.5 text-sm text-amber-400/80">
                 <ShieldCheck className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                 <span>
                   Credentials are transmitted over HTTPS and stored as masked, protected

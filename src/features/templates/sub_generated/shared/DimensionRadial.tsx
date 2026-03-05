@@ -268,7 +268,7 @@ export function DimensionRadial({ designResult, size = 32, className = '' }: Dim
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.97 }}
             transition={MOTION.snappy.framer}
-            className={`absolute ${placementClasses(placement)} z-50 px-3 py-2 rounded-lg bg-background border border-primary/20 shadow-xl text-xs whitespace-nowrap`}
+            className={`absolute ${placementClasses(placement)} z-50 px-3 py-2 rounded-lg bg-background border border-primary/20 shadow-xl text-sm whitespace-nowrap`}
             data-testid="dimension-radial-tooltip"
           >
             {filled.length > 0 && (

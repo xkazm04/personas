@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ListChecks, FileText, Link, Settings, FlaskConical, Wand2 } from 'lucide-react';
+import { ListChecks, FileText, Link, Settings, FlaskConical, Wand2, Check } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { EditorTab } from '@/lib/types/types';
 
@@ -15,6 +15,34 @@ const tabDefs: Array<{ id: EditorTab; label: string; icon: typeof FileText }> = 
 interface EditorTabBarProps {
   dirtyTabs: string[];
   connectorsMissing: number;
+}
+
+type TabBadgeVariant = 'dirty' | 'attention' | 'error' | 'success';
+
+function TabBadge({ variant, count }: { variant: TabBadgeVariant; count?: number }) {
+  if (variant === 'error') {
+    return (
+      <span className="ml-auto min-w-4 h-4 px-1 rounded-full bg-red-500/15 border border-red-500/25 text-red-400 text-sm leading-4 text-center">
+        {count ?? '!'}
+      </span>
+    );
+  }
+  if (variant === 'success') {
+    return (
+      <span className="ml-auto w-4 h-4 rounded-full bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center">
+        <Check className="w-2.5 h-2.5 text-emerald-400" />
+      </span>
+    );
+  }
+  if (variant === 'attention') {
+    return (
+      <span className="ml-auto relative flex h-1.5 w-1.5">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
+        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-violet-500" />
+      </span>
+    );
+  }
+  return <span className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />;
 }
 
 export function EditorTabBar({ dirtyTabs, connectorsMissing }: EditorTabBarProps) {
@@ -40,16 +68,15 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing }: EditorTabBarProps
             >
               <Icon className="w-4 h-4" />
               {tab.label}
-              {tabDirty && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />}
-              {tab.id === 'connectors' && connectorsMissing > 0 && (
-                <span className="w-2 h-2 rounded-full bg-orange-400 flex-shrink-0" />
-              )}
-              {tab.id === 'design' && showDesignNudge && !isActive && (
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500" />
-                </span>
-              )}
+              {tab.id === 'connectors' && connectorsMissing > 0
+                ? <TabBadge variant="error" count={connectorsMissing} />
+                : tab.id === 'design' && showDesignNudge && !isActive
+                  ? <TabBadge variant="attention" />
+                  : tabDirty
+                    ? <TabBadge variant="dirty" />
+                    : isActive && !tabDirty
+                      ? <TabBadge variant="success" />
+                      : null}
               {isActive && (
                 <motion.div
                   layoutId="personaEditorTab"

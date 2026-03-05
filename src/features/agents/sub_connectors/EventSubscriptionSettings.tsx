@@ -171,7 +171,7 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
                         animate={{ opacity: 1, scale: [1, 1.04, 1] }}
                         exit={{ opacity: 0, scale: 0.9 }}
                         transition={{ duration: 0.2 }}
-                        className="text-xs font-semibold text-red-400"
+                        className="text-sm font-semibold text-red-400"
                       >
                         Confirm?
                       </motion.span>

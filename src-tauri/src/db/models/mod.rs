@@ -24,6 +24,8 @@ mod platform_definition;
 mod knowledge;
 mod team_memory;
 mod db_schema;
+mod recipe;
+mod automation;
 
 pub use persona::*;
 pub use tool::*;
@@ -51,3 +53,5 @@ pub use platform_definition::*;
 pub use knowledge::*;
 pub use team_memory::*;
 pub use db_schema::*;
+pub use recipe::*;
+pub use automation::*;

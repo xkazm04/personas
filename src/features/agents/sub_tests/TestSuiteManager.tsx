@@ -273,7 +273,7 @@ export function TestSuiteManager({
                                 {scenario.expectedToolSequence && scenario.expectedToolSequence.length > 0 && (
                                   <div className="flex flex-wrap gap-1 mt-1.5">
                                     {scenario.expectedToolSequence.map((tool) => (
-                                      <span key={tool} className="px-1.5 py-0.5 text-[11px] rounded bg-primary/10 text-primary/70">
+                                      <span key={tool} className="px-1.5 py-0.5 text-sm rounded bg-primary/10 text-primary/70">
                                         {tool}
                                       </span>
                                     ))}

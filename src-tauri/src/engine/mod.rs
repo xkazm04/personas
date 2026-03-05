@@ -48,6 +48,8 @@ pub mod db_query;
 pub mod api_proxy;
 pub mod api_definition;
 pub mod mcp_tools;
+pub mod automation_runner;
+pub mod platforms;
 
 use std::collections::HashMap;
 use std::path::PathBuf;

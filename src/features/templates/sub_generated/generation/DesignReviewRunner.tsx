@@ -321,7 +321,7 @@ export default function DesignReviewRunner({
               {hasPersona ? (
                 <>
                   <div className="w-7 h-7 rounded-lg bg-violet-500/15 border border-violet-500/25 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs">AI</span>
+                    <span className="text-sm">AI</span>
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground/90 truncate">{personaName}</p>

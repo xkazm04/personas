@@ -119,7 +119,8 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
       const res = await executeApiRequest(credentialId, method, path, headers, body);
       setResponse(res);
     } catch (err) {
-      setSendError(err instanceof Error ? err.message : String(err));
+      const raw = err instanceof Error ? err.message : typeof err === 'object' && err !== null ? JSON.stringify(err, null, 2) : String(err);
+      setSendError(raw);
     } finally {
       setIsSending(false);
     }
@@ -154,7 +155,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
       {/* Header bar */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/5 shrink-0">
         <Globe className="w-4 h-4 text-muted-foreground/40" />
-        <span className="text-xs font-medium text-foreground/70">
+        <span className="text-sm font-medium text-foreground/70">
           {endpoints.length} endpoint{endpoints.length !== 1 ? 's' : ''}
         </span>
         <div className="flex-1" />
@@ -168,7 +169,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Filter..."
-              className="pl-6 pr-2 py-1.5 w-[180px] rounded text-xs bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/25 focus:outline-none focus:border-primary/25"
+              className="pl-6 pr-2 py-1.5 w-[180px] rounded text-sm bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/25 focus:outline-none focus:border-primary/25"
             />
           </div>
         )}
@@ -178,7 +179,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
           testRunner.isRunning ? (
             <button
               onClick={testRunner.cancel}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors"
             >
               <Square className="w-3 h-3" />
               Stop
@@ -186,7 +187,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
           ) : (
             <button
               onClick={() => { testRunner.runAll(endpoints, credentialId); setShowLogPanel(true); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-colors"
             >
               <PlayCircle className="w-3 h-3" />
               Run All
@@ -197,7 +198,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={isParsing}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-secondary/30 border border-primary/10 text-foreground/70 hover:bg-secondary/50 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-secondary/30 border border-primary/10 text-foreground/70 hover:bg-secondary/50 transition-colors"
         >
           <Upload className="w-3 h-3" />
           Upload Spec
@@ -211,7 +212,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
         />
         <button
           onClick={() => setShowPasteModal(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-secondary/30 border border-primary/10 text-foreground/70 hover:bg-secondary/50 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-secondary/30 border border-primary/10 text-foreground/70 hover:bg-secondary/50 transition-colors"
         >
           <FileText className="w-3 h-3" />
           Paste OpenAPI
@@ -220,7 +221,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
 
       {/* Parse error */}
       {parseError && (
-        <div className="mx-4 mt-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400 flex items-start gap-2">
+        <div className="mx-4 mt-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400 flex items-start gap-2">
           <span className="flex-1">{parseError}</span>
           <button onClick={() => setParseError(null)} className="text-red-400/50 hover:text-red-400">
             <X className="w-3 h-3" />
@@ -267,7 +268,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
                 />
               ))}
               {filtered.length === 0 && (
-                <p className="text-xs text-muted-foreground/40 text-center py-4">
+                <p className="text-sm text-muted-foreground/40 text-center py-4">
                   No endpoints match "{search}"
                 </p>
               )}
@@ -277,13 +278,13 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
             {selectedEndpoint && (
               <div className="border-t border-primary/8 pt-4 space-y-4">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground/30 font-semibold">
+                  <span className="text-sm uppercase tracking-wider text-muted-foreground/30 font-semibold">
                     Request Builder
                   </span>
                   <div className="flex-1" />
                   <button
                     onClick={() => { setSelectedEndpoint(null); setResponse(null); setSendError(null); }}
-                    className="text-xs text-muted-foreground/40 hover:text-muted-foreground/60"
+                    className="text-sm text-muted-foreground/40 hover:text-muted-foreground/60"
                   >
                     Close
                   </button>
@@ -298,13 +299,13 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
 
             {/* Response viewer */}
             {sendError && (
-              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400 font-mono whitespace-pre-wrap">
+              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400 font-mono whitespace-pre-wrap">
                 {sendError}
               </div>
             )}
             {response && (
               <div className="border-t border-primary/8 pt-4">
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground/30 font-semibold block mb-3">
+                <span className="text-sm uppercase tracking-wider text-muted-foreground/30 font-semibold block mb-3">
                   Response
                 </span>
                 <ResponseViewer response={response} />
@@ -331,19 +332,19 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
               value={pasteContent}
               onChange={(e) => setPasteContent(e.target.value)}
               placeholder="Paste your OpenAPI JSON or YAML spec here..."
-              className="w-full h-[300px] p-3 rounded-lg text-xs font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/25 resize-none focus:outline-none focus:border-primary/25"
+              className="w-full h-[300px] p-3 rounded-lg text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/25 resize-none focus:outline-none focus:border-primary/25"
             />
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => { setShowPasteModal(false); setPasteContent(''); }}
-                className="px-3 py-2 rounded-lg text-xs text-muted-foreground/60 hover:bg-secondary/40 transition-colors"
+                className="px-3 py-2 rounded-lg text-sm text-muted-foreground/60 hover:bg-secondary/40 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handlePasteSubmit}
                 disabled={isParsing || !pasteContent.trim()}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-40 transition-colors"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-40 transition-colors"
               >
                 {isParsing ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileText className="w-3 h-3" />}
                 {isParsing ? 'Parsing...' : 'Parse & Load'}
@@ -364,21 +365,21 @@ function EmptyState({ onUpload, onPaste }: { onUpload: () => void; onPaste: () =
       <Globe className="w-10 h-10 text-muted-foreground/15" />
       <div className="text-center space-y-1">
         <p className="text-sm text-muted-foreground/50">No API endpoints loaded</p>
-        <p className="text-xs text-muted-foreground/30">
+        <p className="text-sm text-muted-foreground/30">
           Upload an OpenAPI/Swagger spec to explore and test API endpoints.
         </p>
       </div>
       <div className="flex items-center gap-2">
         <button
           onClick={onUpload}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
         >
           <Upload className="w-3.5 h-3.5" />
           Upload Spec File
         </button>
         <button
           onClick={onPaste}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium bg-secondary/30 border border-primary/10 text-foreground/70 hover:bg-secondary/50 transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-secondary/30 border border-primary/10 text-foreground/70 hover:bg-secondary/50 transition-colors"
         >
           <FileText className="w-3.5 h-3.5" />
           Paste OpenAPI
@@ -394,7 +395,7 @@ import type { TestProgress } from '../useApiTestRunner';
 
 function TestRunCounters({ progress }: { progress: TestProgress }) {
   return (
-    <div className="flex items-center gap-2.5 shrink-0 text-[10px] font-medium">
+    <div className="flex items-center gap-2.5 shrink-0 text-sm font-medium">
       <span className="text-muted-foreground/40">
         {progress.current}/{progress.total}
       </span>

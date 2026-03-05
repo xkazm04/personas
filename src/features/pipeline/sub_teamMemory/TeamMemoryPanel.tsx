@@ -64,7 +64,7 @@ export default function TeamMemoryPanel({
         <div className="flex items-center gap-2">
           <Brain className="w-4 h-4 text-violet-400" />
           <span className="text-sm font-semibold text-foreground/90">Team Memory</span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-violet-500/15 text-violet-400 font-medium">
+          <span className="text-sm px-1.5 py-0.5 rounded-full bg-violet-500/15 text-violet-400 font-medium">
             {total}
           </span>
         </div>
@@ -81,7 +81,7 @@ export default function TeamMemoryPanel({
         {CATEGORY_FILTERS.map((cat) => (
           <button
             key={cat}
-            className={`text-[10px] px-2 py-0.5 rounded-full capitalize whitespace-nowrap transition-colors ${
+            className={`text-sm px-2 py-0.5 rounded-full capitalize whitespace-nowrap transition-colors ${
               activeCategory === cat
                 ? 'bg-violet-500/20 text-violet-400 font-medium'
                 : 'bg-primary/5 text-muted-foreground/60 hover:bg-primary/10'
@@ -98,7 +98,7 @@ export default function TeamMemoryPanel({
         <div className="relative">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground/40" />
           <input
-            className="w-full text-xs bg-primary/5 border border-primary/10 rounded-md pl-6 pr-2 py-1.5 text-foreground/80 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/20"
+            className="w-full text-sm bg-primary/5 border border-primary/10 rounded-md pl-6 pr-2 py-1.5 text-foreground/80 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/20"
             placeholder="Search memories..."
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
@@ -111,8 +111,8 @@ export default function TeamMemoryPanel({
         {filteredMemories.length === 0 ? (
           <div className="text-center py-6">
             <Brain className="w-8 h-8 mx-auto mb-2 text-muted-foreground/20" />
-            <p className="text-xs text-muted-foreground/50">No memories yet</p>
-            <p className="text-[10px] text-muted-foreground/30 mt-0.5">
+            <p className="text-sm text-muted-foreground/50">No memories yet</p>
+            <p className="text-sm text-muted-foreground/30 mt-0.5">
               Run a pipeline or add one manually
             </p>
           </div>
@@ -137,7 +137,7 @@ export default function TeamMemoryPanel({
       {stats && stats.total > 0 && (
         <div className="border-t border-primary/10 px-3 py-2">
           <button
-            className="flex items-center justify-between w-full text-[10px] text-muted-foreground/50 hover:text-muted-foreground/70"
+            className="flex items-center justify-between w-full text-sm text-muted-foreground/50 hover:text-muted-foreground/70"
             onClick={() => setStatsExpanded(!statsExpanded)}
           >
             <span>
@@ -148,7 +148,7 @@ export default function TeamMemoryPanel({
           {statsExpanded && (
             <div className="mt-1.5 space-y-0.5">
               {stats.category_counts.map(([cat, count]) => (
-                <div key={cat} className="flex items-center justify-between text-[10px]">
+                <div key={cat} className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground/60 capitalize">{cat}</span>
                   <span className="text-muted-foreground/40">{count}</span>
                 </div>

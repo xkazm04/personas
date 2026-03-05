@@ -30,7 +30,7 @@ export function ConnectorPipeline({ steps, className = '' }: ConnectorPipelinePr
               >
                 <ConnectorIcon meta={meta} size="w-3.5 h-3.5" />
               </div>
-              <span className="text-[11px] text-foreground/70 whitespace-nowrap">
+              <span className="text-sm text-foreground/70 whitespace-nowrap">
                 {step.action_label}
               </span>
             </div>

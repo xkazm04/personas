@@ -48,7 +48,7 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
         )}
         <Wrench className="w-3.5 h-3.5 text-muted-foreground/80" />
         <span className="text-sm font-medium text-foreground/80 truncate">{tool.name}</span>
-        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] rounded border border-primary/10 bg-secondary/30 text-muted-foreground/60">
+        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm rounded border border-primary/10 bg-secondary/30 text-muted-foreground/60">
           <TypeIcon className="w-2.5 h-2.5" />
           {toolType}
         </span>
@@ -77,7 +77,7 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
 
               {/* Input */}
               <div>
-                <label className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider mb-1 block">
+                <label className="text-sm font-semibold text-muted-foreground/50 uppercase tracking-wider mb-1 block">
                   Input JSON
                 </label>
                 <textarea
@@ -139,7 +139,7 @@ function ResultDisplay({ result, error }: { result: ToolInvocationResult | null;
         <span className={`font-medium ${result.success ? 'text-emerald-400' : 'text-red-400'}`}>
           {result.success ? 'Success' : 'Failed'}
         </span>
-        <span className="ml-auto flex items-center gap-1 text-muted-foreground/50 text-[11px]">
+        <span className="ml-auto flex items-center gap-1 text-muted-foreground/50 text-sm">
           <Clock className="w-2.5 h-2.5" />
           {result.duration_ms}ms
         </span>

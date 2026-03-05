@@ -113,14 +113,14 @@ export function OverviewStatCard({
           <div className="text-2xl font-bold tracking-tight text-foreground/90">{format(animated)}</div>
           <div className="flex items-center gap-2.5 mt-1.5 min-h-[18px]">
             {trendDisplay ? (
-              <div className={`flex items-center gap-1 text-xs font-semibold ${trendDisplay.trendColor}`}>
+              <div className={`flex items-center gap-1 text-sm font-semibold ${trendDisplay.trendColor}`}>
                 <trendDisplay.TIcon className="w-3 h-3" />
                 <span>{trendDisplay.value}</span>
               </div>
-            ) : <span className="text-xs text-muted-foreground/50">—</span>}
+            ) : <span className="text-sm text-muted-foreground/50">—</span>}
 
             {subtitle && (
-              <p className={`text-xs truncate ${subtitleColor || 'text-muted-foreground/70'}`}>
+              <p className={`text-sm truncate ${subtitleColor || 'text-muted-foreground/70'}`}>
                 {subtitle}
               </p>
             )}

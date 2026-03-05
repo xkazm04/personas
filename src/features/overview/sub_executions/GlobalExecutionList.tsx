@@ -279,7 +279,7 @@ export default function GlobalExecutionList() {
                         {/* Persona */}
                         <div className="flex items-center gap-2 px-4 w-[25%] min-w-0">
                           <div
-                            className="w-6 h-6 rounded-md flex items-center justify-center text-xs border border-primary/15 flex-shrink-0"
+                            className="w-6 h-6 rounded-md flex items-center justify-center text-sm border border-primary/15 flex-shrink-0"
                             style={{ backgroundColor: (exec.persona_color || '#6366f1') + '15' }}
                           >
                             {exec.persona_icon || '?'}

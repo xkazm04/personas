@@ -45,16 +45,16 @@ function MessageBubble({ message }: { message: DesignConversationMessage }) {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 mb-0.5">
-          <span className={`text-[10px] font-medium uppercase tracking-wide ${
+          <span className={`text-sm font-medium uppercase tracking-wide ${
             isUser ? 'text-blue-400/80' : 'text-purple-400/80'
           }`}>
             {typeLabel}
           </span>
-          <span className="text-[10px] text-muted-foreground/50">
+          <span className="text-sm text-muted-foreground/50">
             {formatRelativeTime(message.timestamp)}
           </span>
         </div>
-        <p className="text-xs text-foreground/80 leading-relaxed whitespace-pre-wrap break-words">
+        <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap break-words">
           {displayContent}
         </p>
       </div>
@@ -100,18 +100,18 @@ function ConversationCard({
             <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
           )}
           <MessageSquare className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-          <span className="text-xs font-medium truncate">{conversation.title}</span>
+          <span className="text-sm font-medium truncate">{conversation.title}</span>
           {isCompleted && (
             <CheckCircle2 className="w-3 h-3 text-green-400 flex-shrink-0" />
           )}
         </button>
 
         <div className="flex items-center gap-1.5 flex-shrink-0">
-          <span className="text-[10px] text-muted-foreground/60 tabular-nums">
+          <span className="text-sm text-muted-foreground/60 tabular-nums">
             {messageCount} msg{messageCount !== 1 ? 's' : ''}
           </span>
-          <span className="text-[10px] text-muted-foreground/40">·</span>
-          <span className="text-[10px] text-muted-foreground/60 flex items-center gap-0.5">
+          <span className="text-sm text-muted-foreground/40">·</span>
+          <span className="text-sm text-muted-foreground/60 flex items-center gap-0.5">
             <Clock className="w-2.5 h-2.5" />
             {formatRelativeTime(conversation.updatedAt)}
           </span>
@@ -119,7 +119,7 @@ function ConversationCard({
           {!isActive && conversation.status === 'active' && (
             <button
               onClick={(e) => { e.stopPropagation(); onResume(); }}
-              className="ml-1 px-2 py-0.5 text-[10px] font-medium rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
+              className="ml-1 px-2 py-0.5 text-sm font-medium rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
               data-testid={`conversation-resume-${conversation.id}`}
             >
               Resume
@@ -172,10 +172,10 @@ export function DesignConversationHistory({
     <div className="space-y-1.5" data-testid="design-conversation-history">
       <div className="flex items-center gap-1.5 px-1">
         <MessageSquare className="w-3.5 h-3.5 text-muted-foreground/60" />
-        <span className="text-[11px] font-medium text-muted-foreground/80 uppercase tracking-wide">
+        <span className="text-sm font-medium text-muted-foreground/80 uppercase tracking-wide">
           Design Sessions
         </span>
-        <span className="text-[10px] text-muted-foreground/50">({conversations.length})</span>
+        <span className="text-sm text-muted-foreground/50">({conversations.length})</span>
       </div>
       <div className="space-y-1">
         {conversations.map((conv) => (

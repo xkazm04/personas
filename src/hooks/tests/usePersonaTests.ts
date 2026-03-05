@@ -30,6 +30,14 @@ export function usePersonaTests() {
         "test-run-status",
         (event) => {
           const p = event.payload;
+          const { isTestRunning, testRunProgress } = usePersonaStore.getState();
+          const expectedRunId = testRunProgress?.runId;
+
+          // Ignore stale/global events when no run is active.
+          if (!isTestRunning) return;
+
+          // Once a run is known, only accept events for that specific run.
+          if (expectedRunId && p.run_id !== expectedRunId) return;
 
           setTestRunProgress({
             runId: p.run_id,

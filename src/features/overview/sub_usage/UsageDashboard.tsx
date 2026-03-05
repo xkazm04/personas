@@ -205,7 +205,7 @@ export function UsageDashboard() {
               </div>
               <div className="text-center space-y-2.5">
                 <h3 className="text-xl font-bold text-foreground/90 tracking-tight">Your analytics dashboard</h3>
-                <p className="text-xs text-muted-foreground/80 leading-relaxed max-w-[280px] mx-auto">
+                <p className="text-sm text-muted-foreground/80 leading-relaxed max-w-[280px] mx-auto">
                   When your personas run and use tools, you'll see detailed charts showing
                   which tools are used most, usage trends, and breakdowns.
                 </p>
@@ -222,11 +222,11 @@ export function UsageDashboard() {
                       done ? 'bg-emerald-500/5 border-emerald-500/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]' : 'bg-secondary/40 border-primary/10 shadow-sm'
                     }`}
                   >
-                    <span className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-black tracking-wider ${
+                    <span className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-sm font-black tracking-wider ${
                       done ? 'bg-emerald-500/20 text-emerald-400 shadow-inner' : 'bg-primary/10 text-muted-foreground/70'
                     }`}>{step}</span>
-                    <span className={`text-xs font-medium ${done ? 'text-emerald-400' : 'text-foreground/80'}`}>{label}</span>
-                    {done && <span className="ml-auto text-[11px] font-bold uppercase tracking-widest text-emerald-400/60 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">Done</span>}
+                    <span className={`text-sm font-medium ${done ? 'text-emerald-400' : 'text-foreground/80'}`}>{label}</span>
+                    {done && <span className="ml-auto text-sm font-bold uppercase tracking-widest text-emerald-400/60 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">Done</span>}
                   </div>
                 ))}
               </div>

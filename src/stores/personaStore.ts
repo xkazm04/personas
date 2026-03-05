@@ -28,6 +28,8 @@ import { createLabSlice } from "./slices/labSlice";
 import { createCloudSlice } from "./slices/cloudSlice";
 import { createGitLabSlice } from "./slices/gitlabSlice";
 import { createDatabaseSlice } from "./slices/databaseSlice";
+import { createRecipeSlice } from "./slices/recipeSlice";
+import { createAutomationSlice } from "./slices/automationSlice";
 import { AUTH_LOGIN_EVENT } from "./authStore";
 
 // ── Store ──────────────────────────────────────────────────────────────
@@ -54,6 +56,8 @@ export const usePersonaStore = create<PersonaStore>()(
         ...createCloudSlice(...a),
         ...createGitLabSlice(...a),
         ...createDatabaseSlice(...a),
+        ...createRecipeSlice(...a),
+        ...createAutomationSlice(...a),
       }),
       {
         name: "persona-ui-state",

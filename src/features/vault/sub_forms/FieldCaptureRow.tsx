@@ -97,7 +97,7 @@ export function FieldCaptureRow({
         </label>
         <div className="flex items-center gap-1">
           {mode === 'confirming' && value && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px]">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-sm">
               <Check className="w-2.5 h-2.5" />
               captured
             </span>
@@ -135,7 +135,7 @@ export function FieldCaptureRow({
                 )}
               </button>
               {isSecret && copied && (
-                <span className="absolute top-full mt-0.5 text-[10px] text-muted-foreground/70 whitespace-nowrap">
+                <span className="absolute top-full mt-0.5 text-sm text-muted-foreground/70 whitespace-nowrap">
                   Copied to clipboard
                 </span>
               )}
@@ -184,9 +184,9 @@ export function FieldCaptureRow({
       )}
 
       {error ? (
-        <p className="text-xs text-red-400">{error}</p>
+        <p className="text-sm text-red-400">{error}</p>
       ) : (
-        (helpText ? <p className="text-xs text-muted-foreground/60">{helpText}</p> : null)
+        (helpText ? <p className="text-sm text-muted-foreground/60">{helpText}</p> : null)
       )}
     </div>
   );

@@ -99,14 +99,18 @@ export function DroppableGroup({
   };
 
   return (
-    <div
+    <motion.div
       ref={setNodeRef}
       style={style}
       className={`rounded-xl border transition-all mb-2 ${isDragging ? 'opacity-30' : ''} ${
         isOver && isDragActive
-          ? 'border-primary/40 bg-primary/5 shadow-[0_0_12px_rgba(59,130,246,0.1)]'
+          ? 'border-primary/40 bg-primary/5 shadow-[0_0_12px_rgba(139,92,246,0.15)]'
           : 'border-primary/10 bg-secondary/20'
       }`}
+      animate={isOver && isDragActive
+        ? { scale: 1.01, boxShadow: '0 0 12px rgba(139,92,246,0.15)' }
+        : { scale: 1, boxShadow: '0 0 0 rgba(0,0,0,0)' }}
+      transition={{ type: 'spring', stiffness: 260, damping: 24, duration: 0.15 }}
     >
       {/* Group header */}
       <div className="flex items-center gap-2 px-2.5 py-2 cursor-pointer select-none" onClick={onToggleCollapse}>
@@ -241,7 +245,7 @@ export function DroppableGroup({
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }
 
@@ -286,7 +290,7 @@ function WorkspaceSettings({ group, onUpdate, onClose }: WorkspaceSettingsProps)
   return (
     <div className="px-3 pb-3 pt-1 border-t border-primary/10 space-y-2.5" data-testid="workspace-settings-panel">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">Workspace Defaults</span>
+        <span className="text-sm font-medium text-muted-foreground/60 uppercase tracking-wider">Workspace Defaults</span>
         <button onClick={onClose} className="p-0.5 hover:bg-secondary/60 rounded" data-testid="workspace-settings-close-btn">
           <X className="w-3 h-3 text-muted-foreground/60" />
         </button>
@@ -294,7 +298,7 @@ function WorkspaceSettings({ group, onUpdate, onClose }: WorkspaceSettingsProps)
 
       {/* Description */}
       <div>
-        <label className="text-xs text-muted-foreground/50 flex items-center gap-1 mb-1">
+        <label className="text-sm text-muted-foreground/50 flex items-center gap-1 mb-1">
           <FileText className="w-3 h-3" /> Description
         </label>
         <input
@@ -309,7 +313,7 @@ function WorkspaceSettings({ group, onUpdate, onClose }: WorkspaceSettingsProps)
       {/* Budget + Turns row */}
       <div className="flex gap-2">
         <div className="flex-1">
-          <label className="text-xs text-muted-foreground/50 flex items-center gap-1 mb-1">
+          <label className="text-sm text-muted-foreground/50 flex items-center gap-1 mb-1">
             <DollarSign className="w-3 h-3" /> Budget (USD)
           </label>
           <input
@@ -324,7 +328,7 @@ function WorkspaceSettings({ group, onUpdate, onClose }: WorkspaceSettingsProps)
           />
         </div>
         <div className="flex-1">
-          <label className="text-xs text-muted-foreground/50 flex items-center gap-1 mb-1">
+          <label className="text-sm text-muted-foreground/50 flex items-center gap-1 mb-1">
             <RotateCcw className="w-3 h-3" /> Max Turns
           </label>
           <input
@@ -342,7 +346,7 @@ function WorkspaceSettings({ group, onUpdate, onClose }: WorkspaceSettingsProps)
 
       {/* Shared Instructions */}
       <div>
-        <label className="text-xs text-muted-foreground/50 flex items-center gap-1 mb-1">
+        <label className="text-sm text-muted-foreground/50 flex items-center gap-1 mb-1">
           <FileText className="w-3 h-3" /> Shared Instructions
         </label>
         <textarea
@@ -359,7 +363,7 @@ function WorkspaceSettings({ group, onUpdate, onClose }: WorkspaceSettingsProps)
       <div className="flex justify-end">
         <button
           onClick={handleSave}
-          className="px-3 py-1 text-xs font-medium rounded-md bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 transition-colors"
+          className="px-3 py-1 text-sm font-medium rounded-md bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 transition-colors"
           data-testid="workspace-settings-save-btn"
         >
           Save

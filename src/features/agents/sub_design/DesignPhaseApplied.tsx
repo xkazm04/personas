@@ -21,10 +21,10 @@ export function DesignPhaseApplied({ result, warnings = [], onReset }: DesignPha
   return (
     <motion.div
       key="applied"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.2 }}
+      initial={{ opacity: 0, y: -14, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ type: 'spring', stiffness: 200, damping: 25 }}
       className="flex flex-col items-center py-8 gap-5"
       ref={containerRef}
       tabIndex={-1}
@@ -74,7 +74,7 @@ export function DesignPhaseApplied({ result, warnings = [], onReset }: DesignPha
           {hasWarnings ? `Applied with ${warnings.length} warning${warnings.length !== 1 ? 's' : ''}` : 'Agent configured!'}
         </h3>
         {result?.summary && (
-          <p className="text-xs text-muted-foreground/70 mt-1 max-w-xs mx-auto line-clamp-2">
+          <p className="text-sm text-muted-foreground/70 mt-1 max-w-xs mx-auto line-clamp-2">
             {result.summary}
           </p>
         )}
@@ -90,7 +90,7 @@ export function DesignPhaseApplied({ result, warnings = [], onReset }: DesignPha
         >
           <ul className="space-y-1">
             {warnings.map((w, i) => (
-              <li key={i} className="text-xs text-amber-400/90 flex items-start gap-1.5">
+              <li key={i} className="text-sm text-amber-400/90 flex items-start gap-1.5">
                 <span className="mt-0.5 shrink-0">•</span>
                 <span>{w}</span>
               </li>
@@ -108,7 +108,7 @@ export function DesignPhaseApplied({ result, warnings = [], onReset }: DesignPha
         animate={{ opacity: 1 }}
         transition={{ delay: 0.7 }}
         onClick={onReset}
-        className="mt-1 text-xs text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors"
+        className="mt-1 text-sm text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors"
       >
         Close
       </motion.button>

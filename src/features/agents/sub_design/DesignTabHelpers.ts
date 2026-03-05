@@ -65,3 +65,8 @@ export function buildChangeSummary(opts: {
 
   return items;
 }
+
+/** Build a Set containing every index in the provided array-like value. */
+export function allIndices(items: unknown[] | null | undefined): Set<number> {
+  return new Set((items ?? []).map((_, i) => i));
+}

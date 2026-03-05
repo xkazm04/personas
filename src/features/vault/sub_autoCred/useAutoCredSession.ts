@@ -110,7 +110,8 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
       }
       const raw = err instanceof Error ? err.message : 'Browser session failed';
       setError(parseAutoCredError(raw));
-      setPhase('error');
+      // Stay in browser-error so the terminal log remains visible
+      setPhase('browser-error');
     }
   }, [designResult, adapter]);
 

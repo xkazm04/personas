@@ -52,6 +52,7 @@ export function ToolSelector() {
         filteredTools={filteredTools}
         connectorGroups={connectorGroups}
         assignedToolIds={assignedToolIds}
+        assignedCount={assignedTools.length}
         credentialTypeSet={credentialTypeSet}
         credentialLabel={credentialLabel}
         usageByTool={usageByTool}
@@ -59,6 +60,8 @@ export function ToolSelector() {
         justToggledId={justToggledId}
         isSearching={isSearching}
         searchQuery={searchQuery}
+        onClearSearch={() => setSearchQuery('')}
+        onBrowseTools={() => setViewMode('grouped')}
         onToggleTool={handleToggleTool}
         onBulkToggle={handleBulkToggle}
         onAddCredential={handleAddCredential}

@@ -54,7 +54,7 @@ export function QuickAdoptConfirm() {
                 <span className="text-sm font-medium text-foreground/80 block truncate">
                   {meta.label}
                 </span>
-                <span className="text-xs text-muted-foreground/60 block truncate">
+                <span className="text-sm text-muted-foreground/60 block truncate">
                   {cred?.name ?? 'Matched credential'}
                 </span>
               </div>
@@ -76,7 +76,7 @@ export function QuickAdoptConfirm() {
         </button>
         <button
           onClick={enterFullWizard}
-          className="text-xs text-muted-foreground/60 hover:text-foreground/70 transition-colors inline-flex items-center gap-1.5"
+          className="text-sm text-muted-foreground/60 hover:text-foreground/70 transition-colors inline-flex items-center gap-1.5"
         >
           <Settings className="w-3 h-3" />
           Customize in full wizard

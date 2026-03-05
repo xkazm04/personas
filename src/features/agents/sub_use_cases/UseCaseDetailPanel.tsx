@@ -187,7 +187,7 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
           )}
           {saveError && (
             <span
-              className="text-xs text-red-400/80 cursor-pointer hover:text-red-400 transition-colors"
+              className="text-sm text-red-400/80 cursor-pointer hover:text-red-400 transition-colors"
               title={saveError}
               onClick={() => setSaveError(null)}
             >

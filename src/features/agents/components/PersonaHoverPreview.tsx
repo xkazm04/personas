@@ -173,13 +173,13 @@ export default function PersonaHoverPreview({ personaId, triggerCount, anchorRef
 
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span
-                  className="text-[10px] font-mono px-1.5 py-0.5 rounded-md border bg-primary/5 border-primary/15 text-muted-foreground/80 max-w-[170px] truncate"
+                  className="text-sm font-mono px-1.5 py-0.5 rounded-md border bg-primary/5 border-primary/15 text-muted-foreground/80 max-w-[170px] truncate"
                   title={modelLabel}
                 >
                   {modelLabel}
                 </span>
                 <span
-                  className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${persona?.enabled ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400/80' : 'bg-secondary/40 border-primary/15 text-muted-foreground/70'}`}
+                  className={`text-sm font-medium px-1.5 py-0.5 rounded-full border ${persona?.enabled ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400/80' : 'bg-secondary/40 border-primary/15 text-muted-foreground/70'}`}
                 >
                   {persona?.enabled ? 'Enabled' : 'Disabled'}
                 </span>

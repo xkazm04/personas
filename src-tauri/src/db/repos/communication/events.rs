@@ -4,6 +4,7 @@ use crate::db::models::{
     CreateEventSubscriptionInput, CreatePersonaEventInput, PersonaEvent,
     PersonaEventSubscription, UpdateEventSubscriptionInput,
 };
+use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::engine::crypto;
 use crate::error::AppError;
@@ -77,28 +78,6 @@ fn validate_event_input(input: &CreatePersonaEventInput) -> Result<(), AppError>
     }
 
     Ok(())
-}
-
-/// Collect rows from a query, logging any row-mapping errors instead of silently dropping them.
-fn collect_rows<T>(
-    rows: impl Iterator<Item = rusqlite::Result<T>>,
-    context: &str,
-) -> Vec<T> {
-    let mut results = Vec::new();
-    for (idx, row_result) in rows.enumerate() {
-        match row_result {
-            Ok(item) => results.push(item),
-            Err(e) => {
-                tracing::warn!(
-                    context = context,
-                    row_index = idx,
-                    error = %e,
-                    "Failed to map database row — possible data corruption"
-                );
-            }
-        }
-    }
-    results
 }
 
 // ============================================================================
@@ -482,33 +461,15 @@ pub fn delete_subscription(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 mod tests {
     use super::*;
     use crate::db::init_test_db;
-    use crate::db::models::{CreatePersonaInput, CreateEventSubscriptionInput};
-    use crate::db::repos::core::personas;
+    use crate::db::models::CreateEventSubscriptionInput;
+    use crate::db::repos::test_fixtures;
 
     fn create_test_persona(pool: &DbPool) -> String {
-        let persona = personas::create(
+        test_fixtures::create_test_persona_id(
             pool,
-            CreatePersonaInput {
-                name: "Event Test Persona".into(),
-                system_prompt: "You are an event test persona.".into(),
-                project_id: None,
-                description: None,
-                structured_prompt: None,
-                icon: None,
-                color: None,
-                enabled: Some(true),
-                max_concurrent: None,
-                timeout_ms: None,
-                model_profile: None,
-                max_budget_usd: None,
-                max_turns: None,
-                design_context: None,
-                group_id: None,
-                notification_channels: None,
-            },
+            "Event Test Persona",
+            "You are an event test persona.",
         )
-        .unwrap();
-        persona.id
     }
 
     // ------------------------------------------------------------------

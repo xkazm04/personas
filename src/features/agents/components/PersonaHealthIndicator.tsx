@@ -1,4 +1,4 @@
-import { Bot } from 'lucide-react';
+import { Bot, Check, Minus, X } from 'lucide-react';
 import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizeUrl';
 import type { DbPersona } from '@/lib/types/types';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
@@ -20,6 +20,13 @@ const HEALTH_DOT_COLOR: Record<string, string> = {
   running: 'bg-blue-400',
 };
 
+const HEALTH_LABEL: Record<HealthLevel, string> = {
+  healthy: 'healthy',
+  degraded: 'mixed',
+  failing: 'failing',
+  dormant: 'inactive',
+};
+
 interface PersonaHealthIndicatorProps {
   persona: DbPersona;
   health?: PersonaHealth;
@@ -29,9 +36,18 @@ export function PersonaHealthIndicator({ persona, health }: PersonaHealthIndicat
   const healthStatus = (health?.status ?? 'dormant') as HealthLevel;
   const ringClass = HEALTH_RING_CLASS[healthStatus] ?? HEALTH_RING_CLASS.dormant;
   const statuses = health?.recentStatuses;
+  const successCount = statuses?.filter((s) => s === 'completed').length ?? 0;
+  const srLabel = `Health: ${HEALTH_LABEL[healthStatus]}, ${successCount} of ${statuses?.length ?? 0} recent runs succeeded`;
+
+  const HealthShape = healthStatus === 'healthy'
+    ? Check
+    : healthStatus === 'failing'
+      ? X
+      : Minus;
 
   return (
     <div className="relative group/health">
+      <span className="sr-only">{srLabel}</span>
       <div className={`rounded-lg ${ringClass}`}>
         {persona.icon ? (
           sanitizeIconUrl(persona.icon) ? (
@@ -45,13 +61,23 @@ export function PersonaHealthIndicator({ persona, health }: PersonaHealthIndicat
           </div>
         )}
       </div>
+      {healthStatus !== 'dormant' && (
+        <div
+          className="absolute -right-1 -bottom-1 w-4 h-4 rounded-full border border-background bg-background/95 flex items-center justify-center"
+          aria-hidden="true"
+        >
+          <HealthShape className="w-2.5 h-2.5 text-foreground/80" />
+        </div>
+      )}
       {statuses && statuses.length > 0 && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/health:flex items-center gap-1 px-2 py-1.5 rounded-lg bg-popover border border-primary/15 shadow-lg z-20 whitespace-nowrap">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/health:flex group-focus-within/health:flex items-center gap-1 px-2 py-1.5 rounded-lg bg-popover border border-primary/15 shadow-lg z-20 whitespace-nowrap">
           {statuses.map((s, si) => (
             <div
               key={si}
               className={`w-2 h-2 rounded-full ${HEALTH_DOT_COLOR[s] ?? 'bg-muted-foreground/30'}`}
               title={s}
+              tabIndex={0}
+              aria-label={`Run ${si + 1}: ${s}`}
             />
           ))}
           <span className="text-sm text-muted-foreground/90 ml-1">last {statuses.length}</span>

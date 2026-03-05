@@ -60,6 +60,7 @@ const PHASE_META: Record<string, { label: string; icon: typeof Zap }> = {
   initializing: { label: 'Initializing', icon: Zap },
   thinking: { label: 'Thinking', icon: Brain },
   calling_tools: { label: 'Running tools', icon: Cpu },
+  delegating: { label: 'Delegating to workflow', icon: Zap },
   responding: { label: 'Responding', icon: Brain },
   finalizing: { label: 'Finalizing', icon: CheckCheck },
   error: { label: 'Error', icon: AlertTriangle },
@@ -672,7 +673,7 @@ export function PersonaRunner() {
               <p className="text-sm font-medium text-foreground/70">{selectedPersona.name}</p>
               <p className="text-sm text-zinc-500">
                 Ready to execute &mdash; click Run or press{' '}
-                <kbd className="inline-flex items-center px-1.5 py-0.5 rounded border border-zinc-700 bg-zinc-800/60 text-zinc-400 text-xs font-mono">
+                <kbd className="inline-flex items-center px-1.5 py-0.5 rounded border border-zinc-700 bg-zinc-800/60 text-zinc-400 text-sm font-mono">
                   Enter
                 </kbd>
               </p>
@@ -789,9 +790,9 @@ export function PersonaRunner() {
                                       </div>
                                     )}
                                     <PhaseIcon className="w-3 h-3 flex-shrink-0 relative z-[2]" />
-                                    <span className="truncate text-xs font-medium relative z-[2]">{phase.label}</span>
+                                    <span className="truncate text-sm font-medium relative z-[2]">{phase.label}</span>
                                     {duration > 0 && (
-                                      <span className="font-mono text-[11px] opacity-60 relative z-[2] flex-shrink-0">
+                                      <span className="font-mono text-sm opacity-60 relative z-[2] flex-shrink-0">
                                         {formatElapsed(duration)}
                                       </span>
                                     )}
@@ -870,7 +871,7 @@ function HealingCard({
               <span className={`text-sm font-semibold ${styles.accent}`}>
                 {notification.title}
               </span>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-secondary/40 text-muted-foreground/60 border border-primary/8">
+              <span className="text-sm font-mono px-1.5 py-0.5 rounded bg-secondary/40 text-muted-foreground/60 border border-primary/8">
                 {notification.severity}
               </span>
             </div>
@@ -879,7 +880,7 @@ function HealingCard({
             onClick={onDismiss}
             className="text-muted-foreground/50 hover:text-foreground/80 transition-colors flex-shrink-0 p-0.5"
           >
-            <span className="text-xs">dismiss</span>
+            <span className="text-sm">dismiss</span>
           </button>
         </div>
 
@@ -912,7 +913,7 @@ function HealingCard({
               </div>
             )}
             {/* Attempt badge */}
-            <span className="ml-auto text-[11px] font-mono text-muted-foreground/60 px-2 py-0.5 rounded bg-secondary/30 border border-primary/8">
+            <span className="ml-auto text-sm font-mono text-muted-foreground/60 px-2 py-0.5 rounded bg-secondary/30 border border-primary/8">
               Attempt {notification.retry_number} of {notification.max_retries}
             </span>
           </div>
@@ -943,7 +944,7 @@ function HealingCard({
 
         {/* Suggested fix */}
         {notification.suggested_fix && (
-          <p className="text-[11px] text-muted-foreground/60 leading-relaxed pl-6.5">
+          <p className="text-sm text-muted-foreground/60 leading-relaxed pl-6.5">
             {notification.suggested_fix}
           </p>
         )}
@@ -992,7 +993,7 @@ function AiHealingCounters({
         : 'bg-violet-400 animate-pulse';
 
   return (
-    <span className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+    <span className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
       <span className={`inline-block w-1.5 h-1.5 rounded-full ${dotColor}`} />
       {label}
     </span>

@@ -146,7 +146,7 @@ export function CredentialEditForm({
     <div className="space-y-5">
       {/* ── Credential Fields ── */}
       <div>
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/50 mb-3">
+        <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/50 mb-3">
           Credential Fields
         </h4>
         <div className="space-y-3">
@@ -176,7 +176,7 @@ export function CredentialEditForm({
         <>
           <div className="border-t border-primary/8" />
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/50 mb-3">
+            <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/50 mb-3">
               Authentication
             </h4>
             <button
@@ -189,10 +189,10 @@ export function CredentialEditForm({
               {oauthConsentLabel || 'Authorize with Google'}
             </button>
             {oauthConsentHint && (
-              <p className="mt-1.5 text-xs text-muted-foreground/60">{oauthConsentHint}</p>
+              <p className="mt-1.5 text-sm text-muted-foreground/60">{oauthConsentHint}</p>
             )}
             {oauthConsentSuccessBadge && (
-              <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 text-xs">
+              <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 text-sm">
                 <CheckCircle className="w-3.5 h-3.5" />
                 {oauthConsentSuccessBadge}
               </div>
@@ -206,7 +206,7 @@ export function CredentialEditForm({
         <>
           <div className="border-t border-primary/8" />
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/50 mb-3">
+            <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/50 mb-3">
               Connection Test
             </h4>
             <div className="flex items-center gap-2">
@@ -240,7 +240,7 @@ export function CredentialEditForm({
                     <Info className="w-3.5 h-3.5" />
                   </button>
                   {showTestHint && (
-                    <div className="absolute left-8 top-1/2 -translate-y-1/2 w-72 px-3 py-2 rounded-lg bg-background border border-primary/20 shadow-xl text-xs text-foreground/85 z-20">
+                    <div className="absolute left-8 top-1/2 -translate-y-1/2 w-72 px-3 py-2 rounded-lg bg-background border border-primary/20 shadow-xl text-sm text-foreground/85 z-20">
                       {testHint}
                     </div>
                   )}
@@ -263,7 +263,7 @@ export function CredentialEditForm({
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           {vault && fields.some((f) => f.type === 'password') && (
-            <div className="flex items-center gap-1.5 text-xs text-emerald-400/70">
+            <div className="flex items-center gap-1.5 text-sm text-emerald-400/70">
               <Lock className="w-3 h-3" />
               <span>
                 {vault.key_source === 'keychain'

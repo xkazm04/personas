@@ -100,12 +100,12 @@ export function ForagingResultCard({
               {credential.label}
             </span>
             {credential.already_imported && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted-foreground/10 text-muted-foreground/50 font-medium">
+              <span className="text-sm px-1.5 py-0.5 rounded bg-muted-foreground/10 text-muted-foreground/50 font-medium">
                 Already in vault
               </span>
             )}
             {isImported && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-medium">
+              <span className="text-sm px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-medium">
                 Imported
               </span>
             )}
@@ -116,7 +116,7 @@ export function ForagingResultCard({
             {Object.entries(credential.fields).map(([key, val]) => (
               <span
                 key={key}
-                className="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded bg-secondary/50 text-muted-foreground/70 font-mono"
+                className="inline-flex items-center gap-1 text-sm px-1.5 py-0.5 rounded bg-secondary/50 text-muted-foreground/70 font-mono"
               >
                 <span className="text-foreground/50">{key}:</span>
                 <span className="truncate max-w-[120px]">{val}</span>
@@ -126,9 +126,9 @@ export function ForagingResultCard({
 
           {/* Source + confidence */}
           <div className="mt-1.5 flex items-center gap-2">
-            <span className="text-[10px] text-muted-foreground/50">{meta.label}</span>
+            <span className="text-sm text-muted-foreground/50">{meta.label}</span>
             <span
-              className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${CONFIDENCE_STYLES[credential.confidence]}`}
+              className={`text-sm px-1.5 py-0.5 rounded border font-medium ${CONFIDENCE_STYLES[credential.confidence]}`}
             >
               {credential.confidence}
             </span>

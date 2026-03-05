@@ -322,7 +322,7 @@ export default function MemoriesPage() {
                                 : 'bg-emerald-500/5 border-emerald-500/15'
                             }`}
                           >
-                            <span className={`text-xs font-bold px-1.5 py-0.5 rounded-md flex-shrink-0 mt-0.5 ${
+                            <span className={`text-sm font-bold px-1.5 py-0.5 rounded-md flex-shrink-0 mt-0.5 ${
                               d.score >= 7
                                 ? 'bg-emerald-500/15 text-emerald-400'
                                 : d.score >= 4
@@ -337,9 +337,9 @@ export default function MemoriesPage() {
                               }`}>
                                 {d.title}
                               </p>
-                              <p className="text-xs text-muted-foreground/70 mt-0.5">{d.reason}</p>
+                              <p className="text-sm text-muted-foreground/70 mt-0.5">{d.reason}</p>
                             </div>
-                            <span className={`text-xs font-medium flex-shrink-0 ${
+                            <span className={`text-sm font-medium flex-shrink-0 ${
                               d.action === 'deleted' ? 'text-red-400/70' : 'text-emerald-400/70'
                             }`}>
                               {d.action}

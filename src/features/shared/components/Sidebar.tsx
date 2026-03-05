@@ -361,7 +361,7 @@ export default function Sidebar() {
                   : isActive ? 'text-primary' : 'text-muted-foreground/90 group-hover:text-foreground/95'
               }`} />
               {isDisabled && section.id !== 'cloud' && (
-                <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 z-20 px-1 py-px text-[7px] font-semibold uppercase tracking-wider leading-none rounded bg-muted-foreground/15 text-muted-foreground/80 whitespace-nowrap">
+                <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 z-20 px-1 py-px text-sm font-semibold uppercase tracking-wider leading-none rounded bg-muted-foreground/15 text-muted-foreground/80 whitespace-nowrap">
                   soon
                 </span>
               )}
@@ -403,7 +403,7 @@ export default function Sidebar() {
             {sections.find((s) => s.id === sidebarSection)?.label || 'Overview'}
           </h2>
         </div>
-        <div className="flex-1 overflow-y-auto p-3 space-y-1">
+        <div className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-thin scrollbar-thumb-primary/15 scrollbar-track-transparent">
           {renderLevel2()}
         </div>
       </div>

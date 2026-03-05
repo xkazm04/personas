@@ -155,7 +155,7 @@ function CustomView({ cases, validCount, onAdd, onRemove, onUpdateCase, onFileUp
                   }`}
                 />
                 {instrShort && (
-                  <p className="text-[11px] text-amber-400/80 mt-0.5">
+                  <p className="text-sm text-amber-400/80 mt-0.5">
                     {instrLen}/{MIN_INSTRUCTION_LENGTH} characters minimum
                   </p>
                 )}

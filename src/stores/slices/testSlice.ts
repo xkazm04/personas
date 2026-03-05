@@ -71,6 +71,12 @@ export const createTestSlice: StateCreator<PersonaStore, [], [], TestSlice> = (s
     });
     try {
       const run = await api.startTestRun(personaId, models, useCaseFilter, suiteId);
+      set({
+        testRunProgress: {
+          runId: run.id,
+          phase: 'starting',
+        },
+      });
       return run.id;
     } catch (err) {
       set({ error: errMsg(err, "Failed to start test run"), isTestRunning: false });

@@ -110,7 +110,7 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
         </p>
       </div>
 
-      <div className="max-h-[400px] overflow-y-auto pr-1">
+      <div className="max-h-[calc(100vh-280px)] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-primary/15 scrollbar-track-transparent">
         {/* Sticky category filter chips */}
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm pb-3 flex gap-1.5 flex-wrap">
           <button

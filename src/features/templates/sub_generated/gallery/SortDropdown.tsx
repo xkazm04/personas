@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { ArrowUpDown, ChevronDown } from 'lucide-react';
+import { useClickOutside } from '@/hooks/utility/useClickOutside';
 import { SORT_OPTIONS } from './searchConstants';
 
 export function SortDropdown({
@@ -14,16 +15,7 @@ export function SortDropdown({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
+  useClickOutside(dropdownRef, isOpen, () => setIsOpen(false));
 
   const defaultOption = { value: 'created_at', label: 'Newest First', dir: 'desc' };
   const currentOption = SORT_OPTIONS.find(

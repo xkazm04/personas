@@ -215,11 +215,11 @@ function TriggerCountdown({ trigger, accentColorClass }: { trigger: PersonaTrigg
     return () => clearInterval(id);
   }, [remaining === null, computeRemaining]);
 
-  if (!trigger.enabled) return <span className="text-xs text-muted-foreground/70">Disabled</span>;
-  if (trigger.trigger_type === 'manual') return <span className="text-xs text-muted-foreground/70">Manual</span>;
-  if (trigger.trigger_type === 'webhook') return <span className="text-xs text-muted-foreground/70">Webhook</span>;
-  if (trigger.trigger_type === 'chain') return <span className="text-xs text-muted-foreground/70">Chain</span>;
-  if (remaining === null) return <span className="text-xs text-muted-foreground/70">Pending</span>;
+  if (!trigger.enabled) return <span className="text-sm text-muted-foreground/70">Disabled</span>;
+  if (trigger.trigger_type === 'manual') return <span className="text-sm text-muted-foreground/70">Manual</span>;
+  if (trigger.trigger_type === 'webhook') return <span className="text-sm text-muted-foreground/70">Webhook</span>;
+  if (trigger.trigger_type === 'chain') return <span className="text-sm text-muted-foreground/70">Chain</span>;
+  if (remaining === null) return <span className="text-sm text-muted-foreground/70">Pending</span>;
 
   const total = getTotalIntervalSeconds(trigger);
   const accentColor = TRIGGER_RING_COLORS[accentColorClass] ?? '#c084fc';
@@ -227,7 +227,7 @@ function TriggerCountdown({ trigger, accentColorClass }: { trigger: PersonaTrigg
   if (firing || remaining <= 0) {
     return (
       <RadialCountdownRing remaining={0} total={total} firing accentColor={accentColor}>
-        <span className="text-[8px] font-semibold text-emerald-400 leading-none">Fire</span>
+        <span className="text-sm font-semibold text-emerald-400 leading-none">Fire</span>
       </RadialCountdownRing>
     );
   }
@@ -241,7 +241,7 @@ function TriggerCountdown({ trigger, accentColorClass }: { trigger: PersonaTrigg
 
   return (
     <RadialCountdownRing remaining={remaining} total={total} firing={false} accentColor={accentColor}>
-      <span className="text-[8px] font-mono font-semibold text-foreground/70 leading-none" title={`in ${formatCountdown(remaining)}`}>
+      <span className="text-sm font-mono font-semibold text-foreground/70 leading-none" title={`in ${formatCountdown(remaining)}`}>
         {compactLabel}
       </span>
     </RadialCountdownRing>

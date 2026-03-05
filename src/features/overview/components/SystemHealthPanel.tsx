@@ -510,7 +510,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${sectionStyle.badge}`}>
                         <SectionIcon className={`w-4 h-4 ${sectionStyle.icon}`} />
                       </div>
-                      <span className="text-xs font-bold text-foreground/90 uppercase tracking-widest">
+                      <span className="text-sm font-bold text-foreground/90 uppercase tracking-widest">
                         {stub.label}
                       </span>
                       <div className="ml-auto">
@@ -564,7 +564,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
                     <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${sectionStyle.badge}`}>
                       <SectionIcon className={`w-4 h-4 ${sectionStyle.icon}`} />
                     </div>
-                    <span className="text-xs font-bold text-foreground/90 uppercase tracking-widest">
+                    <span className="text-sm font-bold text-foreground/90 uppercase tracking-widest">
                       {section.label}
                     </span>
                     <div className="ml-auto">
@@ -635,7 +635,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
                           {authLoading ? 'Signing in...' : 'Sign in with Google'}
                         </button>
                         {authError && (
-                          <p className="text-xs text-red-400/80">{authError}</p>
+                          <p className="text-sm text-red-400/80">{authError}</p>
                         )}
                       </div>
                     )}

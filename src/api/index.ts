@@ -32,3 +32,5 @@ export * from "./teamSynthesis";
 export * from "./autoCredBrowser";
 export * from "./foraging";
 export * from "./dbSchema";
+export * from "./recipes";
+export * from "./automations";

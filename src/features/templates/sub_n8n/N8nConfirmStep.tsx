@@ -156,7 +156,7 @@ export function N8nConfirmStep({
                   {confirmResult.entityErrors.length} {confirmResult.entityErrors.length === 1 ? 'entity' : 'entities'} failed
                 </span>
               </div>
-              <div className="text-xs text-red-400/50 max-h-24 overflow-y-auto">
+              <div className="text-sm text-red-400/50 max-h-24 overflow-y-auto">
                 {confirmResult.entityErrors.map((e, i) => (
                   <div key={i}>{e.entity_type} &lsquo;{e.entity_name}&rsquo;: {e.error}</div>
                 ))}

@@ -1,6 +1,7 @@
 use rusqlite::{params, Row};
 
 use crate::db::models::{CreatePersonaInput, Persona, PersonaHealth, PersonaSummary, UpdatePersonaInput};
+use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::engine::crypto;
 use crate::error::AppError;
@@ -239,7 +240,7 @@ pub fn get_all(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare("SELECT * FROM personas ORDER BY created_at DESC")?;
     let rows = stmt.query_map([], row_to_persona_redacted)?;
-    Ok(rows.filter_map(|r| r.ok()).collect())
+    Ok(collect_rows(rows, "personas::get_all"))
 }
 
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<Persona, AppError> {
@@ -255,7 +256,7 @@ pub fn get_enabled(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare("SELECT * FROM personas WHERE enabled = 1 ORDER BY name")?;
     let rows = stmt.query_map([], row_to_persona)?;
-    Ok(rows.filter_map(|r| r.ok()).collect())
+    Ok(collect_rows(rows, "personas::get_enabled"))
 }
 
 pub fn create(pool: &DbPool, input: CreatePersonaInput) -> Result<Persona, AppError> {
@@ -418,16 +419,15 @@ pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
              GROUP BY persona_id
          ) e ON e.persona_id = p.id",
     )?;
-    let base_rows: Vec<(String, i64, Option<String>)> = summary_stmt
-        .query_map([], |row| {
-            Ok((
-                row.get::<_, String>("persona_id")?,
-                row.get::<_, i64>("enabled_trigger_count")?,
-                row.get::<_, Option<String>>("last_run_at")?,
-            ))
-        })?
-        .filter_map(|r| r.ok())
-        .collect();
+    let base_rows = summary_stmt.query_map([], |row| {
+        Ok((
+            row.get::<_, String>("persona_id")?,
+            row.get::<_, i64>("enabled_trigger_count")?,
+            row.get::<_, Option<String>>("last_run_at")?,
+        ))
+    })?;
+    let base_rows: Vec<(String, i64, Option<String>)> =
+        collect_rows(base_rows, "personas::get_summaries/base_rows");
 
     // Step 2: Compute health for each persona from recent executions
     let today_start = chrono::Utc::now().date_naive().and_hms_opt(0, 0, 0).unwrap().to_string();
@@ -461,10 +461,9 @@ fn compute_persona_health(
          ORDER BY created_at DESC
          LIMIT 10",
     )?;
-    let recent_statuses: Vec<String> = status_stmt
-        .query_map(params![persona_id], |row| row.get(0))?
-        .filter_map(|r| r.ok())
-        .collect();
+    let status_rows = status_stmt.query_map(params![persona_id], |row| row.get(0))?;
+    let recent_statuses: Vec<String> =
+        collect_rows(status_rows, "personas::compute_persona_health/recent_statuses");
 
     let total_recent = recent_statuses.len() as i64;
 
@@ -513,12 +512,13 @@ fn compute_persona_health(
          WHERE persona_id = ?1 AND created_at >= ?2
          GROUP BY DATE(created_at)",
     )?;
-    let day_counts: std::collections::HashMap<String, i64> = sparkline_stmt
-        .query_map(params![persona_id, week_ago], |row| {
-            Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
-        })?
-        .filter_map(|r| r.ok())
-        .collect();
+    let day_rows = sparkline_stmt.query_map(params![persona_id, week_ago], |row| {
+        Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
+    })?;
+    let day_counts: std::collections::HashMap<String, i64> =
+        collect_rows(day_rows, "personas::compute_persona_health/day_counts")
+            .into_iter()
+            .collect();
 
     let today = chrono::Utc::now().date_naive();
     let sparkline: Vec<i64> = (0..7)

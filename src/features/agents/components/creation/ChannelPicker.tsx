@@ -117,7 +117,7 @@ export function ChannelPicker({ channels, onToggle }: ChannelPickerProps) {
               key={key}
               type="button"
               onClick={() => handleToggle(opt)}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all ${
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-medium rounded-lg border transition-all ${
                 active
                   ? 'bg-primary/12 border-primary/30 text-primary ring-1 ring-primary/20'
                   : 'bg-secondary/30 border-primary/10 text-muted-foreground/70 hover:bg-secondary/50 hover:text-foreground/80'
@@ -144,7 +144,7 @@ export function ChannelPicker({ channels, onToggle }: ChannelPickerProps) {
             const FIcon = fallbackIcons[channel.type] ?? MessageSquare;
             return <FIcon className="w-3.5 h-3.5 text-muted-foreground/60 flex-shrink-0" />;
           })()}
-          <span className="text-xs text-foreground/70 shrink-0">
+          <span className="text-sm text-foreground/70 shrink-0">
             {channel.credential_id
               ? credentials.find((c) => c.id === channel.credential_id)?.name ?? channel.type
               : channel.type === ('in-app' as string)
@@ -163,7 +163,7 @@ export function ChannelPicker({ channels, onToggle }: ChannelPickerProps) {
       ))}
 
       {channelOptions.length <= 1 && (
-        <p className="text-xs text-muted-foreground/40 italic">
+        <p className="text-sm text-muted-foreground/40 italic">
           Save communication credentials (Slack, Email, etc.) in the Vault to see them here.
         </p>
       )}

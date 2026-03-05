@@ -72,7 +72,7 @@ export function CredentialTypePicker({
         </button>
         <div>
           <h3 className="text-sm font-semibold text-foreground">Add Credential</h3>
-          <p className="text-xs text-muted-foreground/60">Choose the type of connection</p>
+          <p className="text-sm text-muted-foreground/60">Choose the type of connection</p>
         </div>
       </div>
 
@@ -95,7 +95,7 @@ export function CredentialTypePicker({
                 <Icon className="w-4.5 h-4.5" style={{ color: type.color }} />
               </div>
               <h4 className="text-sm font-medium text-foreground mb-1">{type.title}</h4>
-              <p className="text-xs text-muted-foreground/60 leading-relaxed">{type.description}</p>
+              <p className="text-sm text-muted-foreground/60 leading-relaxed">{type.description}</p>
             </button>
           );
         })}
@@ -112,7 +112,7 @@ export function CredentialTypePicker({
           </div>
           <div>
             <h4 className="text-sm font-medium text-foreground">Auto-Discover Credentials</h4>
-            <p className="text-xs text-muted-foreground/60">
+            <p className="text-sm text-muted-foreground/60">
               Scan your filesystem for existing API keys, AWS profiles, env vars, and more
             </p>
           </div>

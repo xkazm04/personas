@@ -1,6 +1,7 @@
 use rusqlite::{params, Row};
 
 use crate::db::models::{CreateMessageInput, PersonaMessage, PersonaMessageDelivery};
+use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -56,7 +57,7 @@ pub fn get_all(
          LIMIT ?1 OFFSET ?2",
     )?;
     let rows = stmt.query_map(params![limit, offset], row_to_message)?;
-    let messages = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+    let messages = collect_rows(rows, "messages::get_all");
     Ok(messages)
 }
 
@@ -90,7 +91,7 @@ pub fn get_by_persona_id(
          LIMIT ?2",
     )?;
     let rows = stmt.query_map(params![persona_id, limit], row_to_message)?;
-    let messages = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+    let messages = collect_rows(rows, "messages::get_by_persona_id");
     Ok(messages)
 }
 
@@ -216,7 +217,7 @@ pub fn get_deliveries_by_message(
          ORDER BY created_at DESC",
     )?;
     let rows = stmt.query_map(params![message_id], row_to_delivery)?;
-    let deliveries = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+    let deliveries = collect_rows(rows, "messages::get_deliveries_by_message");
     Ok(deliveries)
 }
 
@@ -278,33 +279,14 @@ pub fn update_delivery_status(
 mod tests {
     use super::*;
     use crate::db::init_test_db;
-    use crate::db::models::CreatePersonaInput;
-    use crate::db::repos::core::personas;
+    use crate::db::repos::test_fixtures;
 
     fn create_test_persona(pool: &DbPool) -> String {
-        let persona = personas::create(
+        test_fixtures::create_test_persona_id(
             pool,
-            CreatePersonaInput {
-                name: "Message Test Persona".into(),
-                system_prompt: "You are a message test persona.".into(),
-                project_id: None,
-                description: None,
-                structured_prompt: None,
-                icon: None,
-                color: None,
-                enabled: Some(true),
-                max_concurrent: None,
-                timeout_ms: None,
-                model_profile: None,
-                max_budget_usd: None,
-                max_turns: None,
-                design_context: None,
-                group_id: None,
-                notification_channels: None,
-            },
+            "Message Test Persona",
+            "You are a message test persona.",
         )
-        .unwrap();
-        persona.id
     }
 
     // ------------------------------------------------------------------

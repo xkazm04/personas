@@ -154,13 +154,13 @@ export function EvalPanel() {
                   >
                     {isSelected && <Check className="w-3 h-3" />}
                     <span className="font-mono">v{v.version_number}</span>
-                    <span className="text-xs opacity-60">{v.tag}</span>
+                    <span className="text-sm opacity-60">{v.tag}</span>
                   </button>
                 );
               })}
             </div>
             {promptVersions.length < 2 && (
-              <p className="text-xs text-amber-400/80 mt-1">
+              <p className="text-sm text-amber-400/80 mt-1">
                 At least 2 prompt versions are needed. Create more versions in the Versions tab.
               </p>
             )}
@@ -244,7 +244,7 @@ export function EvalPanel() {
 
           {/* Test input */}
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground/70">Test Input (optional JSON)</label>
+            <label className="text-sm text-muted-foreground/70">Test Input (optional JSON)</label>
             <textarea
               value={testInput}
               onChange={(e) => setTestInput(e.target.value)}
@@ -257,7 +257,7 @@ export function EvalPanel() {
 
           {/* Combination preview */}
           {selectedVersionIds.size >= 2 && selectedModels.size > 0 && (
-            <div className="text-xs text-muted-foreground/70 bg-secondary/30 rounded-lg px-3 py-2">
+            <div className="text-sm text-muted-foreground/70 bg-secondary/30 rounded-lg px-3 py-2">
               {selectedVersionIds.size} versions × {selectedModels.size} models = {selectedVersionIds.size * selectedModels.size} evaluation cells
             </div>
           )}
@@ -320,7 +320,7 @@ export function EvalPanel() {
                       : <ChevronRight className="w-4 h-4 text-muted-foreground/80 flex-shrink-0" />}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-mono text-foreground/80">{parseVersionNums(run)}</span>
+                        <span className="text-sm font-mono text-foreground/80">{parseVersionNums(run)}</span>
                         <span className={statusBadge(run.status)}>{run.status}</span>
                       </div>
                       <div className="flex items-center gap-3 mt-0.5 text-sm text-muted-foreground/80">
@@ -329,7 +329,7 @@ export function EvalPanel() {
                           {new Date(run.createdAt).toLocaleString()}
                         </span>
                         {run.scenariosCount > 0 && (
-                          <span className="text-xs">{run.scenariosCount} scenarios</span>
+                          <span className="text-sm">{run.scenariosCount} scenarios</span>
                         )}
                       </div>
                     </div>

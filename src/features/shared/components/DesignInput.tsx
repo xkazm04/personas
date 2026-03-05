@@ -250,7 +250,7 @@ export function DesignInput({
           )}
         </div>
       </div>
-      <p className="text-[10px] text-muted-foreground/60 px-1">Press Enter to submit, Shift+Enter for new line.</p>
+      <p className="text-sm text-muted-foreground/60 px-1">Press Enter to submit, Shift+Enter for new line.</p>
 
       {/* Type selector modal */}
       {showTypeSelector && pendingFile && (

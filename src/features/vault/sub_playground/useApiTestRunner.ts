@@ -188,7 +188,7 @@ export function useApiTestRunner(): UseApiTestRunnerReturn {
         failed++;
         current++;
 
-        const errorMsg = err instanceof Error ? err.message : String(err);
+        const errorMsg = err instanceof Error ? err.message : typeof err === 'object' && err !== null ? JSON.stringify(err) : String(err);
         setResults(prev => {
           const next = new Map(prev);
           next.set(key, { key, verdict: 'failed', error: errorMsg });

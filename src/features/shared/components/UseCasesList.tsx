@@ -151,7 +151,7 @@ export function UseCasesList({ designContext, emptyMessage, emptyHint }: UseCase
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-semibold text-foreground/95">{uc.title}</p>
                     {uc.category && catStyle && (
-                      <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded border ${catStyle.bg} ${catStyle.text} uppercase tracking-wider`}>
+                      <span className={`px-1.5 py-0.5 text-sm font-medium rounded border ${catStyle.bg} ${catStyle.text} uppercase tracking-wider`}>
                         {uc.category.replace('-', ' ')}
                       </span>
                     )}

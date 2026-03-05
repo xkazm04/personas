@@ -129,7 +129,7 @@ export default function EngineSettings() {
                             {engine.name}
                           </span>
                           {health && (
-                            <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                            <span className={`text-sm px-1.5 py-0.5 rounded-full ${
                               isInstalled
                                 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
                                 : isError
@@ -140,14 +140,14 @@ export default function EngineSettings() {
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground/70 mt-1">
+                        <p className="text-sm text-muted-foreground/70 mt-1">
                           {engine.description}
                         </p>
-                        <p className="text-xs text-muted-foreground/50 mt-0.5">
-                          Context file: <code className="text-xs">{engine.contextFile}</code>
+                        <p className="text-sm text-muted-foreground/50 mt-0.5">
+                          Context file: <code className="text-sm">{engine.contextFile}</code>
                         </p>
                         {health?.detail && isInstalled && (
-                          <p className="text-xs text-muted-foreground/50 mt-0.5">{health.detail}</p>
+                          <p className="text-sm text-muted-foreground/50 mt-0.5">{health.detail}</p>
                         )}
                       </div>
                     </div>
@@ -160,7 +160,7 @@ export default function EngineSettings() {
           {/* Warning note */}
           <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 flex items-start gap-3">
             <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
-            <div className="text-xs text-muted-foreground/80">
+            <div className="text-sm text-muted-foreground/80">
               <p className="font-medium text-amber-400/90 mb-1">Protocol Compatibility</p>
               <p>
                 Communication protocols (agent memory, manual review, execution flow tracking, outcome assessment)
@@ -171,7 +171,7 @@ export default function EngineSettings() {
           </div>
 
           {setting.saved && (
-            <p className="text-xs text-emerald-400 text-center">Engine setting saved</p>
+            <p className="text-sm text-emerald-400 text-center">Engine setting saved</p>
           )}
         </div>
       </ContentBody>

@@ -1,12 +1,55 @@
 use rusqlite::{params, Row};
 
 use crate::db::models::{CreatePersonaMemoryInput, PersonaMemory};
+use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::error::AppError;
 
 /// Escape LIKE metacharacters (%, _) so they are matched literally.
 fn escape_like(input: &str) -> String {
     input.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_")
+}
+
+fn build_memory_filters(
+    persona_id: Option<&str>,
+    category: Option<&str>,
+    search: Option<&str>,
+) -> (String, Vec<String>) {
+    let mut conditions: Vec<String> = Vec::new();
+    let mut param_values: Vec<String> = Vec::new();
+    let mut param_idx = 1u32;
+
+    if let Some(pid) = persona_id {
+        conditions.push(format!("persona_id = ?{}", param_idx));
+        param_values.push(pid.to_string());
+        param_idx += 1;
+    }
+    if let Some(cat) = category {
+        conditions.push(format!("category = ?{}", param_idx));
+        param_values.push(cat.to_string());
+        param_idx += 1;
+    }
+    if let Some(q) = search {
+        let trimmed = q.trim();
+        if !trimmed.is_empty() {
+            let pattern = format!("%{}%", escape_like(trimmed));
+            conditions.push(format!(
+                "(title LIKE ?{} ESCAPE '\\' OR content LIKE ?{} ESCAPE '\\')",
+                param_idx,
+                param_idx + 1
+            ));
+            param_values.push(pattern.clone());
+            param_values.push(pattern);
+        }
+    }
+
+    let where_clause = if conditions.is_empty() {
+        String::new()
+    } else {
+        format!("WHERE {}", conditions.join(" AND "))
+    };
+
+    (where_clause, param_values)
 }
 
 fn row_to_memory(row: &Row) -> rusqlite::Result<PersonaMemory> {
@@ -37,46 +80,18 @@ pub fn get_all(
 
     let conn = pool.get()?;
 
-    let mut conditions: Vec<String> = Vec::new();
-    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
-    let mut param_idx = 1u32;
-
-    if let Some(pid) = persona_id {
-        conditions.push(format!("persona_id = ?{}", param_idx));
-        param_values.push(Box::new(pid.to_string()));
-        param_idx += 1;
-    }
-    if let Some(cat) = category {
-        conditions.push(format!("category = ?{}", param_idx));
-        param_values.push(Box::new(cat.to_string()));
-        param_idx += 1;
-    }
-    if let Some(q) = search {
-        let trimmed = q.trim();
-        if !trimmed.is_empty() {
-            let pattern = format!("%{}%", escape_like(trimmed));
-            conditions.push(format!(
-                "(title LIKE ?{} ESCAPE '\\' OR content LIKE ?{} ESCAPE '\\')",
-                param_idx,
-                param_idx + 1
-            ));
-            param_values.push(Box::new(pattern.clone()));
-            param_values.push(Box::new(pattern));
-            param_idx += 2;
-        }
-    }
-
-    let where_clause = if conditions.is_empty() {
-        String::new()
-    } else {
-        format!("WHERE {}", conditions.join(" AND "))
-    };
+    let (where_clause, filter_params) = build_memory_filters(persona_id, category, search);
+    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = filter_params
+        .into_iter()
+        .map(|value| Box::new(value) as Box<dyn rusqlite::types::ToSql>)
+        .collect();
+    let limit_idx = param_values.len() + 1;
 
     let sql = format!(
         "SELECT * FROM persona_memories {} ORDER BY created_at DESC LIMIT ?{} OFFSET ?{}",
         where_clause,
-        param_idx,
-        param_idx + 1
+        limit_idx,
+        limit_idx + 1
     );
 
     param_values.push(Box::new(limit));
@@ -87,7 +102,7 @@ pub fn get_all(
 
     let mut stmt = conn.prepare(&sql)?;
     let rows = stmt.query_map(params_ref.as_slice(), row_to_memory)?;
-    let results: Vec<PersonaMemory> = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+    let results: Vec<PersonaMemory> = collect_rows(rows, "memories::get_all");
     Ok(results)
 }
 
@@ -118,7 +133,7 @@ pub fn get_by_persona(
          ORDER BY importance DESC, created_at DESC LIMIT ?2",
     )?;
     let rows = stmt.query_map(params![persona_id, limit], row_to_memory)?;
-    let results: Vec<PersonaMemory> = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+    let results: Vec<PersonaMemory> = collect_rows(rows, "memories::get_by_persona");
     Ok(results)
 }
 
@@ -132,7 +147,7 @@ pub fn get_by_execution(
          ORDER BY created_at ASC",
     )?;
     let rows = stmt.query_map(params![execution_id], row_to_memory)?;
-    let results: Vec<PersonaMemory> = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+    let results: Vec<PersonaMemory> = collect_rows(rows, "memories::get_by_execution");
     Ok(results)
 }
 
@@ -178,43 +193,13 @@ pub fn get_total_count(
 ) -> Result<i64, AppError> {
     let conn = pool.get()?;
 
-    let mut conditions: Vec<String> = Vec::new();
-    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
-    let mut param_idx = 1u32;
-
-    if let Some(pid) = persona_id {
-        conditions.push(format!("persona_id = ?{}", param_idx));
-        param_values.push(Box::new(pid.to_string()));
-        param_idx += 1;
-    }
-    if let Some(cat) = category {
-        conditions.push(format!("category = ?{}", param_idx));
-        param_values.push(Box::new(cat.to_string()));
-        param_idx += 1;
-    }
-    if let Some(q) = search {
-        let trimmed = q.trim();
-        if !trimmed.is_empty() {
-            let pattern = format!("%{}%", escape_like(trimmed));
-            conditions.push(format!(
-                "(title LIKE ?{} ESCAPE '\\' OR content LIKE ?{} ESCAPE '\\')",
-                param_idx,
-                param_idx + 1
-            ));
-            param_values.push(Box::new(pattern.clone()));
-            param_values.push(Box::new(pattern));
-        }
-    }
-
-    let where_clause = if conditions.is_empty() {
-        String::new()
-    } else {
-        format!("WHERE {}", conditions.join(" AND "))
-    };
+    let (where_clause, filter_params) = build_memory_filters(persona_id, category, search);
 
     let sql = format!("SELECT COUNT(*) FROM persona_memories {}", where_clause);
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-        param_values.iter().map(|p| p.as_ref()).collect();
+    let params_ref: Vec<&dyn rusqlite::types::ToSql> = filter_params
+        .iter()
+        .map(|value| value as &dyn rusqlite::types::ToSql)
+        .collect();
 
     let count: i64 = conn.query_row(&sql, params_ref.as_slice(), |row| row.get(0))?;
     Ok(count)
@@ -240,43 +225,11 @@ pub fn get_stats(
 ) -> Result<MemoryStats, AppError> {
     let conn = pool.get()?;
 
-    // Build shared WHERE clause
-    let mut conditions: Vec<String> = Vec::new();
-    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
-    let mut param_idx = 1u32;
-
-    if let Some(pid) = persona_id {
-        conditions.push(format!("persona_id = ?{}", param_idx));
-        param_values.push(Box::new(pid.to_string()));
-        param_idx += 1;
-    }
-    if let Some(cat) = category {
-        conditions.push(format!("category = ?{}", param_idx));
-        param_values.push(Box::new(cat.to_string()));
-        param_idx += 1;
-    }
-    if let Some(q) = search {
-        let trimmed = q.trim();
-        if !trimmed.is_empty() {
-            let pattern = format!("%{}%", escape_like(trimmed));
-            conditions.push(format!(
-                "(title LIKE ?{} ESCAPE '\\' OR content LIKE ?{} ESCAPE '\\')",
-                param_idx,
-                param_idx + 1
-            ));
-            param_values.push(Box::new(pattern.clone()));
-            param_values.push(Box::new(pattern));
-        }
-    }
-
-    let where_clause = if conditions.is_empty() {
-        String::new()
-    } else {
-        format!("WHERE {}", conditions.join(" AND "))
-    };
-
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-        param_values.iter().map(|p| p.as_ref()).collect();
+    let (where_clause, filter_params) = build_memory_filters(persona_id, category, search);
+    let params_ref: Vec<&dyn rusqlite::types::ToSql> = filter_params
+        .iter()
+        .map(|value| value as &dyn rusqlite::types::ToSql)
+        .collect();
 
     // Total + avg importance in one query
     let agg_sql = format!(
@@ -294,10 +247,10 @@ pub fn get_stats(
         where_clause
     );
     let mut cat_stmt = conn.prepare(&cat_sql)?;
-    let category_counts: Vec<(String, i64)> = cat_stmt
-        .query_map(params_ref.as_slice(), |row| Ok((row.get(0)?, row.get(1)?)))?
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(AppError::Database)?;
+    let category_rows = cat_stmt
+        .query_map(params_ref.as_slice(), |row| Ok((row.get(0)?, row.get(1)?)))?;
+    let category_counts: Vec<(String, i64)> =
+        collect_rows(category_rows, "memories::get_stats/category_counts");
 
     // Agent breakdown
     let agent_sql = format!(
@@ -305,10 +258,10 @@ pub fn get_stats(
         where_clause
     );
     let mut agent_stmt = conn.prepare(&agent_sql)?;
-    let agent_counts: Vec<(String, i64)> = agent_stmt
-        .query_map(params_ref.as_slice(), |row| Ok((row.get(0)?, row.get(1)?)))?
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(AppError::Database)?;
+    let agent_rows = agent_stmt
+        .query_map(params_ref.as_slice(), |row| Ok((row.get(0)?, row.get(1)?)))?;
+    let agent_counts: Vec<(String, i64)> =
+        collect_rows(agent_rows, "memories::get_stats/agent_counts");
 
     Ok(MemoryStats {
         total,

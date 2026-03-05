@@ -177,7 +177,7 @@ export default function CanvasAssistant({
 
             {/* Loading message */}
             {loading && (
-              <div className="mx-3 mb-3 px-3 py-2 rounded-lg bg-indigo-500/8 border border-indigo-500/15 text-xs text-indigo-300/80 flex items-center gap-2">
+              <div className="mx-3 mb-3 px-3 py-2 rounded-lg bg-indigo-500/8 border border-indigo-500/15 text-sm text-indigo-300/80 flex items-center gap-2">
                 <Loader2 className="w-3 h-3 animate-spin flex-shrink-0" />
                 Building your team...
               </div>
@@ -207,7 +207,7 @@ export default function CanvasAssistant({
                     <span className="text-sm font-semibold text-foreground/80 flex items-center gap-2">
                       Blueprint — {blueprint.members.length} agents
                       {suggestedPattern && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-500/15 text-indigo-300 border border-indigo-500/20">
+                        <span className="px-1.5 py-0.5 rounded text-sm font-medium bg-indigo-500/15 text-indigo-300 border border-indigo-500/20">
                           {suggestedPattern}
                         </span>
                       )}

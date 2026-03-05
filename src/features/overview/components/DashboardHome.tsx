@@ -105,7 +105,7 @@ export default function DashboardHome() {
         whileHover={{ scale: 1.05 }}
         onClick={() => setOverviewTab('messages')}
         title={`${unreadMessageCount} unread messages`}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors hover:bg-blue-500/15 bg-blue-500/10 border-blue-500/20 text-blue-300"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-semibold border transition-colors hover:bg-blue-500/15 bg-blue-500/10 border-blue-500/20 text-blue-300"
       >
         <Mail className="w-3 h-3" />
         {unreadMessageCount}
@@ -114,7 +114,7 @@ export default function DashboardHome() {
         whileHover={{ scale: 1.05 }}
         onClick={() => setOverviewTab('manual-review')}
         title={`${pendingReviewCount} pending reviews`}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors hover:bg-amber-500/15 bg-amber-500/10 border-amber-500/20 text-amber-300"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-semibold border transition-colors hover:bg-amber-500/15 bg-amber-500/10 border-amber-500/20 text-amber-300"
       >
         <ClipboardCheck className="w-3 h-3" />
         {pendingReviewCount}
@@ -124,7 +124,7 @@ export default function DashboardHome() {
           whileHover={{ scale: 1.05 }}
           onClick={() => setOverviewTab('executions')}
           title={`${globalExecutionsTotal} total executions`}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors hover:bg-emerald-500/15 bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-semibold border transition-colors hover:bg-emerald-500/15 bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
         >
           <Activity className="w-3 h-3" />
           {globalExecutionsTotal}
@@ -133,7 +133,7 @@ export default function DashboardHome() {
           whileHover={{ scale: 1.05 }}
           onClick={() => setOverviewTab('analytics')}
           title={`${stats.successRate}% success rate`}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors hover:bg-violet-500/15 bg-violet-500/10 border-violet-500/20 text-violet-300"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-semibold border transition-colors hover:bg-violet-500/15 bg-violet-500/10 border-violet-500/20 text-violet-300"
         >
           <ShieldCheck className="w-3 h-3" />
           {stats.successRate}%
@@ -142,7 +142,7 @@ export default function DashboardHome() {
           whileHover={{ scale: 1.05 }}
           onClick={() => setOverviewTab('realtime')}
           title={`${stats.activeAgents} active agents`}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors hover:bg-rose-500/15 bg-rose-500/10 border-rose-500/20 text-rose-300"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-semibold border transition-colors hover:bg-rose-500/15 bg-rose-500/10 border-rose-500/20 text-rose-300"
         >
           <Cpu className="w-3 h-3" />
           {stats.activeAgents}
@@ -202,7 +202,7 @@ export default function DashboardHome() {
                 </h3>
                 <button
                   onClick={() => setOverviewTab('executions')}
-                  className="text-xs font-medium text-primary hover:text-primary/80 flex items-center gap-1 transition-colors"
+                  className="text-sm font-medium text-primary hover:text-primary/80 flex items-center gap-1 transition-colors"
                 >
                   View All <ArrowRight className="w-3 h-3" />
                 </button>
@@ -222,7 +222,7 @@ export default function DashboardHome() {
                          <Activity className="w-3.5 h-3.5 animate-pulse" />}
                       </div>
                       <span className="text-sm font-medium text-foreground/90 truncate min-w-0">{exec.persona_name || 'Agent'}</span>
-                      <span className={`text-[11px] px-1.5 py-0.5 rounded-md font-medium flex-shrink-0 ${
+                      <span className={`text-sm px-1.5 py-0.5 rounded-md font-medium flex-shrink-0 ${
                         exec.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400' :
                         exec.status === 'failed' ? 'bg-rose-500/10 text-rose-400' :
                         'bg-blue-500/10 text-blue-400'
@@ -230,7 +230,7 @@ export default function DashboardHome() {
                         {exec.status}
                       </span>
                       <span className="flex-1" />
-                      <span className="text-[11px] text-muted-foreground/60 flex-shrink-0 hidden sm:inline">
+                      <span className="text-sm text-muted-foreground/60 flex-shrink-0 hidden sm:inline">
                         {new Date(exec.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
@@ -241,7 +241,7 @@ export default function DashboardHome() {
                       <Zap className="w-6 h-6 text-muted-foreground" />
                     </div>
                     <p className="text-sm font-medium text-foreground/70">No recent activity found.</p>
-                    <p className="text-xs text-muted-foreground mt-1">Run an agent to see activity here.</p>
+                    <p className="text-sm text-muted-foreground mt-1">Run an agent to see activity here.</p>
                   </div>
                 )}
               </div>
@@ -252,7 +252,7 @@ export default function DashboardHome() {
               <div className="rounded-2xl border border-primary/10 bg-secondary/20 shadow-sm p-5 space-y-4 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 blur-3xl rounded-full pointer-events-none" />
                 <div className="flex items-center justify-between relative z-10">
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-foreground/80 flex items-center gap-2">
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-foreground/80 flex items-center gap-2">
                     <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400">
                       <TrendingUp className="w-3.5 h-3.5" />
                     </div>
@@ -261,11 +261,11 @@ export default function DashboardHome() {
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1">
                       <span className="w-2 h-2 rounded-full bg-cyan-400" />
-                      <span className="text-[10px] text-muted-foreground/60">{chartTotals.totalTraffic}</span>
+                      <span className="text-sm text-muted-foreground/60">{chartTotals.totalTraffic}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <span className="w-2 h-2 rounded-full bg-rose-400" />
-                      <span className="text-[10px] text-muted-foreground/60">{chartTotals.totalErrors}</span>
+                      <span className="text-sm text-muted-foreground/60">{chartTotals.totalErrors}</span>
                     </div>
                   </div>
                 </div>
@@ -322,13 +322,13 @@ export default function DashboardHome() {
                     </ResponsiveContainer>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <p className="text-xs text-muted-foreground/50">No execution data yet</p>
+                      <p className="text-sm text-muted-foreground/50">No execution data yet</p>
                     </div>
                   )}
                 </div>
 
                 <div className="pt-3 border-t border-primary/5 relative z-10">
-                  <div className="flex justify-between text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-widest">
+                  <div className="flex justify-between text-sm font-semibold text-muted-foreground/60 uppercase tracking-widest">
                     <span>14 Days Ago</span>
                     <span>Today</span>
                   </div>

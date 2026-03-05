@@ -44,11 +44,11 @@ export function UseCaseModelDropdown({
           <span className="flex-1 text-left truncate">{modelLabel}</span>
           {/* Provenance badge */}
           {hasOverride ? (
-            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/20 flex-shrink-0">
+            <span className="text-sm font-semibold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/20 flex-shrink-0">
               Override
             </span>
           ) : (
-            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-secondary/50 text-muted-foreground/60 border border-primary/8 flex-shrink-0 flex items-center gap-0.5">
+            <span className="text-sm font-medium px-1.5 py-0.5 rounded bg-secondary/50 text-muted-foreground/60 border border-primary/8 flex-shrink-0 flex items-center gap-0.5">
               <Link2 className="w-2.5 h-2.5" />
               Inherited
             </span>
@@ -60,7 +60,7 @@ export function UseCaseModelDropdown({
       {({ close, focusIndex }) => (
         <div className="py-1 max-h-56 overflow-y-auto">
           {/* Persona Default group */}
-          <div className="px-3 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">
+          <div className="px-3 pt-1.5 pb-1 text-sm font-semibold uppercase tracking-wider text-muted-foreground/50">
             Persona Default
           </div>
           <button
@@ -83,7 +83,7 @@ export function UseCaseModelDropdown({
           <div className="my-1 border-t border-primary/8" />
 
           {/* Override options group */}
-          <div className="px-3 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-amber-400/50">
+          <div className="px-3 pt-1.5 pb-1 text-sm font-semibold uppercase tracking-wider text-amber-400/50">
             Override
           </div>
           {OVERRIDE_OPTIONS.map((opt, i) => {

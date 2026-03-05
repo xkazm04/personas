@@ -116,9 +116,9 @@ export function ExpandedRowContent({
                       <ConnectorIcon meta={meta} size="w-4 h-4" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium text-foreground/80 truncate">{meta.label}</div>
+                      <div className="text-sm font-medium text-foreground/80 truncate">{meta.label}</div>
                       {card.role && (
-                        <div className="text-[10px] text-muted-foreground/50 truncate">{card.role}</div>
+                        <div className="text-sm text-muted-foreground/50 truncate">{card.role}</div>
                       )}
                     </div>
                     <button
@@ -138,7 +138,7 @@ export function ExpandedRowContent({
                   {card.actions.length > 0 && (
                     <ul className="space-y-0.5">
                       {card.actions.map((action) => (
-                        <li key={action} className="flex items-start gap-1.5 text-[11px] text-foreground/65">
+                        <li key={action} className="flex items-start gap-1.5 text-sm text-foreground/65">
                           <span className="mt-1 w-1 h-1 rounded-full bg-violet-400/50 flex-shrink-0" />
                           <span className="leading-tight">{action}</span>
                         </li>
@@ -150,7 +150,7 @@ export function ExpandedRowContent({
                   {card.tools.length > 0 && (
                     <div className="flex items-start gap-1 pt-0.5 border-t border-primary/5">
                       <Wrench className="w-2.5 h-2.5 text-muted-foreground/30 mt-0.5 flex-shrink-0" />
-                      <span className="text-[10px] text-muted-foreground/40 leading-tight">
+                      <span className="text-sm text-muted-foreground/40 leading-tight">
                         {card.tools.join(', ')}
                       </span>
                     </div>
@@ -211,7 +211,7 @@ export function ExpandedRowContent({
 
       {/* Use case flows (compact) */}
       {displayFlows.length > 0 && (
-        <div className="flex items-center gap-3 text-xs">
+        <div className="flex items-center gap-3 text-sm">
           <span className="font-medium text-violet-400/70 flex-shrink-0">Use cases:</span>
           {displayFlows.map((flow, i) => (
             <span key={flow.id} className="font-light text-foreground/70">

@@ -11,7 +11,7 @@ import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 const selectClass = 'w-full px-2.5 py-1.5 bg-background/50 border border-primary/10 rounded-lg text-sm text-foreground/90 focus:outline-none focus:border-violet-500/30 transition-colors';
 const inputClass = 'w-full px-2.5 py-1.5 bg-background/50 border border-primary/10 rounded-lg text-sm text-foreground/90 placeholder-muted-foreground/30 focus:outline-none focus:border-violet-500/30 transition-colors';
 const labelClass = 'block text-sm font-medium text-foreground/80';
-const descClass = 'text-xs text-muted-foreground/50 mt-0.5';
+const descClass = 'text-sm text-muted-foreground/50 mt-0.5';
 const fieldClass = 'space-y-1';
 
 // ── Notification channel options ──────────────────────────────────────
@@ -76,7 +76,7 @@ function AccordionSection({
           }`}
         />
         <span className="text-muted-foreground/60">{meta.icon}</span>
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 flex-1">
+        <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/60 flex-1">
           {meta.title}
         </span>
 
@@ -99,7 +99,7 @@ function AccordionSection({
                 />
               ))}
             </span>
-            <span className={`text-[10px] tabular-nums ${
+            <span className={`text-sm tabular-nums ${
               allDone
                 ? 'text-emerald-400/60'
                 : meta.hasMissing
@@ -339,7 +339,7 @@ export function TuneStep() {
                     {variable.label}
                     {variable.required && <span className="text-red-400 ml-0.5">*</span>}
                     {variable.type !== 'text' && variable.type !== 'select' && (
-                      <span className="ml-1.5 text-[10px] text-muted-foreground/40 font-normal">{variable.type}</span>
+                      <span className="ml-1.5 text-sm text-muted-foreground/40 font-normal">{variable.type}</span>
                     )}
                   </label>
                   {variable.description && <p className={descClass}>{variable.description}</p>}
@@ -366,7 +366,7 @@ export function TuneStep() {
                   )}
 
                   {hasError && (
-                    <p className="flex items-center gap-1 text-[11px] text-red-400/80 mt-0.5">
+                    <p className="flex items-center gap-1 text-sm text-red-400/80 mt-0.5">
                       <AlertCircle className="w-3 h-3 flex-shrink-0" />
                       {validation.error}
                     </p>
@@ -396,7 +396,7 @@ export function TuneStep() {
                       key={value}
                       type="button"
                       onClick={() => toggleNotificationChannel(value)}
-                      className={`px-2.5 py-1 text-xs font-medium rounded-lg border transition-colors ${
+                      className={`px-2.5 py-1 text-sm font-medium rounded-lg border transition-colors ${
                         active
                           ? 'bg-violet-500/15 text-violet-300 border-violet-500/25'
                           : 'bg-secondary/30 text-muted-foreground/60 border-primary/10 hover:bg-secondary/50'
@@ -450,7 +450,7 @@ export function TuneStep() {
               <label className={labelClass}>
                 Require approval
                 {sandboxPolicy?.requireApproval && (
-                  <span className="inline-flex items-center gap-0.5 ml-1.5 text-amber-400/70 text-[10px]">
+                  <span className="inline-flex items-center gap-0.5 ml-1.5 text-amber-400/70 text-sm">
                     <Lock className="w-2.5 h-2.5" /> Sandbox
                   </span>
                 )}
@@ -519,7 +519,7 @@ export function TuneStep() {
               <label className={labelClass}>
                 Max concurrent
                 {sandboxPolicy && (
-                  <span className="inline-flex items-center gap-0.5 ml-1.5 text-amber-400/70 text-[10px]">
+                  <span className="inline-flex items-center gap-0.5 ml-1.5 text-amber-400/70 text-sm">
                     <Lock className="w-2.5 h-2.5" /> Max {sandboxPolicy.maxConcurrent}
                   </span>
                 )}
@@ -558,7 +558,7 @@ export function TuneStep() {
               <label className={labelClass}>
                 Budget cap (USD)
                 {sandboxPolicy?.budgetEnforced && (
-                  <span className="inline-flex items-center gap-0.5 ml-1.5 text-amber-400/70 text-[10px]">
+                  <span className="inline-flex items-center gap-0.5 ml-1.5 text-amber-400/70 text-sm">
                     <Lock className="w-2.5 h-2.5" /> Required
                   </span>
                 )}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, Filter, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/ConnectorMeta';
+import { useClickOutside } from '@/hooks/utility/useClickOutside';
 import type { ConnectorWithCount } from '@/api/reviews';
 
 export function ConnectorFilterDropdown({
@@ -17,16 +18,7 @@ export function ConnectorFilterDropdown({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
+  useClickOutside(dropdownRef, isOpen, () => setIsOpen(false));
 
   useEffect(() => {
     if (isOpen) {
@@ -71,7 +63,7 @@ export function ConnectorFilterDropdown({
         <Filter className="w-3.5 h-3.5" />
         Connectors
         {connectorFilter.length > 0 && (
-          <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300 text-xs font-medium">
+          <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300 text-sm font-medium">
             {connectorFilter.length}
           </span>
         )}
@@ -111,7 +103,7 @@ export function ConnectorFilterDropdown({
                     <ConnectorIcon meta={meta} size="w-4 h-4" />
                   </div>
                   <span className="text-sm text-foreground/90 flex-1">{meta.label}</span>
-                  <span className="text-xs text-muted-foreground/50 tabular-nums px-1.5 py-0.5 rounded-full bg-secondary/60">
+                  <span className="text-sm text-muted-foreground/50 tabular-nums px-1.5 py-0.5 rounded-full bg-secondary/60">
                     {item.count}
                   </span>
                   <div

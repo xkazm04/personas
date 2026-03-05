@@ -234,7 +234,7 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
                             : entry.detail ?? ''}
                         </span>
                       </div>
-                      <span className="text-xs text-muted-foreground/60 tabular-nums" data-testid={`audit-time-${entry.id}`}>
+                      <span className="text-sm text-muted-foreground/60 tabular-nums" data-testid={`audit-time-${entry.id}`}>
                         {formatRelativeTime(entry.created_at, '')}
                       </span>
                     </div>

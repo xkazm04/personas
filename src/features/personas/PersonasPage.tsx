@@ -30,6 +30,7 @@ export default function PersonasPage() {
   const fetchPersonas = usePersonaStore((s) => s.fetchPersonas);
   const fetchToolDefinitions = usePersonaStore((s) => s.fetchToolDefinitions);
   const fetchCredentials = usePersonaStore((s) => s.fetchCredentials);
+  const fetchRecipes = usePersonaStore((s) => s.fetchRecipes);
   const fetchPendingReviewCount = usePersonaStore((s) => s.fetchPendingReviewCount);
   const fetchGroups = usePersonaStore((s) => s.fetchGroups);
 
@@ -49,11 +50,12 @@ export default function PersonasPage() {
     // Run all startup fetches in parallel and collect failures.
     // Using Promise.allSettled prevents any single call's error from overwriting
     // the others — the final store.error is the aggregate of all failures.
-    const STARTUP_LABELS = ['personas', 'tools', 'credentials', 'pending review', 'groups'] as const;
+    const STARTUP_LABELS = ['personas', 'tools', 'credentials', 'recipes', 'pending review', 'groups'] as const;
     Promise.allSettled([
       fetchPersonas(),
       fetchToolDefinitions(),
       fetchCredentials(),
+      fetchRecipes(),
       fetchPendingReviewCount(),
       fetchGroups(),
     ]).then((results) => {
@@ -65,7 +67,7 @@ export default function PersonasPage() {
         setError(`Startup failed — ${failed.join(', ')} could not be loaded`);
       }
     });
-  }, [fetchPersonas, fetchToolDefinitions, fetchCredentials, fetchPendingReviewCount, fetchGroups, setError]);
+  }, [fetchPersonas, fetchToolDefinitions, fetchCredentials, fetchRecipes, fetchPendingReviewCount, fetchGroups, setError]);
 
   // Hydrate persisted persona selection on app restart
   useEffect(() => {

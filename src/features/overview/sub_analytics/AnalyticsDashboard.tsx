@@ -237,16 +237,16 @@ export default function AnalyticsDashboard() {
         actions={
           <div className="flex items-center gap-2 flex-shrink-0">
             {/* Header badges */}
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border bg-emerald-500/10 border-emerald-500/20 text-emerald-300">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-semibold border bg-emerald-500/10 border-emerald-500/20 text-emerald-300">
               <DollarSign className="w-3 h-3" />${(summary?.total_cost_usd || 0).toFixed(2)}
             </span>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border bg-blue-500/10 border-blue-500/20 text-blue-300">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-semibold border bg-blue-500/10 border-blue-500/20 text-blue-300">
               <Zap className="w-3 h-3" />{summary?.total_executions || 0}
             </span>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border bg-green-500/10 border-green-500/20 text-green-300">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-semibold border bg-green-500/10 border-green-500/20 text-green-300">
               <CheckCircle className="w-3 h-3" />{successRate}%
             </span>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border bg-purple-500/10 border-purple-500/20 text-purple-300">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-semibold border bg-purple-500/10 border-purple-500/20 text-purple-300">
               <TrendingUp className="w-3 h-3" />{summary?.active_personas || 0}
             </span>
             <button
@@ -456,7 +456,7 @@ export default function AnalyticsDashboard() {
                 </div>
                 <h3 className="text-sm font-bold text-foreground/90 uppercase tracking-widest">Health Issues</h3>
                 {healingIssues.length > 0 && (
-                  <span className="px-2 py-0.5 text-[11px] font-black tracking-wide rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm">
+                  <span className="px-2 py-0.5 text-sm font-black tracking-wide rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm">
                     {healingIssues.length}
                   </span>
                 )}
@@ -537,7 +537,7 @@ export default function AnalyticsDashboard() {
                     <CheckCircle2 className="w-6 h-6 text-emerald-400" />
                   </div>
                   <p className="text-sm font-medium text-foreground/80">No open issues</p>
-                  <p className="text-xs text-muted-foreground mt-1">Run analysis to check for problems.</p>
+                  <p className="text-sm text-muted-foreground mt-1">Run analysis to check for problems.</p>
                 </div>
               </div>
             ) : (

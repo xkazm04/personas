@@ -42,7 +42,7 @@ export function TrustBadge({ trustLevel, compact = false, className = '' }: Trus
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded-md border ${colors.bg} ${colors.text} ${colors.border} ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-sm font-medium rounded-md border ${colors.bg} ${colors.text} ${colors.border} ${className}`}
     >
       <Icon className="w-3 h-3" />
       {label}

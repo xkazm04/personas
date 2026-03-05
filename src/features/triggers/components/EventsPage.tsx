@@ -20,7 +20,7 @@ function TabBadge({ count, active, color }: { count: number | null; active: bool
   if (count === null) return null;
   return (
     <span
-      className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-semibold leading-none tabular-nums transition-colors ${
+      className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-sm font-semibold leading-none tabular-nums transition-colors ${
         active ? `${color} text-white` : 'bg-muted-foreground/12 text-muted-foreground/70'
       }`}
     >

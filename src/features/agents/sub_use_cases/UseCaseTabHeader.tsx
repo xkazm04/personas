@@ -70,7 +70,7 @@ export function UseCaseGeneralHistory({ personaId, refreshSignal }: UseCaseGener
                 const statusEntry = getStatusEntry(exec.status);
                 return (
                   <div key={exec.id} className="px-4 py-2 flex items-center gap-3">
-                    <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded border ${badgeClass(statusEntry)} uppercase`}>
+                    <span className={`px-1.5 py-0.5 text-sm font-medium rounded border ${badgeClass(statusEntry)} uppercase`}>
                       {statusEntry.label}
                     </span>
                     <span className="text-sm text-muted-foreground/60 font-mono w-14 flex-shrink-0">

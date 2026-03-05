@@ -95,7 +95,7 @@ export function RotationInsightBadge({ anomalyScore, consecutiveFailures }: Rota
       title={tooltip}
     >
       <Icon className="w-2.5 h-2.5" />
-      <span className="text-[11px] font-medium">{label}</span>
+      <span className="text-sm font-medium">{label}</span>
       {trend === 'up' && <ArrowUp className="w-2.5 h-2.5" />}
       {trend === 'down' && <ArrowDown className="w-2.5 h-2.5 opacity-60" />}
       {trend === 'flat' && <Minus className="w-2 h-2 opacity-40" />}

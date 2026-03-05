@@ -92,7 +92,7 @@ export const HEALING_CATEGORY_COLORS: Record<string, BadgeColors> = {
   prompt: { bg: 'bg-violet-500/10', text: 'text-violet-400', border: 'border-violet-500/20' },
   tool: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/20' },
   config: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
-  external: { bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/20' },
+  external: { bg: 'bg-gray-500/10', text: 'text-gray-600', border: 'border-gray-500/20' },
 };
 
 export const MEMORY_CATEGORY_COLORS: Record<string, BadgeColors & { label: string }> = {
@@ -101,7 +101,7 @@ export const MEMORY_CATEGORY_COLORS: Record<string, BadgeColors & { label: strin
   instruction: { label: 'Instruction', bg: 'bg-violet-500/10', text: 'text-violet-400', border: 'border-violet-500/20' },
   context: { label: 'Context', bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
   learned: { label: 'Learned', bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/20' },
-  custom: { label: 'Custom', bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/20' },
+  custom: { label: 'Custom', bg: 'bg-gray-500/10', text: 'text-gray-600', border: 'border-gray-500/20' },
 };
 
 export const ALL_MEMORY_CATEGORIES = Object.keys(MEMORY_CATEGORY_COLORS) as PersonaMemoryCategory[];

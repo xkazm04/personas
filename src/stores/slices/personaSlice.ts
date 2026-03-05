@@ -89,10 +89,11 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
       if (seq !== fetchDetailSeq) return; // superseded by a newer request
       // Assemble PersonaWithDetails from multiple IPC calls.
       // Triggers/subscriptions are non-critical and should not block editor load.
-      const [allToolsResult, triggersResult, subscriptionsResult] = await Promise.allSettled([
+      const [allToolsResult, triggersResult, subscriptionsResult, automationsResult] = await Promise.allSettled([
         api.listToolDefinitions(),
         api.listTriggers(id),
         api.listSubscriptions(id),
+        api.listAutomations(id),
       ]);
       if (seq !== fetchDetailSeq) return; // superseded by a newer request
 
@@ -102,6 +103,7 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
 
       const triggers = triggersResult.status === 'fulfilled' ? triggersResult.value : [];
       const subscriptions = subscriptionsResult.status === 'fulfilled' ? subscriptionsResult.value : [];
+      const automations = automationsResult.status === 'fulfilled' ? automationsResult.value : [];
 
       // Find tools assigned to this persona (cross-reference with persona_tools)
       // For now, use all tool definitions — actual assignment filtering can be refined
@@ -110,6 +112,7 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
         tools: allToolsResult.value,
         triggers,
         subscriptions,
+        automations,
       };
       set({ selectedPersona: detail, selectedPersonaId: id, isLoading: false });
     } catch (err) {

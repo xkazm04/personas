@@ -50,7 +50,7 @@ export function TriggerConfigPanel({
                 <span className="font-semibold text-sm text-foreground capitalize">
                   {trigger.trigger_type}
                 </span>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="text-sm text-muted-foreground mt-0.5">
                   {trigger.description}
                 </p>
               </div>
@@ -60,7 +60,7 @@ export function TriggerConfigPanel({
             <div className="flex-1 min-w-0">
               {trigger.trigger_type === 'schedule' && (
                 <div>
-                  <label className="block text-xs font-medium text-foreground/70 mb-1.5">
+                  <label className="block text-sm font-medium text-foreground/70 mb-1.5">
                     Cron Schedule
                   </label>
                   <input
@@ -84,7 +84,7 @@ export function TriggerConfigPanel({
 
               {trigger.trigger_type === 'webhook' && (
                 <div>
-                  <label className="block text-xs font-medium text-foreground/70 mb-1.5">
+                  <label className="block text-sm font-medium text-foreground/70 mb-1.5">
                     Webhook URL
                   </label>
                   <input
@@ -108,7 +108,7 @@ export function TriggerConfigPanel({
 
               {trigger.trigger_type === 'polling' && (
                 <div>
-                  <label className="block text-xs font-medium text-foreground/70 mb-1.5">
+                  <label className="block text-sm font-medium text-foreground/70 mb-1.5">
                     Interval (seconds)
                   </label>
                   <input
@@ -131,7 +131,7 @@ export function TriggerConfigPanel({
               )}
 
               {trigger.trigger_type === 'manual' && (
-                <p className="text-xs text-muted-foreground italic pt-1.5">
+                <p className="text-sm text-muted-foreground italic pt-1.5">
                   Triggered manually — no configuration needed
                 </p>
               )}

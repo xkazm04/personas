@@ -437,13 +437,13 @@ export default function GeneratedReviewsTab({
                               {highlightMatch(review.test_case_name, searchQuery)}
                             </span>
                             {isAiResult && (
-                              <span className="px-1.5 py-0.5 text-[10px] rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/20 flex-shrink-0">
+                              <span className="px-1.5 py-0.5 text-sm rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/20 flex-shrink-0">
                                 <Sparkles className="w-2.5 h-2.5 inline -mt-px mr-0.5" />AI
                               </span>
                             )}
                             {categoryMeta && CategoryIcon && (
                               <span
-                                className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] rounded-full bg-violet-500/8 border border-violet-500/15 text-muted-foreground/60 flex-shrink-0"
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm rounded-full bg-violet-500/8 border border-violet-500/15 text-muted-foreground/60 flex-shrink-0"
                               >
                                 <CategoryIcon className="w-2.5 h-2.5" style={{ color: categoryMeta.color }} />
                                 {categoryMeta.label}
@@ -452,7 +452,7 @@ export default function GeneratedReviewsTab({
                           </div>
                           <div className="flex items-center gap-3 flex-shrink-0 ml-2">
                             {review.adoption_count > 0 && (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-400/70">
+                              <span className="inline-flex items-center gap-1 text-sm font-mono text-emerald-400/70">
                                 <Download className="w-2.5 h-2.5" />
                                 {review.adoption_count}
                               </span>
@@ -462,7 +462,7 @@ export default function GeneratedReviewsTab({
                                 e.stopPropagation();
                                 modals.open({ type: 'adopt', review });
                               }}
-                              className={`px-2 py-1 text-[10px] rounded-md border transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 ${BUTTON_VARIANTS.adopt.bg} ${BUTTON_VARIANTS.adopt.text} ${BUTTON_VARIANTS.adopt.border} ${BUTTON_VARIANTS.adopt.hover}`}
+                              className={`px-2 py-1 text-sm rounded-md border transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 ${BUTTON_VARIANTS.adopt.bg} ${BUTTON_VARIANTS.adopt.text} ${BUTTON_VARIANTS.adopt.border} ${BUTTON_VARIANTS.adopt.hover}`}
                             >
                               Adopt
                             </button>
@@ -491,13 +491,13 @@ export default function GeneratedReviewsTab({
                                       {highlightMatch(review.test_case_name, searchQuery)}
                                     </span>
                                     {isAiResult && (
-                                      <span className="px-1.5 py-0.5 text-[10px] rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/20 flex-shrink-0">
+                                      <span className="px-1.5 py-0.5 text-sm rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/20 flex-shrink-0">
                                         <Sparkles className="w-2.5 h-2.5 inline -mt-px mr-0.5" />AI
                                       </span>
                                     )}
                                     {review.adoption_count > 0 && (
                                       <span
-                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono rounded bg-emerald-500/10 text-emerald-400/70 border border-emerald-500/15"
+                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono rounded bg-emerald-500/10 text-emerald-400/70 border border-emerald-500/15"
                                         title={`Adopted ${review.adoption_count} time${review.adoption_count !== 1 ? 's' : ''}`}
                                       >
                                         <Download className="w-2.5 h-2.5" />
@@ -518,7 +518,7 @@ export default function GeneratedReviewsTab({
                                           e.stopPropagation();
                                           onViewFlows(review);
                                         }}
-                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] rounded bg-violet-500/10 text-violet-400/70 border border-violet-500/15 hover:bg-violet-500/20 transition-colors flex-shrink-0"
+                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm rounded bg-violet-500/10 text-violet-400/70 border border-violet-500/15 hover:bg-violet-500/20 transition-colors flex-shrink-0"
                                         title="View flows"
                                       >
                                         <Workflow className="w-2.5 h-2.5" />
@@ -574,7 +574,7 @@ export default function GeneratedReviewsTab({
                                     }
                                     modals.open({ type: 'preview', review });
                                   }}
-                                  className={`px-2.5 py-1.5 text-xs rounded-lg border transition-colors inline-flex items-center gap-1 opacity-0 group-hover:opacity-100 focus:opacity-100 ${BUTTON_VARIANTS.tryIt.bg} ${BUTTON_VARIANTS.tryIt.text} ${BUTTON_VARIANTS.tryIt.border} ${BUTTON_VARIANTS.tryIt.hover}`}
+                                  className={`px-2.5 py-1.5 text-sm rounded-lg border transition-colors inline-flex items-center gap-1 opacity-0 group-hover:opacity-100 focus:opacity-100 ${BUTTON_VARIANTS.tryIt.bg} ${BUTTON_VARIANTS.tryIt.text} ${BUTTON_VARIANTS.tryIt.border} ${BUTTON_VARIANTS.tryIt.hover}`}
                                   title="Run a sample preview"
                                 >
                                   <Play className="w-3 h-3" />
@@ -585,7 +585,7 @@ export default function GeneratedReviewsTab({
                                     e.stopPropagation();
                                     modals.open({ type: 'adopt', review });
                                   }}
-                                  className={`px-2.5 py-1.5 text-xs rounded-lg border transition-colors inline-flex items-center gap-1 opacity-0 group-hover:opacity-100 focus:opacity-100 ${BUTTON_VARIANTS.adopt.bg} ${BUTTON_VARIANTS.adopt.text} ${BUTTON_VARIANTS.adopt.border} ${BUTTON_VARIANTS.adopt.hover}`}
+                                  className={`px-2.5 py-1.5 text-sm rounded-lg border transition-colors inline-flex items-center gap-1 opacity-0 group-hover:opacity-100 focus:opacity-100 ${BUTTON_VARIANTS.adopt.bg} ${BUTTON_VARIANTS.adopt.text} ${BUTTON_VARIANTS.adopt.border} ${BUTTON_VARIANTS.adopt.hover}`}
                                   title="Adopt this template"
                                 >
                                   <Download className="w-3 h-3" />
@@ -639,7 +639,7 @@ export default function GeneratedReviewsTab({
               {gallery.isFetchingMore && (
                 <div className="flex items-center justify-center py-4">
                   <Loader2 className="w-4 h-4 animate-spin text-muted-foreground/50" />
-                  <span className="ml-2 text-xs text-muted-foreground/50">Loading more...</span>
+                  <span className="ml-2 text-sm text-muted-foreground/50">Loading more...</span>
                 </div>
               )}
             </div>

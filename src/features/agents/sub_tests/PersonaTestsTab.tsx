@@ -193,6 +193,24 @@ export function PersonaTestsTab() {
 
   const hasTools = (selectedPersona?.tools?.length ?? 0) > 0;
   const hasPrompt = !!selectedPersona?.structured_prompt || !!selectedPersona?.system_prompt;
+  const orderedSelectedModels = useMemo(
+    () => ALL_MODELS.filter((m) => selectedModels.has(m.id)),
+    [selectedModels],
+  );
+
+  const perModelProgress = useMemo(() => {
+    const total = testRunProgress?.total ?? 0;
+    const current = testRunProgress?.current ?? 0;
+    const modelCount = Math.max(orderedSelectedModels.length, 1);
+    const perModelTotal = total > 0 ? Math.max(1, Math.ceil(total / modelCount)) : 1;
+
+    return orderedSelectedModels.map((m, idx) => {
+      const start = idx * perModelTotal;
+      const completed = Math.max(0, Math.min(perModelTotal, current - start));
+      const isActive = testRunProgress?.modelId === m.id;
+      return { modelId: m.id, label: m.label, completed, total: perModelTotal, isActive };
+    });
+  }, [orderedSelectedModels, testRunProgress?.current, testRunProgress?.modelId, testRunProgress?.total]);
 
   return (
     <div className="space-y-6">
@@ -378,12 +396,30 @@ export function PersonaTestsTab() {
                   </div>
 
                   {testRunProgress.total && (
-                    <div className="w-full h-1.5 rounded-full bg-secondary/50 overflow-hidden">
-                      <motion.div
-                        className="h-full rounded-full bg-primary/60"
-                        animate={{ width: `${((testRunProgress.current ?? 0) / testRunProgress.total) * 100}%` }}
-                        transition={{ duration: 0.4, ease: 'easeOut' }}
-                      />
+                    <div className="space-y-2">
+                      {perModelProgress.map((model) => (
+                        <div key={model.modelId} className="flex items-center gap-2.5">
+                          <span className="w-20 text-sm text-muted-foreground/80 truncate">{model.label}</span>
+                          <div className="flex items-center gap-1">
+                            {Array.from({ length: model.total }).map((_, i) => {
+                              const done = i < model.completed;
+                              const active = model.isActive && i === model.completed && model.completed < model.total;
+                              return (
+                                <span
+                                  key={`${model.modelId}-${i}`}
+                                  className={`w-2 h-2 rounded-full border ${
+                                    done
+                                      ? 'bg-emerald-400 border-emerald-400'
+                                      : active
+                                        ? 'bg-primary border-primary animate-pulse'
+                                        : 'border-muted-foreground/40'
+                                  }`}
+                                />
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
 

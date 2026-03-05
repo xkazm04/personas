@@ -69,7 +69,7 @@ export default function GhostEdge({
       >
         <div className="flex items-center justify-center h-full">
           <span
-            className="px-2 py-0.5 text-[8px] font-mono uppercase rounded-full border backdrop-blur-sm animate-pulse"
+            className="px-2 py-0.5 text-sm font-mono uppercase rounded-full border backdrop-blur-sm animate-pulse"
             style={{
               backgroundColor: typeStyle.stroke + '12',
               borderColor: typeStyle.stroke + '25',

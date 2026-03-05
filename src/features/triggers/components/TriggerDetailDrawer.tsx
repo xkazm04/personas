@@ -118,7 +118,7 @@ function ConfigSection({ trigger, credentialEventsList, detail }: Pick<TriggerDe
             <div className="space-y-0.5 mt-1">
               {config.conditions.map((c, i) => (
                 <div key={i} className="flex items-center gap-1.5">
-                  <span className="text-rose-400/60 text-xs font-mono">{i + 1}.</span>
+                  <span className="text-rose-400/60 text-sm font-mono">{i + 1}.</span>
                   <code className="px-1.5 py-0.5 bg-background/50 border border-border/20 rounded text-sm font-mono">{c.event_type}</code>
                   {c.source_filter && <span className="text-muted-foreground/60">from {c.source_filter}</span>}
                 </div>

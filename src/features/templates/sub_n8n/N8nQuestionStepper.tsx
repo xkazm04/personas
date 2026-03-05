@@ -104,12 +104,12 @@ export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: 
                 <div className="flex items-center gap-2">
                   {dim && <dim.Icon className={`w-4 h-4 ${tone.accent}`} />}
                   {dim && (
-                    <span className={`text-xs font-semibold uppercase tracking-wider ${tone.accent}`}>
+                    <span className={`text-sm font-semibold uppercase tracking-wider ${tone.accent}`}>
                       {dim.label}
                     </span>
                   )}
                 </div>
-                <span className="text-xs text-muted-foreground/60 tabular-nums">
+                <span className="text-sm text-muted-foreground/60 tabular-nums">
                   {activeIndex + 1} / {questions.length}
                 </span>
               </div>
@@ -212,11 +212,11 @@ export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: 
       </div>
 
       {/* Keyboard hint */}
-      <p className="text-[10px] text-muted-foreground/40 mt-2">
+      <p className="text-sm text-muted-foreground/40 mt-2">
         Use{' '}
-        <kbd className="px-1 py-0.5 rounded bg-secondary/40 border border-primary/8 text-[9px] font-mono">&larr;</kbd>
+        <kbd className="px-1 py-0.5 rounded bg-secondary/40 border border-primary/8 text-sm font-mono">&larr;</kbd>
         {' '}
-        <kbd className="px-1 py-0.5 rounded bg-secondary/40 border border-primary/8 text-[9px] font-mono">&rarr;</kbd>
+        <kbd className="px-1 py-0.5 rounded bg-secondary/40 border border-primary/8 text-sm font-mono">&rarr;</kbd>
         {' '}to navigate
       </p>
     </div>

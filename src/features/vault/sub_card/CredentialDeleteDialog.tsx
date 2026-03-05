@@ -124,7 +124,7 @@ export function CredentialDeleteDialog({
                     </div>
                   )}
                   {deleteConfirm.eventCountVerified === false && (
-                    <div className="text-xs text-amber-300/90">
+                    <div className="text-sm text-amber-300/90">
                       Could not verify event trigger count. Deletion may impact active automations.
                     </div>
                   )}

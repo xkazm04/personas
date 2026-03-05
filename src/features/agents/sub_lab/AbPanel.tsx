@@ -282,7 +282,7 @@ export function AbPanel() {
 
           {/* Test input */}
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground/70">Test Input (optional JSON)</label>
+            <label className="text-sm text-muted-foreground/70">Test Input (optional JSON)</label>
             <textarea
               value={testInput}
               onChange={(e) => setTestInput(e.target.value)}
@@ -347,9 +347,9 @@ export function AbPanel() {
                       : <ChevronRight className="w-4 h-4 text-muted-foreground/80 flex-shrink-0" />}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="px-1.5 py-0.5 rounded text-xs font-mono bg-blue-500/15 text-blue-400">v{run.versionANum}</span>
-                        <span className="text-muted-foreground/50 text-xs">vs</span>
-                        <span className="px-1.5 py-0.5 rounded text-xs font-mono bg-violet-500/15 text-violet-400">v{run.versionBNum}</span>
+                        <span className="px-1.5 py-0.5 rounded text-sm font-mono bg-blue-500/15 text-blue-400">v{run.versionANum}</span>
+                        <span className="text-muted-foreground/50 text-sm">vs</span>
+                        <span className="px-1.5 py-0.5 rounded text-sm font-mono bg-violet-500/15 text-violet-400">v{run.versionBNum}</span>
                         <span className={statusBadge(run.status)}>{run.status}</span>
                       </div>
                       <div className="flex items-center gap-3 mt-0.5 text-sm text-muted-foreground/80">

@@ -515,6 +515,8 @@ pub fn run() {
             commands::recipes::crud::unlink_recipe_from_persona,
             commands::recipes::crud::get_persona_recipes,
             commands::recipes::crud::execute_recipe,
+            commands::recipes::crud::start_recipe_execution,
+            commands::recipes::crud::cancel_recipe_execution,
             commands::recipes::crud::get_credential_recipes,
             commands::recipes::crud::start_recipe_generation,
             commands::recipes::crud::cancel_recipe_generation,

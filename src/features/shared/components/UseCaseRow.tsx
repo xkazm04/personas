@@ -67,11 +67,11 @@ export function UseCaseRow({
             <div className="flex items-center gap-2 flex-wrap">
               <p className="text-sm font-semibold text-foreground/95">{useCase.title}</p>
               {useCase.category && catStyle && (
-                <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded border ${catStyle.bg} ${catStyle.text} uppercase tracking-wider`}>
+                <span className={`px-1.5 py-0.5 text-sm font-medium rounded border ${catStyle.bg} ${catStyle.text} uppercase tracking-wider`}>
                   {useCase.category.replace('-', ' ')}
                 </span>
               )}
-              <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded border ${modeBadge.bg} ${modeBadge.text} uppercase tracking-wider`}>
+              <span className={`px-1.5 py-0.5 text-sm font-medium rounded border ${modeBadge.bg} ${modeBadge.text} uppercase tracking-wider`}>
                 {modeBadge.label}
               </span>
             </div>
@@ -82,12 +82,12 @@ export function UseCaseRow({
             {hasAnyConfig && (
               <div className="flex items-center gap-2 mt-1.5">
                 {hasModelOverride && (
-                  <span className="flex items-center gap-1 text-[10px] text-primary/60">
+                  <span className="flex items-center gap-1 text-sm text-primary/60">
                     <Cpu className="w-2.5 h-2.5" /> Custom model
                   </span>
                 )}
                 {hasNotifications && (
-                  <span className="flex items-center gap-1 text-[10px] text-amber-400/60">
+                  <span className="flex items-center gap-1 text-sm text-amber-400/60">
                     <Bell className="w-2.5 h-2.5" /> Notifications
                   </span>
                 )}

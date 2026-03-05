@@ -19,7 +19,7 @@ export function TrendingCarousel({
     <div className="px-4 py-3 border-b border-primary/10 flex-shrink-0">
       <div className="flex items-center gap-2 mb-2.5">
         <TrendingUp className="w-4 h-4 text-emerald-400/70" />
-        <span className="text-xs font-medium text-muted-foreground/70 uppercase tracking-wide">
+        <span className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wide">
           Most Adopted This Week
         </span>
       </div>
@@ -34,7 +34,7 @@ export function TrendingCarousel({
               {t.test_case_name}
             </div>
             <div className="flex items-center gap-2 mt-1.5">
-              <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-400/70">
+              <span className="inline-flex items-center gap-1 text-sm font-mono text-emerald-400/70">
                 <Download className="w-2.5 h-2.5" />
                 {t.adoption_count}
               </span>

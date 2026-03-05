@@ -66,7 +66,7 @@ export function DonePhase({
       {/* Additive refinement input */}
       {onRefine && (
         <div className="w-full max-w-md mt-4 pt-4 border-t border-primary/10">
-          <p className="text-xs text-muted-foreground/70 text-center mb-2">
+          <p className="text-sm text-muted-foreground/70 text-center mb-2">
             Need to adjust scopes, add fields, or tweak the configuration?
           </p>
           <div className="flex items-center gap-2">

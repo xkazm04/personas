@@ -48,9 +48,9 @@ export function DraftDiffViewer({ currentPromptJson, draftPromptJson, changeSumm
         diffs.map((d) => (
           <div key={d.key} className="rounded-lg border border-primary/10 bg-secondary/20 p-3">
             <div className="flex items-center gap-2 mb-2">
-              <h4 className="text-xs font-medium text-muted-foreground/80 uppercase tracking-wider">{d.label}</h4>
+              <h4 className="text-sm font-medium text-muted-foreground/80 uppercase tracking-wider">{d.label}</h4>
               {!d.changed && (
-                <span className="text-xs text-muted-foreground/40">No changes</span>
+                <span className="text-sm text-muted-foreground/40">No changes</span>
               )}
             </div>
             {d.changed && (

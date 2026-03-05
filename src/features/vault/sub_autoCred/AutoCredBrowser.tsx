@@ -50,7 +50,7 @@ export function AutoCredBrowser({ designResult, logs, onCancel }: AutoCredBrowse
           <p className="text-sm font-medium text-foreground">
             Browser session active — {designResult.connector.label}
           </p>
-          <p className="text-xs text-muted-foreground/60 mt-0.5">
+          <p className="text-sm text-muted-foreground/60 mt-0.5">
             Playwright MCP is controlling the browser
           </p>
         </div>
@@ -60,7 +60,7 @@ export function AutoCredBrowser({ designResult, logs, onCancel }: AutoCredBrowse
       {/* Log output */}
       <div
         ref={scrollRef}
-        className="h-64 overflow-y-auto rounded-xl border border-primary/10 bg-black/30 p-3 font-mono text-xs space-y-1"
+        className="h-64 overflow-y-auto rounded-xl border border-primary/10 bg-black/30 p-3 font-mono text-sm space-y-1"
       >
         {logs.map((entry, i) => {
           const Icon = ICON_MAP[entry.type];

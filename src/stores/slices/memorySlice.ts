@@ -13,7 +13,7 @@ export interface MemorySlice {
 
   // Actions
   fetchMemories: (filters?: { persona_id?: string; category?: string; search?: string }) => Promise<void>;
-  createMemory: (input: { persona_id: string; title: string; content: string; category: string; importance: number; tags: string[] }) => Promise<void>;
+  createMemory: (input: { persona_id: string; title: string; content: string; category: string; importance: number; tags: string[] }) => Promise<boolean>;
   deleteMemory: (id: string) => Promise<void>;
   reviewMemories: (personaId?: string) => Promise<MemoryReviewResult>;
 }
@@ -59,8 +59,10 @@ export const createMemorySlice: StateCreator<PersonaStore, [], [], MemorySlice> 
         memories: [created, ...state.memories],
         memoriesTotal: state.memoriesTotal + 1,
       }));
+      return true;
     } catch (err) {
       set({ error: errMsg(err, "Failed to create memory") });
+      return false;
     }
   },
 

@@ -410,7 +410,7 @@ export default function DryRunDebugger({
                 <span className="text-sm font-semibold text-foreground/90">
                   {agentNames[inspectedData.memberId] || 'Agent'}
                 </span>
-                <span className={`px-1.5 py-0.5 text-[10px] font-mono rounded-md ${
+                <span className={`px-1.5 py-0.5 text-sm font-mono rounded-md ${
                   inspectedData.status === 'completed' ? 'bg-emerald-500/15 text-emerald-400' :
                   inspectedData.status === 'running' ? 'bg-blue-500/15 text-blue-400' :
                   'bg-zinc-500/15 text-muted-foreground'
@@ -437,24 +437,24 @@ export default function DryRunDebugger({
             <div className="grid grid-cols-2 gap-0 divide-x divide-primary/10 overflow-y-auto max-h-[230px]">
               {/* Input */}
               <div className="p-3">
-                <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/60 mb-1.5">Input</div>
+                <div className="text-sm font-mono uppercase tracking-wider text-muted-foreground/60 mb-1.5">Input</div>
                 {inspectedData.input ? (
-                  <pre className="text-[11px] text-foreground/80 font-mono leading-relaxed whitespace-pre-wrap break-all">
+                  <pre className="text-sm text-foreground/80 font-mono leading-relaxed whitespace-pre-wrap break-all">
                     {JSON.stringify(inspectedData.input, null, 2)}
                   </pre>
                 ) : (
-                  <span className="text-[11px] text-muted-foreground/50 italic">No input data</span>
+                  <span className="text-sm text-muted-foreground/50 italic">No input data</span>
                 )}
               </div>
               {/* Output */}
               <div className="p-3">
-                <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/60 mb-1.5">Output</div>
+                <div className="text-sm font-mono uppercase tracking-wider text-muted-foreground/60 mb-1.5">Output</div>
                 {inspectedData.output ? (
-                  <pre className="text-[11px] text-foreground/80 font-mono leading-relaxed whitespace-pre-wrap break-all">
+                  <pre className="text-sm text-foreground/80 font-mono leading-relaxed whitespace-pre-wrap break-all">
                     {JSON.stringify(inspectedData.output, null, 2)}
                   </pre>
                 ) : (
-                  <span className="text-[11px] text-muted-foreground/50 italic">Awaiting execution</span>
+                  <span className="text-sm text-muted-foreground/50 italic">Awaiting execution</span>
                 )}
               </div>
             </div>
@@ -468,7 +468,7 @@ export default function DryRunDebugger({
           {/* Debug badge */}
           <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-500/15 border border-amber-500/25">
             <Bug className="w-3.5 h-3.5 text-amber-400" />
-            <span className="text-[11px] font-semibold text-amber-300 uppercase tracking-wider">Dry Run</span>
+            <span className="text-sm font-semibold text-amber-300 uppercase tracking-wider">Dry Run</span>
           </div>
 
           {/* Transport controls */}
@@ -511,7 +511,7 @@ export default function DryRunDebugger({
           </div>
 
           {/* Step progress */}
-          <div className="flex items-center gap-2 text-[11px] font-mono text-muted-foreground/80">
+          <div className="flex items-center gap-2 text-sm font-mono text-muted-foreground/80">
             <span>Step {Math.max(0, stepIndex + 1)} / {executionOrder.length}</span>
             {isFinished && <span className="text-emerald-400">Complete</span>}
             {paused && isStarted && !isFinished && <span className="text-amber-400">Paused</span>}
@@ -551,7 +551,7 @@ export default function DryRunDebugger({
                   <CircleDot className="absolute -top-1 -right-1 w-2.5 h-2.5 text-red-400" />
                 )}
                 {/* Tooltip */}
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[10px] font-mono rounded bg-background border border-primary/20 text-foreground/80 whitespace-nowrap shadow-lg opacity-0 group-hover/dot:opacity-100 pointer-events-none transition-opacity z-50">
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-sm font-mono rounded bg-background border border-primary/20 text-foreground/80 whitespace-nowrap shadow-lg opacity-0 group-hover/dot:opacity-100 pointer-events-none transition-opacity z-50">
                   {item.name}
                 </div>
               </button>
@@ -564,7 +564,7 @@ export default function DryRunDebugger({
           {inspectedNode && panelCollapsed && (
             <button
               onClick={() => setPanelCollapsed(false)}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/5 border border-primary/10 text-muted-foreground/80 hover:text-foreground/80 transition-colors text-[11px]"
+              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/5 border border-primary/10 text-muted-foreground/80 hover:text-foreground/80 transition-colors text-sm"
             >
               <ChevronUp className="w-3 h-3" />
               Inspector
@@ -573,7 +573,7 @@ export default function DryRunDebugger({
 
           {/* Breakpoint count */}
           {breakpoints.size > 0 && (
-            <span className="flex items-center gap-1 text-[11px] font-mono text-red-400/80">
+            <span className="flex items-center gap-1 text-sm font-mono text-red-400/80">
               <CircleDot className="w-3 h-3" />
               {breakpoints.size} breakpoint{breakpoints.size !== 1 ? 's' : ''}
             </span>

@@ -130,7 +130,7 @@ function TimelineScrubber({
       </div>
 
       {/* Time labels */}
-      <div className="flex justify-between text-[10px] font-mono text-muted-foreground/50 tabular-nums">
+      <div className="flex justify-between text-sm font-mono text-muted-foreground/50 tabular-nums">
         <span>{formatMs(currentMs)}</span>
         <span>{formatMs(totalMs)}</span>
       </div>
@@ -158,14 +158,14 @@ function ReplayTerminalPanel({
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
         <Terminal className="w-3.5 h-3.5 text-muted-foreground/60" />
-        <span className="text-xs font-medium text-muted-foreground/70">Output</span>
-        <span className="ml-auto text-[10px] tabular-nums text-muted-foreground/40">
+        <span className="text-sm font-medium text-muted-foreground/70">Output</span>
+        <span className="ml-auto text-sm tabular-nums text-muted-foreground/40">
           {visibleLines.length}/{totalLines} lines
         </span>
       </div>
       <div
         ref={containerRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-2 font-mono text-xs leading-relaxed"
+        className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-2 font-mono text-sm leading-relaxed"
       >
         {visibleLines.map((line) => {
           const style = classifyLine(line.text);
@@ -204,8 +204,8 @@ function ReplayToolPanel({
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
         <Wrench className="w-3.5 h-3.5 text-muted-foreground/60" />
-        <span className="text-xs font-medium text-muted-foreground/70">Tool Steps</span>
-        <span className="ml-auto text-[10px] tabular-nums text-muted-foreground/40">
+        <span className="text-sm font-medium text-muted-foreground/70">Tool Steps</span>
+        <span className="ml-auto text-sm tabular-nums text-muted-foreground/40">
           {completedSteps.length}/{toolSteps.length}
         </span>
       </div>
@@ -231,7 +231,7 @@ function ReplayToolPanel({
             >
               <div className="flex items-center gap-2">
                 {/* Step number */}
-                <span className={`text-[10px] font-mono tabular-nums ${
+                <span className={`text-sm font-mono tabular-nums ${
                   isActive ? 'text-blue-400' : isCompleted ? 'text-emerald-400' : 'text-muted-foreground/40'
                 }`}>
                   {step.step_index + 1}
@@ -247,7 +247,7 @@ function ReplayToolPanel({
                 }`} />
 
                 {/* Tool name */}
-                <span className={`text-xs font-mono truncate ${
+                <span className={`text-sm font-mono truncate ${
                   isPending ? 'text-muted-foreground/40' : 'text-foreground/80'
                 }`}>
                   {step.tool_name}
@@ -255,7 +255,7 @@ function ReplayToolPanel({
 
                 {/* Duration */}
                 {step.duration_ms != null && isCompleted && (
-                  <span className="ml-auto text-[10px] font-mono text-muted-foreground/40 tabular-nums">
+                  <span className="ml-auto text-sm font-mono text-muted-foreground/40 tabular-nums">
                     {formatDuration(step.duration_ms)}
                   </span>
                 )}
@@ -278,7 +278,7 @@ function ReplayToolPanel({
           );
         })}
         {toolSteps.length === 0 && (
-          <div className="text-center py-6 text-xs text-muted-foreground/40">No tool calls recorded</div>
+          <div className="text-center py-6 text-sm text-muted-foreground/40">No tool calls recorded</div>
         )}
       </div>
     </div>
@@ -309,10 +309,10 @@ function ReplayCostPanel({
       {/* Cost */}
       <div className="flex items-center gap-1.5">
         <DollarSign className="w-3 h-3 text-emerald-400/60" />
-        <span className="text-xs font-mono tabular-nums text-emerald-400">
+        <span className="text-sm font-mono tabular-nums text-emerald-400">
           {formatCost(accumulatedCost)}
         </span>
-        <span className="text-[10px] text-muted-foreground/40">
+        <span className="text-sm text-muted-foreground/40">
           / {formatCost(totalCost)}
         </span>
       </div>
@@ -328,10 +328,10 @@ function ReplayCostPanel({
       {/* Time */}
       <div className="flex items-center gap-1.5">
         <Clock className="w-3 h-3 text-blue-400/60" />
-        <span className="text-xs font-mono tabular-nums text-blue-400">
+        <span className="text-sm font-mono tabular-nums text-blue-400">
           {formatMs(currentMs)}
         </span>
-        <span className="text-[10px] text-muted-foreground/40">
+        <span className="text-sm text-muted-foreground/40">
           ({timePct.toFixed(0)}%)
         </span>
       </div>
@@ -339,7 +339,7 @@ function ReplayCostPanel({
       {/* Steps */}
       <div className="flex items-center gap-1.5">
         <Hash className="w-3 h-3 text-muted-foreground/50" />
-        <span className="text-xs font-mono tabular-nums text-muted-foreground/60">
+        <span className="text-sm font-mono tabular-nums text-muted-foreground/60">
           {completedSteps}/{totalSteps} steps
         </span>
       </div>
@@ -503,7 +503,7 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
               <button
                 key={s}
                 onClick={() => actions.setSpeed(s)}
-                className={`px-2 py-0.5 text-[10px] font-mono rounded-md transition-colors ${
+                className={`px-2 py-0.5 text-sm font-mono rounded-md transition-colors ${
                   state.speed === s
                     ? 'bg-primary/15 text-foreground/90 border border-primary/20'
                     : 'text-muted-foreground/50 hover:text-muted-foreground/80 border border-transparent'
@@ -532,7 +532,7 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
                 </button>
                 <button
                   onClick={handleFork}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
                 >
                   <GitFork className="w-3 h-3" />
                   Fork after step {state.forkPoint + 1}

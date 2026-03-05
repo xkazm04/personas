@@ -6,3 +6,4 @@ pub mod communication;
 pub mod teams;
 pub mod tools;
 pub mod infrastructure;
+pub mod recipes;

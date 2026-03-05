@@ -10,7 +10,7 @@
  *   summary: { total, passed, failed, skipped, duration_ms },
  *   providers: {
  *     "Claude Code (claude-sonnet-4-6)": { passed, failed, tests: [...] },
- *     "Gemini CLI (gemini-3-flash-preview)": { ... },
+ *     "Gemini CLI (gemini-3.1-flash-lite-preview)": { ... },
  *     "Copilot CLI (gpt-5.1-codex-mini)": { ... },
  *     "Cross-provider": { ... }
  *   },
@@ -70,7 +70,7 @@ interface CliE2eReport {
 function detectProvider(name: string): string {
   const lower = name.toLowerCase();
   if (lower.includes('claude')) return 'Claude Code (claude-sonnet-4-6)';
-  if (lower.includes('gemini')) return 'Gemini CLI (gemini-3-flash-preview)';
+  if (lower.includes('gemini')) return 'Gemini CLI (gemini-3.1-flash-lite-preview)';
   if (lower.includes('copilot')) return 'Copilot CLI (gpt-5.1-codex-mini)';
   if (lower.includes('cross-scenario') || lower.includes('concurrent') || lower.includes('cross-provider'))
     return 'Cross-provider';

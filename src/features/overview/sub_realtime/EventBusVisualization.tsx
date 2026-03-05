@@ -502,7 +502,7 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
                 className="flex items-center gap-1.5"
               >
                 <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: EVENT_TYPE_HEX_COLORS[type] ?? '#818cf8' }} />
-                <span className="text-[10px] font-mono text-muted-foreground/80">{EVENT_TYPE_LABELS[type] ?? type.replace(/_/g, ' ')}</span>
+                <span className="text-sm font-mono text-muted-foreground/80">{EVENT_TYPE_LABELS[type] ?? type.replace(/_/g, ' ')}</span>
               </motion.div>
             ))}
           </AnimatePresence>
@@ -514,7 +514,7 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
         <div className="absolute bottom-4 left-0 right-0 flex justify-center pointer-events-none">
           <div className="flex items-center gap-2 bg-background/60 backdrop-blur-sm border border-primary/10 rounded-lg px-4 py-2">
             <span className="w-1.5 h-1.5 rounded-full bg-brand-cyan/40" />
-            <span className="text-[11px] text-muted-foreground/60">
+            <span className="text-sm text-muted-foreground/60">
               Idle — click <span className="font-medium text-purple-300/80">Test Flow</span> to simulate traffic
             </span>
           </div>

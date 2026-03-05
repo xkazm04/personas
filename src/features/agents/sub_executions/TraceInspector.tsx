@@ -109,7 +109,7 @@ function WaterfallBar({ span, totalMs }: { span: TraceSpan; totalMs: number }) {
       {/* Duration label */}
       {span.duration_ms != null && (
         <span
-          className="absolute top-0 text-[10px] font-mono text-muted-foreground/60 leading-5 whitespace-nowrap"
+          className="absolute top-0 text-sm font-mono text-muted-foreground/60 leading-5 whitespace-nowrap"
           style={{ left: `${Math.min(leftPct + widthPct + 0.5, 85)}%` }}
         >
           {formatDuration(span.duration_ms)}
@@ -159,7 +159,7 @@ function SpanRow({
           <span className="w-4 flex-shrink-0" />
         )}
 
-        <span className={`inline-flex px-1.5 py-0.5 text-[10px] font-mono uppercase rounded border ${config.bg} ${config.color} ${config.border} flex-shrink-0`}>
+        <span className={`inline-flex px-1.5 py-0.5 text-sm font-mono uppercase rounded border ${config.bg} ${config.color} ${config.border} flex-shrink-0`}>
           {config.label}
         </span>
 
@@ -172,7 +172,7 @@ function SpanRow({
         )}
 
         {span.cost_usd != null && span.cost_usd > 0 && (
-          <span className="text-[10px] font-mono text-amber-400/70 flex-shrink-0">
+          <span className="text-sm font-mono text-amber-400/70 flex-shrink-0">
             ${span.cost_usd.toFixed(4)}
           </span>
         )}
@@ -203,7 +203,7 @@ function TraceSummary({ trace }: { trace: ExecutionTrace }) {
   return (
     <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
       <div className="rounded-lg border border-primary/15 bg-secondary/40 p-3 space-y-1">
-        <div className="text-[10px] font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
+        <div className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <Clock className="w-2.5 h-2.5" />
           Duration
         </div>
@@ -213,7 +213,7 @@ function TraceSummary({ trace }: { trace: ExecutionTrace }) {
       </div>
 
       <div className="rounded-lg border border-primary/15 bg-secondary/40 p-3 space-y-1">
-        <div className="text-[10px] font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
+        <div className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <DollarSign className="w-2.5 h-2.5" />
           Cost
         </div>
@@ -223,7 +223,7 @@ function TraceSummary({ trace }: { trace: ExecutionTrace }) {
       </div>
 
       <div className="rounded-lg border border-primary/15 bg-secondary/40 p-3 space-y-1">
-        <div className="text-[10px] font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
+        <div className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <Zap className="w-2.5 h-2.5" />
           Tokens
         </div>
@@ -233,7 +233,7 @@ function TraceSummary({ trace }: { trace: ExecutionTrace }) {
       </div>
 
       <div className="rounded-lg border border-primary/15 bg-secondary/40 p-3 space-y-1">
-        <div className="text-[10px] font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
+        <div className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <Activity className="w-2.5 h-2.5" />
           Spans
         </div>
@@ -243,7 +243,7 @@ function TraceSummary({ trace }: { trace: ExecutionTrace }) {
       </div>
 
       <div className="rounded-lg border border-primary/15 bg-secondary/40 p-3 space-y-1">
-        <div className="text-[10px] font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
+        <div className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <AlertCircle className="w-2.5 h-2.5" />
           Errors
         </div>
@@ -410,10 +410,10 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
       {/* Time axis header */}
       <div className="rounded-xl border border-primary/15 bg-secondary/30 overflow-hidden">
         <div className="grid grid-cols-[minmax(200px,1fr)_minmax(200px,2fr)] gap-2 px-2 py-1.5 border-b border-primary/10 bg-secondary/40">
-          <div className="text-[10px] font-mono text-muted-foreground/60 uppercase tracking-wider">
+          <div className="text-sm font-mono text-muted-foreground/60 uppercase tracking-wider">
             Span
           </div>
-          <div className="flex justify-between text-[10px] font-mono text-muted-foreground/60 uppercase tracking-wider">
+          <div className="flex justify-between text-sm font-mono text-muted-foreground/60 uppercase tracking-wider">
             <span>0ms</span>
             <span>{formatDuration(totalMs)}</span>
           </div>
@@ -446,7 +446,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
       {/* Error details */}
       {trace.spans.some(s => s.error) && (
         <div className="space-y-2">
-          <div className="text-[10px] font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
+          <div className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
             <AlertCircle className="w-2.5 h-2.5 text-red-400" />
             Errors
           </div>
@@ -457,7 +457,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
               return (
                 <div key={span.span_id} className="p-3 bg-red-500/5 border border-red-500/15 rounded-lg">
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span className={`inline-flex px-1.5 py-0.5 text-[10px] font-mono uppercase rounded border ${config.bg} ${config.color} ${config.border}`}>
+                    <span className={`inline-flex px-1.5 py-0.5 text-sm font-mono uppercase rounded border ${config.bg} ${config.color} ${config.border}`}>
                       {config.label}
                     </span>
                     <span className="text-sm font-mono text-foreground/80">{span.name}</span>

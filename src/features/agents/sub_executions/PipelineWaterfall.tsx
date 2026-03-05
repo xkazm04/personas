@@ -170,10 +170,10 @@ function StageBar({
           ) : (
             <span className="w-4 flex-shrink-0" />
           )}
-          <span className={`inline-flex px-1.5 py-0.5 text-[10px] font-mono uppercase rounded border ${config.bg} ${config.text} ${config.border} flex-shrink-0`}>
+          <span className={`inline-flex px-1.5 py-0.5 text-sm font-mono uppercase rounded border ${config.bg} ${config.text} ${config.border} flex-shrink-0`}>
             {config.category}
           </span>
-          <span className="text-xs font-medium text-foreground/85 truncate">{meta.label}</span>
+          <span className="text-sm font-medium text-foreground/85 truncate">{meta.label}</span>
           {entry.error && <AlertCircle className="w-3 h-3 text-red-400 flex-shrink-0" />}
         </div>
 
@@ -194,16 +194,16 @@ function StageBar({
               className="absolute z-20 bottom-full mb-1 bg-background/95 border border-primary/20 rounded-lg px-3 py-2 shadow-lg backdrop-blur-sm whitespace-nowrap pointer-events-none"
               style={{ left: `${Math.min(leftPct, 70)}%` }}
             >
-              <p className="text-xs font-medium text-foreground/90 mb-1">{meta.label}</p>
-              <p className="text-[10px] text-muted-foreground/60 mb-1">{meta.boundary}</p>
-              <div className="flex items-center gap-3 text-[10px]">
+              <p className="text-sm font-medium text-foreground/90 mb-1">{meta.label}</p>
+              <p className="text-sm text-muted-foreground/60 mb-1">{meta.boundary}</p>
+              <div className="flex items-center gap-3 text-sm">
                 <span className="font-mono text-foreground/70">{formatDuration(durationMs)}</span>
                 <span className="text-muted-foreground/50">offset: {formatDuration(offsetMs)}</span>
               </div>
               {entry.metadata && Object.keys(entry.metadata).length > 0 && (
                 <div className="mt-1 space-y-0.5">
                   {Object.entries(entry.metadata).map(([k, v]) => (
-                    <div key={k} className="text-[10px] text-muted-foreground/60">
+                    <div key={k} className="text-sm text-muted-foreground/60">
                       <span className="text-muted-foreground/40">{k}:</span>{' '}
                       <span className="font-mono">{String(v)}</span>
                     </div>
@@ -215,7 +215,7 @@ function StageBar({
         </div>
 
         {/* Right: duration */}
-        <span className="text-xs font-mono text-muted-foreground/70 text-right">
+        <span className="text-sm font-mono text-muted-foreground/70 text-right">
           {formatDuration(durationMs)}
         </span>
       </div>
@@ -255,10 +255,10 @@ function SubSpanBar({
       {/* Left: indented tool name */}
       <div className="flex items-center gap-1.5 min-w-0 pl-8">
         <span className="w-4 flex-shrink-0" />
-        <span className="inline-flex px-1.5 py-0.5 text-[9px] font-mono uppercase rounded border bg-cyan-500/10 text-cyan-400 border-cyan-500/20 flex-shrink-0">
+        <span className="inline-flex px-1.5 py-0.5 text-sm font-mono uppercase rounded border bg-cyan-500/10 text-cyan-400 border-cyan-500/20 flex-shrink-0">
           Tool
         </span>
-        <span className="text-[11px] font-mono text-foreground/70 truncate">{step.tool_name}</span>
+        <span className="text-sm font-mono text-foreground/70 truncate">{step.tool_name}</span>
       </div>
 
       {/* Center: bar */}
@@ -277,13 +277,13 @@ function SubSpanBar({
             className="absolute z-20 bottom-full mb-1 bg-background/95 border border-primary/20 rounded-lg px-3 py-2 shadow-lg backdrop-blur-sm whitespace-nowrap pointer-events-none"
             style={{ left: `${Math.min(leftPct, 70)}%` }}
           >
-            <p className="text-xs font-medium text-cyan-400 mb-1">{step.tool_name}</p>
-            <div className="flex items-center gap-3 text-[10px]">
+            <p className="text-sm font-medium text-cyan-400 mb-1">{step.tool_name}</p>
+            <div className="flex items-center gap-3 text-sm">
               <span className="font-mono text-foreground/70">{formatDuration(stepDuration)}</span>
               <span className="text-muted-foreground/50">step #{step.step_index}</span>
             </div>
             {step.input_preview && (
-              <p className="text-[10px] text-muted-foreground/50 mt-1 max-w-[200px] truncate">
+              <p className="text-sm text-muted-foreground/50 mt-1 max-w-[200px] truncate">
                 in: {step.input_preview}
               </p>
             )}
@@ -292,7 +292,7 @@ function SubSpanBar({
       </div>
 
       {/* Right: duration */}
-      <span className="text-[11px] font-mono text-muted-foreground/50 text-right">
+      <span className="text-sm font-mono text-muted-foreground/50 text-right">
         {formatDuration(stepDuration)}
       </span>
     </div>
@@ -363,7 +363,7 @@ function CostAccrualOverlay({
     <div className="px-3 py-2">
       <div className="flex items-center gap-2 mb-1">
         <DollarSign className="w-3 h-3 text-emerald-400" />
-        <span className="text-[10px] font-mono text-muted-foreground/60 uppercase tracking-wider">
+        <span className="text-sm font-mono text-muted-foreground/60 uppercase tracking-wider">
           Cost Accrual — ${totalCostUsd.toFixed(4)}
         </span>
       </div>
@@ -393,13 +393,13 @@ function PipelineSummary({ trace, execution }: { trace: PipelineTrace; execution
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
       <div className="rounded-lg border border-primary/15 bg-secondary/40 p-3 space-y-1">
-        <div className="text-[10px] font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
+        <div className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <Clock className="w-2.5 h-2.5" /> Total Duration
         </div>
         <div className="text-sm font-mono text-foreground/90">{formatDuration(totalMs)}</div>
       </div>
       <div className="rounded-lg border border-primary/15 bg-secondary/40 p-3 space-y-1">
-        <div className="text-[10px] font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
+        <div className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <DollarSign className="w-2.5 h-2.5" /> Cost
         </div>
         <div className="text-sm font-mono text-foreground/90">
@@ -407,13 +407,13 @@ function PipelineSummary({ trace, execution }: { trace: PipelineTrace; execution
         </div>
       </div>
       <div className="rounded-lg border border-primary/15 bg-secondary/40 p-3 space-y-1">
-        <div className="text-[10px] font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
+        <div className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <Zap className="w-2.5 h-2.5" /> Stages
         </div>
         <div className="text-sm font-mono text-foreground/90">{stagesHit} / {PIPELINE_STAGES.length}</div>
       </div>
       <div className="rounded-lg border border-primary/15 bg-secondary/40 p-3 space-y-1">
-        <div className="text-[10px] font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
+        <div className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <AlertCircle className="w-2.5 h-2.5" /> Errors
         </div>
         <div className={`text-sm font-mono ${errors > 0 ? 'text-red-400' : 'text-foreground/90'}`}>{errors}</div>
@@ -476,7 +476,7 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
   return (
     <div className="space-y-4">
       {/* Legend */}
-      <div className="flex items-center gap-4 text-[10px] text-muted-foreground/60">
+      <div className="flex items-center gap-4 text-sm text-muted-foreground/60">
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded bg-blue-500/50" /> Frontend
         </div>
@@ -505,14 +505,14 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
       <div className="rounded-xl border border-primary/15 bg-secondary/30 overflow-hidden">
         {/* Time axis header */}
         <div className="grid grid-cols-[180px_1fr_70px] gap-2 px-3 py-1.5 border-b border-primary/10 bg-secondary/40">
-          <div className="text-[10px] font-mono text-muted-foreground/60 uppercase tracking-wider">
+          <div className="text-sm font-mono text-muted-foreground/60 uppercase tracking-wider">
             Stage
           </div>
-          <div className="flex justify-between text-[10px] font-mono text-muted-foreground/60 uppercase tracking-wider">
+          <div className="flex justify-between text-sm font-mono text-muted-foreground/60 uppercase tracking-wider">
             <span>0ms</span>
             <span>{formatDuration(totalDurationMs)}</span>
           </div>
-          <div className="text-[10px] font-mono text-muted-foreground/60 uppercase tracking-wider text-right">
+          <div className="text-sm font-mono text-muted-foreground/60 uppercase tracking-wider text-right">
             Duration
           </div>
         </div>
@@ -577,7 +577,7 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
       {/* Error details */}
       {trace.entries.some(e => e.error) && (
         <div className="space-y-2">
-          <div className="text-[10px] font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
+          <div className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
             <AlertCircle className="w-2.5 h-2.5 text-red-400" /> Stage Errors
           </div>
           {trace.entries
@@ -588,7 +588,7 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
               return (
                 <div key={entry.stage} className="p-3 bg-red-500/5 border border-red-500/15 rounded-lg">
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span className={`inline-flex px-1.5 py-0.5 text-[10px] font-mono uppercase rounded border ${config.bg} ${config.text} ${config.border}`}>
+                    <span className={`inline-flex px-1.5 py-0.5 text-sm font-mono uppercase rounded border ${config.bg} ${config.text} ${config.border}`}>
                       {meta.label}
                     </span>
                   </div>

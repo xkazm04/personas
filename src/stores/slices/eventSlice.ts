@@ -28,16 +28,19 @@ export const createEventSlice: StateCreator<PersonaStore, [], [], EventSlice> = 
 
   pushRecentEvent: (event, maxItems = 200) => {
     set((state) => {
-      const exists = state.recentEvents.some((existing) => existing.id === event.id);
-      if (exists) return state;
+      const existingIndex = state.recentEvents.findIndex((existing) => existing.id === event.id);
 
-      const nextEvents = [event, ...state.recentEvents];
+      let nextEvents: PersonaEvent[];
+      if (existingIndex >= 0) {
+        // Replace in place so status transitions (pending -> completed/failed) are reflected.
+        nextEvents = [...state.recentEvents];
+        nextEvents[existingIndex] = event;
+      } else {
+        nextEvents = [event, ...state.recentEvents];
+      }
+
       const trimmed = nextEvents.length > maxItems ? nextEvents.slice(0, maxItems) : nextEvents;
-      const droppedTail = nextEvents.length > maxItems ? nextEvents[maxItems] : undefined;
-
-      let nextPendingCount = state.pendingEventCount;
-      if (event.status === "pending") nextPendingCount += 1;
-      if (droppedTail?.status === "pending") nextPendingCount = Math.max(0, nextPendingCount - 1);
+      const nextPendingCount = trimmed.filter((e) => e.status === "pending").length;
 
       return {
         recentEvents: trimmed,

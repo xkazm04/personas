@@ -126,7 +126,7 @@ export function N8nEntitiesTab({
         <p className="text-sm font-medium text-muted-foreground/60">
           No entities selected.
         </p>
-        <p className="text-xs text-muted-foreground/60">
+        <p className="text-sm text-muted-foreground/60">
           Go back to the Analyze step to select tools and triggers.
         </p>
       </div>
@@ -383,7 +383,7 @@ function ConnectorRow({
             <div className="mt-3 border border-primary/10 rounded-lg bg-background/40 max-h-48 overflow-y-auto">
               {matchingCreds.length > 0 && (
                 <>
-                  <p className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider border-b border-primary/5">
+                  <p className="px-3 py-1.5 text-sm font-semibold text-muted-foreground/50 uppercase tracking-wider border-b border-primary/5">
                     Best match
                   </p>
                   {matchingCreds.map((cred) => (
@@ -395,7 +395,7 @@ function ConnectorRow({
                       <Star className="w-3 h-3 text-amber-400/60 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-foreground/80 truncate">{cred.name}</p>
-                        <p className="text-[10px] text-muted-foreground/60">{cred.service_type}</p>
+                        <p className="text-sm text-muted-foreground/60">{cred.service_type}</p>
                       </div>
                     </button>
                   ))}
@@ -404,7 +404,7 @@ function ConnectorRow({
               {otherCreds.length > 0 && (
                 <>
                   {matchingCreds.length > 0 && (
-                    <p className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider border-b border-primary/5">
+                    <p className="px-3 py-1.5 text-sm font-semibold text-muted-foreground/50 uppercase tracking-wider border-b border-primary/5">
                       Other credentials
                     </p>
                   )}
@@ -417,7 +417,7 @@ function ConnectorRow({
                       <div className="w-3 h-3 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-foreground/80 truncate">{cred.name}</p>
-                        <p className="text-[10px] text-muted-foreground/60">{cred.service_type}</p>
+                        <p className="text-sm text-muted-foreground/60">{cred.service_type}</p>
                       </div>
                     </button>
                   ))}

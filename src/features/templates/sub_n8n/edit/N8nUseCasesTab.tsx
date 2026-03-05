@@ -73,7 +73,7 @@ export function N8nUseCasesTab({
                 ? 'No structured use cases found in design context.'
                 : 'No use cases generated yet.'}
             </p>
-            <p className="text-xs text-muted-foreground/60">
+            <p className="text-sm text-muted-foreground/60">
               Use the adjustment input below to request use case generation.
             </p>
           </div>
@@ -104,11 +104,11 @@ export function N8nUseCasesTab({
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-sm font-semibold text-foreground/95">{uc.title}</p>
                             {uc.category && catStyle && (
-                              <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded-lg border ${catStyle.bg} ${catStyle.text} uppercase tracking-wider`}>
+                              <span className={`px-1.5 py-0.5 text-sm font-medium rounded-lg border ${catStyle.bg} ${catStyle.text} uppercase tracking-wider`}>
                                 {uc.category.replace('-', ' ')}
                               </span>
                             )}
-                            <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded-lg border ${modeBadge.bg} ${modeBadge.text} uppercase tracking-wider`}>
+                            <span className={`px-1.5 py-0.5 text-sm font-medium rounded-lg border ${modeBadge.bg} ${modeBadge.text} uppercase tracking-wider`}>
                               {modeBadge.label}
                             </span>
                           </div>
@@ -156,7 +156,7 @@ export function N8nUseCasesTab({
                           </button>
                         )}
                         {!onTestUseCase && mode !== 'non_executable' && (
-                          <span className="text-xs text-muted-foreground/30 flex-shrink-0 mt-1">
+                          <span className="text-sm text-muted-foreground/30 flex-shrink-0 mt-1">
                             Save to test
                           </span>
                         )}
@@ -166,8 +166,8 @@ export function N8nUseCasesTab({
                     {/* Mock viewer */}
                     {mode === 'mock' && mockViewId === uc.id && (
                       <div className="border-t border-amber-500/15 bg-amber-500/5 p-3">
-                        <p className="text-xs text-amber-400/70 mb-1.5">Example output:</p>
-                        <pre className="text-xs font-mono text-foreground/60 bg-background/40 rounded-lg p-2.5 overflow-auto max-h-40 border border-amber-500/10">
+                        <p className="text-sm text-amber-400/70 mb-1.5">Example output:</p>
+                        <pre className="text-sm font-mono text-foreground/60 bg-background/40 rounded-lg p-2.5 overflow-auto max-h-40 border border-amber-500/10">
                           {uc.sample_input
                             ? JSON.stringify(uc.sample_input, null, 2)
                             : '// No sample data provided'}

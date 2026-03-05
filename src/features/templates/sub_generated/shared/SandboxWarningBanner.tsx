@@ -49,7 +49,7 @@ export function SandboxWarningBanner({ verification, className = '' }: SandboxWa
             <h4 className={`text-sm font-semibold ${titleColor}`}>
               {isUntrusted ? 'Unverified Template' : 'Community Template — Sandbox Mode'}
             </h4>
-            <span className={`text-xs px-1.5 py-0.5 rounded ${isUntrusted ? 'bg-red-500/15 text-red-400/80' : 'bg-amber-500/15 text-amber-400/80'}`}>
+            <span className={`text-sm px-1.5 py-0.5 rounded ${isUntrusted ? 'bg-red-500/15 text-red-400/80' : 'bg-amber-500/15 text-amber-400/80'}`}>
               {ORIGIN_LABELS[origin]}
             </span>
           </div>
@@ -64,7 +64,7 @@ export function SandboxWarningBanner({ verification, className = '' }: SandboxWa
               {restrictions.map((r) => (
                 <span
                   key={r}
-                  className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md ${
+                  className={`inline-flex items-center gap-1 px-2 py-1 text-sm rounded-md ${
                     isUntrusted
                       ? 'bg-red-500/10 text-red-400/70 border border-red-500/15'
                       : 'bg-amber-500/10 text-amber-400/70 border border-amber-500/15'
@@ -91,7 +91,7 @@ export function SandboxInlineWarning({ verification }: { verification: TemplateV
   const isUntrusted = verification.trustLevel === 'untrusted';
 
   return (
-    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs ${
+    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-sm ${
       isUntrusted
         ? 'bg-red-500/8 text-red-400/70 border border-red-500/15'
         : 'bg-amber-500/8 text-amber-400/70 border border-amber-500/15'

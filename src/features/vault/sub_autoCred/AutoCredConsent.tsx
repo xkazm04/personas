@@ -55,10 +55,10 @@ export function AutoCredConsent({ designResult, onConsent, onCancel }: AutoCredC
       {/* Setup instructions summary */}
       {designResult.setup_instructions && (
         <div className="p-3 rounded-lg border border-primary/10 bg-secondary/20">
-          <p className="text-xs font-medium text-muted-foreground/60 mb-1.5">Setup context from design analysis:</p>
+          <p className="text-sm font-medium text-muted-foreground/60 mb-1.5">Setup context from design analysis:</p>
           <MarkdownRenderer
             content={designResult.setup_instructions}
-            className="[&_p]:text-sm [&_p]:text-muted-foreground/80 [&_p]:mb-1.5 [&_ul]:text-sm [&_ol]:text-sm [&_li]:text-muted-foreground/80 [&_code]:text-xs"
+            className="[&_p]:text-sm [&_p]:text-muted-foreground/80 [&_p]:mb-1.5 [&_ul]:text-sm [&_ol]:text-sm [&_li]:text-muted-foreground/80 [&_code]:text-sm"
           />
         </div>
       )}
@@ -110,7 +110,7 @@ export function AutoCredConsent({ designResult, onConsent, onCancel }: AutoCredC
 function Step({ number, text }: { number: number; text: string }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="w-5 h-5 rounded-full bg-cyan-500/15 text-cyan-400 text-xs font-medium flex items-center justify-center shrink-0">
+      <span className="w-5 h-5 rounded-full bg-cyan-500/15 text-cyan-400 text-sm font-medium flex items-center justify-center shrink-0">
         {number}
       </span>
       <span className="text-sm text-foreground/80">{text}</span>

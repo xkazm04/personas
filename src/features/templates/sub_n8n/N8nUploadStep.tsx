@@ -444,7 +444,7 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
                 >
                   Continue
                 </button>
-                <p className="text-xs text-muted-foreground/60">Press Enter or click to continue</p>
+                <p className="text-sm text-muted-foreground/60">Press Enter or click to continue</p>
               </motion.div>
             )}
           </motion.div>
@@ -549,11 +549,11 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
               </div>
               <div className="flex items-center gap-3 text-sm text-muted-foreground/50">
                 <span>Accepts:</span>
-                <span className="font-mono text-xs">github.com/*/blob/*</span>
+                <span className="font-mono text-sm">github.com/*/blob/*</span>
                 <span className="text-primary/20">|</span>
-                <span className="font-mono text-xs">gist.github.com/*</span>
+                <span className="font-mono text-sm">gist.github.com/*</span>
                 <span className="text-primary/20">|</span>
-                <span className="font-mono text-xs">raw JSON endpoint</span>
+                <span className="font-mono text-sm">raw JSON endpoint</span>
               </div>
             </div>
             <PreviewCard
@@ -569,7 +569,7 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
                 >
                   Continue
                 </button>
-                <p className="text-xs text-muted-foreground/60">Press Enter or click to continue</p>
+                <p className="text-sm text-muted-foreground/60">Press Enter or click to continue</p>
               </motion.div>
             )}
           </motion.div>
@@ -634,7 +634,7 @@ function PreviewCard({
             <>
               <FileIcon className="w-4 h-4 text-violet-400 flex-shrink-0" />
               {preview.platform && (
-                <span className="text-[11px] font-mono uppercase px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-400/80 border border-violet-500/20 flex-shrink-0">
+                <span className="text-sm font-mono uppercase px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-400/80 border border-violet-500/20 flex-shrink-0">
                   {preview.platform}
                 </span>
               )}

@@ -51,7 +51,7 @@ function CompletenessRing({ percent }: { percent: number }) {
           className="transition-all duration-700 ease-out"
         />
       </svg>
-      <span className="absolute text-[10px] font-bold tabular-nums" style={{ color }}>
+      <span className="absolute text-sm font-bold tabular-nums" style={{ color }}>
         {percent}%
       </span>
     </div>
@@ -246,7 +246,7 @@ export function ChatCreator({ onCancel, onDraftPersonaIdChange }: ChatCreatorPro
                   <p className="text-sm text-foreground/80">
                     Tell me what you need this agent to do. I'll build the full configuration — prompt, tools, triggers — from your description.
                   </p>
-                  <p className="text-xs text-muted-foreground/50">
+                  <p className="text-sm text-muted-foreground/50">
                     Example: "Watch my GitHub PRs and post a summary to Slack every morning"
                   </p>
                 </div>
@@ -356,7 +356,7 @@ export function ChatCreator({ onCancel, onDraftPersonaIdChange }: ChatCreatorPro
                     ? <ChevronDown className="w-3 h-3 text-muted-foreground/50" />
                     : <ChevronRight className="w-3 h-3 text-muted-foreground/50" />
                   }
-                  <span className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">Preview</span>
+                  <span className="text-sm font-semibold text-muted-foreground/70 uppercase tracking-wider">Preview</span>
                 </button>
 
                 {previewExpanded && (
@@ -367,7 +367,7 @@ export function ChatCreator({ onCancel, onDraftPersonaIdChange }: ChatCreatorPro
                   >
                     {/* Identity */}
                     <PreviewSection icon={Bot} label="Identity">
-                      <p className="text-xs text-foreground/70 truncate">
+                      <p className="text-sm text-foreground/70 truncate">
                         {design.result.structured_prompt?.identity
                           ? design.result.structured_prompt.identity.slice(0, 80) + (design.result.structured_prompt.identity.length > 80 ? '...' : '')
                           : '—'}
@@ -376,7 +376,7 @@ export function ChatCreator({ onCancel, onDraftPersonaIdChange }: ChatCreatorPro
 
                     {/* Prompt */}
                     <PreviewSection icon={FileText} label="Prompt">
-                      <p className="text-xs text-foreground/70">
+                      <p className="text-sm text-foreground/70">
                         {design.result.full_prompt_markdown
                           ? `${design.result.full_prompt_markdown.split('\n').length} lines`
                           : '—'}
@@ -388,18 +388,18 @@ export function ChatCreator({ onCancel, onDraftPersonaIdChange }: ChatCreatorPro
                       {design.result.suggested_tools.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {design.result.suggested_tools.slice(0, 5).map((t) => (
-                            <span key={t} className="px-1.5 py-0.5 text-[10px] bg-primary/8 border border-primary/12 rounded text-foreground/60 truncate max-w-[100px]">
+                            <span key={t} className="px-1.5 py-0.5 text-sm bg-primary/8 border border-primary/12 rounded text-foreground/60 truncate max-w-[100px]">
                               {t}
                             </span>
                           ))}
                           {design.result.suggested_tools.length > 5 && (
-                            <span className="text-[10px] text-muted-foreground/50">
+                            <span className="text-sm text-muted-foreground/50">
                               +{design.result.suggested_tools.length - 5}
                             </span>
                           )}
                         </div>
                       ) : (
-                        <p className="text-xs text-muted-foreground/40">None yet</p>
+                        <p className="text-sm text-muted-foreground/40">None yet</p>
                       )}
                     </PreviewSection>
 
@@ -410,14 +410,14 @@ export function ChatCreator({ onCancel, onDraftPersonaIdChange }: ChatCreatorPro
                           {design.result.suggested_triggers.map((t, i) => (
                             <div key={i} className="flex items-center gap-1.5">
                               <Clock className="w-2.5 h-2.5 text-muted-foreground/40 shrink-0" />
-                              <span className="text-[10px] text-foreground/60 truncate">
+                              <span className="text-sm text-foreground/60 truncate">
                                 {t.description || t.trigger_type}
                               </span>
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-xs text-muted-foreground/40">None yet</p>
+                        <p className="text-sm text-muted-foreground/40">None yet</p>
                       )}
                     </PreviewSection>
 
@@ -428,7 +428,7 @@ export function ChatCreator({ onCancel, onDraftPersonaIdChange }: ChatCreatorPro
                           {design.result.suggested_event_subscriptions!.map((s, i) => (
                             <div key={i} className="flex items-center gap-1.5">
                               <Bell className="w-2.5 h-2.5 text-muted-foreground/40 shrink-0" />
-                              <span className="text-[10px] text-foreground/60 truncate">
+                              <span className="text-sm text-foreground/60 truncate">
                                 {s.event_type}
                               </span>
                             </div>
@@ -440,7 +440,7 @@ export function ChatCreator({ onCancel, onDraftPersonaIdChange }: ChatCreatorPro
                     {/* Summary */}
                     {design.result.summary && (
                       <div className="px-2 py-1.5 bg-secondary/20 rounded-lg">
-                        <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
+                        <p className="text-sm text-muted-foreground/60 leading-relaxed">
                           {design.result.summary}
                         </p>
                       </div>
@@ -506,9 +506,9 @@ function PreviewSection({
     <div className="space-y-1">
       <div className="flex items-center gap-1.5">
         <Icon className="w-3 h-3 text-muted-foreground/40" />
-        <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">{label}</span>
+        <span className="text-sm font-semibold text-muted-foreground/60 uppercase tracking-wider">{label}</span>
         {count != null && count > 0 && (
-          <span className="ml-auto text-[10px] tabular-nums font-medium text-primary/60 bg-primary/8 px-1.5 py-0.5 rounded-full">
+          <span className="ml-auto text-sm tabular-nums font-medium text-primary/60 bg-primary/8 px-1.5 py-0.5 rounded-full">
             {count}
           </span>
         )}

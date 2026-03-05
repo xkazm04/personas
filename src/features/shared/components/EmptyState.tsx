@@ -37,7 +37,7 @@ export default function EmptyState({
         <Icon className={`w-4 h-4 ${iconColor}`} />
       </div>
       <h3 className="text-sm font-medium text-foreground/90">{title}</h3>
-      {detailText && <p className="text-xs text-muted-foreground/60 max-w-[34ch]">{detailText}</p>}
+      {detailText && <p className="text-sm text-muted-foreground/60 max-w-[34ch]">{detailText}</p>}
       {children ? <div className="pt-1">{children}</div> : null}
       {action && (
         <button

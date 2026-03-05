@@ -58,7 +58,7 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
             </div>
             <div>
               <h2 id="team-synthesis-title" className="text-sm font-semibold text-foreground/90">Synthesize Team</h2>
-              <p className="text-xs text-muted-foreground/60">
+              <p className="text-sm text-muted-foreground/60">
                 AI selects templates and assembles a connected team
               </p>
             </div>

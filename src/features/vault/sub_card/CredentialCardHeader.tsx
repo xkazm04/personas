@@ -227,7 +227,7 @@ function BadgeRow({
       node: (
         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/8 text-muted-foreground/50 shrink-0">
           <Lock className="w-2.5 h-2.5" />
-          <span className="text-[10px] font-medium">{count} field{count !== 1 ? 's' : ''}</span>
+          <span className="text-sm font-medium">{count} field{count !== 1 ? 's' : ''}</span>
         </span>
       ),
     });
@@ -240,7 +240,7 @@ function BadgeRow({
       key: `tag-${tag}`,
       label: tag,
       node: (
-        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded border shrink-0 ${style.bg} ${style.text} ${style.border}`}>
+        <span className={`text-sm font-medium px-1.5 py-0.5 rounded border shrink-0 ${style.bg} ${style.text} ${style.border}`}>
           {tag}
         </span>
       ),
@@ -281,7 +281,7 @@ function OverflowPill({ badges }: { badges: BadgeEntry[] }) {
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
-        className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-secondary/50 border border-primary/10 text-muted-foreground/60 hover:text-muted-foreground/80 hover:border-primary/20 transition-colors shrink-0"
+        className="text-sm font-medium px-1.5 py-0.5 rounded-full bg-secondary/50 border border-primary/10 text-muted-foreground/60 hover:text-muted-foreground/80 hover:border-primary/20 transition-colors shrink-0"
       >
         +{badges.length}
       </button>
@@ -298,7 +298,7 @@ function OverflowPill({ badges }: { badges: BadgeEntry[] }) {
             {badges.map((b) => (
               <div key={b.key} className="flex items-center gap-2 px-3 py-1">
                 {b.node}
-                <span className="text-[11px] text-muted-foreground/70">{b.label}</span>
+                <span className="text-sm text-muted-foreground/70">{b.label}</span>
               </div>
             ))}
           </motion.div>
