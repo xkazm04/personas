@@ -24,7 +24,7 @@ export function FilterChips({
     <>
       {/* Active category chip */}
       {selectedCategory && activeCategoryMeta && ActiveCategoryIcon && (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 flex-shrink-0">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 flex-shrink-0">
           <ActiveCategoryIcon className="w-3 h-3" style={{ color: activeCategoryMeta.color }} />
           {activeCategoryMeta.label}
           <button
@@ -45,7 +45,7 @@ export function FilterChips({
             return (
               <span
                 key={name}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300"
               >
                 <ConnectorIcon meta={meta} size="w-3 h-3" />
                 {meta.label}
@@ -77,7 +77,7 @@ export function FilterChips({
                 <button
                   key={opt.value}
                   onClick={() => onCoverageFilterChange(opt.value)}
-                  className={`px-2.5 py-1.5 text-xs font-medium transition-colors flex items-center gap-1 ${
+                  className={`px-2.5 py-1.5 text-sm font-medium transition-colors flex items-center gap-1 ${
                     isActive
                       ? opt.color === 'violet'
                         ? 'bg-violet-500/20 text-violet-300'

@@ -64,7 +64,7 @@ export function RebuildModal({
               <h2 id="rebuild-modal-title" className="text-sm font-semibold text-foreground/90 truncate">
                 Rebuild Template
               </h2>
-              <p className="text-xs text-muted-foreground/60 truncate">
+              <p className="text-sm text-muted-foreground/60 truncate">
                 {review.test_case_name}
               </p>
             </div>
@@ -80,7 +80,7 @@ export function RebuildModal({
             <div className="space-y-4">
               {/* Instruction context */}
               <div className="bg-secondary/30 rounded-xl border border-primary/10 p-4">
-                <div className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wide mb-1.5">
+                <div className="text-sm font-medium text-muted-foreground/60 uppercase tracking-wide mb-1.5">
                   Template Instruction
                 </div>
                 <p className="text-sm text-foreground/80 leading-relaxed">
@@ -90,7 +90,7 @@ export function RebuildModal({
 
               {/* User direction */}
               <div>
-                <label className="block text-xs font-medium text-muted-foreground/70 mb-1.5">
+                <label className="block text-sm font-medium text-muted-foreground/70 mb-1.5">
                   Custom Direction (optional)
                 </label>
                 <textarea
@@ -99,7 +99,7 @@ export function RebuildModal({
                   placeholder="Add specific requirements, focus areas, or constraints for this rebuild..."
                   className="w-full h-28 px-4 py-3 bg-secondary/20 border border-primary/10 rounded-xl text-sm text-foreground/90 placeholder:text-muted-foreground/40 resize-none focus:outline-none focus:border-violet-500/30 focus:ring-1 focus:ring-violet-500/20 transition-colors"
                 />
-                <p className="text-xs text-muted-foreground/40 mt-1">
+                <p className="text-sm text-muted-foreground/40 mt-1">
                   The rebuild will regenerate all 9 data dimensions using the Protocol System.
                 </p>
               </div>
@@ -108,13 +108,13 @@ export function RebuildModal({
 
           {displayPhase === 'processing' && (
             <div className="space-y-3">
-              <div className="flex items-center gap-2 text-xs text-blue-400/80">
+              <div className="flex items-center gap-2 text-sm text-blue-400/80">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 <span>Rebuilding template with Claude CLI...</span>
               </div>
 
               {/* Streaming output */}
-              <div className="bg-[#0d1117] rounded-xl border border-primary/10 p-4 h-64 overflow-y-auto font-mono text-xs leading-relaxed">
+              <div className="bg-[#0d1117] rounded-xl border border-primary/10 p-4 h-64 overflow-y-auto font-mono text-sm leading-relaxed">
                 {lines.length === 0 && (
                   <span className="text-muted-foreground/40">Waiting for output...</span>
                 )}
@@ -136,7 +136,7 @@ export function RebuildModal({
                 <div ref={linesEndRef} />
               </div>
 
-              <p className="text-xs text-muted-foreground/40 text-center">
+              <p className="text-sm text-muted-foreground/40 text-center">
                 You can close this dialog — the rebuild will continue in the background.
               </p>
             </div>
@@ -150,7 +150,7 @@ export function RebuildModal({
               <h3 className="text-sm font-semibold text-foreground/90 mb-1">
                 Rebuild Complete
               </h3>
-              <p className="text-xs text-muted-foreground/60 max-w-sm">
+              <p className="text-sm text-muted-foreground/60 max-w-sm">
                 The template has been regenerated with all data dimensions.
                 The gallery will refresh to show updated scores.
               </p>
@@ -165,7 +165,7 @@ export function RebuildModal({
               <h3 className="text-sm font-semibold text-foreground/90 mb-1">
                 Rebuild Failed
               </h3>
-              <p className="text-xs text-muted-foreground/60 max-w-sm">
+              <p className="text-sm text-muted-foreground/60 max-w-sm">
                 {error || 'An unknown error occurred during rebuild.'}
               </p>
             </div>

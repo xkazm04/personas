@@ -988,7 +988,7 @@ describe('E2E: complete Gemini execution stream', () => {
 
     expect(result.current.lines).toEqual(GEMINI_EXECUTION_LINES);
     expect(result.current.phase).toBe('completed');
-    expect(result.current.lines[0]).toContain('gemini-3-flash-preview');
+    expect(result.current.lines[0]).toContain('gemini-3.1-flash-lite-preview');
     expect(result.current.lines.some((l) => l.includes('WebSearch'))).toBe(true);
   });
 });

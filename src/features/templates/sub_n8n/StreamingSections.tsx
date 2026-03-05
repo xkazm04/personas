@@ -66,7 +66,7 @@ function SectionDetail({ section }: { section: StreamingSection }) {
       {allMessages.map((m, i) => (
         <p
           key={i}
-          className={`text-[11px] leading-tight ${
+          className={`text-sm leading-tight ${
             m.type === 'error' ? 'text-red-400/80' : 'text-amber-400/70'
           }`}
         >
@@ -161,12 +161,12 @@ export function StreamingSections({ sections, isStreaming }: StreamingSectionsPr
       <div className="px-4 py-2.5 border-b border-primary/8 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
+          <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/70">
             Streaming Sections
           </span>
         </div>
         {sections.length > 0 && (
-          <div className="flex items-center gap-3 text-[11px] text-muted-foreground/60">
+          <div className="flex items-center gap-3 text-sm text-muted-foreground/60">
             {validCount > 0 && (
               <span className="flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3 text-emerald-400/70" />
@@ -206,7 +206,7 @@ export function StreamingSections({ sections, isStreaming }: StreamingSectionsPr
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground/50"
+            className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground/50"
           >
             <Loader2 className="w-3 h-3 animate-spin" />
             Awaiting next section...

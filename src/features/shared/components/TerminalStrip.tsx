@@ -72,7 +72,7 @@ export function TerminalStrip({
         {counters}
 
         {/* Last log line */}
-        <span className="flex-1 font-mono text-[11px] text-muted-foreground/50 truncate">
+        <span className="flex-1 font-mono text-sm text-muted-foreground/50 truncate">
           {lastLine}
         </span>
 
@@ -112,7 +112,7 @@ export function TerminalStrip({
       {isExpanded && (
         <div
           ref={scrollRef}
-          className={`${expandedMaxHeight} overflow-y-auto px-4 pb-2 font-mono text-[11px] leading-4 space-y-px border-t border-primary/5`}
+          className={`${expandedMaxHeight} overflow-y-auto px-4 pb-2 font-mono text-sm leading-4 space-y-px border-t border-primary/5`}
         >
           {lines.map((line, i) => (
             <div

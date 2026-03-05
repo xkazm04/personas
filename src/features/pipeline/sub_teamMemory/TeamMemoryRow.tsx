@@ -37,13 +37,13 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange }: 
 
         <div className="flex-1 min-w-0">
           {/* Title */}
-          <p className="text-xs font-medium text-foreground/90 truncate">{memory.title}</p>
+          <p className="text-sm font-medium text-foreground/90 truncate">{memory.title}</p>
           {/* Content preview */}
-          <p className="text-xs text-muted-foreground/70 line-clamp-2 mt-0.5">{memory.content}</p>
+          <p className="text-sm text-muted-foreground/70 line-clamp-2 mt-0.5">{memory.content}</p>
 
           <div className="flex items-center gap-2 mt-1.5">
             {/* Source badge */}
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${colors.bg} text-foreground/60`}>
+            <span className={`text-sm px-1.5 py-0.5 rounded-full ${colors.bg} text-foreground/60`}>
               {isAuto ? 'Auto' : 'Manual'}{memory.persona_id ? '' : ''}
             </span>
 
@@ -62,7 +62,7 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange }: 
             </div>
 
             {/* Category label */}
-            <span className="text-[10px] text-muted-foreground/50 capitalize">{memory.category}</span>
+            <span className="text-sm text-muted-foreground/50 capitalize">{memory.category}</span>
           </div>
         </div>
       </div>

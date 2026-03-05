@@ -84,6 +84,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   clickup:            { label: 'ClickUp',            color: '#7B68EE', iconUrl: 'https://cdn.simpleicons.org/clickup/7B68EE',         Icon: CheckSquare },
   asana:              { label: 'Asana',              color: '#F06A6A', iconUrl: 'https://cdn.simpleicons.org/asana/F06A6A',            Icon: CheckSquare },
   trello:             { label: 'Trello',             color: '#0052CC', iconUrl: 'https://cdn.simpleicons.org/trello/0052CC',           Icon: Kanban },
+  monday:             { label: 'Monday.com',         color: '#6C3AEF', iconUrl: '/icons/connectors/monday.svg',                        Icon: Kanban },
   monday_com:         { label: 'Monday.com',         color: '#6C3AEF', iconUrl: '/icons/connectors/monday.svg',                        Icon: Kanban },
   todoist:            { label: 'Todoist',            color: '#E44332', iconUrl: 'https://cdn.simpleicons.org/todoist/E44332',          Icon: ListTodo },
 
@@ -107,11 +108,14 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   supabase:           { label: 'Supabase',           color: '#3FCF8E', iconUrl: 'https://cdn.simpleicons.org/supabase/3FCF8E',         Icon: Database },
   neon:               { label: 'Neon',               color: '#00E599', iconUrl: '/icons/connectors/neon.svg',                           Icon: Database },
   postgres_proxy:     { label: 'PostgreSQL',         color: '#4169E1', iconUrl: 'https://cdn.simpleicons.org/postgresql/4169E1',       Icon: Database },
+  convex:             { label: 'Convex',             color: '#EE342F', iconUrl: '/icons/connectors/convex.svg',                         Icon: Database },
+  upstash:            { label: 'Upstash',            color: '#00E9A3', iconUrl: '/icons/connectors/upstash.svg',                        Icon: Database },
 
   // ── Monitoring & Observability ────────────────────────────────
   sentry:             { label: 'Sentry',             color: '#362D59', iconUrl: 'https://cdn.simpleicons.org/sentry/f0f0f0',           Icon: AlertTriangle },
   datadog:            { label: 'Datadog',            color: '#632CA6', iconUrl: 'https://cdn.simpleicons.org/datadog/632CA6',          Icon: Activity },
   pagerduty:          { label: 'PagerDuty',          color: '#06AC38', iconUrl: 'https://cdn.simpleicons.org/pagerduty/06AC38',        Icon: Bell },
+  betterstack:        { label: 'Better Stack',       color: '#4A154B', iconUrl: '/icons/connectors/betterstack.svg',                    Icon: MonitorCheck },
   uptime_robot:       { label: 'Uptime Robot',       color: '#3BD671', iconUrl: '/icons/connectors/uptimerobot.svg',                    Icon: MonitorCheck },
   snyk:               { label: 'Snyk',               color: '#4C4A73', iconUrl: 'https://cdn.simpleicons.org/snyk/f0f0f0',             Icon: Shield },
 
@@ -184,6 +188,11 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
 
   // ── Forms ─────────────────────────────────────────────────────
   typeform:           { label: 'Typeform',           color: '#262627', iconUrl: 'https://cdn.simpleicons.org/typeform/f0f0f0',         Icon: FormInput },
+
+  // ── Automation Platforms ──────────────────────────────────────
+  n8n:                { label: 'n8n',                color: '#EA4B71', iconUrl: '/icons/connectors/n8n.svg',                              Icon: Globe },
+  zapier:             { label: 'Zapier',             color: '#FF4A00', iconUrl: '/icons/connectors/zapier.svg',                           Icon: Globe },
+  github_actions:     { label: 'GitHub Actions',     color: '#2088FF', iconUrl: 'https://cdn.simpleicons.org/github/f0f0f0',             Icon: Github },
 
   // ── Generic ───────────────────────────────────────────────────
   http:               { label: 'HTTP / REST',        color: '#3B82F6', iconUrl: null,                                                   Icon: Globe },

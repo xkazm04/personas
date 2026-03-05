@@ -62,7 +62,7 @@ export function ToolsSection({ tools, personaId }: ToolsSectionProps) {
                         <Wrench className="w-3 h-3 text-muted-foreground/60" />
                         {tool.name}
                         {tool.requires_credential_type && (
-                          <span className="text-[10px] text-muted-foreground/50">
+                          <span className="text-sm text-muted-foreground/50">
                             ({tool.requires_credential_type})
                           </span>
                         )}

@@ -155,7 +155,7 @@ export function TemplateSearchBar({
             return (
               <span
                 key={`${chip.type}-${chip.value}`}
-                className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 text-xs rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 flex-shrink-0"
+                className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 text-sm rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 flex-shrink-0"
               >
                 {Icon && <Icon className="w-3 h-3" style={{ color: meta?.color }} />}
                 {chip.label}
@@ -250,7 +250,7 @@ export function TemplateSearchBar({
 
         {/* Count */}
         {total > 0 && (
-          <span className="text-xs text-muted-foreground/50 tabular-nums flex-shrink-0 hidden sm:inline">
+          <span className="text-sm text-muted-foreground/50 tabular-nums flex-shrink-0 hidden sm:inline">
             {loadedCount < total ? `${loadedCount}/${total}` : `${total}`}
           </span>
         )}
@@ -334,10 +334,10 @@ export function TemplateSearchBar({
         <div className="px-4 pb-2">
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-500/5 border border-indigo-500/10">
             <Sparkles className="w-3.5 h-3.5 text-indigo-400/60 flex-shrink-0" />
-            <span className="text-xs text-indigo-300/70 flex-1">Few results found</span>
+            <span className="text-sm text-indigo-300/70 flex-1">Few results found</span>
             <button
               onClick={() => onAiSearchSubmit(search.trim())}
-              className="text-xs px-2.5 py-1 rounded-lg bg-indigo-500/15 text-indigo-300 border border-indigo-500/25 hover:bg-indigo-500/25 transition-colors"
+              className="text-sm px-2.5 py-1 rounded-lg bg-indigo-500/15 text-indigo-300 border border-indigo-500/25 hover:bg-indigo-500/25 transition-colors"
             >
               Try AI search
             </button>

@@ -174,13 +174,13 @@ export function ChooseStep() {
 
         {/* Bottom summary rail */}
         <div className="flex items-center gap-3 py-3 border-t border-primary/10">
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/15">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm font-medium rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/15">
             {summary.selected} of {summary.total} use cases
           </span>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/15">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm font-medium rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/15">
             {summary.connectorCount} connectors
           </span>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/15">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm font-medium rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/15">
             {summary.toolCount} tools
           </span>
         </div>

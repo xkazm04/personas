@@ -83,6 +83,16 @@ export function PersonaContextMenu({ state, onClose }: PersonaContextMenuProps) 
   const modelItemRef = useRef<HTMLButtonElement>(null);
   const subMenuRef = useRef<HTMLDivElement>(null);
 
+  const getMainItems = useCallback(() => {
+    if (!menuRef.current) return [] as HTMLButtonElement[];
+    return Array.from(menuRef.current.querySelectorAll<HTMLButtonElement>('button[data-menuitem="true"]'));
+  }, []);
+
+  const getSubItems = useCallback(() => {
+    if (!subMenuRef.current) return [] as HTMLButtonElement[];
+    return Array.from(subMenuRef.current.querySelectorAll<HTMLButtonElement>('button[data-menuitem="true"]'));
+  }, []);
+
   const activeModel = currentModelValue(persona);
 
   // Close on outside click or Escape (submenu is a DOM child of menuRef, so contains() covers it)
@@ -155,6 +165,75 @@ export function PersonaContextMenu({ state, onClose }: PersonaContextMenuProps) 
     setSubPos({ left, top });
   }, [showModelSub]);
 
+  useEffect(() => {
+    const items = getMainItems();
+    items[0]?.focus();
+  }, [getMainItems, confirmDelete]);
+
+  const handleMenuKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      if (showModelSub) {
+        setShowModelSub(false);
+        modelItemRef.current?.focus();
+        return;
+      }
+      onClose();
+      return;
+    }
+
+    if (e.key === 'Tab') {
+      const mainItems = getMainItems();
+      const subItems = showModelSub ? getSubItems() : [];
+      const allItems = [...mainItems, ...subItems];
+      if (allItems.length === 0) return;
+      const active = document.activeElement as HTMLElement | null;
+      const idx = allItems.findIndex((item) => item === active);
+      const dir = e.shiftKey ? -1 : 1;
+      const nextIdx = idx === -1
+        ? (e.shiftKey ? allItems.length - 1 : 0)
+        : (idx + dir + allItems.length) % allItems.length;
+      e.preventDefault();
+      allItems[nextIdx]?.focus();
+      return;
+    }
+
+    const active = document.activeElement as HTMLElement | null;
+    const inSubmenu = !!active?.closest('[data-menu-scope="sub"]');
+    const items = inSubmenu ? getSubItems() : getMainItems();
+    if (items.length === 0) return;
+
+    const idx = items.findIndex((item) => item === active);
+    const focusIndex = (next: number) => items[(next + items.length) % items.length]?.focus();
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      focusIndex(idx === -1 ? 0 : idx + 1);
+      return;
+    }
+
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      focusIndex(idx === -1 ? items.length - 1 : idx - 1);
+      return;
+    }
+
+    if (e.key === 'ArrowRight' && !inSubmenu && active === modelItemRef.current) {
+      e.preventDefault();
+      setShowModelSub(true);
+      requestAnimationFrame(() => {
+        getSubItems()[0]?.focus();
+      });
+      return;
+    }
+
+    if (e.key === 'ArrowLeft' && inSubmenu) {
+      e.preventDefault();
+      setShowModelSub(false);
+      modelItemRef.current?.focus();
+    }
+  }, [getMainItems, getSubItems, onClose, showModelSub]);
+
   return (
     <motion.div
       ref={menuRef}
@@ -162,8 +241,12 @@ export function PersonaContextMenu({ state, onClose }: PersonaContextMenuProps) 
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.1 }}
-      className="fixed z-[100] w-44 py-1 bg-background/95 backdrop-blur-md border border-primary/20 rounded-lg shadow-xl origin-top-left"
+      className="fixed z-100 w-44 py-1 bg-background/95 backdrop-blur-md border border-primary/20 rounded-lg shadow-xl origin-top-left"
       style={{ left: pos.x, top: pos.y }}
+      role="menu"
+      aria-label={`Actions for ${persona.name}`}
+      data-menu-scope="main"
+      onKeyDown={handleMenuKeyDown}
     >
       {/* Header */}
       <div className="px-3 py-1.5 border-b border-primary/10">
@@ -175,7 +258,12 @@ export function PersonaContextMenu({ state, onClose }: PersonaContextMenuProps) 
         ref={modelItemRef}
         onMouseEnter={() => setShowModelSub(true)}
         onMouseLeave={() => setShowModelSub(false)}
+        onClick={() => setShowModelSub((v) => !v)}
         className="w-full px-3 py-1.5 text-sm text-left hover:bg-secondary/60 flex items-center gap-2 text-foreground/90 relative"
+        role="menuitem"
+        aria-haspopup="menu"
+        aria-expanded={showModelSub}
+        data-menuitem="true"
       >
         <Cpu className="w-3.5 h-3.5 text-muted-foreground/80" />
         <span className="flex-1">Model</span>
@@ -186,6 +274,8 @@ export function PersonaContextMenu({ state, onClose }: PersonaContextMenuProps) 
       <button
         onClick={handleToggleEnabled}
         className="w-full px-3 py-1.5 text-sm text-left hover:bg-secondary/60 flex items-center gap-2 text-foreground/90"
+        role="menuitem"
+        data-menuitem="true"
       >
         {persona.enabled ? (
           <>
@@ -208,23 +298,29 @@ export function PersonaContextMenu({ state, onClose }: PersonaContextMenuProps) 
         <button
           onClick={handleDelete}
           className="w-full px-3 py-1.5 text-sm text-left hover:bg-red-500/10 flex items-center gap-2 text-red-400/80 hover:text-red-400"
+          role="menuitem"
+          data-menuitem="true"
         >
           <Trash2 className="w-3.5 h-3.5" />
           <span>Delete</span>
         </button>
       ) : (
         <div className="px-2 py-1.5 flex items-center gap-1.5">
-          <AlertTriangle className="w-3.5 h-3.5 text-amber-400/80 flex-shrink-0" />
-          <span className="text-sm text-amber-400/80 flex-shrink-0">Sure?</span>
+          <AlertTriangle className="w-3.5 h-3.5 text-amber-400/80 shrink-0" />
+          <span className="text-sm text-amber-400/80 shrink-0">Sure?</span>
           <button
             onClick={handleDelete}
             className="flex-1 px-2 py-0.5 bg-red-500 hover:bg-red-600 text-foreground rounded text-sm font-medium transition-colors"
+            role="menuitem"
+            data-menuitem="true"
           >
             Delete
           </button>
           <button
             onClick={() => setConfirmDelete(false)}
             className="px-2 py-0.5 bg-secondary/50 text-foreground/80 rounded text-sm transition-colors hover:bg-secondary/70"
+            role="menuitem"
+            data-menuitem="true"
           >
             No
           </button>
@@ -242,8 +338,11 @@ export function PersonaContextMenu({ state, onClose }: PersonaContextMenuProps) 
             transition={{ duration: 0.1 }}
             onMouseEnter={() => setShowModelSub(true)}
             onMouseLeave={() => setShowModelSub(false)}
-            className="fixed z-[101] w-48 py-1 bg-background/95 backdrop-blur-md border border-primary/20 rounded-lg shadow-xl"
+            className="fixed z-101 w-48 py-1 bg-background/95 backdrop-blur-md border border-primary/20 rounded-lg shadow-xl"
             style={{ left: subPos.left, top: subPos.top }}
+            role="menu"
+            aria-label="Quick model selection"
+            data-menu-scope="sub"
           >
             {QUICK_MODELS.map((model, i) => {
               const isActive = activeModel === model.value;
@@ -260,11 +359,13 @@ export function PersonaContextMenu({ state, onClose }: PersonaContextMenuProps) 
                         ? 'bg-primary/10 text-foreground/90'
                         : 'hover:bg-secondary/60 text-foreground/80'
                     }`}
+                    role="menuitem"
+                    data-menuitem="true"
                   >
                     {isActive ? (
-                      <Check className="w-3 h-3 text-primary flex-shrink-0" />
+                      <Check className="w-3 h-3 text-primary shrink-0" />
                     ) : (
-                      <span className="w-3 h-3 flex-shrink-0" />
+                      <span className="w-3 h-3 shrink-0" />
                     )}
                     <span className="flex-1 truncate">{model.label}</span>
                     <span className="text-sm text-muted-foreground/50">{model.provider}</span>

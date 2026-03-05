@@ -5,6 +5,7 @@ import type { CredentialTemplateField } from '@/lib/types/types';
 export type AutoCredPhase =
   | 'consent'
   | 'browser'
+  | 'browser-error'  // error occurred but terminal stays visible
   | 'review'
   | 'saving'
   | 'done'

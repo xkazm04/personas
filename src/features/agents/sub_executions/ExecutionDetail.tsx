@@ -306,7 +306,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
             <div className="flex justify-end">
               <button
                 onClick={() => setShowRaw(!showRaw)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 text-[11px] rounded-lg border transition-colors ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-lg border transition-colors ${
                   showRaw
                     ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                     : 'bg-secondary/30 text-muted-foreground/60 border-primary/10 hover:text-muted-foreground/80'

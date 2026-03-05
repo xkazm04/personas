@@ -86,19 +86,19 @@ export function TemplateDetailModal({
               {review.instruction}
             </p>
             <div className="flex items-center gap-3 mt-2">
-              <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full border ${statusBadge.color}`}>
+              <span className={`inline-flex items-center gap-1 px-2 py-1 text-sm rounded-full border ${statusBadge.color}`}>
                 <StatusIcon className="w-3 h-3" />
                 {statusBadge.label}
               </span>
               <DimensionRadial designResult={designResult} />
               {review.adoption_count > 0 && (
-                <span className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-emerald-500/10 border border-emerald-500/15 text-emerald-400/70">
+                <span className="inline-flex items-center gap-1 px-2 py-1 text-sm rounded-full bg-emerald-500/10 border border-emerald-500/15 text-emerald-400/70">
                   <Download className="w-3 h-3" />
                   {review.adoption_count} adopted
                 </span>
               )}
               {review.had_references && (
-                <span className="text-xs text-violet-400/50 flex items-center gap-1">
+                <span className="text-sm text-violet-400/50 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-violet-400/40" />
                   Used reference patterns
                 </span>
@@ -148,7 +148,7 @@ export function TemplateDetailModal({
             <DesignConnectorGrid designResult={designResult} />
           )}
           {activeTab === 'json' && (
-            <pre className="p-4 bg-secondary/30 rounded-xl border border-primary/10 text-xs text-muted-foreground/90 overflow-x-auto whitespace-pre-wrap">
+            <pre className="p-4 bg-secondary/30 rounded-xl border border-primary/10 text-sm text-muted-foreground/90 overflow-x-auto whitespace-pre-wrap">
               {designResult ? JSON.stringify(designResult, null, 2) : 'No design data available'}
             </pre>
           )}
@@ -222,7 +222,7 @@ function OverviewTab({
       {/* Use Case Flows */}
       {flows.length > 0 && (
         <div>
-          <h4 className="text-xs font-medium text-muted-foreground/70 uppercase tracking-wide mb-2">
+          <h4 className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wide mb-2">
             Use Case Flows
           </h4>
           <div className="flex items-center gap-3 flex-wrap">
@@ -238,7 +238,7 @@ function OverviewTab({
                     {flow.name}
                   </span>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-muted-foreground/60">
+                <div className="flex items-center gap-3 text-sm text-muted-foreground/60">
                   <span>{flow.nodes.length} nodes</span>
                   <span>{flow.edges.length} edges</span>
                 </div>
@@ -253,7 +253,7 @@ function OverviewTab({
         <div className="bg-amber-500/5 border border-amber-500/15 rounded-xl px-4 py-3 space-y-2">
           <div className="flex items-center gap-2">
             <Lightbulb className="w-4 h-4 text-amber-400/80" />
-            <h4 className="text-xs font-medium text-amber-400/80 uppercase">
+            <h4 className="text-sm font-medium text-amber-400/80 uppercase">
               Suggested Adjustment
               {review.adjustment_generation != null && review.adjustment_generation > 0 && (
                 <span className="ml-1.5 text-muted-foreground/80 normal-case">
@@ -271,7 +271,7 @@ function OverviewTab({
               {adjustment.appliedFixes.map((fix: string, i: number) => (
                 <span
                   key={i}
-                  className="px-2 py-0.5 text-xs rounded-full bg-amber-500/10 border border-amber-500/15 text-amber-400/70"
+                  className="px-2 py-0.5 text-sm rounded-full bg-amber-500/10 border border-amber-500/15 text-amber-400/70"
                 >
                   {fix}
                 </span>
@@ -284,7 +284,7 @@ function OverviewTab({
       {/* Dimension completion */}
       {review.structural_score !== null && (
         <div>
-          <h4 className="text-xs font-medium text-muted-foreground/70 uppercase tracking-wide mb-2">
+          <h4 className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wide mb-2">
             Dimension Completion
           </h4>
           <div className="flex items-center gap-3">
@@ -301,7 +301,7 @@ function OverviewTab({
             }`}>
               {review.structural_score}%
             </span>
-            <span className="text-xs text-muted-foreground/50">
+            <span className="text-sm text-muted-foreground/50">
               ({Math.round(review.structural_score / 100 * 9)}/9 dimensions)
             </span>
           </div>

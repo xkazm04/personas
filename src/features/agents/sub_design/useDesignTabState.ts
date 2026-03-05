@@ -9,7 +9,7 @@ import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { parseDesignContext, serializeDesignContext } from '@/features/shared/components/UseCasesList';
 import { applyDesignContextMutation } from '@/features/agents/sub_use_cases/useCaseHelpers';
 import { parseConversationMessages } from '@/lib/types/designTypes';
-import { buildChangeSummary } from './DesignTabHelpers';
+import { allIndices, buildChangeSummary } from './DesignTabHelpers';
 
 export function useDesignTabState() {
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
@@ -163,10 +163,10 @@ export function useDesignTabState() {
   useEffect(() => {
     if (result) {
       setSelectedTools(new Set(result.suggested_tools));
-      setSelectedTriggerIndices(new Set(result.suggested_triggers.map((_: unknown, i: number) => i)));
-      setSelectedChannelIndices(new Set((result.suggested_notification_channels || []).map((_: unknown, i: number) => i)));
+      setSelectedTriggerIndices(allIndices(result.suggested_triggers));
+      setSelectedChannelIndices(allIndices(result.suggested_notification_channels));
       if (result.suggested_event_subscriptions?.length) {
-        setSelectedSubscriptionIndices(new Set(result.suggested_event_subscriptions.map((_: unknown, i: number) => i)));
+        setSelectedSubscriptionIndices(allIndices(result.suggested_event_subscriptions));
       }
     }
   }, [resultId]);

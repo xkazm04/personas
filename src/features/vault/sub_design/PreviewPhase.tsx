@@ -221,10 +221,15 @@ export function PreviewPhase() {
       />
 
       {canSaveCredential && lastSuccessfulTestAt && (
-        <div className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-sm ${SUCCESS_STATUS.bgColor} ${SUCCESS_STATUS.borderColor} ${SUCCESS_STATUS.color}`}>
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: [0.8, 1.08, 1], opacity: 1, boxShadow: ['0 0 0 rgba(16,185,129,0)', '0 0 12px rgba(16,185,129,0.2)', '0 0 0 rgba(16,185,129,0)'] }}
+          transition={{ duration: 0.4 }}
+          className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-sm ${SUCCESS_STATUS.bgColor} ${SUCCESS_STATUS.borderColor} ${SUCCESS_STATUS.color}`}
+        >
           <CheckCircle className="w-3.5 h-3.5" />
           Tested successfully at {lastSuccessfulTestAt}
-        </div>
+        </motion.div>
       )}
     </motion.div>
   );

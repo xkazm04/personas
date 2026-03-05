@@ -315,7 +315,7 @@ function MiniCanvas({ template, hovered }: { template: PipelineTemplate; hovered
 function RoleBadge({ role }: { role: string }) {
   const colors = ROLE_COLORS[role] || { bg: 'bg-zinc-500/15', text: 'text-zinc-400', border: 'border-zinc-500/25' };
   return (
-    <span className={`inline-flex px-1.5 py-0.5 text-[10px] font-mono rounded-md ${colors.bg} ${colors.text} ${colors.border} border`}>
+    <span className={`inline-flex px-1.5 py-0.5 text-sm font-mono rounded-md ${colors.bg} ${colors.text} ${colors.border} border`}>
       {role}
     </span>
   );
@@ -383,10 +383,10 @@ export default function PipelineTemplateGallery({ onAdopt }: PipelineTemplateGal
                         <span className="text-base leading-none">{tpl.icon}</span>
                         <h3 className="text-sm font-semibold text-foreground/90 truncate">{tpl.name}</h3>
                       </div>
-                      <p className="text-[11px] text-muted-foreground/80 line-clamp-2 leading-relaxed">
+                      <p className="text-sm text-muted-foreground/80 line-clamp-2 leading-relaxed">
                         {tpl.description}
                       </p>
-                      <div className="flex items-center gap-2 mt-1.5 text-[10px] text-muted-foreground/60 font-mono">
+                      <div className="flex items-center gap-2 mt-1.5 text-sm text-muted-foreground/60 font-mono">
                         <span>{tpl.nodes.length} nodes</span>
                         <span className="opacity-40">·</span>
                         <span>{tpl.edges.length} edges</span>
@@ -414,7 +414,7 @@ export default function PipelineTemplateGallery({ onAdopt }: PipelineTemplateGal
                                 className="w-2 h-2 rounded-full shrink-0"
                                 style={{ backgroundColor: NODE_ROLE_FILLS[node.role] || '#6366f1' }}
                               />
-                              <span className="text-[11px] text-foreground/80 truncate">{node.label}</span>
+                              <span className="text-sm text-foreground/80 truncate">{node.label}</span>
                               <RoleBadge role={node.role} />
                             </div>
                           ))}
@@ -425,7 +425,7 @@ export default function PipelineTemplateGallery({ onAdopt }: PipelineTemplateGal
                           {[...new Set(tpl.edges.map((e) => e.type))].map((type) => (
                             <span
                               key={type}
-                              className="inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded bg-background/40 border border-primary/8"
+                              className="inline-flex items-center gap-1 text-sm font-mono px-1.5 py-0.5 rounded bg-background/40 border border-primary/8"
                             >
                               <span
                                 className="w-3 h-[2px] rounded-full inline-block"

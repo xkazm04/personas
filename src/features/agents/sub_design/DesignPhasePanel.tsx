@@ -110,8 +110,8 @@ export function DesignPhasePanel({
                     }
                   }}
                 />
-                <p className="text-[10px] text-muted-foreground/60 px-1">Press Enter to submit, Shift+Enter for new line.</p>
-                <p className="text-xs text-muted-foreground/50 px-1">
+                <p className="text-sm text-muted-foreground/60 px-1">Press Enter to submit, Shift+Enter for new line.</p>
+                <p className="text-sm text-muted-foreground/50 px-1">
                   The compiler will generate a complete configuration: prompt, tools, triggers, use cases, model recommendation, and test scenarios.
                 </p>
               </div>

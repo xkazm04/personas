@@ -76,9 +76,9 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
       .split(',')
       .map((t) => t.trim())
       .filter(Boolean);
-    await createMemory({ persona_id: personaId, title: title.trim(), content: content.trim(), category, importance, tags });
+    const ok = await createMemory({ persona_id: personaId, title: title.trim(), content: content.trim(), category, importance, tags });
     setSaving(false);
-    setShowSuccess(true);
+    if (ok) setShowSuccess(true);
   }, [canSave, personaId, title, content, category, importance, tagsInput, createMemory]);
 
   return (
@@ -132,7 +132,7 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
             <legend className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5">Category</legend>
             <div className="flex items-center gap-1.5 flex-wrap">
               {ALL_MEMORY_CATEGORIES.map((cat) => {
-                const defaultColors = { label: cat, bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/20' };
+                const defaultColors = { label: cat, bg: 'bg-gray-500/10', text: 'text-gray-600', border: 'border-gray-500/20' };
                 const colors = MEMORY_CATEGORY_COLORS[cat] ?? defaultColors;
                 const isActive = category === cat;
                 return (

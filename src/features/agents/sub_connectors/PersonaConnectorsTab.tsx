@@ -5,6 +5,8 @@ import { CredentialDesignModal } from '@/features/vault/sub_design/CredentialDes
 import { SectionHeader } from '@/features/shared/components/SectionHeader';
 import EmptyState from '@/features/shared/components/EmptyState';
 import { ToolsSection } from './ToolsSection';
+import { AutomationsSection } from './AutomationsSection';
+import { AutomationSetupModal } from './AutomationSetupModal';
 import { ConnectorStatusCard } from './ConnectorStatusCard';
 import { UseCaseSubscriptionsSection } from './UseCaseSubscriptionsSection';
 import { useConnectorStatuses } from './useConnectorStatuses';
@@ -25,6 +27,8 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
   const [linkingConnector, setLinkingConnector] = useState<string | null>(null);
   const [designOpen, setDesignOpen] = useState(false);
   const [designInstruction, setDesignInstruction] = useState('');
+  const [automationModalOpen, setAutomationModalOpen] = useState(false);
+  const [editingAutomationId, setEditingAutomationId] = useState<string | null>(null);
 
   const handleAddCredential = (connectorName: string) => {
     setLinkingConnector(null);
@@ -80,6 +84,13 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
       {/* Tools section */}
       <ToolsSection tools={tools} personaId={selectedPersona?.id} />
 
+      {/* Automations section */}
+      <AutomationsSection
+        automations={selectedPersona?.automations ?? []}
+        onAdd={() => setAutomationModalOpen(true)}
+        onEdit={(id) => { setEditingAutomationId(id); setAutomationModalOpen(true); }}
+      />
+
       {/* Connectors section */}
       {requiredCredTypes.length > 0 && (
         <div className="space-y-3">
@@ -131,7 +142,7 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
         </div>
       )}
 
-      {requiredCredTypes.length === 0 && tools.length === 0 && (
+      {requiredCredTypes.length === 0 && tools.length === 0 && (selectedPersona?.automations ?? []).length === 0 && (
         <EmptyState
           icon={Link}
           title="No tools or connectors configured"
@@ -143,6 +154,15 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
 
       {/* Event Subscriptions per use case */}
       <UseCaseSubscriptionsSection />
+
+      {/* Automation setup modal */}
+      <AutomationSetupModal
+        open={automationModalOpen}
+        personaId={selectedPersona.id}
+        onClose={() => { setAutomationModalOpen(false); setEditingAutomationId(null); }}
+        onComplete={() => { setAutomationModalOpen(false); setEditingAutomationId(null); }}
+        editAutomationId={editingAutomationId}
+      />
 
       {/* Embedded credential design modal */}
       {designOpen && (

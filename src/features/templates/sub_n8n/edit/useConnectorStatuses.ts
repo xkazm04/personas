@@ -73,8 +73,8 @@ export function useConnectorStatuses({
   const [designInstruction, setDesignInstruction] = useState('');
   const [testingAll, setTestingAll] = useState(false);
   const [linkingConnector, setLinkingConnector] = useState<string | null>(null);
-  const autoTestedRef = useRef<Set<string>>(new Set());
   const inFlightTestsRef = useRef<Set<string>>(new Set());
+  const lastAutoTestedCredentialRef = useRef<Map<string, string>>(new Map());
 
   const credentialLinks = useMemo(() => {
     const links: Record<string, string> = {};
@@ -161,18 +161,21 @@ export function useConnectorStatuses({
     }
   }, [healthcheckCredential, updateStatus]);
 
-  // Auto-test connectors that have a credential but no result yet
+  // Auto-test connectors that have a credential but no result yet.
+  // Track the last auto-tested credential per connector so a new credential can retest.
   useEffect(() => {
     for (const status of statuses) {
+      const credentialId = status.credentialId;
+      const lastAutoCredential = lastAutoTestedCredentialRef.current.get(status.name);
       if (
-        status.credentialId
+        credentialId
         && !status.result
         && !status.testing
-        && !autoTestedRef.current.has(status.name)
+        && lastAutoCredential !== credentialId
         && !inFlightTestsRef.current.has(status.name)
       ) {
-        autoTestedRef.current.add(status.name);
-        void testConnector(status.name, status.credentialId);
+        lastAutoTestedCredentialRef.current.set(status.name, credentialId);
+        void testConnector(status.name, credentialId);
       }
     }
   }, [statuses, testConnector]);
@@ -192,6 +195,7 @@ export function useConnectorStatuses({
   }, []);
 
   const handleLinkCredential = useCallback((connectorName: string, credentialId: string, credentialName: string) => {
+    lastAutoTestedCredentialRef.current.delete(connectorName);
     setStatuses((prev) =>
       prev.map((s) =>
         s.name === connectorName ? { ...s, credentialId, credentialName, result: null } : s,

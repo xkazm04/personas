@@ -55,7 +55,7 @@ export function NegotiatorPanel({ designResult, onComplete, onClose }: Negotiato
             </div>
             <div>
               <h3 className="text-sm font-bold tracking-tight text-foreground">AI Credential Negotiator</h3>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 {negotiator.phase === 'idle' && 'Automated API key provisioning'}
                 {negotiator.phase === 'planning' && 'Generating provisioning plan...'}
                 {negotiator.phase === 'guiding' && `Provisioning ${designResult.connector.label}`}

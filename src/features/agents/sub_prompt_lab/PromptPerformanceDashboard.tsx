@@ -105,7 +105,7 @@ export function PromptPerformanceDashboard({
       <div className="text-center py-12 space-y-2">
         <AlertTriangle className="w-6 h-6 text-red-400 mx-auto" />
         <p className="text-sm text-red-300">{error}</p>
-        <button onClick={fetchData} className="text-xs text-primary/70 hover:text-primary">Retry</button>
+        <button onClick={fetchData} className="text-sm text-primary/70 hover:text-primary">Retry</button>
       </div>
     );
   }
@@ -115,7 +115,7 @@ export function PromptPerformanceDashboard({
       <div className="text-center py-12 space-y-2">
         <BarChart3 className="w-8 h-8 text-muted-foreground/20 mx-auto" />
         <p className="text-sm text-muted-foreground/60">No execution data yet</p>
-        <p className="text-xs text-muted-foreground/40">Run some executions to see performance trends</p>
+        <p className="text-sm text-muted-foreground/40">Run some executions to see performance trends</p>
       </div>
     );
   }
@@ -135,12 +135,12 @@ export function PromptPerformanceDashboard({
 
       {compareMode && (
         <div className="flex items-center gap-3 px-3 py-2 bg-secondary/20 border border-primary/10 rounded-xl">
-          <span className="text-xs text-muted-foreground/60">Compare versions:</span>
+          <span className="text-sm text-muted-foreground/60">Compare versions:</span>
           <ThemedSelect value={compareA ?? ''} onChange={(e) => setCompareA(e.target.value ? Number(e.target.value) : null)} className="px-2 py-1 w-auto" wrapperClassName="inline-block">
             <option value="">Version A</option>
             {versionNumbers.map(n => <option key={n} value={n}>v{n}</option>)}
           </ThemedSelect>
-          <span className="text-xs text-muted-foreground/40">vs</span>
+          <span className="text-sm text-muted-foreground/40">vs</span>
           <ThemedSelect value={compareB ?? ''} onChange={(e) => setCompareB(e.target.value ? Number(e.target.value) : null)} className="px-2 py-1 w-auto" wrapperClassName="inline-block">
             <option value="">Version B</option>
             {versionNumbers.map(n => <option key={n} value={n}>v{n}</option>)}
@@ -148,7 +148,7 @@ export function PromptPerformanceDashboard({
           <button
             type="button"
             onClick={() => setCompareDeltaMode((prev) => !prev)}
-            className={`ml-auto px-2 py-1 rounded-md border text-xs font-medium transition-colors ${
+            className={`ml-auto px-2 py-1 rounded-md border text-sm font-medium transition-colors ${
               compareDeltaMode
                 ? 'bg-primary/15 border-primary/30 text-primary'
                 : 'bg-secondary/30 border-primary/10 text-muted-foreground/70 hover:bg-secondary/45'

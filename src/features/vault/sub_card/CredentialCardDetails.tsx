@@ -88,7 +88,7 @@ export function CredentialCardDetails({
           return (
             <span
               key={tag}
-              className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded border ${style.bg} ${style.text} ${style.border}`}
+              className={`inline-flex items-center gap-1 text-sm font-medium px-1.5 py-0.5 rounded border ${style.bg} ${style.text} ${style.border}`}
             >
               {tag}
               <button
@@ -112,7 +112,7 @@ export function CredentialCardDetails({
               onBlur={onTagInputBlur}
               autoFocus
               placeholder="Add tag..."
-              className="w-20 text-[10px] px-1.5 py-0.5 rounded border border-primary/20 bg-background/50 text-foreground/80 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/30"
+              className="w-20 text-sm px-1.5 py-0.5 rounded border border-primary/20 bg-background/50 text-foreground/80 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/30"
             />
             {showSuggestions && filteredSuggestions.length > 0 && (
               <div className="absolute top-full mt-1 left-0 z-20 bg-background border border-primary/15 rounded-lg shadow-lg py-1 min-w-[100px]">
@@ -120,7 +120,7 @@ export function CredentialCardDetails({
                   <button
                     key={s}
                     onMouseDown={(e) => { e.preventDefault(); addTag(s); }}
-                    className="w-full text-left px-2.5 py-1 text-xs hover:bg-secondary/50 transition-colors text-foreground/80"
+                    className="w-full text-left px-2.5 py-1 text-sm hover:bg-secondary/50 transition-colors text-foreground/80"
                   >
                     {s}
                   </button>
@@ -131,7 +131,7 @@ export function CredentialCardDetails({
         ) : (
           <button
             onClick={startTagInput}
-            className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors"
+            className="inline-flex items-center gap-0.5 text-sm text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors"
             title="Add tag"
           >
             <Plus className="w-2.5 h-2.5" />
@@ -139,7 +139,7 @@ export function CredentialCardDetails({
         )}
         <button
           onClick={copyCredentialId}
-          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-primary/10 bg-secondary/20 text-[10px] text-muted-foreground/70 hover:text-foreground/80 transition-colors"
+          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-primary/10 bg-secondary/20 text-sm text-muted-foreground/70 hover:text-foreground/80 transition-colors"
           title="Copy credential ID"
         >
           <span className="font-mono">id</span>
@@ -212,7 +212,7 @@ export function CredentialCardDetails({
       {connector.fields.length > 0 && (
         <div className="flex items-center gap-1.5 flex-wrap">
           {connector.fields.map((f) => (
-            <span key={f.key} className="text-[10px] px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/8 text-muted-foreground/60 font-mono">
+            <span key={f.key} className="text-sm px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/8 text-muted-foreground/60 font-mono">
               {f.key}
             </span>
           ))}
@@ -233,7 +233,7 @@ export function CredentialCardDetails({
                   <Wrench className="w-3.5 h-3.5 text-muted-foreground/80" />
                   <div>
                     <span className="text-sm text-foreground/80">{service.label}</span>
-                    <span className="ml-2 text-xs font-mono text-muted-foreground/60">{service.toolName}</span>
+                    <span className="ml-2 text-sm font-mono text-muted-foreground/60">{service.toolName}</span>
                   </div>
                 </div>
               ))}

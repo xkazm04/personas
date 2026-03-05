@@ -152,7 +152,7 @@ export function CreateStep() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.35 }}
-            className="flex items-center gap-2 justify-center text-xs text-amber-400/60 mb-3"
+            className="flex items-center gap-2 justify-center text-sm text-amber-400/60 mb-3"
           >
             <AlertTriangle className="w-3 h-3" />
             Configure connector{connectorsNeedingSetup.length !== 1 ? 's' : ''}:{' '}
@@ -166,13 +166,13 @@ export function CreateStep() {
             transition={{ delay: 0.38 }}
             className="mx-auto max-w-xl text-left rounded-xl border border-amber-500/25 bg-amber-500/10 p-3 mb-3"
           >
-            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-amber-300/90 mb-2">
+            <div className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wider text-amber-300/90 mb-2">
               <AlertTriangle className="w-3.5 h-3.5" />
               Partial Setup Issues
             </div>
             <div className="space-y-1.5">
               {partialEntityErrors.map((entry, idx) => (
-                <div key={`${entry.entity_type}-${entry.entity_name}-${idx}`} className="text-xs text-amber-100/85">
+                <div key={`${entry.entity_type}-${entry.entity_name}-${idx}`} className="text-sm text-amber-100/85">
                   <span className="font-medium">{entry.entity_type}</span>{' '}
                   <span className="text-amber-100">"{entry.entity_name}"</span>
                   <span className="text-amber-200/80">: {entry.error}</span>
@@ -255,28 +255,28 @@ export function CreateStep() {
               <div className="px-3 py-3 rounded-xl bg-blue-500/5 border border-blue-500/10 text-center">
                 <Wrench className="w-4 h-4 text-blue-400/60 mx-auto mb-1" />
                 <p className="text-lg font-semibold text-foreground/80">{toolCount}</p>
-                <p className="text-xs text-muted-foreground/80 uppercase tracking-wider">Tools</p>
+                <p className="text-sm text-muted-foreground/80 uppercase tracking-wider">Tools</p>
               </div>
             )}
             {triggerCount > 0 && (
               <div className="px-3 py-3 rounded-xl bg-amber-500/5 border border-amber-500/10 text-center">
                 <Zap className="w-4 h-4 text-amber-400/60 mx-auto mb-1" />
                 <p className="text-lg font-semibold text-foreground/80">{triggerCount}</p>
-                <p className="text-xs text-muted-foreground/80 uppercase tracking-wider">Triggers</p>
+                <p className="text-sm text-muted-foreground/80 uppercase tracking-wider">Triggers</p>
               </div>
             )}
             {connectorCount > 0 && (
               <div className="px-3 py-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10 text-center">
                 <Link className="w-4 h-4 text-emerald-400/60 mx-auto mb-1" />
                 <p className="text-lg font-semibold text-foreground/80">{connectorCount}</p>
-                <p className="text-xs text-muted-foreground/80 uppercase tracking-wider">Connectors</p>
+                <p className="text-sm text-muted-foreground/80 uppercase tracking-wider">Connectors</p>
               </div>
             )}
             {channelCount > 0 && (
               <div className="px-3 py-3 rounded-xl bg-violet-500/5 border border-violet-500/10 text-center">
                 <Bell className="w-4 h-4 text-violet-400/60 mx-auto mb-1" />
                 <p className="text-lg font-semibold text-foreground/80">{channelCount}</p>
-                <p className="text-xs text-muted-foreground/80 uppercase tracking-wider">Channels</p>
+                <p className="text-sm text-muted-foreground/80 uppercase tracking-wider">Channels</p>
               </div>
             )}
           </div>
@@ -286,10 +286,10 @@ export function CreateStep() {
         {readinessStatuses.length > 0 && (
           <div className="mb-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs uppercase tracking-wider text-muted-foreground/50">
+              <span className="text-sm uppercase tracking-wider text-muted-foreground/50">
                 Connector Readiness
               </span>
-              <span className="text-xs text-emerald-400/80">
+              <span className="text-sm text-emerald-400/80">
                 {readyCount} of {readinessStatuses.length} ready
               </span>
             </div>
@@ -303,7 +303,7 @@ export function CreateStep() {
             </div>
             <div className="mt-2 space-y-1.5">
               {readinessStatuses.map((s) => (
-                <div key={s.connector_name} className="flex items-center gap-2 text-xs">
+                <div key={s.connector_name} className="flex items-center gap-2 text-sm">
                   <span
                     className={`w-1.5 h-1.5 rounded-full ${
                       s.health === 'ready' ? 'bg-emerald-500' : 'bg-amber-500'
@@ -325,7 +325,7 @@ export function CreateStep() {
             {capabilities.map((cap) => (
               <span
                 key={cap.type}
-                className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-cyan-500/10 text-cyan-400/70 border border-cyan-500/15"
+                className="inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-full bg-cyan-500/10 text-cyan-400/70 border border-cyan-500/15"
                 title={cap.context}
               >
                 <Shield className="w-3 h-3" />
@@ -391,7 +391,7 @@ export function CreateStep() {
 
       {/* Confirmation hint */}
       {!created && (
-        <p className="text-xs text-amber-300/60 text-center">
+        <p className="text-sm text-amber-300/60 text-center">
           Review the details above, then click &ldquo;Create Persona&rdquo; to save.
         </p>
       )}

@@ -136,7 +136,7 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
                 placeholder={isRedis ? 'Filter keys...' : 'Filter tables...'}
-                className="w-full pl-7 pr-2 py-1.5 rounded-lg bg-secondary/30 border border-primary/10 text-xs text-foreground/80 placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 transition-colors"
+                className="w-full pl-7 pr-2 py-1.5 rounded-lg bg-secondary/30 border border-primary/10 text-sm text-foreground/80 placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 transition-colors"
               />
             </div>
             <button
@@ -155,25 +155,25 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
           {loading && tables.length === 0 && redisKeys.length === 0 && (
             <div className="flex items-center justify-center py-12 gap-2">
               <Loader2 className="w-4 h-4 animate-spin text-muted-foreground/40" />
-              <span className="text-xs text-muted-foreground/40">Loading...</span>
+              <span className="text-sm text-muted-foreground/40">Loading...</span>
             </div>
           )}
 
           {error && (
-            <div className="p-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400 break-words">
+            <div className="p-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400 break-words">
               {error}
             </div>
           )}
 
           {/* SQL tables */}
           {!isRedis && !loading && !error && filteredTables.length === 0 && tables.length === 0 && (
-            <p className="text-xs text-muted-foreground/40 text-center py-8">
+            <p className="text-sm text-muted-foreground/40 text-center py-8">
               No tables found
             </p>
           )}
 
           {!isRedis && !loading && !error && filteredTables.length === 0 && tables.length > 0 && (
-            <p className="text-xs text-muted-foreground/40 text-center py-8">
+            <p className="text-sm text-muted-foreground/40 text-center py-8">
               No matching tables
             </p>
           )}
@@ -193,14 +193,14 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
                 onContextMenu={(e) => handleContextMenu(e, table.table_name)}
               >
                 <Table2 className="w-3 h-3 text-muted-foreground/30 shrink-0" />
-                <span className="flex-1 text-xs font-mono text-foreground/70 truncate">
+                <span className="flex-1 text-sm font-mono text-foreground/70 truncate">
                   {table.table_name}
                 </span>
                 {isPinned && (
                   <Pin className="w-2.5 h-2.5 text-blue-400/50 shrink-0" />
                 )}
                 {table.table_type === 'VIEW' && (
-                  <span className="px-1 py-0.5 rounded text-[10px] font-medium bg-violet-500/10 text-violet-400/70 shrink-0">
+                  <span className="px-1 py-0.5 rounded text-sm font-medium bg-violet-500/10 text-violet-400/70 shrink-0">
                     VIEW
                   </span>
                 )}
@@ -210,13 +210,13 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
 
           {/* Redis keys */}
           {isRedis && !loading && !error && filteredKeys.length === 0 && redisKeys.length === 0 && (
-            <p className="text-xs text-muted-foreground/40 text-center py-8">
+            <p className="text-sm text-muted-foreground/40 text-center py-8">
               No keys found
             </p>
           )}
 
           {isRedis && !loading && !error && filteredKeys.length === 0 && redisKeys.length > 0 && (
-            <p className="text-xs text-muted-foreground/40 text-center py-8">
+            <p className="text-sm text-muted-foreground/40 text-center py-8">
               No matching keys
             </p>
           )}
@@ -234,7 +234,7 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
                 onClick={() => handleSelectKey(keyInfo.key)}
               >
                 <Key className="w-3 h-3 text-muted-foreground/30 shrink-0" />
-                <span className="flex-1 text-xs font-mono text-foreground/70 truncate">
+                <span className="flex-1 text-sm font-mono text-foreground/70 truncate">
                   {keyInfo.key}
                 </span>
                 <ChevronRight className="w-3 h-3 text-muted-foreground/20 shrink-0" />
@@ -245,7 +245,7 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
 
         {/* Footer: count */}
         {!loading && !error && (
-          <div className="px-3 py-2 border-t border-primary/5 text-[10px] text-muted-foreground/30">
+          <div className="px-3 py-2 border-t border-primary/5 text-sm text-muted-foreground/30">
             {isRedis
               ? `${redisKeys.length} key${redisKeys.length !== 1 ? 's' : ''}`
               : `${tables.length} table${tables.length !== 1 ? 's' : ''}`}
@@ -265,14 +265,14 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
                 {selectedTable}
               </span>
               {tables.find((t) => t.table_name === selectedTable)?.table_type === 'VIEW' && (
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-violet-500/10 text-violet-400/70">
+                <span className="px-1.5 py-0.5 rounded text-sm font-medium bg-violet-500/10 text-violet-400/70">
                   VIEW
                 </span>
               )}
               {!pinnedTables.some((p) => p.table_name === selectedTable) && (
                 <button
                   onClick={() => handlePinTable(selectedTable)}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-blue-400/70 hover:bg-blue-500/10 transition-colors"
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-sm font-medium text-blue-400/70 hover:bg-blue-500/10 transition-colors"
                   title="Pin this table"
                 >
                   <Pin className="w-3 h-3" />
@@ -280,7 +280,7 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
                 </button>
               )}
               {pinnedTables.some((p) => p.table_name === selectedTable) && (
-                <span className="flex items-center gap-1 px-2.5 py-1 text-xs text-blue-400/50">
+                <span className="flex items-center gap-1 px-2.5 py-1 text-sm text-blue-400/50">
                   <Pin className="w-3 h-3" />
                   Pinned
                 </span>
@@ -292,19 +292,19 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
               {columnsLoading && (
                 <div className="flex items-center gap-2 py-8 justify-center">
                   <Loader2 className="w-4 h-4 animate-spin text-muted-foreground/40" />
-                  <span className="text-xs text-muted-foreground/40">Loading columns...</span>
+                  <span className="text-sm text-muted-foreground/40">Loading columns...</span>
                 </div>
               )}
 
               {columnsError && (
-                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400 break-words">
+                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400 break-words">
                   {columnsError}
                 </div>
               )}
 
               {!columnsLoading && !columnsError && columns.length > 0 && (
                 <div className="rounded-lg border border-primary/10 overflow-hidden">
-                  <table className="w-full text-xs">
+                  <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-secondary/40 border-b border-primary/10">
                         <th className="px-3 py-2 text-left font-semibold text-foreground/70 w-1/3">Column</th>
@@ -345,13 +345,13 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
               )}
 
               {!columnsLoading && !columnsError && columns.length === 0 && (
-                <p className="text-xs text-muted-foreground/40 text-center py-8">
+                <p className="text-sm text-muted-foreground/40 text-center py-8">
                   No columns found
                 </p>
               )}
 
               {!columnsLoading && !columnsError && columns.length > 0 && (
-                <div className="mt-3 text-[10px] text-muted-foreground/30">
+                <div className="mt-3 text-sm text-muted-foreground/30">
                   {columns.length} column{columns.length !== 1 ? 's' : ''}
                 </div>
               )}
@@ -372,17 +372,17 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
               {keyTypeResult === null ? (
                 <div className="flex items-center gap-2 py-4">
                   <Loader2 className="w-4 h-4 animate-spin text-muted-foreground/40" />
-                  <span className="text-xs text-muted-foreground/40">Loading key info...</span>
+                  <span className="text-sm text-muted-foreground/40">Loading key info...</span>
                 </div>
               ) : (
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-muted-foreground/50">Type:</span>
-                    <span className="px-2 py-0.5 rounded text-xs font-mono font-medium bg-amber-500/10 text-amber-400/70">
+                    <span className="text-sm text-muted-foreground/50">Type:</span>
+                    <span className="px-2 py-0.5 rounded text-sm font-mono font-medium bg-amber-500/10 text-amber-400/70">
                       {keyTypeResult}
                     </span>
                   </div>
-                  <p className="text-[10px] text-muted-foreground/30">
+                  <p className="text-sm text-muted-foreground/30">
                     Use the Console tab to inspect this key's value.
                   </p>
                 </div>

@@ -66,20 +66,20 @@ export function PerformanceCharts({
     <div className="grid grid-cols-2 gap-4">
       {compareMode && compareDeltaMode && comparedData && (
         <div className="col-span-2 bg-secondary/30 border border-primary/10 rounded-xl p-4">
-          <h4 className="text-xs font-medium text-foreground/80 mb-3 uppercase tracking-wider">
+          <h4 className="text-sm font-medium text-foreground/80 mb-3 uppercase tracking-wider">
             Comparison Delta Heatmap ({compALabel} to {compBLabel})
           </h4>
           <div className="space-y-2 overflow-x-auto">
             {heatRows.map((row) => (
               <div key={row.key} className="flex items-center gap-1.5 min-w-max">
-                <div className="w-20 text-xs text-muted-foreground/70">{row.label}</div>
+                <div className="w-20 text-sm text-muted-foreground/70">{row.label}</div>
                 {heatmapDates.map((point) => {
                   const value = point[row.key];
                   return (
                     <div
                       key={`${row.key}-${point.date}`}
                       title={`${fmtDate(point.date)}: ${fmtDelta(value)}`}
-                      className={`w-[52px] h-7 rounded border text-[10px] font-medium flex items-center justify-center ${deltaCellClass(value)}`}
+                      className={`w-[52px] h-7 rounded border text-sm font-medium flex items-center justify-center ${deltaCellClass(value)}`}
                     >
                       {fmtDelta(value)}
                     </div>
@@ -93,7 +93,7 @@ export function PerformanceCharts({
 
       {/* 1) Cost per Execution */}
       <div className="bg-secondary/30 border border-primary/10 rounded-xl p-4">
-        <h4 className="text-xs font-medium text-foreground/80 mb-3 uppercase tracking-wider">Cost per Execution</h4>
+        <h4 className="text-sm font-medium text-foreground/80 mb-3 uppercase tracking-wider">Cost per Execution</h4>
         <ResponsiveContainer width="100%" height={200}>
           {compareMode && comparedData && compareDeltaMode ? (
             <AreaChart data={deltaSeries} syncId="perf-sync">
@@ -152,7 +152,7 @@ export function PerformanceCharts({
 
       {/* 2) Latency Distribution */}
       <div className="bg-secondary/30 border border-primary/10 rounded-xl p-4">
-        <h4 className="text-xs font-medium text-foreground/80 mb-3 uppercase tracking-wider">Latency Distribution</h4>
+        <h4 className="text-sm font-medium text-foreground/80 mb-3 uppercase tracking-wider">Latency Distribution</h4>
         <ResponsiveContainer width="100%" height={200}>
           {compareMode && comparedData && compareDeltaMode ? (
             <AreaChart data={deltaSeries} syncId="perf-sync">
@@ -196,7 +196,7 @@ export function PerformanceCharts({
 
       {/* 3) Error Rate Trend */}
       <div className="bg-secondary/30 border border-primary/10 rounded-xl p-4">
-        <h4 className="text-xs font-medium text-foreground/80 mb-3 uppercase tracking-wider">Error Rate Trend</h4>
+        <h4 className="text-sm font-medium text-foreground/80 mb-3 uppercase tracking-wider">Error Rate Trend</h4>
         <ResponsiveContainer width="100%" height={200}>
           {compareMode && comparedData && compareDeltaMode ? (
             <AreaChart data={deltaSeries} syncId="perf-sync">
@@ -249,7 +249,7 @@ export function PerformanceCharts({
 
       {/* 4) Token Efficiency */}
       <div className="bg-secondary/30 border border-primary/10 rounded-xl p-4">
-        <h4 className="text-xs font-medium text-foreground/80 mb-3 uppercase tracking-wider">Token Efficiency</h4>
+        <h4 className="text-sm font-medium text-foreground/80 mb-3 uppercase tracking-wider">Token Efficiency</h4>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={data.daily_points} syncId="perf-sync">
             <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />

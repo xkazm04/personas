@@ -39,7 +39,7 @@ export function MetricChart({
   return (
     <div className={`bg-secondary/30 border border-primary/10 rounded-xl p-4 ${className ?? ''}`}>
       <div className="mb-3">
-        <h3 className="text-xs font-bold uppercase tracking-widest text-foreground/80 flex items-center gap-2">
+        <h3 className="text-sm font-bold uppercase tracking-widest text-foreground/80 flex items-center gap-2">
           {Icon && (
             <div
               className={`p-1.5 rounded-lg bg-${iconColor}-500/10 text-${iconColor}-400`}

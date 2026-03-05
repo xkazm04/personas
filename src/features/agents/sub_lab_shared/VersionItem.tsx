@@ -56,7 +56,7 @@ export function VersionItem({
         onClick={(e) => { e.stopPropagation(); onClick(); }}
         disabled={isThis}
         data-testid={testId}
-        className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded-lg transition-colors disabled:opacity-70 ${colorClasses} ${isThis ? 'cursor-default' : 'cursor-pointer'}`}
+        className={`inline-flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors disabled:opacity-70 ${colorClasses} ${isThis ? 'cursor-default' : 'cursor-pointer'}`}
       >
         {isThis ? <Loader2 className="w-3 h-3 animate-spin" /> : icon}
         {label}
@@ -82,19 +82,19 @@ export function VersionItem({
       >
         <div className="flex items-center gap-2">
           <span className="text-sm font-mono font-bold text-foreground/90">v{version.version_number}</span>
-          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-medium border ${style.bg} ${style.text}`}>
+          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-sm font-medium border ${style.bg} ${style.text}`}>
             <TagIcon className="w-2.5 h-2.5" />
             {version.tag}
           </span>
-          {isCompareA && <span className="px-1.5 py-0.5 rounded text-xs font-mono bg-blue-500/20 text-blue-400">A</span>}
-          {isCompareB && <span className="px-1.5 py-0.5 rounded text-xs font-mono bg-violet-500/20 text-violet-400">B</span>}
-          <span className="ml-auto text-xs text-muted-foreground/60 flex items-center gap-1">
+          {isCompareA && <span className="px-1.5 py-0.5 rounded text-sm font-mono bg-blue-500/20 text-blue-400">A</span>}
+          {isCompareB && <span className="px-1.5 py-0.5 rounded text-sm font-mono bg-violet-500/20 text-violet-400">B</span>}
+          <span className="ml-auto text-sm text-muted-foreground/60 flex items-center gap-1">
             <Clock className="w-2.5 h-2.5" />
             {formatRelative(version.created_at)}
           </span>
         </div>
         {version.change_summary && (
-          <p className="mt-1 text-xs text-muted-foreground/70 truncate">{version.change_summary}</p>
+          <p className="mt-1 text-sm text-muted-foreground/70 truncate">{version.change_summary}</p>
         )}
       </button>
 
@@ -103,7 +103,7 @@ export function VersionItem({
         <button
           onClick={(e) => { e.stopPropagation(); setShowActions(!showActions); }}
           data-testid={`version-actions-toggle-${version.version_number}`}
-          className="text-xs text-muted-foreground/60 hover:text-muted-foreground flex items-center gap-1 transition-colors"
+          className="text-sm text-muted-foreground/60 hover:text-muted-foreground flex items-center gap-1 transition-colors"
         >
           {showActions ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
           Actions
@@ -112,7 +112,7 @@ export function VersionItem({
         <button
           onClick={(e) => { e.stopPropagation(); onSetCompareA(); }}
           data-testid={`version-compare-a-${version.version_number}`}
-          className={`px-1.5 py-0.5 rounded text-xs transition-colors ${isCompareA ? 'bg-blue-500/20 text-blue-400' : 'text-muted-foreground/50 hover:text-blue-400 hover:bg-blue-500/10'}`}
+          className={`px-1.5 py-0.5 rounded text-sm transition-colors ${isCompareA ? 'bg-blue-500/20 text-blue-400' : 'text-muted-foreground/50 hover:text-blue-400 hover:bg-blue-500/10'}`}
           title="Set as Compare A"
         >
           A
@@ -120,7 +120,7 @@ export function VersionItem({
         <button
           onClick={(e) => { e.stopPropagation(); onSetCompareB(); }}
           data-testid={`version-compare-b-${version.version_number}`}
-          className={`px-1.5 py-0.5 rounded text-xs transition-colors ${isCompareB ? 'bg-violet-500/20 text-violet-400' : 'text-muted-foreground/50 hover:text-violet-400 hover:bg-violet-500/10'}`}
+          className={`px-1.5 py-0.5 rounded text-sm transition-colors ${isCompareB ? 'bg-violet-500/20 text-violet-400' : 'text-muted-foreground/50 hover:text-violet-400 hover:bg-violet-500/10'}`}
           title="Set as Compare B"
         >
           B
@@ -181,8 +181,8 @@ export function VersionItem({
               <div className="mx-3 mb-3 flex items-start gap-3 p-3 rounded-xl bg-red-500/10 border border-red-500/20 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
                 <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 space-y-0.5">
-                  <p className="text-xs font-semibold text-red-400 uppercase tracking-tight">Operation Failed</p>
-                  <p className="text-xs text-red-300/90 leading-relaxed">{actionError}</p>
+                  <p className="text-sm font-semibold text-red-400 uppercase tracking-tight">Operation Failed</p>
+                  <p className="text-sm text-red-300/90 leading-relaxed">{actionError}</p>
                 </div>
                 <button
                   onClick={(e) => { e.stopPropagation(); onDismissError(); }}

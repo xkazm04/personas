@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Eye, BarChart3, RotateCw, Globe, Server, Plug, Key } from 'lucide-react';
+import { X, Eye, BarChart3, RotateCw, Globe, Server, Plug, Key, BookOpen } from 'lucide-react';
 import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { OverviewTab } from './tabs/OverviewTab';
 import { ApiExplorerTab } from './tabs/ApiExplorerTab';
 import { McpToolsTab } from './tabs/McpToolsTab';
 import { CredentialIntelligence } from '@/features/vault/sub_features/CredentialIntelligence';
 import { CredentialRotationSection } from '@/features/vault/sub_features/CredentialRotationSection';
+import { CredentialRecipesTab } from './tabs/CredentialRecipesTab';
 import { useCredentialHealth } from '@/features/vault/hooks/useCredentialHealth';
 import { useGoogleOAuth } from '@/features/vault/hooks/useGoogleOAuth';
 import { useRotationTicker, formatCountdown } from '@/features/vault/hooks/useRotationTicker';
@@ -18,7 +19,7 @@ import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types'
 
 // ── Tab types ────────────────────────────────────────────────────
 
-type PlaygroundTab = 'overview' | 'api-explorer' | 'mcp-tools' | 'intelligence' | 'rotation';
+type PlaygroundTab = 'overview' | 'api-explorer' | 'recipes' | 'mcp-tools' | 'intelligence' | 'rotation';
 
 interface TabDef {
   id: PlaygroundTab;
@@ -36,6 +37,7 @@ function getAvailableTabs(connector: ConnectorDefinition | undefined): TabDef[] 
   // API/PAT credentials: custom connections or catalog connectors with base_url fields
   if (category === 'custom' || (category && !['mcp', 'database'].includes(category))) {
     tabs.push({ id: 'api-explorer', label: 'API Explorer', icon: Globe });
+    tabs.push({ id: 'recipes', label: 'Recipes', icon: BookOpen });
   }
 
   // MCP credentials
@@ -173,7 +175,7 @@ export function CredentialPlaygroundModal({
               <h2 className="text-sm font-semibold text-foreground/90 truncate">
                 {credential.name}
               </h2>
-              <p className="text-xs text-muted-foreground/60">
+              <p className="text-sm text-muted-foreground/60">
                 Credential Playground — {connector?.label || credential.service_type}
               </p>
             </div>
@@ -194,7 +196,7 @@ export function CredentialPlaygroundModal({
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`relative flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium transition-colors ${
+                  className={`relative flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors ${
                     isActive
                       ? 'text-foreground/90'
                       : 'text-muted-foreground/50 hover:text-muted-foreground/70'
@@ -244,6 +246,9 @@ export function CredentialPlaygroundModal({
                 credentialId={credential.id}
                 catalogEndpoints={connector ? CATALOG_API_ENDPOINTS[connector.name] : undefined}
               />
+            )}
+            {activeTab === 'recipes' && (
+              <CredentialRecipesTab credentialId={credential.id} />
             )}
             {activeTab === 'mcp-tools' && (
               <McpToolsTab credentialId={credential.id} />

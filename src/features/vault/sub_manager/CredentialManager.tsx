@@ -230,7 +230,7 @@ export function CredentialManager() {
               <button
                 onClick={bulk.isRunning ? bulk.cancel : () => bulk.run(credentials)}
                 disabled={false}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
                   bulk.isRunning
                     ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                     : bulk.summary
@@ -259,7 +259,7 @@ export function CredentialManager() {
               <button
                 onClick={handleRotateAll}
                 disabled={isRotatingAll}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
                   rotateAllResult
                     ? rotateAllResult.failed > 0
                       ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
@@ -310,7 +310,7 @@ export function CredentialManager() {
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
-            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] px-1.5 py-0.5 rounded border border-primary/15 bg-secondary/40 text-muted-foreground/40 font-mono pointer-events-none">
+            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-sm px-1.5 py-0.5 rounded border border-primary/15 bg-secondary/40 text-muted-foreground/40 font-mono pointer-events-none">
               {navigator.platform?.includes('Mac') ? '⌘K' : 'Ctrl+K'}
             </kbd>
           </div>

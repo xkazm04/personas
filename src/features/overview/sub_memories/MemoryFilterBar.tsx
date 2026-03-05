@@ -72,7 +72,7 @@ export function MemoryFilterBar({
           <span className="relative">All</span>
         </button>
         {ALL_MEMORY_CATEGORIES.map((cat) => {
-          const defaultColors = { label: cat, bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/20' };
+          const defaultColors = { label: cat, bg: 'bg-gray-500/10', text: 'text-gray-600', border: 'border-gray-500/20' };
           const colors = MEMORY_CATEGORY_COLORS[cat] ?? defaultColors;
           const isActive = selectedCategory === cat;
           return (

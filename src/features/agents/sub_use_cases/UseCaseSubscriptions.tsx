@@ -91,7 +91,7 @@ export function UseCaseSubscriptions({
                   {suggestedTrigger.type}
                 </span>
                 {suggestedTrigger.description && (
-                  <span className="text-[11px] text-muted-foreground/60 block truncate">
+                  <span className="text-sm text-muted-foreground/60 block truncate">
                     {suggestedTrigger.description}
                   </span>
                 )}
@@ -99,7 +99,7 @@ export function UseCaseSubscriptions({
               <button
                 onClick={() => onActivateTrigger(useCaseId, suggestedTrigger.type)}
                 disabled={activatingTriggers?.has(`${useCaseId}:${suggestedTrigger.type}`)}
-                className="flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/25 hover:bg-amber-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-1 px-2.5 py-1 text-sm rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/25 hover:bg-amber-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <Zap className="w-3 h-3" />
                 Activate
@@ -138,7 +138,7 @@ export function UseCaseSubscriptions({
                   {sub.event_type}
                 </span>
                 {sub.source_filter && (
-                  <span className="text-[11px] text-muted-foreground/70 block truncate">
+                  <span className="text-sm text-muted-foreground/70 block truncate">
                     filter: {sub.source_filter}
                   </span>
                 )}
@@ -147,7 +147,7 @@ export function UseCaseSubscriptions({
                 <button
                   onClick={() => onActivateSubscription(useCaseId, sub.event_type, sub.source_filter)}
                   disabled={activatingSubscriptions?.has(`${useCaseId}:${sub.event_type}:${sub.source_filter ?? ''}`)}
-                  className="flex items-center gap-1 px-2 py-0.5 text-[11px] rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="flex items-center gap-1 px-2 py-0.5 text-sm rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   title="Create as DB-backed subscription"
                 >
                   <Zap className="w-2.5 h-2.5" />

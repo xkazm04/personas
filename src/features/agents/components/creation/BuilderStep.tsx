@@ -71,7 +71,7 @@ function CollapsibleSection({
         <span className="text-muted-foreground/80">{icon}</span>
         <span className="text-sm font-medium text-foreground/90 flex-1">{label}</span>
         {badge && (
-          <span className="text-[11px] font-medium text-muted-foreground/65 bg-secondary/40 px-1.5 py-0.5 rounded">
+          <span className="text-sm font-medium text-muted-foreground/65 bg-secondary/40 px-1.5 py-0.5 rounded">
             {badge}
           </span>
         )}
@@ -270,7 +270,7 @@ export function BuilderStep({ state, dispatch, onContinue, onCancel, draftPerson
             <div>
               <div className="flex items-center gap-1.5 mb-2">
                 <Plug className="w-3 h-3 text-muted-foreground/60" />
-                <p className="text-xs font-medium text-muted-foreground/70">Components</p>
+                <p className="text-sm font-medium text-muted-foreground/70">Components</p>
               </div>
               <ComponentsPicker
                 components={state.components}
@@ -287,7 +287,7 @@ export function BuilderStep({ state, dispatch, onContinue, onCancel, draftPerson
 
         {/* Streaming output — persists after error so user can read the log */}
         {!logDismissed && design.outputLines.length > 0 && (
-          <div className="relative max-h-48 overflow-y-auto rounded-xl bg-background/50 border border-primary/10 p-3 font-mono text-[11px] text-muted-foreground/60 leading-relaxed">
+          <div className="relative max-h-48 overflow-y-auto rounded-xl bg-background/50 border border-primary/10 p-3 font-mono text-sm text-muted-foreground/60 leading-relaxed">
             {/* Dismiss button (only when not actively generating) */}
             {!isGenerating && (
               <button
@@ -419,7 +419,7 @@ export function BuilderStep({ state, dispatch, onContinue, onCancel, draftPerson
       {hasContent && (
         <div className="xl:hidden fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-lg border-t border-primary/10 px-4 py-2.5 z-40">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground/70 truncate">
+            <p className="text-sm text-muted-foreground/70 truncate">
               {[
                 filledUseCases > 0 && `${filledUseCases} use case${filledUseCases !== 1 ? 's' : ''}`,
                 state.components.length > 0 && `${state.components.length} component${state.components.length !== 1 ? 's' : ''}`,
@@ -432,7 +432,7 @@ export function BuilderStep({ state, dispatch, onContinue, onCancel, draftPerson
               type="button"
               onClick={onContinue}
               disabled={!hasIntent}
-              className="px-4 py-1.5 text-xs font-medium rounded-lg bg-btn-primary text-white"
+              className="px-4 py-1.5 text-sm font-medium rounded-lg bg-btn-primary text-white"
             >
               Continue
             </button>

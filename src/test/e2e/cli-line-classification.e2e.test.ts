@@ -78,7 +78,7 @@ describe('E2E: line classification — Claude execution', () => {
 
 describe('E2E: line classification — Gemini execution', () => {
   it('classifies Gemini session start as status', () => {
-    expect(classifyLine('Session started (gemini-3-flash-preview)')).toBe('status');
+    expect(classifyLine('Session started (gemini-3.1-flash-lite-preview)')).toBe('status');
   });
 
   it('classifies WebSearch tool use', () => {

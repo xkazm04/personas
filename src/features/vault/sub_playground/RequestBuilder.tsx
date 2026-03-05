@@ -75,7 +75,7 @@ export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderPr
         <select
           value={method}
           onChange={(e) => setMethod(e.target.value)}
-          className="px-2 py-2 rounded-lg text-xs font-bold bg-secondary/30 border border-primary/10 text-foreground/80 focus:outline-none focus:border-primary/30"
+          className="px-2 py-2 rounded-lg text-sm font-bold bg-secondary/30 border border-primary/10 text-foreground/80 focus:outline-none focus:border-primary/30"
         >
           {METHODS.map((m) => (
             <option key={m} value={m}>{m}</option>
@@ -87,13 +87,13 @@ export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderPr
           value={path}
           onChange={(e) => setPath(e.target.value)}
           placeholder="/api/v1/resource"
-          className="flex-1 px-3 py-2 rounded-lg text-xs font-mono bg-secondary/20 border border-primary/10 text-foreground/80 placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30"
+          className="flex-1 px-3 py-2 rounded-lg text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/80 placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30"
         />
 
         <button
           onClick={handleSend}
           disabled={isSending || !path.trim()}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
         >
           {isSending ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -110,13 +110,13 @@ export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderPr
           <div className="space-y-1.5">
             {pathParams.map((param) => (
               <div key={param} className="flex items-center gap-2">
-                <span className="text-xs font-mono text-violet-400/70 min-w-[100px]">{`{${param}}`}</span>
+                <span className="text-sm font-mono text-violet-400/70 min-w-[100px]">{`{${param}}`}</span>
                 <input
                   type="text"
                   value={pathParamValues[param] || ''}
                   onChange={(e) => setPathParamValues((prev) => ({ ...prev, [param]: e.target.value }))}
                   placeholder={param}
-                  className="flex-1 px-2 py-1.5 rounded text-xs font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/25 focus:outline-none focus:border-primary/25"
+                  className="flex-1 px-2 py-1.5 rounded text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/25 focus:outline-none focus:border-primary/25"
                 />
               </div>
             ))}
@@ -148,7 +148,7 @@ export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderPr
       )}
 
       {/* Resolved URL preview */}
-      <div className="text-[10px] font-mono text-muted-foreground/30 truncate">
+      <div className="text-sm font-mono text-muted-foreground/30 truncate">
         → {method} {resolvedPath}
       </div>
     </div>
@@ -160,7 +160,7 @@ export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderPr
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <span className="text-[10px] uppercase tracking-wider text-muted-foreground/30 font-semibold">
+      <span className="text-sm uppercase tracking-wider text-muted-foreground/30 font-semibold">
         {label}
       </span>
       {children}
@@ -200,14 +200,14 @@ function KeyValueEditor({
             value={entry.key}
             onChange={(e) => update(i, 'key', e.target.value)}
             placeholder="key"
-            className="flex-1 px-2 py-1.5 rounded text-xs font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/25 focus:outline-none focus:border-primary/25"
+            className="flex-1 px-2 py-1.5 rounded text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/25 focus:outline-none focus:border-primary/25"
           />
           <input
             type="text"
             value={entry.value}
             onChange={(e) => update(i, 'value', e.target.value)}
             placeholder="value"
-            className="flex-1 px-2 py-1.5 rounded text-xs font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/25 focus:outline-none focus:border-primary/25"
+            className="flex-1 px-2 py-1.5 rounded text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/25 focus:outline-none focus:border-primary/25"
           />
           <button
             onClick={() => remove(i)}
@@ -219,7 +219,7 @@ function KeyValueEditor({
       ))}
       <button
         onClick={add}
-        className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-muted-foreground/40 hover:text-muted-foreground/60 hover:bg-secondary/30 transition-colors"
+        className="flex items-center gap-1 px-2 py-1 rounded text-sm text-muted-foreground/40 hover:text-muted-foreground/60 hover:bg-secondary/30 transition-colors"
       >
         <Plus className="w-3 h-3" />
         Add

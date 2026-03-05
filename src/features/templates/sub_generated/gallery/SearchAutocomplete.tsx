@@ -105,7 +105,7 @@ export function SearchAutocomplete({
           role="listbox"
           aria-label="Search suggestions"
         >
-          <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground/50 border-b border-primary/10">
+          <div className="px-3 py-1.5 text-sm uppercase tracking-wider text-muted-foreground/50 border-b border-primary/10">
             {prefix.startsWith('category') ? 'Categories' : 'Suggestions'}
           </div>
           <div className="max-h-64 overflow-y-auto py-1">
@@ -126,7 +126,7 @@ export function SearchAutocomplete({
                 >
                   <Icon className="w-4 h-4 flex-shrink-0" style={{ color: suggestion.color }} />
                   <span className="flex-1 text-left">{suggestion.chip.label}</span>
-                  <span className="text-xs text-muted-foreground/50 tabular-nums">{suggestion.count}</span>
+                  <span className="text-sm text-muted-foreground/50 tabular-nums">{suggestion.count}</span>
                 </button>
               );
             })}

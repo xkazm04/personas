@@ -42,7 +42,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
             )}
             <span className={`relative inline-flex rounded-full h-2 w-2 ${isPaused ? 'bg-amber-400' : isConnected ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
           </div>
-          <span className="text-[11px] font-bold text-foreground/80 uppercase tracking-widest hidden sm:inline">
+          <span className="text-sm font-bold text-foreground/80 uppercase tracking-widest hidden sm:inline">
             {isPaused ? 'Paused' : isConnected ? 'Live' : 'Offline'}
           </span>
           <span className="sr-only">Connection status: {isPaused ? 'Paused' : isConnected ? 'Live' : 'Disconnected'}</span>
@@ -55,7 +55,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={stats.eventsPerMinute} color="text-purple-400 text-[15px]" />
-            <span className="text-[11px] text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">events/min</span>
+            <span className="text-sm text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">events/min</span>
           </div>
         </div>
 
@@ -68,7 +68,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={stats.pendingCount} color="text-amber-400 text-[15px]" />
-            <span className="text-[11px] text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">pending</span>
+            <span className="text-sm text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">pending</span>
           </div>
         </div>
 
@@ -83,7 +83,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={`${stats.successRate}%`} color={stats.successRate >= 90 ? 'text-emerald-400 text-[15px]' : 'text-red-400 text-[15px]'} />
-            <span className="text-[11px] text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">success</span>
+            <span className="text-sm text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">success</span>
           </div>
         </div>
 
@@ -96,7 +96,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={stats.totalInWindow} color="text-blue-400 text-[15px]" />
-            <span className="text-[11px] text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">in window</span>
+            <span className="text-sm text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">in window</span>
           </div>
         </div>
       </div>

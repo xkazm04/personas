@@ -9,3 +9,5 @@ pub mod tools;
 pub mod team_memories;
 pub mod triggers;
 pub mod db_schema;
+pub mod recipes;
+pub mod automations;

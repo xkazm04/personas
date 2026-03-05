@@ -51,7 +51,7 @@ function InlineDeleteButton({
             animate={{ opacity: 1, scale: [1, 1.04, 1] }}
             exit={{ opacity: 0, scale: 0.9 }}
             transition={{ duration: 0.2 }}
-            className="text-xs font-semibold text-red-400"
+            className="text-sm font-semibold text-red-400"
           >
             Confirm?
           </motion.span>
@@ -91,12 +91,12 @@ export function UseCaseActiveTriggers({ triggers, onDelete }: UseCaseActiveTrigg
               {trigger.trigger_type}
             </span>
             {trigger.config && (
-              <span className="text-[11px] text-muted-foreground/70 block truncate">
+              <span className="text-sm text-muted-foreground/70 block truncate">
                 {trigger.config}
               </span>
             )}
           </div>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <span className="text-sm px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
             {trigger.enabled ? 'active' : 'disabled'}
           </span>
           {onDelete && (
@@ -134,12 +134,12 @@ export function UseCaseActiveSubscriptions({ subscriptions, onDelete }: UseCaseA
               {sub.event_type}
             </span>
             {sub.source_filter && (
-              <span className="text-[11px] text-muted-foreground/70 block truncate">
+              <span className="text-sm text-muted-foreground/70 block truncate">
                 filter: {sub.source_filter}
               </span>
             )}
           </div>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <span className="text-sm px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
             {sub.enabled ? 'active' : 'disabled'}
           </span>
           {onDelete && (

@@ -56,7 +56,7 @@ export function WizardSidebar({
               <div className="relative flex-shrink-0">
                 <div
                   className={`
-                    flex h-7 w-7 items-center justify-center rounded-full border text-xs font-medium transition-colors
+                    flex h-7 w-7 items-center justify-center rounded-full border text-sm font-medium transition-colors
                     ${isActive ? 'border-violet-500/50 bg-violet-500/15 text-violet-400' : ''}
                     ${isCompleted ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-400' : ''}
                     ${isFuture ? 'border-primary/15 bg-secondary/20 text-muted-foreground/40' : ''}

@@ -68,7 +68,7 @@ function ImpactBadge({ impact }: { impact: string }) {
     low: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
   };
   return (
-    <span className={`px-1.5 py-0.5 text-[8px] font-mono uppercase rounded border ${colors[impact as keyof typeof colors] ?? colors.low}`}>
+    <span className={`px-1.5 py-0.5 text-sm font-mono uppercase rounded border ${colors[impact as keyof typeof colors] ?? colors.low}`}>
       {impact}
     </span>
   );

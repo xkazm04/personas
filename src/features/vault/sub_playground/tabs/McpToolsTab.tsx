@@ -97,14 +97,14 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
       {/* Header bar */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/5 shrink-0">
         <Server className="w-4 h-4 text-muted-foreground/40" />
-        <span className="text-xs font-medium text-foreground/70">
+        <span className="text-sm font-medium text-foreground/70">
           {hasLoaded ? `${tools.length} tool${tools.length !== 1 ? 's' : ''}` : 'MCP Tools'}
         </span>
         <div className="flex-1" />
         <button
           onClick={handleRefresh}
           disabled={loading}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-secondary/30 border border-primary/10 text-foreground/70 hover:bg-secondary/50 disabled:opacity-40 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-secondary/30 border border-primary/10 text-foreground/70 hover:bg-secondary/50 disabled:opacity-40 transition-colors"
         >
           {loading ? (
             <Loader2 className="w-3 h-3 animate-spin" />
@@ -119,7 +119,7 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
       <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
         {/* Load error */}
         {loadError && (
-          <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400 flex items-start gap-2">
+          <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400 flex items-start gap-2">
             <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
             <span>{loadError}</span>
           </div>
@@ -135,7 +135,7 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
           <div className="flex flex-col items-center justify-center py-16 space-y-2">
             <Server className="w-8 h-8 text-muted-foreground/15" />
             <p className="text-sm text-muted-foreground/50">No tools found on this MCP server</p>
-            <p className="text-xs text-muted-foreground/30">
+            <p className="text-sm text-muted-foreground/30">
               The server responded but reported no available tools.
             </p>
           </div>
@@ -160,14 +160,14 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
         {currentTool && (
           <div className="border-t border-primary/8 pt-4 space-y-3">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground/30 font-semibold">
+              <span className="text-sm uppercase tracking-wider text-muted-foreground/30 font-semibold">
                 Test Tool
               </span>
-              <span className="font-mono text-xs text-foreground/70">{currentTool.name}</span>
+              <span className="font-mono text-sm text-foreground/70">{currentTool.name}</span>
               <div className="flex-1" />
               <button
                 onClick={() => { setSelectedTool(null); setResult(null); setExecError(null); }}
-                className="text-xs text-muted-foreground/40 hover:text-muted-foreground/60"
+                className="text-sm text-muted-foreground/40 hover:text-muted-foreground/60"
               >
                 Close
               </button>
@@ -183,7 +183,7 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
             <button
               onClick={() => handleExecute(currentTool.name)}
               disabled={executing}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               {executing ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -195,7 +195,7 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
 
             {/* Error */}
             {execError && (
-              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400 font-mono whitespace-pre-wrap">
+              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400 font-mono whitespace-pre-wrap">
                 {execError}
               </div>
             )}
@@ -238,19 +238,19 @@ function ToolRow({
           <ChevronRight className="w-3 h-3 text-muted-foreground/40 shrink-0" />
         )}
 
-        <span className="font-mono text-xs text-foreground/80 truncate flex-1">
+        <span className="font-mono text-sm text-foreground/80 truncate flex-1">
           {tool.name}
         </span>
 
         {tool.description && (
-          <span className="text-xs text-muted-foreground/40 truncate max-w-[300px] hidden sm:inline">
+          <span className="text-sm text-muted-foreground/40 truncate max-w-[300px] hidden sm:inline">
             {tool.description}
           </span>
         )}
 
         <button
           onClick={(e) => { e.stopPropagation(); onRun(); }}
-          className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors shrink-0"
+          className="flex items-center gap-1 px-2 py-1 rounded text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors shrink-0"
         >
           <Play className="w-2.5 h-2.5" />
           Run
@@ -260,14 +260,14 @@ function ToolRow({
       {isExpanded && (
         <div className="px-3 pb-3 pt-1 border-t border-primary/5 bg-secondary/10 space-y-2">
           {tool.description && (
-            <p className="text-xs text-muted-foreground/60 leading-relaxed">{tool.description}</p>
+            <p className="text-sm text-muted-foreground/60 leading-relaxed">{tool.description}</p>
           )}
           {tool.input_schema && (
             <div className="space-y-1">
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground/30 font-semibold">
+              <span className="text-sm uppercase tracking-wider text-muted-foreground/30 font-semibold">
                 Input Schema
               </span>
-              <pre className="text-[10px] text-muted-foreground/40 font-mono bg-secondary/20 rounded p-2 overflow-x-auto max-h-[200px]">
+              <pre className="text-sm text-muted-foreground/40 font-mono bg-secondary/20 rounded p-2 overflow-x-auto max-h-[200px]">
                 {JSON.stringify(tool.input_schema, null, 2)}
               </pre>
             </div>
@@ -292,7 +292,7 @@ function ToolInputForm({
   const schema = tool.input_schema as Record<string, unknown> | null;
   if (!schema) {
     return (
-      <p className="text-xs text-muted-foreground/40">This tool takes no input parameters.</p>
+      <p className="text-sm text-muted-foreground/40">This tool takes no input parameters.</p>
     );
   }
 
@@ -302,7 +302,7 @@ function ToolInputForm({
 
   if (keys.length === 0) {
     return (
-      <p className="text-xs text-muted-foreground/40">This tool takes no input parameters.</p>
+      <p className="text-sm text-muted-foreground/40">This tool takes no input parameters.</p>
     );
   }
 
@@ -318,12 +318,12 @@ function ToolInputForm({
         return (
           <div key={key} className="space-y-1">
             <div className="flex items-center gap-2">
-              <label className="text-xs font-mono text-foreground/70">{key}</label>
-              {isRequired && <span className="text-[9px] text-amber-400/60">required</span>}
-              <span className="text-[10px] text-violet-400/50">{propType}</span>
+              <label className="text-sm font-mono text-foreground/70">{key}</label>
+              {isRequired && <span className="text-sm text-amber-400/60">required</span>}
+              <span className="text-sm text-violet-400/50">{propType}</span>
             </div>
             {description && (
-              <p className="text-[10px] text-muted-foreground/40">{description}</p>
+              <p className="text-sm text-muted-foreground/40">{description}</p>
             )}
             {isComplex ? (
               <textarea
@@ -331,13 +331,13 @@ function ToolInputForm({
                 onChange={(e) => onChange({ ...values, [key]: e.target.value })}
                 placeholder={`Enter JSON ${propType}...`}
                 rows={3}
-                className="w-full px-2 py-1.5 rounded text-xs font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/25 resize-none focus:outline-none focus:border-primary/25"
+                className="w-full px-2 py-1.5 rounded text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/25 resize-none focus:outline-none focus:border-primary/25"
               />
             ) : propType === 'boolean' ? (
               <select
                 value={values[key] || ''}
                 onChange={(e) => onChange({ ...values, [key]: e.target.value })}
-                className="px-2 py-1.5 rounded text-xs bg-secondary/20 border border-primary/10 text-foreground/70 focus:outline-none focus:border-primary/25"
+                className="px-2 py-1.5 rounded text-sm bg-secondary/20 border border-primary/10 text-foreground/70 focus:outline-none focus:border-primary/25"
               >
                 <option value="">— select —</option>
                 <option value="true">true</option>
@@ -349,7 +349,7 @@ function ToolInputForm({
                 value={values[key] || ''}
                 onChange={(e) => onChange({ ...values, [key]: e.target.value })}
                 placeholder={`Enter ${propType}...`}
-                className="w-full px-2 py-1.5 rounded text-xs font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/25 focus:outline-none focus:border-primary/25"
+                className="w-full px-2 py-1.5 rounded text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/25 focus:outline-none focus:border-primary/25"
               />
             )}
           </div>
@@ -367,17 +367,17 @@ function ToolResultDisplay({ result }: { result: McpToolResult }) {
       {/* Status line */}
       <div className="flex items-center gap-3">
         {result.is_error ? (
-          <span className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-red-500/15 text-red-400 border border-red-500/25">
+          <span className="flex items-center gap-1 px-2 py-1 rounded text-sm font-medium bg-red-500/15 text-red-400 border border-red-500/25">
             <AlertCircle className="w-3 h-3" />
             Error
           </span>
         ) : (
-          <span className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+          <span className="flex items-center gap-1 px-2 py-1 rounded text-sm font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
             <Check className="w-3 h-3" />
             Success
           </span>
         )}
-        <span className="flex items-center gap-1 text-xs text-muted-foreground/40">
+        <span className="flex items-center gap-1 text-sm text-muted-foreground/40">
           <Clock className="w-3 h-3" />
           {result.duration_ms}ms
         </span>
@@ -387,11 +387,11 @@ function ToolResultDisplay({ result }: { result: McpToolResult }) {
       {result.content.map((block, i) => (
         <div key={i} className="rounded-lg border border-primary/8 overflow-hidden">
           {block.content_type !== 'text' && (
-            <div className="px-3 py-1 text-[10px] text-muted-foreground/30 bg-secondary/20 border-b border-primary/5">
+            <div className="px-3 py-1 text-sm text-muted-foreground/30 bg-secondary/20 border-b border-primary/5">
               {block.content_type}
             </div>
           )}
-          <pre className="p-3 text-xs font-mono text-foreground/75 whitespace-pre-wrap break-words overflow-auto max-h-[400px]">
+          <pre className="p-3 text-sm font-mono text-foreground/75 whitespace-pre-wrap break-words overflow-auto max-h-[400px]">
             {formatContent(block.text)}
           </pre>
         </div>
@@ -408,13 +408,13 @@ function EmptyState({ onDiscover }: { onDiscover: () => void }) {
       <Server className="w-10 h-10 text-muted-foreground/15" />
       <div className="text-center space-y-1">
         <p className="text-sm text-muted-foreground/50">Discover MCP server tools</p>
-        <p className="text-xs text-muted-foreground/30">
+        <p className="text-sm text-muted-foreground/30">
           Connect to the MCP server to discover available tools and test them.
         </p>
       </div>
       <button
         onClick={onDiscover}
-        className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+        className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
       >
         <RefreshCw className="w-3.5 h-3.5" />
         Discover Tools

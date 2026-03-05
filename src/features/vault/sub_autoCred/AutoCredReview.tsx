@@ -80,7 +80,7 @@ export function AutoCredReview({
           <h3 className="text-sm font-semibold text-foreground">
             Review Extracted Credentials
           </h3>
-          <p className="text-xs text-muted-foreground/70">
+          <p className="text-sm text-muted-foreground/70">
             Values extracted from browser — verify before saving
           </p>
         </div>
@@ -92,7 +92,7 @@ export function AutoCredReview({
           <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-medium text-amber-400">Partial Extraction</p>
-            <p className="text-xs text-muted-foreground/70 mt-0.5">
+            <p className="text-sm text-muted-foreground/70 mt-0.5">
               Some fields could not be filled automatically. Please complete the missing fields manually before saving.
             </p>
           </div>
@@ -101,7 +101,7 @@ export function AutoCredReview({
 
       {/* Credential name */}
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-muted-foreground/70">Credential Name</label>
+        <label className="text-sm font-medium text-muted-foreground/70">Credential Name</label>
         <input
           type="text"
           value={credentialName}
@@ -182,7 +182,7 @@ export function AutoCredReview({
         </div>
         <div className="flex items-center gap-2">
           {!healthResult?.success && (
-            <span className="text-xs text-muted-foreground/60">Test connection to enable save</span>
+            <span className="text-sm text-muted-foreground/60">Test connection to enable save</span>
           )}
           {/* Dev-only: Save procedure for future re-use */}
           {isDev && healthResult?.success && extractedValues.__procedure_log && (

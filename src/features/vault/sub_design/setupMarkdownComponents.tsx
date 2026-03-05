@@ -114,10 +114,10 @@ export function buildComponents(onOpenUrl: (url: string) => void): Components {
       <h1 className="text-sm font-bold text-foreground mb-1.5 mt-2">{children}</h1>
     ),
     h2: ({ children }) => (
-      <h2 className="text-[13px] font-semibold text-foreground/90 mb-1 mt-2">{children}</h2>
+      <h2 className="text-sm font-semibold text-foreground/90 mb-1 mt-2">{children}</h2>
     ),
     h3: ({ children }) => (
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground/80 mb-1 mt-1.5">{children}</h3>
+      <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground/80 mb-1 mt-1.5">{children}</h3>
     ),
     strong: ({ children }) => (
       <strong className="font-semibold text-foreground">{children}</strong>

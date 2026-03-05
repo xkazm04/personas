@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bot, Loader2, CheckCircle2, XCircle, AlertTriangle, Clock, Globe, ChevronDown, ChevronUp, Wrench } from 'lucide-react';
 import type { CredentialDesignResult } from '@/hooks/design/useCredentialDesign';
@@ -40,7 +40,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
           <Bot className="w-3.5 h-3.5 text-cyan-400" />
-          <span className="text-xs font-medium text-cyan-400">Auto-Setup via Playwright MCP</span>
+          <span className="text-sm font-medium text-cyan-400">Auto-Setup via Playwright MCP</span>
         </div>
       </div>
 
@@ -60,6 +60,16 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
             designResult={designResult}
             logs={session.logs}
             onCancel={session.cancelBrowser}
+          />
+        )}
+
+        {session.phase === 'browser-error' && session.error && (
+          <AutoCredBrowserError
+            key="browser-error"
+            logs={session.logs}
+            error={session.error}
+            onRetry={session.startBrowser}
+            onCancel={handleCancel}
           />
         )}
 
@@ -132,6 +142,99 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
   );
 }
 
+// ── Browser error with persistent terminal ──────────────────────
+
+function AutoCredBrowserError({
+  logs,
+  error,
+  onRetry,
+  onCancel,
+}: {
+  logs: { ts: number; message: string; type: 'info' | 'action' | 'warning' | 'error' }[];
+  error: AutoCredErrorInfo;
+  onRetry: () => void;
+  onCancel: () => void;
+}) {
+  const scrollRef = useAutoScrollRef(logs.length);
+  const config = ERROR_KIND_CONFIG[error.kind] ?? ERROR_KIND_CONFIG.cli_error!;
+  const Icon = config!.icon;
+
+  return (
+    <motion.div
+      key="browser-error"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      className="space-y-4"
+    >
+      {/* Error banner */}
+      <div className="flex items-start gap-3 p-3 rounded-xl border border-red-500/20 bg-red-500/5">
+        <div className="w-8 h-8 rounded-full bg-red-500/15 flex items-center justify-center shrink-0">
+          <Icon className="w-4 h-4 text-red-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-semibold text-foreground">Auto-Setup Failed</p>
+            <span className={`text-sm font-medium px-1.5 py-0.5 rounded-full border ${config!.badgeClass}`}>
+              {config!.label}
+            </span>
+          </div>
+          <p className="text-sm text-foreground/70 mt-1">{error.guidance}</p>
+        </div>
+      </div>
+
+      {/* Persistent terminal log */}
+      <div
+        ref={scrollRef}
+        className="h-52 overflow-y-auto rounded-xl border border-primary/10 bg-black/30 p-3 font-mono text-sm space-y-1"
+      >
+        {logs.map((entry, i) => (
+          <div key={i} className={`flex items-start gap-2 ${
+            entry.type === 'error' ? 'text-red-400' :
+            entry.type === 'warning' ? 'text-amber-400' :
+            entry.type === 'action' ? 'text-cyan-400' :
+            'text-muted-foreground/70'
+          }`}>
+            <span className="text-muted-foreground/60 select-none shrink-0">
+              {new Date(entry.ts).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            </span>
+            <span>{entry.message}</span>
+          </div>
+        ))}
+        {logs.length === 0 && (
+          <div className="text-muted-foreground/60 text-center py-8">No log output captured.</div>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="flex gap-3 justify-end">
+        <button
+          onClick={onCancel}
+          className="px-4 py-2 text-sm text-muted-foreground/70 hover:text-foreground rounded-lg hover:bg-secondary/40 transition-colors"
+        >
+          Set Up Manually
+        </button>
+        {error.retryable && (
+          <button
+            onClick={onRetry}
+            className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-sm font-medium transition-colors"
+          >
+            Retry
+          </button>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+function useAutoScrollRef(dep: number) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (ref.current) ref.current.scrollTop = ref.current.scrollHeight;
+  }, [dep]);
+  return ref;
+}
+
 // ── Error kind display config ────────────────────────────────────
 
 const ERROR_KIND_CONFIG: Record<string, { label: string; badgeClass: string; icon: typeof XCircle }> = {
@@ -174,7 +277,7 @@ function AutoCredErrorDisplay({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <p className="text-sm font-semibold text-foreground">Auto-Setup Failed</p>
-            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${config!.badgeClass}`}>
+            <span className={`text-sm font-medium px-1.5 py-0.5 rounded-full border ${config!.badgeClass}`}>
               {config!.label}
             </span>
           </div>
@@ -190,13 +293,13 @@ function AutoCredErrorDisplay({
           <button
             type="button"
             onClick={() => setContextOpen((v) => !v)}
-            className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-medium text-muted-foreground/70 hover:text-muted-foreground/90 transition-colors"
+            className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-muted-foreground/70 hover:text-muted-foreground/90 transition-colors"
           >
             <span>What happened</span>
             {contextOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
           {contextOpen && (
-            <div className="px-4 pb-3 space-y-2 text-xs text-muted-foreground/70">
+            <div className="px-4 pb-3 space-y-2 text-sm text-muted-foreground/70">
               {ctx.duration_secs != null && (
                 <div className="flex items-center gap-2">
                   <Clock className="w-3 h-3 shrink-0" />

@@ -190,7 +190,7 @@ function ActivityGauge({
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-end pb-2">
           <div className={`text-xl font-semibold ${toneClasses.text}`}>{displayValue}</div>
-          <div className="text-[10px] text-muted-foreground/60">of {safeMax}</div>
+          <div className="text-sm text-muted-foreground/60">of {safeMax}</div>
         </div>
       </div>
     </div>

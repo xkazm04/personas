@@ -341,8 +341,7 @@ pub async fn start_design_review_run(
                             let result_json = result.to_string();
                             let connectors_used = extract_connectors_from_result(&result);
                             let trigger_types = extract_triggers_from_result(&result);
-                            let (structural_score, semantic_score) =
-                                score_design_result(&result, &tool_names, &connector_names);
+                            let (structural_score, semantic_score) = score_design_result(&result);
 
                             let status = if structural_score >= 55 {
                                 "passed"
@@ -695,8 +694,7 @@ pub async fn rebuild_design_review(
                         let connectors_used = extract_connectors_from_result(&result);
                         let trigger_types = extract_triggers_from_result(&result);
                         let use_case_flows = extract_use_case_flows_from_result(&result);
-                        let (structural_score, semantic_score) =
-                            score_design_result(&result, &tool_names, &connector_names);
+                        let (structural_score, semantic_score) = score_design_result(&result);
 
                         let status = if structural_score >= 55 {
                             "passed"
@@ -1380,16 +1378,14 @@ fn extract_use_case_flows_from_result(result: &serde_json::Value) -> Option<Stri
         .map(|v| v.to_string())
 }
 
-/// Score a generated DesignAnalysisResult for quality based on dimension completion.
-/// Measures 9 Persona data dimensions. Returns (score, score) where score is 0-100
-/// representing the percentage of dimensions that pass validation.
-fn score_design_result(
-    result: &serde_json::Value,
-    _tool_names: &[String],
-    _connector_names: &[String],
-) -> (i32, i32) {
-    let mut passed = 0i32;
-    let total = 9i32;
+/// Score a generated DesignAnalysisResult across two independent dimensions:
+/// - Structural score: core scaffold completeness (prompt/tools/triggers/connectors/flows)
+/// - Semantic score: orchestration richness (events/notifications/summary/service flow)
+fn score_design_result(result: &serde_json::Value) -> (i32, i32) {
+    let mut structural_passed = 0i32;
+    let structural_total = 5i32;
+    let mut semantic_passed = 0i32;
+    let semantic_total = 4i32;
 
     // 1. Prompt dimension — structured_prompt with meaningful identity + instructions
     if let Some(sp) = result.get("structured_prompt") {
@@ -1410,7 +1406,7 @@ fn score_design_result(
                 .and_then(|v| v.as_str())
                 .is_some_and(|s| !s.is_empty());
         if identity_ok && instructions_ok && has_guidance {
-            passed += 1;
+            structural_passed += 1;
         }
     }
 
@@ -1420,7 +1416,7 @@ fn score_design_result(
         .and_then(|v| v.as_array())
         .is_some_and(|arr| !arr.is_empty())
     {
-        passed += 1;
+        structural_passed += 1;
     }
 
     // 3. Triggers dimension — items with valid trigger_type
@@ -1434,7 +1430,7 @@ fn score_design_result(
                     .any(|t| t.get("trigger_type").and_then(|v| v.as_str()).is_some())
         })
     {
-        passed += 1;
+        structural_passed += 1;
     }
 
     // 4. Connectors dimension — items with credential_fields + auth_type
@@ -1451,7 +1447,7 @@ fn score_design_result(
                 })
         })
     {
-        passed += 1;
+        structural_passed += 1;
     }
 
     // 5. Flows dimension — at least one flow with start/end nodes and ≥5 nodes
@@ -1475,7 +1471,7 @@ fn score_design_result(
                 })
         })
     {
-        passed += 1;
+        structural_passed += 1;
     }
 
     // 6. Events dimension — non-empty suggested_event_subscriptions
@@ -1484,7 +1480,7 @@ fn score_design_result(
         .and_then(|v| v.as_array())
         .is_some_and(|arr| !arr.is_empty())
     {
-        passed += 1;
+        semantic_passed += 1;
     }
 
     // 7. Notifications dimension — non-empty suggested_notification_channels
@@ -1493,7 +1489,7 @@ fn score_design_result(
         .and_then(|v| v.as_array())
         .is_some_and(|arr| !arr.is_empty())
     {
-        passed += 1;
+        semantic_passed += 1;
     }
 
     // 8. Summary dimension — summary string >50 chars
@@ -1502,7 +1498,7 @@ fn score_design_result(
         .and_then(|v| v.as_str())
         .is_some_and(|s| s.len() > 50)
     {
-        passed += 1;
+        semantic_passed += 1;
     }
 
     // 9. Service Flow dimension — non-empty service_flow array
@@ -1511,61 +1507,10 @@ fn score_design_result(
         .and_then(|v| v.as_array())
         .is_some_and(|arr| !arr.is_empty())
     {
-        passed += 1;
+        semantic_passed += 1;
     }
 
-    let score = ((passed as f64 / total as f64) * 100.0).round() as i32;
-    (score, score)
-}
-
-/// Score a design prompt based on structural completeness (legacy pre-check).
-/// Returns (status, structural_score, semantic_score, design_result_json).
-#[allow(dead_code)]
-fn score_design_prompt(
-    prompt: &str,
-    tool_names: &[String],
-    connector_names: &[String],
-) -> (String, i32, i32, Option<String>) {
-    let mut structural = 0i32;
-    if prompt.contains("## Target Persona") {
-        structural += 20;
-    }
-    if prompt.contains("## User Instruction") {
-        structural += 20;
-    }
-    if prompt.contains("## Required Output Format") {
-        structural += 20;
-    }
-    if prompt.contains("## Available Tools") {
-        structural += 20;
-    }
-    if prompt.contains("## Available Connectors") {
-        structural += 20;
-    }
-
-    let total_refs = tool_names.len() + connector_names.len();
-    let semantic = if total_refs > 0 {
-        let mut found = 0;
-        for name in tool_names {
-            if prompt.contains(name.as_str()) {
-                found += 1;
-            }
-        }
-        for name in connector_names {
-            if prompt.contains(name.as_str()) {
-                found += 1;
-            }
-        }
-        ((found as f64 / total_refs as f64) * 100.0) as i32
-    } else {
-        100
-    };
-
-    let status = if structural >= 60 && semantic >= 50 {
-        "passed"
-    } else {
-        "failed"
-    };
-
-    (status.into(), structural, semantic, None)
+    let structural_score = ((structural_passed as f64 / structural_total as f64) * 100.0).round() as i32;
+    let semantic_score = ((semantic_passed as f64 / semantic_total as f64) * 100.0).round() as i32;
+    (structural_score, semantic_score)
 }

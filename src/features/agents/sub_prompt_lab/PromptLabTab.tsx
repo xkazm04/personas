@@ -26,7 +26,7 @@ export function PromptLabTab() {
         <div className="flex items-center gap-2 mb-2 flex-shrink-0">
           <GitBranch className="w-4 h-4 text-primary/70" />
           <h3 className="text-sm font-medium text-foreground/80">Prompt Versions</h3>
-          <span className="ml-auto text-xs text-muted-foreground/60">{pv.filteredCount}/{pv.versions.length}</span>
+          <span className="ml-auto text-sm text-muted-foreground/60">{pv.filteredCount}/{pv.versions.length}</span>
         </div>
 
         {/* Filter pill tabs */}
@@ -41,7 +41,7 @@ export function PromptLabTab() {
               key={tab.id}
               onClick={() => pv.setTagFilter(tab.id)}
               data-testid={`version-filter-${tab.id}`}
-              className={`px-2 py-0.5 text-xs rounded-full transition-colors border ${
+              className={`px-2 py-0.5 text-sm rounded-full transition-colors border ${
                 pv.tagFilter === tab.id
                   ? 'bg-primary/15 text-foreground/80 border-primary/25'
                   : 'text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/40 border-transparent'
@@ -53,7 +53,7 @@ export function PromptLabTab() {
           <button
             onClick={() => pv.setSortOrder((o) => o === 'newest' ? 'oldest' : 'newest')}
             data-testid="version-sort-toggle"
-            className="ml-auto flex items-center gap-1 px-1.5 py-0.5 text-xs text-muted-foreground/60 hover:text-muted-foreground rounded transition-colors"
+            className="ml-auto flex items-center gap-1 px-1.5 py-0.5 text-sm text-muted-foreground/60 hover:text-muted-foreground rounded transition-colors"
             title={`Sort: ${pv.sortOrder === 'newest' ? 'Newest first' : 'Oldest first'}`}
           >
             <ArrowUpDown className="w-3 h-3" />
@@ -62,7 +62,7 @@ export function PromptLabTab() {
         </div>
 
         {pv.error && (
-          <div data-testid="prompt-lab-error" className="mb-2 px-3 py-2 text-xs text-red-300 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center justify-between">
+          <div data-testid="prompt-lab-error" className="mb-2 px-3 py-2 text-sm text-red-300 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center justify-between">
             <span>{pv.error}</span>
             <button onClick={() => pv.setError(null)} data-testid="prompt-lab-error-dismiss-btn" className="ml-2 text-red-400 hover:text-red-300">&times;</button>
           </div>
@@ -74,21 +74,22 @@ export function PromptLabTab() {
           <div className="text-center py-8 space-y-2">
             <GitBranch className="w-8 h-8 text-muted-foreground/20 mx-auto" />
             <p className="text-sm text-muted-foreground/60">No versions yet</p>
-            <p className="text-xs text-muted-foreground/40">Versions are created automatically when you edit the prompt</p>
+            <p className="text-sm text-muted-foreground/40">Versions are created automatically when you edit the prompt</p>
           </div>
         ) : pv.filteredCount === 0 ? (
           <div className="text-center py-8 space-y-2">
             <p className="text-sm text-muted-foreground/60">No {pv.tagFilter} versions</p>
-            <button onClick={() => pv.setTagFilter('all')} className="text-xs text-primary/70 hover:text-primary transition-colors">Show all versions</button>
+            <button onClick={() => pv.setTagFilter('all')} className="text-sm text-primary/70 hover:text-primary transition-colors">Show all versions</button>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto pr-1">
+          <div className="flex-1 overflow-y-auto pr-1 relative">
+            <div className="absolute left-3.5 top-2 bottom-2 w-px bg-primary/10" aria-hidden="true" />
             {pv.grouped.map((g) => (
               <div key={g.group} className="mb-1">
                 <button
                   onClick={() => pv.toggleGroupCollapse(g.group)}
                   data-testid={`version-group-${g.group.toLowerCase().replace(/\s/g, '-')}`}
-                  className="sticky top-0 z-10 w-full flex items-center gap-1.5 py-1.5 px-1 text-xs font-mono uppercase tracking-wider text-muted-foreground/50 hover:text-muted-foreground/70 bg-background/80 backdrop-blur-sm transition-colors"
+                  className="sticky top-0 z-10 w-full flex items-center gap-1.5 py-1.5 px-1 text-sm font-mono uppercase tracking-wider text-muted-foreground/50 hover:text-muted-foreground/70 bg-background/80 backdrop-blur-sm transition-colors"
                 >
                   {pv.collapsedGroups.has(g.group) ? <ChevronRight className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                   {g.group}
@@ -97,20 +98,28 @@ export function PromptLabTab() {
                 {!pv.collapsedGroups.has(g.group) && (
                   <div className="space-y-1.5">
                     {g.versions.map((v) => (
-                      <VersionItem
-                        key={v.id} version={v}
-                        isSelected={pv.selectedId === v.id}
-                        isCompareA={pv.compareAId === v.id}
-                        isCompareB={pv.compareBId === v.id}
-                        onSelect={() => pv.setSelectedId(pv.selectedId === v.id ? null : v.id)}
-                        onTag={(tag) => void pv.handleTag(v.id, tag)}
-                        onRollback={() => void pv.handleRollback(v.id)}
-                        onSetCompareA={() => pv.setCompareAId(pv.compareAId === v.id ? null : v.id)}
-                        onSetCompareB={() => pv.setCompareBId(pv.compareBId === v.id ? null : v.id)}
-                        activeAction={pv.busyVersions[v.id] ?? null}
-                        actionError={pv.versionErrors[v.id] ?? null}
-                        onDismissError={() => pv.dismissVersionError(v.id)}
-                      />
+                      <div key={v.id} className="relative pl-7">
+                        <span
+                          className={`absolute left-[11px] top-5 w-1.5 h-1.5 rounded-full border border-background ${
+                            v.tag === 'production' ? 'bg-emerald-400' : v.tag === 'experimental' ? 'bg-amber-400' : 'bg-zinc-400'
+                          } ${pv.selectedId === v.id ? 'ring-2 ring-primary/60' : ''}`}
+                          aria-hidden="true"
+                        />
+                        <VersionItem
+                          version={v}
+                          isSelected={pv.selectedId === v.id}
+                          isCompareA={pv.compareAId === v.id}
+                          isCompareB={pv.compareBId === v.id}
+                          onSelect={() => pv.setSelectedId(pv.selectedId === v.id ? null : v.id)}
+                          onTag={(tag) => void pv.handleTag(v.id, tag)}
+                          onRollback={() => void pv.handleRollback(v.id)}
+                          onSetCompareA={() => pv.setCompareAId(pv.compareAId === v.id ? null : v.id)}
+                          onSetCompareB={() => pv.setCompareBId(pv.compareBId === v.id ? null : v.id)}
+                          activeAction={pv.busyVersions[v.id] ?? null}
+                          actionError={pv.versionErrors[v.id] ?? null}
+                          onDismissError={() => pv.dismissVersionError(v.id)}
+                        />
+                      </div>
                     ))}
                   </div>
                 )}
@@ -153,7 +162,7 @@ export function PromptLabTab() {
                   <ArrowLeftRight className="w-6 h-6 text-primary/30" />
                 </div>
                 <h4 className="text-sm font-medium text-foreground/70">Compare prompt versions</h4>
-                <p className="text-xs text-muted-foreground/50 text-center max-w-xs">
+                <p className="text-sm text-muted-foreground/50 text-center max-w-xs">
                   See exactly what changed between two versions side-by-side. Pick any two from the list, or let us auto-select.
                 </p>
                 {pv.versions.length >= 2 ? (
@@ -164,9 +173,9 @@ export function PromptLabTab() {
                     <ArrowLeftRight className="w-3.5 h-3.5" />Start comparing
                   </button>
                 ) : (
-                  <p className="text-xs text-muted-foreground/40">Create at least two versions to compare them</p>
+                  <p className="text-sm text-muted-foreground/40">Create at least two versions to compare them</p>
                 )}
-                <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground/40">
+                <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground/40">
                   <span>or click</span>
                   <span className="font-mono bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded">A</span>
                   <span>&</span>

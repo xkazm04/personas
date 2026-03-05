@@ -87,7 +87,7 @@ export function DatabaseListView({ onBack: _onBack }: DatabaseListViewProps) {
           <Database className="w-7 h-7 text-blue-400/60" />
         </div>
         <h3 className="text-sm font-medium text-foreground/80 mb-1">No database credentials</h3>
-        <p className="text-xs text-muted-foreground/60 max-w-xs">
+        <p className="text-sm text-muted-foreground/60 max-w-xs">
           Add database credentials from the Catalog to manage schemas and run queries.
         </p>
       </motion.div>
@@ -123,7 +123,7 @@ export function DatabaseListView({ onBack: _onBack }: DatabaseListViewProps) {
                 <button
                   key={key}
                   onClick={() => setActiveTab(key)}
-                  className={`relative px-3 py-2 text-xs font-medium rounded-t-lg transition-colors ${
+                  className={`relative px-3 py-2 text-sm font-medium rounded-t-lg transition-colors ${
                     isActive
                       ? 'text-foreground/90'
                       : 'text-muted-foreground/60 hover:text-muted-foreground/80'
@@ -162,7 +162,7 @@ export function DatabaseListView({ onBack: _onBack }: DatabaseListViewProps) {
             />
           ))}
           {visibleCredentials.length === 0 && search && (
-            <p className="text-xs text-muted-foreground/50 text-center py-6">
+            <p className="text-sm text-muted-foreground/50 text-center py-6">
               No matching databases
             </p>
           )}

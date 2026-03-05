@@ -229,7 +229,7 @@ export function MatrixResultsView({ run, results }: Props) {
             <Check className="w-4 h-4" />
             Accept Draft
           </button>
-          <p className="text-xs text-muted-foreground/60">
+          <p className="text-sm text-muted-foreground/60">
             Accept applies the draft prompt to the persona, creating a new prompt version.
           </p>
         </div>

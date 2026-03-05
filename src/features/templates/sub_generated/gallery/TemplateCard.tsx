@@ -165,7 +165,7 @@ export function TemplateCard({
       <div className="hidden md:grid px-5 py-4 md:grid-cols-2 lg:grid-cols-3 gap-4 border-t border-primary/5">
         {/* Use Cases */}
         <div className="min-w-0">
-          <h4 className="text-xs uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">
+          <h4 className="text-sm uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">
             Use Cases
           </h4>
           {displayFlows.length > 0 ? (
@@ -186,7 +186,7 @@ export function TemplateCard({
                 </button>
               ))}
               {displayFlows.length > 4 && (
-                <span className="text-xs text-muted-foreground/50 pl-5">
+                <span className="text-sm text-muted-foreground/50 pl-5">
                   +{displayFlows.length - 4} more
                 </span>
               )}
@@ -198,7 +198,7 @@ export function TemplateCard({
 
         {/* Connectors */}
         <div className="min-w-0">
-          <h4 className="text-xs uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">
+          <h4 className="text-sm uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">
             Connectors
           </h4>
           {connectors.length > 0 ? (
@@ -228,7 +228,7 @@ export function TemplateCard({
 
         {/* Triggers */}
         <div className="min-w-0">
-          <h4 className="text-xs uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">
+          <h4 className="text-sm uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">
             Triggers
           </h4>
           {(triggerTypes.length > 0 || suggestedTriggers.length > 0) ? (

@@ -52,7 +52,7 @@ const ReplayEntryBar = memo(function ReplayEntryBar({
   return (
     <div className="flex items-center justify-center gap-3 px-4 py-2.5 bg-gradient-to-r from-background/90 via-secondary/30 to-background/90 border-t border-primary/10">
       <History className="w-3.5 h-3.5 text-muted-foreground/50" />
-      <span className="text-[11px] text-muted-foreground/60 font-medium tracking-wide">
+      <span className="text-sm text-muted-foreground/60 font-medium tracking-wide">
         REPLAY
       </span>
       <div className="w-px h-4 bg-primary/10" />
@@ -61,7 +61,7 @@ const ReplayEntryBar = memo(function ReplayEntryBar({
           key={opt.value}
           disabled={loading}
           onClick={() => onEnterReplay(opt.value)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded-lg bg-primary/5 border border-primary/10 text-muted-foreground/70 hover:text-foreground/80 hover:bg-primary/10 hover:border-primary/20 transition-all active:scale-[0.97] disabled:opacity-40"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-bold rounded-lg bg-primary/5 border border-primary/10 text-muted-foreground/70 hover:text-foreground/80 hover:bg-primary/10 hover:border-primary/20 transition-all active:scale-[0.97] disabled:opacity-40"
         >
           {loading ? (
             <Loader2 className="w-3 h-3 animate-spin" />
@@ -227,7 +227,7 @@ const ActiveTimelineBar = memo(function ActiveTimelineBar({
         <button
           onClick={cycleSpeed}
           aria-label="Cycle playback speed"
-          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-purple-500/8 border border-purple-500/15 text-purple-300/80 hover:bg-purple-500/15 transition-all text-[11px] font-bold tracking-wide active:scale-[0.97]"
+          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-purple-500/8 border border-purple-500/15 text-purple-300/80 hover:bg-purple-500/15 transition-all text-sm font-bold tracking-wide active:scale-[0.97]"
           title="Cycle playback speed"
         >
           <Gauge className="w-3 h-3" />
@@ -237,7 +237,7 @@ const ActiveTimelineBar = memo(function ActiveTimelineBar({
         <div className="w-px h-5 bg-primary/10" />
 
         {/* Time indicator */}
-        <div className="flex items-center gap-2 text-[11px] font-mono text-muted-foreground/60">
+        <div className="flex items-center gap-2 text-sm font-mono text-muted-foreground/60">
           <span className="text-foreground/70">{formatDate(cursorTime)}</span>
           <ChevronRight className="w-3 h-3 text-muted-foreground/30" />
           <span>{formatDate(rangeEnd)}</span>
@@ -248,18 +248,18 @@ const ActiveTimelineBar = memo(function ActiveTimelineBar({
         {/* Event counter */}
         <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/5 border border-primary/8">
           <div className="w-1.5 h-1.5 rounded-full bg-cyan-400/60" />
-          <span className="text-[11px] font-bold text-foreground/60">
+          <span className="text-sm font-bold text-foreground/60">
             {emittedCount}
           </span>
-          <span className="text-[10px] text-muted-foreground/40">/</span>
-          <span className="text-[11px] text-muted-foreground/50">
+          <span className="text-sm text-muted-foreground/40">/</span>
+          <span className="text-sm text-muted-foreground/50">
             {totalEventCount}
           </span>
-          <span className="text-[10px] text-muted-foreground/40 ml-0.5">events</span>
+          <span className="text-sm text-muted-foreground/40 ml-0.5">events</span>
         </div>
 
         {/* Range badge */}
-        <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-secondary/30 border border-primary/8 text-[10px] text-muted-foreground/50 font-bold tracking-wider">
+        <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-secondary/30 border border-primary/8 text-sm text-muted-foreground/50 font-bold tracking-wider">
           <History className="w-3 h-3" />
           {range === '1d' ? '24H' : '7D'}
         </div>

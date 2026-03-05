@@ -2,6 +2,7 @@ import { Pencil } from 'lucide-react';
 import { DesignResultPreview } from '@/features/templates/sub_generated';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import type { PersonaWithDetails, DbPersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
+import { allIndices } from './DesignTabHelpers';
 
 interface DesignPhasePanelSavedProps {
   savedDesignResult: DesignAnalysisResult;
@@ -36,10 +37,10 @@ export function DesignPhasePanelSaved({
         credentials={credentials}
         connectorDefinitions={connectorDefinitions}
         selectedTools={new Set(savedDesignResult.suggested_tools)}
-        selectedTriggerIndices={new Set(savedDesignResult.suggested_triggers.map((_: unknown, i: number) => i))}
-        selectedChannelIndices={new Set((savedDesignResult.suggested_notification_channels || []).map((_: unknown, i: number) => i))}
+        selectedTriggerIndices={allIndices(savedDesignResult.suggested_triggers)}
+        selectedChannelIndices={allIndices(savedDesignResult.suggested_notification_channels)}
         suggestedSubscriptions={savedDesignResult.suggested_event_subscriptions}
-        selectedSubscriptionIndices={new Set((savedDesignResult.suggested_event_subscriptions || []).map((_: unknown, i: number) => i))}
+        selectedSubscriptionIndices={allIndices(savedDesignResult.suggested_event_subscriptions)}
         onToolToggle={() => {}}
         onTriggerToggle={() => {}}
         onChannelToggle={() => {}}
@@ -81,7 +82,7 @@ export function DesignPhasePanelSaved({
             Update Design
           </button>
         </div>
-        <p className="text-[10px] text-muted-foreground/60 px-1">Press Enter to submit, Shift+Enter for new line.</p>
+        <p className="text-sm text-muted-foreground/60 px-1">Press Enter to submit, Shift+Enter for new line.</p>
       </div>
     </>
   );

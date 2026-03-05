@@ -1,0 +1,272 @@
+import { useState, useEffect, useCallback } from 'react';
+import { Sparkles, Loader2, Check, RotateCcw, Clock } from 'lucide-react';
+import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
+import type { RecipeVersion } from '@/lib/bindings/RecipeVersion';
+import * as recipeApi from '@/api/recipes';
+import { useRecipeVersioning } from '@/hooks/design/useRecipeVersioning';
+import { EstimatedProgressBar } from '@/features/shared/components/EstimatedProgressBar';
+import { TerminalStrip } from '@/features/shared/components/TerminalStrip';
+import { PromptTemplateRenderer } from '@/features/shared/components/PromptTemplateRenderer';
+
+interface RecipeVersionsTabProps {
+  recipe: RecipeDefinition;
+  onRecipeUpdated: (updated: RecipeDefinition) => void;
+}
+
+export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTabProps) {
+  const [versions, setVersions] = useState<RecipeVersion[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [requirements, setRequirements] = useState('');
+  const [accepting, setAccepting] = useState(false);
+  const [reverting, setReverting] = useState<string | null>(null);
+  const [terminalExpanded, setTerminalExpanded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const versioning = useRecipeVersioning();
+
+  const loadVersions = useCallback(async () => {
+    try {
+      const v = await recipeApi.getRecipeVersions(recipe.id);
+      setVersions(v);
+    } catch {
+      /* ignore */
+    } finally {
+      setLoading(false);
+    }
+  }, [recipe.id]);
+
+  useEffect(() => {
+    loadVersions();
+  }, [loadVersions]);
+
+  useEffect(() => {
+    return () => versioning.reset();
+  }, [recipe.id]);
+
+  const handleGenerate = useCallback(async () => {
+    if (!requirements.trim()) return;
+    setError(null);
+    setTerminalExpanded(false);
+    await versioning.start(recipe.id, requirements.trim());
+  }, [recipe.id, requirements, versioning]);
+
+  const handleAccept = useCallback(async () => {
+    if (!versioning.draft) return;
+    setAccepting(true);
+    setError(null);
+    try {
+      const draft = versioning.draft;
+      const updated = await recipeApi.acceptRecipeVersion(
+        recipe.id,
+        draft.prompt_template,
+        draft.input_schema ?? null,
+        draft.sample_inputs ?? null,
+        draft.description ?? null,
+        draft.changes_summary ?? null,
+      );
+      onRecipeUpdated(updated);
+      versioning.reset();
+      setRequirements('');
+      await loadVersions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setAccepting(false);
+    }
+  }, [versioning, recipe.id, onRecipeUpdated, loadVersions]);
+
+  const handleRevert = useCallback(async (versionId: string) => {
+    setReverting(versionId);
+    setError(null);
+    try {
+      const updated = await recipeApi.revertRecipeVersion(recipe.id, versionId);
+      onRecipeUpdated(updated);
+      await loadVersions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setReverting(null);
+    }
+  }, [recipe.id, onRecipeUpdated, loadVersions]);
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Generate Section */}
+      <div className="p-4 border-b border-border/40 space-y-3">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+          Create New Version
+        </h3>
+
+        <div>
+          <label className="block text-sm text-muted-foreground mb-1.5">
+            What changes do you want to make?
+          </label>
+          <textarea
+            value={requirements}
+            onChange={(e) => setRequirements(e.target.value)}
+            placeholder="e.g., Add error handling for rate limits, include retry logic..."
+            rows={3}
+            className="w-full rounded-lg border border-border/50 bg-background/80 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 resize-none"
+          />
+        </div>
+
+        {/* Generate button */}
+        {(versioning.phase === 'idle' || versioning.phase === 'error') && !versioning.draft && (
+          <button
+            onClick={handleGenerate}
+            disabled={!requirements.trim()}
+            className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            Generate New Version
+          </button>
+        )}
+
+        {/* Progress */}
+        {versioning.phase === 'versioning' && (
+          <div className="space-y-2">
+            <EstimatedProgressBar isRunning estimatedSeconds={30} />
+            <TerminalStrip
+              lastLine={versioning.lines[versioning.lines.length - 1] ?? 'Starting...'}
+              lines={versioning.lines}
+              isRunning
+              isExpanded={terminalExpanded}
+              onToggle={() => setTerminalExpanded((p) => !p)}
+              expandedMaxHeight="max-h-48"
+            />
+          </div>
+        )}
+
+        {/* Error */}
+        {(error || versioning.error) && (
+          <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+            {error || versioning.error}
+          </div>
+        )}
+
+        {/* Draft Preview */}
+        {versioning.draft && (
+          <div className="rounded-lg border border-border/40 bg-card/50 p-4 space-y-3">
+            {versioning.lines.length > 0 && (
+              <TerminalStrip
+                lastLine={versioning.lines[versioning.lines.length - 1] ?? ''}
+                lines={versioning.lines}
+                isRunning={false}
+                isExpanded={terminalExpanded}
+                onToggle={() => setTerminalExpanded((p) => !p)}
+                onClear={() => setTerminalExpanded(false)}
+                expandedMaxHeight="max-h-32"
+              />
+            )}
+
+            <h4 className="text-sm font-semibold text-foreground/80">Generated Version</h4>
+
+            {versioning.draft.changes_summary && (
+              <div>
+                <p className="text-sm text-muted-foreground/60 mb-0.5">Changes</p>
+                <p className="text-sm text-foreground/80">{versioning.draft.changes_summary}</p>
+              </div>
+            )}
+
+            <div>
+              <p className="text-sm text-muted-foreground/60 mb-0.5">Updated Prompt Template</p>
+              <PromptTemplateRenderer content={versioning.draft.prompt_template} maxHeight="max-h-40" />
+            </div>
+
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                onClick={handleAccept}
+                disabled={accepting}
+                className="flex items-center gap-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 text-sm font-medium text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 transition-colors"
+              >
+                {accepting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                Accept & Apply
+              </button>
+              <button
+                onClick={() => {
+                  versioning.reset();
+                  handleGenerate();
+                }}
+                className="rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+              >
+                Regenerate
+              </button>
+              <button
+                onClick={() => versioning.reset()}
+                className="rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+              >
+                Discard
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Version History */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-4">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+          Version History {!loading && versions.length > 0 && `(${versions.length})`}
+        </h3>
+
+        {loading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground/60">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading versions...
+          </div>
+        ) : versions.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-8 text-sm text-muted-foreground/60 gap-2">
+            <Clock className="w-5 h-5" />
+            No versions yet. Generate a new version to start tracking changes.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {versions.map((version, idx) => (
+              <div
+                key={version.id}
+                className="rounded-lg border border-border/40 bg-card/30 px-4 py-3 hover:border-border/60 transition-colors"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-foreground">
+                      v{version.version_number}
+                    </span>
+                    {idx === 0 && (
+                      <span className="rounded-md bg-primary/10 border border-primary/20 px-1.5 py-0.5 text-sm text-primary font-medium">
+                        Latest
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-sm text-muted-foreground/50">
+                    {new Date(version.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+
+                {version.description && (
+                  <p className="text-sm text-foreground/70 mb-1">{version.description}</p>
+                )}
+
+                {version.changes_summary && (
+                  <p className="text-sm text-muted-foreground/60 mb-2">{version.changes_summary}</p>
+                )}
+
+                {idx > 0 && (
+                  <button
+                    onClick={() => handleRevert(version.id)}
+                    disabled={reverting === version.id}
+                    className="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-primary hover:bg-primary/10 transition-colors disabled:opacity-40"
+                  >
+                    {reverting === version.id ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <RotateCcw className="w-3 h-3" />
+                    )}
+                    Revert to this version
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

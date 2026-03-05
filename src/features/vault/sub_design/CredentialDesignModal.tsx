@@ -258,7 +258,7 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
             </div>
             <div>
               <h2 id="credential-design-title" className="text-base font-semibold text-foreground">Design Credential</h2>
-              <p className="text-xs text-muted-foreground">{subtitle}</p>
+              <p className="text-sm text-muted-foreground">{subtitle}</p>
             </div>
           </div>
           <button

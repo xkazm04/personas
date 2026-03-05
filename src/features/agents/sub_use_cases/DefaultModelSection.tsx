@@ -65,12 +65,12 @@ export function DefaultModelSection({ draft, patch, modelDirty }: DefaultModelSe
         {(budgetLabel || turnsLabel) && (
           <span className="flex items-center gap-1.5">
             {budgetLabel && (
-              <span className="flex items-center gap-0.5 text-[11px] font-mono px-1.5 py-0.5 rounded-md bg-secondary/50 border border-primary/10 text-muted-foreground/60">
+              <span className="flex items-center gap-0.5 text-sm font-mono px-1.5 py-0.5 rounded-md bg-secondary/50 border border-primary/10 text-muted-foreground/60">
                 <DollarSign className="w-2.5 h-2.5" />{budgetLabel.replace('$', '')}
               </span>
             )}
             {turnsLabel && (
-              <span className="text-[11px] font-mono px-1.5 py-0.5 rounded-md bg-secondary/50 border border-primary/10 text-muted-foreground/60">
+              <span className="text-sm font-mono px-1.5 py-0.5 rounded-md bg-secondary/50 border border-primary/10 text-muted-foreground/60">
                 {turnsLabel}
               </span>
             )}

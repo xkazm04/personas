@@ -4,7 +4,9 @@ use tauri::State;
 use crate::db::models::PersonaExecution;
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::execution::executions as repo;
+use crate::db::repos::resources::automations as automation_repo;
 use crate::db::repos::resources::tools as tool_repo;
+use crate::engine::automation_runner::automation_to_virtual_tool;
 use crate::error::AppError;
 use crate::AppState;
 
@@ -120,8 +122,15 @@ pub async fn execute_persona(
     // ── Stage: SpawnEngine ───────────────────────────────────────────
     pipeline.enter_stage(PipelineStage::SpawnEngine);
 
-    // 5. Get tools
-    let tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
+    // 5. Get tools + inject virtual tools from active automations
+    let mut tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
+    if let Ok(automations) = automation_repo::get_by_persona(&state.db, &persona_id) {
+        for auto in &automations {
+            if auto.deployment_status == "active" {
+                tools.push(automation_to_virtual_tool(auto));
+            }
+        }
+    }
 
     // 6. Parse input data JSON
     let input_json: Option<serde_json::Value> = input_data

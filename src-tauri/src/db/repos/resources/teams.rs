@@ -532,31 +532,11 @@ pub fn list_pipeline_runs(pool: &DbPool, team_id: &str) -> Result<Vec<PipelineRu
 mod tests {
     use super::*;
     use crate::db::init_test_db;
-    use crate::db::models::{CreatePersonaInput, CreateTeamInput, UpdateTeamInput};
+    use crate::db::models::{CreateTeamInput, UpdateTeamInput};
+    use crate::db::repos::test_fixtures;
 
     fn create_test_persona(pool: &DbPool, name: &str) -> crate::db::models::Persona {
-        crate::db::repos::core::personas::create(
-            pool,
-            CreatePersonaInput {
-                name: name.into(),
-                system_prompt: "You are a test agent.".into(),
-                project_id: None,
-                description: None,
-                structured_prompt: None,
-                icon: None,
-                color: None,
-                enabled: Some(true),
-                max_concurrent: None,
-                timeout_ms: None,
-                model_profile: None,
-                max_budget_usd: None,
-                max_turns: None,
-                design_context: None,
-                group_id: None,
-                notification_channels: None,
-            },
-        )
-        .unwrap()
+        test_fixtures::create_test_persona(pool, name, "You are a test agent.")
     }
 
     #[test]

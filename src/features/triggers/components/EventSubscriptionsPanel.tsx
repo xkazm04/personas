@@ -61,7 +61,7 @@ function EventTypeChip({ eventType }: { eventType: string }) {
   const { Icon, text, bg, border } = meta;
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-mono border ${bg} ${text} ${border} truncate max-w-full`}
+      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-sm font-mono border ${bg} ${text} ${border} truncate max-w-full`}
       title={eventType}
     >
       <Icon className="w-3 h-3 flex-shrink-0" />
@@ -211,7 +211,7 @@ export function EventSubscriptionsPanel() {
               <div className="grid grid-cols-3 gap-3">
                 {/* Persona select */}
                 <div>
-                  <label className="block text-xs text-muted-foreground/80 mb-1">Agent</label>
+                  <label className="block text-sm text-muted-foreground/80 mb-1">Agent</label>
                   <ThemedSelect
                     value={newPersonaId}
                     onChange={(e) => setNewPersonaId(e.target.value)}
@@ -228,7 +228,7 @@ export function EventSubscriptionsPanel() {
 
                 {/* Event type */}
                 <div>
-                  <label className="block text-xs text-muted-foreground/80 mb-1">Event Type</label>
+                  <label className="block text-sm text-muted-foreground/80 mb-1">Event Type</label>
                   <input
                     list="event-type-suggestions"
                     value={newEventType}
@@ -245,7 +245,7 @@ export function EventSubscriptionsPanel() {
 
                 {/* Source filter */}
                 <div>
-                  <label className="block text-xs text-muted-foreground/80 mb-1">
+                  <label className="block text-sm text-muted-foreground/80 mb-1">
                     Source Filter <span className="text-muted-foreground/50">(optional)</span>
                   </label>
                   <input
@@ -281,14 +281,14 @@ export function EventSubscriptionsPanel() {
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Radio className="w-8 h-8 text-muted-foreground/30 mb-3" />
               <p className="text-sm text-muted-foreground/70">No event subscriptions yet</p>
-              <p className="text-xs text-muted-foreground/50 mt-1">
+              <p className="text-sm text-muted-foreground/50 mt-1">
                 Subscribe agents to event types so they activate automatically
               </p>
             </div>
           ) : (
             <div className="border border-border/30 rounded-xl overflow-hidden">
               {/* Column headers */}
-              <div className="grid grid-cols-[1fr_1fr_1fr_80px_40px] gap-3 px-4 py-2.5 bg-secondary/30 border-b border-border/20 text-xs font-mono text-muted-foreground/70 uppercase tracking-wider">
+              <div className="grid grid-cols-[1fr_1fr_1fr_80px_40px] gap-3 px-4 py-2.5 bg-secondary/30 border-b border-border/20 text-sm font-mono text-muted-foreground/70 uppercase tracking-wider">
                 <span>Agent</span>
                 <span>Event Type</span>
                 <span>Source Filter</span>
@@ -317,7 +317,7 @@ export function EventSubscriptionsPanel() {
                       <button
                         onClick={() => handleToggle(sub)}
                         disabled={busy}
-                        className={`px-2 py-0.5 text-xs font-medium rounded-md border transition-colors ${
+                        className={`px-2 py-0.5 text-sm font-medium rounded-md border transition-colors ${
                           sub.enabled
                             ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/25'
                             : 'bg-secondary/60 text-muted-foreground/60 border-border/20 hover:bg-secondary/80'

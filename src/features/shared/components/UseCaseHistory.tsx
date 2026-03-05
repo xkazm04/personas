@@ -66,7 +66,7 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
           <Clock className="w-5 h-5 text-primary/30" />
         </div>
         <h4 className="text-sm font-medium text-foreground/70">No executions yet</h4>
-        <p className="text-xs text-muted-foreground/50 text-center max-w-xs">
+        <p className="text-sm text-muted-foreground/50 text-center max-w-xs">
           Run this use case to see execution history, timings, and costs here.
         </p>
         <button
@@ -128,7 +128,7 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
                 {exec.input_data && (
                   <div>
                     <span className="text-muted-foreground/50 font-medium">Input: </span>
-                    <code className="text-foreground/60 text-xs break-all">
+                    <code className="text-foreground/60 text-sm break-all">
                       {exec.input_data.length > 200 ? exec.input_data.slice(0, 200) + '...' : exec.input_data}
                     </code>
                   </div>
@@ -136,13 +136,13 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
                 {exec.error_message && (
                   <div>
                     <span className="text-red-400/70 font-medium">Error: </span>
-                    <span className="text-red-400/60 text-xs">{exec.error_message}</span>
+                    <span className="text-red-400/60 text-sm">{exec.error_message}</span>
                   </div>
                 )}
                 {exec.output_data && (
                   <div>
                     <span className="text-muted-foreground/50 font-medium">Output: </span>
-                    <code className="text-foreground/60 text-xs break-all">
+                    <code className="text-foreground/60 text-sm break-all">
                       {exec.output_data.length > 300 ? exec.output_data.slice(0, 300) + '...' : exec.output_data}
                     </code>
                   </div>

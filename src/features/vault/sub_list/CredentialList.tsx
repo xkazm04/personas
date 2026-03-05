@@ -224,7 +224,7 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
                   <button
                     key={tag}
                     onClick={() => toggleTag(tag)}
-                    className={`text-[10px] font-medium px-1.5 py-0.5 rounded border transition-colors ${
+                    className={`text-sm font-medium px-1.5 py-0.5 rounded border transition-colors ${
                       active
                         ? `${style.bg} ${style.text} ${style.border}`
                         : 'bg-secondary/30 text-muted-foreground/50 border-primary/10 hover:bg-secondary/50'
@@ -243,7 +243,7 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
               onClick={() => setOpenDropdown((v) => (v === 'health' ? null : 'health'))}
               aria-haspopup="listbox"
               aria-expanded={openDropdown === 'health'}
-              className={`flex items-center gap-1 text-[10px] font-medium px-2 py-1 rounded border transition-colors ${
+              className={`flex items-center gap-1 text-sm font-medium px-2 py-1 rounded border transition-colors ${
                 healthFilter !== 'all'
                   ? 'bg-primary/10 text-primary border-primary/20'
                   : 'bg-secondary/30 text-muted-foreground/50 border-primary/10 hover:bg-secondary/50'
@@ -262,7 +262,7 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
                       role="option"
                       aria-selected={f === healthFilter}
                       onClick={() => { setHealthFilter(f); setOpenDropdown(null); }}
-                      className={`w-full text-left px-3 py-1.5 text-xs hover:bg-secondary/50 transition-colors ${
+                      className={`w-full text-left px-3 py-1.5 text-sm hover:bg-secondary/50 transition-colors ${
                         f === healthFilter ? 'text-primary font-medium' : 'text-foreground/80'
                       }`}
                     >
@@ -280,7 +280,7 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
               onClick={() => setOpenDropdown((v) => (v === 'sort' ? null : 'sort'))}
               aria-haspopup="listbox"
               aria-expanded={openDropdown === 'sort'}
-              className="flex items-center gap-1 text-[10px] font-medium px-2 py-1 rounded border bg-secondary/30 text-muted-foreground/50 border-primary/10 hover:bg-secondary/50 transition-colors"
+              className="flex items-center gap-1 text-sm font-medium px-2 py-1 rounded border bg-secondary/30 text-muted-foreground/50 border-primary/10 hover:bg-secondary/50 transition-colors"
             >
               Sort: {sortLabel(sortKey)}
               <ChevronDown className="w-2.5 h-2.5" />
@@ -295,7 +295,7 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
                       role="option"
                       aria-selected={s === sortKey}
                       onClick={() => { setSortKey(s); setOpenDropdown(null); }}
-                      className={`w-full text-left px-3 py-1.5 text-xs hover:bg-secondary/50 transition-colors ${
+                      className={`w-full text-left px-3 py-1.5 text-sm hover:bg-secondary/50 transition-colors ${
                         s === sortKey ? 'text-primary font-medium' : 'text-foreground/80'
                       }`}
                     >
@@ -311,7 +311,7 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
           {hasFilters && (
             <button
               onClick={clearFilters}
-              className="flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded border border-red-500/15 text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              className="flex items-center gap-1 text-sm font-medium px-1.5 py-0.5 rounded border border-red-500/15 text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors"
             >
               <X className="w-2.5 h-2.5" /> Clear
             </button>
@@ -322,7 +322,7 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
       {grouped.map(({ category, items }, gi) => (
         <div key={category || gi}>
           {category && (
-            <p className={`text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/40 mb-2 ${gi > 0 ? 'mt-4' : ''}`}>
+            <p className={`text-sm font-semibold uppercase tracking-wider text-muted-foreground/40 mb-2 ${gi > 0 ? 'mt-4' : ''}`}>
               {capitalize(category)}
             </p>
           )}

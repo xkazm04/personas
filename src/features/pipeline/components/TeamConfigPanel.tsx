@@ -121,7 +121,7 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
             <PersonaAvatar icon={personaIcon} color={personaColor} size="lg" />
             <div className="min-w-0 flex-1">
               <div className="text-sm font-semibold text-foreground/90 truncate">{personaName}</div>
-              <div className="text-[11px] text-muted-foreground/60 font-mono truncate">{member.id?.slice(0, 8)}...</div>
+              <div className="text-sm text-muted-foreground/60 font-mono truncate">{member.id?.slice(0, 8)}...</div>
             </div>
             {member.persona_id && (
               <button
@@ -144,8 +144,8 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
               {stats.lastRun && (
                 <div className="col-span-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-secondary/30 border border-primary/8">
                   <Clock className="w-3 h-3 text-muted-foreground/50 shrink-0" />
-                  <span className="text-[11px] text-muted-foreground/70">Last run</span>
-                  <span className="text-[11px] text-foreground/80 font-medium ml-auto">{formatRelativeTime(stats.lastRun)}</span>
+                  <span className="text-sm text-muted-foreground/70">Last run</span>
+                  <span className="text-sm text-foreground/80 font-medium ml-auto">{formatRelativeTime(stats.lastRun)}</span>
                 </div>
               )}
             </div>
@@ -235,8 +235,8 @@ function StatPill({ icon: Icon, label, value, color }: { icon: React.ComponentTy
   return (
     <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-secondary/30 border border-primary/8">
       <Icon className="w-3 h-3 shrink-0" style={{ color: color + 'aa' }} />
-      <span className="text-[11px] text-muted-foreground/70 truncate">{label}</span>
-      <span className="text-[11px] text-foreground/80 font-semibold ml-auto">{value}</span>
+      <span className="text-sm text-muted-foreground/70 truncate">{label}</span>
+      <span className="text-sm text-foreground/80 font-semibold ml-auto">{value}</span>
     </div>
   );
 }

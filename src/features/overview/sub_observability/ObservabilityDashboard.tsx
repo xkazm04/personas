@@ -428,7 +428,7 @@ export default function ObservabilityDashboard() {
             </div>
             <h3 className="text-sm font-bold text-foreground/90 uppercase tracking-widest">Health Issues</h3>
             {healingIssues.length > 0 && (
-              <span className="px-2 py-0.5 text-[11px] font-black tracking-wide rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm">
+              <span className="px-2 py-0.5 text-sm font-black tracking-wide rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm">
                 {healingIssues.length}
               </span>
             )}
@@ -528,7 +528,7 @@ export default function ObservabilityDashboard() {
                 <CheckCircle2 className="w-6 h-6 text-emerald-400" />
               </div>
               <p className="text-sm font-medium text-foreground/80">No open issues</p>
-              <p className="text-xs text-muted-foreground mt-1">Run analysis to check for problems.</p>
+              <p className="text-sm text-muted-foreground mt-1">Run analysis to check for problems.</p>
             </div>
           </div>
         ) : (

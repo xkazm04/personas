@@ -46,7 +46,7 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
           Back
         </button>
         {forage.phase === "results" && forage.scanResult && (
-          <span className="text-xs text-muted-foreground/50">
+          <span className="text-sm text-muted-foreground/50">
             Scanned {forage.scanResult.scanned_sources.length} sources in{" "}
             {forage.scanResult.scan_duration_ms}ms
           </span>
@@ -70,7 +70,7 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
               <h3 className="text-sm font-semibold text-foreground/90">
                 Credential Foraging
               </h3>
-              <p className="text-xs text-muted-foreground/60 mt-1 max-w-sm mx-auto leading-relaxed">
+              <p className="text-sm text-muted-foreground/60 mt-1 max-w-sm mx-auto leading-relaxed">
                 Scan your filesystem for existing credentials — AWS profiles,
                 environment variables, .env files, Docker configs, SSH keys, and
                 more. Discovered credentials can be imported into your vault with
@@ -84,7 +84,7 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
               <Sparkles className="w-3.5 h-3.5" />
               Start Scan
             </button>
-            <div className="text-[10px] text-muted-foreground/40 space-y-0.5">
+            <div className="text-sm text-muted-foreground/40 space-y-0.5">
               <p>Scans: ~/.aws, ~/.kube, env vars, .env, ~/.npmrc, Docker, GitHub CLI, SSH</p>
               <p>No secrets are uploaded — scanning happens entirely on your machine.</p>
             </div>
@@ -102,7 +102,7 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
           >
             <Loader2 className="w-8 h-8 text-violet-400 animate-spin mx-auto" />
             <p className="text-sm text-foreground/80">Scanning filesystem for credentials...</p>
-            <p className="text-xs text-muted-foreground/50">
+            <p className="text-sm text-muted-foreground/50">
               Checking environment variables, config files, and dev tool credentials
             </p>
           </motion.div>
@@ -125,7 +125,7 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
                   {forage.scanResult.credentials.length !== 1 ? "s" : ""} found
                 </span>
                 {importableCount > 0 && (
-                  <span className="text-xs text-muted-foreground/50">
+                  <span className="text-sm text-muted-foreground/50">
                     {forage.selected.size} selected
                   </span>
                 )}
@@ -134,14 +134,14 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={forage.selectAll}
-                    className="text-[11px] text-violet-400/80 hover:text-violet-400 transition-colors"
+                    className="text-sm text-violet-400/80 hover:text-violet-400 transition-colors"
                   >
                     All
                   </button>
                   <span className="text-muted-foreground/20">|</span>
                   <button
                     onClick={forage.selectNone}
-                    className="text-[11px] text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+                    className="text-sm text-muted-foreground/50 hover:text-foreground/70 transition-colors"
                   >
                     None
                   </button>
@@ -155,7 +155,7 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
                 <p className="text-sm text-muted-foreground/70">
                   No credentials found on your filesystem.
                 </p>
-                <p className="text-xs text-muted-foreground/40 mt-1">
+                <p className="text-sm text-muted-foreground/40 mt-1">
                   Try setting environment variables like OPENAI_API_KEY or configure ~/.aws/credentials.
                 </p>
               </div>
@@ -202,7 +202,7 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
               <p className="text-sm text-foreground/80">
                 Importing credentials to vault...
               </p>
-              <p className="text-xs text-muted-foreground/50">
+              <p className="text-sm text-muted-foreground/50">
                 {forage.imported.size} of {forage.selected.size} complete
               </p>
             </div>
@@ -241,20 +241,20 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
                 {forage.imported.size} credential{forage.imported.size !== 1 ? "s" : ""} imported
               </p>
               {forage.error && (
-                <p className="text-xs text-amber-400/80 mt-1">{forage.error}</p>
+                <p className="text-sm text-amber-400/80 mt-1">{forage.error}</p>
               )}
             </div>
             <div className="flex items-center justify-center gap-2">
               <button
                 onClick={forage.scan}
-                className="text-xs text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+                className="text-sm text-muted-foreground/60 hover:text-foreground/80 transition-colors"
               >
                 Scan again
               </button>
               <span className="text-muted-foreground/20">|</span>
               <button
                 onClick={onBack}
-                className="text-xs text-violet-400/80 hover:text-violet-400 transition-colors"
+                className="text-sm text-violet-400/80 hover:text-violet-400 transition-colors"
               >
                 Back to vault
               </button>
@@ -274,19 +274,19 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
             <AlertTriangle className="w-8 h-8 text-red-400 mx-auto" />
             <div>
               <p className="text-sm font-medium text-foreground/90">Scan Failed</p>
-              <p className="text-xs text-red-400/70 mt-1">{forage.error}</p>
+              <p className="text-sm text-red-400/70 mt-1">{forage.error}</p>
             </div>
             <div className="flex items-center justify-center gap-2">
               <button
                 onClick={forage.scan}
-                className="text-xs text-violet-400/80 hover:text-violet-400 transition-colors"
+                className="text-sm text-violet-400/80 hover:text-violet-400 transition-colors"
               >
                 Try again
               </button>
               <span className="text-muted-foreground/20">|</span>
               <button
                 onClick={onBack}
-                className="text-xs text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+                className="text-sm text-muted-foreground/60 hover:text-foreground/80 transition-colors"
               >
                 Back
               </button>

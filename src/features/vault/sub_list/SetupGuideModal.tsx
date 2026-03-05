@@ -74,7 +74,7 @@ export function SetupGuideModal({ connector, onClose }: SetupGuideModalProps) {
             <div className="flex-1">
               <h3 className="font-semibold text-foreground">How to get {connector.label} {authLabel}</h3>
               {summary && (
-                <p className="text-xs text-muted-foreground/70 mt-0.5">{summary}</p>
+                <p className="text-sm text-muted-foreground/70 mt-0.5">{summary}</p>
               )}
             </div>
             <button
@@ -94,7 +94,7 @@ export function SetupGuideModal({ connector, onClose }: SetupGuideModalProps) {
                   const stepNum = i + 1;
                   return (
                     <div key={i} className="flex gap-3">
-                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-xs font-bold text-primary/80">
+                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-sm font-bold text-primary/80">
                         {stepNum}
                       </span>
                       <p className="text-sm text-foreground/85 pt-0.5 leading-relaxed">{stripped}</p>
@@ -111,10 +111,10 @@ export function SetupGuideModal({ connector, onClose }: SetupGuideModalProps) {
             {/* Required fields hint */}
             {connector.fields.length > 0 && (
               <div className="pt-2 border-t border-primary/8">
-                <p className="text-xs text-muted-foreground/50 mb-2">Required fields:</p>
+                <p className="text-sm text-muted-foreground/50 mb-2">Required fields:</p>
                 <div className="flex flex-wrap gap-1.5">
                   {connector.fields.filter((f) => f.required).map((f) => (
-                    <span key={f.key} className="text-xs px-2 py-0.5 rounded-md bg-secondary/40 border border-primary/10 text-foreground/70 font-mono">
+                    <span key={f.key} className="text-sm px-2 py-0.5 rounded-md bg-secondary/40 border border-primary/10 text-foreground/70 font-mono">
                       {f.label}
                     </span>
                   ))}

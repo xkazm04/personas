@@ -1,6 +1,7 @@
 use rusqlite::{params, Row};
 
 use crate::db::models::{CreateManualReviewInput, PersonaManualReview};
+use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -66,7 +67,7 @@ pub fn get_by_persona(
              ORDER BY created_at DESC",
         )?;
         let rows = stmt.query_map(params![persona_id, status_filter], row_to_review)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        Ok(collect_rows(rows, "manual_reviews::get_by_persona(filtered)"))
     } else {
         let mut stmt = conn.prepare(
             "SELECT * FROM persona_manual_reviews
@@ -74,7 +75,7 @@ pub fn get_by_persona(
              ORDER BY created_at DESC",
         )?;
         let rows = stmt.query_map(params![persona_id], row_to_review)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        Ok(collect_rows(rows, "manual_reviews::get_by_persona"))
     }
 }
 
@@ -91,14 +92,14 @@ pub fn get_all(
              ORDER BY created_at DESC",
         )?;
         let rows = stmt.query_map(params![status_filter], row_to_review)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        Ok(collect_rows(rows, "manual_reviews::get_all(filtered)"))
     } else {
         let mut stmt = conn.prepare(
             "SELECT * FROM persona_manual_reviews
              ORDER BY created_at DESC",
         )?;
         let rows = stmt.query_map([], row_to_review)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        Ok(collect_rows(rows, "manual_reviews::get_all"))
     }
 }
 
@@ -113,7 +114,7 @@ pub fn get_by_execution(
          ORDER BY created_at DESC",
     )?;
     let rows = stmt.query_map(params![execution_id], row_to_review)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    Ok(collect_rows(rows, "manual_reviews::get_by_execution"))
 }
 
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaManualReview, AppError> {
@@ -145,7 +146,7 @@ pub fn update_status(
         _ => None,
     };
 
-    conn.execute(
+    let rows = conn.execute(
         "UPDATE persona_manual_reviews
          SET status = ?1,
              reviewer_notes = COALESCE(?2, reviewer_notes),
@@ -154,6 +155,10 @@ pub fn update_status(
          WHERE id = ?5",
         params![status, reviewer_notes, resolved_at, now, id],
     )?;
+
+    if rows == 0 {
+        return Err(AppError::NotFound(format!("Manual review {id}")));
+    }
 
     Ok(())
 }

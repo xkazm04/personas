@@ -35,7 +35,7 @@ export const CLAUDE_EXECUTION_LINES = [
 
 /** Gemini CLI — persona execution with web search */
 export const GEMINI_EXECUTION_LINES = [
-  'Session started (gemini-3-flash-preview)',
+  'Session started (gemini-3.1-flash-lite-preview)',
   '> Analyzing input data and determining next steps…',
   '> Using tool: Read',
   '  Tool result: File contents (189 chars)',
@@ -93,7 +93,7 @@ export const TIMEOUT_EXECUTION_LINES = [
 
 /** Gemini failure — auth error */
 export const GEMINI_AUTH_FAILURE_LINES = [
-  'Session started (gemini-3-flash-preview)',
+  'Session started (gemini-3.1-flash-lite-preview)',
   '[ERROR] Authentication failed: invalid API key',
   '[SUMMARY]{"status":"failed","duration_ms":450,"cost_usd":0,"last_tool":null}',
 ];
@@ -177,7 +177,7 @@ export const N8N_TRANSFORM_GEMINI_LINES = [
   '[System] Starting workflow transformation (Gemini)…',
   '> Analyzing static workflow structure (8 nodes, 5 connections)',
   '[Milestone] Parsing workflow structure',
-  '> Preparing transformation prompt for Gemini 3 Flash Preview',
+  '> Preparing transformation prompt for Gemini 3.1 Flash Lite Preview',
   '[Milestone] Preparing transformation',
   '> AI is generating persona draft via Gemini…',
   '[Milestone] AI generating persona draft',
@@ -335,7 +335,7 @@ export const PROVIDER_FIXTURES: ProviderFixture[] = [
   },
   {
     name: 'Gemini CLI',
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-3.1-flash-lite-preview',
     successLines: GEMINI_EXECUTION_LINES,
     failureLines: GEMINI_AUTH_FAILURE_LINES,
     supportsResume: true,

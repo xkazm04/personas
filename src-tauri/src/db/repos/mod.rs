@@ -3,3 +3,7 @@ pub mod core;
 pub mod execution;
 pub mod lab;
 pub mod resources;
+pub mod utils;
+
+#[cfg(test)]
+pub mod test_fixtures;

@@ -139,7 +139,7 @@ export function TemplatePreviewModal({
                 Run Preview
               </button>
               {!designResult && (
-                <p className="text-xs text-red-400/70">
+                <p className="text-sm text-red-400/70">
                   No design data available for this template.
                 </p>
               )}
@@ -190,7 +190,7 @@ export function TemplatePreviewModal({
               </button>
             )}
             {isRunning && (
-              <span className="text-xs text-muted-foreground/40">
+              <span className="text-sm text-muted-foreground/40">
                 You can close — test will continue in background
               </span>
             )}

@@ -28,7 +28,7 @@ export default function ConnectionLegend() {
                 strokeLinecap="round"
               />
             </svg>
-            <span className="text-[11px] font-medium text-muted-foreground/90 leading-none whitespace-nowrap">
+            <span className="text-sm font-medium text-muted-foreground/90 leading-none whitespace-nowrap">
               {style.label}
             </span>
           </div>

@@ -61,7 +61,7 @@ function FilterChip({
   return (
     <button
       onClick={onClick}
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium transition-all whitespace-nowrap ${
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-sm font-medium transition-all whitespace-nowrap ${
         active
           ? 'bg-primary/15 text-primary border border-primary/30'
           : 'bg-secondary/40 text-muted-foreground/80 border border-transparent hover:bg-secondary/60 hover:text-muted-foreground'
@@ -92,7 +92,7 @@ function ChipGroup<T extends string>({
 }) {
   return (
     <div className="flex flex-wrap items-center gap-1">
-      <span className="text-xs text-muted-foreground/60 font-medium mr-0.5 min-w-[52px]">{label}</span>
+      <span className="text-sm text-muted-foreground/60 font-medium mr-0.5 min-w-[52px]">{label}</span>
       {options.map((opt) => (
         <FilterChip
           key={opt.value}
@@ -204,12 +204,12 @@ export function SearchFilterBar({
       {/* Active filter summary / clear */}
       {hasActiveFilters && (
         <div className="flex items-center justify-between px-1">
-          <span className="text-xs text-muted-foreground/60">
+          <span className="text-sm text-muted-foreground/60">
             {matchCount} of {totalCount} agents
           </span>
           <button
             onClick={onClear}
-            className="text-xs text-primary/70 hover:text-primary transition-colors"
+            className="text-sm text-primary/70 hover:text-primary transition-colors"
           >
             Clear all
           </button>
@@ -255,7 +255,7 @@ export function SearchFilterBar({
               {/* Smart tags */}
               {allTags.length > 0 && (
                 <div className="flex flex-wrap items-center gap-1">
-                  <span className="text-xs text-muted-foreground/60 font-medium mr-0.5 min-w-[52px]">Tags</span>
+                  <span className="text-sm text-muted-foreground/60 font-medium mr-0.5 min-w-[52px]">Tags</span>
                   {allTags.map((tag) => (
                     <FilterChip
                       key={tag.id}
@@ -276,7 +276,7 @@ export function SearchFilterBar({
       {!showFilters && allTags.some(t => t.id === 'auto:needs-attention') && filters.health !== 'needs-attention' && (
         <button
           onClick={() => onHealthChange('needs-attention')}
-          className="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-amber-400/80 hover:text-amber-400 bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/10 hover:border-amber-500/20 transition-all w-full"
+          className="flex items-center gap-1.5 px-2 py-1 rounded-md text-sm text-amber-400/80 hover:text-amber-400 bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/10 hover:border-amber-500/20 transition-all w-full"
         >
           <AlertTriangle className="w-3 h-3" />
           <span>Agents need attention</span>

@@ -8,7 +8,7 @@ pub mod negotiator;
 pub mod oauth;
 pub mod connectors;
 pub mod rotation;
-mod shared;
+pub(crate) mod shared;
 pub mod db_schema;
 pub mod api_proxy;
 pub mod mcp_tools;

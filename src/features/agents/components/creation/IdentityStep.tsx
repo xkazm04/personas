@@ -205,18 +205,18 @@ export function IdentityStep({ builderState, onBack, draftPersonaId }: IdentityS
                   <div className="space-y-4 p-4 bg-secondary/30 border border-primary/10 rounded-xl">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-medium text-foreground/70 mb-2">Icon</label>
+                        <label className="block text-sm font-medium text-foreground/70 mb-2">Icon</label>
                         <IconSelector value={icon} onChange={setIcon} connectors={connectorDefinitions} size="sm" />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-foreground/70 mb-2">Color</label>
+                        <label className="block text-sm font-medium text-foreground/70 mb-2">Color</label>
                         <ColorPicker value={color} onChange={setColor} size="sm" />
                       </div>
                     </div>
 
                     {groups.length > 0 && (
                       <div>
-                        <label className="block text-xs font-medium text-foreground/70 mb-1.5">Group</label>
+                        <label className="block text-sm font-medium text-foreground/70 mb-1.5">Group</label>
                         <ThemedSelect
                           value={groupId}
                           onChange={(e) => setGroupId(e.target.value)}
@@ -258,7 +258,7 @@ export function IdentityStep({ builderState, onBack, draftPersonaId }: IdentityS
         <div className="space-y-4">
           {/* Agent preview */}
           <div className="bg-secondary/30 border border-primary/10 rounded-xl p-4 space-y-4">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+            <p className="text-sm font-semibold uppercase tracking-widest text-muted-foreground/60">
               Preview
             </p>
 
@@ -282,7 +282,7 @@ export function IdentityStep({ builderState, onBack, draftPersonaId }: IdentityS
                 <p className="text-sm font-medium text-foreground/85 truncate">
                   {name.trim() || deriveNameFromState(builderState) || 'Agent Name'}
                 </p>
-                <p className="text-xs text-muted-foreground/60 truncate">
+                <p className="text-sm text-muted-foreground/60 truncate">
                   {description.trim() || 'Description'}
                 </p>
               </div>
@@ -292,24 +292,24 @@ export function IdentityStep({ builderState, onBack, draftPersonaId }: IdentityS
             {summary && (
               <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-primary/5">
                 <Sparkles className="w-3.5 h-3.5 text-primary/50 shrink-0" />
-                <span className="text-xs text-foreground/60">{summary}</span>
+                <span className="text-sm text-foreground/60">{summary}</span>
               </div>
             )}
 
             {/* Use cases */}
             {filledUseCases.length > 0 && (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/55 mb-1.5">
+                <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/55 mb-1.5">
                   Use Cases
                 </p>
                 <ul className="space-y-1">
                   {filledUseCases.slice(0, 5).map((uc) => (
-                    <li key={uc.id} className="text-xs text-foreground/70 truncate">
+                    <li key={uc.id} className="text-sm text-foreground/70 truncate">
                       {uc.title}
                     </li>
                   ))}
                   {filledUseCases.length > 5 && (
-                    <li className="text-xs text-muted-foreground/50 italic">
+                    <li className="text-sm text-muted-foreground/50 italic">
                       +{filledUseCases.length - 5} more
                     </li>
                   )}
@@ -320,14 +320,14 @@ export function IdentityStep({ builderState, onBack, draftPersonaId }: IdentityS
             {/* Components */}
             {builderState.components.length > 0 && (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/55 mb-1.5">
+                <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/55 mb-1.5">
                   Components
                 </p>
                 <div className="flex flex-wrap gap-1">
                   {builderState.components.map((comp) => (
                     <span
                       key={comp.id}
-                      className="inline-flex items-center px-1.5 py-0.5 bg-secondary/40 rounded text-[11px] text-foreground/70"
+                      className="inline-flex items-center px-1.5 py-0.5 bg-secondary/40 rounded text-sm text-foreground/70"
                     >
                       {comp.connectorName}
                     </span>
@@ -340,17 +340,17 @@ export function IdentityStep({ builderState, onBack, draftPersonaId }: IdentityS
             {(builderState.globalTrigger || builderState.errorStrategy !== 'halt' || builderState.reviewPolicy !== 'never') && (
               <div className="space-y-1">
                 {builderState.globalTrigger && (
-                  <p className="text-xs text-foreground/60">
+                  <p className="text-sm text-foreground/60">
                     <span className="text-muted-foreground/55">Schedule:</span> {builderState.globalTrigger.label}
                   </p>
                 )}
                 {builderState.errorStrategy !== 'halt' && (
-                  <p className="text-xs text-foreground/60">
+                  <p className="text-sm text-foreground/60">
                     <span className="text-muted-foreground/55">Errors:</span> {builderState.errorStrategy}
                   </p>
                 )}
                 {builderState.reviewPolicy !== 'never' && (
-                  <p className="text-xs text-foreground/60">
+                  <p className="text-sm text-foreground/60">
                     <span className="text-muted-foreground/55">Review:</span> {builderState.reviewPolicy}
                   </p>
                 )}

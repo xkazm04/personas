@@ -2,10 +2,6 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { Zap, RefreshCw, AlertCircle, CheckCircle2, Clock, Loader2, Server, Bot, Copy, Check } from 'lucide-react';
 import { useVirtualList } from '@/hooks/utility/useVirtualList';
-import hljs from 'highlight.js/lib/core';
-import json from 'highlight.js/lib/languages/json';
-
-hljs.registerLanguage('json', json);
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { FilterBar } from '@/features/shared/components/FilterBar';
 import { UuidLabel } from '@/features/shared/components/UuidLabel';
@@ -15,22 +11,20 @@ import { formatRelativeTime, EVENT_STATUS_COLORS, EVENT_TYPE_COLORS } from '@/li
 import DetailModal from '@/features/overview/components/DetailModal';
 import { PersonaSelect } from '@/features/overview/sub_usage/DashboardFilters';
 import type { PersonaEvent } from '@/lib/types/types';
-import { sanitizeHljsHtml } from '@/lib/utils/sanitizeHtml';
 import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
 
 type EventFilter = 'all' | 'pending' | 'completed' | 'failed';
 
 function HighlightedJson({ raw }: { raw: string }) {
-  const html = useMemo(() => {
+  const pretty = useMemo(() => {
     try {
-      const pretty = JSON.stringify(JSON.parse(raw), null, 2);
-      return sanitizeHljsHtml(hljs.highlight(pretty, { language: 'json' }).value);
+      return JSON.stringify(JSON.parse(raw), null, 2);
     } catch {
       return null;
     }
   }, [raw]);
 
-  if (!html) {
+  if (!pretty) {
     return (
       <pre className="bg-background/40 p-2 rounded-lg text-foreground/90 overflow-x-auto max-h-40 text-sm">
         {raw}
@@ -39,10 +33,9 @@ function HighlightedJson({ raw }: { raw: string }) {
   }
 
   return (
-    <pre
-      className="json-highlight bg-background/40 p-2 rounded-lg overflow-x-auto max-h-40 text-sm"
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
+    <pre className="bg-background/40 p-2 rounded-lg text-foreground/90 overflow-x-auto max-h-40 text-sm">
+      {pretty}
+    </pre>
   );
 }
 
@@ -337,7 +330,7 @@ export default function EventLogList() {
                           setTimeout(() => setCopiedPayload(false), 2000);
                         }).catch(() => {});
                       }}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs text-muted-foreground/70 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-sm text-muted-foreground/70 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
                       title="Copy payload"
                     >
                       {copiedPayload ? (

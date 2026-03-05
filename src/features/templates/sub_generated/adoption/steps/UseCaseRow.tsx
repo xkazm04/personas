@@ -119,7 +119,7 @@ export function UseCaseRow({
             <span
               key={type}
               title={`${count} ${label}${count !== 1 ? 's' : ''}`}
-              className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono rounded border ${color}`}
+              className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 text-sm font-mono rounded border ${color}`}
             >
               <Icon className="w-2.5 h-2.5" />
               {count}

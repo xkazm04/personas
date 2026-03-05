@@ -163,7 +163,7 @@ export function UseCaseModelOverride({ useCase, defaultModelProfile, onUpdate }:
                   return (
                     <div key={opt.id}>
                       {showGroup && (
-                        <div className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                        <div className="px-3 pt-2 pb-1 text-sm font-semibold uppercase tracking-wider text-muted-foreground/60">
                           {opt.group}
                         </div>
                       )}

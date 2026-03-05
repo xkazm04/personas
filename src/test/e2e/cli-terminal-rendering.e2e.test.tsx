@@ -613,7 +613,7 @@ describe('E2E: CliOutputPanel — scenario rendering', () => {
       />,
     );
 
-    expect(screen.getByText(/Session started.*gemini-3-flash-preview/)).toBeInTheDocument();
+    expect(screen.getByText(/Session started.*gemini-3.1-flash-lite-preview/)).toBeInTheDocument();
     expect(screen.getByText(/JSON:API specification/)).toBeInTheDocument();
   });
 

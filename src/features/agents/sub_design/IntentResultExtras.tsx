@@ -37,23 +37,23 @@ function UseCaseCard({ uc }: { uc: IntentUseCase }) {
       >
         {open ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/60" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/60" />}
         <span className="text-sm font-medium text-foreground/90 flex-1 truncate">{uc.name}</span>
-        <span className={`text-xs px-1.5 py-0.5 rounded font-mono ${uc.execution_mode === 'e2e' ? 'bg-emerald-500/12 text-emerald-400' : 'bg-violet-500/12 text-violet-400'}`}>
+        <span className={`text-sm px-1.5 py-0.5 rounded font-mono ${uc.execution_mode === 'e2e' ? 'bg-emerald-500/12 text-emerald-400' : 'bg-violet-500/12 text-violet-400'}`}>
           {uc.execution_mode}
         </span>
       </button>
       {open && (
         <div className="px-3 pb-3 space-y-2 border-t border-border/10">
-          <p className="text-xs text-muted-foreground/80 pt-2">{uc.description}</p>
+          <p className="text-sm text-muted-foreground/80 pt-2">{uc.description}</p>
           {uc.expected_behavior && (
             <div>
-              <span className="text-xs font-medium text-muted-foreground/70 uppercase tracking-wider">Expected</span>
-              <p className="text-xs text-foreground/80 mt-0.5">{uc.expected_behavior}</p>
+              <span className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wider">Expected</span>
+              <p className="text-sm text-foreground/80 mt-0.5">{uc.expected_behavior}</p>
             </div>
           )}
           {uc.sample_input && Object.keys(uc.sample_input).length > 0 && (
             <div>
-              <span className="text-xs font-medium text-muted-foreground/70 uppercase tracking-wider">Sample Input</span>
-              <pre className="text-xs text-foreground/70 bg-background/40 rounded p-2 mt-0.5 overflow-x-auto font-mono">
+              <span className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wider">Sample Input</span>
+              <pre className="text-sm text-foreground/70 bg-background/40 rounded p-2 mt-0.5 overflow-x-auto font-mono">
                 {JSON.stringify(uc.sample_input, null, 2)}
               </pre>
             </div>
@@ -77,17 +77,17 @@ function TestScenarioRow({ ts }: { ts: IntentTestScenario }) {
         {open ? <ChevronDown className="w-3 h-3 text-muted-foreground/50" /> : <ChevronRight className="w-3 h-3 text-muted-foreground/50" />}
         <Icon className={`w-3 h-3 ${meta.text}`} />
         <span className="text-sm text-foreground/85 flex-1 truncate">{ts.name}</span>
-        <span className={`text-xs px-1.5 py-0.5 rounded ${meta.bg} ${meta.text} font-mono`}>
+        <span className={`text-sm px-1.5 py-0.5 rounded ${meta.bg} ${meta.text} font-mono`}>
           {ts.category.replace('_', ' ')}
         </span>
       </button>
       {open && (
         <div className="px-3 pb-2.5 space-y-1.5 border-t border-border/10">
-          <p className="text-xs text-muted-foreground/80 pt-1.5">{ts.expected_outcome}</p>
+          <p className="text-sm text-muted-foreground/80 pt-1.5">{ts.expected_outcome}</p>
           {ts.assertions.length > 0 && (
             <ul className="space-y-0.5">
               {ts.assertions.map((a, i) => (
-                <li key={i} className="flex items-start gap-1.5 text-xs text-foreground/70">
+                <li key={i} className="flex items-start gap-1.5 text-sm text-foreground/70">
                   <CheckCircle2 className="w-3 h-3 text-emerald-400/60 mt-0.5 shrink-0" />
                   {a}
                 </li>
@@ -122,7 +122,7 @@ export function IntentResultExtras({ result }: IntentResultExtrasProps) {
           <div className="flex items-start gap-2">
             <Target className="w-3.5 h-3.5 text-violet-400/70 mt-0.5 shrink-0" />
             <div>
-              <span className="text-xs font-medium text-violet-400/80 uppercase tracking-wider">Intent</span>
+              <span className="text-sm font-medium text-violet-400/80 uppercase tracking-wider">Intent</span>
               <p className="text-sm text-foreground/85 mt-0.5">{intent_statement}</p>
             </div>
           </div>
@@ -140,7 +140,7 @@ export function IntentResultExtras({ result }: IntentResultExtrasProps) {
           <h4 className="flex items-center gap-2 text-sm font-semibold text-foreground/90 tracking-wide">
             <Layers className="w-3.5 h-3.5" />
             Use Cases
-            <span className="text-xs font-mono text-muted-foreground/60">({use_cases.length})</span>
+            <span className="text-sm font-mono text-muted-foreground/60">({use_cases.length})</span>
           </h4>
           <div className="space-y-1.5">
             {use_cases.map((uc) => (
@@ -156,7 +156,7 @@ export function IntentResultExtras({ result }: IntentResultExtrasProps) {
           <h4 className="flex items-center gap-2 text-sm font-semibold text-foreground/90 tracking-wide">
             <FlaskConical className="w-3.5 h-3.5" />
             Test Scenarios
-            <span className="text-xs font-mono text-muted-foreground/60">({test_scenarios.length})</span>
+            <span className="text-sm font-mono text-muted-foreground/60">({test_scenarios.length})</span>
           </h4>
           <div className="space-y-1">
             {test_scenarios.map((ts) => (
@@ -179,22 +179,22 @@ function ModelRecommendationCard({ rec }: { rec: IntentModelRecommendation }) {
       </h4>
       <div className="grid grid-cols-3 gap-3">
         <div>
-          <span className="text-xs text-muted-foreground/70 uppercase tracking-wider">Model</span>
+          <span className="text-sm text-muted-foreground/70 uppercase tracking-wider">Model</span>
           <p className="text-sm font-medium text-foreground/90 capitalize mt-0.5">{rec.recommended_model}</p>
         </div>
         <div>
-          <span className="text-xs text-muted-foreground/70 uppercase tracking-wider">Est. Cost/Run</span>
+          <span className="text-sm text-muted-foreground/70 uppercase tracking-wider">Est. Cost/Run</span>
           <p className="text-sm font-mono text-foreground/90 mt-0.5 flex items-center gap-1">
             <DollarSign className="w-3 h-3 text-emerald-400/70" />
             {rec.estimated_cost_per_run_usd.toFixed(3)}
           </p>
         </div>
         <div>
-          <span className="text-xs text-muted-foreground/70 uppercase tracking-wider">Complexity</span>
+          <span className="text-sm text-muted-foreground/70 uppercase tracking-wider">Complexity</span>
           <p className={`text-sm font-medium capitalize mt-0.5 ${complexityColor}`}>{rec.complexity_level}</p>
         </div>
       </div>
-      <p className="text-xs text-muted-foreground/80">{rec.reasoning}</p>
+      <p className="text-sm text-muted-foreground/80">{rec.reasoning}</p>
     </div>
   );
 }

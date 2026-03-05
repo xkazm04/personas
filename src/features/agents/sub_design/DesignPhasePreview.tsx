@@ -7,54 +7,61 @@ import { IntentResultExtras } from './IntentResultExtras';
 import type { DesignAnalysisResult, IntentCompilationResult } from '@/lib/types/designTypes';
 import type { DbPersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 
-interface DesignPhasePreviewProps {
-  result: DesignAnalysisResult;
-  intentResult?: IntentCompilationResult;
-  error: string | null;
+interface DesignPreviewResources {
   toolDefinitions: DbPersonaToolDefinition[];
   currentToolNames: string[];
   credentials: CredentialMetadata[];
   connectorDefinitions: ConnectorDefinition[];
-  selectedTools: Set<string>;
-  selectedTriggerIndices: Set<number>;
-  selectedChannelIndices: Set<number>;
-  selectedSubscriptionIndices: Set<number>;
+}
+
+interface DesignPreviewSelections {
+  tools: Set<string>;
+  triggerIndices: Set<number>;
+  channelIndices: Set<number>;
+  subscriptionIndices: Set<number>;
+}
+
+interface DesignPreviewSelectionHandlers {
   onToolToggle: (toolName: string) => void;
   onTriggerToggle: (index: number) => void;
   onChannelToggle: (index: number) => void;
   onSubscriptionToggle: (index: number) => void;
-  changeSummary: string[];
-  refinementMessage: string;
-  onRefinementMessageChange: (value: string) => void;
+}
+
+interface DesignPreviewRefinement {
+  message: string;
+  onMessageChange: (value: string) => void;
+  onSend: () => void;
+}
+
+interface DesignPreviewActions {
   onApply: () => void;
   onRefine: () => void;
   onDiscard: () => void;
-  onSendRefinement: () => void;
+}
+
+interface DesignPhasePreviewProps {
+  result: DesignAnalysisResult;
+  intentResult?: IntentCompilationResult;
+  error: string | null;
+  resources: DesignPreviewResources;
+  selections: DesignPreviewSelections;
+  selectionHandlers: DesignPreviewSelectionHandlers;
+  changeSummary: string[];
+  refinement: DesignPreviewRefinement;
+  actions: DesignPreviewActions;
 }
 
 export function DesignPhasePreview({
   result,
   intentResult,
   error,
-  toolDefinitions,
-  currentToolNames,
-  credentials,
-  connectorDefinitions,
-  selectedTools,
-  selectedTriggerIndices,
-  selectedChannelIndices,
-  selectedSubscriptionIndices,
-  onToolToggle,
-  onTriggerToggle,
-  onChannelToggle,
-  onSubscriptionToggle,
+  resources,
+  selections,
+  selectionHandlers,
   changeSummary,
-  refinementMessage,
-  onRefinementMessageChange,
-  onApply,
-  onRefine,
-  onDiscard,
-  onSendRefinement,
+  refinement,
+  actions,
 }: DesignPhasePreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
@@ -72,29 +79,29 @@ export function DesignPhasePreview({
   return (
     <motion.div
       key="preview"
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.15 }}
+      initial={{ opacity: 0, scale: 0.96, y: 6 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.98, y: -6 }}
+      transition={{ type: 'spring', stiffness: 200, damping: 25 }}
       className="space-y-4"
       ref={containerRef}
       tabIndex={-1}
     >
       <DesignResultPreview
         result={result}
-        allToolDefs={toolDefinitions}
-        currentToolNames={currentToolNames}
-        credentials={credentials}
-        connectorDefinitions={connectorDefinitions}
-        selectedTools={selectedTools}
-        selectedTriggerIndices={selectedTriggerIndices}
-        selectedChannelIndices={selectedChannelIndices}
+        allToolDefs={resources.toolDefinitions}
+        currentToolNames={resources.currentToolNames}
+        credentials={resources.credentials}
+        connectorDefinitions={resources.connectorDefinitions}
+        selectedTools={selections.tools}
+        selectedTriggerIndices={selections.triggerIndices}
+        selectedChannelIndices={selections.channelIndices}
         suggestedSubscriptions={result.suggested_event_subscriptions}
-        selectedSubscriptionIndices={selectedSubscriptionIndices}
-        onToolToggle={onToolToggle}
-        onTriggerToggle={onTriggerToggle}
-        onChannelToggle={onChannelToggle}
-        onSubscriptionToggle={onSubscriptionToggle}
+        selectedSubscriptionIndices={selections.subscriptionIndices}
+        onToolToggle={selectionHandlers.onToolToggle}
+        onTriggerToggle={selectionHandlers.onTriggerToggle}
+        onChannelToggle={selectionHandlers.onChannelToggle}
+        onSubscriptionToggle={selectionHandlers.onSubscriptionToggle}
         onConnectorClick={() => {}}
         feasibility={result.feasibility}
       />
@@ -122,14 +129,14 @@ export function DesignPhasePreview({
       {/* Action buttons */}
       <div className="flex items-center gap-2">
         <button
-          onClick={onApply}
+          onClick={actions.onApply}
           className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm bg-gradient-to-r from-primary to-accent text-foreground hover:from-primary/90 hover:to-accent/90 shadow-lg shadow-primary/20 transition-all hover:scale-[1.01] active:scale-[0.99]"
         >
           <Check className="w-3.5 h-3.5" />
           Apply Changes
         </button>
         <button
-          onClick={onRefine}
+          onClick={actions.onRefine}
           className="flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm bg-secondary/50 text-foreground/90 hover:bg-secondary/70 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
@@ -139,7 +146,7 @@ export function DesignPhasePreview({
           onClick={() => {
             if (confirmDiscard) {
               setConfirmDiscard(false);
-              onDiscard();
+              actions.onDiscard();
               return;
             }
             setConfirmDiscard(true);
@@ -157,22 +164,22 @@ export function DesignPhasePreview({
       {/* Refinement chat input */}
       <div className="flex items-end gap-2">
         <textarea
-          value={refinementMessage}
-          onChange={(e) => onRefinementMessageChange(e.target.value)}
+          value={refinement.message}
+          onChange={(e) => refinement.onMessageChange(e.target.value)}
           placeholder="Describe what to change..."
           className="flex-1 min-h-[60px] max-h-[120px] bg-background/50 border border-primary/15 rounded-xl px-3 py-2 text-sm text-foreground font-sans resize-y focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all placeholder-muted-foreground/30"
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
-              if (refinementMessage.trim()) onSendRefinement();
+              if (refinement.message.trim()) refinement.onSend();
             }
           }}
         />
         <button
-          onClick={onSendRefinement}
-          disabled={!refinementMessage.trim()}
+          onClick={refinement.onSend}
+          disabled={!refinement.message.trim()}
           className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-            !refinementMessage.trim()
+            !refinement.message.trim()
               ? 'bg-secondary/40 text-muted-foreground/80 cursor-not-allowed'
               : 'bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20'
           }`}
@@ -181,7 +188,7 @@ export function DesignPhasePreview({
           Send
         </button>
       </div>
-      <p className="text-[10px] text-muted-foreground/60 px-1">Press Enter to submit, Shift+Enter for new line.</p>
+      <p className="text-sm text-muted-foreground/60 px-1">Press Enter to submit, Shift+Enter for new line.</p>
     </motion.div>
   );
 }

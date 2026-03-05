@@ -147,8 +147,8 @@ function MethodCard({
       title={disabledHint}
     >
       <div className="mb-1.5">{icon}</div>
-      <p className="text-xs font-medium text-foreground/85">{label}</p>
-      <p className="text-[10px] text-muted-foreground/50 mt-0.5 leading-relaxed">{description}</p>
+      <p className="text-sm font-medium text-foreground/85">{label}</p>
+      <p className="text-sm text-muted-foreground/50 mt-0.5 leading-relaxed">{description}</p>
     </button>
   );
 }
@@ -213,7 +213,7 @@ function DesignQueryInput({
       exit={{ opacity: 0, y: -6 }}
       className="space-y-3"
     >
-      <p className="text-xs text-muted-foreground/70">
+      <p className="text-sm text-muted-foreground/70">
         Describe the service or connector you need. AI will identify
         credential requirements and offer auto-setup when possible.
       </p>
@@ -230,7 +230,7 @@ function DesignQueryInput({
         <button
           onClick={onStartDesign}
           disabled={!query.trim()}
-          className={`flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-foreground rounded-xl text-xs font-medium transition-all ${MOTION.snappy.css}`}
+          className={`flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-foreground rounded-xl text-sm font-medium transition-all ${MOTION.snappy.css}`}
         >
           <Sparkles className="w-3.5 h-3.5" />
           Design Credential
@@ -389,8 +389,8 @@ function ManualForm({
         >
           <Bot className="w-4 h-4 text-cyan-400 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-cyan-300">Auto-Setup available</p>
-            <p className="text-[10px] text-muted-foreground/50">Let browser automation fill these fields for you</p>
+            <p className="text-sm font-medium text-cyan-300">Auto-Setup available</p>
+            <p className="text-sm text-muted-foreground/50">Let browser automation fill these fields for you</p>
           </div>
         </button>
       )}
@@ -409,7 +409,7 @@ function ManualForm({
 
       {effectiveSetupInstructions && (
         <div className="px-3 py-2 mb-3 bg-secondary/40 border border-primary/8 rounded-lg">
-          <p className="text-xs text-muted-foreground/70 whitespace-pre-line leading-relaxed">
+          <p className="text-sm text-muted-foreground/70 whitespace-pre-line leading-relaxed">
             {effectiveSetupInstructions}
           </p>
         </div>
@@ -563,7 +563,7 @@ export function InlineCredentialPanel({
           </div>
           <button
             onClick={onClose}
-            className="text-xs text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+            className="text-sm text-muted-foreground/50 hover:text-foreground/70 transition-colors"
           >
             Cancel
           </button>

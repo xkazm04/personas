@@ -123,7 +123,7 @@ export function MatrixPanel() {
               disabled={isLabRunning}
               className="w-full h-28 px-3 py-2 text-sm bg-background/50 border border-primary/15 rounded-lg text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none disabled:opacity-50"
             />
-            <p className="text-xs text-muted-foreground/50">
+            <p className="text-sm text-muted-foreground/50">
               Claude will generate a draft persona based on your instructions, then test both current and draft versions side by side.
             </p>
           </div>
@@ -262,7 +262,7 @@ export function MatrixPanel() {
                         </span>
                         <span className={statusBadge(run.status)}>{run.status}</span>
                         {run.draftAccepted && (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-sm font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
                             <Check className="w-3 h-3" /> Accepted
                           </span>
                         )}

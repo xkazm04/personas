@@ -125,7 +125,7 @@ export function NegotiatorStepCard({
                     <ExternalLink className="w-3.5 h-3.5" />
                     Open in browser
                   </button>
-                  <p className="text-[11px] text-muted-foreground/60 font-mono truncate pl-0.5">{step.url}</p>
+                  <p className="text-sm text-muted-foreground/60 font-mono truncate pl-0.5">{step.url}</p>
                 </motion.div>
               )}
 

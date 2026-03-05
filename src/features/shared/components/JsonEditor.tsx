@@ -173,12 +173,12 @@ export function JsonEditor({ value, onChange, placeholder }: JsonEditorProps) {
         <div className="flex items-center gap-1.5">
           {!isEmpty && (
             isValid ? (
-              <span className="flex items-center gap-1 text-xs text-emerald-400/80">
+              <span className="flex items-center gap-1 text-sm text-emerald-400/80">
                 <Check className="w-3 h-3" />
                 Valid JSON
               </span>
             ) : isError ? (
-              <span className="flex items-center gap-1 text-xs text-red-400/80 truncate max-w-[280px]">
+              <span className="flex items-center gap-1 text-sm text-red-400/80 truncate max-w-[280px]">
                 <X className="w-3 h-3 flex-shrink-0" />
                 {validationState.error}
               </span>
@@ -189,7 +189,7 @@ export function JsonEditor({ value, onChange, placeholder }: JsonEditorProps) {
           type="button"
           onClick={handleFormat}
           disabled={!isValid}
-          className="flex items-center gap-1 px-2 py-0.5 text-xs text-muted-foreground/70 hover:text-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="flex items-center gap-1 px-2 py-0.5 text-sm text-muted-foreground/70 hover:text-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           title="Format JSON"
         >
           <AlignLeft className="w-3 h-3" />

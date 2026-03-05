@@ -207,7 +207,7 @@ export function AdoptConfirmStep({
               {capabilities.map((cap) => (
                 <span
                   key={cap.type}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-cyan-500/10 text-cyan-400/70 border border-cyan-500/15"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-full bg-cyan-500/10 text-cyan-400/70 border border-cyan-500/15"
                   title={cap.context}
                 >
                   <Shield className="w-3 h-3" />
@@ -221,10 +221,10 @@ export function AdoptConfirmStep({
           {readinessStatuses.length > 0 && (
             <div className="mt-3 mb-3">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs uppercase tracking-wider text-muted-foreground/50">
+                <span className="text-sm uppercase tracking-wider text-muted-foreground/50">
                   Connector Readiness
                 </span>
-                <span className="text-xs text-emerald-400/80">
+                <span className="text-sm text-emerald-400/80">
                   {readyCount} of {readinessStatuses.length} ready
                 </span>
               </div>
@@ -236,7 +236,7 @@ export function AdoptConfirmStep({
               </div>
               <div className="mt-2 space-y-1.5">
                 {readinessStatuses.map((s) => (
-                  <div key={s.connector_name} className="flex items-center gap-2 text-xs">
+                  <div key={s.connector_name} className="flex items-center gap-2 text-sm">
                     <span className={`w-1.5 h-1.5 rounded-full ${s.health === 'ready' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                     <span className="text-foreground/70">{s.connector_name}</span>
                     <span className="text-muted-foreground/40 ml-auto">

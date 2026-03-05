@@ -14,10 +14,10 @@ export function DesignPhaseAnalyzing({ instruction, outputLines, savedDesignResu
   return (
     <motion.div
       key="analyzing"
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.15 }}
+      initial={{ opacity: 0, x: -18, filter: 'blur(4px)' }}
+      animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+      exit={{ opacity: 0, x: 12, filter: 'blur(3px)' }}
+      transition={{ type: 'spring', stiffness: 200, damping: 25 }}
       className="space-y-3"
     >
       {savedDesignResult && (

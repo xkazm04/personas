@@ -170,10 +170,10 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-amber-500/15">
           <div className="flex items-center gap-2">
-            <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded border ${modeBadge.bg} ${modeBadge.text} uppercase tracking-wider`}>
+            <span className={`px-1.5 py-0.5 text-sm font-medium rounded border ${modeBadge.bg} ${modeBadge.text} uppercase tracking-wider`}>
               {modeBadge.label}
             </span>
-            <span className="text-xs text-amber-400/70">Example output</span>
+            <span className="text-sm text-amber-400/70">Example output</span>
           </div>
           <button
             onClick={onClose}
@@ -201,13 +201,13 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-primary/10">
         <div className="flex items-center gap-2">
-          <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded border ${modeBadge.bg} ${modeBadge.text} uppercase tracking-wider`}>
+          <span className={`px-1.5 py-0.5 text-sm font-medium rounded border ${modeBadge.bg} ${modeBadge.text} uppercase tracking-wider`}>
             {modeBadge.label}
           </span>
           {isExecuting && isThisUseCaseExecution && (
             <div className="flex items-center gap-1.5 text-muted-foreground/60">
               <Clock className="w-3 h-3" />
-              <span className="text-xs font-mono">{formatElapsed(elapsedMs)}</span>
+              <span className="text-sm font-mono">{formatElapsed(elapsedMs)}</span>
             </div>
           )}
         </div>
@@ -223,7 +223,7 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
       <div className="p-3 border-b border-primary/10 space-y-2">
         {/* Time filter indicator */}
         {useCase.time_filter && (
-          <div className="flex items-center gap-1.5 text-xs text-cyan-400/70">
+          <div className="flex items-center gap-1.5 text-sm text-cyan-400/70">
             <Timer className="w-3 h-3" />
             <span>{useCase.time_filter.description} (window: {useCase.time_filter.default_window})</span>
           </div>
@@ -244,7 +244,7 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
         ) : (
           /* Free-text JSON fallback */
           <>
-            <p className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">Input Data</p>
+            <p className="text-sm font-medium text-muted-foreground/60 uppercase tracking-wider">Input Data</p>
             <JsonEditor
               value={inputData}
               onChange={(v) => {
@@ -307,7 +307,7 @@ function StructuredField({ field, value, onChange }: { field: UseCaseInputField;
     case 'select':
       return (
         <div className="flex items-center gap-2">
-          <label className="text-xs font-medium text-muted-foreground/70 w-24 flex-shrink-0">{field.label}</label>
+          <label className="text-sm font-medium text-muted-foreground/70 w-24 flex-shrink-0">{field.label}</label>
           <ThemedSelect
             value={String(value ?? field.default ?? '')}
             onChange={(e) => onChange(e.target.value)}
@@ -323,7 +323,7 @@ function StructuredField({ field, value, onChange }: { field: UseCaseInputField;
     case 'number':
       return (
         <div className="flex items-center gap-2">
-          <label className="text-xs font-medium text-muted-foreground/70 w-24 flex-shrink-0">{field.label}</label>
+          <label className="text-sm font-medium text-muted-foreground/70 w-24 flex-shrink-0">{field.label}</label>
           <input
             type="number"
             value={String(value ?? field.default ?? '')}
@@ -335,10 +335,10 @@ function StructuredField({ field, value, onChange }: { field: UseCaseInputField;
     case 'boolean':
       return (
         <div className="flex items-center gap-2">
-          <label className="text-xs font-medium text-muted-foreground/70 w-24 flex-shrink-0">{field.label}</label>
+          <label className="text-sm font-medium text-muted-foreground/70 w-24 flex-shrink-0">{field.label}</label>
           <button
             onClick={() => onChange(!value)}
-            className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+            className={`px-2.5 py-1 rounded-lg text-sm font-medium border transition-all ${
               value
                 ? 'bg-primary/10 border-primary/25 text-primary'
                 : 'bg-secondary/40 border-primary/10 text-muted-foreground/80'
@@ -351,7 +351,7 @@ function StructuredField({ field, value, onChange }: { field: UseCaseInputField;
     default: // text
       return (
         <div className="flex items-center gap-2">
-          <label className="text-xs font-medium text-muted-foreground/70 w-24 flex-shrink-0">{field.label}</label>
+          <label className="text-sm font-medium text-muted-foreground/70 w-24 flex-shrink-0">{field.label}</label>
           <input
             type="text"
             value={String(value ?? field.default ?? '')}

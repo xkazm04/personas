@@ -134,7 +134,7 @@ export function TemplateReviewStep({
                         {flow.name}
                       </span>
                       {flow.description && (
-                        <p className={`text-xs truncate ${isSelected ? 'text-foreground/60' : 'text-muted-foreground/60'}`}>
+                        <p className={`text-sm truncate ${isSelected ? 'text-foreground/60' : 'text-muted-foreground/60'}`}>
                           {flow.description}
                         </p>
                       )}

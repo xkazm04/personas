@@ -271,7 +271,7 @@ export function EvalResultsGrid({ results }: Props) {
               {radarVersions.map((agg, idx) => (
                 <span
                   key={agg.versionId}
-                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs border border-primary/10 bg-secondary/20 text-foreground/80"
+                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-sm border border-primary/10 bg-secondary/20 text-foreground/80"
                 >
                   <span
                     className="w-2 h-2 rounded-full"
@@ -329,7 +329,7 @@ export function EvalResultsGrid({ results }: Props) {
                           <span className={`text-sm font-bold ${scoreColor(cell.compositeScore)}`}>
                             {cell.compositeScore}
                           </span>
-                          <div className="text-xs text-muted-foreground/60 mt-0.5">
+                          <div className="text-sm text-muted-foreground/60 mt-0.5">
                             ${cell.totalCost.toFixed(4)}
                           </div>
                         </td>

@@ -5,7 +5,9 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::db::models::PersonaToolDefinition;
+use crate::db::repos::resources::automations as automation_repo;
 use crate::db::DbPool;
+use crate::engine::automation_runner::invoke_automation;
 use crate::error::AppError;
 
 /// Result of a direct (no-LLM) tool invocation.
@@ -45,7 +47,9 @@ pub async fn invoke_tool_direct(
         .map(|(k, v)| (k.as_str(), v.as_str()))
         .collect();
 
-    let result = if !tool.script_path.is_empty() {
+    let result = if tool.category == "automation" {
+        invoke_automation_tool(pool, tool, input_json).await
+    } else if !tool.script_path.is_empty() {
         invoke_script(tool, input_json, &env_map).await
     } else if let Some(ref guide) = tool.implementation_guide {
         invoke_api(tool, guide, input_json, &env_map).await
@@ -187,6 +191,43 @@ async fn invoke_api(
             "Curl exited with {}: {}",
             output.status,
             msg.trim()
+        )))
+    }
+}
+
+/// Invoke an automation-backed tool via webhook.
+///
+/// Virtual automation tools have IDs in the form `auto_{automation_id}`.
+/// Extracts the automation_id, loads the automation, and delegates to the runner.
+async fn invoke_automation_tool(
+    pool: &DbPool,
+    tool: &PersonaToolDefinition,
+    input_json: &str,
+) -> Result<(String, String), AppError> {
+    // Virtual tool IDs follow the pattern "auto_{automation_id}"
+    let automation_id = tool
+        .id
+        .strip_prefix("auto_")
+        .ok_or_else(|| {
+            AppError::Execution(format!(
+                "Automation tool '{}' has invalid ID format (expected auto_<id>): {}",
+                tool.name, tool.id
+            ))
+        })?;
+
+    let automation = automation_repo::get_by_id(pool, automation_id)?;
+    let run = invoke_automation(pool, &automation, Some(input_json), None).await?;
+
+    if run.status == "completed" {
+        Ok((
+            run.output_data.unwrap_or_default(),
+            "automation".to_string(),
+        ))
+    } else {
+        Err(AppError::Execution(format!(
+            "Automation '{}' failed: {}",
+            tool.name,
+            run.error_message.unwrap_or_else(|| "Unknown error".into())
         )))
     }
 }

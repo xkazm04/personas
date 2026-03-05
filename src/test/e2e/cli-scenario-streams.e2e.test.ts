@@ -286,7 +286,7 @@ describe('E2E: N8N Transform — Gemini provider', () => {
 
     expect(result.current.phase).toBe('completed');
     expect(result.current.lines[0]).toContain('Gemini');
-    expect(result.current.lines.some((l) => l.includes('Gemini 3 Flash Preview'))).toBe(true);
+    expect(result.current.lines.some((l) => l.includes('Gemini 3.1 Flash Lite Preview'))).toBe(true);
   });
 });
 

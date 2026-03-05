@@ -86,7 +86,7 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
               <h2 className="text-sm font-semibold text-foreground/90 truncate">
                 {credential.name}
               </h2>
-              <p className="text-xs text-muted-foreground/60">
+              <p className="text-sm text-muted-foreground/60">
                 Schema Manager — {connector?.label || credential.service_type}
               </p>
             </div>
@@ -107,7 +107,7 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
                 <button
                   key={tab.id}
                   onClick={() => { setVisited((prev) => new Set([...prev, tab.id])); setActiveTab(tab.id); }}
-                  className={`relative flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium transition-colors ${
+                  className={`relative flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors ${
                     isActive
                       ? 'text-foreground/90'
                       : 'text-muted-foreground/50 hover:text-muted-foreground/70'

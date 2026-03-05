@@ -308,11 +308,11 @@ export default function MessageList() {
                 className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-primary/10 grid"
                 style={{ gridTemplateColumns: GRID_TEMPLATE_COLUMNS }}
               >
-                <div role="columnheader" className="text-left text-[11px] text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Persona</div>
-                <div role="columnheader" className="text-left text-[11px] text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Title</div>
-                <div role="columnheader" className="text-left text-[11px] text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Priority</div>
-                <div role="columnheader" className="text-center text-[11px] text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Status</div>
-                <div role="columnheader" className="text-right text-[11px] text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Created</div>
+                <div role="columnheader" className="text-left text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Persona</div>
+                <div role="columnheader" className="text-left text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Title</div>
+                <div role="columnheader" className="text-left text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Priority</div>
+                <div role="columnheader" className="text-center text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Status</div>
+                <div role="columnheader" className="text-right text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Created</div>
               </div>
 
               <div role="rowgroup" style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
@@ -360,7 +360,7 @@ export default function MessageList() {
                       </div>
 
                       <div role="gridcell" className="px-4">
-                        <span className={`inline-flex px-2 py-0.5 rounded-md text-xs font-medium border ${priority.bgColor} ${priority.color} ${priority.borderColor}`}>
+                        <span className={`inline-flex px-2 py-0.5 rounded-md text-sm font-medium border ${priority.bgColor} ${priority.color} ${priority.borderColor}`}>
                           {priority.label}
                         </span>
                       </div>
@@ -374,7 +374,7 @@ export default function MessageList() {
                       </div>
 
                       <div role="gridcell" className="px-4 text-right">
-                        <span className="text-xs text-muted-foreground/80">
+                        <span className="text-sm text-muted-foreground/80">
                           {formatRelativeTime(message.created_at)}
                         </span>
                       </div>
@@ -409,7 +409,7 @@ export default function MessageList() {
             actions={
               <>
                 {/* Metadata */}
-                <div className="flex items-center gap-4 text-xs text-muted-foreground/80 mr-auto">
+                <div className="flex items-center gap-4 text-sm text-muted-foreground/80 mr-auto">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -483,13 +483,13 @@ export default function MessageList() {
             {/* Content section */}
             <div className="space-y-5">
               <div>
-                <div className="text-xs font-mono text-muted-foreground/90 uppercase mb-2">Content</div>
+                <div className="text-sm font-mono text-muted-foreground/90 uppercase mb-2">Content</div>
                 <MarkdownRenderer content={selectedMsg.content} className="text-sm" />
               </div>
 
               {/* Delivery Status section */}
               <div>
-                <div className="text-xs font-mono text-muted-foreground/90 uppercase mb-2 flex items-center gap-1.5">
+                <div className="text-sm font-mono text-muted-foreground/90 uppercase mb-2 flex items-center gap-1.5">
                   <Send className="w-3 h-3" />
                   Delivery Status
                 </div>

@@ -42,7 +42,7 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
       {/* Table */}
       <div className="rounded-xl border border-primary/10 overflow-hidden">
         <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
-          <table className="w-full text-xs">
+          <table className="w-full text-sm">
             <thead className="sticky top-0 z-10">
               <tr className="bg-secondary/40 border-b border-primary/10">
                 {result.columns.map((col, i) => {
@@ -120,7 +120,7 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
       </div>
 
       {/* Status bar */}
-      <div className="flex items-center gap-3 text-xs text-muted-foreground/50">
+      <div className="flex items-center gap-3 text-sm text-muted-foreground/50">
         <span>{result.row_count} row{result.row_count !== 1 ? 's' : ''}</span>
         <span className="flex items-center gap-1">
           <Clock className="w-3 h-3" />

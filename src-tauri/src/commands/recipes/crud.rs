@@ -15,6 +15,7 @@ use crate::db::repos::resources::recipes as repo;
 use crate::error::AppError;
 use crate::AppState;
 
+use super::recipe_execution;
 use super::recipe_generation;
 use super::recipe_versioning;
 
@@ -105,9 +106,67 @@ pub fn execute_recipe(
         recipe_id: recipe.id,
         recipe_name: recipe.name,
         rendered_prompt: rendered,
+        llm_output: None,
         input_data: input.input_data,
         executed_at: chrono::Utc::now().to_rfc3339(),
     })
+}
+
+#[tauri::command]
+pub async fn start_recipe_execution(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    recipe_id: String,
+    input_data: std::collections::HashMap<String, serde_json::Value>,
+) -> Result<serde_json::Value, AppError> {
+    let recipe = repo::get_by_id(&state.db, &recipe_id)?;
+
+    // Render the prompt template with input values
+    let mut rendered = recipe.prompt_template.clone();
+    for (key, value) in &input_data {
+        let placeholder = format!("{{{{{}}}}}", key);
+        let replacement = match value {
+            serde_json::Value::String(s) => s.clone(),
+            other => other.to_string(),
+        };
+        rendered = rendered.replace(&placeholder, &replacement);
+    }
+
+    let cli_args = build_credential_task_cli_args();
+    let execution_id = uuid::Uuid::new_v4().to_string();
+
+    let active_id = state.active_credential_design_id.clone();
+    {
+        let mut guard = active_id.lock().unwrap();
+        *guard = Some(execution_id.clone());
+    }
+
+    let exec_id = execution_id.clone();
+
+    tokio::spawn(async move {
+        run_ai_artifact_task(AiArtifactParams {
+            app,
+            task_id: exec_id,
+            prompt_text: rendered,
+            cli_args,
+            active_id,
+            active_child_pid: None,
+            messages: recipe_execution::RECIPE_EXECUTION_MESSAGES,
+            extractor: recipe_execution::extract_recipe_execution_result,
+        })
+        .await;
+    });
+
+    Ok(json!({ "execution_id": execution_id }))
+}
+
+#[tauri::command]
+pub async fn cancel_recipe_execution(
+    state: State<'_, Arc<AppState>>,
+) -> Result<bool, AppError> {
+    let mut guard = state.active_credential_design_id.lock().unwrap();
+    *guard = None;
+    Ok(true)
 }
 
 #[tauri::command]

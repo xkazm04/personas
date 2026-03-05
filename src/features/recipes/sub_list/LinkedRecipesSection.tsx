@@ -1,0 +1,158 @@
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { BookOpen, Plus, Play, Unlink, Loader2 } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
+import { usePersonaStore } from '@/stores/personaStore';
+import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
+import { SectionHeader } from '@/features/shared/components/SectionHeader';
+import { RecipePicker } from './RecipePicker';
+import { RecipePlaygroundModal } from '../sub_playground/RecipePlaygroundModal';
+
+interface LinkedRecipesSectionProps {
+  personaId: string;
+}
+
+export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
+  const fetchPersonaRecipes = usePersonaStore((s) => s.fetchPersonaRecipes);
+  const linkRecipeToPersona = usePersonaStore((s) => s.linkRecipeToPersona);
+  const unlinkRecipeFromPersona = usePersonaStore((s) => s.unlinkRecipeFromPersona);
+
+  const [linkedRecipes, setLinkedRecipes] = useState<RecipeDefinition[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [playgroundRecipe, setPlaygroundRecipe] = useState<RecipeDefinition | null>(null);
+  const [unlinkingId, setUnlinkingId] = useState<string | null>(null);
+
+  const loadLinked = useCallback(async () => {
+    try {
+      const recipes = await fetchPersonaRecipes(personaId);
+      setLinkedRecipes(recipes);
+    } catch {
+      // Error set by store
+    } finally {
+      setLoading(false);
+    }
+  }, [personaId, fetchPersonaRecipes]);
+
+  useEffect(() => {
+    loadLinked();
+  }, [loadLinked]);
+
+  const linkedIds = useMemo(() => new Set(linkedRecipes.map((r) => r.id)), [linkedRecipes]);
+
+  const handleLink = useCallback(async (recipe: RecipeDefinition) => {
+    setPickerOpen(false);
+    try {
+      await linkRecipeToPersona(personaId, recipe.id);
+      await loadLinked();
+    } catch {
+      // Error set by store
+    }
+  }, [personaId, linkRecipeToPersona, loadLinked]);
+
+  const handleUnlink = useCallback(async (recipeId: string) => {
+    setUnlinkingId(recipeId);
+    try {
+      await unlinkRecipeFromPersona(personaId, recipeId);
+      await loadLinked();
+    } catch {
+      // Error set by store
+    } finally {
+      setUnlinkingId(null);
+    }
+  }, [personaId, unlinkRecipeFromPersona, loadLinked]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground/60">
+        <Loader2 className="w-3 h-3 animate-spin" /> Loading linked recipes...
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <SectionHeader
+          icon={<BookOpen className="w-3.5 h-3.5" />}
+          label={`${linkedRecipes.length} linked recipe${linkedRecipes.length !== 1 ? 's' : ''}`}
+        />
+        <button
+          onClick={() => setPickerOpen(true)}
+          className="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-primary hover:bg-primary/10 transition-colors"
+        >
+          <Plus className="w-3 h-3" /> Add
+        </button>
+      </div>
+
+      {linkedRecipes.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-border/40 px-4 py-6 text-center">
+          <p className="text-sm text-muted-foreground/60">
+            No recipes linked yet. Click "Add" to link recipes from the library.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          {linkedRecipes.map((recipe) => (
+            <div
+              key={recipe.id}
+              className="group flex items-center gap-3 rounded-lg border border-border/40 bg-card/30 px-3 py-2.5 hover:border-border/60 transition-colors"
+            >
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 border border-primary/20">
+                <BookOpen className="w-3 h-3 text-primary" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-foreground truncate">{recipe.name}</p>
+                {recipe.description && (
+                  <p className="text-sm text-muted-foreground/60 truncate">{recipe.description}</p>
+                )}
+              </div>
+              {recipe.category && (
+                <span className="rounded-md border border-border/40 bg-muted/20 px-1.5 py-0.5 text-sm text-muted-foreground">
+                  {recipe.category}
+                </span>
+              )}
+              <button
+                onClick={() => setPlaygroundRecipe(recipe)}
+                className="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+              >
+                <Play className="w-3 h-3" /> Run
+              </button>
+              <button
+                onClick={() => handleUnlink(recipe.id)}
+                disabled={unlinkingId === recipe.id}
+                className="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-40"
+              >
+                {unlinkingId === recipe.id ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Unlink className="w-3 h-3" />
+                )}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Picker Modal */}
+      <AnimatePresence>
+        {pickerOpen && (
+          <RecipePicker
+            linkedRecipeIds={linkedIds}
+            onSelect={handleLink}
+            onClose={() => setPickerOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Playground Modal */}
+      <AnimatePresence>
+        {playgroundRecipe && (
+          <RecipePlaygroundModal
+            recipe={playgroundRecipe}
+            onClose={() => setPlaygroundRecipe(null)}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}

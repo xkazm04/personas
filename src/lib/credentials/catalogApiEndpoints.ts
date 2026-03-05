@@ -535,6 +535,161 @@ const buffer: EP[] = [
   ], ['Schedules']),
 ];
 
+// ── Airtable (Web API) ──────────────────────────────────────────────
+
+const airtable: EP[] = [
+  ep('GET', '/v0/meta/whoami', 'Get current user info', [], ['Auth']),
+  ep('GET', '/v0/meta/bases', 'List bases', [], ['Bases']),
+  ep('GET', '/v0/meta/bases/{baseId}/tables', 'List tables in a base', [
+    pathP('baseId', 'Base ID (appXXX)'),
+  ], ['Bases']),
+  ep('GET', '/v0/{baseId}/{tableIdOrName}', 'List records', [
+    pathP('baseId', 'Base ID (appXXX)'),
+    pathP('tableIdOrName', 'Table ID or name'),
+    queryP('maxRecords', false, 'Max records to return'),
+    queryP('view', false, 'View name or ID'),
+    queryP('filterByFormula', false, 'Airtable formula filter'),
+  ], ['Records']),
+  ep('POST', '/v0/{baseId}/{tableIdOrName}', 'Create records', [
+    pathP('baseId'), pathP('tableIdOrName'),
+  ], ['Records'], jsonBody(), 'Body: { "records": [{ "fields": { "Name": "..." } }] }'),
+  ep('PATCH', '/v0/{baseId}/{tableIdOrName}', 'Update records', [
+    pathP('baseId'), pathP('tableIdOrName'),
+  ], ['Records'], jsonBody(), 'Body: { "records": [{ "id": "recXXX", "fields": { "Name": "..." } }] }'),
+  ep('DELETE', '/v0/{baseId}/{tableIdOrName}', 'Delete records', [
+    pathP('baseId'), pathP('tableIdOrName'),
+    queryP('records[]', true, 'Record IDs to delete'),
+  ], ['Records']),
+  ep('POST', '/v0/meta/bases', 'Create a base', [], ['Bases'], jsonBody(), 'Body: { "name": "...", "workspaceId": "wspXXX", "tables": [{ "name": "...", "fields": [...] }] }'),
+];
+
+// ── Better Stack (Uptime API) ───────────────────────────────────────
+
+const betterstack: EP[] = [
+  ep('GET', '/api/v2/monitors', 'List monitors', [
+    queryP('per_page', false, 'Results per page'),
+  ], ['Monitors']),
+  ep('POST', '/api/v2/monitors', 'Create monitor', [], ['Monitors'], jsonBody(), 'Body: { "url": "https://...", "monitor_type": "status", "check_frequency": 180 }'),
+  ep('GET', '/api/v2/monitors/{monitor_id}', 'Get monitor', [
+    pathP('monitor_id'),
+  ], ['Monitors']),
+  ep('GET', '/api/v2/heartbeats', 'List heartbeats', [], ['Heartbeats']),
+  ep('GET', '/api/v2/incidents', 'List incidents', [
+    queryP('per_page', false, 'Results per page'),
+  ], ['Incidents']),
+  ep('GET', '/api/v2/status-pages', 'List status pages', [], ['Status Pages']),
+  ep('GET', '/api/v2/on-calls', 'List on-call calendars', [], ['On-Call']),
+  ep('GET', '/api/v2/monitor-groups', 'List monitor groups', [], ['Groups']),
+];
+
+// ── Linear ──────────────────────────────────────────────────────────
+
+const linear: EP[] = [
+  ep('POST', '/graphql', 'GraphQL query — viewer', [], ['GraphQL'], jsonBody(), 'Body: { "query": "{ viewer { id name email } }" }'),
+  ep('POST', '/graphql', 'GraphQL query — list issues', [], ['GraphQL'], jsonBody(), 'Body: { "query": "{ issues(first: 10) { nodes { id title state { name } } } }" }'),
+  ep('POST', '/graphql', 'GraphQL query — list teams', [], ['GraphQL'], jsonBody(), 'Body: { "query": "{ teams { nodes { id name key } } }" }'),
+  ep('POST', '/graphql', 'GraphQL query — list projects', [], ['GraphQL'], jsonBody(), 'Body: { "query": "{ projects(first: 10) { nodes { id name state } } }" }'),
+  ep('POST', '/graphql', 'GraphQL mutation — create issue', [], ['GraphQL'], jsonBody(), 'Body: { "query": "mutation { issueCreate(input: { teamId: \\"...\\" title: \\"...\\" }) { issue { id identifier title } } }" }'),
+];
+
+// ── Monday.com ──────────────────────────────────────────────────────
+
+const monday: EP[] = [
+  ep('POST', '/v2', 'GraphQL query — me', [], ['GraphQL'], jsonBody(), 'Body: { "query": "{ me { id name email } }" }'),
+  ep('POST', '/v2', 'GraphQL query — list boards', [], ['GraphQL'], jsonBody(), 'Body: { "query": "{ boards(limit: 10) { id name state } }" }'),
+  ep('POST', '/v2', 'GraphQL query — list items', [], ['GraphQL'], jsonBody(), 'Body: { "query": "{ boards(ids: [123]) { items_page(limit: 10) { items { id name } } } }" }'),
+  ep('POST', '/v2', 'GraphQL mutation — create item', [], ['GraphQL'], jsonBody(), 'Body: { "query": "mutation { create_item(board_id: 123, item_name: \\"New task\\") { id } }" }'),
+  ep('POST', '/v2', 'GraphQL query — list workspaces', [], ['GraphQL'], jsonBody(), 'Body: { "query": "{ workspaces { id name } }" }'),
+];
+
+// ── Dropbox ─────────────────────────────────────────────────────────
+
+const dropbox: EP[] = [
+  ep('POST', '/2/users/get_current_account', 'Get current account', [], ['Users']),
+  ep('POST', '/2/files/list_folder', 'List folder', [], ['Files'], jsonBody(), 'Body: { "path": "", "limit": 100 }'),
+  ep('POST', '/2/files/get_metadata', 'Get file/folder metadata', [], ['Files'], jsonBody(), 'Body: { "path": "/path/to/file" }'),
+  ep('POST', '/2/files/search_v2', 'Search files', [], ['Files'], jsonBody(), 'Body: { "query": "search term", "options": { "max_results": 20 } }'),
+  ep('POST', '/2/files/create_folder_v2', 'Create folder', [], ['Files'], jsonBody(), 'Body: { "path": "/new-folder" }'),
+  ep('POST', '/2/files/delete_v2', 'Delete file or folder', [], ['Files'], jsonBody(), 'Body: { "path": "/path/to/delete" }'),
+];
+
+// ── Convex ──────────────────────────────────────────────────────────
+
+const convex: EP[] = [
+  ep('POST', '/api/query', 'Run a query function', [], ['Functions'], jsonBody(), 'Body: { "path": "messages:list", "args": {} }'),
+  ep('POST', '/api/mutation', 'Run a mutation function', [], ['Functions'], jsonBody(), 'Body: { "path": "messages:send", "args": { "body": "Hello" } }'),
+  ep('POST', '/api/action', 'Run an action function', [], ['Functions'], jsonBody(), 'Body: { "path": "actions:doSomething", "args": {} }'),
+];
+
+// ── n8n ─────────────────────────────────────────────────────────────
+
+const n8n: EP[] = [
+  ep('GET', '/api/v1/workflows', 'List workflows', [
+    queryP('limit', false, 'Max workflows'),
+  ], ['Workflows']),
+  ep('GET', '/api/v1/workflows/{id}', 'Get workflow', [
+    pathP('id', 'Workflow ID'),
+  ], ['Workflows']),
+  ep('POST', '/api/v1/workflows/{id}/activate', 'Activate workflow', [
+    pathP('id'),
+  ], ['Workflows']),
+  ep('POST', '/api/v1/workflows/{id}/deactivate', 'Deactivate workflow', [
+    pathP('id'),
+  ], ['Workflows']),
+  ep('GET', '/api/v1/executions', 'List executions', [
+    queryP('limit', false, 'Max executions'),
+    queryP('workflowId', false, 'Filter by workflow'),
+  ], ['Executions']),
+  ep('GET', '/api/v1/credentials', 'List credentials', [], ['Credentials']),
+];
+
+// ── Zapier ──────────────────────────────────────────────────────────
+
+const zapier: EP[] = [
+  ep('GET', '/v1/profiles/me', 'Get current user profile', [], ['Profiles']),
+  ep('GET', '/v1/zaps', 'List Zaps', [], ['Zaps']),
+  ep('GET', '/v1/zaps/{id}', 'Get Zap', [
+    pathP('id', 'Zap ID'),
+  ], ['Zaps']),
+];
+
+// ── Upstash (Redis REST API) ────────────────────────────────────────
+
+const upstash: EP[] = [
+  ep('POST', '/', 'Execute Redis command', [], ['Redis'], jsonBody(), 'Body: ["SET", "key", "value"]'),
+  ep('GET', '/get/{key}', 'GET key', [
+    pathP('key', 'Redis key'),
+  ], ['Redis']),
+  ep('GET', '/set/{key}/{value}', 'SET key value', [
+    pathP('key'), pathP('value'),
+  ], ['Redis']),
+  ep('GET', '/info', 'Server info', [], ['Redis']),
+  ep('GET', '/dbsize', 'Database size', [], ['Redis']),
+  ep('POST', '/pipeline', 'Execute pipeline', [], ['Redis'], jsonBody(), 'Body: [["SET","k","v"],["GET","k"]]'),
+];
+
+// ── GitHub Actions (reuses github token, different base) ────────────
+
+const github_actions: EP[] = [
+  ep('GET', '/user', 'Get authenticated user', [], ['Users']),
+  ep('GET', '/repos/{owner}/{repo}/actions/workflows', 'List workflows', [
+    pathP('owner'), pathP('repo'),
+  ], ['Workflows']),
+  ep('POST', '/repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches', 'Dispatch workflow', [
+    pathP('owner'), pathP('repo'), pathP('workflow_id'),
+  ], ['Workflows'], jsonBody(), 'Body: { "ref": "main", "inputs": {} }'),
+  ep('GET', '/repos/{owner}/{repo}/actions/runs', 'List workflow runs', [
+    pathP('owner'), pathP('repo'),
+    queryP('per_page', false, 'Results per page'),
+  ], ['Runs']),
+  ep('GET', '/repos/{owner}/{repo}/actions/runs/{run_id}', 'Get workflow run', [
+    pathP('owner'), pathP('repo'), pathP('run_id'),
+  ], ['Runs']),
+  ep('GET', '/repos/{owner}/{repo}/actions/runs/{run_id}/jobs', 'List jobs for workflow run', [
+    pathP('owner'), pathP('repo'), pathP('run_id'),
+  ], ['Jobs']),
+];
+
 // ── Export ────────────────────────────────────────────────────────────
 
 export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
@@ -564,4 +719,15 @@ export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
   calendly,
   telegram,
   buffer,
+  // Added — previously missing
+  airtable,
+  betterstack,
+  linear,
+  monday,
+  dropbox,
+  convex,
+  n8n,
+  zapier,
+  upstash,
+  github_actions,
 };

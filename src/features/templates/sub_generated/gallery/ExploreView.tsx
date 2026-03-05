@@ -51,7 +51,7 @@ export function ExploreView({
           <div className="flex items-center gap-2 mb-3">
             <CheckCircle2 className="w-4 h-4 text-emerald-400/70" />
             <h2 className="text-sm font-semibold text-foreground/80">Ready to Deploy</h2>
-            <span className="text-xs text-muted-foreground/40">Templates with all connectors configured</span>
+            <span className="text-sm text-muted-foreground/40">Templates with all connectors configured</span>
           </div>
           <div className="flex gap-3 overflow-x-auto pb-2">
             {readyTemplates.map((t) => (
@@ -61,11 +61,11 @@ export function ExploreView({
                 className="flex-shrink-0 w-52 bg-secondary/20 border border-emerald-500/15 rounded-xl p-3 text-left hover:border-emerald-500/30 hover:bg-secondary/30 transition-all"
               >
                 <div className="text-sm font-medium text-foreground/80 truncate">{t.test_case_name}</div>
-                <div className="text-xs text-muted-foreground/50 truncate mt-0.5">
+                <div className="text-sm text-muted-foreground/50 truncate mt-0.5">
                   {t.instruction.length > 60 ? t.instruction.slice(0, 60) + '...' : t.instruction}
                 </div>
                 {t.adoption_count > 0 && (
-                  <div className="flex items-center gap-1 mt-2 text-[10px] text-emerald-400/60">
+                  <div className="flex items-center gap-1 mt-2 text-sm text-emerald-400/60">
                     <Download className="w-2.5 h-2.5" />
                     {t.adoption_count} adoption{t.adoption_count !== 1 ? 's' : ''}
                   </div>

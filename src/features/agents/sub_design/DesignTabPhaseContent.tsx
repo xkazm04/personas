@@ -165,25 +165,35 @@ export function DesignTabPhaseContent({
             result={result}
             intentResult={intentMode ? (result as IntentCompilationResult) : undefined}
             error={error}
-            toolDefinitions={toolDefinitions}
-            currentToolNames={currentToolNames}
-            credentials={credentials}
-            connectorDefinitions={connectorDefinitions}
-            selectedTools={selectedTools}
-            selectedTriggerIndices={selectedTriggerIndices}
-            selectedChannelIndices={selectedChannelIndices}
-            selectedSubscriptionIndices={selectedSubscriptionIndices}
-            onToolToggle={onToolToggle}
-            onTriggerToggle={onTriggerToggle}
-            onChannelToggle={onChannelToggle}
-            onSubscriptionToggle={onSubscriptionToggle}
+            resources={{
+              toolDefinitions,
+              currentToolNames,
+              credentials,
+              connectorDefinitions,
+            }}
+            selections={{
+              tools: selectedTools,
+              triggerIndices: selectedTriggerIndices,
+              channelIndices: selectedChannelIndices,
+              subscriptionIndices: selectedSubscriptionIndices,
+            }}
+            selectionHandlers={{
+              onToolToggle,
+              onTriggerToggle,
+              onChannelToggle,
+              onSubscriptionToggle,
+            }}
             changeSummary={changeSummary}
-            refinementMessage={refinementMessage}
-            onRefinementMessageChange={onRefinementMessageChange}
-            onApply={onApply}
-            onRefine={onRefine}
-            onDiscard={onDiscard}
-            onSendRefinement={onSendRefinement}
+            refinement={{
+              message: refinementMessage,
+              onMessageChange: onRefinementMessageChange,
+              onSend: onSendRefinement,
+            }}
+            actions={{
+              onApply,
+              onRefine,
+              onDiscard,
+            }}
           />
         )}
 

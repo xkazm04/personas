@@ -101,7 +101,7 @@ export function AddSubscriptionForm({ onAdd, onCancel }: AddSubscriptionFormProp
           className={INPUT_FIELD}
         />
         {validationError && (
-          <p className="mt-1 text-xs text-red-400/80">{validationError}</p>
+          <p className="mt-1 text-sm text-red-400/80">{validationError}</p>
         )}
       </div>
       <div className="flex items-center gap-2 pt-1">

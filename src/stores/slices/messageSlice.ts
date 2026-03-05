@@ -55,6 +55,8 @@ export const createMessageSlice: StateCreator<PersonaStore, [], [], MessageSlice
     const msg = get().messages.find((m) => m.id === id);
     if (!msg || msg.is_read) return;
 
+    const prevReadAt = msg.read_at;
+
     set((state) => ({
       messages: state.messages.map((m) =>
         m.id === id ? { ...m, is_read: true, read_at: new Date().toISOString() } : m,
@@ -65,8 +67,14 @@ export const createMessageSlice: StateCreator<PersonaStore, [], [], MessageSlice
       await api.markMessageRead(id);
     } catch (err) {
       console.warn("[messageSlice] markMessageAsRead failed, recovering state:", err);
-      // Atomically restore messages list and unread count from server
-      await get().fetchMessages();
+      // Restore only the affected message to preserve pagination/scroll state.
+      set((state) => ({
+        messages: state.messages.map((m) =>
+          m.id === id ? { ...m, is_read: false, read_at: prevReadAt ?? null } : m,
+        ),
+        unreadMessageCount: state.unreadMessageCount + 1,
+      }));
+      set({ error: errMsg(err, "Failed to mark message as read") });
     }
   },
 

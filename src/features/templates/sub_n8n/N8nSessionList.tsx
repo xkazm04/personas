@@ -227,7 +227,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
               data-testid={`n8n-session-card-${session.id}`}
             >
               <div className="w-10 h-10 rounded-lg bg-violet-500/10 border border-violet-500/15 flex items-center justify-center flex-shrink-0">
-                <span className="text-xs font-mono font-medium text-violet-400">
+                <span className="text-sm font-mono font-medium text-violet-400">
                   {(STEP_META[session.step as N8nWizardStep]?.index ?? 0) + 1}/{WIZARD_STEPS.length}
                 </span>
               </div>

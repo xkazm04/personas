@@ -140,7 +140,7 @@ export function ExpirationThresholdConfig({
         </div>
       </div>
       <p className="text-sm text-muted-foreground/60">
-        Credential must have an <code className="text-xs">expires_at</code> field in its metadata.
+        Credential must have an <code className="text-sm">expires_at</code> field in its metadata.
       </p>
     </div>
   );

@@ -12,6 +12,7 @@ const ICON_COLOR_MAP = {
   amber:   { bg: 'bg-amber-500/15',   border: 'border-amber-500/25'   },
   cyan:    { bg: 'bg-cyan-500/15',    border: 'border-cyan-500/25'    },
   red:     { bg: 'bg-red-500/15',     border: 'border-red-500/25'     },
+  primary: { bg: 'bg-primary/10',     border: 'border-primary/20'     },
 } as const;
 
 type IconColor = keyof typeof ICON_COLOR_MAP;

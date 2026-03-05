@@ -46,7 +46,7 @@ export function N8nQuestionListView({ questions, userAnswers, onAnswerUpdated }:
             {showSeparator && dim && (
               <div className="flex items-center gap-2.5 pt-4 pb-1.5">
                 <dim.Icon className="w-4 h-4 text-foreground/60 flex-shrink-0" />
-                <span className="text-xs uppercase tracking-wider text-foreground/60 font-semibold whitespace-nowrap">
+                <span className="text-sm uppercase tracking-wider text-foreground/60 font-semibold whitespace-nowrap">
                   {dim.label}
                 </span>
                 <hr className="flex-1 border-primary/10" />

@@ -133,6 +133,7 @@ pub struct RecipeExecutionResult {
     pub recipe_id: String,
     pub recipe_name: String,
     pub rendered_prompt: String,
+    pub llm_output: Option<String>,
     pub input_data: std::collections::HashMap<String, serde_json::Value>,
     pub executed_at: String,
 }

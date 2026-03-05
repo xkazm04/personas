@@ -93,7 +93,7 @@ function ConnectorDropdown({
         <ConnectorIcon meta={activeMeta} size="w-4 h-4" />
         <span className="flex-1 truncate">{activeMeta.label}</span>
         {isRecommended && (
-          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-medium rounded-full bg-violet-500/15 text-violet-400 border border-violet-500/20">
+          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-sm font-medium rounded-full bg-violet-500/15 text-violet-400 border border-violet-500/20">
             <Star className="w-2 h-2" />
             Rec
           </span>
@@ -125,7 +125,7 @@ function ConnectorDropdown({
                   <ConnectorIcon meta={memberMeta} size="w-4 h-4" />
                   <span className="text-sm flex-1 truncate">{memberMeta.label}</span>
                   {isRec && (
-                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-medium rounded-full bg-violet-500/10 text-violet-400/70 border border-violet-500/15 flex-shrink-0">
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-sm font-medium rounded-full bg-violet-500/10 text-violet-400/70 border border-violet-500/15 flex-shrink-0">
                       <Star className="w-2 h-2" />
                       Recommended
                     </span>
@@ -205,7 +205,7 @@ function ComponentCard({
         <div className="w-6 h-6 rounded-lg bg-violet-500/10 border border-violet-500/15 flex items-center justify-center flex-shrink-0">
           <Box className="w-3 h-3 text-violet-400/70" />
         </div>
-        <span className="text-xs font-semibold text-foreground/90 flex-1 truncate">{connector.roleLabel}</span>
+        <span className="text-sm font-semibold text-foreground/90 flex-1 truncate">{connector.roleLabel}</span>
         {hasCredential ? (
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
         ) : (
@@ -215,7 +215,7 @@ function ComponentCard({
 
       {/* Connector selector */}
       <div className="mb-2.5">
-        <label className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider mb-1 block">
+        <label className="text-sm font-medium text-muted-foreground/50 uppercase tracking-wider mb-1 block">
           Connector
         </label>
         <ConnectorDropdown
@@ -230,11 +230,11 @@ function ComponentCard({
       {connector.activeName === 'personas_messages' ? (
         <div className="flex items-center gap-1.5 px-2 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
           <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-          <span className="text-xs text-emerald-300/80">Always active</span>
+          <span className="text-sm text-emerald-300/80">Always active</span>
         </div>
       ) : (
         <div>
-          <label className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider mb-1 block">
+          <label className="text-sm font-medium text-muted-foreground/50 uppercase tracking-wider mb-1 block">
             Credential
           </label>
           <ThemedSelect
@@ -319,7 +319,7 @@ function StandaloneConnectorTile({
           <AlertCircle className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" />
         )}
         <ConnectorIcon meta={meta} size="w-4 h-4" />
-        <span className="text-xs font-semibold text-foreground/90 flex-1 truncate">{meta.label}</span>
+        <span className="text-sm font-semibold text-foreground/90 flex-1 truncate">{meta.label}</span>
       </div>
 
       <ThemedSelect
@@ -363,7 +363,7 @@ function SuccessBridgeChip({ credentialName, onDone }: { credentialName: string;
     >
       <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
       <span className="text-sm font-medium text-emerald-300 truncate max-w-[200px]">{credentialName}</span>
-      <span className="text-xs text-emerald-400/60">connected</span>
+      <span className="text-sm text-emerald-400/60">connected</span>
     </motion.div>
   );
 }
@@ -489,7 +489,7 @@ export function ConnectStep() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="text-xs text-amber-400/70"
+                className="text-sm text-amber-400/70"
               >
                 {totalCount - configuredCount} remaining
               </motion.span>
@@ -532,7 +532,7 @@ export function ConnectStep() {
           {componentConnectors.length > 0 && (
             <div className="flex items-center gap-2 pt-1">
               <div className="flex-1 h-px bg-primary/8" />
-              <span className="text-[10px] font-medium text-muted-foreground/40 uppercase tracking-wider">
+              <span className="text-sm font-medium text-muted-foreground/40 uppercase tracking-wider">
                 Additional Connectors
               </span>
               <div className="flex-1 h-px bg-primary/8" />

@@ -239,7 +239,7 @@ export function ExecutionList() {
         {executions.length > 0 && (
           <button
             onClick={() => setShowRaw(!showRaw)}
-            className={`ml-auto flex items-center gap-1 px-2 py-1 text-[11px] rounded-lg transition-colors ${
+            className={`ml-auto flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors ${
               showRaw
                 ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                 : 'text-muted-foreground/50 hover:text-muted-foreground/70 border border-transparent'
@@ -253,7 +253,7 @@ export function ExecutionList() {
         {executions.length >= 2 && (
           <button
             onClick={() => compareMode ? exitCompareMode() : setCompareMode(true)}
-            className={`flex items-center gap-1 px-2 py-1 text-[11px] rounded-lg transition-colors ${
+            className={`flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors ${
               compareMode
                 ? 'bg-primary/15 text-primary/80 border border-primary/20'
                 : 'text-muted-foreground/50 hover:text-muted-foreground/70 border border-transparent'
@@ -278,11 +278,11 @@ export function ExecutionList() {
           </span>
           {compareLeft && (
             <span className="ml-auto flex items-center gap-1.5">
-              <span className="text-xs font-mono text-indigo-400">#{compareLeft.slice(0, 8)}</span>
+              <span className="text-sm font-mono text-indigo-400">#{compareLeft.slice(0, 8)}</span>
               {compareRight && (
                 <>
                   <span className="text-muted-foreground/40">vs</span>
-                  <span className="text-xs font-mono text-pink-400">#{compareRight.slice(0, 8)}</span>
+                  <span className="text-sm font-mono text-pink-400">#{compareRight.slice(0, 8)}</span>
                 </>
               )}
             </span>
@@ -290,7 +290,7 @@ export function ExecutionList() {
           {canCompare && (
             <button
               onClick={() => setShowComparison(true)}
-              className="ml-2 px-2.5 py-1 text-xs font-medium rounded-lg bg-primary/15 text-primary/80 border border-primary/20 hover:bg-primary/25 transition-colors"
+              className="ml-2 px-2.5 py-1 text-sm font-medium rounded-lg bg-primary/15 text-primary/80 border border-primary/20 hover:bg-primary/25 transition-colors"
             >
               Compare
             </button>
@@ -380,7 +380,7 @@ export function ExecutionList() {
                   {compareMode && (
                     <div className="col-span-1 flex items-center">
                       {compareLabel ? (
-                        <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold ${
+                        <span className={`w-5 h-5 rounded-md flex items-center justify-center text-sm font-bold ${
                           compareLabel === 'A' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-pink-500/20 text-pink-400 border border-pink-500/30'
                         }`}>
                           {compareLabel}
@@ -430,7 +430,7 @@ export function ExecutionList() {
                 >
                   <div className="flex items-center gap-2">
                     {compareMode && compareLabel && (
-                      <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold ${
+                      <span className={`w-5 h-5 rounded-md flex items-center justify-center text-sm font-bold ${
                         compareLabel === 'A' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-pink-500/20 text-pink-400 border border-pink-500/30'
                       }`}>
                         {compareLabel}

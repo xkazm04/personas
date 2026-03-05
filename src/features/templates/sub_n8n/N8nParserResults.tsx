@@ -141,7 +141,7 @@ export function N8nParserResults({
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-semibold text-foreground/90">{workflowName}</h3>
               {platform && (
-                <span className={`text-[11px] font-mono uppercase px-1.5 py-0.5 rounded border flex-shrink-0 ${PLATFORM_COLORS[platform]}`}>
+                <span className={`text-sm font-mono uppercase px-1.5 py-0.5 rounded border flex-shrink-0 ${PLATFORM_COLORS[platform]}`}>
                   {PLATFORM_LABELS[platform]}
                 </span>
               )}

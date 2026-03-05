@@ -153,7 +153,7 @@ export function CredentialTemplateForm({
         {onAutoSetup && activeMethod?.type !== 'mcp' && (
           <button
             onClick={onAutoSetup}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-cyan-500/20 bg-cyan-500/8 hover:bg-cyan-500/15 text-cyan-300 text-xs font-medium transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-cyan-500/20 bg-cyan-500/8 hover:bg-cyan-500/15 text-cyan-300 text-sm font-medium transition-colors"
           >
             <Bot className="w-3.5 h-3.5" />
             Auto Add
@@ -171,7 +171,7 @@ export function CredentialTemplateForm({
             <button
               key={method.id}
               onClick={() => handleAuthMethodChange(method)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 activeAuthMethodId === method.id
                   ? `border ${getAuthBadgeClasses(method)}`
                   : 'text-muted-foreground/80 hover:bg-secondary/40 border border-transparent'
@@ -215,7 +215,7 @@ export function CredentialTemplateForm({
                 <button
                   key={v.id}
                   onClick={() => handleVariantChange(v.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                     activeVariantId === v.id
                       ? 'bg-primary/10 text-primary border border-primary/20'
                       : 'text-muted-foreground/80 hover:bg-secondary/40 border border-transparent'
@@ -266,7 +266,7 @@ function SetupGuideSection({ guide, connectorLabel }: { guide: string; connector
         ) : (
           <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/60" />
         )}
-        <span className="text-xs font-medium text-muted-foreground/70">
+        <span className="text-sm font-medium text-muted-foreground/70">
           How to get {connectorLabel} credentials
         </span>
       </button>
@@ -284,10 +284,10 @@ function SetupGuideSection({ guide, connectorLabel }: { guide: string; connector
                 const stripped = line.replace(/^\d+\.\s*/, '');
                 return (
                   <div key={i} className="flex gap-2.5">
-                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 border border-primary/15 flex items-center justify-center text-[10px] font-bold text-primary/70">
+                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 border border-primary/15 flex items-center justify-center text-sm font-bold text-primary/70">
                       {i + 1}
                     </span>
-                    <p className="text-xs text-foreground/75 pt-0.5 leading-relaxed">{stripped}</p>
+                    <p className="text-sm text-foreground/75 pt-0.5 leading-relaxed">{stripped}</p>
                   </div>
                 );
               })}

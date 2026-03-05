@@ -19,51 +19,6 @@ interface PromptSectionSidebarProps {
   isSaving: boolean;
 }
 
-// SVG circle constants for the 16x16 progress ring
-const RING_SIZE = 16;
-const RING_STROKE = 2;
-const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
-const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
-
-function ProgressRing({ filled, total }: { filled: number; total: number }) {
-  const ratio = total > 0 ? filled / total : 0;
-  const dashOffset = RING_CIRCUMFERENCE * (1 - ratio);
-
-  return (
-    <svg
-      width={RING_SIZE}
-      height={RING_SIZE}
-      viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
-      className="flex-shrink-0 -rotate-90"
-    >
-      {/* Background track */}
-      <circle
-        cx={RING_SIZE / 2}
-        cy={RING_SIZE / 2}
-        r={RING_RADIUS}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={RING_STROKE}
-        className="text-primary/10"
-      />
-      {/* Animated fill arc */}
-      <motion.circle
-        cx={RING_SIZE / 2}
-        cy={RING_SIZE / 2}
-        r={RING_RADIUS}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={RING_STROKE}
-        strokeLinecap="round"
-        strokeDasharray={RING_CIRCUMFERENCE}
-        animate={{ strokeDashoffset: dashOffset }}
-        transition={{ type: 'spring', stiffness: 120, damping: 20 }}
-        className={ratio >= 1 ? 'text-emerald-400' : 'text-primary/60'}
-      />
-    </svg>
-  );
-}
-
 export function PromptSectionSidebar({
   visibleTabs,
   activeTab,
@@ -121,16 +76,9 @@ export function PromptSectionSidebar({
   }, [focusTabByOffset, onTabChange, visibleTabs]);
 
   return (
-    <div className="w-36 flex-shrink-0 flex flex-col gap-1">
-      {/* Progress header */}
-      <div className="flex items-center gap-1.5 px-2.5 pb-1.5 mb-0.5">
-        <ProgressRing filled={filled} total={total} />
-        <span className="text-xs text-muted-foreground/50">
-          {filled}/{total} complete
-        </span>
-      </div>
-
-      <div className="space-y-0.5 flex-1" role="tablist" aria-orientation="vertical" aria-label="Prompt sections">
+    <div className="w-40 flex-shrink-0 flex flex-col gap-1">
+      <div className="space-y-0.5 flex-1 relative" role="tablist" aria-orientation="vertical" aria-label="Prompt sections">
+        <div className="absolute left-[11px] top-3 bottom-3 w-px bg-primary/10" aria-hidden="true" />
         {visibleTabs.map((tab) => {
           const active = activeTab === tab.key;
           const isFilled = sectionFilled[tab.key];
@@ -146,20 +94,28 @@ export function PromptSectionSidebar({
               id={`prompt-tab-${tab.key}`}
               aria-selected={active}
               tabIndex={active ? 0 : -1}
-              className={`w-full flex items-center gap-2 px-2.5 py-2 text-sm font-medium rounded-lg transition-colors text-left ${
+              className={`w-full flex items-center gap-2 px-2.5 py-2 text-sm font-medium rounded-lg transition-colors text-left relative ${
                 active
                   ? 'bg-primary/10 text-foreground/80 border border-primary/20'
                   : 'text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'
               }`}
             >
+              <span
+                className={`relative z-10 w-2.5 h-2.5 rounded-full border transition-all ${
+                  isFilled
+                    ? 'bg-emerald-400 border-emerald-400'
+                    : 'bg-background border-muted-foreground/30'
+                } ${active ? 'ring-2 ring-primary/60' : ''}`}
+              />
               <tab.Icon className="w-3.5 h-3.5 flex-shrink-0" />
               <span className="truncate">{tab.label}</span>
-              {isFilled && (
-                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-400/60 flex-shrink-0" />
-              )}
             </button>
           );
         })}
+      </div>
+
+      <div className="px-2.5 pb-0.5 text-sm text-muted-foreground/60">
+        Prompt completeness: {filled}/{total} sections
       </div>
 
       {/* Save status */}

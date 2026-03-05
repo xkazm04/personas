@@ -161,7 +161,7 @@ export function CredentialSchemaForm({
           {config.headerIcon}
           <div>
             <h3 className="text-sm font-semibold text-foreground">{config.title}</h3>
-            <p className="text-xs text-muted-foreground/60">{config.subtitle}</p>
+            <p className="text-sm text-muted-foreground/60">{config.subtitle}</p>
           </div>
         </div>
       )}
@@ -183,7 +183,7 @@ export function CredentialSchemaForm({
 
       {config.subTypes.length > 1 && (
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground/50 mb-3">
+          <label className="block text-sm font-semibold uppercase tracking-wider text-muted-foreground/50 mb-3">
             {config.subTypeLabel}
           </label>
 
@@ -204,7 +204,7 @@ export function CredentialSchemaForm({
                   </button>
                 ))}
               </div>
-              <p className="mt-1.5 text-xs text-muted-foreground/60">{activeSubType.description}</p>
+              <p className="mt-1.5 text-sm text-muted-foreground/60">{activeSubType.description}</p>
             </>
           ) : (
             <div className="grid grid-cols-2 gap-2">
@@ -218,11 +218,11 @@ export function CredentialSchemaForm({
                       : 'bg-secondary/25 border-primary/15 text-muted-foreground/80 hover:bg-secondary/40'
                   }`}
                 >
-                  <div className="font-medium text-xs flex items-center gap-2">
+                  <div className="font-medium text-sm flex items-center gap-2">
                     {st.color && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: st.color }} />}
                     {st.label}
                   </div>
-                  <div className="text-xs text-muted-foreground/50 mt-0.5">{st.description}</div>
+                  <div className="text-sm text-muted-foreground/50 mt-0.5">{st.description}</div>
                 </button>
               ))}
             </div>
@@ -243,14 +243,14 @@ export function CredentialSchemaForm({
       />
 
       {!hasHealthcheck && activeSubType.noHealthcheckHint && (
-        <p className="text-xs text-muted-foreground/50 italic">{activeSubType.noHealthcheckHint}</p>
+        <p className="text-sm text-muted-foreground/50 italic">{activeSubType.noHealthcheckHint}</p>
       )}
 
       {config.extraFields?.map((ef) => (
         <ExtraFieldRenderer key={ef.key} def={ef} state={extraState} setState={setExtraState} />
       ))}
 
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && <p className="text-sm text-red-400">{error}</p>}
     </motion.div>
   );
 }

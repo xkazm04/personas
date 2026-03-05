@@ -15,6 +15,7 @@ export function useConnectorStatuses() {
   const [statuses, setStatuses] = useState<ConnectorStatus[]>([]);
   const [testingAll, setTestingAll] = useState(false);
   const inFlightTestsRef = useRef<Set<string>>(new Set());
+  const lastAutoTestedCredentialRef = useRef<Map<string, string>>(new Map());
 
   const tools = selectedPersona?.tools ?? [];
 
@@ -53,10 +54,8 @@ export function useConnectorStatuses() {
 
   useEffect(() => { void fetchCredentials().catch(() => {}); }, [fetchCredentials]);
 
-  const autoTestedRef = useRef<Set<string>>(new Set());
-
   useEffect(() => {
-    autoTestedRef.current.clear();
+    lastAutoTestedCredentialRef.current.clear();
     inFlightTestsRef.current.clear();
   }, [selectedPersona?.id]);
 
@@ -83,18 +82,21 @@ export function useConnectorStatuses() {
     }
   }, [healthcheckCredential, updateStatus]);
 
-  // Auto-test when new status rows gain credentials
+  // Auto-test when rows gain credentials, keyed by connector + credential.
+  // This avoids duplicate auto-tests while still re-testing when a link changes.
   useEffect(() => {
     for (const status of statuses) {
+      const credentialId = status.credentialId;
+      const lastAutoCredential = lastAutoTestedCredentialRef.current.get(status.name);
       if (
-        status.credentialId
+        credentialId
         && !status.result
         && !status.testing
-        && !autoTestedRef.current.has(status.name)
+        && lastAutoCredential !== credentialId
         && !inFlightTestsRef.current.has(status.name)
       ) {
-        autoTestedRef.current.add(status.name);
-        void testConnector(status.name, status.credentialId);
+        lastAutoTestedCredentialRef.current.set(status.name, credentialId);
+        void testConnector(status.name, credentialId);
       }
     }
   }, [statuses, testConnector]);
@@ -119,6 +121,7 @@ export function useConnectorStatuses() {
   };
 
   const handleLinkCredential = useCallback(async (connectorName: string, credentialId: string, credentialName: string) => {
+    lastAutoTestedCredentialRef.current.delete(connectorName);
     setStatuses((prev) =>
       prev.map((s) =>
         s.name === connectorName ? { ...s, credentialId, credentialName, result: null } : s,

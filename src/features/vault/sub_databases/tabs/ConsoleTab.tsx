@@ -93,18 +93,18 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
             {executing ? 'Running...' : 'Run Query'}
           </button>
 
-          <span className="text-xs text-muted-foreground/30">Ctrl+Enter</span>
+          <span className="text-sm text-muted-foreground/30">Ctrl+Enter</span>
         </div>
 
         {/* History chips */}
         {history.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-xs text-muted-foreground/30">Recent:</span>
+            <span className="text-sm text-muted-foreground/30">Recent:</span>
             {history.map((h, i) => (
               <button
                 key={i}
                 onClick={() => handleHistoryClick(h.query)}
-                className="px-2 py-0.5 rounded text-xs font-mono text-muted-foreground/50 bg-secondary/30 border border-primary/10 hover:bg-secondary/50 hover:text-muted-foreground/70 transition-colors truncate max-w-[200px]"
+                className="px-2 py-0.5 rounded text-sm font-mono text-muted-foreground/50 bg-secondary/30 border border-primary/10 hover:bg-secondary/50 hover:text-muted-foreground/70 transition-colors truncate max-w-[200px]"
                 title={h.query}
               >
                 {h.query.length > 40 ? h.query.slice(0, 40) + '...' : h.query}
@@ -117,7 +117,7 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
       {/* Results area */}
       <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 border-t border-primary/5">
         {error && (
-          <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400 whitespace-pre-wrap font-mono">
+          <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400 whitespace-pre-wrap font-mono">
             {error}
           </div>
         )}

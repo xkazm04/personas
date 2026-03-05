@@ -74,6 +74,7 @@ export interface PersonaWithDetails extends Persona {
   tools: PersonaToolDefinition[];
   triggers: PersonaTrigger[];
   subscriptions?: PersonaEventSubscription[];
+  automations?: import("@/lib/bindings/PersonaAutomation").PersonaAutomation[];
 }
 
 /** Credential metadata (without encrypted data) */

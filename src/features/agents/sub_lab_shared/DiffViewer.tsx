@@ -28,7 +28,7 @@ export function DiffViewer({ versionA, versionB }: DiffViewerProps) {
         const diff = diffStrings(a, b);
         return (
           <div key={key} className="rounded-lg border border-primary/10 bg-secondary/20 p-3">
-            <h4 className="text-xs font-medium text-muted-foreground/80 uppercase tracking-wider mb-2">{key}</h4>
+            <h4 className="text-sm font-medium text-muted-foreground/80 uppercase tracking-wider mb-2">{key}</h4>
             <div className="text-sm leading-relaxed">
               {diff.map((d, i) => (
                 <span

@@ -189,6 +189,14 @@ export function TestComparisonTable({ results }: Props) {
                           <span className={`text-sm font-bold ${scoreColor(composite)}`}>
                             {composite}
                           </span>
+                          <div className="w-14 h-1 rounded-full bg-primary/10 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${
+                                composite >= 80 ? 'bg-emerald-400' : composite >= 50 ? 'bg-amber-400' : 'bg-red-400'
+                              }`}
+                              style={{ width: `${Math.max(0, Math.min(100, composite))}%` }}
+                            />
+                          </div>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground/80">
                             <span>${r.cost_usd.toFixed(4)}</span>
                             <span>{(r.duration_ms / 1000).toFixed(1)}s</span>

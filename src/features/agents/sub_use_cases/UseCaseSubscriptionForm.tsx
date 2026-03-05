@@ -35,7 +35,7 @@ export function UseCaseSubscriptionForm({ onAdd, onCancel }: UseCaseSubscription
   return (
     <div className="border border-primary/15 rounded-lg p-2.5 space-y-2 bg-secondary/30">
       <div>
-        <label className="block text-[11px] font-mono text-muted-foreground/70 uppercase mb-1">
+        <label className="block text-sm font-mono text-muted-foreground/70 uppercase mb-1">
           Event Type
         </label>
         <ThemedSelect
@@ -50,7 +50,7 @@ export function UseCaseSubscriptionForm({ onAdd, onCancel }: UseCaseSubscription
         </ThemedSelect>
       </div>
       <div>
-        <label className="block text-[11px] font-mono text-muted-foreground/70 uppercase mb-1">
+        <label className="block text-sm font-mono text-muted-foreground/70 uppercase mb-1">
           Source Filter <span className="normal-case">(optional)</span>
         </label>
         <input

@@ -1,6 +1,7 @@
 use rusqlite::{params, Row};
 
 use crate::db::models::{CreatePersonaGroupInput, PersonaGroup, UpdatePersonaGroupInput};
+use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -26,7 +27,7 @@ pub fn get_all(pool: &DbPool) -> Result<Vec<PersonaGroup>, AppError> {
     let mut stmt =
         conn.prepare("SELECT * FROM persona_groups ORDER BY sort_order, created_at")?;
     let rows = stmt.query_map([], row_to_group)?;
-    Ok(rows.filter_map(|r| r.ok()).collect())
+    Ok(collect_rows(rows, "groups::get_all"))
 }
 
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaGroup, AppError> {
@@ -149,16 +150,21 @@ pub fn update(
 }
 
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    let conn = pool.get()?;
-    conn.execute("UPDATE personas SET group_id = NULL WHERE group_id = ?1", params![id])?;
-    let rows = conn.execute("DELETE FROM persona_groups WHERE id = ?1", params![id])?;
+    let mut conn = pool.get()?;
+    let tx = conn.transaction()?;
+
+    tx.execute("UPDATE personas SET group_id = NULL WHERE group_id = ?1", params![id])?;
+    let rows = tx.execute("DELETE FROM persona_groups WHERE id = ?1", params![id])?;
+
+    tx.commit()?;
     Ok(rows > 0)
 }
 
 pub fn reorder(pool: &DbPool, ordered_ids: &[String]) -> Result<(), AppError> {
-    let conn = pool.get()?;
+    let mut conn = pool.get()?;
+    let tx = conn.transaction()?;
     let mut stmt =
-        conn.prepare("UPDATE persona_groups SET sort_order = ?1, updated_at = ?2 WHERE id = ?3")?;
+        tx.prepare("UPDATE persona_groups SET sort_order = ?1, updated_at = ?2 WHERE id = ?3")?;
     let now = chrono::Utc::now().to_rfc3339();
 
     for (idx, id) in ordered_ids.iter().enumerate() {
@@ -167,6 +173,9 @@ pub fn reorder(pool: &DbPool, ordered_ids: &[String]) -> Result<(), AppError> {
             return Err(AppError::NotFound(format!("PersonaGroup {id}")));
         }
     }
+
+    drop(stmt);
+    tx.commit()?;
 
     Ok(())
 }

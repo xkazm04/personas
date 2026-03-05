@@ -123,7 +123,7 @@ function AssignModal({
               <h3 className="text-sm font-semibold text-foreground/90">
                 Assign to {roleDef?.label}
               </h3>
-              <p className="text-[11px] text-muted-foreground/65">{roleDef?.description}</p>
+              <p className="text-sm text-muted-foreground/65">{roleDef?.description}</p>
             </div>
           </div>
           <button type="button" onClick={onClose} className="p-1 text-muted-foreground/60 hover:text-foreground transition-colors">
@@ -136,7 +136,7 @@ function AssignModal({
           <button
             type="button"
             onClick={() => setTab('credentials')}
-            className={`px-3 py-2 text-xs font-medium border-b-2 transition-colors ${
+            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
               tab === 'credentials'
                 ? 'border-primary text-primary'
                 : 'border-transparent text-muted-foreground/70 hover:text-muted-foreground'
@@ -147,7 +147,7 @@ function AssignModal({
           <button
             type="button"
             onClick={() => setTab('connectors')}
-            className={`px-3 py-2 text-xs font-medium border-b-2 transition-colors ${
+            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
               tab === 'connectors'
                 ? 'border-primary text-primary'
                 : 'border-transparent text-muted-foreground/70 hover:text-muted-foreground'
@@ -181,7 +181,7 @@ function AssignModal({
                     ? 'No saved credentials yet'
                     : 'No credentials match your search'}
                 </p>
-                <p className="text-xs text-muted-foreground/50 mt-1">
+                <p className="text-sm text-muted-foreground/50 mt-1">
                   Save credentials in the Vault, or use the Connectors tab
                 </p>
               </div>
@@ -199,7 +199,7 @@ function AssignModal({
                       <ConnectorIcon meta={meta} size="w-5 h-5" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground/80 truncate">{cred.name}</p>
-                        <p className="text-[11px] text-muted-foreground/60">{cred.service_type}</p>
+                        <p className="text-sm text-muted-foreground/60">{cred.service_type}</p>
                       </div>
                       <Key className="w-3 h-3 text-muted-foreground/50 shrink-0" />
                     </button>
@@ -216,7 +216,7 @@ function AssignModal({
               <div className="space-y-3 pt-1">
                 {groupedConnectors.map(([category, connectors]) => (
                   <div key={category}>
-                    <p className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1.5">
+                    <p className="text-sm font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1.5">
                       {category}
                     </p>
                     <div className="grid grid-cols-2 gap-1">
@@ -227,7 +227,7 @@ function AssignModal({
                             key={c.name}
                             type="button"
                             onClick={() => { onAssign(c.name, null); onClose(); }}
-                            className="flex items-center gap-2 px-2.5 py-2 text-xs rounded-lg border border-transparent hover:bg-secondary/40 hover:border-primary/10 text-muted-foreground/80 hover:text-foreground/90 transition-all"
+                            className="flex items-center gap-2 px-2.5 py-2 text-sm rounded-lg border border-transparent hover:bg-secondary/40 hover:border-primary/10 text-muted-foreground/80 hover:text-foreground/90 transition-all"
                           >
                             <ConnectorIcon meta={meta} size="w-4 h-4" />
                             <span className="truncate">{meta.label}</span>
@@ -293,7 +293,7 @@ function TableSelectorModal({
               <h3 className="text-sm font-semibold text-foreground/90">
                 Select Tables
               </h3>
-              <p className="text-[11px] text-muted-foreground/65">
+              <p className="text-sm text-muted-foreground/65">
                 {meta.label} — choose tables to watch
               </p>
             </div>
@@ -318,7 +318,7 @@ function TableSelectorModal({
 
         {/* Footer */}
         <div className="flex items-center justify-between px-5 py-3 border-t border-primary/10">
-          <p className="text-xs text-muted-foreground/50">
+          <p className="text-sm text-muted-foreground/50">
             {count > 0
               ? `${count} table${count !== 1 ? 's' : ''} selected`
               : 'No tables selected — agent watches all'}
@@ -327,14 +327,14 @@ function TableSelectorModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-1.5 text-xs font-medium rounded-lg text-muted-foreground/70 hover:text-foreground/80 hover:bg-secondary/40 transition-colors"
+              className="px-4 py-1.5 text-sm font-medium rounded-lg text-muted-foreground/70 hover:text-foreground/80 hover:bg-secondary/40 transition-colors"
             >
               Skip
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
+              className="px-4 py-1.5 text-sm font-semibold rounded-lg bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
             >
               Done
             </button>
@@ -360,7 +360,7 @@ function CredentialCoverageBar({ components }: { components: BuilderComponent[] 
       <div className="flex-1 h-1 rounded-full bg-secondary/40 overflow-hidden">
         <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className={`text-[11px] font-medium ${textColor} shrink-0`}>
+      <span className={`text-sm font-medium ${textColor} shrink-0`}>
         {coverage.matched}/{coverage.total} credentials
       </span>
     </div>
@@ -409,7 +409,7 @@ function RoleCard({
           <p className="text-sm font-semibold text-foreground/85">{label}</p>
           <RoleCoverageDot role={role} components={components} />
         </div>
-        <p className="text-xs text-muted-foreground/65 mt-0.5">{description}</p>
+        <p className="text-sm text-muted-foreground/65 mt-0.5">{description}</p>
       </div>
 
       {/* Assigned items */}
@@ -438,7 +438,7 @@ function RoleCard({
                   {credName ? (
                     <Key className="w-3 h-3 text-primary/40 shrink-0" />
                   ) : !BUILTIN_CONNECTORS.has(comp.connectorName) ? (
-                    <span className="text-[10px] font-medium text-amber-400/80 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded shrink-0">
+                    <span className="text-sm font-medium text-amber-400/80 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded shrink-0">
                       No credential
                     </span>
                   ) : null}
@@ -458,14 +458,14 @@ function RoleCard({
                         {comp.watchedTables.slice(0, 4).map((tableName) => (
                           <span
                             key={tableName}
-                            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-500/10 border border-amber-500/15 rounded text-[10px] font-mono text-amber-400/80"
+                            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-500/10 border border-amber-500/15 rounded text-sm font-mono text-amber-400/80"
                           >
                             <Table2 className="w-2 h-2" />
                             {tableName}
                           </span>
                         ))}
                         {comp.watchedTables.length > 4 && (
-                          <span className="text-[10px] text-muted-foreground/40 self-center">
+                          <span className="text-sm text-muted-foreground/40 self-center">
                             +{comp.watchedTables.length - 4}
                           </span>
                         )}
@@ -475,7 +475,7 @@ function RoleCard({
                       <button
                         type="button"
                         onClick={() => onOpenTableSelector(comp.id)}
-                        className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground/50 hover:text-amber-400/80 hover:bg-amber-500/8 rounded transition-colors"
+                        className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-sm font-medium text-muted-foreground/50 hover:text-amber-400/80 hover:bg-amber-500/8 rounded transition-colors"
                       >
                         <Table2 className="w-2 h-2" />
                         {comp.watchedTables?.length ? 'edit' : 'select tables'}
@@ -494,7 +494,7 @@ function RoleCard({
         <button
           type="button"
           onClick={onOpenAssign}
-          className="w-full flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-medium text-muted-foreground/65 border border-dashed border-primary/20 rounded-lg hover:bg-background/40 hover:text-foreground/80 transition-colors"
+          className="w-full flex items-center justify-center gap-1 px-2 py-1.5 text-sm font-medium text-muted-foreground/65 border border-dashed border-primary/20 rounded-lg hover:bg-background/40 hover:text-foreground/80 transition-colors"
         >
           <Plus className="w-3 h-3" />
           Assign

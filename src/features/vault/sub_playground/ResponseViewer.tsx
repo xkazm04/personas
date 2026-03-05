@@ -24,16 +24,15 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
 
   const prettyBody = useMemo(() => {
     if (!response.body) return '';
-    const ct = response.content_type || '';
-    if (ct.includes('json')) {
-      try {
-        return JSON.stringify(JSON.parse(response.body), null, 2);
-      } catch {
-        return response.body;
-      }
+    // Always try JSON-formatting first — many APIs return JSON without proper content-type,
+    // and some URLs (e.g. /user.json) return JSON with non-json content-type headers.
+    try {
+      const parsed = JSON.parse(response.body);
+      return JSON.stringify(parsed, null, 2);
+    } catch {
+      return response.body;
     }
-    return response.body;
-  }, [response.body, response.content_type]);
+  }, [response.body]);
 
   const headerEntries = useMemo(
     () => Object.entries(response.headers),
@@ -50,15 +49,15 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
     <div className="space-y-3">
       {/* Status bar */}
       <div className="flex items-center gap-3">
-        <span className={`px-2.5 py-1 rounded text-xs font-bold border ${statusStyle(response.status)}`}>
+        <span className={`px-2.5 py-1 rounded text-sm font-bold border ${statusStyle(response.status)}`}>
           {response.status} {response.status_text}
         </span>
-        <span className="flex items-center gap-1 text-xs text-muted-foreground/40">
+        <span className="flex items-center gap-1 text-sm text-muted-foreground/40">
           <Clock className="w-3 h-3" />
           {response.duration_ms}ms
         </span>
         {response.content_type && (
-          <span className="text-xs text-muted-foreground/30">{response.content_type}</span>
+          <span className="text-sm text-muted-foreground/30">{response.content_type}</span>
         )}
       </div>
 
@@ -68,7 +67,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
           <button
             key={tab}
             onClick={() => setSubTab(tab)}
-            className={`px-3 py-1.5 text-xs font-medium capitalize transition-colors border-b-2 ${
+            className={`px-3 py-1.5 text-sm font-medium capitalize transition-colors border-b-2 ${
               subTab === tab
                 ? 'text-foreground/80 border-primary/50'
                 : 'text-muted-foreground/40 border-transparent hover:text-muted-foreground/60'
@@ -81,7 +80,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
         <div className="flex-1" />
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-muted-foreground/40 hover:text-muted-foreground/60 hover:bg-secondary/30 transition-colors"
+          className="flex items-center gap-1 px-2 py-1 rounded text-sm text-muted-foreground/40 hover:text-muted-foreground/60 hover:bg-secondary/30 transition-colors"
         >
           {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
           {copied ? 'Copied' : 'Copy'}
@@ -90,14 +89,14 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
 
       {/* Content */}
       {subTab === 'body' && (
-        <pre className="text-xs font-mono text-foreground/75 bg-secondary/15 rounded-lg border border-primary/8 p-3 overflow-auto max-h-[400px] whitespace-pre-wrap break-words">
+        <pre className="text-sm font-mono text-foreground/75 bg-secondary/15 rounded-lg border border-primary/8 p-3 overflow-auto max-h-[400px] whitespace-pre-wrap break-words">
           {prettyBody || '(empty response)'}
         </pre>
       )}
 
       {subTab === 'headers' && (
         <div className="rounded-lg border border-primary/8 overflow-hidden">
-          <table className="w-full text-xs">
+          <table className="w-full text-sm">
             <thead>
               <tr className="bg-secondary/30 border-b border-primary/8">
                 <th className="px-3 py-2 text-left font-semibold text-foreground/60 w-1/3">Header</th>
@@ -120,7 +119,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
       )}
 
       {subTab === 'raw' && (
-        <pre className="text-xs font-mono text-muted-foreground/50 bg-secondary/15 rounded-lg border border-primary/8 p-3 overflow-auto max-h-[400px] whitespace-pre-wrap break-words">
+        <pre className="text-sm font-mono text-muted-foreground/50 bg-secondary/15 rounded-lg border border-primary/8 p-3 overflow-auto max-h-[400px] whitespace-pre-wrap break-words">
           {response.body || '(empty response)'}
         </pre>
       )}
