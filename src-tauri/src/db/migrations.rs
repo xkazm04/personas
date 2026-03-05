@@ -931,6 +931,102 @@ CREATE INDEX IF NOT EXISTS idx_dsq_credential ON db_saved_queries(credential_id)
 CREATE INDEX IF NOT EXISTS idx_dsq_favorite   ON db_saved_queries(credential_id, is_favorite);
 CREATE INDEX IF NOT EXISTS idx_dsq_language   ON db_saved_queries(language);
 
+-- ============================================================================
+-- Recipe Definitions (reusable LLM workflow templates)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS recipe_definitions (
+    id                      TEXT PRIMARY KEY,
+    project_id              TEXT NOT NULL DEFAULT 'default',
+    credential_id           TEXT,
+    name                    TEXT NOT NULL,
+    description             TEXT,
+    category                TEXT,
+    prompt_template         TEXT NOT NULL DEFAULT '',
+    input_schema            TEXT,
+    output_contract         TEXT,
+    tool_requirements       TEXT,
+    credential_requirements TEXT,
+    model_preference        TEXT,
+    sample_inputs           TEXT,
+    tags                    TEXT,
+    icon                    TEXT,
+    color                   TEXT,
+    is_builtin              INTEGER NOT NULL DEFAULT 0,
+    created_at              TEXT NOT NULL,
+    updated_at              TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_recipe_def_project    ON recipe_definitions(project_id);
+CREATE INDEX IF NOT EXISTS idx_recipe_def_category   ON recipe_definitions(category);
+
+-- ============================================================================
+-- Persona ↔ Recipe Links (junction table)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS persona_recipe_links (
+    id          TEXT PRIMARY KEY,
+    persona_id  TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+    recipe_id   TEXT NOT NULL REFERENCES recipe_definitions(id) ON DELETE CASCADE,
+    sort_order  INTEGER DEFAULT 0,
+    config      TEXT,
+    created_at  TEXT NOT NULL,
+    UNIQUE(persona_id, recipe_id)
+);
+CREATE INDEX IF NOT EXISTS idx_prl_persona ON persona_recipe_links(persona_id);
+CREATE INDEX IF NOT EXISTS idx_prl_recipe  ON persona_recipe_links(recipe_id);
+
+-- ============================================================================
+-- Persona Automations (external workflow references)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS persona_automations (
+    id                      TEXT PRIMARY KEY,
+    persona_id              TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+    use_case_id             TEXT,
+    name                    TEXT NOT NULL,
+    description             TEXT DEFAULT '',
+    platform                TEXT NOT NULL,
+    platform_workflow_id    TEXT,
+    platform_url            TEXT,
+    webhook_url             TEXT,
+    webhook_method          TEXT DEFAULT 'POST',
+    platform_credential_id  TEXT REFERENCES persona_credentials(id) ON DELETE SET NULL,
+    credential_mapping      TEXT,
+    input_schema            TEXT,
+    output_schema           TEXT,
+    timeout_ms              INTEGER DEFAULT 30000,
+    retry_count             INTEGER DEFAULT 1,
+    fallback_mode           TEXT DEFAULT 'connector',
+    deployment_status       TEXT DEFAULT 'draft',
+    last_triggered_at       TEXT,
+    last_result_status      TEXT,
+    error_message           TEXT,
+    created_at              TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at              TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_automations_persona ON persona_automations(persona_id);
+
+-- ============================================================================
+-- Automation Runs (invocation history)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS automation_runs (
+    id                  TEXT PRIMARY KEY,
+    automation_id       TEXT NOT NULL REFERENCES persona_automations(id) ON DELETE CASCADE,
+    execution_id        TEXT REFERENCES persona_executions(id) ON DELETE SET NULL,
+    status              TEXT NOT NULL DEFAULT 'pending',
+    input_data          TEXT,
+    output_data         TEXT,
+    platform_run_id     TEXT,
+    platform_logs_url   TEXT,
+    duration_ms         INTEGER,
+    error_message       TEXT,
+    started_at          TEXT NOT NULL DEFAULT (datetime('now')),
+    completed_at        TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_automation_runs_automation ON automation_runs(automation_id);
+CREATE INDEX IF NOT EXISTS idx_automation_runs_execution  ON automation_runs(execution_id);
+
 "#;
 
 /// Incremental migrations for columns added after the initial schema.
@@ -1675,6 +1771,59 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         )?;
         tracing::info!("Created execution_knowledge table");
     }
+
+    // ── Recipe Definitions: add credential_id column ──────────────────────
+    let has_recipe_credential_id: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('recipe_definitions') WHERE name='credential_id'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_recipe_credential_id {
+        conn.execute_batch(
+            "ALTER TABLE recipe_definitions ADD COLUMN credential_id TEXT;"
+        )?;
+        tracing::info!("Added credential_id column to recipe_definitions");
+    }
+    // Index created separately — safe for both new and existing DBs
+    conn.execute_batch(
+        "CREATE INDEX IF NOT EXISTS idx_recipe_def_credential ON recipe_definitions(credential_id);"
+    )?;
+
+    // ── Recipe Definitions: add use_case_id column ───────────────────────
+    let has_recipe_use_case_id: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('recipe_definitions') WHERE name='use_case_id'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_recipe_use_case_id {
+        conn.execute_batch(
+            "ALTER TABLE recipe_definitions ADD COLUMN use_case_id TEXT;"
+        )?;
+        tracing::info!("Added use_case_id column to recipe_definitions");
+    }
+    conn.execute_batch(
+        "CREATE INDEX IF NOT EXISTS idx_recipe_def_use_case ON recipe_definitions(use_case_id);"
+    )?;
+
+    // ── Recipe Versions table ──────────────────────────────────────────
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS recipe_versions (
+            id              TEXT PRIMARY KEY,
+            recipe_id       TEXT NOT NULL REFERENCES recipe_definitions(id) ON DELETE CASCADE,
+            version_number  INTEGER NOT NULL,
+            prompt_template TEXT NOT NULL,
+            input_schema    TEXT,
+            sample_inputs   TEXT,
+            description     TEXT,
+            changes_summary TEXT,
+            created_at      TEXT NOT NULL,
+            UNIQUE(recipe_id, version_number)
+        );
+        CREATE INDEX IF NOT EXISTS idx_rv_recipe ON recipe_versions(recipe_id);
+        CREATE INDEX IF NOT EXISTS idx_rv_version ON recipe_versions(recipe_id, version_number DESC);"
+    )?;
 
     Ok(())
 }
