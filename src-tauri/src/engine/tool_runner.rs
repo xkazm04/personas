@@ -38,9 +38,16 @@ pub async fn invoke_tool_direct(
     let start = Instant::now();
 
     // Resolve credential env vars using the existing runner infrastructure
-    let (env_vars, _hints) =
+    let (env_vars, _hints, cred_failures) =
         super::runner::resolve_credential_env_vars(pool, &[tool.clone()], persona_id, persona_name)
             .await;
+
+    if !cred_failures.is_empty() {
+        return Err(AppError::Execution(format!(
+            "Credential decryption failed for: {}. Re-enter or rotate these credentials before retrying.",
+            cred_failures.join(", ")
+        )));
+    }
 
     let env_map: HashMap<&str, &str> = env_vars
         .iter()

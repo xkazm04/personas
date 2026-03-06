@@ -259,7 +259,7 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
         {!isRedis && selectedTable && (
           <>
             {/* Header */}
-            <div className="flex items-center gap-2 px-5 py-3 border-b border-primary/5 shrink-0">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/5 shrink-0">
               <Table2 className="w-4 h-4 text-blue-400/60" />
               <span className="text-sm font-mono font-medium text-foreground/80 flex-1">
                 {selectedTable}
@@ -288,7 +288,7 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
             </div>
 
             {/* Columns */}
-            <div className="flex-1 min-h-0 overflow-y-auto p-5">
+            <div className="flex-1 min-h-0 overflow-y-auto p-4">
               {columnsLoading && (
                 <div className="flex items-center gap-2 py-8 justify-center">
                   <Loader2 className="w-4 h-4 animate-spin text-muted-foreground/40" />
@@ -362,13 +362,13 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
         {/* Redis key detail */}
         {isRedis && selectedKey && (
           <>
-            <div className="flex items-center gap-2 px-5 py-3 border-b border-primary/5 shrink-0">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/5 shrink-0">
               <Key className="w-4 h-4 text-amber-400/60" />
               <span className="text-sm font-mono font-medium text-foreground/80 flex-1 truncate">
                 {selectedKey}
               </span>
             </div>
-            <div className="p-5">
+            <div className="p-4">
               {keyTypeResult === null ? (
                 <div className="flex items-center gap-2 py-4">
                   <Loader2 className="w-4 h-4 animate-spin text-muted-foreground/40" />

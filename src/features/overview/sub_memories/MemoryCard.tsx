@@ -5,6 +5,7 @@ import type { DbPersonaMemory } from '@/lib/types/types';
 import { formatRelativeTime, MEMORY_CATEGORY_COLORS } from '@/lib/utils/formatters';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { usePersonaStore } from '@/stores/personaStore';
+import { stripHtml } from '@/lib/utils/sanitizeHtml';
 
 function parseTags(tagsJson: string | null): string[] {
   return parseJsonOrDefault<string[]>(tagsJson, []);
@@ -127,7 +128,7 @@ export function MemoryRow({
         </div>
 
         <div className="flex-1 min-w-0">
-          <span className="text-sm text-foreground/80 truncate block">{memory.title}</span>
+          <span className="text-sm text-foreground/80 truncate block">{stripHtml(memory.title)}</span>
         </div>
 
         {categoryBadge}
@@ -171,7 +172,7 @@ export function MemoryRow({
           </div>
         </div>
 
-        <span className="text-sm text-foreground/80 line-clamp-2">{memory.title}</span>
+        <span className="text-sm text-foreground/80 line-clamp-2">{stripHtml(memory.title)}</span>
 
         <div className="flex items-center gap-2 flex-wrap">
           {categoryBadge}
@@ -201,7 +202,7 @@ export function MemoryRow({
           >
             <div className="px-4 pb-4 md:px-6 md:pl-[172px]">
               <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
-                {memory.content}
+                {stripHtml(memory.content)}
               </p>
               {tags.length > 0 && (
                 <div className="flex items-center gap-1.5 mt-2">

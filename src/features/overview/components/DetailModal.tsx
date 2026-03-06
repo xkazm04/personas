@@ -101,7 +101,7 @@ export default function DetailModal({ title, subtitle, onClose, actions, childre
         />
 
         {/* Header */}
-        <div className="flex items-start justify-between p-5 border-b border-primary/10 flex-shrink-0">
+        <div className="flex items-start justify-between p-4 border-b border-primary/10 flex-shrink-0">
           <div className="flex-1 min-w-0 pr-4">
             <h3 id="detail-modal-title" className="text-sm font-semibold text-foreground/90">{title}</h3>
             {subtitle && (
@@ -119,7 +119,7 @@ export default function DetailModal({ title, subtitle, onClose, actions, childre
         </div>
 
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto p-5">
+        <div className="flex-1 overflow-y-auto p-4">
           {children}
         </div>
 

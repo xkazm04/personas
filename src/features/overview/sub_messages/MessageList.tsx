@@ -481,7 +481,7 @@ export default function MessageList() {
             }
           >
             {/* Content section */}
-            <div className="space-y-5">
+            <div className="space-y-6">
               <div>
                 <div className="text-sm font-mono text-muted-foreground/90 uppercase mb-2">Content</div>
                 <MarkdownRenderer content={selectedMsg.content} className="text-sm" />

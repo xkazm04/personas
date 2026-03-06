@@ -5,28 +5,36 @@ export interface Toast {
   message: string;
   type: 'success' | 'error';
   timestamp: number;
+  duration: number;
 }
 
 interface ToastStore {
   toasts: Toast[];
-  addToast: (message: string, type: 'success' | 'error') => void;
+  addToast: (message: string, type: 'success' | 'error', duration?: number) => void;
   dismiss: (id: string) => void;
 }
+
+const DEFAULT_DURATION: Record<'success' | 'error', number> = {
+  success: 3000,
+  error: 5000,
+};
+
+const MAX_TOASTS = 5;
 
 let nextId = 0;
 
 export const useToastStore = create<ToastStore>((set) => ({
   toasts: [],
-  addToast: (message, type) => {
+  addToast: (message, type, duration) => {
     const id = `toast-${++nextId}`;
-    const toast: Toast = { id, message, type, timestamp: Date.now() };
-    set((s) => ({ toasts: [...s.toasts, toast].slice(-5) }));
-
-    // Auto-dismiss after 3s for success, 5s for error
-    const duration = type === 'success' ? 3000 : 5000;
-    setTimeout(() => {
-      set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }));
-    }, duration);
+    const toast: Toast = {
+      id,
+      message,
+      type,
+      timestamp: Date.now(),
+      duration: duration ?? DEFAULT_DURATION[type],
+    };
+    set((s) => ({ toasts: [...s.toasts, toast].slice(-MAX_TOASTS) }));
   },
   dismiss: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 }));

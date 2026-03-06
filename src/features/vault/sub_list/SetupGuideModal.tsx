@@ -86,7 +86,7 @@ export function SetupGuideModal({ connector, onClose }: SetupGuideModalProps) {
           </div>
 
           {/* Body */}
-          <div className="px-6 py-5 space-y-4">
+          <div className="px-6 py-6 space-y-4">
             {guide ? (
               <div className="space-y-2.5">
                 {guide.split('\n').filter(Boolean).map((line, i) => {

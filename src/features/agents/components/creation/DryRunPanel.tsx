@@ -2,14 +2,14 @@ import { type Dispatch } from 'react';
 import { CheckCircle2, AlertTriangle, XCircle, Info, Wrench } from 'lucide-react';
 import type { DryRunResult, DryRunIssue } from './types';
 import type { BuilderAction } from './builderReducer';
-import { FEASIBILITY_COLORS } from '@/lib/utils/designTokens';
+import { FEASIBILITY_COLORS, SEVERITY_STYLES } from '@/lib/utils/designTokens';
 
 // ── Severity styling ────────────────────────────────────────────────
 
-const SEVERITY_STYLES: Record<DryRunIssue['severity'], { icon: typeof AlertTriangle; color: string; bg: string; border: string }> = {
-  error: { icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/8', border: 'border-red-500/20' },
-  warning: { icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/8', border: 'border-amber-500/20' },
-  info: { icon: Info, color: 'text-blue-400', bg: 'bg-blue-500/8', border: 'border-blue-500/20' },
+const SEVERITY_ICONS: Record<DryRunIssue['severity'], typeof AlertTriangle> = {
+  error: XCircle,
+  warning: AlertTriangle,
+  info: Info,
 };
 
 // ── IssueCard ───────────────────────────────────────────────────────
@@ -22,7 +22,7 @@ interface IssueCardProps {
 
 function IssueCard({ issue, dispatch, onResolved }: IssueCardProps) {
   const style = SEVERITY_STYLES[issue.severity];
-  const Icon = style.icon;
+  const Icon = SEVERITY_ICONS[issue.severity];
 
   const handleApply = () => {
     if (!issue.proposal) return;
@@ -34,7 +34,7 @@ function IssueCard({ issue, dispatch, onResolved }: IssueCardProps) {
 
   if (issue.resolved) {
     return (
-      <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5">
+      <div className={`flex items-start gap-2.5 px-3 py-2.5 rounded-xl ${SEVERITY_STYLES.success.border} ${SEVERITY_STYLES.success.bg}`}>
         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
         <span className="text-sm text-muted-foreground/50 line-through leading-relaxed">
           {issue.description}
@@ -44,9 +44,9 @@ function IssueCard({ issue, dispatch, onResolved }: IssueCardProps) {
   }
 
   return (
-    <div className={`px-3 py-2.5 rounded-xl border ${style.border} ${style.bg}`}>
+    <div className={`px-3 py-2.5 rounded-xl ${style.border} ${style.bg}`}>
       <div className="flex items-start gap-2.5">
-        <Icon className={`w-3.5 h-3.5 ${style.color} mt-0.5 shrink-0`} />
+        <Icon className={`w-3.5 h-3.5 ${style.text} mt-0.5 shrink-0`} />
         <div className="flex-1 min-w-0">
           <p className="text-sm text-foreground/80 leading-relaxed">
             {issue.description}

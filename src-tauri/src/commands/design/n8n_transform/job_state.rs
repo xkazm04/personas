@@ -119,6 +119,11 @@ pub fn get_n8n_transform_claude_session(transform_id: &str) -> Option<String> {
     N8N_JOBS.read_extra(transform_id, |extra| extra.claude_session_id.clone())?
 }
 
+/// List all n8n transform job snapshots (for unified workflows view).
+pub fn list_n8n_transform_jobs() -> Vec<crate::background_job::JobSnapshot> {
+    N8N_JOBS.list_snapshots()
+}
+
 // ── Tauri commands for job state ────────────────────────────────
 
 #[tauri::command]

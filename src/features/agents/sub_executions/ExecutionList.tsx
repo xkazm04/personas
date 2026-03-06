@@ -316,7 +316,7 @@ export function ExecutionList() {
           </p>
           <button
             onClick={handleTryIt}
-            className="mt-5 flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-primary/10 text-primary/80 border border-primary/15 hover:bg-primary/20 hover:text-primary transition-colors"
+            className="mt-4 flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-primary/10 text-primary/80 border border-primary/15 hover:bg-primary/20 hover:text-primary transition-colors"
           >
             <Play className="w-3.5 h-3.5" />
             Try it now

@@ -101,7 +101,7 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -40 }}
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      className="flex flex-col gap-5 max-w-lg w-full px-6"
+      className="flex flex-col gap-6 max-w-lg w-full px-6"
     >
       <div>
         <h2 className="text-lg font-semibold text-foreground/90">Choose a Template</h2>

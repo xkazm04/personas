@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
+use super::byom::PolicyDecision;
 use super::provider::EngineKind;
 use super::types::ModelProfile;
 
@@ -232,6 +233,41 @@ pub fn build_failover_chain(
     }
 
     chain
+}
+
+// =============================================================================
+// BYOM-aware failover chain
+// =============================================================================
+
+/// Build the failover chain with BYOM policy applied.
+///
+/// If a policy decision has a preferred provider, it becomes the primary.
+/// Blocked providers are filtered out of the chain entirely.
+pub fn build_failover_chain_with_policy(
+    primary: EngineKind,
+    model_profile: Option<&ModelProfile>,
+    policy: &PolicyDecision,
+) -> Vec<FailoverCandidate> {
+    // Determine effective primary: policy preference overrides configured primary
+    let effective_primary = policy.preferred_provider.unwrap_or(primary);
+
+    // Build effective model profile: policy model overrides configured model
+    let effective_profile = if policy.preferred_model.is_some() {
+        let mut p = model_profile.cloned().unwrap_or_default();
+        p.model = policy.preferred_model.clone();
+        Some(p)
+    } else {
+        model_profile.cloned()
+    };
+
+    // Build the base chain
+    let base_chain = build_failover_chain(effective_primary, effective_profile.as_ref());
+
+    // Filter out blocked providers
+    base_chain
+        .into_iter()
+        .filter(|c| !policy.blocked_providers.contains(&c.engine_kind))
+        .collect()
 }
 
 // =============================================================================

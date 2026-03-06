@@ -115,7 +115,7 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-5">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* Persona Info */}
           <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary/40 border border-primary/10">
             <PersonaAvatar icon={personaIcon} color={personaColor} size="lg" />

@@ -79,7 +79,7 @@ export function ContentHeader({
   );
 
   return (
-    <div className="px-4 md:px-6 py-5 border-b border-primary/10 bg-primary/5 flex-shrink-0">
+    <div className="px-4 md:px-6 py-6 border-b border-primary/10 bg-primary/5 flex-shrink-0">
       <div className="flex items-center gap-3">
         {iconElement}
         <div className="flex-1 min-w-0">

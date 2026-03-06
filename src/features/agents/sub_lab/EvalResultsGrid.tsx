@@ -1,4 +1,5 @@
 import { useMemo, useEffect, useState } from 'react';
+import { useMotion } from '@/hooks/utility/useMotion';
 import { Trophy, Target, FileText, Shield, DollarSign, Clock } from 'lucide-react';
 import {
   PolarAngleAxis,
@@ -39,7 +40,7 @@ interface VersionAggregate extends CellAggregate {
  */
 export function EvalResultsGrid({ results }: Props) {
   const [celebrateWinnerId, setCelebrateWinnerId] = useState<string | null>(null);
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const { shouldAnimate } = useMotion();
   const radarPalette = useMemo(
     () => ['#60A5FA', '#A78BFA', '#34D399', '#F59E0B', '#FB7185', '#22D3EE'],
     [],
@@ -118,15 +119,7 @@ export function EvalResultsGrid({ results }: Props) {
   }, [results]);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const update = () => setReducedMotion(mediaQuery.matches);
-    update();
-    mediaQuery.addEventListener('change', update);
-    return () => mediaQuery.removeEventListener('change', update);
-  }, []);
-
-  useEffect(() => {
-    if (reducedMotion) {
+    if (!shouldAnimate) {
       setCelebrateWinnerId(null);
       return;
     }
@@ -136,7 +129,7 @@ export function EvalResultsGrid({ results }: Props) {
       setCelebrateWinnerId((prev) => (prev === winnerId ? null : prev));
     }, 900);
     return () => window.clearTimeout(timer);
-  }, [winnerId, reducedMotion]);
+  }, [winnerId, shouldAnimate]);
 
   if (results.length === 0) {
     return (

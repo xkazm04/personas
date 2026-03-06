@@ -131,7 +131,7 @@ export function TemplateDetailModal({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-5">
+        <div className="flex-1 overflow-y-auto px-6 py-6">
           {activeTab === 'overview' && (
             <OverviewTab
               designResult={designResult}
@@ -211,7 +211,7 @@ function OverviewTab({
   onViewFlows: () => void;
 }) {
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Summary */}
       {designResult?.summary && (
         <div className="bg-gradient-to-r from-violet-500/5 to-transparent border border-violet-500/10 rounded-xl px-4 py-3">

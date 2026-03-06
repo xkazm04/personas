@@ -189,6 +189,13 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
 
     match result {
         Err(error_msg) => {
+            // Clear active_id so future operations aren't blocked by a failed task
+            {
+                let mut guard = active_id.lock().unwrap();
+                if guard.as_deref() == Some(&task_id) {
+                    *guard = None;
+                }
+            }
             tracing::error!(task_id = %task_id, label = messages.log_label, error = %error_msg, "Claude CLI failed");
             emit_task_status(&app, messages.status_event, messages.id_field, &task_id, "failed", None, Some(error_msg));
         }

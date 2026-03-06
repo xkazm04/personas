@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { Zap, RefreshCw, AlertCircle, CheckCircle2, Clock, Loader2, Server, Bot, Copy, Check } from 'lucide-react';
+import { Zap, Activity, RefreshCw, AlertCircle, CheckCircle2, Clock, Loader2, Server, Bot, Copy, Check } from 'lucide-react';
+import EmptyState from '@/features/shared/components/EmptyState';
 import { useVirtualList } from '@/hooks/utility/useVirtualList';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { FilterBar } from '@/features/shared/components/FilterBar';
@@ -155,10 +156,14 @@ export default function EventLogList() {
             <p className="text-sm">Loading events...</p>
           </div>
         ) : filteredEvents.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-6 text-muted-foreground/80">
-            <Zap className="w-10 h-10 mb-3" />
-            <p className="text-sm">No events yet</p>
-            <p className="text-sm mt-1">Events from webhooks, executions, and persona actions will appear here</p>
+          <div className="flex-1 flex items-center justify-center p-4 md:p-6">
+            <EmptyState
+              icon={Activity}
+              title="No events yet"
+              description="Events from webhooks, executions, and persona actions will appear here as your agents run."
+              iconColor="text-indigo-400/80"
+              iconContainerClassName="bg-indigo-500/10 border-indigo-500/20"
+            />
           </div>
         ) : (
           <div className="flex-1 overflow-hidden flex flex-col">

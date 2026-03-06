@@ -68,7 +68,7 @@ export function EstimatedProgressBar({
   const elapsedInt = Math.floor(elapsed);
 
   return (
-    <div className={`space-y-1.5 ${className ?? ''}`}>
+    <div role="status" aria-live="polite" aria-label={isRunning ? `Progress: ${Math.round(progress)}%` : 'Complete'} className={`space-y-1.5 ${className ?? ''}`}>
       <div className="h-2 rounded-full bg-primary/10 overflow-hidden">
         <motion.div
           className="h-full rounded-full bg-primary"

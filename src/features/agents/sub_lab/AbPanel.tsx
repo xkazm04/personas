@@ -115,7 +115,7 @@ export function AbPanel() {
   return (
     <div className="space-y-6">
       <div className="border border-primary/15 rounded-xl overflow-hidden backdrop-blur-sm bg-secondary/40">
-        <div className="p-5 space-y-4">
+        <div className="p-4 space-y-4">
           {/* Version pickers */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">

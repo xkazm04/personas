@@ -187,9 +187,12 @@ pub async fn start_auto_cred_browser(
         cli_args.args.push(BROWSER_MODEL.to_string());
     }
 
-    // Add Playwright MCP server configuration
+    // Add Playwright MCP server configuration via secure temp file.
+    // _mcp_config_file must stay alive until spawn_claude_and_collect returns —
+    // dropping it auto-deletes the temp file.
+    let _mcp_config_file = build_playwright_mcp_config()?;
     cli_args.args.push("--mcp-config".to_string());
-    cli_args.args.push(build_playwright_mcp_config());
+    cli_args.args.push(_mcp_config_file.path().to_string_lossy().to_string());
 
     // Restrict to only Playwright tools
     cli_args.args.push("--allowedTools".to_string());
@@ -446,8 +449,13 @@ pub async fn get_playwright_procedure(
 
 /// Build a temporary MCP config JSON for the Playwright server.
 /// Claude CLI accepts `--mcp-config <path>` pointing to a JSON file.
-/// We write a temp file and return its path.
-fn build_playwright_mcp_config() -> String {
+///
+/// Returns a `NamedTempFile` with a random filename. The caller MUST keep this
+/// handle alive until the CLI process finishes — dropping it deletes the file,
+/// preventing stale credential configs from lingering on disk.
+fn build_playwright_mcp_config() -> Result<tempfile::NamedTempFile, String> {
+    use std::io::Write;
+
     let config = json!({
         "mcpServers": {
             "playwright": {
@@ -458,11 +466,23 @@ fn build_playwright_mcp_config() -> String {
         }
     });
 
-    // Write to a temp file
-    let temp_dir = std::env::temp_dir();
-    let config_path = temp_dir.join("personas_playwright_mcp.json");
-    let _ = std::fs::write(&config_path, serde_json::to_string_pretty(&config).unwrap());
-    config_path.to_string_lossy().to_string()
+    let mut tmp = tempfile::Builder::new()
+        .prefix("personas_mcp_")
+        .suffix(".json")
+        .tempfile()
+        .map_err(|e| format!("Failed to create temp MCP config: {e}"))?;
+
+    tmp.write_all(
+        serde_json::to_string_pretty(&config)
+            .unwrap()
+            .as_bytes(),
+    )
+    .map_err(|e| format!("Failed to write temp MCP config: {e}"))?;
+
+    tmp.flush()
+        .map_err(|e| format!("Failed to flush temp MCP config: {e}"))?;
+
+    Ok(tmp)
 }
 
 /// Best-effort partial extraction: scan text for any field values even without

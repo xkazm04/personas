@@ -9,6 +9,7 @@ import { extractConnectorNames } from '@/lib/personas/utils';
 import PersonaHoverPreview from './PersonaHoverPreview';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import { PersonaHealthIndicator } from './PersonaHealthIndicator';
+import { WeeklyPerformanceReport } from '@/features/agents/sub_prompt_lab/WeeklyPerformanceReport';
 
 export default function PersonaOverviewPage() {
   const personas = usePersonaStore(s => s.personas);
@@ -105,6 +106,11 @@ export default function PersonaOverviewPage() {
       />
 
       <ContentBody>
+      {/* Weekly Performance Report */}
+      <div className="mb-4">
+        <WeeklyPerformanceReport onNavigateToAgent={(id) => selectPersona(id)} />
+      </div>
+
       <div ref={gridRef} role="grid" aria-label="Agent overview" className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
         {personas.map((persona, i) => {
           const connectors = extractConnectorNames(persona);

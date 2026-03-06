@@ -91,7 +91,7 @@ export function TemplateCard({
   return (
     <div className={`group rounded-xl border border-primary/10 bg-secondary/30 hover:bg-secondary/50 hover:border-primary/15 transition-colors ${MOTION.smooth.css}`}>
       {/* Header */}
-      <div className="px-5 pt-5 pb-2.5 flex items-start justify-between gap-2">
+      <div className="px-4 pt-4 pb-2.5 flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <h3 className="text-base font-semibold text-foreground/90 truncate">
@@ -146,7 +146,7 @@ export function TemplateCard({
       </div>
 
       {/* Compact Body (mobile) */}
-      <div className="px-5 py-3 md:hidden border-t border-primary/5 space-y-2">
+      <div className="px-4 py-3 md:hidden border-t border-primary/5 space-y-2">
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground/60">Use Cases</span>
           <span className="text-foreground/80">{displayFlows.length}</span>
@@ -162,7 +162,7 @@ export function TemplateCard({
       </div>
 
       {/* 3-Column Body */}
-      <div className="hidden md:grid px-5 py-4 md:grid-cols-2 lg:grid-cols-3 gap-4 border-t border-primary/5">
+      <div className="hidden md:grid px-4 py-4 md:grid-cols-2 lg:grid-cols-3 gap-4 border-t border-primary/5">
         {/* Use Cases */}
         <div className="min-w-0">
           <h4 className="text-sm uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">
@@ -252,7 +252,7 @@ export function TemplateCard({
       </div>
 
       {/* Footer */}
-      <div className="px-5 py-3.5 border-t border-primary/5 flex items-center justify-between">
+      <div className="px-4 py-3.5 border-t border-primary/5 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <button
             onClick={(e) => {

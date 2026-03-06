@@ -38,6 +38,60 @@ use super::provider::{self, PromptDelivery};
 use super::trace::{SpanType, TraceCollector, TraceSpanEvent};
 use super::types::*;
 
+// =============================================================================
+// Env var sanitization
+// =============================================================================
+
+/// Env var names that must never be overridden by credential/MCP field injection.
+const BLOCKED_ENV_NAMES: &[&str] = &[
+    // OS-level / linker injection
+    "PATH", "LD_PRELOAD", "LD_LIBRARY_PATH",
+    "DYLD_INSERT_LIBRARIES", "DYLD_LIBRARY_PATH",
+    // System identity & shell
+    "HOME", "SHELL", "USER", "LOGNAME",
+    "SYSTEMROOT", "COMSPEC", "WINDIR",
+    "TEMP", "TMP",
+    // Language runtime code-execution vectors
+    "NODE_OPTIONS",       // --require= arbitrary module loading
+    "NODE_PATH",          // hijack Node module resolution
+    "PYTHONPATH",         // hijack Python imports
+    "PYTHONSTARTUP",      // execute Python script at interpreter start
+    "PERL5OPT",           // inject Perl command-line flags
+    "PERL5LIB",           // hijack Perl module search path
+    "RUBYOPT",            // inject Ruby flags (e.g. -r for require)
+    "RUBYLIB",            // hijack Ruby load path
+    "JAVA_TOOL_OPTIONS",  // JVM agent/flag injection
+    "JAVA_OPTIONS",       // alternative JVM flag injection
+    "_JAVA_OPTIONS",      // alternative JVM flag injection
+    "CLASSPATH",          // hijack Java class loading
+    "DOTNET_STARTUP_HOOKS", // .NET assembly injection at startup
+    "BASH_ENV",           // execute script when bash starts non-interactively
+    "ENV",                // execute script when sh starts
+    "ZDOTDIR",            // redirect zsh config to attacker-controlled dir
+];
+
+/// Sanitize an env var name: strip non-alphanumeric/underscore chars, uppercase,
+/// and check against the denylist. Returns `None` if the name is blocked or empty.
+pub(crate) fn sanitize_env_name(name: &str) -> Option<String> {
+    let sanitized: String = name
+        .to_uppercase()
+        .replace('-', "_")
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || *c == '_')
+        .collect();
+
+    if sanitized.is_empty() {
+        return None;
+    }
+
+    if BLOCKED_ENV_NAMES.contains(&sanitized.as_str()) {
+        tracing::warn!(env_var = %sanitized, "Blocked dangerous env var name from credential injection");
+        return None;
+    }
+
+    Some(sanitized)
+}
+
 /// Run a persona execution: spawn Claude CLI, stream output, capture results.
 ///
 /// Supports automatic provider failover: if the primary provider fails with a
@@ -135,8 +189,25 @@ pub async fn run_execution(
         None,
         Some(serde_json::json!({ "tool_count": tools.len() })),
     );
-    let (cred_env, cred_hints) = resolve_credential_env_vars(&pool, &tools, &persona.id, &persona.name).await;
+    let (cred_env, cred_hints, cred_failures) = resolve_credential_env_vars(&pool, &tools, &persona.id, &persona.name).await;
     trace.end_span(&cred_span, None, None, None, None);
+
+    if !cred_failures.is_empty() {
+        let msg = format!(
+            "Credential decryption failed for: {}. Re-enter or rotate these credentials before retrying.",
+            cred_failures.join(", ")
+        );
+        logger.log(&format!("[ABORT] {}", msg));
+        return ExecutionResult {
+            success: false,
+            error: Some(msg),
+            log_file_path: Some(log_file_path),
+            duration_ms: start_time.elapsed().as_millis() as u64,
+            trace_id: Some(trace.trace_id().to_string()),
+            ..default_result()
+        };
+    }
+
     let cred_env_clone = cred_env.clone();
 
     // Assemble prompt (with credential env var hints)
@@ -208,7 +279,25 @@ pub async fn run_execution(
     // Provider failover: build candidate chain and try each until one succeeds
     // =========================================================================
     let primary_engine = provider::load_engine_kind(&pool);
-    let failover_chain = failover::build_failover_chain(primary_engine, model_profile.as_ref());
+
+    // Evaluate BYOM policy if configured
+    let byom_policy = super::byom::ByomPolicy::load(&pool);
+    let policy_decision = byom_policy
+        .as_ref()
+        .map(|p| p.evaluate(&[], None))
+        .unwrap_or_else(|| super::byom::PolicyDecision {
+            preferred_provider: None,
+            preferred_model: None,
+            blocked_providers: Vec::new(),
+            routing_rule_name: None,
+            compliance_rule_name: None,
+        });
+
+    let failover_chain = failover::build_failover_chain_with_policy(
+        primary_engine,
+        model_profile.as_ref(),
+        &policy_decision,
+    );
 
     // Resolve provider + build CLI args + spawn, trying each failover candidate
     let mut last_spawn_error: Option<String> = None;
@@ -821,6 +910,26 @@ pub async fn run_execution(
         circuit_breaker.record_success(active_engine_kind);
     }
 
+    // Record provider audit log entry (BYOM compliance trail)
+    let audit_entry = super::byom::ProviderAuditEntry {
+        id: uuid::Uuid::new_v4().to_string(),
+        execution_id: execution_id.clone(),
+        persona_id: persona.id.clone(),
+        persona_name: persona.name.clone(),
+        engine_kind: active_engine_kind.as_setting().to_string(),
+        model_used: metrics.model_used.clone(),
+        was_failover: active_engine_kind != primary_engine,
+        routing_rule_name: policy_decision.routing_rule_name.clone(),
+        compliance_rule_name: policy_decision.compliance_rule_name.clone(),
+        cost_usd: Some(metrics.cost_usd),
+        duration_ms: Some(duration_ms as i64),
+        status: final_status.as_str().to_string(),
+        created_at: chrono::Utc::now().to_rfc3339(),
+    };
+    if let Err(e) = crate::db::repos::execution::provider_audit::insert(&pool, &audit_entry) {
+        tracing::warn!(execution_id = %execution_id, "Failed to record provider audit log: {}", e);
+    }
+
     // Finalize and save execution trace
     let final_trace = trace.finalize(
         Some(metrics.cost_usd),
@@ -922,21 +1031,24 @@ fn default_result() -> ExecutionResult {
 ///
 /// Each credential field is mapped to an env var: `{CONNECTOR_NAME_UPPER}_{FIELD_KEY_UPPER}`.
 /// For OAuth credentials with a refresh_token, automatically refreshes the access_token.
+/// Returns `(env_vars, hints, decryption_failures)`. If `decryption_failures`
+/// is non-empty, the caller should abort execution and surface the names.
 pub(crate) async fn resolve_credential_env_vars(
     pool: &DbPool,
     tools: &[PersonaToolDefinition],
     persona_id: &str,
     persona_name: &str,
-) -> (Vec<(String, String)>, Vec<String>) {
+) -> (Vec<(String, String)>, Vec<String>, Vec<String>) {
     let mut env_vars: Vec<(String, String)> = Vec::new();
     let mut hints: Vec<String> = Vec::new();
+    let mut failures: Vec<String> = Vec::new();
     let mut seen_connectors: std::collections::HashSet<String> = std::collections::HashSet::new();
 
     let connectors = match connector_repo::get_all(pool) {
         Ok(c) => c,
         Err(e) => {
             tracing::warn!("Failed to load connectors for credential injection: {}", e);
-            return (env_vars, hints);
+            return (env_vars, hints, failures);
         }
     };
 
@@ -957,7 +1069,7 @@ pub(crate) async fn resolve_credential_env_vars(
                 continue;
             }
 
-            if inject_connector_credentials(
+            match inject_connector_credentials(
                 pool,
                 connector,
                 &mut env_vars,
@@ -965,7 +1077,9 @@ pub(crate) async fn resolve_credential_env_vars(
                 persona_id,
                 persona_name,
             ).await {
-                matched_connector = true;
+                Ok(true) => { matched_connector = true; }
+                Ok(false) => {}
+                Err(name) => { failures.push(name); }
             }
         }
 
@@ -987,7 +1101,7 @@ pub(crate) async fn resolve_credential_env_vars(
                         continue;
                     }
 
-                    if inject_connector_credentials(
+                    match inject_connector_credentials(
                         pool,
                         connector,
                         &mut env_vars,
@@ -995,8 +1109,12 @@ pub(crate) async fn resolve_credential_env_vars(
                         persona_id,
                         persona_name,
                     ).await {
-                        matched_connector = true;
-                        break;
+                        Ok(true) => {
+                            matched_connector = true;
+                            break;
+                        }
+                        Ok(false) => {}
+                        Err(name) => { failures.push(name); }
                     }
                 }
 
@@ -1004,7 +1122,7 @@ pub(crate) async fn resolve_credential_env_vars(
                 if !matched_connector {
                     if let Ok(creds) = cred_repo::get_by_service_type(pool, cred_type) {
                         if let Some(cred) = creds.first() {
-                            inject_credential(
+                            if let Err(name) = inject_credential(
                                 pool,
                                 cred,
                                 cred_type,
@@ -1013,7 +1131,9 @@ pub(crate) async fn resolve_credential_env_vars(
                                 &mut hints,
                                 persona_id,
                                 persona_name,
-                            ).await;
+                            ).await {
+                                failures.push(name);
+                            }
                         }
                     }
                 }
@@ -1021,11 +1141,12 @@ pub(crate) async fn resolve_credential_env_vars(
         }
     }
 
-    (env_vars, hints)
+    (env_vars, hints, failures)
 }
 
 /// Decrypt and inject all fields from a connector's first credential as env vars.
-/// Returns true if credentials were found and injected.
+/// Returns `Ok(true)` if credentials were found and injected, `Ok(false)` if none
+/// found, or `Err(name)` if decryption failed.
 pub(crate) async fn inject_connector_credentials(
     pool: &DbPool,
     connector: &crate::db::models::ConnectorDefinition,
@@ -1033,10 +1154,10 @@ pub(crate) async fn inject_connector_credentials(
     hints: &mut Vec<String>,
     persona_id: &str,
     persona_name: &str,
-) -> bool {
+) -> Result<bool, String> {
     let creds = match cred_repo::get_by_service_type(pool, &connector.name) {
         Ok(c) => c,
-        Err(_) => return false,
+        Err(_) => return Ok(false),
     };
 
     if let Some(cred) = creds.first() {
@@ -1049,10 +1170,10 @@ pub(crate) async fn inject_connector_credentials(
             hints,
             persona_id,
             persona_name,
-        ).await;
-        true
+        ).await?;
+        Ok(true)
     } else {
-        false
+        Ok(false)
     }
 }
 
@@ -1125,6 +1246,7 @@ async fn try_refresh_oauth_token(
 
 /// Decrypt a single credential and inject its fields as env vars.
 /// For OAuth credentials, automatically refreshes expired access tokens.
+/// Returns `Err` with the credential name if decryption fails.
 #[allow(clippy::too_many_arguments)]
 pub(crate) async fn inject_credential(
     pool: &DbPool,
@@ -1135,12 +1257,12 @@ pub(crate) async fn inject_credential(
     hints: &mut Vec<String>,
     persona_id: &str,
     persona_name: &str,
-) {
+) -> Result<(), String> {
     let mut fields: HashMap<String, String> = match cred_repo::get_decrypted_fields(pool, cred) {
         Ok(f) => f,
         Err(e) => {
             tracing::error!("Failed to decrypt credential '{}': {}", cred.name, e);
-            return;
+            return Err(cred.name.clone());
         }
     };
     let prefix = connector_name.to_uppercase().replace('-', "_");
@@ -1193,7 +1315,11 @@ pub(crate) async fn inject_credential(
         if SKIP_FIELDS.contains(&field_key.as_str()) || field_val.is_empty() {
             continue;
         }
-        let env_key = format!("{}_{}", prefix, field_key.to_uppercase().replace('-', "_"));
+        let raw_key = format!("{}_{}", prefix, field_key);
+        let env_key = match sanitize_env_name(&raw_key) {
+            Some(k) => k,
+            None => continue,
+        };
         env_vars.push((env_key.clone(), field_val.clone()));
         hints.push(format!(
             "`{}` (from {} credential '{}')",
@@ -1211,4 +1337,6 @@ pub(crate) async fn inject_credential(
         Some(persona_name),
         Some(&format!("injected via connector '{}'", connector_label)),
     );
+
+    Ok(())
 }

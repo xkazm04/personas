@@ -1,5 +1,8 @@
 import { useMemo } from 'react';
-import { useReducedMotion, type Variants } from 'framer-motion';
+import type { Variants } from 'framer-motion';
+import { useMotion, type MotionConfig } from '@/hooks/utility/useMotion';
+
+export { useMotion, type MotionConfig };
 
 export const CSS_DURATION_CLASS = {
   snappy: 'duration-snap motion-reduce:duration-0 motion-reduce:transition-none',
@@ -10,7 +13,21 @@ export const CSS_DURATION_CLASS = {
   EASE: 'duration-ease motion-reduce:duration-0 motion-reduce:transition-none',
 } as const;
 
-const REDUCED_FRAMER = { duration: 0.01, ease: 'linear' as const };
+export const REDUCED_FRAMER = { duration: 0.01, ease: 'linear' as const };
+
+// ── Standardized ease curve ──────────────────────────────────────────
+// Used across all transition presets for a consistent spring-like feel.
+const EASE_CURVE = [0.22, 1, 0.36, 1] as [number, number, number, number];
+
+// ── Framer Motion transition presets ─────────────────────────────────
+// instant (100ms) → tooltips, micro-interactions
+// fast    (150ms) → dropdowns, toggles, small state changes
+// normal  (250ms) → panels, modals, drawers, standard transitions
+// slow    (400ms) → page transitions, wizard steps, large reveals
+export const TRANSITION_INSTANT = { duration: 0.1, ease: EASE_CURVE };
+export const TRANSITION_FAST = { duration: 0.15, ease: EASE_CURVE };
+export const TRANSITION_NORMAL = { duration: 0.25, ease: EASE_CURVE };
+export const TRANSITION_SLOW = { duration: 0.4, ease: EASE_CURVE };
 
 export const MOTION = {
   snappy: {
@@ -59,12 +76,12 @@ export const staggerItem: Variants = {
 };
 
 export function useTemplateMotion() {
-  const prefersReducedMotion = useReducedMotion();
+  const { shouldAnimate } = useMotion();
 
   return useMemo(() => {
-    if (!prefersReducedMotion) {
+    if (shouldAnimate) {
       return {
-        prefersReducedMotion,
+        prefersReducedMotion: false,
         motion: MOTION,
         staggerDelay: 0.04,
         staggerContainer,
@@ -88,7 +105,7 @@ export function useTemplateMotion() {
     } as const;
 
     return {
-      prefersReducedMotion,
+      prefersReducedMotion: true,
       motion: reducedMotion,
       staggerDelay: 0,
       staggerContainer: {
@@ -115,5 +132,5 @@ export function useTemplateMotion() {
         },
       } as Variants,
     };
-  }, [prefersReducedMotion]);
+  }, [shouldAnimate]);
 }

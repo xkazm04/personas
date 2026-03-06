@@ -83,7 +83,7 @@ export function N8nTransformChat({
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-xl border border-primary/10 bg-secondary/20 p-5"
+              className="rounded-xl border border-primary/10 bg-secondary/20 p-4"
             >
               {/* Header with view mode toggle */}
               <div className="flex items-center justify-between mb-4">
@@ -153,7 +153,7 @@ export function N8nTransformChat({
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-xl border border-primary/10 bg-secondary/20 p-5"
+              className="rounded-xl border border-primary/10 bg-secondary/20 p-4"
             >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-secondary/40 border border-primary/10 flex items-center justify-center">

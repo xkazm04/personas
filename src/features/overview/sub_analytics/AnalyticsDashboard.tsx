@@ -449,7 +449,7 @@ export default function AnalyticsDashboard() {
 
           {/* Health Issues — full width */}
           <div className="rounded-2xl border border-primary/10 bg-secondary/20 shadow-sm overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-primary/5 bg-gradient-to-r from-secondary/40 to-transparent">
+            <div className="flex items-center justify-between px-4 py-4 border-b border-primary/5 bg-gradient-to-r from-secondary/40 to-transparent">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 shadow-inner flex items-center justify-center">
                   <Stethoscope className="w-4 h-4 text-cyan-400" />
@@ -476,7 +476,7 @@ export default function AnalyticsDashboard() {
 
             {/* Analysis result */}
             {analysisResult && !healingRunning && (
-              <div className="flex items-center justify-between px-5 py-2.5 bg-cyan-500/10 border-b border-cyan-500/20">
+              <div className="flex items-center justify-between px-4 py-2.5 bg-cyan-500/10 border-b border-cyan-500/20">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-3.5 h-3.5 text-cyan-400" />
                   <span className="text-sm text-cyan-300">
@@ -492,7 +492,7 @@ export default function AnalyticsDashboard() {
             )}
 
             {analysisError && !healingRunning && (
-              <div className="flex items-center justify-between px-5 py-2.5 bg-red-500/10 border-b border-red-500/20">
+              <div className="flex items-center justify-between px-4 py-2.5 bg-red-500/10 border-b border-red-500/20">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
                   <span className="text-sm text-red-300">{analysisError}</span>
@@ -505,7 +505,7 @@ export default function AnalyticsDashboard() {
 
             {/* Filter chips */}
             {healingIssues.length > 0 && (
-              <div className="px-5 py-2.5 border-b border-primary/10 flex items-center gap-1">
+              <div className="px-4 py-2.5 border-b border-primary/10 flex items-center gap-1">
                 {([
                   { key: 'all' as const, label: 'All', count: issueCounts.all },
                   { key: 'open' as const, label: 'Open', count: issueCounts.open },
@@ -550,7 +550,7 @@ export default function AnalyticsDashboard() {
                   const isCircuitBreaker = /circuit\s*breaker/i.test(issue.title);
 
                   return (
-                    <div key={issue.id} className={`flex items-center gap-4 px-5 py-4 hover:bg-white/[0.03] transition-colors group cursor-pointer ${isAutoFixed ? 'opacity-70' : ''} ${isCircuitBreaker ? 'bg-red-500/5' : ''}`}>
+                    <div key={issue.id} className={`flex items-center gap-4 px-4 py-4 hover:bg-white/[0.03] transition-colors group cursor-pointer ${isAutoFixed ? 'opacity-70' : ''} ${isCircuitBreaker ? 'bg-red-500/5' : ''}`}>
                       {isCircuitBreaker ? (
                         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono uppercase rounded-md border bg-red-500/15 text-red-400 border-red-500/25">
                           <Zap className="w-3 h-3" />breaker

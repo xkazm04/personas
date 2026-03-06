@@ -272,7 +272,7 @@ export function AutomationSetupModal({
           </button>
         </div>
 
-        <div className="px-6 py-5 max-h-[75vh] overflow-y-auto">
+        <div className="px-6 py-6 max-h-[75vh] overflow-y-auto">
           <AnimatePresence mode="wait">
             {/* ── Idle ─────────────────────────────────────── */}
             {phase === 'idle' && (
@@ -504,7 +504,7 @@ export function AutomationSetupModal({
 
             {/* ── Preview ──────────────────────────────────── */}
             {phase === 'preview' && design.result && (
-              <motion.div key="preview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-5">
+              <motion.div key="preview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
                 {/* AI reasoning */}
                 {design.result.platform_reasoning && (
                   <div className="px-3.5 py-2.5 rounded-xl bg-accent/5 border border-accent/15">
@@ -515,7 +515,7 @@ export function AutomationSetupModal({
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-5">
+                <div className="grid grid-cols-2 gap-6">
                   {/* Left column */}
                   <div className="space-y-4">
                     <div>

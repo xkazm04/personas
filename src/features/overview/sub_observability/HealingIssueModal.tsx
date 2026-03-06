@@ -3,6 +3,7 @@ import { X, AlertTriangle, Wrench, CheckCircle, Copy, ClipboardCheck, Zap, Refre
 import { motion, AnimatePresence } from 'framer-motion';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 import { SEVERITY_COLORS, HEALING_CATEGORY_COLORS } from '@/lib/utils/formatters';
+import { SEVERITY_STYLES } from '@/lib/utils/designTokens';
 
 interface HealingIssueModalProps {
   issue: PersonaHealingIssue;
@@ -151,12 +152,12 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
               transition={{ duration: 0.15 }}
             >
               {/* Header */}
-              <div className="flex items-start justify-between p-5 border-b border-primary/10">
+              <div className="flex items-start justify-between p-4 border-b border-primary/10">
                 <div className="flex-1 min-w-0 pr-4">
                   <h3 id="healing-issue-title" className="text-sm font-semibold text-foreground/90 mb-2">{issue.title}</h3>
                   <div className="flex items-center gap-2 flex-wrap">
                     {isCircuitBreaker ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-md border bg-red-500/15 text-red-400 border-red-500/25">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-md ${SEVERITY_STYLES.error.bg} ${SEVERITY_STYLES.error.text} ${SEVERITY_STYLES.error.border}`}>
                         <Zap className="w-3 h-3" />
                         circuit breaker
                       </span>
@@ -196,9 +197,9 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
               </div>
 
               {/* Description */}
-              <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
+              <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
                 {isCircuitBreaker && (
-                  <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-red-500/10 border border-red-500/20">
+                  <div className={`flex items-start gap-2.5 p-3.5 rounded-xl ${SEVERITY_STYLES.error.bg} ${SEVERITY_STYLES.error.border}`}>
                     <Zap className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-red-300/90">Persona auto-disabled</p>
@@ -216,7 +217,7 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
                 </div>
 
                 {issue.suggested_fix && (
-                  <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/15">
+                  <div className={`p-4 rounded-xl ${SEVERITY_STYLES.success.bg} ${SEVERITY_STYLES.success.border}`}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <Wrench className="w-3.5 h-3.5 text-emerald-400" />

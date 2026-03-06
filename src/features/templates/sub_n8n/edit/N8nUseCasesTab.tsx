@@ -64,7 +64,7 @@ export function N8nUseCasesTab({
   return (
     <div className="flex flex-col h-full gap-4">
       {/* Use cases list */}
-      <div className="flex-1 min-h-0 overflow-y-auto space-y-5">
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-4">
         {useCases.length === 0 ? (
           <div className="text-center py-12 space-y-2">
             <ListChecks className="w-10 h-10 text-muted-foreground/40 mx-auto" />

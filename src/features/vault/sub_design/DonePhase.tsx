@@ -48,14 +48,14 @@ export function DonePhase({
       <div className="flex items-center gap-2 mt-2">
         <button
           onClick={onClose}
-          className="px-5 py-2 bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/90 rounded-xl text-sm font-medium transition-all"
+          className="px-4 py-2 bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/90 rounded-xl text-sm font-medium transition-all"
         >
           Done
         </button>
         {onViewCredential && (
           <button
             onClick={onViewCredential}
-            className="flex items-center gap-1.5 px-5 py-2 bg-primary hover:bg-primary/90 text-foreground rounded-xl text-sm font-medium transition-all"
+            className="flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary/90 text-foreground rounded-xl text-sm font-medium transition-all"
           >
             View Credential
             <ArrowRight className="w-3.5 h-3.5" />

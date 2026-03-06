@@ -31,7 +31,7 @@ export function ToolSelector() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <ToolSearchFilter
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}

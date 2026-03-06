@@ -135,7 +135,7 @@ export function IdentityStep({ builderState, onBack, draftPersonaId }: IdentityS
       style={{ minWidth: 900 }}
     >
       {/* Header */}
-      <div className="mb-5">
+      <div className="mb-6">
         <button
           type="button"
           onClick={onBack}
@@ -153,7 +153,7 @@ export function IdentityStep({ builderState, onBack, draftPersonaId }: IdentityS
       {/* Two-column layout */}
       <div className="grid grid-cols-[1fr_320px] gap-6">
         {/* Left column: form */}
-        <div className="space-y-5 min-w-0">
+        <div className="space-y-4 min-w-0">
           {/* Name */}
           <div>
             <label className="block text-sm font-medium text-foreground/80 mb-1.5">Name</label>

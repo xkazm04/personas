@@ -148,7 +148,7 @@ export function CredentialSchemaForm({
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className="space-y-5"
+      className="space-y-4"
     >
       {showHeader && (
         <div className="flex items-center gap-3">

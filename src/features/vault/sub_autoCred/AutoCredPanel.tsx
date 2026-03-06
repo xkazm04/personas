@@ -122,7 +122,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
             </div>
             <button
               onClick={onComplete}
-              className="px-5 py-2 bg-primary/15 hover:bg-primary/25 text-primary rounded-xl text-sm font-medium transition-colors"
+              className="px-4 py-2 bg-primary/15 hover:bg-primary/25 text-primary rounded-xl text-sm font-medium transition-colors"
             >
               Done
             </button>
@@ -217,7 +217,7 @@ function AutoCredBrowserError({
         {error.retryable && (
           <button
             onClick={onRetry}
-            className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-sm font-medium transition-colors"
+            className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-sm font-medium transition-colors"
           >
             Retry
           </button>
@@ -350,7 +350,7 @@ function AutoCredErrorDisplay({
         {error.retryable && (
           <button
             onClick={onRetry}
-            className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-sm font-medium transition-colors"
+            className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-sm font-medium transition-colors"
           >
             Retry
           </button>

@@ -114,7 +114,7 @@ function AssignModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-primary/10">
+        <div className="flex items-center justify-between px-4 py-3.5 border-b border-primary/10">
           <div className="flex items-center gap-2.5">
             <div className={`p-1.5 rounded-lg bg-gradient-to-br ${roleColors[role]}`}>
               <Icon className={`w-4 h-4 ${roleIconColors[role]}`} />
@@ -132,7 +132,7 @@ function AssignModal({
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-primary/8 px-5">
+        <div className="flex border-b border-primary/8 px-4">
           <button
             type="button"
             onClick={() => setTab('credentials')}
@@ -158,7 +158,7 @@ function AssignModal({
         </div>
 
         {/* Search */}
-        <div className="relative px-5 pt-3 pb-2">
+        <div className="relative px-4 pt-3 pb-2">
           <Search className="absolute left-8 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/55 mt-[2px]" />
           <input
             type="text"
@@ -171,7 +171,7 @@ function AssignModal({
         </div>
 
         {/* List */}
-        <div className="flex-1 overflow-y-auto px-5 pb-4">
+        <div className="flex-1 overflow-y-auto px-4 pb-4">
           {tab === 'credentials' ? (
             filteredCredentials.length === 0 ? (
               <div className="text-center py-8">
@@ -284,7 +284,7 @@ function TableSelectorModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-primary/10">
+        <div className="flex items-center justify-between px-4 py-3.5 border-b border-primary/10">
           <div className="flex items-center gap-2.5">
             <div className="p-1.5 rounded-lg bg-gradient-to-br from-amber-500/15 to-orange-500/10 border border-amber-500/20">
               <Table2 className="w-4 h-4 text-amber-400" />
@@ -317,7 +317,7 @@ function TableSelectorModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-5 py-3 border-t border-primary/10">
+        <div className="flex items-center justify-between px-4 py-3 border-t border-primary/10">
           <p className="text-sm text-muted-foreground/50">
             {count > 0
               ? `${count} table${count !== 1 ? 's' : ''} selected`

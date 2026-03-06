@@ -167,7 +167,7 @@ export default function DashboardHome() {
       />
 
       <ContentBody centered>
-        <div className="space-y-5 pb-6">
+        <div className="space-y-6 pb-6">
 
           {/* Welcome Header */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pt-2">
@@ -249,7 +249,7 @@ export default function DashboardHome() {
 
             {/* Side Column — Traffic & Errors Chart */}
             <div className="space-y-6">
-              <div className="rounded-2xl border border-primary/10 bg-secondary/20 shadow-sm p-5 space-y-4 relative overflow-hidden">
+              <div className="rounded-2xl border border-primary/10 bg-secondary/20 shadow-sm p-4 space-y-4 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 blur-3xl rounded-full pointer-events-none" />
                 <div className="flex items-center justify-between relative z-10">
                   <h3 className="text-sm font-bold uppercase tracking-widest text-foreground/80 flex items-center gap-2">

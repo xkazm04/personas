@@ -52,7 +52,9 @@ const SEVERITY_ROWS: Array<{
 ];
 
 export default function NotificationSettings() {
-  const setting = useAppSetting(SETTINGS_KEY, JSON.stringify(DEFAULT_PREFS));
+  const setting = useAppSetting(SETTINGS_KEY, JSON.stringify(DEFAULT_PREFS), (v) => {
+    try { const p = JSON.parse(v); return typeof p === 'object' && p !== null; } catch { return false; }
+  });
   const hasLoadedOnce = useRef(false);
 
   // Auto-save whenever value changes (skip the initial load)

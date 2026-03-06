@@ -72,7 +72,7 @@ export function DesignWizard({ onComplete, onCancel }: DesignWizardProps) {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: direction * -40 }}
           transition={{ duration: 0.2, ease: 'easeInOut' }}
-          className="rounded-2xl border border-primary/10 bg-secondary/10 p-5"
+          className="rounded-2xl border border-primary/10 bg-secondary/10 p-4"
         >
           {/* Step header */}
           <div className="mb-4">

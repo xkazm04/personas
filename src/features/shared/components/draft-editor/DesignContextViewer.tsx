@@ -75,7 +75,7 @@ export function DesignContextViewer({ value, onChange, disabled }: DesignContext
             disabled={disabled}
           />
         ) : (
-          <div className="h-full overflow-y-auto px-4 py-3 bg-background/30 space-y-5">
+          <div className="h-full overflow-y-auto px-4 py-3 bg-background/30 space-y-4">
             {/* Summary */}
             {contextData.summary && (
               <div>

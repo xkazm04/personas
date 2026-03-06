@@ -266,7 +266,7 @@ export default function MemoriesPage() {
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-start justify-between p-5 border-b border-primary/10 flex-shrink-0">
+              <div className="flex items-start justify-between p-4 border-b border-primary/10 flex-shrink-0">
                 <div className="flex-1 min-w-0 pr-4">
                   <h3 className="text-sm font-semibold text-foreground/90 flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-cyan-400" />
@@ -287,7 +287,7 @@ export default function MemoriesPage() {
               </div>
 
               {/* Body */}
-              <div className="flex-1 overflow-y-auto p-5">
+              <div className="flex-1 overflow-y-auto p-4">
                 {reviewError ? (
                   <div className="flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
                     <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />

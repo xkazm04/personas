@@ -4,6 +4,7 @@ import type { DbPersonaTrigger } from '@/lib/types/types';
 import { parseTriggerConfig } from '@/lib/utils/triggerConstants';
 import { formatInterval, formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import type { useTriggerDetail } from '@/features/triggers/hooks/useTriggerDetail';
+import { TRANSITION_NORMAL } from '@/features/templates/animationPresets';
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
@@ -309,7 +310,7 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, detail, onD
       initial={{ height: 0, opacity: 0 }}
       animate={{ height: 'auto', opacity: 1 }}
       exit={{ height: 0, opacity: 0 }}
-      transition={{ duration: 0.2, ease: 'easeInOut' }}
+      transition={TRANSITION_NORMAL}
       className="overflow-hidden"
     >
       <div className="px-3 pb-3 space-y-3">

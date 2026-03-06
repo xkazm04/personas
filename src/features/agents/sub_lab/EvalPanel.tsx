@@ -131,7 +131,7 @@ export function EvalPanel() {
   return (
     <div className="space-y-6" data-testid="eval-panel">
       <div className="border border-primary/15 rounded-xl overflow-hidden backdrop-blur-sm bg-secondary/40">
-        <div className="p-5 space-y-4">
+        <div className="p-4 space-y-4">
           {/* Version multi-select */}
           <div className="space-y-1">
             <label className="text-sm font-medium text-muted-foreground/80">

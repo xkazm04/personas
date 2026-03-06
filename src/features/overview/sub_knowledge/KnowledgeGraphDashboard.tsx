@@ -230,7 +230,7 @@ export default function KnowledgeGraphDashboard() {
       />
 
       <ContentBody>
-        <div className="space-y-5 pb-6">
+        <div className="space-y-6 pb-6">
           {/* Stat cards */}
           {summary && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

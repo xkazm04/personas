@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Users, Radio, Brain, DollarSign, Cloud, Plus, LayoutTemplate, Monitor, Upload, List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu, Network, Database, Home, Compass, type LucideIcon } from 'lucide-react';
+import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Users, Radio, Brain, DollarSign, Cloud, Plus, LayoutTemplate, Monitor, Upload, List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu, Network, Database, Home, Compass, Sparkles, HardDriveDownload, Shield, Workflow, type LucideIcon } from 'lucide-react';
 import { getVersion } from '@tauri-apps/api/app';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useAuthStore } from '@/stores/authStore';
@@ -8,6 +8,7 @@ import type { SidebarSection, HomeTab, OverviewTab, TemplateTab, CloudTab, Setti
 import GroupedAgentSidebar from '@/features/agents/components/GroupedAgentSidebar';
 import TeamDragPanel from '@/features/pipeline/components/TeamDragPanel';
 import { useCredentialNav, type CredentialNavKey } from '@/features/vault/hooks/CredentialNavContext';
+import { useProvisioningWizardStore } from '@/stores/provisioningWizardStore';
 
 const sections: Array<{ id: SidebarSection; icon: typeof Bot; label: string }> = [
   { id: 'home', icon: Home, label: 'Home' },
@@ -183,6 +184,8 @@ export default function Sidebar() {
     { id: 'memories', icon: Brain, label: 'Memories' },
     { id: 'knowledge', icon: Network, label: 'Knowledge' },
     { id: 'budget', icon: DollarSign, label: 'Budget' },
+    { id: 'sla', icon: Shield, label: 'SLA' },
+    { id: 'workflows', icon: Workflow, label: 'Workflows' },
   ];
 
   // Badge maps (only computed for sections that use them)
@@ -224,6 +227,8 @@ export default function Sidebar() {
     { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'engine', label: 'Engine', icon: Cpu },
+    { id: 'byom', label: 'BYOM', icon: Network },
+    { id: 'portability', label: 'Data', icon: HardDriveDownload },
   ];
 
   const renderLevel2 = () => {
@@ -272,11 +277,18 @@ export default function Sidebar() {
             badges={credentialBadges}
           >
             {credentials.length === 0 && credentialView === 'credentials' && (
-              <div className="text-center py-8">
+              <div className="text-center py-8 space-y-3">
                 <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
                   <Key className="w-5 h-5 text-emerald-400/60" />
                 </div>
                 <p className="text-sm text-muted-foreground/80">No credentials yet</p>
+                <button
+                  onClick={() => useProvisioningWizardStore.getState().open(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-violet-500/25 bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  AI Setup Wizard
+                </button>
               </div>
             )}
           </SidebarSubNav>
@@ -394,6 +406,13 @@ export default function Sidebar() {
             </span>
           </div>
         )}
+      </div>
+
+      {/* Screen-reader announcements for badge count changes */}
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {pendingReviewCount > 0 && `${pendingReviewCount} pending review${pendingReviewCount !== 1 ? 's' : ''}.`}
+        {unreadMessageCount > 0 && ` ${unreadMessageCount} unread message${unreadMessageCount !== 1 ? 's' : ''}.`}
+        {pendingEventCount > 0 && ` ${pendingEventCount} pending event${pendingEventCount !== 1 ? 's' : ''}.`}
       </div>
 
       {/* Level 2: Item list */}

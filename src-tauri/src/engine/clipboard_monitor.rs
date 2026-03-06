@@ -128,16 +128,10 @@ pub async fn clipboard_tick(
                 }
             }
 
-            // Publish event
-            let truncated = if content.len() > 1024 {
-                format!("{}...", &content[..1024])
-            } else {
-                content.clone()
-            };
-
+            // Publish event — store only a hash, never plaintext clipboard content
             let payload = serde_json::json!({
                 "content_type": content_type,
-                "content_preview": truncated,
+                "content_hash": format!("{:016x}", current_hash),
                 "content_length": content.len(),
             });
 

@@ -96,7 +96,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
       </div>
 
       {/* Form */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-5">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* Name */}
         <div>
           <label className="block text-sm font-medium text-muted-foreground mb-1.5">Name *</label>

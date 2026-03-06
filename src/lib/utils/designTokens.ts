@@ -1,3 +1,22 @@
+/**
+ * 4px-grid spacing scale.
+ * Maps to CSS custom properties --spacing-1 … --spacing-16.
+ * Use these Tailwind utility classes exclusively for a consistent visual rhythm.
+ */
+export const SPACING = {
+  1: '1',    // 4px
+  2: '2',    // 8px
+  3: '3',    // 12px
+  4: '4',    // 16px
+  6: '6',    // 24px
+  8: '8',    // 32px
+  12: '12',  // 48px
+  16: '16',  // 64px
+} as const;
+
+/** Allowed spacing values on the 4px grid */
+export type SpacingToken = keyof typeof SPACING;
+
 export interface StatusColorToken {
   color: string;
   bgColor: string;
@@ -77,6 +96,20 @@ export const STATUS_COLORS: Record<string, StatusColorToken> = {
   pending: { color: 'text-amber-400', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
   approved: { color: 'text-emerald-400', bgColor: 'bg-emerald-500/10', borderColor: 'border-emerald-500/30' },
   rejected: { color: 'text-red-400', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30' },
+};
+
+/** Standardised severity accent styles — left border + subtle background */
+export interface SeverityStyleToken {
+  border: string;
+  bg: string;
+  text: string;
+}
+
+export const SEVERITY_STYLES: Record<'error' | 'warning' | 'info' | 'success', SeverityStyleToken> = {
+  error:   { border: 'border-l-[3px] border-l-red-500',     bg: 'bg-red-500/5',     text: 'text-red-400' },
+  warning: { border: 'border-l-[3px] border-l-amber-500',   bg: 'bg-amber-500/5',   text: 'text-amber-400' },
+  info:    { border: 'border-l-[3px] border-l-blue-500',    bg: 'bg-blue-500/5',    text: 'text-blue-400' },
+  success: { border: 'border-l-[3px] border-l-emerald-500', bg: 'bg-emerald-500/5', text: 'text-emerald-400' },
 };
 
 /** Feasibility assessment colors: ready, partial, blocked */

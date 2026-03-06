@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useClickOutside } from '@/hooks/utility/useClickOutside';
+import { useViewportClampFixed } from '@/hooks/utility/useViewportClamp';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Cpu, Power, PowerOff, Trash2, ChevronRight, Check, AlertTriangle } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
@@ -99,20 +100,7 @@ export function PersonaContextMenu({ state, onClose }: PersonaContextMenuProps) 
   useClickOutside(menuRef, true, onClose);
 
   // Clamp menu position to viewport
-  const [pos, setPos] = useState({ x, y });
-  useEffect(() => {
-    requestAnimationFrame(() => {
-      if (!menuRef.current) return;
-      const rect = menuRef.current.getBoundingClientRect();
-      let nx = x;
-      let ny = y;
-      if (nx + rect.width > window.innerWidth - 8) nx = window.innerWidth - rect.width - 8;
-      if (ny + rect.height > window.innerHeight - 8) ny = window.innerHeight - rect.height - 8;
-      if (nx < 4) nx = 4;
-      if (ny < 4) ny = 4;
-      setPos({ x: nx, y: ny });
-    });
-  }, [x, y]);
+  const pos = useViewportClampFixed(menuRef, x, y);
 
   const handleModelSwitch = useCallback(async (value: string) => {
     const profile = quickModelToProfile(value);

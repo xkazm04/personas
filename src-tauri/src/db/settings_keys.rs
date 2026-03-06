@@ -20,3 +20,9 @@ pub const COPILOT_GITHUB_TOKEN: &str = "copilot_github_token";
 /// Event retention period in days. Events older than this are purged by the
 /// cleanup subscription. Default: 30.
 pub const EVENT_RETENTION_DAYS: &str = "event_retention_days";
+
+/// Per-persona auto-rollback setting prefix. The full key is
+/// `auto_rollback:<persona_id>`, with value `"true"` or `"false"`.
+/// When enabled, the auto-rollback subscription checks whether the current
+/// prompt version's error rate exceeds 2x the previous version's rate.
+pub const AUTO_ROLLBACK_PREFIX: &str = "auto_rollback:";

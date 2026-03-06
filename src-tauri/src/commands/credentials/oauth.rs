@@ -666,23 +666,30 @@ fn validate_issuer_url(raw: &str) -> Result<url::Url, String> {
     Ok(parsed)
 }
 
-/// Extract an approximate registrable domain (last two labels) from a hostname.
+/// Check whether `candidate` is the same host as `base`, or a subdomain of it.
 ///
-/// This handles common TLDs (.com, .org, .io, .app, etc.) correctly.
-/// Multi-part public suffixes like .co.uk are not handled — for those,
-/// the base domain would be `co.uk` instead of `example.co.uk`. This is
-/// defence-in-depth alongside the HTTPS-only and SSRF-guard checks.
-fn base_domain(host: &str) -> &str {
-    if let Some(last_dot) = host.rfind('.') {
-        let before = &host[..last_dot];
-        if let Some(second_dot) = before.rfind('.') {
-            return &host[second_dot + 1..];
-        }
+/// For example, if `base` is `auth.example.co.uk`:
+/// - `auth.example.co.uk` → true (exact match)
+/// - `login.auth.example.co.uk` → true (subdomain)
+/// - `evil.com` → false
+/// - `attacker.com.auth.example.co.uk` → true (still a subdomain — safe)
+/// - `attacker-auth.example.co.uk` → false (not a subdomain)
+///
+/// This avoids the need for a public suffix list: we trust the issuer host
+/// as the anchor and only allow endpoints at or below that host.
+fn is_same_or_subdomain(candidate: &str, base: &str) -> bool {
+    let c = candidate.to_ascii_lowercase();
+    let b = base.to_ascii_lowercase();
+
+    if c == b {
+        return true;
     }
-    host
+
+    // candidate must end with ".base" to be a subdomain
+    c.ends_with(&format!(".{}", b))
 }
 
-/// Verify a discovered endpoint URL belongs to the same registrable domain
+/// Verify a discovered endpoint URL belongs to the same host (or a subdomain)
 /// as the OIDC issuer and uses HTTPS. Prevents a tampered discovery response
 /// from redirecting OAuth flows to attacker-controlled servers.
 fn validate_endpoint_domain(
@@ -708,13 +715,10 @@ fn validate_endpoint_domain(
         .host_str()
         .ok_or_else(|| format!("OIDC {} has no host", endpoint_name))?;
 
-    let issuer_base = base_domain(issuer_host);
-    let endpoint_base = base_domain(endpoint_host);
-
-    if !issuer_base.eq_ignore_ascii_case(endpoint_base) {
+    if !is_same_or_subdomain(endpoint_host, issuer_host) {
         return Err(format!(
-            "OIDC {} domain mismatch: issuer domain is '{}' but {} points to '{}'. \
-             Discovery response may have been tampered with.",
+            "OIDC {} domain mismatch: issuer host is '{}' but {} points to '{}'. \
+             The endpoint must be at the issuer host or a subdomain of it.",
             endpoint_name, issuer_host, endpoint_name, endpoint_host
         ));
     }

@@ -87,7 +87,7 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ type: 'spring', damping: 24, stiffness: 300 }}
-      className="mx-4 md:mx-6 mb-1 mt-4 p-5 rounded-2xl bg-secondary/40 backdrop-blur-sm border border-violet-500/20 relative overflow-hidden"
+      className="mx-4 md:mx-6 mb-1 mt-4 p-4 rounded-2xl bg-secondary/40 backdrop-blur-sm border border-violet-500/20 relative overflow-hidden"
     >
       {/* Success confirmation overlay */}
       <AnimatePresence>

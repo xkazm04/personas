@@ -17,6 +17,10 @@ use std::time::Instant;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+/// Maximum number of spans a single execution trace may accumulate.
+/// When exceeded, the oldest non-root completed spans are dropped.
+const MAX_SPANS: usize = 10_000;
+
 // =============================================================================
 // Span types
 // =============================================================================
@@ -222,7 +226,19 @@ impl TraceCollector {
             metadata,
         };
 
-        self.spans.lock().unwrap().push(span);
+        let mut spans = self.spans.lock().unwrap();
+
+        // Evict oldest completed non-root spans when at capacity.
+        if spans.len() >= MAX_SPANS {
+            if let Some(pos) = spans.iter().position(|s| {
+                s.span_id != self.root_span_id && s.end_ms.is_some()
+            }) {
+                spans.remove(pos);
+            }
+        }
+
+        spans.push(span);
+        drop(spans);
         span_id
     }
 
@@ -265,6 +281,8 @@ impl TraceCollector {
     }
 
     /// Finalize the trace: close the root span and build the ExecutionTrace.
+    ///
+    /// Drains the internal span vec instead of cloning it to avoid a deep copy.
     pub fn finalize(
         &self,
         total_cost_usd: Option<f64>,
@@ -290,7 +308,7 @@ impl TraceCollector {
             execution_id: self.execution_id.clone(),
             persona_id: self.persona_id.clone(),
             chain_trace_id: self.chain_trace_id.clone(),
-            spans: spans.clone(),
+            spans: spans.drain(..).collect(),
             total_duration_ms: Some(end_ms),
             created_at: chrono::Utc::now().to_rfc3339(),
         }
