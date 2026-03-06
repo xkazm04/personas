@@ -5,7 +5,7 @@
  * Cross-slice calls work because get() returns the full merged PersonaStore.
  */
 import { create } from "zustand";
-import { devtools, persist } from "zustand/middleware";
+import { persist } from "zustand/middleware";
 import { listen } from "@tauri-apps/api/event";
 import type { PersonaStore } from "./storeTypes";
 
@@ -39,7 +39,6 @@ import { AUTH_LOGIN_EVENT } from "./authStore";
 // ── Store ──────────────────────────────────────────────────────────────
 
 export const usePersonaStore = create<PersonaStore>()(
-  devtools(
     persist(
       (...a) => ({
         ...createPersonaSlice(...a),
@@ -81,8 +80,6 @@ export const usePersonaStore = create<PersonaStore>()(
         }),
       },
     ),
-    { name: "persona-store" },
-  ),
 );
 
 // ── Auth Bridge ───────────────────────────────────────────────────────

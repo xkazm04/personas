@@ -362,6 +362,7 @@ impl EphemeralPersona {
             max_turns: Some(1),
             design_context: draft.design_context,
             group_id: None,
+            headless: false,
             created_at: now.clone(),
             updated_at: now,
         };

@@ -361,7 +361,7 @@ export default function Sidebar() {
               className={`relative w-11 h-11 rounded-xl flex items-center justify-center transition-all group ${
                 isDisabled ? 'cursor-not-allowed opacity-40' : ''
               }`}
-              title={isDisabled ? `${section.label} (${section.id === 'cloud' ? 'Sign in required' : 'Coming soon'})` : section.label}
+              title={isDisabled ? `${section.label} (${section.id === 'cloud' ? 'Sign in to unlock cloud features' : 'Coming soon'})` : section.label}
             >
               {isActive && !isDisabled && (
                 <motion.div

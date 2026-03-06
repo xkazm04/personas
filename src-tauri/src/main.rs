@@ -56,7 +56,7 @@ fn sentry_options() -> sentry::ClientOptions {
                 *msg = pii::scrub(msg);
             }
             breadcrumb.data.retain(|k, _| !pii::is_sensitive_field(k));
-            breadcrumb
+            Some(breadcrumb)
         })),
         ..Default::default()
     }

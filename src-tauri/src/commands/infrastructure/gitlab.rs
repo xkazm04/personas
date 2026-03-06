@@ -8,7 +8,7 @@ use crate::error::AppError;
 use crate::gitlab;
 use crate::gitlab::client::GitLabClient;
 use crate::gitlab::types::*;
-use crate::ipc_auth::require_privileged;
+use crate::ipc_auth::require_cloud_auth;
 use crate::AppState;
 
 // ---------------------------------------------------------------------------
@@ -35,7 +35,7 @@ pub async fn gitlab_connect(
     state: State<'_, Arc<AppState>>,
     token: String,
 ) -> Result<GitLabUser, AppError> {
-    require_privileged(&state, "gitlab_connect").await?;
+    require_cloud_auth(&state, "gitlab_connect").await?;
     if token.trim().is_empty() {
         return Err(AppError::GitLab("GitLab token must not be empty".into()));
     }
@@ -63,7 +63,7 @@ pub async fn gitlab_connect(
 pub async fn gitlab_disconnect(
     state: State<'_, Arc<AppState>>,
 ) -> Result<(), AppError> {
-    require_privileged(&state, "gitlab_disconnect").await?;
+    require_cloud_auth(&state, "gitlab_disconnect").await?;
     gitlab::config::clear_gitlab_config();
     *state.gitlab_client.lock().await = None;
     tracing::info!("Disconnected from GitLab");
@@ -75,7 +75,7 @@ pub async fn gitlab_disconnect(
 pub async fn gitlab_get_config(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Option<GitLabConfig>, AppError> {
-    require_privileged(&state, "gitlab_get_config").await?;
+    require_cloud_auth(&state, "gitlab_get_config").await?;
     let guard = state.gitlab_client.lock().await;
     match &*guard {
         Some(client) => {
@@ -111,7 +111,7 @@ pub async fn gitlab_get_config(
 pub async fn gitlab_list_projects(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<GitLabProject>, AppError> {
-    require_privileged(&state, "gitlab_list_projects").await?;
+    require_cloud_auth(&state, "gitlab_list_projects").await?;
     let client = get_gitlab_client(&state).await?;
     client.list_projects().await
 }
@@ -131,7 +131,7 @@ pub async fn gitlab_deploy_persona(
     project_id: i64,
     provision_credentials: bool,
 ) -> Result<GitLabDeployResult, AppError> {
-    require_privileged(&state, "gitlab_deploy_persona").await?;
+    require_cloud_auth(&state, "gitlab_deploy_persona").await?;
     let client = get_gitlab_client(&state).await?;
 
     let persona = personas::get_by_id(&state.db, &persona_id)?;
@@ -246,7 +246,7 @@ pub async fn gitlab_revoke_credentials(
     project_id: i64,
     variable_keys: Vec<String>,
 ) -> Result<u32, AppError> {
-    require_privileged(&state, "gitlab_revoke_credentials").await?;
+    require_cloud_auth(&state, "gitlab_revoke_credentials").await?;
     let client = get_gitlab_client(&state).await?;
     let mut revoked: u32 = 0;
 
@@ -277,7 +277,7 @@ pub async fn gitlab_list_agents(
     state: State<'_, Arc<AppState>>,
     project_id: i64,
 ) -> Result<Vec<GitLabAgent>, AppError> {
-    require_privileged(&state, "gitlab_list_agents").await?;
+    require_cloud_auth(&state, "gitlab_list_agents").await?;
     let client = get_gitlab_client(&state).await?;
     match client.list_duo_agents(project_id).await {
         Ok(agents) => Ok(agents),
@@ -295,7 +295,7 @@ pub async fn gitlab_undeploy_agent(
     project_id: i64,
     agent_id: String,
 ) -> Result<(), AppError> {
-    require_privileged(&state, "gitlab_undeploy_agent").await?;
+    require_cloud_auth(&state, "gitlab_undeploy_agent").await?;
     let client = get_gitlab_client(&state).await?;
     client.delete_duo_agent(project_id, &agent_id).await?;
     tracing::info!(

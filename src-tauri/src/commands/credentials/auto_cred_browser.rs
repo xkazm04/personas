@@ -494,9 +494,6 @@ pub async fn start_auto_cred_browser(
     let dedup = Arc::new(Mutex::new(StreamDedup::default()));
     let dedup_ref = Arc::clone(&dedup);
 
-    // Track the CLI child PID so we can clean up Chromium on error/timeout
-    let child_pid: Arc<Mutex<Option<u32>>> = Arc::new(Mutex::new(None));
-
     let result = spawn_claude_and_collect(
         &cli_args,
         prompt,

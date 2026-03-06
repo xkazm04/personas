@@ -14,7 +14,7 @@ use crate::db::repos::execution::executions;
 use crate::db::repos::resources::tools;
 use crate::engine;
 use crate::error::AppError;
-use crate::ipc_auth::require_privileged;
+use crate::ipc_auth::require_cloud_auth;
 use crate::AppState;
 
 // ---------------------------------------------------------------------------
@@ -81,7 +81,7 @@ pub async fn cloud_connect(
     url: String,
     api_key: String,
 ) -> Result<(), AppError> {
-    require_privileged(&state, "cloud_connect").await?;
+    require_cloud_auth(&state, "cloud_connect").await?;
     if url.trim().is_empty() {
         return Err(AppError::Cloud("Cloud orchestrator URL must not be empty".into()));
     }
@@ -121,7 +121,7 @@ pub async fn cloud_connect(
 pub async fn cloud_reconnect_from_keyring(
     state: State<'_, Arc<AppState>>,
 ) -> Result<(), AppError> {
-    require_privileged(&state, "cloud_reconnect_from_keyring").await?;
+    require_cloud_auth(&state, "cloud_reconnect_from_keyring").await?;
     // Already connected — nothing to do
     if state.cloud_client.lock().await.is_some() {
         return Ok(());
@@ -157,7 +157,7 @@ pub async fn cloud_reconnect_from_keyring(
 pub async fn cloud_disconnect(
     state: State<'_, Arc<AppState>>,
 ) -> Result<(), AppError> {
-    require_privileged(&state, "cloud_disconnect").await?;
+    require_cloud_auth(&state, "cloud_disconnect").await?;
     // Cancel every in-flight cloud execution so polling loops stop immediately
     // and no further requests are sent to the endpoint.
     let active_ids: Vec<String> = state
@@ -191,7 +191,7 @@ pub async fn cloud_disconnect(
 pub async fn cloud_get_config(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Option<CloudConfig>, AppError> {
-    require_privileged(&state, "cloud_get_config").await?;
+    require_cloud_auth(&state, "cloud_get_config").await?;
     let is_connected = state.cloud_client.lock().await.is_some();
 
     match cloud::config::load_cloud_config() {
@@ -205,7 +205,7 @@ pub async fn cloud_get_config(
 pub async fn cloud_status(
     state: State<'_, Arc<AppState>>,
 ) -> Result<cloud::client::CloudStatusResponse, AppError> {
-    require_privileged(&state, "cloud_status").await?;
+    require_cloud_auth(&state, "cloud_status").await?;
     let client = get_cloud_client(&state).await?;
     client.status().await
 }
@@ -218,7 +218,7 @@ pub async fn cloud_execute_persona(
     persona_id: String,
     input_data: Option<String>,
 ) -> Result<String, AppError> {
-    require_privileged(&state, "cloud_execute_persona").await?;
+    require_cloud_auth(&state, "cloud_execute_persona").await?;
     let client = get_cloud_client(&state).await?;
 
     let persona = personas::get_by_id(&state.db, &persona_id)?;
@@ -335,7 +335,7 @@ pub async fn cloud_cancel_execution(
     state: State<'_, Arc<AppState>>,
     execution_id: String,
 ) -> Result<bool, AppError> {
-    require_privileged(&state, "cloud_cancel_execution").await?;
+    require_cloud_auth(&state, "cloud_cancel_execution").await?;
     let cloud_exec_id = state
         .cloud_exec_ids
         .lock()
@@ -368,7 +368,7 @@ pub async fn cloud_cancel_execution(
 pub async fn cloud_oauth_authorize(
     state: State<'_, Arc<AppState>>,
 ) -> Result<cloud::client::CloudOAuthAuthorizeResponse, AppError> {
-    require_privileged(&state, "cloud_oauth_authorize").await?;
+    require_cloud_auth(&state, "cloud_oauth_authorize").await?;
     let client = get_cloud_client(&state).await?;
     let resp = client.oauth_authorize().await?;
 
@@ -385,7 +385,7 @@ pub async fn cloud_oauth_callback(
     code: String,
     oauth_state: String,
 ) -> Result<serde_json::Value, AppError> {
-    require_privileged(&state, "cloud_oauth_callback").await?;
+    require_cloud_auth(&state, "cloud_oauth_callback").await?;
     let client = get_cloud_client(&state).await?;
     client.oauth_callback(&code, &oauth_state).await
 }
@@ -395,7 +395,7 @@ pub async fn cloud_oauth_callback(
 pub async fn cloud_oauth_status(
     state: State<'_, Arc<AppState>>,
 ) -> Result<cloud::client::CloudOAuthStatusResponse, AppError> {
-    require_privileged(&state, "cloud_oauth_status").await?;
+    require_cloud_auth(&state, "cloud_oauth_status").await?;
     let client = get_cloud_client(&state).await?;
     client.oauth_status().await
 }
@@ -405,7 +405,7 @@ pub async fn cloud_oauth_status(
 pub async fn cloud_oauth_refresh(
     state: State<'_, Arc<AppState>>,
 ) -> Result<serde_json::Value, AppError> {
-    require_privileged(&state, "cloud_oauth_refresh").await?;
+    require_cloud_auth(&state, "cloud_oauth_refresh").await?;
     let client = get_cloud_client(&state).await?;
     client.oauth_refresh().await
 }
@@ -415,7 +415,7 @@ pub async fn cloud_oauth_refresh(
 pub async fn cloud_oauth_disconnect(
     state: State<'_, Arc<AppState>>,
 ) -> Result<(), AppError> {
-    require_privileged(&state, "cloud_oauth_disconnect").await?;
+    require_cloud_auth(&state, "cloud_oauth_disconnect").await?;
     let client = get_cloud_client(&state).await?;
     client.oauth_disconnect().await
 }
@@ -431,7 +431,7 @@ pub async fn cloud_deploy_persona(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
 ) -> Result<cloud::client::CloudDeployment, AppError> {
-    require_privileged(&state, "cloud_deploy_persona").await?;
+    require_cloud_auth(&state, "cloud_deploy_persona").await?;
     let client = get_cloud_client(&state).await?;
 
     // Read the persona locally to use as label
@@ -478,7 +478,7 @@ pub async fn cloud_deploy_persona(
 pub async fn cloud_list_deployments(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<cloud::client::CloudDeployment>, AppError> {
-    require_privileged(&state, "cloud_list_deployments").await?;
+    require_cloud_auth(&state, "cloud_list_deployments").await?;
     let client = get_cloud_client(&state).await?;
     client.list_deployments().await
 }
@@ -489,7 +489,7 @@ pub async fn cloud_pause_deployment(
     state: State<'_, Arc<AppState>>,
     deployment_id: String,
 ) -> Result<cloud::client::CloudDeployment, AppError> {
-    require_privileged(&state, "cloud_pause_deployment").await?;
+    require_cloud_auth(&state, "cloud_pause_deployment").await?;
     let client = get_cloud_client(&state).await?;
     client.pause_deployment(&deployment_id).await
 }
@@ -500,7 +500,7 @@ pub async fn cloud_resume_deployment(
     state: State<'_, Arc<AppState>>,
     deployment_id: String,
 ) -> Result<cloud::client::CloudDeployment, AppError> {
-    require_privileged(&state, "cloud_resume_deployment").await?;
+    require_cloud_auth(&state, "cloud_resume_deployment").await?;
     let client = get_cloud_client(&state).await?;
     client.resume_deployment(&deployment_id).await
 }
@@ -511,7 +511,7 @@ pub async fn cloud_undeploy(
     state: State<'_, Arc<AppState>>,
     deployment_id: String,
 ) -> Result<(), AppError> {
-    require_privileged(&state, "cloud_undeploy").await?;
+    require_cloud_auth(&state, "cloud_undeploy").await?;
     let client = get_cloud_client(&state).await?;
     client.delete_deployment(&deployment_id).await?;
     tracing::info!(deployment_id = %deployment_id, "Cloud deployment removed");
@@ -523,7 +523,7 @@ pub async fn cloud_undeploy(
 pub async fn cloud_get_base_url(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Option<String>, AppError> {
-    require_privileged(&state, "cloud_get_base_url").await?;
+    require_cloud_auth(&state, "cloud_get_base_url").await?;
     let client_guard = state.cloud_client.lock().await;
     Ok(client_guard.as_ref().map(|c| c.base_url().to_string()))
 }
