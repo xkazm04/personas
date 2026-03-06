@@ -81,7 +81,7 @@ const FALLBACK_STATUS = { bg: 'bg-amber-500/15', text: 'text-amber-400', border:
 /** Return Tailwind class string for a status badge. */
 export function statusBadge(status: string): string {
   const c = STATUS_STYLES[status] ?? FALLBACK_STATUS;
-  return `px-2 py-0.5 rounded-md text-sm font-medium border ${c.bg} ${c.text} ${c.border}`;
+  return `px-2 py-0.5 rounded-lg text-sm font-medium border ${c.bg} ${c.text} ${c.border}`;
 }
 
 // ── Strategy metadata ──────────────────────────────────────────

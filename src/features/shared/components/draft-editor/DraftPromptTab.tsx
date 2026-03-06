@@ -54,7 +54,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
             <button
               key={tab.id}
               onClick={() => setSubtab(tab.id)}
-              className={`w-full flex items-center gap-2 px-2.5 py-2 text-sm font-medium rounded-lg transition-colors text-left ${
+              className={`w-full flex items-center gap-2 px-2.5 py-2 text-sm font-medium rounded-xl transition-colors text-left ${
                 active
                   ? 'bg-primary/10 text-foreground/80 border border-primary/20'
                   : 'text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'
@@ -166,7 +166,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
                           updatePrompt({ ...editable, customSections: nextSections });
                         }}
                         disabled={disabled}
-                        className="flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        className="flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40"
                       />
                       <input
                         type="text"
@@ -179,7 +179,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
                           updatePrompt({ ...editable, customSections: nextSections });
                         }}
                         disabled={disabled}
-                        className="flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        className="flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40"
                       />
                     </div>
                     <div className="flex-1 min-h-0">

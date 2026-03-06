@@ -72,7 +72,7 @@ export function DesignPhasePanelSaved({
           <button
             onClick={onStartAnalysis}
             disabled={!instruction.trim()}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
               !instruction.trim()
                 ? 'bg-secondary/40 text-muted-foreground/80 cursor-not-allowed'
                 : 'bg-gradient-to-r from-primary to-accent text-foreground shadow-lg shadow-primary/20 hover:from-primary/90 hover:to-accent/90'

@@ -10,6 +10,7 @@ use crate::db::repos::communication::reviews as review_repo;
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::resources::teams as team_repo;
 use crate::error::AppError;
+use crate::ipc_auth::require_auth;
 use crate::AppState;
 
 // ============================================================================
@@ -130,6 +131,7 @@ pub async fn synthesize_team_from_templates(
     query: String,
     team_name: String,
 ) -> Result<TeamSynthesisResult, AppError> {
+    require_auth(&state).await?;
     use crate::commands::credentials::ai_artifact_flow::run_claude_prompt;
     use crate::commands::design::n8n_transform::cli_runner::extract_first_json_object_matching;
     use crate::engine::prompt;

@@ -62,6 +62,13 @@ fn dynamic_base_url(service_type: &str, fields: &HashMap<String, String>) -> Opt
     }
 }
 
+/// Maximum request body size: 10 MB.
+const MAX_REQUEST_BODY_BYTES: usize = 10 * 1024 * 1024;
+
+/// Headers that must not be overridden via user-supplied custom_headers.
+/// Auth headers are applied exclusively through the connector strategy.
+const BLOCKED_HEADERS: &[&str] = &["authorization", "cookie", "host", "proxy-authorization"];
+
 /// Result of a proxied API request.
 #[derive(Debug, serde::Serialize)]
 pub struct ApiProxyResponse {
@@ -171,8 +178,12 @@ pub async fn execute_api_request(
         _ => client.get(&full_url),
     };
 
-    // Apply custom headers
+    // Apply custom headers, blocking sensitive names to prevent auth injection
     for (k, v) in &custom_headers {
+        if BLOCKED_HEADERS.contains(&k.to_lowercase().as_str()) {
+            tracing::warn!(header = %k, "Blocked sensitive header from custom_headers");
+            continue;
+        }
         request = request.header(k.as_str(), v.as_str());
     }
 
@@ -181,8 +192,15 @@ pub async fn execute_api_request(
         request = strategy.apply_auth(request, tok);
     }
 
-    // Apply body
+    // Apply body with size limit
     if let Some(ref body_str) = body {
+        if body_str.len() > MAX_REQUEST_BODY_BYTES {
+            return Err(AppError::Validation(format!(
+                "Request body too large: {} bytes (max {} bytes)",
+                body_str.len(),
+                MAX_REQUEST_BODY_BYTES,
+            )));
+        }
         if !custom_headers.keys().any(|k| k.to_lowercase() == "content-type") {
             request = request.header("Content-Type", "application/json");
         }

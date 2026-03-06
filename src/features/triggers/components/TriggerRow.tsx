@@ -21,7 +21,7 @@ export function TriggerRow({ trigger, expanded, onToggleExpand, onToggleEnabled 
       <button
         type="button"
         onClick={onToggleExpand}
-        className="flex items-center gap-2.5 w-full p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-2xl"
+        className="flex items-center gap-2.5 w-full p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-xl"
       >
         <TriggerStatusSummary trigger={trigger} />
 

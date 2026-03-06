@@ -166,13 +166,17 @@ export default function TeamCanvas() {
 
   // Listen for pipeline-status events from the Rust backend
   useEffect(() => {
-    const unlisten = listen<{
+    let cancelled = false;
+    let unlistenFn: (() => void) | null = null;
+
+    listen<{
       pipeline_id: string;
       team_id: string;
       status: string;
       node_statuses: PipelineNodeStatus[];
       memories_created?: number;
     }>('pipeline-status', (event) => {
+      if (cancelled) return;
       if (event.payload.team_id === selectedTeamId) {
         setPipelineNodeStatuses(event.payload.node_statuses);
         const isRunning = event.payload.status === 'running';
@@ -192,9 +196,13 @@ export default function TeamCanvas() {
           }, 500);
         }
       }
+    }).then((fn) => {
+      if (cancelled) { fn(); } else { unlistenFn = fn; }
     });
+
     return () => {
-      unlisten.then((fn) => fn());
+      cancelled = true;
+      unlistenFn?.();
     };
   }, [selectedTeamId, fetchAnalytics, fetchTeamMemories]);
 
@@ -866,7 +874,7 @@ export default function TeamCanvas() {
         {teamMembers.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[5]">
             <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
                 <Users className="w-8 h-8 text-indigo-400/50" />
               </div>
               <p className="text-sm font-medium text-foreground/80 mb-1">No agents in this team</p>

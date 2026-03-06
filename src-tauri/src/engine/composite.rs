@@ -95,7 +95,7 @@ pub fn composite_tick(pool: &DbPool) {
 
             // Check if we already fired within the window (suppress re-firing)
             {
-                let state = get_state().lock().unwrap();
+                let state = get_state().lock().unwrap_or_else(|e| e.into_inner());
                 if let Some(last) = state.last_fired.get(&trigger.id) {
                     if now.signed_duration_since(*last).num_seconds() < window_secs as i64 {
                         continue;
@@ -128,7 +128,7 @@ pub fn composite_tick(pool: &DbPool) {
             if fired {
                 // Record firing
                 {
-                    let mut state = get_state().lock().unwrap();
+                    let mut state = get_state().lock().unwrap_or_else(|e| e.into_inner());
                     state.last_fired.insert(trigger.id.clone(), now);
                 }
 
@@ -170,7 +170,7 @@ pub fn composite_tick(pool: &DbPool) {
 
     // Cleanup: remove entries for triggers that no longer exist or are old
     {
-        let mut state = get_state().lock().unwrap();
+        let mut state = get_state().lock().unwrap_or_else(|e| e.into_inner());
         let cutoff = now - Duration::seconds(3600);
         state.last_fired.retain(|_, v| *v > cutoff);
     }

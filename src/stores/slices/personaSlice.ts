@@ -24,6 +24,7 @@ export interface PersonaSlice {
   fetchPersonaSummaries: () => Promise<void>;
   fetchDetail: (id: string) => Promise<void>;
   createPersona: (input: { name: string; description?: string; system_prompt: string; icon?: string; color?: string; structured_prompt?: string; design_context?: string }) => Promise<DbPersona>;
+  duplicatePersona: (id: string) => Promise<DbPersona>;
   updatePersona: (id: string, input: PartialPersonaUpdate) => Promise<void>;
   applyPersonaOp: (id: string, op: PersonaOperation) => Promise<void>;
   deletePersona: (id: string) => Promise<void>;
@@ -77,7 +78,7 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
       }
       set({ personaTriggerCounts: triggerCounts, personaLastRun: lastRun, personaHealthMap: healthMap });
     } catch {
-      // Summaries are non-critical sidebar badges — silently ignore errors
+      // intentional: non-critical — sidebar badge counts are cosmetic
     }
   },
 
@@ -149,6 +150,21 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
       set({ error: errMsg(err, "Failed to create persona") });
       throw err;
     }
+  },
+
+  duplicatePersona: async (id) => {
+    const source = get().personas.find((p) => p.id === id);
+    if (!source) throw new Error("Persona not found");
+    const newPersona = await get().createPersona({
+      name: `${source.name} (Copy)`,
+      description: source.description ?? undefined,
+      system_prompt: source.system_prompt,
+      icon: source.icon ?? undefined,
+      color: source.color ?? undefined,
+      structured_prompt: source.structured_prompt ?? undefined,
+      design_context: source.design_context ?? undefined,
+    });
+    return newPersona;
   },
 
   updatePersona: async (id, input) => {

@@ -101,7 +101,7 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -40 }}
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      className="flex flex-col gap-5 max-w-lg w-full px-6"
+      className="flex flex-col gap-6 max-w-lg w-full px-6"
     >
       <div>
         <h2 className="text-lg font-semibold text-foreground/90">Choose a Template</h2>
@@ -115,7 +115,7 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm pb-3 flex gap-1.5 flex-wrap">
           <button
             onClick={() => setActiveFilter('all')}
-            className={`relative px-2.5 py-1 text-sm font-medium rounded-lg border transition-colors ${
+            className={`relative px-2.5 py-1 text-sm font-medium rounded-xl border transition-colors ${
               activeFilter === 'all'
                 ? 'border-primary/25 text-foreground/80'
                 : 'border-primary/8 text-muted-foreground/45 hover:text-muted-foreground hover:border-primary/15'
@@ -134,7 +134,7 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
             <button
               key={cat}
               onClick={() => setActiveFilter(cat)}
-              className={`relative px-2.5 py-1 text-sm font-medium rounded-lg border transition-colors ${
+              className={`relative px-2.5 py-1 text-sm font-medium rounded-xl border transition-colors ${
                 activeFilter === cat
                   ? 'border-primary/25 text-foreground/80'
                   : 'border-primary/8 text-muted-foreground/45 hover:text-muted-foreground hover:border-primary/15'

@@ -44,6 +44,7 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
       const val = result.rows[0]?.[0];
       setKeyTypeResult(val != null ? String(val) : 'unknown');
     } catch {
+      // intentional: non-critical -- Redis TYPE command failure shown inline
       setKeyTypeResult('error');
     }
   }, [credentialId, executeDbQuery]);
@@ -136,7 +137,7 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
                 placeholder={isRedis ? 'Filter keys...' : 'Filter tables...'}
-                className="w-full pl-7 pr-2 py-1.5 rounded-lg bg-secondary/30 border border-primary/10 text-sm text-foreground/80 placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 transition-colors"
+                className="w-full pl-7 pr-2 py-1.5 rounded-xl bg-secondary/30 border border-primary/10 text-sm text-foreground/80 placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 transition-colors"
               />
             </div>
             <button
@@ -184,7 +185,7 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
             return (
               <div
                 key={table.table_name}
-                className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg cursor-pointer transition-colors ${
+                className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl cursor-pointer transition-colors ${
                   isSelected
                     ? 'bg-primary/10 border border-primary/20'
                     : 'hover:bg-secondary/40 border border-transparent'
@@ -226,7 +227,7 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
             return (
               <div
                 key={keyInfo.key}
-                className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg cursor-pointer transition-colors ${
+                className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl cursor-pointer transition-colors ${
                   isSelected
                     ? 'bg-primary/10 border border-primary/20'
                     : 'hover:bg-secondary/40 border border-transparent'
@@ -259,7 +260,7 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
         {!isRedis && selectedTable && (
           <>
             {/* Header */}
-            <div className="flex items-center gap-2 px-5 py-3 border-b border-primary/5 shrink-0">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/5 shrink-0">
               <Table2 className="w-4 h-4 text-blue-400/60" />
               <span className="text-sm font-mono font-medium text-foreground/80 flex-1">
                 {selectedTable}
@@ -272,7 +273,7 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
               {!pinnedTables.some((p) => p.table_name === selectedTable) && (
                 <button
                   onClick={() => handlePinTable(selectedTable)}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-sm font-medium text-blue-400/70 hover:bg-blue-500/10 transition-colors"
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-xl text-sm font-medium text-blue-400/70 hover:bg-blue-500/10 transition-colors"
                   title="Pin this table"
                 >
                   <Pin className="w-3 h-3" />
@@ -288,7 +289,7 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
             </div>
 
             {/* Columns */}
-            <div className="flex-1 min-h-0 overflow-y-auto p-5">
+            <div className="flex-1 min-h-0 overflow-y-auto p-4">
               {columnsLoading && (
                 <div className="flex items-center gap-2 py-8 justify-center">
                   <Loader2 className="w-4 h-4 animate-spin text-muted-foreground/40" />
@@ -362,13 +363,13 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
         {/* Redis key detail */}
         {isRedis && selectedKey && (
           <>
-            <div className="flex items-center gap-2 px-5 py-3 border-b border-primary/5 shrink-0">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/5 shrink-0">
               <Key className="w-4 h-4 text-amber-400/60" />
               <span className="text-sm font-mono font-medium text-foreground/80 flex-1 truncate">
                 {selectedKey}
               </span>
             </div>
-            <div className="p-5">
+            <div className="p-4">
               {keyTypeResult === null ? (
                 <div className="flex items-center gap-2 py-4">
                   <Loader2 className="w-4 h-4 animate-spin text-muted-foreground/40" />

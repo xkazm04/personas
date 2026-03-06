@@ -51,7 +51,7 @@ export function CredentialCardHeader({
     <div
       role="button"
       tabIndex={0}
-      className="w-full px-3 py-2.5 cursor-pointer hover:bg-secondary/50 transition-colors text-left focus-visible:ring-2 focus-visible:ring-violet-500/40 focus-visible:ring-inset focus-visible:outline-none rounded-lg"
+      className="w-full px-3 py-2.5 cursor-pointer hover:bg-secondary/50 transition-colors text-left focus-visible:ring-2 focus-visible:ring-violet-500/40 focus-visible:ring-inset focus-visible:outline-none rounded-xl"
       onClick={onSelect}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(); } }}
     >
@@ -200,7 +200,7 @@ function BadgeRow({
         key: 'auth',
         label: adopted.label,
         node: (
-          <span className={`text-sm px-1.5 py-0.5 rounded-md font-mono border shrink-0 ${getAuthBadgeClasses(adopted)}`}>
+          <span className={`text-sm px-1.5 py-0.5 rounded-lg font-mono border shrink-0 ${getAuthBadgeClasses(adopted)}`}>
             {adopted.label}
           </span>
         ),
@@ -211,7 +211,7 @@ function BadgeRow({
       key: 'service',
       label: credential.service_type,
       node: (
-        <span className="text-sm px-1.5 py-0.5 rounded-md font-mono border shrink-0 bg-secondary/40 border-primary/15 text-muted-foreground/60">
+        <span className="text-sm px-1.5 py-0.5 rounded-lg font-mono border shrink-0 bg-secondary/40 border-primary/15 text-muted-foreground/60">
           {credential.service_type}
         </span>
       ),

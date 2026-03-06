@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { Zap, RefreshCw, AlertCircle, CheckCircle2, Clock, Loader2, Server, Bot, Copy, Check } from 'lucide-react';
+import { Zap, Activity, RefreshCw, AlertCircle, CheckCircle2, Clock, Loader2, Server, Bot, Copy, Check } from 'lucide-react';
+import EmptyState from '@/features/shared/components/EmptyState';
 import { useVirtualList } from '@/hooks/utility/useVirtualList';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { FilterBar } from '@/features/shared/components/FilterBar';
@@ -20,6 +21,7 @@ function HighlightedJson({ raw }: { raw: string }) {
     try {
       return JSON.stringify(JSON.parse(raw), null, 2);
     } catch {
+      // intentional: non-critical — JSON parse fallback
       return null;
     }
   }, [raw]);
@@ -155,10 +157,14 @@ export default function EventLogList() {
             <p className="text-sm">Loading events...</p>
           </div>
         ) : filteredEvents.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-6 text-muted-foreground/80">
-            <Zap className="w-10 h-10 mb-3" />
-            <p className="text-sm">No events yet</p>
-            <p className="text-sm mt-1">Events from webhooks, executions, and persona actions will appear here</p>
+          <div className="flex-1 flex items-center justify-center p-4 md:p-6">
+            <EmptyState
+              icon={Activity}
+              title="No events yet"
+              description="Events from webhooks, executions, and persona actions will appear here as your agents run."
+              iconColor="text-indigo-400/80"
+              iconContainerClassName="bg-indigo-500/10 border-indigo-500/20"
+            />
           </div>
         ) : (
           <div className="flex-1 overflow-hidden flex flex-col">
@@ -226,7 +232,7 @@ export default function EventLogList() {
                           {targetPersona ? (
                             <div className="flex items-center gap-2">
                               <div
-                                className="w-6 h-6 rounded-md flex items-center justify-center text-sm border border-primary/15 flex-shrink-0"
+                                className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0"
                                 style={{ backgroundColor: (targetPersona.color || '#6366f1') + '15' }}
                               >
                                 {targetPersona.icon || <Bot className="w-3.5 h-3.5 text-muted-foreground/60" />}
@@ -237,7 +243,7 @@ export default function EventLogList() {
                             </div>
                           ) : (
                             <div className="flex items-center gap-2">
-                              <div className="w-6 h-6 rounded-md flex items-center justify-center border border-primary/10 bg-muted/20 flex-shrink-0">
+                              <div className="w-6 h-6 rounded-lg flex items-center justify-center border border-primary/10 bg-muted/20 flex-shrink-0">
                                 <Server className="w-3.5 h-3.5 text-muted-foreground/50" />
                               </div>
                               <span className="text-sm text-muted-foreground/50 truncate">
@@ -249,7 +255,7 @@ export default function EventLogList() {
 
                         {/* Status */}
                         <td className="px-4 py-2.5">
-                          <span className={`inline-flex items-center gap-1.5 text-sm px-2 py-0.5 rounded-md font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
+                          <span className={`inline-flex items-center gap-1.5 text-sm px-2 py-0.5 rounded-lg font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
                             {event.status === 'completed' || event.status === 'processed' ? (
                               <CheckCircle2 className="w-3 h-3" />
                             ) : event.status === 'failed' ? (
@@ -307,7 +313,7 @@ export default function EventLogList() {
                   </div>
                 )}
                 {selectedEvent.processed_at && (
-                  <div className="rounded-lg border border-primary/10 bg-background/30 px-2.5 py-2">
+                  <div className="rounded-xl border border-primary/10 bg-background/30 px-2.5 py-2">
                     <span className="text-sm font-mono text-muted-foreground/80">Processed</span>
                     <span className="ml-2 text-sm text-foreground/80">
                       {new Date(selectedEvent.processed_at).toLocaleString()}
@@ -328,9 +334,9 @@ export default function EventLogList() {
                         ).then(() => {
                           setCopiedPayload(true);
                           setTimeout(() => setCopiedPayload(false), 2000);
-                        }).catch(() => {});
+                        }).catch(() => { /* intentional: non-critical — clipboard copy fallback */ });
                       }}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-sm text-muted-foreground/70 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-sm text-muted-foreground/70 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
                       title="Copy payload"
                     >
                       {copiedPayload ? (

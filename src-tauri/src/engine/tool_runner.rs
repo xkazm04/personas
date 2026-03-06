@@ -27,7 +27,8 @@ pub struct ToolInvocationResult {
 ///
 /// For **script** tools (`script_path` is non-empty): spawns `npx tsx <script_path> --input '<json>'`.
 /// For **API** tools (has `implementation_guide` with a `Curl:` line): extracts the curl command,
-/// substitutes `$ENV_VAR` placeholders with resolved credential values, and executes via shell.
+/// tokenizes it, substitutes `$ENV_VAR` placeholders, and executes via `Command::new("curl")`
+/// with individual `.arg()` calls (no shell involved, preventing command injection).
 pub async fn invoke_tool_direct(
     pool: &DbPool,
     tool: &PersonaToolDefinition,
@@ -38,9 +39,16 @@ pub async fn invoke_tool_direct(
     let start = Instant::now();
 
     // Resolve credential env vars using the existing runner infrastructure
-    let (env_vars, _hints) =
+    let (env_vars, _hints, cred_failures) =
         super::runner::resolve_credential_env_vars(pool, &[tool.clone()], persona_id, persona_name)
             .await;
+
+    if !cred_failures.is_empty() {
+        return Err(AppError::Execution(format!(
+            "Credential decryption failed for: {}. Re-enter or rotate these credentials before retrying.",
+            cred_failures.join(", ")
+        )));
+    }
 
     let env_map: HashMap<&str, &str> = env_vars
         .iter()
@@ -128,6 +136,19 @@ async fn invoke_script(
 }
 
 /// Invoke an API tool by extracting the Curl command from its implementation_guide.
+///
+/// Uses `Command::new("curl")` with individual `.arg()` calls to avoid shell
+/// injection (CWE-78). The curl command string is tokenized respecting quotes,
+/// then variable placeholders are substituted in each token individually.
+///
+/// Security measures:
+/// - User input is sanitized (null bytes, CRLF stripped) before substitution
+/// - Input params are substituted **before** env vars, preventing user values
+///   containing `${SECRET}` from triggering credential expansion
+/// - Resolved arguments are validated against a blocklist of dangerous curl
+///   flags (`-o`, `--output`, `-K`, `--config`, etc.)
+/// - `--proto =https,http` is injected to restrict curl to safe protocols,
+///   blocking `file://`, `gopher://`, `dict://`, etc. (SSRF mitigation)
 async fn invoke_api(
     tool: &PersonaToolDefinition,
     guide: &str,
@@ -141,33 +162,36 @@ async fn invoke_api(
         ))
     })?;
 
-    // Substitute $ENV_VAR placeholders with resolved credential values
-    let mut resolved_curl = curl_line.to_string();
-    for (k, v) in env_map {
-        resolved_curl = resolved_curl.replace(&format!("${k}"), v);
-        resolved_curl = resolved_curl.replace(&format!("${{{k}}}"), v);
+    // Parse the curl command into shell-style tokens (respecting quotes)
+    let raw_tokens = shell_tokenize(curl_line);
+
+    // The first token must be "curl"
+    if raw_tokens.is_empty() || raw_tokens[0] != "curl" {
+        return Err(AppError::Execution(format!(
+            "Tool '{}' Curl: line must start with 'curl', got: {:?}",
+            tool.name,
+            raw_tokens.first()
+        )));
     }
 
-    // Also substitute input parameters from the JSON
-    if let Ok(input_val) = serde_json::from_str::<serde_json::Value>(input_json) {
-        if let Some(obj) = input_val.as_object() {
-            for (key, val) in obj {
-                let val_str = match val {
-                    serde_json::Value::String(s) => s.clone(),
-                    other => other.to_string(),
-                };
-                resolved_curl = resolved_curl.replace(&format!("${{{key}}}"), &val_str);
-                resolved_curl = resolved_curl.replace(&format!("${key}"), &val_str);
-            }
-        }
+    // Substitute placeholders in each token individually.
+    // Each token becomes a separate process argument so shell metacharacters
+    // (;, |, &&, $(...), etc.) have no effect.
+    let resolved_tokens: Vec<String> = raw_tokens[1..]
+        .iter()
+        .map(|token| resolve_placeholders(token, env_map, input_json))
+        .collect();
+
+    // Validate resolved arguments — block dangerous curl flags and URL schemes
+    validate_curl_args(&resolved_tokens, &tool.name)?;
+
+    // Execute directly via Command::new("curl") — no shell involved.
+    // Inject --proto to restrict to safe URL schemes (blocks file://, gopher://, etc.)
+    let mut cmd = tokio::process::Command::new("curl");
+    cmd.arg("--proto").arg("=https,http");
+    for token in &resolved_tokens {
+        cmd.arg(token);
     }
-
-    // Execute the resolved curl command
-    let shell = if cfg!(target_os = "windows") { "cmd" } else { "sh" };
-    let flag = if cfg!(target_os = "windows") { "/C" } else { "-c" };
-
-    let mut cmd = tokio::process::Command::new(shell);
-    cmd.arg(flag).arg(&resolved_curl);
 
     for (k, v) in env_map {
         cmd.env(k, v);
@@ -193,6 +217,141 @@ async fn invoke_api(
             msg.trim()
         )))
     }
+}
+
+/// Substitute `$VAR` and `${VAR}` placeholders in a single token with values
+/// from the environment map and input JSON. Returns the resolved string.
+///
+/// **Security**: Input parameters (user-controlled) are substituted **first** and
+/// their values are sanitized to strip null bytes and control characters.
+/// Environment variables (credentials) are substituted **second**. This ordering
+/// prevents a user from injecting `${SECRET_ENV}` into their input value and
+/// having it expand to actual credential data during the env-var pass.
+fn resolve_placeholders(
+    token: &str,
+    env_map: &HashMap<&str, &str>,
+    input_json: &str,
+) -> String {
+    let mut resolved = token.to_string();
+
+    // 1. Substitute input parameters FIRST (user-controlled values).
+    //    Sanitize values to strip null bytes and CRLF sequences that could be
+    //    used for header injection in HTTP requests.
+    if let Ok(input_val) = serde_json::from_str::<serde_json::Value>(input_json) {
+        if let Some(obj) = input_val.as_object() {
+            for (key, val) in obj {
+                let raw = match val {
+                    serde_json::Value::String(s) => s.clone(),
+                    other => other.to_string(),
+                };
+                let sanitized = sanitize_input_value(&raw);
+                resolved = resolved.replace(&format!("${{{}}}", key), &sanitized);
+                resolved = resolved.replace(&format!("${}", key), &sanitized);
+            }
+        }
+    }
+
+    // 2. Substitute credential env vars SECOND.
+    //    Because user input was already expanded above, any `${VAR}` patterns
+    //    originating from user values are now literal text and will NOT match
+    //    env var keys (user values had `$` escaped to prevent expansion).
+    for (k, v) in env_map {
+        resolved = resolved.replace(&format!("${{{}}}", k), v);
+        resolved = resolved.replace(&format!("${}", k), v);
+    }
+
+    resolved
+}
+
+/// Sanitize a user-provided input value before substitution into a curl argument.
+///
+/// - Strips null bytes (prevent C-string truncation)
+/// - Strips carriage returns and newlines (prevent CRLF / header injection)
+/// - Escapes `$` characters so user values cannot trigger secondary placeholder
+///   expansion (e.g. user providing `${API_KEY}` won't match env var substitution)
+fn sanitize_input_value(value: &str) -> String {
+    value
+        .replace('\0', "")
+        .replace('\r', "")
+        .replace('\n', " ")
+        .replace('$', "\\$")
+}
+
+/// Curl flags that are dangerous when user input can influence arguments.
+///
+/// - `-o` / `--output`: write response to arbitrary file path
+/// - `-O` / `--remote-name`: write to file named by URL (directory traversal)
+/// - `-K` / `--config`: read additional curl options from a file
+/// - `-T` / `--upload-file`: upload local files
+/// - `--proto`: override our protocol restriction
+const BLOCKED_CURL_FLAGS: &[&str] = &[
+    "-o", "--output",
+    "-O", "--remote-name",
+    "-K", "--config",
+    "-T", "--upload-file",
+    "--proto",
+];
+
+/// Validate that resolved curl arguments do not contain dangerous flags.
+fn validate_curl_args(args: &[String], tool_name: &str) -> Result<(), AppError> {
+    for arg in args {
+        let lower = arg.to_ascii_lowercase();
+        for blocked in BLOCKED_CURL_FLAGS {
+            // Match both exact flags and flags with `=` (e.g. `--output=path`)
+            if &lower == blocked || lower.starts_with(&format!("{}=", blocked)) {
+                return Err(AppError::Execution(format!(
+                    "Tool '{}': blocked dangerous curl flag '{}'",
+                    tool_name, arg
+                )));
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Tokenize a command string into arguments, respecting single and double quotes.
+///
+/// Examples:
+/// - `curl -s -H 'Authorization: Bearer tok'` → `["curl", "-s", "-H", "Authorization: Bearer tok"]`
+/// - `curl -d "hello world"` → `["curl", "-d", "hello world"]`
+/// - `curl -sS https://example.com` → `["curl", "-sS", "https://example.com"]`
+fn shell_tokenize(input: &str) -> Vec<String> {
+    let mut tokens = Vec::new();
+    let mut current = String::new();
+    let mut chars = input.chars().peekable();
+    let mut in_single_quote = false;
+    let mut in_double_quote = false;
+
+    while let Some(ch) = chars.next() {
+        match ch {
+            '\'' if !in_double_quote => {
+                in_single_quote = !in_single_quote;
+            }
+            '"' if !in_single_quote => {
+                in_double_quote = !in_double_quote;
+            }
+            ' ' | '\t' if !in_single_quote && !in_double_quote => {
+                if !current.is_empty() {
+                    tokens.push(std::mem::take(&mut current));
+                }
+            }
+            '\\' if !in_single_quote => {
+                // Consume next char literally
+                if let Some(next) = chars.next() {
+                    current.push(next);
+                }
+            }
+            _ => {
+                current.push(ch);
+            }
+        }
+    }
+
+    if !current.is_empty() {
+        tokens.push(current);
+    }
+
+    tokens
 }
 
 /// Invoke an automation-backed tool via webhook.

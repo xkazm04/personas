@@ -38,7 +38,7 @@ function SelectionCheckbox({ checked, onChange }: { checked: boolean; onChange: 
         e.stopPropagation();
         onChange();
       }}
-      className={`w-4 h-4 rounded-md flex items-center justify-center flex-shrink-0 transition-all duration-200 cursor-pointer ${
+      className={`w-4 h-4 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200 cursor-pointer ${
         checked
           ? 'bg-violet-500 border border-violet-500'
           : 'bg-secondary/40 border border-primary/20 hover:border-primary/40'
@@ -151,7 +151,7 @@ export function N8nParserResults({
         </div>
         <button
           onClick={onReset}
-          className="px-3 py-1.5 text-sm rounded-lg border border-primary/15 hover:bg-secondary/50 text-muted-foreground/80 transition-colors"
+          className="px-3 py-1.5 text-sm rounded-xl border border-primary/15 hover:bg-secondary/50 text-muted-foreground/80 transition-colors"
         >
           Import Another
         </button>
@@ -160,13 +160,13 @@ export function N8nParserResults({
       {/* Selection summary */}
       {hasSelection && (
         <div className="flex items-center gap-2 text-sm font-mono uppercase tracking-wider text-muted-foreground/45">
-          <span className="px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/15">
+          <span className="px-2.5 py-1 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/15">
             {toolCount} tools
           </span>
-          <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/15">
+          <span className="px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/15">
             {triggerCount} triggers
           </span>
-          <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/15">
+          <span className="px-2.5 py-1 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/15">
             {connectorCount} connectors
           </span>
           <span className="text-muted-foreground/80 ml-1">selected for import</span>
@@ -187,7 +187,7 @@ export function N8nParserResults({
                 return (
                   <div
                     key={tool}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-all duration-150 ${
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border transition-all duration-150 ${
                       isSelected
                         ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
                         : 'bg-secondary/30 text-muted-foreground/80 border-primary/10 opacity-60'
@@ -221,7 +221,7 @@ export function N8nParserResults({
                 return (
                   <div
                     key={i}
-                    className={`flex items-center gap-2.5 px-3 py-2 rounded-lg border transition-all duration-150 ${
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border transition-all duration-150 ${
                       isSelected
                         ? 'bg-amber-500/5 border-amber-500/15'
                         : 'bg-secondary/20 border-primary/10 opacity-50'
@@ -264,7 +264,7 @@ export function N8nParserResults({
                 return (
                   <div
                     key={conn.name}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-all duration-150 ${
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border transition-all duration-150 ${
                       isSelected
                         ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                         : 'bg-secondary/30 text-muted-foreground/80 border-primary/10 opacity-60'

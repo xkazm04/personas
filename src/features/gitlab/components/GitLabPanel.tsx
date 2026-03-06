@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { GitBranch } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
@@ -8,6 +8,7 @@ import { ErrorBanner } from '@/features/shared/components/ErrorBanner';
 import { GitLabConnectionForm } from '@/features/gitlab/components/GitLabConnectionForm';
 import { GitLabAgentList } from '@/features/gitlab/components/GitLabAgentList';
 import { GitLabDeployModal } from '@/features/gitlab/components/GitLabDeployModal';
+import type { CiCdTemplate } from '../data/cicdTemplates';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -51,6 +52,7 @@ export default function GitLabPanel() {
   const fetchAgents = usePersonaStore((s) => s.gitlabFetchAgents);
   const undeployAgent = usePersonaStore((s) => s.gitlabUndeployAgent);
   const clearError = usePersonaStore((s) => s.gitlabClearError);
+  const createPersona = usePersonaStore((s) => s.createPersona);
 
   const isConnected = config?.isConnected ?? false;
 
@@ -63,7 +65,7 @@ export default function GitLabPanel() {
     try {
       await connect(token.trim());
     } catch {
-      // error surfaced via store
+      // intentional: error state handled locally via store + ErrorBanner
     }
   };
 
@@ -76,6 +78,17 @@ export default function GitLabPanel() {
   const handleSelectProject = (id: number) => {
     usePersonaStore.setState({ gitlabSelectedProjectId: id });
   };
+
+  const handleCreateFromTemplate = useCallback(async (template: CiCdTemplate): Promise<string> => {
+    const persona = await createPersona({
+      name: template.name,
+      description: template.description,
+      system_prompt: template.systemPrompt,
+      icon: template.icon,
+      color: template.color,
+    });
+    return persona.id;
+  }, [createPersona]);
 
   return (
     <ContentBox>
@@ -121,6 +134,8 @@ export default function GitLabPanel() {
               onSelectProject={handleSelectProject}
               onFetchProjects={fetchProjects}
               onDeploy={deployPersona}
+              onCreateFromTemplate={handleCreateFromTemplate}
+              gitlabTier="free"
             />
           )}
           {activeTab === 'agents' && isConnected && (

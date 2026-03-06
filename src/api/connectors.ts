@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { ConnectorDefinition } from "@/lib/bindings/ConnectorDefinition";
 import type { CreateConnectorDefinitionInput } from "@/lib/bindings/CreateConnectorDefinitionInput";

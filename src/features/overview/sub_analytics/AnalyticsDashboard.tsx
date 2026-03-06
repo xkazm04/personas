@@ -237,16 +237,16 @@ export default function AnalyticsDashboard() {
         actions={
           <div className="flex items-center gap-2 flex-shrink-0">
             {/* Header badges */}
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-semibold border bg-emerald-500/10 border-emerald-500/20 text-emerald-300">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-sm font-semibold border bg-emerald-500/10 border-emerald-500/20 text-emerald-300">
               <DollarSign className="w-3 h-3" />${(summary?.total_cost_usd || 0).toFixed(2)}
             </span>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-semibold border bg-blue-500/10 border-blue-500/20 text-blue-300">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-sm font-semibold border bg-blue-500/10 border-blue-500/20 text-blue-300">
               <Zap className="w-3 h-3" />{summary?.total_executions || 0}
             </span>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-semibold border bg-green-500/10 border-green-500/20 text-green-300">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-sm font-semibold border bg-green-500/10 border-green-500/20 text-green-300">
               <CheckCircle className="w-3 h-3" />{successRate}%
             </span>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-semibold border bg-purple-500/10 border-purple-500/20 text-purple-300">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-sm font-semibold border bg-purple-500/10 border-purple-500/20 text-purple-300">
               <TrendingUp className="w-3 h-3" />{summary?.active_personas || 0}
             </span>
             <button
@@ -287,7 +287,7 @@ export default function AnalyticsDashboard() {
                   <p className="text-sm font-medium text-red-300">Metrics unavailable</p>
                   <p className="text-sm text-red-400/70 mt-0.5">{observabilityError}</p>
                 </div>
-                <button onClick={() => { void refreshAllSafe(); }} className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-lg bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors">
+                <button onClick={() => { void refreshAllSafe(); }} className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors">
                   <RefreshCw className="w-3 h-3" /> Retry
                 </button>
               </div>
@@ -305,7 +305,7 @@ export default function AnalyticsDashboard() {
                   </p>
                   <div className="mt-1.5 flex flex-wrap gap-2">
                     {budgetWarnings.map((w) => (
-                        <span key={w.personaId} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm border ${w.exceeded ? 'bg-red-500/15 text-red-300 border-red-500/25' : 'bg-amber-500/15 text-amber-300 border-amber-500/25'}`}>
+                        <span key={w.personaId} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-sm border ${w.exceeded ? 'bg-red-500/15 text-red-300 border-red-500/25' : 'bg-amber-500/15 text-amber-300 border-amber-500/25'}`}>
                           {w.name}
                           <span className="font-mono text-sm opacity-80">${w.spend.toFixed(2)} / ${w.budget.toFixed(2)}</span>
                           <span className={`font-mono text-sm font-bold ${w.exceeded ? 'text-red-400' : 'text-amber-400'}`}>{(w.ratio * 100).toFixed(0)}%</span>
@@ -328,7 +328,7 @@ export default function AnalyticsDashboard() {
                   </p>
                   <div className="mt-1.5 flex flex-wrap gap-2">
                     {costAnomalies.map((a, i) => (
-                      <span key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm border bg-amber-500/15 text-amber-300 border-amber-500/25">
+                      <span key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-sm border bg-amber-500/15 text-amber-300 border-amber-500/25">
                         {new Date(a.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         <span className="font-mono text-sm opacity-80">${a.cost.toFixed(2)}</span>
                         <span className="font-mono text-sm font-bold text-amber-400">{a.deviation_sigma.toFixed(1)}&sigma;</span>
@@ -448,15 +448,15 @@ export default function AnalyticsDashboard() {
           )}
 
           {/* Health Issues — full width */}
-          <div className="rounded-2xl border border-primary/10 bg-secondary/20 shadow-sm overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-primary/5 bg-gradient-to-r from-secondary/40 to-transparent">
+          <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-sm overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between px-4 py-4 border-b border-primary/5 bg-gradient-to-r from-secondary/40 to-transparent">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 shadow-inner flex items-center justify-center">
                   <Stethoscope className="w-4 h-4 text-cyan-400" />
                 </div>
                 <h3 className="text-sm font-bold text-foreground/90 uppercase tracking-widest">Health Issues</h3>
                 {healingIssues.length > 0 && (
-                  <span className="px-2 py-0.5 text-sm font-black tracking-wide rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm">
+                  <span className="px-2 py-0.5 text-sm font-black tracking-wide rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm">
                     {healingIssues.length}
                   </span>
                 )}
@@ -476,7 +476,7 @@ export default function AnalyticsDashboard() {
 
             {/* Analysis result */}
             {analysisResult && !healingRunning && (
-              <div className="flex items-center justify-between px-5 py-2.5 bg-cyan-500/10 border-b border-cyan-500/20">
+              <div className="flex items-center justify-between px-4 py-2.5 bg-cyan-500/10 border-b border-cyan-500/20">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-3.5 h-3.5 text-cyan-400" />
                   <span className="text-sm text-cyan-300">
@@ -492,7 +492,7 @@ export default function AnalyticsDashboard() {
             )}
 
             {analysisError && !healingRunning && (
-              <div className="flex items-center justify-between px-5 py-2.5 bg-red-500/10 border-b border-red-500/20">
+              <div className="flex items-center justify-between px-4 py-2.5 bg-red-500/10 border-b border-red-500/20">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
                   <span className="text-sm text-red-300">{analysisError}</span>
@@ -505,7 +505,7 @@ export default function AnalyticsDashboard() {
 
             {/* Filter chips */}
             {healingIssues.length > 0 && (
-              <div className="px-5 py-2.5 border-b border-primary/10 flex items-center gap-1">
+              <div className="px-4 py-2.5 border-b border-primary/10 flex items-center gap-1">
                 {([
                   { key: 'all' as const, label: 'All', count: issueCounts.all },
                   { key: 'open' as const, label: 'Open', count: issueCounts.open },
@@ -514,7 +514,7 @@ export default function AnalyticsDashboard() {
                   <button
                     key={chip.key}
                     onClick={() => setIssueFilter(chip.key)}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-medium transition-all ${
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-sm font-medium transition-all ${
                       issueFilter === chip.key
                         ? 'bg-background text-foreground shadow-sm border border-primary/20'
                         : 'text-muted-foreground/80 hover:text-muted-foreground'
@@ -533,7 +533,7 @@ export default function AnalyticsDashboard() {
             {healingIssues.length === 0 ? (
               <div className="flex items-center justify-center py-10">
                 <div className="text-center flex flex-col items-center">
-                  <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 shadow-inner flex items-center justify-center mb-4 opacity-70">
+                  <div className="w-14 h-14 rounded-xl bg-emerald-500/10 border border-emerald-500/20 shadow-inner flex items-center justify-center mb-4 opacity-70">
                     <CheckCircle2 className="w-6 h-6 text-emerald-400" />
                   </div>
                   <p className="text-sm font-medium text-foreground/80">No open issues</p>
@@ -550,18 +550,18 @@ export default function AnalyticsDashboard() {
                   const isCircuitBreaker = /circuit\s*breaker/i.test(issue.title);
 
                   return (
-                    <div key={issue.id} className={`flex items-center gap-4 px-5 py-4 hover:bg-white/[0.03] transition-colors group cursor-pointer ${isAutoFixed ? 'opacity-70' : ''} ${isCircuitBreaker ? 'bg-red-500/5' : ''}`}>
+                    <div key={issue.id} className={`flex items-center gap-4 px-4 py-4 hover:bg-white/[0.03] transition-colors group cursor-pointer ${isAutoFixed ? 'opacity-70' : ''} ${isCircuitBreaker ? 'bg-red-500/5' : ''}`}>
                       {isCircuitBreaker ? (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono uppercase rounded-md border bg-red-500/15 text-red-400 border-red-500/25">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono uppercase rounded-lg border bg-red-500/15 text-red-400 border-red-500/25">
                           <Zap className="w-3 h-3" />breaker
                         </span>
                       ) : isAutoFixed ? (
-                        <span className="inline-flex px-1.5 py-0.5 text-sm font-mono uppercase rounded-md border bg-emerald-500/15 text-emerald-400 border-emerald-500/20">fixed</span>
+                        <span className="inline-flex px-1.5 py-0.5 text-sm font-mono uppercase rounded-lg border bg-emerald-500/15 text-emerald-400 border-emerald-500/20">fixed</span>
                       ) : (
-                        <span className={`inline-flex px-1.5 py-0.5 text-sm font-mono uppercase rounded-md ${badgeClass(sevBadge)}`}>{issue.severity}</span>
+                        <span className={`inline-flex px-1.5 py-0.5 text-sm font-mono uppercase rounded-lg ${badgeClass(sevBadge)}`}>{issue.severity}</span>
                       )}
                       {isAutoFixed && issue.execution_id && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" title="Auto-healed via retry">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" title="Auto-healed via retry">
                           <RefreshCw className="w-2.5 h-2.5" />retry
                         </span>
                       )}
@@ -578,7 +578,7 @@ export default function AnalyticsDashboard() {
                       {!isAutoFixed && (
                         <button
                           onClick={() => resolveHealingIssue(issue.id)}
-                          className="px-2 py-1 text-sm font-medium text-emerald-400 hover:bg-emerald-500/10 rounded-md transition-colors"
+                          className="px-2 py-1 text-sm font-medium text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
                         >
                           Resolve
                         </button>

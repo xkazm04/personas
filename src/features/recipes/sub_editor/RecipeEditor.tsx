@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import { usePersonaStore } from '@/stores/personaStore';
+import { useToastStore } from '@/stores/toastStore';
 
 interface RecipeEditorProps {
   /** null = create mode, RecipeDefinition = edit mode */
@@ -67,7 +68,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
       }
       onSaved();
     } catch {
-      // Error set by store
+      useToastStore.getState().addToast('Failed to save recipe', 'error');
     } finally {
       setSaving(false);
     }
@@ -88,7 +89,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
         <button
           onClick={handleSave}
           disabled={!isValid || saving}
-          className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors"
         >
           {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
           {recipe ? 'Save Changes' : 'Create Recipe'}
@@ -96,7 +97,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
       </div>
 
       {/* Form */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-5">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* Name */}
         <div>
           <label className="block text-sm font-medium text-muted-foreground mb-1.5">Name *</label>
@@ -105,7 +106,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Summarize PR Changes"
-            className="w-full rounded-md border border-border/60 bg-background/50 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
+            className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
           />
         </div>
 
@@ -117,7 +118,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="What does this recipe do?"
             rows={2}
-            className="w-full rounded-md border border-border/60 bg-background/50 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 resize-none"
+            className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 resize-none"
           />
         </div>
 
@@ -127,7 +128,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full rounded-md border border-border/60 bg-background/50 px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50"
+            className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50"
           >
             <option value="">None</option>
             {CATEGORIES.map((c) => (
@@ -149,7 +150,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
             onChange={(e) => setPromptTemplate(e.target.value)}
             placeholder={'You are a helpful assistant.\n\nAnalyze the following: {{input}}'}
             rows={10}
-            className="w-full rounded-md border border-border/60 bg-background/50 px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 resize-y"
+            className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 resize-y"
           />
         </div>
 
@@ -166,7 +167,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
             onChange={(e) => setInputSchema(e.target.value)}
             placeholder='[{"key": "input", "type": "text", "label": "Input text", "default": ""}]'
             rows={4}
-            className="w-full rounded-md border border-border/60 bg-background/50 px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 resize-y"
+            className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 resize-y"
           />
         </div>
 
@@ -178,7 +179,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
             value={tags}
             onChange={(e) => setTags(e.target.value)}
             placeholder='["summarization", "code-review"]'
-            className="w-full rounded-md border border-border/60 bg-background/50 px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
+            className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
           />
         </div>
       </div>

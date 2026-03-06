@@ -12,7 +12,7 @@ interface SectionCardProps {
 const SIZE_CLASSES: Record<SectionCardSize, string> = {
   sm: 'rounded-lg p-2.5',
   md: 'rounded-xl p-3.5',
-  lg: 'rounded-2xl p-4',
+  lg: 'rounded-xl p-4',
 };
 
 export function SectionCard({ children, size = 'md', blur = false, className = '' }: SectionCardProps) {

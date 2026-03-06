@@ -191,7 +191,7 @@ export function DesignInput({
       >
         {/* Drag overlay */}
         {isDragging && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center border-2 border-dashed border-primary/40 bg-primary/5 rounded-2xl pointer-events-none">
+          <div className="absolute inset-0 z-10 flex items-center justify-center border-2 border-dashed border-primary/40 bg-primary/5 rounded-xl pointer-events-none">
             <span className="text-sm font-medium text-primary/50">Drop file here</span>
           </div>
         )}
@@ -203,7 +203,7 @@ export function DesignInput({
           onKeyDown={handleKeyDown}
           disabled={disabled}
           placeholder={`Describe what this persona should do...\n\nExamples:\n  - Monitor my Gmail for invoices and extract amounts into a spreadsheet\n  - Watch GitHub webhooks and post summaries to Slack\n  - Analyze our API logs daily and flag anomalies`}
-          className="w-full min-h-[200px] bg-background/50 border border-primary/15 rounded-2xl p-4 pb-12 text-sm text-foreground font-sans resize-none focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all placeholder-muted-foreground/30"
+          className="w-full min-h-[200px] bg-background/50 border border-primary/15 rounded-xl p-4 pb-12 text-sm text-foreground font-sans resize-none focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all placeholder-muted-foreground/30"
           spellCheck
           style={{ overflow: 'hidden' }}
         />
@@ -214,7 +214,7 @@ export function DesignInput({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled}
-            className="flex items-center gap-1.5 px-2 py-1 rounded-md text-sm text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/50 transition-colors"
+            className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/50 transition-colors"
             title="Attach file (API spec, schema, MCP config)"
           >
             <Paperclip className="w-3.5 h-3.5" />
@@ -232,7 +232,7 @@ export function DesignInput({
             type="button"
             onClick={() => setShowReferences(!showReferences)}
             disabled={disabled}
-            className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-sm transition-colors ${
+            className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm transition-colors ${
               showReferences
                 ? 'text-indigo-400 bg-indigo-500/10'
                 : 'text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/50'
@@ -265,7 +265,7 @@ export function DesignInput({
                 <button
                   key={type}
                   onClick={() => handleTypeConfirm(type)}
-                  className="flex items-center gap-1.5 px-2.5 py-1 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground/90 hover:border-primary/30 hover:bg-primary/5 transition-all"
+                  className="flex items-center gap-1.5 px-2.5 py-1 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground/90 hover:border-primary/30 hover:bg-primary/5 transition-all"
                 >
                   <Icon className="w-3 h-3" />
                   {FILE_TYPE_LABELS[type]}

@@ -56,7 +56,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
           setEndpoints((prev) => mergeEndpoints(prev, saved));
         }
       } catch {
-        // No saved definition
+        // intentional: non-critical — no saved API definition to restore
       }
       // Merge catalog endpoints
       if (!cancelled && catalogEndpoints?.length) {
@@ -179,7 +179,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
           testRunner.isRunning ? (
             <button
               onClick={testRunner.cancel}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors"
             >
               <Square className="w-3 h-3" />
               Stop
@@ -187,7 +187,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
           ) : (
             <button
               onClick={() => { testRunner.runAll(endpoints, credentialId); setShowLogPanel(true); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-colors"
             >
               <PlayCircle className="w-3 h-3" />
               Run All
@@ -198,7 +198,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={isParsing}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-secondary/30 border border-primary/10 text-foreground/80 hover:bg-secondary/50 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-secondary/30 border border-primary/10 text-foreground/70 hover:bg-secondary/50 transition-colors"
         >
           <Upload className="w-3 h-3" />
           Upload Spec
@@ -212,7 +212,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
         />
         <button
           onClick={() => setShowPasteModal(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-secondary/30 border border-primary/10 text-foreground/80 hover:bg-secondary/50 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-secondary/30 border border-primary/10 text-foreground/70 hover:bg-secondary/50 transition-colors"
         >
           <FileText className="w-3 h-3" />
           Paste OpenAPI
@@ -322,8 +322,8 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
 
       {/* Paste modal */}
       {showPasteModal && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-2xl">
-          <div className="w-full max-w-2xl mx-4 bg-background border border-primary/15 rounded-xl shadow-xl p-5 space-y-3">
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-xl">
+          <div className="w-full max-w-2xl mx-4 bg-background border border-primary/15 rounded-xl shadow-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-foreground/80">Paste OpenAPI / Swagger Spec</h3>
               <button
@@ -342,14 +342,14 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => { setShowPasteModal(false); setPasteContent(''); }}
-                className="px-3 py-2 rounded-lg text-sm text-muted-foreground/70 hover:bg-secondary/40 transition-colors"
+                className="px-3 py-2 rounded-xl text-sm text-muted-foreground/60 hover:bg-secondary/40 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handlePasteSubmit}
                 disabled={isParsing || !pasteContent.trim()}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-40 transition-colors"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-40 transition-colors"
               >
                 {isParsing ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileText className="w-3 h-3" />}
                 {isParsing ? 'Parsing...' : 'Parse & Load'}
@@ -377,14 +377,14 @@ function EmptyState({ onUpload, onPaste }: { onUpload: () => void; onPaste: () =
       <div className="flex items-center gap-2">
         <button
           onClick={onUpload}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
         >
           <Upload className="w-3.5 h-3.5" />
           Upload Spec File
         </button>
         <button
           onClick={onPaste}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-secondary/30 border border-primary/10 text-foreground/80 hover:bg-secondary/50 transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-secondary/30 border border-primary/10 text-foreground/70 hover:bg-secondary/50 transition-colors"
         >
           <FileText className="w-3.5 h-3.5" />
           Paste OpenAPI

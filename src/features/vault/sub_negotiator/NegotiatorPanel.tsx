@@ -46,9 +46,9 @@ export function NegotiatorPanel({ designResult, onComplete, onClose }: Negotiato
       transition={MOTION_TIMING.FLOW}
       className="overflow-hidden"
     >
-      <div className="rounded-2xl border border-violet-500/20 bg-gradient-to-b from-violet-500/5 to-transparent">
+      <div className="rounded-xl border border-violet-500/20 bg-gradient-to-b from-violet-500/5 to-transparent">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-violet-500/10">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-violet-500/10">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-violet-500/15 flex items-center justify-center">
               <Bot className="w-4 h-4 text-violet-400" />
@@ -146,7 +146,7 @@ export function NegotiatorPanel({ designResult, onComplete, onClose }: Negotiato
                 </p>
                 <button
                   onClick={handleFinish}
-                  className="px-5 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 rounded-xl text-sm font-medium transition-colors mt-1"
+                  className="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 rounded-xl text-sm font-medium transition-colors mt-1"
                 >
                   Apply to credential form
                 </button>

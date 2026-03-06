@@ -72,7 +72,7 @@ export function DesignWizard({ onComplete, onCancel }: DesignWizardProps) {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: direction * -40 }}
           transition={{ duration: 0.2, ease: 'easeInOut' }}
-          className="rounded-2xl border border-primary/10 bg-secondary/10 p-5"
+          className="rounded-xl border border-primary/10 bg-secondary/10 p-4"
         >
           {/* Step header */}
           <div className="mb-4">
@@ -89,7 +89,7 @@ export function DesignWizard({ onComplete, onCancel }: DesignWizardProps) {
                   {summary.map((item) => (
                     <div
                       key={item.label}
-                      className="flex items-start gap-3 px-3 py-2 rounded-lg bg-secondary/30 border border-primary/5"
+                      className="flex items-start gap-3 px-3 py-2 rounded-xl bg-secondary/30 border border-primary/5"
                     >
                       <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/80 w-24 flex-shrink-0 mt-0.5">
                         {item.label}
@@ -143,7 +143,7 @@ export function DesignWizard({ onComplete, onCancel }: DesignWizardProps) {
             <button
               type="button"
               onClick={handleBack}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/50 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/50 transition-colors"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
               Back

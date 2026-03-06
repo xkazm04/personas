@@ -35,6 +35,7 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
       const updated = await refreshVaultStatus();
       onVaultRefresh?.(updated);
     } catch {
+      // User feedback via migrationResult banner rendered below
       setMigrationResult({ migrated: 0, failed: vault.plaintext });
     } finally {
       setIsMigrating(false);
@@ -46,7 +47,7 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
   const hasPlaintext = vault.plaintext > 0;
   const isKeychain = vault.key_source === 'keychain';
 
-  const badgeClass = `flex items-center gap-1.5 text-sm px-2 py-0.5 rounded-md border cursor-pointer transition-colors ${
+  const badgeClass = `flex items-center gap-1.5 text-sm px-2 py-0.5 rounded-lg border cursor-pointer transition-colors ${
     hasPlaintext
       ? 'bg-amber-500/10 border-amber-500/20 text-amber-400 hover:bg-amber-500/15'
       : isKeychain
@@ -128,7 +129,7 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
               <button
                 onClick={handleEncryptNow}
                 disabled={isMigrating}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-amber-500/15 border border-amber-500/25 text-amber-300 text-sm font-medium hover:bg-amber-500/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-amber-500/15 border border-amber-500/25 text-amber-300 text-sm font-medium hover:bg-amber-500/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isMigrating ? (
                   <><Loader2 className="w-3.5 h-3.5 animate-spin" />Encrypting...</>
@@ -141,7 +142,7 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
 
           {/* Migration result */}
           {migrationResult && (
-            <div className={`mx-4 mb-3 px-3 py-2 rounded-lg text-sm ${
+            <div className={`mx-4 mb-3 px-3 py-2 rounded-xl text-sm ${
               migrationResult.failed > 0
                 ? 'bg-red-500/10 border border-red-500/20 text-red-300'
                 : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300'

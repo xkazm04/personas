@@ -95,7 +95,7 @@ const SectionRow = memo(function SectionRow({
       initial={{ opacity: 0, x: -12 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
-      className={`flex items-start gap-2.5 px-3 py-2 rounded-lg border transition-colors ${
+      className={`flex items-start gap-2.5 px-3 py-2 rounded-xl border transition-colors ${
         isLatest
           ? 'border-primary/15 bg-secondary/30'
           : 'border-transparent bg-transparent'
@@ -103,7 +103,7 @@ const SectionRow = memo(function SectionRow({
     >
       {/* Icon */}
       <div
-        className={`flex-shrink-0 w-6 h-6 rounded-md ${bg} flex items-center justify-center mt-0.5`}
+        className={`flex-shrink-0 w-6 h-6 rounded-lg ${bg} flex items-center justify-center mt-0.5`}
       >
         <Icon className={`w-3 h-3 ${color}`} />
       </div>

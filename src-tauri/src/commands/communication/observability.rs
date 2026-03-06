@@ -6,6 +6,7 @@ use ts_rs::TS;
 use crate::db::models::{MetricsChartData, PersonaPromptVersion, PromptPerformanceData, ExecutionDashboardData};
 use crate::db::repos::execution::metrics as repo;
 use crate::error::AppError;
+use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 #[derive(Debug, Serialize, TS)]
@@ -23,6 +24,7 @@ pub fn get_metrics_summary(
     days: Option<i64>,
     persona_id: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
     repo::get_summary(&state.db, days, persona_id.as_deref())
 }
 
@@ -32,6 +34,7 @@ pub fn get_metrics_chart_data(
     days: Option<i64>,
     persona_id: Option<String>,
 ) -> Result<MetricsChartData, AppError> {
+    require_auth_sync(&state)?;
     repo::get_chart_data(&state.db, days, persona_id.as_deref())
 }
 
@@ -41,6 +44,7 @@ pub fn get_prompt_versions(
     persona_id: String,
     limit: Option<i64>,
 ) -> Result<Vec<PersonaPromptVersion>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_prompt_versions(&state.db, &persona_id, limit)
 }
 
@@ -48,6 +52,7 @@ pub fn get_prompt_versions(
 pub fn get_all_monthly_spend(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<PersonaMonthlySpend>, AppError> {
+    require_auth_sync(&state)?;
     let conn = state.db.get()?;
     let mut stmt = conn.prepare(
         "SELECT p.id, COALESCE(e.spend, 0.0), p.max_budget_usd, p.name
@@ -84,6 +89,7 @@ pub fn get_prompt_performance(
     persona_id: String,
     days: Option<i64>,
 ) -> Result<PromptPerformanceData, AppError> {
+    require_auth_sync(&state)?;
     repo::get_prompt_performance(&state.db, &persona_id, days.unwrap_or(30))
 }
 
@@ -99,6 +105,7 @@ pub fn get_execution_dashboard(
     state: State<'_, Arc<AppState>>,
     days: Option<i64>,
 ) -> Result<ExecutionDashboardData, AppError> {
+    require_auth_sync(&state)?;
     repo::get_execution_dashboard(&state.db, days.unwrap_or(30))
 }
 
@@ -114,6 +121,7 @@ pub fn tag_prompt_version(
     id: String,
     tag: String,
 ) -> Result<PersonaPromptVersion, AppError> {
+    require_auth_sync(&state)?;
     let valid_tags = ["production", "experimental", "archived"];
     if !valid_tags.contains(&tag.as_str()) {
         return Err(AppError::Validation(format!(
@@ -141,6 +149,7 @@ pub fn rollback_prompt_version(
     state: State<'_, Arc<AppState>>,
     version_id: String,
 ) -> Result<PersonaPromptVersion, AppError> {
+    require_auth_sync(&state)?;
     let version = repo::get_prompt_version_by_id(&state.db, &version_id)?;
 
     // Update the persona's prompt to the version's prompt
@@ -181,6 +190,7 @@ pub fn get_prompt_error_rate(
     persona_id: String,
     window: Option<i64>,
 ) -> Result<f64, AppError> {
+    require_auth_sync(&state)?;
     repo::get_recent_error_rate(&state.db, &persona_id, window.unwrap_or(10))
 }
 
@@ -227,6 +237,7 @@ pub async fn run_prompt_ab_test(
     version_b_id: String,
     test_input: Option<String>,
 ) -> Result<PromptAbTestResult, AppError> {
+    require_auth(&state).await?;
     let version_a = repo::get_prompt_version_by_id(&state.db, &version_a_id)?;
     let version_b = repo::get_prompt_version_by_id(&state.db, &version_b_id)?;
 

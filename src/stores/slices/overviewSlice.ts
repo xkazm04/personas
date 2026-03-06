@@ -155,6 +155,7 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
             if (execs.length >= currentPerPersonaLimit) anyAtLimit = true;
             return enrichWithPersona(execs, [p]);
           } catch {
+            // intentional: error state handled by store — per-persona failures collected in globalExecutionsWarning
             failedPersonaNames.push(p.name);
             return [];
           }
@@ -217,6 +218,7 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
       const count = await api.getPendingReviewCount();
       set({ pendingReviewCount: count });
     } catch {
+      // intentional: non-critical — badge count defaults to zero on failure
       set({ pendingReviewCount: 0 });
     }
   },

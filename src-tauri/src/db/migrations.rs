@@ -1825,6 +1825,96 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         CREATE INDEX IF NOT EXISTS idx_rv_version ON recipe_versions(recipe_id, version_number DESC);"
     )?;
 
+    // ── Provider Audit Log (BYOM compliance trail) ─────────────────
+    let has_provider_audit_log: bool = conn
+        .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='provider_audit_log'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_provider_audit_log {
+        conn.execute_batch(
+            "CREATE TABLE IF NOT EXISTS provider_audit_log (
+                id                  TEXT PRIMARY KEY,
+                execution_id        TEXT NOT NULL,
+                persona_id          TEXT NOT NULL,
+                persona_name        TEXT NOT NULL,
+                engine_kind         TEXT NOT NULL,
+                model_used          TEXT,
+                was_failover        INTEGER NOT NULL DEFAULT 0,
+                routing_rule_name   TEXT,
+                compliance_rule_name TEXT,
+                cost_usd            REAL,
+                duration_ms         INTEGER,
+                status              TEXT NOT NULL DEFAULT 'completed',
+                created_at          TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_pal_execution ON provider_audit_log(execution_id);
+            CREATE INDEX IF NOT EXISTS idx_pal_persona   ON provider_audit_log(persona_id);
+            CREATE INDEX IF NOT EXISTS idx_pal_engine    ON provider_audit_log(engine_kind);
+            CREATE INDEX IF NOT EXISTS idx_pal_created   ON provider_audit_log(created_at DESC);"
+        )?;
+        tracing::info!("Created provider_audit_log table (BYOM)");
+    }
+
+    // ── Missing indexes for common query patterns ────────────────────
+    // These cover the most frequent WHERE + ORDER BY combinations found
+    // across repository modules. All use IF NOT EXISTS so they are safe
+    // to run on existing databases that already have them.
+    conn.execute_batch(
+        "-- personas: list queries order by created_at and filter by project_id
+         CREATE INDEX IF NOT EXISTS idx_personas_project    ON personas(project_id);
+         CREATE INDEX IF NOT EXISTS idx_personas_created    ON personas(created_at DESC);
+
+         -- persona_executions: the most queried table; composite covers
+         -- WHERE persona_id = ? ORDER BY created_at DESC (listing, stats, cost)
+         CREATE INDEX IF NOT EXISTS idx_pe_persona_created  ON persona_executions(persona_id, created_at DESC);
+         -- WHERE persona_id = ? AND status IN (...) (concurrent count, failed listing)
+         CREATE INDEX IF NOT EXISTS idx_pe_persona_status   ON persona_executions(persona_id, status);
+         -- WHERE retry_of_execution_id = ? (retry lineage lookup)
+         CREATE INDEX IF NOT EXISTS idx_pe_retry_of         ON persona_executions(retry_of_execution_id);
+
+         -- persona_manual_reviews: WHERE execution_id = ?
+         CREATE INDEX IF NOT EXISTS idx_pmr_execution       ON persona_manual_reviews(execution_id);
+
+         -- persona_memories: WHERE source_execution_id = ?
+         CREATE INDEX IF NOT EXISTS idx_pm_source_exec      ON persona_memories(source_execution_id);
+         -- WHERE persona_id = ? ORDER BY created_at DESC (list with pagination)
+         CREATE INDEX IF NOT EXISTS idx_pm_persona_created  ON persona_memories(persona_id, created_at DESC);
+
+         -- persona_healing_issues: WHERE persona_id = ? AND status = ?
+         CREATE INDEX IF NOT EXISTS idx_phi_persona_status  ON persona_healing_issues(persona_id, status);
+         -- ORDER BY created_at DESC (listing)
+         CREATE INDEX IF NOT EXISTS idx_phi_created         ON persona_healing_issues(created_at DESC);
+
+         -- execution_knowledge: WHERE persona_id = ? AND knowledge_type = ?
+         CREATE INDEX IF NOT EXISTS idx_ek_persona_type     ON execution_knowledge(persona_id, knowledge_type);
+
+         -- persona_credentials: ORDER BY created_at DESC (listing)
+         CREATE INDEX IF NOT EXISTS idx_pc_created          ON persona_credentials(created_at DESC);
+
+         -- persona_automations: WHERE persona_id = ? ORDER BY created_at
+         CREATE INDEX IF NOT EXISTS idx_automations_created ON persona_automations(persona_id, created_at);
+
+         -- persona_events: WHERE project_id = ? ORDER BY created_at DESC
+         CREATE INDEX IF NOT EXISTS idx_pev_project_created ON persona_events(project_id, created_at DESC);
+
+         -- persona_metrics_snapshots: composite for date-range queries per persona
+         CREATE INDEX IF NOT EXISTS idx_pms_persona_date    ON persona_metrics_snapshots(persona_id, snapshot_date);"
+    )?;
+
+    // ── Headless flag for background cron agents ─────────────────────────
+    let has_headless: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('personas') WHERE name = 'headless'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_headless {
+        conn.execute_batch("ALTER TABLE personas ADD COLUMN headless INTEGER NOT NULL DEFAULT 0;")?;
+        tracing::info!("Added headless column to personas for background cron agents");
+    }
+
     Ok(())
 }
 

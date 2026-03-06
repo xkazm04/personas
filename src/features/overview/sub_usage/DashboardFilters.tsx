@@ -28,7 +28,7 @@ export function DayRangePicker({ value, onChange }: DayRangePickerProps) {
           key={opt.value}
           onClick={() => onChange(opt.value)}
           aria-pressed={value === opt.value}
-          className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
+          className={`px-3 py-1 rounded-xl text-sm font-medium transition-all ${
             value === opt.value
               ? 'bg-background text-foreground shadow-sm border border-primary/20'
               : 'text-muted-foreground/80 hover:text-muted-foreground'

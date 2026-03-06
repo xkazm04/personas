@@ -294,7 +294,26 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
             },
             error: job.error.clone(),
             lines: job.lines.clone(),
+            elapsed_secs: job.created_at.elapsed().as_secs(),
         })
+    }
+
+    /// List all jobs as snapshots (for the workflows overview).
+    pub fn list_snapshots(&self) -> Vec<JobSnapshot> {
+        let Ok(jobs) = self.lock() else { return Vec::new() };
+        jobs.iter()
+            .map(|(id, job)| JobSnapshot {
+                job_id: id.clone(),
+                status: if job.status.is_empty() {
+                    "idle".to_string()
+                } else {
+                    job.status.clone()
+                },
+                error: job.error.clone(),
+                lines: job.lines.clone(),
+                elapsed_secs: job.created_at.elapsed().as_secs(),
+            })
+            .collect()
     }
 
     /// Get a full snapshot including extra state via a mapping function.
@@ -325,4 +344,6 @@ pub struct JobSnapshot {
     pub status: String,
     pub error: Option<String>,
     pub lines: Vec<String>,
+    /// Seconds since this job was created.
+    pub elapsed_secs: u64,
 }

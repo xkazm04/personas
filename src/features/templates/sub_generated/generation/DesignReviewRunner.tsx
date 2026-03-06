@@ -291,7 +291,7 @@ export default function DesignReviewRunner({
           className="w-[750px] max-h-[85vh] bg-background border border-primary/20 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-primary/10 bg-primary/5">
+          <div className="flex items-center justify-between px-4 py-4 border-b border-primary/10 bg-primary/5">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
                 <Play className="w-4 h-4 text-violet-400" />
@@ -315,7 +315,7 @@ export default function DesignReviewRunner({
 
           {/* Persona context banner */}
           {!hasStarted && (
-            <div className={`px-5 py-3 border-b flex items-center gap-3 ${
+            <div className={`px-4 py-3 border-b flex items-center gap-3 ${
               hasPersona ? 'border-primary/10 bg-violet-500/5' : 'border-amber-500/20 bg-amber-500/5'
             }`}>
               {hasPersona ? (
@@ -343,7 +343,7 @@ export default function DesignReviewRunner({
 
           {/* Mode selection (hidden once started) */}
           {!hasStarted && (
-            <div className="px-5 py-4 border-b border-primary/10 space-y-4">
+            <div className="px-4 py-4 border-b border-primary/10 space-y-4">
               {/* Tabs */}
               <ModeTabBar mode={mode} onModeChange={setMode} batchCount={batchTemplates.length} />
 
@@ -381,7 +381,7 @@ export default function DesignReviewRunner({
 
           {/* Progress Bar */}
           {isRunning && progressInfo && (
-            <div className="px-5 py-3 border-b border-primary/10 bg-primary/5">
+            <div className="px-4 py-3 border-b border-primary/10 bg-primary/5">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-sm font-medium text-foreground/80">
                   Template {progressInfo.current} of {progressInfo.total}
@@ -460,7 +460,7 @@ export default function DesignReviewRunner({
 
           {/* Result summary */}
           {result && (
-            <div className="px-5 py-3 border-t border-primary/10 bg-primary/5">
+            <div className="px-4 py-3 border-t border-primary/10 bg-primary/5">
               <div className="flex items-center gap-4 text-sm">
                 <span className="flex items-center gap-1.5 text-emerald-400">
                   <CheckCircle2 className="w-4 h-4" />
@@ -482,7 +482,7 @@ export default function DesignReviewRunner({
           )}
 
           {/* Footer actions */}
-          <div className="flex items-center justify-end gap-3 px-5 py-3 border-t border-primary/10">
+          <div className="flex items-center justify-end gap-3 px-4 py-3 border-t border-primary/10">
             {isRunning ? (
               <button
                 onClick={onCancel}

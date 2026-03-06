@@ -39,8 +39,10 @@ const ENGINES: EngineOption[] = [
   },
 ];
 
+const VALID_ENGINE_IDS = new Set<string>(ENGINES.map((e) => e.id));
+
 export default function EngineSettings() {
-  const setting = useAppSetting('cli_engine', 'claude_code');
+  const setting = useAppSetting('cli_engine', 'claude_code', (v) => VALID_ENGINE_IDS.has(v));
   const hasLoadedOnce = useRef(false);
   const [healthStatus, setHealthStatus] = useState<Record<string, { status: string; detail?: string }>>({});
 

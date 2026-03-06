@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { RecipeDefinition } from "@/lib/bindings/RecipeDefinition";
 import type { CreateRecipeInput } from "@/lib/bindings/CreateRecipeInput";

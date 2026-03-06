@@ -7,6 +7,7 @@ import type { TeamMemory } from "@/lib/bindings/TeamMemory";
 import type { TeamMemoryStats } from "@/lib/bindings/TeamMemoryStats";
 import type { CreateTeamMemoryInput } from "@/lib/bindings/CreateTeamMemoryInput";
 import * as api from "@/api/tauriApi";
+import { useToastStore } from "@/stores/toastStore";
 
 export interface TeamSlice {
   // State
@@ -50,7 +51,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
       const teams = await api.listTeams();
       set({ teams });
     } catch {
-      // Silent fail
+      useToastStore.getState().addToast('Failed to load teams', 'error');
     }
   },
 
@@ -69,7 +70,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
       // Also fetch team memories
       get().fetchTeamMemories(teamId);
     } catch {
-      // Silent fail
+      useToastStore.getState().addToast('Failed to load team details', 'error');
     }
   },
 
@@ -88,6 +89,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
       await get().fetchTeams();
       return team;
     } catch {
+      useToastStore.getState().addToast('Failed to create team', 'error');
       return null;
     }
   },
@@ -98,7 +100,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
       if (get().selectedTeamId === teamId) set({ selectedTeamId: null, teamMembers: [], teamConnections: [], teamMemories: [], teamMemoriesTotal: 0, teamMemoryStats: null });
       await get().fetchTeams();
     } catch {
-      // Silent fail
+      useToastStore.getState().addToast('Failed to delete team', 'error');
     }
   },
 
@@ -129,6 +131,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
     } catch {
       // Rollback
       set({ teamMembers: get().teamMembers.filter((m) => m.id !== tempId) });
+      useToastStore.getState().addToast('Failed to add team member', 'error');
       return null;
     }
   },
@@ -152,6 +155,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
     } catch {
       // Rollback
       set({ teamMembers: prevMembers, teamConnections: prevConnections });
+      useToastStore.getState().addToast('Failed to remove team member', 'error');
     }
   },
 
@@ -181,6 +185,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
     } catch {
       // Rollback
       set({ teamConnections: get().teamConnections.filter((c) => c.id !== tempId) });
+      useToastStore.getState().addToast('Failed to create team connection', 'error');
       return null;
     }
   },
@@ -195,6 +200,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
     } catch {
       // Rollback
       set({ teamConnections: prevConnections });
+      useToastStore.getState().addToast('Failed to delete team connection', 'error');
     }
   },
 
@@ -212,6 +218,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
     } catch {
       // Rollback
       set({ teamConnections: prevConnections });
+      useToastStore.getState().addToast('Failed to update team connection', 'error');
     }
   },
 
@@ -224,7 +231,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
       ]);
       set({ teamMemories: memories, teamMemoriesTotal: total, teamMemoryStats: stats });
     } catch {
-      // Silent fail
+      useToastStore.getState().addToast('Failed to load team memories', 'error');
     }
   },
 
@@ -236,6 +243,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
       if (teamId) get().fetchTeamMemories(teamId);
       return memory;
     } catch {
+      useToastStore.getState().addToast('Failed to create team memory', 'error');
       return null;
     }
   },
@@ -247,6 +255,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
       await api.deleteTeamMemory(id);
     } catch {
       set({ teamMemories: prev, teamMemoriesTotal: get().teamMemoriesTotal + 1 });
+      useToastStore.getState().addToast('Failed to delete team memory', 'error');
     }
   },
 
@@ -257,6 +266,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
       await api.batchDeleteTeamMemories(ids);
     } catch {
       set({ teamMemories: prev, teamMemoriesTotal: get().teamMemoriesTotal + ids.length });
+      useToastStore.getState().addToast('Failed to delete team memories', 'error');
     }
   },
 
@@ -269,6 +279,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
       await api.updateTeamMemoryImportance(id, importance);
     } catch {
       set({ teamMemories: prev });
+      useToastStore.getState().addToast('Failed to update memory importance', 'error');
     }
   },
 });

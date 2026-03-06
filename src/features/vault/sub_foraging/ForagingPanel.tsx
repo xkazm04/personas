@@ -63,7 +63,7 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
             exit={{ opacity: 0 }}
             className="rounded-xl border border-primary/15 bg-secondary/25 p-6 text-center space-y-4"
           >
-            <div className="mx-auto w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500/20 to-cyan-500/20 flex items-center justify-center">
+            <div className="mx-auto w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/20 to-cyan-500/20 flex items-center justify-center">
               <Radar className="w-6 h-6 text-violet-400" />
             </div>
             <div>
@@ -79,7 +79,7 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
             </div>
             <button
               onClick={forage.scan}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-500/15 text-violet-400 text-sm font-medium border border-violet-500/25 hover:bg-violet-500/25 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-500/15 text-violet-400 text-sm font-medium border border-violet-500/25 hover:bg-violet-500/25 transition-colors"
             >
               <Sparkles className="w-3.5 h-3.5" />
               Start Scan
@@ -179,7 +179,7 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
             {forage.selected.size > 0 && (
               <button
                 onClick={handleImport}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-violet-500/15 text-violet-400 text-sm font-medium border border-violet-500/25 hover:bg-violet-500/25 transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-violet-500/15 text-violet-400 text-sm font-medium border border-violet-500/25 hover:bg-violet-500/25 transition-colors"
               >
                 <Download className="w-4 h-4" />
                 Import {forage.selected.size} credential{forage.selected.size !== 1 ? "s" : ""} to vault

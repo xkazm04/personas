@@ -98,7 +98,7 @@ export function useBulkHealthcheck() {
               usePersonaStore.setState((s) => ({
                 credentials: s.credentials.map((c) => (c.id === cred.id ? updated : c)),
               }));
-            } catch { /* metadata persistence is best-effort */ }
+            } catch { /* intentional: non-critical — healthcheck metadata persistence is best-effort */ }
           } catch (e) {
             success = false;
             message = e instanceof Error ? e.message : 'Healthcheck failed';

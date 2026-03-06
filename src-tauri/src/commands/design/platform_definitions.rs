@@ -1,6 +1,12 @@
+use std::sync::Arc;
+
+use tauri::State;
+
 use crate::engine::platform_rules;
 use crate::db::models::PlatformDefinition;
 use crate::error::AppError;
+use crate::ipc_auth::require_auth_sync;
+use crate::AppState;
 use serde::Serialize;
 
 /// Lightweight summary returned by list command.
@@ -17,7 +23,10 @@ pub struct PlatformDefinitionSummary {
 
 /// List all available platform definitions (built-in only for now).
 #[tauri::command]
-pub fn list_platform_definitions() -> Result<Vec<PlatformDefinitionSummary>, AppError> {
+pub fn list_platform_definitions(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<PlatformDefinitionSummary>, AppError> {
+    require_auth_sync(&state)?;
     let defs = platform_rules::builtin_definitions();
     Ok(defs
         .iter()
@@ -34,7 +43,11 @@ pub fn list_platform_definitions() -> Result<Vec<PlatformDefinitionSummary>, App
 
 /// Get a full platform definition by ID.
 #[tauri::command]
-pub fn get_platform_definition(id: String) -> Result<PlatformDefinition, AppError> {
+pub fn get_platform_definition(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<PlatformDefinition, AppError> {
+    require_auth_sync(&state)?;
     platform_rules::get_builtin(&id)
         .ok_or_else(|| AppError::NotFound(format!("Platform definition '{id}'")))
 }

@@ -18,6 +18,7 @@ use crate::db::repos::resources::{connectors as connector_repo, tools as tool_re
 use crate::engine::design;
 use crate::engine::prompt;
 use crate::error::AppError;
+use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 use super::analysis::extract_display_text;
@@ -50,6 +51,7 @@ pub fn list_design_reviews(
     test_run_id: Option<String>,
     limit: Option<i64>,
 ) -> Result<Vec<PersonaDesignReview>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_reviews(&state.db, test_run_id.as_deref(), limit)
 }
 
@@ -58,6 +60,7 @@ pub fn get_design_review(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<PersonaDesignReview, AppError> {
+    require_auth_sync(&state)?;
     repo::get_review_by_id(&state.db, &id)
 }
 
@@ -66,6 +69,7 @@ pub fn delete_design_review(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     repo::delete_review(&state.db, &id)
 }
 
@@ -83,6 +87,7 @@ pub fn list_design_reviews_paginated(
     coverage_filter: Option<String>,
     coverage_service_types: Option<Vec<String>>,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
     let result = repo::get_reviews_paginated(
         &state.db,
         search.as_deref(),
@@ -105,6 +110,7 @@ pub fn list_design_reviews_paginated(
 pub fn list_review_connectors(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<ConnectorWithCount>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_distinct_connectors(&state.db)
 }
 
@@ -112,6 +118,7 @@ pub fn list_review_connectors(
 pub fn list_review_categories(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<CategoryWithCount>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_distinct_categories(&state.db)
 }
 
@@ -120,6 +127,7 @@ pub fn get_trending_templates(
     state: State<'_, Arc<AppState>>,
     limit: Option<i64>,
 ) -> Result<Vec<PersonaDesignReview>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_trending_templates(&state.db, limit.unwrap_or(10))
 }
 
@@ -127,6 +135,7 @@ pub fn get_trending_templates(
 pub fn cleanup_duplicate_reviews(
     state: State<'_, Arc<AppState>>,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
     let deleted = repo::cleanup_duplicate_reviews(&state.db)?;
     Ok(serde_json::json!({ "deleted": deleted }))
 }
@@ -138,6 +147,7 @@ pub async fn start_design_review_run(
     persona_id: String,
     test_cases: Vec<serde_json::Value>,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth(&state).await?;
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
     let tools = tool_repo::get_all_definitions(&state.db)?;
     let connectors = connector_repo::get_all(&state.db)?;
@@ -153,7 +163,7 @@ pub async fn start_design_review_run(
     // Register cancellation flag
     let cancel_flag = Arc::new(AtomicBool::new(false));
     {
-        let mut map = state.active_test_run_cancelled.lock().unwrap();
+        let mut map = state.active_test_run_cancelled.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
         map.insert(run_id.clone(), cancel_flag.clone());
     }
     let cancel_map = state.active_test_run_cancelled.clone();
@@ -436,11 +446,11 @@ pub async fn start_design_review_run(
 
         // Cleanup cancellation flag and child PID
         {
-            let mut map = cancel_map.lock().unwrap();
+            let mut map = cancel_map.lock().unwrap_or_else(|e| e.into_inner());
             map.remove(&run_id_clone);
         }
         {
-            let mut pids = child_pids.lock().unwrap();
+            let mut pids = child_pids.lock().unwrap_or_else(|e| e.into_inner());
             pids.remove(&run_id_clone);
         }
 
@@ -467,13 +477,14 @@ pub fn cancel_design_review_run(
     state: State<'_, Arc<AppState>>,
     run_id: String,
 ) -> Result<(), AppError> {
-    let map = state.active_test_run_cancelled.lock().unwrap();
+    require_auth_sync(&state)?;
+    let map = state.active_test_run_cancelled.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
     if let Some(flag) = map.get(&run_id) {
         flag.store(true, Ordering::Relaxed);
     }
 
     // Kill the currently-running CLI child process to stop API credit consumption immediately.
-    if let Some(pid) = state.active_review_child_pids.lock().unwrap().remove(&run_id) {
+    if let Some(pid) = state.active_review_child_pids.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?.remove(&run_id) {
         tracing::info!(run_id = %run_id, pid = pid, "Killing review CLI child process");
         crate::engine::kill_process(pid);
     }
@@ -617,6 +628,7 @@ pub async fn rebuild_design_review(
     id: String,
     user_instruction: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth(&state).await?;
     use crate::commands::design::n8n_transform::job_state as n8n_job_state;
     use crate::commands::design::n8n_transform::run_claude_prompt_text;
     use tokio_util::sync::CancellationToken;
@@ -769,13 +781,25 @@ pub async fn rebuild_design_review(
 }
 
 #[tauri::command]
-pub fn get_rebuild_snapshot(rebuild_id: String) -> Result<serde_json::Value, AppError> {
-    crate::commands::design::n8n_transform::job_state::get_n8n_transform_snapshot(rebuild_id)
+pub fn get_rebuild_snapshot(
+    state: State<'_, Arc<AppState>>,
+    rebuild_id: String,
+) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
+    let snapshot = crate::commands::design::n8n_transform::job_state::get_n8n_transform_snapshot_internal(&rebuild_id)
+        .ok_or_else(|| AppError::NotFound("rebuild not found".into()))?;
+    Ok(serde_json::to_value(snapshot).unwrap_or_else(|_| serde_json::json!({})))
 }
 
 #[tauri::command]
-pub fn cancel_rebuild(app: tauri::AppHandle, rebuild_id: String) -> Result<(), AppError> {
-    crate::commands::design::n8n_transform::job_state::cancel_n8n_transform(app, rebuild_id)
+pub fn cancel_rebuild(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    rebuild_id: String,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    crate::commands::design::n8n_transform::job_state::manager()
+        .cancel_or_preempt(&app, &rebuild_id, crate::commands::design::n8n_transform::job_state::N8nTransformExtra::default())
 }
 
 // ── Manual Review Commands ───────────────────────────────────
@@ -786,6 +810,7 @@ pub fn list_manual_reviews(
     persona_id: Option<String>,
     status: Option<String>,
 ) -> Result<Vec<PersonaManualReview>, AppError> {
+    require_auth_sync(&state)?;
     match persona_id {
         Some(pid) => manual_repo::get_by_persona(&state.db, &pid, status.as_deref()),
         None => manual_repo::get_all(&state.db, status.as_deref()),
@@ -808,6 +833,7 @@ pub fn update_manual_review_status(
     status: String,
     reviewer_notes: Option<String>,
 ) -> Result<PersonaManualReview, AppError> {
+    require_auth_sync(&state)?;
     manual_repo::update_status(&state.db, &id, &status, reviewer_notes)?;
     let review = manual_repo::get_by_id(&state.db, &id)?;
 
@@ -831,6 +857,7 @@ pub fn get_pending_review_count(
     state: State<'_, Arc<AppState>>,
     persona_id: Option<String>,
 ) -> Result<i64, AppError> {
+    require_auth_sync(&state)?;
     manual_repo::get_pending_count(&state.db, persona_id.as_deref())
 }
 
@@ -841,6 +868,7 @@ pub fn get_pending_review_count(
 pub fn backfill_review_categories(
     state: State<'_, Arc<AppState>>,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
     let uncategorized = repo::get_uncategorized_reviews(&state.db)?;
     let mut updated = 0i64;
 
@@ -865,6 +893,7 @@ pub fn backfill_review_categories(
 pub fn backfill_service_flow(
     state: State<'_, Arc<AppState>>,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
     let reviews = repo::get_reviews_with_design_result(&state.db)?;
     let mut updated = 0i64;
     let mut skipped = 0i64;
@@ -967,6 +996,7 @@ pub fn backfill_service_flow(
 pub fn backfill_related_tools(
     state: State<'_, Arc<AppState>>,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
     let reviews = repo::get_reviews_with_design_result(&state.db)?;
     let mut updated = 0i64;
     let mut skipped = 0i64;
@@ -1086,6 +1116,7 @@ pub fn import_design_review(
     state: State<'_, Arc<AppState>>,
     input: serde_json::Value,
 ) -> Result<PersonaDesignReview, AppError> {
+    require_auth_sync(&state)?;
     let import_input: ImportDesignReviewInput = serde_json::from_value(input)
         .map_err(|e| AppError::Validation(format!("Invalid design review input: {e}")))?;
     let mut review_input: CreateDesignReviewInput = import_input.into();
@@ -1143,7 +1174,7 @@ async fn run_cli_for_template(
 
     // Register child PID so cancel can kill it immediately
     if let Some(pid) = child.id() {
-        child_pids.lock().unwrap().insert(run_id.to_string(), pid);
+        child_pids.lock().map_err(|_| "Lock poisoned".to_string())?.insert(run_id.to_string(), pid);
     }
 
     // Write prompt to stdin
@@ -1188,12 +1219,12 @@ async fn run_cli_for_template(
     if stream_result.is_err() {
         let _ = child.kill().await;
         let _ = child.wait().await;
-        child_pids.lock().unwrap().remove(run_id);
+        child_pids.lock().unwrap_or_else(|e| e.into_inner()).remove(run_id);
         return Err("Template generation timed out after 3 minutes".into());
     }
 
     let _ = child.wait().await;
-    child_pids.lock().unwrap().remove(run_id);
+    child_pids.lock().unwrap_or_else(|e| e.into_inner()).remove(run_id);
 
     if full_output.is_empty() {
         // Read stderr for error info

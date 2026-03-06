@@ -55,6 +55,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
       const result = await listN8nSessions();
       setSessions(result);
     } catch {
+      // User-facing: error is displayed inline via error state
       setError('Failed to load previous imports. Please retry.');
     } finally {
       setLoading(false);
@@ -73,6 +74,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
       setSessions((prev) => prev.filter((s) => s.id !== id));
       setError(null);
     } catch {
+      // User-facing: error is displayed inline via error state
       setError('Failed to delete session. Please retry.');
     } finally {
       setDeletingId(null);
@@ -90,6 +92,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
         try {
           return JSON.parse(raw) as T;
         } catch {
+          // intentional: non-critical — JSON parse fallback
           parseErrors.push(label);
           return null;
         }
@@ -163,6 +166,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
           : null,
       });
     } catch {
+      // User-facing: error is displayed inline via error state
       setError('Failed to load session. Please retry.');
     }
   };
@@ -195,14 +199,14 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
       <div className="space-y-1.5">
         {error && (
           <div
-            className="flex items-center justify-between gap-3 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2"
+            className="flex items-center justify-between gap-3 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2"
             aria-live="polite"
           >
             <p className="text-sm text-red-400/80">{error}</p>
             <button
               type="button"
               onClick={() => void fetchSessions()}
-              className="px-3 py-1.5 text-sm rounded-lg border border-red-500/20 bg-red-500/10 text-red-300 hover:bg-red-500/20 transition-colors"
+              className="px-3 py-1.5 text-sm rounded-xl border border-red-500/20 bg-red-500/10 text-red-300 hover:bg-red-500/20 transition-colors"
             >
               Retry
             </button>
@@ -236,7 +240,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
                   {session.workflow_name}
                 </p>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className={`px-1.5 py-0.5 text-sm font-medium rounded-md ${style.bg} ${style.text}`}>
+                  <span className={`px-1.5 py-0.5 text-sm font-medium rounded-lg ${style.bg} ${style.text}`}>
                     {style.label}
                   </span>
                   <span className="text-sm text-muted-foreground/80 flex items-center gap-1">

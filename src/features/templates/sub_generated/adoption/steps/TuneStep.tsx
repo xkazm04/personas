@@ -8,8 +8,8 @@ import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 
 // ── Shared styles ─────────────────────────────────────────────────────
 
-const selectClass = 'w-full px-2.5 py-1.5 bg-background/50 border border-primary/10 rounded-lg text-sm text-foreground/90 focus:outline-none focus:border-violet-500/30 transition-colors';
-const inputClass = 'w-full px-2.5 py-1.5 bg-background/50 border border-primary/10 rounded-lg text-sm text-foreground/90 placeholder-muted-foreground/30 focus:outline-none focus:border-violet-500/30 transition-colors';
+const selectClass = 'w-full px-2.5 py-1.5 bg-background/50 border border-primary/10 rounded-xl text-sm text-foreground/90 focus:outline-none focus:border-violet-500/30 transition-colors';
+const inputClass = 'w-full px-2.5 py-1.5 bg-background/50 border border-primary/10 rounded-xl text-sm text-foreground/90 placeholder-muted-foreground/30 focus:outline-none focus:border-violet-500/30 transition-colors';
 const labelClass = 'block text-sm font-medium text-foreground/80';
 const descClass = 'text-sm text-muted-foreground/50 mt-0.5';
 const fieldClass = 'space-y-1';
@@ -396,7 +396,7 @@ export function TuneStep() {
                       key={value}
                       type="button"
                       onClick={() => toggleNotificationChannel(value)}
-                      className={`px-2.5 py-1 text-sm font-medium rounded-lg border transition-colors ${
+                      className={`px-2.5 py-1 text-sm font-medium rounded-xl border transition-colors ${
                         active
                           ? 'bg-violet-500/15 text-violet-300 border-violet-500/25'
                           : 'bg-secondary/30 text-muted-foreground/60 border-primary/10 hover:bg-secondary/50'

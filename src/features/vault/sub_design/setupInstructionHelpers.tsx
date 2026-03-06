@@ -51,7 +51,7 @@ export function readPersistedSteps(key: string): number[] {
   try {
     const saved = localStorage.getItem(key);
     if (saved) return JSON.parse(saved) as number[];
-  } catch { /* ignore */ }
+  } catch { /* intentional: non-critical -- localStorage fallback */ }
   return [];
 }
 

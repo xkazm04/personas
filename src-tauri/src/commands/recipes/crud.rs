@@ -13,6 +13,7 @@ use crate::db::models::{
 use crate::db::repos::resources::credentials as cred_repo;
 use crate::db::repos::resources::recipes as repo;
 use crate::error::AppError;
+use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 use super::recipe_execution;
@@ -23,6 +24,7 @@ use super::recipe_versioning;
 pub fn list_recipes(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<RecipeDefinition>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_all(&state.db)
 }
 
@@ -31,6 +33,7 @@ pub fn get_recipe(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<RecipeDefinition, AppError> {
+    require_auth_sync(&state)?;
     repo::get_by_id(&state.db, &id)
 }
 
@@ -39,6 +42,7 @@ pub fn create_recipe(
     state: State<'_, Arc<AppState>>,
     input: CreateRecipeInput,
 ) -> Result<RecipeDefinition, AppError> {
+    require_auth_sync(&state)?;
     repo::create(&state.db, input)
 }
 
@@ -48,6 +52,7 @@ pub fn update_recipe(
     id: String,
     input: UpdateRecipeInput,
 ) -> Result<RecipeDefinition, AppError> {
+    require_auth_sync(&state)?;
     repo::update(&state.db, &id, input)
 }
 
@@ -56,6 +61,7 @@ pub fn delete_recipe(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     repo::delete(&state.db, &id)
 }
 
@@ -64,6 +70,7 @@ pub fn link_recipe_to_persona(
     state: State<'_, Arc<AppState>>,
     input: CreatePersonaRecipeLinkInput,
 ) -> Result<PersonaRecipeLink, AppError> {
+    require_auth_sync(&state)?;
     repo::link_to_persona(&state.db, input)
 }
 
@@ -73,6 +80,7 @@ pub fn unlink_recipe_from_persona(
     persona_id: String,
     recipe_id: String,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     repo::unlink_from_persona(&state.db, &persona_id, &recipe_id)
 }
 
@@ -81,6 +89,7 @@ pub fn get_persona_recipes(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
 ) -> Result<Vec<RecipeDefinition>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_for_persona(&state.db, &persona_id)
 }
 
@@ -89,6 +98,7 @@ pub fn execute_recipe(
     state: State<'_, Arc<AppState>>,
     input: RecipeExecutionInput,
 ) -> Result<RecipeExecutionResult, AppError> {
+    require_auth_sync(&state)?;
     let recipe = repo::get_by_id(&state.db, &input.recipe_id)?;
 
     // Substitute {{variable}} placeholders with input_data values
@@ -119,6 +129,7 @@ pub async fn start_recipe_execution(
     recipe_id: String,
     input_data: std::collections::HashMap<String, serde_json::Value>,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth(&state).await?;
     let recipe = repo::get_by_id(&state.db, &recipe_id)?;
 
     // Render the prompt template with input values
@@ -137,7 +148,7 @@ pub async fn start_recipe_execution(
 
     let active_id = state.active_credential_design_id.clone();
     {
-        let mut guard = active_id.lock().unwrap();
+        let mut guard = active_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
         *guard = Some(execution_id.clone());
     }
 
@@ -164,7 +175,8 @@ pub async fn start_recipe_execution(
 pub async fn cancel_recipe_execution(
     state: State<'_, Arc<AppState>>,
 ) -> Result<bool, AppError> {
-    let mut guard = state.active_credential_design_id.lock().unwrap();
+    require_auth(&state).await?;
+    let mut guard = state.active_credential_design_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
     *guard = None;
     Ok(true)
 }
@@ -174,6 +186,7 @@ pub fn get_credential_recipes(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
 ) -> Result<Vec<RecipeDefinition>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_for_credential(&state.db, &credential_id)
 }
 
@@ -184,6 +197,7 @@ pub async fn start_recipe_generation(
     credential_id: String,
     description: String,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth(&state).await?;
     // Load credential info for the prompt
     let credential = cred_repo::get_by_id(&state.db, &credential_id)?;
 
@@ -199,7 +213,7 @@ pub async fn start_recipe_generation(
     // Reuse the credential design mutex (one credential op at a time)
     let active_id = state.active_credential_design_id.clone();
     {
-        let mut guard = active_id.lock().unwrap();
+        let mut guard = active_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
         *guard = Some(generation_id.clone());
     }
 
@@ -226,7 +240,8 @@ pub async fn start_recipe_generation(
 pub async fn cancel_recipe_generation(
     state: State<'_, Arc<AppState>>,
 ) -> Result<bool, AppError> {
-    let mut guard = state.active_credential_design_id.lock().unwrap();
+    require_auth(&state).await?;
+    let mut guard = state.active_credential_design_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
     *guard = None;
     Ok(true)
 }
@@ -236,6 +251,7 @@ pub fn get_use_case_recipes(
     state: State<'_, Arc<AppState>>,
     use_case_id: String,
 ) -> Result<Vec<RecipeDefinition>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_for_use_case(&state.db, &use_case_id)
 }
 
@@ -248,6 +264,7 @@ pub fn promote_use_case_to_recipe(
     description: Option<String>,
     category: Option<String>,
 ) -> Result<RecipeDefinition, AppError> {
+    require_auth_sync(&state)?;
     // Build a recipe from use case fields
     let prompt_template = format!(
         "Execute the following use case:\n\n{}\n\n{}",
@@ -286,6 +303,7 @@ pub fn get_recipe_versions(
     state: State<'_, Arc<AppState>>,
     recipe_id: String,
 ) -> Result<Vec<RecipeVersion>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_versions(&state.db, &recipe_id)
 }
 
@@ -296,6 +314,7 @@ pub async fn start_recipe_versioning(
     recipe_id: String,
     change_requirements: String,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth(&state).await?;
     let recipe = repo::get_by_id(&state.db, &recipe_id)?;
 
     let prompt = recipe_versioning::build_recipe_versioning_prompt(
@@ -310,7 +329,7 @@ pub async fn start_recipe_versioning(
 
     let active_id = state.active_credential_design_id.clone();
     {
-        let mut guard = active_id.lock().unwrap();
+        let mut guard = active_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
         *guard = Some(versioning_id.clone());
     }
 
@@ -337,7 +356,8 @@ pub async fn start_recipe_versioning(
 pub async fn cancel_recipe_versioning(
     state: State<'_, Arc<AppState>>,
 ) -> Result<bool, AppError> {
-    let mut guard = state.active_credential_design_id.lock().unwrap();
+    require_auth(&state).await?;
+    let mut guard = state.active_credential_design_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
     *guard = None;
     Ok(true)
 }
@@ -352,6 +372,7 @@ pub fn accept_recipe_version(
     description: Option<String>,
     changes_summary: Option<String>,
 ) -> Result<RecipeDefinition, AppError> {
+    require_auth_sync(&state)?;
     let latest = repo::get_latest_version_number(&state.db, &recipe_id)?;
 
     // If no versions exist yet, snapshot the current recipe as v1
@@ -400,5 +421,6 @@ pub fn revert_recipe_version(
     recipe_id: String,
     version_id: String,
 ) -> Result<RecipeDefinition, AppError> {
+    require_auth_sync(&state)?;
     repo::revert_to_version(&state.db, &recipe_id, &version_id)
 }

@@ -28,7 +28,7 @@ export function TriggerConfigPanel({
   if (selected.length === 0) return null;
 
   const inputClass =
-    'w-full px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-lg text-foreground/90 placeholder:text-muted-foreground/40 focus:outline-none focus:border-violet-500/30 transition-colors';
+    'w-full px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground/90 placeholder:text-muted-foreground/40 focus:outline-none focus:border-violet-500/30 transition-colors';
 
   return (
     <div className="flex flex-col gap-3">

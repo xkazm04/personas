@@ -10,12 +10,14 @@ use crate::db::repos::resources::audit_log;
 use crate::db::repos::resources::credentials as repo;
 use crate::engine::crypto;
 use crate::error::AppError;
+use crate::ipc_auth::{require_privileged, require_privileged_sync};
 use crate::AppState;
 
 #[tauri::command]
 pub fn list_credentials(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<PersonaCredential>, AppError> {
+    require_privileged_sync(&state, "list_credentials")?;
     repo::get_all(&state.db)
 }
 
@@ -31,6 +33,7 @@ pub fn create_credential(
     state: State<'_, Arc<AppState>>,
     mut input: CreateCredentialInput,
 ) -> Result<PersonaCredential, AppError> {
+    require_privileged_sync(&state, "create_credential")?;
     // Decrypt session-encrypted data if provided (asymmetric IPC protection)
     if let Some(encrypted) = input.session_encrypted_data.take() {
         match state.session_key.decrypt(&encrypted) {
@@ -45,8 +48,8 @@ pub fn create_credential(
     }
 
     // Parse plaintext JSON into field-level rows (the canonical storage path).
-    let field_map: HashMap<String, String> =
-        serde_json::from_str(&input.encrypted_data).unwrap_or_default();
+    let field_map: HashMap<String, String> = serde_json::from_str(&input.encrypted_data)
+        .map_err(|e| AppError::Validation(format!("Invalid credential field data: {}", e)))?;
 
     // Store an empty blob — all secrets live in credential_fields now.
     let name = input.name.clone();
@@ -56,15 +59,9 @@ pub fn create_credential(
         session_encrypted_data: None,
         ..input
     };
-    let cred = repo::create(&state.db, db_input)?;
 
-    // Persist per-field encrypted rows — roll back the credential row on failure
-    if !field_map.is_empty() {
-        if let Err(e) = repo::save_fields(&state.db, &cred.id, &field_map) {
-            let _ = repo::delete(&state.db, &cred.id);
-            return Err(e);
-        }
-    }
+    // Create credential + save fields in a single transaction to prevent orphaned rows
+    let cred = repo::create_with_fields(&state.db, db_input, &field_map)?;
 
     let _ = audit_log::insert(&state.db, &cred.id, &name, "create", None, None, None);
     Ok(cred)
@@ -76,6 +73,7 @@ pub fn update_credential(
     id: String,
     mut input: UpdateCredentialInput,
 ) -> Result<PersonaCredential, AppError> {
+    require_privileged_sync(&state, "update_credential")?;
     // Decrypt session-encrypted data if provided (asymmetric IPC protection)
     if let Some(encrypted) = input.session_encrypted_data.take() {
         match state.session_key.decrypt(&encrypted) {
@@ -92,10 +90,11 @@ pub fn update_credential(
     let has_data_change = input.encrypted_data.is_some();
 
     // Parse plaintext fields for field-level storage
-    let field_map: Option<HashMap<String, String>> = input
-        .encrypted_data
-        .as_ref()
-        .and_then(|data| serde_json::from_str(data).ok());
+    let field_map: Option<HashMap<String, String>> = match input.encrypted_data.as_ref() {
+        Some(data) => Some(serde_json::from_str(data)
+            .map_err(|e| AppError::Validation(format!("Invalid credential field data: {}", e)))?),
+        None => None,
+    };
 
     // Strip blob columns — all secrets live in credential_fields now.
     let metadata_input = UpdateCredentialInput {
@@ -124,6 +123,7 @@ pub fn patch_credential_metadata(
     id: String,
     patch: serde_json::Value,
 ) -> Result<PersonaCredential, AppError> {
+    require_privileged_sync(&state, "patch_credential_metadata")?;
     let patch_obj = patch
         .as_object()
         .cloned()
@@ -137,6 +137,7 @@ pub fn delete_credential(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_privileged_sync(&state, "delete_credential")?;
     // Capture name before deletion for audit trail
     let name = repo::get_by_id(&state.db, &id)
         .map(|c| c.name)
@@ -153,6 +154,7 @@ pub fn list_credential_events(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
 ) -> Result<Vec<CredentialEvent>, AppError> {
+    require_privileged_sync(&state, "list_credential_events")?;
     repo::get_events_by_credential(&state.db, &credential_id)
 }
 
@@ -160,6 +162,7 @@ pub fn list_credential_events(
 pub fn list_all_credential_events(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<CredentialEvent>, AppError> {
+    require_privileged_sync(&state, "list_all_credential_events")?;
     repo::get_all_events(&state.db)
 }
 
@@ -168,6 +171,7 @@ pub fn create_credential_event(
     state: State<'_, Arc<AppState>>,
     input: CreateCredentialEventInput,
 ) -> Result<CredentialEvent, AppError> {
+    require_privileged_sync(&state, "create_credential_event")?;
     repo::create_event(&state.db, input)
 }
 
@@ -177,6 +181,7 @@ pub fn update_credential_event(
     id: String,
     input: UpdateCredentialEventInput,
 ) -> Result<CredentialEvent, AppError> {
+    require_privileged_sync(&state, "update_credential_event")?;
     repo::update_event(&state.db, &id, input)
 }
 
@@ -185,6 +190,7 @@ pub fn delete_credential_event(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_privileged_sync(&state, "delete_credential_event")?;
     repo::delete_event(&state.db, &id)
 }
 
@@ -193,6 +199,7 @@ pub async fn healthcheck_credential(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
 ) -> Result<serde_json::Value, AppError> {
+    require_privileged(&state, "healthcheck_credential").await?;
     let result =
         crate::engine::healthcheck::run_healthcheck(&state.db, &credential_id).await?;
     let cred = repo::get_by_id(&state.db, &credential_id)
@@ -247,6 +254,7 @@ pub async fn healthcheck_credential_preview(
     mut field_values: HashMap<String, String>,
     session_encrypted_data: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
+    require_privileged(&state, "healthcheck_credential_preview").await?;
     // Decrypt session-encrypted data if provided (asymmetric IPC protection)
     if let Some(encrypted) = session_encrypted_data {
         match state.session_key.decrypt(&encrypted) {
@@ -278,6 +286,7 @@ pub async fn healthcheck_credential_preview(
 pub fn vault_status(
     state: State<'_, Arc<AppState>>,
 ) -> Result<serde_json::Value, AppError> {
+    require_privileged_sync(&state, "vault_status")?;
     let all = repo::get_all(&state.db)?;
     let total = all.len();
     let plaintext = all.iter().filter(|c| crypto::is_plaintext(&c.iv)).count();
@@ -296,6 +305,7 @@ pub fn vault_status(
 pub fn migrate_plaintext_credentials(
     state: State<'_, Arc<AppState>>,
 ) -> Result<serde_json::Value, AppError> {
+    require_privileged_sync(&state, "migrate_plaintext_credentials")?;
     let (migrated, failed) = crypto::migrate_plaintext_credentials(&state.db)?;
     Ok(serde_json::json!({
         "migrated": migrated,
@@ -310,6 +320,7 @@ pub fn list_credential_fields(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
 ) -> Result<Vec<serde_json::Value>, AppError> {
+    require_privileged_sync(&state, "list_credential_fields")?;
     let fields = repo::get_fields(&state.db, &credential_id)?;
     Ok(fields
         .iter()
@@ -338,6 +349,7 @@ pub fn update_credential_field(
     is_sensitive: bool,
     session_encrypted_value: Option<String>,
 ) -> Result<bool, AppError> {
+    require_privileged_sync(&state, "update_credential_field")?;
     // Decrypt session-encrypted value if provided (asymmetric IPC protection)
     if let Some(encrypted) = session_encrypted_value {
         match state.session_key.decrypt(&encrypted) {

@@ -117,7 +117,7 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
               <button
                 onClick={() => void handleTestAll()}
                 disabled={testingAll}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95 transition-colors duration-snap disabled:opacity-40"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95 transition-colors duration-snap disabled:opacity-40"
               >
                 {testingAll ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
                 Test All
@@ -166,7 +166,7 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
 
       {/* Embedded credential design modal */}
       {designOpen && (
-        <div className="mt-4 border border-violet-500/20 rounded-2xl overflow-hidden">
+        <div className="mt-4 border border-violet-500/20 rounded-xl overflow-hidden">
           <CredentialDesignModal
             open={designOpen}
             embedded

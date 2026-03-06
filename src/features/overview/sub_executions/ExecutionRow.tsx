@@ -49,7 +49,7 @@ export const ExecutionRow = memo(function ExecutionRow({ execution, isExpanded, 
         </div>
 
         {/* Status badge */}
-        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium border ${status.bg} ${status.text} ${status.border}`}>
+        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-sm font-medium border ${status.bg} ${status.text} ${status.border}`}>
           {status.pulse && (
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
@@ -61,7 +61,7 @@ export const ExecutionRow = memo(function ExecutionRow({ execution, isExpanded, 
 
         {/* Retry badge */}
         {execution.retry_count > 0 && (
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" title={`Healing retry #${execution.retry_count}`}>
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" title={`Healing retry #${execution.retry_count}`}>
             <RotateCw className="w-2.5 h-2.5" />
             #{execution.retry_count}
           </span>

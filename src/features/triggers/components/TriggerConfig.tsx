@@ -47,7 +47,7 @@ export function TriggerConfig() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Triggers</h3>
         <button

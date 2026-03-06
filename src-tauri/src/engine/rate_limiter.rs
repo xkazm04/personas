@@ -1,6 +1,10 @@
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
+
+/// How often (in `check()` calls) to trigger an automatic prune pass.
+const AUTO_PRUNE_INTERVAL: u64 = 100;
 
 /// Sliding-window rate limiter using in-memory token buckets.
 ///
@@ -9,6 +13,8 @@ use std::time::{Duration, Instant};
 pub struct RateLimiter {
     /// Per-key buckets: key → list of timestamps within the window.
     buckets: Mutex<HashMap<String, Vec<Instant>>>,
+    /// Monotonic counter of `check()` calls, used to trigger periodic pruning.
+    call_count: AtomicU64,
 }
 
 impl Default for RateLimiter {
@@ -21,6 +27,7 @@ impl RateLimiter {
     pub fn new() -> Self {
         Self {
             buckets: Mutex::new(HashMap::new()),
+            call_count: AtomicU64::new(0),
         }
     }
 
@@ -48,7 +55,35 @@ impl RateLimiter {
         }
 
         timestamps.push(now);
+
+        // Periodically prune fully-expired buckets to prevent unbounded memory growth.
+        // We do this while already holding the lock to avoid a second lock acquisition.
+        if self.call_count.fetch_add(1, Ordering::Relaxed) % AUTO_PRUNE_INTERVAL == 0 {
+            buckets.retain(|_, ts| {
+                ts.retain(|t| *t > cutoff);
+                !ts.is_empty()
+            });
+        }
+
         Ok(())
+    }
+
+    /// Return the current event count for each key within the given window.
+    ///
+    /// Used by the tier usage dashboard to show how many events have been
+    /// consumed against the tier limit.
+    pub fn usage_snapshot(&self, window: Duration) -> Vec<(String, usize)> {
+        let now = Instant::now();
+        let cutoff = now - window;
+        let mut buckets = self.buckets.lock().unwrap_or_else(|e| e.into_inner());
+        buckets
+            .iter_mut()
+            .map(|(key, timestamps)| {
+                timestamps.retain(|t| *t > cutoff);
+                (key.clone(), timestamps.len())
+            })
+            .filter(|(_, count)| *count > 0)
+            .collect()
     }
 
     /// Periodically prune empty or fully-expired buckets to prevent unbounded
@@ -63,15 +98,12 @@ impl RateLimiter {
     }
 }
 
-// ── Default limits ──────────────────────────────────────────────────────
+// ── Window durations ─────────────────────────────────────────────────────
+// Max events per tier are defined in engine::tier::TierConfig.
 
-/// Max events per source type per window (60 events/minute).
-pub const EVENT_SOURCE_MAX: usize = 60;
 /// Window duration for event source rate limiting.
 pub const EVENT_SOURCE_WINDOW: Duration = Duration::from_secs(60);
 
-/// Max webhook calls per trigger per window (10 calls/minute).
-pub const WEBHOOK_TRIGGER_MAX: usize = 10;
 /// Window duration for webhook rate limiting.
 pub const WEBHOOK_TRIGGER_WINDOW: Duration = Duration::from_secs(60);
 
@@ -131,5 +163,27 @@ mod tests {
         rl.prune(short_window);
         let buckets = rl.buckets.lock().unwrap();
         assert!(buckets.is_empty());
+    }
+
+    #[test]
+    fn test_auto_prune_on_check_interval() {
+        let rl = RateLimiter::new();
+        let short_window = Duration::from_millis(50);
+
+        // Create an expired bucket under a different key
+        rl.check("old_key", 1000, short_window).unwrap();
+        thread::sleep(Duration::from_millis(60));
+
+        // Advance call_count to just before the prune interval fires
+        rl.call_count.store(super::AUTO_PRUNE_INTERVAL - 1, Ordering::Relaxed);
+
+        // This call should trigger auto-prune (count hits the interval boundary)
+        rl.check("new_key", 1000, short_window).unwrap();
+
+        let buckets = rl.buckets.lock().unwrap();
+        // "old_key" should have been pruned away
+        assert!(!buckets.contains_key("old_key"), "expired bucket should be auto-pruned");
+        // "new_key" should still be present (just inserted)
+        assert!(buckets.contains_key("new_key"), "active bucket should remain");
     }
 }

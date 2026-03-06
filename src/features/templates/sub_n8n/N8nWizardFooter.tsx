@@ -170,7 +170,7 @@ export function N8nWizardFooter({
           <button
             onClick={onNext}
             disabled={nextAction.disabled}
-            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
               nextAction.variant === 'emerald'
                 ? 'bg-emerald-500/25 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/35'
                 : 'bg-violet-500/25 text-violet-300 border-violet-500/30 hover:bg-violet-500/35'

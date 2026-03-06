@@ -118,9 +118,55 @@ fn validate_name(name: &str) -> Result<(), AppError> {
     Ok(())
 }
 
+/// 50 KB limit — generous for prompts, prevents economic abuse via oversized payloads.
+const MAX_PROMPT_BYTES: usize = 50 * 1024;
+
 fn validate_system_prompt(prompt: &str) -> Result<(), AppError> {
     if prompt.trim().is_empty() {
         return Err(AppError::Validation("System prompt cannot be empty".into()));
+    }
+    if prompt.len() > MAX_PROMPT_BYTES {
+        return Err(AppError::Validation(format!(
+            "System prompt exceeds maximum size of {} KB",
+            MAX_PROMPT_BYTES / 1024
+        )));
+    }
+    reject_dangerous_content(prompt, "System prompt")?;
+    Ok(())
+}
+
+fn validate_structured_prompt(prompt: &str) -> Result<(), AppError> {
+    if prompt.len() > MAX_PROMPT_BYTES {
+        return Err(AppError::Validation(format!(
+            "Structured prompt exceeds maximum size of {} KB",
+            MAX_PROMPT_BYTES / 1024
+        )));
+    }
+    reject_dangerous_content(prompt, "Structured prompt")?;
+    // Must be valid JSON
+    if serde_json::from_str::<serde_json::Value>(prompt).is_err() {
+        return Err(AppError::Validation(
+            "Structured prompt must be valid JSON".into(),
+        ));
+    }
+    Ok(())
+}
+
+/// Reject null bytes and C0 control characters (except \t, \n, \r) that have
+/// no legitimate purpose in prompts and could be used to smuggle payloads.
+fn reject_dangerous_content(text: &str, field_name: &str) -> Result<(), AppError> {
+    for ch in text.chars() {
+        if ch == '\0' {
+            return Err(AppError::Validation(format!(
+                "{field_name} must not contain null bytes"
+            )));
+        }
+        // Block C0 control chars U+0001..U+001F except tab, newline, carriage return
+        if ch.is_control() && ch != '\t' && ch != '\n' && ch != '\r' {
+            return Err(AppError::Validation(format!(
+                "{field_name} contains invalid control characters"
+            )));
+        }
     }
     Ok(())
 }
@@ -214,6 +260,7 @@ fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Pe
         color: row.get("color")?,
         enabled: row.get::<_, i32>("enabled")? != 0,
         sensitive: row.get::<_, i32>("sensitive")? != 0,
+        headless: row.get::<_, i32>("headless").unwrap_or(0) != 0,
         max_concurrent: row.get("max_concurrent")?,
         timeout_ms: row.get("timeout_ms")?,
         notification_channels: row.get("notification_channels")?,
@@ -262,6 +309,7 @@ pub fn get_enabled(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
 pub fn create(pool: &DbPool, input: CreatePersonaInput) -> Result<Persona, AppError> {
     validate_name(&input.name)?;
     validate_system_prompt(&input.system_prompt)?;
+    if let Some(ref sp) = input.structured_prompt { validate_structured_prompt(sp)?; }
     if let Some(v) = input.max_concurrent { validate_max_concurrent(v)?; }
     if let Some(v) = input.timeout_ms { validate_timeout_ms(v)?; }
     if let Some(v) = input.max_budget_usd { validate_max_budget_usd(v)?; }
@@ -325,6 +373,7 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
     // Validate fields when provided
     if let Some(ref name) = input.name { validate_name(name)?; }
     if let Some(ref prompt) = input.system_prompt { validate_system_prompt(prompt)?; }
+    if let Some(Some(ref sp)) = input.structured_prompt { validate_structured_prompt(sp)?; }
     if let Some(v) = input.max_concurrent { validate_max_concurrent(v)?; }
     if let Some(v) = input.timeout_ms { validate_timeout_ms(v)?; }
     if let Some(Some(v)) = input.max_budget_usd { validate_max_budget_usd(v)?; }
@@ -351,6 +400,7 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
     push_field!(input.color, "color", sets, param_idx);
     push_field!(input.enabled, "enabled", sets, param_idx);
     push_field!(input.sensitive, "sensitive", sets, param_idx);
+    push_field!(input.headless, "headless", sets, param_idx);
     push_field!(input.max_concurrent, "max_concurrent", sets, param_idx);
     push_field!(input.timeout_ms, "timeout_ms", sets, param_idx);
     push_field!(input.notification_channels, "notification_channels", sets, param_idx);
@@ -378,6 +428,7 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
     if let Some(ref v) = input.color { param_values.push(Box::new(v.clone())); }
     if let Some(v) = input.enabled { param_values.push(Box::new(v as i32)); }
     if let Some(v) = input.sensitive { param_values.push(Box::new(v as i32)); }
+    if let Some(v) = input.headless { param_values.push(Box::new(v as i32)); }
     if let Some(v) = input.max_concurrent { param_values.push(Box::new(v)); }
     if let Some(v) = input.timeout_ms { param_values.push(Box::new(v)); }
     if let Some(ref v) = input.notification_channels { param_values.push(Box::new(v.clone())); }

@@ -5,6 +5,7 @@ import { usePersonaStore } from '@/stores/personaStore';
 import { ContentBox } from '@/features/shared/components/ContentLayout';
 import { ChatCreator } from '@/features/agents/components/ChatCreator';
 import { BuilderStep, IdentityStep, builderReducer, INITIAL_BUILDER_STATE } from './creation';
+import { TRANSITION_SLOW, TRANSITION_FAST } from '@/features/templates/animationPresets';
 
 type WizardStep = 'entry' | 'identity';
 type EntryMode = 'build' | 'chat';
@@ -13,7 +14,7 @@ interface CreationWizardProps {
   canCancel?: boolean;
 }
 
-const pageTransition = { duration: 0.35, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] };
+const pageTransition = TRANSITION_SLOW;
 
 export default function CreationWizard({ canCancel }: CreationWizardProps) {
   const setIsCreatingPersona = usePersonaStore((s) => s.setIsCreatingPersona);
@@ -40,7 +41,7 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
       try {
         await deletePersona(draftPersonaId);
       } catch {
-        // Best-effort cleanup for abandoned drafts.
+        // intentional: non-critical — best-effort cleanup for abandoned drafts
       }
       setDraftPersonaId(null);
     }
@@ -78,7 +79,7 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
               className="p-6 h-full"
             >
               {/* Header + mode tabs */}
-              <div className="flex items-end justify-between mb-5 gap-6">
+              <div className="flex items-end justify-between mb-6 gap-6">
                 <div>
                   <h2 className="text-lg font-semibold text-foreground/90">Create a New Agent</h2>
                   <p className="text-sm text-muted-foreground/90 mt-1">
@@ -138,7 +139,7 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 0.15 }}
+                    transition={TRANSITION_FAST}
                     className="border border-primary/10 rounded-xl overflow-hidden bg-background/30"
                   >
                     <ChatCreator
@@ -152,7 +153,7 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 0.15 }}
+                    transition={TRANSITION_FAST}
                   >
                     <BuilderStep
                       state={builderState}

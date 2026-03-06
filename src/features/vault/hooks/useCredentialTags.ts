@@ -32,7 +32,7 @@ export function useCredentialTags(credential: CredentialMetadata) {
         credentials: s.credentials.map((c) => (c.id === credential.id ? updated : c)),
       }));
     } catch {
-      // Metadata update is best-effort; we don't block the details UI.
+      // intentional: non-critical — tag metadata update is best-effort
     }
   }, [credential]);
 
@@ -89,7 +89,7 @@ export function useCredentialTags(credential: CredentialMetadata) {
       if (copiedCredentialIdTimerRef.current) clearTimeout(copiedCredentialIdTimerRef.current);
       copiedCredentialIdTimerRef.current = setTimeout(() => setCopiedCredentialId(false), 1500);
     } catch {
-      // Clipboard access denied.
+      // intentional: non-critical — clipboard copy may be denied by browser
     }
   }, [credential.id]);
 

@@ -116,6 +116,7 @@ export function parseStructuredPrompt(json: string | null): StructuredPrompt | n
     const parsed = JSON.parse(json);
     return parseFromRecord(parsed);
   } catch {
+    // intentional: non-critical -- JSON parse fallback
     return null;
   }
 }
@@ -220,7 +221,7 @@ export async function previewPrompt(
     const spJson = sp ? JSON.stringify(sp) : null;
     return await tauriPreviewPrompt(personaId, spJson);
   } catch {
-    // Offline / error fallback — render locally from the draft if available
+    // intentional: non-critical -- Tauri IPC fallback, render locally from draft
     if (sp) return renderToMarkdown(sp);
     return '';
   }

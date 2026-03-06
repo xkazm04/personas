@@ -4,6 +4,7 @@ use tauri::State;
 use crate::db::models::{CreateTeamMemoryInput, TeamMemory, TeamMemoryStats};
 use crate::db::repos::resources::team_memories as repo;
 use crate::error::AppError;
+use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
 
 #[tauri::command]
@@ -16,6 +17,7 @@ pub fn list_team_memories(
     limit: Option<i64>,
     offset: Option<i64>,
 ) -> Result<Vec<TeamMemory>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_all(
         &state.db,
         &team_id,
@@ -32,6 +34,7 @@ pub fn create_team_memory(
     state: State<'_, Arc<AppState>>,
     input: CreateTeamMemoryInput,
 ) -> Result<TeamMemory, AppError> {
+    require_auth_sync(&state)?;
     repo::create(&state.db, input)
 }
 
@@ -40,6 +43,7 @@ pub fn delete_team_memory(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     repo::delete(&state.db, &id)
 }
 
@@ -49,6 +53,7 @@ pub fn update_team_memory_importance(
     id: String,
     importance: i32,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     repo::update_importance(&state.db, &id, importance)
 }
 
@@ -57,6 +62,7 @@ pub fn batch_delete_team_memories(
     state: State<'_, Arc<AppState>>,
     ids: Vec<String>,
 ) -> Result<i64, AppError> {
+    require_auth_sync(&state)?;
     repo::batch_delete(&state.db, &ids)
 }
 
@@ -67,6 +73,7 @@ pub fn get_team_memory_count(
     run_id: Option<String>,
     category: Option<String>,
 ) -> Result<i64, AppError> {
+    require_auth_sync(&state)?;
     repo::get_total_count(&state.db, &team_id, run_id.as_deref(), category.as_deref())
 }
 
@@ -75,6 +82,7 @@ pub fn get_team_memory_stats(
     state: State<'_, Arc<AppState>>,
     team_id: String,
 ) -> Result<TeamMemoryStats, AppError> {
+    require_auth_sync(&state)?;
     repo::get_stats(&state.db, &team_id)
 }
 
@@ -83,5 +91,6 @@ pub fn list_team_memories_by_run(
     state: State<'_, Arc<AppState>>,
     run_id: String,
 ) -> Result<Vec<TeamMemory>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_by_run(&state.db, &run_id)
 }

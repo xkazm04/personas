@@ -51,7 +51,7 @@ function KnowledgeRow({ entry, personaName }: {
   const Icon = config?.icon ?? Network;
 
   let patternData: Record<string, unknown> = {};
-  try { patternData = JSON.parse(entry.pattern_data); } catch { /* empty */ }
+  try { patternData = JSON.parse(entry.pattern_data); } catch { /* intentional: non-critical — JSON parse fallback */ }
 
   return (
     <div className="border border-primary/8 rounded-xl bg-background/40 hover:bg-background/60 transition-colors">
@@ -222,7 +222,7 @@ export default function KnowledgeGraphDashboard() {
         actions={
           <button
             onClick={() => { void fetchData(); }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary/40 border border-primary/10 text-sm text-foreground/70 hover:text-foreground/90 hover:bg-secondary/60 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-secondary/40 border border-primary/10 text-sm text-foreground/70 hover:text-foreground/90 hover:bg-secondary/60 transition-colors"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             Refresh
@@ -231,7 +231,7 @@ export default function KnowledgeGraphDashboard() {
       />
 
       <ContentBody>
-        <div className="space-y-5 pb-6">
+        <div className="space-y-6 pb-6">
           {/* Stat cards */}
           {summary && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -309,7 +309,7 @@ export default function KnowledgeGraphDashboard() {
                 </div>
                 <button
                   onClick={dismissDrilldown}
-                  className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-lg bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors"
+                  className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors"
                 >
                   <X className="w-3 h-3" /> Clear
                 </button>
@@ -328,7 +328,7 @@ export default function KnowledgeGraphDashboard() {
                 </div>
                 <button
                   onClick={() => { void fetchData(); }}
-                  className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-lg bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors"
+                  className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors"
                 >
                   <RefreshCw className="w-3 h-3" /> Retry
                 </button>
@@ -340,7 +340,7 @@ export default function KnowledgeGraphDashboard() {
             </div>
           ) : allEntries.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="w-12 h-12 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-4">
+              <div className="w-12 h-12 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-4">
                 <Network className="w-6 h-6 text-violet-400/60" />
               </div>
               <h3 className="text-sm font-semibold text-foreground/80 mb-1">

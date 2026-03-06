@@ -1,12 +1,13 @@
 import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import * as api from '@/api/tauriApi';
 import { getTriggerHealthMap } from '@/api/triggers';
 import type { PersonaTrigger } from '@/lib/types/types';
 import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, parseTriggerConfig } from '@/lib/utils/triggerConstants';
 import { formatTimestamp, formatCountdown } from '@/lib/utils/formatters';
+import EmptyState from '@/features/shared/components/EmptyState';
 
 type TriggerHealth = 'healthy' | 'degraded' | 'failing' | 'unknown';
 
@@ -314,9 +315,20 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
       <div className="flex-1 overflow-y-auto flex flex-col">
         {Object.keys(groupedTriggers).length === 0 ? (
           <div className="flex-1 flex items-center justify-center p-6">
-            <div className="text-center text-muted-foreground/80 text-sm">
-              No triggers configured yet
-            </div>
+            <EmptyState
+              icon={Zap}
+              title="No triggers configured yet"
+              description="Triggers let your agents react to events automatically — schedules, webhooks, file changes, and more."
+              iconColor="text-amber-400/80"
+              iconContainerClassName="bg-amber-500/10 border-amber-500/20"
+              action={onNavigateToPersona ? {
+                label: 'Create Your First Trigger',
+                onClick: () => {
+                  const firstPersona = personas[0];
+                  if (firstPersona) onNavigateToPersona(firstPersona.id);
+                },
+              } : undefined}
+            />
           </div>
         ) : (
           <div className="p-6 space-y-6">
@@ -367,7 +379,7 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
                               <span className={`text-sm font-medium capitalize ${colorClass}`}>
                                 {trigger.trigger_type}
                               </span>
-                              <span className={`text-sm px-1.5 py-0.5 rounded-md font-mono ${
+                              <span className={`text-sm px-1.5 py-0.5 rounded-lg font-mono ${
                                 trigger.enabled
                                   ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
                                   : 'bg-secondary/60 text-muted-foreground/80 border border-border/20'

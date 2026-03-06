@@ -83,6 +83,24 @@ pub struct CloudHealthResponse {
     pub workers: Option<CloudWorkerCounts>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CloudDeployment {
+    pub id: String,
+    pub project_id: String,
+    pub persona_id: String,
+    pub slug: String,
+    pub label: String,
+    pub status: String,
+    pub webhook_enabled: bool,
+    pub webhook_secret: Option<String>,
+    pub invocation_count: u64,
+    pub last_invoked_at: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
 // ============================================================================
 // Internal request bodies (not exported to TS)
 // ============================================================================
@@ -101,6 +119,14 @@ struct SubmitExecutionBody<'a> {
 struct OAuthCallbackBody<'a> {
     code: &'a str,
     state: &'a str,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CreateDeploymentBody<'a> {
+    persona_id: &'a str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    label: Option<&'a str>,
 }
 
 // ============================================================================
@@ -262,5 +288,67 @@ impl CloudClient {
     /// `DELETE /api/oauth/disconnect` -- disconnect the OAuth integration.
     pub async fn oauth_disconnect(&self) -> Result<(), AppError> {
         self.send_ok(self.authed(reqwest::Method::DELETE, "/api/oauth/disconnect").await).await
+    }
+
+    // --------------------------------------------------------------------
+    // Persona sync
+    // --------------------------------------------------------------------
+
+    /// `POST /api/personas` -- upsert a persona on the cloud side.
+    pub async fn upsert_persona(&self, body: &serde_json::Value) -> Result<(), AppError> {
+        let req = self
+            .authed(reqwest::Method::POST, "/api/personas").await
+            .json(body);
+        self.send_ok(req).await
+    }
+
+    // --------------------------------------------------------------------
+    // Cloud Deployments
+    // --------------------------------------------------------------------
+
+    /// `POST /api/deployments` -- deploy a persona as a cloud API endpoint.
+    pub async fn create_deployment(
+        &self,
+        persona_id: &str,
+        label: Option<&str>,
+    ) -> Result<CloudDeployment, AppError> {
+        let req = self
+            .authed(reqwest::Method::POST, "/api/deployments").await
+            .json(&CreateDeploymentBody { persona_id, label });
+        self.send_json(req).await
+    }
+
+    /// `GET /api/deployments` -- list all deployments.
+    pub async fn list_deployments(&self) -> Result<Vec<CloudDeployment>, AppError> {
+        self.send_json(self.authed(reqwest::Method::GET, "/api/deployments").await).await
+    }
+
+    /// `GET /api/deployments/{id}` -- get a single deployment.
+    pub async fn get_deployment(&self, id: &str) -> Result<CloudDeployment, AppError> {
+        let path = format!("/api/deployments/{}", id);
+        self.send_json(self.authed(reqwest::Method::GET, &path).await).await
+    }
+
+    /// `POST /api/deployments/{id}/pause` -- pause a deployment.
+    pub async fn pause_deployment(&self, id: &str) -> Result<CloudDeployment, AppError> {
+        let path = format!("/api/deployments/{}/pause", id);
+        self.send_json(self.authed(reqwest::Method::POST, &path).await).await
+    }
+
+    /// `POST /api/deployments/{id}/resume` -- resume a paused deployment.
+    pub async fn resume_deployment(&self, id: &str) -> Result<CloudDeployment, AppError> {
+        let path = format!("/api/deployments/{}/resume", id);
+        self.send_json(self.authed(reqwest::Method::POST, &path).await).await
+    }
+
+    /// `DELETE /api/deployments/{id}` -- undeploy (remove) a deployment.
+    pub async fn delete_deployment(&self, id: &str) -> Result<(), AppError> {
+        let path = format!("/api/deployments/{}", id);
+        self.send_ok(self.authed(reqwest::Method::DELETE, &path).await).await
+    }
+
+    /// Returns the base URL of the orchestrator (for building endpoint URLs).
+    pub fn base_url(&self) -> &str {
+        &self.base_url
     }
 }

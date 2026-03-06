@@ -3,6 +3,7 @@ use tauri::State;
 
 use crate::engine::platforms::n8n::{self, N8nActivateResult, N8nWorkflow};
 use crate::error::AppError;
+use crate::ipc_auth::require_privileged;
 use crate::AppState;
 
 /// List all workflows from an n8n instance using a stored credential.
@@ -11,6 +12,7 @@ pub async fn n8n_list_workflows(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
 ) -> Result<Vec<N8nWorkflow>, AppError> {
+    require_privileged(&state, "n8n_list_workflows").await?;
     let client = n8n::build_client_from_credential(&state.db, &credential_id)?;
     client.list_workflows().await
 }
@@ -22,6 +24,7 @@ pub async fn n8n_activate_workflow(
     credential_id: String,
     workflow_id: String,
 ) -> Result<N8nActivateResult, AppError> {
+    require_privileged(&state, "n8n_activate_workflow").await?;
     let client = n8n::build_client_from_credential(&state.db, &credential_id)?;
     client.activate_workflow(&workflow_id).await
 }
@@ -33,6 +36,7 @@ pub async fn n8n_deactivate_workflow(
     credential_id: String,
     workflow_id: String,
 ) -> Result<N8nActivateResult, AppError> {
+    require_privileged(&state, "n8n_deactivate_workflow").await?;
     let client = n8n::build_client_from_credential(&state.db, &credential_id)?;
     client.deactivate_workflow(&workflow_id).await
 }
@@ -44,6 +48,7 @@ pub async fn n8n_create_workflow(
     credential_id: String,
     definition: serde_json::Value,
 ) -> Result<serde_json::Value, AppError> {
+    require_privileged(&state, "n8n_create_workflow").await?;
     let client = n8n::build_client_from_credential(&state.db, &credential_id)?;
     client.create_workflow(&definition).await
 }
@@ -56,6 +61,7 @@ pub async fn n8n_trigger_webhook(
     webhook_url: String,
     body: Option<serde_json::Value>,
 ) -> Result<serde_json::Value, AppError> {
+    require_privileged(&state, "n8n_trigger_webhook").await?;
     let client = n8n::build_client_from_credential(&state.db, &credential_id)?;
     client
         .trigger_webhook(&webhook_url, &body.unwrap_or(serde_json::Value::Object(Default::default())))

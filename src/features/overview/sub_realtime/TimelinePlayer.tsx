@@ -61,7 +61,7 @@ const ReplayEntryBar = memo(function ReplayEntryBar({
           key={opt.value}
           disabled={loading}
           onClick={() => onEnterReplay(opt.value)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-bold rounded-lg bg-primary/5 border border-primary/10 text-muted-foreground/70 hover:text-foreground/80 hover:bg-primary/10 hover:border-primary/20 transition-all active:scale-[0.97] disabled:opacity-40"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-bold rounded-xl bg-primary/5 border border-primary/10 text-muted-foreground/70 hover:text-foreground/80 hover:bg-primary/10 hover:border-primary/20 transition-all active:scale-[0.97] disabled:opacity-40"
         >
           {loading ? (
             <Loader2 className="w-3 h-3 animate-spin" />
@@ -246,7 +246,7 @@ const ActiveTimelineBar = memo(function ActiveTimelineBar({
         <div className="flex-1" />
 
         {/* Event counter */}
-        <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/5 border border-primary/8">
+        <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-primary/5 border border-primary/8">
           <div className="w-1.5 h-1.5 rounded-full bg-cyan-400/60" />
           <span className="text-sm font-bold text-foreground/60">
             {emittedCount}
@@ -259,7 +259,7 @@ const ActiveTimelineBar = memo(function ActiveTimelineBar({
         </div>
 
         {/* Range badge */}
-        <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-secondary/30 border border-primary/8 text-sm text-muted-foreground/50 font-bold tracking-wider">
+        <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-secondary/30 border border-primary/8 text-sm text-muted-foreground/50 font-bold tracking-wider">
           <History className="w-3 h-3" />
           {range === '1d' ? '24H' : '7D'}
         </div>

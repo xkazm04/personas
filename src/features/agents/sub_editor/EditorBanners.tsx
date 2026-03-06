@@ -82,10 +82,10 @@ export function UnsavedChangesBanner({
       icon={<AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />}
       message={`Unsaved changes${changedSections.length > 0 ? `: ${changedSections.join(', ')}` : ''}`}
       actions={[
-        <button key="save" onClick={onSaveAndSwitch} className="px-3 py-1 rounded-lg text-sm font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-colors duration-snap">
+        <button key="save" onClick={onSaveAndSwitch} className="btn-sm font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-colors duration-snap">
           Save & Switch
         </button>,
-        <button key="discard" onClick={onDiscardAndSwitch} className="px-3 py-1 rounded-lg text-sm font-medium bg-secondary/50 text-foreground/80 border border-primary/15 hover:bg-secondary/70 transition-colors duration-snap">
+        <button key="discard" onClick={onDiscardAndSwitch} className="btn-sm font-medium bg-secondary/50 text-foreground/80 border border-primary/15 hover:bg-secondary/70 transition-colors duration-snap">
           Discard
         </button>,
       ]}
@@ -111,7 +111,7 @@ export function DesignNudgeBanner() {
         <button
           key="design"
           onClick={() => { setEditorTab('design'); setShowDesignNudge(false); }}
-          className="px-3 py-1 rounded-lg text-sm font-medium bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30 transition-colors duration-snap"
+          className="px-3 py-1 rounded-xl text-sm font-medium bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30 transition-colors duration-snap"
         >
           Try Design Wizard
         </button>,
@@ -140,7 +140,7 @@ export function CloudNudgeBanner() {
           <button
             key="signin"
             onClick={() => { setSidebarSection('settings'); setShowCloudNudge(false); }}
-            className="px-3 py-1 rounded-lg text-sm font-medium bg-sky-500/20 text-sky-300 border border-sky-500/30 hover:bg-sky-500/30 transition-colors duration-snap flex items-center gap-1.5"
+            className="px-3 py-1 rounded-xl text-sm font-medium bg-sky-500/20 text-sky-300 border border-sky-500/30 hover:bg-sky-500/30 transition-colors duration-snap flex items-center gap-1.5"
           >
             <LogIn className="w-3 h-3" />
             Sign In
@@ -149,7 +149,7 @@ export function CloudNudgeBanner() {
         <button
           key="cloud"
           onClick={() => { setSidebarSection('cloud'); setShowCloudNudge(false); }}
-          className="px-3 py-1 rounded-lg text-sm font-medium bg-sky-500/20 text-sky-300 border border-sky-500/30 hover:bg-sky-500/30 transition-colors duration-snap flex items-center gap-1.5"
+          className="px-3 py-1 rounded-xl text-sm font-medium bg-sky-500/20 text-sky-300 border border-sky-500/30 hover:bg-sky-500/30 transition-colors duration-snap flex items-center gap-1.5"
         >
           <Cloud className="w-3 h-3" />
           Set up Cloud

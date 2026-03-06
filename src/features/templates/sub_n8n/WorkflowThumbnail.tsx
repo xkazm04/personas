@@ -74,6 +74,7 @@ export function WorkflowThumbnail({ rawWorkflowJson }: WorkflowThumbnailProps) {
 
       return { nodes: mapped, sorted };
     } catch {
+      // intentional: non-critical — JSON parse fallback
       return null;
     }
   }, [rawWorkflowJson]);

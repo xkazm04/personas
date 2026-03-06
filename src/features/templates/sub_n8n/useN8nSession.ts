@@ -8,6 +8,7 @@ import {
   N8N_TRANSFORM_CONTEXT_KEY,
   type PersistedTransformContext,
 } from './n8nTypes';
+import { useToastStore } from '@/stores/toastStore';
 import type { N8nImportState, N8nImportAction } from './useN8nImportReducer';
 
 // ── Derived status from reducer state ──
@@ -123,7 +124,7 @@ export function useN8nSession(
           });
           lastSyncedSliceRef.current = currentSlice;
         } catch {
-          // Keep lastSyncedSliceRef unchanged so a future state change retries sync.
+          // intentional: non-critical — DB sync will be retried on next state change
         }
       })();
     }, DB_SYNC_DELAY);
@@ -168,7 +169,7 @@ export function useN8nSession(
         };
         window.localStorage.setItem(N8N_TRANSFORM_CONTEXT_KEY, JSON.stringify(context));
       } catch {
-        // localStorage might be full — continue without persistence
+        // intentional: non-critical — localStorage cleanup
       }
     }, LS_SYNC_DELAY);
 
@@ -224,7 +225,7 @@ export function useN8nSession(
             };
             window.localStorage.setItem(N8N_TRANSFORM_CONTEXT_KEY, JSON.stringify(context));
           } catch {
-            // ignore flush failures on unmount
+            // intentional: non-critical — localStorage cleanup
           }
         }
       }
@@ -234,7 +235,7 @@ export function useN8nSession(
   // ── Manual operations ──
 
   const clearPersistedContext = useCallback(() => {
-    try { window.localStorage.removeItem(N8N_TRANSFORM_CONTEXT_KEY); } catch { /* ignore */ }
+    try { window.localStorage.removeItem(N8N_TRANSFORM_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
   }, []);
 
   const create = useCallback(async (workflowName: string, rawJson: string): Promise<string | null> => {
@@ -244,6 +245,7 @@ export function useN8nSession(
       sessionIdRef.current = session.id;
       return session.id;
     } catch {
+      useToastStore.getState().addToast('Failed to create import session', 'error');
       return null;
     }
   }, [dispatch]);

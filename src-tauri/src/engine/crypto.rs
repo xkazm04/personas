@@ -1,3 +1,4 @@
+use std::io::Write;
 use std::sync::OnceLock;
 use std::{fs, path::PathBuf};
 
@@ -226,17 +227,57 @@ impl From<CryptoError> for AppError {
 // ---------------------------------------------------------------------------
 
 /// Get or create the 32-byte master key. Cached in OnceLock after first call.
-/// Always succeeds because we fall back to PBKDF2 if the OS keychain is unavailable.
+///
+/// **Fail-closed**: If the OS keychain is completely inaccessible (e.g. the
+/// platform backend cannot be initialised), this returns `Err` rather than
+/// silently falling through to an unprotected local file.
+///
+/// The local fallback file is only used when:
+/// 1. The keychain *works* but has no entry yet — we load/generate a key and
+///    backfill it into the keychain (handled inside `try_keychain`).
+/// 2. `PERSONAS_ALLOW_FALLBACK_KEY=1` is explicitly set — for CI, headless
+///    environments, or tests where no keychain daemon is available.
 pub fn get_master_key() -> Result<&'static [u8; 32], CryptoError> {
-    Ok(MASTER_KEY.get_or_init(|| {
+    // OnceLock stores Result so we can propagate the error on every call.
+    static KEY_RESULT: OnceLock<Result<[u8; 32], String>> = OnceLock::new();
+
+    let result = KEY_RESULT.get_or_init(|| {
         match try_keychain() {
-            Ok(key) => key,
+            Ok(key) => Ok(key),
             Err(e) => {
-                tracing::warn!("Keychain unavailable ({}), using fallback key derivation", e);
-                derive_fallback_key()
+                // Only allow the local-file fallback if explicitly opted-in.
+                if std::env::var("PERSONAS_ALLOW_FALLBACK_KEY").unwrap_or_default() == "1" {
+                    tracing::warn!(
+                        "Keychain unavailable ({}) but PERSONAS_ALLOW_FALLBACK_KEY=1 — \
+                         using local fallback key. Credential encryption is less protected.",
+                        e
+                    );
+                    Ok(derive_fallback_key())
+                } else {
+                    tracing::error!(
+                        "Keychain unavailable ({}) and PERSONAS_ALLOW_FALLBACK_KEY is not set. \
+                         Refusing to store credentials without OS keychain protection. \
+                         Set PERSONAS_ALLOW_FALLBACK_KEY=1 to allow local fallback in headless environments.",
+                        e
+                    );
+                    Err(format!("Keychain unavailable: {e}"))
+                }
             }
         }
-    }))
+    });
+
+    match result {
+        Ok(key) => {
+            // Cache in the original MASTER_KEY OnceLock for backwards compat with key_source()
+            let _ = MASTER_KEY.set(*key);
+            Ok(MASTER_KEY.get().unwrap())
+        }
+        Err(msg) => Err(CryptoError::KeyManagement(format!(
+            "Master key not available (fail-closed): {}. \
+             Set PERSONAS_ALLOW_FALLBACK_KEY=1 to allow local fallback.",
+            msg
+        ))),
+    }
 }
 
 /// Try to load or create the master key via OS keychain.
@@ -316,10 +357,16 @@ fn derive_fallback_key() -> [u8; 32] {
 }
 
 fn local_fallback_key_path() -> Option<PathBuf> {
-    let appdata = std::env::var("APPDATA").ok()?;
+    let appdata = std::env::var("APPDATA")
+        .or_else(|_| std::env::var("HOME"))
+        .ok()?;
     let dir = PathBuf::from(appdata).join("com.personas.desktop");
     Some(dir.join("master.key"))
 }
+
+/// Prefix added to DPAPI-protected key files so we can distinguish them from
+/// legacy plaintext base64 files during load.
+const DPAPI_PREFIX: &str = "DPAPI:";
 
 fn load_local_fallback_key() -> Result<Option<[u8; 32]>, CryptoError> {
     let Some(path) = local_fallback_key_path() else {
@@ -331,43 +378,86 @@ fn load_local_fallback_key() -> Result<Option<[u8; 32]>, CryptoError> {
     }
 
     let raw = fs::read_to_string(&path)
-        .map_err(|e| CryptoError::KeyManagement(format!("Failed reading local key file: {e}")))?;
-    let bytes = B64.decode(raw.trim())?;
-    if bytes.len() != 32 {
+        .map_err(|e| CryptoError::KeyManagement(format!("Failed reading local key file: {}", e)))?;
+    let trimmed = raw.trim();
+
+    let key_bytes = if trimmed.starts_with(DPAPI_PREFIX) {
+        // DPAPI-protected format: "DPAPI:<base64(dpapi_ciphertext)>"
+        let protected_b64 = &trimmed[DPAPI_PREFIX.len()..];
+        let protected_bytes = B64.decode(protected_b64)?;
+        platform_unprotect(&protected_bytes)?
+    } else {
+        // Legacy plaintext base64 format — decode and schedule migration
+        let bytes = B64.decode(trimmed)?;
+        if bytes.len() == 32 {
+            tracing::info!("Found legacy plaintext key file, migrating to protected format");
+            let mut key = [0u8; 32];
+            key.copy_from_slice(&bytes);
+            // Re-save in protected format (best-effort migration)
+            if let Err(e) = save_local_fallback_key(&key) {
+                tracing::warn!("Failed to migrate legacy key file to protected format: {}", e);
+            }
+        }
+        bytes
+    };
+
+    if key_bytes.len() != 32 {
         return Err(CryptoError::KeyManagement(format!(
             "Local key has wrong length: {} (expected 32)",
-            bytes.len()
+            key_bytes.len()
         )));
     }
 
     let mut key = [0u8; 32];
-    key.copy_from_slice(&bytes);
+    key.copy_from_slice(&key_bytes);
     Ok(Some(key))
 }
 
+/// Save the master key to a local file using atomic write (tempfile + rename)
+/// with permissions set BEFORE content is written, eliminating the TOCTOU race.
+/// On Windows, the key is additionally encrypted with DPAPI before writing.
 fn save_local_fallback_key(key: &[u8; 32]) -> Result<(), CryptoError> {
     let Some(path) = local_fallback_key_path() else {
         return Ok(());
     };
 
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent)
-            .map_err(|e| CryptoError::KeyManagement(format!("Failed creating local key dir: {e}")))?;
-    }
+    let parent = path.parent().ok_or_else(|| {
+        CryptoError::KeyManagement("Key file path has no parent directory".into())
+    })?;
 
-    fs::write(&path, B64.encode(key))
-        .map_err(|e| CryptoError::KeyManagement(format!("Failed writing local key file: {e}")))?;
+    fs::create_dir_all(parent)
+        .map_err(|e| CryptoError::KeyManagement(format!("Failed creating local key dir: {}", e)))?;
 
-    restrict_file_permissions(&path);
+    // Protect the raw key bytes with platform-specific encryption (DPAPI on Windows)
+    let protected = platform_protect(key)?;
+    let file_content = format!("{}{}", DPAPI_PREFIX, B64.encode(&protected));
 
+    // Atomic write: create temp file in the same directory → write → set permissions → rename.
+    // This eliminates the TOCTOU window where the key could be read by another process.
+    let mut tmp = tempfile::NamedTempFile::new_in(parent)
+        .map_err(|e| CryptoError::KeyManagement(format!("Failed creating temp file: {}", e)))?;
+
+    tmp.write_all(file_content.as_bytes())
+        .map_err(|e| CryptoError::KeyManagement(format!("Failed writing temp key file: {}", e)))?;
+    tmp.flush()
+        .map_err(|e| CryptoError::KeyManagement(format!("Failed flushing temp key file: {}", e)))?;
+
+    // Set restrictive permissions BEFORE making the file visible at the final path
+    restrict_file_permissions(tmp.path())?;
+
+    // Atomic rename (same filesystem, same directory)
+    tmp.persist(&path)
+        .map_err(|e| CryptoError::KeyManagement(format!("Failed persisting key file: {}", e)))?;
+
+    tracing::debug!("Master key saved to local fallback file with restricted permissions");
     Ok(())
 }
 
 /// Restrict file permissions so only the current user can read/write the key file.
-/// Logs a warning on failure but does not propagate the error — the key is already
-/// persisted and functional; restrictive ACLs are defense-in-depth.
+/// Returns an error if permissions cannot be set — the caller must not leave the
+/// key file world-readable.
 #[cfg(windows)]
-fn restrict_file_permissions(path: &std::path::Path) {
+fn restrict_file_permissions(path: &std::path::Path) -> Result<(), CryptoError> {
     let path_str = path.to_string_lossy();
     let username = whoami::username();
 
@@ -384,35 +474,157 @@ fn restrict_file_permissions(path: &std::path::Path) {
 
     match result {
         Ok(output) if output.status.success() => {
-            tracing::debug!("Restricted master key file permissions to current user");
+            tracing::debug!("Restricted key file permissions to current user");
+            Ok(())
         }
         Ok(output) => {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            tracing::warn!(
+            Err(CryptoError::KeyManagement(format!(
                 "icacls failed to restrict key file permissions (exit {}): {}",
                 output.status,
                 stderr.trim()
-            );
+            )))
         }
         Err(e) => {
-            tracing::warn!("Failed to run icacls for key file permissions: {}", e);
+            Err(CryptoError::KeyManagement(format!(
+                "Failed to run icacls for key file permissions: {}", e
+            )))
         }
     }
 }
 
 #[cfg(unix)]
-fn restrict_file_permissions(path: &std::path::Path) {
+fn restrict_file_permissions(path: &std::path::Path) -> Result<(), CryptoError> {
     use std::os::unix::fs::PermissionsExt;
-    if let Err(e) = fs::set_permissions(path, fs::Permissions::from_mode(0o600)) {
-        tracing::warn!("Failed to set key file permissions to 0600: {}", e);
-    } else {
-        tracing::debug!("Restricted master key file permissions to owner-only (0600)");
-    }
+    fs::set_permissions(path, fs::Permissions::from_mode(0o600))
+        .map_err(|e| CryptoError::KeyManagement(format!(
+            "Failed to set key file permissions to 0600: {}", e
+        )))?;
+    tracing::debug!("Restricted key file permissions to owner-only (0600)");
+    Ok(())
 }
 
 #[cfg(not(any(windows, unix)))]
-fn restrict_file_permissions(_path: &std::path::Path) {
-    tracing::warn!("Cannot restrict key file permissions on this platform");
+fn restrict_file_permissions(_path: &std::path::Path) -> Result<(), CryptoError> {
+    Err(CryptoError::KeyManagement(
+        "Cannot restrict key file permissions on this platform — refusing to store key".into(),
+    ))
+}
+
+// ---------------------------------------------------------------------------
+// Platform-specific key protection (DPAPI on Windows, passthrough elsewhere)
+// ---------------------------------------------------------------------------
+
+/// Encrypt key material using the platform's user-scoped data protection.
+/// On Windows this uses DPAPI (CryptProtectData) which ties the ciphertext
+/// to the current user's login credentials.
+/// On non-Windows platforms, returns the key as-is (keychain is the primary
+/// protection there).
+#[cfg(windows)]
+fn platform_protect(data: &[u8]) -> Result<Vec<u8>, CryptoError> {
+    dpapi_protect(data)
+}
+
+#[cfg(not(windows))]
+fn platform_protect(data: &[u8]) -> Result<Vec<u8>, CryptoError> {
+    Ok(data.to_vec())
+}
+
+/// Decrypt key material previously protected by `platform_protect`.
+#[cfg(windows)]
+fn platform_unprotect(data: &[u8]) -> Result<Vec<u8>, CryptoError> {
+    dpapi_unprotect(data)
+}
+
+#[cfg(not(windows))]
+fn platform_unprotect(data: &[u8]) -> Result<Vec<u8>, CryptoError> {
+    Ok(data.to_vec())
+}
+
+// ---------------------------------------------------------------------------
+// Windows DPAPI wrappers
+// ---------------------------------------------------------------------------
+
+#[cfg(windows)]
+extern "system" {
+    /// LocalFree from kernel32.dll — used to free buffers allocated by DPAPI.
+    /// Not exported by the `windows` crate v0.58, so we declare it manually.
+    fn LocalFree(hmem: *mut std::ffi::c_void) -> *mut std::ffi::c_void;
+}
+
+#[cfg(windows)]
+fn dpapi_protect(plaintext: &[u8]) -> Result<Vec<u8>, CryptoError> {
+    use std::ptr;
+    use windows::Win32::Security::Cryptography::{
+        CryptProtectData, CRYPT_INTEGER_BLOB,
+    };
+    use windows::core::PCWSTR;
+
+    unsafe {
+        let mut data_in = CRYPT_INTEGER_BLOB {
+            cbData: plaintext.len() as u32,
+            pbData: plaintext.as_ptr() as *mut u8,
+        };
+        let mut data_out = CRYPT_INTEGER_BLOB {
+            cbData: 0,
+            pbData: ptr::null_mut(),
+        };
+
+        CryptProtectData(
+            &mut data_in,
+            PCWSTR::null(),
+            None,
+            None,
+            None,
+            0,
+            &mut data_out,
+        )
+        .map_err(|e| CryptoError::KeyManagement(format!("DPAPI CryptProtectData failed: {}", e)))?;
+
+        let protected = std::slice::from_raw_parts(data_out.pbData, data_out.cbData as usize).to_vec();
+
+        // Free the buffer allocated by CryptProtectData
+        LocalFree(data_out.pbData as *mut _);
+
+        Ok(protected)
+    }
+}
+
+#[cfg(windows)]
+fn dpapi_unprotect(ciphertext: &[u8]) -> Result<Vec<u8>, CryptoError> {
+    use std::ptr;
+    use windows::Win32::Security::Cryptography::{
+        CryptUnprotectData, CRYPT_INTEGER_BLOB,
+    };
+
+    unsafe {
+        let mut data_in = CRYPT_INTEGER_BLOB {
+            cbData: ciphertext.len() as u32,
+            pbData: ciphertext.as_ptr() as *mut u8,
+        };
+        let mut data_out = CRYPT_INTEGER_BLOB {
+            cbData: 0,
+            pbData: ptr::null_mut(),
+        };
+
+        CryptUnprotectData(
+            &mut data_in,
+            None,
+            None,
+            None,
+            None,
+            0,
+            &mut data_out,
+        )
+        .map_err(|e| CryptoError::KeyManagement(format!("DPAPI CryptUnprotectData failed: {}", e)))?;
+
+        let decrypted = std::slice::from_raw_parts(data_out.pbData, data_out.cbData as usize).to_vec();
+
+        // Free the buffer allocated by CryptUnprotectData
+        LocalFree(data_out.pbData as *mut _);
+
+        Ok(decrypted)
+    }
 }
 
 /// Returns the key source: "keychain" or "fallback".

@@ -12,6 +12,7 @@ export type BuilderAction =
   | { type: 'ADD_USE_CASE_WITH_DATA'; payload: { title: string; description: string; category?: string } }
   | { type: 'UPDATE_USE_CASE'; payload: { id: string; updates: Partial<BuilderUseCase> } }
   | { type: 'REMOVE_USE_CASE'; payload: string }
+  | { type: 'REORDER_USE_CASES'; payload: { fromIndex: number; toIndex: number } }
   | { type: 'ADD_COMPONENT'; payload: { role: ComponentRole; connectorName: string; credentialId: string | null } }
   | { type: 'REMOVE_COMPONENT'; payload: string } // component id
   | { type: 'AUTO_MATCH_CREDENTIALS'; payload: { credentials: Array<{ id: string; service_type: string }> } }
@@ -171,6 +172,16 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
         ...state,
         useCases: state.useCases.filter((uc) => uc.id !== action.payload),
       };
+
+    case 'REORDER_USE_CASES': {
+      const { fromIndex, toIndex } = action.payload;
+      if (fromIndex === toIndex) return state;
+      const reordered = [...state.useCases];
+      const [moved] = reordered.splice(fromIndex, 1);
+      if (!moved) return state;
+      reordered.splice(toIndex, 0, moved);
+      return { ...state, useCases: reordered };
+    }
 
     case 'ADD_COMPONENT': {
       const { role, connectorName, credentialId } = action.payload;

@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { PersonaToolDefinition } from "@/lib/bindings/PersonaToolDefinition";
 import type { CreateToolDefinitionInput } from "@/lib/bindings/CreateToolDefinitionInput";

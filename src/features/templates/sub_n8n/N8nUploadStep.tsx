@@ -40,7 +40,7 @@ function fileNameFromUrl(url: string): string {
     const path = new URL(url).pathname;
     const lastSegment = path.split('/').filter(Boolean).pop() || '';
     if (/\.(json|ya?ml)$/i.test(lastSegment)) return lastSegment;
-  } catch { /* ignore */ }
+  } catch { /* intentional: non-critical — JSON parse fallback */ }
   return 'imported.json';
 }
 
@@ -364,7 +364,7 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
           <button
             key={m.id}
             onClick={() => setMode(m.id)}
-            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all ${
+            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
               mode === m.id
                 ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25 shadow-sm'
                 : 'text-muted-foreground/70 hover:text-foreground/80 hover:bg-secondary/40 border border-transparent'
@@ -411,7 +411,7 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
               <motion.div
                 animate={isDragging ? { scale: 1.1, y: -4 } : { scale: 1, y: 0 }}
                 transition={{ duration: 0.2 }}
-                className={`w-16 h-16 rounded-2xl border flex items-center justify-center transition-colors duration-200 ${
+                className={`w-16 h-16 rounded-xl border flex items-center justify-center transition-colors duration-200 ${
                   isDragging ? 'bg-violet-500/25 border-violet-400/40' : 'bg-violet-500/15 border-violet-500/25'
                 }`}
               >
@@ -440,7 +440,7 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
               <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="mt-3 flex flex-col items-start gap-1.5">
                 <button
                   onClick={handleManualProceed}
-                  className="px-5 py-2.5 text-sm font-semibold rounded-xl bg-violet-500 text-white hover:bg-violet-400 transition-colors"
+                  className="px-4 py-2.5 text-sm font-semibold rounded-xl bg-violet-500 text-white hover:bg-violet-400 transition-colors"
                 >
                   Continue
                 </button>
@@ -484,7 +484,7 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
                 <button
                   onClick={handlePasteImport}
                   disabled={pastePreview?.kind !== 'valid'}
-                  className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-sm font-medium transition-all ${
                     pastePreview?.kind === 'valid'
                       ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30'
                       : 'bg-secondary/40 text-muted-foreground/40 border border-primary/10 cursor-not-allowed'
@@ -512,7 +512,7 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.15 }}
           >
-            <div className="rounded-xl border border-primary/15 bg-secondary/20 p-5 space-y-4">
+            <div className="rounded-xl border border-primary/15 bg-secondary/20 p-4 space-y-4">
               <div className="flex items-center gap-2">
                 <Link2 className="w-4 h-4 text-violet-400 flex-shrink-0" />
                 <span className="text-sm font-medium text-foreground/80">Import from URL</span>
@@ -528,13 +528,13 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
                   onKeyDown={(e) => { if (e.key === 'Enter' && !urlFetching) void handleUrlFetch(); }}
                   aria-label="Workflow URL"
                   placeholder="https://raw.githubusercontent.com/.../workflow.json"
-                  className="flex-1 px-3 py-2 rounded-lg bg-background/50 border border-primary/15 text-sm text-foreground/80 placeholder:text-muted-foreground/40 outline-none focus:border-violet-500/40 transition-colors"
+                  className="flex-1 px-3 py-2 rounded-xl bg-background/50 border border-primary/15 text-sm text-foreground/80 placeholder:text-muted-foreground/40 outline-none focus:border-violet-500/40 transition-colors"
                   data-testid="url-input"
                 />
                 <button
                   onClick={() => void handleUrlFetch()}
                   disabled={urlFetching || !urlValue.trim()}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                     urlFetching || !urlValue.trim()
                       ? 'bg-secondary/40 text-muted-foreground/40 border border-primary/10 cursor-not-allowed'
                       : 'bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30'
@@ -565,7 +565,7 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
               <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="mt-3 flex flex-col items-start gap-1.5">
                 <button
                   onClick={handleUrlImport}
-                  className="px-5 py-2.5 text-sm font-semibold rounded-xl bg-violet-500 text-white hover:bg-violet-400 transition-colors"
+                  className="px-4 py-2.5 text-sm font-semibold rounded-xl bg-violet-500 text-white hover:bg-violet-400 transition-colors"
                 >
                   Continue
                 </button>
@@ -624,7 +624,7 @@ function PreviewCard({
           }}
           role={onClick ? 'button' : undefined}
           tabIndex={onClick ? 0 : -1}
-          className={`mt-3 flex items-center gap-3 px-4 rounded-lg border ${
+          className={`mt-3 flex items-center gap-3 px-4 rounded-xl border ${
             preview.kind === 'valid'
               ? 'border-primary/10 bg-zinc-900/50 py-2 cursor-pointer hover:bg-zinc-800/60 transition-colors'
               : 'border-red-400/40 bg-red-500/5 h-12'

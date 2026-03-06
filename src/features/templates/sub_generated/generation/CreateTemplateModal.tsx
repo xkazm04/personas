@@ -84,7 +84,7 @@ export function CreateTemplateModal({
       try {
         const parsed = JSON.parse(snap.result_json);
         draft = normalizeDraftFromUnknown(parsed?.persona ?? parsed);
-      } catch { /* parse error handled below */ }
+      } catch { /* intentional: non-critical — JSON parse fallback */ }
     }
     return {
       status: snap.status as 'idle' | 'running' | 'completed' | 'failed',
@@ -120,7 +120,7 @@ export function CreateTemplateModal({
             return;
           }
         }
-      } catch { /* fall through */ }
+      } catch { /* intentional: non-critical — JSON parse fallback */ }
     }
     reducer.generateFailed('Generation completed but no valid persona draft was found.');
     clearPersistedContext();
@@ -195,7 +195,7 @@ export function CreateTemplateModal({
     if (state.backgroundGenId) {
       try {
         await cancelTemplateGenerate(state.backgroundGenId);
-      } catch { /* ignore */ }
+      } catch { /* intentional: non-critical — best-effort cancellation */ }
     }
     reducer.generateCancelled();
     clearPersistedContext();
@@ -238,7 +238,7 @@ export function CreateTemplateModal({
       if (genIdRef.current) {
         try {
           await clearTemplateGenerateSnapshot(genIdRef.current);
-        } catch { /* ignore */ }
+        } catch { /* intentional: non-critical — snapshot cleanup */ }
       }
 
       onTemplateCreated();
@@ -358,7 +358,7 @@ export function CreateTemplateModal({
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
-                className="p-6 space-y-5"
+                className="p-6 space-y-6"
               >
                 <div className="space-y-1.5">
                   <label className="text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider">
@@ -468,7 +468,7 @@ export function CreateTemplateModal({
               <button
                 onClick={handleStartGenerate}
                 disabled={!state.templateName.trim() || !state.description.trim()}
-                className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-xl border bg-violet-500/15 text-violet-300 border-violet-500/25 hover:bg-violet-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border bg-violet-500/15 text-violet-300 border-violet-500/25 hover:bg-violet-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <Sparkles className="w-4 h-4" />
                 Generate Template
@@ -479,7 +479,7 @@ export function CreateTemplateModal({
               <button
                 onClick={() => reducer.goToStep('review')}
                 disabled={!state.draft}
-                className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-xl border bg-violet-500/15 text-violet-300 border-violet-500/25 hover:bg-violet-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border bg-violet-500/15 text-violet-300 border-violet-500/25 hover:bg-violet-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <ArrowRight className="w-4 h-4" />
                 View Draft
@@ -490,7 +490,7 @@ export function CreateTemplateModal({
               <button
                 onClick={handleSaveTemplate}
                 disabled={state.saving || !state.draft}
-                className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-xl border bg-emerald-500/15 text-emerald-300 border-emerald-500/25 hover:bg-emerald-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border bg-emerald-500/15 text-emerald-300 border-emerald-500/25 hover:bg-emerald-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 {state.saving ? (
                   <><RefreshCw className="w-4 h-4 animate-spin" /> Saving...</>
@@ -501,7 +501,7 @@ export function CreateTemplateModal({
             )}
 
             {state.step === 'review' && state.saved && (
-              <span className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-emerald-400">
+              <span className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-emerald-400">
                 <Check className="w-4 h-4" />
                 Template Saved
               </span>

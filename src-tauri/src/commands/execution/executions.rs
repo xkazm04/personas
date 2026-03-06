@@ -8,6 +8,7 @@ use crate::db::repos::resources::automations as automation_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::engine::automation_runner::automation_to_virtual_tool;
 use crate::error::AppError;
+use crate::ipc_auth::{require_auth, require_auth_sync, require_privileged, require_privileged_sync};
 use crate::AppState;
 
 /// Verify that the execution belongs to the expected persona.
@@ -26,6 +27,7 @@ pub fn list_executions(
     persona_id: String,
     limit: Option<i64>,
 ) -> Result<Vec<PersonaExecution>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_by_persona_id(&state.db, &persona_id, limit)
 }
 
@@ -35,6 +37,7 @@ pub fn get_execution(
     id: String,
     caller_persona_id: String,
 ) -> Result<PersonaExecution, AppError> {
+    require_auth_sync(&state)?;
     let execution = repo::get_by_id(&state.db, &id)?;
     verify_execution_owner(&execution, &caller_persona_id)?;
     Ok(execution)
@@ -49,6 +52,7 @@ pub fn create_execution(
     model_used: Option<String>,
     use_case_id: Option<String>,
 ) -> Result<PersonaExecution, AppError> {
+    require_privileged_sync(&state, "create_execution")?;
     repo::create(&state.db, &persona_id, trigger_id, input_data, model_used, use_case_id)
 }
 
@@ -69,6 +73,7 @@ pub async fn execute_persona(
     use_case_id: Option<String>,
     continuation: Option<crate::engine::types::Continuation>,
 ) -> Result<PersonaExecution, AppError> {
+    require_privileged(&state, "execute_persona").await?;
     use crate::engine::pipeline::{PipelineContext, PipelineStage};
 
     // ── Stage: Initiate ──────────────────────────────────────────────
@@ -165,6 +170,7 @@ pub fn list_executions_for_use_case(
     use_case_id: String,
     limit: Option<i64>,
 ) -> Result<Vec<PersonaExecution>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_by_use_case_id(&state.db, &persona_id, &use_case_id, limit)
 }
 
@@ -175,6 +181,7 @@ pub async fn cancel_execution(
     id: String,
     caller_persona_id: String,
 ) -> Result<(), AppError> {
+    require_auth(&state).await?;
     // Look up persona_id so the engine can clean up the tracker
     let execution = repo::get_by_id(&state.db, &id)?;
     verify_execution_owner(&execution, &caller_persona_id)?;
@@ -201,6 +208,7 @@ pub fn get_execution_log(
     id: String,
     caller_persona_id: String,
 ) -> Result<Option<String>, AppError> {
+    require_auth_sync(&state)?;
     let execution = repo::get_by_id(&state.db, &id)?;
     verify_execution_owner(&execution, &caller_persona_id)?;
     if let Some(ref path) = execution.log_file_path {
@@ -231,26 +239,34 @@ pub fn get_execution_trace(
     execution_id: String,
     caller_persona_id: String,
 ) -> Result<Option<crate::engine::trace::ExecutionTrace>, AppError> {
+    require_auth_sync(&state)?;
     let execution = repo::get_by_id(&state.db, &execution_id)?;
     verify_execution_owner(&execution, &caller_persona_id)?;
     crate::db::repos::execution::traces::get_by_execution_id(&state.db, &execution_id)
 }
 
 /// Get all traces sharing a chain_trace_id (distributed trace across chain executions).
+///
+/// Only returns traces belonging to the caller's persona. Chain executions may
+/// span multiple personas; returning traces from other personas would leak
+/// their execution details (instructions, tool outputs, credential usage).
 #[tauri::command]
 pub fn get_chain_trace(
     state: State<'_, Arc<AppState>>,
     chain_trace_id: String,
     caller_persona_id: String,
 ) -> Result<Vec<crate::engine::trace::ExecutionTrace>, AppError> {
+    require_auth_sync(&state)?;
     let traces = crate::db::repos::execution::traces::get_by_chain_trace_id(&state.db, &chain_trace_id)?;
-    // Verify at least one trace in the chain belongs to the caller
-    if let Some(first) = traces.first() {
-        if first.persona_id != caller_persona_id {
-            return Err(AppError::Auth(
-                "Chain trace does not belong to the specified persona".into(),
-            ));
-        }
+    // Filter to only traces owned by the caller's persona
+    let owned: Vec<_> = traces
+        .into_iter()
+        .filter(|t| t.persona_id == caller_persona_id)
+        .collect();
+    if owned.is_empty() {
+        return Err(AppError::Auth(
+            "Chain trace does not belong to the specified persona".into(),
+        ));
     }
-    Ok(traces)
+    Ok(owned)
 }

@@ -15,7 +15,7 @@ function extractErrorMessage(err: unknown): string {
     return String((err as Record<string, unknown>).error);
   }
   if (typeof err === 'string') return err;
-  try { return JSON.stringify(err); } catch { return 'Unknown error'; }
+  try { return JSON.stringify(err); } catch { /* intentional: non-critical -- JSON stringify fallback */ return 'Unknown error'; }
 }
 
 interface QueriesTabProps {
@@ -90,6 +90,7 @@ export function QueriesTab({ credentialId, language, serviceType }: QueriesTabPr
       setSaveState('saved');
       setTimeout(() => setSaveState('idle'), 1500);
     } catch {
+      // intentional: non-critical -- save failure resets state silently
       setSaveState('idle');
     }
   }, [selectedId, editorValue, updateQuery, saveState]);
@@ -145,7 +146,7 @@ export function QueriesTab({ credentialId, language, serviceType }: QueriesTabPr
                   onChange={(e) => setNewTitle(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') setIsCreating(false); }}
                   placeholder="Query title"
-                  className="flex-1 px-2.5 py-1.5 rounded-lg text-sm bg-background/50 border border-primary/15 text-foreground/80 focus:outline-none focus:ring-1 focus:ring-primary/30 placeholder:text-muted-foreground/30"
+                  className="flex-1 px-2.5 py-1.5 rounded-xl text-sm bg-background/50 border border-primary/15 text-foreground/80 focus:outline-none focus:ring-1 focus:ring-primary/30 placeholder:text-muted-foreground/30"
                 />
                 <button onClick={handleCreate} className="p-1.5 rounded-lg text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-colors">
                   <Check className="w-3.5 h-3.5" />
@@ -161,7 +162,7 @@ export function QueriesTab({ credentialId, language, serviceType }: QueriesTabPr
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setIsCreating(true)}
-                className="w-full flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-primary/80 hover:bg-primary/8 border border-dashed border-primary/15 hover:border-primary/25 transition-all"
+                className="w-full flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-sm font-medium text-primary/80 hover:bg-primary/8 border border-dashed border-primary/15 hover:border-primary/25 transition-all"
               >
                 <Plus className="w-3.5 h-3.5" />
                 New Query
@@ -174,7 +175,7 @@ export function QueriesTab({ credentialId, language, serviceType }: QueriesTabPr
           {queries.map((q) => (
             <div
               key={q.id}
-              className={`group flex items-center gap-1.5 px-2.5 py-2 rounded-lg cursor-pointer transition-all duration-150 ${
+              className={`group flex items-center gap-1.5 px-2.5 py-2 rounded-xl cursor-pointer transition-all duration-150 ${
                 selectedId === q.id
                   ? 'bg-primary/10 border border-primary/20 shadow-sm shadow-primary/5'
                   : 'hover:bg-secondary/40 border border-transparent'
@@ -221,14 +222,14 @@ export function QueriesTab({ credentialId, language, serviceType }: QueriesTabPr
             {/* ── Editor toolbar ── */}
             <div className="flex items-center gap-2 px-4 py-2.5 border-b border-primary/8 bg-secondary/5 shrink-0">
               <span className="text-sm font-semibold text-foreground/70 flex-1 truncate">{selectedQuery.title}</span>
-              <span className="text-sm uppercase tracking-wider text-muted-foreground/30 px-2 py-0.5 rounded-md bg-secondary/40 border border-primary/8 font-medium">
+              <span className="text-sm uppercase tracking-wider text-muted-foreground/30 px-2 py-0.5 rounded-lg bg-secondary/40 border border-primary/8 font-medium">
                 {language}
               </span>
 
               <button
                 onClick={handleSave}
                 disabled={saveState === 'saving'}
-                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-sm font-medium border transition-all duration-300 ${
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-sm font-medium border transition-all duration-300 ${
                   saveState === 'saved'
                     ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25 shadow-sm shadow-emerald-500/10'
                     : saveState === 'saving'
@@ -249,7 +250,7 @@ export function QueriesTab({ credentialId, language, serviceType }: QueriesTabPr
               <button
                 onClick={handleExecute}
                 disabled={executing || !editorValue.trim()}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 hover:border-emerald-500/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 hover:border-emerald-500/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
               >
                 {executing ? (
                   <Loader2 className="w-3 h-3 animate-spin" />
@@ -262,7 +263,7 @@ export function QueriesTab({ credentialId, language, serviceType }: QueriesTabPr
               <button
                 onClick={handleAiRun}
                 disabled={queryDebug.isRunning || !editorValue.trim()}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-medium bg-gradient-to-r from-violet-500/15 to-fuchsia-500/10 text-violet-400 border border-violet-500/20 hover:from-violet-500/25 hover:to-fuchsia-500/20 hover:border-violet-500/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm shadow-violet-500/5"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-sm font-medium bg-gradient-to-r from-violet-500/15 to-fuchsia-500/10 text-violet-400 border border-violet-500/20 hover:from-violet-500/25 hover:to-fuchsia-500/20 hover:border-violet-500/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm shadow-violet-500/5"
               >
                 {queryDebug.isRunning ? (
                   <Loader2 className="w-3 h-3 animate-spin" />
@@ -367,7 +368,7 @@ export function QueriesTab({ credentialId, language, serviceType }: QueriesTabPr
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-secondary/20 border border-primary/10 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-secondary/20 border border-primary/10 flex items-center justify-center">
               <Wand2 className="w-5 h-5 text-muted-foreground/20" />
             </div>
             <p className="text-sm text-muted-foreground/35">Select or create a query</p>

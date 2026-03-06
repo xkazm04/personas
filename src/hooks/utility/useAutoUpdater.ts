@@ -29,7 +29,7 @@ export function useAutoUpdater() {
         setUpdateAvailable(true);
       }
     } catch {
-      // Silently ignore — endpoint may not be configured yet
+      // intentional: non-critical — update endpoint may not be configured yet
     } finally {
       setIsChecking(false);
     }

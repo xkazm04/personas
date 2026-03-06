@@ -20,7 +20,7 @@ export function PanelTabBar<T extends string>({
   idPrefix,
 }: PanelTabBarProps<T>) {
   return (
-    <div role="tablist" className="flex gap-0 mt-4 -mb-5 -mx-4 md:-mx-6 border-t border-primary/10">
+    <div role="tablist" className="flex gap-0 mt-4 -mb-4 -mx-4 md:-mx-6 border-t border-primary/10">
       {tabs.map((tab) => {
         const active = activeTab === tab.id;
         return (
@@ -33,7 +33,7 @@ export function PanelTabBar<T extends string>({
             disabled={tab.disabled}
             onClick={() => onTabChange(tab.id)}
             className={[
-              'px-5 py-2.5 text-sm font-medium transition-colors relative',
+              'px-4 py-2.5 text-sm font-medium transition-colors relative',
               active
                 ? `text-foreground/90 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 ${activeUnderlineClass}`
                 : 'text-muted-foreground/90 hover:text-foreground/95',

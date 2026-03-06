@@ -92,7 +92,7 @@ function CustomView({ cases, validCount, onAdd, onRemove, onUpdateCase, onFileUp
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="px-3 py-1.5 text-sm rounded-lg border border-primary/15 hover:bg-secondary/50 text-muted-foreground/90 transition-colors flex items-center gap-1.5"
+            className="px-3 py-1.5 text-sm rounded-xl border border-primary/15 hover:bg-secondary/50 text-muted-foreground/90 transition-colors flex items-center gap-1.5"
             title="Load from .txt or .md file"
           >
             <Upload className="w-3 h-3" />
@@ -100,7 +100,7 @@ function CustomView({ cases, validCount, onAdd, onRemove, onUpdateCase, onFileUp
           </button>
           <button
             onClick={onAdd}
-            className="px-3 py-1.5 text-sm rounded-lg border border-primary/15 hover:bg-secondary/50 text-muted-foreground/90 transition-colors flex items-center gap-1.5"
+            className="px-3 py-1.5 text-sm rounded-xl border border-primary/15 hover:bg-secondary/50 text-muted-foreground/90 transition-colors flex items-center gap-1.5"
           >
             <Plus className="w-3 h-3" />
             Add
@@ -129,7 +129,7 @@ function CustomView({ cases, validCount, onAdd, onRemove, onUpdateCase, onFileUp
                   value={c.name}
                   onChange={(e) => onUpdateCase(index, 'name', e.target.value)}
                   placeholder="Template name (e.g. Gmail Smart Filter)"
-                  className={`flex-1 px-3 py-1.5 text-sm bg-secondary/30 border rounded-lg text-foreground/80 placeholder:text-muted-foreground/50 focus:outline-none focus:border-violet-500/30 transition-colors ${
+                  className={`flex-1 px-3 py-1.5 text-sm bg-secondary/30 border rounded-xl text-foreground/80 placeholder:text-muted-foreground/50 focus:outline-none focus:border-violet-500/30 transition-colors ${
                     nameMissing ? 'border-amber-500/30' : 'border-primary/10'
                   }`}
                 />
@@ -144,13 +144,13 @@ function CustomView({ cases, validCount, onAdd, onRemove, onUpdateCase, onFileUp
               </div>
 
               {/* Row 2: instruction */}
-              <div className="ml-7">
+              <div className="ml-8">
                 <textarea
                   value={c.instruction}
                   onChange={(e) => onUpdateCase(index, 'instruction', e.target.value)}
                   placeholder="Describe what this persona should do, which services to integrate, and what triggers should activate it..."
                   rows={3}
-                  className={`w-full px-3 py-2 text-sm bg-secondary/30 border rounded-lg text-foreground/80 placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:border-violet-500/30 transition-colors ${
+                  className={`w-full px-3 py-2 text-sm bg-secondary/30 border rounded-xl text-foreground/80 placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:border-violet-500/30 transition-colors ${
                     instrShort ? 'border-amber-500/30' : 'border-primary/10'
                   }`}
                 />
@@ -162,7 +162,7 @@ function CustomView({ cases, validCount, onAdd, onRemove, onUpdateCase, onFileUp
               </div>
 
               {/* Row 3: metadata dropdowns */}
-              <div className="ml-7 flex items-center gap-2 flex-wrap">
+              <div className="ml-8 flex items-center gap-2 flex-wrap">
                 <select
                   value={c.category ?? ''}
                   onChange={(e) => onUpdateCase(index, 'category', e.target.value)}
@@ -277,7 +277,7 @@ function BatchView({ templates, categoryFilter, onCategoryFilterChange, onClear,
         <div className="flex flex-wrap gap-1.5">
           <button
             onClick={() => onCategoryFilterChange(null)}
-            className={`px-2.5 py-1 text-sm rounded-lg border transition-all ${
+            className={`px-2.5 py-1 text-sm rounded-xl border transition-all ${
               categoryFilter === null
                 ? 'bg-violet-500/15 border-violet-500/30 text-violet-300'
                 : 'bg-secondary/30 border-primary/10 text-muted-foreground/80 hover:border-primary/20'
@@ -291,7 +291,7 @@ function BatchView({ templates, categoryFilter, onCategoryFilterChange, onClear,
               <button
                 key={cat}
                 onClick={() => onCategoryFilterChange(categoryFilter === cat ? null : cat)}
-                className={`px-2.5 py-1 text-sm rounded-lg border transition-all ${
+                className={`px-2.5 py-1 text-sm rounded-xl border transition-all ${
                   categoryFilter === cat
                     ? 'bg-violet-500/15 border-violet-500/30 text-violet-300'
                     : 'bg-secondary/30 border-primary/10 text-muted-foreground/80 hover:border-primary/20'
@@ -311,14 +311,14 @@ function BatchView({ templates, categoryFilter, onCategoryFilterChange, onClear,
           return (
             <div
               key={t.id}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/20 border border-primary/5 hover:border-primary/15 transition-colors"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/20 border border-primary/5 hover:border-primary/15 transition-colors"
             >
               <span className="text-sm text-muted-foreground/80 w-6 text-right flex-shrink-0">
                 {t.id.replace('template_', '')}
               </span>
               <span className="text-sm text-foreground/90 flex-1 truncate">{t.name}</span>
               {t.category && (
-                <span className={`px-2 py-0.5 text-sm rounded-md border flex-shrink-0 ${catStyle}`}>
+                <span className={`px-2 py-0.5 text-sm rounded-lg border flex-shrink-0 ${catStyle}`}>
                   {t.category}
                 </span>
               )}
@@ -334,7 +334,7 @@ function BatchView({ templates, categoryFilter, onCategoryFilterChange, onClear,
         </p>
         <button
           onClick={onClear}
-          className="px-2 py-1 text-sm rounded-md text-muted-foreground/80 hover:text-red-400 transition-colors"
+          className="px-2 py-1 text-sm rounded-lg text-muted-foreground/80 hover:text-red-400 transition-colors"
         >
           Clear
         </button>

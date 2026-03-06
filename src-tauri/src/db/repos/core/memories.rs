@@ -5,6 +5,25 @@ use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::error::AppError;
 
+/// Strip HTML/XML tags from a string to prevent stored XSS.
+///
+/// This is a defence-in-depth measure: persona memory content is AI-generated
+/// and could contain injected HTML payloads. We strip tags before persisting
+/// to SQLite so that the data is safe regardless of how the frontend renders it.
+fn strip_html_tags(input: &str) -> String {
+    let mut out = String::with_capacity(input.len());
+    let mut inside_tag = false;
+    for ch in input.chars() {
+        match ch {
+            '<' => inside_tag = true,
+            '>' if inside_tag => inside_tag = false,
+            _ if !inside_tag => out.push(ch),
+            _ => {} // skip characters inside tags
+        }
+    }
+    out
+}
+
 /// Escape LIKE metacharacters (%, _) so they are matched literally.
 fn escape_like(input: &str) -> String {
     input.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_")
@@ -152,10 +171,13 @@ pub fn get_by_execution(
 }
 
 pub fn create(pool: &DbPool, input: CreatePersonaMemoryInput) -> Result<PersonaMemory, AppError> {
-    if input.title.trim().is_empty() {
+    let title = strip_html_tags(&input.title);
+    let content = strip_html_tags(&input.content);
+
+    if title.trim().is_empty() {
         return Err(AppError::Validation("Title cannot be empty".into()));
     }
-    if input.content.trim().is_empty() {
+    if content.trim().is_empty() {
         return Err(AppError::Validation("Content cannot be empty".into()));
     }
 
@@ -172,8 +194,8 @@ pub fn create(pool: &DbPool, input: CreatePersonaMemoryInput) -> Result<PersonaM
         params![
             id,
             input.persona_id,
-            input.title,
-            input.content,
+            title,
+            content,
             category,
             input.source_execution_id,
             importance,
@@ -306,6 +328,23 @@ mod tests {
     use crate::db::init_test_db;
     use crate::db::models::{CreatePersonaInput, CreatePersonaMemoryInput};
     use crate::db::repos::core::personas;
+
+    #[test]
+    fn test_strip_html_tags() {
+        assert_eq!(strip_html_tags("hello world"), "hello world");
+        assert_eq!(strip_html_tags("<b>bold</b>"), "bold");
+        assert_eq!(
+            strip_html_tags("<img src=x onerror=alert(1)>payload"),
+            "payload"
+        );
+        assert_eq!(
+            strip_html_tags("<script>alert('xss')</script>safe text"),
+            "alert('xss')safe text"
+        );
+        assert_eq!(strip_html_tags("no < tags > here"), "no  here");
+        assert_eq!(strip_html_tags(""), "");
+        assert_eq!(strip_html_tags("a < b and c > d"), "a  d");
+    }
 
     #[test]
     fn test_memory_crud() {

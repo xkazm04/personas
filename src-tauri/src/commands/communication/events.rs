@@ -7,8 +7,9 @@ use crate::db::models::{
 };
 use crate::db::repos::communication::events as repo;
 use crate::db::repos::resources::triggers as trigger_repo;
-use crate::engine::rate_limiter::{EVENT_SOURCE_MAX, EVENT_SOURCE_WINDOW};
+use crate::engine::rate_limiter::EVENT_SOURCE_WINDOW;
 use crate::error::AppError;
+use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
 
 #[tauri::command]
@@ -17,6 +18,7 @@ pub fn list_events(
     limit: Option<i64>,
     project_id: Option<String>,
 ) -> Result<Vec<PersonaEvent>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_recent(&state.db, limit, project_id.as_deref())
 }
 
@@ -26,6 +28,7 @@ pub fn list_events_in_range(
     since: String,
     until: String,
 ) -> Result<Vec<PersonaEvent>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_in_range(&state.db, &since, &until)
 }
 
@@ -35,11 +38,13 @@ pub fn publish_event(
     state: State<'_, Arc<AppState>>,
     input: CreatePersonaEventInput,
 ) -> Result<PersonaEvent, AppError> {
+    require_auth_sync(&state)?;
+    let event_source_max = state.tier_config.lock().unwrap_or_else(|e| e.into_inner()).event_source_max;
     let rate_key = format!("event:{}", input.source_type);
-    if let Err(retry_after) = state.rate_limiter.check(&rate_key, EVENT_SOURCE_MAX, EVENT_SOURCE_WINDOW) {
+    if let Err(retry_after) = state.rate_limiter.check(&rate_key, event_source_max, EVENT_SOURCE_WINDOW) {
         return Err(AppError::RateLimited(format!(
             "Event source '{}' exceeded {} events/minute. Retry after {}s",
-            input.source_type, EVENT_SOURCE_MAX, retry_after
+            input.source_type, event_source_max, retry_after
         )));
     }
 
@@ -55,6 +60,7 @@ pub fn list_subscriptions(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
 ) -> Result<Vec<PersonaEventSubscription>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_subscriptions_by_persona(&state.db, &persona_id)
 }
 
@@ -63,6 +69,7 @@ pub fn create_subscription(
     state: State<'_, Arc<AppState>>,
     input: CreateEventSubscriptionInput,
 ) -> Result<PersonaEventSubscription, AppError> {
+    require_auth_sync(&state)?;
     // Dual-write: create the legacy subscription AND an event_listener trigger.
     // The event bus deduplicates by persona_id so both existing paths work.
     let config = serde_json::json!({
@@ -89,6 +96,7 @@ pub fn update_subscription(
     id: String,
     input: UpdateEventSubscriptionInput,
 ) -> Result<PersonaEventSubscription, AppError> {
+    require_auth_sync(&state)?;
     repo::update_subscription(&state.db, &id, input)
 }
 
@@ -97,6 +105,7 @@ pub fn delete_subscription(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     repo::delete_subscription(&state.db, &id)
 }
 
@@ -107,9 +116,12 @@ pub fn test_event_flow(
     event_type: String,
     payload: Option<String>,
 ) -> Result<PersonaEvent, AppError> {
-    if let Err(retry_after) = state.rate_limiter.check("event:test", EVENT_SOURCE_MAX, EVENT_SOURCE_WINDOW) {
+    require_auth_sync(&state)?;
+    let event_source_max = state.tier_config.lock().unwrap_or_else(|e| e.into_inner()).event_source_max;
+    if let Err(retry_after) = state.rate_limiter.check("event:test", event_source_max, EVENT_SOURCE_WINDOW) {
         return Err(AppError::RateLimited(format!(
-            "Test event flow exceeded {EVENT_SOURCE_MAX} events/minute. Retry after {retry_after}s"
+            "Test event flow exceeded {} events/minute. Retry after {}s",
+            event_source_max, retry_after
         )));
     }
 

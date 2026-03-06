@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { BookOpen, Plus, Play, Unlink, Loader2 } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
+import { useToastStore } from '@/stores/toastStore';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import { SectionHeader } from '@/features/shared/components/SectionHeader';
 import { RecipePicker } from './RecipePicker';
@@ -27,7 +28,7 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
       const recipes = await fetchPersonaRecipes(personaId);
       setLinkedRecipes(recipes);
     } catch {
-      // Error set by store
+      useToastStore.getState().addToast('Failed to load linked recipes', 'error');
     } finally {
       setLoading(false);
     }
@@ -45,7 +46,7 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
       await linkRecipeToPersona(personaId, recipe.id);
       await loadLinked();
     } catch {
-      // Error set by store
+      useToastStore.getState().addToast('Failed to link recipe', 'error');
     }
   }, [personaId, linkRecipeToPersona, loadLinked]);
 
@@ -55,7 +56,7 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
       await unlinkRecipeFromPersona(personaId, recipeId);
       await loadLinked();
     } catch {
-      // Error set by store
+      useToastStore.getState().addToast('Failed to unlink recipe', 'error');
     } finally {
       setUnlinkingId(null);
     }
@@ -78,14 +79,14 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
         />
         <button
           onClick={() => setPickerOpen(true)}
-          className="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-primary hover:bg-primary/10 transition-colors"
+          className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-primary hover:bg-primary/10 transition-colors"
         >
           <Plus className="w-3 h-3" /> Add
         </button>
       </div>
 
       {linkedRecipes.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border/40 px-4 py-6 text-center">
+        <div className="rounded-xl border border-dashed border-border/40 px-4 py-6 text-center">
           <p className="text-sm text-muted-foreground/60">
             No recipes linked yet. Click "Add" to link recipes from the library.
           </p>
@@ -95,9 +96,9 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
           {linkedRecipes.map((recipe) => (
             <div
               key={recipe.id}
-              className="group flex items-center gap-3 rounded-lg border border-border/40 bg-card/30 px-3 py-2.5 hover:border-border/60 transition-colors"
+              className="group flex items-center gap-3 rounded-xl border border-border/40 bg-card/30 px-3 py-2.5 hover:border-border/60 transition-colors"
             >
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 border border-primary/20">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
                 <BookOpen className="w-3 h-3 text-primary" />
               </div>
               <div className="min-w-0 flex-1">
@@ -107,20 +108,20 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
                 )}
               </div>
               {recipe.category && (
-                <span className="rounded-md border border-border/40 bg-muted/20 px-1.5 py-0.5 text-sm text-muted-foreground">
+                <span className="rounded-lg border border-border/40 bg-muted/20 px-1.5 py-0.5 text-sm text-muted-foreground">
                   {recipe.category}
                 </span>
               )}
               <button
                 onClick={() => setPlaygroundRecipe(recipe)}
-                className="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-emerald-400 hover:bg-emerald-500/10 transition-colors"
               >
                 <Play className="w-3 h-3" /> Run
               </button>
               <button
                 onClick={() => handleUnlink(recipe.id)}
                 disabled={unlinkingId === recipe.id}
-                className="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-40"
+                className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-40"
               >
                 {unlinkingId === recipe.id ? (
                   <Loader2 className="w-3 h-3 animate-spin" />

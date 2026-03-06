@@ -35,5 +35,7 @@ export * from "./utility/useToggleSet";
 export * from "./utility/useAppSetting";
 export * from "./utility/useCopyToClipboard";
 export * from "./utility/useClickOutside";
+export * from "./utility/useViewportClamp";
 export * from "./utility/useElapsedTimer";
 export * from "./utility/useDebouncedSave";
+export * from "./utility/useMotion";

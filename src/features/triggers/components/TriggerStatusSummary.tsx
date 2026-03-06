@@ -25,6 +25,7 @@ export function TriggerStatusSummary({ trigger }: TriggerStatusSummaryProps) {
       const url = new URL(config.endpoint);
       parts.push(url.hostname);
     } catch {
+      // intentional: non-critical — URL parse fallback for display
       parts.push('custom endpoint');
     }
   }

@@ -28,6 +28,7 @@ export function sanitizeIconUrl(url: string | null | undefined): string | null {
   try {
     parsed = new URL(trimmed);
   } catch {
+    // intentional: non-critical -- URL parse fallback
     return null;
   }
 
@@ -62,6 +63,7 @@ export function sanitizeExternalUrl(url: string | null | undefined): string | nu
   try {
     parsed = new URL(trimmed);
   } catch {
+    // intentional: non-critical -- URL parse fallback
     return null;
   }
 

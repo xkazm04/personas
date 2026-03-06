@@ -16,6 +16,7 @@ use tauri::{Emitter, Manager, State};
 use crate::commands::credentials::ai_artifact_flow::spawn_claude_and_collect;
 use crate::engine::prompt::build_cli_args;
 use crate::engine::types::StreamLineType;
+use crate::ipc_auth::require_privileged;
 use crate::AppState;
 
 /// Event names for auto-cred browser progress.
@@ -39,6 +40,10 @@ const OPEN_URL_PREFIX: &str = "OPEN_URL:";
 
 /// Protocol prefix: when Claude needs user input during guided mode.
 const USER_INPUT_PREFIX: &str = "USER_INPUT:";
+
+/// Maximum number of tool invocations per session to prevent infinite loops
+/// from a misbehaving MCP server or looping browser automation.
+const MAX_TOOL_INVOCATIONS: u32 = 500;
 
 #[derive(Debug, Deserialize)]
 pub struct AutoCredBrowserRequest {
@@ -404,6 +409,7 @@ pub async fn start_auto_cred_browser(
     state: State<'_, Arc<AppState>>,
     request: AutoCredBrowserRequest,
 ) -> Result<AutoCredBrowserResult, String> {
+    require_privileged(&state, "start_auto_cred_browser").await.map_err(|e| e.to_string())?;
     let pid_ref = Arc::clone(&state.active_auto_cred_child_pid);
     let session_id = request.session_id.clone();
     let force_guided = request.force_guided.unwrap_or(false);
@@ -428,11 +434,18 @@ pub async fn start_auto_cred_browser(
         cli_args.args.push(BROWSER_MODEL.to_string());
     }
 
+    // Clean up stale MCP config temp files from any previous crashed sessions
+    // before creating a new one.
+    cleanup_stale_mcp_temp_files();
+
     let (prompt, timeout) = match mode {
         AutoCredMode::Playwright => {
-            // Add Playwright MCP server configuration
+            // Add Playwright MCP server configuration via secure temp file.
+            // _mcp_config_file must stay alive until spawn_claude_and_collect returns —
+            // dropping it auto-deletes the temp file.
+            let _mcp_config_file = build_playwright_mcp_config()?;
             cli_args.args.push("--mcp-config".to_string());
-            cli_args.args.push(build_playwright_mcp_config());
+            cli_args.args.push(_mcp_config_file.path().to_string_lossy().to_string());
 
             // Restrict to only Playwright tools
             cli_args.args.push("--allowedTools".to_string());
@@ -480,6 +493,9 @@ pub async fn start_auto_cred_browser(
     // ALL text from the turn), so we compute deltas to only emit new content.
     let dedup = Arc::new(Mutex::new(StreamDedup::default()));
     let dedup_ref = Arc::clone(&dedup);
+
+    // Track the CLI child PID so we can clean up Chromium on error/timeout
+    let child_pid: Arc<Mutex<Option<u32>>> = Arc::new(Mutex::new(None));
 
     let result = spawn_claude_and_collect(
         &cli_args,
@@ -606,6 +622,15 @@ pub async fn start_auto_cred_browser(
                     // to avoid noisy log entries like "Navigating...", "Working..."
                     if let Ok(mut ctx) = ctx_ref.lock() {
                         ctx.tool_call_count += 1;
+                        // Guard against infinite browser automation loops
+                        if ctx.tool_call_count >= MAX_TOOL_INVOCATIONS {
+                            let _ = app_clone.emit(PROGRESS_EVENT, json!({
+                                "session_id": sid,
+                                "type": "warning",
+                                "message": format!("Tool invocation limit reached ({}). Stopping session.", MAX_TOOL_INVOCATIONS),
+                            }));
+                        }
+
                         let action = match tool_name.as_str() {
                             "mcp__playwright__browser_navigate" => "Navigating",
                             "mcp__playwright__browser_snapshot" => "Reading page",
@@ -673,6 +698,33 @@ pub async fn start_auto_cred_browser(
 
     // Snapshot the accumulated session context
     let session_ctx = ctx_acc.lock().ok().map(|g| g.clone());
+
+    // Clean up any orphaned browser processes spawned by the Playwright MCP
+    // server.  The CLI itself is already reaped by spawn_claude_and_collect,
+    // but Chromium children may linger.
+    cleanup_orphaned_browsers();
+
+    // Check if the tool invocation limit was reached
+    let hit_tool_limit = session_ctx
+        .as_ref()
+        .map(|c| c.tool_call_count >= MAX_TOOL_INVOCATIONS)
+        .unwrap_or(false);
+
+    if hit_tool_limit {
+        let err = structured_error(
+            "tool_limit",
+            &format!("Browser session exceeded the maximum of {} tool invocations.", MAX_TOOL_INVOCATIONS),
+            "The automation may be stuck in a loop. Try with more specific instructions or set up manually.",
+            true,
+            session_ctx,
+        );
+        let _ = app.emit(STATUS_EVENT, json!({
+            "session_id": session_id,
+            "status": "failed",
+            "error": &err,
+        }));
+        return Err(err);
+    }
 
     match result {
         Err(error_msg) => {
@@ -813,6 +865,7 @@ pub async fn save_playwright_procedure(
     procedure_json: String,
     field_keys: String,
 ) -> Result<serde_json::Value, String> {
+    require_privileged(&state, "save_playwright_procedure").await.map_err(|e| e.to_string())?;
     let proc = crate::db::repos::resources::playwright_procedures::save(
         &state.db,
         &connector_name,
@@ -833,6 +886,7 @@ pub async fn get_playwright_procedure(
     state: State<'_, Arc<AppState>>,
     connector_name: String,
 ) -> Result<Option<serde_json::Value>, String> {
+    require_privileged(&state, "get_playwright_procedure").await.map_err(|e| e.to_string())?;
     let proc = crate::db::repos::resources::playwright_procedures::get_active(
         &state.db,
         &connector_name,
@@ -850,9 +904,13 @@ pub async fn get_playwright_procedure(
 
 /// Build a temporary MCP config JSON for the Playwright server.
 /// Claude CLI accepts `--mcp-config <path>` pointing to a JSON file.
-/// We write a temp file and return its path.
 ///
-fn build_playwright_mcp_config() -> String {
+/// Returns a `NamedTempFile` with a random filename. The caller MUST keep this
+/// handle alive until the CLI process finishes — dropping it deletes the file,
+/// preventing stale credential configs from lingering on disk.
+fn build_playwright_mcp_config() -> Result<tempfile::NamedTempFile, String> {
+    use std::io::Write;
+
     let config = json!({
         "mcpServers": {
             "playwright": {
@@ -863,11 +921,75 @@ fn build_playwright_mcp_config() -> String {
         }
     });
 
-    // Write to a temp file
-    let temp_dir = std::env::temp_dir();
-    let config_path = temp_dir.join("personas_playwright_mcp.json");
-    let _ = std::fs::write(&config_path, serde_json::to_string_pretty(&config).unwrap());
-    config_path.to_string_lossy().to_string()
+    let mut tmp = tempfile::Builder::new()
+        .prefix("personas_mcp_")
+        .suffix(".json")
+        .tempfile()
+        .map_err(|e| format!("Failed to create temp MCP config: {e}"))?;
+
+    tmp.write_all(
+        serde_json::to_string_pretty(&config)
+            .unwrap()
+            .as_bytes(),
+    )
+    .map_err(|e| format!("Failed to write temp MCP config: {e}"))?;
+
+    tmp.flush()
+        .map_err(|e| format!("Failed to flush temp MCP config: {e}"))?;
+
+    Ok(tmp)
+}
+
+/// Remove stale `personas_mcp_*.json` temp files left behind by crashed or
+/// killed sessions.  The `tempfile` crate's `NamedTempFile` auto-deletes on
+/// Drop, but that won't run if the process is killed (e.g. SIGKILL, Task
+/// Manager on Windows).  We sweep the OS temp dir at session start.
+fn cleanup_stale_mcp_temp_files() {
+    let tmp_dir = std::env::temp_dir();
+    if let Ok(entries) = std::fs::read_dir(&tmp_dir) {
+        for entry in entries.flatten() {
+            let name = entry.file_name();
+            let name_str = name.to_string_lossy();
+            if name_str.starts_with("personas_mcp_") && name_str.ends_with(".json") {
+                if std::fs::remove_file(entry.path()).is_ok() {
+                    tracing::debug!(file = %name_str, "Cleaned up stale MCP temp file");
+                }
+            }
+        }
+    }
+}
+
+/// Best-effort cleanup of Chromium processes that were spawned by the
+/// Playwright MCP server.  When the Claude CLI exits (normally or via timeout /
+/// crash), the MCP server's Chromium child may remain running and consume
+/// 200-500 MB of memory per instance.
+///
+/// This is a best-effort sweep: we look for Chromium processes whose
+/// command-line contains the Playwright user-data-dir marker.  On Windows we
+/// use WMIC; on Unix we use `pkill`.
+fn cleanup_orphaned_browsers() {
+    #[cfg(windows)]
+    {
+        // Kill Chromium instances launched by Playwright
+        // Playwright uses --remote-debugging-pipe and a distinctive user-data-dir
+        #[allow(unused_imports)]
+        use std::os::windows::process::CommandExt;
+        let _ = std::process::Command::new("wmic")
+            .args([
+                "process", "where",
+                "commandline like '%playwright%' and commandline like '%chromium%'",
+                "call", "terminate",
+            ])
+            .creation_flags(0x08000000) // CREATE_NO_WINDOW
+            .output();
+    }
+    #[cfg(not(windows))]
+    {
+        // On macOS/Linux, pkill with a pattern matching Playwright-launched Chromium
+        let _ = std::process::Command::new("pkill")
+            .args(["-f", "chromium.*playwright"])
+            .output();
+    }
 }
 
 

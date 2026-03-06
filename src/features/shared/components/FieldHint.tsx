@@ -43,7 +43,7 @@ export function FieldHint({ text, range, example }: FieldHintProps) {
 
       {open && (
         <div
-          className={`absolute z-50 w-56 px-3 py-2 rounded-lg border border-primary/15 bg-background/95 backdrop-blur-md shadow-lg text-sm leading-relaxed ${
+          className={`absolute z-50 w-56 px-3 py-2 rounded-xl border border-primary/15 bg-background/95 backdrop-blur-md shadow-lg text-sm leading-relaxed ${
             above ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
           } left-1/2 -translate-x-1/2`}
         >

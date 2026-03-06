@@ -1,5 +1,32 @@
 import * as Sentry from "@sentry/react";
 
+// ---------------------------------------------------------------------------
+// PII patterns to scrub from messages
+// ---------------------------------------------------------------------------
+
+/** UUIDs: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx → [id:a1b2c3] */
+const UUID_RE = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/g;
+
+/** Full URLs → domain-only */
+const URL_RE = /https?:\/\/[^\s,)}\]]+/g;
+
+/** Quoted strings that may contain user-generated content */
+const QUOTED_RE = /'[^']{1,200}'|"[^"]{1,200}"/g;
+
+function scrubPii(input: string): string {
+  return input
+    .replace(UUID_RE, (match) => `[id:${match.slice(0, 6)}]`)
+    .replace(URL_RE, (match) => {
+      try {
+        const u = new URL(match);
+        return `${u.protocol}//${u.host}/…`;
+      } catch {
+        return '[redacted-url]';
+      }
+    })
+    .replace(QUOTED_RE, '[redacted]');
+}
+
 /**
  * Initialize Sentry for error-only monitoring.
  *
@@ -8,7 +35,7 @@ import * as Sentry from "@sentry/react";
  *
  * Privacy: no performance monitoring, no session replay, no user tracking.
  * Session tracking is enabled for Release Health (active user counts).
- * beforeSend strips IP, email, and request bodies from every event.
+ * beforeSend strips PII (IPs, emails, UUIDs, URLs, quoted names) from events.
  */
 export function initSentry(appVersion: string): void {
   const dsn = import.meta.env.VITE_SENTRY_DSN as string | undefined;
@@ -29,16 +56,45 @@ export function initSentry(appVersion: string): void {
     sendDefaultPii: false,
 
     beforeSend(event) {
+      // Strip user fields
       if (event.user) {
         delete event.user.email;
         delete event.user.ip_address;
         delete event.user.username;
       }
+      // Strip request headers and body
       if (event.request) {
         delete event.request.headers;
         delete event.request.data;
       }
+      // Scrub PII from the event message
+      if (event.message) {
+        event.message = scrubPii(event.message);
+      }
+      // Scrub PII from exception values
+      if (event.exception?.values) {
+        for (const exc of event.exception.values) {
+          if (exc.value) {
+            exc.value = scrubPii(exc.value);
+          }
+        }
+      }
+      // Scrub PII from breadcrumbs attached to the event
+      if (event.breadcrumbs) {
+        for (const bc of event.breadcrumbs) {
+          if (bc.message) {
+            bc.message = scrubPii(bc.message);
+          }
+        }
+      }
       return event;
+    },
+
+    beforeBreadcrumb(breadcrumb) {
+      if (breadcrumb.message) {
+        breadcrumb.message = scrubPii(breadcrumb.message);
+      }
+      return breadcrumb;
     },
   });
 }

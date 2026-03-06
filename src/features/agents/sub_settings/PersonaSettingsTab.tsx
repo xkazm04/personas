@@ -174,7 +174,7 @@ export function PersonaSettingsTab({
         {!showDeleteConfirm ? (
           <button
             onClick={() => setShowDeleteConfirm(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-400/60 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-400/60 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors"
           >
             <Trash2 className="w-3.5 h-3.5" />
             Delete
@@ -187,13 +187,13 @@ export function PersonaSettingsTab({
             </span>
             <button
               onClick={onDelete}
-              className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-foreground rounded-lg text-sm font-medium transition-colors"
+              className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-foreground rounded-xl text-sm font-medium transition-colors"
             >
               Confirm
             </button>
             <button
               onClick={() => setShowDeleteConfirm(false)}
-              className="px-3 py-1.5 bg-secondary/50 text-foreground/80 rounded-lg text-sm transition-colors hover:bg-secondary/70"
+              className="px-3 py-1.5 bg-secondary/50 text-foreground/80 rounded-xl text-sm transition-colors hover:bg-secondary/70"
             >
               Cancel
             </button>

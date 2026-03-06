@@ -18,6 +18,8 @@ export interface TauriStreamOptions<TResult> {
   runningPhase: string;
   /** Default error message when start() throws. */
   startErrorMessage?: string;
+  /** Timeout in ms for the running phase. Auto-resets to idle if no completion arrives. Default: 5 minutes. */
+  timeoutMs?: number;
 }
 
 export interface TauriStreamState<TResult> {
@@ -57,6 +59,7 @@ export function useTauriStream<TResult>(
     completedPhase,
     runningPhase,
     startErrorMessage = 'Stream failed to start',
+    timeoutMs = 5 * 60 * 1000, // 5 minutes default
   } = options;
 
   const [phase, setPhase] = useState('idle');
@@ -64,16 +67,24 @@ export function useTauriStream<TResult>(
   const [result, setResult] = useState<TResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const unlistenersRef = useRef<UnlistenFn[]>([]);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearTimeout_ = useCallback(() => {
+    if (timeoutRef.current !== null) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  }, []);
 
   const cleanup = useCallback(() => {
+    clearTimeout_();
     for (const unlisten of unlistenersRef.current) {
       unlisten();
     }
     unlistenersRef.current = [];
-  }, []);
+  }, [clearTimeout_]);
 
-  // Clean up Tauri event listeners on unmount to prevent stale callbacks
-  // from firing on unmounted components.
+  // Clean up Tauri event listeners and timeout on unmount.
   useEffect(() => cleanup, [cleanup]);
 
   const start = useCallback(async (invokeBackend: () => Promise<unknown>) => {
@@ -108,13 +119,21 @@ export function useTauriStream<TResult>(
 
       unlistenersRef.current = [unlistenProgress, unlistenStatus];
 
+      // Start negotiation timeout — auto-reset to idle if no completion arrives.
+      clearTimeout_();
+      timeoutRef.current = setTimeout(() => {
+        cleanup();
+        setError('Operation timed out. Please try again.');
+        setPhase('error');
+      }, timeoutMs);
+
       await invokeBackend();
     } catch (err) {
       setError(err instanceof Error ? err.message : startErrorMessage);
       setPhase('error');
       cleanup();
     }
-  }, [cleanup, progressEvent, statusEvent, getLine, resolveStatus, completedPhase, runningPhase, startErrorMessage]);
+  }, [cleanup, clearTimeout_, progressEvent, statusEvent, getLine, resolveStatus, completedPhase, runningPhase, startErrorMessage, timeoutMs]);
 
   const cancel = useCallback((invokeCancel?: () => Promise<void>) => {
     invokeCancel?.().catch(() => {});

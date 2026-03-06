@@ -4,6 +4,7 @@ import { errMsg } from "../storeTypes";
 import type { TriggerChainLink } from "@/lib/bindings/TriggerChainLink";
 import type { WebhookStatus } from "@/lib/bindings/WebhookStatus";
 import * as api from "@/api/tauriApi";
+import { useToastStore } from "@/stores/toastStore";
 
 export interface TriggerSlice {
   // State
@@ -39,7 +40,7 @@ export const createTriggerSlice: StateCreator<PersonaStore, [], [], TriggerSlice
 
   updateTrigger: async (personaId, triggerId, updates) => {
     try {
-      await api.updateTrigger(triggerId, {
+      await api.updateTrigger(triggerId, personaId, {
         trigger_type: (updates.trigger_type as string) ?? null,
         config: updates.config ? JSON.stringify(updates.config) : null,
         enabled: updates.enabled !== undefined ? (updates.enabled as boolean) : null,
@@ -53,7 +54,7 @@ export const createTriggerSlice: StateCreator<PersonaStore, [], [], TriggerSlice
 
   deleteTrigger: async (personaId, triggerId) => {
     try {
-      await api.deleteTrigger(triggerId);
+      await api.deleteTrigger(triggerId, personaId);
       get().fetchDetail(personaId);
     } catch (err) {
       set({ error: errMsg(err, "Failed to delete trigger") });
@@ -65,7 +66,7 @@ export const createTriggerSlice: StateCreator<PersonaStore, [], [], TriggerSlice
       const chains = await api.listTriggerChains();
       set({ triggerChains: chains });
     } catch {
-      // Silent fail
+      useToastStore.getState().addToast('Failed to load trigger chains', 'error');
     }
   },
 
@@ -74,7 +75,7 @@ export const createTriggerSlice: StateCreator<PersonaStore, [], [], TriggerSlice
       const status = await api.getWebhookStatus();
       set({ webhookStatus: status });
     } catch {
-      // Silent fail
+      useToastStore.getState().addToast('Failed to load webhook status', 'error');
     }
   },
 });

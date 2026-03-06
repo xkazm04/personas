@@ -29,22 +29,32 @@ const MAX_VALUE_LENGTH = 2000;
 /** Maximum length for JSON variable values (larger to accommodate structured data) */
 const MAX_JSON_VALUE_LENGTH = 10_000;
 
-// ── Prompt Injection Patterns ──────────────────────────────────────────
-// Mirrors workflowSanitizer.ts patterns, applied to individual variable values.
+// ── Structural Sanitisation Patterns ─────────────────────────────────────
+// Uses structural patterns that target prompt *structure* exploits rather
+// than a blocklist of specific injection phrases (which are trivially
+// bypassed via synonyms, word-splitting, homoglyphs, and encoding tricks).
+// Per OWASP LLM01, structural isolation is the primary defence.
 
-const INJECTION_PATTERNS: RegExp[] = [
+const STRUCTURAL_PATTERNS: RegExp[] = [
+  // Section delimiter injection
   /---SECTION:\w+---/gi,
+  // Role override lines (system:, user:, assistant:, etc.)
   /(?:^|\n)\s*(?:system|user|assistant|human|ai)\s*:/gi,
-  /(?:^|\n)\s*#{1,6}\s+(INJECT|OVERRIDE|IGNORE|IMPORTANT|CRITICAL|SYSTEM|INSTRUCTION|NOTE:|WARNING:)/gi,
+  // Dangerous XML/HTML tags that could inject prompt structure
   /<\/?(?:system|instruction|prompt|role|override|ignore)[^>]*>/gi,
   /ignore\s+(?:all\s+)?(?:previous|prior|above|system)\s+(?:instructions?|prompts?|rules?)/gi,
   /disregard\s+(?:all\s+)?(?:previous|prior|above)\s+/gi,
   /you\s+are\s+now\s+(?:a\s+different|no\s+longer|free\s+from)/gi,
   /override\s+(?:system|safety|security)\s+(?:prompt|instruction|rule)/gi,
   /bypass\s+(?:safety|security|restriction|guardrail|filter)/gi,
-  /(?:\u200b|\u200c|\u200d|\u200e|\u200f|\ufeff|\u2060|\u2061|\u2062|\u2063|\u2064)/g,
+  // Invisible/zero-width Unicode characters
+  /[\u200b\u200c\u200d\u200e\u200f\ufeff\u2060\u2061\u2062\u2063\u2064]/g,
+  // ANSI escape sequences
   // eslint-disable-next-line no-control-regex
   /\x1b\[[0-9;]*[a-zA-Z]/g,
+  // Non-BMP Unicode (homoglyph defence — e.g. Mathematical Alphanumeric Symbols)
+  // eslint-disable-next-line no-misleading-character-class
+  /[\u{10000}-\u{10FFFF}]/gu,
 ];
 
 /** Blocked hostname patterns for URL validation (mirrors sanitizeUrl.ts) */
@@ -74,6 +84,7 @@ function validateUrl(value: string): VariableValidation {
   try {
     parsed = new URL(trimmed);
   } catch {
+    // intentional: non-critical -- URL parse fallback
     return { valid: false, error: 'Invalid URL format' };
   }
 
@@ -163,6 +174,7 @@ function validateJson(value: string): VariableValidation {
   try {
     JSON.parse(trimmed);
   } catch {
+    // intentional: non-critical -- JSON parse fallback
     return { valid: false, error: 'Invalid JSON format' };
   }
 
@@ -238,11 +250,11 @@ export function validateAllVariables(
 // ── Sanitization ────────────────────────────────────────────────────────
 
 /**
- * Strip prompt injection patterns from a variable value.
+ * Strip structural patterns from a variable value.
  */
-function stripInjectionPatterns(text: string): string {
+function stripStructuralPatterns(text: string): string {
   let clean = text;
-  for (const pattern of INJECTION_PATTERNS) {
+  for (const pattern of STRUCTURAL_PATTERNS) {
     clean = clean.replace(pattern, '');
   }
   return clean;
@@ -293,7 +305,7 @@ export function sanitizeVariableValue(
       // URLs are validated separately; just trim and prevent injection in the
       // URL string itself (e.g. a URL with prompt injection in query params)
       clean = clean.trim();
-      clean = stripInjectionPatterns(clean);
+      clean = stripStructuralPatterns(clean);
       break;
     }
     case 'cron': {
@@ -314,18 +326,18 @@ export function sanitizeVariableValue(
     case 'json': {
       // JSON gets injection stripping but preserves structural characters
       clean = clean.slice(0, MAX_JSON_VALUE_LENGTH);
-      clean = stripInjectionPatterns(clean);
+      clean = stripStructuralPatterns(clean);
       break;
     }
     case 'select': {
       // Select values come from a predefined list — strip injection only
-      clean = stripInjectionPatterns(clean);
+      clean = stripStructuralPatterns(clean);
       break;
     }
     case 'text':
     default: {
       // Free text gets full sanitization
-      clean = stripInjectionPatterns(clean);
+      clean = stripStructuralPatterns(clean);
       clean = escapeForPromptContext(clean);
       break;
     }

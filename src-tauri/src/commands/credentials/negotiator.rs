@@ -6,6 +6,7 @@ use tauri::State;
 use crate::db::repos::resources::audit_log;
 use crate::engine::credential_negotiator;
 use crate::error::AppError;
+use crate::ipc_auth::{require_privileged, require_privileged_sync};
 use crate::AppState;
 
 use super::ai_artifact_flow::{
@@ -40,6 +41,7 @@ pub async fn start_credential_negotiation(
     connector: serde_json::Value,
     field_keys: Vec<String>,
 ) -> Result<serde_json::Value, AppError> {
+    require_privileged(&state, "start_credential_negotiation").await?;
     let negotiation_prompt = credential_negotiator::build_negotiation_prompt(
         &service_name,
         &connector,
@@ -49,11 +51,11 @@ pub async fn start_credential_negotiation(
     let cli_args = build_credential_task_cli_args();
     let negotiation_id = uuid::Uuid::new_v4().to_string();
 
-    // Use the active_credential_design_id mutex to track active negotiation too
-    // (only one credential operation at a time)
-    let active_id = state.active_credential_design_id.clone();
+    // Use a dedicated mutex so negotiation and credential design don't
+    // corrupt each other's state when a user switches between flows.
+    let active_id = state.active_negotiation_id.clone();
     {
-        let mut guard = active_id.lock().unwrap();
+        let mut guard = active_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
         *guard = Some(negotiation_id.clone());
     }
 
@@ -64,6 +66,7 @@ pub async fn start_credential_negotiation(
     );
 
     let neg_id = negotiation_id.clone();
+    let active_child_pid = state.active_negotiation_child_pid.clone();
 
     tokio::spawn(async move {
         run_ai_artifact_task(AiArtifactParams {
@@ -72,7 +75,7 @@ pub async fn start_credential_negotiation(
             prompt_text: negotiation_prompt,
             cli_args,
             active_id,
-            active_child_pid: None,
+            active_child_pid: Some(active_child_pid),
             messages: NEGOTIATION_MESSAGES,
             extractor: credential_negotiator::extract_negotiation_result,
         })
@@ -87,20 +90,30 @@ pub async fn start_credential_negotiation(
 pub fn cancel_credential_negotiation(
     state: State<'_, Arc<AppState>>,
 ) -> Result<(), AppError> {
-    let mut guard = state.active_credential_design_id.lock().unwrap();
+    require_privileged_sync(&state, "cancel_credential_negotiation")?;
+    let mut guard = state.active_negotiation_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
     *guard = None;
+
+    // Kill the CLI child process to stop API credit consumption immediately.
+    let pid = state.active_negotiation_child_pid.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?.take();
+    if let Some(pid) = pid {
+        tracing::info!(pid = pid, "Killing credential negotiation CLI child process");
+        crate::engine::kill_process(pid);
+    }
+
     Ok(())
 }
 
 /// Get contextual help for a specific provisioning step.
 #[tauri::command]
 pub async fn get_negotiation_step_help(
-    _state: State<'_, Arc<AppState>>,
+    state: State<'_, Arc<AppState>>,
     service_name: String,
     step_index: u32,
     step_title: String,
     user_question: String,
 ) -> Result<serde_json::Value, AppError> {
+    require_privileged(&state, "get_negotiation_step_help").await?;
     let prompt_text = credential_negotiator::build_step_help_prompt(
         &service_name,
         step_index as usize,

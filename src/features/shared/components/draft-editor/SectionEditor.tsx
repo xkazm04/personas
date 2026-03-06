@@ -60,7 +60,7 @@ export function SectionEditor({ value, onChange, label, placeholder, disabled }:
         <div className="flex gap-0.5 p-0.5 rounded-lg bg-secondary/30 border border-primary/10">
           <button
             onClick={() => setMode('edit')}
-            className={`flex items-center gap-1 px-2 py-1 text-sm rounded-md transition-colors ${
+            className={`flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors ${
               mode === 'edit'
                 ? 'bg-primary/15 text-foreground/80 font-medium'
                 : 'text-muted-foreground/90 hover:text-muted-foreground'
@@ -71,7 +71,7 @@ export function SectionEditor({ value, onChange, label, placeholder, disabled }:
           </button>
           <button
             onClick={() => setMode('preview')}
-            className={`flex items-center gap-1 px-2 py-1 text-sm rounded-md transition-colors ${
+            className={`flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors ${
               mode === 'preview'
                 ? 'bg-primary/15 text-foreground/80 font-medium'
                 : 'text-muted-foreground/90 hover:text-muted-foreground'

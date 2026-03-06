@@ -12,6 +12,7 @@ import {
 import { usePersonaStore } from '@/stores/personaStore';
 import type { DashboardCostAnomaly } from '@/lib/bindings/DashboardCostAnomaly';
 import { CHART_COLORS, GRID_STROKE, AXIS_TICK_FILL } from '@/features/overview/sub_usage/charts/chartConstants';
+import { ChartErrorBoundary } from '@/features/overview/sub_usage/charts/ChartErrorBoundary';
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
 import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
 
@@ -88,7 +89,7 @@ function AnomalyBadge({
   onClickExecution?: (id: string) => void;
 }) {
   return (
-    <div className="flex items-start gap-2 px-3 py-2 rounded-lg border border-amber-500/25 bg-amber-500/10">
+    <div className="flex items-start gap-2 px-3 py-2 rounded-xl border border-amber-500/25 bg-amber-500/10">
       <AlertTriangle className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
       <div className="min-w-0">
         <p className="text-sm font-medium text-amber-300">
@@ -123,7 +124,7 @@ function AnomalyBadge({
 function ChartTooltipContent({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-background/95 border border-primary/20 rounded-lg px-3 py-2 shadow-lg backdrop-blur-sm">
+    <div className="bg-background/95 border border-primary/20 rounded-xl px-3 py-2 shadow-lg backdrop-blur-sm">
       <p className="text-sm text-muted-foreground/80 mb-1">{label}</p>
       {payload.map((entry, i) => (
         <div key={i} className="flex items-center gap-2 text-sm">
@@ -271,7 +272,7 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
               <button
                 key={tw.value}
                 onClick={() => setDayRange(tw.value)}
-                className={`px-2.5 py-1 rounded-md text-sm font-medium transition-all ${
+                className={`px-2.5 py-1 rounded-xl text-sm font-medium transition-all ${
                   days === tw.value
                     ? 'bg-background text-foreground shadow-sm border border-primary/20'
                     : 'text-muted-foreground/70 hover:text-muted-foreground'
@@ -316,30 +317,32 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
       <div className="space-y-2">
         <h4 className="text-sm font-medium text-muted-foreground/70">Cost per Day</h4>
         <div className="h-48 bg-secondary/20 rounded-xl border border-primary/10 p-3">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={personaCostData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-              <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} />
-              <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} tickFormatter={(v: number) => `$${v.toFixed(2)}`} />
-              <Tooltip content={<ChartTooltipContent />} />
-              <Legend iconType="circle" iconSize={6} wrapperStyle={{ fontSize: 10 }} />
-              {personaNames.map((name, i) => (
-                <Area
-                  key={name}
-                  type="monotone"
-                  dataKey={name}
-                  stackId="1"
-                  stroke={CHART_COLORS[i % CHART_COLORS.length]}
-                  fill={CHART_COLORS[i % CHART_COLORS.length]}
-                  fillOpacity={0.3}
-                />
-              ))}
-              {/* Anomaly markers as reference lines */}
-              {chartData.filter((pt) => anomalyDates.has(String(pt.date))).map((pt) => (
-                <ReferenceLine key={pt.date} x={pt.date} stroke="#f59e0b" strokeDasharray="3 3" strokeOpacity={0.6} />
-              ))}
-            </AreaChart>
-          </ResponsiveContainer>
+          <ChartErrorBoundary>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={personaCostData}>
+                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
+                <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} />
+                <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} tickFormatter={(v: number) => `$${v.toFixed(2)}`} />
+                <Tooltip content={<ChartTooltipContent />} />
+                <Legend iconType="circle" iconSize={6} wrapperStyle={{ fontSize: 10 }} />
+                {personaNames.map((name, i) => (
+                  <Area
+                    key={name}
+                    type="monotone"
+                    dataKey={name}
+                    stackId="1"
+                    stroke={CHART_COLORS[i % CHART_COLORS.length]}
+                    fill={CHART_COLORS[i % CHART_COLORS.length]}
+                    fillOpacity={0.3}
+                  />
+                ))}
+                {/* Anomaly markers as reference lines */}
+                {chartData.filter((pt) => anomalyDates.has(String(pt.date))).map((pt) => (
+                  <ReferenceLine key={pt.date} x={pt.date} stroke="#f59e0b" strokeDasharray="3 3" strokeOpacity={0.6} />
+                ))}
+              </AreaChart>
+            </ResponsiveContainer>
+          </ChartErrorBoundary>
         </div>
       </div>
 
@@ -347,17 +350,19 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
       <div className="space-y-2">
         <h4 className="text-sm font-medium text-muted-foreground/70">Executions by Status</h4>
         <div className="h-40 bg-secondary/20 rounded-xl border border-primary/10 p-3">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-              <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} />
-              <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} />
-              <Tooltip content={<ChartTooltipContent />} />
-              <Legend iconType="circle" iconSize={6} wrapperStyle={{ fontSize: 10 }} />
-              <Bar dataKey="completed" name="Completed" stackId="status" fill="#10b981" radius={[0, 0, 0, 0]} />
-              <Bar dataKey="failed" name="Failed" stackId="status" fill="#ef4444" radius={[2, 2, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <ChartErrorBoundary>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
+                <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} />
+                <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} />
+                <Tooltip content={<ChartTooltipContent />} />
+                <Legend iconType="circle" iconSize={6} wrapperStyle={{ fontSize: 10 }} />
+                <Bar dataKey="completed" name="Completed" stackId="status" fill="#10b981" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="failed" name="Failed" stackId="status" fill="#ef4444" radius={[2, 2, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartErrorBoundary>
         </div>
       </div>
 
@@ -365,16 +370,18 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
       <div className="space-y-2">
         <h4 className="text-sm font-medium text-muted-foreground/70">Success Rate Trend</h4>
         <div className="h-40 bg-secondary/20 rounded-xl border border-primary/10 p-3">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-              <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} />
-              <YAxis domain={[0, 100]} tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} tickFormatter={(v: number) => `${v}%`} />
-              <Tooltip content={<ChartTooltipContent />} />
-              <Line type="monotone" dataKey="successRate" name="Success %" stroke="#10b981" strokeWidth={2} dot={false} />
-              <ReferenceLine y={90} stroke="#10b981" strokeDasharray="3 3" strokeOpacity={0.3} label={{ value: '90%', fill: AXIS_TICK_FILL, fontSize: 9 }} />
-            </LineChart>
-          </ResponsiveContainer>
+          <ChartErrorBoundary>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
+                <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} />
+                <YAxis domain={[0, 100]} tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} tickFormatter={(v: number) => `${v}%`} />
+                <Tooltip content={<ChartTooltipContent />} />
+                <Line type="monotone" dataKey="successRate" name="Success %" stroke="#10b981" strokeWidth={2} dot={false} />
+                <ReferenceLine y={90} stroke="#10b981" strokeDasharray="3 3" strokeOpacity={0.3} label={{ value: '90%', fill: AXIS_TICK_FILL, fontSize: 9 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartErrorBoundary>
         </div>
       </div>
 
@@ -382,18 +389,20 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
       <div className="space-y-2">
         <h4 className="text-sm font-medium text-muted-foreground/70">Latency Distribution (p50 / p95 / p99)</h4>
         <div className="h-40 bg-secondary/20 rounded-xl border border-primary/10 p-3">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-              <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} />
-              <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} tickFormatter={(v: number) => fmtMs(v)} />
-              <Tooltip content={<ChartTooltipContent />} />
-              <Legend iconType="circle" iconSize={6} wrapperStyle={{ fontSize: 10 }} />
-              <Line type="monotone" dataKey="p50" name="p50" stroke="#3b82f6" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="p95" name="p95" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
-              <Line type="monotone" dataKey="p99" name="p99" stroke="#ef4444" strokeWidth={1} dot={false} strokeDasharray="2 2" />
-            </LineChart>
-          </ResponsiveContainer>
+          <ChartErrorBoundary>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
+                <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} />
+                <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} tickFormatter={(v: number) => fmtMs(v)} />
+                <Tooltip content={<ChartTooltipContent />} />
+                <Legend iconType="circle" iconSize={6} wrapperStyle={{ fontSize: 10 }} />
+                <Line type="monotone" dataKey="p50" name="p50" stroke="#3b82f6" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="p95" name="p95" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
+                <Line type="monotone" dataKey="p99" name="p99" stroke="#ef4444" strokeWidth={1} dot={false} strokeDasharray="2 2" />
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartErrorBoundary>
         </div>
       </div>
 
@@ -406,7 +415,7 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
               const maxCost = data.top_personas[0]?.total_cost || 1;
               const pct = (p.total_cost / maxCost) * 100;
               return (
-                <div key={p.persona_id} className="flex items-center gap-3 px-3 py-2 rounded-lg border border-primary/10 bg-secondary/20">
+                <div key={p.persona_id} className="flex items-center gap-3 px-3 py-2 rounded-xl border border-primary/10 bg-secondary/20">
                   <span className="text-sm font-mono text-muted-foreground/60 w-4 text-right">#{i + 1}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">

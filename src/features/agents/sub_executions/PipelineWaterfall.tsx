@@ -43,7 +43,7 @@ function parseToolSteps(raw: string | null): ToolCallStep[] {
   try {
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
-  } catch {
+  } catch { // intentional: non-critical — JSON parse fallback
     return [];
   }
 }
@@ -191,7 +191,7 @@ function StageBar({
           {/* Hover tooltip */}
           {hovered && (
             <div
-              className="absolute z-20 bottom-full mb-1 bg-background/95 border border-primary/20 rounded-lg px-3 py-2 shadow-lg backdrop-blur-sm whitespace-nowrap pointer-events-none"
+              className="absolute z-20 bottom-full mb-1 bg-background/95 border border-primary/20 rounded-xl px-3 py-2 shadow-lg backdrop-blur-sm whitespace-nowrap pointer-events-none"
               style={{ left: `${Math.min(leftPct, 70)}%` }}
             >
               <p className="text-sm font-medium text-foreground/90 mb-1">{meta.label}</p>
@@ -274,7 +274,7 @@ function SubSpanBar({
         />
         {hovered && (
           <div
-            className="absolute z-20 bottom-full mb-1 bg-background/95 border border-primary/20 rounded-lg px-3 py-2 shadow-lg backdrop-blur-sm whitespace-nowrap pointer-events-none"
+            className="absolute z-20 bottom-full mb-1 bg-background/95 border border-primary/20 rounded-xl px-3 py-2 shadow-lg backdrop-blur-sm whitespace-nowrap pointer-events-none"
             style={{ left: `${Math.min(leftPct, 70)}%` }}
           >
             <p className="text-sm font-medium text-cyan-400 mb-1">{step.tool_name}</p>

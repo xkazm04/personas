@@ -143,7 +143,7 @@ export function CredentialEditForm({
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* ── Credential Fields ── */}
       <div>
         <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/50 mb-3">
@@ -240,7 +240,7 @@ export function CredentialEditForm({
                     <Info className="w-3.5 h-3.5" />
                   </button>
                   {showTestHint && (
-                    <div className="absolute left-8 top-1/2 -translate-y-1/2 w-72 px-3 py-2 rounded-lg bg-background border border-primary/20 shadow-xl text-sm text-foreground/85 z-20">
+                    <div className="absolute left-8 top-1/2 -translate-y-1/2 w-72 px-3 py-2 rounded-xl bg-background border border-primary/20 shadow-xl text-sm text-foreground/85 z-20">
                       {testHint}
                     </div>
                   )}

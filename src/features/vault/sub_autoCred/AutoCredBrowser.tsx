@@ -246,7 +246,7 @@ export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCre
         {import.meta.env.VITE_DEVELOPMENT === 'true' ? <CopyLogButton logs={logs} /> : <div />}
         <button
           onClick={onCancel}
-          className="px-4 py-2 text-sm text-red-400/80 hover:text-red-400 rounded-lg border border-red-500/15 hover:bg-red-500/10 transition-colors"
+          className="px-4 py-2 text-sm text-red-400/80 hover:text-red-400 rounded-xl border border-red-500/15 hover:bg-red-500/10 transition-colors"
         >
           Cancel Session
         </button>

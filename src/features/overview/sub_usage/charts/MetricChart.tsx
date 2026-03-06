@@ -1,5 +1,6 @@
 import { ResponsiveContainer } from 'recharts';
 import type { ComponentType, ReactElement, ReactNode, SVGProps } from 'react';
+import { ChartErrorBoundary } from './ChartErrorBoundary';
 
 interface MetricChartProps {
   title: string;
@@ -60,9 +61,11 @@ export function MetricChart({
         </div>
       ) : (
         emptySlot ?? (
-          <ResponsiveContainer width="100%" height={height}>
-            {children}
-          </ResponsiveContainer>
+          <ChartErrorBoundary>
+            <ResponsiveContainer width="100%" height={height}>
+              {children}
+            </ResponsiveContainer>
+          </ChartErrorBoundary>
         )
       )}
     </div>

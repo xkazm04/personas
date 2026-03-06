@@ -59,7 +59,7 @@ export function BulkHealthcheckSummary({ summary, onDismiss }: BulkHealthcheckSu
                 {summary.needsAttention.map((r) => (
                   <div
                     key={r.credentialId}
-                    className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-red-500/5 border border-red-500/10 text-sm"
+                    className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-red-500/5 border border-red-500/10 text-sm"
                   >
                     <span className="text-foreground/80 truncate">{r.credentialName}</span>
                     <span className="text-red-400/70 text-sm truncate max-w-[200px]" title={r.message}>

@@ -237,6 +237,7 @@ export function useDesignAnalysis() {
             use_case_id: null,
           });
         } catch {
+          // intentional: non-critical — individual trigger failures collected as warnings
           warnings.push(`Trigger "${trigger.trigger_type}" failed to create`);
         }
       }
@@ -252,6 +253,7 @@ export function useDesignAnalysis() {
             use_case_id: null,
           });
         } catch {
+          // intentional: non-critical — individual subscription failures collected as warnings
           warnings.push(`Subscription "${sub.event_type}" failed to create`);
         }
       }

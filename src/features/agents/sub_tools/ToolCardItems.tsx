@@ -28,8 +28,8 @@ function ToolCheckbox({
   onToggle: () => void;
 }) {
   const classes = size === 'md'
-    ? 'w-5 h-5 rounded-md'
-    : 'w-4 h-4 rounded-md';
+    ? 'w-5 h-5 rounded-lg'
+    : 'w-4 h-4 rounded-lg';
   const checkClass = size === 'md' ? 'w-3 h-3' : 'w-2.5 h-2.5';
 
   return (
@@ -96,7 +96,7 @@ export function ToolCard({
       whileHover={missingCredential ? undefined : { scale: 1.02 }}
       whileTap={missingCredential ? undefined : { scale: 0.98 }}
       onClick={() => !missingCredential && onToggle(tool.id, tool.name, isAssigned)}
-      className={`p-3 rounded-2xl border backdrop-blur-sm transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+      className={`p-3 rounded-xl border backdrop-blur-sm transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
         missingCredential
           ? 'bg-secondary/20 border-primary/10 opacity-60 cursor-not-allowed'
           : isAssigned
@@ -145,12 +145,12 @@ export function ToolCard({
           )}
           <div className="flex items-center gap-2 mt-2 flex-wrap">
             {tool.category && (
-              <span className="inline-block px-2 py-0.5 rounded-md text-sm font-mono bg-background/50 text-muted-foreground/80 border border-primary/15">
+              <span className="inline-block px-2 py-0.5 rounded-lg text-sm font-mono bg-background/50 text-muted-foreground/80 border border-primary/15">
                 {tool.category}
               </span>
             )}
             {usageCount > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-sm bg-primary/5 text-muted-foreground/90 border border-primary/10">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-sm bg-primary/5 text-muted-foreground/90 border border-primary/10">
                 <BarChart3 className="w-3 h-3" />
                 {usageCount.toLocaleString()} calls
               </span>
@@ -158,7 +158,7 @@ export function ToolCard({
             {hasImpact && (
               <button
                 onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
-                className="ml-auto inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-sm text-muted-foreground/60 hover:text-muted-foreground/90 hover:bg-primary/5 border border-transparent hover:border-primary/10 transition-all"
+                className="ml-auto inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-sm text-muted-foreground/60 hover:text-muted-foreground/90 hover:bg-primary/5 border border-transparent hover:border-primary/10 transition-all"
                 title={expanded ? 'Hide impact analysis' : 'Show impact analysis'}
               >
                 Impact

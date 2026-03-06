@@ -9,6 +9,7 @@ use crate::db::repos::resources::n8n_sessions as session_repo;
 use crate::db::models::UpdateN8nSessionInput;
 use crate::db::DbPool;
 use crate::error::AppError;
+use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
 
 use super::types::{N8nPersonaOutput, normalize_n8n_persona_draft};
@@ -463,6 +464,7 @@ pub fn confirm_n8n_persona_draft(
     draft_json: String,
     session_id: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
     // Idempotency guard: if the session already produced a persona, check its
     // completeness before blindly returning it. If the persona exists but had a
     // rolled-back import (import_transactions.status = 'rolled_back'), clear the

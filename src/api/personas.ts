@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { Persona } from "@/lib/bindings/Persona";
 import type { PersonaSummary } from "@/lib/bindings/PersonaSummary";
@@ -61,6 +61,7 @@ export interface PartialPersonaUpdate {
   color?: string | null;
   enabled?: boolean;
   sensitive?: boolean;
+  headless?: boolean;
   max_concurrent?: number;
   timeout_ms?: number;
   notification_channels?: string;
@@ -197,6 +198,7 @@ export function buildUpdateInput(partial: PartialPersonaUpdate): UpdatePersonaIn
     system_prompt: partial.system_prompt ?? null,
     enabled: partial.enabled !== undefined ? partial.enabled : null,
     sensitive: partial.sensitive !== undefined ? partial.sensitive : null,
+    headless: partial.headless !== undefined ? partial.headless : null,
     max_concurrent: partial.max_concurrent ?? null,
     timeout_ms: partial.timeout_ms ?? null,
     notification_channels: partial.notification_channels ?? null,

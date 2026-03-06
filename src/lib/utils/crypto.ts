@@ -2,6 +2,11 @@ import { getSessionPublicKey } from "@/api/credentials";
 
 let cachedPublicKey: CryptoKey | null = null;
 
+/** Clear the cached session public key. Must be called on logout. */
+export function clearCryptoCache(): void {
+  cachedPublicKey = null;
+}
+
 /**
  * Import a PEM-formatted SPKI public key into a CryptoKey object.
  */

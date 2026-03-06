@@ -13,7 +13,7 @@ export default function ConnectionLegend() {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <div className="flex flex-col gap-1.5 px-3 py-2 rounded-lg bg-secondary/80 border border-primary/10 backdrop-blur-sm">
+      <div className="flex flex-col gap-1.5 px-3 py-2 rounded-xl bg-secondary/80 border border-primary/10 backdrop-blur-sm">
         {ENTRIES.map((style) => (
           <div key={style.label} className="flex items-center gap-2">
             <svg width={28} height={6} className="shrink-0">
