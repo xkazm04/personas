@@ -361,7 +361,7 @@ pub fn update_credential_field(
         "field_update",
         None,
         None,
-        Some(&format!("field '{}' updated", field_key)),
+        Some(&format!("field '{field_key}' updated")),
     );
     Ok(true)
 }

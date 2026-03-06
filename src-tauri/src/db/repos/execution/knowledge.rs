@@ -24,6 +24,7 @@ fn row_to_knowledge(row: &Row) -> rusqlite::Result<ExecutionKnowledge> {
 }
 
 /// Upsert a knowledge entry — update counts and averages if the unique key exists.
+#[allow(clippy::too_many_arguments)]
 pub fn upsert(
     pool: &DbPool,
     persona_id: &str,
@@ -163,8 +164,7 @@ pub fn get_summary(
             SUM(CASE WHEN knowledge_type = 'tool_sequence' THEN 1 ELSE 0 END),
             SUM(CASE WHEN knowledge_type = 'failure_pattern' THEN 1 ELSE 0 END),
             SUM(CASE WHEN knowledge_type = 'model_performance' THEN 1 ELSE 0 END)
-         FROM execution_knowledge {}",
-        where_clause
+         FROM execution_knowledge {where_clause}"
     );
 
     let (total, tool_seq, fail_pat, model_perf) = if let Some(ref pid) = persona_filter {
@@ -189,10 +189,9 @@ pub fn get_summary(
 
     // Top patterns by confidence
     let top_sql = format!(
-        "SELECT * FROM execution_knowledge {}
+        "SELECT * FROM execution_knowledge {where_clause}
          ORDER BY confidence DESC, (success_count + failure_count) DESC
-         LIMIT 10",
-        where_clause
+         LIMIT 10"
     );
     let top_patterns = if let Some(ref pid) = persona_filter {
         let mut stmt = conn.prepare(&top_sql)?;
@@ -206,10 +205,9 @@ pub fn get_summary(
 
     // Recent learnings
     let recent_sql = format!(
-        "SELECT * FROM execution_knowledge {}
+        "SELECT * FROM execution_knowledge {where_clause}
          ORDER BY updated_at DESC
-         LIMIT 10",
-        where_clause
+         LIMIT 10"
     );
     let recent_learnings = if let Some(ref pid) = persona_filter {
         let mut stmt = conn.prepare(&recent_sql)?;

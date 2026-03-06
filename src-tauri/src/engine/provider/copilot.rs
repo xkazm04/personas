@@ -144,7 +144,7 @@ impl CliProvider for CopilotProvider {
                         .get("session_id")
                         .and_then(|s| s.as_str())
                         .map(String::from);
-                    let display = format!("Session started ({})", model);
+                    let display = format!("Session started ({model})");
                     (
                         StreamLineType::SystemInit { model, session_id },
                         Some(display),
@@ -184,7 +184,7 @@ impl CliProvider for CopilotProvider {
                                     .to_string();
                                 let input_json = block.get("input").cloned().unwrap_or(serde_json::Value::Null);
                                 let input_preview = serde_json::to_string(&input_json).unwrap_or_default();
-                                let display = format!("> Using tool: {}", name);
+                                let display = format!("> Using tool: {name}");
                                 return (
                                     StreamLineType::AssistantToolUse {
                                         tool_name: name,
@@ -236,12 +236,12 @@ impl CliProvider for CopilotProvider {
                 let mut display = String::new();
                 if let Some(ms) = duration_ms {
                     let secs = ms as f64 / 1000.0;
-                    display.push_str(&format!("Completed in {:.1}s", secs));
+                    display.push_str(&format!("Completed in {secs:.1}s"));
                 } else {
                     display.push_str("Completed");
                 }
                 if let Some(cost) = total_cost_usd {
-                    display.push_str(&format!(" (cost: ${:.4})", cost));
+                    display.push_str(&format!(" (cost: ${cost:.4})"));
                 }
 
                 (
@@ -270,7 +270,7 @@ impl CliProvider for CopilotProvider {
                     .or_else(|| value.get("session_id"))
                     .and_then(|s| s.as_str())
                     .map(String::from);
-                let display = format!("Session started ({})", model);
+                let display = format!("Session started ({model})");
                 (
                     StreamLineType::SystemInit { model, session_id },
                     Some(display),
@@ -301,7 +301,7 @@ impl CliProvider for CopilotProvider {
 
                 let mut display = "Completed".to_string();
                 if let Some(cost) = total_cost_usd {
-                    display.push_str(&format!(" (cost: ${:.4})", cost));
+                    display.push_str(&format!(" (cost: ${cost:.4})"));
                 }
 
                 (
@@ -393,7 +393,7 @@ fn parse_copilot_item(value: &serde_json::Value) -> (StreamLineType, Option<Stri
                         .and_then(|a| a.as_str())
                         .unwrap_or("{}")
                         .to_string();
-                    let display = format!("> Using tool: {}", name);
+                    let display = format!("> Using tool: {name}");
                     return (
                         StreamLineType::AssistantToolUse {
                             tool_name: name,
@@ -467,7 +467,7 @@ mod tests {
                 assert_eq!(model, "gpt-5-mini");
                 assert_eq!(session_id, Some("sess-cp".to_string()));
             }
-            _ => panic!("Expected SystemInit, got {:?}", st),
+            _ => panic!("Expected SystemInit, got {st:?}"),
         }
         assert!(display.unwrap().contains("gpt-5-mini"));
     }
@@ -483,7 +483,7 @@ mod tests {
                 assert_eq!(model, "gpt-5-mini");
                 assert_eq!(session_id, Some("thread-abc".to_string()));
             }
-            _ => panic!("Expected SystemInit, got {:?}", st),
+            _ => panic!("Expected SystemInit, got {st:?}"),
         }
         assert_eq!(display, Some("Session started (gpt-5-mini)".to_string()));
     }
@@ -498,7 +498,7 @@ mod tests {
             StreamLineType::AssistantText { text } => {
                 assert_eq!(text, "Hello from Copilot");
             }
-            _ => panic!("Expected AssistantText, got {:?}", st),
+            _ => panic!("Expected AssistantText, got {st:?}"),
         }
         assert_eq!(display, Some("Hello from Copilot".to_string()));
     }
@@ -513,7 +513,7 @@ mod tests {
             StreamLineType::AssistantToolUse { tool_name, .. } => {
                 assert_eq!(tool_name, "read_file");
             }
-            _ => panic!("Expected AssistantToolUse, got {:?}", st),
+            _ => panic!("Expected AssistantToolUse, got {st:?}"),
         }
         assert_eq!(display, Some("> Using tool: read_file".to_string()));
     }
@@ -528,7 +528,7 @@ mod tests {
             StreamLineType::AssistantText { text } => {
                 assert_eq!(text, "Hello from Copilot");
             }
-            _ => panic!("Expected AssistantText, got {:?}", st),
+            _ => panic!("Expected AssistantText, got {st:?}"),
         }
         assert_eq!(display, Some("Hello from Copilot".to_string()));
     }
@@ -544,7 +544,7 @@ mod tests {
                 assert_eq!(tool_name, "shell");
                 assert!(input_preview.contains("ls"));
             }
-            _ => panic!("Expected AssistantToolUse, got {:?}", st),
+            _ => panic!("Expected AssistantToolUse, got {st:?}"),
         }
         assert_eq!(display, Some("> Using tool: shell".to_string()));
     }
@@ -568,7 +568,7 @@ mod tests {
                 assert_eq!(total_input_tokens, Some(5000));
                 assert_eq!(total_output_tokens, Some(1000));
             }
-            _ => panic!("Expected Result, got {:?}", st),
+            _ => panic!("Expected Result, got {st:?}"),
         }
     }
 
@@ -593,7 +593,7 @@ mod tests {
                 assert_eq!(model, Some("gpt-5-mini".to_string()));
                 assert_eq!(session_id, Some("thread-xyz".to_string()));
             }
-            _ => panic!("Expected Result, got {:?}", st),
+            _ => panic!("Expected Result, got {st:?}"),
         }
     }
 

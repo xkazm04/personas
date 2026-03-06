@@ -144,8 +144,8 @@ async fn invoke_api(
     // Substitute $ENV_VAR placeholders with resolved credential values
     let mut resolved_curl = curl_line.to_string();
     for (k, v) in env_map {
-        resolved_curl = resolved_curl.replace(&format!("${}", k), v);
-        resolved_curl = resolved_curl.replace(&format!("${{{}}}", k), v);
+        resolved_curl = resolved_curl.replace(&format!("${k}"), v);
+        resolved_curl = resolved_curl.replace(&format!("${{{k}}}"), v);
     }
 
     // Also substitute input parameters from the JSON
@@ -156,8 +156,8 @@ async fn invoke_api(
                     serde_json::Value::String(s) => s.clone(),
                     other => other.to_string(),
                 };
-                resolved_curl = resolved_curl.replace(&format!("${{{}}}", key), &val_str);
-                resolved_curl = resolved_curl.replace(&format!("${}", key), &val_str);
+                resolved_curl = resolved_curl.replace(&format!("${{{key}}}"), &val_str);
+                resolved_curl = resolved_curl.replace(&format!("${key}"), &val_str);
             }
         }
     }

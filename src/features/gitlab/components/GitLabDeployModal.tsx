@@ -54,7 +54,7 @@ export function GitLabDeployModal({
         <label htmlFor="target-project" className="block text-sm font-medium text-foreground/80 mb-1.5">Target Project</label>
         <ThemedSelect
           id="target-project"
-          value={selectedProjectId ?? ''}
+          value={String(selectedProjectId ?? '')}
           onChange={(e) => onSelectProject(Number(e.target.value))}
         >
           <option value="">Select a project...</option>

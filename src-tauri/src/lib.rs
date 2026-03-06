@@ -43,6 +43,9 @@ pub struct AppState {
     pub cloud_client: Arc<tokio::sync::Mutex<Option<Arc<cloud::client::CloudClient>>>>,
     /// Maps local execution ID → cloud execution ID for active cloud runs.
     pub cloud_exec_ids: Arc<tokio::sync::Mutex<HashMap<String, String>>>,
+    /// PID of the CLI child process for the active auto-cred browser session.
+    /// Used to kill the process when the user cancels.
+    pub active_auto_cred_child_pid: Arc<Mutex<Option<u32>>>,
     /// Cancellation flag for the auto-installer (setup commands).
     pub active_setup_cancelled: Arc<Mutex<bool>>,
     /// Cancellation flags for active test runs, keyed by run ID.
@@ -186,6 +189,7 @@ pub fn run() {
                 auth: auth.clone(),
                 cloud_client: Arc::new(tokio::sync::Mutex::new(cloud_client_opt)),
                 cloud_exec_ids: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
+                active_auto_cred_child_pid: Arc::new(Mutex::new(None)),
                 active_setup_cancelled: Arc::new(Mutex::new(false)),
                 active_test_run_cancelled: Arc::new(Mutex::new(HashMap::new())),
                 active_pipeline_cancelled: Arc::new(Mutex::new(HashMap::new())),
@@ -471,6 +475,8 @@ pub fn run() {
             commands::credentials::auto_cred_browser::start_auto_cred_browser,
             commands::credentials::auto_cred_browser::save_playwright_procedure,
             commands::credentials::auto_cred_browser::get_playwright_procedure,
+            commands::credentials::auto_cred_browser::check_auto_cred_playwright_available,
+            commands::credentials::auto_cred_browser::cancel_auto_cred_browser,
             // Credentials — Foraging
             commands::credentials::foraging::scan_credential_sources,
             commands::credentials::foraging::import_foraged_credential,

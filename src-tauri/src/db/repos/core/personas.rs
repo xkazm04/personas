@@ -13,7 +13,7 @@ use crate::error::AppError;
 /// Returns the modified JSON string. No-ops if auth_token is absent or empty.
 fn encrypt_model_profile(json: &str) -> Result<String, AppError> {
     let mut val: serde_json::Value = serde_json::from_str(json)
-        .map_err(|e| AppError::Validation(format!("Invalid model_profile JSON: {}", e)))?;
+        .map_err(|e| AppError::Validation(format!("Invalid model_profile JSON: {e}")))?;
 
     let obj = match val.as_object_mut() {
         Some(o) => o,
@@ -36,7 +36,7 @@ fn encrypt_model_profile(json: &str) -> Result<String, AppError> {
     obj.insert("auth_token_iv".into(), serde_json::Value::String(nonce));
 
     serde_json::to_string(&val)
-        .map_err(|e| AppError::Internal(format!("Failed to serialize model_profile: {}", e)))
+        .map_err(|e| AppError::Internal(format!("Failed to serialize model_profile: {e}")))
 }
 
 /// Decrypt the `auth_token_enc` field inside a model_profile JSON string back to `auth_token`.
@@ -599,6 +599,7 @@ mod tests {
                 icon: None,
                 color: None,
                 enabled: Some(false),
+                sensitive: None,
                 max_concurrent: None,
                 timeout_ms: None,
                 notification_channels: None,
@@ -684,7 +685,7 @@ mod tests {
             UpdatePersonaInput {
                 name: Some("".into()),
                 description: None, system_prompt: None, structured_prompt: None,
-                icon: None, color: None, enabled: None, max_concurrent: None,
+                icon: None, color: None, enabled: None, sensitive: None, max_concurrent: None,
                 timeout_ms: None, notification_channels: None, last_design_result: None,
                 model_profile: None, max_budget_usd: None, max_turns: None,
                 design_context: None, group_id: None,
@@ -699,7 +700,7 @@ mod tests {
             UpdatePersonaInput {
                 name: Some("   ".into()),
                 description: None, system_prompt: None, structured_prompt: None,
-                icon: None, color: None, enabled: None, max_concurrent: None,
+                icon: None, color: None, enabled: None, sensitive: None, max_concurrent: None,
                 timeout_ms: None, notification_channels: None, last_design_result: None,
                 model_profile: None, max_budget_usd: None, max_turns: None,
                 design_context: None, group_id: None,
@@ -746,7 +747,7 @@ mod tests {
                 name: None, description: None,
                 system_prompt: Some("".into()),
                 structured_prompt: None,
-                icon: None, color: None, enabled: None, max_concurrent: None,
+                icon: None, color: None, enabled: None, sensitive: None, max_concurrent: None,
                 timeout_ms: None, notification_channels: None, last_design_result: None,
                 model_profile: None, max_budget_usd: None, max_turns: None,
                 design_context: None, group_id: None,
@@ -762,7 +763,7 @@ mod tests {
                 name: None, description: None,
                 system_prompt: Some("  \n  ".into()),
                 structured_prompt: None,
-                icon: None, color: None, enabled: None, max_concurrent: None,
+                icon: None, color: None, enabled: None, sensitive: None, max_concurrent: None,
                 timeout_ms: None, notification_channels: None, last_design_result: None,
                 model_profile: None, max_budget_usd: None, max_turns: None,
                 design_context: None, group_id: None,
@@ -838,7 +839,7 @@ mod tests {
         let base = || UpdatePersonaInput {
             name: None, description: None, system_prompt: None,
             structured_prompt: None, icon: None, color: None, enabled: None,
-            max_concurrent: None, timeout_ms: None, notification_channels: None,
+            sensitive: None, max_concurrent: None, timeout_ms: None, notification_channels: None,
             last_design_result: None, model_profile: None, max_budget_usd: None,
             max_turns: None, design_context: None, group_id: None,
         };

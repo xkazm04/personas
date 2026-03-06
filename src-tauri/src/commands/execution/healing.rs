@@ -208,7 +208,7 @@ pub async fn trigger_ai_healing(
         &execution.persona_id,
         &session_id,
         error_str,
-        &format!("{:?}", category),
+        &format!("{category:?}"),
     );
 
     Ok(serde_json::json!({

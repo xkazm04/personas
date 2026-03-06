@@ -85,8 +85,7 @@ pub async fn run_cloud_execution(
                     return CloudRunResult {
                         success: false,
                         error: Some(format!(
-                            "Cloud orchestrator unreachable after {} consecutive poll failures: {}",
-                            max_consecutive_errors, e
+                            "Cloud orchestrator unreachable after {max_consecutive_errors} consecutive poll failures: {e}"
                         )),
                         duration_ms: 0,
                         cost_usd: None,

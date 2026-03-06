@@ -109,8 +109,7 @@ pub fn test_event_flow(
 ) -> Result<PersonaEvent, AppError> {
     if let Err(retry_after) = state.rate_limiter.check("event:test", EVENT_SOURCE_MAX, EVENT_SOURCE_WINDOW) {
         return Err(AppError::RateLimited(format!(
-            "Test event flow exceeded {} events/minute. Retry after {}s",
-            EVENT_SOURCE_MAX, retry_after
+            "Test event flow exceeded {EVENT_SOURCE_MAX} events/minute. Retry after {retry_after}s"
         )));
     }
 

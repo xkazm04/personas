@@ -94,7 +94,7 @@ pub fn execute_recipe(
     // Substitute {{variable}} placeholders with input_data values
     let mut rendered = recipe.prompt_template.clone();
     for (key, value) in &input.input_data {
-        let placeholder = format!("{{{{{}}}}}", key);
+        let placeholder = format!("{{{{{key}}}}}");
         let replacement = match value {
             serde_json::Value::String(s) => s.clone(),
             other => other.to_string(),
@@ -124,7 +124,7 @@ pub async fn start_recipe_execution(
     // Render the prompt template with input values
     let mut rendered = recipe.prompt_template.clone();
     for (key, value) in &input_data {
-        let placeholder = format!("{{{{{}}}}}", key);
+        let placeholder = format!("{{{{{key}}}}}");
         let replacement = match value {
             serde_json::Value::String(s) => s.clone(),
             other => other.to_string(),

@@ -108,7 +108,7 @@ async fn resolve_auth_headers(
 
     // Common patterns for webhook auth
     if let Some(token) = fields.get("api_key").or(fields.get("access_token")).or(fields.get("token")) {
-        headers.insert("Authorization".into(), format!("Bearer {}", token));
+        headers.insert("Authorization".into(), format!("Bearer {token}"));
     }
     if let Some(header_name) = fields.get("header_name") {
         if let Some(header_value) = fields.get("header_value") {
@@ -153,9 +153,9 @@ async fn invoke_webhook(
 
     let resp = req.send().await.map_err(|e| {
         if e.is_timeout() {
-            AppError::Execution(format!("Webhook timed out after {}ms: {}", timeout_ms, url))
+            AppError::Execution(format!("Webhook timed out after {timeout_ms}ms: {url}"))
         } else if e.is_connect() {
-            AppError::Execution(format!("Failed to connect to webhook: {}", url))
+            AppError::Execution(format!("Failed to connect to webhook: {url}"))
         } else {
             AppError::Execution(format!("Webhook request failed: {e}"))
         }
@@ -203,10 +203,9 @@ pub fn automation_to_virtual_tool(
     };
 
     let guide = format!(
-        "This tool delegates to an external {} workflow.\n\
+        "This tool delegates to an external {platform_label} workflow.\n\
          It will be invoked automatically — do NOT construct HTTP requests yourself.\n\
-         Simply call this tool with the expected input JSON.{}",
-        platform_label, fallback_note
+         Simply call this tool with the expected input JSON.{fallback_note}"
     );
 
     crate::db::models::PersonaToolDefinition {
@@ -260,8 +259,7 @@ async fn invoke_github_dispatch(
     let parts: Vec<&str> = repo.splitn(2, '/').collect();
     if parts.len() != 2 {
         return Err(AppError::Validation(format!(
-            "Invalid repo format '{}'. Expected 'owner/repo'.",
-            repo
+            "Invalid repo format '{repo}'. Expected 'owner/repo'."
         )));
     }
     let (owner, repo_name) = (parts[0], parts[1]);
@@ -298,7 +296,7 @@ async fn invoke_github_dispatch(
                 Some(&serde_json::json!({"dispatched": true, "event_type": event_type}).to_string()),
                 Some(duration_ms),
                 None,
-                Some(&format!("https://github.com/{}/actions", repo)),
+                Some(&format!("https://github.com/{repo}/actions")),
                 None,
             )?;
             let _ = repo::record_trigger_result(pool, &automation.id, "success", None);

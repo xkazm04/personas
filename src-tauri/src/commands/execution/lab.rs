@@ -35,7 +35,7 @@ pub async fn lab_start_arena(
     for v in models {
         match serde_json::from_value(v.clone()) {
             Ok(config) => model_configs.push(config),
-            Err(e) => return Err(AppError::Validation(format!("Invalid model config: {}", e))),
+            Err(e) => return Err(AppError::Validation(format!("Invalid model config: {e}"))),
         }
     }
     if model_configs.is_empty() {
@@ -152,7 +152,7 @@ pub async fn lab_start_ab(
     for v in models {
         match serde_json::from_value(v.clone()) {
             Ok(config) => model_configs.push(config),
-            Err(e) => return Err(AppError::Validation(format!("Invalid model config: {}", e))),
+            Err(e) => return Err(AppError::Validation(format!("Invalid model config: {e}"))),
         }
     }
     if model_configs.is_empty() {
@@ -294,7 +294,7 @@ pub async fn lab_start_matrix(
     for v in models {
         match serde_json::from_value(v.clone()) {
             Ok(config) => model_configs.push(config),
-            Err(e) => return Err(AppError::Validation(format!("Invalid model config: {}", e))),
+            Err(e) => return Err(AppError::Validation(format!("Invalid model config: {e}"))),
         }
     }
     if model_configs.is_empty() {
@@ -446,7 +446,7 @@ pub async fn lab_start_eval(
     for vid in &version_ids {
         let v = metrics_repo::get_prompt_version_by_id(&state.db, vid)?;
         if v.persona_id != persona_id {
-            return Err(AppError::Validation(format!("Version {} does not belong to this persona", vid)));
+            return Err(AppError::Validation(format!("Version {vid} does not belong to this persona")));
         }
         versions.push(v);
     }
@@ -455,7 +455,7 @@ pub async fn lab_start_eval(
     for v in models {
         match serde_json::from_value(v.clone()) {
             Ok(config) => model_configs.push(config),
-            Err(e) => return Err(AppError::Validation(format!("Invalid model config: {}", e))),
+            Err(e) => return Err(AppError::Validation(format!("Invalid model config: {e}"))),
         }
     }
     if model_configs.is_empty() {

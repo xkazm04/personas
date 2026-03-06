@@ -145,10 +145,10 @@ fn supabase_anon_key() -> Result<String, AppError> {
 
 fn store_refresh_token(token: &str) -> Result<(), AppError> {
     let entry = keyring::Entry::new(KEYRING_SERVICE, KEYRING_REFRESH)
-        .map_err(|e| AppError::Auth(format!("Keyring entry error: {}", e)))?;
+        .map_err(|e| AppError::Auth(format!("Keyring entry error: {e}")))?;
     entry
         .set_password(token)
-        .map_err(|e| AppError::Auth(format!("Failed to store refresh token: {}", e)))?;
+        .map_err(|e| AppError::Auth(format!("Failed to store refresh token: {e}")))?;
     Ok(())
 }
 
@@ -191,24 +191,23 @@ async fn fetch_user_profile(access_token: &str) -> Result<AuthUser, AppError> {
     let resp = reqwest::Client::new()
         .get(&url)
         .header("apikey", &anon_key)
-        .header("Authorization", format!("Bearer {}", access_token))
+        .header("Authorization", format!("Bearer {access_token}"))
         .send()
         .await
-        .map_err(|e| AppError::Auth(format!("Failed to fetch user profile: {}", e)))?;
+        .map_err(|e| AppError::Auth(format!("Failed to fetch user profile: {e}")))?;
 
     if !resp.status().is_success() {
         let status = resp.status();
         let body = resp.text().await.unwrap_or_default();
         return Err(AppError::Auth(format!(
-            "Supabase user endpoint returned {}: {}",
-            status, body
+            "Supabase user endpoint returned {status}: {body}"
         )));
     }
 
     let user: SupabaseUserResponse = resp
         .json()
         .await
-        .map_err(|e| AppError::Auth(format!("Failed to parse user response: {}", e)))?;
+        .map_err(|e| AppError::Auth(format!("Failed to parse user response: {e}")))?;
 
     Ok(user.to_auth_user())
 }
@@ -231,9 +230,9 @@ async fn refresh_access_token(
         .await
         .map_err(|e| {
             if e.is_connect() || e.is_timeout() || e.is_request() {
-                AppError::NetworkOffline(format!("Token refresh failed: {}", e))
+                AppError::NetworkOffline(format!("Token refresh failed: {e}"))
             } else {
-                AppError::Auth(format!("Token refresh failed: {}", e))
+                AppError::Auth(format!("Token refresh failed: {e}"))
             }
         })?;
 
@@ -241,14 +240,13 @@ async fn refresh_access_token(
         let status = resp.status();
         let body = resp.text().await.unwrap_or_default();
         return Err(AppError::Auth(format!(
-            "Token refresh returned {}: {}",
-            status, body
+            "Token refresh returned {status}: {body}"
         )));
     }
 
     resp.json::<SupabaseTokenResponse>()
         .await
-        .map_err(|e| AppError::Auth(format!("Failed to parse token response: {}", e)))
+        .map_err(|e| AppError::Auth(format!("Failed to parse token response: {e}")))
 }
 
 fn parse_url_fragment(url_str: &str) -> HashMap<String, String> {
@@ -270,12 +268,11 @@ fn parse_url_fragment(url_str: &str) -> HashMap<String, String> {
 pub async fn login_with_google() -> Result<(), AppError> {
     let base_url = supabase_url()?;
     let oauth_url = format!(
-        "{}/auth/v1/authorize?provider=google&redirect_to=personas://auth/callback",
-        base_url
+        "{base_url}/auth/v1/authorize?provider=google&redirect_to=personas://auth/callback"
     );
 
     open::that(&oauth_url)
-        .map_err(|e| AppError::Auth(format!("Failed to open browser: {}", e)))?;
+        .map_err(|e| AppError::Auth(format!("Failed to open browser: {e}")))?;
 
     tracing::info!("Opened browser for Google OAuth");
     Ok(())

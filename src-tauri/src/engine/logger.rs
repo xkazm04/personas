@@ -10,7 +10,7 @@ pub struct ExecutionLogger {
 impl ExecutionLogger {
     pub fn new(log_dir: &std::path::Path, execution_id: &str) -> std::io::Result<Self> {
         fs::create_dir_all(log_dir)?;
-        let path = log_dir.join(format!("{}.log", execution_id));
+        let path = log_dir.join(format!("{execution_id}.log"));
         let file = OpenOptions::new()
             .create(true)
             .append(true)
@@ -24,7 +24,7 @@ impl ExecutionLogger {
     pub fn log(&mut self, msg: &str) {
         if let Some(ref mut w) = self.writer {
             let timestamp = chrono::Utc::now().to_rfc3339();
-            let _ = writeln!(w, "[{}] {}", timestamp, msg);
+            let _ = writeln!(w, "[{timestamp}] {msg}");
         }
     }
 

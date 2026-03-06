@@ -301,7 +301,7 @@ export function QueriesTab({ credentialId, language, serviceType }: QueriesTabPr
                 value={editorValue}
                 onChange={setEditorValue}
                 language={language}
-                placeholder={language === 'redis' ? 'GET mykey' : 'SELECT * FROM ...'}
+                placeholder={language === 'redis' ? 'GET mykey' : language === 'convex' ? '{"path": "func:name", "args": {}}' : 'SELECT * FROM ...'}
                 onExecute={handleExecute}
                 minHeight="160px"
               />

@@ -96,7 +96,7 @@ fn build_tray_menu(
     } else {
         for (i, label) in recent_labels.iter().enumerate() {
             builder = builder.item(
-                &MenuItemBuilder::with_id(format!("recent_{}", i), label.as_str())
+                &MenuItemBuilder::with_id(format!("recent_{i}"), label.as_str())
                     .enabled(false)
                     .build(app)?,
             );

@@ -82,7 +82,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   jira:               { label: 'Jira',               color: '#0052CC', iconUrl: 'https://cdn.simpleicons.org/jira/0052CC',            Icon: Globe },
   linear:             { label: 'Linear',             color: '#5E6AD2', iconUrl: 'https://cdn.simpleicons.org/linear/5E6AD2',          Icon: CheckSquare },
   clickup:            { label: 'ClickUp',            color: '#7B68EE', iconUrl: 'https://cdn.simpleicons.org/clickup/7B68EE',         Icon: CheckSquare },
-  asana:              { label: 'Asana',              color: '#F06A6A', iconUrl: 'https://cdn.simpleicons.org/asana/F06A6A',            Icon: CheckSquare },
+  asana:              { label: 'Asana',              color: '#F06A6A', iconUrl: '/icons/connectors/asana.svg',                         Icon: CheckSquare },
   trello:             { label: 'Trello',             color: '#0052CC', iconUrl: 'https://cdn.simpleicons.org/trello/0052CC',           Icon: Kanban },
   monday:             { label: 'Monday.com',         color: '#6C3AEF', iconUrl: '/icons/connectors/monday.svg',                        Icon: Kanban },
   monday_com:         { label: 'Monday.com',         color: '#6C3AEF', iconUrl: '/icons/connectors/monday.svg',                        Icon: Kanban },
@@ -140,6 +140,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
 
   // ── Social ────────────────────────────────────────────────────
   buffer:             { label: 'Buffer',             color: '#231F20', iconUrl: 'https://cdn.simpleicons.org/buffer/f0f0f0',           Icon: Share2 },
+  linkedin:           { label: 'LinkedIn',           color: '#0A66C2', iconUrl: '/icons/connectors/linkedin.svg',                      Icon: Users },
   twitter:            { label: 'X (Twitter)',        color: '#000000', iconUrl: 'https://cdn.simpleicons.org/x/f0f0f0',                Icon: MessageCircle },
 
   // ── E-Commerce ────────────────────────────────────────────────

@@ -1,18 +1,29 @@
+import { useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Globe, Shield, ArrowRight, ExternalLink } from 'lucide-react';
+import { Globe, Shield, ArrowRight, ExternalLink, MessageSquare, LogIn } from 'lucide-react';
 import type { CredentialDesignResult } from '@/hooks/design/useCredentialDesign';
+import type { AutoCredMode } from './types';
 import { MarkdownRenderer } from '@/features/shared/components/MarkdownRenderer';
 import { buildConnectorContext } from './types';
+import { openExternalUrl } from '@/api/system';
 
 interface AutoCredConsentProps {
   designResult: CredentialDesignResult;
   onConsent: () => void;
   onCancel: () => void;
+  mode?: AutoCredMode;
 }
 
-export function AutoCredConsent({ designResult, onConsent, onCancel }: AutoCredConsentProps) {
+export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'playwright' }: AutoCredConsentProps) {
   const ctx = buildConnectorContext(designResult);
   const fieldCount = ctx.fields.length;
+  const isGuided = mode === 'guided';
+
+  const handleDocsClick = useCallback(() => {
+    if (ctx.docsUrl) {
+      openExternalUrl(ctx.docsUrl).catch(console.error);
+    }
+  }, [ctx.docsUrl]);
 
   return (
     <motion.div
@@ -22,7 +33,9 @@ export function AutoCredConsent({ designResult, onConsent, onCancel }: AutoCredC
       className="space-y-5"
     >
       {/* Header */}
-      <div className="flex items-start gap-4 p-4 rounded-xl border border-cyan-500/20 bg-cyan-500/5">
+      <div className={`flex items-start gap-4 p-4 rounded-xl border ${
+        isGuided ? 'border-violet-500/20 bg-violet-500/5' : 'border-cyan-500/20 bg-cyan-500/5'
+      }`}>
         <div
           className="w-12 h-12 rounded-xl border flex items-center justify-center shrink-0"
           style={{ backgroundColor: `${designResult.connector.color}15`, borderColor: `${designResult.connector.color}30` }}
@@ -31,11 +44,13 @@ export function AutoCredConsent({ designResult, onConsent, onCancel }: AutoCredC
         </div>
         <div>
           <h3 className="text-base font-semibold text-foreground">
-            Auto-Setup: {designResult.connector.label}
+            {isGuided ? 'Guided Setup' : 'Auto-Setup'}: {designResult.connector.label}
           </h3>
           <p className="text-sm text-muted-foreground/80 mt-1">
-            Claude designed the credential schema. Now Playwright will open a browser
-            to create the actual credential on your behalf.
+            {isGuided
+              ? 'Claude will guide you step-by-step through creating credentials. URLs will open in your browser automatically.'
+              : 'Claude designed the credential schema. Now Playwright will open a browser to create the actual credential on your behalf.'
+            }
           </p>
         </div>
       </div>
@@ -44,11 +59,23 @@ export function AutoCredConsent({ designResult, onConsent, onCancel }: AutoCredC
       <div className="space-y-2.5">
         <p className="text-sm font-medium text-foreground/90">What will happen:</p>
         <div className="space-y-2">
-          <Step number={1} text={`Open ${ctx.docsUrl ? 'credential page' : designResult.connector.label + ' dashboard'} in browser`} />
-          <Step number={2} text="Navigate to token/key creation form" />
-          <Step number={3} text={`Fill required fields (${fieldCount} field${fieldCount !== 1 ? 's' : ''})`} />
-          <Step number={4} text="Extract generated credential values" />
-          <Step number={5} text="Return here for your review before saving" />
+          {isGuided ? (
+            <>
+              <Step number={1} text={`Open ${designResult.connector.label} dashboard in your browser`} guided />
+              <Step number={2} text="Claude provides step-by-step instructions" guided />
+              <Step number={3} text={`You create the credential following the guide (${fieldCount} field${fieldCount !== 1 ? 's' : ''})`} guided />
+              <Step number={4} text="Claude extracts the values from its instructions" guided />
+              <Step number={5} text="Review and save the credential" guided />
+            </>
+          ) : (
+            <>
+              <Step number={1} text={`Open ${ctx.docsUrl ? 'credential page' : designResult.connector.label + ' dashboard'} in browser`} />
+              <Step number={2} text="Navigate to token/key creation form" />
+              <Step number={3} text={`Fill required fields (${fieldCount} field${fieldCount !== 1 ? 's' : ''})`} />
+              <Step number={4} text="Extract generated credential values" />
+              <Step number={5} text="Return here for your review before saving" />
+            </>
+          )}
         </div>
       </div>
 
@@ -63,27 +90,37 @@ export function AutoCredConsent({ designResult, onConsent, onCancel }: AutoCredC
         </div>
       )}
 
+      {/* Pre-login tip */}
+      <div className="flex items-start gap-2.5 p-3 rounded-lg border border-blue-500/20 bg-blue-500/5">
+        <LogIn className="w-4 h-4 text-blue-400 mt-0.5 shrink-0" />
+        <div className="text-sm text-muted-foreground/80">
+          <span className="font-medium text-blue-400/90">Log in first.</span>{' '}
+          Make sure you are already registered and logged in to {designResult.connector.label} in your browser before starting.
+          This allows the automation to access your account settings directly.
+        </div>
+      </div>
+
       {/* Security notice */}
       <div className="flex items-start gap-2.5 p-3 rounded-lg border border-amber-500/20 bg-amber-500/5">
         <Shield className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
         <div className="text-sm text-muted-foreground/80">
           <span className="font-medium text-amber-400/90">Your consent is required.</span>{' '}
-          Nothing is saved without your explicit approval. If a login page or CAPTCHA appears,
-          the browser will pause for you to handle manually.
+          {isGuided
+            ? 'Nothing is saved without your explicit approval. You will create the credential yourself following guided instructions.'
+            : 'Nothing is saved without your explicit approval. If a login page or CAPTCHA appears, the browser will pause for you to handle manually.'
+          }
         </div>
       </div>
 
-      {/* Docs link */}
+      {/* Docs link — uses Tauri open_external_url instead of <a href> */}
       {ctx.docsUrl && (
-        <a
-          href={ctx.docsUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
+        <button
+          onClick={handleDocsClick}
+          className="inline-flex items-center gap-1.5 text-sm text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer"
         >
           <ExternalLink className="w-3.5 h-3.5" />
           View credential docs
-        </a>
+        </button>
       )}
 
       {/* Actions */}
@@ -96,10 +133,18 @@ export function AutoCredConsent({ designResult, onConsent, onCancel }: AutoCredC
         </button>
         <button
           onClick={onConsent}
-          className="flex items-center gap-2 px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-cyan-600/20"
+          className={`flex items-center gap-2 px-5 py-2.5 text-white rounded-xl text-sm font-medium transition-all shadow-lg ${
+            isGuided
+              ? 'bg-violet-600 hover:bg-violet-500 shadow-violet-600/20'
+              : 'bg-cyan-600 hover:bg-cyan-500 shadow-cyan-600/20'
+          }`}
         >
-          <Globe className="w-4 h-4" />
-          Start Browser Session
+          {isGuided ? (
+            <MessageSquare className="w-4 h-4" />
+          ) : (
+            <Globe className="w-4 h-4" />
+          )}
+          {isGuided ? 'Start Guided Setup' : 'Start Browser Session'}
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -107,10 +152,12 @@ export function AutoCredConsent({ designResult, onConsent, onCancel }: AutoCredC
   );
 }
 
-function Step({ number, text }: { number: number; text: string }) {
+function Step({ number, text, guided = false }: { number: number; text: string; guided?: boolean }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="w-5 h-5 rounded-full bg-cyan-500/15 text-cyan-400 text-sm font-medium flex items-center justify-center shrink-0">
+      <span className={`w-5 h-5 rounded-full text-sm font-medium flex items-center justify-center shrink-0 ${
+        guided ? 'bg-violet-500/15 text-violet-400' : 'bg-cyan-500/15 text-cyan-400'
+      }`}>
         {number}
       </span>
       <span className="text-sm text-foreground/80">{text}</span>

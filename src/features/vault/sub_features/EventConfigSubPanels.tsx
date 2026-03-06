@@ -161,7 +161,7 @@ export function GenericPollingConfig({
         <Clock className="w-3.5 h-3.5 text-muted-foreground/80" />
         <label className="text-sm text-muted-foreground/90">Polling interval</label>
         <ThemedSelect
-          value={pollingInterval}
+          value={String(pollingInterval)}
           onChange={(e) => onUpdate({ pollingIntervalSeconds: parseInt(e.target.value) })}
           className="px-2 py-1 w-auto"
           wrapperClassName="inline-block"

@@ -60,8 +60,8 @@ pub fn notify_execution_completed(
     let duration_str = format!("{:.1}s", duration_ms as f64 / 1000.0);
     send(
         app,
-        &format!("Execution {}", status),
-        &format!("{} finished in {}", persona_name, duration_str),
+        &format!("Execution {status}"),
+        &format!("{persona_name} finished in {duration_str}"),
     );
 }
 
@@ -77,7 +77,7 @@ pub fn notify_manual_review(
     send(
         app,
         "Manual Review Needed",
-        &format!("{}: {}", persona_name, title),
+        &format!("{persona_name}: {title}"),
     );
 }
 
@@ -92,7 +92,7 @@ pub fn notify_new_message(
     }
     send(
         app,
-        &format!("Message from {}", persona_name),
+        &format!("Message from {persona_name}"),
         title,
     );
 }
@@ -114,12 +114,12 @@ pub fn notify_healing_issue(
         _ => return,
     }
     let body = match suggested_fix {
-        Some(fix) => format!("{}: {}\nFix: {}", persona_name, title, fix),
-        None => format!("{}: {}", persona_name, title),
+        Some(fix) => format!("{persona_name}: {title}\nFix: {fix}"),
+        None => format!("{persona_name}: {title}"),
     };
     send(
         app,
-        &format!("Healing Alert ({})", severity),
+        &format!("Healing Alert ({severity})"),
         &body,
     );
 }
@@ -133,13 +133,13 @@ pub fn notify_n8n_transform_completed(
         send(
             app,
             "n8n Transform Complete",
-            &format!("{} draft is ready for review.", workflow_name),
+            &format!("{workflow_name} draft is ready for review."),
         );
     } else {
         send(
             app,
             "n8n Transform Failed",
-            &format!("{} transformation failed. Re-open importer for details.", workflow_name),
+            &format!("{workflow_name} transformation failed. Re-open importer for details."),
         );
     }
 }

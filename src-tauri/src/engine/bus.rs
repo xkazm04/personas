@@ -146,7 +146,7 @@ mod tests {
 
     fn make_sub(persona_id: &str, event_type: &str) -> PersonaEventSubscription {
         PersonaEventSubscription {
-            id: format!("sub-{}", persona_id),
+            id: format!("sub-{persona_id}"),
             persona_id: persona_id.into(),
             event_type: event_type.into(),
             source_filter: None,
@@ -244,7 +244,7 @@ mod tests {
             "source_filter": source_filter,
         });
         PersonaTrigger {
-            id: format!("trig-{}", persona_id),
+            id: format!("trig-{persona_id}"),
             persona_id: persona_id.into(),
             trigger_type: "event_listener".into(),
             config: Some(serde_json::to_string(&config).unwrap()),

@@ -73,7 +73,9 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
           placeholder={
             language === 'redis'
               ? 'Enter Redis command (e.g. GET mykey, HGETALL users:1)'
-              : 'Enter SQL query (Ctrl+Enter to execute)'
+              : language === 'convex'
+                ? 'Enter table name to browse, or JSON body: {"path": "func:name", "args": {}}'
+                : 'Enter SQL query (Ctrl+Enter to execute)'
           }
           onExecute={handleExecute}
           minHeight="100px"

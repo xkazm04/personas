@@ -48,17 +48,17 @@ pub fn get_all(
     let mut param_idx = 1u32;
 
     // team_id is always required
-    conditions.push(format!("team_id = ?{}", param_idx));
+    conditions.push(format!("team_id = ?{param_idx}"));
     param_values.push(Box::new(team_id.to_string()));
     param_idx += 1;
 
     if let Some(rid) = run_id {
-        conditions.push(format!("run_id = ?{}", param_idx));
+        conditions.push(format!("run_id = ?{param_idx}"));
         param_values.push(Box::new(rid.to_string()));
         param_idx += 1;
     }
     if let Some(cat) = category {
-        conditions.push(format!("category = ?{}", param_idx));
+        conditions.push(format!("category = ?{param_idx}"));
         param_values.push(Box::new(cat.to_string()));
         param_idx += 1;
     }
@@ -223,7 +223,7 @@ pub fn batch_delete(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
         return Ok(0);
     }
     let conn = pool.get()?;
-    let placeholders: Vec<String> = (1..=ids.len()).map(|i| format!("?{}", i)).collect();
+    let placeholders: Vec<String> = (1..=ids.len()).map(|i| format!("?{i}")).collect();
     let sql = format!(
         "DELETE FROM team_memories WHERE id IN ({})",
         placeholders.join(", ")
@@ -248,23 +248,23 @@ pub fn get_total_count(
     let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
     let mut param_idx = 1u32;
 
-    conditions.push(format!("team_id = ?{}", param_idx));
+    conditions.push(format!("team_id = ?{param_idx}"));
     param_values.push(Box::new(team_id.to_string()));
     param_idx += 1;
 
     if let Some(rid) = run_id {
-        conditions.push(format!("run_id = ?{}", param_idx));
+        conditions.push(format!("run_id = ?{param_idx}"));
         param_values.push(Box::new(rid.to_string()));
         param_idx += 1;
     }
     if let Some(cat) = category {
-        conditions.push(format!("category = ?{}", param_idx));
+        conditions.push(format!("category = ?{param_idx}"));
         param_values.push(Box::new(cat.to_string()));
         let _ = param_idx;
     }
 
     let where_clause = format!("WHERE {}", conditions.join(" AND "));
-    let sql = format!("SELECT COUNT(*) FROM team_memories {}", where_clause);
+    let sql = format!("SELECT COUNT(*) FROM team_memories {where_clause}");
     let params_ref: Vec<&dyn rusqlite::types::ToSql> =
         param_values.iter().map(|p| p.as_ref()).collect();
 

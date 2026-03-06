@@ -42,6 +42,7 @@ impl FileWatcherState {
 }
 
 /// Create the channel pair and initial state for the file watcher subscription.
+#[allow(clippy::type_complexity)]
 pub fn create_file_watcher() -> (
     Arc<Mutex<FileWatcherState>>,
     tokio::sync::mpsc::Sender<RawFsEvent>,
@@ -231,7 +232,7 @@ async fn reconcile_watches(
                 RecursiveMode::NonRecursive
             };
             let path_set: HashSet<String> = paths.iter().cloned().collect();
-            if state.registered.get(&trigger.id).map_or(true, |e| e != &path_set) {
+            if state.registered.get(&trigger.id) != Some(&path_set) {
                 to_register.push((trigger.id.clone(), path_set, mode));
             }
         }

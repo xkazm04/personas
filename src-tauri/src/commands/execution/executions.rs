@@ -209,7 +209,7 @@ pub fn get_execution_log(
         let log_root = state.engine.log_dir().canonicalize().unwrap_or_else(|_| state.engine.log_dir().to_path_buf());
         let requested = std::path::Path::new(path)
             .canonicalize()
-            .map_err(|_| AppError::NotFound(format!("Log file not found: {}", id)))?;
+            .map_err(|_| AppError::NotFound(format!("Log file not found: {id}")))?;
         if !requested.starts_with(&log_root) {
             return Err(AppError::Validation(
                 "Log file path is outside the allowed log directory".into(),

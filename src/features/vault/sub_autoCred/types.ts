@@ -15,8 +15,13 @@ export type AutoCredPhase =
 export interface BrowserLogEntry {
   ts: number;
   message: string;
-  type: 'info' | 'action' | 'warning' | 'error';
+  type: 'info' | 'action' | 'warning' | 'error' | 'url' | 'input_request';
+  /** URL associated with this entry (for type='url') */
+  url?: string;
 }
+
+/** Mode of the auto-credential session */
+export type AutoCredMode = 'playwright' | 'guided';
 
 /** Values extracted from the browser session, keyed by field key */
 export type ExtractedValues = Record<string, string>;
@@ -37,6 +42,7 @@ export interface SessionContext {
   tool_call_count: number;
   duration_secs: number | null;
   had_waiting_prompt: boolean;
+  last_assistant_text: string | null;
 }
 
 /** Parse backend error string — returns structured info or wraps raw string */
@@ -45,10 +51,27 @@ export function parseAutoCredError(raw: string): AutoCredErrorInfo {
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed.kind === 'string') return parsed as AutoCredErrorInfo;
   } catch { /* not JSON */ }
+
+  // Derive a better guidance message from the raw error text
+  const lower = raw.toLowerCase();
+  let guidance: string;
+  if (lower.includes('timed out')) {
+    guidance = 'The session timed out. The service may be slow or require manual interaction.';
+  } else if (lower.includes('not found') || lower.includes('cli not found')) {
+    guidance = 'Claude CLI is not installed or not accessible. Install it and try again.';
+  } else if (lower.includes('api key') || lower.includes('credit') || lower.includes('billing')) {
+    guidance = 'There may be an issue with your API key or billing. Check your Anthropic account.';
+  } else if (raw.length > 30) {
+    // Use the raw message itself if it's descriptive enough
+    guidance = raw;
+  } else {
+    guidance = 'The session failed unexpectedly. Check the session log for details, or set up the credential manually.';
+  }
+
   return {
     kind: 'cli_error',
     message: raw,
-    guidance: 'An unexpected error occurred. Try again or set up the credential manually.',
+    guidance,
     retryable: true,
     context: null,
   };

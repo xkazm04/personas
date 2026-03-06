@@ -375,7 +375,7 @@ fn build_coordinator_prompt(persona: &Persona, tools: &[PersonaToolDefinition], 
     p.push_str(&format!("**Name**: {}\n", persona.name));
     if let Some(ref desc) = persona.description {
         if !desc.is_empty() {
-            p.push_str(&format!("**Description**: {}\n", desc));
+            p.push_str(&format!("**Description**: {desc}\n"));
         }
     }
     p.push('\n');
@@ -387,7 +387,7 @@ fn build_coordinator_prompt(persona: &Persona, tools: &[PersonaToolDefinition], 
             for section in &["identity", "instructions", "toolGuidance", "examples", "errorHandling"] {
                 if let Some(val) = sp.get(section).and_then(|v| v.as_str()) {
                     if !val.is_empty() {
-                        p.push_str(&format!("**{}**: {}\n\n", section, val));
+                        p.push_str(&format!("**{section}**: {val}\n\n"));
                     }
                 }
             }
@@ -403,7 +403,7 @@ fn build_coordinator_prompt(persona: &Persona, tools: &[PersonaToolDefinition], 
         for tool in tools {
             p.push_str(&format!("- **{}** ({}): {}\n", tool.name, tool.category, tool.description));
             if let Some(ref schema) = tool.input_schema {
-                p.push_str(&format!("  Input schema: {}\n", schema));
+                p.push_str(&format!("  Input schema: {schema}\n"));
             }
         }
         p.push('\n');
@@ -448,12 +448,12 @@ fn build_coordinator_prompt(persona: &Persona, tools: &[PersonaToolDefinition], 
 
                             p.push_str("\n\n## FOCUS: Specific Use Case\n");
                             p.push_str("Generate ALL test scenarios specifically for this use case:\n");
-                            p.push_str(&format!("- **Title**: {}\n", title));
+                            p.push_str(&format!("- **Title**: {title}\n"));
                             if !desc.is_empty() {
-                                p.push_str(&format!("- **Description**: {}\n", desc));
+                                p.push_str(&format!("- **Description**: {desc}\n"));
                             }
                             if !category.is_empty() {
-                                p.push_str(&format!("- **Category**: {}\n", category));
+                                p.push_str(&format!("- **Category**: {category}\n"));
                             }
 
                             // Include sample_input if available
@@ -560,7 +560,7 @@ fn build_sandbox_section(mock_tools: &[MockToolResponse]) -> String {
     for mock in mock_tools {
         section.push_str(&format!("### Simulated response for `{}`\n", mock.tool_name));
         if let Some(ref desc) = mock.description {
-            section.push_str(&format!("Context: {}\n", desc));
+            section.push_str(&format!("Context: {desc}\n"));
         }
         section.push_str("Assume it returns:\n```json\n");
         section.push_str(&serde_json::to_string_pretty(&mock.mock_response).unwrap_or_default());
@@ -584,7 +584,7 @@ fn inject_sandbox_into_prompt(base_prompt: &str, sandbox_section: &str) -> Strin
         result
     } else {
         // Fallback: append at end
-        format!("{}\n{}", base_prompt, sandbox_section)
+        format!("{base_prompt}\n{sandbox_section}")
     }
 }
 

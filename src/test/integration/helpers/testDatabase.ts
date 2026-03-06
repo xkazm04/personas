@@ -2,8 +2,8 @@
  * SQLite test database for recording and comparing integration test results.
  * Uses better-sqlite3 for synchronous, reliable DB operations.
  */
-import Database = require('better-sqlite3');
-import { mkdirSync } from 'fs';
+import Database from 'better-sqlite3';
+import { mkdirSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { randomUUID } from 'crypto';
@@ -178,7 +178,6 @@ export function createTestDb(): TestDbContext {
       } catch {
         /* ignore */
       }
-      const { unlinkSync } = require('fs');
       try {
         unlinkSync(dbPath);
       } catch {

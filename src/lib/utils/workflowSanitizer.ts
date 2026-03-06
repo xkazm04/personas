@@ -48,7 +48,7 @@ const INJECTION_PATTERNS: RegExp[] = [
   /override\s+(?:system|safety|security)\s+(?:prompt|instruction|rule)/gi,
   /bypass\s+(?:safety|security|restriction|guardrail|filter)/gi,
   // Zero-width characters used to hide content
-  /[\u200b\u200c\u200d\u200e\u200f\ufeff\u2060\u2061\u2062\u2063\u2064]/g,
+  /(?:\u200b|\u200c|\u200d|\u200e|\u200f|\ufeff|\u2060|\u2061|\u2062|\u2063|\u2064)/g,
   // ANSI escape sequences
   // eslint-disable-next-line no-control-regex
   /\x1b\[[0-9;]*[a-zA-Z]/g,

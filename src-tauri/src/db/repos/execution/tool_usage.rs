@@ -24,7 +24,7 @@ const INTERNAL_TOOLS: &[&str] = &[
 /// Build a SQL NOT IN clause for excluding internal tools.
 /// `col` is the column reference, e.g. "tool_name" or "u.tool_name".
 fn internal_tools_exclusion(col: &str) -> String {
-    let placeholders: Vec<String> = INTERNAL_TOOLS.iter().map(|t| format!("'{}'", t)).collect();
+    let placeholders: Vec<String> = INTERNAL_TOOLS.iter().map(|t| format!("'{t}'")).collect();
     format!("{} NOT IN ({})", col, placeholders.join(", "))
 }
 

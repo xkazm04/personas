@@ -33,11 +33,19 @@
   "events": [],
   "metadata": {
     "template_enabled": true,
-    "summary": "Convex real-time backend-as-a-service with database, functions, and scheduling.",
+    "summary": "Convex real-time backend-as-a-service with document database, serverless functions, and scheduling.",
     "auth_type": "deploy_key",
     "auth_type_label": "Deploy Key",
-    "docs_url": "https://docs.convex.dev/production/hosting/deploy-keys",
-    "setup_guide": "1. Open your Convex Dashboard at dashboard.convex.dev\n2. Select your project and go to Settings\n3. Copy the Deployment URL (e.g. https://your-app-123.convex.cloud)\n4. Generate or copy the Deploy Key (starts with prod:...)\n5. Paste both values here",
-    "pricing_tier": "free"
+    "docs_url": "https://docs.convex.dev/http-api/",
+    "setup_guide": "1. Open your Convex Dashboard at dashboard.convex.dev\n2. Select your project and go to Settings\n3. Copy the Deployment URL (e.g. https://your-app-123.convex.cloud)\n4. Generate or copy the Deploy Key (starts with prod:...)\n5. Paste both values here\n\nNote: Table listing requires the Professional plan. On the free Starter plan, use the Console to call your query functions directly.",
+    "pricing_tier": "free",
+    "db_type": "document",
+    "db_engine": "convex",
+    "db_features": ["function_execution", "schema_introspection_pro", "document_browsing_pro"],
+    "query_language": "convex",
+    "query_help": "Call Convex functions via JSON body:\n\n• Query: {\"path\": \"messages:list\", \"args\": {}}\n• Mutation: {\"path\": \"messages:send\", \"args\": {\"body\": \"Hello\"}}\n• Action: {\"path\": \"actions:doSomething\", \"args\": {}}\n\nProfessional plan also supports browsing tables by name.",
+    "auth_methods": [
+      {"id": "deploy_key", "label": "Deploy Key", "type": "credential", "is_default": true}
+    ]
   }
 }

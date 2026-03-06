@@ -321,6 +321,7 @@ pub fn get_latest_version_number(pool: &DbPool, recipe_id: &str) -> Result<i32, 
     Ok(n as i32)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn create_version(
     pool: &DbPool,
     recipe_id: &str,

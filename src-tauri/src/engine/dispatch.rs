@@ -77,7 +77,7 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                         ctx.notification_channels,
                     );
                 }
-                Err(e) => ctx.logger.log(&format!("[MESSAGE] Failed to create: {}", e)),
+                Err(e) => ctx.logger.log(&format!("[MESSAGE] Failed to create: {e}")),
             }
         }
         ProtocolMessage::PersonaAction {
@@ -105,10 +105,9 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                 },
             ) {
                 Ok(_) => ctx.logger.log(&format!(
-                    "[EVENT] Published persona_action targeting '{}'",
-                    target
+                    "[EVENT] Published persona_action targeting '{target}'"
                 )),
-                Err(e) => ctx.logger.log(&format!("[EVENT] Failed to publish persona_action: {}", e)),
+                Err(e) => ctx.logger.log(&format!("[EVENT] Failed to publish persona_action: {e}")),
             }
         }
         ProtocolMessage::EmitEvent { event_type, data } => {
@@ -124,8 +123,8 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                     use_case_id: None,
                 },
             ) {
-                Ok(_) => ctx.logger.log(&format!("[EVENT] Published custom event: {}", event_type)),
-                Err(e) => ctx.logger.log(&format!("[EVENT] Failed to publish: {}", e)),
+                Ok(_) => ctx.logger.log(&format!("[EVENT] Published custom event: {event_type}")),
+                Err(e) => ctx.logger.log(&format!("[EVENT] Failed to publish: {e}")),
             }
         }
         ProtocolMessage::AgentMemory {
@@ -148,7 +147,7 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                 },
             ) {
                 Ok(m) => ctx.logger.log(&format!("[MEMORY] Stored: {} ({})", title, m.id)),
-                Err(e) => ctx.logger.log(&format!("[MEMORY] Failed to store: {}", e)),
+                Err(e) => ctx.logger.log(&format!("[MEMORY] Failed to store: {e}")),
             }
         }
         ProtocolMessage::ManualReview {
@@ -184,7 +183,7 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                         ctx.notification_channels,
                     );
                 }
-                Err(e) => ctx.logger.log(&format!("[REVIEW] Failed to create: {}", e)),
+                Err(e) => ctx.logger.log(&format!("[REVIEW] Failed to create: {e}")),
             }
         }
         ProtocolMessage::ExecutionFlow { .. } => {

@@ -181,12 +181,12 @@ impl PipelineContext {
             .map(|s| {
                 let dur = s
                     .duration_ms
-                    .map(|d| format!("{}ms", d))
+                    .map(|d| format!("{d}ms"))
                     .unwrap_or_else(|| "?".into());
                 let err = s
                     .error
                     .as_ref()
-                    .map(|e| format!(" [ERR: {}]", e))
+                    .map(|e| format!(" [ERR: {e}]"))
                     .unwrap_or_default();
                 format!("  {} ({}): {}{}", s.stage.label(), s.stage.boundary(), dur, err)
             })

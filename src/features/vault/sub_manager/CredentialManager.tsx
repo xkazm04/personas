@@ -17,10 +17,12 @@ import { ForagingPanel } from '@/features/vault/sub_foraging/ForagingPanel';
 import { DatabaseListView } from '@/features/vault/sub_databases/DatabaseListView';
 import { BulkHealthcheckSummary } from '@/features/vault/sub_manager/BulkHealthcheckSummary';
 import { useCredentialOAuth } from '@/features/vault/hooks/useCredentialOAuth';
+import { useUniversalOAuth } from '@/hooks/design/useUniversalOAuth';
 import { useUndoDelete } from '@/features/vault/hooks/useUndoDelete';
 import { useCredentialViewFSM } from '@/features/vault/hooks/useCredentialViewFSM';
 import { useCredentialHealth } from '@/features/vault/hooks/useCredentialHealth';
 import { useBulkHealthcheck } from '@/features/vault/hooks/useBulkHealthcheck';
+import { isUniversalOAuthConnector, getOAuthProviderId, getOAuthScopes } from '@/lib/utils/connectors';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import * as api from '@/api/tauriApi';
 import type { VaultStatus } from '@/api/tauriApi';
@@ -105,11 +107,38 @@ export function CredentialManager() {
     onError: handleOAuthError,
   });
 
+  // Universal OAuth (LinkedIn, etc.)
+  const universalOAuth = useUniversalOAuth();
+
+  // Save credential once universal OAuth completes
+  useEffect(() => {
+    if (!universalOAuth.completedAt || !catalogFormData) return;
+    const values = universalOAuth.getValues();
+    if (!values.access_token) return;
+    const name = catalogFormData.credentialName.trim() || `${catalogFormData.connector.label} Credential`;
+    (async () => {
+      try {
+        await createCredential({
+          name,
+          service_type: catalogFormData.connector.name,
+          data: values,
+        });
+        await fetchCredentials();
+        universalOAuth.reset();
+        dispatch({ type: 'GO_LIST' });
+        setCredentialSearch('');
+      } catch {
+        setError('Failed to save OAuth credential');
+      }
+    })();
+  }, [universalOAuth.completedAt]);
+
   // Wrap pickType to clear healthcheck state when switching connectors
   const handlePickType = useCallback((connector: ConnectorDefinition) => {
     oauth.reset();
+    universalOAuth.reset();
     dispatch({ type: 'PICK_CONNECTOR', connector, parentSearch: credentialSearch });
-  }, [credentialSearch, dispatch, oauth]);
+  }, [credentialSearch, dispatch, oauth, universalOAuth]);
 
   const undoDelete = useUndoDelete({
     onDelete: deleteCredential,
@@ -157,7 +186,20 @@ export function CredentialManager() {
   const handleTemplateOAuthConsent = (values: Record<string, string>) => {
     if (!catalogFormData) return;
     setError(null);
-    oauth.startConsent(catalogFormData.connector.name, values);
+
+    const connector = catalogFormData.connector;
+    if (isUniversalOAuthConnector(connector)) {
+      const providerId = getOAuthProviderId(connector) ?? 'custom';
+      const scopes = getOAuthScopes(connector);
+      universalOAuth.startConsent({
+        providerId,
+        clientId: values.client_id ?? '',
+        clientSecret: values.client_secret,
+        scopes: scopes.length > 0 ? scopes : undefined,
+      });
+    } else {
+      oauth.startConsent(connector.name, values);
+    }
   };
 
   const handleTemplateHealthcheck = async (values: Record<string, string>) => {
@@ -356,23 +398,27 @@ export function CredentialManager() {
             onCredentialNameChange={(name) => dispatch({ type: 'SET_CREDENTIAL_NAME', name })}
             effectiveTemplateFields={catalogFormData!.fields}
             isGoogleTemplate={catalogFormData!.isGoogle}
-            isAuthorizingOAuth={oauth.isAuthorizing}
-            oauthCompletedAt={oauth.completedAt}
+            isOAuthTemplate={isUniversalOAuthConnector(viewState.connector)}
+            isAuthorizingOAuth={oauth.isAuthorizing || universalOAuth.isAuthorizing}
+            oauthCompletedAt={oauth.completedAt ?? universalOAuth.completedAt}
             onCreateCredential={handleCreateCredential}
             onOAuthConsent={handleTemplateOAuthConsent}
             onAutoSetup={handleAutoSetup}
             onBack={() => {
               dispatch({ type: 'CANCEL_FORM' });
               oauth.reset();
+              universalOAuth.reset();
               templateHealth.invalidate();
             }}
             onCancel={() => {
               dispatch({ type: 'CANCEL_FORM' });
               oauth.reset();
+              universalOAuth.reset();
               templateHealth.invalidate();
             }}
             onValuesChanged={() => {
               if (oauth.completedAt) oauth.reset();
+              if (universalOAuth.completedAt) universalOAuth.reset();
               if (templateHealth.result) templateHealth.invalidate();
             }}
             onMcpComplete={() => {

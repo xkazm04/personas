@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Clock, Copy, Check } from 'lucide-react';
+import { MarkdownRenderer } from '@/features/shared/components/MarkdownRenderer';
 import type { ApiProxyResponse } from '@/api/apiProxy';
 
 // ── Status styling ───────────────────────────────────────────────
@@ -24,14 +25,17 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
 
   const prettyBody = useMemo(() => {
     if (!response.body) return '';
-    // Always try JSON-formatting first — many APIs return JSON without proper content-type,
-    // and some URLs (e.g. /user.json) return JSON with non-json content-type headers.
     try {
       const parsed = JSON.parse(response.body);
       return JSON.stringify(parsed, null, 2);
     } catch {
       return response.body;
     }
+  }, [response.body]);
+
+  const isJson = useMemo(() => {
+    if (!response.body) return false;
+    try { JSON.parse(response.body); return true; } catch { return false; }
   }, [response.body]);
 
   const headerEntries = useMemo(
@@ -52,12 +56,12 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
         <span className={`px-2.5 py-1 rounded text-sm font-bold border ${statusStyle(response.status)}`}>
           {response.status} {response.status_text}
         </span>
-        <span className="flex items-center gap-1 text-sm text-muted-foreground/40">
+        <span className="flex items-center gap-1 text-sm text-muted-foreground/60">
           <Clock className="w-3 h-3" />
           {response.duration_ms}ms
         </span>
         {response.content_type && (
-          <span className="text-sm text-muted-foreground/30">{response.content_type}</span>
+          <span className="text-sm text-muted-foreground/50">{response.content_type}</span>
         )}
       </div>
 
@@ -70,7 +74,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
             className={`px-3 py-1.5 text-sm font-medium capitalize transition-colors border-b-2 ${
               subTab === tab
                 ? 'text-foreground/80 border-primary/50'
-                : 'text-muted-foreground/40 border-transparent hover:text-muted-foreground/60'
+                : 'text-muted-foreground/60 border-transparent hover:text-muted-foreground/80'
             }`}
           >
             {tab}
@@ -80,7 +84,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
         <div className="flex-1" />
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1 px-2 py-1 rounded text-sm text-muted-foreground/40 hover:text-muted-foreground/60 hover:bg-secondary/30 transition-colors"
+          className="flex items-center gap-1 px-2 py-1 rounded text-sm text-muted-foreground/60 hover:text-muted-foreground/80 hover:bg-secondary/30 transition-colors"
         >
           {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
           {copied ? 'Copied' : 'Copy'}
@@ -89,9 +93,13 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
 
       {/* Content */}
       {subTab === 'body' && (
-        <pre className="text-sm font-mono text-foreground/75 bg-secondary/15 rounded-lg border border-primary/8 p-3 overflow-auto max-h-[400px] whitespace-pre-wrap break-words">
-          {prettyBody || '(empty response)'}
-        </pre>
+        prettyBody ? (
+          <div className="rounded-lg border border-primary/8 bg-secondary/15 p-3 overflow-auto max-h-[400px]">
+            <MarkdownRenderer content={isJson ? '```json\n' + prettyBody + '\n```' : prettyBody} />
+          </div>
+        ) : (
+          <div className="text-sm text-muted-foreground/50 p-3">(empty response)</div>
+        )
       )}
 
       {subTab === 'headers' && (
@@ -99,8 +107,8 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-secondary/30 border-b border-primary/8">
-                <th className="px-3 py-2 text-left font-semibold text-foreground/60 w-1/3">Header</th>
-                <th className="px-3 py-2 text-left font-semibold text-foreground/60">Value</th>
+                <th className="px-3 py-2 text-left font-semibold text-foreground/70 w-1/3">Header</th>
+                <th className="px-3 py-2 text-left font-semibold text-foreground/70">Value</th>
               </tr>
             </thead>
             <tbody>
@@ -109,8 +117,8 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
                   key={key}
                   className={`border-b border-primary/5 ${i % 2 === 0 ? '' : 'bg-secondary/10'}`}
                 >
-                  <td className="px-3 py-1.5 font-mono text-violet-400/70">{key}</td>
-                  <td className="px-3 py-1.5 text-foreground/70 break-all">{val}</td>
+                  <td className="px-3 py-1.5 font-mono text-violet-400/80">{key}</td>
+                  <td className="px-3 py-1.5 text-foreground/80 break-all">{val}</td>
                 </tr>
               ))}
             </tbody>
@@ -119,7 +127,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
       )}
 
       {subTab === 'raw' && (
-        <pre className="text-sm font-mono text-muted-foreground/50 bg-secondary/15 rounded-lg border border-primary/8 p-3 overflow-auto max-h-[400px] whitespace-pre-wrap break-words">
+        <pre className="text-sm font-mono text-muted-foreground/70 bg-secondary/15 rounded-lg border border-primary/8 p-3 overflow-auto max-h-[400px] whitespace-pre-wrap break-words">
           {response.body || '(empty response)'}
         </pre>
       )}

@@ -153,7 +153,7 @@ pub fn eval_tool_accuracy(input: &EvalInput) -> EvalResult {
                 explanation: if actual == 0 {
                     "No expected tools and no tools called".into()
                 } else {
-                    format!("No expected tools but {} tool(s) called", actual)
+                    format!("No expected tools but {actual} tool(s) called")
                 },
                 passed: None,
             };
@@ -210,8 +210,8 @@ pub fn eval_protocol_compliance(input: &EvalInput) -> EvalResult {
     let output = input.output;
     let mut found = 0;
     for proto in expected {
-        let pattern = format!("\"{}\":", proto);
-        let alt_pattern = format!("{{{}", proto);
+        let pattern = format!("\"{proto}\":");
+        let alt_pattern = format!("{{{proto}");
         if output.contains(&pattern) || output.contains(&alt_pattern) {
             found += 1;
         }

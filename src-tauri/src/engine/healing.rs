@@ -151,7 +151,7 @@ pub fn diagnose(
                 ),
                 severity: "medium".into(),
                 db_category: "external".into(),
-                suggested_fix: Some(format!("Automatic retry with {}s backoff.", delay)),
+                suggested_fix: Some(format!("Automatic retry with {delay}s backoff.")),
             }
         }
         FailureCategory::SessionLimit => HealingDiagnosis {
@@ -201,8 +201,7 @@ pub fn diagnose(
                     severity: "medium".into(),
                     db_category: "config".into(),
                     suggested_fix: Some(format!(
-                        "Automatic retry with increased timeout ({}ms).",
-                        new_timeout,
+                        "Automatic retry with increased timeout ({new_timeout}ms).",
                     )),
                 }
             }

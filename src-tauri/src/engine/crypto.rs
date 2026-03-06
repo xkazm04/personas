@@ -28,12 +28,12 @@ impl SessionKeyPair {
     pub fn generate() -> Result<Self, CryptoError> {
         let mut rng = OsRng;
         let private_key = RsaPrivateKey::new(&mut rng, 2048)
-            .map_err(|e| CryptoError::KeyManagement(format!("RSA generation failed: {}", e)))?;
+            .map_err(|e| CryptoError::KeyManagement(format!("RSA generation failed: {e}")))?;
         let public_key = RsaPublicKey::from(&private_key);
         
         let public_key_pem = public_key
             .to_public_key_pem(LineEnding::LF)
-            .map_err(|e| CryptoError::KeyManagement(format!("RSA PEM export failed: {}", e)))?;
+            .map_err(|e| CryptoError::KeyManagement(format!("RSA PEM export failed: {e}")))?;
 
         Ok(Self {
             private_key,
@@ -59,15 +59,15 @@ impl SessionKeyPair {
 
             // 1. RSA-decrypt the AES key (32 bytes)
             let encrypted_aes_key = B64.decode(rsa_part)
-                .map_err(|e| CryptoError::Decrypt(format!("Base64 decode (RSA part) failed: {}", e)))?;
+                .map_err(|e| CryptoError::Decrypt(format!("Base64 decode (RSA part) failed: {e}")))?;
             let padding = Oaep::new::<sha2::Sha256>();
             let raw_aes_key = self.private_key
                 .decrypt(padding, &encrypted_aes_key)
-                .map_err(|e| CryptoError::Decrypt(format!("RSA decryption of AES key failed: {}", e)))?;
+                .map_err(|e| CryptoError::Decrypt(format!("RSA decryption of AES key failed: {e}")))?;
 
             // 2. Split IV (12 bytes) from AES ciphertext
             let iv_and_ciphertext = B64.decode(aes_part)
-                .map_err(|e| CryptoError::Decrypt(format!("Base64 decode (AES part) failed: {}", e)))?;
+                .map_err(|e| CryptoError::Decrypt(format!("Base64 decode (AES part) failed: {e}")))?;
             if iv_and_ciphertext.len() < 13 {
                 return Err(CryptoError::Decrypt("AES payload too short".into()));
             }
@@ -78,21 +78,21 @@ impl SessionKeyPair {
             let cipher = Aes256Gcm::new(aes_key);
             let nonce = Nonce::from_slice(iv_bytes);
             let plaintext_bytes = cipher.decrypt(nonce, aes_ciphertext)
-                .map_err(|e| CryptoError::Decrypt(format!("AES-GCM decryption failed: {}", e)))?;
+                .map_err(|e| CryptoError::Decrypt(format!("AES-GCM decryption failed: {e}")))?;
 
             String::from_utf8(plaintext_bytes)
-                .map_err(|e| CryptoError::Decrypt(format!("Invalid UTF-8 in decrypted data: {}", e)))
+                .map_err(|e| CryptoError::Decrypt(format!("Invalid UTF-8 in decrypted data: {e}")))
         } else {
             // ── Legacy mode: plain RSA (small payloads only) ──
             let ciphertext = B64.decode(ciphertext_b64)
-                .map_err(|e| CryptoError::Decrypt(format!("Base64 decode failed: {}", e)))?;
+                .map_err(|e| CryptoError::Decrypt(format!("Base64 decode failed: {e}")))?;
             let padding = Oaep::new::<sha2::Sha256>();
             let plaintext_bytes = self.private_key
                 .decrypt(padding, &ciphertext)
-                .map_err(|e| CryptoError::Decrypt(format!("RSA decryption failed: {}", e)))?;
+                .map_err(|e| CryptoError::Decrypt(format!("RSA decryption failed: {e}")))?;
 
             String::from_utf8(plaintext_bytes)
-                .map_err(|e| CryptoError::Decrypt(format!("Invalid UTF-8 in decrypted data: {}", e)))
+                .map_err(|e| CryptoError::Decrypt(format!("Invalid UTF-8 in decrypted data: {e}")))
         }
     }
 }
@@ -242,7 +242,7 @@ pub fn get_master_key() -> Result<&'static [u8; 32], CryptoError> {
 /// Try to load or create the master key via OS keychain.
 fn try_keychain() -> Result<[u8; 32], CryptoError> {
     let entry = keyring::Entry::new("personas-desktop", "credential-master-key")
-        .map_err(|e| CryptoError::KeyManagement(format!("Keychain entry error: {}", e)))?;
+        .map_err(|e| CryptoError::KeyManagement(format!("Keychain entry error: {e}")))?;
 
     // Try to get existing key
     match entry.get_password() {
@@ -283,8 +283,7 @@ fn try_keychain() -> Result<[u8; 32], CryptoError> {
             Ok(key)
         }
         Err(e) => Err(CryptoError::KeyManagement(format!(
-            "Keychain access failed: {}",
-            e
+            "Keychain access failed: {e}"
         ))),
     }
 }
@@ -332,7 +331,7 @@ fn load_local_fallback_key() -> Result<Option<[u8; 32]>, CryptoError> {
     }
 
     let raw = fs::read_to_string(&path)
-        .map_err(|e| CryptoError::KeyManagement(format!("Failed reading local key file: {}", e)))?;
+        .map_err(|e| CryptoError::KeyManagement(format!("Failed reading local key file: {e}")))?;
     let bytes = B64.decode(raw.trim())?;
     if bytes.len() != 32 {
         return Err(CryptoError::KeyManagement(format!(
@@ -353,11 +352,11 @@ fn save_local_fallback_key(key: &[u8; 32]) -> Result<(), CryptoError> {
 
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)
-            .map_err(|e| CryptoError::KeyManagement(format!("Failed creating local key dir: {}", e)))?;
+            .map_err(|e| CryptoError::KeyManagement(format!("Failed creating local key dir: {e}")))?;
     }
 
     fs::write(&path, B64.encode(key))
-        .map_err(|e| CryptoError::KeyManagement(format!("Failed writing local key file: {}", e)))?;
+        .map_err(|e| CryptoError::KeyManagement(format!("Failed writing local key file: {e}")))?;
 
     restrict_file_permissions(&path);
 
@@ -379,7 +378,7 @@ fn restrict_file_permissions(path: &std::path::Path) {
             &*path_str,
             "/inheritance:r",
             "/grant:r",
-            &format!("{}:(F)", username),
+            &format!("{username}:(F)"),
         ])
         .output();
 
@@ -470,7 +469,7 @@ pub fn decrypt_from_db(ciphertext_b64: &str, nonce_b64: &str) -> Result<String, 
         .map_err(|e| CryptoError::Decrypt(e.to_string()))?;
 
     String::from_utf8(plaintext)
-        .map_err(|e| CryptoError::Decrypt(format!("Invalid UTF-8 in decrypted data: {}", e)))
+        .map_err(|e| CryptoError::Decrypt(format!("Invalid UTF-8 in decrypted data: {e}")))
 }
 
 /// Check if a credential row stores legacy plaintext data (iv is empty).
@@ -511,17 +510,17 @@ pub fn decrypt_field(encrypted_value: &str, iv: &str) -> Result<String, CryptoEr
 pub fn migrate_plaintext_credentials(pool: &DbPool) -> Result<(usize, usize), CryptoError> {
     let mut conn = pool
         .get()
-        .map_err(|e| CryptoError::KeyManagement(format!("DB pool error: {}", e)))?;
+        .map_err(|e| CryptoError::KeyManagement(format!("DB pool error: {e}")))?;
 
     // Collect plaintext rows before starting the transaction.
     let rows: Vec<(String, String)> = {
         let mut stmt = conn
             .prepare("SELECT id, encrypted_data FROM persona_credentials WHERE iv = ''")
-            .map_err(|e| CryptoError::KeyManagement(format!("Query error: {}", e)))?;
+            .map_err(|e| CryptoError::KeyManagement(format!("Query error: {e}")))?;
 
         let result: Vec<(String, String)> = stmt
             .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
-            .map_err(|e| CryptoError::KeyManagement(format!("Query error: {}", e)))?
+            .map_err(|e| CryptoError::KeyManagement(format!("Query error: {e}")))?
             .filter_map(|r| r.ok())
             .collect();
         result
@@ -533,7 +532,7 @@ pub fn migrate_plaintext_credentials(pool: &DbPool) -> Result<(usize, usize), Cr
 
     let tx = conn
         .transaction()
-        .map_err(|e| CryptoError::KeyManagement(format!("Transaction begin error: {}", e)))?;
+        .map_err(|e| CryptoError::KeyManagement(format!("Transaction begin error: {e}")))?;
 
     let mut migrated = 0;
 
@@ -549,14 +548,14 @@ pub fn migrate_plaintext_credentials(pool: &DbPool) -> Result<(usize, usize), Cr
         )
         .map_err(|e| {
             tracing::error!("Failed to update credential {}: {}", id, e);
-            CryptoError::KeyManagement(format!("Update error for credential {}: {}", id, e))
+            CryptoError::KeyManagement(format!("Update error for credential {id}: {e}"))
         })?;
 
         migrated += 1;
     }
 
     tx.commit()
-        .map_err(|e| CryptoError::KeyManagement(format!("Transaction commit error: {}", e)))?;
+        .map_err(|e| CryptoError::KeyManagement(format!("Transaction commit error: {e}")))?;
 
     Ok((migrated, 0))
 }

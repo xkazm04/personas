@@ -269,21 +269,20 @@ async fn exchange_google_refresh_token(
         ])
         .send()
         .await
-        .map_err(|e| AppError::Internal(format!("Google token refresh request failed: {}", e)))?;
+        .map_err(|e| AppError::Internal(format!("Google token refresh request failed: {e}")))?;
 
     if !response.status().is_success() {
         let status = response.status();
         let body = response.text().await.unwrap_or_else(|_| "<no body>".into());
         return Err(AppError::Internal(format!(
-            "Google token refresh failed ({}): {}",
-            status, body
+            "Google token refresh failed ({status}): {body}"
         )));
     }
 
     let value = response
         .json::<serde_json::Value>()
         .await
-        .map_err(|e| AppError::Internal(format!("Invalid Google token response JSON: {}", e)))?;
+        .map_err(|e| AppError::Internal(format!("Invalid Google token response JSON: {e}")))?;
 
     value
         .get("access_token")

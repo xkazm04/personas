@@ -1,10 +1,13 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Plug, DollarSign } from 'lucide-react';
+import { Plug, User, CreditCard, Building2 } from 'lucide-react';
 import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
+import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
+import type { ThemedSelectOption } from '@/features/shared/components/ThemedSelect';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
 import { getAuthMethods } from '@/lib/types/types';
 import { getAuthBadgeClasses, getAuthIcon } from '@/features/vault/utils/authMethodStyles';
 import { PURPOSE_GROUPS, getPurposeForConnector } from '@/lib/credentials/connectorRoles';
+import { getLicenseTier, LICENSE_TIER_META, type LicenseTier } from '@/lib/credentials/connectorLicensing';
 
 interface CredentialPickerProps {
   connectors: ConnectorDefinition[];
@@ -19,9 +22,16 @@ function capitalize(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+const LICENSE_ICON: Record<LicenseTier, typeof User> = {
+  personal: User,
+  paid: CreditCard,
+  enterprise: Building2,
+};
+
 export function CredentialPicker({ connectors, credentials, onPickType, searchTerm }: CredentialPickerProps) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activePurpose, setActivePurpose] = useState<string | null>(null);
+  const [activeLicense, setActiveLicense] = useState<string | null>(null);
   const [connectedFilter, setConnectedFilter] = useState<ConnectedFilter>('all');
 
   const ownedServiceTypes = useMemo(() => {
@@ -31,8 +41,6 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
   }, [credentials]);
 
   // ── Cross-filter helpers ────────────────────────────────────────
-  // Each filter row's counts are computed from connectors matching ALL OTHER
-  // active filters, so the user sees how many results each option would yield.
 
   const applyConnected = (list: ConnectorDefinition[], filter: ConnectedFilter) => {
     if (filter === 'connected') return list.filter((c) => ownedServiceTypes.has(c.name));
@@ -46,152 +54,157 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
   const applyPurpose = (list: ConnectorDefinition[], purpose: string | null) =>
     purpose ? list.filter((c) => getPurposeForConnector(c.name) === purpose) : list;
 
-  // Base for purpose filter counts = connectors filtered by category + connected
+  const applyLicense = (list: ConnectorDefinition[], license: string | null) =>
+    license
+      ? list.filter((c) => getLicenseTier(c.name, c.metadata as Record<string, unknown> | null) === license)
+      : list;
+
+  // ── Cross-filtered counts ──────────────────────────────────────
+
+  // Base for each filter = connectors with all OTHER filters applied
   const purposeBase = useMemo(
-    () => applyConnected(applyCategory(connectors, activeCategory), connectedFilter),
-    [connectors, activeCategory, connectedFilter, ownedServiceTypes],
+    () => applyLicense(applyConnected(applyCategory(connectors, activeCategory), connectedFilter), activeLicense),
+    [connectors, activeCategory, connectedFilter, activeLicense, ownedServiceTypes],
   );
 
-  // Base for category filter counts = connectors filtered by purpose + connected
   const categoryBase = useMemo(
-    () => applyConnected(applyPurpose(connectors, activePurpose), connectedFilter),
-    [connectors, activePurpose, connectedFilter, ownedServiceTypes],
+    () => applyLicense(applyConnected(applyPurpose(connectors, activePurpose), connectedFilter), activeLicense),
+    [connectors, activePurpose, connectedFilter, activeLicense, ownedServiceTypes],
   );
 
-  // Base for connected filter counts = connectors filtered by purpose + category
   const connectedBase = useMemo(
-    () => applyCategory(applyPurpose(connectors, activePurpose), activeCategory),
-    [connectors, activePurpose, activeCategory],
+    () => applyLicense(applyCategory(applyPurpose(connectors, activePurpose), activeCategory), activeLicense),
+    [connectors, activePurpose, activeCategory, activeLicense],
   );
 
-  // ── Tab data with cross-filtered counts ─────────────────────────
+  const licenseBase = useMemo(
+    () => applyConnected(applyCategory(applyPurpose(connectors, activePurpose), activeCategory), connectedFilter),
+    [connectors, activePurpose, activeCategory, connectedFilter, ownedServiceTypes],
+  );
 
-  const purposeTabs = useMemo(() => {
+  // ── Tab/option data with cross-filtered counts ─────────────────
+
+  const purposeOptions = useMemo<ThemedSelectOption[]>(() => {
     const counts: Record<string, number> = {};
     for (const c of purposeBase) {
       const p = getPurposeForConnector(c.name);
       if (p) counts[p] = (counts[p] || 0) + 1;
     }
-    return PURPOSE_GROUPS
-      .filter((pg) => counts[pg.purpose])
-      .map((pg) => ({ purpose: pg.purpose, label: pg.label, count: counts[pg.purpose] }));
+    const opts: ThemedSelectOption[] = [{ value: '', label: `All Purposes (${purposeBase.length})` }];
+    for (const pg of PURPOSE_GROUPS) {
+      if (counts[pg.purpose]) {
+        opts.push({ value: pg.purpose, label: `${pg.label} (${counts[pg.purpose]})` });
+      }
+    }
+    return opts;
   }, [purposeBase]);
 
-  const categoryTabs = useMemo(() => {
+  const categoryOptions = useMemo<ThemedSelectOption[]>(() => {
     const counts: Record<string, number> = {};
     for (const c of categoryBase) {
       counts[c.category] = (counts[c.category] || 0) + 1;
     }
-    return Object.entries(counts)
+    const opts: ThemedSelectOption[] = [{ value: '', label: `All Categories (${categoryBase.length})` }];
+    Object.entries(counts)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([category, count]) => ({ category, count, label: capitalize(category) }));
+      .forEach(([cat, count]) => {
+        opts.push({ value: cat, label: `${capitalize(cat)} (${count})` });
+      });
+    return opts;
   }, [categoryBase]);
 
-  const connectedCounts = useMemo(() => {
+  const connectedOptions = useMemo<ThemedSelectOption[]>(() => {
     let connected = 0;
     let fresh = 0;
     for (const c of connectedBase) {
       if (ownedServiceTypes.has(c.name)) connected++;
       else fresh++;
     }
-    return { all: connectedBase.length, connected, new: fresh };
+    const opts: ThemedSelectOption[] = [
+      { value: 'all', label: `All (${connectedBase.length})` },
+    ];
+    if (connected > 0) opts.push({ value: 'connected', label: `Connected (${connected})` });
+    if (fresh > 0) opts.push({ value: 'new', label: `New (${fresh})` });
+    return opts;
   }, [connectedBase, ownedServiceTypes]);
 
-  // ── Final filtered list (all three filters applied) ─────────────
+  const licenseOptions = useMemo<ThemedSelectOption[]>(() => {
+    const counts: Record<string, number> = {};
+    for (const c of licenseBase) {
+      const tier = getLicenseTier(c.name, c.metadata as Record<string, unknown> | null);
+      counts[tier] = (counts[tier] || 0) + 1;
+    }
+    const opts: ThemedSelectOption[] = [{ value: '', label: `All Licenses (${licenseBase.length})` }];
+    for (const tier of ['personal', 'paid', 'enterprise'] as LicenseTier[]) {
+      if (counts[tier]) {
+        opts.push({ value: tier, label: `${LICENSE_TIER_META[tier].label} (${counts[tier]})` });
+      }
+    }
+    return opts;
+  }, [licenseBase]);
+
+  // ── Final filtered list ─────────────────────────────────────────
 
   const filteredConnectors = useMemo(() => {
     let result = connectors;
     if (activeCategory) result = result.filter((c) => c.category === activeCategory);
     if (activePurpose) result = result.filter((c) => getPurposeForConnector(c.name) === activePurpose);
+    if (activeLicense) result = result.filter((c) => getLicenseTier(c.name, c.metadata as Record<string, unknown> | null) === activeLicense);
     if (connectedFilter === 'connected') result = result.filter((c) => ownedServiceTypes.has(c.name));
     if (connectedFilter === 'new') result = result.filter((c) => !ownedServiceTypes.has(c.name));
     return result;
-  }, [connectors, activeCategory, activePurpose, connectedFilter, ownedServiceTypes]);
+  }, [connectors, activeCategory, activePurpose, activeLicense, connectedFilter, ownedServiceTypes]);
 
   // Reset filters when search text arrives
   useEffect(() => {
     if (searchTerm?.trim()) {
       setActiveCategory(null);
       setActivePurpose(null);
+      setActiveLicense(null);
       setConnectedFilter('all');
     }
   }, [searchTerm]);
 
   return (
     <div className="space-y-3">
-      {/* Connected filter */}
-      <div className="flex flex-wrap gap-1.5">
-        {([
-          { key: 'all' as const, label: 'All', count: connectedCounts.all, active: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25' },
-          { key: 'connected' as const, label: 'Connected', count: connectedCounts.connected, active: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25' },
-          { key: 'new' as const, label: 'New', count: connectedCounts.new, active: 'bg-amber-500/15 text-amber-400 border-amber-500/25' },
-        ] as const).map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setConnectedFilter(connectedFilter === tab.key && tab.key !== 'all' ? 'all' : tab.key)}
-            className={`px-2.5 py-1 rounded-lg text-md font-medium border transition-all ${
-              connectedFilter === tab.key
-                ? tab.active
-                : 'bg-secondary/25 text-muted-foreground/70 border-primary/10 hover:bg-secondary/40'
-            }`}
-          >
-            {tab.label} ({tab.count})
-          </button>
-        ))}
-      </div>
-
-      {/* Purpose filter */}
-      <div className="flex flex-wrap gap-1.5">
-        <button
-          onClick={() => setActivePurpose(null)}
-          className={`px-2.5 py-1 rounded-lg text-md font-medium border transition-all ${
-            activePurpose === null
-              ? 'bg-violet-500/15 text-violet-400 border-violet-500/25'
-              : 'bg-secondary/25 text-muted-foreground/70 border-primary/10 hover:bg-secondary/40'
-          }`}
-        >
-          All Purposes
-        </button>
-        {purposeTabs.map((tab) => (
-          <button
-            key={tab.purpose}
-            onClick={() => setActivePurpose(activePurpose === tab.purpose ? null : tab.purpose)}
-            className={`px-2.5 py-1 rounded-lg text-md font-medium border transition-all ${
-              activePurpose === tab.purpose
-                ? 'bg-violet-500/15 text-violet-400 border-violet-500/25'
-                : 'bg-secondary/25 text-muted-foreground/70 border-primary/10 hover:bg-secondary/40'
-            }`}
-          >
-            {tab.label} ({tab.count})
-          </button>
-        ))}
-      </div>
-
-      {/* Category filter */}
-      <div className="flex flex-wrap gap-1.5">
-        <button
-          onClick={() => setActiveCategory(null)}
-          className={`px-2.5 py-1 rounded-lg text-md font-medium border transition-all ${
-            activeCategory === null
-              ? 'bg-primary/15 text-primary border-primary/25'
-              : 'bg-secondary/25 text-muted-foreground/70 border-primary/10 hover:bg-secondary/40'
-          }`}
-        >
-          All ({categoryBase.length})
-        </button>
-        {categoryTabs.map((tab) => (
-          <button
-            key={tab.category}
-            onClick={() => setActiveCategory(activeCategory === tab.category ? null : tab.category)}
-            className={`px-2.5 py-1 rounded-lg text-md font-medium border transition-all ${
-              activeCategory === tab.category
-                ? 'bg-primary/15 text-primary border-primary/25'
-                : 'bg-secondary/25 text-muted-foreground/70 border-primary/10 hover:bg-secondary/40'
-            }`}
-          >
-            {tab.label} ({tab.count})
-          </button>
-        ))}
+      {/* Compact filter row */}
+      <div className="flex items-center gap-2">
+        <ThemedSelect
+          filterable
+          options={connectedOptions}
+          value={connectedFilter}
+          onValueChange={(v) => setConnectedFilter((v || 'all') as ConnectedFilter)}
+          placeholder="Status"
+          wrapperClassName="w-[150px]"
+          className="!py-1.5 !text-sm"
+        />
+        <ThemedSelect
+          filterable
+          options={purposeOptions}
+          value={activePurpose ?? ''}
+          onValueChange={(v) => setActivePurpose(v || null)}
+          placeholder="Purpose"
+          wrapperClassName="w-[195px]"
+          className="!py-1.5 !text-sm"
+        />
+        <ThemedSelect
+          filterable
+          options={categoryOptions}
+          value={activeCategory ?? ''}
+          onValueChange={(v) => setActiveCategory(v || null)}
+          placeholder="Category"
+          wrapperClassName="w-[175px]"
+          className="!py-1.5 !text-sm"
+        />
+        <ThemedSelect
+          filterable
+          options={licenseOptions}
+          value={activeLicense ?? ''}
+          onValueChange={(v) => setActiveLicense(v || null)}
+          placeholder="License"
+          wrapperClassName="w-[170px]"
+          className="!py-1.5 !text-sm"
+        />
       </div>
 
       {/* Responsive auto-fill grid */}
@@ -199,6 +212,9 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
         {filteredConnectors.map((connector) => {
           const isOwned = ownedServiceTypes.has(connector.name);
           const authMethods = getAuthMethods(connector);
+          const tier = getLicenseTier(connector.name, connector.metadata as Record<string, unknown> | null);
+          const tierMeta = LICENSE_TIER_META[tier];
+          const TierIcon = LICENSE_ICON[tier];
 
           return (
             <button
@@ -210,7 +226,7 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
                   : 'bg-secondary/25 border-primary/15 hover:bg-secondary/50 hover:border-primary/25'
               }`}
             >
-              {/* Auth method icons — top-left corner, stacked, 20% → 100% on hover */}
+              {/* Auth method icons — top-left corner */}
               <div className="absolute top-1.5 left-1.5 flex flex-col gap-1 z-10 opacity-20 group-hover:opacity-100 transition-opacity duration-200">
                 {authMethods.map((m) => {
                   const Icon = getAuthIcon(m);
@@ -225,6 +241,14 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
                   );
                 })}
               </div>
+
+              {/* License tier badge — top-right corner */}
+              <span
+                className={`absolute top-1.5 right-1.5 inline-flex items-center justify-center w-6 h-6 rounded-lg border opacity-20 group-hover:opacity-100 transition-opacity duration-200 ${tierMeta.bgClass} ${tierMeta.borderClass}`}
+                title={`${tierMeta.label} license`}
+              >
+                <TierIcon className={`w-3 h-3 ${tierMeta.textClass}`} />
+              </span>
 
               {/* Large icon */}
               <div
@@ -245,16 +269,6 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
               <span className="text-base font-semibold text-foreground/90 truncate w-full leading-tight">
                 {connector.label}
               </span>
-
-              {/* Paid-only indicator — top-right */}
-              {((connector.metadata as Record<string, unknown> | undefined)?.pricing_tier === 'paid') && (
-                <span
-                  className="absolute top-1.5 right-1.5 inline-flex items-center justify-center w-6 h-6 rounded-lg bg-amber-500/10 border border-amber-500/20 opacity-20 group-hover:opacity-100 transition-opacity duration-200"
-                  title="Paid plan required"
-                >
-                  <DollarSign className="w-3 h-3 text-amber-400" />
-                </span>
-              )}
             </button>
           );
         })}

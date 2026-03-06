@@ -31,7 +31,7 @@ pub fn build_negotiation_prompt(
 
     prompt.push_str("## Required Credential Fields\n");
     for key in field_keys {
-        prompt.push_str(&format!("- `{}`\n", key));
+        prompt.push_str(&format!("- `{key}`\n"));
     }
     prompt.push('\n');
 
@@ -219,7 +219,7 @@ mod tests {
             "verification_hint": "We'll test the token",
             "tips": []
         });
-        let output = format!("Here:\n\n```json\n{}\n```\n", json);
+        let output = format!("Here:\n\n```json\n{json}\n```\n");
         let result = extract_negotiation_result(&output);
         assert!(result.is_some());
         let val = result.unwrap();
@@ -236,7 +236,7 @@ mod tests {
             "service_name": "Test"
         })
         .to_string();
-        let output = format!("Result: {}", json);
+        let output = format!("Result: {json}");
         let result = extract_negotiation_result(&output);
         assert!(result.is_some());
     }

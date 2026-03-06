@@ -112,13 +112,13 @@ export function UseCaseSubscriptionsSection() {
         console.error('Failed to create trigger:', e);
       } finally {
         triggerControllersRef.current.delete(key);
-        if (controller.signal.aborted || selectedPersonaIdRef.current !== personaIdAtStart) return;
-        setActivatingTriggers((prev) => {
-          const next = new Set(prev);
-          next.delete(key);
-          return next;
-        });
       }
+      if (controller.signal.aborted || selectedPersonaIdRef.current !== personaIdAtStart) return;
+      setActivatingTriggers((prev) => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
     },
     [selectedPersona],
   );
@@ -156,13 +156,13 @@ export function UseCaseSubscriptionsSection() {
         console.error('Failed to create subscription:', e);
       } finally {
         subscriptionControllersRef.current.delete(key);
-        if (controller.signal.aborted || selectedPersonaIdRef.current !== personaIdAtStart) return;
-        setActivatingSubscriptions((prev) => {
-          const next = new Set(prev);
-          next.delete(key);
-          return next;
-        });
       }
+      if (controller.signal.aborted || selectedPersonaIdRef.current !== personaIdAtStart) return;
+      setActivatingSubscriptions((prev) => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
     },
     [selectedPersona],
   );

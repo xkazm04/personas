@@ -97,7 +97,26 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
       const ctx = buildConnectorContext(designResult);
       const { values, partial } = await adapter.run(
         ctx,
-        (entry) => setLogs((prev) => [...prev, entry]),
+        (entry) => setLogs((prev) => {
+          // Deduplicate: skip if the last message is identical or a near-duplicate
+          if (prev.length > 0) {
+            const last = prev[prev.length - 1]!;
+            const lastMsg = last.message.trim();
+            const newMsg = entry.message.trim();
+            // Exact duplicate
+            if (lastMsg === newMsg && last.type === entry.type) return prev;
+            // Near-duplicate: one is a prefix of the other (within 5 chars difference)
+            if (last.type === entry.type && entry.type === 'action') {
+              const shorter = lastMsg.length <= newMsg.length ? lastMsg : newMsg;
+              const longer = lastMsg.length <= newMsg.length ? newMsg : lastMsg;
+              if (longer.startsWith(shorter) && (longer.length - shorter.length) <= 5) {
+                // Replace the last entry with the longer version
+                return [...prev.slice(0, -1), { ...entry, message: longer }];
+              }
+            }
+          }
+          return [...prev, entry];
+        }),
         ctrl.signal,
       );
       setExtractedValues(values);

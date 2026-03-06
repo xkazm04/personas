@@ -218,13 +218,13 @@ impl CloudClient {
         execution_id: &str,
         offset: u32,
     ) -> Result<CloudExecutionPoll, AppError> {
-        let path = format!("/api/executions/{}?offset={}", execution_id, offset);
+        let path = format!("/api/executions/{execution_id}?offset={offset}");
         self.send_json(self.authed(reqwest::Method::GET, &path).await).await
     }
 
     /// `POST /api/executions/{id}/cancel` -- cancel a running execution.
     pub async fn cancel_execution(&self, execution_id: &str) -> Result<(), AppError> {
-        let path = format!("/api/executions/{}/cancel", execution_id);
+        let path = format!("/api/executions/{execution_id}/cancel");
         self.send_ok(self.authed(reqwest::Method::POST, &path).await).await
     }
 

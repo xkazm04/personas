@@ -57,7 +57,7 @@ pub async fn save_api_definition(
     std::fs::create_dir_all(&dir)
         .map_err(|e| AppError::Internal(format!("Failed to create api_definitions dir: {e}")))?;
 
-    let path = dir.join(format!("{}.json", credential_id));
+    let path = dir.join(format!("{credential_id}.json"));
     let json = serde_json::to_string_pretty(&endpoints)
         .map_err(|e| AppError::Internal(format!("JSON serialize error: {e}")))?;
 
@@ -73,7 +73,7 @@ pub fn load_api_definition(
     credential_id: String,
 ) -> Result<Option<Vec<ApiEndpoint>>, AppError> {
     let dir = api_definitions_dir(&app)?;
-    let path = dir.join(format!("{}.json", credential_id));
+    let path = dir.join(format!("{credential_id}.json"));
 
     if !path.exists() {
         return Ok(None);

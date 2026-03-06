@@ -65,9 +65,9 @@ fn parse_field(field: &str, min: u32, max: u32) -> Result<Vec<u32>, String> {
         } else {
             let v: u32 = part
                 .parse()
-                .map_err(|_| format!("Invalid value: {}", part))?;
+                .map_err(|_| format!("Invalid value: {part}"))?;
             if v < min || v > max {
-                return Err(format!("Value {} out of range {}-{}", v, min, max));
+                return Err(format!("Value {v} out of range {min}-{max}"));
             }
             values.push(v);
         }
@@ -90,8 +90,7 @@ fn parse_range_bounds(s: &str, min: u32, max: u32) -> Result<(u32, u32), String>
         .map_err(|_| format!("Invalid range end: {}", pieces[1]))?;
     if lo < min || hi > max || lo > hi {
         return Err(format!(
-            "Range {}-{} out of bounds {}-{}",
-            lo, hi, min, max
+            "Range {lo}-{hi} out of bounds {min}-{max}"
         ));
     }
     Ok((lo, hi))

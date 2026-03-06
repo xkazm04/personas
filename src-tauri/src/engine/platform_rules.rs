@@ -327,7 +327,7 @@ impl PlatformDefinition {
 
         for rule in &self.credential_consolidation {
             let sources = rule.source_patterns.iter()
-                .map(|s| format!("\"{}\"", s))
+                .map(|s| format!("\"{s}\""))
                 .collect::<Vec<_>>()
                 .join(", ");
             lines.push(format!("- {} → single connector \"{}\"", sources, rule.target_connector));
@@ -335,10 +335,10 @@ impl PlatformDefinition {
 
         if !self.excluded_credential_types.is_empty() {
             let excluded = self.excluded_credential_types.iter()
-                .map(|s| format!("\"{}\"", s))
+                .map(|s| format!("\"{s}\""))
                 .collect::<Vec<_>>()
                 .join(", ");
-            lines.push(format!("- {} → NOT mapped (Personas has built-in LLM)", excluded));
+            lines.push(format!("- {excluded} → NOT mapped (Personas has built-in LLM)"));
         }
 
         lines.push("- For other credential types, map to the closest connector by service name".into());
@@ -362,10 +362,10 @@ impl PlatformDefinition {
 
         for (role, patterns) in &roles {
             let pats = patterns.iter()
-                .map(|p| format!("/{}/i", p))
+                .map(|p| format!("/{p}/i"))
                 .collect::<Vec<_>>()
                 .join(", ");
-            lines.push(format!("- **{}** nodes: {}", role, pats));
+            lines.push(format!("- **{role}** nodes: {pats}"));
         }
 
         lines.join("\n")

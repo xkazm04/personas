@@ -161,8 +161,8 @@ fn strip_dangerous_tags(text: &str) -> String {
     let mut result = text.to_string();
     for tag in DANGEROUS_TAGS {
         // Remove opening tags: <system>, <system ...>
-        let open_pattern = format!("<{}", tag);
-        let close_pattern = format!("</{}", tag);
+        let open_pattern = format!("<{tag}");
+        let close_pattern = format!("</{tag}");
         // Simple removal of these tag patterns
         loop {
             let lower = result.to_lowercase();

@@ -86,7 +86,7 @@ where
             let first_line = request_text.lines().next().unwrap_or("");
             let path_part = first_line.split_whitespace().nth(1).unwrap_or("/");
 
-            let parsed_url = Url::parse(&format!("http://127.0.0.1{}", path_part));
+            let parsed_url = Url::parse(&format!("http://127.0.0.1{path_part}"));
 
             let outcome = match parsed_url {
                 Ok(url) => {
@@ -103,9 +103,9 @@ where
                         )
                     } else if let Some(err) = oauth_error {
                         let msg = if let Some(desc) = error_desc {
-                            format!("OAuth error: {} {}", err, desc).trim().to_string()
+                            format!("OAuth error: {err} {desc}").trim().to_string()
                         } else {
-                            format!("OAuth error: {}", err)
+                            format!("OAuth error: {err}")
                         };
                         OAuthCallbackOutcome::Error(msg)
                     } else if let Some(code_value) = code {
@@ -117,7 +117,7 @@ where
                         OAuthCallbackOutcome::Error("No authorization code returned".into())
                     }
                 }
-                Err(e) => OAuthCallbackOutcome::Error(format!("Failed parsing callback URL: {}", e)),
+                Err(e) => OAuthCallbackOutcome::Error(format!("Failed parsing callback URL: {e}")),
             };
 
             let is_success = matches!(outcome, OAuthCallbackOutcome::Success(_));
@@ -135,7 +135,7 @@ where
 
             outcome
         }
-        Ok(Err(e)) => OAuthCallbackOutcome::AcceptFailed(format!("OAuth callback server failed: {}", e)),
+        Ok(Err(e)) => OAuthCallbackOutcome::AcceptFailed(format!("OAuth callback server failed: {e}")),
         Err(_) => OAuthCallbackOutcome::Timeout,
     }
 }
@@ -231,10 +231,10 @@ pub async fn start_google_credential_oauth(
 
     let listener = TcpListener::bind("127.0.0.1:0")
         .await
-        .map_err(|e| AppError::Internal(format!("Failed to start OAuth callback server: {}", e)))?;
+        .map_err(|e| AppError::Internal(format!("Failed to start OAuth callback server: {e}")))?;
     let port = listener
         .local_addr()
-        .map_err(|e| AppError::Internal(format!("Failed to resolve callback port: {}", e)))?
+        .map_err(|e| AppError::Internal(format!("Failed to resolve callback port: {e}")))?
         .port();
 
     {
@@ -252,7 +252,7 @@ pub async fn start_google_credential_oauth(
         );
     }
 
-    let redirect_uri = format!("http://127.0.0.1:{}", port);
+    let redirect_uri = format!("http://127.0.0.1:{port}");
 
     let default_scopes = default_google_scopes_for_connector(&connector_name);
     let mut scopes = default_scopes;
@@ -270,7 +270,7 @@ pub async fn start_google_credential_oauth(
     let oauth_state = generate_oauth_state();
 
     let mut auth_url = Url::parse("https://accounts.google.com/o/oauth2/v2/auth")
-        .map_err(|e| AppError::Internal(format!("Failed to build auth URL: {}", e)))?;
+        .map_err(|e| AppError::Internal(format!("Failed to build auth URL: {e}")))?;
     {
         let mut query = auth_url.query_pairs_mut();
         query.append_pair("client_id", resolved_client_id.trim());
@@ -285,7 +285,7 @@ pub async fn start_google_credential_oauth(
     let _ = audit_log::insert(
         &state.db, &session_id, &connector_name,
         "oauth_initiated", None, None,
-        Some(&format!("google oauth for {}", connector_name)),
+        Some(&format!("google oauth for {connector_name}")),
     );
 
     let session_id_clone = session_id.clone();
@@ -487,18 +487,18 @@ async fn exchange_google_oauth_code_for_tokens(
         ])
         .send()
         .await
-        .map_err(|e| format!("Token exchange request failed: {}", e))?;
+        .map_err(|e| format!("Token exchange request failed: {e}"))?;
 
     if !response.status().is_success() {
         let status = response.status();
         let body = response.text().await.unwrap_or_else(|_| "<no body>".into());
-        return Err(format!("Token exchange failed ({}): {}", status, body));
+        return Err(format!("Token exchange failed ({status}): {body}"));
     }
 
     let value = response
         .json::<serde_json::Value>()
         .await
-        .map_err(|e| format!("Invalid token response JSON: {}", e))?;
+        .map_err(|e| format!("Invalid token response JSON: {e}"))?;
 
     Ok(GoogleTokenExchangeResult {
         refresh_token: value.get("refresh_token").and_then(|v| v.as_str()).map(|s| SecureString::new(s.to_string())),
@@ -609,6 +609,15 @@ static PROVIDER_REGISTRY: &[OAuthProviderConfig] = &[
         extra_auth_params: &[("owner", "user")],
         default_scopes: &[],
     },
+    OAuthProviderConfig {
+        id: "linkedin",
+        name: "LinkedIn",
+        authorize_url: "https://www.linkedin.com/oauth/v2/authorization",
+        token_url: "https://www.linkedin.com/oauth/v2/accessToken",
+        supports_pkce: true,
+        extra_auth_params: &[],
+        default_scopes: &["openid", "profile", "email", "w_member_social"],
+    },
 ];
 
 fn find_provider(provider_id: &str) -> Option<&'static OAuthProviderConfig> {
@@ -627,7 +636,7 @@ struct OidcDiscovery {
 /// Validate that a URL is safe for outbound requests (HTTPS, no private IPs).
 fn validate_issuer_url(raw: &str) -> Result<url::Url, String> {
     let parsed = url::Url::parse(raw)
-        .map_err(|e| format!("Invalid issuer URL: {}", e))?;
+        .map_err(|e| format!("Invalid issuer URL: {e}"))?;
 
     if parsed.scheme() != "https" {
         return Err("OIDC issuer must use HTTPS".into());
@@ -691,7 +700,7 @@ fn validate_endpoint_domain(
     endpoint_name: &str,
 ) -> Result<(), String> {
     let endpoint = url::Url::parse(endpoint_url)
-        .map_err(|e| format!("OIDC {} is not a valid URL: {}", endpoint_name, e))?;
+        .map_err(|e| format!("OIDC {endpoint_name} is not a valid URL: {e}"))?;
 
     if endpoint.scheme() != "https" {
         return Err(format!(
@@ -706,16 +715,15 @@ fn validate_endpoint_domain(
         .ok_or_else(|| "OIDC issuer has no host".to_string())?;
     let endpoint_host = endpoint
         .host_str()
-        .ok_or_else(|| format!("OIDC {} has no host", endpoint_name))?;
+        .ok_or_else(|| format!("OIDC {endpoint_name} has no host"))?;
 
     let issuer_base = base_domain(issuer_host);
     let endpoint_base = base_domain(endpoint_host);
 
     if !issuer_base.eq_ignore_ascii_case(endpoint_base) {
         return Err(format!(
-            "OIDC {} domain mismatch: issuer domain is '{}' but {} points to '{}'. \
-             Discovery response may have been tampered with.",
-            endpoint_name, issuer_host, endpoint_name, endpoint_host
+            "OIDC {endpoint_name} domain mismatch: issuer domain is '{issuer_host}' but {endpoint_name} points to '{endpoint_host}'. \
+             Discovery response may have been tampered with."
         ));
     }
 
@@ -734,7 +742,7 @@ async fn discover_oidc(issuer_url: &str) -> Result<OidcDiscovery, String> {
         .timeout(std::time::Duration::from_secs(10))
         .send()
         .await
-        .map_err(|e| format!("OIDC discovery failed for {}: {}", well_known, e))?;
+        .map_err(|e| format!("OIDC discovery failed for {well_known}: {e}"))?;
 
     if !resp.status().is_success() {
         return Err(format!(
@@ -747,7 +755,7 @@ async fn discover_oidc(issuer_url: &str) -> Result<OidcDiscovery, String> {
     let discovery = resp
         .json::<OidcDiscovery>()
         .await
-        .map_err(|e| format!("Invalid OIDC discovery JSON: {}", e))?;
+        .map_err(|e| format!("Invalid OIDC discovery JSON: {e}"))?;
 
     // Validate that discovered endpoints belong to the same domain as the issuer.
     // This prevents a tampered discovery response from redirecting authorization
@@ -898,12 +906,12 @@ pub async fn start_oauth(
     // Bind TCP listener for redirect
     let listener = TcpListener::bind("127.0.0.1:0")
         .await
-        .map_err(|e| AppError::Internal(format!("Failed to start OAuth callback server: {}", e)))?;
+        .map_err(|e| AppError::Internal(format!("Failed to start OAuth callback server: {e}")))?;
     let port = listener
         .local_addr()
-        .map_err(|e| AppError::Internal(format!("Failed to resolve callback port: {}", e)))?
+        .map_err(|e| AppError::Internal(format!("Failed to resolve callback port: {e}")))?
         .port();
-    let redirect_uri = format!("http://127.0.0.1:{}", port);
+    let redirect_uri = format!("http://127.0.0.1:{port}");
 
     // Resolve scopes
     let effective_scopes = scopes.filter(|s| !s.is_empty()).unwrap_or(default_scopes);
@@ -921,7 +929,7 @@ pub async fn start_oauth(
 
     // Build authorization URL
     let mut auth_url = Url::parse(&resolved_auth_url)
-        .map_err(|e| AppError::Internal(format!("Invalid authorize URL: {}", e)))?;
+        .map_err(|e| AppError::Internal(format!("Invalid authorize URL: {e}")))?;
     {
         let mut query = auth_url.query_pairs_mut();
         query.append_pair("client_id", client_id.trim());
@@ -978,7 +986,7 @@ pub async fn start_oauth(
     let _ = audit_log::insert(
         &state.db, &session_id, &provider_id,
         "oauth_initiated", None, None,
-        Some(&format!("universal oauth for provider '{}'", provider_id)),
+        Some(&format!("universal oauth for provider '{provider_id}'")),
     );
 
     // Spawn TCP listener to wait for callback
@@ -1152,7 +1160,7 @@ pub async fn refresh_oauth_token(
         .timeout(std::time::Duration::from_secs(15))
         .send()
         .await
-        .map_err(|e| AppError::Internal(format!("Token refresh request failed: {}", e)))?;
+        .map_err(|e| AppError::Internal(format!("Token refresh request failed: {e}")))?;
 
     if !response.status().is_success() {
         let status = response.status();
@@ -1160,20 +1168,20 @@ pub async fn refresh_oauth_token(
         let _ = audit_log::insert(
             &state.db, &provider_id, &provider_id,
             "token_refresh_failed", None, None,
-            Some(&format!("HTTP {}", status)),
+            Some(&format!("HTTP {status}")),
         );
-        return Err(AppError::Internal(format!("Token refresh failed ({}): {}", status, body)));
+        return Err(AppError::Internal(format!("Token refresh failed ({status}): {body}")));
     }
 
     let value = response
         .json::<serde_json::Value>()
         .await
-        .map_err(|e| AppError::Internal(format!("Invalid token refresh JSON: {}", e)))?;
+        .map_err(|e| AppError::Internal(format!("Invalid token refresh JSON: {e}")))?;
 
     let _ = audit_log::insert(
         &state.db, &provider_id, &provider_id,
         "token_refreshed", None, None,
-        Some(&format!("provider '{}'", provider_id)),
+        Some(&format!("provider '{provider_id}'")),
     );
 
     Ok(json!({
@@ -1225,18 +1233,18 @@ async fn exchange_oauth_code(
         .timeout(std::time::Duration::from_secs(15))
         .send()
         .await
-        .map_err(|e| format!("Token exchange request failed: {}", e))?;
+        .map_err(|e| format!("Token exchange request failed: {e}"))?;
 
     if !response.status().is_success() {
         let status = response.status();
         let body = response.text().await.unwrap_or_else(|_| "<no body>".into());
-        return Err(format!("Token exchange failed ({}): {}", status, body));
+        return Err(format!("Token exchange failed ({status}): {body}"));
     }
 
     let value = response
         .json::<serde_json::Value>()
         .await
-        .map_err(|e| format!("Invalid token response JSON: {}", e))?;
+        .map_err(|e| format!("Invalid token response JSON: {e}"))?;
 
     Ok(OAuthTokenResult {
         access_token: value.get("access_token").and_then(|v| v.as_str()).map(|s| SecureString::new(s.to_string())),

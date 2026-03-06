@@ -21,8 +21,12 @@ export interface CredentialTemplateFormProps {
   onCredentialNameChange: (name: string) => void;
   effectiveTemplateFields: CredentialTemplateField[];
   isGoogleTemplate: boolean;
+  /** True when using the universal OAuth gateway (non-Google OAuth connectors like LinkedIn) */
+  isOAuthTemplate?: boolean;
   isAuthorizingOAuth: boolean;
   oauthCompletedAt: string | null;
+  /** Label for the OAuth consent button (defaults to "Authorize with Google" for Google, "Authorize with {label}" for others) */
+  oauthConsentLabel?: string;
   onCreateCredential: (values: Record<string, string>) => void;
   onOAuthConsent: (values: Record<string, string>) => void;
   onCancel: () => void;
@@ -42,8 +46,10 @@ export function CredentialTemplateForm({
   onCredentialNameChange,
   effectiveTemplateFields,
   isGoogleTemplate,
+  isOAuthTemplate,
   isAuthorizingOAuth,
   oauthCompletedAt,
+  oauthConsentLabel,
   onCreateCredential,
   onOAuthConsent,
   onCancel,
@@ -103,10 +109,11 @@ export function CredentialTemplateForm({
 
   const healthcheckPassed = healthcheckResult?.success === true;
 
-  const requiresHealthcheck = onHealthcheck != null && !isGoogleTemplate;
-  const saveDisabled = isGoogleTemplate || (requiresHealthcheck && !healthcheckPassed);
-  const saveDisabledReason = isGoogleTemplate
-    ? 'Use Authorize with Google to create this credential.'
+  const isAnyOAuth = isGoogleTemplate || isOAuthTemplate;
+  const requiresHealthcheck = onHealthcheck != null && !isAnyOAuth;
+  const saveDisabled = isAnyOAuth || (requiresHealthcheck && !healthcheckPassed);
+  const saveDisabledReason = isAnyOAuth
+    ? `Use the authorize button below to connect this credential.`
     : requiresHealthcheck && !healthcheckPassed
       ? 'Run a successful connection test before saving.'
       : undefined;
@@ -230,13 +237,15 @@ export function CredentialTemplateForm({
           <CredentialEditForm
             fields={variantFields}
             onSave={onCreateCredential}
-            onOAuthConsent={isGoogleTemplate ? onOAuthConsent : undefined}
-            oauthConsentLabel={isAuthorizingOAuth ? 'Authorizing with Google...' : 'Authorize with Google'}
+            onOAuthConsent={isAnyOAuth ? onOAuthConsent : undefined}
+            oauthConsentLabel={isAuthorizingOAuth
+              ? `Authorizing with ${selectedConnector.label}...`
+              : (oauthConsentLabel ?? `Authorize with ${selectedConnector.label}`)}
             oauthConsentDisabled={isAuthorizingOAuth}
-            oauthConsentHint={isGoogleTemplate
-              ? 'One click consent: uses app-managed Google OAuth and saves token metadata in background.'
+            oauthConsentHint={isAnyOAuth
+              ? `Opens ${selectedConnector.label} in your browser. Grant access, then return here.`
               : undefined}
-            oauthConsentSuccessBadge={oauthCompletedAt ? `Google consent completed at ${oauthCompletedAt}` : undefined}
+            oauthConsentSuccessBadge={oauthCompletedAt ? `${selectedConnector.label} connected at ${oauthCompletedAt}` : undefined}
             saveDisabled={saveDisabled}
             saveDisabledReason={saveDisabledReason}
             onHealthcheck={onHealthcheck}

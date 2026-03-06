@@ -105,7 +105,7 @@ impl FromStr for ExecutionState {
             "cancelled" => Ok(ExecutionState::Cancelled),
             // Backwards-compat: some old DB rows might have "pending"
             "pending" => Ok(ExecutionState::Queued),
-            other => Err(format!("Unknown execution state: '{}'", other)),
+            other => Err(format!("Unknown execution state: '{other}'")),
         }
     }
 }
@@ -339,7 +339,7 @@ impl EphemeralPersona {
         }
 
         let draft: DraftInput = serde_json::from_str(draft_json)
-            .map_err(|e| format!("Invalid draft JSON: {}", e))?;
+            .map_err(|e| format!("Invalid draft JSON: {e}"))?;
 
         let now = chrono::Utc::now().to_rfc3339();
         let persona = Persona {

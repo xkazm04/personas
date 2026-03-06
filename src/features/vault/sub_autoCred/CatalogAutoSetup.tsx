@@ -66,7 +66,7 @@ export function CatalogAutoSetup({ connector, onComplete, onCancel }: CatalogAut
     if (phase === 'analyzing' && design.phase === 'idle') {
       design.start(`Analyze ${connector.label} (${connector.name}) connector and discover setup procedures for creating API credentials.`);
     }
-  }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps -- start once
+  }, [phase]);
 
   // When AI analysis completes, merge result and go to auto phase
   useEffect(() => {

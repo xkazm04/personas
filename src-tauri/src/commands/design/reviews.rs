@@ -625,7 +625,7 @@ pub async fn rebuild_design_review(
     let tools = tool_repo::get_all_definitions(&state.db)?;
     let connectors = connector_repo::get_all(&state.db)?;
 
-    let rebuild_id = format!("rebuild-{}", id);
+    let rebuild_id = format!("rebuild-{id}");
     let pool = state.db.clone();
     let tool_names: Vec<String> = tools.iter().map(|t| t.name.clone()).collect();
     let connector_names: Vec<String> = connectors.iter().map(|c| c.name.clone()).collect();
@@ -718,7 +718,7 @@ pub async fn rebuild_design_review(
 
                         n8n_job_state::emit_n8n_transform_line(
                             &app, &rebuild_id,
-                            format!("[Milestone] Rebuild complete — quality: {}%", structural_score),
+                            format!("[Milestone] Rebuild complete — quality: {structural_score}%"),
                         );
                         n8n_job_state::set_n8n_transform_status(&app, &rebuild_id, "completed", None);
                     }
@@ -1044,8 +1044,8 @@ pub fn backfill_related_tools(
                 .filter(|tool| {
                     let t = tool.to_lowercase();
                     t.starts_with(&connector_name)
-                        || t.starts_with(&format!("{}_", connector_name))
-                        || t.contains(&format!("_{}_", connector_name))
+                        || t.starts_with(&format!("{connector_name}_"))
+                        || t.contains(&format!("_{connector_name}_"))
                 })
                 .map(|t| serde_json::Value::String(t.clone()))
                 .collect();

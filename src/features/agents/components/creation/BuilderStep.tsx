@@ -154,7 +154,6 @@ export function BuilderStep({ state, dispatch, onContinue, onCancel, draftPerson
     if (autoTestGen > 0 && dryRun.phase === 'idle') {
       dryRun.runTest(state);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoTestGen]);
 
   // Auto-apply all fixable proposals when dry run completes

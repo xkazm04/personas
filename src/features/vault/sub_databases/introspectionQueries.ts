@@ -1,4 +1,4 @@
-export type ConnectorFamily = 'postgres' | 'mysql' | 'redis' | 'unsupported';
+export type ConnectorFamily = 'postgres' | 'mysql' | 'redis' | 'convex' | 'unsupported';
 
 export function getConnectorFamily(serviceType: string): ConnectorFamily {
   switch (serviceType) {
@@ -10,6 +10,8 @@ export function getConnectorFamily(serviceType: string): ConnectorFamily {
     case 'upstash':
     case 'redis':
       return 'redis';
+    case 'convex':
+      return 'convex';
     default:
       return 'unsupported';
   }
@@ -54,6 +56,8 @@ export function getSelectAllQuery(serviceType: string, tableName: string): strin
       return `SELECT * FROM \`${tableName}\` LIMIT 100;`;
     case 'redis':
       return `SCAN 0 MATCH ${tableName}* COUNT 100`;
+    case 'convex':
+      return `db.query("${tableName}").take(100)`;
     default:
       return `SELECT * FROM ${tableName} LIMIT 100;`;
   }

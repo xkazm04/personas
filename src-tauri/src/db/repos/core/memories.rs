@@ -20,12 +20,12 @@ fn build_memory_filters(
     let mut param_idx = 1u32;
 
     if let Some(pid) = persona_id {
-        conditions.push(format!("persona_id = ?{}", param_idx));
+        conditions.push(format!("persona_id = ?{param_idx}"));
         param_values.push(pid.to_string());
         param_idx += 1;
     }
     if let Some(cat) = category {
-        conditions.push(format!("category = ?{}", param_idx));
+        conditions.push(format!("category = ?{param_idx}"));
         param_values.push(cat.to_string());
         param_idx += 1;
     }
@@ -195,7 +195,7 @@ pub fn get_total_count(
 
     let (where_clause, filter_params) = build_memory_filters(persona_id, category, search);
 
-    let sql = format!("SELECT COUNT(*) FROM persona_memories {}", where_clause);
+    let sql = format!("SELECT COUNT(*) FROM persona_memories {where_clause}");
     let params_ref: Vec<&dyn rusqlite::types::ToSql> = filter_params
         .iter()
         .map(|value| value as &dyn rusqlite::types::ToSql)
@@ -233,8 +233,7 @@ pub fn get_stats(
 
     // Total + avg importance in one query
     let agg_sql = format!(
-        "SELECT COUNT(*), COALESCE(AVG(importance), 0) FROM persona_memories {}",
-        where_clause
+        "SELECT COUNT(*), COALESCE(AVG(importance), 0) FROM persona_memories {where_clause}"
     );
     let (total, avg_importance): (i64, f64) =
         conn.query_row(&agg_sql, params_ref.as_slice(), |row| {
@@ -243,8 +242,7 @@ pub fn get_stats(
 
     // Category breakdown
     let cat_sql = format!(
-        "SELECT category, COUNT(*) as cnt FROM persona_memories {} GROUP BY category ORDER BY cnt DESC",
-        where_clause
+        "SELECT category, COUNT(*) as cnt FROM persona_memories {where_clause} GROUP BY category ORDER BY cnt DESC"
     );
     let mut cat_stmt = conn.prepare(&cat_sql)?;
     let category_rows = cat_stmt
@@ -254,8 +252,7 @@ pub fn get_stats(
 
     // Agent breakdown
     let agent_sql = format!(
-        "SELECT persona_id, COUNT(*) as cnt FROM persona_memories {} GROUP BY persona_id ORDER BY cnt DESC",
-        where_clause
+        "SELECT persona_id, COUNT(*) as cnt FROM persona_memories {where_clause} GROUP BY persona_id ORDER BY cnt DESC"
     );
     let mut agent_stmt = conn.prepare(&agent_sql)?;
     let agent_rows = agent_stmt
@@ -286,7 +283,7 @@ pub fn batch_delete(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
         return Ok(0);
     }
     let conn = pool.get()?;
-    let placeholders: Vec<String> = (1..=ids.len()).map(|i| format!("?{}", i)).collect();
+    let placeholders: Vec<String> = (1..=ids.len()).map(|i| format!("?{i}")).collect();
     let sql = format!(
         "DELETE FROM persona_memories WHERE id IN ({})",
         placeholders.join(", ")

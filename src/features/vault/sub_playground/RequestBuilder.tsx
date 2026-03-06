@@ -87,7 +87,7 @@ export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderPr
           value={path}
           onChange={(e) => setPath(e.target.value)}
           placeholder="/api/v1/resource"
-          className="flex-1 px-3 py-2 rounded-lg text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/80 placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30"
+          className="flex-1 px-3 py-2 rounded-lg text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/80 placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/30"
         />
 
         <button
@@ -116,7 +116,7 @@ export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderPr
                   value={pathParamValues[param] || ''}
                   onChange={(e) => setPathParamValues((prev) => ({ ...prev, [param]: e.target.value }))}
                   placeholder={param}
-                  className="flex-1 px-2 py-1.5 rounded text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/25 focus:outline-none focus:border-primary/25"
+                  className="flex-1 px-2 py-1.5 rounded text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/25"
                 />
               </div>
             ))}
@@ -148,7 +148,7 @@ export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderPr
       )}
 
       {/* Resolved URL preview */}
-      <div className="text-sm font-mono text-muted-foreground/30 truncate">
+      <div className="text-sm font-mono text-muted-foreground/50 truncate">
         → {method} {resolvedPath}
       </div>
     </div>
@@ -160,7 +160,7 @@ export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderPr
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <span className="text-sm uppercase tracking-wider text-muted-foreground/30 font-semibold">
+      <span className="text-sm uppercase tracking-wider text-cyan-400/70 font-semibold">
         {label}
       </span>
       {children}
@@ -200,18 +200,18 @@ function KeyValueEditor({
             value={entry.key}
             onChange={(e) => update(i, 'key', e.target.value)}
             placeholder="key"
-            className="flex-1 px-2 py-1.5 rounded text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/25 focus:outline-none focus:border-primary/25"
+            className="flex-1 px-2 py-1.5 rounded text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/25"
           />
           <input
             type="text"
             value={entry.value}
             onChange={(e) => update(i, 'value', e.target.value)}
             placeholder="value"
-            className="flex-1 px-2 py-1.5 rounded text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/25 focus:outline-none focus:border-primary/25"
+            className="flex-1 px-2 py-1.5 rounded text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/25"
           />
           <button
             onClick={() => remove(i)}
-            className="p-1 rounded text-muted-foreground/30 hover:text-red-400/60 transition-colors"
+            className="p-1 rounded text-muted-foreground/50 hover:text-red-400/60 transition-colors"
           >
             <Trash2 className="w-3 h-3" />
           </button>
@@ -219,7 +219,7 @@ function KeyValueEditor({
       ))}
       <button
         onClick={add}
-        className="flex items-center gap-1 px-2 py-1 rounded text-sm text-muted-foreground/40 hover:text-muted-foreground/60 hover:bg-secondary/30 transition-colors"
+        className="flex items-center gap-1 px-2 py-1 rounded text-sm text-muted-foreground/60 hover:text-muted-foreground/80 hover:bg-secondary/30 transition-colors"
       >
         <Plus className="w-3 h-3" />
         Add

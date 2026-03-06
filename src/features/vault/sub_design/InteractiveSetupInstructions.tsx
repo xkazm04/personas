@@ -47,7 +47,7 @@ export function InteractiveSetupInstructions({
     const saved = readPersistedSteps(storageKey);
     saved.forEach((i) => rawToggle(i));
     setRestored(true);
-  }, [storageKey]); // eslint-disable-line react-hooks/exhaustive-deps -- restore once on mount
+  }, [storageKey]);
 
   // Persist whenever completedSteps changes (after initial restore)
   useEffect(() => {

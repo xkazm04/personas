@@ -75,8 +75,7 @@ impl GitLabClient {
         if !status.is_success() {
             let body = resp.text().await.unwrap_or_default();
             return Err(AppError::GitLab(format!(
-                "GitLab API error ({}): {}",
-                status, body
+                "GitLab API error ({status}): {body}"
             )));
         }
         resp.json().await.map_err(gitlab_err)
@@ -88,8 +87,7 @@ impl GitLabClient {
         if !status.is_success() {
             let body = resp.text().await.unwrap_or_default();
             return Err(AppError::GitLab(format!(
-                "GitLab API error ({}): {}",
-                status, body
+                "GitLab API error ({status}): {body}"
             )));
         }
         Ok(())
@@ -101,8 +99,7 @@ impl GitLabClient {
         if !status.is_success() {
             let body = resp.text().await.unwrap_or_default();
             return Err(AppError::GitLab(format!(
-                "GitLab API error ({}): {}",
-                status, body
+                "GitLab API error ({status}): {body}"
             )));
         }
         resp.text().await.map_err(gitlab_err)
@@ -138,7 +135,7 @@ impl GitLabClient {
 
     /// `GET /api/v4/projects/:id`
     pub async fn get_project(&self, project_id: i64) -> Result<GitLabProject, AppError> {
-        let path = format!("/projects/{}", project_id);
+        let path = format!("/projects/{project_id}");
         self.send_json(self.authed(reqwest::Method::GET, &path))
             .await
     }
@@ -153,7 +150,7 @@ impl GitLabClient {
         project_id: i64,
         definition: &GitLabAgentDefinition,
     ) -> Result<GitLabAgent, AppError> {
-        let path = format!("/projects/{}/duo/agents", project_id);
+        let path = format!("/projects/{project_id}/duo/agents");
         let req = self.authed(reqwest::Method::POST, &path).json(definition);
         self.send_json(req).await
     }
@@ -165,14 +162,14 @@ impl GitLabClient {
         agent_id: &str,
         definition: &GitLabAgentDefinition,
     ) -> Result<GitLabAgent, AppError> {
-        let path = format!("/projects/{}/duo/agents/{}", project_id, agent_id);
+        let path = format!("/projects/{project_id}/duo/agents/{agent_id}");
         let req = self.authed(reqwest::Method::PUT, &path).json(definition);
         self.send_json(req).await
     }
 
     /// `GET /api/v4/projects/:id/duo/agents`
     pub async fn list_duo_agents(&self, project_id: i64) -> Result<Vec<GitLabAgent>, AppError> {
-        let path = format!("/projects/{}/duo/agents", project_id);
+        let path = format!("/projects/{project_id}/duo/agents");
         self.send_json(self.authed(reqwest::Method::GET, &path))
             .await
     }
@@ -183,7 +180,7 @@ impl GitLabClient {
         project_id: i64,
         agent_id: &str,
     ) -> Result<(), AppError> {
-        let path = format!("/projects/{}/duo/agents/{}", project_id, agent_id);
+        let path = format!("/projects/{project_id}/duo/agents/{agent_id}");
         self.send_ok(self.authed(reqwest::Method::DELETE, &path))
             .await
     }
@@ -218,7 +215,7 @@ impl GitLabClient {
         project_id: i64,
         variable: &GitLabVariable,
     ) -> Result<(), AppError> {
-        let path = format!("/projects/{}/variables", project_id);
+        let path = format!("/projects/{project_id}/variables");
         let req = self.authed(reqwest::Method::POST, &path).json(variable);
         self.send_ok(req).await
     }
@@ -277,7 +274,7 @@ impl GitLabClient {
         content: &str,
     ) -> Result<(), AppError> {
         let encoded = urlencoding::encode("AGENTS.md");
-        let path = format!("/projects/{}/repository/files/{}", project_id, encoded);
+        let path = format!("/projects/{project_id}/repository/files/{encoded}");
 
         // Try PUT first (update); if 404, use POST (create)
         let update_req = self

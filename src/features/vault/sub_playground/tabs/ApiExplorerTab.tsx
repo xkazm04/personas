@@ -144,8 +144,8 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full py-20 gap-2">
-        <Loader2 className="w-4 h-4 animate-spin text-muted-foreground/40" />
-        <span className="text-sm text-muted-foreground/40">Loading API definition...</span>
+        <Loader2 className="w-4 h-4 animate-spin text-muted-foreground/60" />
+        <span className="text-sm text-muted-foreground/60">Loading API definition...</span>
       </div>
     );
   }
@@ -154,8 +154,8 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
     <div className="flex flex-col h-full">
       {/* Header bar */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/5 shrink-0">
-        <Globe className="w-4 h-4 text-muted-foreground/40" />
-        <span className="text-sm font-medium text-foreground/70">
+        <Globe className="w-4 h-4 text-muted-foreground/60" />
+        <span className="text-sm font-medium text-foreground/80">
           {endpoints.length} endpoint{endpoints.length !== 1 ? 's' : ''}
         </span>
         <div className="flex-1" />
@@ -163,13 +163,13 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
         {/* Search */}
         {endpoints.length > 0 && (
           <div className="relative">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground/30" />
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground/50" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Filter..."
-              className="pl-6 pr-2 py-1.5 w-[180px] rounded text-sm bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/25 focus:outline-none focus:border-primary/25"
+              className="pl-6 pr-2 py-1.5 w-[180px] rounded text-sm bg-secondary/20 border border-primary/10 text-foreground/80 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/25"
             />
           </div>
         )}
@@ -198,7 +198,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={isParsing}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-secondary/30 border border-primary/10 text-foreground/70 hover:bg-secondary/50 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-secondary/30 border border-primary/10 text-foreground/80 hover:bg-secondary/50 transition-colors"
         >
           <Upload className="w-3 h-3" />
           Upload Spec
@@ -212,7 +212,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
         />
         <button
           onClick={() => setShowPasteModal(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-secondary/30 border border-primary/10 text-foreground/70 hover:bg-secondary/50 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-secondary/30 border border-primary/10 text-foreground/80 hover:bg-secondary/50 transition-colors"
         >
           <FileText className="w-3 h-3" />
           Paste OpenAPI
@@ -268,47 +268,52 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
                 />
               ))}
               {filtered.length === 0 && (
-                <p className="text-sm text-muted-foreground/40 text-center py-4">
+                <p className="text-sm text-muted-foreground/60 text-center py-4">
                   No endpoints match "{search}"
                 </p>
               )}
             </div>
 
-            {/* Request builder */}
+            {/* Request / Response — side by side when both present */}
             {selectedEndpoint && (
-              <div className="border-t border-primary/8 pt-4 space-y-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm uppercase tracking-wider text-muted-foreground/30 font-semibold">
-                    Request Builder
-                  </span>
-                  <div className="flex-1" />
-                  <button
-                    onClick={() => { setSelectedEndpoint(null); setResponse(null); setSendError(null); }}
-                    className="text-sm text-muted-foreground/40 hover:text-muted-foreground/60"
-                  >
-                    Close
-                  </button>
-                </div>
-                <RequestBuilder
-                  endpoint={selectedEndpoint}
-                  onSend={handleSend}
-                  isSending={isSending}
-                />
-              </div>
-            )}
-
-            {/* Response viewer */}
-            {sendError && (
-              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400 font-mono whitespace-pre-wrap">
-                {sendError}
-              </div>
-            )}
-            {response && (
               <div className="border-t border-primary/8 pt-4">
-                <span className="text-sm uppercase tracking-wider text-muted-foreground/30 font-semibold block mb-3">
-                  Response
-                </span>
-                <ResponseViewer response={response} />
+                <div className={`grid gap-4 ${response || sendError ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                  {/* Request Builder */}
+                  <div className="space-y-4 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm uppercase tracking-wider text-blue-400/70 font-semibold">
+                        Request Builder
+                      </span>
+                      <div className="flex-1" />
+                      <button
+                        onClick={() => { setSelectedEndpoint(null); setResponse(null); setSendError(null); }}
+                        className="text-sm text-muted-foreground/60 hover:text-muted-foreground/80"
+                      >
+                        Close
+                      </button>
+                    </div>
+                    <RequestBuilder
+                      endpoint={selectedEndpoint}
+                      onSend={handleSend}
+                      isSending={isSending}
+                    />
+                  </div>
+
+                  {/* Response Viewer */}
+                  {(response || sendError) && (
+                    <div className="min-w-0">
+                      <span className="text-sm uppercase tracking-wider text-emerald-400/70 font-semibold block mb-3">
+                        Response
+                      </span>
+                      {sendError && (
+                        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400 font-mono whitespace-pre-wrap">
+                          {sendError}
+                        </div>
+                      )}
+                      {response && <ResponseViewer response={response} />}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </>
@@ -323,7 +328,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
               <h3 className="text-sm font-semibold text-foreground/80">Paste OpenAPI / Swagger Spec</h3>
               <button
                 onClick={() => { setShowPasteModal(false); setPasteContent(''); }}
-                className="p-1 rounded hover:bg-secondary/40 text-muted-foreground/50"
+                className="p-1 rounded hover:bg-secondary/40 text-muted-foreground/60"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -332,12 +337,12 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
               value={pasteContent}
               onChange={(e) => setPasteContent(e.target.value)}
               placeholder="Paste your OpenAPI JSON or YAML spec here..."
-              className="w-full h-[300px] p-3 rounded-lg text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/25 resize-none focus:outline-none focus:border-primary/25"
+              className="w-full h-[300px] p-3 rounded-lg text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/80 placeholder:text-muted-foreground/40 resize-none focus:outline-none focus:border-primary/25"
             />
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => { setShowPasteModal(false); setPasteContent(''); }}
-                className="px-3 py-2 rounded-lg text-sm text-muted-foreground/60 hover:bg-secondary/40 transition-colors"
+                className="px-3 py-2 rounded-lg text-sm text-muted-foreground/70 hover:bg-secondary/40 transition-colors"
               >
                 Cancel
               </button>
@@ -362,10 +367,10 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
 function EmptyState({ onUpload, onPaste }: { onUpload: () => void; onPaste: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 space-y-4">
-      <Globe className="w-10 h-10 text-muted-foreground/15" />
+      <Globe className="w-10 h-10 text-muted-foreground/30" />
       <div className="text-center space-y-1">
-        <p className="text-sm text-muted-foreground/50">No API endpoints loaded</p>
-        <p className="text-sm text-muted-foreground/30">
+        <p className="text-sm text-muted-foreground/70">No API endpoints loaded</p>
+        <p className="text-sm text-muted-foreground/50">
           Upload an OpenAPI/Swagger spec to explore and test API endpoints.
         </p>
       </div>
@@ -379,7 +384,7 @@ function EmptyState({ onUpload, onPaste }: { onUpload: () => void; onPaste: () =
         </button>
         <button
           onClick={onPaste}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-secondary/30 border border-primary/10 text-foreground/70 hover:bg-secondary/50 transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-secondary/30 border border-primary/10 text-foreground/80 hover:bg-secondary/50 transition-colors"
         >
           <FileText className="w-3.5 h-3.5" />
           Paste OpenAPI
@@ -396,7 +401,7 @@ import type { TestProgress } from '../useApiTestRunner';
 function TestRunCounters({ progress }: { progress: TestProgress }) {
   return (
     <div className="flex items-center gap-2.5 shrink-0 text-sm font-medium">
-      <span className="text-muted-foreground/40">
+      <span className="text-muted-foreground/60">
         {progress.current}/{progress.total}
       </span>
       {progress.passed > 0 && (
@@ -412,7 +417,7 @@ function TestRunCounters({ progress }: { progress: TestProgress }) {
         </span>
       )}
       {progress.skipped > 0 && (
-        <span className="flex items-center gap-0.5 text-muted-foreground/30">
+        <span className="flex items-center gap-0.5 text-muted-foreground/50">
           <MinusCircle className="w-3 h-3" />
           {progress.skipped}
         </span>
@@ -426,8 +431,8 @@ function apiTestLineClassName(line: string): string {
   if (line.includes('✓')) return 'text-emerald-400/70';
   if (line.includes('✗')) return 'text-red-400/70';
   if (line.includes('→')) return 'text-blue-400/50';
-  if (line.includes('Done:') || line.includes('Starting')) return 'text-foreground/60';
-  return 'text-muted-foreground/40';
+  if (line.includes('Done:') || line.includes('Starting')) return 'text-foreground/70';
+  return 'text-muted-foreground/60';
 }
 
 // ── Helpers ──────────────────────────────────────────────────────

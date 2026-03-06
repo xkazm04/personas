@@ -178,8 +178,8 @@ fn scan_env_vars() -> Vec<ForagedCredential> {
             .collect();
 
         results.push(ForagedCredential {
-            id: format!("env:{}", service_type),
-            label: format!("{}{}", service_type, label_suffix),
+            id: format!("env:{service_type}"),
+            label: format!("{service_type}{label_suffix}"),
             service_type: service_type.clone(),
             source: ForageSource::EnvVar,
             fields: display_fields,
@@ -214,8 +214,8 @@ fn scan_aws_credentials() -> Vec<ForagedCredential> {
             .map(|(k, v)| (k.clone(), mask_value(v)))
             .collect();
         out.push(ForagedCredential {
-            id: format!("aws:profile:{}", profile),
-            label: format!("AWS — {}", profile),
+            id: format!("aws:profile:{profile}"),
+            label: format!("AWS — {profile}"),
             service_type: "aws".to_string(),
             source: ForageSource::AwsCredentials,
             fields: display_fields,
@@ -285,8 +285,8 @@ fn scan_kube_config() -> Vec<ForagedCredential> {
         let mut fields = HashMap::new();
         fields.insert("context".to_string(), name.clone());
         results.push(ForagedCredential {
-            id: format!("kube:context:{}", name),
-            label: format!("Kubernetes — {}", name),
+            id: format!("kube:context:{name}"),
+            label: format!("Kubernetes — {name}"),
             service_type: "kubernetes".to_string(),
             source: ForageSource::KubeConfig,
             fields,
@@ -341,8 +341,8 @@ fn parse_dotenv_content(content: &str, source_label: &str) -> Vec<ForagedCredent
                 fields.insert(field_key.to_string(), mask_value(val));
 
                 results.push(ForagedCredential {
-                    id: format!("dotenv:{}:{}", source_label, key),
-                    label: format!("{} from {}", service_type, source_label),
+                    id: format!("dotenv:{source_label}:{key}"),
+                    label: format!("{service_type} from {source_label}"),
                     service_type: service_type.to_string(),
                     source: ForageSource::DotEnv,
                     fields,
@@ -406,8 +406,8 @@ fn scan_docker_config() -> Vec<ForagedCredential> {
                 let mut fields = HashMap::new();
                 fields.insert("registry".to_string(), registry.clone());
                 results.push(ForagedCredential {
-                    id: format!("docker:registry:{}", registry),
-                    label: format!("Docker — {}", registry),
+                    id: format!("docker:registry:{registry}"),
+                    label: format!("Docker — {registry}"),
                     service_type: "docker".to_string(),
                     source: ForageSource::DockerConfig,
                     fields,
@@ -451,8 +451,8 @@ fn scan_github_cli() -> Vec<ForagedCredential> {
                 let mut fields = HashMap::new();
                 fields.insert("api_key".to_string(), mask_value(token));
                 results.push(ForagedCredential {
-                    id: format!("ghcli:{}", host),
-                    label: format!("GitHub CLI — {}", host),
+                    id: format!("ghcli:{host}"),
+                    label: format!("GitHub CLI — {host}"),
                     service_type: "github".to_string(),
                     source: ForageSource::GitHubCli,
                     fields,
@@ -483,10 +483,10 @@ fn scan_ssh_keys() -> Vec<ForagedCredential> {
         if name.ends_with(".pub") {
             let key_name = name.trim_end_matches(".pub");
             let mut fields = HashMap::new();
-            fields.insert("key_file".to_string(), format!("~/.ssh/{}", key_name));
+            fields.insert("key_file".to_string(), format!("~/.ssh/{key_name}"));
             results.push(ForagedCredential {
-                id: format!("ssh:key:{}", key_name),
-                label: format!("SSH Key — {}", key_name),
+                id: format!("ssh:key:{key_name}"),
+                label: format!("SSH Key — {key_name}"),
                 service_type: "ssh".to_string(),
                 source: ForageSource::SshKey,
                 fields,
@@ -609,7 +609,7 @@ pub fn import_foraged_credential(
 ) -> Result<serde_json::Value, String> {
     // Re-read the actual values from the source
     let fields = resolve_real_values(&foraged_id, &service_type)
-        .map_err(|e| format!("Failed to read credential values: {}", e))?;
+        .map_err(|e| format!("Failed to read credential values: {e}"))?;
 
     if fields.is_empty() {
         return Err("No credential values found at source. The credential may have been removed.".to_string());
@@ -626,14 +626,14 @@ pub fn import_foraged_credential(
     };
 
     let cred = crate::db::repos::resources::credentials::create(&state.db, input)
-        .map_err(|e| format!("Failed to create credential: {}", e))?;
+        .map_err(|e| format!("Failed to create credential: {e}"))?;
 
     // Save fields with encryption
     crate::db::repos::resources::credentials::save_fields(&state.db, &cred.id, &fields)
         .map_err(|e| {
             // Rollback credential on field save failure
             let _ = crate::db::repos::resources::credentials::delete(&state.db, &cred.id);
-            format!("Failed to save credential fields: {}", e)
+            format!("Failed to save credential fields: {e}")
         })?;
 
     // Audit log
@@ -706,7 +706,7 @@ fn resolve_aws_profile(profile: &str) -> Result<HashMap<String, String>, String>
     let home = home_dir().ok_or("Cannot determine home directory")?;
     let path = home.join(".aws").join("credentials");
     let content = std::fs::read_to_string(&path)
-        .map_err(|e| format!("Cannot read ~/.aws/credentials: {}", e))?;
+        .map_err(|e| format!("Cannot read ~/.aws/credentials: {e}"))?;
 
     let mut in_profile = false;
     let mut fields = HashMap::new();
@@ -750,7 +750,7 @@ fn resolve_dotenv_value(source: &str, key: &str) -> Result<HashMap<String, Strin
     };
 
     let content = std::fs::read_to_string(&path)
-        .map_err(|e| format!("Cannot read {}: {}", source, e))?;
+        .map_err(|e| format!("Cannot read {source}: {e}"))?;
 
     for line in content.lines() {
         let trimmed = line.trim();
@@ -772,7 +772,7 @@ fn resolve_dotenv_value(source: &str, key: &str) -> Result<HashMap<String, Strin
         }
     }
 
-    Err(format!("Key {} not found in {}", key, source))
+    Err(format!("Key {key} not found in {source}"))
 }
 
 fn resolve_github_cli_token(host: &str) -> Result<HashMap<String, String>, String> {
@@ -782,7 +782,7 @@ fn resolve_github_cli_token(host: &str) -> Result<HashMap<String, String>, Strin
 
     let content = std::fs::read_to_string(&path)
         .or_else(|_| std::fs::read_to_string(&win_path))
-        .map_err(|e| format!("Cannot read GitHub CLI config: {}", e))?;
+        .map_err(|e| format!("Cannot read GitHub CLI config: {e}"))?;
 
     let mut current_host: Option<String> = None;
     for line in content.lines() {
@@ -801,14 +801,14 @@ fn resolve_github_cli_token(host: &str) -> Result<HashMap<String, String>, Strin
         }
     }
 
-    Err(format!("No token found for host {}", host))
+    Err(format!("No token found for host {host}"))
 }
 
 fn resolve_npmrc_token() -> Result<HashMap<String, String>, String> {
     let home = home_dir().ok_or("Cannot determine home directory")?;
     let path = home.join(".npmrc");
     let content = std::fs::read_to_string(&path)
-        .map_err(|e| format!("Cannot read ~/.npmrc: {}", e))?;
+        .map_err(|e| format!("Cannot read ~/.npmrc: {e}"))?;
 
     for line in content.lines() {
         let trimmed = line.trim();

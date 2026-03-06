@@ -436,11 +436,10 @@ async fn run_continue_transform(
     let base_prompt = format!(
         r#"Here are the user's answers to your questions:
 
-{}
+{user_answers_json}
 
 Now proceed to PHASE 2. Generate the full persona JSON based on the workflow analysis and the user's answers above.
-Remember: return ONLY valid JSON with the persona object, no markdown fences."#,
-        user_answers_json
+Remember: return ONLY valid JSON with the persona object, no markdown fences."#
     );
     let prompt_text = wrap_prompt_with_sections(&base_prompt);
 
@@ -688,7 +687,7 @@ pub async fn run_claude_prompt_text_inner(
             "Claude CLI not found. Install from https://docs.anthropic.com/en/docs/claude-code"
                 .to_string()
         } else {
-            format!("Failed to spawn Claude CLI: {}", e)
+            format!("Failed to spawn Claude CLI: {e}")
         }
     })?;
 
@@ -771,7 +770,7 @@ pub async fn run_claude_prompt_text_inner(
     if stream_result.is_err() {
         let _ = child.kill().await;
         let _ = child.wait().await;
-        return Err(format!("Claude CLI timed out after {} seconds", timeout_secs));
+        return Err(format!("Claude CLI timed out after {timeout_secs} seconds"));
     }
 
     // Flush any remaining buffered section
@@ -786,7 +785,7 @@ pub async fn run_claude_prompt_text_inner(
     let exit_status = child
         .wait()
         .await
-        .map_err(|e| format!("Failed waiting for Claude CLI: {}", e))?;
+        .map_err(|e| format!("Failed waiting for Claude CLI: {e}"))?;
     let stderr_output = stderr_task.await.unwrap_or_default();
 
     if !exit_status.success() {
@@ -796,7 +795,7 @@ pub async fn run_claude_prompt_text_inner(
             .last()
             .unwrap_or("unknown error")
             .to_string();
-        return Err(format!("Claude CLI exited with error: {}", msg));
+        return Err(format!("Claude CLI exited with error: {msg}"));
     }
 
     if text_output.trim().is_empty() {

@@ -71,12 +71,12 @@ fn is_v6_unique_local(ip: Ipv6Addr) -> bool {
 /// (e.g., `http://metadata.internal/` → 169.254.169.254).
 pub fn validate_url_safety(url_str: &str) -> Result<(), String> {
     let parsed = url::Url::parse(url_str)
-        .map_err(|e| format!("Invalid URL: {}", e))?;
+        .map_err(|e| format!("Invalid URL: {e}"))?;
 
     // Only allow http and https schemes
     match parsed.scheme() {
         "http" | "https" => {}
-        scheme => return Err(format!("Blocked scheme '{}': only http/https allowed", scheme)),
+        scheme => return Err(format!("Blocked scheme '{scheme}': only http/https allowed")),
     }
 
     let host = parsed.host_str()
@@ -85,19 +85,19 @@ pub fn validate_url_safety(url_str: &str) -> Result<(), String> {
     // Quick check: if host is an IP literal, validate directly
     if let Ok(ip) = host.parse::<IpAddr>() {
         if is_private_ip(ip) {
-            return Err(format!("Blocked private/internal address: {}", ip));
+            return Err(format!("Blocked private/internal address: {ip}"));
         }
         return Ok(());
     }
 
     // Resolve hostname and check all resolved IPs
     let port = parsed.port_or_known_default().unwrap_or(80);
-    let addr = format!("{}:{}", host, port);
+    let addr = format!("{host}:{port}");
     match addr.to_socket_addrs() {
         Ok(addrs) => {
             let resolved: Vec<_> = addrs.collect();
             if resolved.is_empty() {
-                return Err(format!("DNS resolution failed: no addresses for {}", host));
+                return Err(format!("DNS resolution failed: no addresses for {host}"));
             }
             for socket_addr in &resolved {
                 if is_private_ip(socket_addr.ip()) {

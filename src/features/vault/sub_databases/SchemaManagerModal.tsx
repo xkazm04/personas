@@ -158,6 +158,8 @@ function getQueryLanguage(serviceType: string): string {
       return 'redis';
     case 'mongodb':
       return 'mongodb';
+    case 'convex':
+      return 'convex';
     default:
       return 'sql';
   }

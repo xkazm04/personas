@@ -33,7 +33,7 @@ pub async fn start_test_run(
     for v in models {
         match serde_json::from_value(v.clone()) {
             Ok(config) => model_configs.push(config),
-            Err(e) => return Err(AppError::Validation(format!("Invalid model config: {}", e))),
+            Err(e) => return Err(AppError::Validation(format!("Invalid model config: {e}"))),
         }
     }
 
@@ -199,14 +199,14 @@ pub async fn validate_n8n_draft(
             if !path.exists() {
                 tool_issues.push(ToolIssue {
                     tool_name: tool.name.clone(),
-                    issue: format!("Script not found: {}", script),
+                    issue: format!("Script not found: {script}"),
                 });
             }
         } else {
             // Relative path — no mechanism creates these
             tool_issues.push(ToolIssue {
                 tool_name: tool.name.clone(),
-                issue: format!("Script '{}' does not exist.", script),
+                issue: format!("Script '{script}' does not exist."),
             });
         }
     }
@@ -337,7 +337,7 @@ pub async fn test_n8n_draft(
             let error_msg = if e.kind() == std::io::ErrorKind::NotFound {
                 "Claude CLI not found. Install it from https://docs.anthropic.com/en/docs/claude-code".to_string()
             } else {
-                format!("Failed to spawn Claude CLI: {}", e)
+                format!("Failed to spawn Claude CLI: {e}")
             };
             let _ = app.emit(
                 "n8n-test-status",

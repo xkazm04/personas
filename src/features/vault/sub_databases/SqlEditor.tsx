@@ -178,7 +178,7 @@ function tokenizeRedis(text: string): Token[] {
 
     if (/[a-zA-Z_*]/.test(ch)) {
       let word = '';
-      while (i < text.length && /[a-zA-Z0-9_:.*\-]/.test(text[i]!)) { word += text[i]!; i++; }
+      while (i < text.length && /[a-zA-Z0-9_:.*-]/.test(text[i]!)) { word += text[i]!; i++; }
       const upper = word.toUpperCase();
       if (REDIS_COMMANDS.has(upper)) {
         tokens.push({ type: 'keyword', value: word });
@@ -261,6 +261,7 @@ function tokenizeJson(text: string): Token[] {
 function tokenize(text: string, language: string): Token[] {
   switch (language) {
     case 'json':
+    case 'convex':
       return tokenizeJson(text);
     case 'redis':
       return tokenizeRedis(text);

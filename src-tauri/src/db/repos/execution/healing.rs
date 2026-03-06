@@ -34,12 +34,12 @@ pub fn get_all(
     let mut param_idx = 1u32;
 
     if let Some(pid) = persona_id {
-        conditions.push(format!("persona_id = ?{}", param_idx));
+        conditions.push(format!("persona_id = ?{param_idx}"));
         param_values.push(Box::new(pid.to_string()));
         param_idx += 1;
     }
     if let Some(st) = status {
-        conditions.push(format!("status = ?{}", param_idx));
+        conditions.push(format!("status = ?{param_idx}"));
         param_values.push(Box::new(st.to_string()));
         #[allow(unused_assignments)]
         { param_idx += 1; }
@@ -52,8 +52,7 @@ pub fn get_all(
     };
 
     let sql = format!(
-        "SELECT * FROM persona_healing_issues {} ORDER BY created_at DESC",
-        where_clause
+        "SELECT * FROM persona_healing_issues {where_clause} ORDER BY created_at DESC"
     );
 
     let params_ref: Vec<&dyn rusqlite::types::ToSql> =

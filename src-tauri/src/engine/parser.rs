@@ -47,7 +47,7 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
                     .get("session_id")
                     .and_then(|s| s.as_str())
                     .map(String::from);
-                let display = format!("Session started ({})", model);
+                let display = format!("Session started ({model})");
                 (
                     StreamLineType::SystemInit { model, session_id },
                     Some(display),
@@ -94,7 +94,7 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
                                 let input_json = block.get("input").cloned().unwrap_or(serde_json::Value::Null);
                                 let input_preview = serde_json::to_string(&input_json).unwrap_or_default();
                                 let input_preview_truncated = truncate_field(&input_preview, MAX_TOOL_INPUT_DISPLAY);
-                                let display = format!("> Using tool: {}", name);
+                                let display = format!("> Using tool: {name}");
                                 if first_type.is_none() {
                                     first_type = Some(StreamLineType::AssistantToolUse {
                                         tool_name: name,
@@ -142,7 +142,7 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
                     if block_type == "tool_result" {
                         let preview = extract_tool_result_preview(block);
                         let truncated = truncate_field(&preview, MAX_TOOL_RESULT_DISPLAY);
-                        let display = format!("  Tool result: {}", truncated);
+                        let display = format!("  Tool result: {truncated}");
                         return (
                             StreamLineType::ToolResult {
                                 content_preview: preview,
@@ -180,12 +180,12 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
             let mut display = String::new();
             if let Some(ms) = duration_ms {
                 let secs = ms as f64 / 1000.0;
-                display.push_str(&format!("Completed in {:.1}s", secs));
+                display.push_str(&format!("Completed in {secs:.1}s"));
             } else {
                 display.push_str("Completed");
             }
             if let Some(cost) = total_cost_usd {
-                display.push_str(&format!(" (cost: ${:.4})", cost));
+                display.push_str(&format!(" (cost: ${cost:.4})"));
             }
 
             (
@@ -321,8 +321,8 @@ pub fn extract_protocol_message(line: &str) -> Option<ProtocolMessage> {
 
     for &(key, parser_fn) in PROTOCOL_KEYS {
         // Fast prefix check: {"key": or {"key" :
-        if trimmed.starts_with(&format!("{{\"{}\":", key))
-            || trimmed.starts_with(&format!("{{\"{}\" :", key))
+        if trimmed.starts_with(&format!("{{\"{key}\":"))
+            || trimmed.starts_with(&format!("{{\"{key}\" :"))
         {
             let wrapper: serde_json::Value = serde_json::from_str(trimmed).ok()?;
             let msg = wrapper.get(key)?;
@@ -442,7 +442,7 @@ mod tests {
                 assert_eq!(model, "claude-sonnet-4-20250514");
                 assert_eq!(session_id, Some("sess-123".to_string()));
             }
-            _ => panic!("Expected SystemInit, got {:?}", st),
+            _ => panic!("Expected SystemInit, got {st:?}"),
         }
         assert_eq!(display, Some("Session started (claude-sonnet-4-20250514)".to_string()));
     }
@@ -456,7 +456,7 @@ mod tests {
             StreamLineType::AssistantText { text } => {
                 assert_eq!(text, "Hello world");
             }
-            _ => panic!("Expected AssistantText, got {:?}", st),
+            _ => panic!("Expected AssistantText, got {st:?}"),
         }
         assert_eq!(display, Some("Hello world".to_string()));
     }
@@ -471,7 +471,7 @@ mod tests {
                 assert_eq!(tool_name, "read_file");
                 assert_eq!(input_preview, "{}");
             }
-            _ => panic!("Expected AssistantToolUse, got {:?}", st),
+            _ => panic!("Expected AssistantToolUse, got {st:?}"),
         }
         assert_eq!(display, Some("> Using tool: read_file".to_string()));
     }
@@ -497,7 +497,7 @@ mod tests {
                 assert_eq!(model, Some("claude-sonnet-4-20250514".to_string()));
                 assert_eq!(session_id, Some("sess-456".to_string()));
             }
-            _ => panic!("Expected Result, got {:?}", st),
+            _ => panic!("Expected Result, got {st:?}"),
         }
         let disp = display.unwrap();
         assert!(disp.contains("Completed in 5.2s"));
@@ -513,7 +513,7 @@ mod tests {
             StreamLineType::ToolResult { content_preview } => {
                 assert_eq!(content_preview, "File contents here: some data");
             }
-            _ => panic!("Expected ToolResult, got {:?}", st),
+            _ => panic!("Expected ToolResult, got {st:?}"),
         }
         let disp = display.unwrap();
         assert!(disp.starts_with("  Tool result: "));
@@ -550,7 +550,7 @@ mod tests {
             StreamLineType::AssistantText { text } => {
                 assert_eq!(text, "Let me check that.");
             }
-            _ => panic!("Expected AssistantText for first block, got {:?}", st),
+            _ => panic!("Expected AssistantText for first block, got {st:?}"),
         }
         // Display should contain the text
         let disp = display.unwrap();
@@ -574,7 +574,7 @@ mod tests {
                 assert_eq!(content_type, Some("success".to_string()));
                 assert_eq!(priority, Some("normal".to_string()));
             }
-            _ => panic!("Expected UserMessage, got {:?}", msg),
+            _ => panic!("Expected UserMessage, got {msg:?}"),
         }
     }
 
@@ -595,7 +595,7 @@ mod tests {
                 let inp = input.unwrap();
                 assert!(inp.get("files").is_some());
             }
-            _ => panic!("Expected PersonaAction, got {:?}", msg),
+            _ => panic!("Expected PersonaAction, got {msg:?}"),
         }
     }
 
@@ -611,7 +611,7 @@ mod tests {
                 let d = data.unwrap();
                 assert_eq!(d.get("success").and_then(|v| v.as_bool()), Some(true));
             }
-            _ => panic!("Expected EmitEvent, got {:?}", msg),
+            _ => panic!("Expected EmitEvent, got {msg:?}"),
         }
     }
 
@@ -637,7 +637,7 @@ mod tests {
                     Some(vec!["api".to_string(), "patterns".to_string()])
                 );
             }
-            _ => panic!("Expected AgentMemory, got {:?}", msg),
+            _ => panic!("Expected AgentMemory, got {msg:?}"),
         }
     }
 
