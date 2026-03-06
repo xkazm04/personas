@@ -1,6 +1,7 @@
 import { Sparkles, Wand2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { DesignInput } from '@/features/shared/components/DesignInput';
+import { ErrorBanner } from '@/features/shared/components/ErrorBanner';
 import { DesignPhasePanelSaved } from './DesignPhasePanelSaved';
 
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
@@ -70,7 +71,7 @@ export function DesignPhasePanel({
             <div className="flex items-center gap-3">
               <button
                 onClick={() => onIntentModeChange(false)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all border ${
                   !intentMode
                     ? 'bg-primary/10 text-primary border-primary/25'
                     : 'bg-transparent text-muted-foreground/70 border-transparent hover:text-foreground/80'
@@ -81,7 +82,7 @@ export function DesignPhasePanel({
               </button>
               <button
                 onClick={() => onIntentModeChange(true)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all border ${
                   intentMode
                     ? 'bg-violet-500/10 text-violet-400 border-violet-500/25'
                     : 'bg-transparent text-muted-foreground/70 border-transparent hover:text-foreground/80'
@@ -155,7 +156,11 @@ export function DesignPhasePanel({
           )}
 
           {error && (
-            <p className="text-sm text-red-400 px-1">{error}</p>
+            <ErrorBanner
+              message={error}
+              variant="inline"
+              onRetry={onStartAnalysis}
+            />
           )}
         </>
       )}

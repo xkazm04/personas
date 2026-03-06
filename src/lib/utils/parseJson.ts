@@ -4,6 +4,7 @@ export function parseJsonOrDefault<T>(json: string | null | undefined, fallback:
   try {
     return JSON.parse(json) as T;
   } catch {
+    // intentional: non-critical -- JSON parse fallback
     return fallback;
   }
 }

@@ -27,7 +27,7 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange }: 
 
   return (
     <div
-      className="group relative px-2.5 py-2 rounded-lg border border-primary/5 hover:border-primary/15 transition-colors"
+      className="group relative px-2.5 py-2 rounded-xl border border-primary/5 hover:border-primary/15 transition-colors"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
@@ -70,7 +70,7 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange }: 
       {/* Delete button on hover */}
       {hovered && (
         <button
-          className="absolute top-1.5 right-1.5 p-1 rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+          className="absolute top-1.5 right-1.5 p-1 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
           onClick={() => onDelete(memory.id)}
           title="Delete memory"
         >

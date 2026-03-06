@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { PersonaMessage } from "@/lib/bindings/PersonaMessage";
 import type { PersonaMessageDelivery } from "@/lib/bindings/PersonaMessageDelivery";

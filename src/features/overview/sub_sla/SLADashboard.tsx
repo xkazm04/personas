@@ -51,7 +51,7 @@ export default function SLADashboard() {
               <button
                 key={d}
                 onClick={() => setDays(d)}
-                className={`px-2.5 py-1 text-xs rounded-md transition-colors ${
+                className={`px-2.5 py-1 text-xs rounded-xl transition-colors ${
                   days === d
                     ? 'bg-primary/15 text-primary border border-primary/30'
                     : 'text-muted-foreground/70 hover:text-foreground/80 hover:bg-primary/5 border border-transparent'
@@ -279,7 +279,7 @@ function PersonaRow({
 
 function MiniStat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-primary/10 bg-secondary/10 px-3 py-2">
+    <div className="rounded-xl border border-primary/10 bg-secondary/10 px-3 py-2">
       <div className="flex items-center gap-1.5 text-muted-foreground/60 mb-0.5">
         {icon}
         <span className="text-xs">{label}</span>

@@ -66,14 +66,14 @@ export function TableSelector({
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder="Filter tables..."
-            className="w-full pl-6 pr-2 py-1 rounded-md bg-background/50 border border-primary/8 text-sm text-foreground/80 placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/25 transition-colors"
+            className="w-full pl-6 pr-2 py-1 rounded-xl bg-background/50 border border-primary/8 text-sm text-foreground/80 placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/25 transition-colors"
           />
         </div>
         {onRefresh && (
           <button
             onClick={onRefresh}
             disabled={loading}
-            className="p-1 rounded-md text-muted-foreground/40 hover:text-foreground/70 hover:bg-secondary/40 disabled:opacity-40 transition-colors"
+            className="p-1 rounded-lg text-muted-foreground/40 hover:text-foreground/70 hover:bg-secondary/40 disabled:opacity-40 transition-colors"
             title="Refresh"
           >
             <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
@@ -108,7 +108,7 @@ export function TableSelector({
         )}
 
         {error && (
-          <div className="p-2 mx-2 my-1.5 rounded-md bg-red-500/10 border border-red-500/15 text-sm text-red-400 break-words">
+          <div className="p-2 mx-2 my-1.5 rounded-lg bg-red-500/10 border border-red-500/15 text-sm text-red-400 break-words">
             {error}
           </div>
         )}

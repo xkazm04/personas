@@ -178,7 +178,7 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
 
     // Check if cancelled
     let is_cancelled = {
-        let guard = active_id.lock().unwrap();
+        let guard = active_id.lock().unwrap_or_else(|e| e.into_inner());
         guard.as_deref() != Some(&task_id)
     };
 
@@ -191,7 +191,7 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
         Err(error_msg) => {
             // Clear active_id so future operations aren't blocked by a failed task
             {
-                let mut guard = active_id.lock().unwrap();
+                let mut guard = active_id.lock().unwrap_or_else(|e| e.into_inner());
                 if guard.as_deref() == Some(&task_id) {
                     *guard = None;
                 }
@@ -212,7 +212,7 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
             match extractor(&spawn_result.text_output) {
                 Some(extracted) => {
                     {
-                        let mut guard = active_id.lock().unwrap();
+                        let mut guard = active_id.lock().unwrap_or_else(|e| e.into_inner());
                         if guard.as_deref() == Some(&task_id) {
                             *guard = None;
                         }
@@ -222,7 +222,7 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
                 }
                 None => {
                     {
-                        let mut guard = active_id.lock().unwrap();
+                        let mut guard = active_id.lock().unwrap_or_else(|e| e.into_inner());
                         if guard.as_deref() == Some(&task_id) {
                             *guard = None;
                         }
@@ -314,7 +314,7 @@ pub async fn spawn_claude_and_collect(
     // Register child PID so cancel handlers can kill the process immediately
     if let Some(pid_ref) = child_pid_out {
         if let Some(pid) = child.id() {
-            *pid_ref.lock().unwrap() = Some(pid);
+            *pid_ref.lock().unwrap_or_else(|e| e.into_inner()) = Some(pid);
         }
     }
 
@@ -378,7 +378,7 @@ pub async fn spawn_claude_and_collect(
 
     // Clear the PID now that the process has exited
     if let Some(pid_ref) = child_pid_out {
-        *pid_ref.lock().unwrap() = None;
+        *pid_ref.lock().unwrap_or_else(|e| e.into_inner()) = None;
     }
 
     if stream_result.is_err() {

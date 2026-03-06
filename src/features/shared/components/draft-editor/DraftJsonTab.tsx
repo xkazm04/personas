@@ -29,6 +29,7 @@ export function DraftJsonTab({ draftJson, draftJsonError, disabled, onJsonChange
       }
       onJsonChange(value, parsed, null);
     } catch {
+      // intentional: non-critical — JSON parse fallback
       onJsonChange(value, null, 'Invalid JSON syntax.');
     }
   };
@@ -52,7 +53,7 @@ export function DraftJsonTab({ draftJson, draftJsonError, disabled, onJsonChange
     try {
       return sanitizeHljsHtml(hljs.highlight(draftJson, { language: 'json' }).value);
     } catch {
-      // Fallback: escape and show plain
+      // intentional: non-critical — JSON parse fallback (escape and show plain)
       return draftJson
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -71,7 +72,7 @@ export function DraftJsonTab({ draftJson, draftJsonError, disabled, onJsonChange
         </div>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-lg border border-primary/10 text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/40 transition-colors"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-xl border border-primary/10 text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/40 transition-colors"
         >
           {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
           {copied ? 'Copied' : 'Copy'}

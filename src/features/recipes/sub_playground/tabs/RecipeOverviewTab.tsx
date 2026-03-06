@@ -12,6 +12,7 @@ function parseTags(tags: string | null): string[] {
     const parsed = JSON.parse(tags);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
+    // intentional: non-critical — JSON parse fallback
     return [];
   }
 }
@@ -22,6 +23,7 @@ function parseInputSchema(schema: string | null): Array<{ key: string; type: str
     const parsed = JSON.parse(schema);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
+    // intentional: non-critical — JSON parse fallback
     return [];
   }
 }
@@ -55,7 +57,7 @@ export function RecipeOverviewTab({ recipe }: RecipeOverviewTabProps) {
           </h3>
           <div className="flex flex-wrap gap-1.5">
             {tags.map((tag) => (
-              <span key={tag} className="rounded-md border border-border/50 bg-muted/30 px-2 py-0.5 text-sm text-muted-foreground">
+              <span key={tag} className="rounded-lg border border-border/50 bg-muted/30 px-2 py-0.5 text-sm text-muted-foreground">
                 {tag}
               </span>
             ))}

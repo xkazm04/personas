@@ -97,7 +97,7 @@ export function AbTestPanel({ personaId, compareA, compareB }: AbTestPanelProps)
           onChange={(e) => setTestInput(e.target.value)}
           placeholder='{"task": "Summarize the latest sales report"}'
           data-testid="ab-test-input"
-          className="w-full h-20 px-3 py-2 text-sm bg-background/50 border border-primary/15 rounded-lg text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none font-mono"
+          className="w-full h-20 px-3 py-2 text-sm bg-background/50 border border-primary/15 rounded-xl text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none font-mono"
         />
       </div>
 
@@ -105,7 +105,7 @@ export function AbTestPanel({ personaId, compareA, compareB }: AbTestPanelProps)
         onClick={() => void handleRun()}
         disabled={running}
         data-testid="ab-test-run-btn"
-        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/15 text-primary hover:bg-primary/25 transition-colors disabled:opacity-50 text-sm font-medium"
+        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/15 text-primary hover:bg-primary/25 transition-colors disabled:opacity-50 text-sm font-medium"
       >
         {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
         {running ? 'Running A/B Test...' : 'Run A/B Test'}

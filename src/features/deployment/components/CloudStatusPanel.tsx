@@ -40,7 +40,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh }: CloudStatusPa
         <button
           onClick={onRefresh}
           disabled={isLoading}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md bg-secondary/40 border border-primary/15 text-muted-foreground/80 hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-secondary/40 border border-primary/15 text-muted-foreground/80 hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           Refresh
@@ -119,7 +119,7 @@ function WorkerBadge({ label, count, color }: { label: string; count: number; co
   };
 
   return (
-    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${colorMap[color]}`}>
+    <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${colorMap[color]}`}>
       <span className="text-lg font-semibold">{count}</span>
       <span className="text-sm opacity-70">{label}</span>
     </div>
@@ -168,7 +168,7 @@ function ActivityGauge({
   return (
     <div className="p-3 rounded-lg bg-secondary/30 border border-primary/10">
       <p className="text-sm text-muted-foreground/90 mb-2">{label}</p>
-      <div className="relative h-24 rounded-md bg-gradient-to-b from-secondary/40 to-secondary/10 border border-primary/10 overflow-hidden">
+      <div className="relative h-24 rounded-lg bg-gradient-to-b from-secondary/40 to-secondary/10 border border-primary/10 overflow-hidden">
         <div className={`absolute inset-0 pointer-events-none ${toneClasses.glow}`} />
         <svg viewBox="0 0 120 70" className="w-full h-full" role="img" aria-label={`${label} gauge`}>
           <path

@@ -23,6 +23,13 @@ const CIRCUIT_BREAKER_THRESHOLD: u32 = 5;
 /// How long an open circuit stays open before allowing a probe request.
 const CIRCUIT_COOLDOWN: Duration = Duration::from_secs(60);
 
+/// Total failures across ALL providers within the rolling window before
+/// the global breaker pauses all failover attempts.
+const GLOBAL_FAILURE_THRESHOLD: u32 = 10;
+
+/// Rolling time window for the global failure counter.
+const GLOBAL_FAILURE_WINDOW: Duration = Duration::from_secs(120);
+
 // =============================================================================
 // Error classification
 // =============================================================================
@@ -78,30 +85,74 @@ struct CircuitState {
     opened_at: Option<Instant>,
 }
 
-/// Per-provider circuit breaker.
+/// Global failure tracking state.
+#[derive(Debug)]
+struct GlobalState {
+    /// Timestamps of recent failures across all providers, used as a rolling window.
+    failure_times: Vec<Instant>,
+    /// When the global breaker was tripped (None = not tripped).
+    paused_at: Option<Instant>,
+}
+
+impl Default for GlobalState {
+    fn default() -> Self {
+        Self {
+            failure_times: Vec::new(),
+            paused_at: None,
+        }
+    }
+}
+
+/// Per-provider + global circuit breaker.
 ///
-/// Thread-safe: the inner state is behind a Mutex so multiple async tasks
-/// (concurrent executions) can record failures and check availability.
+/// Thread-safe: all state is behind a single Mutex so `try_acquire` can
+/// atomically check availability and reserve a slot, eliminating the TOCTOU
+/// race between `is_available()` and the caller's use of the result.
+///
+/// The global failure counter tracks total failures across ALL providers
+/// within a rolling window. When the threshold is reached, all failover
+/// attempts are paused until the cooldown expires — preventing the failover
+/// chain from amplifying load on already-stressed services.
 pub struct ProviderCircuitBreaker {
-    states: Mutex<HashMap<EngineKind, CircuitState>>,
+    states: Mutex<(HashMap<EngineKind, CircuitState>, GlobalState)>,
 }
 
 impl ProviderCircuitBreaker {
     pub fn new() -> Self {
         Self {
-            states: Mutex::new(HashMap::new()),
+            states: Mutex::new((HashMap::new(), GlobalState::default())),
         }
     }
 
-    /// Check if a provider is available (circuit closed or cooldown elapsed).
-    pub fn is_available(&self, kind: EngineKind) -> bool {
-        let mut states = self.states.lock().unwrap();
+    /// Atomically check if a provider is available and reserve a slot.
+    ///
+    /// Returns `true` if the provider can be used (circuit closed or cooldown
+    /// elapsed AND global breaker not tripped). Returns `false` if the circuit
+    /// is open or the global breaker is paused.
+    ///
+    /// This replaces the old `is_available()` to eliminate the TOCTOU race
+    /// where another thread could open the circuit between check and use.
+    pub fn try_acquire(&self, kind: EngineKind) -> bool {
+        let mut guard = self.states.lock().unwrap_or_else(|e| e.into_inner());
+        let (ref mut states, ref mut global) = *guard;
+
+        // 1. Check global breaker first
+        if let Some(paused_at) = global.paused_at {
+            if paused_at.elapsed() < CIRCUIT_COOLDOWN {
+                return false;
+            }
+            // Global cooldown elapsed — reset
+            tracing::info!("Global circuit breaker reset after cooldown");
+            global.paused_at = None;
+            global.failure_times.clear();
+        }
+
+        // 2. Check per-provider circuit
         let state = states.entry(kind).or_default();
         match state.opened_at {
             None => true,
             Some(opened) => {
-                let elapsed: Duration = opened.elapsed();
-                if elapsed >= CIRCUIT_COOLDOWN {
+                if opened.elapsed() >= CIRCUIT_COOLDOWN {
                     // Cooldown elapsed — half-open: allow one probe
                     tracing::info!(
                         provider = ?kind,
@@ -117,17 +168,40 @@ impl ProviderCircuitBreaker {
         }
     }
 
-    /// Record a successful execution — resets the failure counter.
+    /// Check if a provider is available (delegates to try_acquire).
+    ///
+    /// Kept for backward compatibility with callers that only need a read check.
+    pub fn is_available(&self, kind: EngineKind) -> bool {
+        self.try_acquire(kind)
+    }
+
+    /// Check if the global breaker is currently paused (all providers blocked).
+    pub fn is_globally_paused(&self) -> bool {
+        let guard = self.states.lock().unwrap_or_else(|e| e.into_inner());
+        let (_, ref global) = *guard;
+        match global.paused_at {
+            Some(paused_at) => paused_at.elapsed() < CIRCUIT_COOLDOWN,
+            None => false,
+        }
+    }
+
+    /// Record a successful execution — resets the per-provider failure counter.
     pub fn record_success(&self, kind: EngineKind) {
-        let mut states = self.states.lock().unwrap();
+        let mut guard = self.states.lock().unwrap_or_else(|e| e.into_inner());
+        let (ref mut states, _) = *guard;
         let state = states.entry(kind).or_default();
         state.consecutive_failures = 0;
         state.opened_at = None;
     }
 
-    /// Record a failure. If threshold is reached, open the circuit.
+    /// Record a failure. Opens the per-provider circuit if its threshold is
+    /// reached, and increments the global failure counter which may pause all
+    /// providers.
     pub fn record_failure(&self, kind: EngineKind) {
-        let mut states = self.states.lock().unwrap();
+        let mut guard = self.states.lock().unwrap_or_else(|e| e.into_inner());
+        let (ref mut states, ref mut global) = *guard;
+
+        // Per-provider tracking
         let state = states.entry(kind).or_default();
         state.consecutive_failures += 1;
         if state.consecutive_failures >= CIRCUIT_BREAKER_THRESHOLD && state.opened_at.is_none() {
@@ -139,6 +213,27 @@ impl ProviderCircuitBreaker {
                 state.consecutive_failures,
             );
             state.opened_at = Some(Instant::now());
+        }
+
+        // Global tracking: add timestamp and prune old entries outside the window
+        let now = Instant::now();
+        global.failure_times.push(now);
+        global
+            .failure_times
+            .retain(|t| now.duration_since(*t) < GLOBAL_FAILURE_WINDOW);
+
+        if global.failure_times.len() as u32 >= GLOBAL_FAILURE_THRESHOLD
+            && global.paused_at.is_none()
+        {
+            tracing::warn!(
+                total_failures = global.failure_times.len(),
+                window_secs = GLOBAL_FAILURE_WINDOW.as_secs(),
+                "Global circuit breaker tripped: {} failures across all providers in {}s — \
+                 pausing all failover attempts",
+                global.failure_times.len(),
+                GLOBAL_FAILURE_WINDOW.as_secs(),
+            );
+            global.paused_at = Some(now);
         }
     }
 }
@@ -313,22 +408,23 @@ mod tests {
     #[test]
     fn test_circuit_breaker_starts_closed() {
         let cb = ProviderCircuitBreaker::new();
-        assert!(cb.is_available(EngineKind::ClaudeCode));
-        assert!(cb.is_available(EngineKind::GeminiCli));
-        assert!(cb.is_available(EngineKind::CodexCli));
+        assert!(cb.try_acquire(EngineKind::ClaudeCode));
+        assert!(cb.try_acquire(EngineKind::GeminiCli));
+        assert!(cb.try_acquire(EngineKind::CodexCli));
+        assert!(!cb.is_globally_paused());
     }
 
     #[test]
     fn test_circuit_breaker_opens_after_threshold() {
         let cb = ProviderCircuitBreaker::new();
         for _ in 0..CIRCUIT_BREAKER_THRESHOLD {
-            assert!(cb.is_available(EngineKind::ClaudeCode));
+            assert!(cb.try_acquire(EngineKind::ClaudeCode));
             cb.record_failure(EngineKind::ClaudeCode);
         }
         // Circuit should now be open
-        assert!(!cb.is_available(EngineKind::ClaudeCode));
+        assert!(!cb.try_acquire(EngineKind::ClaudeCode));
         // Other providers unaffected
-        assert!(cb.is_available(EngineKind::GeminiCli));
+        assert!(cb.try_acquire(EngineKind::GeminiCli));
     }
 
     #[test]
@@ -338,10 +434,54 @@ mod tests {
             cb.record_failure(EngineKind::ClaudeCode);
         }
         // 4 failures, still under threshold
-        assert!(cb.is_available(EngineKind::ClaudeCode));
+        assert!(cb.try_acquire(EngineKind::ClaudeCode));
         cb.record_success(EngineKind::ClaudeCode);
         // Counter reset, should be available
-        assert!(cb.is_available(EngineKind::ClaudeCode));
+        assert!(cb.try_acquire(EngineKind::ClaudeCode));
+    }
+
+    #[test]
+    fn test_global_breaker_trips_after_threshold() {
+        let cb = ProviderCircuitBreaker::new();
+        // Spread failures across multiple providers to hit the global threshold
+        // without hitting any single provider's threshold (5)
+        for _ in 0..4 {
+            cb.record_failure(EngineKind::ClaudeCode);
+        }
+        for _ in 0..4 {
+            cb.record_failure(EngineKind::GeminiCli);
+        }
+        // 8 total failures — still under global threshold (10)
+        assert!(!cb.is_globally_paused());
+        assert!(cb.try_acquire(EngineKind::CodexCli));
+
+        // Push past global threshold
+        cb.record_failure(EngineKind::CodexCli);
+        cb.record_failure(EngineKind::CodexCli);
+        // 10 total failures — global breaker should trip
+        assert!(cb.is_globally_paused());
+
+        // All providers should be blocked
+        assert!(!cb.try_acquire(EngineKind::ClaudeCode));
+        assert!(!cb.try_acquire(EngineKind::GeminiCli));
+        assert!(!cb.try_acquire(EngineKind::CodexCli));
+        assert!(!cb.try_acquire(EngineKind::CopilotCli));
+    }
+
+    #[test]
+    fn test_global_breaker_does_not_trip_with_successes() {
+        let cb = ProviderCircuitBreaker::new();
+        // Record failures interleaved with successes
+        for _ in 0..4 {
+            cb.record_failure(EngineKind::ClaudeCode);
+        }
+        cb.record_success(EngineKind::ClaudeCode);
+        for _ in 0..4 {
+            cb.record_failure(EngineKind::GeminiCli);
+        }
+        // 8 total failures (successes don't reduce the global counter, but
+        // we're still under 10)
+        assert!(!cb.is_globally_paused());
     }
 
     #[test]

@@ -226,6 +226,7 @@ export function parseConversationMessages(messagesJson: string): DesignConversat
   try {
     return JSON.parse(messagesJson) as DesignConversationMessage[];
   } catch {
+    // intentional: non-critical -- JSON parse fallback
     return null;
   }
 }

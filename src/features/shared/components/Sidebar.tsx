@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Users, Radio, Brain, DollarSign, Cloud, Plus, LayoutTemplate, Monitor, Upload, List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu, Network, Database, Home, Compass, Sparkles, HardDriveDownload, Shield, Workflow, type LucideIcon } from 'lucide-react';
+import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Users, Radio, Brain, DollarSign, Cloud, Plus, LayoutTemplate, Monitor, Upload, List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu, Network, Database, Home, Compass, Sparkles, HardDriveDownload, Shield, Workflow, Gauge, type LucideIcon } from 'lucide-react';
 import { getVersion } from '@tauri-apps/api/app';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useAuthStore } from '@/stores/authStore';
@@ -9,6 +9,7 @@ import GroupedAgentSidebar from '@/features/agents/components/GroupedAgentSideba
 import TeamDragPanel from '@/features/pipeline/components/TeamDragPanel';
 import { useCredentialNav, type CredentialNavKey } from '@/features/vault/hooks/CredentialNavContext';
 import { useProvisioningWizardStore } from '@/stores/provisioningWizardStore';
+import OnboardingProgressBar from '@/features/onboarding/components/OnboardingProgressBar';
 
 const sections: Array<{ id: SidebarSection; icon: typeof Bot; label: string }> = [
   { id: 'home', icon: Home, label: 'Home' },
@@ -186,6 +187,8 @@ export default function Sidebar() {
     { id: 'budget', icon: DollarSign, label: 'Budget' },
     { id: 'sla', icon: Shield, label: 'SLA' },
     { id: 'workflows', icon: Workflow, label: 'Workflows' },
+    { id: 'tier', icon: Gauge, label: 'Tier Usage' },
+    { id: 'cron-agents', icon: Cpu, label: 'Cron Agents' },
   ];
 
   // Badge maps (only computed for sections that use them)
@@ -284,7 +287,7 @@ export default function Sidebar() {
                 <p className="text-sm text-muted-foreground/80">No credentials yet</p>
                 <button
                   onClick={() => useProvisioningWizardStore.getState().open(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-violet-500/25 bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border border-violet-500/25 bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors"
                 >
                   <Sparkles className="w-3 h-3" />
                   AI Setup Wizard
@@ -425,6 +428,7 @@ export default function Sidebar() {
         <div className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-thin scrollbar-thumb-primary/15 scrollbar-track-transparent">
           {renderLevel2()}
         </div>
+        <OnboardingProgressBar />
       </div>
     </div>
   );

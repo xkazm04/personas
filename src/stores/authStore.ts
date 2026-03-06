@@ -1,8 +1,9 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import { invoke } from "@tauri-apps/api/core";
+import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import { listen } from "@tauri-apps/api/event";
 import type { AuthUser, AuthStateResponse } from "@/api/auth";
+import { clearCryptoCache } from "@/lib/utils/crypto";
 
 // Re-export so existing consumers can still import from authStore
 export type { AuthUser, AuthStateResponse };
@@ -56,6 +57,7 @@ export const useAuthStore = create<AuthState>()(
               isLoading: false,
             });
           } catch {
+            // intentional: non-critical — auth state check on startup; backend may not be ready yet
             set({ isLoading: false });
           }
         },
@@ -86,6 +88,7 @@ export const useAuthStore = create<AuthState>()(
         logout: async () => {
           try {
             await invoke("logout");
+            clearCryptoCache();
             set({
               user: null,
               isAuthenticated: false,

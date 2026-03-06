@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef } from 'react';
 import { AlertTriangle, Undo2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { BaseModal } from '@/lib/ui/BaseModal';
 import type { CredentialMetadata } from '@/lib/types/types';
 
 export interface DeleteConfirmState {
@@ -30,126 +30,69 @@ export function CredentialDeleteDialog({
   undoToast,
   onUndo,
 }: CredentialDeleteDialogProps) {
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const cancelButtonRef = useRef<HTMLButtonElement>(null);
-
-  const handleDialogKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key !== 'Tab' || !dialogRef.current) return;
-
-    const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-    );
-    if (focusable.length === 0) return;
-
-    const first = focusable[0]!;
-    const last = focusable[focusable.length - 1]!;
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault();
-      last.focus();
-      return;
-    }
-    if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first.focus();
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!deleteConfirm) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCancelDelete();
-    };
-    window.addEventListener('keydown', onKeyDown);
-
-    const timer = setTimeout(() => {
-      cancelButtonRef.current?.focus();
-    }, 20);
-
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('keydown', onKeyDown);
-    };
-  }, [deleteConfirm, onCancelDelete]);
-
   return (
     <>
       {/* Delete Confirmation Dialog */}
-      <AnimatePresence>
+      <BaseModal
+        isOpen={!!deleteConfirm}
+        onClose={onCancelDelete}
+        titleId="delete-dialog-title"
+        maxWidthClass="max-w-sm"
+        panelClassName="bg-background border border-primary/15 rounded-2xl shadow-2xl overflow-hidden"
+      >
         {deleteConfirm && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 z-40"
-              onClick={onCancelDelete}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              ref={dialogRef}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="delete-dialog-title"
-              onKeyDown={handleDialogKeyDown}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            >
-              <div className="bg-background border border-primary/15 rounded-2xl shadow-2xl w-full max-w-sm p-4 space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-red-500/15 border border-red-500/25 flex items-center justify-center flex-shrink-0">
-                    <AlertTriangle className="w-5 h-5 text-red-400" />
-                  </div>
-                  <div>
-                    <h3 id="delete-dialog-title" className="text-sm font-semibold text-foreground/90">Delete Credential</h3>
-                    <p className="text-sm text-muted-foreground/90 mt-1">This action cannot be undone after the undo window expires.</p>
-                  </div>
-                </div>
-
-                <div className="bg-secondary/40 border border-primary/10 rounded-xl p-3 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-mono uppercase text-muted-foreground/80">Name</span>
-                    <span className="text-sm text-foreground/80">{deleteConfirm.credential.name}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-mono uppercase text-muted-foreground/80">Type</span>
-                    <span className="text-sm font-mono text-muted-foreground/80">{deleteConfirm.credential.service_type}</span>
-                  </div>
-                  {deleteConfirm.eventCount > 0 && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-mono uppercase text-muted-foreground/80">Event triggers</span>
-                      <span className="text-sm font-medium text-amber-400">
-                        {deleteConfirm.eventCount} will be removed
-                      </span>
-                    </div>
-                  )}
-                  {deleteConfirm.eventCountVerified === false && (
-                    <div className="text-sm text-amber-300/90">
-                      Could not verify event trigger count. Deletion may impact active automations.
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-end gap-2 pt-1">
-                  <button
-                    ref={cancelButtonRef}
-                    onClick={onCancelDelete}
-                    className="px-4 py-2 text-sm text-muted-foreground/80 hover:text-foreground/95 rounded-lg hover:bg-secondary/40 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={onConfirmDelete}
-                    className="px-4 py-2 text-sm font-medium rounded-lg bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors"
-                  >
-                    Delete
-                  </button>
-                </div>
+          <div className="p-4 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-500/15 border border-red-500/25 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-400" />
               </div>
-            </motion.div>
-          </>
+              <div>
+                <h3 id="delete-dialog-title" className="text-sm font-semibold text-foreground/90">Delete Credential</h3>
+                <p className="text-sm text-muted-foreground/90 mt-1">This action cannot be undone after the undo window expires.</p>
+              </div>
+            </div>
+
+            <div className="bg-secondary/40 border border-primary/10 rounded-xl p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-mono uppercase text-muted-foreground/80">Name</span>
+                <span className="text-sm text-foreground/80">{deleteConfirm.credential.name}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-mono uppercase text-muted-foreground/80">Type</span>
+                <span className="text-sm font-mono text-muted-foreground/80">{deleteConfirm.credential.service_type}</span>
+              </div>
+              {deleteConfirm.eventCount > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-mono uppercase text-muted-foreground/80">Event triggers</span>
+                  <span className="text-sm font-medium text-amber-400">
+                    {deleteConfirm.eventCount} will be removed
+                  </span>
+                </div>
+              )}
+              {deleteConfirm.eventCountVerified === false && (
+                <div className="text-sm text-amber-300/90">
+                  Could not verify event trigger count. Deletion may impact active automations.
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                onClick={onCancelDelete}
+                className="px-4 py-2 text-sm text-muted-foreground/80 hover:text-foreground/95 rounded-xl hover:bg-secondary/40 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={onConfirmDelete}
+                className="px-4 py-2 text-sm font-medium rounded-xl bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         )}
-      </AnimatePresence>
+      </BaseModal>
 
       {/* Undo Toast */}
       <AnimatePresence>
@@ -166,7 +109,7 @@ export function CredentialDeleteDialog({
               </span>
               <button
                 onClick={onUndo}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30 transition-colors"
               >
                 <Undo2 className="w-3.5 h-3.5" />
                 Undo

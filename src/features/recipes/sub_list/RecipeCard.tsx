@@ -28,6 +28,7 @@ function parseTags(tags: string | null): string[] {
     const parsed = JSON.parse(tags);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
+    // intentional: non-critical — JSON parse fallback
     return [];
   }
 }
@@ -53,14 +54,14 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
       {/* Category & Tags */}
       <div className="flex flex-wrap gap-1.5 mt-3">
         {recipe.category && (
-          <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-sm font-medium ${getCategoryStyle(recipe.category)}`}>
+          <span className={`inline-flex items-center rounded-lg border px-1.5 py-0.5 text-sm font-medium ${getCategoryStyle(recipe.category)}`}>
             {recipe.category}
           </span>
         )}
         {tags.slice(0, 3).map((tag) => (
           <span
             key={tag}
-            className="inline-flex items-center rounded-md border border-border/50 bg-muted/30 px-1.5 py-0.5 text-sm text-muted-foreground"
+            className="inline-flex items-center rounded-lg border border-border/50 bg-muted/30 px-1.5 py-0.5 text-sm text-muted-foreground"
           >
             {tag}
           </span>
@@ -72,7 +73,7 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
         {recipe.sample_inputs && onQuickTest && (
           <button
             onClick={() => onQuickTest(recipe.id)}
-            className="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+            className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-emerald-400 hover:bg-emerald-500/10 transition-colors"
             title="Quick test with mock values"
           >
             <Play className="w-3 h-3" /> Run
@@ -80,21 +81,21 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
         )}
         <button
           onClick={() => onPlayground(recipe.id)}
-          className="flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+          className="flex items-center justify-center rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
           title="Open settings"
         >
           <Settings className="w-3.5 h-3.5" />
         </button>
         <button
           onClick={() => onEdit(recipe.id)}
-          className="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
+          className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
         >
           <Pencil className="w-3 h-3" /> Edit
         </button>
         <div className="flex-1" />
         <button
           onClick={() => onDelete(recipe.id)}
-          className="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100"
+          className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100"
         >
           <Trash2 className="w-3 h-3" />
         </button>

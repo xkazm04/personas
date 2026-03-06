@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { LabArenaRun } from "@/lib/bindings/LabArenaRun";
 import type { LabArenaResult } from "@/lib/bindings/LabArenaResult";

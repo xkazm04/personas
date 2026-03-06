@@ -33,7 +33,7 @@ export default function EmptyState({
       animate={{ opacity: 1, y: 0 }}
       className={`py-8 flex flex-col items-center justify-center text-center gap-2.5 ${className ?? ''}`}
     >
-      <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center ${iconContainerClassName}`}>
+      <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${iconContainerClassName}`}>
         <Icon className={`w-4 h-4 ${iconColor}`} />
       </div>
       <h3 className="text-sm font-medium text-foreground/90">{title}</h3>
@@ -42,7 +42,7 @@ export default function EmptyState({
       {action && (
         <button
           onClick={action.onClick}
-          className="mt-1 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary/15 transition-colors"
+          className="mt-1 px-3 py-1.5 text-sm font-medium rounded-xl bg-primary/10 border border-primary/20 text-primary hover:bg-primary/15 transition-colors"
         >
           {action.label}
         </button>

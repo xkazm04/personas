@@ -61,7 +61,7 @@ function EventTypeChip({ eventType }: { eventType: string }) {
   const { Icon, text, bg, border } = meta;
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-sm font-mono border ${bg} ${text} ${border} truncate max-w-full`}
+      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-sm font-mono border ${bg} ${text} ${border} truncate max-w-full`}
       title={eventType}
     >
       <Icon className="w-3 h-3 flex-shrink-0" />
@@ -198,7 +198,7 @@ export function EventSubscriptionsPanel() {
             </h3>
             <button
               onClick={() => setAdding(!adding)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15 transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
               Add
@@ -234,7 +234,7 @@ export function EventSubscriptionsPanel() {
                     value={newEventType}
                     onChange={(e) => setNewEventType(e.target.value)}
                     placeholder="e.g. file_changed"
-                    className="w-full px-2.5 py-1.5 text-sm bg-background/60 border border-border/40 rounded-lg text-foreground/90 placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    className="w-full px-2.5 py-1.5 text-sm bg-background/60 border border-border/40 rounded-xl text-foreground/90 placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
                   />
                   <datalist id="event-type-suggestions">
                     {COMMON_EVENT_TYPES.map((t) => (
@@ -252,7 +252,7 @@ export function EventSubscriptionsPanel() {
                     value={newSourceFilter}
                     onChange={(e) => setNewSourceFilter(e.target.value)}
                     placeholder="e.g. src/**"
-                    className="w-full px-2.5 py-1.5 text-sm bg-background/60 border border-border/40 rounded-lg text-foreground/90 placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    className="w-full px-2.5 py-1.5 text-sm bg-background/60 border border-border/40 rounded-xl text-foreground/90 placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
                   />
                 </div>
               </div>
@@ -267,7 +267,7 @@ export function EventSubscriptionsPanel() {
                 <button
                   onClick={handleAdd}
                   disabled={!newPersonaId || !newEventType.trim() || saving || !!isDuplicate}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary/15 text-primary border border-primary/25 hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-primary/15 text-primary border border-primary/25 hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {saving && <Loader2 className="w-3 h-3 animate-spin" />}
                   {isDuplicate ? 'Already Subscribed' : 'Create Subscription'}
@@ -317,7 +317,7 @@ export function EventSubscriptionsPanel() {
                       <button
                         onClick={() => handleToggle(sub)}
                         disabled={busy}
-                        className={`px-2 py-0.5 text-sm font-medium rounded-md border transition-colors ${
+                        className={`px-2 py-0.5 text-sm font-medium rounded-lg border transition-colors ${
                           sub.enabled
                             ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/25'
                             : 'bg-secondary/60 text-muted-foreground/60 border-border/20 hover:bg-secondary/80'
@@ -330,7 +330,7 @@ export function EventSubscriptionsPanel() {
                       <button
                         onClick={() => handleDelete(sub.id)}
                         disabled={busy}
-                        className={`p-1 rounded-md text-muted-foreground/40 hover:text-red-400 hover:bg-red-500/10 transition-colors ${busy ? 'opacity-50 cursor-wait' : ''}`}
+                        className={`p-1 rounded-lg text-muted-foreground/40 hover:text-red-400 hover:bg-red-500/10 transition-colors ${busy ? 'opacity-50 cursor-wait' : ''}`}
                         title="Delete subscription"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

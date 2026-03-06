@@ -31,7 +31,7 @@ export class TauriPlaywrightAdapter implements PlaywrightAdapter {
         });
       }
     } catch {
-      // No saved procedure, that's fine
+      // intentional: non-critical -- no saved procedure available
     }
 
     // Set up event listener for progress

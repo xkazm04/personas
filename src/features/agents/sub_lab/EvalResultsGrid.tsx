@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from 'recharts';
+import { ChartErrorBoundary } from '@/features/overview/sub_usage/charts/ChartErrorBoundary';
 import type { LabEvalResult } from '@/lib/bindings/LabEvalResult';
 import { compositeScore, scoreColor } from './labUtils';
 
@@ -181,7 +182,7 @@ export function EvalResultsGrid({ results }: Props) {
                     v{agg.versionNumber}
                   </span>
                   {isWinner && (
-                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-sm font-medium bg-primary/15 text-primary border border-primary/20">
+                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-sm font-medium bg-primary/15 text-primary border border-primary/20">
                       <Trophy className="w-3 h-3 animate-[pulse_3s_ease-in-out_infinite] motion-reduce:animate-none" /> Winner
                     </span>
                   )}
@@ -232,6 +233,7 @@ export function EvalResultsGrid({ results }: Props) {
           </h4>
           <div className="border border-primary/10 rounded-xl bg-background/20 p-3">
             <div className="h-[260px]" data-testid="eval-radar-chart">
+              <ChartErrorBoundary>
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart data={radarData} outerRadius="72%">
                   <PolarGrid stroke="rgba(148, 163, 184, 0.25)" />
@@ -259,12 +261,13 @@ export function EvalResultsGrid({ results }: Props) {
                   ))}
                 </RadarChart>
               </ResponsiveContainer>
+              </ChartErrorBoundary>
             </div>
             <div className="mt-2 flex flex-wrap gap-2">
               {radarVersions.map((agg, idx) => (
                 <span
                   key={agg.versionId}
-                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-sm border border-primary/10 bg-secondary/20 text-foreground/80"
+                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm border border-primary/10 bg-secondary/20 text-foreground/80"
                 >
                   <span
                     className="w-2 h-2 rounded-full"

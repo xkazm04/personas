@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { Check, X, AlignLeft } from 'lucide-react';
+import { Tooltip } from './Tooltip';
 
 interface JsonEditorProps {
   value: string;
@@ -145,7 +146,7 @@ export function JsonEditor({ value, onChange, placeholder }: JsonEditorProps) {
       const parsed = JSON.parse(value);
       onChange(JSON.stringify(parsed, null, 2));
     } catch {
-      // Can't format invalid JSON
+      // intentional: non-critical — JSON parse fallback (can't format invalid JSON)
     }
   }, [value, onChange]);
 
@@ -185,16 +186,17 @@ export function JsonEditor({ value, onChange, placeholder }: JsonEditorProps) {
             ) : null
           )}
         </div>
-        <button
-          type="button"
-          onClick={handleFormat}
-          disabled={!isValid}
-          className="flex items-center gap-1 px-2 py-0.5 text-sm text-muted-foreground/70 hover:text-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          title="Format JSON"
-        >
-          <AlignLeft className="w-3 h-3" />
-          Format
-        </button>
+        <Tooltip content="Format JSON">
+          <button
+            type="button"
+            onClick={handleFormat}
+            disabled={!isValid}
+            className="flex items-center gap-1 px-2 py-0.5 text-sm text-muted-foreground/70 hover:text-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            <AlignLeft className="w-3 h-3" />
+            Format
+          </button>
+        </Tooltip>
       </div>
 
       {/* Editor with overlay */}

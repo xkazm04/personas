@@ -183,7 +183,7 @@ export function useOAuthPolling<
           await openExternalUrl(oauthStart.auth_url);
           opened = true;
         } catch {
-          // fallback below
+          // intentional: non-critical — fallback to window.open below
         }
 
         if (!opened) {
@@ -191,7 +191,7 @@ export function useOAuthPolling<
             const popup = window.open(oauthStart.auth_url, '_blank', 'noopener,noreferrer');
             opened = popup !== null;
           } catch {
-            // no-op
+            // intentional: non-critical — both open methods failed, handled below
           }
         }
 

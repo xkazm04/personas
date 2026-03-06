@@ -6,14 +6,16 @@ import { usePersonaStore } from '@/stores/personaStore';
 import { usePersonaExecution } from '@/hooks/execution/usePersonaExecution';
 import { useAiHealingStream } from '@/hooks/execution/useAiHealingStream';
 import { TerminalStrip } from '@/features/shared/components/TerminalStrip';
-import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, Timer, DollarSign, RotateCw, Wrench, Zap, Brain, Cpu, CheckCheck, AlertTriangle, ShieldAlert, ExternalLink } from 'lucide-react';
+import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, Timer, DollarSign, RotateCw, Wrench, Zap, Brain, Cpu, CheckCheck, AlertTriangle, ShieldAlert, ExternalLink, Pin, PinOff } from 'lucide-react';
 import { classifyLine, parseSummaryLine } from '@/lib/utils/terminalColors';
+import { Tooltip } from '@/features/shared/components/Tooltip';
 import { formatElapsed, getStatusEntry } from '@/lib/utils/formatters';
 import { motion, AnimatePresence } from 'framer-motion';
 import { JsonEditor } from '@/features/shared/components/JsonEditor';
 import { ExecutionTerminal } from '@/features/agents/sub_executions/ExecutionTerminal';
 import type { TerminalEmptyState } from '@/features/shared/components/TerminalBody';
 import * as api from '@/api/tauriApi';
+import { useToastStore } from '@/stores/toastStore';
 
 
 /** Healing event payload from Tauri backend */
@@ -91,6 +93,28 @@ function detectPhaseFromLine(line: string, hasSeenTools: boolean): string | null
   }
 
   return null;
+}
+
+function MiniPlayerPinButton() {
+  const pinned = usePersonaStore((s) => s.miniPlayerPinned);
+  const pin = usePersonaStore((s) => s.pinMiniPlayer);
+  const unpin = usePersonaStore((s) => s.unpinMiniPlayer);
+
+  return (
+    <Tooltip content={pinned ? 'Unpin mini-player' : 'Pin to mini-player'}>
+      <button
+        onClick={pinned ? unpin : pin}
+        className={`p-1.5 rounded-lg text-sm transition-colors flex items-center gap-1.5 ${
+          pinned
+            ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25'
+            : 'hover:bg-secondary/50 text-muted-foreground/50 hover:text-foreground/80'
+        }`}
+      >
+        {pinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+        <span className="text-sm">{pinned ? 'Pinned' : 'Pin'}</span>
+      </button>
+    </Tooltip>
+  );
 }
 
 export function PersonaRunner() {
@@ -177,7 +201,7 @@ export function PersonaRunner() {
       } else {
         setTypicalDurationMs(null);
       }
-    } catch {
+    } catch { // intentional: non-critical
       setTypicalDurationMs(null);
     }
   }, []);
@@ -254,14 +278,30 @@ export function PersonaRunner() {
     hasSeenToolsRef.current = false;
   }, [personaId]);
 
-  // Listen for healing events scoped to the current persona
+  // Listen for healing events scoped to the current persona.
+  // Uses a cancelled flag to prevent leaked listeners when the component
+  // unmounts before the async listen() Promise resolves.
   useEffect(() => {
-    const unlisten = listen<HealingEventPayload>('healing-event', (event) => {
+    let cancelled = false;
+    let unlistenFn: (() => void) | null = null;
+
+    listen<HealingEventPayload>('healing-event', (event) => {
+      if (cancelled) return;
       const payload = event.payload;
       if (payload.persona_id !== personaId) return;
       setHealingNotification(payload);
+    }).then((fn) => {
+      if (cancelled) {
+        fn();
+      } else {
+        unlistenFn = fn;
+      }
     });
-    return () => { unlisten.then((fn) => fn()); };
+
+    return () => {
+      cancelled = true;
+      unlistenFn?.();
+    };
   }, [personaId]);
 
   // Clear healing notification when a new execution starts
@@ -343,7 +383,7 @@ export function PersonaRunner() {
       try {
         const formatted = JSON.stringify(JSON.parse(rerunInputData), null, 2);
         setInputData(formatted);
-      } catch {
+      } catch { // intentional: non-critical
         setInputData(rerunInputData);
       }
       setShowInputEditor(true);
@@ -383,6 +423,7 @@ export function PersonaRunner() {
         setOutputLines(['Cloud execution started: ' + executionId]);
       } catch {
         setOutputLines(['ERROR: Failed to start cloud execution']);
+        useToastStore.getState().addToast('Failed to start cloud execution', 'error');
       }
     } else {
       executionId = await executePersona(personaId, parsedInput);
@@ -434,14 +475,13 @@ export function PersonaRunner() {
       try {
         const exec = await api.getExecution(activeExecutionId, selectedPersona.id);
         sessionId = exec.claude_session_id ?? null;
-      } catch {
-        // Fall back to prompt hint
+      } catch { // intentional: non-critical — fall back to prompt hint
       }
     }
 
     let parsedInput = {};
     if (inputData.trim()) {
-      try { parsedInput = JSON.parse(inputData); } catch { /* keep empty */ }
+      try { parsedInput = JSON.parse(inputData); } catch { /* intentional: non-critical */ }
     }
 
     setOutputLines([]);
@@ -507,7 +547,7 @@ export function PersonaRunner() {
         <button
           data-testid="execute-persona-btn"
           onClick={isExecuting ? handleStop : handleExecute}
-          className={`w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl font-medium text-sm transition-all ${
+          className={`w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl font-medium text-sm transition-all ${
             isExecuting
               ? 'bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20'
               : 'bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99]'
@@ -536,6 +576,8 @@ export function PersonaRunner() {
           className="flex items-center gap-3 px-4 py-2.5 bg-primary/5 border border-primary/10 rounded-xl"
         >
           <Clock className="w-3.5 h-3.5 text-primary/50 flex-shrink-0" />
+          {/* Mini-player pin toggle */}
+          <MiniPlayerPinButton />
           <div className="flex-1 min-w-0">
             {typicalDurationMs ? (
               <div className="space-y-1.5">
@@ -605,7 +647,7 @@ export function PersonaRunner() {
                 <div className="flex items-center gap-2 text-sm text-muted-foreground/90">
                   <Wrench className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" />
                   <span>Stopped while running</span>
-                  <code className="px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-300/80 font-mono text-sm">
+                  <code className="px-1.5 py-0.5 rounded-lg bg-amber-500/10 text-amber-300/80 font-mono text-sm">
                     {executionSummary.last_tool}
                   </code>
                 </div>
@@ -760,6 +802,7 @@ export function PersonaRunner() {
                                 const duration = durations[i]!;
 
                                 return (
+                                  <Tooltip content={`${phase.label}: ${formatElapsed(duration)}${phase.toolCalls.length > 0 ? ` — ${phase.toolCalls.length} tool call${phase.toolCalls.length > 1 ? 's' : ''}` : ''}`} placement="bottom">
                                   <motion.div
                                     key={`${phase.id}-${i}`}
                                     layout
@@ -771,7 +814,6 @@ export function PersonaRunner() {
                                           : 'bg-secondary/40 text-muted-foreground/80'
                                     }`}
                                     style={{ flexGrow: Math.max(duration, minGrow) }}
-                                    title={`${phase.label}: ${formatElapsed(duration)}${phase.toolCalls.length > 0 ? ` — ${phase.toolCalls.length} tool call${phase.toolCalls.length > 1 ? 's' : ''}` : ''}`}
                                   >
                                     {isActive && (
                                       <motion.div
@@ -792,13 +834,14 @@ export function PersonaRunner() {
                                           const pct = Math.min(100, Math.max(0, (offset / duration) * 100));
                                           const tcDuration = tc.endMs != null ? tc.endMs - tc.startMs : undefined;
                                           return (
-                                            <span
-                                              key={j}
-                                              className={`absolute top-1/2 -translate-y-1/2 w-[5px] h-[5px] rounded-full ${dotColor(tcDuration)} opacity-90`}
-                                              style={{ left: `${pct}%` }}
-                                              title={`${tc.toolName}${tcDuration != null ? `: ${formatElapsed(tcDuration)}` : ''}`}
-                                              data-testid={`tool-dot-${i}-${j}`}
-                                            />
+                                            <Tooltip content={`${tc.toolName}${tcDuration != null ? `: ${formatElapsed(tcDuration)}` : ''}`} placement="bottom">
+                                              <span
+                                                key={j}
+                                                className={`absolute top-1/2 -translate-y-1/2 w-[5px] h-[5px] rounded-full ${dotColor(tcDuration)} opacity-90`}
+                                                style={{ left: `${pct}%` }}
+                                                data-testid={`tool-dot-${i}-${j}`}
+                                              />
+                                            </Tooltip>
                                           );
                                         })}
                                       </div>
@@ -811,6 +854,7 @@ export function PersonaRunner() {
                                       </span>
                                     )}
                                   </motion.div>
+                                  </Tooltip>
                                 );
                               })}
                             </div>

@@ -260,6 +260,7 @@ fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Pe
         color: row.get("color")?,
         enabled: row.get::<_, i32>("enabled")? != 0,
         sensitive: row.get::<_, i32>("sensitive")? != 0,
+        headless: row.get::<_, i32>("headless").unwrap_or(0) != 0,
         max_concurrent: row.get("max_concurrent")?,
         timeout_ms: row.get("timeout_ms")?,
         notification_channels: row.get("notification_channels")?,
@@ -399,6 +400,7 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
     push_field!(input.color, "color", sets, param_idx);
     push_field!(input.enabled, "enabled", sets, param_idx);
     push_field!(input.sensitive, "sensitive", sets, param_idx);
+    push_field!(input.headless, "headless", sets, param_idx);
     push_field!(input.max_concurrent, "max_concurrent", sets, param_idx);
     push_field!(input.timeout_ms, "timeout_ms", sets, param_idx);
     push_field!(input.notification_channels, "notification_channels", sets, param_idx);
@@ -426,6 +428,7 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
     if let Some(ref v) = input.color { param_values.push(Box::new(v.clone())); }
     if let Some(v) = input.enabled { param_values.push(Box::new(v as i32)); }
     if let Some(v) = input.sensitive { param_values.push(Box::new(v as i32)); }
+    if let Some(v) = input.headless { param_values.push(Box::new(v as i32)); }
     if let Some(v) = input.max_concurrent { param_values.push(Box::new(v)); }
     if let Some(v) = input.timeout_ms { param_values.push(Box::new(v)); }
     if let Some(ref v) = input.notification_channels { param_values.push(Box::new(v.clone())); }

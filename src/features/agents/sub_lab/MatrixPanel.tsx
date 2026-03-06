@@ -121,7 +121,7 @@ export function MatrixPanel() {
               onChange={(e) => setInstruction(e.target.value)}
               placeholder="e.g. Make the greeting more formal and add multi-language support for German and French"
               disabled={isLabRunning}
-              className="w-full h-28 px-3 py-2 text-sm bg-background/50 border border-primary/15 rounded-lg text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none disabled:opacity-50"
+              className="w-full h-28 px-3 py-2 text-sm bg-background/50 border border-primary/15 rounded-xl text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none disabled:opacity-50"
             />
             <p className="text-sm text-muted-foreground/50">
               Claude will generate a draft persona based on your instructions, then test both current and draft versions side by side.
@@ -144,7 +144,7 @@ export function MatrixPanel() {
                     });
                   }}
                   disabled={isLabRunning}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                  className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${
                     selectedModels.has(m.id)
                       ? 'bg-primary/15 text-primary border-primary/30'
                       : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20'
@@ -174,7 +174,7 @@ export function MatrixPanel() {
                   <button
                     onClick={toggle}
                     disabled={isLabRunning}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm border transition-all ${
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm border transition-all ${
                       isOpen ? 'bg-primary/10 border-primary/30' : 'bg-background/30 border-primary/10 hover:border-primary/20'
                     } ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   >
@@ -206,7 +206,7 @@ export function MatrixPanel() {
           {isLabRunning ? (
             <button
               onClick={() => void handleCancel()}
-              className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-2xl font-medium text-sm transition-all bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20"
+              className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20"
             >
               <Square className="w-4 h-4" />
               Cancel Matrix Test
@@ -215,7 +215,7 @@ export function MatrixPanel() {
             <button
               onClick={() => void handleStart()}
               disabled={!instruction.trim() || selectedModels.size === 0 || !hasPrompt}
-              className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-2xl font-medium text-sm transition-all bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-500/90 hover:to-purple-500/90 text-foreground shadow-lg shadow-violet-500/20 hover:shadow-violet-500/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-500/90 hover:to-purple-500/90 text-foreground shadow-lg shadow-violet-500/20 hover:shadow-violet-500/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               <Wand2 className="w-4 h-4" />
               Generate & Test Draft
@@ -236,7 +236,7 @@ export function MatrixPanel() {
 
         {matrixRuns.length === 0 ? (
           <div className="text-center py-12 bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl">
-            <div className="w-14 h-14 rounded-2xl bg-violet-500/8 border border-violet-500/12 flex items-center justify-center mx-auto mb-4">
+            <div className="w-14 h-14 rounded-xl bg-violet-500/8 border border-violet-500/12 flex items-center justify-center mx-auto mb-4">
               <Wand2 className="w-7 h-7 text-violet-400/40" />
             </div>
             <p className="text-sm text-muted-foreground/80">No matrix runs yet</p>
@@ -262,7 +262,7 @@ export function MatrixPanel() {
                         </span>
                         <span className={statusBadge(run.status)}>{run.status}</span>
                         {run.draftAccepted && (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-sm font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-sm font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
                             <Check className="w-3 h-3" /> Accepted
                           </span>
                         )}

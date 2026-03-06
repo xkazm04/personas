@@ -15,6 +15,7 @@ import { PromptTabsPreview } from '@/features/shared/components/PromptTabsPrevie
 import { DesignConnectorGrid } from '@/features/shared/components/DesignConnectorGrid';
 import { DimensionRadial } from '../shared/DimensionRadial';
 import { BaseModal } from '../shared/BaseModal';
+import { TabTransition } from '../shared/TabTransition';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
@@ -132,31 +133,33 @@ export function TemplateDetailModal({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 py-6">
-          {activeTab === 'overview' && (
-            <OverviewTab
-              designResult={designResult}
-              flows={flows}
-              adjustment={adjustment}
-              review={review}
-              onViewFlows={() => onViewFlows(review)}
-            />
-          )}
-          {activeTab === 'prompt' && designResult && (
-            <PromptTabsPreview designResult={designResult} />
-          )}
-          {activeTab === 'connectors' && designResult && (
-            <DesignConnectorGrid designResult={designResult} />
-          )}
-          {activeTab === 'json' && (
-            <pre className="p-4 bg-secondary/30 rounded-xl border border-primary/10 text-sm text-muted-foreground/90 overflow-x-auto whitespace-pre-wrap">
-              {designResult ? JSON.stringify(designResult, null, 2) : 'No design data available'}
-            </pre>
-          )}
-          {!designResult && activeTab !== 'json' && (
-            <div className="flex items-center justify-center py-12 text-sm text-muted-foreground/60">
-              Design data unavailable for this template.
-            </div>
-          )}
+          <TabTransition tabKey={activeTab}>
+            {activeTab === 'overview' && (
+              <OverviewTab
+                designResult={designResult}
+                flows={flows}
+                adjustment={adjustment}
+                review={review}
+                onViewFlows={() => onViewFlows(review)}
+              />
+            )}
+            {activeTab === 'prompt' && designResult && (
+              <PromptTabsPreview designResult={designResult} />
+            )}
+            {activeTab === 'connectors' && designResult && (
+              <DesignConnectorGrid designResult={designResult} />
+            )}
+            {activeTab === 'json' && (
+              <pre className="p-4 bg-secondary/30 rounded-xl border border-primary/10 text-sm text-muted-foreground/90 overflow-x-auto whitespace-pre-wrap">
+                {designResult ? JSON.stringify(designResult, null, 2) : 'No design data available'}
+              </pre>
+            )}
+            {!designResult && activeTab !== 'json' && (
+              <div className="flex items-center justify-center py-12 text-sm text-muted-foreground/60">
+                Design data unavailable for this template.
+              </div>
+            )}
+          </TabTransition>
         </div>
 
         {/* Footer */}
@@ -263,7 +266,7 @@ function OverviewTab({
             </h4>
           </div>
           <p className="text-sm text-muted-foreground/90">{adjustment.reason}</p>
-          <div className="bg-background/50 rounded-md px-3 py-2 text-sm text-foreground/90 border border-primary/10">
+          <div className="bg-background/50 rounded-xl px-3 py-2 text-sm text-foreground/90 border border-primary/10">
             {adjustment.suggestion}
           </div>
           {adjustment.appliedFixes.length > 0 && (

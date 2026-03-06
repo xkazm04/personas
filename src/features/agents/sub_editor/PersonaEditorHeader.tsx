@@ -3,6 +3,7 @@ import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizeUrl';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
+import { useToastStore } from '@/stores/toastStore';
 import { ContentHeader } from '@/features/shared/components/ContentLayout';
 import { AccessibleToggle } from '@/features/shared/components/AccessibleToggle';
 import type { PersonaDraft } from './PersonaDraft';
@@ -49,7 +50,7 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
       await applyPersonaOp(selectedPersona.id, { kind: 'ToggleEnabled', enabled: nextEnabled });
       patch({ enabled: nextEnabled });
       setBaseline((prev) => ({ ...prev, enabled: nextEnabled }));
-    } catch { /* store.error already set */ }
+    } catch { useToastStore.getState().addToast('Failed to toggle persona — check your connection', 'error'); }
   }, [selectedPersona, readiness, applyPersonaOp, patch, setBaseline]);
 
   if (!effective) return null;

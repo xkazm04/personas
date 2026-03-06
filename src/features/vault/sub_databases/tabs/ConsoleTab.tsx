@@ -12,7 +12,7 @@ function extractErrorMessage(err: unknown): string {
     return String((err as Record<string, unknown>).error);
   }
   if (typeof err === 'string') return err;
-  try { return JSON.stringify(err); } catch { return 'Unknown error'; }
+  try { return JSON.stringify(err); } catch { /* intentional: non-critical -- JSON stringify fallback */ return 'Unknown error'; }
 }
 
 interface ConsoleTabProps {
@@ -83,7 +83,7 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
           <button
             onClick={handleExecute}
             disabled={executing || !query.trim()}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {executing ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />

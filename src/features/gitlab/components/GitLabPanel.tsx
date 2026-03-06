@@ -65,7 +65,7 @@ export default function GitLabPanel() {
     try {
       await connect(token.trim());
     } catch {
-      // error surfaced via store
+      // intentional: error state handled locally via store + ErrorBanner
     }
   };
 

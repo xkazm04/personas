@@ -160,7 +160,7 @@ export function N8nEntitiesTab({
           {onGoToAnalyze && (
             <button
               onClick={onGoToAnalyze}
-              className="px-3 py-1.5 text-sm rounded-lg border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 transition-colors"
+              className="px-3 py-1.5 text-sm rounded-xl border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 transition-colors"
             >
               Edit Selection
             </button>
@@ -169,7 +169,7 @@ export function N8nEntitiesTab({
             <button
               onClick={() => void cs.handleTestAll()}
               disabled={cs.testingAll}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40"
             >
               {cs.testingAll ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
               Test All
@@ -213,7 +213,7 @@ export function N8nEntitiesTab({
             {generalTools.map((tool) => (
               <span
                 key={tool.name}
-                className="px-2.5 py-1 text-sm font-mono rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                className="px-2.5 py-1 text-sm font-mono rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20"
                 title={tool.description ?? undefined}
               >
                 {tool.name}
@@ -322,7 +322,7 @@ function ConnectorRow({
             <button
               onClick={onTest}
               disabled={status.testing}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40"
             >
               {status.testing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Activity className="w-3 h-3" />}
               Test
@@ -332,7 +332,7 @@ function ConnectorRow({
               {credentials.length > 0 && (
                 <button
                   onClick={onToggleLink}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border transition-colors ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border transition-colors ${
                     isLinking
                       ? 'border-violet-500/30 text-violet-300 bg-violet-500/15'
                       : 'border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95'
@@ -344,7 +344,7 @@ function ConnectorRow({
               )}
               <button
                 onClick={onAddCredential}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors"
               >
                 <Plus className="w-3 h-3" />
                 Add New
@@ -361,7 +361,7 @@ function ConnectorRow({
           {tools.map((tool) => (
             <span
               key={tool.name}
-              className="px-2 py-0.5 text-sm font-mono rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20"
+              className="px-2 py-0.5 text-sm font-mono rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20"
               title={tool.description ?? undefined}
             >
               {tool.name}
@@ -435,7 +435,7 @@ function ConnectorRow({
 
       {/* Test result detail */}
       {status.result && !status.testing && (
-        <div className={`mt-2.5 px-3 py-2 rounded-lg text-sm ${
+        <div className={`mt-2.5 px-3 py-2 rounded-xl text-sm ${
           status.result.success
             ? 'bg-emerald-500/5 border border-emerald-500/15 text-emerald-400'
             : 'bg-red-500/5 border border-red-500/15 text-red-400'

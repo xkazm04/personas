@@ -11,6 +11,7 @@ use crate::engine::healthcheck::{
     resolve_template, validate_field_values, validate_healthcheck_url, validate_template_url,
 };
 use crate::error::AppError;
+use crate::ipc_auth::{require_privileged, require_privileged_sync};
 use crate::AppState;
 
 use super::ai_artifact_flow::{
@@ -42,6 +43,7 @@ pub async fn start_credential_design(
     app: tauri::AppHandle,
     instruction: String,
 ) -> Result<serde_json::Value, AppError> {
+    require_privileged(&state, "start_credential_design").await?;
     let connectors = connector_repo::get_all(&state.db)?;
 
     let design_prompt = credential_design::build_credential_design_prompt(
@@ -56,7 +58,7 @@ pub async fn start_credential_design(
     let active_child_pid = state.active_credential_design_child_pid.clone();
 
     {
-        let mut guard = active_id.lock().unwrap();
+        let mut guard = active_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
         *guard = Some(design_id.clone());
     }
 
@@ -94,11 +96,12 @@ pub async fn start_credential_design(
 pub fn cancel_credential_design(
     state: State<'_, Arc<AppState>>,
 ) -> Result<(), AppError> {
-    let mut guard = state.active_credential_design_id.lock().unwrap();
+    require_privileged_sync(&state, "cancel_credential_design")?;
+    let mut guard = state.active_credential_design_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
     *guard = None;
 
     // Kill the CLI child process to stop API credit consumption immediately.
-    let pid = state.active_credential_design_child_pid.lock().unwrap().take();
+    let pid = state.active_credential_design_child_pid.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?.take();
     if let Some(pid) = pid {
         tracing::info!(pid = pid, "Killing credential design CLI child process");
         crate::engine::kill_process(pid);
@@ -109,11 +112,12 @@ pub fn cancel_credential_design(
 
 #[tauri::command]
 pub async fn test_credential_design_healthcheck(
-    _state: State<'_, Arc<AppState>>,
+    state: State<'_, Arc<AppState>>,
     instruction: String,
     connector: serde_json::Value,
     field_values: serde_json::Value,
 ) -> Result<serde_json::Value, AppError> {
+    require_privileged(&state, "test_credential_design_healthcheck").await?;
     let values_map: HashMap<String, String> = serde_json::from_value(field_values)
         .map_err(|e| AppError::Validation(format!("Invalid field values: {}", e)))?;
 

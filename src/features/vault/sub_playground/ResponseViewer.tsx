@@ -30,6 +30,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
       const parsed = JSON.parse(response.body);
       return JSON.stringify(parsed, null, 2);
     } catch {
+      // intentional: non-critical — JSON parse fallback
       return response.body;
     }
   }, [response.body]);

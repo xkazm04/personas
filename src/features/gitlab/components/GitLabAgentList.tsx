@@ -39,7 +39,7 @@ export function GitLabAgentList({
         <p className="text-sm text-muted-foreground/60 mt-1">Deploy a persona from the Deploy tab</p>
         <button
           onClick={() => onFetchAgents(projectId)}
-          className="mt-3 flex items-center gap-1.5 mx-auto px-3 py-1.5 text-sm rounded-lg border border-primary/15 text-muted-foreground/70 hover:text-foreground/80 transition-colors"
+          className="mt-3 flex items-center gap-1.5 mx-auto px-3 py-1.5 text-sm rounded-xl border border-primary/15 text-muted-foreground/70 hover:text-foreground/80 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           Refresh
@@ -54,7 +54,7 @@ export function GitLabAgentList({
         <p className="text-sm text-muted-foreground/70">{agents.length} agent(s) deployed</p>
         <button
           onClick={() => onFetchAgents(projectId)}
-          className="flex items-center gap-1.5 px-2 py-1 text-sm rounded-md text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+          className="flex items-center gap-1.5 px-2 py-1 text-sm rounded-lg text-muted-foreground/60 hover:text-foreground/80 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           Refresh
@@ -81,7 +81,7 @@ export function GitLabAgentList({
                 href={agent.webUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-1.5 rounded-md hover:bg-secondary/50 text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+                className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/60 hover:text-foreground/80 transition-colors"
                 title="Open in GitLab"
               >
                 <ExternalLink className="w-4 h-4" />
@@ -89,7 +89,7 @@ export function GitLabAgentList({
             )}
             <button
               onClick={() => onUndeploy(projectId, agent.id)}
-              className="p-1.5 rounded-md hover:bg-red-500/10 text-muted-foreground/60 hover:text-red-400 transition-colors"
+              className="p-1.5 rounded-lg hover:bg-red-500/10 text-muted-foreground/60 hover:text-red-400 transition-colors"
               title="Undeploy agent"
             >
               <Trash2 className="w-4 h-4" />

@@ -132,7 +132,7 @@ export function DesignQuestionPanel({
               }
             }}
             disabled={!questionAnswer.trim()}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
               !questionAnswer.trim()
                 ? 'bg-secondary/40 text-muted-foreground/80 cursor-not-allowed'
                 : 'bg-accent/15 text-accent border border-accent/25 hover:bg-accent/25'
@@ -148,7 +148,7 @@ export function DesignQuestionPanel({
       {/* Cancel */}
       <button
         onClick={onCancelAnalysis}
-        className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground/90 hover:text-foreground/95 transition-colors"
+        className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium text-muted-foreground/90 hover:text-foreground/95 transition-colors"
       >
         Cancel Design
       </button>

@@ -71,32 +71,32 @@ export function TemplateReviewStep({
       {/* Selection summary pills */}
       <div className="flex items-center gap-2 flex-wrap text-sm font-mono uppercase tracking-wider text-muted-foreground/45">
         {hasTools && (
-          <span className="px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/15">
+          <span className="px-2.5 py-1 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/15">
             {toolCount} tool{toolCount !== 1 ? 's' : ''}
           </span>
         )}
         {hasTriggers && (
-          <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/15">
+          <span className="px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/15">
             {triggerCount} trigger{triggerCount !== 1 ? 's' : ''}
           </span>
         )}
         {hasConnectors && (
-          <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/15">
+          <span className="px-2.5 py-1 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/15">
             {connectorCount} connector{connectorCount !== 1 ? 's' : ''}
           </span>
         )}
         {hasChannels && (
-          <span className="px-2.5 py-1 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/15">
+          <span className="px-2.5 py-1 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/15">
             {channelCount} channel{channelCount !== 1 ? 's' : ''}
           </span>
         )}
         {hasEvents && (
-          <span className="px-2.5 py-1 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/15">
+          <span className="px-2.5 py-1 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/15">
             {eventCount} event{eventCount !== 1 ? 's' : ''}
           </span>
         )}
         {hasUseCases && (
-          <span className="px-2.5 py-1 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/15">
+          <span className="px-2.5 py-1 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/15">
             {useCaseCount} use case{useCaseCount !== 1 ? 's' : ''}
           </span>
         )}
@@ -118,7 +118,7 @@ export function TemplateReviewStep({
                 return (
                   <div
                     key={flow.id}
-                    className={`flex items-center gap-2.5 px-3 py-2 rounded-lg border transition-all ${MOTION.snappy.css} cursor-pointer hover:bg-primary/5 ${
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border transition-all ${MOTION.snappy.css} cursor-pointer hover:bg-primary/5 ${
                       isSelected
                         ? 'bg-cyan-500/5 border-cyan-500/15'
                         : 'bg-secondary/20 border-primary/10 opacity-50'
@@ -159,7 +159,7 @@ export function TemplateReviewStep({
                 return (
                   <div
                     key={tool}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-all ${MOTION.snappy.css} cursor-pointer hover:opacity-80 ${
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border transition-all ${MOTION.snappy.css} cursor-pointer hover:opacity-80 ${
                       isSelected
                         ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
                         : 'bg-secondary/30 text-muted-foreground/80 border-primary/10 opacity-60'
@@ -191,7 +191,7 @@ export function TemplateReviewStep({
                 return (
                   <div
                     key={i}
-                    className={`flex items-center gap-2.5 px-3 py-2 rounded-lg border transition-all ${MOTION.snappy.css} cursor-pointer hover:opacity-80 ${
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border transition-all ${MOTION.snappy.css} cursor-pointer hover:opacity-80 ${
                       isSelected
                         ? 'bg-amber-500/5 border-amber-500/15'
                         : 'bg-secondary/20 border-primary/10 opacity-50'
@@ -233,7 +233,7 @@ export function TemplateReviewStep({
                 return (
                   <div
                     key={conn.name}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-all ${MOTION.snappy.css} cursor-pointer hover:opacity-80 ${
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border transition-all ${MOTION.snappy.css} cursor-pointer hover:opacity-80 ${
                       isSelected
                         ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                         : 'bg-secondary/30 text-muted-foreground/80 border-primary/10 opacity-60'
@@ -266,7 +266,7 @@ export function TemplateReviewStep({
                 return (
                   <div
                     key={i}
-                    className={`flex items-center gap-2.5 px-3 py-2 rounded-lg border transition-all ${MOTION.snappy.css} cursor-pointer hover:opacity-80 ${
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border transition-all ${MOTION.snappy.css} cursor-pointer hover:opacity-80 ${
                       isSelected
                         ? 'bg-purple-500/5 border-purple-500/15'
                         : 'bg-secondary/20 border-primary/10 opacity-50'
@@ -307,7 +307,7 @@ export function TemplateReviewStep({
                 return (
                   <div
                     key={i}
-                    className={`flex items-center gap-2.5 px-3 py-2 rounded-lg border transition-all ${MOTION.snappy.css} cursor-pointer hover:opacity-80 ${
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border transition-all ${MOTION.snappy.css} cursor-pointer hover:opacity-80 ${
                       isSelected
                         ? 'bg-rose-500/5 border-rose-500/15'
                         : 'bg-secondary/20 border-primary/10 opacity-50'

@@ -203,7 +203,7 @@ export function PromptPerformanceCard({ personaId, onOpenLab }: PromptPerformanc
             <button
               onClick={() => void handleRollback()}
               disabled={rollingBack}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-colors disabled:opacity-50"
             >
               {rollingBack ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />

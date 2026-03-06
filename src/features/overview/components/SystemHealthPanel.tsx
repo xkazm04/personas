@@ -20,6 +20,7 @@ import {
   ChevronRight,
   Trash2,
   FileWarning,
+  Sparkles,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { healthCheckLocal, healthCheckAgents, healthCheckCloud, healthCheckAccount, getCrashLogs, clearCrashLogs } from '@/api/tauriApi';
@@ -29,6 +30,7 @@ import { useAutoInstaller, type InstallState } from '@/hooks/utility/useAutoInst
 import { ExternalLink } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { ConfigurationPopup, type ConfigField } from '@/features/agents/components/onboarding/ConfigurationPopup';
+import { usePersonaStore } from '@/stores/personaStore';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -136,7 +138,7 @@ function InstallButton({
           {installState.error || 'Installation failed'}
         </div>
         {installState.manualCommand && (
-          <div className="bg-primary/5 rounded-md px-2 py-1.5">
+          <div className="bg-primary/5 rounded-lg px-2 py-1.5">
             <p className="text-sm text-muted-foreground/80 mb-1">Try running manually:</p>
             <code className="text-sm text-foreground/80 font-mono select-all">
               {installState.manualCommand}
@@ -145,7 +147,7 @@ function InstallButton({
         )}
         <button
           onClick={onInstall}
-          className="inline-flex items-center gap-1.5 px-2 py-1 text-sm font-medium rounded-md border border-primary/20 text-foreground/90 hover:bg-secondary/60 transition-colors"
+          className="inline-flex items-center gap-1.5 px-2 py-1 text-sm font-medium rounded-lg border border-primary/20 text-foreground/90 hover:bg-secondary/60 transition-colors"
         >
           Retry
           <RefreshCw className="w-3 h-3" />
@@ -157,7 +159,7 @@ function InstallButton({
   return (
     <button
       onClick={onInstall}
-      className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-md bg-violet-500/10 text-violet-300 border border-violet-500/20 hover:bg-violet-500/20 transition-colors"
+      className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-violet-500/10 text-violet-300 border border-violet-500/20 hover:bg-violet-500/20 transition-colors"
     >
       <Download className="w-3 h-3" />
       {label}
@@ -209,6 +211,7 @@ function CrashLogsSection() {
       if (raw) setFrontendLogs(JSON.parse(raw));
       else setFrontendLogs([]);
     } catch {
+      // intentional: non-critical — JSON parse fallback
       setFrontendLogs([]);
     }
   }, []);
@@ -228,7 +231,7 @@ function CrashLogsSection() {
       setFrontendLogs([]);
       setSelectedLog(null);
     } catch {
-      // ignore
+      // intentional: non-critical — crash log clear is best-effort
     } finally {
       setClearing(false);
     }
@@ -240,7 +243,7 @@ function CrashLogsSection() {
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-secondary/30 transition-colors"
       >
-        <div className="w-6 h-6 rounded-md flex items-center justify-center bg-red-500/10">
+        <div className="w-6 h-6 rounded-lg flex items-center justify-center bg-red-500/10">
           <FileWarning className="w-3.5 h-3.5 text-red-300" />
         </div>
         <span className="text-sm font-medium text-foreground/80 uppercase tracking-wider">
@@ -259,7 +262,7 @@ function CrashLogsSection() {
                 void handleClear();
               }}
               disabled={clearing}
-              className="flex items-center gap-1 px-2 py-1 text-sm rounded-md text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
+              className="flex items-center gap-1 px-2 py-1 text-sm rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
             >
               <Trash2 className="w-3 h-3" />
               Clear
@@ -350,6 +353,10 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
   const { nodeState, claudeState, install } = useAutoInstaller();
   const [showOllamaPopup, setShowOllamaPopup] = useState(false);
   const [showLiteLLMPopup, setShowLiteLLMPopup] = useState(false);
+  const personas = usePersonaStore((s) => s.personas);
+  const onboardingCompleted = usePersonaStore((s) => s.onboardingCompleted);
+  const onboardingActive = usePersonaStore((s) => s.onboardingActive);
+  const startOnboarding = usePersonaStore((s) => s.startOnboarding);
 
   const runChecks = useCallback(() => {
     setLoading(true);
@@ -449,7 +456,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
     try {
       await loginWithGoogle();
     } catch {
-      // Error handled by auth store
+      // intentional: non-critical — error handled by auth store
     }
   };
 
@@ -505,7 +512,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
                     initial={{ opacity: 0.5, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: shouldAnimate ? stubIdx * 0.08 : 0, duration: shouldAnimate ? 0.3 : duration }}
-                    className="rounded-2xl border border-primary/10 bg-secondary/20 shadow-sm overflow-hidden flex flex-col min-h-[160px]"
+                    className="rounded-xl border border-primary/10 bg-secondary/20 shadow-sm overflow-hidden flex flex-col min-h-[160px]"
                   >
                     <div className="flex items-center gap-3 px-4 py-4 border-b border-primary/5 bg-background/30">
                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${sectionStyle.badge}`}>
@@ -531,15 +538,15 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
                       <div className="flex gap-3">
                         <div className="w-4 h-4 rounded-full bg-primary/10 flex-shrink-0" />
                         <div className="space-y-2 flex-1">
-                          <div className="h-3 w-3/4 rounded-md bg-primary/10" />
-                          <div className="h-2 w-1/2 rounded-md bg-primary/5" />
+                          <div className="h-3 w-3/4 rounded-lg bg-primary/10" />
+                          <div className="h-2 w-1/2 rounded-lg bg-primary/5" />
                         </div>
                       </div>
                       <div className="flex gap-3">
                         <div className="w-4 h-4 rounded-full bg-primary/10 flex-shrink-0" />
                         <div className="space-y-2 flex-1">
-                          <div className="h-3 w-4/5 rounded-md bg-primary/10" />
-                          <div className="h-2 w-2/3 rounded-md bg-primary/5" />
+                          <div className="h-3 w-4/5 rounded-lg bg-primary/10" />
+                          <div className="h-2 w-2/3 rounded-lg bg-primary/5" />
                         </div>
                       </div>
                     </div>
@@ -559,7 +566,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: stubIdx * 0.1, duration: 0.25 }}
-                  className="rounded-2xl border border-primary/10 bg-secondary/20 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col min-h-[160px] group"
+                  className="rounded-xl border border-primary/10 bg-secondary/20 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col min-h-[160px] group"
                 >
                   <div className="flex items-center gap-3 px-4 py-4 border-b border-primary/5 bg-background/30 group-hover:bg-background/50 transition-colors">
                     <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${sectionStyle.badge}`}>
@@ -602,7 +609,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
                           {check.id === 'ollama_api_key' && !ipcError && (
                             <button
                               onClick={() => setShowOllamaPopup(true)}
-                              className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+                              className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
                             >
                               <Key className="w-3 h-3" />
                               {check.status === 'ok' ? 'Edit Key' : 'Configure'}
@@ -611,7 +618,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
                           {check.id === 'litellm_proxy' && !ipcError && (
                             <button
                               onClick={() => setShowLiteLLMPopup(true)}
-                              className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-md bg-sky-500/10 text-sky-300 border border-sky-500/20 hover:bg-sky-500/20 transition-colors"
+                              className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-sky-500/10 text-sky-300 border border-sky-500/20 hover:bg-sky-500/20 transition-colors"
                             >
                               <Key className="w-3 h-3" />
                               {check.status === 'ok' ? 'Edit Config' : 'Configure'}
@@ -626,7 +633,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
                         <button
                           onClick={handleSignIn}
                           disabled={authLoading}
-                          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 transition-colors disabled:opacity-50"
+                          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 transition-colors disabled:opacity-50"
                         >
                           {authLoading ? (
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -678,6 +685,33 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
               </button>
             )}
           </div>
+
+          {/* Onboarding CTA — shown after checks pass for first-time users */}
+          {!loading && !hasIssues && !ipcError && personas.length === 0 && !onboardingCompleted && !onboardingActive && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.3 }}
+              className="rounded-xl border border-violet-500/20 bg-gradient-to-r from-violet-500/8 to-indigo-500/5 p-4"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-5 h-5 text-violet-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold text-foreground/90">Ready to create your first agent?</h3>
+                  <p className="text-sm text-muted-foreground/70">All checks passed. Let us guide you through creating and running your first agent.</p>
+                </div>
+                <button
+                  onClick={startOnboarding}
+                  className="flex-shrink-0 px-4 py-2.5 text-sm font-medium rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Get Started
+                </button>
+              </div>
+            </motion.div>
+          )}
 
           <AnimatePresence>
             {showOllamaPopup && (

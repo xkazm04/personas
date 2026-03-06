@@ -13,6 +13,7 @@ use crate::engine::{eval, parser, prompt};
 use crate::engine::test_runner::{self, build_cli_command, write_prompt_to_stdin, TestModelConfig, TestScenario};
 use crate::engine::types::{EphemeralPersona, StreamLineType};
 use crate::error::AppError;
+use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 #[tauri::command]
@@ -24,6 +25,7 @@ pub async fn start_test_run(
     use_case_filter: Option<String>,
     suite_id: Option<String>,
 ) -> Result<PersonaTestRun, AppError> {
+    require_auth(&state).await?;
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
     let tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
     let ephemeral = EphemeralPersona::from_persisted(persona, tools);
@@ -70,7 +72,7 @@ pub async fn start_test_run(
     // Create cancellation flag and register in AppState
     let cancelled = Arc::new(std::sync::atomic::AtomicBool::new(false));
     {
-        let mut flags = state.active_test_run_cancelled.lock().unwrap();
+        let mut flags = state.active_test_run_cancelled.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
         flags.insert(run_id.clone(), cancelled.clone());
     }
 
@@ -107,6 +109,7 @@ pub fn list_test_runs(
     persona_id: String,
     limit: Option<i64>,
 ) -> Result<Vec<PersonaTestRun>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_runs_by_persona(&state.db, &persona_id, limit)
 }
 
@@ -115,6 +118,7 @@ pub fn get_test_results(
     state: State<'_, Arc<AppState>>,
     test_run_id: String,
 ) -> Result<Vec<PersonaTestResult>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_results_by_run(&state.db, &test_run_id)
 }
 
@@ -123,6 +127,7 @@ pub fn delete_test_run(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     repo::delete_run(&state.db, &id)
 }
 
@@ -131,6 +136,7 @@ pub fn cancel_test_run(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
     // Set cancellation flag — the test runner checks this between iterations
     if let Ok(flags) = state.active_test_run_cancelled.lock() {
         if let Some(flag) = flags.get(&id) {
@@ -181,8 +187,10 @@ struct N8nTestStatusEvent {
 /// Used for quick pre-checks. Returns immediately.
 #[tauri::command]
 pub async fn validate_n8n_draft(
+    state: State<'_, Arc<AppState>>,
     draft_json: String,
 ) -> Result<DraftValidationResult, AppError> {
+    require_auth(&state).await?;
     let ephemeral = EphemeralPersona::from_draft_json(&draft_json)
         .map_err(AppError::Validation)?;
     let tools = &ephemeral.tools;
@@ -238,10 +246,12 @@ pub async fn validate_n8n_draft(
 /// Returns immediately after spawning.
 #[tauri::command]
 pub async fn test_n8n_draft(
+    state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     test_id: String,
     draft_json: String,
 ) -> Result<(), AppError> {
+    require_auth(&state).await?;
     let ephemeral = EphemeralPersona::from_draft_json(&draft_json)
         .map_err(AppError::Validation)?;
     let persona = &ephemeral.persona;

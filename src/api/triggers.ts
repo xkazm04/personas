@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { PersonaTrigger } from "@/lib/bindings/PersonaTrigger";
 import type { CreateTriggerInput } from "@/lib/bindings/CreateTriggerInput";
@@ -6,6 +6,7 @@ import type { UpdateTriggerInput } from "@/lib/bindings/UpdateTriggerInput";
 import type { TriggerChainLink } from "@/lib/bindings/TriggerChainLink";
 import type { TriggerValidationResult } from "@/lib/bindings/TriggerValidationResult";
 import type { WebhookStatus } from "@/lib/bindings/WebhookStatus";
+import type { CronAgent } from "@/lib/bindings/CronAgent";
 
 // ============================================================================
 // Triggers
@@ -20,11 +21,11 @@ export const listTriggers = (personaId: string) =>
 export const createTrigger = (input: CreateTriggerInput) =>
   invoke<PersonaTrigger>("create_trigger", { input });
 
-export const updateTrigger = (id: string, input: UpdateTriggerInput) =>
-  invoke<PersonaTrigger>("update_trigger", { id, input });
+export const updateTrigger = (id: string, personaId: string, input: UpdateTriggerInput) =>
+  invoke<PersonaTrigger>("update_trigger", { id, personaId, input });
 
-export const deleteTrigger = (id: string) =>
-  invoke<boolean>("delete_trigger", { id });
+export const deleteTrigger = (id: string, personaId: string) =>
+  invoke<boolean>("delete_trigger", { id, personaId });
 
 // ============================================================================
 // Trigger Health
@@ -107,3 +108,10 @@ export interface DryRunResult {
 
 export const dryRunTrigger = (id: string) =>
   invoke<DryRunResult>("dry_run_trigger", { id });
+
+// ============================================================================
+// Cron Agents
+// ============================================================================
+
+export const listCronAgents = () =>
+  invoke<CronAgent[]>("list_cron_agents");

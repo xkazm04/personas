@@ -12,7 +12,7 @@ import type { Continuation } from "@/lib/bindings/Continuation";
 import * as api from "@/api/tauriApi";
 
 /** Maximum terminal output lines kept in memory to prevent OOM on long executions. */
-const MAX_TERMINAL_LINES = 5000;
+const MAX_TERMINAL_LINES = 10_000;
 /** Maximum length of a single terminal line in characters. */
 const MAX_LINE_LENGTH = 4096;
 /** Maximum total bytes tracked across all terminal lines (~10 MB). */

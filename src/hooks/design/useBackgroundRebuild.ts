@@ -124,7 +124,7 @@ export function useBackgroundRebuild(onCompleted?: () => void): UseBackgroundReb
       try {
         await cancelRebuild(rebuildId);
       } catch {
-        // Best effort
+        // intentional: non-critical — cancellation is best-effort
       }
     }
     setPhase('failed');

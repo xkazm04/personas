@@ -79,6 +79,7 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
     try {
       return JSON.parse(defaultModelProfile) as ModelProfile;
     } catch {
+      // intentional: non-critical — JSON parse fallback
       return { model: 'sonnet', provider: 'anthropic' };
     }
   }, [useCase.model_override, defaultModelProfile]);

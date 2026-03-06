@@ -39,7 +39,7 @@ export function CloudConnectionForm({
 
         <button
           onClick={onDisconnect}
-          className="px-4 py-2 text-sm font-medium rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer"
+          className="px-4 py-2 text-sm font-medium rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer"
         >
           Disconnect
         </button>
@@ -57,7 +57,7 @@ export function CloudConnectionForm({
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://your-orchestrator.example.com"
-          className={`w-full px-3 py-2 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground/80 placeholder:text-muted-foreground/80 focus:outline-none focus:border-indigo-500/40 transition-colors ${isConnecting ? 'border-indigo-500/35 bg-indigo-500/5' : ''}`}
+          className={`w-full px-3 py-2 text-sm rounded-xl bg-secondary/40 border border-primary/15 text-foreground/80 placeholder:text-muted-foreground/80 focus:outline-none focus:border-indigo-500/40 transition-colors ${isConnecting ? 'border-indigo-500/35 bg-indigo-500/5' : ''}`}
         />
       </div>
 
@@ -69,14 +69,14 @@ export function CloudConnectionForm({
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
           placeholder="Enter API key"
-          className={`w-full px-3 py-2 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground/80 placeholder:text-muted-foreground/80 focus:outline-none focus:border-indigo-500/40 transition-colors ${isConnecting ? 'border-indigo-500/35 bg-indigo-500/5' : ''}`}
+          className={`w-full px-3 py-2 text-sm rounded-xl bg-secondary/40 border border-primary/15 text-foreground/80 placeholder:text-muted-foreground/80 focus:outline-none focus:border-indigo-500/40 transition-colors ${isConnecting ? 'border-indigo-500/35 bg-indigo-500/5' : ''}`}
         />
       </div>
 
       <button
         onClick={onConnect}
         disabled={isConnecting || !url.trim() || !apiKey.trim()}
-        className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-indigo-500 text-foreground hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+        className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-indigo-500 text-foreground hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
       >
         {isConnecting ? (
           <span role="status" aria-live="polite" className="inline-flex items-center gap-2">

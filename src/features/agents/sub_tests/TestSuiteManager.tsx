@@ -5,6 +5,7 @@ import {
   Pencil, X, Check, FileText,
 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
+import { useToastStore } from '@/stores/toastStore';
 import type { PersonaTestSuite } from '@/lib/bindings/PersonaTestSuite';
 import type { TestSuiteScenario } from '@/lib/bindings/TestSuiteScenario';
 
@@ -82,7 +83,7 @@ export function TestSuiteManager({
       scenarios.splice(scenarioIndex, 1);
       await updateTestSuite(suiteId, undefined, undefined, JSON.stringify(scenarios), scenarios.length);
     } catch {
-      // Invalid JSON — skip
+      useToastStore.getState().addToast('Failed to remove scenario from suite', 'error');
     }
   }, [updateTestSuite]);
 
@@ -100,7 +101,7 @@ export function TestSuiteManager({
           <button
             onClick={() => setSavingFromRun(true)}
             disabled={disabled || savingFromRun}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-primary/20 bg-primary/10 text-primary hover:bg-primary/15 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border border-primary/20 bg-primary/10 text-primary hover:bg-primary/15 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             data-testid="save-suite-from-run-btn"
           >
             <Save className="w-3.5 h-3.5" />
@@ -128,12 +129,12 @@ export function TestSuiteManager({
                   value={saveNameInput}
                   onChange={(e) => setSaveNameInput(e.target.value)}
                   placeholder="Suite name (optional)"
-                  className="flex-1 px-3 py-2 rounded-lg text-sm bg-background/40 border border-primary/10 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/30"
+                  className="flex-1 px-3 py-2 rounded-xl text-sm bg-background/40 border border-primary/10 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/30"
                   data-testid="save-suite-name-input"
                 />
                 <button
                   onClick={handleSaveFromRun}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-primary/15 text-primary hover:bg-primary/20 transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-primary/15 text-primary hover:bg-primary/20 transition-colors"
                   data-testid="save-suite-confirm-btn"
                 >
                   <Check className="w-3.5 h-3.5" />
@@ -155,7 +156,7 @@ export function TestSuiteManager({
       {/* Suite list */}
       {testSuites.length === 0 ? (
         <div className="text-center py-8 bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl">
-          <div className="w-12 h-12 rounded-2xl bg-primary/8 border border-primary/12 flex items-center justify-center mx-auto mb-3">
+          <div className="w-12 h-12 rounded-xl bg-primary/8 border border-primary/12 flex items-center justify-center mx-auto mb-3">
             <BookOpen className="w-6 h-6 text-primary/40" />
           </div>
           <p className="text-sm text-muted-foreground/80">No saved test suites</p>
@@ -169,7 +170,7 @@ export function TestSuiteManager({
             const isExpanded = expandedSuiteId === suite.id;
             const isEditing = editingSuiteId === suite.id;
             let scenarios: TestSuiteScenario[] = [];
-            try { scenarios = JSON.parse(suite.scenarios); } catch { /* skip */ }
+            try { scenarios = JSON.parse(suite.scenarios); } catch { /* intentional: non-critical — JSON parse fallback */ }
 
             return (
               <div key={suite.id} className="border border-primary/10 rounded-xl overflow-hidden">

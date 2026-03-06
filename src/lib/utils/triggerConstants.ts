@@ -300,6 +300,7 @@ function parseRawConfig(config: string | object | null | undefined): Record<stri
   try {
     return JSON.parse(config);
   } catch {
+    // intentional: non-critical -- JSON parse fallback
     return {};
   }
 }

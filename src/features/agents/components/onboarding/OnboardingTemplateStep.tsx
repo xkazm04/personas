@@ -115,7 +115,7 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm pb-3 flex gap-1.5 flex-wrap">
           <button
             onClick={() => setActiveFilter('all')}
-            className={`relative px-2.5 py-1 text-sm font-medium rounded-lg border transition-colors ${
+            className={`relative px-2.5 py-1 text-sm font-medium rounded-xl border transition-colors ${
               activeFilter === 'all'
                 ? 'border-primary/25 text-foreground/80'
                 : 'border-primary/8 text-muted-foreground/45 hover:text-muted-foreground hover:border-primary/15'
@@ -134,7 +134,7 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
             <button
               key={cat}
               onClick={() => setActiveFilter(cat)}
-              className={`relative px-2.5 py-1 text-sm font-medium rounded-lg border transition-colors ${
+              className={`relative px-2.5 py-1 text-sm font-medium rounded-xl border transition-colors ${
                 activeFilter === cat
                   ? 'border-primary/25 text-foreground/80'
                   : 'border-primary/8 text-muted-foreground/45 hover:text-muted-foreground hover:border-primary/15'

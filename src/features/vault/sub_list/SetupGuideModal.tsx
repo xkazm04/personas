@@ -35,6 +35,7 @@ export function SetupGuideModal({ connector, onClose }: SetupGuideModalProps) {
     try {
       await openExternalUrl(docsUrl);
     } catch {
+      // intentional: non-critical — Tauri shell open failed, fall back to window.open
       window.open(docsUrl, '_blank', 'noopener,noreferrer');
     }
   };
@@ -114,7 +115,7 @@ export function SetupGuideModal({ connector, onClose }: SetupGuideModalProps) {
                 <p className="text-sm text-muted-foreground/50 mb-2">Required fields:</p>
                 <div className="flex flex-wrap gap-1.5">
                   {connector.fields.filter((f) => f.required).map((f) => (
-                    <span key={f.key} className="text-sm px-2 py-0.5 rounded-md bg-secondary/40 border border-primary/10 text-foreground/70 font-mono">
+                    <span key={f.key} className="text-sm px-2 py-0.5 rounded-lg bg-secondary/40 border border-primary/10 text-foreground/70 font-mono">
                       {f.label}
                     </span>
                   ))}

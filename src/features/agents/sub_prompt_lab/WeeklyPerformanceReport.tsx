@@ -3,6 +3,7 @@ import { X, TrendingUp, TrendingDown, ArrowRight, BarChart3 } from 'lucide-react
 import { getPromptPerformance } from '@/api/observability';
 import { sendAppNotification } from '@/api/system';
 import { usePersonaStore } from '@/stores/personaStore';
+import { useToastStore } from '@/stores/toastStore';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PromptPerformanceData } from '@/lib/bindings/PromptPerformanceData';
 
@@ -75,7 +76,7 @@ export function WeeklyPerformanceReport({ onNavigateToAgent }: WeeklyPerformance
 
       setTrends(successfulTrends);
     } catch {
-      // silently fail - this is a non-critical notification
+      useToastStore.getState().addToast('Failed to load weekly performance data', 'error');
     } finally {
       setLoading(false);
     }
@@ -141,7 +142,7 @@ export function WeeklyPerformanceReport({ onNavigateToAgent }: WeeklyPerformance
         </div>
         <button
           onClick={handleDismiss}
-          className="p-1 rounded-md text-muted-foreground/40 hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
+          className="p-1 rounded-lg text-muted-foreground/40 hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
           title="Dismiss for a week"
         >
           <X className="w-3.5 h-3.5" />
@@ -200,7 +201,7 @@ function AgentTrendRow({
   return (
     <button
       onClick={() => onNavigate?.(trend.persona.id)}
-      className="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg hover:bg-secondary/40 transition-colors text-left group"
+      className="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-xl hover:bg-secondary/40 transition-colors text-left group"
     >
       <span className="text-sm text-foreground/80 truncate flex-1">{trend.persona.name}</span>
       <span

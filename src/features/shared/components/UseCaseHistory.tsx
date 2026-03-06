@@ -71,7 +71,7 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
         </p>
         <button
           onClick={() => onRerun('')}
-          className="mt-1 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
+          className="mt-1 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
         >
           <Play className="w-3.5 h-3.5" />
           Run this use case

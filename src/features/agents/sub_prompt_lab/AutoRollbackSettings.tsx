@@ -84,7 +84,7 @@ export function AutoRollbackSettings({ personaId }: AutoRollbackSettingsProps) {
           <button
             onClick={() => void fetchErrorRate()}
             disabled={loading}
-            className="mt-1 inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
+            className="mt-1 inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
           >
             <RotateCcw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
             Check again

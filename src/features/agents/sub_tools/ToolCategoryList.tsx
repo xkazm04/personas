@@ -38,7 +38,7 @@ export function ToolCategoryList({
       <p className="text-sm text-muted-foreground">No tools matching query</p>
       <button
         onClick={onClearSearch}
-        className="mt-3 text-sm px-2.5 py-1 rounded-md border border-primary/20 text-primary/80 hover:bg-primary/10 transition-colors"
+        className="mt-3 text-sm px-2.5 py-1 rounded-xl border border-primary/20 text-primary/80 hover:bg-primary/10 transition-colors"
       >
         Clear filter
       </button>
@@ -49,7 +49,7 @@ export function ToolCategoryList({
       <p className="text-sm text-muted-foreground">No tools assigned yet</p>
       <button
         onClick={onBrowseTools}
-        className="mt-3 text-sm px-2.5 py-1 rounded-md border border-primary/15 text-muted-foreground/80 hover:text-foreground/80 hover:bg-secondary/40 transition-colors"
+        className="mt-3 text-sm px-2.5 py-1 rounded-xl border border-primary/15 text-muted-foreground/80 hover:text-foreground/80 hover:bg-secondary/40 transition-colors"
       >
         Browse available tools
       </button>
@@ -145,7 +145,7 @@ function ConnectorGroup({
         <button
           onClick={() => !missingCredential && onBulkToggle(tools, allAssigned)}
           disabled={missingCredential}
-          className={`flex-shrink-0 w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${
+          className={`flex-shrink-0 w-5 h-5 rounded-lg border flex items-center justify-center transition-colors ${
             missingCredential
               ? 'bg-background/30 border-primary/10 cursor-not-allowed'
               : allAssigned
@@ -161,7 +161,7 @@ function ConnectorGroup({
         </button>
         {meta && (
           <div
-            className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
+            className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
             style={{ backgroundColor: `${meta.color}15` }}
           >
             <ConnectorIcon meta={meta} size="w-3.5 h-3.5" />

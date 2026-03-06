@@ -92,7 +92,7 @@ export function CredentialPlaygroundModal({
       const status = await getRotationStatus(credential.id);
       setRotationStatus(status);
     } catch {
-      // No rotation data yet
+      // intentional: non-critical — rotation status not yet configured for this credential
     }
   }, [credential.id]);
 

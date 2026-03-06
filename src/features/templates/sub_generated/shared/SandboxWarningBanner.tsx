@@ -64,7 +64,7 @@ export function SandboxWarningBanner({ verification, className = '' }: SandboxWa
               {restrictions.map((r) => (
                 <span
                   key={r}
-                  className={`inline-flex items-center gap-1 px-2 py-1 text-sm rounded-md ${
+                  className={`inline-flex items-center gap-1 px-2 py-1 text-sm rounded-lg ${
                     isUntrusted
                       ? 'bg-red-500/10 text-red-400/70 border border-red-500/15'
                       : 'bg-amber-500/10 text-amber-400/70 border border-amber-500/15'
@@ -91,7 +91,7 @@ export function SandboxInlineWarning({ verification }: { verification: TemplateV
   const isUntrusted = verification.trustLevel === 'untrusted';
 
   return (
-    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-sm ${
+    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm ${
       isUntrusted
         ? 'bg-red-500/8 text-red-400/70 border border-red-500/15'
         : 'bg-amber-500/8 text-amber-400/70 border border-amber-500/15'

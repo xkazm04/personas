@@ -5,3 +5,4 @@ export { ConnectorReadiness, deriveConnectorReadiness } from './ConnectorReadine
 export { SandboxWarningBanner } from './SandboxWarningBanner';
 export { ScanResultsBanner } from './ScanResultsBanner';
 export { TeamSynthesisPanel } from './TeamSynthesisPanel';
+export { TabTransition } from './TabTransition';

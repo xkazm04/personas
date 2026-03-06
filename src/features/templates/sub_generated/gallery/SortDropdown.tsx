@@ -32,7 +32,7 @@ export function SortDropdown({
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="px-3 py-2 text-sm rounded-lg border border-primary/15 hover:bg-secondary/50 text-muted-foreground/80 transition-colors flex items-center gap-1.5"
+        className="px-3 py-2 text-sm rounded-xl border border-primary/15 hover:bg-secondary/50 text-muted-foreground/80 transition-colors flex items-center gap-1.5"
       >
         <ArrowUpDown className="w-3.5 h-3.5" />
         {currentOption.label}

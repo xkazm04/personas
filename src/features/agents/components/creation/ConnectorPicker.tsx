@@ -53,7 +53,7 @@ export function ConnectorPicker({ selected, onToggle }: ConnectorPickerProps) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search connectors..."
-          className="w-full pl-8 pr-3 py-1.5 bg-secondary/40 border border-primary/10 rounded-lg text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-1 focus:ring-primary/30"
+          className="w-full pl-8 pr-3 py-1.5 bg-secondary/40 border border-primary/10 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-1 focus:ring-primary/30"
         />
       </div>
 
@@ -80,7 +80,7 @@ export function ConnectorPicker({ selected, onToggle }: ConnectorPickerProps) {
                     key={c.name}
                     type="button"
                     onClick={() => onToggle(c.name)}
-                    className={`inline-flex items-center gap-1.5 px-2 py-1 text-sm rounded-md border transition-all ${
+                    className={`inline-flex items-center gap-1.5 px-2 py-1 text-sm rounded-lg border transition-all ${
                       active
                         ? 'bg-primary/10 border-primary/25 text-foreground/90 ring-1 ring-primary/20'
                         : 'bg-secondary/20 border-primary/8 text-muted-foreground/60 hover:bg-secondary/40 hover:text-foreground/75'

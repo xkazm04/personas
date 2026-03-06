@@ -82,7 +82,7 @@ export function VersionItem({
       >
         <div className="flex items-center gap-2">
           <span className="text-sm font-mono font-bold text-foreground/90">v{version.version_number}</span>
-          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-sm font-medium border ${style.bg} ${style.text}`}>
+          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-sm font-medium border ${style.bg} ${style.text}`}>
             <TagIcon className="w-2.5 h-2.5" />
             {version.tag}
           </span>

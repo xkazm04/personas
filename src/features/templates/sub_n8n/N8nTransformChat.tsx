@@ -104,7 +104,7 @@ export function N8nTransformChat({
                   <button
                     type="button"
                     onClick={() => setViewMode('list')}
-                    className={`px-2 py-1 text-sm rounded-md flex items-center gap-1.5 transition-all ${
+                    className={`px-2 py-1 text-sm rounded-lg flex items-center gap-1.5 transition-all ${
                       viewMode === 'list'
                         ? 'bg-primary/15 text-foreground/90 shadow-sm'
                         : 'text-muted-foreground/50 hover:text-foreground/70'
@@ -116,7 +116,7 @@ export function N8nTransformChat({
                   <button
                     type="button"
                     onClick={() => setViewMode('stepper')}
-                    className={`px-2 py-1 text-sm rounded-md flex items-center gap-1.5 transition-all ${
+                    className={`px-2 py-1 text-sm rounded-lg flex items-center gap-1.5 transition-all ${
                       viewMode === 'stepper'
                         ? 'bg-primary/15 text-foreground/90 shadow-sm'
                         : 'text-muted-foreground/50 hover:text-foreground/70'
@@ -193,7 +193,7 @@ export function N8nTransformChat({
                   return (
                     <span
                       key={q.id}
-                      className="inline-flex items-center gap-1 px-2 py-1 text-sm rounded-md bg-violet-500/10 text-violet-300/80 border border-violet-500/15"
+                      className="inline-flex items-center gap-1 px-2 py-1 text-sm rounded-lg bg-violet-500/10 text-violet-300/80 border border-violet-500/15"
                     >
                       <CheckCircle2 className="w-2.5 h-2.5" />
                       {answer.length > 30 ? `${answer.slice(0, 30)}...` : answer}

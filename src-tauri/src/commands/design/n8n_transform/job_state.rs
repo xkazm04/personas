@@ -1,7 +1,12 @@
+use std::sync::Arc;
+
 use serde::Serialize;
+use tauri::State;
 
 use crate::background_job::BackgroundJobManager;
 use crate::error::AppError;
+use crate::ipc_auth::require_auth_sync;
+use crate::AppState;
 
 use super::types::N8nPersonaOutput;
 
@@ -127,21 +132,31 @@ pub fn list_n8n_transform_jobs() -> Vec<crate::background_job::JobSnapshot> {
 // ── Tauri commands for job state ────────────────────────────────
 
 #[tauri::command]
-pub fn get_n8n_transform_snapshot(transform_id: String) -> Result<serde_json::Value, AppError> {
+pub fn get_n8n_transform_snapshot(
+    state: State<'_, Arc<AppState>>,
+    transform_id: String,
+) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
     let snapshot = get_n8n_transform_snapshot_internal(&transform_id)
         .ok_or_else(|| AppError::NotFound("n8n transform not found".into()))?;
     Ok(serde_json::to_value(snapshot).unwrap_or_else(|_| serde_json::json!({})))
 }
 
 #[tauri::command]
-pub fn clear_n8n_transform_snapshot(transform_id: String) -> Result<(), AppError> {
+pub fn clear_n8n_transform_snapshot(
+    state: State<'_, Arc<AppState>>,
+    transform_id: String,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
     N8N_JOBS.remove(&transform_id)
 }
 
 #[tauri::command]
 pub fn cancel_n8n_transform(
+    state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     transform_id: String,
 ) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
     N8N_JOBS.cancel_or_preempt(&app, &transform_id, N8nTransformExtra::default())
 }

@@ -7,6 +7,7 @@ use tauri::State;
 use ts_rs::TS;
 
 use crate::error::AppError;
+use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
 
 // ============================================================================
@@ -91,6 +92,7 @@ pub fn get_sla_dashboard(
     state: State<'_, Arc<AppState>>,
     days: Option<i64>,
 ) -> Result<SlaDashboardData, AppError> {
+    require_auth_sync(&state)?;
     let pool = &state.db;
     let conn = pool.get()?;
     let days = days.unwrap_or(30);

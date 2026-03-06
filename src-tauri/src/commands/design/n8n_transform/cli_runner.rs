@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use serde_json::json;
-use tauri::Manager;
+use tauri::{Manager, State};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
 use tokio_util::sync::CancellationToken;
@@ -12,6 +12,7 @@ use crate::engine::parser::parse_stream_line;
 use crate::engine::prompt;
 use crate::engine::types::StreamLineType;
 use crate::error::AppError;
+use crate::ipc_auth::require_auth;
 use crate::AppState;
 
 use super::job_state::{self, *};
@@ -26,6 +27,7 @@ use crate::commands::design::analysis::extract_display_text;
 #[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn start_n8n_transform_background(
+    state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     transform_id: String,
     workflow_name: String,
@@ -38,6 +40,7 @@ pub async fn start_n8n_transform_background(
     user_answers_json: Option<String>,
     session_id: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth(&state).await?;
     if workflow_json.trim().is_empty() {
         return Err(AppError::Validation("Workflow JSON cannot be empty".into()));
     }
@@ -215,11 +218,13 @@ pub async fn start_n8n_transform_background(
 /// Turn 2: resume the Claude session with user answers.
 #[tauri::command]
 pub async fn continue_n8n_transform(
+    state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     transform_id: String,
     user_answers_json: String,
     session_id: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth(&state).await?;
     let claude_session_id = get_n8n_transform_claude_session(&transform_id)
         .ok_or_else(|| AppError::NotFound("No Claude session found for this transform".into()))?;
 

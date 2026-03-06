@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { CloudConfig } from "@/lib/bindings/CloudConfig";
 import type { CloudStatusResponse } from "@/lib/bindings/CloudStatusResponse";
@@ -50,3 +50,38 @@ export const cloudOAuthRefresh = () =>
 
 export const cloudOAuthDisconnect = () =>
   invoke<void>("cloud_oauth_disconnect");
+
+// Deployments
+
+export interface CloudDeployment {
+  id: string;
+  project_id: string;
+  persona_id: string;
+  slug: string;
+  label: string;
+  status: string;
+  webhook_enabled: boolean;
+  webhook_secret: string | null;
+  invocation_count: number;
+  last_invoked_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export const cloudDeployPersona = (personaId: string) =>
+  invoke<CloudDeployment>("cloud_deploy_persona", { personaId });
+
+export const cloudListDeployments = () =>
+  invoke<CloudDeployment[]>("cloud_list_deployments");
+
+export const cloudPauseDeployment = (deploymentId: string) =>
+  invoke<CloudDeployment>("cloud_pause_deployment", { deploymentId });
+
+export const cloudResumeDeployment = (deploymentId: string) =>
+  invoke<CloudDeployment>("cloud_resume_deployment", { deploymentId });
+
+export const cloudUndeploy = (deploymentId: string) =>
+  invoke<void>("cloud_undeploy", { deploymentId });
+
+export const cloudGetBaseUrl = () =>
+  invoke<string | null>("cloud_get_base_url");

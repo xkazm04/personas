@@ -8,7 +8,27 @@ use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::core::{memories as memory_repo, personas as persona_repo};
 use crate::db::repos::resources::triggers as trigger_repo;
 use crate::error::AppError;
+use crate::ipc_auth::require_auth_sync;
+use crate::validation;
 use crate::AppState;
+
+/// Maximum import file size (5 MB).
+const MAX_IMPORT_FILE_BYTES: u64 = 5 * 1024 * 1024;
+
+/// Field length limits.
+const MAX_NAME_LEN: usize = 200;
+const MAX_DESCRIPTION_LEN: usize = 2_000;
+const MAX_SYSTEM_PROMPT_LEN: usize = 100_000; // 100 KB
+const MAX_STRUCTURED_PROMPT_LEN: usize = 100_000;
+const MAX_SHORT_FIELD_LEN: usize = 500;
+const MAX_CONFIG_LEN: usize = 10_000;
+const MAX_DESIGN_CONTEXT_LEN: usize = 50_000;
+const MAX_MEMORY_CONTENT_LEN: usize = 50_000;
+
+/// Array size caps.
+const MAX_TRIGGERS: usize = 100;
+const MAX_SUBSCRIPTIONS: usize = 50;
+const MAX_MEMORIES: usize = 500;
 
 // ============================================================================
 // Export-only data structs (no system-generated fields like id/created_at)
@@ -84,6 +104,7 @@ pub async fn export_persona(
     app: AppHandle,
     persona_id: String,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     let pool = &state.db;
 
     // Gather data
@@ -174,6 +195,7 @@ pub async fn import_persona(
     state: State<'_, Arc<AppState>>,
     app: AppHandle,
 ) -> Result<Option<ImportResult>, AppError> {
+    require_auth_sync(&state)?;
     let app_clone = app.clone();
     let file_path = tokio::task::spawn_blocking(move || {
         app_clone
@@ -193,6 +215,18 @@ pub async fn import_persona(
         .into_path()
         .map_err(|e| AppError::Internal(format!("Invalid file path: {e}")))?;
 
+    // Check file size before reading to prevent memory exhaustion
+    let metadata = tokio::fs::metadata(&path)
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to read file metadata: {e}")))?;
+    if metadata.len() > MAX_IMPORT_FILE_BYTES {
+        return Err(AppError::Validation(format!(
+            "Import file too large ({:.1} MB). Maximum is {} MB.",
+            metadata.len() as f64 / (1024.0 * 1024.0),
+            MAX_IMPORT_FILE_BYTES / (1024 * 1024)
+        )));
+    }
+
     let content = tokio::fs::read_to_string(&path)
         .await
         .map_err(|e| AppError::Internal(format!("Failed to read file: {e}")))?;
@@ -207,8 +241,50 @@ pub async fn import_persona(
         )));
     }
 
-    let pool = &state.db;
+    // Validate array sizes
+    validation::require_max_count("triggers", &bundle.triggers, MAX_TRIGGERS)?;
+    validation::require_max_count("subscriptions", &bundle.subscriptions, MAX_SUBSCRIPTIONS)?;
+    validation::require_max_count("memories", &bundle.memories, MAX_MEMORIES)?;
+
+    // Validate persona fields
     let p = &bundle.persona;
+    validation::require_non_empty("persona name", &p.name)?;
+    validation::require_max_len("persona name", &p.name, MAX_NAME_LEN)?;
+    validation::require_max_len("system_prompt", &p.system_prompt, MAX_SYSTEM_PROMPT_LEN)?;
+    validation::require_optional_max_len("description", &p.description, MAX_DESCRIPTION_LEN)?;
+    validation::require_optional_max_len("structured_prompt", &p.structured_prompt, MAX_STRUCTURED_PROMPT_LEN)?;
+    validation::require_optional_max_len("icon", &p.icon, MAX_SHORT_FIELD_LEN)?;
+    validation::require_optional_max_len("color", &p.color, MAX_SHORT_FIELD_LEN)?;
+    validation::require_optional_max_len("notification_channels", &p.notification_channels, MAX_SHORT_FIELD_LEN)?;
+    validation::require_optional_max_len("model_profile", &p.model_profile, MAX_SHORT_FIELD_LEN)?;
+    validation::require_optional_max_len("design_context", &p.design_context, MAX_DESIGN_CONTEXT_LEN)?;
+
+    // Validate trigger fields
+    for (i, t) in bundle.triggers.iter().enumerate() {
+        validation::require_non_empty(&format!("trigger[{i}].trigger_type"), &t.trigger_type)?;
+        validation::require_max_len(&format!("trigger[{i}].trigger_type"), &t.trigger_type, MAX_SHORT_FIELD_LEN)?;
+        validation::require_optional_max_len(&format!("trigger[{i}].config"), &t.config, MAX_CONFIG_LEN)?;
+        validation::require_optional_max_len(&format!("trigger[{i}].use_case_id"), &t.use_case_id, MAX_SHORT_FIELD_LEN)?;
+    }
+
+    // Validate subscription fields
+    for (i, s) in bundle.subscriptions.iter().enumerate() {
+        validation::require_non_empty(&format!("subscription[{i}].event_type"), &s.event_type)?;
+        validation::require_max_len(&format!("subscription[{i}].event_type"), &s.event_type, MAX_SHORT_FIELD_LEN)?;
+        validation::require_optional_max_len(&format!("subscription[{i}].source_filter"), &s.source_filter, MAX_SHORT_FIELD_LEN)?;
+        validation::require_optional_max_len(&format!("subscription[{i}].use_case_id"), &s.use_case_id, MAX_SHORT_FIELD_LEN)?;
+    }
+
+    // Validate memory fields
+    for (i, m) in bundle.memories.iter().enumerate() {
+        validation::require_non_empty(&format!("memory[{i}].title"), &m.title)?;
+        validation::require_max_len(&format!("memory[{i}].title"), &m.title, MAX_NAME_LEN)?;
+        validation::require_max_len(&format!("memory[{i}].content"), &m.content, MAX_MEMORY_CONTENT_LEN)?;
+        validation::require_max_len(&format!("memory[{i}].category"), &m.category, MAX_SHORT_FIELD_LEN)?;
+        validation::require_optional_max_len(&format!("memory[{i}].tags"), &m.tags, MAX_SHORT_FIELD_LEN)?;
+    }
+
+    let pool = &state.db;
 
     // Create the persona (disabled by default, with "(imported)" suffix)
     let new_persona = persona_repo::create(

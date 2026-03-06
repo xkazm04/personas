@@ -58,14 +58,14 @@ export function UseCaseSubscriptionForm({ onAdd, onCancel }: UseCaseSubscription
           value={newSourceFilter}
           onChange={(e) => setNewSourceFilter(e.target.value)}
           placeholder="e.g. persona-id or glob pattern"
-          className="w-full px-2.5 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary/30"
+          className="w-full px-2.5 py-1.5 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary/30"
         />
       </div>
       <div className="flex items-center gap-2 pt-1">
         <button
           onClick={handleAdd}
           disabled={!newEventType}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
             newEventType
               ? 'bg-primary hover:bg-primary/90 text-foreground'
               : 'bg-secondary/40 text-muted-foreground/70 cursor-not-allowed'

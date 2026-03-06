@@ -61,14 +61,14 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
       </div>
 
       <input
-        className="w-full text-sm bg-secondary/60 border border-primary/10 rounded-md px-2 py-1.5 text-foreground/90 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/30"
+        className="w-full text-sm bg-secondary/60 border border-primary/10 rounded-lg px-2 py-1.5 text-foreground/90 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/30"
         placeholder="Title..."
         value={title}
         onChange={(e) => setTitle(e.target.value)}
       />
 
       <textarea
-        className="w-full text-sm bg-secondary/60 border border-primary/10 rounded-md px-2 py-1.5 text-foreground/90 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/30 resize-none"
+        className="w-full text-sm bg-secondary/60 border border-primary/10 rounded-lg px-2 py-1.5 text-foreground/90 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/30 resize-none"
         placeholder="Content..."
         rows={3}
         value={content}
@@ -77,7 +77,7 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
 
       <div className="flex items-center gap-2">
         <select
-          className="text-sm bg-secondary/60 border border-primary/10 rounded-md px-1.5 py-1 text-foreground/80 focus:outline-none"
+          className="text-sm bg-secondary/60 border border-primary/10 rounded-lg px-1.5 py-1 text-foreground/80 focus:outline-none"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
         >
@@ -101,7 +101,7 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
       </div>
 
       <button
-        className="w-full text-sm py-1.5 rounded-md bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/25 transition-colors disabled:opacity-40"
+        className="w-full text-sm py-1.5 rounded-lg bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/25 transition-colors disabled:opacity-40"
         disabled={!title.trim() || !content.trim()}
         onClick={handleSubmit}
       >

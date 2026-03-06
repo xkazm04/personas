@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { Bell, ShieldAlert } from 'lucide-react';
+import { Bell, ShieldAlert, Activity } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { useAppSetting } from '@/hooks/utility/useAppSetting';
 
@@ -51,9 +51,61 @@ const SEVERITY_ROWS: Array<{
   },
 ];
 
+function WeeklyDigestToggle() {
+  const digestSetting = useAppSetting('health_digest_enabled', 'true', (v) => v === 'true' || v === 'false');
+
+  const enabled = digestSetting.value === 'true';
+
+  const handleToggle = useCallback(() => {
+    digestSetting.setValue(enabled ? 'false' : 'true');
+  }, [enabled, digestSetting]);
+
+  // Auto-save
+  const digestLoadedOnce = useRef(false);
+  useEffect(() => {
+    if (!digestSetting.loaded) return;
+    if (!digestLoadedOnce.current) {
+      digestLoadedOnce.current = true;
+      return;
+    }
+    digestSetting.save();
+  }, [digestSetting.value]);
+
+  if (!digestSetting.loaded) return null;
+
+  return (
+    <div className="rounded-xl border border-primary/15 bg-secondary/40 overflow-hidden">
+      <div className="px-4 py-3 border-b border-primary/10 flex items-center gap-2">
+        <Activity className="w-4 h-4 text-primary/60" />
+        <span className="text-sm font-medium text-foreground/80">Weekly Health Digest</span>
+      </div>
+      <div className="px-4 py-3 flex items-center justify-between">
+        <div className="space-y-0.5">
+          <span className="text-sm font-medium text-foreground/80">Agent Health Digest</span>
+          <p className="text-sm text-muted-foreground/80">
+            Weekly notification summarizing health issues across all agents with a total health score
+          </p>
+        </div>
+        <button
+          onClick={handleToggle}
+          className={`relative w-9 h-5 rounded-full transition-colors ${
+            enabled ? 'bg-primary/60' : 'bg-secondary/80 border border-border/30'
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 w-4 h-4 rounded-full bg-foreground/90 transition-transform ${
+              enabled ? 'left-[18px]' : 'left-0.5'
+            }`}
+          />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function NotificationSettings() {
   const setting = useAppSetting(SETTINGS_KEY, JSON.stringify(DEFAULT_PREFS), (v) => {
-    try { const p = JSON.parse(v); return typeof p === 'object' && p !== null; } catch { return false; }
+    try { const p = JSON.parse(v); return typeof p === 'object' && p !== null; } catch { /* intentional: non-critical — JSON parse fallback */ return false; }
   });
   const hasLoadedOnce = useRef(false);
 
@@ -71,6 +123,7 @@ export default function NotificationSettings() {
     try {
       return { ...DEFAULT_PREFS, ...JSON.parse(setting.value) };
     } catch {
+      // intentional: non-critical — JSON parse fallback
       return DEFAULT_PREFS;
     }
   }, [setting.value]);
@@ -125,6 +178,9 @@ export default function NotificationSettings() {
               ))}
             </div>
           </div>
+
+          {/* Weekly Health Digest */}
+          <WeeklyDigestToggle />
 
           <p className="text-sm text-muted-foreground/80">
             Desktop notifications use the native OS notification system. In-app toasts appear for critical and high severity issues regardless of these settings.

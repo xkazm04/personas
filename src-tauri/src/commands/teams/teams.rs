@@ -10,20 +10,24 @@ use crate::db::repos::resources::team_memories as team_memories_repo;
 use crate::engine::optimizer::{self, PipelineAnalytics};
 use crate::engine::topology::{self, TopologyBlueprint};
 use crate::error::AppError;
+use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 #[tauri::command]
 pub fn list_teams(state: State<'_, Arc<AppState>>) -> Result<Vec<PersonaTeam>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_all(&state.db)
 }
 
 #[tauri::command]
 pub fn get_team_counts(state: State<'_, Arc<AppState>>) -> Result<Vec<TeamCounts>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_all_team_counts(&state.db)
 }
 
 #[tauri::command]
 pub fn get_team(state: State<'_, Arc<AppState>>, id: String) -> Result<PersonaTeam, AppError> {
+    require_auth_sync(&state)?;
     repo::get_by_id(&state.db, &id)
 }
 
@@ -32,6 +36,7 @@ pub fn create_team(
     state: State<'_, Arc<AppState>>,
     input: CreateTeamInput,
 ) -> Result<PersonaTeam, AppError> {
+    require_auth_sync(&state)?;
     repo::create(&state.db, input)
 }
 
@@ -41,11 +46,13 @@ pub fn update_team(
     id: String,
     input: UpdateTeamInput,
 ) -> Result<PersonaTeam, AppError> {
+    require_auth_sync(&state)?;
     repo::update(&state.db, &id, input)
 }
 
 #[tauri::command]
 pub fn delete_team(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     repo::delete(&state.db, &id)
 }
 
@@ -54,6 +61,7 @@ pub fn list_team_members(
     state: State<'_, Arc<AppState>>,
     team_id: String,
 ) -> Result<Vec<PersonaTeamMember>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_members(&state.db, &team_id)
 }
 
@@ -67,6 +75,7 @@ pub fn add_team_member(
     position_y: Option<f64>,
     config: Option<String>,
 ) -> Result<PersonaTeamMember, AppError> {
+    require_auth_sync(&state)?;
     repo::add_member(&state.db, &team_id, &persona_id, role, position_x, position_y, config)
 }
 
@@ -79,6 +88,7 @@ pub fn update_team_member(
     position_y: Option<f64>,
     config: Option<String>,
 ) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
     repo::update_member(&state.db, &id, role, position_x, position_y, config)
 }
 
@@ -87,6 +97,7 @@ pub fn remove_team_member(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     repo::remove_member(&state.db, &id)
 }
 
@@ -95,6 +106,7 @@ pub fn list_team_connections(
     state: State<'_, Arc<AppState>>,
     team_id: String,
 ) -> Result<Vec<PersonaTeamConnection>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_connections(&state.db, &team_id)
 }
 
@@ -108,6 +120,7 @@ pub fn create_team_connection(
     condition: Option<String>,
     label: Option<String>,
 ) -> Result<PersonaTeamConnection, AppError> {
+    require_auth_sync(&state)?;
     repo::create_connection(&state.db, &team_id, &source_member_id, &target_member_id, connection_type, condition, label)
 }
 
@@ -117,6 +130,7 @@ pub fn update_team_connection(
     id: String,
     connection_type: String,
 ) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
     repo::update_connection_type(&state.db, &id, &connection_type)
 }
 
@@ -125,6 +139,7 @@ pub fn delete_team_connection(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     repo::delete_connection(&state.db, &id)
 }
 
@@ -158,6 +173,7 @@ pub fn list_pipeline_runs(
     state: State<'_, Arc<AppState>>,
     team_id: String,
 ) -> Result<Vec<PipelineRun>, AppError> {
+    require_auth_sync(&state)?;
     repo::list_pipeline_runs(&state.db, &team_id)
 }
 
@@ -166,6 +182,7 @@ pub fn get_pipeline_run(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<PipelineRun, AppError> {
+    require_auth_sync(&state)?;
     repo::get_pipeline_run(&state.db, &id)
 }
 
@@ -176,6 +193,7 @@ pub async fn execute_team(
     team_id: String,
     input_data: Option<String>,
 ) -> Result<String, AppError> {
+    require_auth(&state).await?;
     use crate::db::repos::resources::teams as team_repo;
     use crate::db::repos::core::personas as persona_repo;
     use crate::db::repos::resources::tools as tool_repo;
@@ -588,6 +606,7 @@ pub fn cancel_pipeline(
     state: State<'_, Arc<AppState>>,
     run_id: String,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     let map = state.active_pipeline_cancelled.lock().unwrap_or_else(|e| e.into_inner());
     if let Some(flag) = map.get(&run_id) {
         flag.store(true, std::sync::atomic::Ordering::Relaxed);
@@ -607,6 +626,7 @@ pub fn get_pipeline_analytics(
     state: State<'_, Arc<AppState>>,
     team_id: String,
 ) -> Result<PipelineAnalytics, AppError> {
+    require_auth_sync(&state)?;
     let runs = repo::list_pipeline_runs(&state.db, &team_id)?;
     let members = repo::get_members(&state.db, &team_id)?;
     let connections = repo::get_connections(&state.db, &team_id)?;
@@ -620,6 +640,7 @@ pub fn suggest_topology(
     query: String,
     team_id: Option<String>,
 ) -> Result<TopologyBlueprint, AppError> {
+    require_auth_sync(&state)?;
     use crate::db::repos::core::personas as persona_repo;
 
     let personas = persona_repo::get_all(&state.db)?;
@@ -645,6 +666,7 @@ pub async fn suggest_topology_llm(
     query: String,
     team_id: Option<String>,
 ) -> Result<TopologyBlueprint, AppError> {
+    require_auth(&state).await?;
     use crate::commands::credentials::ai_artifact_flow::run_claude_prompt;
     use crate::db::repos::communication::reviews as review_repo;
     use crate::db::repos::core::personas as persona_repo;

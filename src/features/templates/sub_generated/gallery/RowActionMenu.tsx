@@ -28,7 +28,7 @@ export function RowActionMenu({
           e.stopPropagation();
           setOpen((prev) => !prev);
         }}
-        className="p-1 rounded-md opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-secondary/60 transition-all"
+        className="p-1 rounded-lg opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-secondary/60 transition-all"
         aria-label="Row actions"
       >
         <MoreVertical className="w-4.5 h-4.5 text-muted-foreground/90" />

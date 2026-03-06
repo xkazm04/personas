@@ -14,6 +14,7 @@ import type {
   DesignQuestion,
 } from '@/lib/types/designTypes';
 import { parseConversationMessages } from '@/lib/types/designTypes';
+import { useToastStore } from '@/stores/toastStore';
 
 /**
  * Manages persistent design conversations alongside the design analysis flow.
@@ -49,7 +50,7 @@ export function useDesignConversation(personaId: string | null) {
       setConversations(list);
       setActiveConversation(active);
     } catch {
-      // Non-critical — conversation persistence is best-effort
+      // intentional: non-critical — conversation preloading is best-effort
     }
   }, [personaId]);
 
@@ -85,6 +86,7 @@ export function useDesignConversation(personaId: string | null) {
       setConversations((prev) => [conv, ...prev]);
       return conv;
     } catch {
+      useToastStore.getState().addToast('Failed to start design conversation', 'error');
       return null;
     }
   }, [personaId]);
@@ -122,7 +124,7 @@ export function useDesignConversation(personaId: string | null) {
           prev.map((c) => (c.id === updated.id ? updated : c))
         );
       } catch {
-        // Preserve the appended message in-memory even when persistence fails.
+        // intentional: non-critical — preserve appended message in-memory when persistence fails
         const fallback: DesignConversation = {
           ...conv,
           messages: JSON.stringify(messages),
@@ -208,7 +210,7 @@ export function useDesignConversation(personaId: string | null) {
         prev.map((c) => (c.id === updated.id ? updated : c))
       );
     } catch {
-      // Best-effort
+      // intentional: non-critical — completing conversation status is best-effort
     }
   }, []);
 
@@ -224,7 +226,7 @@ export function useDesignConversation(personaId: string | null) {
       try {
         await updateDesignConversationStatus(current.id, 'abandoned');
       } catch {
-        // Best-effort
+        // intentional: non-critical — abandoning previous conversation is best-effort
       }
     }
 
@@ -242,6 +244,7 @@ export function useDesignConversation(personaId: string | null) {
       );
       return updated;
     } catch {
+      useToastStore.getState().addToast('Failed to resume conversation', 'error');
       return null;
     }
   }, []);
@@ -255,7 +258,7 @@ export function useDesignConversation(personaId: string | null) {
         setActiveConversation(null);
       }
     } catch {
-      // Best-effort
+      useToastStore.getState().addToast('Failed to delete conversation', 'error');
     }
   }, []);
 

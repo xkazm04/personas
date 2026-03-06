@@ -6,6 +6,7 @@ use tokio::process::Command;
 use crate::db::models::{CreatePersonaMemoryInput, PersonaMemory};
 use crate::db::repos::core::memories as repo;
 use crate::error::AppError;
+use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 #[tauri::command]
@@ -17,6 +18,7 @@ pub fn list_memories(
     limit: Option<i64>,
     offset: Option<i64>,
 ) -> Result<Vec<PersonaMemory>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_all(&state.db, persona_id.as_deref(), category.as_deref(), search.as_deref(), limit, offset)
 }
 
@@ -25,6 +27,7 @@ pub fn create_memory(
     state: State<'_, Arc<AppState>>,
     input: CreatePersonaMemoryInput,
 ) -> Result<PersonaMemory, AppError> {
+    require_auth_sync(&state)?;
     repo::create(&state.db, input)
 }
 
@@ -35,6 +38,7 @@ pub fn get_memory_count(
     category: Option<String>,
     search: Option<String>,
 ) -> Result<i64, AppError> {
+    require_auth_sync(&state)?;
     repo::get_total_count(&state.db, persona_id.as_deref(), category.as_deref(), search.as_deref())
 }
 
@@ -45,6 +49,7 @@ pub fn get_memory_stats(
     category: Option<String>,
     search: Option<String>,
 ) -> Result<repo::MemoryStats, AppError> {
+    require_auth_sync(&state)?;
     repo::get_stats(&state.db, persona_id.as_deref(), category.as_deref(), search.as_deref())
 }
 
@@ -53,6 +58,7 @@ pub fn list_memories_by_execution(
     state: State<'_, Arc<AppState>>,
     execution_id: String,
 ) -> Result<Vec<PersonaMemory>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_by_execution(&state.db, &execution_id)
 }
 
@@ -61,6 +67,7 @@ pub fn delete_memory(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     repo::delete(&state.db, &id)
 }
 
@@ -70,6 +77,7 @@ pub fn update_memory_importance(
     id: String,
     importance: i32,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     repo::update_importance(&state.db, &id, importance)
 }
 
@@ -78,6 +86,7 @@ pub fn batch_delete_memories(
     state: State<'_, Arc<AppState>>,
     ids: Vec<String>,
 ) -> Result<i64, AppError> {
+    require_auth_sync(&state)?;
     repo::batch_delete(&state.db, &ids)
 }
 
@@ -106,6 +115,7 @@ pub async fn review_memories_with_cli(
     persona_id: Option<String>,
     threshold: Option<i32>,
 ) -> Result<MemoryReviewResult, AppError> {
+    require_auth(&state).await?;
     let db = state.db.clone();
     let threshold = threshold.unwrap_or(7);
 

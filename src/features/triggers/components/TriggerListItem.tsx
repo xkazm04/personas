@@ -29,7 +29,7 @@ export function TriggerListItem({
   const detail = useTriggerDetail(trigger.id, trigger.persona_id);
 
   return (
-    <div className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-2xl transition-colors hover:border-primary/25">
+    <div className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl transition-colors hover:border-primary/25">
       <TriggerRow
         trigger={trigger}
         expanded={expanded}

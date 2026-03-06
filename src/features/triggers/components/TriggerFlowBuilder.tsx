@@ -195,7 +195,7 @@ export function TriggerFlowBuilder() {
           </div>
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-purple-500/15 text-purple-400 border border-purple-500/20 rounded-lg hover:bg-purple-500/25 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-purple-500/15 text-purple-400 border border-purple-500/20 rounded-xl hover:bg-purple-500/25 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             Add Chain
@@ -271,7 +271,7 @@ export function TriggerFlowBuilder() {
                   >
                     <div className="flex items-center justify-center">
                       <span
-                        className={`text-sm px-1.5 py-0.5 rounded-md bg-background/80 border border-border/30 ${color}`}
+                        className={`text-sm px-1.5 py-0.5 rounded-lg bg-background/80 border border-border/30 ${color}`}
                       >
                         {edge.conditionType}
                       </span>
@@ -333,7 +333,7 @@ export function TriggerFlowBuilder() {
                     {chain.target_persona_name}
                   </span>
                   <span
-                    className={`ml-auto text-sm px-1.5 py-0.5 rounded-md font-mono ${
+                    className={`ml-auto text-sm px-1.5 py-0.5 rounded-lg font-mono ${
                       chain.enabled
                         ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20"
                         : "bg-secondary/60 text-muted-foreground/80 border border-border/20"
@@ -366,7 +366,7 @@ export function TriggerFlowBuilder() {
             </p>
             <button
               onClick={() => setShowAddModal(true)}
-              className="mt-2 px-4 py-2 text-sm font-medium bg-purple-500/15 text-purple-400 border border-purple-500/20 rounded-lg hover:bg-purple-500/25 transition-colors"
+              className="mt-2 px-4 py-2 text-sm font-medium bg-purple-500/15 text-purple-400 border border-purple-500/20 rounded-xl hover:bg-purple-500/25 transition-colors"
             >
               <Plus className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5" />
               Create First Chain
@@ -390,7 +390,7 @@ export function TriggerFlowBuilder() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-background border border-border/40 rounded-2xl p-6 w-[400px] shadow-2xl space-y-4"
+              className="bg-background border border-border/40 rounded-xl p-6 w-[400px] shadow-2xl space-y-4"
             >
               <h3 className="text-sm font-semibold text-foreground/80">
                 Add Trigger Chain
@@ -469,7 +469,7 @@ export function TriggerFlowBuilder() {
               <div className="flex gap-2 pt-2">
                 <button
                   onClick={() => setShowAddModal(false)}
-                  className="flex-1 px-4 py-2 text-sm font-medium bg-secondary/40 text-muted-foreground/80 border border-border/20 rounded-lg hover:bg-secondary/60 transition-colors"
+                  className="flex-1 px-4 py-2 text-sm font-medium bg-secondary/40 text-muted-foreground/80 border border-border/20 rounded-xl hover:bg-secondary/60 transition-colors"
                 >
                   Cancel
                 </button>
@@ -480,7 +480,7 @@ export function TriggerFlowBuilder() {
                     !selectedTarget ||
                     selectedSource === selectedTarget
                   }
-                  className="flex-1 px-4 py-2 text-sm font-medium bg-purple-500/15 text-purple-400 border border-purple-500/20 rounded-lg hover:bg-purple-500/25 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="flex-1 px-4 py-2 text-sm font-medium bg-purple-500/15 text-purple-400 border border-purple-500/20 rounded-xl hover:bg-purple-500/25 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
                   Create Chain
                 </button>

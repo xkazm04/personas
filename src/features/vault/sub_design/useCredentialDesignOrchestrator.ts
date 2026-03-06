@@ -139,6 +139,7 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
           const parsed = new URL(trimmed);
           return !['http:', 'https:'].includes(parsed.protocol);
         } catch {
+          // intentional: non-critical -- URL parse fallback
           return true;
         }
       }

@@ -385,7 +385,7 @@ function ManualForm({
       {canAutoSetup && onSwitchToAuto && (
         <button
           onClick={onSwitchToAuto}
-          className="w-full flex items-center gap-2.5 px-3 py-2.5 mb-3 rounded-lg border border-cyan-500/20 bg-cyan-500/5 hover:bg-cyan-500/10 transition-colors text-left"
+          className="w-full flex items-center gap-2.5 px-3 py-2.5 mb-3 rounded-xl border border-cyan-500/20 bg-cyan-500/5 hover:bg-cyan-500/10 transition-colors text-left"
         >
           <Bot className="w-4 h-4 text-cyan-400 flex-shrink-0" />
           <div className="flex-1 min-w-0">
@@ -400,7 +400,7 @@ function ManualForm({
           href={effectiveSetupUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 px-3 py-2 mb-3 bg-amber-500/10 border border-amber-500/25 rounded-lg text-sm text-foreground/80 hover:bg-amber-500/15 transition-colors"
+          className="flex items-center gap-2 px-3 py-2 mb-3 bg-amber-500/10 border border-amber-500/25 rounded-xl text-sm text-foreground/80 hover:bg-amber-500/15 transition-colors"
         >
           <ExternalLink className="w-3.5 h-3.5 text-amber-400/70 flex-shrink-0" />
           <span className="flex-1 truncate">Get your credentials</span>
@@ -408,7 +408,7 @@ function ManualForm({
       )}
 
       {effectiveSetupInstructions && (
-        <div className="px-3 py-2 mb-3 bg-secondary/40 border border-primary/8 rounded-lg">
+        <div className="px-3 py-2 mb-3 bg-secondary/40 border border-primary/8 rounded-xl">
           <p className="text-sm text-muted-foreground/70 whitespace-pre-line leading-relaxed">
             {effectiveSetupInstructions}
           </p>

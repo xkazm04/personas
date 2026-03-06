@@ -108,7 +108,7 @@ export function AddSubscriptionForm({ onAdd, onCancel }: AddSubscriptionFormProp
         <button
           onClick={() => void handleAdd()}
           disabled={!newEventType || saving}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
             newEventType && !saving
               ? 'bg-primary hover:bg-primary/90 text-foreground'
               : 'bg-secondary/40 text-muted-foreground/80 cursor-not-allowed'

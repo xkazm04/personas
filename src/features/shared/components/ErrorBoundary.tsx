@@ -96,7 +96,7 @@ function ErrorFallback({
   return (
     <div className="flex flex-col items-center justify-center h-full p-8">
       <div className="max-w-md w-full">
-        <div className="p-6 rounded-2xl bg-red-500/5 border border-red-500/15">
+        <div className="p-6 rounded-xl bg-red-500/5 border border-red-500/15">
           {/* Header */}
           <div className="flex items-start gap-3 mb-4">
             <div className="w-10 h-10 rounded-xl bg-red-500/15 border border-red-500/25 flex items-center justify-center flex-shrink-0">

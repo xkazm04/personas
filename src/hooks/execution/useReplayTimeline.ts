@@ -80,6 +80,7 @@ function parseToolSteps(raw: string | null): ToolCallStep[] {
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
+    // intentional: non-critical — malformed JSON returns empty array
     return [];
   }
 }

@@ -3,6 +3,7 @@ use tauri::State;
 
 use crate::engine::byom::{ByomPolicy, ProviderAuditEntry};
 use crate::db::repos::execution::provider_audit;
+use crate::ipc_auth::require_privileged_sync;
 use crate::AppState;
 
 // =============================================================================
@@ -42,6 +43,7 @@ pub fn list_provider_audit_log(
     state: State<'_, Arc<AppState>>,
     limit: Option<i64>,
 ) -> Result<Vec<ProviderAuditEntry>, String> {
+    require_privileged_sync(&state, "list_provider_audit_log").map_err(|e| e.to_string())?;
     provider_audit::list(&state.db, limit).map_err(|e| e.to_string())
 }
 
@@ -52,6 +54,7 @@ pub fn list_provider_audit_by_persona(
     persona_id: String,
     limit: Option<i64>,
 ) -> Result<Vec<ProviderAuditEntry>, String> {
+    require_privileged_sync(&state, "list_provider_audit_by_persona").map_err(|e| e.to_string())?;
     provider_audit::list_by_persona(&state.db, &persona_id, limit).map_err(|e| e.to_string())
 }
 
@@ -60,5 +63,6 @@ pub fn list_provider_audit_by_persona(
 pub fn get_provider_usage_stats(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<provider_audit::ProviderUsageStats>, String> {
+    require_privileged_sync(&state, "get_provider_usage_stats").map_err(|e| e.to_string())?;
     provider_audit::get_usage_stats(&state.db).map_err(|e| e.to_string())
 }

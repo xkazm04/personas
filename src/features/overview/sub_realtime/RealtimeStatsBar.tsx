@@ -35,7 +35,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
       {/* Stats */}
       <div className="flex items-center gap-2 sm:gap-3 md:gap-6">
         {/* Connection status */}
-        <div className="flex items-center gap-1.5 sm:gap-2 bg-background/50 px-2 sm:px-3 py-1.5 rounded-md border border-primary/5 shadow-inner">
+        <div className="flex items-center gap-1.5 sm:gap-2 bg-background/50 px-2 sm:px-3 py-1.5 rounded-xl border border-primary/5 shadow-inner">
           <div className="relative flex h-2 w-2">
             {isConnected && !isPaused && (
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>

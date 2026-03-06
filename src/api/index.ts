@@ -38,3 +38,4 @@ export * from "./byom";
 export * from "./dataPortability";
 export * from "./sla";
 export * from "./workflows";
+export * from "./tierUsage";

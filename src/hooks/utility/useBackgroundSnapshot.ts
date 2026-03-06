@@ -157,6 +157,7 @@ export function useBackgroundSnapshot({
 
         scheduleNextPoll(backoffRef.current);
       } catch {
+        // intentional: non-critical — polling retries with backoff until maxFailures
         notFoundCountRef.current += 1;
         if (notFoundCountRef.current >= maxFailures) {
           onSessionLost();

@@ -10,6 +10,7 @@ use crate::db::repos::resources::audit_log;
 use crate::db::repos::resources::rotation as rotation_repo;
 use crate::engine::rotation as rotation_engine;
 use crate::error::AppError;
+use crate::ipc_auth::{require_privileged, require_privileged_sync};
 use crate::AppState;
 
 // ============================================================================
@@ -21,6 +22,7 @@ pub fn list_rotation_policies(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
 ) -> Result<Vec<CredentialRotationPolicy>, AppError> {
+    require_privileged_sync(&state, "list_rotation_policies")?;
     rotation_repo::get_policies_by_credential(&state.db, &credential_id)
 }
 
@@ -29,6 +31,7 @@ pub fn create_rotation_policy(
     state: State<'_, Arc<AppState>>,
     input: CreateRotationPolicyInput,
 ) -> Result<CredentialRotationPolicy, AppError> {
+    require_privileged_sync(&state, "create_rotation_policy")?;
     rotation_repo::create_policy(&state.db, input)
 }
 
@@ -38,6 +41,7 @@ pub fn update_rotation_policy(
     id: String,
     input: UpdateRotationPolicyInput,
 ) -> Result<CredentialRotationPolicy, AppError> {
+    require_privileged_sync(&state, "update_rotation_policy")?;
     rotation_repo::update_policy(&state.db, &id, input)
 }
 
@@ -46,6 +50,7 @@ pub fn delete_rotation_policy(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_privileged_sync(&state, "delete_rotation_policy")?;
     rotation_repo::delete_policy(&state.db, &id)
 }
 
@@ -59,6 +64,7 @@ pub fn get_rotation_history(
     credential_id: String,
     limit: Option<i64>,
 ) -> Result<Vec<CredentialRotationEntry>, AppError> {
+    require_privileged_sync(&state, "get_rotation_history")?;
     rotation_repo::get_history(&state.db, &credential_id, limit)
 }
 
@@ -71,6 +77,7 @@ pub fn get_rotation_status(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
 ) -> Result<rotation_engine::RotationStatus, AppError> {
+    require_privileged_sync(&state, "get_rotation_status")?;
     rotation_engine::get_rotation_status(&state.db, &credential_id)
 }
 
@@ -79,6 +86,7 @@ pub async fn rotate_credential_now(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
 ) -> Result<String, AppError> {
+    require_privileged(&state, "rotate_credential_now").await?;
     let result = rotation_engine::rotate_now(&state.db, &credential_id, "manual").await;
     let (op, detail) = match &result {
         Ok(_) => ("credential_rotated", "manual rotation succeeded".to_string()),

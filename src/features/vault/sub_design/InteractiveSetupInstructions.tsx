@@ -54,7 +54,7 @@ export function InteractiveSetupInstructions({
     if (!restored) return;
     try {
       localStorage.setItem(storageKey, JSON.stringify([...completedSteps]));
-    } catch { /* quota exceeded — ignore */ }
+    } catch { /* intentional: non-critical -- localStorage fallback */ }
   }, [completedSteps, storageKey, restored]);
 
   const toggleStep = rawToggle;
@@ -68,6 +68,7 @@ export function InteractiveSetupInstructions({
     try {
       await openExternalUrl(safe);
     } catch {
+      // intentional: non-critical -- Tauri open fallback to window.open
       window.open(safe, '_blank', 'noopener,noreferrer');
     }
   }, []);
@@ -133,7 +134,7 @@ export function InteractiveSetupInstructions({
             <div className="px-4 pb-3">
               {/* Preamble (non-step content before the numbered list) */}
               {preamble && (
-                <div className="px-3 py-2 mb-2 bg-background/40 rounded-lg border border-primary/10">
+                <div className="px-3 py-2 mb-2 bg-background/40 rounded-xl border border-primary/10">
                   <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
                     {preamble}
                   </ReactMarkdown>
@@ -159,7 +160,7 @@ export function InteractiveSetupInstructions({
                     <motion.div
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="flex items-center gap-2 px-3 py-2 mt-1 rounded-lg bg-emerald-500/10 border border-emerald-500/15"
+                      className="flex items-center gap-2 px-3 py-2 mt-1 rounded-xl bg-emerald-500/10 border border-emerald-500/15"
                     >
                       <Check className="w-3.5 h-3.5 text-emerald-400" />
                       <span className="text-sm text-emerald-300/80">
@@ -170,7 +171,7 @@ export function InteractiveSetupInstructions({
                 </div>
               ) : (
                 /* Fallback: render as plain enhanced markdown when no numbered steps detected */
-                <div className="px-3 py-2 bg-background/40 rounded-lg border border-primary/10">
+                <div className="px-3 py-2 bg-background/40 rounded-xl border border-primary/10">
                   <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
                     {markdown}
                   </ReactMarkdown>

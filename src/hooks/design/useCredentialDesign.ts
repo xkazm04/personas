@@ -108,7 +108,7 @@ export function useCredentialDesign() {
       if (createdConnectorId) {
         try {
           await deleteConnectorDefinition(createdConnectorId);
-        } catch { /* rollback is best-effort */ }
+        } catch { /* intentional: non-critical — rollback is best-effort */ }
       }
       flow.setError(err instanceof Error ? err.message : 'Failed to save credential');
       flow.setPhase('preview');

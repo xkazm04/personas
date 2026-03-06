@@ -52,7 +52,7 @@ export function IdlePhase({
       <div className="flex flex-wrap gap-2">
         <button
           onClick={onToggleTemplates}
-          className="px-2.5 py-1 text-sm rounded-lg border border-primary/20 text-primary hover:bg-primary/10 transition-colors"
+          className="px-2.5 py-1 text-sm rounded-xl border border-primary/20 text-primary hover:bg-primary/10 transition-colors"
         >
           From Catalog
         </button>
@@ -61,7 +61,7 @@ export function IdlePhase({
           <button
             key={hint}
             onClick={() => onInstructionChange(hint)}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-lg border border-primary/15 text-foreground/85 hover:bg-secondary/60 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-xl border border-primary/15 text-foreground/85 hover:bg-secondary/60 transition-colors"
             data-testid={`hint-chip-${hint.split(' ')[0]?.toLowerCase()}`}
           >
             <span
@@ -81,7 +81,7 @@ export function IdlePhase({
             value={templateSearch}
             onChange={(e) => onTemplateSearchChange(e.target.value)}
             placeholder="Search catalog"
-            className="w-full px-3 py-1.5 rounded-lg border border-primary/15 bg-background/40 text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full px-3 py-1.5 rounded-xl border border-primary/15 bg-background/40 text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           {templateConnectors.length === 0 ? (
             <p className="text-sm text-muted-foreground/90">No catalog entries yet. Save a successfully tested connector first.</p>
@@ -95,7 +95,7 @@ export function IdlePhase({
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <div
-                        className="w-6 h-6 rounded-md border flex items-center justify-center"
+                        className="w-6 h-6 rounded-lg border flex items-center justify-center"
                         style={{
                           backgroundColor: `${conn.color}15`,
                           borderColor: `${conn.color}30`,
@@ -119,7 +119,7 @@ export function IdlePhase({
                         }
                       }}
                       disabled={applyingTemplateId === conn.id}
-                      className="px-2 py-1 text-sm rounded-md border border-primary/20 bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
+                      className="px-2 py-1 text-sm rounded-lg border border-primary/20 bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
                     >
                       {applyingTemplateId === conn.id ? (
                         <span className="inline-flex items-center gap-1">

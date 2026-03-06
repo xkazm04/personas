@@ -26,6 +26,7 @@ function parseInputSchema(schema: string | null): InputField[] {
     const parsed = JSON.parse(schema);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
+    // intentional: non-critical — JSON parse fallback
     return [];
   }
 }
@@ -36,6 +37,7 @@ function parseMockValues(sampleInputs: string | null): Record<string, unknown> |
     const parsed = JSON.parse(sampleInputs);
     return typeof parsed === 'object' && parsed !== null ? parsed : null;
   } catch {
+    // intentional: non-critical — JSON parse fallback
     return null;
   }
 }
@@ -48,7 +50,7 @@ function formatOutputForMarkdown(output: string): string {
       const formatted = JSON.stringify(JSON.parse(trimmed), null, 2);
       return '```json\n' + formatted + '\n```';
     } catch {
-      // not valid JSON, fall through
+      // intentional: non-critical — JSON parse fallback
     }
   }
   return trimmed;
@@ -81,7 +83,7 @@ export function RecipeTestRunnerTab({ recipe }: RecipeTestRunnerTabProps) {
       const mock = JSON.parse(recipe.sample_inputs) as Record<string, string>;
       setFieldValues((prev) => ({ ...prev, ...mock }));
     } catch {
-      /* ignore parse errors */
+      // intentional: non-critical — JSON parse fallback
     }
   }, [recipe.sample_inputs]);
 
@@ -109,6 +111,7 @@ export function RecipeTestRunnerTab({ recipe }: RecipeTestRunnerTabProps) {
       try {
         inputData = JSON.parse(freeInput);
       } catch {
+        // intentional: non-critical — JSON parse fallback
         inputData = { input: freeInput };
       }
     } else {
@@ -144,7 +147,7 @@ export function RecipeTestRunnerTab({ recipe }: RecipeTestRunnerTabProps) {
             {recipe.sample_inputs && fields.length > 0 && (
               <button
                 onClick={handleLoadMockValues}
-                className="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-primary hover:bg-primary/10 transition-colors"
+                className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-primary hover:bg-primary/10 transition-colors"
               >
                 <Download className="w-3 h-3" /> Load Mock
               </button>
@@ -152,7 +155,7 @@ export function RecipeTestRunnerTab({ recipe }: RecipeTestRunnerTabProps) {
             {fields.length > 0 && (
               <button
                 onClick={handleSaveMockValues}
-                className="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
+                className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
               >
                 {mockSaved ? (
                   <><Check className="w-3 h-3 text-emerald-400" /> Saved</>
@@ -164,7 +167,7 @@ export function RecipeTestRunnerTab({ recipe }: RecipeTestRunnerTabProps) {
             <button
               onClick={handleExecute}
               disabled={running || executionPhase === 'executing'}
-              className="flex items-center gap-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 text-sm font-medium text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+              className="flex items-center gap-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 text-sm font-medium text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 disabled:pointer-events-none transition-colors"
             >
               {running || executionPhase === 'executing' ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -193,7 +196,7 @@ export function RecipeTestRunnerTab({ recipe }: RecipeTestRunnerTabProps) {
                       <select
                         value={fieldValues[field.key] ?? ''}
                         onChange={(e) => handleFieldChange(field.key, e.target.value)}
-                        className="w-full rounded-md border border-border/60 bg-background/50 px-3 py-1.5 text-sm text-foreground focus:outline-none focus:border-emerald-500/50"
+                        className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-1.5 text-sm text-foreground focus:outline-none focus:border-emerald-500/50"
                       >
                         {field.options.map((opt) => (
                           <option key={opt} value={opt}>{opt}</option>
@@ -205,7 +208,7 @@ export function RecipeTestRunnerTab({ recipe }: RecipeTestRunnerTabProps) {
                           <button
                             key={v}
                             onClick={() => handleFieldChange(field.key, v)}
-                            className={`rounded-md px-3 py-1 text-sm border transition-colors ${
+                            className={`rounded-xl px-3 py-1 text-sm border transition-colors ${
                               fieldValues[field.key] === v
                                 ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400'
                                 : 'border-border/60 text-muted-foreground hover:border-border'
@@ -220,7 +223,7 @@ export function RecipeTestRunnerTab({ recipe }: RecipeTestRunnerTabProps) {
                         type={field.type === 'number' ? 'number' : 'text'}
                         value={fieldValues[field.key] ?? ''}
                         onChange={(e) => handleFieldChange(field.key, e.target.value)}
-                        className="w-full rounded-md border border-border/60 bg-background/50 px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-emerald-500/50"
+                        className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-emerald-500/50"
                       />
                     )}
                   </div>
@@ -232,7 +235,7 @@ export function RecipeTestRunnerTab({ recipe }: RecipeTestRunnerTabProps) {
                 onChange={(e) => setFreeInput(e.target.value)}
                 placeholder="Enter input JSON or plain text..."
                 rows={3}
-                className="w-full rounded-md border border-border/60 bg-background/50 px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-emerald-500/50 resize-y"
+                className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-emerald-500/50 resize-y"
               />
             )}
           </div>
@@ -265,7 +268,7 @@ export function RecipeTestRunnerTab({ recipe }: RecipeTestRunnerTabProps) {
 
       {/* Error */}
       {(error || executionError) && (
-        <div className="mx-4 mt-3 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+        <div className="mx-4 mt-3 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
           {error || executionError}
         </div>
       )}

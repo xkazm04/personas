@@ -8,6 +8,7 @@ export function safeParseConfig(json: string | null | undefined): Record<string,
   try {
     return JSON.parse(json);
   } catch {
+    // intentional: non-critical -- JSON parse fallback
     return {};
   }
 }
@@ -69,7 +70,7 @@ export function CronScheduleConfig({
               <button
                 key={p.value}
                 onClick={() => { setDraft(p.value); onUpdate({ cronExpression: p.value }); setEditing(false); }}
-                className={`px-2 py-0.5 rounded-md text-sm transition-colors ${
+                className={`px-2 py-0.5 rounded-lg text-sm transition-colors ${
                   draft === p.value
                     ? 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
                     : 'bg-secondary/40 text-muted-foreground/80 border border-transparent hover:bg-secondary/60'
@@ -90,7 +91,7 @@ export function CronScheduleConfig({
             <button
               onClick={() => { onUpdate({ cronExpression: draft }); setEditing(false); }}
               disabled={!draft.trim()}
-              className="px-2 py-1 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/25 text-amber-400 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+              className="px-2 py-1 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/25 text-amber-400 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
             >
               Save
             </button>
@@ -128,7 +129,7 @@ export function ExpirationThresholdConfig({
             <button
               key={d}
               onClick={() => onUpdate({ thresholdDays: d })}
-              className={`px-2 py-0.5 rounded-md text-sm font-mono transition-colors ${
+              className={`px-2 py-0.5 rounded-lg text-sm font-mono transition-colors ${
                 thresholdDays === d
                   ? 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
                   : 'bg-secondary/40 text-muted-foreground/80 border border-transparent hover:bg-secondary/60'

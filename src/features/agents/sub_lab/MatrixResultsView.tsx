@@ -235,7 +235,7 @@ export function MatrixResultsView({ run, results }: Props) {
         </div>
       )}
       {run.draftAccepted && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-sm text-emerald-400">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-sm text-emerald-400">
           <Check className="w-4 h-4" />
           Draft accepted and applied
         </div>

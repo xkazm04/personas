@@ -41,6 +41,7 @@ export function maskSensitiveJson(raw: string | null | undefined): string | null
     const parsed: unknown = JSON.parse(raw);
     return JSON.stringify(redactObject(parsed));
   } catch {
+    // intentional: non-critical -- JSON parse fallback
     return raw;
   }
 }

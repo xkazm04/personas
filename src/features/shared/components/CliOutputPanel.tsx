@@ -32,7 +32,7 @@ export default function CliOutputPanel({
   const isRunning = phase === 'running';
 
   return (
-    <div className="mt-3 rounded-2xl border border-border/30 overflow-hidden bg-background shadow-[0_0_30px_rgba(0,0,0,0.3)]">
+    <div className="mt-3 rounded-xl border border-border/30 overflow-hidden bg-background shadow-[0_0_30px_rgba(0,0,0,0.3)]">
       <TerminalHeader
         isRunning={isRunning}
         lineCount={lines.length}

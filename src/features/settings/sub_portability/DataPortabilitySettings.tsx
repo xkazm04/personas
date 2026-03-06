@@ -153,7 +153,7 @@ export default function DataPortabilitySettings() {
               <button
                 onClick={handleExportFull}
                 disabled={exportStatus === 'loading'}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium
                   bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/15
                   transition-colors disabled:opacity-50"
               >
@@ -187,7 +187,7 @@ export default function DataPortabilitySettings() {
               <button
                 onClick={handleImport}
                 disabled={importStatus === 'loading'}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium
                   bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15
                   transition-colors disabled:opacity-50"
               >
@@ -258,7 +258,7 @@ export default function DataPortabilitySettings() {
               <button
                 onClick={handleCompetitiveImport}
                 disabled={competitiveStatus === 'loading'}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium
                   bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/15
                   transition-colors disabled:opacity-50"
               >

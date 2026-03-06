@@ -73,7 +73,7 @@ export default function PipelineControls({
         <button
           onClick={onExecute}
           disabled={isRunning || isDryRunActive}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
             isRunning || isDryRunActive
               ? 'bg-primary/10 text-muted-foreground cursor-not-allowed'
               : 'bg-indigo-500 text-foreground hover:bg-indigo-600 active:scale-95'
@@ -96,7 +96,7 @@ export default function PipelineControls({
         <button
           onClick={onDryRun}
           disabled={isRunning || isDryRunActive}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
             isRunning || isDryRunActive
               ? 'bg-primary/10 text-muted-foreground cursor-not-allowed'
               : 'bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-500/25 active:scale-95'
@@ -154,7 +154,7 @@ export default function PipelineControls({
 
         {/* Honest status: pipeline runs until completion */}
         {isRunning && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-primary/5 text-muted-foreground border border-primary/10">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-primary/5 text-muted-foreground border border-primary/10">
             <Info className="w-3 h-3" />
             Runs until completion
           </span>

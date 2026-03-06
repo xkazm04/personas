@@ -44,7 +44,7 @@ export function parseAutoCredError(raw: string): AutoCredErrorInfo {
   try {
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed.kind === 'string') return parsed as AutoCredErrorInfo;
-  } catch { /* not JSON */ }
+  } catch { /* intentional: non-critical -- JSON parse fallback */ }
   return {
     kind: 'cli_error',
     message: raw,

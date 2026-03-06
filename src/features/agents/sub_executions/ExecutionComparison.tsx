@@ -8,6 +8,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDuration, formatTimestamp, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import { getExecutionLog } from '@/api/executions';
+import { useToastStore } from '@/stores/toastStore';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -34,7 +35,7 @@ function parseToolSteps(raw: string | null): ToolCallStep[] {
   try {
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
-  } catch {
+  } catch { // intentional: non-critical — JSON parse fallback
     return [];
   }
 }
@@ -107,7 +108,7 @@ function jsonDiff(a: string | null, b: string | null): Array<{ path: string; lef
         diffs.push({ path: key, left: valA, right: valB });
       }
     }
-  } catch {
+  } catch { // intentional: non-critical — JSON parse fallback
     if (a !== b) {
       diffs.push({ path: '(root)', left: a ?? '(empty)', right: b ?? '(empty)' });
     }
@@ -247,7 +248,7 @@ function ToolTimelineComparison({
         return (
           <div key={i} className="grid grid-cols-[1fr_auto_1fr] gap-2 items-center">
             {/* Left step */}
-            <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm ${l ? 'bg-secondary/40 border border-primary/10' : 'bg-transparent'}`}>
+            <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-sm ${l ? 'bg-secondary/40 border border-primary/10' : 'bg-transparent'}`}>
               {l ? (
                 <>
                   <Hash className="w-3 h-3 text-primary/50 flex-shrink-0" />
@@ -277,7 +278,7 @@ function ToolTimelineComparison({
             </div>
 
             {/* Right step */}
-            <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm ${r ? 'bg-secondary/40 border border-primary/10' : 'bg-transparent'}`}>
+            <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-sm ${r ? 'bg-secondary/40 border border-primary/10' : 'bg-transparent'}`}>
               {r ? (
                 <>
                   <Hash className="w-3 h-3 text-primary/50 flex-shrink-0" />
@@ -321,7 +322,7 @@ function OutputDiffSection({
       setLogLeft(l);
       setLogRight(r);
     } catch {
-      // Silently handle - logs may not exist
+      useToastStore.getState().addToast('Failed to load execution logs for comparison', 'error');
     } finally {
       setLoading(false);
     }

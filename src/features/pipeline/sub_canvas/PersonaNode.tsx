@@ -131,7 +131,7 @@ function PersonaNodeComponent({ data, selected }: NodeProps) {
           <div className="text-sm font-semibold text-foreground/90 truncate max-w-[140px]" title={name}>
             {name}
           </div>
-          <div className={`inline-flex items-center mt-0.5 px-1.5 py-0.5 text-sm font-mono uppercase rounded-md border ${roleDef.bg} ${roleDef.text} ${roleDef.border}`}>
+          <div className={`inline-flex items-center mt-0.5 px-1.5 py-0.5 text-sm font-mono uppercase rounded-lg border ${roleDef.bg} ${roleDef.text} ${roleDef.border}`}>
             {role}
           </div>
         </div>

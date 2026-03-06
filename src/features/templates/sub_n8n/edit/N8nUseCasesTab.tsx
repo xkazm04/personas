@@ -193,7 +193,7 @@ export function N8nUseCasesTab({
                 return (
                   <span
                     key={cap.type}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-lg border ${style.bg} ${style.text}`}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-xl border ${style.bg} ${style.text}`}
                     title={cap.context}
                   >
                     <style.Icon className="w-3 h-3" />

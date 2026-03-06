@@ -94,7 +94,7 @@ export function ConnectorStatusCard({
             <button
               onClick={() => onTest(status.name, status.credentialId!)}
               disabled={status.testing}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40"
             >
               {status.testing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Activity className="w-3 h-3" />}
               Test
@@ -104,7 +104,7 @@ export function ConnectorStatusCard({
               {credentials.length > 0 && (
                 <button
                   onClick={() => onToggleLinking(isLinking ? null : status.name)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border transition-colors ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border transition-colors ${
                     isLinking
                       ? 'border-violet-500/30 text-violet-300 bg-violet-500/15'
                       : 'border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95'
@@ -116,7 +116,7 @@ export function ConnectorStatusCard({
               )}
               <button
                 onClick={() => onAddCredential(status.name)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors"
               >
                 <Plus className="w-3 h-3" />
                 Add New
@@ -182,7 +182,7 @@ export function ConnectorStatusCard({
 
       {/* Result detail */}
       {status.result && !status.testing && (
-        <div className={`mt-2.5 px-3 py-2 rounded-lg text-sm ${
+        <div className={`mt-2.5 px-3 py-2 rounded-xl text-sm ${
           status.result.success
             ? 'bg-emerald-500/5 border border-emerald-500/15 text-emerald-400'
             : 'bg-red-500/5 border border-red-500/15 text-red-400'

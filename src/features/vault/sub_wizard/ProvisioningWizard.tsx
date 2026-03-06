@@ -8,6 +8,7 @@ import { NegotiatorPlanningPhase } from '@/features/vault/sub_negotiator/Negotia
 import { NegotiatorGuidingPhase } from '@/features/vault/sub_negotiator/NegotiatorGuidingPhase';
 import { WizardServiceSelect } from './WizardServiceSelect';
 import type { ConnectorDefinition } from '@/lib/types/types';
+import { useToastStore } from '@/stores/toastStore';
 
 export function ProvisioningWizard() {
   const phase = useProvisioningWizardStore((s) => s.phase);
@@ -62,7 +63,7 @@ export function ProvisioningWizard() {
       });
       await fetchCredentials();
     } catch {
-      // Error is handled by store
+      useToastStore.getState().addToast('Failed to save credential', 'error');
     }
     negotiator.reset();
     close();

@@ -88,7 +88,7 @@ function ConnectorDropdown({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center gap-2 px-2.5 py-2 bg-background/50 border border-primary/10 rounded-lg text-sm text-foreground/80 hover:border-primary/20 transition-colors text-left"
+        className="w-full flex items-center gap-2 px-2.5 py-2 bg-background/50 border border-primary/10 rounded-xl text-sm text-foreground/80 hover:border-primary/20 transition-colors text-left"
       >
         <ConnectorIcon meta={activeMeta} size="w-4 h-4" />
         <span className="flex-1 truncate">{activeMeta.label}</span>
