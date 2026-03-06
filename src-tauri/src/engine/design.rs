@@ -35,7 +35,7 @@ pub fn build_design_prompt(
     prompt.push_str(&format!("## Target Persona: {}\n", persona.name));
     if let Some(ref desc) = persona.description {
         if !desc.is_empty() {
-            prompt.push_str(&format!("Description: {}\n", desc));
+            prompt.push_str(&format!("Description: {desc}\n"));
         }
     }
     if !persona.system_prompt.is_empty() {
@@ -64,7 +64,7 @@ pub fn build_design_prompt(
             groups.entry(conn.category.as_str()).or_default().push(conn);
         }
         for (category, conns) in &groups {
-            prompt.push_str(&format!("### {}\n", category));
+            prompt.push_str(&format!("### {category}\n"));
             for conn in conns {
                 prompt.push_str(&format!("- **{}**: {}\n", conn.name, conn.label));
             }
@@ -160,7 +160,7 @@ pub fn build_refinement_prompt_with_history(
                                 "feedback" => "User Feedback",
                                 _ => "User",
                             };
-                            prompt.push_str(&format!("**{}**: {}\n\n", label, content));
+                            prompt.push_str(&format!("**{label}**: {content}\n\n"));
                         }
                         "assistant" => {
                             let label = match msg_type {
@@ -172,7 +172,7 @@ pub fn build_refinement_prompt_with_history(
                             if msg_type == "result" && content.len() > 500 {
                                 prompt.push_str(&format!("**{}**: [Design result — {} chars, see Current Design below]\n\n", label, content.len()));
                             } else {
-                                prompt.push_str(&format!("**{}**: {}\n\n", label, content));
+                                prompt.push_str(&format!("**{label}**: {content}\n\n"));
                             }
                         }
                         _ => {}
@@ -355,9 +355,9 @@ pub fn check_feasibility(
         for tool in tools {
             if let Some(name) = tool.as_str() {
                 if available_tools.iter().any(|t| t == name) {
-                    confirmed.push(format!("Tool '{}' is available", name));
+                    confirmed.push(format!("Tool '{name}' is available"));
                 } else {
-                    issues.push(format!("Tool '{}' is not installed", name));
+                    issues.push(format!("Tool '{name}' is not installed"));
                 }
             }
         }
@@ -368,9 +368,9 @@ pub fn check_feasibility(
         for conn in conns {
             if let Some(name) = conn.get("name").and_then(|v| v.as_str()) {
                 if available_connectors.iter().any(|c| c == name) {
-                    confirmed.push(format!("Connector '{}' is available", name));
+                    confirmed.push(format!("Connector '{name}' is available"));
                 } else {
-                    issues.push(format!("Connector '{}' is not installed", name));
+                    issues.push(format!("Connector '{name}' is not installed"));
                 }
             }
         }
@@ -382,9 +382,9 @@ pub fn check_feasibility(
         for trigger in triggers {
             if let Some(t_type) = trigger.get("trigger_type").and_then(|v| v.as_str()) {
                 if valid_types.contains(&t_type) {
-                    confirmed.push(format!("Trigger type '{}' is supported", t_type));
+                    confirmed.push(format!("Trigger type '{t_type}' is supported"));
                 } else {
-                    issues.push(format!("Unknown trigger type '{}'", t_type));
+                    issues.push(format!("Unknown trigger type '{t_type}'"));
                 }
             }
         }
@@ -579,6 +579,7 @@ mod tests {
             icon: None,
             color: None,
             enabled: true,
+            sensitive: false,
             max_concurrent: 1,
             timeout_ms: 300000,
             notification_channels: None,

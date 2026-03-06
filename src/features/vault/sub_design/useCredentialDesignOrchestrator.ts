@@ -125,7 +125,6 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
   // The valuesVersion counters trigger re-computation when tokens arrive.
   const mergedOAuthValues = useMemo(
     () => ({ ...oauth.getValues(), ...universalOAuth.getValues(), ...negotiatorValues }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- version counters drive reactivity
     [oauth.valuesVersion, universalOAuth.valuesVersion, negotiatorValues],
   );
 

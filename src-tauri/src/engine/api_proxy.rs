@@ -14,6 +14,54 @@ use crate::error::AppError;
 use super::connector_strategy;
 use super::healthcheck::{validate_field_values, validate_healthcheck_url};
 
+/// Well-known API base URLs for connectors that have fixed endpoints.
+fn well_known_base_url(service_type: &str) -> Option<&'static str> {
+    match service_type {
+        "github" | "github_actions" => Some("https://api.github.com"),
+        "slack" => Some("https://slack.com/api"),
+        "discord" => Some("https://discord.com/api/v10"),
+        "airtable" => Some("https://api.airtable.com"),
+        "notion" => Some("https://api.notion.com"),
+        "clickup" => Some("https://api.clickup.com"),
+        "calendly" => Some("https://api.calendly.com"),
+        "betterstack" => Some("https://uptime.betterstack.com"),
+        "mixpanel" => Some("https://mixpanel.com"),
+        "twilio_segment" => Some("https://api.segment.io"),
+        "monday" | "monday_com" => Some("https://api.monday.com"),
+        "linear" => Some("https://api.linear.app"),
+        "circleci" => Some("https://circleci.com"),
+        "buffer" => Some("https://api.bufferapp.com"),
+        "sendgrid" => Some("https://api.sendgrid.com"),
+        "resend" => Some("https://api.resend.com"),
+        "vercel" => Some("https://api.vercel.com"),
+        "netlify" => Some("https://api.netlify.com"),
+        "cloudflare" => Some("https://api.cloudflare.com/client/v4"),
+        "figma" => Some("https://api.figma.com"),
+        "hubspot" => Some("https://api.hubapi.com"),
+        "neon" => Some("https://console.neon.tech/api/v2"),
+        "planetscale" => Some("https://api.planetscale.com"),
+        "dropbox" => Some("https://api.dropboxapi.com"),
+        "twilio_sms" => Some("https://api.twilio.com"),
+        "zapier" => Some("https://api.zapier.com"),
+        "asana" => Some("https://app.asana.com/api/1.0"),
+        "linkedin" => Some("https://api.linkedin.com"),
+        "sentry" => Some("https://sentry.io"),
+        "google_workspace_oauth_template" => Some("https://www.googleapis.com"),
+        _ => None,
+    }
+}
+
+/// Build a dynamic base URL for connectors that embed credential fields in the URL.
+fn dynamic_base_url(service_type: &str, fields: &HashMap<String, String>) -> Option<String> {
+    match service_type {
+        "telegram" => {
+            let token = fields.get("bot_token")?;
+            Some(format!("https://api.telegram.org/bot{token}"))
+        }
+        _ => None,
+    }
+}
+
 /// Result of a proxied API request.
 #[derive(Debug, serde::Serialize)]
 pub struct ApiProxyResponse {
@@ -43,18 +91,41 @@ pub async fn execute_api_request(
     let credential = cred_repo::get_by_id(pool, credential_id)?;
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
 
-    // Resolve base URL from credential fields
-    let base_url = fields
+    // Resolve base URL from credential fields, dynamic domain fields, or well-known defaults
+    let base_url_resolved: String = if let Some(url) = fields
         .get("base_url")
         .or_else(|| fields.get("project_url"))
         .or_else(|| fields.get("url"))
         .or_else(|| fields.get("deployment_url"))
-        .ok_or_else(|| {
-            AppError::Validation(
-                "Credential has no base URL field (base_url, project_url, url, or deployment_url)"
-                    .into(),
-            )
-        })?;
+        .or_else(|| fields.get("redis_url"))
+    {
+        url.clone()
+    } else if let Some(host) = fields.get("host") {
+        // PostHog-style: host field is a full URL
+        if host.starts_with("http://") || host.starts_with("https://") {
+            host.clone()
+        } else {
+            format!("https://{host}")
+        }
+    } else if let Some(domain) = fields.get("domain") {
+        // Jira/Confluence-style: domain field (e.g., "yoursite.atlassian.net")
+        if domain.starts_with("http://") || domain.starts_with("https://") {
+            domain.clone()
+        } else {
+            format!("https://{domain}")
+        }
+    } else if let Some(dynamic) = dynamic_base_url(&credential.service_type, &fields) {
+        dynamic
+    } else if let Some(known) = well_known_base_url(&credential.service_type) {
+        known.to_string()
+    } else {
+        return Err(AppError::Validation(
+            "Credential has no base URL field and no well-known API URL for this service. \
+             Add a base_url field to the credential or contact support."
+                .into(),
+        ));
+    };
+    let base_url = &base_url_resolved;
 
     // Build full URL
     let trimmed_base = base_url.trim_end_matches('/');
@@ -62,7 +133,7 @@ pub async fn execute_api_request(
     let full_url = if trimmed_path.is_empty() {
         trimmed_base.to_string()
     } else {
-        format!("{}/{}", trimmed_base, trimmed_path)
+        format!("{trimmed_base}/{trimmed_path}")
     };
 
     // SSRF protection (reuse healthcheck infrastructure)

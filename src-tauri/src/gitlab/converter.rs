@@ -94,7 +94,7 @@ pub fn resolve_credentials_for_gitlab(
                     });
 
                     let source_label = format!("{} credential '{}'", connector.label, cred.name);
-                    hints.push(format!("`{}` (from {})", env_key, source_label));
+                    hints.push(format!("`{env_key}` (from {source_label})"));
                     entries.push(CredentialProvisionEntry {
                         env_var_name: env_key,
                         source_label,
@@ -181,7 +181,7 @@ pub fn persona_to_agents_md(
 
     if let Some(ref desc) = persona.description {
         if !desc.is_empty() {
-            md.push_str(&format!("**Description:** {}\n\n", desc));
+            md.push_str(&format!("**Description:** {desc}\n\n"));
         }
     }
 

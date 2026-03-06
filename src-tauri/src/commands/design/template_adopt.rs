@@ -317,7 +317,7 @@ pub fn instant_adopt_template(
         .get("summary")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
-        .or_else(|| Some(format!("Adopted from template: {}", template_name)));
+        .or_else(|| Some(format!("Adopted from template: {template_name}")));
 
     // Normalize structured_prompt: ensure customSections use "title" as the canonical heading field
     let structured_prompt = design.get("structured_prompt").map(|v| {
@@ -677,8 +677,7 @@ Design analysis (first 8000 chars): {design_preview}
     if let Some(swaps) = connector_swaps_json {
         if !swaps.is_empty() && swaps != "{}" {
             prompt.push_str(&format!(
-                "\n\n## Connector Swaps\nThe user has swapped the following connectors. Use the REPLACEMENT connector's APIs, authentication patterns, and endpoints instead of the originals:\n{}\n\nWhen generating tools, system prompt API references, and tool guidance, use the replacement connector's API patterns, not the original's.\n",
-                swaps
+                "\n\n## Connector Swaps\nThe user has swapped the following connectors. Use the REPLACEMENT connector's APIs, authentication patterns, and endpoints instead of the originals:\n{swaps}\n\nWhen generating tools, system prompt API references, and tool guidance, use the replacement connector's API patterns, not the original's.\n"
             ));
         }
     }
@@ -779,11 +778,10 @@ async fn run_continue_adopt(
     let prompt_text = format!(
         r#"Here are the user's answers to your questions:
 
-{}
+{user_answers_json}
 
 Now proceed to PHASE 2. Generate the full persona JSON based on the template analysis and the user's answers above.
-Remember: return ONLY valid JSON with the persona object, no markdown fences."#,
-        user_answers_json
+Remember: return ONLY valid JSON with the persona object, no markdown fences."#
     );
 
     let mut cli_args = prompt::build_resume_cli_args(claude_session_id);
@@ -828,25 +826,25 @@ fn build_template_adopt_prompt(
 ) -> String {
     let adjustment_section = adjustment_request
         .filter(|a| !a.trim().is_empty())
-        .map(|a| format!("\nUser adjustment request:\n{}\n", a))
+        .map(|a| format!("\nUser adjustment request:\n{a}\n"))
         .unwrap_or_default();
 
     let previous_draft_section = previous_draft_json
         .filter(|d| !d.trim().is_empty())
-        .map(|d| format!("\nPrevious draft JSON to refine:\n{}\n", d))
+        .map(|d| format!("\nPrevious draft JSON to refine:\n{d}\n"))
         .unwrap_or_default();
 
     let user_answers_section = user_answers_json
         .filter(|a| !a.trim().is_empty() && a.trim() != "{}")
         .map(|a| format!(
-            "\n## User Configuration Answers\nThe user has provided these answers to clarify the adoption. Honor these answers when generating the persona configuration:\n{}\n", a
+            "\n## User Configuration Answers\nThe user has provided these answers to clarify the adoption. Honor these answers when generating the persona configuration:\n{a}\n"
         ))
         .unwrap_or_default();
 
     let connector_swaps_section = connector_swaps_json
         .filter(|s| !s.trim().is_empty() && s.trim() != "{}")
         .map(|s| format!(
-            "\n## Connector Swaps\nThe user has swapped the following connectors. Use the REPLACEMENT connector's APIs, authentication patterns, and endpoints instead of the originals:\n{}\n\nWhen generating tools, system prompt API references, and tool guidance, use the replacement connector's API patterns, not the original's.\n", s
+            "\n## Connector Swaps\nThe user has swapped the following connectors. Use the REPLACEMENT connector's APIs, authentication patterns, and endpoints instead of the originals:\n{s}\n\nWhen generating tools, system prompt API references, and tool guidance, use the replacement connector's API patterns, not the original's.\n"
         ))
         .unwrap_or_default();
 

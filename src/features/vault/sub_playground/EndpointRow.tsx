@@ -35,9 +35,9 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
         className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-secondary/20 transition-colors"
       >
         {isExpanded ? (
-          <ChevronDown className="w-3 h-3 text-muted-foreground/40 shrink-0" />
+          <ChevronDown className="w-3 h-3 text-muted-foreground/60 shrink-0" />
         ) : (
-          <ChevronRight className="w-3 h-3 text-muted-foreground/40 shrink-0" />
+          <ChevronRight className="w-3 h-3 text-muted-foreground/60 shrink-0" />
         )}
 
         <span
@@ -51,7 +51,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
         </span>
 
         {endpoint.summary && (
-          <span className="text-sm text-muted-foreground/40 truncate max-w-[240px] hidden sm:inline">
+          <span className="text-sm text-muted-foreground/60 truncate max-w-[240px] hidden sm:inline">
             {endpoint.summary}
           </span>
         )}
@@ -82,7 +82,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
               {endpoint.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="px-1.5 py-0.5 rounded text-sm text-muted-foreground/50 bg-secondary/40 border border-primary/8"
+                  className="px-1.5 py-0.5 rounded text-sm text-muted-foreground/70 bg-secondary/40 border border-primary/8"
                 >
                   {tag}
                 </span>
@@ -92,21 +92,21 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
 
           {endpoint.parameters.length > 0 && (
             <div className="space-y-1">
-              <span className="text-sm uppercase tracking-wider text-muted-foreground/30 font-semibold">
+              <span className="text-sm uppercase tracking-wider text-cyan-400/70 font-semibold">
                 Parameters
               </span>
               <div className="space-y-0.5">
                 {endpoint.parameters.map((p) => (
                   <div key={`${p.location}-${p.name}`} className="flex items-center gap-2 text-sm">
                     <span className="font-mono text-foreground/70">{p.name}</span>
-                    <span className="text-sm text-muted-foreground/30">
+                    <span className="text-sm text-muted-foreground/70">
                       {p.location}{p.required ? ' · required' : ''}
                     </span>
                     {p.schema_type && (
                       <span className="text-sm text-violet-400/60">{p.schema_type}</span>
                     )}
                     {p.description && (
-                      <span className="text-sm text-muted-foreground/40 truncate">
+                      <span className="text-sm text-muted-foreground/60 truncate">
                         — {p.description}
                       </span>
                     )}
@@ -118,15 +118,15 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
 
           {endpoint.request_body && (
             <div className="space-y-1">
-              <span className="text-sm uppercase tracking-wider text-muted-foreground/30 font-semibold">
+              <span className="text-sm uppercase tracking-wider text-cyan-400/70 font-semibold">
                 Request Body
               </span>
-              <div className="text-sm text-muted-foreground/50">
+              <div className="text-sm text-muted-foreground/70">
                 {endpoint.request_body.content_type}
                 {endpoint.request_body.required && ' · required'}
               </div>
               {endpoint.request_body.schema_json && (
-                <pre className="text-sm text-muted-foreground/40 font-mono bg-secondary/20 rounded p-2 overflow-x-auto max-h-[120px]">
+                <pre className="text-sm text-muted-foreground/60 font-mono bg-secondary/20 rounded p-2 overflow-x-auto max-h-[120px]">
                   {formatSchema(endpoint.request_body.schema_json)}
                 </pre>
               )}
@@ -184,7 +184,7 @@ function TestBadge({ result }: { result: EndpointTestResult }) {
       );
     case 'skipped':
       return (
-        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-sm text-muted-foreground/30 shrink-0">
+        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-sm text-muted-foreground/70 shrink-0">
           <MinusCircle className="w-3 h-3" />
           skip
         </span>

@@ -103,6 +103,7 @@ impl N8nClient {
     }
 
     /// Get a single workflow by ID.
+    #[allow(dead_code)]
     pub async fn get_workflow(&self, id: &str) -> Result<Value, AppError> {
         let url = format!("{}/api/v1/workflows/{}", self.base_url, id);
         let resp = self

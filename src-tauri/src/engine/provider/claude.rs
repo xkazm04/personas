@@ -87,7 +87,7 @@ mod tests {
                 assert_eq!(model, "claude-sonnet-4-20250514");
                 assert_eq!(session_id, Some("sess-123".to_string()));
             }
-            _ => panic!("Expected SystemInit, got {:?}", st),
+            _ => panic!("Expected SystemInit, got {st:?}"),
         }
         assert!(display.is_some());
     }
@@ -102,7 +102,7 @@ mod tests {
             StreamLineType::Result { total_cost_usd, .. } => {
                 assert_eq!(total_cost_usd, Some(0.0123));
             }
-            _ => panic!("Expected Result, got {:?}", st),
+            _ => panic!("Expected Result, got {st:?}"),
         }
     }
 

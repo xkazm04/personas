@@ -185,6 +185,7 @@ mod tests {
             icon: None,
             color: None,
             enabled: true,
+            sensitive: false,
             max_concurrent: 1,
             timeout_ms: 300000,
             notification_channels: None,

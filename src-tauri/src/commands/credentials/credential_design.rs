@@ -115,7 +115,7 @@ pub async fn test_credential_design_healthcheck(
     field_values: serde_json::Value,
 ) -> Result<serde_json::Value, AppError> {
     let values_map: HashMap<String, String> = serde_json::from_value(field_values)
-        .map_err(|e| AppError::Validation(format!("Invalid field values: {}", e)))?;
+        .map_err(|e| AppError::Validation(format!("Invalid field values: {e}")))?;
 
     let field_keys: Vec<String> = values_map.keys().cloned().collect();
     let prompt_text = credential_design::build_credential_healthcheck_prompt(
@@ -177,7 +177,7 @@ pub async fn test_credential_design_healthcheck(
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(10))
         .build()
-        .map_err(|e| AppError::Internal(format!("HTTP client error: {}", e)))?;
+        .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?;
 
     let mut request = match method.as_str() {
         "POST" => client.post(&resolved_endpoint),
@@ -202,11 +202,11 @@ pub async fn test_credential_design_healthcheck(
             let status = resp.status().as_u16();
             let success = expected_status.map(|exp| exp == status).unwrap_or(resp.status().is_success());
             let message = if success {
-                format!("Claude healthcheck passed (HTTP {})", status)
+                format!("Claude healthcheck passed (HTTP {status})")
             } else if let Some(exp) = expected_status {
-                format!("Claude healthcheck failed (HTTP {}, expected {})", status, exp)
+                format!("Claude healthcheck failed (HTTP {status}, expected {exp})")
             } else {
-                format!("Claude healthcheck failed (HTTP {})", status)
+                format!("Claude healthcheck failed (HTTP {status})")
             };
 
             Ok(json!({

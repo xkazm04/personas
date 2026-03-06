@@ -70,7 +70,7 @@ pub async fn clipboard_tick(
 
     let changed = {
         let mut s = state.lock().await;
-        let was_different = s.last_hash.map_or(true, |h| h != current_hash);
+        let was_different = s.last_hash != Some(current_hash);
         if was_different {
             s.last_hash = Some(current_hash);
         }

@@ -8,7 +8,7 @@
  * Run: `npm test -- src/test/e2e/cli-terminal-rendering.e2e.test.tsx`
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { TerminalStrip } from '@/features/shared/components/TerminalStrip';
 import CliOutputPanel from '@/features/shared/components/CliOutputPanel';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
@@ -442,7 +442,7 @@ describe('E2E: CliOutputPanel — rendering', () => {
   describe('running state with output', () => {
     it('renders all output lines', () => {
       const lines = ['I have analyzed the data.', 'The report includes 3 key findings:', '1. Revenue increased by 15% QoQ'];
-      const { container } = render(
+      render(
         <CliOutputPanel phase="running" lines={lines} />,
       );
 
@@ -647,7 +647,7 @@ describe('E2E: CliOutputPanel — scenario rendering', () => {
   });
 
   it('renders failed execution with error styling', () => {
-    const { container } = render(
+    render(
       <CliOutputPanel
         phase="failed"
         lines={FAILED_EXECUTION_LINES}
@@ -743,7 +743,7 @@ describe('E2E: CliOutputPanel + TerminalStrip healing integration', () => {
       />
     );
 
-    const { container } = render(
+    render(
       <CliOutputPanel
         phase="running"
         lines={CLAUDE_EXECUTION_LINES.slice(0, 3)}
@@ -787,7 +787,7 @@ describe('E2E: large output rendering', () => {
   it('renders 500 lines without crashing', () => {
     const lines = Array.from({ length: 500 }, (_, i) => `Output line ${i + 1}`);
 
-    const { container } = render(
+    render(
       <CliOutputPanel phase="completed" lines={lines} />,
     );
 

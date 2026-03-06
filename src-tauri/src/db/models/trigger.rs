@@ -360,7 +360,7 @@ mod tests {
                 assert_eq!(interval_seconds, Some(300));
                 assert_eq!(event_type.as_deref(), Some("build_check"));
             }
-            other => panic!("Expected Schedule, got {:?}", other),
+            other => panic!("Expected Schedule, got {other:?}"),
         }
     }
 
@@ -377,7 +377,7 @@ mod tests {
                 assert_eq!(content_hash.as_deref(), Some("abc123"));
                 assert_eq!(interval_seconds, Some(600));
             }
-            other => panic!("Expected Polling, got {:?}", other),
+            other => panic!("Expected Polling, got {other:?}"),
         }
     }
 
@@ -389,7 +389,7 @@ mod tests {
                 assert_eq!(webhook_secret.as_deref(), Some("my-secret"));
                 assert_eq!(event_type.as_deref(), Some("deploy"));
             }
-            other => panic!("Expected Webhook, got {:?}", other),
+            other => panic!("Expected Webhook, got {other:?}"),
         }
     }
 
@@ -406,7 +406,7 @@ mod tests {
                 assert_eq!(cond.condition_type, "success");
                 assert_eq!(cond.status.as_deref(), Some("completed"));
             }
-            other => panic!("Expected Chain, got {:?}", other),
+            other => panic!("Expected Chain, got {other:?}"),
         }
     }
 
@@ -418,7 +418,7 @@ mod tests {
                 assert!(event_type.is_none());
                 assert!(payload.is_none());
             }
-            other => panic!("Expected Manual, got {:?}", other),
+            other => panic!("Expected Manual, got {other:?}"),
         }
     }
 
@@ -429,7 +429,7 @@ mod tests {
             TriggerConfig::Unknown { event_type, .. } => {
                 assert_eq!(event_type.as_deref(), Some("foo"));
             }
-            other => panic!("Expected Unknown, got {:?}", other),
+            other => panic!("Expected Unknown, got {other:?}"),
         }
     }
 
@@ -450,7 +450,7 @@ mod tests {
                 assert_eq!(listen_event_type.as_deref(), Some("file_changed"));
                 assert_eq!(source_filter.as_deref(), Some("watcher-*"));
             }
-            other => panic!("Expected EventListener, got {:?}", other),
+            other => panic!("Expected EventListener, got {other:?}"),
         }
     }
 
@@ -493,7 +493,7 @@ mod tests {
                 assert_eq!(glob_filter.as_deref(), Some("*.py"));
                 assert_eq!(event_type.as_deref(), Some("file_changed"));
             }
-            other => panic!("Expected FileWatcher, got {:?}", other),
+            other => panic!("Expected FileWatcher, got {other:?}"),
         }
     }
 
@@ -510,7 +510,7 @@ mod tests {
                 assert_eq!(interval_seconds, Some(5));
                 assert_eq!(event_type.as_deref(), Some("clipboard_changed"));
             }
-            other => panic!("Expected Clipboard, got {:?}", other),
+            other => panic!("Expected Clipboard, got {other:?}"),
         }
     }
 
@@ -527,7 +527,7 @@ mod tests {
                 assert_eq!(interval_seconds, Some(3));
                 assert_eq!(event_type.as_deref(), Some("app_focused"));
             }
-            other => panic!("Expected AppFocus, got {:?}", other),
+            other => panic!("Expected AppFocus, got {other:?}"),
         }
     }
 
@@ -549,7 +549,7 @@ mod tests {
                 assert_eq!(window_seconds, Some(300));
                 assert_eq!(event_type.as_deref(), Some("composite_fired"));
             }
-            other => panic!("Expected Composite, got {:?}", other),
+            other => panic!("Expected Composite, got {other:?}"),
         }
     }
 

@@ -183,8 +183,9 @@ export default function KnowledgeGraphDashboard() {
       setSummary(null);
       setEntries([]);
     } finally {
-      if (!isActive()) return;
-      setLoading(false);
+      if (isActive()) {
+        setLoading(false);
+      }
     }
   };
 

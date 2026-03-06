@@ -233,7 +233,7 @@ fn persona_filter_params(
 pub fn get_summary(pool: &DbPool, days: Option<i64>, persona_id: Option<&str>) -> Result<serde_json::Value, AppError> {
     let days = days.unwrap_or(30);
     let conn = pool.get()?;
-    let (pid_clause, param_values) = persona_filter_params(format!("-{} days", days), persona_id);
+    let (pid_clause, param_values) = persona_filter_params(format!("-{days} days"), persona_id);
 
     let sql = format!(
         "SELECT
@@ -283,7 +283,7 @@ pub fn get_chart_data(
 ) -> Result<MetricsChartData, AppError> {
     let days = days.unwrap_or(30);
     let conn = pool.get()?;
-    let (pid_clause, param_values) = persona_filter_params(format!("-{} days", days), persona_id);
+    let (pid_clause, param_values) = persona_filter_params(format!("-{days} days"), persona_id);
 
     // 1) Date-bucketed chart points (GROUP BY date only)
     let chart_sql = format!(
@@ -451,7 +451,7 @@ pub fn get_prompt_performance(
     days: i64,
 ) -> Result<PromptPerformanceData, AppError> {
     let conn = pool.get()?;
-    let date_filter = format!("-{} days", days);
+    let date_filter = format!("-{days} days");
 
     // 1) Fetch raw execution rows for this persona
     let mut stmt = conn.prepare(
@@ -594,7 +594,7 @@ pub fn get_execution_dashboard(
     days: i64,
 ) -> Result<ExecutionDashboardData, AppError> {
     let conn = pool.get()?;
-    let date_filter = format!("-{} days", days);
+    let date_filter = format!("-{days} days");
 
     // 1) Fetch raw execution rows with persona names
     let mut stmt = conn.prepare(

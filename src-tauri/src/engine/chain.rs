@@ -602,7 +602,7 @@ mod tests {
         let result = detect_chain_cycle(&pool, &a, &a, None);
         assert!(result.is_err());
         let msg = result.unwrap_err().to_string();
-        assert!(msg.contains("cannot chain-trigger itself"), "got: {}", msg);
+        assert!(msg.contains("cannot chain-trigger itself"), "got: {msg}");
     }
 
     #[test]
@@ -618,7 +618,7 @@ mod tests {
         let result = detect_chain_cycle(&pool, &b, &a, None);
         assert!(result.is_err());
         let msg = result.unwrap_err().to_string();
-        assert!(msg.contains("Circular chain detected"), "got: {}", msg);
+        assert!(msg.contains("Circular chain detected"), "got: {msg}");
     }
 
     #[test]
@@ -636,7 +636,7 @@ mod tests {
         let result = detect_chain_cycle(&pool, &c, &a, None);
         assert!(result.is_err());
         let msg = result.unwrap_err().to_string();
-        assert!(msg.contains("Circular chain detected"), "got: {}", msg);
+        assert!(msg.contains("Circular chain detected"), "got: {msg}");
     }
 
     #[test]

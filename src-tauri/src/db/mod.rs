@@ -137,6 +137,17 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             metadata: Some(r#"{"template_enabled":true,"summary":"Airtable spreadsheet-database for project tracking and data management.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://airtable.com/create/tokens","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
+            id: "builtin-asana",
+            name: "asana",
+            label: "Asana",
+            color: "#F06A6A",
+            icon_url: "/icons/connectors/asana.svg",
+            category: "productivity",
+            fields: r#"[{"key":"personal_access_token","label":"Personal Access Token","type":"password","required":true,"placeholder":"1/12345:abcdef...","helpText":"From Asana → My Settings → Apps → Manage Developer Apps → Personal Access Tokens"}]"#,
+            healthcheck_config: Some(r#"{"endpoint":"https://app.asana.com/api/1.0/users/me","method":"GET","headers":{"Authorization":"Bearer {{personal_access_token}}"},"description":"Validates personal access token via Asana users/me endpoint"}"#),
+            metadata: Some(r#"{"template_enabled":true,"summary":"Asana project management for tasks, projects, and team collaboration.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://developers.asana.com/docs/personal-access-token","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@roychri/mcp-server-asana","transport":"stdio","suggested_env":{"ASANA_ACCESS_TOKEN":""}}]}"#),
+        },
+        BuiltinConnector {
             id: "builtin-notion",
             name: "notion",
             label: "Notion",
@@ -288,7 +299,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             category: "database",
             fields: r#"[{"key":"deployment_url","label":"Deployment URL","type":"url","required":true,"placeholder":"https://your-app-123.convex.cloud","helpText":"From Convex Dashboard → Settings → URL"},{"key":"deploy_key","label":"Deploy Key","type":"password","required":true,"placeholder":"prod:...","helpText":"From Convex Dashboard → Settings → Deploy Key"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"{{deployment_url}}/version","method":"GET","headers":{},"description":"Validates Convex deployment URL is reachable"}"#),
-            metadata: Some(r#"{"template_enabled":true,"summary":"Convex real-time backend-as-a-service with database, functions, and scheduling.","auth_type":"deploy_key","auth_type_label":"Deploy Key","docs_url":"https://docs.convex.dev/production/hosting/deploy-keys","auth_methods":[{"id":"deploy_key","label":"Deploy Key","type":"credential","is_default":true}]}"#),
+            metadata: Some(r#"{"template_enabled":true,"summary":"Convex real-time backend-as-a-service with document database, serverless functions, and scheduling.","auth_type":"deploy_key","auth_type_label":"Deploy Key","docs_url":"https://docs.convex.dev/http-api/","db_type":"document","db_engine":"convex","db_features":["function_execution","schema_introspection_pro","document_browsing_pro"],"query_language":"convex","query_help":"Call Convex functions via JSON body. Table browsing requires Professional plan.","pricing_tier":"free","auth_methods":[{"id":"deploy_key","label":"Deploy Key","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
             id: "builtin-buffer",
@@ -300,6 +311,17 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             fields: r#"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"","helpText":"From Buffer → Settings → Apps → Access Token"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.bufferapp.com/1/user.json","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates access token via Buffer user endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Buffer social media management for scheduling and publishing.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://buffer.com/developers/api","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
+        },
+        BuiltinConnector {
+            id: "builtin-linkedin",
+            name: "linkedin",
+            label: "LinkedIn",
+            color: "#0A66C2",
+            icon_url: "/icons/connectors/linkedin.svg",
+            category: "social",
+            fields: r#"[{"key":"client_id","label":"Client ID","type":"text","required":true,"placeholder":"86abc123def456","helpText":"From LinkedIn Developer Portal → My Apps → Auth tab"},{"key":"client_secret","label":"Client Secret","type":"password","required":true,"placeholder":"","helpText":"From LinkedIn Developer Portal → My Apps → Auth tab"}]"#,
+            healthcheck_config: Some(r#"{"endpoint":"https://api.linkedin.com/v2/userinfo","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates OAuth token via LinkedIn userinfo endpoint"}"#),
+            metadata: Some(r#"{"template_enabled":true,"summary":"LinkedIn professional network for profile, connections, and social posts.","auth_type":"oauth","auth_type_label":"OAuth","oauth_provider_id":"linkedin","oauth_scopes":["openid","profile","email","w_member_social"],"docs_url":"https://learn.microsoft.com/en-us/linkedin/shared/authentication/authorization-code-flow","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true}]}"#),
         },
         // ── New connectors ──
         BuiltinConnector {

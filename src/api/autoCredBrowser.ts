@@ -17,6 +17,7 @@ export interface AutoCredBrowserRequest {
   setup_instructions?: string;
   fields: AutoCredField[];
   saved_procedure?: string;
+  force_guided?: boolean;
 }
 
 export interface AutoCredBrowserResult {
@@ -40,6 +41,14 @@ export async function savePlaywrightProcedure(
     procedureJson,
     fieldKeys,
   });
+}
+
+export async function checkPlaywrightAvailable(): Promise<boolean> {
+  return invoke<boolean>('check_auto_cred_playwright_available');
+}
+
+export async function cancelAutoCredBrowser(): Promise<void> {
+  return invoke<void>('cancel_auto_cred_browser');
 }
 
 export async function getPlaywrightProcedure(

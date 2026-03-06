@@ -150,7 +150,7 @@ impl CliProvider for CodexProvider {
                     .or_else(|| value.get("session_id"))
                     .and_then(|s| s.as_str())
                     .map(String::from);
-                let display = format!("Session started ({})", model);
+                let display = format!("Session started ({model})");
                 (
                     StreamLineType::SystemInit { model, session_id },
                     Some(display),
@@ -185,7 +185,7 @@ impl CliProvider for CodexProvider {
 
                 let mut display = "Completed".to_string();
                 if let Some(cost) = total_cost_usd {
-                    display.push_str(&format!(" (cost: ${:.4})", cost));
+                    display.push_str(&format!(" (cost: ${cost:.4})"));
                 }
 
                 (
@@ -267,7 +267,7 @@ fn parse_codex_item(value: &serde_json::Value) -> (StreamLineType, Option<String
                         .and_then(|a| a.as_str())
                         .unwrap_or("{}")
                         .to_string();
-                    let display = format!("> Using tool: {}", name);
+                    let display = format!("> Using tool: {name}");
                     return (
                         StreamLineType::AssistantToolUse {
                             tool_name: name,
@@ -342,7 +342,7 @@ mod tests {
                 assert_eq!(model, "gpt-4.1");
                 assert_eq!(session_id, Some("thread-abc".to_string()));
             }
-            _ => panic!("Expected SystemInit, got {:?}", st),
+            _ => panic!("Expected SystemInit, got {st:?}"),
         }
         assert_eq!(display, Some("Session started (gpt-4.1)".to_string()));
     }
@@ -357,7 +357,7 @@ mod tests {
             StreamLineType::AssistantText { text } => {
                 assert_eq!(text, "Hello from Codex");
             }
-            _ => panic!("Expected AssistantText, got {:?}", st),
+            _ => panic!("Expected AssistantText, got {st:?}"),
         }
         assert_eq!(display, Some("Hello from Codex".to_string()));
     }
@@ -373,7 +373,7 @@ mod tests {
                 assert_eq!(tool_name, "shell");
                 assert!(input_preview.contains("ls"));
             }
-            _ => panic!("Expected AssistantToolUse, got {:?}", st),
+            _ => panic!("Expected AssistantToolUse, got {st:?}"),
         }
         assert_eq!(display, Some("> Using tool: shell".to_string()));
     }
@@ -388,7 +388,7 @@ mod tests {
             StreamLineType::ToolResult { content_preview } => {
                 assert!(content_preview.contains("file1.rs"));
             }
-            _ => panic!("Expected ToolResult, got {:?}", st),
+            _ => panic!("Expected ToolResult, got {st:?}"),
         }
         assert!(display.unwrap().starts_with("  Tool result: "));
     }
@@ -414,7 +414,7 @@ mod tests {
                 assert_eq!(model, Some("gpt-4.1".to_string()));
                 assert_eq!(session_id, Some("thread-xyz".to_string()));
             }
-            _ => panic!("Expected Result, got {:?}", st),
+            _ => panic!("Expected Result, got {st:?}"),
         }
     }
 

@@ -20,6 +20,7 @@ struct ToolCallStep {
 }
 
 /// Extract knowledge from a completed execution and persist it.
+#[allow(clippy::too_many_arguments)]
 pub fn extract_and_persist(
     pool: &DbPool,
     execution_id: &str,
@@ -89,6 +90,7 @@ pub fn extract_and_persist(
 
 /// Extract the tool sequence used in an execution.
 /// Pattern key: sorted tool names joined by " -> ".
+#[allow(clippy::too_many_arguments)]
 fn extract_tool_sequence(
     pool: &DbPool,
     execution_id: &str,
@@ -173,6 +175,7 @@ fn extract_failure_pattern(
 }
 
 /// Extract model performance data.
+#[allow(clippy::too_many_arguments)]
 fn extract_model_performance(
     pool: &DbPool,
     execution_id: &str,
@@ -215,7 +218,7 @@ fn extract_cost_quality(
     duration_ms: f64,
 ) {
     let key = if let Some(uc) = use_case_id {
-        format!("use_case:{}", uc)
+        format!("use_case:{uc}")
     } else {
         "overall".to_string()
     };

@@ -167,7 +167,7 @@ impl CliProvider for GeminiProvider {
                         .get("session_id")
                         .and_then(|s| s.as_str())
                         .map(String::from);
-                    let display = format!("Session started ({})", model);
+                    let display = format!("Session started ({model})");
                     (
                         StreamLineType::SystemInit { model, session_id },
                         Some(display),
@@ -208,7 +208,7 @@ impl CliProvider for GeminiProvider {
                                     .to_string();
                                 let input_json = block.get("input").cloned().unwrap_or(serde_json::Value::Null);
                                 let input_preview = serde_json::to_string(&input_json).unwrap_or_default();
-                                let display = format!("> Using tool: {}", name);
+                                let display = format!("> Using tool: {name}");
                                 return (
                                     StreamLineType::AssistantToolUse {
                                         tool_name: name,
@@ -261,12 +261,12 @@ impl CliProvider for GeminiProvider {
                 let mut display = String::new();
                 if let Some(ms) = duration_ms {
                     let secs = ms as f64 / 1000.0;
-                    display.push_str(&format!("Completed in {:.1}s", secs));
+                    display.push_str(&format!("Completed in {secs:.1}s"));
                 } else {
                     display.push_str("Completed");
                 }
                 if let Some(cost) = total_cost_usd {
-                    display.push_str(&format!(" (cost: ${:.4})", cost));
+                    display.push_str(&format!(" (cost: ${cost:.4})"));
                 }
 
                 (
@@ -350,7 +350,7 @@ mod tests {
                 assert_eq!(model, "gemini-2.5-pro");
                 assert_eq!(session_id, Some("sess-gem".to_string()));
             }
-            _ => panic!("Expected SystemInit, got {:?}", st),
+            _ => panic!("Expected SystemInit, got {st:?}"),
         }
         assert!(display.unwrap().contains("gemini-2.5-pro"));
     }
@@ -365,7 +365,7 @@ mod tests {
             StreamLineType::AssistantText { text } => {
                 assert_eq!(text, "Hello from Gemini");
             }
-            _ => panic!("Expected AssistantText, got {:?}", st),
+            _ => panic!("Expected AssistantText, got {st:?}"),
         }
         assert_eq!(display, Some("Hello from Gemini".to_string()));
     }
@@ -380,7 +380,7 @@ mod tests {
             StreamLineType::AssistantToolUse { tool_name, .. } => {
                 assert_eq!(tool_name, "read_file");
             }
-            _ => panic!("Expected AssistantToolUse, got {:?}", st),
+            _ => panic!("Expected AssistantToolUse, got {st:?}"),
         }
         assert_eq!(display, Some("> Using tool: read_file".to_string()));
     }
@@ -404,7 +404,7 @@ mod tests {
                 assert_eq!(total_input_tokens, Some(5000));
                 assert_eq!(total_output_tokens, Some(1000));
             }
-            _ => panic!("Expected Result, got {:?}", st),
+            _ => panic!("Expected Result, got {st:?}"),
         }
     }
 

@@ -305,7 +305,7 @@ async fn run_design_analysis(params: DesignRunParams) {
                 "Claude CLI not found. Install from https://docs.anthropic.com/en/docs/claude-code"
                     .to_string()
             } else {
-                format!("Failed to spawn Claude CLI: {}", e)
+                format!("Failed to spawn Claude CLI: {e}")
             };
             let _ = app.emit(
                 "design-status",

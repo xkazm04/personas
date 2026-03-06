@@ -282,15 +282,20 @@ function CrashLogsSection() {
                 <p className="text-sm text-muted-foreground/80 py-2">No crash logs recorded.</p>
               )}
 
-              {backendLogs.map((log) => (
+              {backendLogs.map((log) => {
+                const isAutoCred = log.filename.startsWith('autocred_');
+                const crashLabel = isAutoCred ? 'Auto-cred session' : 'Rust panic';
+                const crashColor = isAutoCred ? 'text-amber-400/60' : 'text-red-400/60';
+                const CrashIcon = isAutoCred ? AlertTriangle : XCircle;
+                return (
                 <div key={log.filename} className="rounded-lg border border-primary/10 bg-background/40 overflow-hidden">
                   <button
                     onClick={() => setSelectedLog(selectedLog === log.filename ? null : log.filename)}
                     className="w-full flex items-center gap-2 px-3 py-2 hover:bg-secondary/30 transition-colors"
                   >
-                    <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+                    <CrashIcon className={`w-3.5 h-3.5 flex-shrink-0 ${isAutoCred ? 'text-amber-400' : 'text-red-400'}`} />
                     <span className="text-sm text-foreground/90 font-mono truncate">{log.filename}</span>
-                    <span className="ml-auto text-sm text-red-400/60 font-medium">Rust panic</span>
+                    <span className={`ml-auto text-sm font-medium ${crashColor}`}>{crashLabel}</span>
                   </button>
                   {selectedLog === log.filename && (
                     <div className="border-t border-primary/5 px-3 py-2">
@@ -300,7 +305,8 @@ function CrashLogsSection() {
                     </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
 
               {frontendLogs.map((log, i) => (
                 <div key={`fe-${i}`} className="rounded-lg border border-primary/10 bg-background/40 overflow-hidden">

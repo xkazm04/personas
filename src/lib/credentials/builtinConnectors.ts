@@ -4,6 +4,7 @@
  */
 
 import airtable from '../../../scripts/connectors/builtin/airtable.json';
+import asana from '../../../scripts/connectors/builtin/asana.json';
 import notion from '../../../scripts/connectors/builtin/notion.json';
 import clickup from '../../../scripts/connectors/builtin/clickup.json';
 import github from '../../../scripts/connectors/builtin/github.json';
@@ -19,6 +20,7 @@ import posthog from '../../../scripts/connectors/builtin/posthog.json';
 import circleci from '../../../scripts/connectors/builtin/circleci.json';
 import convex from '../../../scripts/connectors/builtin/convex.json';
 import buffer from '../../../scripts/connectors/builtin/buffer.json';
+import linkedin from '../../../scripts/connectors/builtin/linkedin.json';
 import slack from '../../../scripts/connectors/builtin/slack.json';
 import discord from '../../../scripts/connectors/builtin/discord.json';
 import telegram from '../../../scripts/connectors/builtin/telegram.json';
@@ -64,6 +66,7 @@ export interface BuiltinConnectorDef {
 
 export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   airtable,
+  asana,
   notion,
   clickup,
   github,
@@ -79,6 +82,7 @@ export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   circleci,
   convex,
   buffer,
+  linkedin,
   slack,
   discord,
   telegram,

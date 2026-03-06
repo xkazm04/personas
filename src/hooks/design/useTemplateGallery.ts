@@ -136,7 +136,7 @@ export function useTemplateGallery(coverageServiceTypes?: string[]): UseTemplate
       currentPageRef.current = 0;
       fetchPage(0, false);
     }
-  }, [fetchPage, aiSearchActive]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fetchPage, aiSearchActive]);
 
   // Fetch more: load the next page and append
   const fetchMore = useCallback(() => {
@@ -174,7 +174,7 @@ export function useTemplateGallery(coverageServiceTypes?: string[]): UseTemplate
         .then((r) => setReadyTemplates(r.items))
         .catch(() => {});
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // AI search: fire-and-forget background call
   const triggerAiSearch = useCallback((query: string) => {

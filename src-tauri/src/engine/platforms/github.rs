@@ -162,8 +162,7 @@ impl GitHubClient {
         client_payload: &Value,
     ) -> Result<(), AppError> {
         let url = format!(
-            "https://api.github.com/repos/{}/{}/dispatches",
-            owner, repo
+            "https://api.github.com/repos/{owner}/{repo}/dispatches"
         );
         let body = serde_json::json!({
             "event_type": event_type,

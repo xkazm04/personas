@@ -336,7 +336,7 @@ pub async fn system_health_check(
             .map(|u| {
                 let name = u.display_name.as_deref().unwrap_or(&u.email);
                 if auth_resp.is_offline {
-                    format!("{} (offline mode)", name)
+                    format!("{name} (offline mode)")
                 } else {
                     name.to_string()
                 }
@@ -636,7 +636,7 @@ pub async fn health_check_account(
             .map(|u| {
                 let name = u.display_name.as_deref().unwrap_or(&u.email);
                 if auth_resp.is_offline {
-                    format!("{} (offline mode)", name)
+                    format!("{name} (offline mode)")
                 } else {
                     name.to_string()
                 }

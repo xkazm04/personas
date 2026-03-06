@@ -68,7 +68,7 @@ export default function PersonaOverviewPage() {
   const handleCardKeyDown = useCallback((e: React.KeyboardEvent, index: number) => {
     if (personas.length === 0) return;
     const cols = getGridColumns();
-    let nextIndex = index;
+    let nextIndex: number;
     switch (e.key) {
       case 'ArrowRight':
         nextIndex = Math.min(personas.length - 1, index + 1);

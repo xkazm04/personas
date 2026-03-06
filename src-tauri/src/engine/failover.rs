@@ -190,7 +190,7 @@ pub fn build_failover_chain(
     chain.push(FailoverCandidate {
         engine_kind: primary,
         model: configured_model.clone(),
-        label: format!("{:?} (configured)", primary),
+        label: format!("{primary:?} (configured)"),
     });
 
     // 2. Within-provider model fallback (Claude only — other providers have single model families)
@@ -227,7 +227,7 @@ pub fn build_failover_chain(
         chain.push(FailoverCandidate {
             engine_kind: alt,
             model: None, // use provider default
-            label: format!("{:?} (failover)", alt),
+            label: format!("{alt:?} (failover)"),
         });
     }
 
@@ -311,13 +311,14 @@ mod tests {
     #[test]
     fn test_failover_chain_claude_primary() {
         let chain = build_failover_chain(EngineKind::ClaudeCode, None);
-        // Should have: Claude(configured) + Claude model fallbacks + Gemini + Codex
-        assert!(chain.len() >= 4);
+        // Should have: Claude(configured) + Claude model fallbacks + Gemini + Codex + Copilot
+        assert!(chain.len() >= 5);
         assert_eq!(chain[0].engine_kind, EngineKind::ClaudeCode);
-        // Last two should be alternate providers
-        let last_two: Vec<_> = chain.iter().rev().take(2).collect();
-        assert!(last_two.iter().any(|c| c.engine_kind == EngineKind::GeminiCli));
-        assert!(last_two.iter().any(|c| c.engine_kind == EngineKind::CodexCli));
+        // Last three should be alternate providers
+        let last_three: Vec<_> = chain.iter().rev().take(3).collect();
+        assert!(last_three.iter().any(|c| c.engine_kind == EngineKind::GeminiCli));
+        assert!(last_three.iter().any(|c| c.engine_kind == EngineKind::CodexCli));
+        assert!(last_three.iter().any(|c| c.engine_kind == EngineKind::CopilotCli));
     }
 
     #[test]
@@ -325,7 +326,7 @@ mod tests {
         let chain = build_failover_chain(EngineKind::GeminiCli, None);
         assert_eq!(chain[0].engine_kind, EngineKind::GeminiCli);
         // No model-level fallback for Gemini, so alternates follow immediately
-        assert_eq!(chain.len(), 3); // Gemini + Claude + Codex
+        assert_eq!(chain.len(), 4); // Gemini + Claude + Codex + Copilot
     }
 
     #[test]

@@ -31,7 +31,7 @@ fn validate_config_json(config: Option<&str>) -> Result<(), AppError> {
         let trimmed = c.trim();
         if !trimmed.is_empty() {
             serde_json::from_str::<serde_json::Value>(trimmed).map_err(|e| {
-                AppError::Validation(format!("Invalid config JSON: {}", e))
+                AppError::Validation(format!("Invalid config JSON: {e}"))
             })?;
         }
     }
@@ -54,7 +54,7 @@ fn validate_polling_url(trigger_type: &str, config: Option<&str>) -> Result<(), 
     if let Some(u) = url {
         if !u.is_empty() {
             crate::engine::url_safety::validate_url_safety(&u)
-                .map_err(|reason| AppError::Validation(format!("Polling URL blocked: {}", reason)))?;
+                .map_err(|reason| AppError::Validation(format!("Polling URL blocked: {reason}")))?;
         }
     }
     Ok(())
@@ -170,7 +170,7 @@ pub async fn validate_trigger(
                 checks.push(TriggerValidationCheck {
                     label: "Config JSON".into(),
                     passed: false,
-                    message: format!("Malformed JSON in config: {}", e),
+                    message: format!("Malformed JSON in config: {e}"),
                 });
                 // Return early — all downstream checks depend on valid config
                 checks.push(TriggerValidationCheck {
@@ -203,7 +203,7 @@ pub async fn validate_trigger(
                         checks.push(TriggerValidationCheck {
                             label: "Cron syntax".into(),
                             passed: false,
-                            message: format!("Invalid cron: {}", e),
+                            message: format!("Invalid cron: {e}"),
                         });
                     }
                 }
@@ -214,13 +214,13 @@ pub async fn validate_trigger(
                     checks.push(TriggerValidationCheck {
                         label: "Interval".into(),
                         passed: true,
-                        message: format!("{}s (minimum 60s)", interval),
+                        message: format!("{interval}s (minimum 60s)"),
                     });
                 } else {
                     checks.push(TriggerValidationCheck {
                         label: "Interval".into(),
                         passed: false,
-                        message: format!("{}s is below minimum of 60s", interval),
+                        message: format!("{interval}s is below minimum of 60s"),
                     });
                 }
             }
@@ -239,13 +239,13 @@ pub async fn validate_trigger(
                     checks.push(TriggerValidationCheck {
                         label: "Interval".into(),
                         passed: true,
-                        message: format!("{}s", interval),
+                        message: format!("{interval}s"),
                     });
                 } else {
                     checks.push(TriggerValidationCheck {
                         label: "Interval".into(),
                         passed: false,
-                        message: format!("{}s is below minimum of 60s", interval),
+                        message: format!("{interval}s is below minimum of 60s"),
                     });
                 }
             }
@@ -264,7 +264,7 @@ pub async fn validate_trigger(
                             checks.push(TriggerValidationCheck {
                                 label: "Endpoint".into(),
                                 passed: false,
-                                message: format!("Blocked: {}", reason),
+                                message: format!("Blocked: {reason}"),
                             });
                         }
                         Ok(()) => match url::Url::parse(endpoint) {
@@ -294,13 +294,13 @@ pub async fn validate_trigger(
                                             checks.push(TriggerValidationCheck {
                                                 label: "Endpoint".into(),
                                                 passed: true,
-                                                message: format!("Reachable (HTTP {} redirect to {})", status, location),
+                                                message: format!("Reachable (HTTP {status} redirect to {location})"),
                                             });
                                         } else {
                                             checks.push(TriggerValidationCheck {
                                                 label: "Endpoint".into(),
                                                 passed: true,
-                                                message: format!("Reachable (HTTP {})", status),
+                                                message: format!("Reachable (HTTP {status})"),
                                             });
                                         }
                                     }
@@ -308,7 +308,7 @@ pub async fn validate_trigger(
                                         checks.push(TriggerValidationCheck {
                                             label: "Endpoint".into(),
                                             passed: false,
-                                            message: format!("Unreachable: {}", e),
+                                            message: format!("Unreachable: {e}"),
                                         });
                                     }
                                 }
@@ -317,7 +317,7 @@ pub async fn validate_trigger(
                                 checks.push(TriggerValidationCheck {
                                     label: "Endpoint".into(),
                                     passed: false,
-                                    message: format!("Invalid URL: {}", endpoint),
+                                    message: format!("Invalid URL: {endpoint}"),
                                 });
                             }
                         }
@@ -368,7 +368,7 @@ pub async fn validate_trigger(
                         checks.push(TriggerValidationCheck {
                             label: "Source persona".into(),
                             passed: false,
-                            message: format!("Persona {} not found", source_id),
+                            message: format!("Persona {source_id} not found"),
                         });
                     }
                 }
@@ -429,7 +429,7 @@ pub async fn validate_trigger(
                     checks.push(TriggerValidationCheck {
                         label: "Watch paths".into(),
                         passed: true,
-                        message: format!("All {} path(s) exist", total),
+                        message: format!("All {total} path(s) exist"),
                     });
                 } else {
                     checks.push(TriggerValidationCheck {
@@ -448,7 +448,7 @@ pub async fn validate_trigger(
             if let Some(events) = config.get("events").and_then(|v| v.as_array()) {
                 let valid_events = ["create", "modify", "delete", "rename"];
                 let all_valid = events.iter().all(|e| {
-                    e.as_str().map_or(false, |s| valid_events.contains(&s))
+                    e.as_str().is_some_and(|s| valid_events.contains(&s))
                 });
                 checks.push(TriggerValidationCheck {
                     label: "Event types".into(),
@@ -467,7 +467,7 @@ pub async fn validate_trigger(
             checks.push(TriggerValidationCheck {
                 label: "Content type".into(),
                 passed: valid_types.contains(&ct),
-                message: format!("Monitoring: {}", ct),
+                message: format!("Monitoring: {ct}"),
             });
             if let Some(pattern) = config.get("pattern").and_then(|v| v.as_str()) {
                 match regex::Regex::new(pattern) {
@@ -475,14 +475,14 @@ pub async fn validate_trigger(
                         checks.push(TriggerValidationCheck {
                             label: "Pattern".into(),
                             passed: true,
-                            message: format!("Valid regex: {}", pattern),
+                            message: format!("Valid regex: {pattern}"),
                         });
                     }
                     Err(e) => {
                         checks.push(TriggerValidationCheck {
                             label: "Pattern".into(),
                             passed: false,
-                            message: format!("Invalid regex: {}", e),
+                            message: format!("Invalid regex: {e}"),
                         });
                     }
                 }
@@ -504,14 +504,14 @@ pub async fn validate_trigger(
                         checks.push(TriggerValidationCheck {
                             label: "Title pattern".into(),
                             passed: true,
-                            message: format!("Valid regex: {}", pattern),
+                            message: format!("Valid regex: {pattern}"),
                         });
                     }
                     Err(e) => {
                         checks.push(TriggerValidationCheck {
                             label: "Title pattern".into(),
                             passed: false,
-                            message: format!("Invalid regex: {}", e),
+                            message: format!("Invalid regex: {e}"),
                         });
                     }
                 }
@@ -527,7 +527,7 @@ pub async fn validate_trigger(
                     });
                 } else {
                     let all_have_type = conditions.iter().all(|c| {
-                        c.get("event_type").and_then(|v| v.as_str()).map_or(false, |s| !s.is_empty())
+                        c.get("event_type").and_then(|v| v.as_str()).is_some_and(|s| !s.is_empty())
                     });
                     checks.push(TriggerValidationCheck {
                         label: "Conditions".into(),
@@ -551,7 +551,7 @@ pub async fn validate_trigger(
                     label: "Time window".into(),
                     passed: window >= 5,
                     message: if window >= 5 {
-                        format!("{}s window", window)
+                        format!("{window}s window")
                     } else {
                         "Time window must be at least 5 seconds".into()
                     },
@@ -568,7 +568,7 @@ pub async fn validate_trigger(
             checks.push(TriggerValidationCheck {
                 label: "Operator".into(),
                 passed: valid_ops.contains(&op),
-                message: format!("Operator: {}", op),
+                message: format!("Operator: {op}"),
             });
         }
         "event_listener" => {
@@ -576,7 +576,7 @@ pub async fn validate_trigger(
                 checks.push(TriggerValidationCheck {
                     label: "Event type".into(),
                     passed: !evt.is_empty(),
-                    message: format!("Listening for: {}", evt),
+                    message: format!("Listening for: {evt}"),
                 });
             } else {
                 checks.push(TriggerValidationCheck {
@@ -645,7 +645,7 @@ pub fn preview_cron_schedule(
                 valid: false,
                 description: String::new(),
                 next_runs: vec![],
-                error: Some(format!("Invalid cron expression: {}", e)),
+                error: Some(format!("Invalid cron expression: {e}")),
             });
         }
     };
@@ -677,7 +677,7 @@ pub fn preview_cron_schedule(
 fn cron_to_human(expr: &str) -> String {
     let fields: Vec<&str> = expr.split_whitespace().collect();
     if fields.len() != 5 {
-        return format!("Cron: {}", expr);
+        return format!("Cron: {expr}");
     }
     let (min, hour, dom, mon, dow) = (fields[0], fields[1], fields[2], fields[3], fields[4]);
 
@@ -689,13 +689,13 @@ fn cron_to_human(expr: &str) -> String {
     // Every N minutes
     if min.starts_with("*/") && hour == "*" && dom == "*" && mon == "*" && dow == "*" {
         let n = &min[2..];
-        return format!("Every {} minutes", n);
+        return format!("Every {n} minutes");
     }
 
     // Every N hours
     if min == "0" && hour.starts_with("*/") && dom == "*" && mon == "*" && dow == "*" {
         let n = &hour[2..];
-        return format!("Every {} hours", n);
+        return format!("Every {n} hours");
     }
 
     // Specific time patterns
@@ -703,23 +703,23 @@ fn cron_to_human(expr: &str) -> String {
 
     // Daily at specific time
     if dom == "*" && mon == "*" && dow == "*" {
-        return format!("Daily at {}", time_str);
+        return format!("Daily at {time_str}");
     }
 
     // Specific days of week
     if dom == "*" && mon == "*" && dow != "*" {
         let days = format_dow(dow);
-        return format!("Every {} at {}", days, time_str);
+        return format!("Every {days} at {time_str}");
     }
 
     // Specific day of month
     if dom != "*" && mon == "*" && dow == "*" {
         let ordinal = format_dom(dom);
-        return format!("Monthly on the {} at {}", ordinal, time_str);
+        return format!("Monthly on the {ordinal} at {time_str}");
     }
 
     // Fallback
-    format!("Cron: {}", expr)
+    format!("Cron: {expr}")
 }
 
 fn format_time_from_cron(min: &str, hour: &str) -> String {
@@ -735,9 +735,9 @@ fn format_time_from_cron(min: &str, hour: &str) -> String {
         (h - 12, "PM")
     };
     if m == 0 {
-        format!("{} {}", h12, ampm)
+        format!("{h12} {ampm}")
     } else {
-        format!("{}:{:02} {}", h12, m, ampm)
+        format!("{h12}:{m:02} {ampm}")
     }
 }
 
@@ -764,7 +764,7 @@ fn format_dow(dow: &str) -> String {
                 if lo <= hi && hi < 7 {
                     let start = DAYS.get(lo).unwrap_or(&"?");
                     let end = DAYS.get(hi).unwrap_or(&"?");
-                    Some(format!("{}-{}", start, end))
+                    Some(format!("{start}-{end}"))
                 } else {
                     None
                 }
@@ -790,7 +790,7 @@ fn format_dom(dom: &str) -> String {
         3 if d != 13 => "rd",
         _ => "th",
     };
-    format!("{}{}", d, suffix)
+    format!("{d}{suffix}")
 }
 
 // =============================================================================

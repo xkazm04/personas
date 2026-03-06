@@ -239,7 +239,7 @@ impl SectionAccumulator {
                 if name.is_empty() {
                     "Identity".to_string()
                 } else {
-                    format!("Identity: {}", name)
+                    format!("Identity: {name}")
                 }
             }
             SectionKind::Prompt => "System Prompt".to_string(),
@@ -247,7 +247,7 @@ impl SectionAccumulator {
                 if name.is_empty() {
                     format!("Tool #{}", self.tool_count + 1)
                 } else {
-                    format!("Tool: {}", name)
+                    format!("Tool: {name}")
                 }
             }
             SectionKind::Trigger => {
@@ -255,13 +255,13 @@ impl SectionAccumulator {
                     .get("trigger_type")
                     .and_then(|v| v.as_str())
                     .unwrap_or("unknown");
-                format!("Trigger: {}", tt)
+                format!("Trigger: {tt}")
             }
             SectionKind::Connector => {
                 if name.is_empty() {
                     format!("Connector #{}", self.connector_count + 1)
                 } else {
-                    format!("Connector: {}", name)
+                    format!("Connector: {name}")
                 }
             }
             SectionKind::DesignContext => "Design Context".to_string(),
@@ -483,8 +483,7 @@ fn validate_tool(data: &serde_json::Value, known_connectors: &[String]) -> Secti
                 .any(|c| c.eq_ignore_ascii_case(cred_type))
         {
             warnings.push(format!(
-                "References unknown connector '{}'",
-                cred_type
+                "References unknown connector '{cred_type}'"
             ));
         }
     }

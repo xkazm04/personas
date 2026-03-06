@@ -87,8 +87,7 @@ fn resolve_connector_healthcheck(
         Some(c) => c,
         None => {
             return Err(AppError::NotFound(format!(
-                "No connector definition found for '{}'",
-                service_type
+                "No connector definition found for '{service_type}'"
             )));
         }
     };
@@ -131,7 +130,7 @@ fn resolve_variant_healthcheck(
         };
         let filled = vf.iter().filter(|k| {
             k.as_str()
-                .map(|s| fields.get(s).map_or(false, |val| !val.is_empty()))
+                .map(|s| fields.get(s).is_some_and(|val| !val.is_empty()))
                 .unwrap_or(false)
         }).count();
         if filled == 0 { continue; }
@@ -148,7 +147,7 @@ fn resolve_variant_healthcheck(
                 });
             }
             if let Some(hc_val) = v.get("healthcheck_config") {
-                if let Some(hc_str) = serde_json::to_string(hc_val).ok() {
+                if let Ok(hc_str) = serde_json::to_string(hc_val) {
                     return parse_healthcheck_config(&hc_str);
                 }
             }
@@ -175,7 +174,7 @@ fn resolve_variant_healthcheck(
             });
         }
         if let Some(hc_val) = v.get("healthcheck_config") {
-            if let Some(hc_str) = serde_json::to_string(hc_val).ok() {
+            if let Ok(hc_str) = serde_json::to_string(hc_val) {
                 return parse_healthcheck_config(&hc_str);
             }
         }
@@ -217,7 +216,7 @@ async fn execute_healthcheck_request_with_strategy(
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(5))
         .build()
-        .map_err(|e| AppError::Internal(format!("HTTP client error: {}", e)))?;
+        .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?;
 
     let method = hc_config
         .method
@@ -272,7 +271,7 @@ async fn execute_healthcheck_request_with_strategy(
             }
         }
         Err(e) => {
-            let msg = format!("Connection failed: {}", e);
+            let msg = format!("Connection failed: {e}");
             Ok(HealthcheckResult {
                 success: false,
                 message: sanitize_secrets(&msg),
@@ -285,7 +284,7 @@ async fn execute_healthcheck_request_with_strategy(
 pub(crate) fn resolve_template(template: &str, values: &HashMap<String, String>) -> String {
     let mut resolved = template.to_string();
     for (key, value) in values {
-        resolved = resolved.replace(&format!("{{{{{}}}}}", key), value);
+        resolved = resolved.replace(&format!("{{{{{key}}}}}"), value);
     }
     resolved
 }
@@ -396,8 +395,7 @@ pub(crate) fn validate_field_values(
         if let Ok(ip) = check_target.parse::<IpAddr>() {
             if is_private_ip(&ip) {
                 return Err(AppError::Validation(format!(
-                    "Field '{}' contains a private or internal network address ({})",
-                    key, ip
+                    "Field '{key}' contains a private or internal network address ({ip})"
                 )));
             }
         }
@@ -410,8 +408,7 @@ pub(crate) fn validate_field_values(
             || ct_lower.contains("metadata.google.internal")
         {
             return Err(AppError::Validation(format!(
-                "Field '{}' contains a private or internal hostname",
-                key
+                "Field '{key}' contains a private or internal hostname"
             )));
         }
     }
@@ -597,7 +594,7 @@ fn find_auth_token(fields: &HashMap<String, String>) -> Option<String> {
 /// Build auth header value from credential data (exported for testing).
 #[cfg(test)]
 pub fn build_auth_header(fields: &HashMap<String, String>) -> Option<String> {
-    find_auth_token(fields).map(|t| format!("Bearer {}", t))
+    find_auth_token(fields).map(|t| format!("Bearer {t}"))
 }
 
 // ---------------------------------------------------------------------------

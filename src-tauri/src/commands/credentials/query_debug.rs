@@ -118,7 +118,7 @@ async fn run_query_debug(params: RunParams) {
         error_context.as_deref(),
     );
 
-    emit_line(&app, &debug_id, &format!("> Analyzing query for {} ({})...", connector_family, service_type));
+    emit_line(&app, &debug_id, &format!("> Analyzing query for {connector_family} ({service_type})..."));
 
     // Build CLI args (no persona, default provider)
     let mut cli_args = prompt::build_cli_args(None, None);
@@ -147,7 +147,7 @@ async fn run_query_debug(params: RunParams) {
     let (mut output, mut session_id) = match cli_result {
         Ok((text, sid, _)) => (text, sid),
         Err(e) => {
-            emit_line(&app, &debug_id, &format!("[ERROR] Claude CLI failed: {}", e));
+            emit_line(&app, &debug_id, &format!("[ERROR] Claude CLI failed: {e}"));
             QUERY_DEBUG_JOBS.set_status(&app, &debug_id, "failed", Some(e));
             return;
         }
@@ -210,16 +210,16 @@ async fn run_query_debug(params: RunParams) {
                 return;
             }
             Err(exec_err) => {
-                let err_msg = format!("{}", exec_err);
-                emit_line(&app, &debug_id, &format!("[ERROR] Execution failed: {}", err_msg));
+                let err_msg = format!("{exec_err}");
+                emit_line(&app, &debug_id, &format!("[ERROR] Execution failed: {err_msg}"));
 
                 if attempt + 1 >= MAX_RETRIES {
-                    emit_line(&app, &debug_id, &format!("> Max retries ({}) reached.", MAX_RETRIES));
+                    emit_line(&app, &debug_id, &format!("> Max retries ({MAX_RETRIES}) reached."));
                     QUERY_DEBUG_JOBS.set_status(
                         &app,
                         &debug_id,
                         "failed",
-                        Some(format!("Query still failing after {} attempts: {}", MAX_RETRIES, err_msg)),
+                        Some(format!("Query still failing after {MAX_RETRIES} attempts: {err_msg}")),
                     );
                     return;
                 }
@@ -228,9 +228,8 @@ async fn run_query_debug(params: RunParams) {
                 emit_line(&app, &debug_id, "> Resuming AI session with error context...");
 
                 let resume_prompt = format!(
-                    "The query you suggested failed with this error:\n\n{}\n\n\
-                     Please fix the query and output the corrected version in a single ```{} code block.",
-                    err_msg, language,
+                    "The query you suggested failed with this error:\n\n{err_msg}\n\n\
+                     Please fix the query and output the corrected version in a single ```{language} code block.",
                 );
 
                 let resume_result = if let Some(ref sid) = session_id {
@@ -276,7 +275,7 @@ async fn run_query_debug(params: RunParams) {
                         }
                     }
                     Err(e) => {
-                        emit_line(&app, &debug_id, &format!("[ERROR] AI retry failed: {}", e));
+                        emit_line(&app, &debug_id, &format!("[ERROR] AI retry failed: {e}"));
                         QUERY_DEBUG_JOBS.set_status(&app, &debug_id, "failed", Some(e));
                         return;
                     }
@@ -301,8 +300,7 @@ fn build_prompt(
     error_context: Option<&str>,
 ) -> String {
     let mut prompt = format!(
-        "You are a database query expert. Fix and optimize the following query for a {} database ({} service).\n\n",
-        connector_family, service_type,
+        "You are a database query expert. Fix and optimize the following query for a {connector_family} database ({service_type} service).\n\n",
     );
 
     if !schema_context.is_empty() {
@@ -311,19 +309,18 @@ fn build_prompt(
         prompt.push_str("\n\n");
     }
 
-    prompt.push_str(&format!("## Query\n```{}\n{}\n```\n\n", language, query_text));
+    prompt.push_str(&format!("## Query\n```{language}\n{query_text}\n```\n\n"));
 
     if let Some(err) = error_context {
-        prompt.push_str(&format!("## Previous Error\n{}\n\n", err));
+        prompt.push_str(&format!("## Previous Error\n{err}\n\n"));
     }
 
     prompt.push_str(&format!(
         "## Instructions\n\
          1. Identify and fix all issues (syntax, table/column names, dialect-specific syntax)\n\
-         2. Output ONLY the corrected database query in a single ```{lang} code block\n\
-         3. Do NOT output JavaScript, TypeScript, or client library code — ONLY the raw {lang} query\n\
+         2. Output ONLY the corrected database query in a single ```{language} code block\n\
+         3. Do NOT output JavaScript, TypeScript, or client library code — ONLY the raw {language} query\n\
          4. Briefly explain what you fixed\n",
-        lang = language,
     ));
 
     prompt
@@ -425,7 +422,7 @@ async fn build_schema_context(
         let cols = match db_query::introspect_columns(pool, credential_id, table_name).await {
             Ok(r) => r,
             Err(_) => {
-                ctx.push_str(&format!("- {}\n", table_name));
+                ctx.push_str(&format!("- {table_name}\n"));
                 continue;
             }
         };
@@ -443,12 +440,12 @@ async fn build_schema_context(
                 .filter_map(|row| {
                     let name = row.get(ni).and_then(|v| v.as_str())?;
                     let dtype = row.get(ti).and_then(|v| v.as_str()).unwrap_or("?");
-                    Some(format!("{} {}", name, dtype))
+                    Some(format!("{name} {dtype}"))
                 })
                 .collect();
             ctx.push_str(&format!("- {} ({})\n", table_name, col_strs.join(", ")));
         } else {
-            ctx.push_str(&format!("- {}\n", table_name));
+            ctx.push_str(&format!("- {table_name}\n"));
         }
     }
 

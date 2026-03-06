@@ -664,7 +664,7 @@ function extractYamlName(content: string): string | null {
   if (topLevelMatch?.[1]) return topLevelMatch[1];
 
   // Common nested form in workflow metadata blocks.
-  const metadataBlock = content.match(/^[ \t]*metadata\s*:\s*([\s\S]*?)(?:^\S|\Z)/m)?.[1] ?? '';
+  const metadataBlock = content.match(/^[ \t]*metadata\s*:\s*([\s\S]*?)(?:^\S|$)/m)?.[1] ?? '';
   const metadataName = metadataBlock.match(/^[ \t]+name\s*:\s*['"]?(.+?)['"]?\s*$/m);
   return metadataName?.[1] ?? null;
 }

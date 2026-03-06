@@ -791,6 +791,7 @@ impl ExecutionEngine {
 
     /// Start a chained AI healing execution that resumes the original Claude
     /// session to diagnose and fix the failure.  Dev-mode only.
+    #[allow(clippy::too_many_arguments)]
     pub fn start_healing_chain(
         &self,
         app: &AppHandle,
@@ -1293,7 +1294,7 @@ fn evaluate_healing_and_retry(
                 (Some("Exponential backoff".to_string()), Some(effective))
             }
             healing::HealingAction::RetryWithTimeout { new_timeout_ms } => {
-                (Some(format!("Increased timeout to {}ms", new_timeout_ms)), Some(5u64))
+                (Some(format!("Increased timeout to {new_timeout_ms}ms")), Some(5u64))
             }
             _ => (None, None),
         }
@@ -1358,7 +1359,7 @@ fn evaluate_healing_and_retry(
                     persona_id.to_string(),
                     session_id.clone(),
                     result.error.clone().unwrap_or_default(),
-                    format!("{:?}", category),
+                    format!("{category:?}"),
                     tracker,
                     child_pids,
                     cancelled_flags,
@@ -1405,8 +1406,7 @@ fn check_circuit_breaker(
         persona_id,
         "Circuit breaker tripped",
         &format!(
-            "Persona disabled after {} consecutive failures. Re-enable manually after investigating the root cause.",
-            consecutive,
+            "Persona disabled after {consecutive} consecutive failures. Re-enable manually after investigating the root cause.",
         ),
         true,
         Some("critical"),
@@ -1427,8 +1427,7 @@ fn check_circuit_breaker(
             suggested_fix: Some(cb_fix.into()),
             persona_name: persona_name.into(),
             description: Some(format!(
-                "Agent disabled after {} consecutive failures. Investigation required.",
-                consecutive,
+                "Agent disabled after {consecutive} consecutive failures. Investigation required.",
             )),
             strategy: Some("Persona disabled — manual intervention required".into()),
             backoff_seconds: None,

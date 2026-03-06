@@ -200,7 +200,7 @@ async fn deploy_github(
         AppError::Validation("GitHub repository is required for github_actions platform".into())
     })?;
 
-    let (owner, repo) = parse_owner_repo(repo_full)?;
+    let (_owner, _repo) = parse_owner_repo(repo_full)?;
 
     let client = github::build_client_from_credential(pool, &input.credential_id)?;
 
@@ -249,7 +249,7 @@ async fn deploy_github(
         ],
     )?;
 
-    let webhook_url = format!("http://localhost:9420/webhook/{}", trigger_id);
+    let webhook_url = format!("http://localhost:9420/webhook/{trigger_id}");
 
     // Store dispatch metadata for runtime use
     let credential_mapping = serde_json::json!({
@@ -258,7 +258,7 @@ async fn deploy_github(
         "webhook_trigger_id": trigger_id,
     });
 
-    let platform_url = format!("https://github.com/{}/actions", repo_full);
+    let platform_url = format!("https://github.com/{repo_full}/actions");
 
     // Save automation to DB
     let automation = create_and_activate(
@@ -293,8 +293,7 @@ fn parse_owner_repo(full: &str) -> Result<(&str, &str), AppError> {
     let parts: Vec<&str> = full.splitn(2, '/').collect();
     if parts.len() != 2 || parts[0].is_empty() || parts[1].is_empty() {
         return Err(AppError::Validation(format!(
-            "Invalid repository format '{}'. Expected 'owner/repo'.",
-            full
+            "Invalid repository format '{full}'. Expected 'owner/repo'."
         )));
     }
     Ok((parts[0], parts[1]))

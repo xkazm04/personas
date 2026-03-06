@@ -318,7 +318,7 @@ async fn install_node_windows(app: &tauri::AppHandle, install_id: &str, platform
 
     let node_version = get_node_lts_version().await;
     let arch_label = if platform.arch == "arm64" { "arm64" } else { "x64" };
-    let url = format!("https://nodejs.org/dist/v{}/node-v{}-{}.msi", node_version, node_version, arch_label);
+    let url = format!("https://nodejs.org/dist/v{node_version}/node-v{node_version}-{arch_label}.msi");
 
     match download_file(app, install_id, &SetupTarget::Node, &url, "node-installer.msi").await {
         Ok(msi_path) => {
@@ -354,7 +354,7 @@ async fn install_node_macos(app: &tauri::AppHandle, install_id: &str, platform: 
 
     let node_version = get_node_lts_version().await;
     let arch_label = if platform.arch == "arm64" { "arm64" } else { "x64" };
-    let url = format!("https://nodejs.org/dist/v{}/node-v{}-darwin-{}.pkg", node_version, node_version, arch_label);
+    let url = format!("https://nodejs.org/dist/v{node_version}/node-v{node_version}-darwin-{arch_label}.pkg");
 
     match download_file(app, install_id, &SetupTarget::Node, &url, "node-installer.pkg").await {
         Ok(pkg_path) => {

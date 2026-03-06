@@ -619,6 +619,20 @@ const convex: EP[] = [
   ep('POST', '/api/query', 'Run a query function', [], ['Functions'], jsonBody(), 'Body: { "path": "messages:list", "args": {} }'),
   ep('POST', '/api/mutation', 'Run a mutation function', [], ['Functions'], jsonBody(), 'Body: { "path": "messages:send", "args": { "body": "Hello" } }'),
   ep('POST', '/api/action', 'Run an action function', [], ['Functions'], jsonBody(), 'Body: { "path": "actions:doSomething", "args": {} }'),
+  ep('GET', '/api/json_schemas', 'List tables and JSON schemas', [
+    queryP('format', false, 'Output format (json)'),
+  ], ['Schema'], null, 'Returns JSON Schema describing all tables and document structures'),
+  ep('GET', '/api/list_snapshot', 'Browse documents (snapshot)', [
+    queryP('tableName', false, 'Filter to specific table'),
+    queryP('cursor', false, 'Pagination cursor'),
+    queryP('format', false, 'Output format (json)'),
+  ], ['Data'], null, 'Walks a consistent snapshot of documents across one or more paginated calls'),
+  ep('GET', '/api/document_deltas', 'Get document changes', [
+    queryP('cursor', true, 'Timestamp from previous call'),
+    queryP('tableName', false, 'Filter to specific table'),
+    queryP('format', false, 'Output format (json)'),
+  ], ['Data'], null, 'Walks the change log of documents ordered by mutation timestamp'),
+  ep('GET', '/version', 'Get deployment version', [], ['System']),
 ];
 
 // ── n8n ─────────────────────────────────────────────────────────────
@@ -690,6 +704,39 @@ const github_actions: EP[] = [
   ], ['Jobs']),
 ];
 
+// ── Asana ──────────────────────────────────────────────────────────────
+
+const asana: EP[] = [
+  ep('GET', '/users/me', 'Get current user', [], ['Users']),
+  ep('GET', '/workspaces', 'List workspaces', [], ['Workspaces']),
+  ep('GET', '/projects', 'List projects', [
+    queryP('workspace', true, 'Workspace GID'),
+  ], ['Projects']),
+  ep('GET', '/projects/{project_gid}', 'Get a project', [
+    pathP('project_gid', 'Project GID'),
+  ], ['Projects']),
+  ep('GET', '/projects/{project_gid}/tasks', 'List tasks in project', [
+    pathP('project_gid', 'Project GID'),
+  ], ['Tasks']),
+  ep('POST', '/tasks', 'Create a task', [], ['Tasks'], jsonBody(), 'Body: { "data": { "workspace": "GID", "name": "Task title", "projects": ["GID"] } }'),
+  ep('GET', '/tasks/{task_gid}', 'Get a task', [
+    pathP('task_gid', 'Task GID'),
+  ], ['Tasks']),
+  ep('PUT', '/tasks/{task_gid}', 'Update a task', [
+    pathP('task_gid', 'Task GID'),
+  ], ['Tasks'], jsonBody(), 'Body: { "data": { "name": "Updated title", "completed": true } }'),
+];
+
+// ── LinkedIn ────────────────────────────────────────────────────────
+
+const linkedin: EP[] = [
+  ep('GET', '/v2/userinfo', 'Get authenticated user info', [], ['User']),
+  ep('GET', '/v2/me', 'Get current member profile', [], ['Profile']),
+  ep('POST', '/v2/posts', 'Create a post (share)', [], ['Posts'], jsonBody(), 'Body: { "author": "urn:li:person:{id}", "commentary": "Hello LinkedIn!", "visibility": "PUBLIC", "distribution": { "feedDistribution": "MAIN_FEED" }, "lifecycleState": "PUBLISHED" }'),
+  ep('GET', '/v2/connections?q=viewer&start=0&count=10', 'List connections', [], ['Connections']),
+  ep('GET', '/v2/organizationalEntityAcls?q=roleAssignee', 'List managed pages', [], ['Organizations']),
+];
+
 // ── Export ────────────────────────────────────────────────────────────
 
 export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
@@ -730,4 +777,6 @@ export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
   zapier,
   upstash,
   github_actions,
+  asana,
+  linkedin,
 };

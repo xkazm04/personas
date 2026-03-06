@@ -18,7 +18,7 @@ import type { AdoptionRequirement } from '@/lib/types/designTypes';
  * Cron expression: 5-6 fields separated by spaces.
  * Allows standard cron characters: digits, *, /, -, comma, and named months/days.
  */
-const CRON_RE = /^(\*|[0-9*/,\-LW#]+)\s+(\*|[0-9*/,\-LW#]+)\s+(\*|[0-9*/,\-LW#?]+)\s+(\*|[0-9*/,\-LWa-zA-Z]+)\s+(\*|[0-9*/,\-a-zA-Z]+)(\s+(\*|[0-9*/,\-]+))?$/;
+const CRON_RE = /^(\*|[0-9*/,\-LW#]+)\s+(\*|[0-9*/,\-LW#]+)\s+(\*|[0-9*/,\-LW#?]+)\s+(\*|[0-9*/,\-LWa-zA-Z]+)\s+(\*|[0-9*/,\-a-zA-Z]+)(\s+(\*|[0-9*/,-]+))?$/;
 
 /** Email: basic RFC 5322 pattern — intentionally simple to avoid ReDoS */
 const EMAIL_RE = /^[^\s@<>'"`;(){}[\]\\]+@[^\s@<>'"`;(){}[\]\\]+\.[a-zA-Z]{2,}$/;
@@ -42,7 +42,7 @@ const INJECTION_PATTERNS: RegExp[] = [
   /you\s+are\s+now\s+(?:a\s+different|no\s+longer|free\s+from)/gi,
   /override\s+(?:system|safety|security)\s+(?:prompt|instruction|rule)/gi,
   /bypass\s+(?:safety|security|restriction|guardrail|filter)/gi,
-  /[\u200b\u200c\u200d\u200e\u200f\ufeff\u2060\u2061\u2062\u2063\u2064]/g,
+  /(?:\u200b|\u200c|\u200d|\u200e|\u200f|\ufeff|\u2060|\u2061|\u2062|\u2063|\u2064)/g,
   // eslint-disable-next-line no-control-regex
   /\x1b\[[0-9;]*[a-zA-Z]/g,
 ];
@@ -366,7 +366,7 @@ export function sanitizeVariableValues(
 export function sanitizeForDisplay(value: string): string {
   return value
     // Strip zero-width/invisible Unicode
-    .replace(/[\u200b\u200c\u200d\u200e\u200f\ufeff\u2060-\u2064]/g, '')
+    .replace(/(?:\u200b|\u200c|\u200d|\u200e|\u200f|\ufeff|\u2060|\u2061|\u2062|\u2063|\u2064)/g, '')
     // Strip ANSI escape codes
     // eslint-disable-next-line no-control-regex
     .replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '')

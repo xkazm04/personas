@@ -69,7 +69,7 @@ pub async fn run_execution(
         Err(e) => {
             return ExecutionResult {
                 success: false,
-                error: Some(format!("Failed to create log file: {}", e)),
+                error: Some(format!("Failed to create log file: {e}")),
                 duration_ms: 0,
                 ..default_result()
             };
@@ -171,7 +171,7 @@ pub async fn run_execution(
 
     logger.log("=== Persona Execution Started ===");
     logger.log(&format!("Persona: {}", persona.name));
-    logger.log(&format!("Execution ID: {}", execution_id));
+    logger.log(&format!("Execution ID: {execution_id}"));
     logger.log(&format!(
         "Tools: {}",
         tools
@@ -194,10 +194,10 @@ pub async fn run_execution(
         }
     };
     if let Err(e) = std::fs::create_dir_all(&exec_dir) {
-        logger.log(&format!("Failed to create exec dir: {}", e));
+        logger.log(&format!("Failed to create exec dir: {e}"));
         return ExecutionResult {
             success: false,
-            error: Some(format!("Failed to create execution directory: {}", e)),
+            error: Some(format!("Failed to create execution directory: {e}")),
             log_file_path: Some(log_file_path),
             duration_ms: start_time.elapsed().as_millis() as u64,
             ..default_result()
@@ -352,14 +352,14 @@ pub async fn run_execution(
         let final_trace = trace.finalize(None, None, None, Some(error_msg.clone()));
         let _ = crate::db::repos::execution::traces::save(&pool, &final_trace);
 
-        logger.log(&format!("[ERROR] {}", error_msg));
+        logger.log(&format!("[ERROR] {error_msg}"));
         logger.close();
 
         let _ = app.emit(
             "execution-output",
             ExecutionOutputEvent {
                 execution_id: execution_id.clone(),
-                line: format!("[ERROR] {}", error_msg),
+                line: format!("[ERROR] {error_msg}"),
             },
         );
         let _ = app.emit(
@@ -580,7 +580,7 @@ pub async fn run_execution(
                 // Create trace span for this tool call
                 let tool_span_id = trace.start_span(
                     SpanType::ToolCall,
-                    &format!("ToolCall: {}", tool_name),
+                    &format!("ToolCall: {tool_name}"),
                     Some(&stream_span),
                     Some(serde_json::json!({
                         "tool_name": tool_name,
@@ -723,8 +723,8 @@ pub async fn run_execution(
 
     let exit_code = exit_status.map(|s| s.code().unwrap_or(-1)).unwrap_or(-1);
 
-    logger.log(&format!("Process exited with code: {}", exit_code));
-    logger.log(&format!("Duration: {}ms", duration_ms));
+    logger.log(&format!("Process exited with code: {exit_code}"));
+    logger.log(&format!("Duration: {duration_ms}ms"));
     logger.log("=== Persona Execution Finished ===");
 
     // Post-mortem: extract execution flows only.
@@ -1209,6 +1209,6 @@ pub(crate) async fn inject_credential(
         "decrypt",
         Some(persona_id),
         Some(persona_name),
-        Some(&format!("injected via connector '{}'", connector_label)),
+        Some(&format!("injected via connector '{connector_label}'")),
     );
 }

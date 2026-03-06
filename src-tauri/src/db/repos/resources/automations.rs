@@ -238,6 +238,7 @@ pub fn create_run(
     get_run_by_id(pool, &id)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn complete_run(
     pool: &DbPool,
     run_id: &str,

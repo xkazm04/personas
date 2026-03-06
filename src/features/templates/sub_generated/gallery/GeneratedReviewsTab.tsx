@@ -248,7 +248,7 @@ export default function GeneratedReviewsTab({
     if (lastItem.index >= gallery.allItems.length - 10 && gallery.hasMore && !gallery.isFetchingMore && !gallery.isLoading) {
       gallery.fetchMore();
     }
-  }, [virtualizer.getVirtualItems(), gallery.allItems.length, gallery.hasMore, gallery.isFetchingMore, gallery.isLoading, gallery.fetchMore]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [virtualizer.getVirtualItems(), gallery.allItems.length, gallery.hasMore, gallery.isFetchingMore, gallery.isLoading, gallery.fetchMore]);
 
   // Loading state
   if (gallery.isLoading && gallery.allItems.length === 0 && gallery.total === 0) {

@@ -82,7 +82,7 @@ pub async fn rotate_credential_now(
     let result = rotation_engine::rotate_now(&state.db, &credential_id, "manual").await;
     let (op, detail) = match &result {
         Ok(_) => ("credential_rotated", "manual rotation succeeded".to_string()),
-        Err(e) => ("credential_rotation_failed", format!("manual rotation failed: {}", e)),
+        Err(e) => ("credential_rotation_failed", format!("manual rotation failed: {e}")),
     };
     let _ = audit_log::insert(
         &state.db, &credential_id, &credential_id,

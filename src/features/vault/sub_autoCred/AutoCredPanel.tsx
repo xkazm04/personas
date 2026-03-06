@@ -1,10 +1,11 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bot, Loader2, CheckCircle2, XCircle, AlertTriangle, Clock, Globe, ChevronDown, ChevronUp, Wrench } from 'lucide-react';
+import { Bot, Loader2, CheckCircle2, XCircle, AlertTriangle, Clock, Globe, ChevronDown, ChevronUp, Wrench, MessageSquare, Copy, Check } from 'lucide-react';
 import type { CredentialDesignResult } from '@/hooks/design/useCredentialDesign';
-import type { AutoCredErrorInfo } from './types';
+import type { AutoCredErrorInfo, AutoCredMode, BrowserLogEntry } from './types';
 import { useAutoCredSession } from './useAutoCredSession';
-import { tauriPlaywrightAdapter } from './TauriPlaywrightAdapter';
+import { tauriPlaywrightAdapter, tauriGuidedAdapter } from './TauriPlaywrightAdapter';
+import { checkPlaywrightAvailable } from '@/api/autoCredBrowser';
 import { AutoCredConsent } from './AutoCredConsent';
 import { AutoCredBrowser } from './AutoCredBrowser';
 import { AutoCredReview } from './AutoCredReview';
@@ -16,18 +17,36 @@ interface AutoCredPanelProps {
 }
 
 export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPanelProps) {
-  const session = useAutoCredSession({ adapter: tauriPlaywrightAdapter });
+  const [mode, setMode] = useState<AutoCredMode>('playwright');
+  const [modeChecked, setModeChecked] = useState(false);
+
+  // Check Playwright availability on mount
+  useEffect(() => {
+    checkPlaywrightAvailable()
+      .then((available) => {
+        setMode(available ? 'playwright' : 'guided');
+        setModeChecked(true);
+      })
+      .catch(() => {
+        setMode('guided');
+        setModeChecked(true);
+      });
+  }, []);
+
+  const adapter = mode === 'guided' ? tauriGuidedAdapter : tauriPlaywrightAdapter;
+  const session = useAutoCredSession({ adapter });
   const fieldsHash = useMemo(() => {
     return designResult.connector.fields
       .map((f) => `${f.key}:${f.type}:${f.required ? '1' : '0'}`)
       .join('|');
   }, [designResult.connector.fields]);
 
-  // Initialize session when design result arrives
+  // Initialize session when design result arrives and mode is resolved
   useEffect(() => {
-    session.init(designResult);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [designResult.connector.name, fieldsHash]);
+    if (modeChecked) {
+      session.init(designResult);
+    }
+  }, [designResult.connector.name, fieldsHash, modeChecked]);
 
   const handleCancel = () => {
     session.reset();
@@ -38,10 +57,17 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
     <div className="space-y-4">
       {/* Badge */}
       <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
-          <Bot className="w-3.5 h-3.5 text-cyan-400" />
-          <span className="text-sm font-medium text-cyan-400">Auto-Setup via Playwright MCP</span>
-        </div>
+        {mode === 'guided' ? (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-violet-500/10 border border-violet-500/20">
+            <MessageSquare className="w-3.5 h-3.5 text-violet-400" />
+            <span className="text-sm font-medium text-violet-400">Guided Setup</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+            <Bot className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="text-sm font-medium text-cyan-400">Auto-Setup via Playwright MCP</span>
+          </div>
+        )}
       </div>
 
       <AnimatePresence mode="wait">
@@ -51,15 +77,16 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
             designResult={designResult}
             onConsent={session.startBrowser}
             onCancel={handleCancel}
+            mode={mode}
           />
         )}
 
         {session.phase === 'browser' && (
           <AutoCredBrowser
             key="browser"
-            designResult={designResult}
             logs={session.logs}
             onCancel={session.cancelBrowser}
+            mode={mode}
           />
         )}
 
@@ -133,6 +160,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
           <AutoCredErrorDisplay
             key="error"
             error={session.error}
+            logs={session.logs}
             onRetry={session.startBrowser}
             onCancel={handleCancel}
           />
@@ -150,7 +178,7 @@ function AutoCredBrowserError({
   onRetry,
   onCancel,
 }: {
-  logs: { ts: number; message: string; type: 'info' | 'action' | 'warning' | 'error' }[];
+  logs: BrowserLogEntry[];
   error: AutoCredErrorInfo;
   onRetry: () => void;
   onCancel: () => void;
@@ -183,10 +211,10 @@ function AutoCredBrowserError({
         </div>
       </div>
 
-      {/* Persistent terminal log */}
+      {/* Persistent terminal log — 2x height */}
       <div
         ref={scrollRef}
-        className="h-52 overflow-y-auto rounded-xl border border-primary/10 bg-black/30 p-3 font-mono text-sm space-y-1"
+        className="max-h-[26rem] overflow-y-auto rounded-xl border border-primary/10 bg-black/30 p-3 font-mono text-sm space-y-1"
       >
         {logs.map((entry, i) => (
           <div key={i} className={`flex items-start gap-2 ${
@@ -207,21 +235,24 @@ function AutoCredBrowserError({
       </div>
 
       {/* Actions */}
-      <div className="flex gap-3 justify-end">
-        <button
-          onClick={onCancel}
-          className="px-4 py-2 text-sm text-muted-foreground/70 hover:text-foreground rounded-lg hover:bg-secondary/40 transition-colors"
-        >
-          Set Up Manually
-        </button>
-        {error.retryable && (
+      <div className="flex justify-between">
+        <CopyLogButton logs={logs} />
+        <div className="flex gap-3">
           <button
-            onClick={onRetry}
-            className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-sm font-medium transition-colors"
+            onClick={onCancel}
+            className="px-4 py-2 text-sm text-muted-foreground/70 hover:text-foreground rounded-lg hover:bg-secondary/40 transition-colors"
           >
-            Retry
+            Set Up Manually
           </button>
-        )}
+          {error.retryable && (
+            <button
+              onClick={onRetry}
+              className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-sm font-medium transition-colors"
+            >
+              Retry
+            </button>
+          )}
+        </div>
       </div>
     </motion.div>
   );
@@ -233,6 +264,48 @@ function useAutoScrollRef(dep: number) {
     if (ref.current) ref.current.scrollTop = ref.current.scrollHeight;
   }, [dep]);
   return ref;
+}
+
+// ── Copy log helper ─────────────────────────────────────────────
+
+function CopyLogButton({ logs }: { logs: BrowserLogEntry[] }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(() => {
+    if (logs.length === 0) return;
+    const text = logs
+      .map((e) => {
+        const time = new Date(e.ts).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const prefix = e.type === 'error' ? '[ERROR]' : e.type === 'warning' ? '[WARN]' : e.type === 'url' ? '[URL]' : e.type === 'action' ? '[ACTION]' : '[INFO]';
+        return `${time} ${prefix} ${e.message}`;
+      })
+      .join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(console.error);
+  }, [logs]);
+
+  if (logs.length === 0) return null;
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground/60 hover:text-muted-foreground rounded-lg hover:bg-secondary/30 transition-colors"
+    >
+      {copied ? (
+        <>
+          <Check className="w-3.5 h-3.5 text-emerald-400" />
+          <span className="text-emerald-400">Copied</span>
+        </>
+      ) : (
+        <>
+          <Copy className="w-3.5 h-3.5" />
+          <span>Copy Log</span>
+        </>
+      )}
+    </button>
+  );
 }
 
 // ── Error kind display config ────────────────────────────────────
@@ -250,14 +323,17 @@ const ERROR_KIND_CONFIG: Record<string, { label: string; badgeClass: string; ico
 
 function AutoCredErrorDisplay({
   error,
+  logs,
   onRetry,
   onCancel,
 }: {
   error: AutoCredErrorInfo;
+  logs: BrowserLogEntry[];
   onRetry: () => void;
   onCancel: () => void;
 }) {
   const [contextOpen, setContextOpen] = useState(false);
+  const [logOpen, setLogOpen] = useState(false);
   const config = ERROR_KIND_CONFIG[error.kind] ?? ERROR_KIND_CONFIG.cli_error!;
   const Icon = config!.icon;
   const ctx = error.context;
@@ -334,6 +410,42 @@ function AutoCredErrorDisplay({
                   </ul>
                 </div>
               )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Session log — expandable with copy */}
+      {logs.length > 0 && (
+        <div className="rounded-lg border border-primary/10 bg-secondary/15 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setLogOpen((v) => !v)}
+            className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-muted-foreground/70 hover:text-muted-foreground/90 transition-colors"
+          >
+            <span>Session log ({logs.length} entries)</span>
+            {logOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+          {logOpen && (
+            <div className="border-t border-primary/10">
+              <div className="max-h-[26rem] overflow-y-auto p-3 font-mono text-sm space-y-1">
+                {logs.map((entry, i) => (
+                  <div key={i} className={`flex items-start gap-2 ${
+                    entry.type === 'error' ? 'text-red-400' :
+                    entry.type === 'warning' ? 'text-amber-400' :
+                    entry.type === 'action' ? 'text-cyan-400' :
+                    'text-muted-foreground/70'
+                  }`}>
+                    <span className="text-muted-foreground/60 select-none shrink-0">
+                      {new Date(entry.ts).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    </span>
+                    <span>{entry.message}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="px-3 pb-2">
+                <CopyLogButton logs={logs} />
+              </div>
             </div>
           )}
         </div>

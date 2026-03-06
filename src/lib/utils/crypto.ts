@@ -89,6 +89,8 @@ export async function encryptWithSessionKey(data: string): Promise<string> {
     return arrayBufferToBase64(encryptedAesKey) + "." + arrayBufferToBase64(ivAndCiphertext.buffer);
   } catch (err) {
     console.error("Hybrid encryption failed:", err);
-    throw new Error("Failed to encrypt sensitive data for IPC");
+    const wrapped = new Error("Failed to encrypt sensitive data for IPC");
+    (wrapped as unknown as { cause: unknown }).cause = err;
+    throw wrapped;
   }
 }

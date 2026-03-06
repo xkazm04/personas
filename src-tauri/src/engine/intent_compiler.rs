@@ -33,7 +33,7 @@ pub fn build_intent_prompt(
     prompt.push_str(&format!("## Target Persona: {}\n", persona.name));
     if let Some(ref desc) = persona.description {
         if !desc.is_empty() {
-            prompt.push_str(&format!("Description: {}\n", desc));
+            prompt.push_str(&format!("Description: {desc}\n"));
         }
     }
     prompt.push('\n');
@@ -59,7 +59,7 @@ pub fn build_intent_prompt(
             groups.entry(conn.category.as_str()).or_default().push(conn);
         }
         for (category, conns) in &groups {
-            prompt.push_str(&format!("### {}\n", category));
+            prompt.push_str(&format!("### {category}\n"));
             for conn in conns {
                 prompt.push_str(&format!("- **{}**: {}\n", conn.name, conn.label));
             }

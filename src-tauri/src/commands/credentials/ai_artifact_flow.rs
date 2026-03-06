@@ -142,7 +142,7 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
         messages.timeout_secs,
         |line_type, _raw_line| match line_type {
             StreamLineType::SystemInit { model, .. } => {
-                emit_task_progress(&app, pe, idf, &tid, &format!("Connected ({})", model));
+                emit_task_progress(&app, pe, idf, &tid, &format!("Connected ({model})"));
                 emit_task_progress(&app, pe, idf, &tid, messages.init_progress);
             }
             StreamLineType::AssistantText { .. } => {
@@ -152,7 +152,7 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
                 }
             }
             StreamLineType::AssistantToolUse { tool_name, .. } => {
-                emit_task_progress(&app, pe, idf, &tid, &format!("Researching: {}", tool_name));
+                emit_task_progress(&app, pe, idf, &tid, &format!("Researching: {tool_name}"));
             }
             StreamLineType::Result {
                 duration_ms,
@@ -164,7 +164,7 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
                     let secs = *ms as f64 / 1000.0;
                     msg = format!("{} ({:.1}s", messages.complete_prefix, secs);
                     if let Some(cost) = total_cost_usd {
-                        msg.push_str(&format!(", ${:.4}", cost));
+                        msg.push_str(&format!(", ${cost:.4}"));
                     }
                     msg.push(')');
                 }
@@ -300,7 +300,7 @@ pub async fn spawn_claude_and_collect(
             "Claude CLI not found. Install from https://docs.anthropic.com/en/docs/claude-code"
                 .to_string()
         } else {
-            format!("Failed to spawn Claude CLI: {}", e)
+            format!("Failed to spawn Claude CLI: {e}")
         }
     })?;
 
@@ -366,7 +366,7 @@ pub async fn spawn_claude_and_collect(
     let exit_status = child
         .wait()
         .await
-        .map_err(|e| format!("Failed waiting for Claude CLI: {}", e))?;
+        .map_err(|e| format!("Failed waiting for Claude CLI: {e}"))?;
     let stderr_output = stderr_task.await.unwrap_or_default();
 
     // Clear the PID now that the process has exited
@@ -376,7 +376,7 @@ pub async fn spawn_claude_and_collect(
 
     if stream_result.is_err() {
         let _ = child.kill().await;
-        return Err(format!("Claude CLI timed out after {} seconds", timeout_secs));
+        return Err(format!("Claude CLI timed out after {timeout_secs} seconds"));
     }
 
     if !exit_status.success() {
@@ -389,7 +389,7 @@ pub async fn spawn_claude_and_collect(
             );
         }
         let msg = stderr_trimmed.lines().last().unwrap_or("unknown error");
-        return Err(format!("Claude CLI exited with error: {}", msg));
+        return Err(format!("Claude CLI exited with error: {msg}"));
     }
 
     Ok(ClaudeSpawnResult {

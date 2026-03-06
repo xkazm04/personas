@@ -469,7 +469,7 @@ pub fn save_fields(
     for (key, value) in fields {
         let is_sensitive = !NON_SENSITIVE_KEYS.contains(&key.to_lowercase().as_str());
         let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
-            .map_err(|e| AppError::Internal(format!("Field encryption failed: {}", e)))?;
+            .map_err(|e| AppError::Internal(format!("Field encryption failed: {e}")))?;
 
         let field_type = classify_field_type(key);
         let field_id = uuid::Uuid::new_v4().to_string();
@@ -505,7 +505,7 @@ pub fn upsert_field(
     is_sensitive: bool,
 ) -> Result<(), AppError> {
     let (enc_val, field_iv) = crypto::encrypt_field(field_value, is_sensitive)
-        .map_err(|e| AppError::Internal(format!("Field encryption failed: {}", e)))?;
+        .map_err(|e| AppError::Internal(format!("Field encryption failed: {e}")))?;
 
     let now = chrono::Utc::now().to_rfc3339();
     let field_type = classify_field_type(field_key);

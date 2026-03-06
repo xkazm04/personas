@@ -70,7 +70,7 @@ pub fn build_credential_healthcheck_prompt(
         prompt.push_str("- (none)\n");
     } else {
         for key in field_keys {
-            prompt.push_str(&format!("- {}\n", key));
+            prompt.push_str(&format!("- {key}\n"));
         }
     }
     prompt.push('\n');
@@ -317,7 +317,7 @@ mod tests {
     #[test]
     fn test_extract_fenced_result() {
         let json = sample_result();
-        let output = format!("Here is the result:\n\n```json\n{}\n```\n\nDone.", json);
+        let output = format!("Here is the result:\n\n```json\n{json}\n```\n\nDone.");
         let result = extract_credential_design_result(&output);
         assert!(result.is_some());
         let val = result.unwrap();
@@ -331,7 +331,7 @@ mod tests {
     #[test]
     fn test_extract_bare_result() {
         let json = sample_result();
-        let output = format!("Analysis complete. {}", json);
+        let output = format!("Analysis complete. {json}");
         let result = extract_credential_design_result(&output);
         assert!(result.is_some());
         let val = result.unwrap();

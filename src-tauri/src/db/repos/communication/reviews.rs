@@ -266,8 +266,8 @@ pub fn get_reviews_paginated(
             // Each connector must be present: connectors_used LIKE '%"name"%'
             let mut connector_conds = Vec::new();
             for c in connectors {
-                connector_conds.push(format!("connectors_used LIKE ?{}", param_idx));
-                params_vec.push(Box::new(format!("%\"{}\"%", c)));
+                connector_conds.push(format!("connectors_used LIKE ?{param_idx}"));
+                params_vec.push(Box::new(format!("%\"{c}\"%")));
                 param_idx += 1;
             }
             // ANY connector matches (OR logic)
@@ -322,8 +322,7 @@ pub fn get_reviews_paginated(
         };
 
         let select_sql = format!(
-            "SELECT * FROM persona_design_reviews{} ORDER BY {} {}",
-            where_clause, order_col, order_dir,
+            "SELECT * FROM persona_design_reviews{where_clause} ORDER BY {order_col} {order_dir}",
         );
         let params_refs: Vec<&dyn rusqlite::types::ToSql> =
             params_vec.iter().map(|p| p.as_ref()).collect();
@@ -363,7 +362,7 @@ pub fn get_reviews_paginated(
     } else {
         // Fast path: no coverage filter — use SQL LIMIT/OFFSET
         // Count total
-        let count_sql = format!("SELECT COUNT(*) FROM persona_design_reviews{}", where_clause);
+        let count_sql = format!("SELECT COUNT(*) FROM persona_design_reviews{where_clause}");
         let params_refs: Vec<&dyn rusqlite::types::ToSql> =
             params_vec.iter().map(|p| p.as_ref()).collect();
         let total: i64 = conn.query_row(&count_sql, params_refs.as_slice(), |row| row.get(0))?;

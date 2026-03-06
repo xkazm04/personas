@@ -43,7 +43,7 @@ export const CONNECTOR_ROLES: ConnectorRole[] = [
   // ── Customer-Facing ───────────────────────────────────────────
   { role: 'crm',                 label: 'CRM',                  members: ['hubspot', 'intercom'] },
   { role: 'support_ticketing',   label: 'Support Ticketing',    members: ['zendesk', 'freshdesk', 'intercom'] },
-  { role: 'social_media',        label: 'Social Media',         members: ['buffer', 'twitter'] },
+  { role: 'social_media',        label: 'Social Media',         members: ['buffer', 'linkedin', 'twitter'] },
 
   // ── Content & CMS ─────────────────────────────────────────────
   { role: 'cms',                 label: 'CMS',                  members: ['wordpress', 'webflow', 'contentful'] },

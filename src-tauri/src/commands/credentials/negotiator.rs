@@ -60,7 +60,7 @@ pub async fn start_credential_negotiation(
     let _ = audit_log::insert(
         &state.db, &negotiation_id, &service_name,
         "negotiation_started", None, None,
-        Some(&format!("provisioning plan for '{}'", service_name)),
+        Some(&format!("provisioning plan for '{service_name}'")),
     );
 
     let neg_id = negotiation_id.clone();

@@ -444,7 +444,6 @@ export function ScheduleBuilder({
   useEffect(() => {
     fetchPreview(cronExpression);
     // Only on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handlePresetSelect = useCallback(

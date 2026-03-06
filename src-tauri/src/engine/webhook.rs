@@ -156,7 +156,7 @@ async fn handle_webhook(
     }
 
     // 2b. Rate limit: max WEBHOOK_TRIGGER_MAX calls per trigger per minute
-    let rate_key = format!("webhook:{}", trigger_id);
+    let rate_key = format!("webhook:{trigger_id}");
     if let Err(retry_after) = state.rate_limiter.check(&rate_key, WEBHOOK_TRIGGER_MAX, WEBHOOK_TRIGGER_WINDOW) {
         tracing::warn!(
             trigger_id = %trigger_id,
@@ -169,8 +169,7 @@ async fn handle_webhook(
                 accepted: false,
                 event_id: None,
                 error: Some(format!(
-                    "Rate limited: max {} webhook calls/minute per trigger. Retry after {}s",
-                    WEBHOOK_TRIGGER_MAX, retry_after
+                    "Rate limited: max {WEBHOOK_TRIGGER_MAX} webhook calls/minute per trigger. Retry after {retry_after}s"
                 )),
             }),
         );
@@ -346,7 +345,7 @@ mod tests {
         assert!(verify_hmac_sha256(
             secret,
             body,
-            &format!("sha256={}", hex_sig)
+            &format!("sha256={hex_sig}")
         ));
     }
 

@@ -55,7 +55,7 @@ pub fn install_crash_hook(app_data_dir: &std::path::Path) {
         // Write crash log to file
         if let Some(dir) = CRASH_LOG_DIR.get() {
             let timestamp = chrono::Local::now().format("%Y%m%d_%H%M%S");
-            let path = dir.join(format!("crash_{}.log", timestamp));
+            let path = dir.join(format!("crash_{timestamp}.log"));
 
             let mut report = String::new();
             report.push_str(&format!(
@@ -68,9 +68,9 @@ pub fn install_crash_hook(app_data_dir: &std::path::Path) {
 
             // Panic message
             if let Some(msg) = info.payload().downcast_ref::<&str>() {
-                report.push_str(&format!("Panic: {}\n", msg));
+                report.push_str(&format!("Panic: {msg}\n"));
             } else if let Some(msg) = info.payload().downcast_ref::<String>() {
-                report.push_str(&format!("Panic: {}\n", msg));
+                report.push_str(&format!("Panic: {msg}\n"));
             } else {
                 report.push_str("Panic: <unknown payload>\n");
             }

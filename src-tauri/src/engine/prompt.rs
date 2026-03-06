@@ -33,12 +33,11 @@ pub fn build_tool_documentation(tool: &PersonaToolDefinition) -> String {
     }
 
     if let Some(ref schema) = tool.input_schema {
-        doc.push_str(&format!("**Input Schema**: {}\n", schema));
+        doc.push_str(&format!("**Input Schema**: {schema}\n"));
     }
     if let Some(ref cred_type) = tool.requires_credential_type {
         doc.push_str(&format!(
-            "**Requires Credential**: {} (available as env var)\n",
-            cred_type
+            "**Requires Credential**: {cred_type} (available as env var)\n"
         ));
     }
     doc
@@ -60,7 +59,7 @@ pub fn assemble_prompt(
     let description = persona.description.as_ref().map(|d| replace_variables(d, persona, input_data));
 
     // Header
-    prompt.push_str(&format!("# Persona: {}\n\n", name));
+    prompt.push_str(&format!("# Persona: {name}\n\n"));
 
     // Description
     if let Some(ref desc) = description {
@@ -127,7 +126,7 @@ pub fn assemble_prompt(
                         heading,
                         section.get("content").and_then(|v| v.as_str()),
                     ) {
-                        prompt.push_str(&format!("## {}\n", name));
+                        prompt.push_str(&format!("## {name}\n"));
                         prompt.push_str(&replace_variables(content, persona, input_data));
                         prompt.push_str("\n\n");
                     }
@@ -197,7 +196,7 @@ pub fn assemble_prompt(
             prompt.push_str("## Available Credentials (as environment variables)\n");
             prompt.push_str("These env vars are ALREADY SET in your shell — use them directly in curl commands:\n");
             for hint in hints {
-                prompt.push_str(&format!("- {}\n", hint));
+                prompt.push_str(&format!("- {hint}\n"));
             }
             prompt.push_str(
                 "\nExample: `curl -H \"Authorization: Bearer $GOOGLE_ACCESS_TOKEN\" https://api.example.com`\n\
@@ -222,10 +221,10 @@ pub fn assemble_prompt(
         if let Some(use_case) = data.get("_use_case") {
             prompt.push_str("## Use Case Context\n");
             if let Some(title) = use_case.get("title").and_then(|v| v.as_str()) {
-                prompt.push_str(&format!("You are executing the use case: **{}**\n", title));
+                prompt.push_str(&format!("You are executing the use case: **{title}**\n"));
             }
             if let Some(desc) = use_case.get("description").and_then(|v| v.as_str()) {
-                prompt.push_str(&format!("Description: {}\n", desc));
+                prompt.push_str(&format!("Description: {desc}\n"));
             }
             prompt.push_str("Focus on this specific use case.\n\n");
         }
@@ -234,13 +233,12 @@ pub fn assemble_prompt(
         if let Some(time_filter) = data.get("_time_filter") {
             prompt.push_str("## Time Filter (IMPORTANT)\n");
             if let Some(desc) = time_filter.get("description").and_then(|v| v.as_str()) {
-                prompt.push_str(&format!("{}\n", desc));
+                prompt.push_str(&format!("{desc}\n"));
             }
             if let Some(field) = time_filter.get("field").and_then(|v| v.as_str()) {
                 if let Some(window) = time_filter.get("default_window").and_then(|v| v.as_str()) {
                     prompt.push_str(&format!(
-                        "When querying data, use the '{}' parameter to limit results to the last {}. ",
-                        field, window
+                        "When querying data, use the '{field}' parameter to limit results to the last {window}. "
                     ));
                     prompt.push_str("Do NOT fetch all historical data — only process recent items within this time window.\n");
                 }
@@ -399,7 +397,7 @@ fn sanitize_runtime_variable(value: &str) -> String {
     clean = re_heading.replace_all(&clean, |caps: &regex::Captures| {
         let hashes = caps.get(1).unwrap().as_str();
         let escaped = hashes.replace('#', "\u{FF03}"); // fullwidth #
-        format!("{} ", escaped)
+        format!("{escaped} ")
     }).to_string();
 
     // Escape triple backticks (could break markdown code fences)
@@ -589,7 +587,7 @@ pub fn build_cli_args(
         if let Some(budget) = persona.max_budget_usd {
             if budget > 0.0 {
                 args.push("--max-budget-usd".to_string());
-                args.push(format!("{}", budget));
+                args.push(format!("{budget}"));
             }
         }
 
@@ -597,7 +595,7 @@ pub fn build_cli_args(
         if let Some(turns) = persona.max_turns {
             if turns > 0 {
                 args.push("--max-turns".to_string());
-                args.push(format!("{}", turns));
+                args.push(format!("{turns}"));
             }
         }
     }
@@ -662,7 +660,7 @@ pub fn assemble_resume_prompt(
         if !hints.is_empty() {
             prompt.push_str("## Available Credentials\n");
             for hint in hints {
-                prompt.push_str(&format!("- {}\n", hint));
+                prompt.push_str(&format!("- {hint}\n"));
             }
             prompt.push('\n');
         }
@@ -793,6 +791,7 @@ mod tests {
             icon: None,
             color: None,
             enabled: true,
+            sensitive: false,
             max_concurrent: 2,
             timeout_ms: 300000,
             notification_channels: None,

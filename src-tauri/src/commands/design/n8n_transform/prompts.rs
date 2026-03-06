@@ -54,7 +54,7 @@ Now proceed with the transformation task described below. Remember: use section 
 fn format_connector_section(connectors_json: Option<&str>) -> String {
     connectors_json
         .filter(|c| !c.trim().is_empty() && c.trim() != "[]")
-        .map(|c| format!("\n## User's Available Connectors\n{}\n", c))
+        .map(|c| format!("\n## User's Available Connectors\n{c}\n"))
         .unwrap_or_default()
 }
 
@@ -62,7 +62,7 @@ fn format_connector_section(connectors_json: Option<&str>) -> String {
 fn format_credential_section(credentials_json: Option<&str>) -> String {
     credentials_json
         .filter(|c| !c.trim().is_empty() && c.trim() != "[]")
-        .map(|c| format!("\n## User's Available Credentials\n{}\n", c))
+        .map(|c| format!("\n## User's Available Credentials\n{c}\n"))
         .unwrap_or_default()
 }
 

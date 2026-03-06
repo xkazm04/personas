@@ -39,9 +39,10 @@ pub async fn execute_query(
         "neon" => execute_neon(&fields, query_text).await,
         "upstash" => execute_upstash(&fields, query_text).await,
         "planetscale" => execute_planetscale(&fields, query_text).await,
+        "convex" => execute_convex(&fields, query_text).await,
         other => Err(AppError::Internal(format!(
             "Direct query execution is not yet supported for '{other}'. \
-             Supported connectors with REST APIs: Supabase, Neon, Upstash, PlanetScale."
+             Supported connectors with REST APIs: Supabase, Neon, Upstash, PlanetScale, Convex."
         ))),
     };
 
@@ -83,6 +84,7 @@ pub async fn introspect_tables(
         "upstash" | "redis" => {
             execute_upstash(&fields, "SCAN 0 MATCH * COUNT 100").await
         }
+        "convex" => introspect_convex_tables(&fields).await,
         other => Err(AppError::Internal(format!(
             "Table introspection is not supported for '{other}'."
         ))),
@@ -113,9 +115,8 @@ pub async fn introspect_columns(
             let q = format!(
                 "SELECT column_name, data_type, is_nullable, column_default \
                  FROM information_schema.columns \
-                 WHERE table_schema = 'public' AND table_name = '{}' \
-                 ORDER BY ordinal_position",
-                safe_name
+                 WHERE table_schema = 'public' AND table_name = '{safe_name}' \
+                 ORDER BY ordinal_position"
             );
             execute_neon(&fields, &q).await
         }
@@ -123,12 +124,12 @@ pub async fn introspect_columns(
             let q = format!(
                 "SELECT column_name, column_type, is_nullable, column_default \
                  FROM information_schema.columns \
-                 WHERE table_schema = DATABASE() AND table_name = '{}' \
-                 ORDER BY ordinal_position",
-                safe_name
+                 WHERE table_schema = DATABASE() AND table_name = '{safe_name}' \
+                 ORDER BY ordinal_position"
             );
             execute_planetscale(&fields, &q).await
         }
+        "convex" => introspect_convex_columns(&fields, &safe_name).await,
         other => Err(AppError::Internal(format!(
             "Column introspection is not supported for '{other}'."
         ))),
@@ -188,7 +189,7 @@ async fn introspect_supabase_columns(
 
     let table_def = definitions
         .get(table_name)
-        .ok_or_else(|| AppError::Internal(format!("Table '{}' not found in schema", table_name)))?;
+        .ok_or_else(|| AppError::Internal(format!("Table '{table_name}' not found in schema")))?;
 
     let empty_map = serde_json::Map::new();
     let properties = table_def
@@ -271,7 +272,7 @@ async fn fetch_supabase_openapi_spec(
     let resp = client
         .get(&spec_url)
         .header("apikey", api_key)
-        .header("Authorization", format!("Bearer {}", api_key))
+        .header("Authorization", format!("Bearer {api_key}"))
         .header("Accept", "application/openapi+json")
         .send()
         .await
@@ -330,20 +331,20 @@ pub(crate) async fn execute_supabase(
     let mut url = format!("{}/rest/v1/{}?select={}", base, parsed.table, parsed.select);
 
     if let Some(limit) = parsed.limit {
-        url.push_str(&format!("&limit={}", limit));
+        url.push_str(&format!("&limit={limit}"));
     }
     if let Some(ref order) = parsed.order {
-        url.push_str(&format!("&order={}", order));
+        url.push_str(&format!("&order={order}"));
     }
     for filter in &parsed.filters {
-        url.push_str(&format!("&{}", filter));
+        url.push_str(&format!("&{filter}"));
     }
 
     let client = reqwest::Client::new();
     let resp = client
         .get(&url)
         .header("apikey", api_key)
-        .header("Authorization", format!("Bearer {}", api_key))
+        .header("Authorization", format!("Bearer {api_key}"))
         .header("Accept", "application/json")
         .header("Prefer", "count=exact")
         .send()
@@ -462,15 +463,15 @@ fn parse_select_to_postgrest(sql: &str) -> Option<PostgrestSelect> {
                     let col = part[..part.len() - 5]
                         .trim()
                         .trim_matches(|c: char| c == '"' || c == '`');
-                    format!("{}.desc", col)
+                    format!("{col}.desc")
                 } else if upper_part.ends_with(" ASC") {
                     let col = part[..part.len() - 4]
                         .trim()
                         .trim_matches(|c: char| c == '"' || c == '`');
-                    format!("{}.asc", col)
+                    format!("{col}.asc")
                 } else {
                     let col = part.trim_matches(|c: char| c == '"' || c == '`');
-                    format!("{}.asc", col)
+                    format!("{col}.asc")
                 }
             })
             .collect();
@@ -524,14 +525,14 @@ fn parse_postgrest_filter(cond: &str) -> Option<String> {
         let col = cond[..cond.len() - 11]
             .trim()
             .trim_matches(|c: char| c == '"' || c == '`');
-        return Some(format!("{}=not.is.null", col));
+        return Some(format!("{col}=not.is.null"));
     }
     // IS NULL
     if upper.ends_with("IS NULL") {
         let col = cond[..cond.len() - 7]
             .trim()
             .trim_matches(|c: char| c == '"' || c == '`');
-        return Some(format!("{}=is.null", col));
+        return Some(format!("{col}=is.null"));
     }
 
     // Operator-based: >=, <=, !=, <>, =, >, <, LIKE, ILIKE
@@ -553,7 +554,7 @@ fn parse_postgrest_filter(cond: &str) -> Option<String> {
             let val = cond[pos + op.len()..]
                 .trim()
                 .trim_matches(|c: char| c == '\'' || c == '"');
-            return Some(format!("{}={}.{}", col, pg_op, val));
+            return Some(format!("{col}={pg_op}.{val}"));
         }
     }
 
@@ -566,7 +567,7 @@ fn parse_postgrest_filter(cond: &str) -> Option<String> {
             .trim()
             .trim_matches(|c: char| c == '\'' || c == '"')
             .replace('%', "*");
-        return Some(format!("{}=like.{}", col, val));
+        return Some(format!("{col}=like.{val}"));
     }
     if let Some(pos) = upper.find(" ILIKE ") {
         let col = cond[..pos]
@@ -576,7 +577,7 @@ fn parse_postgrest_filter(cond: &str) -> Option<String> {
             .trim()
             .trim_matches(|c: char| c == '\'' || c == '"')
             .replace('%', "*");
-        return Some(format!("{}=ilike.{}", col, val));
+        return Some(format!("{col}=ilike.{val}"));
     }
 
     None
@@ -602,7 +603,7 @@ pub(crate) async fn execute_neon(
         AppError::Validation("Cannot extract host from Neon connection string".into())
     })?;
 
-    let sql_url = format!("https://{}/sql", host);
+    let sql_url = format!("https://{host}/sql");
 
     let client = reqwest::Client::new();
     let resp = client
@@ -657,12 +658,12 @@ pub(crate) async fn execute_upstash(
         return Err(AppError::Validation("Empty Redis command".into()));
     }
 
-    let url = format!("{}", redis_url.trim_end_matches('/'));
+    let url = redis_url.trim_end_matches('/').to_string();
 
     let client = reqwest::Client::new();
     let resp = client
         .post(&url)
-        .header("Authorization", format!("Bearer {}", token))
+        .header("Authorization", format!("Bearer {token}"))
         .header("Content-Type", "application/json")
         .json(&parts)
         .send()
@@ -705,7 +706,7 @@ pub(crate) async fn execute_planetscale(
         .get("password")
         .ok_or_else(|| AppError::Validation("Missing password field for PlanetScale".into()))?;
 
-    let url = format!("https://{}/psdb.v1alpha1.Database/Execute", host);
+    let url = format!("https://{host}/psdb.v1alpha1.Database/Execute");
 
     let client = reqwest::Client::new();
     let resp = client
@@ -958,6 +959,494 @@ pub(crate) fn extract_pg_host(conn_str: &str) -> Option<String> {
         }
     } else {
         None
+    }
+}
+
+// ============================================================================
+// Convex — function execution & schema introspection via HTTP API
+// ============================================================================
+
+/// Extract deploy key and deployment URL from credential fields.
+fn convex_creds(fields: &HashMap<String, String>) -> Result<(String, String), AppError> {
+    let deployment_url = fields
+        .get("deployment_url")
+        .ok_or_else(|| AppError::Validation("Missing deployment_url field".into()))?
+        .trim_end_matches('/')
+        .to_string();
+    let deploy_key = fields
+        .get("deploy_key")
+        .ok_or_else(|| AppError::Validation("Missing deploy_key field".into()))?
+        .clone();
+    Ok((deployment_url, deploy_key))
+}
+
+/// Execute a Convex query or mutation via the HTTP API.
+///
+/// The query text should be a JSON body for the `/api/query` or `/api/mutation`
+/// endpoint, e.g.: `{ "path": "messages:list", "args": {} }`
+///
+/// Alternatively, a shorthand like `tableName` or `tableName:functionName` is
+/// accepted and expanded into a list_snapshot request for table browsing.
+async fn execute_convex(
+    fields: &HashMap<String, String>,
+    query_text: &str,
+) -> Result<QueryResult, AppError> {
+    let (deployment_url, deploy_key) = convex_creds(fields)?;
+    let trimmed = query_text.trim();
+
+    // If it looks like JSON, treat as a raw function call
+    if trimmed.starts_with('{') {
+        let body: Value = serde_json::from_str(trimmed).map_err(|e| {
+            AppError::Validation(format!("Invalid JSON body: {e}"))
+        })?;
+
+        // Determine endpoint: presence of "mutation" key or path containing "mutation" → /api/mutation
+        let path_str = body.get("path").and_then(|p| p.as_str()).unwrap_or("");
+        let endpoint = if path_str.contains("mutation") || body.get("mutation").is_some() {
+            "mutation"
+        } else if path_str.contains("action") || body.get("action").is_some() {
+            "action"
+        } else {
+            "query"
+        };
+
+        let url = format!("{deployment_url}/api/{endpoint}");
+        let client = reqwest::Client::new();
+        let resp = client
+            .post(&url)
+            .header("Authorization", format!("Convex {deploy_key}"))
+            .header("Content-Type", "application/json")
+            .json(&body)
+            .send()
+            .await
+            .map_err(|e| AppError::Internal(format!("Convex request failed: {e}")))?;
+
+        let status = resp.status();
+        let resp_body: Value = resp
+            .json()
+            .await
+            .map_err(|e| AppError::Internal(format!("Failed to parse Convex response: {e}")))?;
+
+        if !status.is_success() || resp_body.get("status").and_then(|s| s.as_str()) == Some("error") {
+            let msg = resp_body
+                .get("errorMessage")
+                .and_then(|m| m.as_str())
+                .unwrap_or("Unknown error");
+            return Err(AppError::Internal(format!("Convex {endpoint} failed: {msg}")));
+        }
+
+        return convex_value_to_query_result(&resp_body.get("value").cloned().unwrap_or(Value::Null));
+    }
+
+    // Shorthand: treat as table name — list documents via /api/list_snapshot
+    let table_name = trimmed
+        .trim_matches('"')
+        .trim_matches('\'');
+    convex_list_snapshot(&deployment_url, &deploy_key, Some(table_name)).await
+}
+
+/// List documents from a Convex table via the streaming export snapshot API.
+async fn convex_list_snapshot(
+    deployment_url: &str,
+    deploy_key: &str,
+    table_name: Option<&str>,
+) -> Result<QueryResult, AppError> {
+    let mut url = format!("{deployment_url}/api/list_snapshot?format=json");
+    if let Some(tn) = table_name {
+        url.push_str(&format!("&tableName={tn}"));
+    }
+
+    let client = reqwest::Client::new();
+    let resp = client
+        .get(&url)
+        .header("Authorization", format!("Convex {deploy_key}"))
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("Convex list_snapshot failed: {e}")))?;
+
+    let status = resp.status();
+
+    // list_snapshot is also part of Streaming Export — requires Professional plan
+    if status == reqwest::StatusCode::FORBIDDEN {
+        let tn_hint = table_name.map(|n| format!(" '{n}'")).unwrap_or_default();
+        return Err(AppError::Internal(format!(
+            "Browsing table{tn_hint} via list_snapshot requires the Convex Professional plan. \
+             On the free plan, call your query functions instead:\n\n\
+             {{\"path\": \"myModule:listItems\", \"args\": {{}}}}"
+        )));
+    }
+
+    let body: Value = resp
+        .json()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to parse Convex response: {e}")))?;
+
+    if !status.is_success() {
+        let msg = body
+            .get("errorMessage")
+            .or_else(|| body.get("message"))
+            .and_then(|m| m.as_str())
+            .unwrap_or("Unknown error");
+        return Err(AppError::Internal(format!(
+            "Convex list_snapshot failed (HTTP {status}): {msg}"
+        )));
+    }
+
+    let values = body
+        .get("values")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+
+    if values.is_empty() {
+        return Ok(QueryResult {
+            columns: vec!["(no documents)".into()],
+            rows: vec![],
+            row_count: 0,
+            duration_ms: 0,
+            truncated: false,
+        });
+    }
+
+    // Collect all unique keys from documents to build columns (_id first)
+    let mut columns = vec!["_id".to_string()];
+    for doc in &values {
+        if let Some(obj) = doc.as_object() {
+            for key in obj.keys() {
+                if key != "_id" && !columns.contains(key) {
+                    columns.push(key.clone());
+                }
+            }
+        }
+    }
+
+    let truncated = values.len() > MAX_ROWS;
+    let rows: Vec<Vec<Value>> = values
+        .iter()
+        .take(MAX_ROWS)
+        .map(|doc| {
+            columns
+                .iter()
+                .map(|col| doc.get(col).cloned().unwrap_or(Value::Null))
+                .collect()
+        })
+        .collect();
+
+    let row_count = rows.len();
+    Ok(QueryResult {
+        columns,
+        rows,
+        row_count,
+        duration_ms: 0,
+        truncated,
+    })
+}
+
+/// Introspect Convex tables via the `/api/json_schemas` streaming export endpoint.
+///
+/// This endpoint requires the Convex Professional plan. On free plans it returns
+/// a 403, in which case we fall back to an empty result with guidance.
+async fn introspect_convex_tables(
+    fields: &HashMap<String, String>,
+) -> Result<QueryResult, AppError> {
+    let (deployment_url, deploy_key) = convex_creds(fields)?;
+    let url = format!("{deployment_url}/api/json_schemas?format=json");
+
+    let client = reqwest::Client::new();
+    let resp = client
+        .get(&url)
+        .header("Authorization", format!("Convex {deploy_key}"))
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("Convex json_schemas request failed: {e}")))?;
+
+    let status = resp.status();
+
+    // 403 = Streaming Export requires Professional plan — return helpful guidance
+    if status == reqwest::StatusCode::FORBIDDEN {
+        return Err(AppError::Internal(
+            "Schema introspection requires the Convex Professional plan (Streaming Export API). \
+             On the free Starter plan, use the Console tab to query tables directly:\n\n\
+             • Enter a table name to browse its documents\n\
+             • Use JSON to call your functions: {\"path\": \"myModule:myQuery\", \"args\": {}}"
+                .into(),
+        ));
+    }
+
+    let body: Value = resp
+        .json()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to parse Convex schema response: {e}")))?;
+
+    if !status.is_success() {
+        let msg = body
+            .get("errorMessage")
+            .or_else(|| body.get("message"))
+            .and_then(|m| m.as_str())
+            .unwrap_or("Unknown error");
+        return Err(AppError::Internal(format!(
+            "Convex json_schemas failed (HTTP {status}): {msg}"
+        )));
+    }
+
+    // The response is a JSON Schema with table definitions under various paths.
+    let tables = extract_convex_table_names(&body);
+
+    let rows: Vec<Vec<Value>> = tables
+        .iter()
+        .map(|name| {
+            vec![
+                Value::String(name.clone()),
+                Value::String("DOCUMENT".to_string()),
+            ]
+        })
+        .collect();
+
+    let row_count = rows.len();
+    Ok(QueryResult {
+        columns: vec!["table_name".into(), "table_type".into()],
+        rows,
+        row_count,
+        duration_ms: 0,
+        truncated: false,
+    })
+}
+
+/// Extract table names from Convex JSON Schema response.
+///
+/// The schema has `$defs` with entries like `"tableName"` or uses `oneOf`
+/// with `$ref` paths. We look for object definitions that have `properties`
+/// containing `_id` (which indicates a document table).
+fn extract_convex_table_names(schema: &Value) -> Vec<String> {
+    let mut tables = Vec::new();
+
+    // Method 1: Look in "$defs" for table definitions
+    if let Some(defs) = schema.get("$defs").and_then(|d| d.as_object()) {
+        for (name, def) in defs {
+            // Skip internal/system tables
+            if name.starts_with('_') {
+                continue;
+            }
+            // Table definitions typically have "type": "object" with properties
+            if def.get("type").and_then(|t| t.as_str()) == Some("object") {
+                tables.push(name.clone());
+            }
+        }
+    }
+
+    // Method 2: Look in "anyOf" / "oneOf" for $ref table references
+    for key in &["anyOf", "oneOf"] {
+        if let Some(variants) = schema.get(key).and_then(|v| v.as_array()) {
+            for variant in variants {
+                if let Some(ref_path) = variant.get("$ref").and_then(|r| r.as_str()) {
+                    // "$ref": "#/$defs/tableName" → extract tableName
+                    if let Some(name) = ref_path.strip_prefix("#/$defs/") {
+                        if !name.starts_with('_') && !tables.contains(&name.to_string()) {
+                            tables.push(name.to_string());
+                        }
+                    }
+                }
+                // Also check if the variant has a $description with table name
+                if let Some(desc) = variant.get("$description").and_then(|d| d.as_str()) {
+                    if desc.contains("table:") {
+                        if let Some(name) = desc.strip_prefix("table:") {
+                            let name = name.trim().to_string();
+                            if !name.starts_with('_') && !tables.contains(&name) {
+                                tables.push(name);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    tables.sort();
+    tables
+}
+
+/// Introspect columns (document fields) for a Convex table.
+///
+/// Like table introspection, this requires the Professional plan.
+async fn introspect_convex_columns(
+    fields: &HashMap<String, String>,
+    table_name: &str,
+) -> Result<QueryResult, AppError> {
+    let (deployment_url, deploy_key) = convex_creds(fields)?;
+    let url = format!("{deployment_url}/api/json_schemas?format=json");
+
+    let client = reqwest::Client::new();
+    let resp = client
+        .get(&url)
+        .header("Authorization", format!("Convex {deploy_key}"))
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("Convex json_schemas request failed: {e}")))?;
+
+    let status = resp.status();
+
+    if status == reqwest::StatusCode::FORBIDDEN {
+        return Err(AppError::Internal(
+            "Column introspection requires the Convex Professional plan (Streaming Export API). \
+             Browse documents directly using the Console tab instead."
+                .into(),
+        ));
+    }
+
+    let body: Value = resp
+        .json()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to parse Convex schema response: {e}")))?;
+
+    if !status.is_success() {
+        let msg = body
+            .get("errorMessage")
+            .and_then(|m| m.as_str())
+            .unwrap_or("Unknown error");
+        return Err(AppError::Internal(format!(
+            "Convex json_schemas failed (HTTP {status}): {msg}"
+        )));
+    }
+
+    // Find the table definition in $defs
+    let table_def = body
+        .get("$defs")
+        .and_then(|d| d.get(table_name))
+        .ok_or_else(|| {
+            AppError::Internal(format!("Table '{table_name}' not found in Convex schema"))
+        })?;
+
+    let empty_map = serde_json::Map::new();
+    let properties = table_def
+        .get("properties")
+        .and_then(|p| p.as_object())
+        .unwrap_or(&empty_map);
+
+    let required: Vec<String> = table_def
+        .get("required")
+        .and_then(|r| r.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str().map(String::from))
+                .collect()
+        })
+        .unwrap_or_default();
+
+    let rows: Vec<Vec<Value>> = properties
+        .iter()
+        .map(|(col_name, col_def)| {
+            // Convex types: use "type" field or "$description" annotation
+            let convex_type = col_def
+                .get("$description")
+                .and_then(|d| d.as_str())
+                .or_else(|| col_def.get("type").and_then(|t| t.as_str()))
+                .unwrap_or("unknown");
+
+            let is_nullable = if required.contains(col_name) {
+                "NO"
+            } else {
+                "YES"
+            };
+
+            vec![
+                Value::String(col_name.clone()),
+                Value::String(convex_type.to_string()),
+                Value::String(is_nullable.to_string()),
+                Value::Null, // no default concept in Convex
+            ]
+        })
+        .collect();
+
+    let row_count = rows.len();
+    Ok(QueryResult {
+        columns: vec![
+            "column_name".into(),
+            "data_type".into(),
+            "is_nullable".into(),
+            "column_default".into(),
+        ],
+        rows,
+        row_count,
+        duration_ms: 0,
+        truncated: false,
+    })
+}
+
+/// Convert a Convex function return value into a QueryResult.
+fn convex_value_to_query_result(value: &Value) -> Result<QueryResult, AppError> {
+    match value {
+        Value::Array(arr) => {
+            if arr.is_empty() {
+                return Ok(QueryResult {
+                    columns: vec!["(empty)".into()],
+                    rows: vec![],
+                    row_count: 0,
+                    duration_ms: 0,
+                    truncated: false,
+                });
+            }
+
+            // Collect all unique keys from array items (_id first)
+            let mut columns = vec!["_id".to_string()];
+            for item in arr {
+                if let Some(obj) = item.as_object() {
+                    for key in obj.keys() {
+                        if key != "_id" && !columns.contains(key) {
+                            columns.push(key.clone());
+                        }
+                    }
+                }
+            }
+
+            let truncated = arr.len() > MAX_ROWS;
+            let rows: Vec<Vec<Value>> = arr
+                .iter()
+                .take(MAX_ROWS)
+                .map(|item| {
+                    columns
+                        .iter()
+                        .map(|col| item.get(col).cloned().unwrap_or(Value::Null))
+                        .collect()
+                })
+                .collect();
+
+            let row_count = rows.len();
+            Ok(QueryResult {
+                columns,
+                rows,
+                row_count,
+                duration_ms: 0,
+                truncated,
+            })
+        }
+        Value::Object(_) => {
+            // Single document result — present as single-row table
+            let columns: Vec<String> = value
+                .as_object()
+                .map(|o| o.keys().cloned().collect())
+                .unwrap_or_default();
+            let row: Vec<Value> = columns
+                .iter()
+                .map(|col| value.get(col).cloned().unwrap_or(Value::Null))
+                .collect();
+            Ok(QueryResult {
+                columns,
+                rows: vec![row],
+                row_count: 1,
+                duration_ms: 0,
+                truncated: false,
+            })
+        }
+        _ => {
+            // Scalar result
+            Ok(QueryResult {
+                columns: vec!["result".into()],
+                rows: vec![vec![value.clone()]],
+                row_count: 1,
+                duration_ms: 0,
+                truncated: false,
+            })
+        }
     }
 }
 

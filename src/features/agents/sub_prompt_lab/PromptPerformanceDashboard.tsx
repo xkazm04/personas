@@ -136,12 +136,12 @@ export function PromptPerformanceDashboard({
       {compareMode && (
         <div className="flex items-center gap-3 px-3 py-2 bg-secondary/20 border border-primary/10 rounded-xl">
           <span className="text-sm text-muted-foreground/60">Compare versions:</span>
-          <ThemedSelect value={compareA ?? ''} onChange={(e) => setCompareA(e.target.value ? Number(e.target.value) : null)} className="px-2 py-1 w-auto" wrapperClassName="inline-block">
+          <ThemedSelect value={String(compareA ?? '')} onChange={(e) => setCompareA(e.target.value ? Number(e.target.value) : null)} className="px-2 py-1 w-auto" wrapperClassName="inline-block">
             <option value="">Version A</option>
             {versionNumbers.map(n => <option key={n} value={n}>v{n}</option>)}
           </ThemedSelect>
           <span className="text-sm text-muted-foreground/40">vs</span>
-          <ThemedSelect value={compareB ?? ''} onChange={(e) => setCompareB(e.target.value ? Number(e.target.value) : null)} className="px-2 py-1 w-auto" wrapperClassName="inline-block">
+          <ThemedSelect value={String(compareB ?? '')} onChange={(e) => setCompareB(e.target.value ? Number(e.target.value) : null)} className="px-2 py-1 w-auto" wrapperClassName="inline-block">
             <option value="">Version B</option>
             {versionNumbers.map(n => <option key={n} value={n}>v{n}</option>)}
           </ThemedSelect>
