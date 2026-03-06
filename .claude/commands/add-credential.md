@@ -281,7 +281,47 @@ If the service has a fixed API base URL (not user-specific), add it to the `well
 
 Skip this step if the service requires a user-provided URL (self-hosted instances).
 
-## Step 7: Verify
+## Step 7: Sync to Supabase Catalog
+
+Upsert the new connector to the `connector_catalog` table in Supabase so it's available for web exposure.
+
+Use the Supabase REST API (PostgREST) to upsert a single row. Requires `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` (or `SUPABASE_ANON_KEY`) env vars.
+
+```bash
+# Extract the row data from the JSON file and upsert via curl
+node -e "
+const c = require('./scripts/connectors/builtin/{name}.json');
+const m = c.metadata || {};
+const row = {
+  id: c.id, name: c.name, label: c.label,
+  summary: m.summary || null,
+  category: c.category,
+  auth_type: m.auth_type || null,
+  auth_type_label: m.auth_type_label || null,
+  pricing_tier: m.pricing_tier || 'free',
+  icon_url: c.icon_url || null,
+  color: c.color || null,
+  docs_url: m.docs_url || null,
+  is_active: true,
+};
+console.log(JSON.stringify(row));
+" | curl -s -X POST \
+  '\$SUPABASE_URL/rest/v1/connector_catalog' \
+  -H 'Content-Type: application/json' \
+  -H 'apikey: \$SUPABASE_KEY' \
+  -H 'Authorization: Bearer \$SUPABASE_KEY' \
+  -H 'Prefer: resolution=merge-duplicates,return=minimal' \
+  -d @-
+```
+
+Alternatively, run the full seed script which processes all connectors:
+```bash
+node scripts/connectors/seed-supabase-catalog.mjs
+```
+
+If the env vars are not configured, skip this step and inform the user they can run the seed script later.
+
+## Step 8: Verify
 
 Run these checks:
 1. `cargo check` in `src-tauri/` — Rust compilation
@@ -291,7 +331,7 @@ Run these checks:
 
 Report any errors and fix them before completing.
 
-## Step 8: Summary
+## Step 9: Summary
 
 Print a completion summary:
 ```
@@ -303,6 +343,7 @@ Connector Added: {Display Name}
   Endpoints:  {N} API Explorer endpoints
   Icon:       {local SVG or CDN URL}
   MCP:        {package name or "none available"}
+  Supabase:   {synced | skipped (no env vars)}
 
 Files created/modified:
   + scripts/connectors/builtin/{name}.json
@@ -315,4 +356,5 @@ Files created/modified:
   ~ src/lib/credentials/catalogApiEndpoints.ts
   ~ src/lib/credentials/connectorLicensing.ts
   ~ src/lib/credentials/connectorRoles.ts
+  → Supabase connector_catalog (upsert)
 ```

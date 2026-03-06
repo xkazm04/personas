@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { devtools, persist } from "zustand/middleware";
+import { persist } from "zustand/middleware";
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import { listen } from "@tauri-apps/api/event";
 import type { AuthUser, AuthStateResponse } from "@/api/auth";
@@ -37,7 +37,6 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>()(
-  devtools(
     persist(
       (set) => ({
         user: null,
@@ -107,8 +106,6 @@ export const useAuthStore = create<AuthState>()(
         }),
       },
     ),
-    { name: "auth-store" },
-  ),
 );
 
 export const AUTH_LOGIN_EVENT = "personas:auth-login";

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, lazy, Suspense } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMotion } from '@/hooks/utility/useMotion';
 import { usePersonaStore } from '@/stores/personaStore';
@@ -13,12 +13,10 @@ import CloudDeployPanel from '@/features/deployment/components/CloudDeployPanel'
 import SettingsPage from '@/features/settings/components/SettingsPage';
 import CreationWizard from '@/features/agents/components/CreationWizard';
 import { CredentialNavProvider } from '@/features/vault/hooks/CredentialNavContext';
-import PanelSkeleton from '@/features/shared/components/PanelSkeleton';
 import { ErrorBanner } from '@/features/shared/components/ErrorBanner';
-
-const TeamCanvas = lazy(() => import('@/features/pipeline/components/TeamCanvas'));
-const OverviewPage = lazy(() => import('@/features/overview/components/OverviewPage'));
-const GitLabPanel = lazy(() => import('@/features/gitlab/components/GitLabPanel'));
+import TeamCanvas from '@/features/pipeline/components/TeamCanvas';
+import OverviewPage from '@/features/overview/components/OverviewPage';
+import GitLabPanel from '@/features/gitlab/components/GitLabPanel';
 
 export default function PersonasPage() {
   const { shouldAnimate, transition } = useMotion();
@@ -39,7 +37,6 @@ export default function PersonasPage() {
 
   const fetchDetail = usePersonaStore((s) => s.fetchDetail);
 
-  const lazyFallback = <PanelSkeleton />;
 
   // True only after fetchPersonas has settled (success or fail).
   // Prevents showing CreationWizard before the first load completes.
@@ -93,11 +90,7 @@ export default function PersonasPage() {
 
     if (sidebarSection === 'home') return <HomePage />;
     if (sidebarSection === 'team') {
-      return (
-        <Suspense fallback={lazyFallback}>
-          <TeamCanvas />
-        </Suspense>
-      );
+      return <TeamCanvas />;
     }
     if (sidebarSection === 'cloud') {
       return (
@@ -111,9 +104,7 @@ export default function PersonasPage() {
             className="h-full"
           >
             {cloudTab === 'gitlab' ? (
-              <Suspense fallback={lazyFallback}>
-                <GitLabPanel />
-              </Suspense>
+              <GitLabPanel />
             ) : (
               <CloudDeployPanel />
             )}
@@ -122,11 +113,7 @@ export default function PersonasPage() {
       );
     }
     if (sidebarSection === 'overview') {
-      return (
-        <Suspense fallback={lazyFallback}>
-          <OverviewPage />
-        </Suspense>
-      );
+      return <OverviewPage />;
     }
     if (sidebarSection === 'credentials') return <CredentialManager />;
     if (sidebarSection === 'events') return <EventsPage />;

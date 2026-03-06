@@ -1,4 +1,3 @@
-import { lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
 import DashboardHome from '@/features/overview/components/DashboardHome';
@@ -15,9 +14,7 @@ import WorkflowsDashboard from '@/features/overview/sub_workflows/WorkflowsDashb
 import TierUsageDashboard from '@/features/overview/sub_tier/TierUsageDashboard';
 import CronAgentsPage from '@/features/overview/sub_cron_agents/CronAgentsPage';
 import { OverviewFilterProvider } from '@/features/overview/components/OverviewFilterContext';
-import PanelSkeleton from '@/features/shared/components/PanelSkeleton';
-
-const AnalyticsDashboard = lazy(() => import('@/features/overview/sub_analytics/AnalyticsDashboard'));
+import AnalyticsDashboard from '@/features/overview/sub_analytics/AnalyticsDashboard';
 
 export default function OverviewPage() {
   const overviewTab = usePersonaStore((s) => s.overviewTab);
@@ -37,7 +34,7 @@ export default function OverviewPage() {
         overviewTab === 'messages' ? <MessageList /> :
         overviewTab === 'events' ? <EventLogList /> :
         overviewTab === 'analytics' || overviewTab === 'usage' || overviewTab === 'observability' ? (
-          <Suspense fallback={<PanelSkeleton />}><AnalyticsDashboard /></Suspense>
+          <AnalyticsDashboard />
         ) :
         overviewTab === 'realtime' ? <RealtimeVisualizerPage /> :
         overviewTab === 'memories' ? <MemoriesPage /> :
