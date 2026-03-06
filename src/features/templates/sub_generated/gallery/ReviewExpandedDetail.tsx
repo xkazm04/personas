@@ -43,7 +43,7 @@ export function ReviewExpandedDetail({
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* 1. Summary Card */}
       {designResult.summary && (
         <div className="bg-gradient-to-r from-violet-500/5 to-transparent border border-violet-500/10 rounded-xl px-4 py-3">

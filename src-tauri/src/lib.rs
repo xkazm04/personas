@@ -286,6 +286,12 @@ pub fn run() {
             // Core — Import/Export
             commands::core::import_export::export_persona,
             commands::core::import_export::import_persona,
+            // Core — Data Portability
+            commands::core::data_portability::get_export_stats,
+            commands::core::data_portability::export_full,
+            commands::core::data_portability::export_selective,
+            commands::core::data_portability::import_portability_bundle,
+            commands::core::data_portability::preview_competitive_import,
             // Execution — Executions
             commands::execution::executions::list_executions,
             commands::execution::executions::get_execution,
@@ -559,6 +565,8 @@ pub fn run() {
             commands::communication::observability::rollback_prompt_version,
             commands::communication::observability::get_prompt_error_rate,
             commands::communication::observability::run_prompt_ab_test,
+            // Communication — SLA Dashboard
+            commands::communication::sla::get_sla_dashboard,
             // Teams
             commands::teams::teams::list_teams,
             commands::teams::teams::get_team_counts,
@@ -661,6 +669,13 @@ pub fn run() {
             commands::infrastructure::settings::get_app_setting,
             commands::infrastructure::settings::set_app_setting,
             commands::infrastructure::settings::delete_app_setting,
+            // Infrastructure — BYOM (Bring Your Own Model)
+            commands::infrastructure::byom::get_byom_policy,
+            commands::infrastructure::byom::set_byom_policy,
+            commands::infrastructure::byom::delete_byom_policy,
+            commands::infrastructure::byom::list_provider_audit_log,
+            commands::infrastructure::byom::list_provider_audit_by_persona,
+            commands::infrastructure::byom::get_provider_usage_stats,
             // Infrastructure — Cloud
             commands::infrastructure::cloud::cloud_connect,
             commands::infrastructure::cloud::cloud_reconnect_from_keyring,
@@ -683,8 +698,13 @@ pub fn run() {
             commands::infrastructure::gitlab::gitlab_list_agents,
             commands::infrastructure::gitlab::gitlab_undeploy_agent,
             commands::infrastructure::gitlab::gitlab_revoke_credentials,
+            // Workflows
+            commands::infrastructure::workflows::get_workflows_overview,
+            commands::infrastructure::workflows::get_workflow_job_output,
+            commands::infrastructure::workflows::cancel_workflow_job,
             // Notifications
             notifications::send_app_notification,
+            notifications::test_notification_channel,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

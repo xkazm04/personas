@@ -67,13 +67,13 @@ export default function PipelineControls({
   const progressText = getProgressText(nodeStatuses);
 
   return (
-    <div className="sticky bottom-0 z-20 bg-secondary/80 backdrop-blur-sm border-t border-primary/15 px-4 py-3">
+    <div className="sticky bottom-0 z-20 bg-secondary/70 backdrop-blur-lg border-t border-border/30 px-3 py-2">
       <div className="flex items-center gap-4">
         {/* Execute button */}
         <button
           onClick={onExecute}
           disabled={isRunning || isDryRunActive}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
             isRunning || isDryRunActive
               ? 'bg-primary/10 text-muted-foreground cursor-not-allowed'
               : 'bg-indigo-500 text-foreground hover:bg-indigo-600 active:scale-95'
@@ -96,7 +96,7 @@ export default function PipelineControls({
         <button
           onClick={onDryRun}
           disabled={isRunning || isDryRunActive}
-          className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
             isRunning || isDryRunActive
               ? 'bg-primary/10 text-muted-foreground cursor-not-allowed'
               : 'bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-500/25 active:scale-95'

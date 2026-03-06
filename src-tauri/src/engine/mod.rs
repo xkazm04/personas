@@ -1,5 +1,7 @@
+pub mod auto_rollback;
 pub mod background;
 pub mod bus;
+pub mod byom;
 pub mod chain;
 pub mod compiler;
 pub mod connector_strategy;
@@ -860,18 +862,19 @@ fn drain_and_start_next(
 ) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>> {
     Box::pin(async move {
     let persona_id = persona_id.as_str();
-    // Try to promote the next queued execution
+    // Atomically: check capacity, dequeue, register as running, and read queue depth
+    // in a single lock scope to prevent races with concurrent drains or new admissions.
     let next = {
         let mut t = tracker.lock().await;
         t.drain_next(persona_id, max_concurrent)
+            .map(|queued| (queued, t.queue_depth(persona_id)))
     };
 
-    if let Some(queued) = next {
+    if let Some((queued, queue_depth)) = next {
         let exec_id = queued.execution_id.clone();
         let exec_id_for_tasks = exec_id.clone();
 
         // Emit promoted event
-        let queue_depth = tracker.lock().await.queue_depth(persona_id);
         let _ = app.emit(
             "queue-status",
             QueueStatusEvent {

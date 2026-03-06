@@ -20,7 +20,7 @@ export default function AccountSettings() {
       />
 
       <ContentBody centered>
-        <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-5">
+        <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-6">
           {isAuthenticated && user ? (
             <>
               <div className="flex items-center gap-4">
@@ -70,7 +70,7 @@ export default function AccountSettings() {
               <button
                 onClick={loginWithGoogle}
                 disabled={isLoading}
-                className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-lg text-sm font-medium
+                className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-sm font-medium
                   bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15
                   transition-colors disabled:opacity-50"
               >

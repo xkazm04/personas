@@ -318,7 +318,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
       {/* Paste modal */}
       {showPasteModal && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-2xl">
-          <div className="w-full max-w-2xl mx-4 bg-background border border-primary/15 rounded-xl shadow-xl p-5 space-y-3">
+          <div className="w-full max-w-2xl mx-4 bg-background border border-primary/15 rounded-xl shadow-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-foreground/80">Paste OpenAPI / Swagger Spec</h3>
               <button

@@ -45,8 +45,8 @@ pub fn create_credential(
     }
 
     // Parse plaintext JSON into field-level rows (the canonical storage path).
-    let field_map: HashMap<String, String> =
-        serde_json::from_str(&input.encrypted_data).unwrap_or_default();
+    let field_map: HashMap<String, String> = serde_json::from_str(&input.encrypted_data)
+        .map_err(|e| AppError::Validation(format!("Invalid credential field data: {}", e)))?;
 
     // Store an empty blob — all secrets live in credential_fields now.
     let name = input.name.clone();
@@ -56,15 +56,9 @@ pub fn create_credential(
         session_encrypted_data: None,
         ..input
     };
-    let cred = repo::create(&state.db, db_input)?;
 
-    // Persist per-field encrypted rows — roll back the credential row on failure
-    if !field_map.is_empty() {
-        if let Err(e) = repo::save_fields(&state.db, &cred.id, &field_map) {
-            let _ = repo::delete(&state.db, &cred.id);
-            return Err(e);
-        }
-    }
+    // Create credential + save fields in a single transaction to prevent orphaned rows
+    let cred = repo::create_with_fields(&state.db, db_input, &field_map)?;
 
     let _ = audit_log::insert(&state.db, &cred.id, &name, "create", None, None, None);
     Ok(cred)
@@ -92,10 +86,11 @@ pub fn update_credential(
     let has_data_change = input.encrypted_data.is_some();
 
     // Parse plaintext fields for field-level storage
-    let field_map: Option<HashMap<String, String>> = input
-        .encrypted_data
-        .as_ref()
-        .and_then(|data| serde_json::from_str(data).ok());
+    let field_map: Option<HashMap<String, String>> = match input.encrypted_data.as_ref() {
+        Some(data) => Some(serde_json::from_str(data)
+            .map_err(|e| AppError::Validation(format!("Invalid credential field data: {}", e)))?),
+        None => None,
+    };
 
     // Strip blob columns — all secrets live in credential_fields now.
     let metadata_input = UpdateCredentialInput {

@@ -232,7 +232,7 @@ export function UsageDashboard() {
               </div>
               <button
                 onClick={() => setSidebarSection('personas')}
-                className="mt-2 flex items-center justify-center w-full gap-2 px-5 py-3 bg-gradient-to-b from-primary/15 to-primary/5 hover:from-primary/20 hover:to-primary/10 active:scale-[0.98] text-primary border border-primary/20 rounded-xl text-sm font-bold transition-all group shadow-sm"
+                className="mt-2 flex items-center justify-center w-full gap-2 px-4 py-3 bg-gradient-to-b from-primary/15 to-primary/5 hover:from-primary/20 hover:to-primary/10 active:scale-[0.98] text-primary border border-primary/20 rounded-xl text-sm font-bold transition-all group shadow-sm"
               >
                 {personas.length > 0 ? (
                   <><Play className="w-4 h-4 fill-primary/20" />Run a persona</>

@@ -144,7 +144,7 @@ function CustomView({ cases, validCount, onAdd, onRemove, onUpdateCase, onFileUp
               </div>
 
               {/* Row 2: instruction */}
-              <div className="ml-7">
+              <div className="ml-8">
                 <textarea
                   value={c.instruction}
                   onChange={(e) => onUpdateCase(index, 'instruction', e.target.value)}
@@ -162,7 +162,7 @@ function CustomView({ cases, validCount, onAdd, onRemove, onUpdateCase, onFileUp
               </div>
 
               {/* Row 3: metadata dropdowns */}
-              <div className="ml-7 flex items-center gap-2 flex-wrap">
+              <div className="ml-8 flex items-center gap-2 flex-wrap">
                 <select
                   value={c.category ?? ''}
                   onChange={(e) => onUpdateCase(index, 'category', e.target.value)}

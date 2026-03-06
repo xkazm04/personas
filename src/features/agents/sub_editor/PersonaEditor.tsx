@@ -8,6 +8,7 @@ import { useEditorSave } from '@/features/agents/sub_editor/useEditorSave';
 import { UnsavedChangesBanner, DesignNudgeBanner, CloudNudgeBanner } from '@/features/agents/sub_editor/EditorBanners';
 import { EditorTabBar } from '@/features/agents/sub_editor/EditorTabBar';
 import { PersonaEditorHeader } from '@/features/agents/sub_editor/PersonaEditorHeader';
+import PanelSkeleton from '@/features/shared/components/PanelSkeleton';
 
 const PersonaPromptEditor = lazy(() =>
   import('@/features/agents/sub_prompt/PersonaPromptEditor').then((m) => ({ default: m.PersonaPromptEditor })),
@@ -27,6 +28,9 @@ const DesignTab = lazy(() =>
 const LabTab = lazy(() =>
   import('@/features/agents/sub_lab/LabTab').then((m) => ({ default: m.LabTab })),
 );
+const PromptPerformanceCard = lazy(() =>
+  import('@/features/agents/sub_prompt_lab/PromptPerformanceCard').then((m) => ({ default: m.PromptPerformanceCard })),
+);
 
 export default function PersonaEditor() {
   return (
@@ -39,6 +43,8 @@ export default function PersonaEditor() {
 function PersonaEditorInner() {
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
   const editorTab = usePersonaStore((s) => s.editorTab);
+  const setEditorTab = usePersonaStore((s) => s.setEditorTab);
+  const setLabMode = usePersonaStore((s) => s.setLabMode);
   const deletePersona = usePersonaStore((s) => s.deletePersona);
   const credentials = usePersonaStore((s) => s.credentials);
   const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
@@ -131,6 +137,11 @@ function PersonaEditorInner() {
 
   const changedSections = allDirtyTabs.map((t) => t.charAt(0).toUpperCase() + t.slice(1));
 
+  const handleOpenLab = useCallback(() => {
+    setEditorTab('lab');
+    setLabMode('versions');
+  }, [setEditorTab, setLabMode]);
+
   return (
     <ContentBox>
       <PersonaEditorHeader draft={draft} baseline={baseline} patch={patch} setBaseline={setBaseline} />
@@ -148,6 +159,15 @@ function PersonaEditorInner() {
       <CloudNudgeBanner />
 
       <div className="flex-1 overflow-y-auto p-4">
+        {/* Prompt Performance Summary Card — shown on prompt and use-cases tabs */}
+        {(editorTab === 'prompt' || editorTab === 'use-cases') && (
+          <Suspense fallback={null}>
+            <div className="mb-4">
+              <PromptPerformanceCard personaId={selectedPersona.id} onOpenLab={handleOpenLab} />
+            </div>
+          </Suspense>
+        )}
+
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={editorTab}
@@ -156,7 +176,7 @@ function PersonaEditorInner() {
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.15 }}
           >
-            <Suspense fallback={<div className="py-10 text-sm text-muted-foreground/70">Loading tab...</div>}>
+            <Suspense fallback={<PanelSkeleton variant="tab" />}>
               {editorTab === 'use-cases' && <PersonaUseCasesTab draft={draft} patch={patch} modelDirty={modelDirty} credentials={credentials} connectorDefinitions={connectorDefinitions} />}
               {editorTab === 'prompt' && <PersonaPromptEditor />}
               {editorTab === 'lab' && <LabTab />}

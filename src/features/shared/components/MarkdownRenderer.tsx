@@ -10,7 +10,7 @@ interface MarkdownRendererProps {
 
 const components: Components = {
   h1: ({ children }) => (
-    <h1 className="text-lg font-bold text-primary mb-3 mt-5 pb-1.5 border-b border-primary/20">{children}</h1>
+    <h1 className="text-lg font-bold text-primary mb-3 mt-6 pb-1.5 border-b border-primary/20">{children}</h1>
   ),
   h2: ({ children }) => (
     <h2 className="text-[15px] font-semibold text-primary/90 mb-2.5 mt-4">{children}</h2>

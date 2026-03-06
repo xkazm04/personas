@@ -110,24 +110,26 @@ pub async fn introspect_columns(
     let result = match credential.service_type.as_str() {
         "supabase" => introspect_supabase_columns(&fields, &safe_name).await,
         "neon" => {
-            let q = format!(
+            execute_neon_parameterized(
+                &fields,
                 "SELECT column_name, data_type, is_nullable, column_default \
                  FROM information_schema.columns \
-                 WHERE table_schema = 'public' AND table_name = '{}' \
+                 WHERE table_schema = 'public' AND table_name = $1 \
                  ORDER BY ordinal_position",
-                safe_name
-            );
-            execute_neon(&fields, &q).await
+                &[&safe_name],
+            )
+            .await
         }
         "planetscale" => {
-            let q = format!(
+            execute_planetscale_parameterized(
+                &fields,
                 "SELECT column_name, column_type, is_nullable, column_default \
                  FROM information_schema.columns \
-                 WHERE table_schema = DATABASE() AND table_name = '{}' \
+                 WHERE table_schema = DATABASE() AND table_name = ? \
                  ORDER BY ordinal_position",
-                safe_name
-            );
-            execute_planetscale(&fields, &q).await
+                &[&safe_name],
+            )
+            .await
         }
         other => Err(AppError::Internal(format!(
             "Column introspection is not supported for '{other}'."
@@ -629,6 +631,48 @@ pub(crate) async fn execute_neon(
     parse_neon_response(&body)
 }
 
+/// Execute a parameterized query against Neon (used for introspection to prevent SQL injection).
+async fn execute_neon_parameterized(
+    fields: &HashMap<String, String>,
+    query_text: &str,
+    params: &[&str],
+) -> Result<QueryResult, AppError> {
+    let connection_string = fields
+        .get("connection_string")
+        .or_else(|| fields.get("database_url"))
+        .ok_or_else(|| AppError::Validation("Missing connection_string field for Neon".into()))?;
+
+    let host = extract_pg_host(connection_string).ok_or_else(|| {
+        AppError::Validation("Cannot extract host from Neon connection string".into())
+    })?;
+
+    let sql_url = format!("https://{}/sql", host);
+
+    let client = reqwest::Client::new();
+    let resp = client
+        .post(&sql_url)
+        .header("Neon-Connection-String", connection_string)
+        .header("Content-Type", "application/json")
+        .json(&serde_json::json!({ "query": query_text, "params": params }))
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("Neon request failed: {e}")))?;
+
+    let status = resp.status();
+    let body = resp
+        .text()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to read Neon response: {e}")))?;
+
+    if !status.is_success() {
+        return Err(AppError::Internal(format!(
+            "Neon query failed (HTTP {status}): {body}"
+        )));
+    }
+
+    parse_neon_response(&body)
+}
+
 // ============================================================================
 // Upstash — Redis REST API
 // ============================================================================
@@ -714,6 +758,75 @@ pub(crate) async fn execute_planetscale(
         .header("Content-Type", "application/json")
         .json(&serde_json::json!({
             "query": query_text
+        }))
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("PlanetScale request failed: {e}")))?;
+
+    let status = resp.status();
+    let body = resp
+        .text()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to read PlanetScale response: {e}")))?;
+
+    if !status.is_success() {
+        return Err(AppError::Internal(format!(
+            "PlanetScale query failed (HTTP {status}): {body}"
+        )));
+    }
+
+    parse_planetscale_response(&body)
+}
+
+/// Execute a parameterized query against PlanetScale (used for introspection to prevent SQL injection).
+async fn execute_planetscale_parameterized(
+    fields: &HashMap<String, String>,
+    query_text: &str,
+    params: &[&str],
+) -> Result<QueryResult, AppError> {
+    let host = fields
+        .get("host")
+        .or_else(|| fields.get("database_host"))
+        .ok_or_else(|| AppError::Validation("Missing host field for PlanetScale".into()))?;
+
+    let username = fields
+        .get("username")
+        .ok_or_else(|| AppError::Validation("Missing username field for PlanetScale".into()))?;
+
+    let password = fields
+        .get("password")
+        .ok_or_else(|| AppError::Validation("Missing password field for PlanetScale".into()))?;
+
+    let url = format!("https://{}/psdb.v1alpha1.Database/Execute", host);
+
+    // PlanetScale Vitess API accepts typed bind variables
+    let bind_vars: serde_json::Map<String, Value> = params
+        .iter()
+        .enumerate()
+        .map(|(i, v)| {
+            (
+                format!("v{}", i + 1),
+                serde_json::json!({ "type": "VARCHAR", "value": v }),
+            )
+        })
+        .collect();
+
+    // Replace ? placeholders with :v1, :v2, etc. for Vitess bind variable syntax
+    let mut vitess_query = query_text.to_string();
+    for i in (0..params.len()).rev() {
+        if let Some(pos) = vitess_query.rfind('?') {
+            vitess_query.replace_range(pos..pos + 1, &format!(":v{}", i + 1));
+        }
+    }
+
+    let client = reqwest::Client::new();
+    let resp = client
+        .post(&url)
+        .basic_auth(username, Some(password))
+        .header("Content-Type", "application/json")
+        .json(&serde_json::json!({
+            "query": vitess_query,
+            "bindings": bind_vars
         }))
         .send()
         .await

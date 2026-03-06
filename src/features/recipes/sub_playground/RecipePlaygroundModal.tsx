@@ -46,7 +46,7 @@ export function RecipePlaygroundModal({ recipe, onClose }: RecipePlaygroundModal
         className="relative flex flex-col w-[90vw] max-w-5xl h-[85vh] rounded-xl border border-border/60 bg-background shadow-2xl overflow-hidden"
       >
         {/* Header */}
-        <div className="flex items-center gap-3 px-5 pt-4 pb-0">
+        <div className="flex items-center gap-3 px-4 pt-4 pb-0">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
             <BookOpen className="w-4 h-4 text-primary" />
           </div>
@@ -65,7 +65,7 @@ export function RecipePlaygroundModal({ recipe, onClose }: RecipePlaygroundModal
         </div>
 
         {/* Tab Bar */}
-        <div className="relative flex gap-1 px-5 mt-3 border-b border-border/40">
+        <div className="relative flex gap-1 px-4 mt-3 border-b border-border/40">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;

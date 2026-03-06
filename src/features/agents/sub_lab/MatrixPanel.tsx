@@ -105,7 +105,7 @@ export function MatrixPanel() {
   return (
     <div className="space-y-6">
       <div className="border border-primary/15 rounded-xl overflow-hidden backdrop-blur-sm bg-secondary/40">
-        <div className="p-5 space-y-4">
+        <div className="p-4 space-y-4">
           {!hasPrompt && (
             <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
               <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />

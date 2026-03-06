@@ -19,29 +19,36 @@ export function useEditorSave({ draft, baseline, setBaseline, pendingPersonaId }
   const settingsSaveInFlightRef = useRef<Promise<void> | null>(null);
   const modelSaveInFlightRef = useRef<Promise<void> | null>(null);
 
+  // Keep latest draft/baseline in refs so save callbacks never capture stale state
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+  const baselineRef = useRef(baseline);
+  baselineRef.current = baseline;
+
   const settingsDirty = draftChanged(draft, baseline, SETTINGS_KEYS);
   const modelDirty = draftChanged(draft, baseline, MODEL_KEYS);
 
   const handleSaveSettings = useCallback(async () => {
     while (settingsSaveInFlightRef.current) {
       await settingsSaveInFlightRef.current;
-      if (!draftChanged(draft, baseline, SETTINGS_KEYS)) return;
+      if (!draftChanged(draftRef.current, baselineRef.current, SETTINGS_KEYS)) return;
     }
 
     const savePromise = (async () => {
     if (!selectedPersona) return;
+    const d = draftRef.current;
     await applyPersonaOp(selectedPersona.id, {
       kind: 'UpdateSettings',
-      name: draft.name,
-      description: draft.description || null,
-      icon: draft.icon || null,
-      color: draft.color || null,
-      max_concurrent: draft.maxConcurrent,
-      timeout_ms: draft.timeout,
-      enabled: draft.enabled,
-      sensitive: draft.sensitive,
+      name: d.name,
+      description: d.description || null,
+      icon: d.icon || null,
+      color: d.color || null,
+      max_concurrent: d.maxConcurrent,
+      timeout_ms: d.timeout,
+      enabled: d.enabled,
+      sensitive: d.sensitive,
     });
-    setBaseline((prev) => ({ ...prev, name: draft.name, description: draft.description, icon: draft.icon, color: draft.color, maxConcurrent: draft.maxConcurrent, timeout: draft.timeout, enabled: draft.enabled, sensitive: draft.sensitive }));
+    setBaseline((prev) => ({ ...prev, name: d.name, description: d.description, icon: d.icon, color: d.color, maxConcurrent: d.maxConcurrent, timeout: d.timeout, enabled: d.enabled, sensitive: d.sensitive }));
     })();
 
     settingsSaveInFlightRef.current = savePromise;
@@ -52,20 +59,21 @@ export function useEditorSave({ draft, baseline, setBaseline, pendingPersonaId }
         settingsSaveInFlightRef.current = null;
       }
     }
-  }, [selectedPersona, applyPersonaOp, draft, baseline, setBaseline]);
+  }, [selectedPersona, applyPersonaOp, setBaseline]);
 
   const saveModelSettings = useCallback(async () => {
     while (modelSaveInFlightRef.current) {
       await modelSaveInFlightRef.current;
-      if (!draftChanged(draft, baseline, MODEL_KEYS)) return;
+      if (!draftChanged(draftRef.current, baselineRef.current, MODEL_KEYS)) return;
     }
 
     const savePromise = (async () => {
     if (!selectedPersona) return;
+    const d = draftRef.current;
 
     let profile: string | null = null;
-    const ollamaPreset = getOllamaPreset(draft.selectedModel);
-    const copilotPreset = getCopilotPreset(draft.selectedModel);
+    const ollamaPreset = getOllamaPreset(d.selectedModel);
+    const copilotPreset = getCopilotPreset(d.selectedModel);
 
     if (ollamaPreset) {
       profile = JSON.stringify({
@@ -78,16 +86,16 @@ export function useEditorSave({ draft, baseline, setBaseline, pendingPersonaId }
         model: copilotPreset.modelId,
         provider: 'copilot',
       } satisfies ModelProfile);
-    } else if (draft.selectedModel === 'custom') {
+    } else if (d.selectedModel === 'custom') {
       profile = JSON.stringify({
-        model: draft.customModelName || undefined,
-        provider: draft.selectedProvider,
-        base_url: draft.baseUrl || undefined,
-        auth_token: draft.authToken || undefined,
+        model: d.customModelName || undefined,
+        provider: d.selectedProvider,
+        base_url: d.baseUrl || undefined,
+        auth_token: d.authToken || undefined,
       } satisfies ModelProfile);
-    } else if (draft.selectedModel !== '') {
+    } else if (d.selectedModel !== '') {
       profile = JSON.stringify({
-        model: draft.selectedModel,
+        model: d.selectedModel,
         provider: 'anthropic',
       } satisfies ModelProfile);
     }
@@ -95,10 +103,10 @@ export function useEditorSave({ draft, baseline, setBaseline, pendingPersonaId }
     await applyPersonaOp(selectedPersona.id, {
       kind: 'SwitchModel',
       model_profile: profile,
-      max_budget_usd: draft.maxBudget === '' ? null : draft.maxBudget,
-      max_turns: draft.maxTurns === '' ? null : draft.maxTurns,
+      max_budget_usd: d.maxBudget === '' ? null : d.maxBudget,
+      max_turns: d.maxTurns === '' ? null : d.maxTurns,
     });
-    setBaseline((prev) => ({ ...prev, selectedModel: draft.selectedModel, selectedProvider: draft.selectedProvider, baseUrl: draft.baseUrl, authToken: draft.authToken, customModelName: draft.customModelName, maxBudget: draft.maxBudget, maxTurns: draft.maxTurns }));
+    setBaseline((prev) => ({ ...prev, selectedModel: d.selectedModel, selectedProvider: d.selectedProvider, baseUrl: d.baseUrl, authToken: d.authToken, customModelName: d.customModelName, maxBudget: d.maxBudget, maxTurns: d.maxTurns }));
     })();
 
     modelSaveInFlightRef.current = savePromise;
@@ -109,7 +117,7 @@ export function useEditorSave({ draft, baseline, setBaseline, pendingPersonaId }
         modelSaveInFlightRef.current = null;
       }
     }
-  }, [selectedPersona, applyPersonaOp, draft, baseline, setBaseline]);
+  }, [selectedPersona, applyPersonaOp, setBaseline]);
 
   const { isSaving: isSavingSettings } = useTabSection({
     tab: 'settings',

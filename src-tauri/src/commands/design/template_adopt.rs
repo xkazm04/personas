@@ -83,6 +83,26 @@ fn get_adopt_snapshot_internal(adopt_id: &str) -> Option<TemplateAdoptSnapshot> 
     })
 }
 
+/// List all template adopt job snapshots (for unified workflows view).
+pub fn list_adopt_jobs() -> Vec<crate::background_job::JobSnapshot> {
+    ADOPT_JOBS.list_snapshots()
+}
+
+/// List all template generate job snapshots (for unified workflows view).
+pub fn list_generate_jobs() -> Vec<crate::background_job::JobSnapshot> {
+    GEN_JOBS.list_snapshots()
+}
+
+/// Cancel an adopt job (non-command wrapper for workflows).
+pub fn cancel_adopt_job(app: &tauri::AppHandle, adopt_id: &str) -> Result<(), crate::error::AppError> {
+    ADOPT_JOBS.cancel(app, adopt_id)
+}
+
+/// Cancel a generate job (non-command wrapper for workflows).
+pub fn cancel_generate_job(app: &tauri::AppHandle, gen_id: &str) -> Result<(), crate::error::AppError> {
+    GEN_JOBS.cancel(app, gen_id)
+}
+
 // ── Commands ────────────────────────────────────────────────────
 
 #[allow(clippy::too_many_arguments)]

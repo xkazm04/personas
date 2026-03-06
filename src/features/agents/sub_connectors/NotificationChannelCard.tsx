@@ -1,4 +1,6 @@
-import { X } from 'lucide-react';
+import { useState } from 'react';
+import { X, Send, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { invoke } from '@tauri-apps/api/core';
 import { AccessibleToggle } from '@/features/shared/components/AccessibleToggle';
 import { CredentialPicker, channelIcon } from './CredentialPicker';
 import type { CredentialMetadata } from '@/lib/types/types';
@@ -36,6 +38,24 @@ export function NotificationChannelCard({
   onConfigChange,
   onCredentialChange,
 }: NotificationChannelCardProps) {
+  const [testStatus, setTestStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [testError, setTestError] = useState('');
+
+  const handleTestNotification = async () => {
+    setTestStatus('sending');
+    setTestError('');
+    try {
+      const channelPayload = JSON.stringify({ type, enabled: true, config, credential_id: credentialId });
+      await invoke<string>('test_notification_channel', { channelJson: channelPayload });
+      setTestStatus('success');
+      setTimeout(() => setTestStatus('idle'), 3000);
+    } catch (err) {
+      setTestStatus('error');
+      setTestError(err instanceof Error ? err.message : String(err));
+      setTimeout(() => setTestStatus('idle'), 5000);
+    }
+  };
+
   return (
     <div
       className={`border rounded-xl p-2.5 space-y-2 transition-colors ${
@@ -89,6 +109,34 @@ export function NotificationChannelCard({
           <span className="text-sm text-emerald-400/70 mt-0.5 block">Connected</span>
         ) : (
           <span className="text-sm text-amber-400/70 mt-0.5 block">Credential needed</span>
+        )}
+      </div>
+
+      {/* Test notification button */}
+      <div className="pt-1">
+        <button
+          onClick={handleTestNotification}
+          disabled={!enabled || testStatus === 'sending'}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+            testStatus === 'success'
+              ? 'bg-emerald-500/15 border border-emerald-500/25 text-emerald-300'
+              : testStatus === 'error'
+                ? 'bg-red-500/15 border border-red-500/25 text-red-300'
+                : 'bg-secondary/60 border border-primary/15 text-muted-foreground/90 hover:text-foreground/95 hover:bg-secondary/80'
+          } disabled:opacity-40 disabled:cursor-not-allowed`}
+        >
+          {testStatus === 'sending' ? (
+            <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Sending...</>
+          ) : testStatus === 'success' ? (
+            <><CheckCircle2 className="w-3.5 h-3.5" /> Delivered</>
+          ) : testStatus === 'error' ? (
+            <><AlertCircle className="w-3.5 h-3.5" /> Failed</>
+          ) : (
+            <><Send className="w-3.5 h-3.5" /> Test Notification</>
+          )}
+        </button>
+        {testStatus === 'error' && testError && (
+          <p className="text-xs text-red-400/80 mt-1 truncate" title={testError}>{testError}</p>
         )}
       </div>
     </div>

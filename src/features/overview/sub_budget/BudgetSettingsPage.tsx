@@ -133,7 +133,7 @@ export default function BudgetSettingsPage() {
       )}
 
       {/* Monthly Spend Summary */}
-      <div className="rounded-xl border border-primary/15 bg-secondary/30 p-5">
+      <div className="rounded-xl border border-primary/15 bg-secondary/30 p-4">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
             <TrendingUp className="w-5 h-5 text-primary/70" />

@@ -7,6 +7,7 @@ import { RecipeList } from '@/features/recipes/sub_list/RecipeList';
 import { RecipeEditor } from '@/features/recipes/sub_editor/RecipeEditor';
 import { RecipePlaygroundModal } from '@/features/recipes/sub_playground/RecipePlaygroundModal';
 import { useRecipeViewFSM } from '@/features/recipes/hooks/useRecipeViewFSM';
+import { TRANSITION_FAST, TRANSITION_NORMAL } from '@/features/templates/animationPresets';
 
 export function RecipeManager() {
   const recipes = usePersonaStore((s) => s.recipes);
@@ -114,7 +115,7 @@ export function RecipeManager() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
+              transition={TRANSITION_FAST}
               className="h-full"
             >
               <RecipeList
@@ -133,7 +134,7 @@ export function RecipeManager() {
               initial={{ opacity: 0, x: 12 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -12 }}
-              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              transition={TRANSITION_NORMAL}
               className="h-full"
             >
               <RecipeEditor recipe={null} onSaved={handleSaved} onCancel={() => dispatch({ type: 'GO_LIST' })} />
@@ -146,7 +147,7 @@ export function RecipeManager() {
               initial={{ opacity: 0, x: 12 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -12 }}
-              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              transition={TRANSITION_NORMAL}
               className="h-full"
             >
               <RecipeEditor

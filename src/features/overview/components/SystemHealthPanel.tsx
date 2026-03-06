@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useMotion } from '@/hooks/utility/useMotion';
 import {
   ArrowRight,
   CheckCircle2,
@@ -341,7 +342,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
   const [loading, setLoading] = useState(true);
   const [hasIssues, setHasIssues] = useState(false);
   const [ipcError, setIpcError] = useState(false);
-  const prefersReducedMotion = useReducedMotion();
+  const { shouldAnimate, duration } = useMotion();
   const loginWithGoogle = useAuthStore((s) => s.loginWithGoogle);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const authLoading = useAuthStore((s) => s.isLoading);
@@ -503,10 +504,10 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
                     key={stub.id}
                     initial={{ opacity: 0.5, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: stubIdx * 0.08, duration: prefersReducedMotion ? 0.15 : 0.3 }}
+                    transition={{ delay: shouldAnimate ? stubIdx * 0.08 : 0, duration: shouldAnimate ? 0.3 : duration }}
                     className="rounded-2xl border border-primary/10 bg-secondary/20 shadow-sm overflow-hidden flex flex-col min-h-[160px]"
                   >
-                    <div className="flex items-center gap-3 px-5 py-4 border-b border-primary/5 bg-background/30">
+                    <div className="flex items-center gap-3 px-4 py-4 border-b border-primary/5 bg-background/30">
                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${sectionStyle.badge}`}>
                         <SectionIcon className={`w-4 h-4 ${sectionStyle.icon}`} />
                       </div>
@@ -517,14 +518,14 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
                         <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground/50" />
                       </div>
                     </div>
-                    <div className="px-5 py-4 space-y-4 flex-1 relative overflow-hidden">
+                    <div className="px-4 py-4 space-y-4 flex-1 relative overflow-hidden">
                       <motion.div
                         className="absolute inset-y-0 -left-1/2 w-[200%] bg-gradient-to-r from-transparent via-primary/5 to-transparent"
-                        animate={prefersReducedMotion ? { opacity: 0 } : { x: ['0%', '200%'] }}
+                        animate={shouldAnimate ? { x: ['0%', '200%'] } : { opacity: 0 }}
                         transition={
-                          prefersReducedMotion
-                            ? { duration: 0 }
-                            : { duration: 2, repeat: Infinity, ease: 'linear', delay: stubIdx * 0.15 }
+                          shouldAnimate
+                            ? { duration: 2, repeat: Infinity, ease: 'linear', delay: stubIdx * 0.15 }
+                            : { duration: 0 }
                         }
                       />
                       <div className="flex gap-3">
@@ -560,7 +561,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
                   transition={{ delay: stubIdx * 0.1, duration: 0.25 }}
                   className="rounded-2xl border border-primary/10 bg-secondary/20 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col min-h-[160px] group"
                 >
-                  <div className="flex items-center gap-3 px-5 py-4 border-b border-primary/5 bg-background/30 group-hover:bg-background/50 transition-colors">
+                  <div className="flex items-center gap-3 px-4 py-4 border-b border-primary/5 bg-background/30 group-hover:bg-background/50 transition-colors">
                     <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${sectionStyle.badge}`}>
                       <SectionIcon className={`w-4 h-4 ${sectionStyle.icon}`} />
                     </div>
@@ -574,7 +575,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
 
                   <div className="divide-y divide-primary/5 flex-1 bg-gradient-to-b from-transparent to-black/[0.02]">
                     {section.items.map((check) => (
-                      <div key={check.id} className="flex items-start gap-3 px-5 py-3 hover:bg-white/[0.02] transition-colors">
+                      <div key={check.id} className="flex items-start gap-3 px-4 py-3 hover:bg-white/[0.02] transition-colors">
                         {getStatusIcon(check.status)}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-foreground/80">{check.label}</p>

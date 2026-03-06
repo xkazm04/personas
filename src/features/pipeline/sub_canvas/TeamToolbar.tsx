@@ -33,7 +33,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
   }, []);
 
   return (
-    <div className="flex items-center justify-between px-4 py-2.5 bg-secondary/50 backdrop-blur-sm border-b border-primary/15">
+    <div className="flex items-center justify-between px-3 py-2 bg-secondary/70 backdrop-blur-lg border-b border-border/30">
       <div className="flex items-center gap-3">
         <button
           onClick={onBack}

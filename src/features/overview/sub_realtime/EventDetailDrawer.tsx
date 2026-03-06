@@ -53,7 +53,7 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
       </div>
 
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-2 border-b border-primary/10">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-primary/10">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">
             <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: typeColor }} />
@@ -77,7 +77,7 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-5 py-3 space-y-2">
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
         {/* Metadata grid */}
         <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
           <div className="rounded-lg border border-primary/10 bg-secondary/20 px-2.5 py-2">

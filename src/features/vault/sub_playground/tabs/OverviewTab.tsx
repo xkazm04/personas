@@ -107,7 +107,7 @@ export function OverviewTab({
   }, []);
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="p-6 space-y-6">
       {editError && (
         <VaultErrorBanner message={editError} onDismiss={() => setEditError(null)} variant="inline" />
       )}

@@ -25,7 +25,7 @@ export function DesignPhaseApplied({ result, warnings = [], onReset }: DesignPha
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-      className="flex flex-col items-center py-8 gap-5"
+      className="flex flex-col items-center py-8 gap-6"
       ref={containerRef}
       tabIndex={-1}
     >

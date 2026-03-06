@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, Filter, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { useClickOutside } from '@/hooks/utility/useClickOutside';
+import { useViewportClampAbsolute } from '@/hooks/utility/useViewportClamp';
 import type { ConnectorWithCount } from '@/api/reviews';
 
 export function ConnectorFilterDropdown({
@@ -16,9 +17,11 @@ export function ConnectorFilterDropdown({
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownSearch, setDropdownSearch] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useClickOutside(dropdownRef, isOpen, () => setIsOpen(false));
+  const clampStyle = useViewportClampAbsolute(popupRef, isOpen);
 
   useEffect(() => {
     if (isOpen) {
@@ -71,7 +74,7 @@ export function ConnectorFilterDropdown({
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 z-20 bg-background border border-primary/20 rounded-xl shadow-xl min-w-[280px] overflow-hidden">
+        <div ref={popupRef} style={{ transform: clampStyle.transform }} className="absolute top-full left-0 mt-1 z-20 bg-background border border-primary/20 rounded-xl shadow-xl min-w-[280px] overflow-hidden">
           <div className="px-3 py-2 border-b border-primary/10">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40" />

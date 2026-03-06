@@ -1,7 +1,7 @@
 import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import { Zap, Eye, EyeOff, Copy, CheckCircle2, Clock, CalendarClock, Plus, X } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, type CompositeCondition } from '@/lib/utils/triggerConstants';
+import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, TRIGGER_TEMPLATES, type CompositeCondition } from '@/lib/utils/triggerConstants';
 import { formatInterval } from '@/lib/utils/formatters';
 import { previewCronSchedule, type CronPreview } from '@/api/triggers';
 import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
@@ -345,6 +345,24 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
     fetchCronPreview(expr);
   };
 
+  const applyTemplate = (templateId: string) => {
+    const tpl = TRIGGER_TEMPLATES.find((t) => t.id === templateId);
+    if (!tpl) return;
+    setValidationError(null);
+    setTriggerType(tpl.triggerType);
+    const cfg = tpl.config;
+    if (tpl.triggerType === 'file_watcher') {
+      setWatchPaths((cfg.watch_paths as string[] | undefined) ?? ['']);
+      setWatchEvents((cfg.events as string[] | undefined) ?? ['modify']);
+      setWatchRecursive((cfg.recursive as boolean | undefined) ?? true);
+      setGlobFilter((cfg.glob_filter as string | undefined) ?? '');
+    } else if (tpl.triggerType === 'clipboard') {
+      setClipboardContentType((cfg.content_type as string | undefined) ?? 'text');
+      setClipboardPattern((cfg.pattern as string | undefined) ?? '');
+      setClipboardInterval(String((cfg.interval_seconds as number | undefined) ?? 5));
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, height: 0 }}
@@ -352,6 +370,33 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
       exit={{ opacity: 0, height: 0 }}
       className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-2xl p-4 space-y-4"
     >
+      {/* ── Quick Templates ── */}
+      <div>
+        <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+          Quick Templates
+        </label>
+        <div className="grid grid-cols-2 gap-1.5">
+          {TRIGGER_TEMPLATES.map((tpl) => {
+            const meta = TRIGGER_TYPE_META[tpl.triggerType] || DEFAULT_TRIGGER_META;
+            const Icon = meta.Icon;
+            return (
+              <button
+                key={tpl.id}
+                type="button"
+                onClick={() => applyTemplate(tpl.id)}
+                className="flex items-start gap-2.5 p-2.5 rounded-xl border border-primary/10 bg-background/30 hover:border-primary/25 hover:bg-secondary/30 transition-all text-left group"
+              >
+                <Icon className={`w-4 h-4 mt-0.5 ${meta.color} shrink-0`} />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground/90 truncate">{tpl.label}</p>
+                  <p className="text-sm text-muted-foreground/70 line-clamp-1">{tpl.description}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div>
         <label className="block text-sm font-medium text-foreground/80 mb-1.5">
           Trigger Type

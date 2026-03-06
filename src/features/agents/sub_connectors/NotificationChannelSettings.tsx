@@ -20,9 +20,19 @@ interface NotificationChannelSettingsProps {
 }
 
 const channelTypes: Array<{ type: NotificationChannelType; label: string; configFields: Array<{ key: string; label: string; placeholder: string }> }> = [
-  { type: 'slack', label: 'Slack', configFields: [{ key: 'channel', label: 'Channel', placeholder: '#general' }] },
-  { type: 'telegram', label: 'Telegram', configFields: [{ key: 'chat_id', label: 'Chat ID', placeholder: '123456789' }] },
-  { type: 'email', label: 'Email', configFields: [{ key: 'to', label: 'To Address', placeholder: 'user@example.com' }] },
+  { type: 'slack', label: 'Slack', configFields: [
+    { key: 'webhook_url', label: 'Webhook URL', placeholder: 'https://hooks.slack.com/services/...' },
+    { key: 'channel', label: 'Channel (optional)', placeholder: '#general' },
+  ] },
+  { type: 'telegram', label: 'Telegram', configFields: [
+    { key: 'bot_token', label: 'Bot Token', placeholder: '123456:ABC-DEF...' },
+    { key: 'chat_id', label: 'Chat ID', placeholder: '123456789' },
+  ] },
+  { type: 'email', label: 'Email', configFields: [
+    { key: 'to', label: 'To Address', placeholder: 'user@example.com' },
+    { key: 'from', label: 'From Address (optional)', placeholder: 'noreply@personas.app' },
+    { key: 'sendgrid_api_key', label: 'SendGrid API Key', placeholder: 'SG.xxxx' },
+  ] },
 ];
 
 export function NotificationChannelSettings({ personaId, credentials, connectorDefinitions, draftChannels, onDraftChannelsChange }: NotificationChannelSettingsProps) {
@@ -84,6 +94,7 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
     if (!isDraftMode) setIsDirty(true);
   };
 
+  // Fields whose label contains "(optional)" are skipped during validation.
   const validateChannels = (): string[] => {
     const errors: string[] = [];
     for (const channel of channels) {
@@ -91,6 +102,7 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
       const typeDef = channelTypes.find(t => t.type === channel.type);
       if (!typeDef) continue;
       for (const field of typeDef.configFields) {
+        if (field.label.toLowerCase().includes('(optional)')) continue;
         if (!channel.config[field.key]?.trim()) errors.push(`${typeDef.label}: ${field.label} is required`);
       }
     }
@@ -128,7 +140,7 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
   return (
     <div className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-2xl p-4">
       <SectionHeader
-        className="mb-5"
+        className="mb-6"
         icon={<Bell className="w-3.5 h-3.5" />}
         label="Notification Channels"
       />

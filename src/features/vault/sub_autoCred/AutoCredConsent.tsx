@@ -19,7 +19,7 @@ export function AutoCredConsent({ designResult, onConsent, onCancel }: AutoCredC
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className="space-y-5"
+      className="space-y-4"
     >
       {/* Header */}
       <div className="flex items-start gap-4 p-4 rounded-xl border border-cyan-500/20 bg-cyan-500/5">
@@ -96,7 +96,7 @@ export function AutoCredConsent({ designResult, onConsent, onCancel }: AutoCredC
         </button>
         <button
           onClick={onConsent}
-          className="flex items-center gap-2 px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-cyan-600/20"
+          className="flex items-center gap-2 px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-cyan-600/20"
         >
           <Globe className="w-4 h-4" />
           Start Browser Session

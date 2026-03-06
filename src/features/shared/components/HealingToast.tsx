@@ -101,7 +101,7 @@ export function HealingToast() {
   }, [resolveHealingIssue, dismiss]);
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none max-w-sm">
+    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none max-w-sm" role="status" aria-live="polite" aria-relevant="additions removals">
       <AnimatePresence mode="popLayout">
         {toasts.map((toast) => {
           const styles = SEVERITY_STYLES[toast.payload.severity] ?? SEVERITY_STYLES.medium!;

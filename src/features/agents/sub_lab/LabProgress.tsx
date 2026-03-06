@@ -15,7 +15,7 @@ export function LabProgress() {
           exit={{ opacity: 0, height: 0 }}
           className="overflow-hidden"
         >
-          <div className="p-4 rounded-xl bg-secondary/30 border border-primary/10 space-y-3">
+          <div className="p-4 rounded-xl bg-secondary/30 border border-primary/10 space-y-3" role="status" aria-live="polite">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Loader2 className="w-4 h-4 text-primary animate-spin" />

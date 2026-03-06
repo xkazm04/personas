@@ -118,7 +118,7 @@ export default function TeamList() {
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6 p-5 rounded-2xl bg-secondary/40 backdrop-blur-sm border border-indigo-500/20"
+            className="mb-6 p-4 rounded-2xl bg-secondary/40 backdrop-blur-sm border border-indigo-500/20"
           >
             <div className="space-y-4">
               <div>
@@ -182,7 +182,7 @@ export default function TeamList() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05, duration: 0.25 }}
-              className="group relative p-5 rounded-2xl bg-secondary/40 backdrop-blur-sm border border-primary/15 hover:border-indigo-500/30 cursor-pointer transition-all hover:shadow-[0_0_20px_rgba(99,102,241,0.08)]"
+              className="group relative p-4 rounded-2xl bg-secondary/40 backdrop-blur-sm border border-primary/15 hover:border-indigo-500/30 cursor-pointer transition-all hover:shadow-[0_0_20px_rgba(99,102,241,0.08)]"
               onClick={() => selectTeam(team.id)}
             >
               {/* Color accent bar */}
@@ -302,7 +302,7 @@ export default function TeamList() {
             </p>
             <button
               onClick={() => setShowCreate(true)}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/25 transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/25 transition-all"
             >
               <Plus className="w-4 h-4" />
               <span className="text-sm font-medium">Create Blank Team</span>

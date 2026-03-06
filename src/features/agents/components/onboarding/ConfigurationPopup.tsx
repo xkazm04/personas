@@ -96,7 +96,7 @@ export function ConfigurationPopup({
         exit={{ opacity: 0, scale: 0.95 }}
         className="bg-background border border-primary/15 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
       >
-        <div className="px-5 py-4 border-b border-primary/10">
+        <div className="px-4 py-4 border-b border-primary/10">
           <h3 className="text-sm font-semibold text-foreground/90 flex items-center gap-2">
             <Key className={`w-4 h-4 ${styles.icon}`} />
             {title}
@@ -104,7 +104,7 @@ export function ConfigurationPopup({
           <p className="text-sm text-muted-foreground/90 mt-1">{subtitle}</p>
         </div>
 
-        <div className="px-5 py-4 space-y-3">
+        <div className="px-4 py-4 space-y-3">
           {fields.map((field) => (
             <div key={field.key}>
               <label className="block text-sm font-medium text-foreground/80 mb-1.5">
@@ -130,7 +130,7 @@ export function ConfigurationPopup({
           )}
         </div>
 
-        <div className="px-5 py-3 border-t border-primary/10 flex items-center justify-end gap-2">
+        <div className="px-4 py-3 border-t border-primary/10 flex items-center justify-end gap-2">
           <button
             onClick={onClose}
             className="px-3 py-1.5 text-sm font-medium rounded-lg text-muted-foreground/80 hover:bg-secondary/60 transition-colors"

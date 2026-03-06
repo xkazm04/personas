@@ -14,6 +14,8 @@ import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
 import type { LucideIcon } from 'lucide-react';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 import { isTerminalState } from '@/lib/execution/executionState';
+import { SEVERITY_STYLES } from '@/lib/utils/designTokens';
+import { stripHtml } from '@/lib/utils/sanitizeHtml';
 import { maskSensitiveJson, sanitizeErrorMessage } from '@/lib/utils/maskSensitive';
 import hljs from 'highlight.js/lib/core';
 import jsonLang from 'highlight.js/lib/languages/json';
@@ -43,10 +45,16 @@ interface ErrorAction {
 
 type ErrorSeverity = 'critical' | 'warning' | 'info';
 
-const SEVERITY_CONFIG: Record<ErrorSeverity, { border: string; icon: LucideIcon; iconColor: string }> = {
-  critical: { border: 'border-l-red-500', icon: XCircle, iconColor: 'text-red-400' },
-  warning:  { border: 'border-l-amber-500', icon: AlertTriangle, iconColor: 'text-amber-400' },
-  info:     { border: 'border-l-yellow-500', icon: Clock, iconColor: 'text-yellow-400' },
+const SEVERITY_ICONS: Record<ErrorSeverity, { icon: LucideIcon; iconColor: string }> = {
+  critical: { icon: XCircle, iconColor: 'text-red-400' },
+  warning:  { icon: AlertTriangle, iconColor: 'text-amber-400' },
+  info:     { icon: Clock, iconColor: 'text-yellow-400' },
+};
+
+const SEVERITY_TO_TOKEN: Record<ErrorSeverity, keyof typeof SEVERITY_STYLES> = {
+  critical: 'error',
+  warning: 'warning',
+  info: 'info',
 };
 
 const ERROR_PATTERNS: Array<{ pattern: RegExp; summary: string; guidance: string; severity: ErrorSeverity; action?: ErrorAction }> = [
@@ -326,16 +334,17 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
             return (
               <div className="space-y-2">
                 {explanation && (() => {
-                  const sev = SEVERITY_CONFIG[explanation.severity];
-                  const SeverityIcon = sev.icon;
+                  const sevToken = SEVERITY_STYLES[SEVERITY_TO_TOKEN[explanation.severity]];
+                  const sevIcon = SEVERITY_ICONS[explanation.severity];
+                  const SeverityIcon = sevIcon.icon;
                   return (
                     <div
-                      className={`border-l-[3px] ${sev.border} rounded-lg bg-zinc-900/50 p-3.5`}
+                      className={`${sevToken.border} rounded-lg ${sevToken.bg} p-3.5`}
                       data-testid="error-explanation-card"
                       data-severity={explanation.severity}
                     >
                       <div className="flex items-start gap-2.5">
-                        <SeverityIcon className={`w-4 h-4 ${sev.iconColor} mt-0.5 flex-shrink-0`} data-testid="error-severity-icon" />
+                        <SeverityIcon className={`w-4 h-4 ${sevIcon.iconColor} mt-0.5 flex-shrink-0`} data-testid="error-severity-icon" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground/90">{explanation.summary}</p>
                           <p className="text-sm text-muted-foreground/70 mt-1">{explanation.guidance}</p>
@@ -358,7 +367,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
                     </div>
                   );
                 })()}
-                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+                <div className={`p-4 ${SEVERITY_STYLES.error.border} ${SEVERITY_STYLES.error.bg} rounded-xl`}>
                   <div className="flex items-start gap-2.5">
                     <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
@@ -478,9 +487,9 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
                             <span className={`inline-flex px-1.5 py-0.5 text-sm font-mono uppercase rounded border ${cat.bg} ${cat.text} ${cat.border}`}>
                               {cat.label}
                             </span>
-                            <span className="text-sm font-medium text-foreground/90">{mem.title}</span>
+                            <span className="text-sm font-medium text-foreground/90">{stripHtml(mem.title)}</span>
                           </div>
-                          <p className="text-sm text-foreground/70 line-clamp-2">{mem.content}</p>
+                          <p className="text-sm text-foreground/70 line-clamp-2">{stripHtml(mem.content)}</p>
                         </div>
                       );
                     })}

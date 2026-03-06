@@ -58,7 +58,7 @@ export function AdoptConfirmStep({
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ type: 'spring', damping: 15, stiffness: 300 }}
-          className="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center"
+          className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center"
         >
           <motion.div
             initial={{ scale: 0 }}
@@ -114,12 +114,12 @@ export function AdoptConfirmStep({
 
       {/* Persona preview card */}
       {!created && (
-        <div className="bg-secondary/20 border border-primary/10 rounded-2xl p-5">
+        <div className="bg-secondary/20 border border-primary/10 rounded-2xl p-4">
           <p className="text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider mb-3">
             Persona Preview
           </p>
 
-          <div className="flex items-center gap-4 mb-5">
+          <div className="flex items-center gap-4 mb-4">
             <motion.div
               initial={{ scale: 0.8 }}
               animate={{ scale: 1 }}

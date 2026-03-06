@@ -31,7 +31,7 @@ export function RecipeOverviewTab({ recipe }: RecipeOverviewTabProps) {
   const inputs = parseInputSchema(recipe.input_schema);
 
   return (
-    <div className="p-5 space-y-5">
+    <div className="p-4 space-y-4">
       {/* Details */}
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Details</h3>

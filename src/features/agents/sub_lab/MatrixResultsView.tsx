@@ -224,7 +224,7 @@ export function MatrixResultsView({ run, results }: Props) {
         <div className="flex items-center gap-3 pt-2">
           <button
             onClick={() => void handleAccept()}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25 transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25 transition-colors"
           >
             <Check className="w-4 h-4" />
             Accept Draft

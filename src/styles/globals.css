@@ -25,6 +25,16 @@
   /* Dark-enough button background for white text — overridden per theme */
   --color-btn-primary: #2563eb;
 
+  /* 4px-grid spacing scale */
+  --spacing-1: 4px;   /* 0.25rem */
+  --spacing-2: 8px;   /* 0.5rem  */
+  --spacing-3: 12px;  /* 0.75rem */
+  --spacing-4: 16px;  /* 1rem    */
+  --spacing-6: 24px;  /* 1.5rem  */
+  --spacing-8: 32px;  /* 2rem    */
+  --spacing-12: 48px; /* 3rem    */
+  --spacing-16: 64px; /* 4rem    */
+
   --radius-container: 1rem;
   --radius-interactive: 0.75rem;
   --radius-secondary: 0.5rem;
@@ -105,9 +115,18 @@ input[type="number"] {
 .animate-spin-slow { animation: spin-slow 30s linear infinite; }
 .animate-expand-in { animation: expand-in 150ms ease-out both; }
 
-.duration-snap { transition-duration: 150ms; }
-.duration-flow { transition-duration: 250ms; }
-.duration-ease { transition-duration: 400ms; }
+/* ── Animation timing scale ── */
+:root {
+  --duration-instant: 100ms;
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+}
+
+.duration-instant { transition-duration: var(--duration-instant); }
+.duration-snap { transition-duration: var(--duration-fast); }
+.duration-flow { transition-duration: var(--duration-normal); }
+.duration-ease { transition-duration: var(--duration-slow); }
 
 /* Terminal cursor blink */
 @keyframes blink-caret {
@@ -271,7 +290,25 @@ input[type="number"] {
 .json-highlight .hljs-punctuation { color: #71717a; }
 .json-highlight .hljs-comment { color: #52525b; font-style: italic; }
 
+/* ── Theme Transition ── */
+.theme-transitioning,
+.theme-transitioning *,
+.theme-transitioning *::before,
+.theme-transitioning *::after {
+  transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease, box-shadow 200ms ease !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  /* Disable all CSS animations and transitions globally */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
   .animate-pulse,
   .animate-spin,
   .animate-pulse-slow,

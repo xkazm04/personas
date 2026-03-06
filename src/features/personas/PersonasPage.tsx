@@ -1,5 +1,6 @@
 import { useEffect, useState, lazy, Suspense } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useMotion } from '@/hooks/utility/useMotion';
 import { usePersonaStore } from '@/stores/personaStore';
 import Sidebar from '@/features/shared/components/Sidebar';
 import HomePage from '@/features/home/components/HomePage';
@@ -12,13 +13,14 @@ import CloudDeployPanel from '@/features/deployment/components/CloudDeployPanel'
 import SettingsPage from '@/features/settings/components/SettingsPage';
 import CreationWizard from '@/features/agents/components/CreationWizard';
 import { CredentialNavProvider } from '@/features/vault/hooks/CredentialNavContext';
+import PanelSkeleton from '@/features/shared/components/PanelSkeleton';
 
 const TeamCanvas = lazy(() => import('@/features/pipeline/components/TeamCanvas'));
 const OverviewPage = lazy(() => import('@/features/overview/components/OverviewPage'));
 const GitLabPanel = lazy(() => import('@/features/gitlab/components/GitLabPanel'));
 
 export default function PersonasPage() {
-  const prefersReducedMotion = useReducedMotion();
+  const { shouldAnimate, transition } = useMotion();
   const sidebarSection = usePersonaStore((s) => s.sidebarSection);
   const cloudTab = usePersonaStore((s) => s.cloudTab);
   const selectedPersonaId = usePersonaStore((s) => s.selectedPersonaId);
@@ -36,11 +38,7 @@ export default function PersonasPage() {
 
   const fetchDetail = usePersonaStore((s) => s.fetchDetail);
 
-  const lazyFallback = (
-    <div className="flex h-full items-center justify-center text-sm text-muted-foreground/80">
-      Loading panel...
-    </div>
-  );
+  const lazyFallback = <PanelSkeleton />;
 
   // True only after fetchPersonas has settled (success or fail).
   // Prevents showing CreationWizard before the first load completes.
@@ -100,10 +98,10 @@ export default function PersonasPage() {
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={cloudTab}
-            initial={{ opacity: 0, x: prefersReducedMotion ? 0 : cloudTab === 'gitlab' ? 14 : -14 }}
+            initial={{ opacity: 0, x: shouldAnimate ? (cloudTab === 'gitlab' ? 14 : -14) : 0 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: prefersReducedMotion ? 0 : cloudTab === 'gitlab' ? -14 : 14 }}
-            transition={{ duration: prefersReducedMotion ? 0.12 : 0.24, ease: [0.22, 1, 0.36, 1] }}
+            exit={{ opacity: 0, x: shouldAnimate ? (cloudTab === 'gitlab' ? -14 : 14) : 0 }}
+            transition={transition}
             className="h-full"
           >
             {cloudTab === 'gitlab' ? (

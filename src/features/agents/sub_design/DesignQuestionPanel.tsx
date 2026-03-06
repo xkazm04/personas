@@ -62,7 +62,7 @@ export function DesignQuestionPanel({
       <TransformProgress mode="analysis" lines={outputLines} isRunning={false} />
 
       {/* Question card */}
-      <div className="bg-gradient-to-br from-accent/10 via-primary/5 to-transparent border border-accent/25 rounded-[var(--radius-interactive)] p-5 space-y-4">
+      <div className="bg-gradient-to-br from-accent/10 via-primary/5 to-transparent border border-accent/25 rounded-[var(--radius-interactive)] p-4 space-y-4">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-[var(--radius-secondary)] bg-accent/10 border border-accent/25 flex items-center justify-center">
             <MessageCircleQuestion className="w-4 h-4 text-accent" />

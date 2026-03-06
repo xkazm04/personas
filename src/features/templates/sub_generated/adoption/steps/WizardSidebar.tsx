@@ -1,4 +1,5 @@
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { useMotion } from '@/hooks/utility/useMotion';
 import { Check } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { AdoptWizardStep } from '../useAdoptReducer';
@@ -25,10 +26,10 @@ export function WizardSidebar({
   onStepClick,
   disabled,
 }: WizardSidebarProps) {
-  const prefersReducedMotion = useReducedMotion();
+  const { shouldAnimate, spring } = useMotion();
 
   return (
-    <div className="w-[200px] border-r border-primary/10 bg-secondary/5 py-4">
+    <div className="w-[200px] border-r border-primary/10 bg-secondary/5 py-4" role="status" aria-live="polite" aria-label={`Wizard step: ${steps.find(s => s.key === currentStep)?.label ?? ''}`}>
       {steps.map((step, i) => {
         const stepIndex = ADOPT_STEP_META[step.key].index;
         const isActive = step.key === currentStep;
@@ -70,7 +71,7 @@ export function WizardSidebar({
                 </div>
 
                 {/* Pulsing ring for active step */}
-                {isActive && !prefersReducedMotion && (
+                {isActive && shouldAnimate && (
                   <motion.div
                     className="absolute inset-0 rounded-full border border-violet-500/40"
                     animate={{
@@ -110,11 +111,7 @@ export function WizardSidebar({
                     initial={{ scaleY: 0 }}
                     animate={{ scaleY: isCompleted ? 1 : 0 }}
                     style={{ originY: 0 }}
-                    transition={
-                      prefersReducedMotion
-                        ? { duration: 0.01, ease: 'linear' }
-                        : { type: 'spring', damping: 18, stiffness: 300 }
-                    }
+                    transition={spring}
                   />
                 </div>
               </div>

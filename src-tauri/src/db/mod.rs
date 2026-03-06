@@ -11,7 +11,7 @@ pub mod settings_keys;
 use r2d2::{CustomizeConnection, Pool};
 use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::params;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::error::AppError;
 
@@ -36,6 +36,7 @@ impl CustomizeConnection<rusqlite::Connection, rusqlite::Error> for SqlitePragma
 /// Initialize the database: create file, enable WAL + foreign keys, run migrations, seed data.
 pub fn init_db(app_data_dir: &PathBuf) -> Result<DbPool, AppError> {
     std::fs::create_dir_all(app_data_dir)?;
+    restrict_dir_permissions(app_data_dir);
     let db_path = app_data_dir.join("personas.db");
 
     tracing::info!(path = %db_path.display(), "Initializing database");
@@ -53,6 +54,9 @@ pub fn init_db(app_data_dir: &PathBuf) -> Result<DbPool, AppError> {
         tracing::debug!("SQLite pragmas configured (WAL, FK, busy_timeout)");
     }
 
+    // Restrict file permissions on the database and WAL/SHM journal files
+    restrict_db_file_permissions(&db_path);
+
     // Run migrations
     {
         let conn = pool.get()?;
@@ -69,6 +73,100 @@ pub fn init_db(app_data_dir: &PathBuf) -> Result<DbPool, AppError> {
 
     tracing::info!("Database initialized successfully");
     Ok(pool)
+}
+
+/// Set owner-only permissions on the database file and its WAL/SHM journal files.
+///
+/// On Unix: chmod 0600 (owner read/write only).
+/// On Windows: icacls to remove inherited permissions and grant owner-only access.
+fn restrict_db_file_permissions(db_path: &Path) {
+    let wal_path = db_path.with_extension("db-wal");
+    let shm_path = db_path.with_extension("db-shm");
+
+    for path in [db_path, wal_path.as_path(), shm_path.as_path()] {
+        if path.exists() {
+            restrict_file_permissions_impl(path);
+        }
+    }
+}
+
+/// Set owner-only permissions on the app data directory itself.
+///
+/// On Unix: chmod 0700 (owner rwx only).
+/// On Windows: icacls to remove inherited permissions and grant owner-only access.
+fn restrict_dir_permissions(dir_path: &Path) {
+    restrict_dir_permissions_impl(dir_path);
+}
+
+#[cfg(unix)]
+fn restrict_file_permissions_impl(path: &Path) {
+    use std::os::unix::fs::PermissionsExt;
+    let perms = std::fs::Permissions::from_mode(0o600);
+    if let Err(e) = std::fs::set_permissions(path, perms) {
+        tracing::warn!(path = %path.display(), error = %e, "Failed to set restrictive file permissions");
+    } else {
+        tracing::debug!(path = %path.display(), "Set file permissions to 0600");
+    }
+}
+
+#[cfg(unix)]
+fn restrict_dir_permissions_impl(path: &Path) {
+    use std::os::unix::fs::PermissionsExt;
+    let perms = std::fs::Permissions::from_mode(0o700);
+    if let Err(e) = std::fs::set_permissions(path, perms) {
+        tracing::warn!(path = %path.display(), error = %e, "Failed to set restrictive directory permissions");
+    } else {
+        tracing::debug!(path = %path.display(), "Set directory permissions to 0700");
+    }
+}
+
+#[cfg(windows)]
+fn restrict_file_permissions_impl(path: &Path) {
+    restrict_windows_permissions(path);
+}
+
+#[cfg(windows)]
+fn restrict_dir_permissions_impl(path: &Path) {
+    restrict_windows_permissions(path);
+}
+
+/// On Windows, use icacls to:
+/// 1. Disable permission inheritance (replacing with explicit entries).
+/// 2. Remove all existing access entries.
+/// 3. Grant the current user full control.
+#[cfg(windows)]
+fn restrict_windows_permissions(path: &Path) {
+    let path_str = path.to_string_lossy();
+    let username = whoami::username();
+
+    // Disable inheritance and remove inherited ACEs
+    let inheritance_result = std::process::Command::new("icacls")
+        .args([path_str.as_ref(), "/inheritance:r"])
+        .output();
+
+    if let Err(e) = &inheritance_result {
+        tracing::warn!(path = %path.display(), error = %e, "Failed to run icacls /inheritance:r");
+        return;
+    }
+
+    // Grant owner-only full control
+    let grant_arg = format!("{}:(F)", username);
+    let grant_result = std::process::Command::new("icacls")
+        .args([path_str.as_ref(), "/grant:r", &grant_arg])
+        .output();
+
+    match grant_result {
+        Ok(output) if output.status.success() => {
+            tracing::debug!(path = %path.display(), "Set restrictive Windows permissions (owner-only)");
+        }
+        Ok(output) => {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            tracing::warn!(path = %path.display(), stderr = %stderr, "icacls /grant:r returned non-zero exit");
+        }
+        Err(e) => {
+            tracing::warn!(path = %path.display(), error = %e, "Failed to run icacls /grant:r");
+        }
+    }
 }
 
 /// Seed the 7 builtin tool definitions.

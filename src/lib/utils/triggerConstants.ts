@@ -116,6 +116,90 @@ export type TriggerConfig =
   | AppFocusConfig
   | CompositeConfig;
 
+// ── Pre-built trigger templates ──────────────────────────────────────
+
+export interface TriggerTemplate {
+  id: string;
+  label: string;
+  description: string;
+  triggerType: string;
+  config: Record<string, unknown>;
+}
+
+export const TRIGGER_TEMPLATES: TriggerTemplate[] = [
+  // File watcher templates
+  {
+    id: 'fw-error-logs',
+    label: 'Auto-analyze error logs',
+    description: 'Triggers when new .log files appear or change in a folder',
+    triggerType: 'file_watcher',
+    config: {
+      watch_paths: [''],
+      events: ['create', 'modify'],
+      recursive: true,
+      glob_filter: '*.log',
+    },
+  },
+  {
+    id: 'fw-csv-data',
+    label: 'Process new CSV files',
+    description: 'Triggers when CSV files are added or modified',
+    triggerType: 'file_watcher',
+    config: {
+      watch_paths: [''],
+      events: ['create', 'modify'],
+      recursive: false,
+      glob_filter: '*.csv',
+    },
+  },
+  {
+    id: 'fw-config-changes',
+    label: 'Watch config file changes',
+    description: 'Triggers on changes to JSON, YAML, or TOML config files',
+    triggerType: 'file_watcher',
+    config: {
+      watch_paths: [''],
+      events: ['modify'],
+      recursive: true,
+      glob_filter: '*.{json,yaml,yml,toml}',
+    },
+  },
+  // Clipboard templates
+  {
+    id: 'cb-url-summarize',
+    label: 'Auto-summarize copied URLs',
+    description: 'Triggers when you copy a URL to your clipboard',
+    triggerType: 'clipboard',
+    config: {
+      content_type: 'text',
+      pattern: 'https?://\\S+',
+      interval_seconds: 3,
+    },
+  },
+  {
+    id: 'cb-error-message',
+    label: 'Auto-diagnose error messages',
+    description: 'Triggers when you copy text containing errors or exceptions',
+    triggerType: 'clipboard',
+    config: {
+      content_type: 'text',
+      pattern: '(?i)(error|exception|traceback|panic|fatal|FAIL)',
+      interval_seconds: 3,
+    },
+  },
+  {
+    id: 'cb-code-snippet',
+    label: 'Auto-format code snippets',
+    description: 'Triggers when you copy code-like text (function definitions, imports)',
+    triggerType: 'clipboard',
+    config: {
+      content_type: 'text',
+      pattern: '(function |def |class |import |const |let |var |=>|\\{\\s*$)',
+      interval_seconds: 3,
+    },
+  },
+];
+
 /**
  * Parse a trigger's raw config JSON into a typed discriminated union.
  *

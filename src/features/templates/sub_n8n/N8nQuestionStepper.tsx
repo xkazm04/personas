@@ -97,7 +97,7 @@ export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: 
               exit="exit"
               transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
               style={{ minHeight: 250 }}
-              className={`p-5 rounded-xl border ${tone.border} ${tone.bg}`}
+              className={`p-4 rounded-xl border ${tone.border} ${tone.bg}`}
             >
               {/* Category + counter */}
               <div className="flex items-center justify-between mb-3">
@@ -155,7 +155,7 @@ export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: 
                           key={opt}
                           type="button"
                           onClick={() => onAnswerUpdated(q.id, opt)}
-                          className={`px-5 py-2 text-sm rounded-lg border transition-all ${
+                          className={`px-4 py-2 text-sm rounded-lg border transition-all ${
                             isSelected
                               ? `${tone.selectBg} font-medium`
                               : 'text-muted-foreground border-primary/10 hover:bg-secondary/40'

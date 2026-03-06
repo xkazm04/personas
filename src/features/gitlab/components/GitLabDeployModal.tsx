@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Loader2, Rocket, Check, ExternalLink, ShieldCheck, KeyRound } from 'lucide-react';
 import type { GitLabProject, GitLabDeployResult } from '@/api/gitlab';
 import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
+import { CiCdTemplatesPicker } from './CiCdTemplatesPicker';
+import type { CiCdTemplate, GitLabTierId } from '../data/cicdTemplates';
 
 interface GitLabDeployModalProps {
   projects: GitLabProject[];
@@ -10,6 +12,8 @@ interface GitLabDeployModalProps {
   onSelectProject: (id: number) => void;
   onFetchProjects: () => Promise<void>;
   onDeploy: (personaId: string, projectId: number, provisionCredentials: boolean) => Promise<GitLabDeployResult>;
+  onCreateFromTemplate?: (template: CiCdTemplate) => Promise<string>;
+  gitlabTier?: GitLabTierId;
 }
 
 export function GitLabDeployModal({
@@ -19,16 +23,32 @@ export function GitLabDeployModal({
   onSelectProject,
   onFetchProjects,
   onDeploy,
+  onCreateFromTemplate,
+  gitlabTier = 'free',
 }: GitLabDeployModalProps) {
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
   const [provisionCredentials, setProvisionCredentials] = useState(false);
   const [isDeploying, setIsDeploying] = useState(false);
+  const [isCreatingFromTemplate, setIsCreatingFromTemplate] = useState(false);
   const [result, setResult] = useState<GitLabDeployResult | null>(null);
   const deployingRef = useRef(false);
 
   useEffect(() => {
     onFetchProjects();
   }, [onFetchProjects]);
+
+  const handleSelectTemplate = async (template: CiCdTemplate) => {
+    if (!onCreateFromTemplate || isCreatingFromTemplate) return;
+    setIsCreatingFromTemplate(true);
+    try {
+      const newPersonaId = await onCreateFromTemplate(template);
+      setSelectedPersonaId(newPersonaId);
+    } catch {
+      // Error surfaced by store
+    } finally {
+      setIsCreatingFromTemplate(false);
+    }
+  };
 
   const handleDeploy = async () => {
     if (deployingRef.current) return;
@@ -81,6 +101,20 @@ export function GitLabDeployModal({
             </option>
           ))}
         </ThemedSelect>
+      </div>
+
+      {/* CI/CD Agent Templates */}
+      <div className="p-3 rounded-xl border border-primary/10 bg-secondary/10">
+        <CiCdTemplatesPicker
+          userTier={gitlabTier}
+          onSelectTemplate={handleSelectTemplate}
+        />
+        {isCreatingFromTemplate && (
+          <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground/60">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            Creating persona from template...
+          </div>
+        )}
       </div>
 
       {/* Credential provisioning toggle */}

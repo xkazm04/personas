@@ -14,6 +14,9 @@ use crate::db::repos::resources::credentials as cred_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
 
+/// Maximum allowed MCP JSON-RPC response payload (10 MB).
+const MAX_MCP_PAYLOAD_BYTES: usize = 10 * 1024 * 1024;
+
 /// An MCP tool definition as returned by `tools/list`.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct McpTool {
@@ -319,10 +322,16 @@ fn jsonrpc_request(id: u64, method: &str, params: serde_json::Value) -> serde_js
 }
 
 fn parse_env_vars(fields: &HashMap<String, String>) -> HashMap<String, String> {
-    fields
+    let raw: HashMap<String, String> = fields
         .get("env_vars")
-        .and_then(|v| serde_json::from_str::<HashMap<String, String>>(v).ok())
-        .unwrap_or_default()
+        .and_then(|v| serde_json::from_str(v).ok())
+        .unwrap_or_default();
+
+    raw.into_iter()
+        .filter_map(|(k, v)| {
+            super::runner::sanitize_env_name(&k).map(|safe_key| (safe_key, v))
+        })
+        .collect()
 }
 
 fn spawn_mcp_process(
@@ -399,37 +408,50 @@ async fn read_jsonrpc(
 
     let mut reader = tokio::io::BufReader::new(stdout);
 
-    // Read Content-Length header
-    let mut content_length: usize = 0;
-    loop {
-        let mut line = String::new();
-        let bytes_read = tokio::time::timeout(
-            std::time::Duration::from_secs(30),
-            reader.read_line(&mut line),
-        )
-        .await
-        .map_err(|_| AppError::Internal("Timeout reading from MCP server".into()))?
-        .map_err(|e| AppError::Internal(format!("Failed to read from MCP stdout: {e}")))?;
+    // Read headers with a total timeout (prevents slowloris-style attacks
+    // where the server sends headers one byte at a time).
+    let content_length: usize = tokio::time::timeout(
+        std::time::Duration::from_secs(30),
+        async {
+            let mut cl: usize = 0;
+            loop {
+                let mut line = String::new();
+                let bytes_read = reader
+                    .read_line(&mut line)
+                    .await
+                    .map_err(|e| AppError::Internal(format!("Failed to read from MCP stdout: {e}")))?;
 
-        if bytes_read == 0 {
-            return Err(AppError::Internal("MCP process closed stdout unexpectedly".into()));
-        }
+                if bytes_read == 0 {
+                    return Err(AppError::Internal("MCP process closed stdout unexpectedly".into()));
+                }
 
-        let trimmed = line.trim();
-        if trimmed.is_empty() {
-            break; // End of headers
-        }
+                let trimmed = line.trim();
+                if trimmed.is_empty() {
+                    break; // End of headers
+                }
 
-        if let Some(len_str) = trimmed.strip_prefix("Content-Length:") {
-            content_length = len_str
-                .trim()
-                .parse()
-                .map_err(|_| AppError::Internal("Invalid Content-Length from MCP server".into()))?;
-        }
-    }
+                if let Some(len_str) = trimmed.strip_prefix("Content-Length:") {
+                    cl = len_str
+                        .trim()
+                        .parse()
+                        .map_err(|_| AppError::Internal("Invalid Content-Length from MCP server".into()))?;
+                }
+            }
+            Ok(cl)
+        },
+    )
+    .await
+    .map_err(|_| AppError::Internal("Timeout reading headers from MCP server".into()))??;
 
     if content_length == 0 {
         return Err(AppError::Internal("MCP server sent no Content-Length header".into()));
+    }
+
+    if content_length > MAX_MCP_PAYLOAD_BYTES {
+        return Err(AppError::Internal(format!(
+            "MCP response too large: Content-Length {} exceeds limit of {} bytes",
+            content_length, MAX_MCP_PAYLOAD_BYTES,
+        )));
     }
 
     // Read exact body

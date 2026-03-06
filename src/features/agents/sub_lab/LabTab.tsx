@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { FlaskConical, GitBranch, Wand2, ArrowLeftRight, Grid3X3 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
@@ -8,17 +9,34 @@ import { EvalPanel } from './EvalPanel';
 import { VersionsPanel } from './VersionsPanel';
 import type { LabMode } from '@/stores/slices/labSlice';
 
-const modeTabs: Array<{ id: LabMode; label: string; icon: typeof FlaskConical }> = [
-  { id: 'arena', label: 'Arena', icon: FlaskConical },
-  { id: 'ab', label: 'A/B', icon: ArrowLeftRight },
-  { id: 'eval', label: 'Eval', icon: Grid3X3 },
-  { id: 'matrix', label: 'Matrix', icon: Wand2 },
-  { id: 'versions', label: 'Versions', icon: GitBranch },
+const LAB_MODE_KEY = 'dac-lab-mode';
+
+const modeTabs: Array<{ id: LabMode; label: string; desc: string; icon: typeof FlaskConical }> = [
+  { id: 'arena', label: 'Arena', desc: 'Compare models head-to-head', icon: FlaskConical },
+  { id: 'ab', label: 'A/B', desc: 'Split-test prompt variants', icon: ArrowLeftRight },
+  { id: 'eval', label: 'Eval', desc: 'Score against rubrics', icon: Grid3X3 },
+  { id: 'matrix', label: 'Matrix', desc: 'Cross-model x cross-scenario grid', icon: Wand2 },
+  { id: 'versions', label: 'Versions', desc: 'Track prompt evolution', icon: GitBranch },
 ];
+
+const validModes = new Set<string>(modeTabs.map((t) => t.id));
 
 export function LabTab() {
   const labMode = usePersonaStore((s) => s.labMode);
   const setLabMode = usePersonaStore((s) => s.setLabMode);
+
+  // Restore persisted tab on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(LAB_MODE_KEY);
+    if (saved && validModes.has(saved)) {
+      setLabMode(saved as LabMode);
+    }
+  }, [setLabMode]);
+
+  // Persist tab on change
+  useEffect(() => {
+    localStorage.setItem(LAB_MODE_KEY, labMode);
+  }, [labMode]);
 
   return (
     <div className="space-y-4">
@@ -31,14 +49,19 @@ export function LabTab() {
             <button
               key={tab.id}
               onClick={() => setLabMode(tab.id)}
-              className={`relative flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+              className={`relative flex flex-col items-start gap-0.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                 isActive
                   ? 'bg-primary/10 text-foreground/90 border border-primary/20'
                   : 'text-muted-foreground/70 hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'
               }`}
             >
-              <Icon className="w-3.5 h-3.5" />
-              {tab.label}
+              <span className="flex items-center gap-1.5">
+                <Icon className="w-3.5 h-3.5" />
+                {tab.label}
+              </span>
+              <span className="text-[10px] text-muted-foreground/60 font-mono tracking-wider">
+                {tab.desc}
+              </span>
               {isActive && (
                 <motion.div
                   layoutId="labModeTab"

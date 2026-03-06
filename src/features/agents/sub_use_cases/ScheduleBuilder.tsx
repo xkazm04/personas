@@ -203,7 +203,7 @@ function NextRunsPreview({ preview }: { preview: CronPreview }) {
       </div>
 
       {/* Run list */}
-      <div className="mt-5 flex flex-wrap gap-x-3 gap-y-0.5">
+      <div className="mt-4 flex flex-wrap gap-x-3 gap-y-0.5">
         {runs.map((run, i) => (
           <span key={i} className={`text-sm font-mono ${i === 0 ? 'text-amber-400/80' : 'text-muted-foreground/50'}`}>
             {formatRunTime(run)}

@@ -237,6 +237,10 @@ pub fn get_execution_trace(
 }
 
 /// Get all traces sharing a chain_trace_id (distributed trace across chain executions).
+///
+/// Only returns traces belonging to the caller's persona. Chain executions may
+/// span multiple personas; returning traces from other personas would leak
+/// their execution details (instructions, tool outputs, credential usage).
 #[tauri::command]
 pub fn get_chain_trace(
     state: State<'_, Arc<AppState>>,
@@ -244,13 +248,15 @@ pub fn get_chain_trace(
     caller_persona_id: String,
 ) -> Result<Vec<crate::engine::trace::ExecutionTrace>, AppError> {
     let traces = crate::db::repos::execution::traces::get_by_chain_trace_id(&state.db, &chain_trace_id)?;
-    // Verify at least one trace in the chain belongs to the caller
-    if let Some(first) = traces.first() {
-        if first.persona_id != caller_persona_id {
-            return Err(AppError::Auth(
-                "Chain trace does not belong to the specified persona".into(),
-            ));
-        }
+    // Filter to only traces owned by the caller's persona
+    let owned: Vec<_> = traces
+        .into_iter()
+        .filter(|t| t.persona_id == caller_persona_id)
+        .collect();
+    if owned.is_empty() {
+        return Err(AppError::Auth(
+            "Chain trace does not belong to the specified persona".into(),
+        ));
     }
-    Ok(traces)
+    Ok(owned)
 }

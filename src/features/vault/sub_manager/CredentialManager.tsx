@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { Search, Key, X, RotateCw, Loader2, CheckCircle2, HeartPulse } from 'lucide-react';
+import { useProvisioningWizardStore } from '@/stores/provisioningWizardStore';
+import { Search, Key, X, RotateCw, Loader2, CheckCircle2, HeartPulse, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { VaultErrorBanner } from '@/features/vault/sub_card/VaultErrorBanner';
@@ -35,6 +36,7 @@ export function CredentialManager() {
   const deleteCredential = usePersonaStore((s) => s.deleteCredential);
   const globalError = usePersonaStore((s) => s.error);
   const setGlobalError = usePersonaStore((s) => s.setError);
+  const openWizard = useProvisioningWizardStore((s) => s.open);
 
   const [loading, setLoading] = useState(true);
   const [vault, setVault] = useState<VaultStatus | null>(null);
@@ -226,6 +228,14 @@ export function CredentialManager() {
         subtitle={`${credentials.length} credential${credentials.length !== 1 ? 's' : ''} stored`}
         actions={
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => openWizard()}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium border border-violet-500/25 bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors"
+              title="AI-guided credential setup wizard"
+            >
+              <Sparkles className="w-3 h-3" />
+              AI Setup
+            </button>
             {credentials.length > 0 && (
               <button
                 onClick={bulk.isRunning ? bulk.cancel : () => bulk.run(credentials)}

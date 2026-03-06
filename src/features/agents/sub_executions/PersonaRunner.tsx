@@ -143,6 +143,7 @@ export function PersonaRunner() {
   const isDraggingTerminal = useRef(false);
   const dragStartY = useRef(0);
   const dragStartHeight = useRef(0);
+  const dragListenersRef = useRef<{ onMove: (e: MouseEvent) => void; onUp: () => void } | null>(null);
 
   // Extract summary from terminal output for the persistent card
   const executionSummary = useMemo(() => {
@@ -285,11 +286,24 @@ export function PersonaRunner() {
       isDraggingTerminal.current = false;
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
+      dragListenersRef.current = null;
     };
 
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
+    dragListenersRef.current = { onMove, onUp };
   }, [terminalHeight]);
+
+  // Clean up drag listeners on unmount to prevent leaked document listeners
+  useEffect(() => {
+    return () => {
+      if (dragListenersRef.current) {
+        document.removeEventListener('mousemove', dragListenersRef.current.onMove);
+        document.removeEventListener('mouseup', dragListenersRef.current.onUp);
+        dragListenersRef.current = null;
+      }
+    };
+  }, []);
 
   const toggleTerminalFullscreen = useCallback(() => setIsTerminalFullscreen(prev => !prev), []);
 
@@ -443,7 +457,7 @@ export function PersonaRunner() {
   const summaryPresentation = getStatusEntry(executionSummary?.status ?? 'failed');
 
   return (
-    <div ref={runnerRef} className="space-y-5">
+    <div ref={runnerRef} className="space-y-4">
       <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
         <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
         <Play className="w-3.5 h-3.5" />
@@ -561,7 +575,7 @@ export function PersonaRunner() {
           transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
           className={`rounded-xl border p-4 ${summaryPresentation.border} ${summaryPresentation.bg}`}
         >
-          <div className="flex items-center gap-5 flex-wrap">
+          <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">
               <StatusIcon status={executionSummary.status} className="w-5 h-5" />
               <span className={`text-sm font-semibold capitalize ${summaryPresentation.text}`}>

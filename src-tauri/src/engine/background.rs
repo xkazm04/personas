@@ -146,6 +146,9 @@ pub fn start_loops(
         Box::new(CompositeSubscription {
             pool: pool.clone(),
         }),
+        Box::new(subscription::AutoRollbackSubscription {
+            pool: pool.clone(),
+        }),
     ];
 
     // Spawn all subscriptions through the unified scheduler

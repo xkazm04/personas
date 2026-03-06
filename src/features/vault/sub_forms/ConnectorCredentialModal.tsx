@@ -111,7 +111,7 @@ export function ConnectorCredentialModal({
         className="bg-secondary/95 backdrop-blur-xl border border-primary/15 rounded-2xl shadow-2xl max-w-2xl w-full mx-4 p-6 max-h-[85vh] overflow-y-auto"
       >
         {/* Header */}
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             {connectorDefinition?.icon_url ? (
               <ThemedConnectorIcon url={connectorDefinition.icon_url} label={label} color={connectorDefinition.color} size="w-7 h-7" />

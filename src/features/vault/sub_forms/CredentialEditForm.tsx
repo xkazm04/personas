@@ -143,7 +143,7 @@ export function CredentialEditForm({
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* ── Credential Fields ── */}
       <div>
         <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/50 mb-3">

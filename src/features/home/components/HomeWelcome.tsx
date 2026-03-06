@@ -246,7 +246,7 @@ function NavigationCard({ card, index, onClick }: { card: NavCard; index: number
       }}
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
       onClick={onClick}
-      className={`group relative text-left rounded-2xl border bg-gradient-to-br ${card.gradFrom} ${card.gradTo} ${card.accentBorder} shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer`}
+      className={`group relative text-left rounded-2xl border bg-gradient-to-br ${card.gradFrom} ${card.gradTo} ${card.accentBorder} shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
     >
       <AnimatedBorderGlow color={card.glowColor} />
 
@@ -257,7 +257,7 @@ function NavigationCard({ card, index, onClick }: { card: NavCard; index: number
       <CardPattern color={card.iconText} index={index} />
 
       {/* Content */}
-      <div className="relative z-10 p-5">
+      <div className="relative z-10 p-4">
         <div className="flex items-start justify-between mb-4">
           <div className={`w-12 h-12 rounded-xl ${card.iconBg} border border-white/5 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-300`}>
             <Icon className={`w-6 h-6 ${card.iconText}`} />

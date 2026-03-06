@@ -104,6 +104,72 @@ pub fn create(pool: &DbPool, input: CreateCredentialInput) -> Result<PersonaCred
     get_by_id(pool, &id)
 }
 
+/// Create a credential and save its fields in a single SQLite transaction.
+/// If field encryption or insertion fails, the credential row is rolled back
+/// automatically — no orphaned rows.
+pub fn create_with_fields(
+    pool: &DbPool,
+    input: CreateCredentialInput,
+    fields: &HashMap<String, String>,
+) -> Result<PersonaCredential, AppError> {
+    let id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().to_rfc3339();
+
+    let mut conn = pool.get()?;
+    let tx = conn.transaction().map_err(AppError::Database)?;
+
+    tx.execute(
+        "INSERT INTO persona_credentials
+         (id, name, service_type, encrypted_data, iv, metadata, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
+        params![
+            id,
+            input.name,
+            input.service_type,
+            input.encrypted_data,
+            input.iv,
+            input.metadata,
+            now,
+        ],
+    )?;
+
+    // Non-sensitive field keys (stored as queryable plaintext)
+    const NON_SENSITIVE_KEYS: &[&str] = &[
+        "base_url", "url", "host", "hostname", "server",
+        "port", "database", "project", "organization", "org",
+        "workspace", "team", "region", "scope", "scopes",
+        "oauth_client_mode", "token_type",
+    ];
+
+    for (key, value) in fields {
+        let is_sensitive = !NON_SENSITIVE_KEYS.contains(&key.to_lowercase().as_str());
+        let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
+            .map_err(|e| AppError::Internal(format!("Field encryption failed: {}", e)))?;
+
+        let field_type = classify_field_type(key);
+        let field_id = uuid::Uuid::new_v4().to_string();
+
+        tx.execute(
+            "INSERT INTO credential_fields
+             (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
+            params![
+                field_id,
+                id,
+                key,
+                enc_val,
+                field_iv,
+                field_type,
+                is_sensitive as i32,
+                now,
+            ],
+        )?;
+    }
+
+    tx.commit().map_err(AppError::Database)?;
+    get_by_id(pool, &id)
+}
+
 pub fn update(
     pool: &DbPool,
     id: &str,

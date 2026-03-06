@@ -18,6 +18,16 @@ static QUERY_DEBUG_JOBS: BackgroundJobManager<()> =
 /// Maximum number of fix-and-retry cycles.
 const MAX_RETRIES: usize = 3;
 
+/// List all query debug job snapshots (for unified workflows view).
+pub fn list_query_debug_jobs() -> Vec<crate::background_job::JobSnapshot> {
+    QUERY_DEBUG_JOBS.list_snapshots()
+}
+
+/// Cancel a query debug job.
+pub fn cancel_query_debug_job(app: &tauri::AppHandle, debug_id: &str) -> Result<(), crate::error::AppError> {
+    QUERY_DEBUG_JOBS.cancel(app, debug_id)
+}
+
 // ── Tauri commands ──────────────────────────────────────────────────────
 
 #[tauri::command]

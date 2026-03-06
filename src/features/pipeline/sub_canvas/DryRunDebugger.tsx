@@ -413,7 +413,7 @@ export default function DryRunDebugger({
                 <span className={`px-1.5 py-0.5 text-sm font-mono rounded-md ${
                   inspectedData.status === 'completed' ? 'bg-emerald-500/15 text-emerald-400' :
                   inspectedData.status === 'running' ? 'bg-blue-500/15 text-blue-400' :
-                  'bg-zinc-500/15 text-muted-foreground'
+                  'bg-secondary/40 text-muted-foreground'
                 }`}>
                   {inspectedData.status}
                 </span>
@@ -463,7 +463,7 @@ export default function DryRunDebugger({
       </AnimatePresence>
 
       {/* Debugger Controls Bar */}
-      <div className="bg-zinc-900/95 backdrop-blur-md border-t border-amber-500/20 px-4 py-2.5">
+      <div className="bg-secondary/95 backdrop-blur-md border-t border-border/30 px-4 py-2.5">
         <div className="flex items-center gap-3">
           {/* Debug badge */}
           <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-500/15 border border-amber-500/25">
@@ -543,8 +543,8 @@ export default function DryRunDebugger({
                         : item.data?.status === 'paused'
                           ? 'bg-amber-500 border-amber-400'
                           : item.data?.status === 'queued'
-                            ? 'bg-zinc-600 border-zinc-500'
-                            : 'bg-zinc-700 border-zinc-600'
+                            ? 'bg-secondary/60 border-primary/25'
+                            : 'bg-secondary/40 border-primary/15'
                   }`}
                 />
                 {item.hasBreakpoint && (
