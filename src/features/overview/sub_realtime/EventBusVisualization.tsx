@@ -490,7 +490,7 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
 
       {/* ── Legend (only when traffic flowing) ── */}
       {seenTypes.length > 0 && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 bg-background/80 backdrop-blur-sm border border-primary/10 rounded-lg px-3 py-2 flex items-center gap-3">
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl px-3 py-2 flex items-center gap-3">
           <AnimatePresence initial={false}>
             {seenTypes.slice(0, 6).map((type) => (
               <motion.div
@@ -512,7 +512,7 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
       {/* ── Idle empty state ── */}
       {events.length === 0 && (
         <div className="absolute bottom-4 left-0 right-0 flex justify-center pointer-events-none">
-          <div className="flex items-center gap-2 bg-background/60 backdrop-blur-sm border border-primary/10 rounded-lg px-4 py-2">
+          <div className="flex items-center gap-2 bg-background/60 backdrop-blur-sm border border-primary/10 rounded-xl px-4 py-2">
             <span className="w-1.5 h-1.5 rounded-full bg-brand-cyan/40" />
             <span className="text-sm text-muted-foreground/60">
               Idle — click <span className="font-medium text-purple-300/80">Test Flow</span> to simulate traffic

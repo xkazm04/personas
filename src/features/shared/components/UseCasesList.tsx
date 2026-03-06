@@ -64,7 +64,7 @@ export function parseDesignContext(raw: string | null | undefined): DesignContex
 
     return result;
   } catch {
-    // Completely unparseable — treat raw text as summary
+    // intentional: non-critical — JSON parse fallback (treat raw text as summary)
     return { summary: raw };
   }
 }

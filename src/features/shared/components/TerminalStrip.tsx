@@ -2,6 +2,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { ChevronDown, ChevronUp, X, Copy, Check } from 'lucide-react';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 import { useCopyToClipboard } from '@/hooks/utility/useCopyToClipboard';
+import { Tooltip } from './Tooltip';
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -78,33 +79,36 @@ export function TerminalStrip({
 
         {/* Copy log */}
         {!isRunning && lines.length > 0 && (
-          <button
-            onClick={() => copy(lines.join('\n'))}
-            className="p-1 rounded hover:bg-secondary/40 text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors shrink-0"
-            title="Copy log"
-          >
-            {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-          </button>
+          <Tooltip content="Copy log">
+            <button
+              onClick={() => copy(lines.join('\n'))}
+              className="p-1 rounded hover:bg-secondary/40 text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors shrink-0"
+            >
+              {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+            </button>
+          </Tooltip>
         )}
 
         {/* Expand / collapse */}
-        <button
-          onClick={onToggle}
-          className="p-1 rounded hover:bg-secondary/40 text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors shrink-0"
-          title={isExpanded ? 'Collapse log' : 'Expand log'}
-        >
-          {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-        </button>
+        <Tooltip content={isExpanded ? 'Collapse log' : 'Expand log'}>
+          <button
+            onClick={onToggle}
+            className="p-1 rounded hover:bg-secondary/40 text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors shrink-0"
+          >
+            {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </button>
+        </Tooltip>
 
         {/* Clear / dismiss */}
         {!isRunning && onClear && lines.length > 0 && (
-          <button
-            onClick={onClear}
-            className="p-1 rounded hover:bg-secondary/40 text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors shrink-0"
-            title="Dismiss"
-          >
-            <X className="w-3 h-3" />
-          </button>
+          <Tooltip content="Dismiss">
+            <button
+              onClick={onClear}
+              className="p-1 rounded hover:bg-secondary/40 text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors shrink-0"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </Tooltip>
         )}
       </div>
 

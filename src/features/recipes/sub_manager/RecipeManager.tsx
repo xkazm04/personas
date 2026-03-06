@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { BookOpen, Plus, Search, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
+import { useToastStore } from '@/stores/toastStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { RecipeList } from '@/features/recipes/sub_list/RecipeList';
 import { RecipeEditor } from '@/features/recipes/sub_editor/RecipeEditor';
@@ -26,7 +27,7 @@ export function RecipeManager() {
       try {
         await fetchRecipes();
       } catch {
-        // Error set by store
+        useToastStore.getState().addToast('Failed to load recipes', 'error');
       } finally {
         setLoading(false);
       }
@@ -51,7 +52,7 @@ export function RecipeManager() {
       try {
         await deleteRecipe(id);
       } catch {
-        // Error set by store
+        useToastStore.getState().addToast('Failed to delete recipe', 'error');
       }
     },
     [deleteRecipe],
@@ -76,7 +77,7 @@ export function RecipeManager() {
           viewState.view === 'list' ? (
             <button
               onClick={() => dispatch({ type: 'GO_CREATE' })}
-              className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary/90 transition-colors"
+              className="btn-md flex items-center gap-1.5 bg-primary font-medium text-white hover:bg-primary/90 transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
               New Recipe
@@ -93,7 +94,7 @@ export function RecipeManager() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search recipes... (Ctrl+K)"
-              className="w-full rounded-md border border-border/50 bg-background/50 pl-8 pr-8 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50"
+              className="w-full rounded-xl border border-border/50 bg-background/50 pl-8 pr-8 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50"
             />
             {search && (
               <button

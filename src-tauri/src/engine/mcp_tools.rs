@@ -17,6 +17,12 @@ use crate::error::AppError;
 /// Maximum allowed MCP JSON-RPC response payload (10 MB).
 const MAX_MCP_PAYLOAD_BYTES: usize = 10 * 1024 * 1024;
 
+/// Maximum nesting depth for MCP tool arguments.
+const MAX_ARGUMENT_DEPTH: usize = 20;
+
+/// Maximum serialized size for MCP tool arguments (1 MB).
+const MAX_ARGUMENT_BYTES: usize = 1024 * 1024;
+
 /// An MCP tool definition as returned by `tools/list`.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct McpTool {
@@ -64,12 +70,18 @@ pub async fn list_tools(
 }
 
 /// Execute a tool on an MCP server.
+///
+/// Validates arguments against structural limits (depth, size) and the tool's
+/// declared `input_schema` before forwarding to the MCP server.
 pub async fn execute_tool(
     pool: &DbPool,
     credential_id: &str,
     tool_name: &str,
     arguments: serde_json::Value,
 ) -> Result<McpToolResult, AppError> {
+    // Structural validation: reject oversized or deeply nested arguments early.
+    validate_argument_structure(&arguments)?;
+
     let credential = cred_repo::get_by_id(pool, credential_id)?;
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
 
@@ -184,8 +196,16 @@ async fn execute_tool_stdio(
     });
     write_jsonrpc(&mut child, &initialized).await?;
 
+    // List tools to get input_schema for validation
+    let list_req = jsonrpc_request(2, "tools/list", serde_json::json!({}));
+    write_jsonrpc(&mut child, &list_req).await?;
+    let list_resp = read_jsonrpc(&mut child).await?;
+
+    let schema = extract_tool_schema(&list_resp, tool_name)?;
+    validate_arguments_against_schema(arguments, schema.as_ref())?;
+
     // Call tool
-    let call_req = jsonrpc_request(2, "tools/call", serde_json::json!({
+    let call_req = jsonrpc_request(3, "tools/call", serde_json::json!({
         "name": tool_name,
         "arguments": arguments,
     }));
@@ -266,8 +286,15 @@ async fn execute_tool_sse(
     }));
     let _init_resp = send_sse_request(&client, url, auth_token, &init_payload).await?;
 
+    // List tools to get input_schema for validation
+    let list_payload = jsonrpc_request(2, "tools/list", serde_json::json!({}));
+    let list_resp = send_sse_request(&client, url, auth_token, &list_payload).await?;
+
+    let schema = extract_tool_schema(&list_resp, tool_name)?;
+    validate_arguments_against_schema(arguments, schema.as_ref())?;
+
     // Call tool
-    let call_payload = jsonrpc_request(2, "tools/call", serde_json::json!({
+    let call_payload = jsonrpc_request(3, "tools/call", serde_json::json!({
         "name": tool_name,
         "arguments": arguments,
     }));
@@ -306,6 +333,121 @@ async fn send_sse_request(
 
     serde_json::from_str(&body)
         .map_err(|e| AppError::Internal(format!("Invalid JSON from SSE server: {e}")))
+}
+
+// ============================================================================
+// Argument validation
+// ============================================================================
+
+/// Reject arguments that exceed structural limits (depth, serialized size).
+fn validate_argument_structure(arguments: &serde_json::Value) -> Result<(), AppError> {
+    let serialized_len = serde_json::to_string(arguments)
+        .map_err(|e| AppError::Validation(format!("Cannot serialize arguments: {e}")))?
+        .len();
+
+    if serialized_len > MAX_ARGUMENT_BYTES {
+        return Err(AppError::Validation(format!(
+            "MCP tool arguments exceed maximum size ({serialized_len} bytes > {MAX_ARGUMENT_BYTES} byte limit)"
+        )));
+    }
+
+    let depth = json_depth(arguments);
+    if depth > MAX_ARGUMENT_DEPTH {
+        return Err(AppError::Validation(format!(
+            "MCP tool arguments exceed maximum nesting depth ({depth} > {MAX_ARGUMENT_DEPTH} limit)"
+        )));
+    }
+
+    Ok(())
+}
+
+/// Compute the maximum nesting depth of a JSON value.
+fn json_depth(value: &serde_json::Value) -> usize {
+    match value {
+        serde_json::Value::Array(arr) => {
+            1 + arr.iter().map(json_depth).max().unwrap_or(0)
+        }
+        serde_json::Value::Object(obj) => {
+            1 + obj.values().map(json_depth).max().unwrap_or(0)
+        }
+        _ => 0,
+    }
+}
+
+/// Extract the `input_schema` for a specific tool from a `tools/list` response.
+/// Returns `Ok(None)` if the tool exists but has no schema.
+/// Returns `Err` if the tool is not found in the server's tool list.
+fn extract_tool_schema(
+    list_resp: &serde_json::Value,
+    tool_name: &str,
+) -> Result<Option<serde_json::Value>, AppError> {
+    let tools_arr = list_resp
+        .get("result")
+        .and_then(|r| r.get("tools"))
+        .and_then(|t| t.as_array())
+        .ok_or_else(|| AppError::Internal("Invalid tools/list response".into()))?;
+
+    let tool = tools_arr
+        .iter()
+        .find(|t| t.get("name").and_then(|n| n.as_str()) == Some(tool_name))
+        .ok_or_else(|| {
+            AppError::Validation(format!(
+                "Tool '{tool_name}' not found on MCP server"
+            ))
+        })?;
+
+    Ok(tool.get("inputSchema").or_else(|| tool.get("input_schema")).cloned())
+}
+
+/// Validate arguments against the tool's declared JSON Schema.
+/// Skips validation if no schema is declared (permissive by default).
+fn validate_arguments_against_schema(
+    arguments: &serde_json::Value,
+    schema: Option<&serde_json::Value>,
+) -> Result<(), AppError> {
+    let schema = match schema {
+        Some(s) => s,
+        None => return Ok(()), // No schema declared; allow any arguments
+    };
+
+    let validator = match jsonschema::validator_for(schema) {
+        Ok(v) => v,
+        Err(e) => {
+            // If the schema itself is invalid, log and skip validation rather
+            // than blocking all calls to a tool with a broken schema.
+            tracing::warn!("MCP tool has invalid input_schema, skipping validation: {e}");
+            return Ok(());
+        }
+    };
+
+    let errors: Vec<String> = validator
+        .iter_errors(arguments)
+        .map(|err| {
+            let path = err.instance_path.to_string();
+            if path.is_empty() {
+                err.to_string()
+            } else {
+                format!("{path}: {err}")
+            }
+        })
+        .collect();
+
+    if !errors.is_empty() {
+        let summary = if errors.len() <= 3 {
+            errors.join("; ")
+        } else {
+            format!(
+                "{}; ... and {} more errors",
+                errors[..3].join("; "),
+                errors.len() - 3
+            )
+        };
+        return Err(AppError::Validation(format!(
+            "MCP tool arguments failed schema validation: {summary}"
+        )));
+    }
+
+    Ok(())
 }
 
 // ============================================================================

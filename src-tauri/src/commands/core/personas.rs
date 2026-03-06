@@ -5,15 +5,18 @@ use crate::db::models::{CreatePersonaInput, Persona, PersonaSummary, UpdatePerso
 use crate::db::repos::core::personas as repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::error::AppError;
+use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 #[tauri::command]
 pub fn list_personas(state: State<'_, Arc<AppState>>) -> Result<Vec<Persona>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_all(&state.db)
 }
 
 #[tauri::command]
 pub fn get_persona(state: State<'_, Arc<AppState>>, id: String) -> Result<Persona, AppError> {
+    require_auth_sync(&state)?;
     repo::get_by_id(&state.db, &id)
 }
 
@@ -22,6 +25,7 @@ pub fn create_persona(
     state: State<'_, Arc<AppState>>,
     input: CreatePersonaInput,
 ) -> Result<Persona, AppError> {
+    require_auth_sync(&state)?;
     repo::create(&state.db, input)
 }
 
@@ -31,6 +35,7 @@ pub fn update_persona(
     id: String,
     input: UpdatePersonaInput,
 ) -> Result<Persona, AppError> {
+    require_auth_sync(&state)?;
     repo::update(&state.db, &id, input)
 }
 
@@ -38,11 +43,13 @@ pub fn update_persona(
 pub fn get_persona_summaries(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<PersonaSummary>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_summaries(&state.db)
 }
 
 #[tauri::command]
 pub async fn delete_persona(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
+    require_auth(&state).await?;
     // Cancel any running/queued executions for this persona before deleting
     if let Ok(running) = exec_repo::get_running(&state.db) {
         for exec in running {

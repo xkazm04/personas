@@ -18,7 +18,7 @@ export function CopyButton({ text, className }: { text: string; className?: stri
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      // Clipboard access denied
+      // intentional: non-critical -- clipboard access denied
     }
   }, [text]);
 

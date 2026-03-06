@@ -31,7 +31,7 @@ function hasNonEmptyJson(raw: string | null | undefined, type: 'array' | 'object
       return Array.isArray(parsed) && parsed.length > 0;
     }
     return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed) && Object.keys(parsed as Record<string, unknown>).length > 0;
-  } catch {
+  } catch { // intentional: non-critical — JSON parse fallback
     return type === 'object' ? !!raw : false;
   }
 }
@@ -90,7 +90,7 @@ function HighlightedJsonBlock({ raw }: { raw: string | null }) {
     try {
       const pretty = JSON.stringify(JSON.parse(raw), null, 2);
       return sanitizeHljsHtml(hljs.highlight(pretty, { language: 'json' }).value);
-    } catch {
+    } catch { // intentional: non-critical — JSON parse fallback
       return null;
     }
   }, [raw]);
@@ -191,7 +191,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
       <div className="flex gap-1 p-1 rounded-xl bg-secondary/40 border border-primary/10 w-fit">
         <button
           onClick={() => setActiveTab('detail')}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
             activeTab === 'detail'
               ? 'bg-primary/15 text-foreground/90 border border-primary/25'
               : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'
@@ -203,7 +203,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
         {hasToolSteps && (
           <button
             onClick={() => setActiveTab('inspector')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
               activeTab === 'inspector'
                 ? 'bg-primary/15 text-foreground/90 border border-primary/25'
                 : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'
@@ -215,7 +215,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
         )}
         <button
           onClick={() => setActiveTab('trace')}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
             activeTab === 'trace'
               ? 'bg-primary/15 text-foreground/90 border border-primary/25'
               : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'
@@ -226,7 +226,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
         </button>
         <button
           onClick={() => setActiveTab('pipeline')}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
             activeTab === 'pipeline'
               ? 'bg-primary/15 text-foreground/90 border border-primary/25'
               : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'
@@ -238,7 +238,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
         {isTerminalState(execution.status) && (
           <button
             onClick={() => setActiveTab('replay')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
               activeTab === 'replay'
                 ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25'
                 : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'
@@ -266,11 +266,11 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
             <div className="space-y-1.5">
               <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider">Status</div>
               <div className="flex items-center gap-2">
-                <span className={`inline-block px-2 py-0.5 rounded-md text-sm font-medium ${badgeClass(getStatusEntry(execution.status))}`}>
+                <span className={`inline-block px-2 py-0.5 rounded-lg text-sm font-medium ${badgeClass(getStatusEntry(execution.status))}`}>
                   {getStatusEntry(execution.status).label}
                 </span>
                 {execution.retry_count > 0 && (
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" title={`Healing retry #${execution.retry_count} of original execution`}>
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" title={`Healing retry #${execution.retry_count} of original execution`}>
                     <RefreshCw className="w-2.5 h-2.5" />
                     Retry #{execution.retry_count}
                   </span>
@@ -314,7 +314,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
             <div className="flex justify-end">
               <button
                 onClick={() => setShowRaw(!showRaw)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-lg border transition-colors ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-xl border transition-colors ${
                   showRaw
                     ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                     : 'bg-secondary/30 text-muted-foreground/60 border-primary/10 hover:text-muted-foreground/80'
@@ -354,7 +354,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
                               <button
                                 onClick={() => handleErrorAction(explanation.action!)}
                                 data-testid="error-action-btn"
-                                className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary/10 text-primary/80 border border-primary/15 hover:bg-primary/20 hover:text-primary transition-all group"
+                                className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-primary/10 text-primary/80 border border-primary/15 hover:bg-primary/20 hover:text-primary transition-all group"
                               >
                                 <ActionIcon className="w-3.5 h-3.5" />
                                 {explanation.action.label}

@@ -187,7 +187,7 @@ export default function GlobalExecutionList() {
           />
 
           {globalExecutionsWarning && (
-            <div className="mx-4 md:mx-6 mt-3 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-sm text-amber-300/90" role="status" aria-live="polite">
+            <div className="mx-4 md:mx-6 mt-3 rounded-xl border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-sm text-amber-300/90" role="status" aria-live="polite">
               {globalExecutionsWarning}
             </div>
           )}
@@ -279,7 +279,7 @@ export default function GlobalExecutionList() {
                         {/* Persona */}
                         <div className="flex items-center gap-2 px-4 w-[25%] min-w-0">
                           <div
-                            className="w-6 h-6 rounded-md flex items-center justify-center text-sm border border-primary/15 flex-shrink-0"
+                            className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0"
                             style={{ backgroundColor: (exec.persona_color || '#6366f1') + '15' }}
                           >
                             {exec.persona_icon || '?'}
@@ -291,7 +291,7 @@ export default function GlobalExecutionList() {
 
                         {/* Status */}
                         <div className="px-4 w-[20%]">
-                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-sm font-medium ${badgeClass(status)}`}>
+                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-sm font-medium ${badgeClass(status)}`}>
                             {status.pulse && (
                               <span className="relative flex h-1.5 w-1.5">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
@@ -332,7 +332,7 @@ export default function GlobalExecutionList() {
                   <div className="pt-3 pb-2 text-center">
                     <button
                       onClick={handleLoadMore}
-                      className="px-4 py-2 text-sm font-medium text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 rounded-lg border border-primary/15 transition-all"
+                      className="px-4 py-2 text-sm font-medium text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 rounded-xl border border-primary/15 transition-all"
                     >
                       Load More
                     </button>

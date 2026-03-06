@@ -1903,6 +1903,18 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
          CREATE INDEX IF NOT EXISTS idx_pms_persona_date    ON persona_metrics_snapshots(persona_id, snapshot_date);"
     )?;
 
+    // ── Headless flag for background cron agents ─────────────────────────
+    let has_headless: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('personas') WHERE name = 'headless'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_headless {
+        conn.execute_batch("ALTER TABLE personas ADD COLUMN headless INTEGER NOT NULL DEFAULT 0;")?;
+        tracing::info!("Added headless column to personas for background cron agents");
+    }
+
     Ok(())
 }
 

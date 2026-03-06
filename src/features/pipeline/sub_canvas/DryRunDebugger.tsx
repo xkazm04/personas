@@ -410,7 +410,7 @@ export default function DryRunDebugger({
                 <span className="text-sm font-semibold text-foreground/90">
                   {agentNames[inspectedData.memberId] || 'Agent'}
                 </span>
-                <span className={`px-1.5 py-0.5 text-sm font-mono rounded-md ${
+                <span className={`px-1.5 py-0.5 text-sm font-mono rounded-lg ${
                   inspectedData.status === 'completed' ? 'bg-emerald-500/15 text-emerald-400' :
                   inspectedData.status === 'running' ? 'bg-blue-500/15 text-blue-400' :
                   'bg-secondary/40 text-muted-foreground'
@@ -421,13 +421,13 @@ export default function DryRunDebugger({
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setPanelCollapsed(true)}
-                  className="p-1 rounded-md hover:bg-primary/10 text-muted-foreground/80 hover:text-foreground/80 transition-colors"
+                  className="p-1 rounded-lg hover:bg-primary/10 text-muted-foreground/80 hover:text-foreground/80 transition-colors"
                 >
                   <ChevronDown className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => setInspectedNode(null)}
-                  className="p-1 rounded-md hover:bg-primary/10 text-muted-foreground/80 hover:text-foreground/80 transition-colors"
+                  className="p-1 rounded-lg hover:bg-primary/10 text-muted-foreground/80 hover:text-foreground/80 transition-colors"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>

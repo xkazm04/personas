@@ -31,6 +31,7 @@ pub mod prompt;
 pub mod provider;
 pub mod queue;
 pub mod rate_limiter;
+pub mod tier;
 pub mod rotation;
 pub mod runner;
 pub mod scheduler;
@@ -222,6 +223,11 @@ impl ExecutionEngine {
     /// Returns the log directory root used by the execution engine.
     pub fn log_dir(&self) -> &std::path::Path {
         &self.log_dir
+    }
+
+    /// Returns a reference to the concurrency tracker (for tier usage reporting).
+    pub fn tracker(&self) -> &Arc<Mutex<queue::ConcurrencyTracker>> {
+        &self.tracker
     }
 
     /// Mark any executions left in running/queued state as failed.

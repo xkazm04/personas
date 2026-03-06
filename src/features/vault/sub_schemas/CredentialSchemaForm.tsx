@@ -137,7 +137,7 @@ export function CredentialSchemaForm({
       if (createdConnectorId) {
         try {
           await deleteConnectorDefinition(createdConnectorId);
-        } catch { /* rollback is best-effort */ }
+        } catch { /* intentional: non-critical — rollback is best-effort */ }
       }
       setError(err instanceof Error ? err.message : `Failed to save ${config.title.toLowerCase()}`);
     }

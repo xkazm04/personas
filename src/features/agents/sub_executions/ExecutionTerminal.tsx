@@ -46,7 +46,7 @@ export function ExecutionTerminal({
     <div className={
       isFullscreen
         ? 'fixed inset-0 z-50 flex flex-col bg-background'
-        : 'border border-border/30 rounded-2xl overflow-hidden bg-background shadow-[0_0_30px_rgba(0,0,0,0.3)]'
+        : 'border border-border/30 rounded-xl overflow-hidden bg-background shadow-[0_0_30px_rgba(0,0,0,0.3)]'
     }>
       <TerminalHeader
         isRunning={isRunning}

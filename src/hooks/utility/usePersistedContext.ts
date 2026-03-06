@@ -69,6 +69,7 @@ export function usePersistedContext<T>({
 
       onRestore(parsed);
     } catch {
+      // intentional: non-critical — corrupt localStorage entry is removed
       window.localStorage.removeItem(key);
     }
   }, [enabled, key, maxAge, validate, getSavedAt, onRestore]);

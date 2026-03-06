@@ -53,7 +53,7 @@ export default function AccountSettings() {
               <div className="border-t border-primary/10 pt-4">
                 <button
                   onClick={logout}
-                  className="flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-sm text-foreground/90
+                  className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-foreground/90
                     hover:bg-primary/5 border border-primary/10 hover:border-primary/20 transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
@@ -70,7 +70,7 @@ export default function AccountSettings() {
               <button
                 onClick={loginWithGoogle}
                 disabled={isLoading}
-                className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-sm font-medium
+                className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-medium
                   bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15
                   transition-colors disabled:opacity-50"
               >

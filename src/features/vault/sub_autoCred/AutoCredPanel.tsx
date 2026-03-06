@@ -38,7 +38,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
     <div className="space-y-4">
       {/* Badge */}
       <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
           <Bot className="w-3.5 h-3.5 text-cyan-400" />
           <span className="text-sm font-medium text-cyan-400">Auto-Setup via Playwright MCP</span>
         </div>
@@ -210,7 +210,7 @@ function AutoCredBrowserError({
       <div className="flex gap-3 justify-end">
         <button
           onClick={onCancel}
-          className="px-4 py-2 text-sm text-muted-foreground/70 hover:text-foreground rounded-lg hover:bg-secondary/40 transition-colors"
+          className="px-4 py-2 text-sm text-muted-foreground/70 hover:text-foreground rounded-xl hover:bg-secondary/40 transition-colors"
         >
           Set Up Manually
         </button>
@@ -343,7 +343,7 @@ function AutoCredErrorDisplay({
       <div className="flex gap-3 justify-center">
         <button
           onClick={onCancel}
-          className="px-4 py-2 text-sm text-muted-foreground/70 hover:text-foreground rounded-lg hover:bg-secondary/40 transition-colors"
+          className="px-4 py-2 text-sm text-muted-foreground/70 hover:text-foreground rounded-xl hover:bg-secondary/40 transition-colors"
         >
           {error.retryable ? 'Cancel' : 'Set Up Manually'}
         </button>

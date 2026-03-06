@@ -140,7 +140,7 @@ export function ToolImpactPanel({ impact, isAssigned }: ToolImpactPanelProps) {
                 {coUsedTools.map((co) => (
                   <span
                     key={co.toolName}
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-sm bg-primary/5 border border-primary/10 text-foreground/60"
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-sm bg-primary/5 border border-primary/10 text-foreground/60"
                     title={`Co-used ${co.coOccurrences} time${co.coOccurrences !== 1 ? 's' : ''}`}
                   >
                     {co.toolName}

@@ -85,7 +85,7 @@ export function useDesignReviews() {
       const data = await api.listDesignReviews();
       setReviews(data);
     } catch {
-      // Seeding is best-effort — don't block the UI
+      // intentional: non-critical — seeding catalog templates is best-effort
     }
   }, []);
 
@@ -207,7 +207,7 @@ export function useDesignReviews() {
       try {
         await api.cancelDesignReviewRun(currentRunId.current);
       } catch {
-        // Best effort cancellation
+        // intentional: non-critical — cancellation is best-effort
       }
     }
     if (unlistenRef.current) {

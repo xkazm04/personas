@@ -9,6 +9,7 @@ use crate::commands::design::n8n_transform::cli_runner::extract_first_json_objec
 use crate::db::repos::communication::reviews as repo;
 use crate::engine::prompt;
 use crate::error::AppError;
+use crate::ipc_auth::require_auth;
 use crate::AppState;
 
 /// Model for smart search — cheap and fast, this is a ranking task.
@@ -94,6 +95,7 @@ pub async fn smart_search_templates(
     state: State<'_, Arc<AppState>>,
     query: String,
 ) -> Result<SmartSearchResult, AppError> {
+    require_auth(&state).await?;
     let query = query.trim().to_string();
     if query.len() < 5 {
         return Err(AppError::Validation(

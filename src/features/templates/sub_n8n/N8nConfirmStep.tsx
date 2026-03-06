@@ -105,7 +105,7 @@ export function N8nConfirmStep({
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ type: 'spring', damping: 15, stiffness: 300 }}
-          className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center"
+          className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center"
         >
           <motion.div
             initial={{ scale: 0 }}
@@ -182,7 +182,7 @@ export function N8nConfirmStep({
           >
             <button
               onClick={onReset}
-              className="flex items-center gap-2 px-4 py-2 text-sm rounded-lg border border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/15 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-sm rounded-xl border border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/15 transition-colors"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               Import Another
@@ -193,7 +193,7 @@ export function N8nConfirmStep({
 
       {/* Persona preview card */}
       {!created && (
-        <div className="bg-secondary/20 border border-primary/10 rounded-2xl p-4">
+        <div className="bg-secondary/20 border border-primary/10 rounded-xl p-4">
           <p className="text-sm font-semibold text-muted-foreground/55 uppercase tracking-wider mb-3">
             Persona Preview
           </p>

@@ -211,7 +211,7 @@ function CardPattern({ color, index }: { color: string; index: number }) {
 
 function AnimatedBorderGlow({ color }: { color: string }) {
   return (
-    <div className="absolute inset-0 rounded-2xl overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
+    <div className="absolute inset-0 rounded-xl overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
       <motion.div
         className={`absolute w-24 h-24 ${color} blur-2xl rounded-full`}
         animate={{
@@ -246,7 +246,7 @@ function NavigationCard({ card, index, onClick }: { card: NavCard; index: number
       }}
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
       onClick={onClick}
-      className={`group relative text-left rounded-2xl border bg-gradient-to-br ${card.gradFrom} ${card.gradTo} ${card.accentBorder} shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
+      className={`group relative text-left rounded-xl border bg-gradient-to-br ${card.gradFrom} ${card.gradTo} ${card.accentBorder} shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
     >
       <AnimatedBorderGlow color={card.glowColor} />
 
@@ -355,11 +355,11 @@ export default function HomeWelcome() {
               className="inline-flex items-center justify-center mb-6"
             >
               <div className="relative">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/20 flex items-center justify-center shadow-lg shadow-indigo-500/10">
+                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/20 flex items-center justify-center shadow-lg shadow-indigo-500/10">
                   <Sparkles className="w-8 h-8 text-indigo-400" />
                 </div>
                 {/* Orbiting ring */}
-                <div className="absolute inset-[-6px] rounded-2xl border border-indigo-500/10 animate-spin-slow" />
+                <div className="absolute inset-[-6px] rounded-xl border border-indigo-500/10 animate-spin-slow" />
                 {/* Corner dots */}
                 <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-cyan-400/50" />
                 <div className="absolute -bottom-1 -left-1 w-2 h-2 rounded-full bg-purple-400/50" />

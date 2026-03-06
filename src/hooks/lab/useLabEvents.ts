@@ -82,7 +82,9 @@ export function useLabEvents() {
         listeners.push(unlisten);
       };
 
-      await Promise.all([
+      // Use allSettled so a single listener registration failure doesn't
+      // prevent the remaining listeners from being set up.
+      await Promise.allSettled([
         register("lab-arena-status", "arena"),
         register("lab-ab-status", "ab"),
         register("lab-matrix-status", "matrix"),

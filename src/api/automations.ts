@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import type { PersonaAutomation, AutomationRun, CreateAutomationInput, UpdateAutomationInput } from "@/lib/bindings/PersonaAutomation";
 
 export const listAutomations = (personaId: string) =>
@@ -61,6 +61,36 @@ export const n8nCreateWorkflow = (credentialId: string, definition: Record<strin
 
 export const n8nTriggerWebhook = (credentialId: string, webhookUrl: string, body?: Record<string, unknown>) =>
   invoke<Record<string, unknown>>("n8n_trigger_webhook", { credentialId, webhookUrl, body: body ?? null });
+
+// Zapier Platform API
+export interface ZapierZap {
+  id: string;
+  title: string;
+  status: 'on' | 'off' | 'draft';
+  steps: ZapierStep[];
+  updatedAt: string;
+}
+
+export interface ZapierStep {
+  app: string;
+  action: string;
+  position: number;
+}
+
+export interface ZapierWebhookResult {
+  success: boolean;
+  status: number;
+  requestId: string | null;
+}
+
+export const zapierListZaps = (credentialId: string) =>
+  invoke<ZapierZap[]>("zapier_list_zaps", { credentialId });
+
+export const zapierCreateZap = (credentialId: string, definition: Record<string, unknown>) =>
+  invoke<{ zapId: string; webhookUrl: string | null }>("zapier_create_zap", { credentialId, definition });
+
+export const zapierTriggerWebhook = (credentialId: string, webhookUrl: string, body?: Record<string, unknown>) =>
+  invoke<ZapierWebhookResult>("zapier_trigger_webhook", { credentialId, webhookUrl, body: body ?? null });
 
 // GitHub Platform API
 export interface GitHubRepo {

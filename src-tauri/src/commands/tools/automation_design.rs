@@ -9,6 +9,7 @@ use crate::db::repos::resources::connectors as connector_repo;
 use crate::db::repos::resources::credentials as cred_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::error::AppError;
+use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 use crate::commands::credentials::ai_artifact_flow::{
@@ -199,6 +200,7 @@ pub async fn start_automation_design(
     persona_id: String,
     description: String,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth(&state).await?;
     // Gather persona context
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
     let tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
@@ -261,7 +263,7 @@ pub async fn start_automation_design(
     let active_child_pid = state.active_automation_design_child_pid.clone();
 
     {
-        let mut guard = active_id.lock().unwrap();
+        let mut guard = active_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
         *guard = Some(design_id.clone());
     }
 
@@ -288,10 +290,11 @@ pub async fn start_automation_design(
 pub fn cancel_automation_design(
     state: State<'_, Arc<AppState>>,
 ) -> Result<(), AppError> {
-    let mut guard = state.active_automation_design_id.lock().unwrap();
+    require_auth_sync(&state)?;
+    let mut guard = state.active_automation_design_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
     *guard = None;
 
-    let pid = state.active_automation_design_child_pid.lock().unwrap().take();
+    let pid = state.active_automation_design_child_pid.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?.take();
     if let Some(pid) = pid {
         tracing::info!(pid = pid, "Killing automation design CLI child process");
         crate::engine::kill_process(pid);

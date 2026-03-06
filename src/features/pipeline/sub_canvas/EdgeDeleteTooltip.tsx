@@ -67,7 +67,7 @@ export default function EdgeDeleteTooltip({
         </div>
         <button
           onClick={onClose}
-          className="p-0.5 rounded-md text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/80 transition-colors"
+          className="p-0.5 rounded-lg text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/80 transition-colors"
         >
           <X className="w-3 h-3" />
         </button>
@@ -123,7 +123,7 @@ export default function EdgeDeleteTooltip({
       {/* Delete button */}
       <button
         onClick={onDelete}
-        className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-red-400 hover:bg-red-500/15 border border-red-500/20 bg-red-500/5 transition-colors"
+        className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl text-red-400 hover:bg-red-500/15 border border-red-500/20 bg-red-500/5 transition-colors"
       >
         <Trash2 className="w-3 h-3" />
         Delete Connection

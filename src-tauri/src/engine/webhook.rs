@@ -18,7 +18,8 @@ use crate::db::models::CreatePersonaEventInput;
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::resources::triggers as trigger_repo;
 use crate::db::DbPool;
-use crate::engine::rate_limiter::{RateLimiter, WEBHOOK_TRIGGER_MAX, WEBHOOK_TRIGGER_WINDOW};
+use crate::engine::rate_limiter::{RateLimiter, WEBHOOK_TRIGGER_WINDOW};
+use crate::engine::tier::TierConfig;
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -27,6 +28,7 @@ type HmacSha256 = Hmac<Sha256>;
 pub struct WebhookState {
     pub pool: DbPool,
     pub rate_limiter: Arc<RateLimiter>,
+    pub tier_config: Arc<std::sync::Mutex<TierConfig>>,
 }
 
 /// Start the webhook HTTP server on port 9420.
@@ -35,9 +37,10 @@ pub struct WebhookState {
 pub async fn start_webhook_server(
     pool: DbPool,
     rate_limiter: Arc<RateLimiter>,
+    tier_config: Arc<std::sync::Mutex<TierConfig>>,
     mut shutdown_rx: watch::Receiver<bool>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let state = WebhookState { pool, rate_limiter };
+    let state = WebhookState { pool, rate_limiter, tier_config };
 
     // 1 MB body limit to prevent OOM DoS via oversized payloads
     const MAX_BODY_BYTES: usize = 1024 * 1024;
@@ -155,9 +158,10 @@ async fn handle_webhook(
         );
     }
 
-    // 2b. Rate limit: max WEBHOOK_TRIGGER_MAX calls per trigger per minute
+    // 2b. Rate limit: max webhook calls per trigger per minute (tier-aware)
+    let webhook_trigger_max = state.tier_config.lock().unwrap_or_else(|e| e.into_inner()).webhook_trigger_max;
     let rate_key = format!("webhook:{}", trigger_id);
-    if let Err(retry_after) = state.rate_limiter.check(&rate_key, WEBHOOK_TRIGGER_MAX, WEBHOOK_TRIGGER_WINDOW) {
+    if let Err(retry_after) = state.rate_limiter.check(&rate_key, webhook_trigger_max, WEBHOOK_TRIGGER_WINDOW) {
         tracing::warn!(
             trigger_id = %trigger_id,
             retry_after = retry_after,
@@ -170,7 +174,7 @@ async fn handle_webhook(
                 event_id: None,
                 error: Some(format!(
                     "Rate limited: max {} webhook calls/minute per trigger. Retry after {}s",
-                    WEBHOOK_TRIGGER_MAX, retry_after
+                    webhook_trigger_max, retry_after
                 )),
             }),
         );

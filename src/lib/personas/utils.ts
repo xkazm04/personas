@@ -13,6 +13,7 @@ export function extractConnectorNames(persona: DbPersona, limit = 4): string[] {
       .map((c) => (typeof c === 'string' ? c : c.name))
       .slice(0, limit);
   } catch {
+    // intentional: non-critical -- JSON parse fallback
     return [];
   }
 }

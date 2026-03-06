@@ -107,6 +107,7 @@ export function useN8nWizard() {
       try {
         parserJson = JSON.stringify(state.parsedResult);
       } catch {
+        // intentional: non-critical — JSON parse fallback
         parserJson = '{}';
       }
 
@@ -235,7 +236,7 @@ export function useN8nWizard() {
               break;
             }
           } catch {
-            // Snapshot no longer available is treated as stopped.
+            // intentional: non-critical — snapshot no longer available is treated as stopped
             stopped = true;
             break;
           }
@@ -276,6 +277,7 @@ export function useN8nWizard() {
       dispatch({ type: 'RESET' });
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch {
+      // intentional: non-critical — ensure reset completes even if cleanup fails
       setN8nTransformActive(false);
       dispatch({ type: 'RESET' });
     }

@@ -56,7 +56,7 @@ export function ToolsSection({ tools, personaId }: ToolsSectionProps) {
                     {tools.map((tool) => (
                       <span
                         key={tool.id}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-lg border border-primary/10 bg-secondary/20 text-foreground/80"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-xl border border-primary/10 bg-secondary/20 text-foreground/80"
                         title={tool.description ?? undefined}
                       >
                         <Wrench className="w-3 h-3 text-muted-foreground/60" />
@@ -75,7 +75,7 @@ export function ToolsSection({ tools, personaId }: ToolsSectionProps) {
                       <button
                         onClick={() => setShowRunner(!showRunner)}
                         aria-expanded={showRunner}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none focus-visible:rounded-xl"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none focus-visible:rounded-xl"
                       >
                         <Play className="w-3 h-3" />
                         {showRunner ? 'Hide Tool Runner' : `Try Tools (${invocableTools.length})`}

@@ -62,6 +62,7 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
     try {
       return JSON.parse(selectedPersona.model_profile) as ModelProfile;
     } catch {
+      // intentional: non-critical — JSON parse fallback
       return { model: 'sonnet', provider: 'anthropic' };
     }
   }, [useCase?.model_override, selectedPersona?.model_profile]);
@@ -96,6 +97,7 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
     try {
       return profileToLabel(JSON.parse(selectedPersona.model_profile) as ModelProfile);
     } catch {
+      // intentional: non-critical — JSON parse fallback
       return 'Sonnet';
     }
   }, [selectedPersona?.model_profile]);
@@ -146,7 +148,7 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
           <button
             onClick={handleCancelTest}
             disabled={!canCancel}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             title={!canCancel ? 'Waiting for test to start...' : 'Stop test'}
           >
             <Square className="w-3.5 h-3.5" /> Stop
@@ -155,7 +157,7 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
           <button
             onClick={handleRunTest}
             disabled={!hasPrompt || !modelConfig}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             title={!hasPrompt ? 'No prompt configured' : 'Test this use case'}
           >
             <Play className="w-3.5 h-3.5" /> Test

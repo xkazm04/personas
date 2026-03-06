@@ -123,7 +123,7 @@ export function EvalPanel() {
     try {
       const nums = JSON.parse(run.versionNumbers) as number[];
       return nums.map((n) => `v${n}`).join(', ');
-    } catch {
+    } catch { // intentional: non-critical — JSON parse fallback
       return run.versionNumbers;
     }
   };
@@ -146,7 +146,7 @@ export function EvalPanel() {
                     onClick={() => toggleVersion(v.id)}
                     disabled={isLabRunning}
                     data-testid={`eval-version-toggle-${v.version_number}`}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${
                       isSelected
                         ? 'bg-primary/15 text-primary border-primary/30'
                         : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20'
@@ -183,7 +183,7 @@ export function EvalPanel() {
                   }}
                   disabled={isLabRunning}
                   data-testid={`eval-model-toggle-${m.id}`}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                  className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${
                     selectedModels.has(m.id)
                       ? 'bg-primary/15 text-primary border-primary/30'
                       : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20'
@@ -214,7 +214,7 @@ export function EvalPanel() {
                     onClick={toggle}
                     disabled={isLabRunning}
                     data-testid="eval-usecase-trigger"
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm border transition-all ${
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm border transition-all ${
                       isOpen ? 'bg-primary/10 border-primary/30' : 'bg-background/30 border-primary/10 hover:border-primary/20'
                     } ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   >
@@ -251,13 +251,13 @@ export function EvalPanel() {
               placeholder='{"task": "Summarize the latest sales report"}'
               disabled={isLabRunning}
               data-testid="eval-test-input"
-              className="w-full h-20 px-3 py-2 text-sm bg-background/50 border border-primary/15 rounded-lg text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none font-mono disabled:opacity-50"
+              className="w-full h-20 px-3 py-2 text-sm bg-background/50 border border-primary/15 rounded-xl text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none font-mono disabled:opacity-50"
             />
           </div>
 
           {/* Combination preview */}
           {selectedVersionIds.size >= 2 && selectedModels.size > 0 && (
-            <div className="text-sm text-muted-foreground/70 bg-secondary/30 rounded-lg px-3 py-2">
+            <div className="text-sm text-muted-foreground/70 bg-secondary/30 rounded-xl px-3 py-2">
               {selectedVersionIds.size} versions × {selectedModels.size} models = {selectedVersionIds.size * selectedModels.size} evaluation cells
             </div>
           )}
@@ -267,7 +267,7 @@ export function EvalPanel() {
             <button
               onClick={() => void handleCancel()}
               data-testid="eval-cancel-btn"
-              className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-2xl font-medium text-sm transition-all bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20"
+              className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20"
             >
               <Square className="w-4 h-4" />
               Cancel Eval
@@ -277,7 +277,7 @@ export function EvalPanel() {
               onClick={() => void handleStart()}
               disabled={selectedVersionIds.size < 2 || selectedModels.size === 0}
               data-testid="eval-start-btn"
-              className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-2xl font-medium text-sm transition-all bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               <Play className="w-4 h-4" />
               Run Evaluation Matrix
@@ -298,7 +298,7 @@ export function EvalPanel() {
 
         {evalRuns.length === 0 ? (
           <div className="text-center py-12 bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl" data-testid="eval-history-empty">
-            <div className="w-14 h-14 rounded-2xl bg-primary/8 border border-primary/12 flex items-center justify-center mx-auto mb-4">
+            <div className="w-14 h-14 rounded-xl bg-primary/8 border border-primary/12 flex items-center justify-center mx-auto mb-4">
               <Grid3X3 className="w-7 h-7 text-primary/40" />
             </div>
             <p className="text-sm text-muted-foreground/80">No evaluation runs yet</p>

@@ -131,8 +131,7 @@ export function IdentityStep({ builderState, onBack, draftPersonaId }: IdentityS
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -40 }}
       transition={pageTransition}
-      className="w-full"
-      style={{ minWidth: 900 }}
+      className="w-full lg:min-w-[900px]"
     >
       {/* Header */}
       <div className="mb-6">
@@ -151,7 +150,7 @@ export function IdentityStep({ builderState, onBack, draftPersonaId }: IdentityS
       </div>
 
       {/* Two-column layout */}
-      <div className="grid grid-cols-[1fr_320px] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
         {/* Left column: form */}
         <div className="space-y-4 min-w-0">
           {/* Name */}
@@ -163,7 +162,7 @@ export function IdentityStep({ builderState, onBack, draftPersonaId }: IdentityS
               onChange={(e) => setName(e.target.value)}
               placeholder="Agent name"
               autoFocus
-              className="w-full px-3 py-2 bg-secondary/40 border border-primary/15 rounded-lg text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+              className="w-full px-3 py-2 bg-secondary/40 border border-primary/15 rounded-xl text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
             />
           </div>
 
@@ -177,7 +176,7 @@ export function IdentityStep({ builderState, onBack, draftPersonaId }: IdentityS
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Short description"
-              className="w-full px-3 py-2 bg-secondary/40 border border-primary/15 rounded-lg text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+              className="w-full px-3 py-2 bg-secondary/40 border border-primary/15 rounded-xl text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
             />
           </div>
 
@@ -239,7 +238,7 @@ export function IdentityStep({ builderState, onBack, draftPersonaId }: IdentityS
             type="button"
             onClick={handleCreate}
             disabled={!canSubmit || isCreating}
-            className={`w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all ${
+            className={`btn-lg w-full flex items-center justify-center gap-2.5 font-medium transition-all ${
               canSubmit && !isCreating
                 ? 'bg-btn-primary hover:bg-btn-primary/90 text-white shadow-lg shadow-btn-primary/20 hover:shadow-btn-primary/30 hover:scale-[1.01] active:scale-[0.99]'
                 : 'bg-secondary/40 text-muted-foreground/50 cursor-not-allowed'
@@ -252,6 +251,16 @@ export function IdentityStep({ builderState, onBack, draftPersonaId }: IdentityS
             )}
             {isCreating ? 'Creating...' : 'Create Agent'}
           </button>
+          {!canSubmit && !isCreating && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.15 }}
+              className="text-muted-foreground text-xs mt-1.5 text-center"
+            >
+              Enter a name to continue
+            </motion.p>
+          )}
         </div>
 
         {/* Right column: preview card */}

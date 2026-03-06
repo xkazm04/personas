@@ -15,6 +15,7 @@ use crate::db::repos::resources::{
 };
 use crate::db::DbPool;
 use crate::error::AppError;
+use crate::ipc_auth::{require_auth, require_auth_sync, require_privileged};
 use crate::AppState;
 
 // ============================================================================
@@ -198,6 +199,7 @@ pub struct ExportStats {
 pub async fn get_export_stats(
     state: State<'_, Arc<AppState>>,
 ) -> Result<ExportStats, AppError> {
+    require_auth_sync(&state)?;
     let pool = &state.db;
     let personas = persona_repo::get_all(pool)?;
     let groups = group_repo::get_all(pool)?;
@@ -230,6 +232,7 @@ pub async fn export_full(
     state: State<'_, Arc<AppState>>,
     app: AppHandle,
 ) -> Result<bool, AppError> {
+    require_privileged(&state, "export_full").await?;
     let pool = &state.db;
     let bundle = build_export_bundle(pool, ExportScope::Full)?;
     save_bundle_to_file(&app, &bundle, "personas_full_export").await
@@ -243,6 +246,7 @@ pub async fn export_selective(
     persona_ids: Vec<String>,
     team_ids: Vec<String>,
 ) -> Result<bool, AppError> {
+    require_auth(&state).await?;
     let pool = &state.db;
     let scope = ExportScope::Selective {
         persona_ids: persona_ids.clone(),
@@ -258,6 +262,7 @@ pub async fn import_portability_bundle(
     state: State<'_, Arc<AppState>>,
     app: AppHandle,
 ) -> Result<Option<PortabilityImportResult>, AppError> {
+    require_privileged(&state, "import_portability_bundle").await?;
     let app_clone = app.clone();
     let file_path = tokio::task::spawn_blocking(move || {
         app_clone
@@ -307,6 +312,7 @@ pub async fn preview_competitive_import(
     state: State<'_, Arc<AppState>>,
     app: AppHandle,
 ) -> Result<Option<Vec<CompetitiveImportPreview>>, AppError> {
+    require_auth(&state).await?;
     let _ = &state.db; // validate state
 
     let app_clone = app.clone();

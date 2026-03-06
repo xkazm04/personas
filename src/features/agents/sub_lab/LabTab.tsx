@@ -49,7 +49,7 @@ export function LabTab() {
             <button
               key={tab.id}
               onClick={() => setLabMode(tab.id)}
-              className={`relative flex flex-col items-start gap-0.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+              className={`relative flex flex-col items-start gap-0.5 px-3 py-2 text-sm font-medium rounded-xl transition-colors ${
                 isActive
                   ? 'bg-primary/10 text-foreground/90 border border-primary/20'
                   : 'text-muted-foreground/70 hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'

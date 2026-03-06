@@ -172,13 +172,13 @@ export default function ByomSettings() {
           <div className="flex items-center gap-2">
             <button
               onClick={handleReset}
-              className="px-3 py-1.5 text-sm rounded-lg border border-primary/10 text-muted-foreground hover:bg-secondary/50 transition-colors"
+              className="px-3 py-1.5 text-sm rounded-xl border border-primary/10 text-muted-foreground hover:bg-secondary/50 transition-colors"
             >
               Reset
             </button>
             <button
               onClick={handleSave}
-              className="px-3 py-1.5 text-sm rounded-lg bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 transition-colors"
+              className="px-3 py-1.5 text-sm rounded-xl bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 transition-colors"
             >
               Save Policy
             </button>
@@ -221,7 +221,7 @@ export default function ByomSettings() {
               <button
                 key={tab.id}
                 onClick={() => setActiveSection(tab.id)}
-                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm rounded-md transition-colors ${
+                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm rounded-xl transition-colors ${
                   activeSection === tab.id
                     ? 'bg-primary/15 text-foreground border border-primary/20'
                     : 'text-muted-foreground hover:text-foreground hover:bg-primary/5'
@@ -337,7 +337,7 @@ export default function ByomSettings() {
                   </div>
                   <button
                     onClick={addRoutingRule}
-                    className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg border border-primary/20 text-primary hover:bg-primary/10 transition-colors"
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-xl border border-primary/20 text-primary hover:bg-primary/10 transition-colors"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Add Rule
@@ -436,7 +436,7 @@ export default function ByomSettings() {
                   </div>
                   <button
                     onClick={addComplianceRule}
-                    className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg border border-primary/20 text-primary hover:bg-primary/10 transition-colors"
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-xl border border-primary/20 text-primary hover:bg-primary/10 transition-colors"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Add Rule
@@ -512,7 +512,7 @@ export default function ByomSettings() {
                                         : [...rule.allowed_providers, prov.id];
                                       updateComplianceRule(idx, { allowed_providers: updated });
                                     }}
-                                    className={`px-2 py-1 text-xs rounded-md border transition-colors ${
+                                    className={`px-2 py-1 text-xs rounded-lg border transition-colors ${
                                       isSelected
                                         ? 'border-emerald-500/30 bg-emerald-500/15 text-emerald-400'
                                         : 'border-primary/10 text-muted-foreground/50 hover:text-foreground'

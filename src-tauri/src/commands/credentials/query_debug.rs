@@ -8,7 +8,109 @@ use crate::commands::design::n8n_transform::run_claude_prompt_text_inner;
 use crate::engine::db_query;
 use crate::engine::prompt;
 use crate::error::AppError;
+use crate::ipc_auth::require_privileged;
 use crate::AppState;
+
+// ── Debug output sanitization ─────────────────────────────────────────
+//
+// The query debug feature emits events to the frontend webview. To prevent
+// schema/data leakage (CVSS 6.8), we:
+//   1. Redact values in columns whose names suggest sensitive data
+//   2. Cap the number of result rows sent to the frontend
+//   3. Replace raw database errors with generic messages (full detail logged server-side)
+
+/// Maximum rows included in the debug result event sent to the frontend.
+const DEBUG_MAX_RESULT_ROWS: usize = 5;
+
+/// Column names (lowercase) that indicate sensitive data requiring redaction.
+const SENSITIVE_COLUMNS: &[&str] = &[
+    "password", "passwd", "pass", "secret", "token", "api_key", "apikey",
+    "access_key", "private_key", "credential", "auth", "authorization",
+    "ssn", "credit_card", "card_number", "cvv", "encrypted", "hash",
+    "salt", "iv", "tag", "encrypted_data", "service_role_key", "anon_key",
+    "connection_string", "database_url", "redis_rest_token",
+];
+
+/// Redaction placeholder shown in place of sensitive values.
+const REDACTED: &str = "[REDACTED]";
+
+/// Sanitize a `QueryResult` before emitting it to the frontend:
+/// - Redact values in sensitive columns
+/// - Limit the number of rows
+fn sanitize_query_result(result: &crate::db::models::QueryResult) -> serde_json::Value {
+    // Identify which column indices are sensitive
+    let sensitive_indices: Vec<bool> = result
+        .columns
+        .iter()
+        .map(|col| {
+            let lower = col.to_lowercase();
+            SENSITIVE_COLUMNS.iter().any(|s| lower.contains(s))
+        })
+        .collect();
+
+    let capped_rows: Vec<Vec<serde_json::Value>> = result
+        .rows
+        .iter()
+        .take(DEBUG_MAX_RESULT_ROWS)
+        .map(|row| {
+            row.iter()
+                .enumerate()
+                .map(|(i, val)| {
+                    if sensitive_indices.get(i).copied().unwrap_or(false) {
+                        serde_json::Value::String(REDACTED.to_string())
+                    } else {
+                        // Truncate long string values to prevent data exfiltration
+                        truncate_value(val, 200)
+                    }
+                })
+                .collect()
+        })
+        .collect();
+
+    let rows_omitted = result.row_count.saturating_sub(DEBUG_MAX_RESULT_ROWS);
+
+    serde_json::json!({
+        "columns": result.columns,
+        "rows": capped_rows,
+        "row_count": result.row_count,
+        "duration_ms": result.duration_ms,
+        "truncated": result.truncated || rows_omitted > 0,
+        "rows_omitted": rows_omitted,
+    })
+}
+
+/// Truncate a JSON value's string content if it exceeds `max_len` characters.
+fn truncate_value(val: &serde_json::Value, max_len: usize) -> serde_json::Value {
+    match val {
+        serde_json::Value::String(s) if s.len() > max_len => {
+            serde_json::Value::String(format!("{}...[truncated]", &s[..max_len]))
+        }
+        other => other.clone(),
+    }
+}
+
+/// Sanitize a database error message for frontend display.
+/// Strips internal details (table names, column names, SQL fragments) and returns
+/// a generic message. The full error is returned for server-side logging only.
+fn sanitize_db_error(err: &str) -> String {
+    // Return a generic error that doesn't leak schema details
+    let lower = err.to_lowercase();
+    if lower.contains("syntax") {
+        "Query syntax error. Check the query and try again.".to_string()
+    } else if lower.contains("permission") || lower.contains("denied") {
+        "Permission denied. The database user may lack required privileges.".to_string()
+    } else if lower.contains("timeout") || lower.contains("timed out") {
+        "Query timed out. Try simplifying the query or adding limits.".to_string()
+    } else if lower.contains("not exist") || lower.contains("not found") || lower.contains("unknown") {
+        "Referenced object not found. Check table and column names.".to_string()
+    } else if lower.contains("connection") || lower.contains("connect") {
+        "Database connection error. Check credentials and network.".to_string()
+    } else if lower.contains("duplicate") || lower.contains("unique") || lower.contains("conflict") {
+        "Duplicate value conflict. The query violates a uniqueness constraint.".to_string()
+    } else {
+        "Query execution failed. See application logs for details.".to_string()
+    }
+}
 
 // ── Static job manager ──────────────────────────────────────────────────
 
@@ -40,6 +142,7 @@ pub async fn start_query_debug(
     service_type: String,
     debug_id: String,
 ) -> Result<(), AppError> {
+    require_privileged(&state, "start_query_debug").await?;
     QUERY_DEBUG_JOBS.ensure_not_running(&debug_id)?;
 
     let cancel_token = CancellationToken::new();
@@ -72,9 +175,11 @@ pub async fn start_query_debug(
 
 #[tauri::command]
 pub async fn cancel_query_debug(
+    state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     debug_id: String,
 ) -> Result<(), AppError> {
+    require_privileged(&state, "cancel_query_debug").await?;
     QUERY_DEBUG_JOBS.cancel_or_preempt(&app, &debug_id, ())
 }
 
@@ -157,8 +262,9 @@ async fn run_query_debug(params: RunParams) {
     let (mut output, mut session_id) = match cli_result {
         Ok((text, sid, _)) => (text, sid),
         Err(e) => {
-            emit_line(&app, &debug_id, &format!("[ERROR] Claude CLI failed: {}", e));
-            QUERY_DEBUG_JOBS.set_status(&app, &debug_id, "failed", Some(e));
+            tracing::warn!(debug_id = %debug_id, "Claude CLI failed: {}", e);
+            emit_line(&app, &debug_id, "[ERROR] AI analysis failed. See application logs for details.");
+            QUERY_DEBUG_JOBS.set_status(&app, &debug_id, "failed", Some("AI analysis failed".into()));
             return;
         }
     };
@@ -186,7 +292,6 @@ async fn run_query_debug(params: RunParams) {
         };
 
         emit_line(&app, &debug_id, &format!("> Attempt {} — executing extracted query...", attempt + 1));
-        emit_line(&app, &debug_id, &format!("> {}", query_to_run.replace('\n', "\n> ")));
 
         // Execute the extracted query
         match db_query::execute_query(&pool, &credential_id, &query_to_run).await {
@@ -199,15 +304,15 @@ async fn run_query_debug(params: RunParams) {
                 );
                 emit_line(&app, &debug_id, &summary);
 
-                // Emit result as JSON in status event
-                let result_json = serde_json::to_value(&result).ok();
+                // Emit sanitized result — redact sensitive columns, cap rows
+                let sanitized_result = sanitize_query_result(&result);
                 let _ = app.emit(
                     "query-debug-status",
                     serde_json::json!({
                         "job_id": debug_id,
                         "status": "completed",
                         "error": serde_json::Value::Null,
-                        "result": result_json,
+                        "result": sanitized_result,
                         "corrected_query": query_to_run,
                     }),
                 );
@@ -221,7 +326,10 @@ async fn run_query_debug(params: RunParams) {
             }
             Err(exec_err) => {
                 let err_msg = format!("{}", exec_err);
-                emit_line(&app, &debug_id, &format!("[ERROR] Execution failed: {}", err_msg));
+                let safe_msg = sanitize_db_error(&err_msg);
+                // Log full error server-side only
+                tracing::warn!(debug_id = %debug_id, "Query debug execution failed: {}", err_msg);
+                emit_line(&app, &debug_id, &format!("[ERROR] {}", safe_msg));
 
                 if attempt + 1 >= MAX_RETRIES {
                     emit_line(&app, &debug_id, &format!("> Max retries ({}) reached.", MAX_RETRIES));
@@ -229,7 +337,7 @@ async fn run_query_debug(params: RunParams) {
                         &app,
                         &debug_id,
                         "failed",
-                        Some(format!("Query still failing after {} attempts: {}", MAX_RETRIES, err_msg)),
+                        Some(format!("Query failed after {} attempts: {}", MAX_RETRIES, safe_msg)),
                     );
                     return;
                 }
@@ -286,8 +394,9 @@ async fn run_query_debug(params: RunParams) {
                         }
                     }
                     Err(e) => {
-                        emit_line(&app, &debug_id, &format!("[ERROR] AI retry failed: {}", e));
-                        QUERY_DEBUG_JOBS.set_status(&app, &debug_id, "failed", Some(e));
+                        tracing::warn!(debug_id = %debug_id, "AI retry failed: {}", e);
+                        emit_line(&app, &debug_id, "[ERROR] AI retry failed. See application logs for details.");
+                        QUERY_DEBUG_JOBS.set_status(&app, &debug_id, "failed", Some("AI retry failed".into()));
                         return;
                     }
                 }
@@ -468,6 +577,96 @@ async fn build_schema_context(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::db::models::QueryResult;
+
+    // ── Sanitization tests ──────────────────────────────────────────
+
+    #[test]
+    fn test_sanitize_redacts_sensitive_columns() {
+        let result = QueryResult {
+            columns: vec!["id".into(), "email".into(), "password".into(), "api_key".into()],
+            rows: vec![
+                vec![
+                    serde_json::json!(1),
+                    serde_json::json!("alice@test.com"),
+                    serde_json::json!("hunter2"),
+                    serde_json::json!("sk-1234567890"),
+                ],
+            ],
+            row_count: 1,
+            duration_ms: 42,
+            truncated: false,
+        };
+
+        let sanitized = sanitize_query_result(&result);
+        let rows = sanitized["rows"].as_array().unwrap();
+        assert_eq!(rows[0][0], serde_json::json!(1));          // id: not redacted
+        assert_eq!(rows[0][1], serde_json::json!("alice@test.com")); // email: not redacted
+        assert_eq!(rows[0][2], serde_json::json!(REDACTED));   // password: redacted
+        assert_eq!(rows[0][3], serde_json::json!(REDACTED));   // api_key: redacted
+    }
+
+    #[test]
+    fn test_sanitize_caps_rows() {
+        let rows: Vec<Vec<serde_json::Value>> = (0..20)
+            .map(|i| vec![serde_json::json!(i)])
+            .collect();
+
+        let result = QueryResult {
+            columns: vec!["id".into()],
+            rows,
+            row_count: 20,
+            duration_ms: 10,
+            truncated: false,
+        };
+
+        let sanitized = sanitize_query_result(&result);
+        let out_rows = sanitized["rows"].as_array().unwrap();
+        assert_eq!(out_rows.len(), DEBUG_MAX_RESULT_ROWS);
+        assert_eq!(sanitized["row_count"], serde_json::json!(20));
+        assert_eq!(sanitized["rows_omitted"], serde_json::json!(15));
+        assert_eq!(sanitized["truncated"], serde_json::json!(true));
+    }
+
+    #[test]
+    fn test_sanitize_truncates_long_strings() {
+        let long_val = "x".repeat(500);
+        let result = QueryResult {
+            columns: vec!["data".into()],
+            rows: vec![vec![serde_json::json!(long_val)]],
+            row_count: 1,
+            duration_ms: 5,
+            truncated: false,
+        };
+
+        let sanitized = sanitize_query_result(&result);
+        let val = sanitized["rows"][0][0].as_str().unwrap();
+        assert!(val.len() < 500);
+        assert!(val.ends_with("...[truncated]"));
+    }
+
+    #[test]
+    fn test_sanitize_db_error_syntax() {
+        let msg = sanitize_db_error("ERROR: syntax error at or near \"SELEC\" at position 1");
+        assert!(msg.contains("syntax error"));
+        assert!(!msg.contains("SELEC"));
+    }
+
+    #[test]
+    fn test_sanitize_db_error_not_exist() {
+        let msg = sanitize_db_error("ERROR: relation \"secret_table\" does not exist");
+        assert!(msg.contains("not found"));
+        assert!(!msg.contains("secret_table"));
+    }
+
+    #[test]
+    fn test_sanitize_db_error_generic() {
+        let msg = sanitize_db_error("some completely unknown error from the database driver");
+        assert!(msg.contains("See application logs"));
+        assert!(!msg.contains("database driver"));
+    }
+
+    // ── Code block extraction tests ─────────────────────────────────
 
     #[test]
     fn test_extract_code_block_sql() {

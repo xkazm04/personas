@@ -69,7 +69,7 @@ export default function TeamMemoryPanel({
           </span>
         </div>
         <button
-          className="p-1 rounded-md hover:bg-primary/10 text-muted-foreground/60"
+          className="p-1 rounded-lg hover:bg-primary/10 text-muted-foreground/60"
           onClick={onClose}
         >
           <ChevronDown className="w-4 h-4" />
@@ -98,7 +98,7 @@ export default function TeamMemoryPanel({
         <div className="relative">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground/40" />
           <input
-            className="w-full text-sm bg-primary/5 border border-primary/10 rounded-md pl-6 pr-2 py-1.5 text-foreground/80 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/20"
+            className="w-full text-sm bg-primary/5 border border-primary/10 rounded-xl pl-6 pr-2 py-1.5 text-foreground/80 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/20"
             placeholder="Search memories..."
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}

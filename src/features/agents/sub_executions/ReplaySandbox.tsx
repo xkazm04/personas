@@ -219,7 +219,7 @@ function ReplayToolPanel({
           return (
             <div
               key={step.step_index}
-              className={`relative rounded-lg border px-3 py-2 transition-all ${
+              className={`relative rounded-xl border px-3 py-2 transition-all ${
                 isFork
                   ? 'border-amber-400/50 bg-amber-500/10 ring-1 ring-amber-400/30'
                   : isActive
@@ -503,7 +503,7 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
               <button
                 key={s}
                 onClick={() => actions.setSpeed(s)}
-                className={`px-2 py-0.5 text-sm font-mono rounded-md transition-colors ${
+                className={`px-2 py-0.5 text-sm font-mono rounded-lg transition-colors ${
                   state.speed === s
                     ? 'bg-primary/15 text-foreground/90 border border-primary/20'
                     : 'text-muted-foreground/50 hover:text-muted-foreground/80 border border-transparent'
@@ -525,14 +525,14 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
               >
                 <button
                   onClick={() => actions.setForkPoint(null)}
-                  className="p-1 rounded-md hover:bg-secondary/50 text-muted-foreground/40 hover:text-muted-foreground"
+                  className="p-1 rounded-lg hover:bg-secondary/50 text-muted-foreground/40 hover:text-muted-foreground"
                   title="Clear fork point"
                 >
                   <X className="w-3 h-3" />
                 </button>
                 <button
                   onClick={handleFork}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
                 >
                   <GitFork className="w-3 h-3" />
                   Fork after step {state.forkPoint + 1}

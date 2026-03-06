@@ -19,6 +19,7 @@ use std::sync::Arc;
 use crate::db::repos::resources::audit_log;
 use crate::engine::crypto::{EncryptedToken, SecureString};
 use crate::error::AppError;
+use crate::ipc_auth::{require_privileged, require_privileged_sync};
 use crate::AppState;
 
 const GOOGLE_OAUTH_SESSION_TTL_SECS: u64 = 10 * 60;
@@ -182,7 +183,7 @@ fn now_unix_secs() -> u64 {
 
 fn cleanup_google_oauth_sessions() {
     let now = now_unix_secs();
-    let mut sessions = google_oauth_sessions().lock().unwrap();
+    let mut sessions = google_oauth_sessions().lock().unwrap_or_else(|e| e.into_inner());
     sessions.retain(|_, session| now.saturating_sub(session.created_at) <= GOOGLE_OAUTH_SESSION_TTL_SECS);
 }
 
@@ -222,6 +223,7 @@ pub async fn start_google_credential_oauth(
     connector_name: String,
     extra_scopes: Option<Vec<String>>,
 ) -> Result<serde_json::Value, AppError> {
+    require_privileged(&state, "start_google_credential_oauth").await?;
     let (resolved_client_id, resolved_client_secret, credential_source) =
         resolve_google_oauth_client_credentials(client_id, client_secret)?;
 
@@ -238,7 +240,7 @@ pub async fn start_google_credential_oauth(
         .port();
 
     {
-        let mut sessions = google_oauth_sessions().lock().unwrap();
+        let mut sessions = google_oauth_sessions().lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
         sessions.insert(
             session_id.clone(),
             GoogleCredentialOAuthSession {
@@ -322,7 +324,7 @@ pub async fn start_google_credential_oauth(
         )
         .await;
 
-        let mut sessions = google_oauth_sessions().lock().unwrap();
+        let mut sessions = google_oauth_sessions().lock().unwrap_or_else(|e| e.into_inner());
         if let Some(existing) = sessions.get_mut(&session_id_clone) {
             match outcome {
                 OAuthCallbackOutcome::Success(tokens) => {
@@ -373,11 +375,12 @@ pub async fn start_google_credential_oauth(
 
 #[tauri::command]
 pub fn get_google_credential_oauth_status(
-    _state: State<'_, Arc<AppState>>,
+    state: State<'_, Arc<AppState>>,
     session_id: String,
 ) -> Result<serde_json::Value, AppError> {
+    require_privileged_sync(&state, "get_google_credential_oauth_status")?;
     cleanup_google_oauth_sessions();
-    let mut sessions = google_oauth_sessions().lock().unwrap();
+    let mut sessions = google_oauth_sessions().lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
     if let Some(session) = sessions.get(&session_id) {
         // Decrypt tokens into short-lived SecureStrings for serialization only
         let decrypted_refresh = decrypt_token(&session.refresh_token);
@@ -816,7 +819,7 @@ fn oauth_sessions() -> &'static Mutex<HashMap<String, OAuthSession>> {
 
 fn cleanup_oauth_sessions() {
     let now = now_unix_secs();
-    let mut sessions = oauth_sessions().lock().unwrap();
+    let mut sessions = oauth_sessions().lock().unwrap_or_else(|e| e.into_inner());
     sessions.retain(|_, s| now.saturating_sub(s.created_at) <= OAUTH_SESSION_TTL_SECS);
 }
 
@@ -825,8 +828,9 @@ fn cleanup_oauth_sessions() {
 /// List available OAuth providers.
 #[tauri::command]
 pub fn list_oauth_providers(
-    _state: State<'_, Arc<AppState>>,
+    state: State<'_, Arc<AppState>>,
 ) -> Result<serde_json::Value, AppError> {
+    require_privileged_sync(&state, "list_oauth_providers")?;
     let providers: Vec<serde_json::Value> = PROVIDER_REGISTRY
         .iter()
         .map(|p| {
@@ -868,6 +872,7 @@ pub async fn start_oauth(
     use_pkce: Option<bool>,
     extra_params: Option<HashMap<String, String>>,
 ) -> Result<serde_json::Value, AppError> {
+    require_privileged(&state, "start_oauth").await?;
     // Wrap secret immediately so the bare String is dropped
     let client_secret: Option<SecureString> = client_secret.map(SecureString::new);
 
@@ -959,7 +964,7 @@ pub async fn start_oauth(
     let session_id = format!("oauth_{}_{}", now_unix_secs(), uuid::Uuid::new_v4());
 
     {
-        let mut sessions = oauth_sessions().lock().unwrap();
+        let mut sessions = oauth_sessions().lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
         sessions.insert(session_id.clone(), OAuthSession {
             status: "pending".into(),
             provider_id: provider_id.clone(),
@@ -1021,7 +1026,7 @@ pub async fn start_oauth(
         )
         .await;
 
-        let mut sessions = oauth_sessions().lock().unwrap();
+        let mut sessions = oauth_sessions().lock().unwrap_or_else(|e| e.into_inner());
         if let Some(s) = sessions.get_mut(&sid) {
             match outcome {
                 OAuthCallbackOutcome::Success(tokens) => {
@@ -1076,11 +1081,12 @@ pub async fn start_oauth(
 
 #[tauri::command]
 pub fn get_oauth_status(
-    _state: State<'_, Arc<AppState>>,
+    state: State<'_, Arc<AppState>>,
     session_id: String,
 ) -> Result<serde_json::Value, AppError> {
+    require_privileged_sync(&state, "get_oauth_status")?;
     cleanup_oauth_sessions();
-    let mut sessions = oauth_sessions().lock().unwrap();
+    let mut sessions = oauth_sessions().lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
     if let Some(s) = sessions.get(&session_id) {
         // Decrypt tokens into short-lived SecureStrings for serialization only
         let decrypted_access = decrypt_token(&s.access_token);
@@ -1121,6 +1127,7 @@ pub async fn refresh_oauth_token(
     token_url: Option<String>,
     oidc_issuer: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
+    require_privileged(&state, "refresh_oauth_token").await?;
     // Wrap secrets immediately so bare Strings are dropped
     let client_secret = client_secret.map(SecureString::new);
     let refresh_token = SecureString::new(refresh_token);

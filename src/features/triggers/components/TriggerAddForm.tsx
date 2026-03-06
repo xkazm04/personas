@@ -215,6 +215,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
       const result = await previewCronSchedule(expr.trim(), 5);
       setCronPreview(result);
     } catch {
+      // intentional: non-critical — cron preview is best-effort UI hint
       setCronPreview(null);
     } finally {
       setCronLoading(false);
@@ -240,7 +241,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
       setCopiedHmac(true);
       setTimeout(() => setCopiedHmac(false), 2000);
     } catch {
-      // Fallback for clipboard API failures
+      // intentional: non-critical — clipboard write best-effort
     }
   };
 
@@ -368,7 +369,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
       initial={{ opacity: 0, height: 0 }}
       animate={{ opacity: 1, height: 'auto' }}
       exit={{ opacity: 0, height: 0 }}
-      className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-2xl p-4 space-y-4"
+      className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-4 space-y-4"
     >
       {/* ── Quick Templates ── */}
       <div>
@@ -479,7 +480,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
               <button
                 type="button"
                 onClick={() => { setScheduleMode('interval'); setValidationError(null); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all border ${
                   scheduleMode === 'interval'
                     ? 'bg-primary/15 text-primary border-primary/30'
                     : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
@@ -491,7 +492,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
               <button
                 type="button"
                 onClick={() => { setScheduleMode('cron'); setValidationError(null); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all border ${
                   scheduleMode === 'cron'
                     ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
                     : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
@@ -718,7 +719,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
                   key={evt}
                   type="button"
                   onClick={() => setWatchEvents(prev => prev.includes(evt) ? prev.filter(e => e !== evt) : [...prev, evt])}
-                  className={`px-2.5 py-1 rounded-lg text-sm font-medium transition-all border ${
+                  className={`px-2.5 py-1 rounded-xl text-sm font-medium transition-all border ${
                     watchEvents.includes(evt)
                       ? 'bg-orange-500/15 text-orange-400 border-orange-500/30'
                       : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:bg-secondary/50'
@@ -761,7 +762,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
                   key={ct}
                   type="button"
                   onClick={() => setClipboardContentType(ct)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all border capitalize ${
+                  className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all border capitalize ${
                     clipboardContentType === ct
                       ? 'bg-pink-500/15 text-pink-400 border-pink-500/30'
                       : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:bg-secondary/50'
@@ -916,7 +917,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
                   key={op.value}
                   type="button"
                   onClick={() => setCompositeOperator(op.value)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
+                  className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all border ${
                     compositeOperator === op.value
                       ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
                       : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:bg-secondary/50'
@@ -1002,7 +1003,7 @@ function IntervalConfig({
             key={preset.value}
             type="button"
             onClick={() => { setIntervalValue(preset.value); setCustomInterval(false); }}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
+            className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all border ${
               !customInterval && interval === preset.value
                 ? 'bg-primary/15 text-primary border-primary/30'
                 : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
@@ -1014,7 +1015,7 @@ function IntervalConfig({
         <button
           type="button"
           onClick={() => setCustomInterval(true)}
-          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
+          className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all border ${
             customInterval
               ? 'bg-primary/15 text-primary border-primary/30'
               : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
@@ -1115,7 +1116,7 @@ function CronConfig({
               key={p.value}
               type="button"
               onClick={() => onPresetSelect(p.value)}
-              className={`px-2.5 py-1 rounded-lg text-sm transition-all border ${
+              className={`px-2.5 py-1 rounded-xl text-sm transition-all border ${
                 cronExpression === p.value
                   ? 'bg-amber-500/15 text-amber-400 border-amber-500/30 font-medium'
                   : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'

@@ -12,6 +12,8 @@ import BudgetSettingsPage from '@/features/overview/sub_budget/BudgetSettingsPag
 import KnowledgeGraphDashboard from '@/features/overview/sub_knowledge/KnowledgeGraphDashboard';
 import SLADashboard from '@/features/overview/sub_sla/SLADashboard';
 import WorkflowsDashboard from '@/features/overview/sub_workflows/WorkflowsDashboard';
+import TierUsageDashboard from '@/features/overview/sub_tier/TierUsageDashboard';
+import CronAgentsPage from '@/features/overview/sub_cron_agents/CronAgentsPage';
 import { OverviewFilterProvider } from '@/features/overview/components/OverviewFilterContext';
 import PanelSkeleton from '@/features/shared/components/PanelSkeleton';
 
@@ -43,6 +45,8 @@ export default function OverviewPage() {
         overviewTab === 'budget' ? <BudgetSettingsPage /> :
         overviewTab === 'sla' ? <SLADashboard /> :
         overviewTab === 'workflows' ? <WorkflowsDashboard /> :
+        overviewTab === 'tier' ? <TierUsageDashboard /> :
+        overviewTab === 'cron-agents' ? <CronAgentsPage /> :
         <DashboardHome />}
       </motion.div>
     </OverviewFilterProvider>

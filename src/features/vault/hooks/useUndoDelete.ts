@@ -36,6 +36,7 @@ export function useUndoDelete({ onDelete, onError }: UseUndoDeleteOptions): Undo
       const events = await api.listCredentialEvents(credential.id);
       setDeleteConfirm({ credential, eventCount: events.length, eventCountVerified: true });
     } catch {
+      // intentional: non-critical — event count preload failed, show dialog with unverified count
       setDeleteConfirm({ credential, eventCount: 0, eventCountVerified: false });
     }
   }, []);

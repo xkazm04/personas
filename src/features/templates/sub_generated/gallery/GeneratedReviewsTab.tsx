@@ -27,6 +27,7 @@ import { useModalStack } from './useModalStack';
 import { ConnectorCredentialModal } from '@/features/vault/sub_forms/ConnectorCredentialModal';
 import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
 import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
+import { highlightMatch } from '@/lib/ui/highlightMatch';
 import { getCategoryMeta } from './searchConstants';
 import type { Density } from './DensityToggle';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
@@ -43,21 +44,6 @@ import { EmptyState } from './EmptyState';
 import { ExploreView } from './ExploreView';
 
 export type ViewMode = 'list' | 'explore';
-
-// ── Search match highlighting ──────────────────────────────────────
-
-function highlightMatch(text: string, query: string): React.ReactNode {
-  if (!query || query.length < 2) return text;
-  const idx = text.toLowerCase().indexOf(query.toLowerCase());
-  if (idx === -1) return text;
-  return (
-    <>
-      {text.slice(0, idx)}
-      <mark className="bg-amber-500/20 text-foreground rounded-sm px-0.5">{text.slice(idx, idx + query.length)}</mark>
-      {text.slice(idx + query.length)}
-    </>
-  );
-}
 
 // ============================================================================
 // Main Component
@@ -219,7 +205,7 @@ export default function GeneratedReviewsTab({
           'The adoption may still be running in the background.',
         );
       }
-    } catch { /* ignore parse errors */ }
+    } catch { /* intentional: non-critical — JSON parse fallback */ }
   };
 
   // ── Virtual list ────────────────────────────────────────────────────
@@ -462,7 +448,7 @@ export default function GeneratedReviewsTab({
                                 e.stopPropagation();
                                 modals.open({ type: 'adopt', review });
                               }}
-                              className={`px-2 py-1 text-sm rounded-md border transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 ${BUTTON_VARIANTS.adopt.bg} ${BUTTON_VARIANTS.adopt.text} ${BUTTON_VARIANTS.adopt.border} ${BUTTON_VARIANTS.adopt.hover}`}
+                              className={`px-2 py-1 text-sm rounded-lg border transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 ${BUTTON_VARIANTS.adopt.bg} ${BUTTON_VARIANTS.adopt.text} ${BUTTON_VARIANTS.adopt.border} ${BUTTON_VARIANTS.adopt.hover}`}
                             >
                               Adopt
                             </button>
@@ -574,7 +560,7 @@ export default function GeneratedReviewsTab({
                                     }
                                     modals.open({ type: 'preview', review });
                                   }}
-                                  className={`px-2.5 py-1.5 text-sm rounded-lg border transition-colors inline-flex items-center gap-1 opacity-0 group-hover:opacity-100 focus:opacity-100 ${BUTTON_VARIANTS.tryIt.bg} ${BUTTON_VARIANTS.tryIt.text} ${BUTTON_VARIANTS.tryIt.border} ${BUTTON_VARIANTS.tryIt.hover}`}
+                                  className={`px-2.5 py-1.5 text-sm rounded-xl border transition-colors inline-flex items-center gap-1 opacity-0 group-hover:opacity-100 focus:opacity-100 ${BUTTON_VARIANTS.tryIt.bg} ${BUTTON_VARIANTS.tryIt.text} ${BUTTON_VARIANTS.tryIt.border} ${BUTTON_VARIANTS.tryIt.hover}`}
                                   title="Run a sample preview"
                                 >
                                   <Play className="w-3 h-3" />
@@ -585,7 +571,7 @@ export default function GeneratedReviewsTab({
                                     e.stopPropagation();
                                     modals.open({ type: 'adopt', review });
                                   }}
-                                  className={`px-2.5 py-1.5 text-sm rounded-lg border transition-colors inline-flex items-center gap-1 opacity-0 group-hover:opacity-100 focus:opacity-100 ${BUTTON_VARIANTS.adopt.bg} ${BUTTON_VARIANTS.adopt.text} ${BUTTON_VARIANTS.adopt.border} ${BUTTON_VARIANTS.adopt.hover}`}
+                                  className={`px-2.5 py-1.5 text-sm rounded-xl border transition-colors inline-flex items-center gap-1 opacity-0 group-hover:opacity-100 focus:opacity-100 ${BUTTON_VARIANTS.adopt.bg} ${BUTTON_VARIANTS.adopt.text} ${BUTTON_VARIANTS.adopt.border} ${BUTTON_VARIANTS.adopt.hover}`}
                                   title="Adopt this template"
                                 >
                                   <Download className="w-3 h-3" />

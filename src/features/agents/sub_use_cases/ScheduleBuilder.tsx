@@ -408,6 +408,7 @@ export function ScheduleBuilder({
       const result = await previewCronSchedule(expr, 5);
       setCronPreview(result);
     } catch {
+      // intentional: non-critical — cron preview fetch failure
       setCronPreview(null);
     } finally {
       setCronLoading(false);
@@ -494,7 +495,7 @@ export function ScheduleBuilder({
               key={tab.key}
               type="button"
               onClick={() => setMode(tab.key)}
-              className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-sm font-medium transition-all ${
+              className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-sm font-medium transition-all ${
                 active
                   ? 'bg-amber-500/12 text-amber-300 shadow-sm'
                   : 'text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/40'
@@ -526,7 +527,7 @@ export function ScheduleBuilder({
                     key={preset.cron}
                     type="button"
                     onClick={() => handlePresetSelect(preset.cron)}
-                    className={`text-left px-2.5 py-2 rounded-lg text-sm transition-all border ${
+                    className={`text-left px-2.5 py-2 rounded-xl text-sm transition-all border ${
                       active
                         ? 'bg-amber-500/12 text-amber-300 border-amber-500/25 font-medium'
                         : 'bg-secondary/20 text-muted-foreground/70 border-primary/10 hover:border-primary/20 hover:text-foreground/80'
@@ -581,7 +582,7 @@ export function ScheduleBuilder({
                 value={cronExpression}
                 onChange={(e) => setCronExpression(e.target.value)}
                 placeholder="* * * * *  (min hour dom mon dow)"
-                className={`flex-1 px-3 py-2 bg-background/50 border rounded-lg text-foreground font-mono text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 transition-all ${
+                className={`flex-1 px-3 py-2 bg-background/50 border rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 transition-all ${
                   cronPreview && !cronPreview.valid
                     ? 'border-red-500/30 ring-1 ring-red-500/20 focus:ring-red-500/30'
                     : 'border-primary/15 focus:ring-amber-500/30'
@@ -676,7 +677,7 @@ export function ScheduleBuilder({
       <button
         onClick={handleActivate}
         disabled={isActivating || !isValid}
-        className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all border disabled:opacity-40 disabled:cursor-not-allowed bg-amber-500/12 text-amber-300 border-amber-500/25 hover:bg-amber-500/20"
+        className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all border disabled:opacity-40 disabled:cursor-not-allowed bg-amber-500/12 text-amber-300 border-amber-500/25 hover:bg-amber-500/20"
       >
         {isActivating ? (
           <Loader2 className="w-3.5 h-3.5 animate-spin" />

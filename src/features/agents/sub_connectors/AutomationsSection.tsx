@@ -93,7 +93,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
           trailing={
             <button
               onClick={(e) => { e.stopPropagation(); onAdd(); }}
-              className="flex items-center gap-1 px-2 py-1 text-sm font-medium rounded-md border border-accent/20 text-foreground/80 bg-accent/10 hover:bg-accent/20 transition-colors"
+              className="flex items-center gap-1 px-2 py-1 text-sm font-medium rounded-lg border border-accent/20 text-foreground/80 bg-accent/10 hover:bg-accent/20 transition-colors"
             >
               <Plus className="w-3 h-3" />
               Add
@@ -128,7 +128,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
               {automations.length === 0 && (
                 <button
                   onClick={onAdd}
-                  className="w-full flex items-center justify-center gap-2 py-4 px-4 rounded-lg border border-dashed border-border text-sm text-muted-foreground hover:border-accent/30 hover:text-foreground/80 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 py-4 px-4 rounded-xl border border-dashed border-border text-sm text-muted-foreground hover:border-accent/30 hover:text-foreground/80 transition-colors"
                 >
                   <Zap className="w-4 h-4" />
                   <span>Add automation from n8n, Zapier, or GitHub Actions</span>

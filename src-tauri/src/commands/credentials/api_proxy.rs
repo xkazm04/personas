@@ -7,6 +7,7 @@ use crate::engine::api_definition::ApiEndpoint;
 use crate::engine::api_proxy::ApiProxyResponse;
 use crate::engine::crypto;
 use crate::error::AppError;
+use crate::ipc_auth::{require_privileged, require_privileged_sync};
 use crate::AppState;
 
 /// Validate that credential_id is safe for use in file paths.
@@ -39,6 +40,7 @@ pub async fn execute_api_request(
     headers: HashMap<String, String>,
     body: Option<String>,
 ) -> Result<ApiProxyResponse, AppError> {
+    require_privileged(&state, "execute_api_request").await?;
     crate::engine::api_proxy::execute_api_request(
         &state.db,
         &credential_id,
@@ -68,10 +70,12 @@ const ENC_SEPARATOR: u8 = b'\n';
 
 #[tauri::command]
 pub async fn save_api_definition(
+    state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     credential_id: String,
     raw_spec: String,
 ) -> Result<(), AppError> {
+    require_privileged(&state, "save_api_definition").await?;
     validate_credential_id(&credential_id)?;
 
     let endpoints = crate::engine::api_definition::parse_openapi_spec(&raw_spec)?;
@@ -109,9 +113,11 @@ pub async fn save_api_definition(
 
 #[tauri::command]
 pub fn load_api_definition(
+    state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     credential_id: String,
 ) -> Result<Option<Vec<ApiEndpoint>>, AppError> {
+    require_privileged_sync(&state, "load_api_definition")?;
     validate_credential_id(&credential_id)?;
 
     let dir = api_definitions_dir(&app)?;

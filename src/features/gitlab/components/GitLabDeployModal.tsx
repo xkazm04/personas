@@ -44,7 +44,7 @@ export function GitLabDeployModal({
       const newPersonaId = await onCreateFromTemplate(template);
       setSelectedPersonaId(newPersonaId);
     } catch {
-      // Error surfaced by store
+      // intentional: error state handled locally via store + ErrorBanner
     } finally {
       setIsCreatingFromTemplate(false);
     }
@@ -60,7 +60,7 @@ export function GitLabDeployModal({
       const res = await onDeploy(selectedPersonaId, selectedProjectId, provisionCredentials);
       setResult(res);
     } catch {
-      // Error handled by store
+      // intentional: error state handled locally via store + ErrorBanner
     } finally {
       setIsDeploying(false);
       deployingRef.current = false;
@@ -154,7 +154,7 @@ export function GitLabDeployModal({
       <button
         onClick={handleDeploy}
         disabled={isDeploying || !selectedPersonaId || !selectedProjectId}
-        className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-orange-500/15 border border-orange-500/25 text-orange-400 hover:bg-orange-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-orange-500/15 border border-orange-500/25 text-orange-400 hover:bg-orange-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {isDeploying ? (
           <span role="status" aria-live="polite" className="inline-flex items-center gap-2">

@@ -24,6 +24,10 @@ import type { GitLabSlice } from "./slices/gitlabSlice";
 import type { DatabaseSlice } from "./slices/databaseSlice";
 import type { RecipeSlice } from "./slices/recipeSlice";
 import type { AutomationSlice } from "./slices/automationSlice";
+import type { OnboardingSlice } from "./slices/onboardingSlice";
+import type { CronAgentsSlice } from "./slices/cronAgentsSlice";
+import type { MiniPlayerSlice } from "./slices/miniPlayerSlice";
+import type { HealthCheckSlice } from "./slices/healthCheckSlice";
 
 // ── Shared helper ──────────────────────────────────────────────────────
 export function errMsg(err: unknown, fallback: string): string {
@@ -53,4 +57,8 @@ export type PersonaStore = PersonaSlice &
   GitLabSlice &
   DatabaseSlice &
   RecipeSlice &
-  AutomationSlice;
+  AutomationSlice &
+  OnboardingSlice &
+  CronAgentsSlice &
+  MiniPlayerSlice &
+  HealthCheckSlice;

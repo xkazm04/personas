@@ -133,7 +133,7 @@ export function ArenaPanel() {
         best_quality_model?: string;
         rankings?: Array<{ model_id: string; composite_score: number }>;
       };
-    } catch { return null; }
+    } catch { /* intentional: non-critical — JSON parse fallback */ return null; }
   };
 
   const hasTools = (selectedPersona?.tools?.length ?? 0) > 0;
@@ -172,7 +172,7 @@ export function ArenaPanel() {
                   <button
                     onClick={toggle}
                     disabled={isLabRunning}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm border transition-all ${
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm border transition-all ${
                       isOpen
                         ? 'bg-primary/10 border-primary/30 text-foreground/90'
                         : 'bg-background/30 border-primary/10 text-muted-foreground/90 hover:border-primary/20'
@@ -221,7 +221,7 @@ export function ArenaPanel() {
                       key={m.id}
                       onClick={() => toggleModel(m.id)}
                       disabled={isLabRunning}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                      className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${
                         selectedModels.has(m.id)
                           ? 'bg-primary/15 text-primary border-primary/30'
                           : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20 hover:text-foreground/95'
@@ -241,7 +241,7 @@ export function ArenaPanel() {
                         key={m.id}
                         onClick={() => toggleModel(m.id)}
                         disabled={isLabRunning}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                        className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${
                           selectedModels.has(m.id)
                             ? 'bg-primary/15 text-primary border-primary/30'
                             : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20 hover:text-foreground/95'
@@ -260,7 +260,7 @@ export function ArenaPanel() {
           {isLabRunning ? (
             <button
               onClick={() => void handleCancel()}
-              className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-2xl font-medium text-sm transition-all bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20"
+              className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20"
             >
               <Square className="w-4 h-4" />
               Cancel Test
@@ -269,7 +269,7 @@ export function ArenaPanel() {
             <button
               onClick={() => void handleStart()}
               disabled={selectedModels.size === 0 || !hasPrompt}
-              className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-2xl font-medium text-sm transition-all bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               <Play className="w-4 h-4" />
               Run Arena ({selectedModels.size} model{selectedModels.size !== 1 ? 's' : ''}{selectedUseCase ? ` — ${selectedUseCase.title}` : ''})
@@ -290,7 +290,7 @@ export function ArenaPanel() {
 
         {arenaRuns.length === 0 ? (
           <div className="text-center py-12 bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl">
-            <div className="w-14 h-14 rounded-2xl bg-primary/8 border border-primary/12 flex items-center justify-center mx-auto mb-4">
+            <div className="w-14 h-14 rounded-xl bg-primary/8 border border-primary/12 flex items-center justify-center mx-auto mb-4">
               <FlaskConical className="w-7 h-7 text-primary/40" />
             </div>
             <p className="text-sm text-muted-foreground/80">No arena runs yet</p>
@@ -302,7 +302,7 @@ export function ArenaPanel() {
               const isExpanded = expandedRunId === run.id;
               const summary = parseSummary(run);
               const modelsList: string[] = (() => {
-                try { return JSON.parse(run.modelsTested); } catch { return []; }
+                try { return JSON.parse(run.modelsTested); } catch { /* intentional: non-critical — JSON parse fallback */ return []; }
               })();
 
               return (

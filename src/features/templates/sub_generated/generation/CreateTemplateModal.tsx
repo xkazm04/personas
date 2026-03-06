@@ -84,7 +84,7 @@ export function CreateTemplateModal({
       try {
         const parsed = JSON.parse(snap.result_json);
         draft = normalizeDraftFromUnknown(parsed?.persona ?? parsed);
-      } catch { /* parse error handled below */ }
+      } catch { /* intentional: non-critical — JSON parse fallback */ }
     }
     return {
       status: snap.status as 'idle' | 'running' | 'completed' | 'failed',
@@ -120,7 +120,7 @@ export function CreateTemplateModal({
             return;
           }
         }
-      } catch { /* fall through */ }
+      } catch { /* intentional: non-critical — JSON parse fallback */ }
     }
     reducer.generateFailed('Generation completed but no valid persona draft was found.');
     clearPersistedContext();
@@ -195,7 +195,7 @@ export function CreateTemplateModal({
     if (state.backgroundGenId) {
       try {
         await cancelTemplateGenerate(state.backgroundGenId);
-      } catch { /* ignore */ }
+      } catch { /* intentional: non-critical — best-effort cancellation */ }
     }
     reducer.generateCancelled();
     clearPersistedContext();
@@ -238,7 +238,7 @@ export function CreateTemplateModal({
       if (genIdRef.current) {
         try {
           await clearTemplateGenerateSnapshot(genIdRef.current);
-        } catch { /* ignore */ }
+        } catch { /* intentional: non-critical — snapshot cleanup */ }
       }
 
       onTemplateCreated();

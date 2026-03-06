@@ -42,7 +42,7 @@ export function GitLabConnectionForm({
 
         <button
           onClick={onDisconnect}
-          className="flex items-center gap-2 px-4 py-2 text-sm rounded-lg border border-red-500/20 bg-red-500/5 text-red-400 hover:bg-red-500/10 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 text-sm rounded-xl border border-red-500/20 bg-red-500/5 text-red-400 hover:bg-red-500/10 transition-colors"
         >
           <LogOut className="w-4 h-4" />
           Disconnect
@@ -76,7 +76,7 @@ export function GitLabConnectionForm({
             value={token}
             onChange={(e) => setToken(e.target.value)}
             placeholder="glpat-xxxxxxxxxxxxxxxxxxxx"
-            className={`w-full px-3 py-2 pr-16 rounded-lg border border-primary/15 bg-background text-sm text-foreground/90 placeholder:text-muted-foreground/40 focus:outline-none focus:border-orange-500/40 ${isConnecting ? 'border-orange-500/35 bg-orange-500/5' : ''}`}
+            className={`w-full px-3 py-2 pr-16 rounded-xl border border-primary/15 bg-background text-sm text-foreground/90 placeholder:text-muted-foreground/40 focus:outline-none focus:border-orange-500/40 ${isConnecting ? 'border-orange-500/35 bg-orange-500/5' : ''}`}
             onKeyDown={(e) => e.key === 'Enter' && onConnect()}
           />
           <button
@@ -91,7 +91,7 @@ export function GitLabConnectionForm({
       <button
         onClick={onConnect}
         disabled={isConnecting || !token.trim()}
-        className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-orange-500/15 border border-orange-500/25 text-orange-400 hover:bg-orange-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-orange-500/15 border border-orange-500/25 text-orange-400 hover:bg-orange-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {isConnecting ? (
           <span role="status" aria-live="polite" className="inline-flex items-center gap-2">

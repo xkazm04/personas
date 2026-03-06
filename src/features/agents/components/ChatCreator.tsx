@@ -17,6 +17,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
+import { useToastStore } from '@/stores/toastStore';
 import { useDesignAnalysis } from '@/hooks/design/useDesignAnalysis';
 import { deriveName, calcCompleteness } from './designUtils';
 
@@ -204,6 +205,7 @@ export function ChatCreator({ onCancel, onDraftPersonaIdChange }: ChatCreatorPro
       setEditorTab('use-cases');
       onDraftPersonaIdChange?.(null);
     } catch {
+      useToastStore.getState().addToast('Failed to activate agent — check your connection', 'error');
       setIsActivating(false);
     }
   }, [draftPersonaId, design, isActivating, selectPersona, setSidebarSection, setEditorTab, onDraftPersonaIdChange]);
@@ -333,6 +335,16 @@ export function ChatCreator({ onCancel, onDraftPersonaIdChange }: ChatCreatorPro
                 <Send className="w-3.5 h-3.5" />
               </button>
             </div>
+            {!input.trim() && !isThinking && messages.length === 0 && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.15 }}
+                className="text-muted-foreground text-xs mt-1.5"
+              >
+                Describe what your agent should do to get started
+              </motion.p>
+            )}
           </div>
         </div>
 
@@ -469,6 +481,16 @@ export function ChatCreator({ onCancel, onDraftPersonaIdChange }: ChatCreatorPro
                   )}
                   {isActivating ? 'Activating...' : completeness >= 80 ? 'Activate Agent' : 'Create Agent'}
                 </button>
+                {completeness < 40 && !isActivating && !isThinking && (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.15 }}
+                    className="text-muted-foreground text-xs mt-1.5 text-center"
+                  >
+                    Add more detail to reach 40% completeness
+                  </motion.p>
+                )}
               </div>
             </motion.div>
           )}

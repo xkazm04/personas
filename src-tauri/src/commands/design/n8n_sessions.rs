@@ -5,6 +5,7 @@ use tauri::State;
 use crate::db::models::{CreateN8nSessionInput, N8nTransformSession, UpdateN8nSessionInput};
 use crate::db::repos::resources::n8n_sessions as repo;
 use crate::error::AppError;
+use crate::ipc_auth::require_auth;
 use crate::AppState;
 
 /// Maximum raw workflow JSON size allowed in session storage (10 MB),
@@ -19,6 +20,7 @@ pub async fn create_n8n_session(
     step: String,
     status: String,
 ) -> Result<N8nTransformSession, AppError> {
+    require_auth(&state).await?;
     if raw_workflow_json.len() > MAX_WORKFLOW_JSON_BYTES {
         return Err(AppError::Validation(
             "Workflow JSON too large (>10 MB). Use a smaller workflow export.".into(),
@@ -41,6 +43,7 @@ pub async fn get_n8n_session(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<N8nTransformSession, AppError> {
+    require_auth(&state).await?;
     repo::get(&state.db, &id)
 }
 
@@ -48,6 +51,7 @@ pub async fn get_n8n_session(
 pub async fn list_n8n_sessions(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<N8nTransformSession>, AppError> {
+    require_auth(&state).await?;
     repo::list(&state.db)
 }
 
@@ -67,6 +71,7 @@ pub async fn update_n8n_session(
     transform_id: Option<Option<String>>,
     questions_json: Option<Option<String>>,
 ) -> Result<N8nTransformSession, AppError> {
+    require_auth(&state).await?;
     repo::update(
         &state.db,
         &id,
@@ -90,5 +95,6 @@ pub async fn delete_n8n_session(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_auth(&state).await?;
     repo::delete(&state.db, &id)
 }

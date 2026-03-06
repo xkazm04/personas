@@ -206,7 +206,7 @@ export function TransformProgress({
   // ── Analysis mode (compact terminal with phase header) ──
   if (mode === 'analysis') {
     return (
-      <div className="border border-primary/15 rounded-2xl overflow-hidden bg-background shadow-[0_0_15px_rgba(0,0,0,0.2)]" role="status" aria-live="polite">
+      <div className="border border-primary/15 rounded-xl overflow-hidden bg-background shadow-[0_0_15px_rgba(0,0,0,0.2)]" role="status" aria-live="polite">
         <AnimatePresence mode="wait">
           {isRunning && analysisPhase && (
             <motion.div
@@ -268,7 +268,7 @@ export function TransformProgress({
 
   return (
     <div className="space-y-4" role="status" aria-live="polite">
-      <div className="rounded-2xl border border-primary/10 bg-secondary/20 overflow-hidden">
+      <div className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
         <div className="p-4">
           {phase === 'running' && (
             <div className="space-y-3">
@@ -276,7 +276,7 @@ export function TransformProgress({
                 <motion.div
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20"
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20"
                 >
                   <RotateCcw className="w-3.5 h-3.5 text-amber-400/70" />
                   <span className="text-sm text-amber-400/80">Resuming previous transformation session...</span>

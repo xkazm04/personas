@@ -62,6 +62,24 @@ impl RateLimiter {
         Ok(())
     }
 
+    /// Return the current event count for each key within the given window.
+    ///
+    /// Used by the tier usage dashboard to show how many events have been
+    /// consumed against the tier limit.
+    pub fn usage_snapshot(&self, window: Duration) -> Vec<(String, usize)> {
+        let now = Instant::now();
+        let cutoff = now - window;
+        let mut buckets = self.buckets.lock().unwrap_or_else(|e| e.into_inner());
+        buckets
+            .iter_mut()
+            .map(|(key, timestamps)| {
+                timestamps.retain(|t| *t > cutoff);
+                (key.clone(), timestamps.len())
+            })
+            .filter(|(_, count)| *count > 0)
+            .collect()
+    }
+
     /// Periodically prune empty or fully-expired buckets to prevent unbounded
     /// memory growth. Called opportunistically, not on every request.
     pub fn prune(&self, window: Duration) {
@@ -74,15 +92,12 @@ impl RateLimiter {
     }
 }
 
-// ── Default limits ──────────────────────────────────────────────────────
+// ── Window durations ─────────────────────────────────────────────────────
+// Max events per tier are defined in engine::tier::TierConfig.
 
-/// Max events per source type per window (60 events/minute).
-pub const EVENT_SOURCE_MAX: usize = 60;
 /// Window duration for event source rate limiting.
 pub const EVENT_SOURCE_WINDOW: Duration = Duration::from_secs(60);
 
-/// Max webhook calls per trigger per window (10 calls/minute).
-pub const WEBHOOK_TRIGGER_MAX: usize = 10;
 /// Window duration for webhook rate limiting.
 pub const WEBHOOK_TRIGGER_WINDOW: Duration = Duration::from_secs(60);
 

@@ -24,6 +24,7 @@ function formatPayload(payload: string | null): string {
   try {
     return JSON.stringify(JSON.parse(payload), null, 2);
   } catch {
+    // intentional: non-critical — JSON parse fallback
     return payload;
   }
 }
@@ -70,7 +71,7 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
         <button
           onClick={onClose}
           title="Close event details"
-          className="p-1 rounded-md hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground/95 transition-colors"
+          className="p-1 rounded-lg hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground/95 transition-colors"
         >
           <X className="w-4 h-4" />
         </button>
@@ -80,11 +81,11 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
         {/* Metadata grid */}
         <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
-          <div className="rounded-lg border border-primary/10 bg-secondary/20 px-2.5 py-2">
+          <div className="rounded-xl border border-primary/10 bg-secondary/20 px-2.5 py-2">
             <span className="text-sm font-mono uppercase text-muted-foreground/50">Event ID</span>
             <p className="text-sm"><UuidLabel value={event.id} /></p>
           </div>
-          <div className="rounded-lg border border-primary/10 bg-secondary/20 px-2.5 py-2">
+          <div className="rounded-xl border border-primary/10 bg-secondary/20 px-2.5 py-2">
             <span className="text-sm font-mono uppercase text-muted-foreground/50">Source</span>
             <p className="text-sm">
               <span className="text-foreground/80">{event.source_type}</span>
@@ -92,7 +93,7 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
               {event.source_id && <UuidLabel value={event.source_id} label={event.source_type || undefined} />}
             </p>
           </div>
-          <div className="rounded-lg border border-primary/10 bg-secondary/20 px-2.5 py-2">
+          <div className="rounded-xl border border-primary/10 bg-secondary/20 px-2.5 py-2">
             <span className="text-sm font-mono uppercase text-muted-foreground/50">Target</span>
             <p className="text-sm">
               {event.target_persona_id
@@ -101,12 +102,12 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
               }
             </p>
           </div>
-          <div className="rounded-lg border border-primary/10 bg-secondary/20 px-2.5 py-2">
+          <div className="rounded-xl border border-primary/10 bg-secondary/20 px-2.5 py-2">
             <span className="text-sm font-mono uppercase text-muted-foreground/50">Created</span>
             <p className="text-sm font-mono text-foreground/80">{new Date(event.created_at).toLocaleTimeString()}</p>
           </div>
           {event.processed_at && (
-            <div className="rounded-lg border border-primary/10 bg-secondary/20 px-2.5 py-2">
+            <div className="rounded-xl border border-primary/10 bg-secondary/20 px-2.5 py-2">
               <span className="text-sm font-mono uppercase text-muted-foreground/50">Processed</span>
               <p className="text-sm font-mono text-foreground/80">{new Date(event.processed_at).toLocaleTimeString()}</p>
             </div>

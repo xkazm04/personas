@@ -62,7 +62,7 @@ export function RotationPolicyControls({
               }}
               disabled={isRotating}
               data-testid="rotation-rotate-now-btn"
-              className={`flex items-center gap-1 px-2.5 py-1 border rounded-lg text-sm font-medium transition-all disabled:opacity-50 hover:opacity-90 ${ROTATION_STATUS.bgColor} ${ROTATION_STATUS.borderColor} ${ROTATION_STATUS.color}`}
+              className={`flex items-center gap-1 px-2.5 py-1 border rounded-xl text-sm font-medium transition-all disabled:opacity-50 hover:opacity-90 ${ROTATION_STATUS.bgColor} ${ROTATION_STATUS.borderColor} ${ROTATION_STATUS.color}`}
             >
               <RotateCw className={`w-3 h-3 ${isRotating ? 'animate-spin' : ''}`} />
               Rotate Now
@@ -103,7 +103,7 @@ export function RotationPolicyControls({
                 onChange={(e) => setRotationDays(Math.max(1, parseInt(e.target.value, 10) || 1))}
                 min={1}
                 data-testid="rotation-days-input"
-                className={`w-16 px-2 py-0.5 bg-background/50 border rounded-md text-sm text-foreground text-center focus:outline-none focus:ring-1 ${ROTATION_STATUS.borderColor} ${ROTATION_STATUS.ringColor!}`}
+                className={`w-16 px-2 py-0.5 bg-background/50 border rounded-xl text-sm text-foreground text-center focus:outline-none focus:ring-1 ${ROTATION_STATUS.borderColor} ${ROTATION_STATUS.ringColor!}`}
               />
               <span className="text-sm text-muted-foreground/80">days</span>
               <button
@@ -121,7 +121,7 @@ export function RotationPolicyControls({
                   }
                 }}
                 data-testid="rotation-save-period-btn"
-                className={`px-2 py-0.5 border rounded-md text-sm font-medium transition-colors hover:opacity-90 ${ROTATION_STATUS.bgColor} ${ROTATION_STATUS.borderColor} ${ROTATION_STATUS.color}`}
+                className={`px-2 py-0.5 border rounded-lg text-sm font-medium transition-colors hover:opacity-90 ${ROTATION_STATUS.bgColor} ${ROTATION_STATUS.borderColor} ${ROTATION_STATUS.color}`}
               >
                 Save
               </button>
@@ -140,7 +140,7 @@ export function RotationPolicyControls({
             <button
               onClick={() => setIsEditingPeriod(true)}
               data-testid="rotation-edit-period-btn"
-              className="flex items-center gap-1 px-2 py-0.5 bg-secondary/40 hover:bg-secondary/60 border border-primary/15 rounded-md text-sm text-foreground/80 transition-colors"
+              className="flex items-center gap-1 px-2 py-0.5 bg-secondary/40 hover:bg-secondary/60 border border-primary/15 rounded-lg text-sm text-foreground/80 transition-colors"
             >
               <span className="font-mono">{rotationStatus.rotation_interval_days ?? 90}</span>
               <span>days</span>
@@ -163,7 +163,7 @@ export function RotationPolicyControls({
               key={d}
               onClick={() => setRotationDays(d)}
               data-testid={`rotation-preset-${d}-btn`}
-              className={`px-2 py-0.5 rounded-md text-sm font-mono transition-colors ${
+              className={`px-2 py-0.5 rounded-lg text-sm font-mono transition-colors ${
                 rotationDays === d
                   ? `${ROTATION_STATUS.bgColor} ${ROTATION_STATUS.color} border ${ROTATION_STATUS.borderColor}`
                   : 'bg-secondary/40 text-muted-foreground/80 border border-transparent hover:bg-secondary/60'
@@ -178,7 +178,7 @@ export function RotationPolicyControls({
             onChange={(e) => setRotationDays(Math.max(1, parseInt(e.target.value, 10) || 1))}
             min={1}
             data-testid="rotation-custom-days-input"
-            className={`w-16 px-2 py-0.5 bg-background/50 border border-primary/15 rounded-md text-sm text-foreground text-center focus:outline-none focus:ring-1 ${ROTATION_STATUS.ringColor!}`}
+            className={`w-16 px-2 py-0.5 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground text-center focus:outline-none focus:ring-1 ${ROTATION_STATUS.ringColor!}`}
           />
           <span className="text-sm text-muted-foreground/60">days</span>
         </div>
@@ -203,7 +203,7 @@ export function RotationPolicyControls({
         }}
         disabled={isEnablingPolicy}
         data-testid="rotation-enable-btn"
-        className={`flex items-center gap-1 px-2.5 py-1 border rounded-lg text-sm font-medium transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed ${ROTATION_STATUS.bgColor} ${ROTATION_STATUS.borderColor} ${ROTATION_STATUS.color}`}
+        className={`flex items-center gap-1 px-2.5 py-1 border rounded-xl text-sm font-medium transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed ${ROTATION_STATUS.bgColor} ${ROTATION_STATUS.borderColor} ${ROTATION_STATUS.color}`}
       >
         {isEnablingPolicy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
         {isEnablingPolicy ? 'Enabling...' : 'Enable Rotation'}

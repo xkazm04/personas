@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X, Send, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
-import { invoke } from '@tauri-apps/api/core';
+import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import { AccessibleToggle } from '@/features/shared/components/AccessibleToggle';
 import { CredentialPicker, channelIcon } from './CredentialPicker';
 import type { CredentialMetadata } from '@/lib/types/types';
@@ -91,7 +91,7 @@ export function NotificationChannelCard({
               value={config[field.key] || ''}
               onChange={(e) => onConfigChange(field.key, e.target.value)}
               placeholder={field.placeholder}
-              className={`w-full px-2.5 py-1.5 bg-background/50 border rounded-lg text-sm text-foreground placeholder:text-muted-foreground/80 focus:outline-none focus:ring-1 focus:ring-primary/30 ${isEmpty ? 'border-red-500/50' : 'border-primary/15'}`}
+              className={`w-full px-2.5 py-1.5 bg-background/50 border rounded-xl text-sm text-foreground placeholder:text-muted-foreground/80 focus:outline-none focus:ring-1 focus:ring-primary/30 ${isEmpty ? 'border-red-500/50' : 'border-primary/15'}`}
             />
           </div>
         );
@@ -117,7 +117,7 @@ export function NotificationChannelCard({
         <button
           onClick={handleTestNotification}
           disabled={!enabled || testStatus === 'sending'}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
             testStatus === 'success'
               ? 'bg-emerald-500/15 border border-emerald-500/25 text-emerald-300'
               : testStatus === 'error'

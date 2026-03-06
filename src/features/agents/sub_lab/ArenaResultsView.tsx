@@ -95,7 +95,7 @@ export function ArenaResultsView({ results }: Props) {
                   <span className="text-sm font-medium text-foreground">{agg.modelId}</span>
                   <span className="text-sm text-muted-foreground/80">{agg.provider}</span>
                   {agg.modelId === bestModelId && (
-                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-sm font-medium bg-primary/15 text-primary border border-primary/20">
+                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-sm font-medium bg-primary/15 text-primary border border-primary/20">
                       <Trophy className="w-3 h-3" /> Best
                     </span>
                   )}

@@ -6,3 +6,4 @@ pub mod settings;
 pub mod cloud;
 pub mod gitlab;
 pub mod workflows;
+pub mod tier_usage;

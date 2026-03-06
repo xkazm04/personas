@@ -164,7 +164,7 @@ export default function PersonaOverviewPage() {
                 <PersonaHealthIndicator persona={persona} health={health} />
                 <div className="flex items-center gap-1.5">
                   <div className={`w-2 h-2 rounded-full ${persona.enabled ? 'bg-emerald-400' : 'bg-muted-foreground/20'}`} />
-                  <span className={`text-sm font-medium px-1.5 py-0.5 rounded-md ${persona.enabled ? 'text-emerald-400 bg-emerald-500/10' : 'text-muted-foreground/80 bg-muted-foreground/10'}`}>
+                  <span className={`text-sm font-medium px-1.5 py-0.5 rounded-lg ${persona.enabled ? 'text-emerald-400 bg-emerald-500/10' : 'text-muted-foreground/80 bg-muted-foreground/10'}`}>
                     {persona.enabled ? 'Active' : 'Inactive'}
                   </span>
                 </div>
@@ -189,7 +189,7 @@ export default function PersonaOverviewPage() {
                   </span>
                 )}
                 {persona.model_profile && (
-                  <span className="text-sm font-mono px-1.5 py-0.5 rounded-md bg-primary/5 text-muted-foreground/80 truncate max-w-[100px]" title={persona.model_profile}>
+                  <span className="text-sm font-mono px-1.5 py-0.5 rounded-lg bg-primary/5 text-muted-foreground/80 truncate max-w-[100px]" title={persona.model_profile}>
                     {persona.model_profile}
                   </span>
                 )}

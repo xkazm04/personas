@@ -129,7 +129,7 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
           <button
             key={tab.key}
             onClick={() => setConnectedFilter(connectedFilter === tab.key && tab.key !== 'all' ? 'all' : tab.key)}
-            className={`px-2.5 py-1 rounded-lg text-md font-medium border transition-all ${
+            className={`px-2.5 py-1 rounded-xl text-md font-medium border transition-all ${
               connectedFilter === tab.key
                 ? tab.active
                 : 'bg-secondary/25 text-muted-foreground/70 border-primary/10 hover:bg-secondary/40'
@@ -144,7 +144,7 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
       <div className="flex flex-wrap gap-1.5">
         <button
           onClick={() => setActivePurpose(null)}
-          className={`px-2.5 py-1 rounded-lg text-md font-medium border transition-all ${
+          className={`px-2.5 py-1 rounded-xl text-md font-medium border transition-all ${
             activePurpose === null
               ? 'bg-violet-500/15 text-violet-400 border-violet-500/25'
               : 'bg-secondary/25 text-muted-foreground/70 border-primary/10 hover:bg-secondary/40'
@@ -156,7 +156,7 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
           <button
             key={tab.purpose}
             onClick={() => setActivePurpose(activePurpose === tab.purpose ? null : tab.purpose)}
-            className={`px-2.5 py-1 rounded-lg text-md font-medium border transition-all ${
+            className={`px-2.5 py-1 rounded-xl text-md font-medium border transition-all ${
               activePurpose === tab.purpose
                 ? 'bg-violet-500/15 text-violet-400 border-violet-500/25'
                 : 'bg-secondary/25 text-muted-foreground/70 border-primary/10 hover:bg-secondary/40'
@@ -171,7 +171,7 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
       <div className="flex flex-wrap gap-1.5">
         <button
           onClick={() => setActiveCategory(null)}
-          className={`px-2.5 py-1 rounded-lg text-md font-medium border transition-all ${
+          className={`px-2.5 py-1 rounded-xl text-md font-medium border transition-all ${
             activeCategory === null
               ? 'bg-primary/15 text-primary border-primary/25'
               : 'bg-secondary/25 text-muted-foreground/70 border-primary/10 hover:bg-secondary/40'
@@ -183,7 +183,7 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
           <button
             key={tab.category}
             onClick={() => setActiveCategory(activeCategory === tab.category ? null : tab.category)}
-            className={`px-2.5 py-1 rounded-lg text-md font-medium border transition-all ${
+            className={`px-2.5 py-1 rounded-xl text-md font-medium border transition-all ${
               activeCategory === tab.category
                 ? 'bg-primary/15 text-primary border-primary/25'
                 : 'bg-secondary/25 text-muted-foreground/70 border-primary/10 hover:bg-secondary/40'

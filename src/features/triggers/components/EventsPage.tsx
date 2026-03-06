@@ -73,7 +73,7 @@ export function EventsPage() {
           setTriggerHealth('healthy');
         }
       } catch {
-        // Silently fall back — badges just won't show
+        // intentional: non-critical — badge counts are decorative
       }
 
       // Subscriptions require per-persona fetches
@@ -84,7 +84,7 @@ export function EventsPage() {
         if (stale) return;
         setSubCount(results.flat().length);
       } catch {
-        // Silently fall back
+        // intentional: non-critical — subscription count is decorative
       }
     }
 
@@ -104,7 +104,7 @@ export function EventsPage() {
         <div className="flex items-center gap-1 mt-4">
           <button
             onClick={() => setTab("triggers")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl transition-colors ${
               tab === "triggers"
                 ? "bg-primary/10 text-primary border border-primary/20"
                 : "text-muted-foreground/90 hover:text-muted-foreground hover:bg-secondary/40"
@@ -117,7 +117,7 @@ export function EventsPage() {
           </button>
           <button
             onClick={() => setTab("chains")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl transition-colors ${
               tab === "chains"
                 ? "bg-purple-500/10 text-purple-400 border border-purple-500/20"
                 : "text-muted-foreground/90 hover:text-muted-foreground hover:bg-secondary/40"
@@ -129,7 +129,7 @@ export function EventsPage() {
           </button>
           <button
             onClick={() => setTab("subscriptions")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl transition-colors ${
               tab === "subscriptions"
                 ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"
                 : "text-muted-foreground/90 hover:text-muted-foreground hover:bg-secondary/40"

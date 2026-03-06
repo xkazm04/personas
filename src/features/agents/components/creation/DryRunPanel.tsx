@@ -55,7 +55,7 @@ function IssueCard({ issue, dispatch, onResolved }: IssueCardProps) {
             <button
               type="button"
               onClick={handleApply}
-              className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+              className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
             >
               <Wrench className="w-3 h-3" />
               Apply Fix: {issue.proposal.label}
@@ -100,7 +100,7 @@ export function DryRunPanel({ result, dispatch, onIssueResolved }: DryRunPanelPr
     <div className="space-y-3">
       {/* Status badge */}
       <div className="flex items-center gap-2">
-        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-medium ${statusTokens.bgColor} ${statusTokens.color} border ${statusTokens.borderColor}`}>
+        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-sm font-medium ${statusTokens.bgColor} ${statusTokens.color} border ${statusTokens.borderColor}`}>
           <StatusIcon className="w-3.5 h-3.5" />
           {statusLabel}
         </div>

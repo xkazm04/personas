@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ListChecks, FileText, Link, Settings, FlaskConical, Wand2, Check } from 'lucide-react';
+import { ListChecks, FileText, Link, Settings, FlaskConical, Wand2, Check, Activity } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { EditorTab } from '@/lib/types/types';
 
@@ -9,6 +9,7 @@ const tabDefs: Array<{ id: EditorTab; label: string; icon: typeof FileText }> = 
   { id: 'lab', label: 'Lab', icon: FlaskConical },
   { id: 'connectors', label: 'Connectors', icon: Link },
   { id: 'design', label: 'Design', icon: Wand2 },
+  { id: 'health', label: 'Health', icon: Activity },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 

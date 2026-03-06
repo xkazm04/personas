@@ -21,7 +21,7 @@ export function DesignCheckbox({ checked, onChange, disabled = false, color = 'p
       aria-checked={checked}
       disabled={disabled}
       onClick={onChange}
-      className={`w-4 h-4 rounded-md flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
+      className={`w-4 h-4 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
         disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
       } ${
         checked

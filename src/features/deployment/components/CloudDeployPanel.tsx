@@ -8,12 +8,13 @@ import { ErrorBanner } from '@/features/shared/components/ErrorBanner';
 import { CloudConnectionForm } from '@/features/deployment/components/CloudConnectionForm';
 import { CloudStatusPanel } from '@/features/deployment/components/CloudStatusPanel';
 import { CloudOAuthPanel } from '@/features/deployment/components/CloudOAuthPanel';
+import { CloudDeploymentsPanel } from '@/features/deployment/components/CloudDeploymentsPanel';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-type TabId = 'connection' | 'status' | 'oauth';
+type TabId = 'connection' | 'status' | 'oauth' | 'deployments';
 
 interface TabDef {
   id: TabId;
@@ -25,6 +26,7 @@ const TABS: TabDef[] = [
   { id: 'connection', label: 'Connection', disabledWhenOffline: false },
   { id: 'status', label: 'Status', disabledWhenOffline: true },
   { id: 'oauth', label: 'OAuth', disabledWhenOffline: true },
+  { id: 'deployments', label: 'Deployments', disabledWhenOffline: true },
 ];
 
 // ---------------------------------------------------------------------------
@@ -57,6 +59,14 @@ export default function CloudDeployPanel() {
   const refreshOAuth = usePersonaStore((s) => s.cloudRefreshOAuth);
   const disconnectOAuth = usePersonaStore((s) => s.cloudDisconnectOAuth);
   const clearError = usePersonaStore((s) => s.cloudClearError);
+  const deployments = usePersonaStore((s) => s.cloudDeployments);
+  const isDeploying = usePersonaStore((s) => s.cloudIsDeploying);
+  const baseUrl = usePersonaStore((s) => s.cloudBaseUrl);
+  const fetchDeployments = usePersonaStore((s) => s.cloudFetchDeployments);
+  const deploy = usePersonaStore((s) => s.cloudDeploy);
+  const pauseDeploy = usePersonaStore((s) => s.cloudPauseDeploy);
+  const resumeDeploy = usePersonaStore((s) => s.cloudResumeDeploy);
+  const removeDeploy = usePersonaStore((s) => s.cloudRemoveDeploy);
 
   const isConnected = config?.is_connected ?? false;
 
@@ -65,15 +75,17 @@ export default function CloudDeployPanel() {
     initialize();
   }, [initialize]);
 
-  // Auto-refresh when Status or OAuth tabs become active
+  // Auto-refresh when Status, OAuth, or Deployments tabs become active
   useEffect(() => {
     if (!isConnected) return;
     if (activeTab === 'status') {
       fetchStatus();
     } else if (activeTab === 'oauth') {
       fetchOAuthStatus();
+    } else if (activeTab === 'deployments') {
+      fetchDeployments();
     }
-  }, [activeTab, isConnected, fetchStatus, fetchOAuthStatus]);
+  }, [activeTab, isConnected, fetchStatus, fetchOAuthStatus, fetchDeployments]);
 
   // ---------- handlers ----------
 
@@ -82,7 +94,7 @@ export default function CloudDeployPanel() {
     try {
       await connect(url.trim(), apiKey.trim());
     } catch {
-      // error is surfaced via store
+      // intentional: error state handled locally via store + ErrorBanner
     }
   };
 
@@ -169,6 +181,16 @@ export default function CloudDeployPanel() {
             onCancelOAuth={handleCancelOAuth}
             onRefreshOAuth={refreshOAuth}
             onDisconnectOAuth={handleDisconnectOAuth}
+          />}
+          {activeTab === 'deployments' && isConnected && <CloudDeploymentsPanel
+            deployments={deployments}
+            baseUrl={baseUrl}
+            isDeploying={isDeploying}
+            onDeploy={deploy}
+            onPause={pauseDeploy}
+            onResume={resumeDeploy}
+            onRemove={removeDeploy}
+            onRefresh={fetchDeployments}
           />}
         </div>
       </ContentBody>

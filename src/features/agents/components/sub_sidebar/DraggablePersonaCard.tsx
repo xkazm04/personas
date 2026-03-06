@@ -32,7 +32,7 @@ export function SidebarPersonaCard({
     <button
       onClick={onClick}
       onContextMenu={onContextMenu}
-      className={`w-full text-left px-3 py-1.5 rounded-lg transition-all mb-0.5 ${
+      className={`w-full text-left px-3 py-1.5 rounded-xl transition-all mb-0.5 ${
         isSelected
           ? 'bg-primary/10 border border-primary/20 border-l-2 border-l-primary'
           : 'border border-transparent border-l-2 border-l-transparent hover:bg-primary/5'

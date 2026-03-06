@@ -124,7 +124,7 @@ export function CredentialManager() {
       try {
         const vs = await api.vaultStatus();
         setVault(vs);
-      } catch { /* vault status is best-effort */ }
+      } catch { /* intentional: non-critical — vault status is best-effort */ }
       setLoading(false);
     };
     init();
@@ -188,7 +188,7 @@ export function CredentialManager() {
             rotatable.push(cred.id);
           }
         } catch {
-          // skip credentials without rotation
+          // intentional: non-critical — skip credentials without rotation support
         }
       }),
     );
@@ -230,7 +230,7 @@ export function CredentialManager() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => openWizard()}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium border border-violet-500/25 bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium border border-violet-500/25 bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors"
               title="AI-guided credential setup wizard"
             >
               <Sparkles className="w-3 h-3" />
@@ -240,7 +240,7 @@ export function CredentialManager() {
               <button
                 onClick={bulk.isRunning ? bulk.cancel : () => bulk.run(credentials)}
                 disabled={false}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium border transition-colors ${
                   bulk.isRunning
                     ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                     : bulk.summary
@@ -269,7 +269,7 @@ export function CredentialManager() {
               <button
                 onClick={handleRotateAll}
                 disabled={isRotatingAll}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium border transition-colors ${
                   rotateAllResult
                     ? rotateAllResult.failed > 0
                       ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
@@ -309,7 +309,7 @@ export function CredentialManager() {
                   ? 'Search catalog by label, type, or category'
                   : 'Search credentials by name, type, or connector'
               }
-              className="w-full pl-9 pr-20 py-2 rounded-lg border border-primary/15 bg-secondary/25 text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full pl-9 pr-20 py-2 rounded-xl border border-primary/15 bg-secondary/25 text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
             {credentialSearch && (
               <button
@@ -449,7 +449,7 @@ export function CredentialManager() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="bg-secondary/35 border border-primary/15 rounded-2xl p-4"
+            className="bg-secondary/35 border border-primary/15 rounded-xl p-4"
           >
             <CredentialDesignModal
               open

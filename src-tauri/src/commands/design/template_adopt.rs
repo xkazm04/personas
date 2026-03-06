@@ -11,6 +11,7 @@ use crate::db::repos::communication::reviews as reviews_repo;
 use crate::db::models::CreatePersonaInput;
 use crate::engine::prompt;
 use crate::error::AppError;
+use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 use super::n8n_transform::{
@@ -108,6 +109,7 @@ pub fn cancel_generate_job(app: &tauri::AppHandle, gen_id: &str) -> Result<(), c
 #[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn start_template_adopt_background(
+    state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     adopt_id: String,
     template_name: String,
@@ -117,6 +119,7 @@ pub async fn start_template_adopt_background(
     user_answers_json: Option<String>,
     connector_swaps_json: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth(&state).await?;
     if design_result_json.trim().is_empty() {
         return Err(AppError::Validation(
             "Design result JSON cannot be empty".into(),
@@ -217,10 +220,12 @@ pub async fn start_template_adopt_background(
 /// Turn 2: resume the Claude session with user answers.
 #[tauri::command]
 pub async fn continue_template_adopt(
+    state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     adopt_id: String,
     user_answers_json: String,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth(&state).await?;
     let claude_session_id = get_adopt_claude_session(&adopt_id)
         .ok_or_else(|| AppError::NotFound("No Claude session found for this adoption".into()))?;
 
@@ -259,22 +264,32 @@ pub async fn continue_template_adopt(
 }
 
 #[tauri::command]
-pub fn get_template_adopt_snapshot(adopt_id: String) -> Result<serde_json::Value, AppError> {
+pub fn get_template_adopt_snapshot(
+    state: State<'_, Arc<AppState>>,
+    adopt_id: String,
+) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
     let snapshot = get_adopt_snapshot_internal(&adopt_id)
         .ok_or_else(|| AppError::NotFound("Template adoption not found".into()))?;
     Ok(serde_json::to_value(snapshot).unwrap_or_else(|_| json!({})))
 }
 
 #[tauri::command]
-pub fn clear_template_adopt_snapshot(adopt_id: String) -> Result<(), AppError> {
+pub fn clear_template_adopt_snapshot(
+    state: State<'_, Arc<AppState>>,
+    adopt_id: String,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
     ADOPT_JOBS.remove(&adopt_id)
 }
 
 #[tauri::command]
 pub fn cancel_template_adopt(
+    state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     adopt_id: String,
 ) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
     ADOPT_JOBS.cancel(&app, &adopt_id)
 }
 
@@ -284,6 +299,7 @@ pub fn confirm_template_adopt_draft(
     draft_json: String,
     template_name: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
     let draft: N8nPersonaOutput = serde_json::from_str(&draft_json)
         .map_err(|e| AppError::Validation(format!("Invalid draft JSON: {e}")))?;
 
@@ -318,6 +334,7 @@ pub fn instant_adopt_template(
     template_name: String,
     design_result_json: String,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
     if design_result_json.trim().is_empty() {
         return Err(AppError::Validation(
             "Design result JSON cannot be empty".into(),
@@ -412,9 +429,11 @@ pub fn instant_adopt_template(
 
 #[tauri::command]
 pub async fn generate_template_adopt_questions(
+    state: State<'_, Arc<AppState>>,
     template_name: String,
     design_result_json: String,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth(&state).await?;
     if design_result_json.trim().is_empty() {
         return Err(AppError::Validation(
             "Design result JSON cannot be empty".into(),
@@ -985,11 +1004,13 @@ static GEN_JOBS: BackgroundJobManager<GenExtra> = BackgroundJobManager::new(
 
 #[tauri::command]
 pub async fn generate_template_background(
+    state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     gen_id: String,
     template_name: String,
     description: String,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth(&state).await?;
     if description.trim().is_empty() {
         return Err(AppError::Validation(
             "Template description cannot be empty".into(),
@@ -1036,7 +1057,11 @@ pub async fn generate_template_background(
 }
 
 #[tauri::command]
-pub fn get_template_generate_snapshot(gen_id: String) -> Result<serde_json::Value, AppError> {
+pub fn get_template_generate_snapshot(
+    state: State<'_, Arc<AppState>>,
+    gen_id: String,
+) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
     let snapshot = GEN_JOBS
         .get_snapshot_with(&gen_id, |id, job| TemplateGenSnapshot {
             gen_id: id.to_string(),
@@ -1054,12 +1079,21 @@ pub fn get_template_generate_snapshot(gen_id: String) -> Result<serde_json::Valu
 }
 
 #[tauri::command]
-pub fn clear_template_generate_snapshot(gen_id: String) -> Result<(), AppError> {
+pub fn clear_template_generate_snapshot(
+    state: State<'_, Arc<AppState>>,
+    gen_id: String,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
     GEN_JOBS.remove(&gen_id)
 }
 
 #[tauri::command]
-pub fn cancel_template_generate(app: tauri::AppHandle, gen_id: String) -> Result<(), AppError> {
+pub fn cancel_template_generate(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    gen_id: String,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
     GEN_JOBS.cancel(&app, &gen_id)
 }
 
@@ -1070,6 +1104,7 @@ pub fn save_custom_template(
     instruction: String,
     design_result_json: String,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
     if design_result_json.trim().is_empty() {
         return Err(AppError::Validation(
             "Design result JSON cannot be empty".into(),

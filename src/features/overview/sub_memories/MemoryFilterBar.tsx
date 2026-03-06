@@ -36,7 +36,7 @@ export function MemoryFilterBar({
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search memories..."
-          className="w-full pl-9 pr-3 py-2 text-sm bg-secondary/50 border border-primary/15 rounded-lg outline-none focus:border-primary/30 text-foreground/80 placeholder:text-muted-foreground/80"
+          className="w-full pl-9 pr-3 py-2 text-sm bg-secondary/50 border border-primary/15 rounded-xl outline-none focus:border-primary/30 text-foreground/80 placeholder:text-muted-foreground/80"
         />
       </div>
 
@@ -56,7 +56,7 @@ export function MemoryFilterBar({
       <div className="flex items-center gap-1.5 flex-wrap">
         <button
           onClick={() => onCategoryChange(null)}
-          className={`relative px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors ${
+          className={`relative px-3 py-1.5 text-sm font-medium rounded-xl border transition-colors ${
             selectedCategory === null
               ? 'bg-primary/15 text-primary border-primary/30'
               : 'bg-secondary/30 text-muted-foreground/80 border-primary/15 hover:text-muted-foreground hover:bg-secondary/50'
@@ -79,7 +79,7 @@ export function MemoryFilterBar({
             <button
               key={cat}
               onClick={() => onCategoryChange(isActive ? null : cat)}
-              className={`relative flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors ${
+              className={`relative flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border transition-colors ${
                 isActive
                   ? `${colors.bg} ${colors.text} ${colors.border}`
                   : 'bg-secondary/30 text-muted-foreground/80 border-primary/15 hover:text-muted-foreground hover:bg-secondary/50'
@@ -103,7 +103,7 @@ export function MemoryFilterBar({
       {hasFilters && (
         <button
           onClick={onClearFilters}
-          className="flex items-center gap-1 px-2.5 py-2 text-sm text-muted-foreground/90 hover:text-foreground/95 rounded-lg hover:bg-secondary/40 transition-colors"
+          className="flex items-center gap-1 px-2.5 py-2 text-sm text-muted-foreground/90 hover:text-foreground/95 rounded-xl hover:bg-secondary/40 transition-colors"
         >
           <X className="w-3 h-3" />
           Clear

@@ -22,7 +22,7 @@ export function AiSearchStatusBar({
 
   return (
     <div className="px-4 pb-2">
-      <div className={`flex items-center gap-2 px-3 py-2 rounded-lg max-w-2xl mx-auto ${
+      <div className={`flex items-center gap-2 px-3 py-2 rounded-xl max-w-2xl mx-auto ${
         aiSearchLoading
           ? 'bg-indigo-500/8 border border-indigo-500/15'
           : aiSearchActive

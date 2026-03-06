@@ -39,7 +39,7 @@ export default function TeamList() {
       }
       setTeamCounts(map);
     } catch {
-      // Silent fail
+      // intentional: non-critical — background team count preload
     }
   }, []);
 
@@ -85,7 +85,7 @@ export default function TeamList() {
           enabled: null,
         });
       } catch {
-        // Non-critical — team still created
+        // intentional: non-critical — template blueprint save is best-effort (team still created)
       }
       selectTeam(team.id);
     }
@@ -118,7 +118,7 @@ export default function TeamList() {
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6 p-4 rounded-2xl bg-secondary/40 backdrop-blur-sm border border-indigo-500/20"
+            className="mb-6 p-4 rounded-xl bg-secondary/40 backdrop-blur-sm border border-indigo-500/20"
           >
             <div className="space-y-4">
               <div>
@@ -128,7 +128,7 @@ export default function TeamList() {
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   placeholder="e.g. Code Review Pipeline"
-                  className="w-full px-3 py-2 rounded-lg bg-background/60 border border-primary/15 text-sm text-foreground/90 placeholder:text-muted-foreground/80 focus:outline-none focus:border-indigo-500/40"
+                  className="w-full px-3 py-2 rounded-xl bg-background/60 border border-primary/15 text-sm text-foreground/90 placeholder:text-muted-foreground/80 focus:outline-none focus:border-indigo-500/40"
                   autoFocus
                 />
               </div>
@@ -139,7 +139,7 @@ export default function TeamList() {
                   value={newDescription}
                   onChange={(e) => setNewDescription(e.target.value)}
                   placeholder="Optional description"
-                  className="w-full px-3 py-2 rounded-lg bg-background/60 border border-primary/15 text-sm text-foreground/90 placeholder:text-muted-foreground/80 focus:outline-none focus:border-indigo-500/40"
+                  className="w-full px-3 py-2 rounded-xl bg-background/60 border border-primary/15 text-sm text-foreground/90 placeholder:text-muted-foreground/80 focus:outline-none focus:border-indigo-500/40"
                 />
               </div>
               <div>
@@ -165,7 +165,7 @@ export default function TeamList() {
                 <button
                   onClick={handleCreate}
                   disabled={!newName.trim()}
-                  className="px-4 py-1.5 text-sm font-medium rounded-lg bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  className="px-4 py-1.5 text-sm font-medium rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                 >
                   Create Team
                 </button>
@@ -182,7 +182,7 @@ export default function TeamList() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05, duration: 0.25 }}
-              className="group relative p-4 rounded-2xl bg-secondary/40 backdrop-blur-sm border border-primary/15 hover:border-indigo-500/30 cursor-pointer transition-all hover:shadow-[0_0_20px_rgba(99,102,241,0.08)]"
+              className="group relative p-4 rounded-xl bg-secondary/40 backdrop-blur-sm border border-primary/15 hover:border-indigo-500/30 cursor-pointer transition-all hover:shadow-[0_0_20px_rgba(99,102,241,0.08)]"
               onClick={() => selectTeam(team.id)}
             >
               {/* Color accent bar */}
@@ -293,7 +293,7 @@ export default function TeamList() {
             animate={{ opacity: 1 }}
             className="text-center py-12"
           >
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
               <Users className="w-8 h-8 text-indigo-400/50" />
             </div>
             <h2 className="text-lg font-semibold text-foreground/90 mb-1">No teams yet</h2>

@@ -38,6 +38,7 @@ export function parseSummaryLine(line: string): ExecutionSummary | null {
   try {
     return JSON.parse(line.slice('[SUMMARY]'.length));
   } catch {
+    // intentional: non-critical -- JSON parse fallback
     return null;
   }
 }

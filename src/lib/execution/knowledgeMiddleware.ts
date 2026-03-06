@@ -38,6 +38,7 @@ function compileGuidance(entries: ExecutionKnowledge[]): string {
         const data = JSON.parse(f.pattern_data) as { sample_error?: string };
         lines.push(`  - ${data.sample_error?.slice(0, 80) ?? f.pattern_key}`);
       } catch {
+        // intentional: non-critical -- JSON parse fallback
         lines.push(`  - ${f.pattern_key}`);
       }
     }
@@ -78,7 +79,7 @@ const knowledgeInjectionMiddleware: PipelineMiddleware<'validate'> = async (
       }
     }
   } catch {
-    // Non-blocking: if knowledge query fails, continue without injection
+    // intentional: non-critical -- knowledge query failure, continue without injection
   }
 
   return payload;

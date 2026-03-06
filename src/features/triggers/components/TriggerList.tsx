@@ -379,7 +379,7 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
                               <span className={`text-sm font-medium capitalize ${colorClass}`}>
                                 {trigger.trigger_type}
                               </span>
-                              <span className={`text-sm px-1.5 py-0.5 rounded-md font-mono ${
+                              <span className={`text-sm px-1.5 py-0.5 rounded-lg font-mono ${
                                 trigger.enabled
                                   ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
                                   : 'bg-secondary/60 text-muted-foreground/80 border border-border/20'

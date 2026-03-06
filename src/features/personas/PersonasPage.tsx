@@ -1,4 +1,4 @@
-import { useEffect, useState, lazy, Suspense } from 'react';
+import { useEffect, useState, useCallback, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMotion } from '@/hooks/utility/useMotion';
 import { usePersonaStore } from '@/stores/personaStore';
@@ -14,6 +14,7 @@ import SettingsPage from '@/features/settings/components/SettingsPage';
 import CreationWizard from '@/features/agents/components/CreationWizard';
 import { CredentialNavProvider } from '@/features/vault/hooks/CredentialNavContext';
 import PanelSkeleton from '@/features/shared/components/PanelSkeleton';
+import { ErrorBanner } from '@/features/shared/components/ErrorBanner';
 
 const TeamCanvas = lazy(() => import('@/features/pipeline/components/TeamCanvas'));
 const OverviewPage = lazy(() => import('@/features/overview/components/OverviewPage'));
@@ -44,10 +45,11 @@ export default function PersonasPage() {
   // Prevents showing CreationWizard before the first load completes.
   const [personasFetched, setPersonasFetched] = useState(false);
 
-  useEffect(() => {
+  const runStartup = useCallback(() => {
     // Run all startup fetches in parallel and collect failures.
     // Using Promise.allSettled prevents any single call's error from overwriting
     // the others — the final store.error is the aggregate of all failures.
+    setError(null);
     const STARTUP_LABELS = ['personas', 'tools', 'credentials', 'recipes', 'pending review', 'groups'] as const;
     Promise.allSettled([
       fetchPersonas(),
@@ -66,6 +68,10 @@ export default function PersonasPage() {
       }
     });
   }, [fetchPersonas, fetchToolDefinitions, fetchCredentials, fetchRecipes, fetchPendingReviewCount, fetchGroups, setError]);
+
+  useEffect(() => {
+    runStartup();
+  }, [runStartup]);
 
   // Hydrate persisted persona selection on app restart
   useEffect(() => {
@@ -144,15 +150,25 @@ export default function PersonasPage() {
         <Sidebar />
 
         {/* Content area */}
-        <motion.div
-          key={sidebarSection + (selectedPersonaId || '')}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-          className="flex-1 flex flex-col overflow-x-auto overflow-y-hidden"
-        >
-          {renderContent()}
-        </motion.div>
+        <div className="flex-1 flex flex-col overflow-x-auto overflow-y-hidden">
+          {error && (
+            <ErrorBanner
+              message={error}
+              variant="banner"
+              onRetry={runStartup}
+              onDismiss={() => setError(null)}
+            />
+          )}
+          <motion.div
+            key={sidebarSection + (selectedPersonaId || '')}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="flex-1 flex flex-col overflow-x-auto overflow-y-hidden"
+          >
+            {renderContent()}
+          </motion.div>
+        </div>
       </div>
       </div>
     </CredentialNavProvider>

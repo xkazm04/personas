@@ -65,6 +65,7 @@ export function CatalogCredentialModal({
           .healthcheckCredentialPreview(connectorDefinition.name, values);
         setHealthcheckResult(result);
       } catch {
+        // intentional: healthcheck error is shown inline via result state
         setHealthcheckResult({ success: false, message: 'Healthcheck failed' });
       } finally {
         setIsHealthchecking(false);
@@ -89,6 +90,7 @@ export function CatalogCredentialModal({
         );
         setHealthcheckResult({ success: result.success, message: result.message });
       } catch {
+        // intentional: healthcheck error is shown inline via result state
         setHealthcheckResult({ success: false, message: 'Connection test failed' });
       } finally {
         setIsHealthchecking(false);

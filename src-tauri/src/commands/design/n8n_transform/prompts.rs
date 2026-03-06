@@ -1,5 +1,5 @@
 use super::cli_runner::truncate_utf8;
-use super::prompt_sanitizer::{sanitize_workflow_name, sanitize_json_payload, sanitize_free_text};
+use super::prompt_sanitizer::{sanitize_workflow_name, sanitize_json_payload, sanitize_free_text, wrap_xml_boundary, canary_instruction};
 use crate::engine::platform_rules;
 
 /// Wraps a persona-generation prompt with section-delimited output instructions.
@@ -302,33 +302,52 @@ pub fn build_n8n_transform_prompt(
     let credential_rules = platform.format_credential_rules_prompt();
     let platform_label = &platform.label;
 
-    let adjustment_section = adjustment_request
-        .filter(|a| !a.trim().is_empty())
-        .map(|a| format!("\nUser adjustment request:\n{}\n", sanitize_free_text(a)))
-        .unwrap_or_default();
-
-    let previous_draft_section = previous_draft_json
-        .filter(|d| !d.trim().is_empty())
-        .map(|d| format!("\nPrevious draft JSON to refine:\n{}\n", sanitize_json_payload(d)))
-        .unwrap_or_default();
-
     let connectors_section = format_connector_section(connectors_json);
     let credentials_section = format_credential_section(credentials_json);
-
-    let user_answers_section = user_answers_json
-        .filter(|a| !a.trim().is_empty() && a.trim() != "{}")
-        .map(|a| format!(
-            "\n## User Configuration Answers\nThe user has provided these answers to clarify the transformation. Honor these answers when generating the persona configuration:\n{}\n", sanitize_json_payload(a)
-        ))
-        .unwrap_or_default();
 
     let credential_adaptation = build_credential_adaptation_rules();
     let protocol_docs = build_protocol_docs();
     let pattern_mapping = build_pattern_mapping();
     let output_schema = build_output_schema();
 
+    let canary = canary_instruction();
+
+    // Wrap all untrusted workflow data in XML boundary tags
+    let wrapped_workflow_name = wrap_xml_boundary("workflow_name", &workflow_name);
+    let wrapped_parser_result = wrap_xml_boundary("parser_result", &parser_result_json);
+    let wrapped_workflow_json = wrap_xml_boundary("workflow_json", &workflow_json);
+
+    let wrapped_adjustment = adjustment_request
+        .filter(|a| !a.trim().is_empty())
+        .map(|a| {
+            let sanitized = sanitize_free_text(a);
+            format!("\nUser adjustment request:\n{}\n", wrap_xml_boundary("adjustment_request", &sanitized))
+        })
+        .unwrap_or_default();
+
+    let wrapped_previous_draft = previous_draft_json
+        .filter(|d| !d.trim().is_empty())
+        .map(|d| {
+            let sanitized = sanitize_json_payload(d);
+            format!("\nPrevious draft JSON to refine:\n{}\n", wrap_xml_boundary("previous_draft", &sanitized))
+        })
+        .unwrap_or_default();
+
+    let wrapped_user_answers = user_answers_json
+        .filter(|a| !a.trim().is_empty() && a.trim() != "{}")
+        .map(|a| {
+            let sanitized = sanitize_json_payload(a);
+            format!(
+                "\n## User Configuration Answers\nThe user has provided these answers to clarify the transformation. Honor these answers when generating the persona configuration:\n{}\n",
+                wrap_xml_boundary("user_answers", &sanitized)
+            )
+        })
+        .unwrap_or_default();
+
     format!(
         r#"You are a senior Personas architect.
+
+{canary}
 
 Transform the following {platform_label} workflow into a production-ready Personas agent.
 
@@ -351,17 +370,17 @@ Transform the following {platform_label} workflow into a production-ready Person
 {output_schema}
 
 Workflow name:
-{workflow_name}
+{wrapped_workflow_name}
 
 Static parser baseline JSON:
-{parser_result_json}
+{wrapped_parser_result}
 
 Original n8n workflow JSON:
-{workflow_json}
+{wrapped_workflow_json}
 
-{adjustment_section}
-{previous_draft_section}
-{user_answers_section}
+{wrapped_adjustment}
+{wrapped_previous_draft}
+{wrapped_user_answers}
 "#
     )
 }
@@ -393,9 +412,18 @@ pub fn build_n8n_unified_prompt(
     let pattern_mapping = build_pattern_mapping();
     let output_schema = build_output_schema();
 
+    let canary = canary_instruction();
+
+    // Wrap untrusted workflow data in XML boundary tags
+    let wrapped_workflow_name = wrap_xml_boundary("workflow_name", &workflow_name);
+    let wrapped_parser_result = wrap_xml_boundary("parser_result", &parser_result_json);
+    let wrapped_workflow_preview = wrap_xml_boundary("workflow_json_preview", &workflow_preview);
+
     format!(
         r#"You are a senior Personas architect. You will analyze a {platform_label} workflow and either ask
 clarifying questions OR generate a persona directly.
+
+{canary}
 
 ## PHASE 1: Analyze the workflow
 
@@ -455,9 +483,12 @@ The Personas platform capabilities:
 
 ## Workflow Data
 
-Workflow name: {workflow_name}
-Parser result: {parser_result_json}
-Original n8n JSON (first 5000 chars): {workflow_preview}
+Workflow name:
+{wrapped_workflow_name}
+Parser result:
+{wrapped_parser_result}
+Original n8n JSON (first 5000 chars):
+{wrapped_workflow_preview}
 "#
     )
 }

@@ -16,6 +16,7 @@ function modelProfileToDropdownValue(profileJson: string | null): string {
     const mp: ModelProfile = JSON.parse(profileJson);
     return profileToDropdownValue(mp);
   } catch {
+    // intentional: non-critical — JSON parse fallback
     return 'sonnet';
   }
 }
@@ -45,6 +46,7 @@ function parseChannels(json: string | null | undefined): NotificationChannel[] {
     const parsed = JSON.parse(json);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
+    // intentional: non-critical — JSON parse fallback
     return [];
   }
 }

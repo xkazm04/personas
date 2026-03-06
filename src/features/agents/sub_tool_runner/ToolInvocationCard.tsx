@@ -84,7 +84,7 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
                   value={inputJson}
                   onChange={(e) => setInputJson(e.target.value)}
                   rows={4}
-                  className="w-full rounded-lg border border-primary/15 bg-background/60 px-3 py-2 text-sm font-mono text-foreground/80 placeholder:text-muted-foreground/30 focus:outline-none focus:ring-1 focus:ring-violet-500/30 resize-y"
+                  className="w-full rounded-xl border border-primary/15 bg-background/60 px-3 py-2 text-sm font-mono text-foreground/80 placeholder:text-muted-foreground/30 focus:outline-none focus:ring-1 focus:ring-violet-500/30 resize-y"
                   placeholder='{ "key": "value" }'
                 />
               </div>
@@ -93,7 +93,7 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
               <button
                 onClick={handleRun}
                 disabled={isRunning}
-                className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium rounded-lg border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors disabled:opacity-40"
+                className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium rounded-xl border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors disabled:opacity-40"
               >
                 {isRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
                 {isRunning ? 'Running...' : 'Run'}
@@ -112,7 +112,7 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
 function ResultDisplay({ result, error }: { result: ToolInvocationResult | null; error: string | null }) {
   if (error) {
     return (
-      <div className="rounded-lg border border-red-500/15 bg-red-500/5 px-3 py-2 text-sm text-red-400">
+      <div className="rounded-xl border border-red-500/15 bg-red-500/5 px-3 py-2 text-sm text-red-400">
         <div className="flex items-center gap-1.5 mb-1">
           <XCircle className="w-3 h-3 flex-shrink-0" />
           <span className="font-medium">Error</span>
@@ -125,7 +125,7 @@ function ResultDisplay({ result, error }: { result: ToolInvocationResult | null;
   if (!result) return null;
 
   return (
-    <div className={`rounded-lg border px-3 py-2 text-sm ${
+    <div className={`rounded-xl border px-3 py-2 text-sm ${
       result.success
         ? 'border-emerald-500/15 bg-emerald-500/5'
         : 'border-red-500/15 bg-red-500/5'
@@ -170,7 +170,7 @@ function buildDefaultInput(tool: PersonaToolDefinition): string {
         }
         return JSON.stringify(defaults, null, 2);
       }
-    } catch { /* ignore */ }
+    } catch { /* intentional: non-critical — JSON parse fallback */ }
   }
   return '{}';
 }
@@ -179,6 +179,7 @@ function formatOutput(output: string): string {
   try {
     return JSON.stringify(JSON.parse(output), null, 2);
   } catch {
+    // intentional: non-critical — JSON parse fallback
     return output;
   }
 }

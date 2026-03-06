@@ -34,7 +34,7 @@ export function UseCaseModelDropdown({
           type="button"
           onClick={toggle}
           aria-expanded={isOpen}
-          className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm font-medium border transition-all w-full ${
+          className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-sm font-medium border transition-all w-full ${
             hasOverride
               ? 'bg-amber-500/8 border-amber-500/20 text-foreground/90'
               : 'bg-secondary/40 border-primary/10 text-muted-foreground/80 hover:border-primary/20'

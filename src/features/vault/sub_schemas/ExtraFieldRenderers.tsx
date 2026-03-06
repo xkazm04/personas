@@ -78,7 +78,7 @@ function KeyValueListField({
           </h4>
           <button
             onClick={() => update([...pairs, { key: '', value: '' }])}
-            className={`flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-lg border transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-xl border transition-colors ${
               def.addButtonClass ?? 'text-primary hover:text-primary/80 bg-primary/10 hover:bg-primary/15 border-primary/20'
             }`}
           >
@@ -103,7 +103,7 @@ function KeyValueListField({
                   update(next);
                 }}
                 placeholder="KEY"
-                className="flex-1 px-2.5 py-1.5 bg-background/50 border border-border/50 rounded-lg text-sm text-foreground font-mono focus:outline-none focus:ring-2 focus:ring-primary/40 placeholder-muted-foreground/30"
+                className="flex-1 px-2.5 py-1.5 bg-background/50 border border-border/50 rounded-xl text-sm text-foreground font-mono focus:outline-none focus:ring-2 focus:ring-primary/40 placeholder-muted-foreground/30"
               />
               <span className="text-muted-foreground/30">=</span>
               <input
@@ -115,7 +115,7 @@ function KeyValueListField({
                   update(next);
                 }}
                 placeholder="value"
-                className="flex-1 px-2.5 py-1.5 bg-background/50 border border-border/50 rounded-lg text-sm text-foreground font-mono focus:outline-none focus:ring-2 focus:ring-primary/40 placeholder-muted-foreground/30"
+                className="flex-1 px-2.5 py-1.5 bg-background/50 border border-border/50 rounded-xl text-sm text-foreground font-mono focus:outline-none focus:ring-2 focus:ring-primary/40 placeholder-muted-foreground/30"
               />
               <button
                 onClick={() => update(pairs.filter((_, j) => j !== i))}

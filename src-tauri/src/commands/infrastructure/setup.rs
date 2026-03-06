@@ -463,7 +463,7 @@ async fn run_setup_install(params: SetupRunParams) {
         }
         InstallScope::All => {
             let node_ok = install_node(&app, &install_id, &platform).await;
-            if *cancelled.lock().unwrap() {
+            if *cancelled.lock().unwrap_or_else(|e| e.into_inner()) {
                 tracing::info!(install_id = %install_id, "Setup install cancelled");
                 return;
             }
@@ -496,7 +496,7 @@ pub async fn start_setup_install(
     let cancelled = state.active_setup_cancelled.clone();
 
     {
-        let mut guard = cancelled.lock().unwrap();
+        let mut guard = cancelled.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
         *guard = false;
     }
 
@@ -510,7 +510,7 @@ pub async fn start_setup_install(
 
 #[tauri::command]
 pub fn cancel_setup_install(state: State<'_, Arc<AppState>>) -> Result<(), AppError> {
-    let mut guard = state.active_setup_cancelled.lock().unwrap();
+    let mut guard = state.active_setup_cancelled.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
     *guard = true;
     Ok(())
 }

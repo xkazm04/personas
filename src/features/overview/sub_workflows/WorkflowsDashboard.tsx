@@ -12,6 +12,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
+import { useToastStore } from '@/stores/toastStore';
 import { getWorkflowsOverview, getWorkflowJobOutput, cancelWorkflowJob } from '@/api/workflows';
 import type { WorkflowsOverview, WorkflowJob } from '@/api/workflows';
 
@@ -62,7 +63,7 @@ function SummaryCards({ data }: { data: WorkflowsOverview }) {
   return (
     <div className="grid grid-cols-4 gap-3">
       {cards.map((c) => (
-        <div key={c.label} className={`${c.bg} rounded-lg border border-primary/10 px-4 py-3`}>
+        <div key={c.label} className={`${c.bg} rounded-xl border border-primary/10 px-4 py-3`}>
           <div className="text-[11px] text-muted-foreground/80 uppercase tracking-wide mb-1">{c.label}</div>
           <div className={`text-2xl font-semibold tabular-nums ${c.color}`}>{c.value}</div>
         </div>
@@ -214,7 +215,7 @@ export default function WorkflowsDashboard() {
   const load = useCallback(() => {
     getWorkflowsOverview()
       .then(setData)
-      .catch(() => {})
+      .catch(() => { /* intentional: non-critical — background dashboard poll */ })
       .finally(() => setLoading(false));
   }, []);
 
@@ -242,7 +243,7 @@ export default function WorkflowsDashboard() {
       await cancelWorkflowJob(job.job_type, job.job_id);
       load();
     } catch {
-      // ignore
+      useToastStore.getState().addToast('Failed to cancel workflow job', 'error');
     }
   };
 
@@ -264,7 +265,7 @@ export default function WorkflowsDashboard() {
         actions={
           <button
             onClick={load}
-            className="flex items-center gap-1.5 text-[11px] px-2.5 py-1.5 rounded-md bg-secondary/60 text-muted-foreground hover:text-foreground border border-primary/10 hover:border-primary/20 transition-colors"
+            className="flex items-center gap-1.5 text-[11px] px-2.5 py-1.5 rounded-xl bg-secondary/60 text-muted-foreground hover:text-foreground border border-primary/10 hover:border-primary/20 transition-colors"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             Refresh
@@ -298,7 +299,7 @@ export default function WorkflowsDashboard() {
                   <button
                     key={f}
                     onClick={() => setStatusFilter(f)}
-                    className={`text-[11px] px-2.5 py-1 rounded-md border transition-colors capitalize ${
+                    className={`text-[11px] px-2.5 py-1 rounded-xl border transition-colors capitalize ${
                       statusFilter === f
                         ? 'bg-violet-500/15 text-violet-400 border-violet-500/25'
                         : 'bg-secondary/40 text-muted-foreground/70 border-primary/10 hover:text-foreground'
@@ -315,7 +316,7 @@ export default function WorkflowsDashboard() {
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => setTypeFilter('all')}
-                      className={`text-[11px] px-2.5 py-1 rounded-md border transition-colors ${
+                      className={`text-[11px] px-2.5 py-1 rounded-xl border transition-colors ${
                         typeFilter === 'all'
                           ? 'bg-violet-500/15 text-violet-400 border-violet-500/25'
                           : 'bg-secondary/40 text-muted-foreground/70 border-primary/10 hover:text-foreground'
@@ -327,7 +328,7 @@ export default function WorkflowsDashboard() {
                       <button
                         key={t}
                         onClick={() => setTypeFilter(t)}
-                        className={`text-[11px] px-2.5 py-1 rounded-md border transition-colors ${
+                        className={`text-[11px] px-2.5 py-1 rounded-xl border transition-colors ${
                           typeFilter === t
                             ? 'bg-violet-500/15 text-violet-400 border-violet-500/25'
                             : 'bg-secondary/40 text-muted-foreground/70 border-primary/10 hover:text-foreground'

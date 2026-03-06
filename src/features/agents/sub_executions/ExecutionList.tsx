@@ -6,10 +6,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import * as api from '@/api/tauriApi';
 import { getRetryChain } from '@/api/healing';
 import { formatTimestamp, formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
+import { Tooltip } from '@/features/shared/components/Tooltip';
 import { TEMPLATE_CATALOG } from '@/lib/personas/templateCatalog';
 import { useCopyToClipboard } from '@/hooks/utility/useCopyToClipboard';
 import { ExecutionComparison } from './ExecutionComparison';
 import { maskSensitiveJson, sanitizeErrorMessage } from '@/lib/utils/maskSensitive';
+import { useToastStore } from '@/stores/toastStore';
 
 /** Inline 48x16 SVG sparkline for cost trend. No charting library needed. */
 function CostSparkline({ costs }: { costs: number[] }) {
@@ -151,7 +153,7 @@ export function ExecutionList() {
         setCompareMode(true);
       }
     } catch {
-      // Silently ignore - chain may not exist
+      useToastStore.getState().addToast('Failed to load retry chain for comparison', 'error');
     }
   }, [personaId]);
 
@@ -237,18 +239,19 @@ export function ExecutionList() {
           History
         </h4>
         {executions.length > 0 && (
-          <button
-            onClick={() => setShowRaw(!showRaw)}
-            className={`ml-auto flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors ${
-              showRaw
-                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                : 'text-muted-foreground/50 hover:text-muted-foreground/70 border border-transparent'
-            }`}
-            title={showRaw ? 'Sensitive values are visible' : 'Sensitive values are masked'}
-          >
-            <Shield className="w-3 h-3" />
-            {showRaw ? 'Raw' : 'Masked'}
-          </button>
+          <Tooltip content={showRaw ? 'Sensitive values are visible' : 'Sensitive values are masked'}>
+            <button
+              onClick={() => setShowRaw(!showRaw)}
+              className={`ml-auto flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors ${
+                showRaw
+                  ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                  : 'text-muted-foreground/50 hover:text-muted-foreground/70 border border-transparent'
+              }`}
+            >
+              <Shield className="w-3 h-3" />
+              {showRaw ? 'Raw' : 'Masked'}
+            </button>
+          </Tooltip>
         )}
         {executions.length >= 2 && (
           <button
@@ -290,7 +293,7 @@ export function ExecutionList() {
           {canCompare && (
             <button
               onClick={() => setShowComparison(true)}
-              className="ml-2 px-2.5 py-1 text-sm font-medium rounded-lg bg-primary/15 text-primary/80 border border-primary/20 hover:bg-primary/25 transition-colors"
+              className="ml-2 px-2.5 py-1 text-sm font-medium rounded-xl bg-primary/15 text-primary/80 border border-primary/20 hover:bg-primary/25 transition-colors"
             >
               Compare
             </button>
@@ -305,7 +308,7 @@ export function ExecutionList() {
           transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
           className="flex flex-col items-center text-center py-12 px-6 bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl"
         >
-          <div className="w-12 h-12 rounded-2xl bg-primary/8 border border-primary/12 flex items-center justify-center mb-4">
+          <div className="w-12 h-12 rounded-xl bg-primary/8 border border-primary/12 flex items-center justify-center mb-4">
             <Rocket className="w-5.5 h-5.5 text-primary/40" />
           </div>
           <p className="text-sm font-medium text-foreground/80">
@@ -348,16 +351,18 @@ export function ExecutionList() {
 
             const statusEntry = getStatusEntry(execution.status);
             const statusBadge = (
-              <span className={`px-2 py-0.5 rounded-md text-sm font-medium ${badgeClass(statusEntry)}`}>
+              <span className={`px-2 py-0.5 rounded-lg text-sm font-medium ${badgeClass(statusEntry)}`}>
                 {statusEntry.label}
               </span>
             );
 
             const retryBadge = execution.retry_count > 0 ? (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" title={`Healing retry #${execution.retry_count}`}>
-                <RefreshCw className="w-2.5 h-2.5" />
-                #{execution.retry_count}
-              </span>
+              <Tooltip content={`Healing retry #${execution.retry_count}`}>
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                  <RefreshCw className="w-2.5 h-2.5" />
+                  #{execution.retry_count}
+                </span>
+              </Tooltip>
             ) : null;
 
             const duration = (
@@ -380,13 +385,13 @@ export function ExecutionList() {
                   {compareMode && (
                     <div className="col-span-1 flex items-center">
                       {compareLabel ? (
-                        <span className={`w-5 h-5 rounded-md flex items-center justify-center text-sm font-bold ${
+                        <span className={`w-5 h-5 rounded-lg flex items-center justify-center text-sm font-bold ${
                           compareLabel === 'A' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-pink-500/20 text-pink-400 border border-pink-500/30'
                         }`}>
                           {compareLabel}
                         </span>
                       ) : (
-                        <span className="w-5 h-5 rounded-md border border-primary/15 bg-background/30" />
+                        <span className="w-5 h-5 rounded-lg border border-primary/15 bg-background/30" />
                       )}
                     </div>
                   )}
@@ -402,9 +407,9 @@ export function ExecutionList() {
                     {formatTimestamp(execution.started_at)}
                   </div>
                   <div className="col-span-2 text-sm text-foreground/90 font-mono flex items-center">
-                    <span title="Input tokens">{formatTokens(execution.input_tokens)}</span>
+                    <Tooltip content="Input tokens"><span>{formatTokens(execution.input_tokens)}</span></Tooltip>
                     {' / '}
-                    <span title="Output tokens">{formatTokens(execution.output_tokens)}</span>
+                    <Tooltip content="Output tokens"><span>{formatTokens(execution.output_tokens)}</span></Tooltip>
                   </div>
                   <div className={`${compareMode ? 'col-span-2' : 'col-span-3'} flex items-center gap-2`}>
                     <span className="text-sm text-foreground/90 font-mono">
@@ -430,7 +435,7 @@ export function ExecutionList() {
                 >
                   <div className="flex items-center gap-2">
                     {compareMode && compareLabel && (
-                      <span className={`w-5 h-5 rounded-md flex items-center justify-center text-sm font-bold ${
+                      <span className={`w-5 h-5 rounded-lg flex items-center justify-center text-sm font-bold ${
                         compareLabel === 'A' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-pink-500/20 text-pink-400 border border-pink-500/30'
                       }`}>
                         {compareLabel}
@@ -464,22 +469,23 @@ export function ExecutionList() {
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
                             <span className="text-muted-foreground/90 text-sm font-mono uppercase">Execution ID</span>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                copyToClipboard(execution.id);
-                                setCopiedId(execution.id);
-                              }}
-                              className="flex items-center gap-1.5 mt-0.5 text-foreground/90 hover:text-foreground/95 transition-colors group"
-                              title={execution.id}
-                            >
-                              <span className="font-mono text-sm">#{execution.id.slice(0, 8)}</span>
-                              {hasCopied && copiedId === execution.id ? (
-                                <Check className="w-3 h-3 text-emerald-400" />
-                              ) : (
-                                <Copy className="w-3 h-3 opacity-0 group-hover:opacity-60 transition-opacity" />
-                              )}
-                            </button>
+                            <Tooltip content={execution.id} placement="bottom">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  copyToClipboard(execution.id);
+                                  setCopiedId(execution.id);
+                                }}
+                                className="flex items-center gap-1.5 mt-0.5 text-foreground/90 hover:text-foreground/95 transition-colors group"
+                              >
+                                <span className="font-mono text-sm">#{execution.id.slice(0, 8)}</span>
+                                {hasCopied && copiedId === execution.id ? (
+                                  <Check className="w-3 h-3 text-emerald-400" />
+                                ) : (
+                                  <Copy className="w-3 h-3 opacity-0 group-hover:opacity-60 transition-opacity" />
+                                )}
+                              </button>
+                            </Tooltip>
                           </div>
                           <div>
                             <span className="text-muted-foreground/90 text-sm font-mono uppercase">Model</span>
@@ -523,7 +529,7 @@ export function ExecutionList() {
                               e.stopPropagation();
                               setRerunInputData(execution.input_data || '{}');
                             }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary/10 text-primary/80 border border-primary/15 hover:bg-primary/20 hover:text-primary transition-colors"
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-primary/10 text-primary/80 border border-primary/15 hover:bg-primary/20 hover:text-primary transition-colors"
                           >
                             <RotateCw className="w-3 h-3" />
                             Re-run with same input
@@ -534,7 +540,7 @@ export function ExecutionList() {
                                 e.stopPropagation();
                                 void handleAutoCompareRetry(execution.id);
                               }}
-                              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-cyan-500/10 text-cyan-400/80 border border-cyan-500/15 hover:bg-cyan-500/20 hover:text-cyan-400 transition-colors"
+                              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-cyan-500/10 text-cyan-400/80 border border-cyan-500/15 hover:bg-cyan-500/20 hover:text-cyan-400 transition-colors"
                             >
                               <ArrowLeftRight className="w-3 h-3" />
                               Compare with original

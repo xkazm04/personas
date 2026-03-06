@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Key } from 'lucide-react';
 import { getAppSetting, setAppSetting } from '@/api/tauriApi';
+import { useToastStore } from '@/stores/toastStore';
 
 export interface ConfigField {
   key: string;
@@ -79,7 +80,7 @@ export function ConfigurationPopup({
       );
       onSaved();
     } catch {
-      // keep popup open on error
+      useToastStore.getState().addToast('Failed to save configuration', 'error');
     } finally {
       setSaving(false);
     }
@@ -119,7 +120,7 @@ export function ConfigurationPopup({
                 placeholder={loaded ? field.placeholder : 'Loading\u2026'}
                 disabled={!loaded}
                 autoFocus={field.autoFocus}
-                className={`w-full px-3 py-2 bg-secondary/40 border border-primary/15 rounded-lg text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 ${styles.ring} transition-all disabled:opacity-50`}
+                className={`w-full px-3 py-2 bg-secondary/40 border border-primary/15 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 ${styles.ring} transition-all disabled:opacity-50`}
               />
             </div>
           ))}
@@ -130,20 +131,32 @@ export function ConfigurationPopup({
           )}
         </div>
 
-        <div className="px-4 py-3 border-t border-primary/10 flex items-center justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="px-3 py-1.5 text-sm font-medium rounded-lg text-muted-foreground/80 hover:bg-secondary/60 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={!hasAnyValue || saving}
-            className={`px-3 py-1.5 text-sm font-medium rounded-lg ${styles.button} transition-colors disabled:opacity-40 disabled:cursor-not-allowed`}
-          >
-            {saving ? 'Saving\u2026' : saveLabel}
-          </button>
+        <div className="px-4 py-3 border-t border-primary/10">
+          <div className="flex items-center justify-end gap-2">
+            <button
+              onClick={onClose}
+              className="px-3 py-1.5 text-sm font-medium rounded-xl text-muted-foreground/80 hover:bg-secondary/60 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={!hasAnyValue || saving}
+              className={`px-3 py-1.5 text-sm font-medium rounded-xl ${styles.button} transition-colors disabled:opacity-40 disabled:cursor-not-allowed`}
+            >
+              {saving ? 'Saving\u2026' : saveLabel}
+            </button>
+          </div>
+          {!hasAnyValue && !saving && loaded && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.15 }}
+              className="text-muted-foreground text-xs mt-1.5 text-right"
+            >
+              Fill in at least one field to save
+            </motion.p>
+          )}
         </div>
       </motion.div>
     </div>

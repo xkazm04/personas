@@ -8,12 +8,14 @@ use crate::db::repos::resources::triggers as repo;
 use crate::db::repos::communication::events as event_repo;
 use crate::engine::chain;
 use crate::error::AppError;
+use crate::ipc_auth::{require_auth, require_auth_sync, require_privileged};
 use crate::AppState;
 
 #[tauri::command]
 pub fn list_all_triggers(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<PersonaTrigger>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_all(&state.db)
 }
 
@@ -22,6 +24,7 @@ pub fn list_triggers(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
 ) -> Result<Vec<PersonaTrigger>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_by_persona_id(&state.db, &persona_id)
 }
 
@@ -86,6 +89,7 @@ pub fn create_trigger(
     state: State<'_, Arc<AppState>>,
     input: CreateTriggerInput,
 ) -> Result<PersonaTrigger, AppError> {
+    require_auth_sync(&state)?;
     validate_config_json(input.config.as_deref())?;
     validate_polling_url(&input.trigger_type, input.config.as_deref())?;
     validate_chain_cycle(
@@ -102,13 +106,22 @@ pub fn create_trigger(
 pub fn update_trigger(
     state: State<'_, Arc<AppState>>,
     id: String,
+    persona_id: String,
     input: UpdateTriggerInput,
 ) -> Result<PersonaTrigger, AppError> {
+    require_auth_sync(&state)?;
     validate_config_json(input.config.as_deref())?;
+    // Verify ownership: the trigger must belong to the specified persona
+    let existing = repo::get_by_id(&state.db, &id)?;
+    if existing.persona_id != persona_id {
+        return Err(AppError::Validation(format!(
+            "Trigger {} does not belong to persona {}",
+            id, persona_id
+        )));
+    }
     // For chain cycle detection and polling URL validation on update, we need
     // the existing trigger's data to fill in fields not being changed.
     if input.trigger_type.is_some() || input.config.is_some() {
-        let existing = repo::get_by_id(&state.db, &id)?;
         let trigger_type = input.trigger_type.as_deref().unwrap_or(&existing.trigger_type);
         let config = input.config.as_deref().or(existing.config.as_deref());
         validate_polling_url(trigger_type, config)?;
@@ -118,7 +131,20 @@ pub fn update_trigger(
 }
 
 #[tauri::command]
-pub fn delete_trigger(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
+pub fn delete_trigger(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    persona_id: String,
+) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    // Verify ownership: the trigger must belong to the specified persona
+    let existing = repo::get_by_id(&state.db, &id)?;
+    if existing.persona_id != persona_id {
+        return Err(AppError::Validation(format!(
+            "Trigger {} does not belong to persona {}",
+            id, persona_id
+        )));
+    }
     repo::delete(&state.db, &id)
 }
 
@@ -128,6 +154,7 @@ pub fn delete_trigger(state: State<'_, Arc<AppState>>, id: String) -> Result<boo
 pub fn get_trigger_health_map(
     state: State<'_, Arc<AppState>>,
 ) -> Result<std::collections::HashMap<String, String>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_health_map(&state.db)
 }
 
@@ -158,6 +185,7 @@ pub async fn validate_trigger(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<TriggerValidationResult, AppError> {
+    require_auth(&state).await?;
     let trigger = repo::get_by_id(&state.db, &id)?;
 
     let mut checks: Vec<TriggerValidationCheck> = Vec::new();
@@ -633,9 +661,11 @@ pub struct CronPreview {
 /// Parse a cron expression and return a human-readable description + next N fire times.
 #[tauri::command]
 pub fn preview_cron_schedule(
+    state: State<'_, Arc<AppState>>,
     cron_expression: String,
     count: Option<usize>,
 ) -> Result<CronPreview, AppError> {
+    require_auth_sync(&state)?;
     let count = count.unwrap_or(5).min(10);
 
     let schedule = match crate::engine::cron::parse_cron(&cron_expression) {
@@ -815,6 +845,7 @@ pub struct TriggerChainLink {
 pub fn list_trigger_chains(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<TriggerChainLink>, AppError> {
+    require_auth_sync(&state)?;
     let rows = repo::get_chain_links(&state.db)?;
     Ok(rows
         .into_iter()
@@ -851,6 +882,7 @@ pub struct WebhookStatus {
 pub fn get_webhook_status(
     state: State<'_, Arc<AppState>>,
 ) -> Result<WebhookStatus, AppError> {
+    require_auth_sync(&state)?;
     Ok(WebhookStatus {
         listening: state.scheduler.is_webhook_alive(),
         port: 9420,
@@ -911,6 +943,7 @@ pub async fn dry_run_trigger(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<DryRunResult, AppError> {
+    require_privileged(&state, "dry_run_trigger").await?;
     // 1. Run full validation
     let validation = validate_trigger(state.clone(), id.clone()).await?;
 
@@ -1003,4 +1036,110 @@ pub async fn dry_run_trigger(
         matched_subscriptions,
         chain_targets,
     })
+}
+
+// =============================================================================
+// Cron Agents — unified view of personas with schedule triggers
+// =============================================================================
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+pub struct CronAgent {
+    pub persona_id: String,
+    pub persona_name: String,
+    pub persona_icon: Option<String>,
+    pub persona_color: Option<String>,
+    pub persona_enabled: bool,
+    pub headless: bool,
+    pub trigger_id: String,
+    pub cron_expression: Option<String>,
+    pub interval_seconds: Option<u64>,
+    pub trigger_enabled: bool,
+    pub last_triggered_at: Option<String>,
+    pub next_trigger_at: Option<String>,
+    pub description: String,
+    /// Recent execution count (last 24h)
+    pub recent_executions: i64,
+    /// Recent failure count (last 24h)
+    pub recent_failures: i64,
+}
+
+/// List all personas that have at least one schedule trigger, enriched with
+/// cron metadata and recent execution stats. This powers the "Cron Agents" panel.
+#[tauri::command]
+pub fn list_cron_agents(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<CronAgent>, AppError> {
+    require_auth_sync(&state)?;
+
+    let conn = state.db.get()?;
+    let cutoff = (chrono::Utc::now() - chrono::Duration::hours(24)).to_rfc3339();
+
+    let mut stmt = conn.prepare(
+        "SELECT
+            p.id            AS persona_id,
+            p.name          AS persona_name,
+            p.icon          AS persona_icon,
+            p.color         AS persona_color,
+            p.enabled       AS persona_enabled,
+            p.headless      AS headless,
+            t.id            AS trigger_id,
+            t.config        AS trigger_config,
+            t.enabled       AS trigger_enabled,
+            t.last_triggered_at,
+            t.next_trigger_at,
+            COALESCE((SELECT COUNT(*) FROM persona_executions e
+                       WHERE e.persona_id = p.id AND e.created_at >= ?1), 0)
+                            AS recent_executions,
+            COALESCE((SELECT COUNT(*) FROM persona_executions e
+                       WHERE e.persona_id = p.id AND e.status = 'failed' AND e.created_at >= ?1), 0)
+                            AS recent_failures
+         FROM persona_triggers t
+         JOIN personas p ON p.id = t.persona_id
+         WHERE t.trigger_type = 'schedule'
+         ORDER BY t.next_trigger_at ASC NULLS LAST"
+    )?;
+
+    let rows = stmt.query_map([&cutoff], |row| {
+        let config_json: Option<String> = row.get("trigger_config")?;
+        let (cron_expression, interval_seconds) = config_json
+            .as_deref()
+            .and_then(|c| serde_json::from_str::<serde_json::Value>(c).ok())
+            .map(|v| {
+                (
+                    v.get("cron").and_then(|c| c.as_str().map(String::from)),
+                    v.get("interval_seconds").and_then(|i| i.as_u64()),
+                )
+            })
+            .unwrap_or((None, None));
+
+        let description = cron_expression
+            .as_deref()
+            .map(cron_to_human)
+            .or_else(|| interval_seconds.map(|s| {
+                if s >= 3600 { format!("Every {} hours", s / 3600) }
+                else { format!("Every {} minutes", s / 60) }
+            }))
+            .unwrap_or_else(|| "No schedule configured".into());
+
+        Ok(CronAgent {
+            persona_id: row.get("persona_id")?,
+            persona_name: row.get("persona_name")?,
+            persona_icon: row.get("persona_icon")?,
+            persona_color: row.get("persona_color")?,
+            persona_enabled: row.get::<_, i32>("persona_enabled")? != 0,
+            headless: row.get::<_, i32>("headless").unwrap_or(0) != 0,
+            trigger_id: row.get("trigger_id")?,
+            cron_expression,
+            interval_seconds,
+            trigger_enabled: row.get::<_, i32>("trigger_enabled")? != 0,
+            last_triggered_at: row.get("last_triggered_at")?,
+            next_trigger_at: row.get("next_trigger_at")?,
+            description,
+            recent_executions: row.get("recent_executions")?,
+            recent_failures: row.get("recent_failures")?,
+        })
+    })?;
+
+    Ok(rows.filter_map(|r| r.ok()).collect())
 }

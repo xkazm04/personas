@@ -90,7 +90,7 @@ export function AutoCredConsent({ designResult, onConsent, onCancel }: AutoCredC
       <div className="flex items-center justify-end gap-3 pt-1">
         <button
           onClick={onCancel}
-          className="px-4 py-2 text-sm text-muted-foreground/70 hover:text-foreground rounded-lg hover:bg-secondary/40 transition-colors"
+          className="px-4 py-2 text-sm text-muted-foreground/70 hover:text-foreground rounded-xl hover:bg-secondary/40 transition-colors"
         >
           Cancel
         </button>

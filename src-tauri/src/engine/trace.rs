@@ -226,7 +226,7 @@ impl TraceCollector {
             metadata,
         };
 
-        let mut spans = self.spans.lock().unwrap();
+        let mut spans = self.spans.lock().unwrap_or_else(|e| e.into_inner());
 
         // Evict oldest completed non-root spans when at capacity.
         if spans.len() >= MAX_SPANS {
@@ -252,7 +252,7 @@ impl TraceCollector {
         output_tokens: Option<u64>,
     ) {
         let end_ms = self.epoch.elapsed().as_millis() as u64;
-        let mut spans = self.spans.lock().unwrap();
+        let mut spans = self.spans.lock().unwrap_or_else(|e| e.into_inner());
 
         if let Some(span) = spans.iter_mut().find(|s| s.span_id == span_id) {
             span.end_ms = Some(end_ms);
@@ -291,7 +291,7 @@ impl TraceCollector {
         error: Option<String>,
     ) -> ExecutionTrace {
         let end_ms = self.epoch.elapsed().as_millis() as u64;
-        let mut spans = self.spans.lock().unwrap();
+        let mut spans = self.spans.lock().unwrap_or_else(|e| e.into_inner());
 
         // Close root span
         if let Some(root) = spans.iter_mut().find(|s| s.span_id == self.root_span_id) {

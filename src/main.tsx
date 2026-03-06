@@ -12,7 +12,7 @@ async function bootstrap() {
   try {
     appVersion = await getVersion();
   } catch {
-    // Not in Tauri context (browser dev, Storybook, etc.)
+    // intentional: non-critical -- not in Tauri context (browser dev, Storybook, etc.)
   }
 
   initSentry(appVersion);

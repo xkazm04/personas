@@ -59,7 +59,7 @@ export function MemoryRow({
 
   const agentAvatar = (
     <div
-      className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
+      className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
       style={{ background: `linear-gradient(135deg, ${personaColor}20, ${personaColor}40)`, border: `1px solid ${personaColor}50` }}
     >
       <Bot className="w-3 h-3" style={{ color: personaColor }} />
@@ -67,7 +67,7 @@ export function MemoryRow({
   );
 
   const categoryBadge = (
-    <span className={`inline-flex px-2 py-0.5 text-sm font-mono uppercase rounded-md border flex-shrink-0 ${cat.bg} ${cat.text} ${cat.border}`}>
+    <span className={`inline-flex px-2 py-0.5 text-sm font-mono uppercase rounded-lg border flex-shrink-0 ${cat.bg} ${cat.text} ${cat.border}`}>
       {cat.label}
     </span>
   );
@@ -85,13 +85,13 @@ export function MemoryRow({
           >
             <button
               onClick={onDelete}
-              className="px-2 py-1 text-sm font-medium rounded-md bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors"
+              className="px-2 py-1 text-sm font-medium rounded-lg bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors"
             >
               Confirm
             </button>
             <button
               onClick={() => setConfirmDelete(false)}
-              className="px-2 py-1 text-sm font-medium rounded-md bg-secondary/50 text-foreground/80 hover:text-foreground/95 hover:bg-secondary/70 transition-colors"
+              className="px-2 py-1 text-sm font-medium rounded-lg bg-secondary/50 text-foreground/80 hover:text-foreground/95 hover:bg-secondary/70 transition-colors"
             >
               Cancel
             </button>

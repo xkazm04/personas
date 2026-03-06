@@ -86,7 +86,7 @@ export function DesignPhaseApplied({ result, warnings = [], onReset }: DesignPha
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.35 }}
-          className="w-full max-w-sm px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20"
+          className="w-full max-w-sm px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20"
         >
           <ul className="space-y-1">
             {warnings.map((w, i) => (

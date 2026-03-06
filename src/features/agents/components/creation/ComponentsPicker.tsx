@@ -194,7 +194,7 @@ function AssignModal({
                       key={cred.id}
                       type="button"
                       onClick={() => { onAssign(cred.service_type, cred.id); onClose(); }}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border border-transparent hover:bg-secondary/40 hover:border-primary/10 transition-all text-left"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-transparent hover:bg-secondary/40 hover:border-primary/10 transition-all text-left"
                     >
                       <ConnectorIcon meta={meta} size="w-5 h-5" />
                       <div className="flex-1 min-w-0">
@@ -227,7 +227,7 @@ function AssignModal({
                             key={c.name}
                             type="button"
                             onClick={() => { onAssign(c.name, null); onClose(); }}
-                            className="flex items-center gap-2 px-2.5 py-2 text-sm rounded-lg border border-transparent hover:bg-secondary/40 hover:border-primary/10 text-muted-foreground/80 hover:text-foreground/90 transition-all"
+                            className="flex items-center gap-2 px-2.5 py-2 text-sm rounded-xl border border-transparent hover:bg-secondary/40 hover:border-primary/10 text-muted-foreground/80 hover:text-foreground/90 transition-all"
                           >
                             <ConnectorIcon meta={meta} size="w-4 h-4" />
                             <span className="truncate">{meta.label}</span>
@@ -327,14 +327,14 @@ function TableSelectorModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-1.5 text-sm font-medium rounded-lg text-muted-foreground/70 hover:text-foreground/80 hover:bg-secondary/40 transition-colors"
+              className="px-4 py-1.5 text-sm font-medium rounded-xl text-muted-foreground/70 hover:text-foreground/80 hover:bg-secondary/40 transition-colors"
             >
               Skip
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-1.5 text-sm font-semibold rounded-lg bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
+              className="px-4 py-1.5 text-sm font-semibold rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
             >
               Done
             </button>
@@ -430,7 +430,7 @@ function RoleCard({
                 transition={{ duration: 0.12 }}
                 className="overflow-hidden"
               >
-                <div className="flex items-center gap-1.5 px-2 py-1.5 bg-background/50 border border-primary/10 rounded-md text-sm">
+                <div className="flex items-center gap-1.5 px-2 py-1.5 bg-background/50 border border-primary/10 rounded-lg text-sm">
                   <ConnectorIcon meta={meta} size="w-4 h-4" />
                   <span className="flex-1 min-w-0 truncate text-foreground/70">
                     {credName ?? meta.label}

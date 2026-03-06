@@ -40,7 +40,7 @@ export default function NodeContextMenu({ x, y, memberName, currentRole, onChang
           <button
             key={role.value}
             onClick={() => { onChangeRole(role.value); onClose(); }}
-            className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-sm rounded-lg transition-colors ${
+            className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-sm rounded-xl transition-colors ${
               currentRole === role.value ? 'bg-indigo-500/15 text-indigo-300' : 'text-foreground/90 hover:bg-secondary/60'
             }`}
           >
@@ -55,14 +55,14 @@ export default function NodeContextMenu({ x, y, memberName, currentRole, onChang
       <div className="px-1 py-1">
         <button
           onClick={() => { onConfigure(); onClose(); }}
-          className="w-full flex items-center gap-2 px-2.5 py-1.5 text-sm text-foreground/90 hover:bg-secondary/60 rounded-lg transition-colors"
+          className="w-full flex items-center gap-2 px-2.5 py-1.5 text-sm text-foreground/90 hover:bg-secondary/60 rounded-xl transition-colors"
         >
           <Settings className="w-3 h-3" />
           Configure
         </button>
         <button
           onClick={() => { onRemove(); onClose(); }}
-          className="w-full flex items-center gap-2 px-2.5 py-1.5 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+          className="w-full flex items-center gap-2 px-2.5 py-1.5 text-sm text-red-400 hover:bg-red-500/10 rounded-xl transition-colors"
         >
           <Trash2 className="w-3 h-3" />
           Remove from Team

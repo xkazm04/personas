@@ -46,7 +46,7 @@ export function NegotiatorPanel({ designResult, onComplete, onClose }: Negotiato
       transition={MOTION_TIMING.FLOW}
       className="overflow-hidden"
     >
-      <div className="rounded-2xl border border-violet-500/20 bg-gradient-to-b from-violet-500/5 to-transparent">
+      <div className="rounded-xl border border-violet-500/20 bg-gradient-to-b from-violet-500/5 to-transparent">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-violet-500/10">
           <div className="flex items-center gap-2.5">

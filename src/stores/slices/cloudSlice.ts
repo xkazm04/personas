@@ -14,10 +14,17 @@ import {
   cloudOAuthStatus,
   cloudOAuthRefresh,
   cloudOAuthDisconnect,
+  cloudDeployPersona,
+  cloudListDeployments,
+  cloudPauseDeployment,
+  cloudResumeDeployment,
+  cloudUndeploy,
+  cloudGetBaseUrl,
   type CloudConfig,
   type CloudStatusResponse,
   type CloudOAuthAuthorizeResponse,
   type CloudOAuthStatusResponse,
+  type CloudDeployment,
 } from "@/api/cloud";
 
 /** Translate raw backend error strings into user-friendly messages. */
@@ -87,6 +94,10 @@ export interface CloudSlice {
   cloudOAuthStatus: CloudOAuthStatusResponse | null;
   cloudPendingOAuthState: string | null;
   cloudError: string | null;
+  // Deployments
+  cloudDeployments: CloudDeployment[];
+  cloudIsDeploying: boolean;
+  cloudBaseUrl: string | null;
 
   // Actions
   cloudInitialize: () => Promise<void>;
@@ -102,6 +113,12 @@ export interface CloudSlice {
   cloudRefreshOAuth: () => Promise<void>;
   cloudDisconnectOAuth: () => Promise<void>;
   cloudClearError: () => void;
+  // Deployment actions
+  cloudFetchDeployments: () => Promise<void>;
+  cloudDeploy: (personaId: string) => Promise<CloudDeployment>;
+  cloudPauseDeploy: (deploymentId: string) => Promise<void>;
+  cloudResumeDeploy: (deploymentId: string) => Promise<void>;
+  cloudRemoveDeploy: (deploymentId: string) => Promise<void>;
 }
 
 const PENDING_OAUTH_TIMEOUT_MS = 10 * 60 * 1000;
@@ -119,6 +136,9 @@ export const createCloudSlice: StateCreator<PersonaStore, [], [], CloudSlice> = 
   cloudIsConnecting: false,
   cloudStatus: null,
   cloudIsLoadingStatus: false,
+  cloudDeployments: [],
+  cloudIsDeploying: false,
+  cloudBaseUrl: null,
   cloudOAuthStatus: null,
   cloudPendingOAuthState: null,
   cloudError: null,
@@ -156,7 +176,7 @@ export const createCloudSlice: StateCreator<PersonaStore, [], [], CloudSlice> = 
         }
       }
     } catch {
-      // No config stored — that's fine
+      // intentional: non-critical — no config stored yet is expected on first launch
     }
   },
 
@@ -267,5 +287,73 @@ export const createCloudSlice: StateCreator<PersonaStore, [], [], CloudSlice> = 
 
   cloudClearError: () => {
     set({ cloudError: null });
+  },
+
+  // --- Deployment actions ---
+
+  cloudFetchDeployments: async () => {
+    try {
+      const [deployments, baseUrl] = await Promise.all([
+        cloudListDeployments(),
+        cloudGetBaseUrl(),
+      ]);
+      set({ cloudDeployments: deployments, cloudBaseUrl: baseUrl });
+    } catch (err) {
+      set({ cloudError: translateCloudError(err) });
+    }
+  },
+
+  cloudDeploy: async (personaId: string) => {
+    set({ cloudIsDeploying: true, cloudError: null });
+    try {
+      const deployment = await cloudDeployPersona(personaId);
+      const baseUrl = await cloudGetBaseUrl();
+      set((state) => ({
+        cloudDeployments: [deployment, ...state.cloudDeployments],
+        cloudIsDeploying: false,
+        cloudBaseUrl: baseUrl,
+      }));
+      return deployment;
+    } catch (err) {
+      set({ cloudIsDeploying: false, cloudError: translateCloudError(err) });
+      throw err;
+    }
+  },
+
+  cloudPauseDeploy: async (deploymentId: string) => {
+    try {
+      const updated = await cloudPauseDeployment(deploymentId);
+      set((state) => ({
+        cloudDeployments: state.cloudDeployments.map((d) =>
+          d.id === deploymentId ? updated : d
+        ),
+      }));
+    } catch (err) {
+      set({ cloudError: translateCloudError(err) });
+    }
+  },
+
+  cloudResumeDeploy: async (deploymentId: string) => {
+    try {
+      const updated = await cloudResumeDeployment(deploymentId);
+      set((state) => ({
+        cloudDeployments: state.cloudDeployments.map((d) =>
+          d.id === deploymentId ? updated : d
+        ),
+      }));
+    } catch (err) {
+      set({ cloudError: translateCloudError(err) });
+    }
+  },
+
+  cloudRemoveDeploy: async (deploymentId: string) => {
+    try {
+      await cloudUndeploy(deploymentId);
+      set((state) => ({
+        cloudDeployments: state.cloudDeployments.filter((d) => d.id !== deploymentId),
+      }));
+    } catch (err) {
+      set({ cloudError: translateCloudError(err) });
+    }
   },
 });

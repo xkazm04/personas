@@ -94,6 +94,7 @@ function parseModelProfile(persona: DbPersona): ModelProfile | null {
   try {
     return JSON.parse(persona.model_profile) as ModelProfile;
   } catch {
+    // intentional: non-critical — JSON parse fallback
     return null;
   }
 }

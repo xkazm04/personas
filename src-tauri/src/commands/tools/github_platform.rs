@@ -3,6 +3,7 @@ use tauri::State;
 
 use crate::engine::platforms::github::{self, GitHubPermissions, GitHubRepo};
 use crate::error::AppError;
+use crate::ipc_auth::require_privileged;
 use crate::AppState;
 
 /// List repositories accessible to the GitHub credential.
@@ -11,6 +12,7 @@ pub async fn github_list_repos(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
 ) -> Result<Vec<GitHubRepo>, AppError> {
+    require_privileged(&state, "github_list_repos").await?;
     let client = github::build_client_from_credential(&state.db, &credential_id)?;
     client.list_repos().await
 }
@@ -21,6 +23,7 @@ pub async fn github_check_permissions(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
 ) -> Result<GitHubPermissions, AppError> {
+    require_privileged(&state, "github_check_permissions").await?;
     let client = github::build_client_from_credential(&state.db, &credential_id)?;
     client.check_permissions().await
 }

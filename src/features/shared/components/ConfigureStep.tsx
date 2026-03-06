@@ -63,7 +63,7 @@ export function ConfigureStep({
         </div>
         <button
           onClick={onSkip}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground/80 hover:text-muted-foreground border border-primary/10 rounded-lg transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground/80 hover:text-muted-foreground border border-primary/10 rounded-xl transition-colors"
         >
           <SkipForward className="w-3 h-3" />
           Skip
@@ -109,7 +109,7 @@ export function ConfigureStep({
                 value={userAnswers[q.id] ?? q.default ?? ''}
                 onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
                 placeholder={q.default ?? 'Type your answer...'}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-primary/15 bg-background/40 text-foreground/75 placeholder-muted-foreground/30"
+                className="w-full px-3 py-2 text-sm rounded-xl border border-primary/15 bg-background/40 text-foreground/75 placeholder-muted-foreground/30"
               />
             )}
 
@@ -121,7 +121,7 @@ export function ConfigureStep({
                     <button
                       key={opt}
                       onClick={() => onAnswerUpdated(q.id, opt)}
-                      className={`px-4 py-1.5 text-sm rounded-lg border transition-colors ${
+                      className={`px-4 py-1.5 text-sm rounded-xl border transition-colors ${
                         isSelected
                           ? 'bg-violet-500/15 text-violet-300 border-violet-500/25'
                           : 'text-muted-foreground/90 border-primary/10 hover:bg-secondary/30'

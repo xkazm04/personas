@@ -7,6 +7,7 @@ use crate::db::repos::execution::healing as repo;
 use crate::engine::healing;
 use crate::engine::healing::HealingAction;
 use crate::error::AppError;
+use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 use crate::engine::healing::MAX_RETRY_COUNT;
@@ -27,6 +28,7 @@ pub fn list_healing_issues(
     persona_id: Option<String>,
     status: Option<String>,
 ) -> Result<Vec<PersonaHealingIssue>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_all(&state.db, persona_id.as_deref(), status.as_deref())
 }
 
@@ -36,6 +38,7 @@ pub fn get_healing_issue(
     id: String,
     caller_persona_id: String,
 ) -> Result<PersonaHealingIssue, AppError> {
+    require_auth_sync(&state)?;
     let issue = repo::get_by_id(&state.db, &id)?;
     verify_healing_owner(&issue, &caller_persona_id)?;
     Ok(issue)
@@ -48,6 +51,7 @@ pub fn update_healing_status(
     status: String,
     caller_persona_id: String,
 ) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
     let issue = repo::get_by_id(&state.db, &id)?;
     verify_healing_owner(&issue, &caller_persona_id)?;
     repo::update_status(&state.db, &id, &status)
@@ -61,6 +65,7 @@ pub async fn run_healing_analysis(
     app: tauri::AppHandle,
     persona_id: String,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth(&state).await?;
     let pool = &state.db;
 
     let failures = exec_repo::get_recent_failures(pool, &persona_id, 10)?;
@@ -150,6 +155,7 @@ pub fn get_retry_chain(
     execution_id: String,
     caller_persona_id: String,
 ) -> Result<Vec<PersonaExecution>, AppError> {
+    require_auth_sync(&state)?;
     let execution = exec_repo::get_by_id(&state.db, &execution_id)?;
     if execution.persona_id != caller_persona_id {
         return Err(AppError::Auth(
@@ -165,6 +171,7 @@ pub fn list_healing_knowledge(
     state: State<'_, Arc<AppState>>,
     service_type: Option<String>,
 ) -> Result<Vec<HealingKnowledge>, AppError> {
+    require_auth_sync(&state)?;
     match service_type {
         Some(st) => repo::get_knowledge_by_service(&state.db, &st),
         None => repo::get_all_knowledge(&state.db),
@@ -182,6 +189,7 @@ pub async fn trigger_ai_healing(
     app: tauri::AppHandle,
     execution_id: String,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth(&state).await?;
     // Only available in dev mode
     if !cfg!(debug_assertions) && std::env::var("VITE_DEVELOPMENT").as_deref() != Ok("true") {
         return Err(AppError::Internal("AI healing is only available in development mode".into()));

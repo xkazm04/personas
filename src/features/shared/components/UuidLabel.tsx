@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Copy, Check } from 'lucide-react';
+import { Tooltip } from './Tooltip';
 
 interface UuidLabelProps {
   value: string;
@@ -20,24 +21,26 @@ export function UuidLabel({ value, label }: UuidLabelProps) {
 
   return (
     <span className="inline-flex items-center gap-1 group/uuid relative">
-      <span
-        className={`${label ? '' : 'font-mono '}text-foreground/80 cursor-default`}
-        title={value}
-      >
-        {display}
-        {!label && <span className="text-foreground/30">&hellip;</span>}
-      </span>
-      <button
-        onClick={handleCopy}
-        className="opacity-0 group-hover/uuid:opacity-100 p-0.5 rounded hover:bg-secondary/60 transition-opacity text-muted-foreground/80 hover:text-foreground/95"
-        title="Copy full ID"
-      >
-        {copied ? (
-          <Check className="w-3 h-3 text-emerald-400" />
-        ) : (
-          <Copy className="w-3 h-3" />
-        )}
-      </button>
+      <Tooltip content={value}>
+        <span
+          className={`${label ? '' : 'font-mono '}text-foreground/80 cursor-default`}
+        >
+          {display}
+          {!label && <span className="text-foreground/30">&hellip;</span>}
+        </span>
+      </Tooltip>
+      <Tooltip content="Copy full ID">
+        <button
+          onClick={handleCopy}
+          className="opacity-0 group-hover/uuid:opacity-100 p-0.5 rounded hover:bg-secondary/60 transition-opacity text-muted-foreground/80 hover:text-foreground/95"
+        >
+          {copied ? (
+            <Check className="w-3 h-3 text-emerald-400" />
+          ) : (
+            <Copy className="w-3 h-3" />
+          )}
+        </button>
+      </Tooltip>
     </span>
   );
 }

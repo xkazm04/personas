@@ -5,6 +5,7 @@ use tauri::State;
 use crate::db::models::PersonaTestSuite;
 use crate::db::repos::execution::test_suites as repo;
 use crate::error::AppError;
+use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
 
 #[tauri::command]
@@ -12,6 +13,7 @@ pub fn list_test_suites(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
 ) -> Result<Vec<PersonaTestSuite>, AppError> {
+    require_auth_sync(&state)?;
     repo::list_by_persona(&state.db, &persona_id)
 }
 
@@ -20,6 +22,7 @@ pub fn get_test_suite(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<PersonaTestSuite, AppError> {
+    require_auth_sync(&state)?;
     repo::get_by_id(&state.db, &id)
 }
 
@@ -33,6 +36,7 @@ pub fn create_test_suite(
     scenario_count: i32,
     source_run_id: Option<String>,
 ) -> Result<PersonaTestSuite, AppError> {
+    require_auth_sync(&state)?;
     repo::create(
         &state.db,
         &persona_id,
@@ -53,6 +57,7 @@ pub fn update_test_suite(
     scenarios: Option<String>,
     scenario_count: Option<i32>,
 ) -> Result<PersonaTestSuite, AppError> {
+    require_auth_sync(&state)?;
     repo::update(
         &state.db,
         &id,
@@ -68,5 +73,6 @@ pub fn delete_test_suite(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     repo::delete(&state.db, &id)
 }

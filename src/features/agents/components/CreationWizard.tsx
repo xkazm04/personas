@@ -41,7 +41,7 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
       try {
         await deletePersona(draftPersonaId);
       } catch {
-        // Best-effort cleanup for abandoned drafts.
+        // intentional: non-critical — best-effort cleanup for abandoned drafts
       }
       setDraftPersonaId(null);
     }

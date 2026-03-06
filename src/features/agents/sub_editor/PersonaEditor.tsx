@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
+import { useToastStore } from '@/stores/toastStore';
 import { ContentBox } from '@/features/shared/components/ContentLayout';
 import { type PersonaDraft, buildDraft } from '@/features/agents/sub_editor/PersonaDraft';
 import { EditorDirtyProvider, useEditorDirtyState } from '@/features/agents/sub_editor/EditorDocument';
@@ -30,6 +31,9 @@ const LabTab = lazy(() =>
 );
 const PromptPerformanceCard = lazy(() =>
   import('@/features/agents/sub_prompt_lab/PromptPerformanceCard').then((m) => ({ default: m.PromptPerformanceCard })),
+);
+const HealthTab = lazy(() =>
+  import('@/features/agents/sub_health/HealthTab').then((m) => ({ default: m.HealthTab })),
 );
 
 export default function PersonaEditor() {
@@ -124,7 +128,7 @@ function PersonaEditorInner() {
     isSwitchingRef.current = true;
     cancelAllDebouncedSaves();
     try {
-      try { await saveAllTabs(); } catch { return; }
+      try { await saveAllTabs(); } catch { useToastStore.getState().addToast('Failed to save changes', 'error'); return; }
       const target = pendingPersonaId;
       setPendingPersonaId(null);
       dirtyRef.current = false;
@@ -182,6 +186,7 @@ function PersonaEditorInner() {
               {editorTab === 'lab' && <LabTab />}
               {editorTab === 'connectors' && <PersonaConnectorsTab onMissingCountChange={setConnectorsMissing} />}
               {editorTab === 'design' && <DesignTab />}
+              {editorTab === 'health' && <HealthTab />}
               {editorTab === 'settings' && (
                 <PersonaSettingsTab
                   draft={draft} patch={patch} isDirty={isDirty} changedSections={changedSections}

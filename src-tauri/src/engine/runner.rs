@@ -7,6 +7,95 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
 use tokio::sync::Mutex;
 
+/// Maximum bytes read for a single stdout line before truncation.
+/// Prevents OOM from CLI processes that emit huge single-line output
+/// (binary data, base64 blobs, minified JSON, infinite loops without newlines).
+const MAX_LINE_BYTES: usize = 64 * 1024; // 64 KB
+
+/// Watchdog timeout: if no newline arrives within this duration, the line
+/// read is aborted and whatever has been buffered so far is returned.
+/// Prevents indefinite hangs from processes that produce output without newlines.
+const LINE_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
+
+/// Read the next line from a buffered reader with per-line size and time limits.
+///
+/// Returns `Ok(Some(line))` for each line, `Ok(None)` at EOF.
+/// Lines exceeding `MAX_LINE_BYTES` are truncated with a `...[truncated]` suffix.
+/// If no newline arrives within `LINE_READ_TIMEOUT`, returns whatever has been
+/// accumulated so far (with a `...[timeout]` suffix if non-empty).
+async fn read_line_limited<R: tokio::io::AsyncBufRead + Unpin>(
+    reader: &mut R,
+) -> std::io::Result<Option<String>> {
+    let mut line_buf = Vec::with_capacity(4096);
+    let mut truncated = false;
+
+    loop {
+        // Apply watchdog timeout to each fill_buf call
+        let fill_result = tokio::time::timeout(LINE_READ_TIMEOUT, reader.fill_buf()).await;
+
+        let available = match fill_result {
+            Ok(Ok(buf)) => buf,
+            Ok(Err(e)) => return Err(e),
+            Err(_) => {
+                // Watchdog timeout — no newline within the time limit
+                if line_buf.is_empty() {
+                    // Nothing buffered and timed out — treat as EOF
+                    return Ok(None);
+                }
+                let mut s = String::from_utf8_lossy(&line_buf).into_owned();
+                s.push_str("...[timeout]");
+                return Ok(Some(s));
+            }
+        };
+
+        if available.is_empty() {
+            // EOF
+            if line_buf.is_empty() {
+                return Ok(None);
+            }
+            return Ok(Some(String::from_utf8_lossy(&line_buf).into_owned()));
+        }
+
+        // Search for newline in the available buffer
+        let (consumed, found_newline) = if let Some(nl_pos) = available.iter().position(|&b| b == b'\n') {
+            // Copy up to newline (excluding the newline itself)
+            let take = nl_pos;
+            if !truncated && line_buf.len() + take <= MAX_LINE_BYTES {
+                line_buf.extend_from_slice(&available[..take]);
+            } else if !truncated {
+                // Partial fit — fill up to the limit
+                let remaining = MAX_LINE_BYTES - line_buf.len();
+                line_buf.extend_from_slice(&available[..remaining]);
+                truncated = true;
+            }
+            (nl_pos + 1, true) // +1 to consume the newline
+        } else {
+            // No newline found — take the whole buffer
+            let take = available.len();
+            if !truncated && line_buf.len() + take <= MAX_LINE_BYTES {
+                line_buf.extend_from_slice(available);
+            } else if !truncated {
+                let remaining = MAX_LINE_BYTES.saturating_sub(line_buf.len());
+                if remaining > 0 {
+                    line_buf.extend_from_slice(&available[..remaining]);
+                }
+                truncated = true;
+            }
+            (take, false)
+        };
+
+        reader.consume(consumed);
+
+        if found_newline {
+            let mut s = String::from_utf8_lossy(&line_buf).into_owned();
+            if truncated {
+                s.push_str("...[truncated]");
+            }
+            return Ok(Some(s));
+        }
+    }
+}
+
 /// Per-credential mutex to prevent concurrent OAuth token refreshes from racing.
 /// Keyed by credential ID. The outer std::sync::Mutex guards brief map access;
 /// the inner tokio::sync::Mutex is held across the async refresh + DB persist.
@@ -309,11 +398,18 @@ pub async fn run_execution(
 
     let mut child = 'failover: {
         for (candidate_idx, candidate) in failover_chain.iter().enumerate() {
-            // Check circuit breaker
-            if !circuit_breaker.is_available(candidate.engine_kind) {
+            // Atomically check circuit breaker and reserve a slot.
+            // try_acquire prevents the TOCTOU race where another thread could
+            // open the circuit between check and use.
+            if !circuit_breaker.try_acquire(candidate.engine_kind) {
+                let reason = if circuit_breaker.is_globally_paused() {
+                    "global circuit breaker paused"
+                } else {
+                    "circuit breaker open"
+                };
                 logger.log(&format!(
-                    "[FAILOVER] Skipping {} (circuit breaker open)",
-                    candidate.label,
+                    "[FAILOVER] Skipping {} ({})",
+                    candidate.label, reason,
                 ));
                 continue;
             }
@@ -538,10 +634,10 @@ pub async fn run_execution(
         }
     }
 
-    // Read stdout line by line
+    // Read stdout line by line (with per-line 64KB cap and 30s watchdog)
     let stdout = child.stdout.take().expect("stdout was piped");
     let stderr = child.stderr.take().expect("stderr was piped");
-    let mut stdout_reader = BufReader::new(stdout).lines();
+    let mut stdout_reader = BufReader::new(stdout);
     let mut stderr_reader = BufReader::new(stderr);
 
     let mut metrics = ExecutionMetrics::default();
@@ -552,8 +648,6 @@ pub async fn run_execution(
 
     /// Maximum total stdout bytes captured before truncation (10 MB).
     const MAX_OUTPUT_BYTES: usize = 10 * 1024 * 1024;
-    /// Maximum length of a single stdout line in characters.
-    const MAX_LINE_LENGTH: usize = 4096;
     let mut total_stdout_bytes: usize = 0;
     let mut output_truncated = false;
 
@@ -607,7 +701,7 @@ pub async fn run_execution(
 
     // Process stdout lines with timeout
     let stream_result = tokio::time::timeout(timeout_duration, async {
-        while let Ok(Some(raw_line)) = stdout_reader.next_line().await {
+        while let Ok(Some(raw_line)) = read_line_limited(&mut stdout_reader).await {
             if raw_line.trim().is_empty() {
                 continue;
             }
@@ -629,14 +723,8 @@ pub async fn run_execution(
                 continue;
             }
 
-            // Enforce per-line length limit
-            let line = if raw_line.len() > MAX_LINE_LENGTH {
-                let mut truncated = raw_line[..MAX_LINE_LENGTH].to_string();
-                truncated.push_str("...[truncated]");
-                truncated
-            } else {
-                raw_line
-            };
+            // Per-line truncation is now handled by read_line_limited (64KB cap).
+            let line = raw_line;
 
             logger.log(&format!("[STDOUT] {}", line.trim()));
 
@@ -716,7 +804,7 @@ pub async fn run_execution(
 
                 // End the most recent open ToolCall trace span
                 let tool_span_to_close = {
-                    let spans = trace.spans.lock().unwrap();
+                    let spans = trace.spans.lock().unwrap_or_else(|e| e.into_inner());
                     spans.iter().rev()
                         .find(|s| s.span_type == SpanType::ToolCall && s.end_ms.is_none())
                         .map(|s| s.span_id.clone())

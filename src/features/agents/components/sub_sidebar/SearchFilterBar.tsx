@@ -61,7 +61,7 @@ function FilterChip({
   return (
     <button
       onClick={onClick}
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-sm font-medium transition-all whitespace-nowrap ${
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
         active
           ? 'bg-primary/15 text-primary border border-primary/30'
           : 'bg-secondary/40 text-muted-foreground/80 border border-transparent hover:bg-secondary/60 hover:text-muted-foreground'
@@ -164,7 +164,7 @@ export function SearchFilterBar({
     <div className="mb-2 space-y-1.5">
       {/* Search row */}
       <div className="flex items-center gap-1.5">
-        <div className="flex-1 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-primary/10 bg-secondary/30 focus-within:border-primary/25 focus-within:bg-secondary/50 transition-all">
+        <div className="flex-1 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-primary/10 bg-secondary/30 focus-within:border-primary/25 focus-within:bg-secondary/50 transition-all">
           <Search className="w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0" />
           <input
             ref={inputRef}
@@ -276,7 +276,7 @@ export function SearchFilterBar({
       {!showFilters && allTags.some(t => t.id === 'auto:needs-attention') && filters.health !== 'needs-attention' && (
         <button
           onClick={() => onHealthChange('needs-attention')}
-          className="flex items-center gap-1.5 px-2 py-1 rounded-md text-sm text-amber-400/80 hover:text-amber-400 bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/10 hover:border-amber-500/20 transition-all w-full"
+          className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm text-amber-400/80 hover:text-amber-400 bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/10 hover:border-amber-500/20 transition-all w-full"
         >
           <AlertTriangle className="w-3 h-3" />
           <span>Agents need attention</span>

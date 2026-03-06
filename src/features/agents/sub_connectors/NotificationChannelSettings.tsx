@@ -62,7 +62,7 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
     try {
       const parsed = JSON.parse(selectedPersona.notification_channels);
       setChannelsInternal(Array.isArray(parsed) ? parsed : []);
-    } catch { setChannelsInternal([]); }
+    } catch { /* intentional: non-critical — JSON parse fallback */ setChannelsInternal([]); }
     setIsDirty(false);
   }, [selectedPersona?.notification_channels, isDraftMode]);
 
@@ -138,7 +138,7 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
   const existingTypes = new Set(effectiveChannels.map(c => c.type));
 
   return (
-    <div className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-2xl p-4">
+    <div className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-4">
       <SectionHeader
         className="mb-6"
         icon={<Bell className="w-3.5 h-3.5" />}
