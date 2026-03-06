@@ -124,13 +124,14 @@ export function UseCaseSubscriptionsSection() {
   );
 
   const handleDeleteTrigger = useCallback(async (triggerId: string) => {
+    if (!selectedPersona) return;
     try {
-      await deleteTrigger(triggerId);
+      await deleteTrigger(triggerId, selectedPersona.id);
       setDbTriggers((prev) => prev.filter((t) => t.id !== triggerId));
     } catch (e) {
       console.error('Failed to delete trigger:', e);
     }
-  }, []);
+  }, [selectedPersona]);
 
   const handleActivateSubscription = useCallback(
     async (useCaseId: string, eventType: string, sourceFilter?: string) => {
@@ -211,7 +212,7 @@ export function UseCaseSubscriptionsSection() {
       />
 
       {error && (
-        <div className="px-3 py-2 rounded-lg border border-red-500/20 bg-red-500/10 text-sm text-red-400/80">
+        <div className="px-3 py-2 rounded-xl border border-red-500/20 bg-red-500/10 text-sm text-red-400/80">
           {error}
         </div>
       )}

@@ -37,7 +37,7 @@ export function DraftDiffViewer({ currentPromptJson, draftPromptJson, changeSumm
   return (
     <div className="space-y-3">
       {changeSummary && (
-        <div className="px-3 py-2 rounded-lg bg-violet-500/10 border border-violet-500/20 text-sm text-violet-300">
+        <div className="px-3 py-2 rounded-xl bg-violet-500/10 border border-violet-500/20 text-sm text-violet-300">
           {changeSummary}
         </div>
       )}

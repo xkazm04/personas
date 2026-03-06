@@ -105,7 +105,7 @@ export function AbResultsView({ results }: Props) {
                     v{agg.versionNumber}
                   </span>
                   {isWinner && (
-                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-sm font-medium bg-primary/15 text-primary border border-primary/20">
+                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-sm font-medium bg-primary/15 text-primary border border-primary/20">
                       <Trophy className="w-3 h-3" /> Winner
                     </span>
                   )}

@@ -12,6 +12,7 @@ use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
+use crate::ipc_auth::require_privileged_sync;
 use crate::AppState;
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -549,6 +550,7 @@ fn deduplicate(results: Vec<ForagedCredential>) -> Vec<ForagedCredential> {
 pub fn scan_credential_sources(
     state: State<'_, Arc<AppState>>,
 ) -> Result<ForagingScanResult, String> {
+    require_privileged_sync(&state, "scan_credential_sources").map_err(|e| e.to_string())?;
     let start = std::time::Instant::now();
 
     // Get existing credential service types to mark duplicates
@@ -607,6 +609,7 @@ pub fn import_foraged_credential(
     credential_name: String,
     service_type: String,
 ) -> Result<serde_json::Value, String> {
+    require_privileged_sync(&state, "import_foraged_credential").map_err(|e| e.to_string())?;
     // Re-read the actual values from the source
     let fields = resolve_real_values(&foraged_id, &service_type)
         .map_err(|e| format!("Failed to read credential values: {e}"))?;

@@ -1,8 +1,9 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import { invoke } from "@tauri-apps/api/core";
+import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import { listen } from "@tauri-apps/api/event";
 import type { AuthUser, AuthStateResponse } from "@/api/auth";
+import { clearCryptoCache } from "@/lib/utils/crypto";
 
 // Re-export so existing consumers can still import from authStore
 export type { AuthUser, AuthStateResponse };
@@ -56,6 +57,7 @@ export const useAuthStore = create<AuthState>()(
               isLoading: false,
             });
           } catch {
+            // intentional: non-critical — auth state check on startup; backend may not be ready yet
             set({ isLoading: false });
           }
         },
@@ -86,6 +88,7 @@ export const useAuthStore = create<AuthState>()(
         logout: async () => {
           try {
             await invoke("logout");
+            clearCryptoCache();
             set({
               user: null,
               isAuthenticated: false,
@@ -124,26 +127,34 @@ function clearLoginTimeout() {
 }
 
 let authListenerAttached = false;
+let authDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function initAuthListener() {
   if (authListenerAttached) return;
   authListenerAttached = true;
   listen<AuthStateResponse>("auth-state-changed", (event) => {
     clearLoginTimeout();
-    const prev = useAuthStore.getState();
-    const state = event.payload;
-    useAuthStore.setState({
-      user: state.user,
-      isAuthenticated: state.is_authenticated,
-      isOffline: state.is_offline,
-      isLoading: false,
-    });
 
-    // When user becomes authenticated, notify persona store to initialize cloud connection.
-    if (state.is_authenticated && !prev.isAuthenticated) {
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent(AUTH_LOGIN_EVENT));
+    // Debounce rapid auth-state-changed events (100ms trailing) to avoid
+    // inconsistent isAuthenticated/user state from interleaved updates.
+    if (authDebounceTimer !== null) clearTimeout(authDebounceTimer);
+    authDebounceTimer = setTimeout(() => {
+      authDebounceTimer = null;
+      const prev = useAuthStore.getState();
+      const state = event.payload;
+      useAuthStore.setState({
+        user: state.user,
+        isAuthenticated: state.is_authenticated,
+        isOffline: state.is_offline,
+        isLoading: false,
+      });
+
+      // When user becomes authenticated, notify persona store to initialize cloud connection.
+      if (state.is_authenticated && !prev.isAuthenticated) {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent(AUTH_LOGIN_EVENT));
+        }
       }
-    }
+    }, 100);
   });
 }

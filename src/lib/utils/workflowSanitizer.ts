@@ -175,7 +175,7 @@ export function sanitizeJsonForPrompt(jsonStr: string, maxLen = 50_000): string 
   try {
     parsed = JSON.parse(truncated);
   } catch {
-    // If JSON is invalid, sanitize as plain text
+    // intentional: non-critical -- JSON parse fallback
     return sanitizeTextField(truncated, maxLen);
   }
 
@@ -261,6 +261,7 @@ export function sanitizeWorkflowJson(jsonStr: string): string {
   try {
     parsed = JSON.parse(jsonStr);
   } catch {
+    // intentional: non-critical -- JSON parse fallback
     return '{"error": "invalid JSON"}';
   }
 

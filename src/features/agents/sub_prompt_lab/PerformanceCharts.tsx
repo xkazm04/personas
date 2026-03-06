@@ -6,6 +6,7 @@ import {
 import type { PromptPerformancePoint } from '@/lib/bindings/PromptPerformancePoint';
 import type { PromptPerformanceData } from '@/lib/bindings/PromptPerformanceData';
 import { GRID_STROKE, AXIS_TICK_FILL } from '@/features/overview/sub_usage/charts/chartConstants';
+import { ChartErrorBoundary } from '@/features/overview/sub_usage/charts/ChartErrorBoundary';
 import { VERSION_COLORS, COMPARE_A_COLOR, COMPARE_B_COLOR, fmtDate, fmtCost, fmtMs, fmtPct } from './performanceHelpers';
 import { DashTooltip } from './PerformanceWidgets';
 
@@ -94,6 +95,7 @@ export function PerformanceCharts({
       {/* 1) Cost per Execution */}
       <div className="bg-secondary/30 border border-primary/10 rounded-xl p-4">
         <h4 className="text-sm font-medium text-foreground/80 mb-3 uppercase tracking-wider">Cost per Execution</h4>
+        <ChartErrorBoundary>
         <ResponsiveContainer width="100%" height={200}>
           {compareMode && comparedData && compareDeltaMode ? (
             <AreaChart data={deltaSeries} syncId="perf-sync">
@@ -148,11 +150,13 @@ export function PerformanceCharts({
             </AreaChart>
           )}
         </ResponsiveContainer>
+        </ChartErrorBoundary>
       </div>
 
       {/* 2) Latency Distribution */}
       <div className="bg-secondary/30 border border-primary/10 rounded-xl p-4">
         <h4 className="text-sm font-medium text-foreground/80 mb-3 uppercase tracking-wider">Latency Distribution</h4>
+        <ChartErrorBoundary>
         <ResponsiveContainer width="100%" height={200}>
           {compareMode && comparedData && compareDeltaMode ? (
             <AreaChart data={deltaSeries} syncId="perf-sync">
@@ -192,11 +196,13 @@ export function PerformanceCharts({
             </LineChart>
           )}
         </ResponsiveContainer>
+        </ChartErrorBoundary>
       </div>
 
       {/* 3) Error Rate Trend */}
       <div className="bg-secondary/30 border border-primary/10 rounded-xl p-4">
         <h4 className="text-sm font-medium text-foreground/80 mb-3 uppercase tracking-wider">Error Rate Trend</h4>
+        <ChartErrorBoundary>
         <ResponsiveContainer width="100%" height={200}>
           {compareMode && comparedData && compareDeltaMode ? (
             <AreaChart data={deltaSeries} syncId="perf-sync">
@@ -245,11 +251,13 @@ export function PerformanceCharts({
             </AreaChart>
           )}
         </ResponsiveContainer>
+        </ChartErrorBoundary>
       </div>
 
       {/* 4) Token Efficiency */}
       <div className="bg-secondary/30 border border-primary/10 rounded-xl p-4">
         <h4 className="text-sm font-medium text-foreground/80 mb-3 uppercase tracking-wider">Token Efficiency</h4>
+        <ChartErrorBoundary>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={data.daily_points} syncId="perf-sync">
             <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
@@ -261,6 +269,7 @@ export function PerformanceCharts({
             <Bar dataKey="avg_output_tokens" name="Output" fill="#8b5cf6" radius={[2, 2, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
+        </ChartErrorBoundary>
       </div>
     </div>
   );

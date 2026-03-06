@@ -1,7 +1,7 @@
 import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import { Zap, Eye, EyeOff, Copy, CheckCircle2, Clock, CalendarClock, Plus, X } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, type CompositeCondition } from '@/lib/utils/triggerConstants';
+import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, TRIGGER_TEMPLATES, type CompositeCondition } from '@/lib/utils/triggerConstants';
 import { formatInterval } from '@/lib/utils/formatters';
 import { previewCronSchedule, type CronPreview } from '@/api/triggers';
 import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
@@ -215,6 +215,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
       const result = await previewCronSchedule(expr.trim(), 5);
       setCronPreview(result);
     } catch {
+      // intentional: non-critical — cron preview is best-effort UI hint
       setCronPreview(null);
     } finally {
       setCronLoading(false);
@@ -240,7 +241,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
       setCopiedHmac(true);
       setTimeout(() => setCopiedHmac(false), 2000);
     } catch {
-      // Fallback for clipboard API failures
+      // intentional: non-critical — clipboard write best-effort
     }
   };
 
@@ -345,13 +346,58 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
     fetchCronPreview(expr);
   };
 
+  const applyTemplate = (templateId: string) => {
+    const tpl = TRIGGER_TEMPLATES.find((t) => t.id === templateId);
+    if (!tpl) return;
+    setValidationError(null);
+    setTriggerType(tpl.triggerType);
+    const cfg = tpl.config;
+    if (tpl.triggerType === 'file_watcher') {
+      setWatchPaths((cfg.watch_paths as string[] | undefined) ?? ['']);
+      setWatchEvents((cfg.events as string[] | undefined) ?? ['modify']);
+      setWatchRecursive((cfg.recursive as boolean | undefined) ?? true);
+      setGlobFilter((cfg.glob_filter as string | undefined) ?? '');
+    } else if (tpl.triggerType === 'clipboard') {
+      setClipboardContentType((cfg.content_type as string | undefined) ?? 'text');
+      setClipboardPattern((cfg.pattern as string | undefined) ?? '');
+      setClipboardInterval(String((cfg.interval_seconds as number | undefined) ?? 5));
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, height: 0 }}
       animate={{ opacity: 1, height: 'auto' }}
       exit={{ opacity: 0, height: 0 }}
-      className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-2xl p-4 space-y-4"
+      className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-4 space-y-4"
     >
+      {/* ── Quick Templates ── */}
+      <div>
+        <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+          Quick Templates
+        </label>
+        <div className="grid grid-cols-2 gap-1.5">
+          {TRIGGER_TEMPLATES.map((tpl) => {
+            const meta = TRIGGER_TYPE_META[tpl.triggerType] || DEFAULT_TRIGGER_META;
+            const Icon = meta.Icon;
+            return (
+              <button
+                key={tpl.id}
+                type="button"
+                onClick={() => applyTemplate(tpl.id)}
+                className="flex items-start gap-2.5 p-2.5 rounded-xl border border-primary/10 bg-background/30 hover:border-primary/25 hover:bg-secondary/30 transition-all text-left group"
+              >
+                <Icon className={`w-4 h-4 mt-0.5 ${meta.color} shrink-0`} />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground/90 truncate">{tpl.label}</p>
+                  <p className="text-sm text-muted-foreground/70 line-clamp-1">{tpl.description}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div>
         <label className="block text-sm font-medium text-foreground/80 mb-1.5">
           Trigger Type
@@ -434,7 +480,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
               <button
                 type="button"
                 onClick={() => { setScheduleMode('interval'); setValidationError(null); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all border ${
                   scheduleMode === 'interval'
                     ? 'bg-primary/15 text-primary border-primary/30'
                     : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
@@ -446,7 +492,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
               <button
                 type="button"
                 onClick={() => { setScheduleMode('cron'); setValidationError(null); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all border ${
                   scheduleMode === 'cron'
                     ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
                     : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
@@ -673,7 +719,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
                   key={evt}
                   type="button"
                   onClick={() => setWatchEvents(prev => prev.includes(evt) ? prev.filter(e => e !== evt) : [...prev, evt])}
-                  className={`px-2.5 py-1 rounded-lg text-sm font-medium transition-all border ${
+                  className={`px-2.5 py-1 rounded-xl text-sm font-medium transition-all border ${
                     watchEvents.includes(evt)
                       ? 'bg-orange-500/15 text-orange-400 border-orange-500/30'
                       : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:bg-secondary/50'
@@ -716,7 +762,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
                   key={ct}
                   type="button"
                   onClick={() => setClipboardContentType(ct)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all border capitalize ${
+                  className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all border capitalize ${
                     clipboardContentType === ct
                       ? 'bg-pink-500/15 text-pink-400 border-pink-500/30'
                       : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:bg-secondary/50'
@@ -871,7 +917,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
                   key={op.value}
                   type="button"
                   onClick={() => setCompositeOperator(op.value)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
+                  className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all border ${
                     compositeOperator === op.value
                       ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
                       : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:bg-secondary/50'
@@ -957,7 +1003,7 @@ function IntervalConfig({
             key={preset.value}
             type="button"
             onClick={() => { setIntervalValue(preset.value); setCustomInterval(false); }}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
+            className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all border ${
               !customInterval && interval === preset.value
                 ? 'bg-primary/15 text-primary border-primary/30'
                 : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
@@ -969,7 +1015,7 @@ function IntervalConfig({
         <button
           type="button"
           onClick={() => setCustomInterval(true)}
-          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
+          className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all border ${
             customInterval
               ? 'bg-primary/15 text-primary border-primary/30'
               : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
@@ -1070,7 +1116,7 @@ function CronConfig({
               key={p.value}
               type="button"
               onClick={() => onPresetSelect(p.value)}
-              className={`px-2.5 py-1 rounded-lg text-sm transition-all border ${
+              className={`px-2.5 py-1 rounded-xl text-sm transition-all border ${
                 cronExpression === p.value
                   ? 'bg-amber-500/15 text-amber-400 border-amber-500/30 font-medium'
                   : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'

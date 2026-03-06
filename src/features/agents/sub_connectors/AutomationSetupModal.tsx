@@ -9,8 +9,8 @@ import { usePersonaStore } from '@/stores/personaStore';
 import { useAutomationDesign } from '@/hooks/design/useAutomationDesign';
 import type { AutomationPlatform, AutomationFallbackMode } from '@/lib/bindings/PersonaAutomation';
 import type { CredentialMetadata } from '@/lib/types/types';
-import { githubListRepos, githubCheckPermissions } from '@/api/automations';
-import type { GitHubRepo, GitHubPermissions, DeployAutomationResult } from '@/api/automations';
+import { githubListRepos, githubCheckPermissions, zapierListZaps } from '@/api/automations';
+import type { GitHubRepo, GitHubPermissions, DeployAutomationResult, ZapierZap } from '@/api/automations';
 import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 import { PLATFORM_CONFIG } from './automationTypes';
 
@@ -84,6 +84,10 @@ export function AutomationSetupModal({
   const [githubRepo, setGithubRepo] = useState<string | null>(null);
   const [loadingRepos, setLoadingRepos] = useState(false);
 
+  // Zapier-specific state
+  const [zapierZaps, setZapierZaps] = useState<ZapierZap[]>([]);
+  const [loadingZaps, setLoadingZaps] = useState(false);
+
   // Deploy state
   const [localPhase, setLocalPhase] = useState<'deploying' | 'success' | null>(null);
   const [deployResult, setDeployResult] = useState<DeployAutomationResult | null>(null);
@@ -149,6 +153,18 @@ export function AutomationSetupModal({
       setGithubPerms(perms);
       setLoadingRepos(false);
     });
+  }, [platform, platformCredentialId]);
+
+  // Fetch Zapier zaps when platform is zapier and credential is available
+  useEffect(() => {
+    if (platform !== 'zapier' || !platformCredentialId) {
+      setZapierZaps([]);
+      return;
+    }
+    setLoadingZaps(true);
+    zapierListZaps(platformCredentialId)
+      .then((zaps) => { setZapierZaps(zaps); setLoadingZaps(false); })
+      .catch(() => { setZapierZaps([]); setLoadingZaps(false); });
   }, [platform, platformCredentialId]);
 
   // Timer for analyzing phase
@@ -222,6 +238,7 @@ export function AutomationSetupModal({
     setGithubRepo(null);
     setGithubRepos([]);
     setGithubPerms(null);
+    setZapierZaps([]);
     setLocalPhase(null);
     setDeployResult(null);
     setDeployError(null);
@@ -272,7 +289,7 @@ export function AutomationSetupModal({
           </button>
         </div>
 
-        <div className="px-6 py-5 max-h-[75vh] overflow-y-auto">
+        <div className="px-6 py-6 max-h-[75vh] overflow-y-auto">
           <AnimatePresence mode="wait">
             {/* ── Idle ─────────────────────────────────────── */}
             {phase === 'idle' && (
@@ -300,7 +317,7 @@ export function AutomationSetupModal({
                 <div className="flex items-center gap-3">
                   <label className="text-sm text-muted-foreground">Target platform:</label>
                   {editAutomation ? (
-                    <span className={`inline-flex items-center px-2.5 py-1 text-sm font-medium rounded-lg border ${PLATFORM_CONFIG[platform]?.bg ?? ''} ${PLATFORM_CONFIG[platform]?.color ?? ''}`}>
+                    <span className={`inline-flex items-center px-2.5 py-1 text-sm font-medium rounded-xl border ${PLATFORM_CONFIG[platform]?.bg ?? ''} ${PLATFORM_CONFIG[platform]?.color ?? ''}`}>
                       {PLATFORM_CONFIG[platform]?.label ?? platform}
                     </span>
                   ) : (
@@ -309,7 +326,7 @@ export function AutomationSetupModal({
                         <button
                           key={p}
                           onClick={() => { setPlatform(p); setGithubRepo(null); }}
-                          className={`px-2.5 py-1 text-sm rounded-lg border transition-colors ${
+                          className={`px-2.5 py-1 text-sm rounded-xl border transition-colors ${
                             platform === p
                               ? `${PLATFORM_CONFIG[p]?.bg ?? ''} ${PLATFORM_CONFIG[p]?.color ?? ''} border-current/30`
                               : 'border-border/60 text-muted-foreground/60 hover:text-muted-foreground hover:border-border'
@@ -338,7 +355,7 @@ export function AutomationSetupModal({
                           onClick={() => {
                             window.dispatchEvent(new CustomEvent('open-vault-connector', { detail: { connectorId: platformConnector.id } }));
                           }}
-                          className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-brand-amber/15 border border-brand-amber/25 text-foreground/80 hover:bg-brand-amber/25 transition-colors"
+                          className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 text-sm font-medium rounded-xl bg-brand-amber/15 border border-brand-amber/25 text-foreground/80 hover:bg-brand-amber/25 transition-colors"
                         >
                           <KeyRound className="w-3 h-3" />
                           Add {PLATFORM_CONFIG[platform]?.label} Credentials
@@ -417,6 +434,38 @@ export function AutomationSetupModal({
                         <p className="mt-1 text-sm text-muted-foreground/60">No repositories found. Check your token permissions.</p>
                       )}
                     </div>
+                  </div>
+                )}
+
+                {/* Zapier: Existing zaps listing */}
+                {platform === 'zapier' && hasPlatformCredential && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">Your existing Zaps</label>
+                    {loadingZaps ? (
+                      <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        Loading your Zaps...
+                      </div>
+                    ) : zapierZaps.length > 0 ? (
+                      <div className="max-h-36 overflow-y-auto rounded-xl border border-border/60 divide-y divide-border/40">
+                        {zapierZaps.map((zap) => (
+                          <div key={zap.id} className="flex items-center gap-2.5 px-3 py-2">
+                            <Zap className={`w-3.5 h-3.5 flex-shrink-0 ${zap.status === 'on' ? 'text-brand-amber' : 'text-muted-foreground/40'}`} />
+                            <span className="text-sm text-foreground/80 truncate flex-1">{zap.title}</span>
+                            <span className={`text-xs px-1.5 py-0.5 rounded-lg ${
+                              zap.status === 'on' ? 'bg-brand-emerald/10 text-brand-emerald border border-brand-emerald/20' :
+                              zap.status === 'off' ? 'bg-secondary/60 text-muted-foreground border border-border/40' :
+                              'bg-brand-amber/10 text-brand-amber border border-brand-amber/20'
+                            }`}>{zap.status}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground/60 px-1">No existing Zaps found. A new Zap will be created during deployment.</p>
+                    )}
+                    <p className="text-xs text-muted-foreground/50 px-1">
+                      AI will design a new Zap with a catch hook for your agent. Existing Zaps are shown for reference.
+                    </p>
                   </div>
                 )}
 
@@ -504,7 +553,7 @@ export function AutomationSetupModal({
 
             {/* ── Preview ──────────────────────────────────── */}
             {phase === 'preview' && design.result && (
-              <motion.div key="preview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-5">
+              <motion.div key="preview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
                 {/* AI reasoning */}
                 {design.result.platform_reasoning && (
                   <div className="px-3.5 py-2.5 rounded-xl bg-accent/5 border border-accent/15">
@@ -515,7 +564,7 @@ export function AutomationSetupModal({
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-5">
+                <div className="grid grid-cols-2 gap-6">
                   {/* Left column */}
                   <div className="space-y-4">
                     <div>
@@ -524,7 +573,7 @@ export function AutomationSetupModal({
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="w-full mt-1.5 px-3 py-2 text-sm rounded-lg border border-border bg-secondary/20 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+                        className="w-full mt-1.5 px-3 py-2 text-sm rounded-xl border border-border bg-secondary/20 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
                       />
                     </div>
 
@@ -532,7 +581,7 @@ export function AutomationSetupModal({
                     <div>
                       <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Platform</label>
                       <div className="mt-1.5">
-                        <span className={`inline-flex items-center px-2.5 py-1 text-sm font-medium rounded-lg border ${PLATFORM_CONFIG[platform]?.bg ?? ''} ${PLATFORM_CONFIG[platform]?.color ?? ''}`}>
+                        <span className={`inline-flex items-center px-2.5 py-1 text-sm font-medium rounded-xl border ${PLATFORM_CONFIG[platform]?.bg ?? ''} ${PLATFORM_CONFIG[platform]?.color ?? ''}`}>
                           {PLATFORM_CONFIG[platform]?.label ?? platform}
                         </span>
                       </div>
@@ -540,7 +589,7 @@ export function AutomationSetupModal({
 
                     {/* Platform-specific info */}
                     {platform === 'n8n' && (
-                      <div className="px-3 py-2.5 rounded-lg bg-brand-amber/5 border border-brand-amber/15">
+                      <div className="px-3 py-2.5 rounded-xl bg-brand-amber/5 border border-brand-amber/15">
                         <p className="text-sm text-foreground/80">
                           <Rocket className="w-3.5 h-3.5 inline mr-1 text-brand-amber" />
                           Workflow will be created and activated on your n8n instance automatically.
@@ -549,7 +598,7 @@ export function AutomationSetupModal({
                     )}
 
                     {platform === 'github_actions' && githubRepo && (
-                      <div className="px-3 py-2.5 rounded-lg bg-primary/5 border border-primary/15">
+                      <div className="px-3 py-2.5 rounded-xl bg-primary/5 border border-primary/15">
                         <p className="text-sm text-foreground/80">
                           <GitBranch className="w-3.5 h-3.5 inline mr-1 text-primary" />
                           Repository dispatch configured for <span className="font-medium">{githubRepo}</span>
@@ -563,7 +612,7 @@ export function AutomationSetupModal({
                     )}
 
                     {platform === 'zapier' && (
-                      <div className="px-3 py-2.5 rounded-lg bg-brand-amber/5 border border-brand-amber/15">
+                      <div className="px-3 py-2.5 rounded-xl bg-brand-amber/5 border border-brand-amber/15">
                         <p className="text-sm text-foreground/80">
                           <Zap className="w-3.5 h-3.5 inline mr-1 text-brand-amber" />
                           Catch hook will be validated and connected.
@@ -572,7 +621,7 @@ export function AutomationSetupModal({
                     )}
 
                     {platform === 'custom' && (
-                      <div className="px-3 py-2.5 rounded-lg bg-secondary/20 border border-border/40">
+                      <div className="px-3 py-2.5 rounded-xl bg-secondary/20 border border-border/40">
                         <p className="text-sm text-muted-foreground">Manual setup required. Automation will be saved as draft.</p>
                       </div>
                     )}
@@ -581,7 +630,7 @@ export function AutomationSetupModal({
                     <div>
                       <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Credential</label>
                       {hasPlatformCredential ? (
-                        <div className="mt-1.5 flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-emerald/5 border border-brand-emerald/15">
+                        <div className="mt-1.5 flex items-center gap-2 px-3 py-2 rounded-xl bg-brand-emerald/5 border border-brand-emerald/15">
                           <CheckCircle2 className="w-3.5 h-3.5 text-brand-emerald/70 flex-shrink-0" />
                           <span className="text-sm text-foreground/80">{platformCredentials.find((c) => c.id === platformCredentialId)?.name ?? platformCredentials[0]?.name}</span>
                         </div>
@@ -598,7 +647,7 @@ export function AutomationSetupModal({
                         <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">What will happen</label>
                         <div className="mt-1.5 space-y-1.5">
                           {design.result.setup_steps.map((step, i) => (
-                            <div key={i} className="flex items-start gap-2.5 px-3 py-2 rounded-lg bg-secondary/20 border border-border/40">
+                            <div key={i} className="flex items-start gap-2.5 px-3 py-2 rounded-xl bg-secondary/20 border border-border/40">
                               <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center text-sm font-bold text-primary mt-0.5">
                                 {i + 1}
                               </span>
@@ -614,7 +663,7 @@ export function AutomationSetupModal({
                         <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Replaces connectors</label>
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
                           {design.result.handles_connectors.map((c) => (
-                            <span key={c} className="px-2 py-0.5 text-sm rounded-md bg-secondary/40 border border-border/40 text-muted-foreground">
+                            <span key={c} className="px-2 py-0.5 text-sm rounded-lg bg-secondary/40 border border-border/40 text-muted-foreground">
                               {c}
                             </span>
                           ))}
@@ -650,7 +699,7 @@ export function AutomationSetupModal({
                           value={inputSchema}
                           onChange={(e) => setInputSchema(e.target.value)}
                           rows={3}
-                          className="w-full mt-1.5 px-3 py-2 text-sm rounded-lg border border-border bg-secondary/20 text-foreground placeholder:text-muted-foreground/50 font-mono focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none"
+                          className="w-full mt-1.5 px-3 py-2 text-sm rounded-xl border border-border bg-secondary/20 text-foreground placeholder:text-muted-foreground/50 font-mono focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none"
                         />
                       </div>
                       <div>
@@ -670,7 +719,7 @@ export function AutomationSetupModal({
                       <div>
                         <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Timeout</label>
                         <div className="flex items-center gap-2 mt-1.5">
-                          <input type="number" min={1} max={300} value={timeoutSecs} onChange={(e) => setTimeoutSecs(Number(e.target.value) || 30)} className="w-20 px-3 py-2 text-sm rounded-lg border border-border bg-secondary/20 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40" />
+                          <input type="number" min={1} max={300} value={timeoutSecs} onChange={(e) => setTimeoutSecs(Number(e.target.value) || 30)} className="w-20 px-3 py-2 text-sm rounded-xl border border-border bg-secondary/20 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40" />
                           <span className="text-sm text-muted-foreground">seconds</span>
                         </div>
                       </div>
@@ -726,7 +775,7 @@ export function AutomationSetupModal({
                     href={deployResult.platformUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-accent/15 border border-accent/25 text-foreground/80 hover:bg-accent/25 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-accent/15 border border-accent/25 text-foreground/80 hover:bg-accent/25 transition-colors"
                   >
                     View on {PLATFORM_CONFIG[platform]?.label}
                     <ExternalLink className="w-3 h-3" />
@@ -734,7 +783,7 @@ export function AutomationSetupModal({
                 )}
                 <button
                   onClick={() => { onComplete(); handleClose(); }}
-                  className="px-4 py-2 text-sm font-medium rounded-lg bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors"
+                  className="px-4 py-2 text-sm font-medium rounded-xl bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors"
                 >
                   Done
                 </button>
@@ -752,10 +801,10 @@ export function AutomationSetupModal({
                   </div>
                 </div>
                 <div className="flex justify-end gap-2">
-                  <button onClick={handleClose} className="px-4 py-2 text-sm rounded-lg border border-border text-muted-foreground hover:bg-secondary/50 transition-colors">
+                  <button onClick={handleClose} className="px-4 py-2 text-sm rounded-xl border border-border text-muted-foreground hover:bg-secondary/50 transition-colors">
                     Close
                   </button>
-                  <button onClick={() => design.reset()} className="px-4 py-2 text-sm font-medium rounded-lg bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors">
+                  <button onClick={() => design.reset()} className="px-4 py-2 text-sm font-medium rounded-xl bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors">
                     Try Again
                   </button>
                 </div>
@@ -774,13 +823,13 @@ export function AutomationSetupModal({
               Start over
             </button>
             <div className="flex items-center gap-2">
-              <button onClick={handleClose} className="px-4 py-2 text-sm rounded-lg border border-border text-muted-foreground hover:bg-secondary/50 transition-colors">
+              <button onClick={handleClose} className="btn-md border border-border text-muted-foreground hover:bg-secondary/50 transition-colors">
                 Cancel
               </button>
               <button
                 onClick={() => void handleDeploy()}
                 disabled={!name.trim() || (!hasPlatformCredential && needsCredential)}
-                className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors disabled:opacity-40"
+                className="btn-md flex items-center gap-1.5 font-medium bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors disabled:opacity-40"
               >
                 <Rocket className="w-3.5 h-3.5" />
                 Deploy & Save

@@ -62,6 +62,35 @@ fn is_v6_unique_local(ip: Ipv6Addr) -> bool {
     (segments[0] & 0xFE00) == 0xFC00
 }
 
+/// Well-known cloud metadata and internal hostnames that must be blocked
+/// regardless of DNS resolution outcome.
+const BLOCKED_HOSTNAMES: &[&str] = &[
+    "metadata.google.internal",
+    "metadata.goog",
+    "169.254.169.254",
+    "metadata",
+];
+
+/// Hostname suffixes that indicate internal/cloud infrastructure.
+const BLOCKED_HOSTNAME_SUFFIXES: &[&str] = &[
+    ".internal",
+    ".local",
+    ".localhost",
+];
+
+/// Returns true if the hostname matches a known cloud metadata or internal service pattern.
+fn is_blocked_hostname(host: &str) -> bool {
+    if BLOCKED_HOSTNAMES.contains(&host) {
+        return true;
+    }
+    for suffix in BLOCKED_HOSTNAME_SUFFIXES {
+        if host.ends_with(suffix) {
+            return true;
+        }
+    }
+    false
+}
+
 /// Validate that a URL is safe for outbound HTTP requests.
 ///
 /// Returns `Ok(())` if the URL targets an external host, or `Err(reason)` if
@@ -81,6 +110,14 @@ pub fn validate_url_safety(url_str: &str) -> Result<(), String> {
 
     let host = parsed.host_str()
         .ok_or_else(|| "URL has no host".to_string())?;
+
+    // Block well-known cloud metadata hostnames before DNS resolution.
+    // These resolve to private IPs inside cloud environments but may fail
+    // locally, which is exactly the SSRF bypass vector we need to prevent.
+    let host_lower = host.to_ascii_lowercase();
+    if is_blocked_hostname(&host_lower) {
+        return Err(format!("Blocked cloud metadata hostname: {}", host));
+    }
 
     // Quick check: if host is an IP literal, validate directly
     if let Ok(ip) = host.parse::<IpAddr>() {
@@ -110,10 +147,11 @@ pub fn validate_url_safety(url_str: &str) -> Result<(), String> {
             }
             Ok(())
         }
-        Err(_) => {
-            // DNS resolution failed — allow the request through so reqwest
-            // can produce a proper "unreachable" error downstream.
-            Ok(())
+        Err(e) => {
+            // Fail-closed: if DNS resolution fails, block the request.
+            // An attacker could craft hostnames (e.g. metadata.google.internal)
+            // that fail local DNS but resolve within the target network.
+            Err(format!("DNS resolution failed for '{}': {}", host, e))
         }
     }
 }
@@ -197,5 +235,24 @@ mod tests {
     #[test]
     fn test_is_private_covers_broadcast() {
         assert!(is_private_ip(IpAddr::V4(Ipv4Addr::BROADCAST)));
+    }
+
+    #[test]
+    fn test_blocks_cloud_metadata_hostnames() {
+        assert!(validate_url_safety("http://metadata.google.internal/computeMetadata/v1/").is_err());
+        assert!(validate_url_safety("http://metadata.goog/computeMetadata/v1/").is_err());
+    }
+
+    #[test]
+    fn test_blocks_internal_suffix() {
+        assert!(validate_url_safety("http://anything.internal/secret").is_err());
+        assert!(validate_url_safety("http://service.local/api").is_err());
+        assert!(validate_url_safety("http://evil.localhost/test").is_err());
+    }
+
+    #[test]
+    fn test_dns_failure_is_blocked() {
+        // A hostname that won't resolve should be rejected (fail-closed)
+        assert!(validate_url_safety("http://this-domain-will-never-resolve-3829482.example.test/secret").is_err());
     }
 }

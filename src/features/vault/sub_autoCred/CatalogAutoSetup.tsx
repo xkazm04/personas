@@ -104,7 +104,7 @@ export function CatalogAutoSetup({ connector, onComplete, onCancel }: CatalogAut
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-2xl p-6 space-y-4"
+      className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-6 space-y-4"
     >
       {/* Header */}
       <div className="flex items-center gap-3">

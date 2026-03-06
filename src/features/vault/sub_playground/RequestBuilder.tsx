@@ -87,13 +87,13 @@ export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderPr
           value={path}
           onChange={(e) => setPath(e.target.value)}
           placeholder="/api/v1/resource"
-          className="flex-1 px-3 py-2 rounded-lg text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/80 placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/30"
+          className="flex-1 px-3 py-2 rounded-xl text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/80 placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30"
         />
 
         <button
           onClick={handleSend}
           disabled={isSending || !path.trim()}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
         >
           {isSending ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -241,6 +241,7 @@ function formatSchema(schemaJson: string): string {
   try {
     return JSON.stringify(JSON.parse(schemaJson), null, 2);
   } catch {
+    // intentional: non-critical — JSON parse fallback
     return schemaJson;
   }
 }

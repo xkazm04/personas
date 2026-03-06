@@ -270,7 +270,7 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-5">
+        <div className="p-6 space-y-6">
           {/* Auto-credential panel (takes over after design + auto-setup) */}
           {autoSetupResult ? (
             <AutoCredPanel

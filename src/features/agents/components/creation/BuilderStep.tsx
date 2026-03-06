@@ -22,6 +22,7 @@ import { PolicyPicker } from './PolicyPicker';
 import { BuilderPreview } from './BuilderPreview';
 import { useDesignAnalysis } from '@/hooks/design/useDesignAnalysis';
 import { usePersonaStore } from '@/stores/personaStore';
+import { useToastStore } from '@/stores/toastStore';
 import { useDryRun } from './useDryRun';
 
 interface BuilderStepProps {
@@ -213,7 +214,7 @@ export function BuilderStep({ state, dispatch, onContinue, onCancel, draftPerson
             await movePersonaToGroup(personaId, draftGroup.id);
           }
         } catch {
-          // Non-critical — draft still works without a group
+          // intentional: non-critical — draft still works without a group
         }
       }
 
@@ -230,6 +231,7 @@ export function BuilderStep({ state, dispatch, onContinue, onCancel, draftPerson
 
       await design.startIntentCompilation(personaId, enhancedIntent);
     } catch {
+      useToastStore.getState().addToast('Failed to generate agent — check your connection', 'error');
       isCreatingRef.current = false;
       setIsGenerating(false);
     }
@@ -292,7 +294,7 @@ export function BuilderStep({ state, dispatch, onContinue, onCancel, draftPerson
               <button
                 type="button"
                 onClick={() => setLogDismissed(true)}
-                className="absolute top-2 right-2 p-1 rounded-md hover:bg-secondary/40 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                className="absolute top-2 right-2 p-1 rounded-lg hover:bg-secondary/40 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -330,6 +332,7 @@ export function BuilderStep({ state, dispatch, onContinue, onCancel, draftPerson
             onAdd={() => dispatch({ type: 'ADD_USE_CASE' })}
             onUpdate={(id, updates) => dispatch({ type: 'UPDATE_USE_CASE', payload: { id, updates } })}
             onRemove={(id) => dispatch({ type: 'REMOVE_USE_CASE', payload: id })}
+            onReorder={(fromIndex, toIndex) => dispatch({ type: 'REORDER_USE_CASES', payload: { fromIndex, toIndex } })}
           />
         </CollapsibleSection>
 
@@ -393,18 +396,30 @@ export function BuilderStep({ state, dispatch, onContinue, onCancel, draftPerson
                 {isGenerating ? 'Enhancing...' : 'Enhance with AI'}
               </button>
             )}
-            <button
-              type="button"
-              onClick={onContinue}
-              disabled={!hasIntent}
-              className={`px-6 py-2.5 text-sm font-semibold rounded-xl transition-all flex items-center gap-2 ${
-                hasIntent
-                  ? 'bg-btn-primary hover:bg-btn-primary/90 text-white shadow-md shadow-btn-primary/25 hover:shadow-btn-primary/35 hover:scale-[1.01] active:scale-[0.99]'
-                  : 'bg-secondary/50 text-muted-foreground/50 cursor-not-allowed'
-              }`}
-            >
-              Continue
-            </button>
+            <div className="flex flex-col items-end">
+              <button
+                type="button"
+                onClick={onContinue}
+                disabled={!hasIntent}
+                className={`px-6 py-2.5 text-sm font-semibold rounded-xl transition-all flex items-center gap-2 ${
+                  hasIntent
+                    ? 'bg-btn-primary hover:bg-btn-primary/90 text-white shadow-md shadow-btn-primary/25 hover:shadow-btn-primary/35 hover:scale-[1.01] active:scale-[0.99]'
+                    : 'bg-secondary/50 text-muted-foreground/50 cursor-not-allowed'
+                }`}
+              >
+                Continue
+              </button>
+              {!hasIntent && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.15 }}
+                  className="text-muted-foreground text-xs mt-1.5"
+                >
+                  Describe what your agent should do
+                </motion.p>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -431,7 +446,7 @@ export function BuilderStep({ state, dispatch, onContinue, onCancel, draftPerson
               type="button"
               onClick={onContinue}
               disabled={!hasIntent}
-              className="px-4 py-1.5 text-sm font-medium rounded-lg bg-btn-primary text-white"
+              className="btn-md font-medium bg-btn-primary text-white"
             >
               Continue
             </button>

@@ -124,7 +124,7 @@ export default function BudgetSettingsPage() {
           <button
             onClick={fetchMonthlySpend}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/25 px-2.5 py-1 text-sm text-red-200 hover:bg-red-500/10 disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-red-500/25 px-2.5 py-1 text-sm text-red-200 hover:bg-red-500/10 disabled:opacity-50 transition-colors"
           >
             {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
             Retry
@@ -133,7 +133,7 @@ export default function BudgetSettingsPage() {
       )}
 
       {/* Monthly Spend Summary */}
-      <div className="rounded-xl border border-primary/15 bg-secondary/30 p-5">
+      <div className="rounded-xl border border-primary/15 bg-secondary/30 p-4">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
             <TrendingUp className="w-5 h-5 text-primary/70" />
@@ -211,7 +211,7 @@ export default function BudgetSettingsPage() {
                     {progress.text}
                   </div>
                 </div>
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-sm font-medium border ${budgetBadgeClass(spend, budget)}`}>
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-sm font-medium border ${budgetBadgeClass(spend, budget)}`}>
                   {status.label === 'Warning' && <AlertTriangle className="w-3 h-3" />}
                   {status.label === 'Exceeded' && <AlertTriangle className="w-3 h-3" />}
                   {status.label}
@@ -269,7 +269,7 @@ export default function BudgetSettingsPage() {
                   <button
                     onClick={() => handleBudgetSubmit(persona.id)}
                     disabled={savingBudgetId === persona.id}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/15 border border-primary/25 text-sm font-medium text-primary hover:bg-primary/25 disabled:opacity-60 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-primary/15 border border-primary/25 text-sm font-medium text-primary hover:bg-primary/25 disabled:opacity-60 transition-colors"
                   >
                     {savingBudgetId === persona.id && <Loader2 className="w-3 h-3 animate-spin" />}
                     {savingBudgetId === persona.id ? 'Saving...' : 'Save'}

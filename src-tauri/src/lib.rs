@@ -5,6 +5,7 @@ mod db;
 mod engine;
 mod error;
 mod gitlab;
+pub mod ipc_auth;
 mod logging;
 mod notifications;
 mod tray;
@@ -30,15 +31,24 @@ pub struct AppState {
     pub active_design_child_pid: Arc<Mutex<Option<u32>>>,
     /// Tracks the currently active credential design ID.
     pub active_credential_design_id: Arc<Mutex<Option<String>>>,
-    /// PID of the CLI child process for the active credential design/negotiation.
+    /// PID of the CLI child process for the active credential design.
     /// Used to kill the process when the user cancels.
     pub active_credential_design_child_pid: Arc<Mutex<Option<u32>>>,
+    /// Tracks the currently active credential negotiation ID.
+    /// Separate from credential design so the two flows don't corrupt each other.
+    pub active_negotiation_id: Arc<Mutex<Option<String>>>,
+    /// PID of the CLI child process for the active credential negotiation.
+    pub active_negotiation_child_pid: Arc<Mutex<Option<u32>>>,
     /// Tracks the currently active automation design ID.
     pub active_automation_design_id: Arc<Mutex<Option<String>>>,
     /// PID of the CLI child process for the active automation design.
     pub active_automation_design_child_pid: Arc<Mutex<Option<u32>>>,
     /// Authentication state (Supabase OAuth).
     pub auth: Arc<tokio::sync::Mutex<commands::infrastructure::auth::AuthStateInner>>,
+    /// Serialises token refresh attempts so that only one in-flight refresh
+    /// executes at a time, preventing the race where concurrent callers each
+    /// consume the same single-use refresh token (Supabase rotates on use).
+    pub refresh_lock: Arc<tokio::sync::Mutex<()>>,
     /// Cloud orchestrator HTTP client (None when not connected).
     pub cloud_client: Arc<tokio::sync::Mutex<Option<Arc<cloud::client::CloudClient>>>>,
     /// Maps local execution ID → cloud execution ID for active cloud runs.
@@ -61,6 +71,8 @@ pub struct AppState {
     pub rate_limiter: Arc<engine::rate_limiter::RateLimiter>,
     /// Session-specific RSA key pair for encrypted IPC.
     pub session_key: Arc<engine::crypto::SessionKeyPair>,
+    /// Current tier configuration (rate limits, queue depth).
+    pub tier_config: Arc<Mutex<engine::tier::TierConfig>>,
 }
 
 /// Hello world IPC command — verifies the Rust ↔ React bridge works.
@@ -89,6 +101,11 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(
+            tauri::plugin::Builder::<tauri::Wry, ()>::new("ipc-auth")
+                .js_init_script(ipc_auth::IPC_AUTH_SCRIPT.to_string())
+                .build(),
+        )
         .setup(|app| {
             let app_data_dir = app
                 .path()
@@ -184,9 +201,12 @@ pub fn run() {
                 active_design_child_pid: Arc::new(Mutex::new(None)),
                 active_credential_design_id: Arc::new(Mutex::new(None)),
                 active_credential_design_child_pid: Arc::new(Mutex::new(None)),
+                active_negotiation_id: Arc::new(Mutex::new(None)),
+                active_negotiation_child_pid: Arc::new(Mutex::new(None)),
                 active_automation_design_id: Arc::new(Mutex::new(None)),
                 active_automation_design_child_pid: Arc::new(Mutex::new(None)),
                 auth: auth.clone(),
+                refresh_lock: Arc::new(tokio::sync::Mutex::new(())),
                 cloud_client: Arc::new(tokio::sync::Mutex::new(cloud_client_opt)),
                 cloud_exec_ids: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
                 active_auto_cred_child_pid: Arc::new(Mutex::new(None)),
@@ -197,6 +217,7 @@ pub fn run() {
                 gitlab_client: Arc::new(tokio::sync::Mutex::new(gitlab_client_opt)),
                 rate_limiter: Arc::new(engine::rate_limiter::RateLimiter::new()),
                 session_key: Arc::new(engine::crypto::SessionKeyPair::generate()?),
+                tier_config: Arc::new(Mutex::new(engine::tier::TierConfig::default())),
             });
             app.manage(state_arc.clone());
 
@@ -237,6 +258,7 @@ pub fn run() {
             let restore_handle = app.handle().clone();
             let restore_state = state_arc.clone();
             let startup_rate_limiter = state_arc.rate_limiter.clone();
+            let startup_tier_config = state_arc.tier_config.clone();
             tauri::async_runtime::spawn(async move {
                 tokio::time::sleep(std::time::Duration::from_secs(2)).await;
                 let _webhook_shutdown = engine::background::start_loops(
@@ -245,6 +267,7 @@ pub fn run() {
                     pool,
                     engine,
                     startup_rate_limiter,
+                    startup_tier_config,
                 );
                 tracing::info!("Scheduler auto-started (with webhook server on port 9420)");
                 tray::refresh_tray(&app_handle);
@@ -290,6 +313,12 @@ pub fn run() {
             // Core — Import/Export
             commands::core::import_export::export_persona,
             commands::core::import_export::import_persona,
+            // Core — Data Portability
+            commands::core::data_portability::get_export_stats,
+            commands::core::data_portability::export_full,
+            commands::core::data_portability::export_selective,
+            commands::core::data_portability::import_portability_bundle,
+            commands::core::data_portability::preview_competitive_import,
             // Execution — Executions
             commands::execution::executions::list_executions,
             commands::execution::executions::get_execution,
@@ -565,6 +594,8 @@ pub fn run() {
             commands::communication::observability::rollback_prompt_version,
             commands::communication::observability::get_prompt_error_rate,
             commands::communication::observability::run_prompt_ab_test,
+            // Communication — SLA Dashboard
+            commands::communication::sla::get_sla_dashboard,
             // Teams
             commands::teams::teams::list_teams,
             commands::teams::teams::get_team_counts,
@@ -646,6 +677,7 @@ pub fn run() {
             commands::tools::triggers::get_webhook_status,
             commands::tools::triggers::preview_cron_schedule,
             commands::tools::triggers::dry_run_trigger,
+            commands::tools::triggers::list_cron_agents,
             // Infrastructure — Auth
             commands::infrastructure::auth::login_with_google,
             commands::infrastructure::auth::get_auth_state,
@@ -667,6 +699,13 @@ pub fn run() {
             commands::infrastructure::settings::get_app_setting,
             commands::infrastructure::settings::set_app_setting,
             commands::infrastructure::settings::delete_app_setting,
+            // Infrastructure — BYOM (Bring Your Own Model)
+            commands::infrastructure::byom::get_byom_policy,
+            commands::infrastructure::byom::set_byom_policy,
+            commands::infrastructure::byom::delete_byom_policy,
+            commands::infrastructure::byom::list_provider_audit_log,
+            commands::infrastructure::byom::list_provider_audit_by_persona,
+            commands::infrastructure::byom::get_provider_usage_stats,
             // Infrastructure — Cloud
             commands::infrastructure::cloud::cloud_connect,
             commands::infrastructure::cloud::cloud_reconnect_from_keyring,
@@ -680,6 +719,12 @@ pub fn run() {
             commands::infrastructure::cloud::cloud_oauth_status,
             commands::infrastructure::cloud::cloud_oauth_refresh,
             commands::infrastructure::cloud::cloud_oauth_disconnect,
+            commands::infrastructure::cloud::cloud_deploy_persona,
+            commands::infrastructure::cloud::cloud_list_deployments,
+            commands::infrastructure::cloud::cloud_pause_deployment,
+            commands::infrastructure::cloud::cloud_resume_deployment,
+            commands::infrastructure::cloud::cloud_undeploy,
+            commands::infrastructure::cloud::cloud_get_base_url,
             // Infrastructure — GitLab
             commands::infrastructure::gitlab::gitlab_connect,
             commands::infrastructure::gitlab::gitlab_disconnect,
@@ -689,8 +734,15 @@ pub fn run() {
             commands::infrastructure::gitlab::gitlab_list_agents,
             commands::infrastructure::gitlab::gitlab_undeploy_agent,
             commands::infrastructure::gitlab::gitlab_revoke_credentials,
+            // Workflows
+            commands::infrastructure::workflows::get_workflows_overview,
+            commands::infrastructure::workflows::get_workflow_job_output,
+            commands::infrastructure::workflows::cancel_workflow_job,
+            // Tier usage
+            commands::infrastructure::tier_usage::get_tier_usage,
             // Notifications
             notifications::send_app_notification,
+            notifications::test_notification_channel,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

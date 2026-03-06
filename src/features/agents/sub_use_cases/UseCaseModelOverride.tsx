@@ -56,6 +56,7 @@ function defaultProfileLabel(rawModelProfile: string | null): string {
     const mp = JSON.parse(rawModelProfile) as ModelProfile;
     return profileToLabel(mp);
   } catch {
+    // intentional: non-critical — JSON parse fallback
     return 'Not set';
   }
 }
@@ -115,7 +116,7 @@ export function UseCaseModelOverride({ useCase, defaultModelProfile, onUpdate }:
         {/* Use Default toggle */}
         <button
           onClick={handleUseDefault}
-          className={`px-2.5 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+          className={`px-2.5 py-1.5 rounded-xl text-sm font-medium border transition-all ${
             !hasOverride
               ? 'bg-primary/10 border-primary/30 text-primary'
               : 'bg-background/30 border-primary/10 text-muted-foreground/80 hover:border-primary/20'
@@ -135,7 +136,7 @@ export function UseCaseModelOverride({ useCase, defaultModelProfile, onUpdate }:
               type="button"
               onClick={toggle}
               aria-expanded={isOpen}
-              className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+              className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-sm font-medium border transition-all ${
                 hasOverride
                   ? 'bg-primary/10 border-primary/30 text-primary'
                   : 'bg-background/30 border-primary/10 text-muted-foreground/80 hover:border-primary/20'

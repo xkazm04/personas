@@ -88,6 +88,7 @@ pub fn start_loops(
     pool: DbPool,
     engine: Arc<ExecutionEngine>,
     rate_limiter: Arc<super::rate_limiter::RateLimiter>,
+    tier_config: Arc<std::sync::Mutex<super::tier::TierConfig>>,
 ) -> tokio::sync::watch::Sender<bool> {
     scheduler.running.store(true, Ordering::Relaxed);
     tracing::info!("Scheduler starting via unified subscription model: event_bus (2s) + trigger_scheduler (5s) + polling (10s) + cleanup (3600s) + rotation (60s) + file_watcher (2s) + clipboard (3s) + app_focus (3s) + composite (2s) + webhook server (port 9420)");
@@ -146,6 +147,9 @@ pub fn start_loops(
         Box::new(CompositeSubscription {
             pool: pool.clone(),
         }),
+        Box::new(subscription::AutoRollbackSubscription {
+            pool: pool.clone(),
+        }),
     ];
 
     // Spawn all subscriptions through the unified scheduler
@@ -158,7 +162,7 @@ pub fn start_loops(
         let scheduler = scheduler.clone();
         async move {
             scheduler.webhook_alive.store(true, Ordering::Relaxed);
-            if let Err(e) = super::webhook::start_webhook_server(pool, rate_limiter, webhook_shutdown_rx).await {
+            if let Err(e) = super::webhook::start_webhook_server(pool, rate_limiter, tier_config, webhook_shutdown_rx).await {
                 tracing::error!("Webhook server failed: {}", e);
             }
             scheduler.webhook_alive.store(false, Ordering::Relaxed);

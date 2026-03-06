@@ -50,7 +50,7 @@ export function parseAutoCredError(raw: string): AutoCredErrorInfo {
   try {
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed.kind === 'string') return parsed as AutoCredErrorInfo;
-  } catch { /* not JSON */ }
+  } catch { /* intentional: non-critical -- JSON parse fallback */ }
 
   // Derive a better guidance message from the raw error text
   const lower = raw.toLowerCase();
@@ -62,7 +62,6 @@ export function parseAutoCredError(raw: string): AutoCredErrorInfo {
   } else if (lower.includes('api key') || lower.includes('credit') || lower.includes('billing')) {
     guidance = 'There may be an issue with your API key or billing. Check your Anthropic account.';
   } else if (raw.length > 30) {
-    // Use the raw message itself if it's descriptive enough
     guidance = raw;
   } else {
     guidance = 'The session failed unexpectedly. Check the session log for details, or set up the credential manually.';

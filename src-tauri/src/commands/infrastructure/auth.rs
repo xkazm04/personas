@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use base64::Engine as _;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager};
 use ts_rs::TS;
@@ -57,6 +58,10 @@ pub struct AuthStateInner {
     pub subscription: Option<AuthSubscription>,
     pub is_offline: bool,
     pub token_expires_at: Option<std::time::Instant>,
+    /// Cryptographic nonce generated before initiating an OAuth flow.
+    /// Validated against the `state` parameter returned in the deep-link callback
+    /// to prevent token injection via crafted deep links (RFC 6749 §10.12).
+    pub pending_oauth_state: Option<String>,
 }
 
 impl AuthStateInner {
@@ -264,17 +269,39 @@ fn parse_url_fragment(url_str: &str) -> HashMap<String, String> {
 // ---------------------------------------------------------------------------
 
 /// Open system browser to Supabase Google OAuth.
+///
+/// Generates a cryptographic random `state` parameter (RFC 6749 §10.12) and
+/// stores it in `AuthStateInner` so that the deep-link callback can verify
+/// the response originated from this OAuth flow.
 #[tauri::command]
-pub async fn login_with_google() -> Result<(), AppError> {
+pub async fn login_with_google(
+    state: tauri::State<'_, Arc<AppState>>,
+) -> Result<(), AppError> {
+    use rand::Rng;
+
+    // Generate 32-byte cryptographic random state nonce
+    let mut buf = [0u8; 32];
+    rand::thread_rng().fill(&mut buf);
+    let oauth_state = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(buf);
+
+    // Store the state nonce so the callback handler can verify it
+    {
+        let mut auth = state.auth.lock().await;
+        auth.pending_oauth_state = Some(oauth_state.clone());
+    }
+
     let base_url = supabase_url()?;
     let oauth_url = format!(
-        "{base_url}/auth/v1/authorize?provider=google&redirect_to=personas://auth/callback"
+        "{}/auth/v1/authorize?provider=google&redirect_to={}&state={}",
+        base_url,
+        urlencoding::encode("personas://auth/callback"),
+        urlencoding::encode(&oauth_state),
     );
 
     open::that(&oauth_url)
         .map_err(|e| AppError::Auth(format!("Failed to open browser: {e}")))?;
 
-    tracing::info!("Opened browser for Google OAuth");
+    tracing::info!("Opened browser for Google OAuth (with state parameter)");
     Ok(())
 }
 
@@ -317,11 +344,32 @@ pub async fn logout(
 }
 
 /// Refresh the session using the stored refresh token.
+///
+/// A `refresh_lock` mutex serialises concurrent callers so that only one
+/// token refresh executes at a time. Supabase rotates refresh tokens on
+/// every use; without this guard two concurrent refreshes would both consume
+/// the same token, causing one to fail and invalidating the session.
 #[tauri::command]
 pub async fn refresh_session(
     state: tauri::State<'_, Arc<AppState>>,
     app: AppHandle,
 ) -> Result<AuthStateResponse, AppError> {
+    // Acquire the refresh lock — subsequent callers block here until the
+    // first refresh completes, then proceed with the already-refreshed state.
+    let _refresh_guard = state.refresh_lock.lock().await;
+
+    // After acquiring the lock, check whether the token is still valid.
+    // A previous holder of the lock may have already completed a refresh.
+    {
+        let auth = state.auth.lock().await;
+        if let Some(expires_at) = auth.token_expires_at {
+            if expires_at > std::time::Instant::now() + std::time::Duration::from_secs(30) {
+                tracing::debug!("Token already refreshed by a concurrent caller, skipping");
+                return Ok(auth.to_response());
+            }
+        }
+    }
+
     let refresh_token = load_refresh_token()
         .ok_or_else(|| AppError::Auth("No refresh token stored".into()))?;
 
@@ -379,6 +427,10 @@ pub async fn refresh_session(
 // ---------------------------------------------------------------------------
 
 /// Handle the OAuth callback deep link. Called by the deep-link event handler.
+///
+/// Validates the `state` parameter against the nonce stored by
+/// `login_with_google` to prevent token injection via crafted deep links
+/// (RFC 6749 §10.12).
 pub async fn handle_auth_callback(
     app: &AppHandle,
     url_str: &str,
@@ -386,6 +438,38 @@ pub async fn handle_auth_callback(
     tracing::info!("Auth callback received");
 
     let params = parse_url_fragment(url_str);
+
+    // ── State parameter validation (RFC 6749 §10.12) ────────────────────
+    let state: &Arc<AppState> = &app.state::<Arc<AppState>>();
+    {
+        let mut auth = state.auth.lock().await;
+        let expected_state = auth.pending_oauth_state.take();
+        let received_state = params.get("state");
+
+        match (expected_state, received_state) {
+            (Some(expected), Some(received)) if expected == *received => {
+                tracing::debug!("OAuth state parameter validated");
+            }
+            (Some(_), Some(_)) => {
+                tracing::warn!("OAuth callback state mismatch — possible deep-link injection");
+                return Err(AppError::Auth(
+                    "OAuth state mismatch: callback did not originate from this app".into(),
+                ));
+            }
+            (Some(_), None) => {
+                tracing::warn!("OAuth callback missing state parameter");
+                return Err(AppError::Auth(
+                    "OAuth callback missing state parameter".into(),
+                ));
+            }
+            (None, _) => {
+                tracing::warn!("No pending OAuth state — unsolicited callback rejected");
+                return Err(AppError::Auth(
+                    "No pending OAuth flow: unsolicited auth callback rejected".into(),
+                ));
+            }
+        }
+    }
 
     let access_token = params
         .get("access_token")
@@ -412,7 +496,6 @@ pub async fn handle_auth_callback(
         std::time::Instant::now() + std::time::Duration::from_secs(expires_in);
 
     // Update in-memory state
-    let state: &Arc<AppState> = &app.state::<Arc<AppState>>();
     let response = {
         let mut auth = state.auth.lock().await;
         auth.access_token = Some(access_token.clone());
@@ -443,7 +526,12 @@ pub async fn handle_auth_callback(
 // ---------------------------------------------------------------------------
 
 /// Attempt to restore an existing session from the keyring. Called once at startup.
+///
+/// Acquires `refresh_lock` to prevent races with a concurrent `refresh_session`
+/// call that might fire before startup restore completes.
 pub async fn try_restore_session(app: &AppHandle, state: &Arc<AppState>) {
+    let _refresh_guard = state.refresh_lock.lock().await;
+
     let refresh_token = match load_refresh_token() {
         Some(t) => t,
         None => {
@@ -564,6 +652,7 @@ mod tests {
             subscription: None,
             is_offline: false,
             token_expires_at: None,
+            pending_oauth_state: None,
         };
         let resp = inner.to_response();
         assert!(resp.is_authenticated);
@@ -584,6 +673,7 @@ mod tests {
             subscription: None,
             is_offline: true,
             token_expires_at: None,
+            pending_oauth_state: None,
         };
         let resp = inner.to_response();
         // Offline with cached user = still authenticated
@@ -622,5 +712,40 @@ mod tests {
         assert_eq!(user.email, "");
         assert!(user.display_name.is_none());
         assert!(user.avatar_url.is_none());
+    }
+
+    #[test]
+    fn test_auth_state_inner_default_has_no_pending_state() {
+        let inner = AuthStateInner::default();
+        assert!(inner.pending_oauth_state.is_none());
+    }
+
+    #[test]
+    fn test_pending_oauth_state_cleared_on_default() {
+        // Simulates logout path: resetting to default clears any pending state
+        let mut inner = AuthStateInner::default();
+        inner.pending_oauth_state = Some("test-nonce".into());
+        inner = AuthStateInner::default();
+        assert!(inner.pending_oauth_state.is_none());
+    }
+
+    #[test]
+    fn test_parse_url_fragment_with_state() {
+        let url = "personas://auth/callback#access_token=abc&refresh_token=def&state=my-nonce-123";
+        let params = parse_url_fragment(url);
+        assert_eq!(params.get("state").unwrap(), "my-nonce-123");
+        assert_eq!(params.get("access_token").unwrap(), "abc");
+    }
+
+    #[test]
+    fn test_oauth_state_generation_is_url_safe() {
+        use rand::Rng;
+        let mut buf = [0u8; 32];
+        rand::thread_rng().fill(&mut buf);
+        let state = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(buf);
+        // URL-safe base64 should only contain alphanumeric, '-', and '_'
+        assert!(state.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_'));
+        // 32 bytes -> 43 base64 characters (no padding)
+        assert_eq!(state.len(), 43);
     }
 }

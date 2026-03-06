@@ -152,7 +152,7 @@ export function useAsyncTransform({
       try {
         wizard.transformCompleted(normalizeDraft(draft));
       } catch (err) {
-        try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
+        try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
         wizard.transformFailed(
           err instanceof Error
             ? `Draft normalization failed: ${err.message}`
@@ -168,7 +168,7 @@ export function useAsyncTransform({
   const handleSnapshotCompletedNoDraft = useCallback(() => {
     setIsRestoring(false);
     setTemplateAdoptActive(false);
-    try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
+    try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
     wizard.transformFailed('Transform completed but no draft was generated. Please try again.');
   }, [wizard.transformFailed, setTemplateAdoptActive]);
 
@@ -176,7 +176,7 @@ export function useAsyncTransform({
     (error: string) => {
       setIsRestoring(false);
       setTemplateAdoptActive(false);
-      try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
+      try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
       wizard.transformFailed(error);
     },
     [wizard.transformFailed, setTemplateAdoptActive],
@@ -185,7 +185,7 @@ export function useAsyncTransform({
   const handleSnapshotSessionLost = useCallback(() => {
     setIsRestoring(false);
     setTemplateAdoptActive(false);
-    try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
+    try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
     wizard.transformFailed('Adoption session lost. The backend may have restarted. Please try again.');
   }, [wizard.transformFailed, setTemplateAdoptActive]);
 
@@ -265,7 +265,7 @@ export function useAsyncTransform({
           savedAt: Date.now(),
         };
         window.localStorage.setItem(ADOPT_CONTEXT_KEY, JSON.stringify(context));
-      } catch { /* localStorage might be full */ }
+      } catch { /* intentional: non-critical — localStorage cleanup */ }
 
       // Enforce sandbox policy overrides on user-selected preferences
       const enforced = applySandboxOverrides(sandboxPolicy, {
@@ -320,7 +320,7 @@ export function useAsyncTransform({
       if (state.adjustmentRequest.trim()) wizard.setAdjustment('');
     } catch (err) {
       setTemplateAdoptActive(false);
-      try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
+      try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
       void resetAdoptStream();
       wizard.transformFailed(err instanceof Error ? err.message : 'Failed to start template adoption.');
     } finally {
@@ -332,14 +332,16 @@ export function useAsyncTransform({
     try {
       const adoptId = state.backgroundAdoptId || currentAdoptId;
       if (adoptId) {
-        try { await cancelTemplateAdopt(adoptId); } catch { void clearTemplateAdoptSnapshot(adoptId).catch(() => {}); }
+        try { await cancelTemplateAdopt(adoptId); } catch { /* intentional: non-critical — best-effort cancellation; clean up snapshot */
+          void clearTemplateAdoptSnapshot(adoptId).catch(() => {}); }
       }
-      try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
+      try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
       void resetAdoptStream();
       setIsRestoring(false);
       setTemplateAdoptActive(false);
       wizard.transformCancelled();
     } catch {
+      // intentional: non-critical — ensure cancellation completes even if cleanup fails
       setIsRestoring(false);
       setTemplateAdoptActive(false);
       wizard.transformCancelled();
@@ -417,7 +419,7 @@ export function useAsyncTransform({
       if (state.backgroundAdoptId) {
         void clearTemplateAdoptSnapshot(state.backgroundAdoptId).catch(() => {});
       }
-      try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
+      try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
       onPersonaCreated();
     } catch (err) {
       wizard.confirmFailed(err instanceof Error ? err.message : 'Failed to create persona.');
@@ -431,7 +433,7 @@ export function useAsyncTransform({
   const cleanupAll = useCallback(async () => {
     const snapshotId = state.backgroundAdoptId || currentAdoptId;
     if (snapshotId) void clearTemplateAdoptSnapshot(snapshotId).catch(() => {});
-    try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
+    try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
     void resetAdoptStream();
     setTemplateAdoptActive(false);
   }, [state.backgroundAdoptId, currentAdoptId, resetAdoptStream, setTemplateAdoptActive]);

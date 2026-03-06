@@ -157,13 +157,13 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
                 onChange={(e) => setHelpQuestion(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAskHelp()}
                 placeholder="Ask a question about this step..."
-                className={`flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-foreground text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 ${AI_STATUS.ringColor!} transition-all`}
+                className={`flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 ${AI_STATUS.ringColor!} transition-all`}
                 data-testid={`negotiator-step-${stepIndex}-help-input`}
               />
               <button
                 onClick={handleAskHelp}
                 disabled={!helpQuestion.trim() || isLoadingHelp}
-                className={`px-3 py-1.5 rounded-lg text-sm transition-colors disabled:opacity-40 hover:opacity-90 ${AI_STATUS.bgColor} ${AI_STATUS.borderColor} ${AI_STATUS.color}`}
+                className={`px-3 py-1.5 rounded-xl text-sm transition-colors disabled:opacity-40 hover:opacity-90 ${AI_STATUS.bgColor} ${AI_STATUS.borderColor} ${AI_STATUS.color}`}
                 data-testid={`negotiator-step-${stepIndex}-help-ask-btn`}
               >
                 {isLoadingHelp ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Ask'}
@@ -171,7 +171,7 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
             </div>
             {stepHelp && stepHelp.stepIndex === stepIndex && (
               <div
-                className={`px-3 py-2 rounded-lg text-sm text-foreground/80 ${AI_STATUS.bgColor} border ${AI_STATUS.borderColor}`}
+                className={`px-3 py-2 rounded-xl text-sm text-foreground/80 ${AI_STATUS.bgColor} border ${AI_STATUS.borderColor}`}
                 data-testid={`negotiator-step-${stepIndex}-help-answer`}
               >
                 {stepHelp.answer}

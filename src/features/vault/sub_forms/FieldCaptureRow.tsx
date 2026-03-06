@@ -68,7 +68,7 @@ export function FieldCaptureRow({
       const text = await navigator.clipboard.readText();
       if (text.trim()) onChange(text.trim());
     } catch {
-      // Clipboard access denied.
+      // intentional: non-critical — clipboard paste may be denied by browser
     }
   };
 
@@ -80,7 +80,7 @@ export function FieldCaptureRow({
       if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
       copiedTimerRef.current = setTimeout(() => setCopied(false), 1500);
     } catch {
-      // Clipboard access denied.
+      // intentional: non-critical — clipboard copy may be denied by browser
     }
   };
 

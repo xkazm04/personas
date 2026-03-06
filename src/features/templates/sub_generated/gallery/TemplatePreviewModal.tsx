@@ -118,7 +118,7 @@ export function TemplatePreviewModal({
           {phase === 'idle' && !hasStarted ? (
             /* Pre-run state */
             <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 py-12">
-              <div className="w-16 h-16 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
                 <Play className="w-7 h-7 text-violet-400" />
               </div>
               <div className="text-center max-w-md">
@@ -133,7 +133,7 @@ export function TemplatePreviewModal({
               <button
                 onClick={handleRun}
                 disabled={!designResult}
-                className="px-5 py-2.5 text-sm rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="px-4 py-2.5 text-sm rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Play className="w-4 h-4" />
                 Run Preview
@@ -183,7 +183,7 @@ export function TemplatePreviewModal({
             {isDone && (
               <button
                 onClick={handleRetry}
-                className="px-3.5 py-2 text-sm rounded-lg bg-secondary/50 text-foreground/70 hover:bg-secondary/80 transition-colors flex items-center gap-1.5"
+                className="px-3.5 py-2 text-sm rounded-xl bg-secondary/50 text-foreground/70 hover:bg-secondary/80 transition-colors flex items-center gap-1.5"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 Run Again
@@ -196,7 +196,7 @@ export function TemplatePreviewModal({
             )}
             <button
               onClick={onClose}
-              className="px-3.5 py-2 text-sm rounded-lg text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50 transition-colors"
+              className="px-3.5 py-2 text-sm rounded-xl text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50 transition-colors"
             >
               Close
             </button>

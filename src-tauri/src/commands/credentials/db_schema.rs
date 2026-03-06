@@ -4,6 +4,7 @@ use tauri::State;
 use crate::db::models::{DbSavedQuery, DbSchemaTable, QueryResult};
 use crate::db::repos::resources::db_schema as repo;
 use crate::error::AppError;
+use crate::ipc_auth::{require_privileged, require_privileged_sync};
 use crate::AppState;
 
 // ============================================================================
@@ -15,6 +16,7 @@ pub fn list_db_schema_tables(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
 ) -> Result<Vec<DbSchemaTable>, AppError> {
+    require_privileged_sync(&state, "list_db_schema_tables")?;
     repo::list_tables(&state.db, &credential_id)
 }
 
@@ -26,6 +28,7 @@ pub fn create_db_schema_table(
     display_label: Option<String>,
     column_hints: Option<String>,
 ) -> Result<DbSchemaTable, AppError> {
+    require_privileged_sync(&state, "create_db_schema_table")?;
     repo::create_table(
         &state.db,
         &credential_id,
@@ -45,6 +48,7 @@ pub fn update_db_schema_table(
     is_favorite: Option<bool>,
     sort_order: Option<i64>,
 ) -> Result<DbSchemaTable, AppError> {
+    require_privileged_sync(&state, "update_db_schema_table")?;
     repo::update_table(
         &state.db,
         &id,
@@ -61,6 +65,7 @@ pub fn delete_db_schema_table(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_privileged_sync(&state, "delete_db_schema_table")?;
     repo::delete_table(&state.db, &id)
 }
 
@@ -73,6 +78,7 @@ pub fn list_db_saved_queries(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
 ) -> Result<Vec<DbSavedQuery>, AppError> {
+    require_privileged_sync(&state, "list_db_saved_queries")?;
     repo::list_queries(&state.db, &credential_id)
 }
 
@@ -84,6 +90,7 @@ pub fn create_db_saved_query(
     query_text: String,
     language: Option<String>,
 ) -> Result<DbSavedQuery, AppError> {
+    require_privileged_sync(&state, "create_db_saved_query")?;
     repo::create_query(
         &state.db,
         &credential_id,
@@ -103,6 +110,7 @@ pub fn update_db_saved_query(
     is_favorite: Option<bool>,
     sort_order: Option<i64>,
 ) -> Result<DbSavedQuery, AppError> {
+    require_privileged_sync(&state, "update_db_saved_query")?;
     repo::update_query(
         &state.db,
         &id,
@@ -119,6 +127,7 @@ pub fn delete_db_saved_query(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_privileged_sync(&state, "delete_db_saved_query")?;
     repo::delete_query(&state.db, &id)
 }
 
@@ -131,6 +140,7 @@ pub async fn introspect_db_tables(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
 ) -> Result<QueryResult, AppError> {
+    require_privileged(&state, "introspect_db_tables").await?;
     crate::engine::db_query::introspect_tables(&state.db, &credential_id).await
 }
 
@@ -140,6 +150,7 @@ pub async fn introspect_db_columns(
     credential_id: String,
     table_name: String,
 ) -> Result<QueryResult, AppError> {
+    require_privileged(&state, "introspect_db_columns").await?;
     crate::engine::db_query::introspect_columns(&state.db, &credential_id, &table_name).await
 }
 
@@ -153,6 +164,7 @@ pub async fn execute_db_query(
     credential_id: String,
     query_text: String,
 ) -> Result<QueryResult, AppError> {
+    require_privileged(&state, "execute_db_query").await?;
     let result = crate::engine::db_query::execute_query(&state.db, &credential_id, &query_text).await?;
 
     // Update last_run stats if we can find a matching saved query

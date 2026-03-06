@@ -75,7 +75,7 @@ export function RebuildModal({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-5">
+        <div className="flex-1 overflow-y-auto px-6 py-6">
           {displayPhase === 'input' && (
             <div className="space-y-4">
               {/* Instruction context */}
@@ -144,7 +144,7 @@ export function RebuildModal({
 
           {displayPhase === 'completed' && (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 mb-4">
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 mb-4">
                 <CheckCircle2 className="w-8 h-8 text-emerald-400" />
               </div>
               <h3 className="text-sm font-semibold text-foreground/90 mb-1">
@@ -159,7 +159,7 @@ export function RebuildModal({
 
           {displayPhase === 'failed' && (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/20 mb-4">
+              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 mb-4">
                 <XCircle className="w-8 h-8 text-red-400" />
               </div>
               <h3 className="text-sm font-semibold text-foreground/90 mb-1">

@@ -338,7 +338,7 @@ function StructuredField({ field, value, onChange }: { field: UseCaseInputField;
           <label className="text-sm font-medium text-muted-foreground/70 w-24 flex-shrink-0">{field.label}</label>
           <button
             onClick={() => onChange(!value)}
-            className={`px-2.5 py-1 rounded-lg text-sm font-medium border transition-all ${
+            className={`px-2.5 py-1 rounded-xl text-sm font-medium border transition-all ${
               value
                 ? 'bg-primary/10 border-primary/25 text-primary'
                 : 'bg-secondary/40 border-primary/10 text-muted-foreground/80'

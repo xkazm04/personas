@@ -48,7 +48,7 @@ export function AnomalyDot({
       className="group relative"
       title={`${ANOMALY_LABEL[anomaly.metric] ?? anomaly.metric}: ${anomaly.deviation_pct.toFixed(0)}% above baseline${anomaly.execution_id ? ' — click to inspect' : ''}`}
     >
-      <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-sm font-medium bg-red-500/15 text-red-400 border border-red-500/20 group-hover:bg-red-500/25 transition-colors">
+      <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-sm font-medium bg-red-500/15 text-red-400 border border-red-500/20 group-hover:bg-red-500/25 transition-colors">
         <AlertTriangle className="w-2.5 h-2.5" />
         {ANOMALY_LABEL[anomaly.metric] ?? anomaly.metric}
       </span>
@@ -100,7 +100,7 @@ export function DashboardToolbar({ anomalyCount, days, setDays, compareMode, tog
         <TrendingUp className="w-4 h-4 text-primary/70" />
         <h3 className="text-sm font-medium text-foreground/80">Performance</h3>
         {anomalyCount > 0 && (
-          <span className="px-1.5 py-0.5 text-sm font-medium rounded-md bg-red-500/10 text-red-400 border border-red-500/20">
+          <span className="px-1.5 py-0.5 text-sm font-medium rounded-lg bg-red-500/10 text-red-400 border border-red-500/20">
             {anomalyCount} anomal{anomalyCount === 1 ? 'y' : 'ies'}
           </span>
         )}
@@ -108,7 +108,7 @@ export function DashboardToolbar({ anomalyCount, days, setDays, compareMode, tog
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1 bg-secondary/30 rounded-lg p-0.5">
           {PERIOD_OPTIONS.map((p) => (
-            <button key={p} onClick={() => setDays(p)} className={`px-2 py-1 text-sm font-mono rounded-md transition-colors ${days === p ? 'bg-primary/15 text-foreground/80 border border-primary/20' : 'text-muted-foreground/50 hover:text-muted-foreground/70'}`}>{p}d</button>
+            <button key={p} onClick={() => setDays(p)} className={`px-2 py-1 text-sm font-mono rounded-lg transition-colors ${days === p ? 'bg-primary/15 text-foreground/80 border border-primary/20' : 'text-muted-foreground/50 hover:text-muted-foreground/70'}`}>{p}d</button>
           ))}
         </div>
         <button onClick={toggleCompare} className={`flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors ${compareMode ? 'bg-primary/15 text-primary/80 border border-primary/20' : 'text-muted-foreground/50 hover:text-muted-foreground/70 border border-transparent'}`}>
@@ -134,7 +134,7 @@ export function VersionTimeline({ markers }: { markers: VersionMarker[] }) {
       </div>
       <div className="flex gap-2 overflow-x-auto pb-1">
         {markers.map((v) => (
-          <div key={v.version_id} className="flex-shrink-0 flex items-center gap-2 px-2.5 py-1.5 bg-background/40 border border-border/20 rounded-lg">
+          <div key={v.version_id} className="flex-shrink-0 flex items-center gap-2 px-2.5 py-1.5 bg-background/40 border border-border/20 rounded-xl">
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: VERSION_COLORS[v.tag] ?? '#71717a' }} />
             <span className="text-sm font-mono text-foreground/80">v{v.version_number}</span>
             <span className="text-sm text-muted-foreground/50">{v.tag}</span>

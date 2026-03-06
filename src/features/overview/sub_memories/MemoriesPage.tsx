@@ -122,7 +122,7 @@ export default function MemoriesPage() {
             <button
               onClick={handleReview}
               disabled={isReviewing || memoriesTotal === 0}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border transition-all bg-cyan-500/15 text-cyan-300 border-cyan-500/25 hover:bg-cyan-500/25 disabled:opacity-40"
+              className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-xl border transition-all bg-cyan-500/15 text-cyan-300 border-cyan-500/25 hover:bg-cyan-500/25 disabled:opacity-40"
             >
               {isReviewing ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -133,7 +133,7 @@ export default function MemoriesPage() {
             </button>
             <button
               onClick={() => setShowAddForm((v) => !v)}
-              className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-xl border transition-all ${
                 showAddForm
                   ? 'bg-violet-500/30 text-violet-200 border-violet-500/40'
                   : 'bg-violet-500/20 text-violet-300 border-violet-500/30 hover:bg-violet-500/30'
@@ -176,7 +176,7 @@ export default function MemoriesPage() {
 
         {filteredMemories.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-4 text-muted-foreground/80">
-            <div className="w-16 h-16 rounded-2xl bg-violet-500/10 border border-violet-500/15 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-xl bg-violet-500/10 border border-violet-500/15 flex items-center justify-center">
               <Brain className="w-8 h-8 text-violet-400/40" />
             </div>
             <div className="text-center">
@@ -197,7 +197,7 @@ export default function MemoriesPage() {
               <span className="w-[70px] text-sm font-mono uppercase text-muted-foreground/80 flex-shrink-0">Category</span>
               <button
                 onClick={() => toggleSort('importance')}
-                className={`w-[60px] flex items-center gap-0.5 text-sm font-mono uppercase flex-shrink-0 transition-colors rounded-md px-1.5 py-0.5 hover:bg-secondary/30 ${sort.column === 'importance' ? 'text-foreground/90 font-semibold border-b-2 border-primary/40' : 'text-muted-foreground/80 hover:text-muted-foreground'}`}
+                className={`w-[60px] flex items-center gap-0.5 text-sm font-mono uppercase flex-shrink-0 transition-colors rounded-lg px-1.5 py-0.5 hover:bg-secondary/30 ${sort.column === 'importance' ? 'text-foreground/90 font-semibold border-b-2 border-primary/40' : 'text-muted-foreground/80 hover:text-muted-foreground'}`}
               >
                 Priority
                 {sort.column === 'importance' ? (
@@ -209,7 +209,7 @@ export default function MemoriesPage() {
               <span className="w-[120px] text-sm font-mono uppercase text-muted-foreground/80 flex-shrink-0">Tags</span>
               <button
                 onClick={() => toggleSort('created_at')}
-                className={`w-[60px] flex items-center justify-end gap-0.5 text-sm font-mono uppercase flex-shrink-0 transition-colors rounded-md px-1.5 py-0.5 hover:bg-secondary/30 ${sort.column === 'created_at' ? 'text-foreground/90 font-semibold border-b-2 border-primary/40' : 'text-muted-foreground/80 hover:text-muted-foreground'}`}
+                className={`w-[60px] flex items-center justify-end gap-0.5 text-sm font-mono uppercase flex-shrink-0 transition-colors rounded-lg px-1.5 py-0.5 hover:bg-secondary/30 ${sort.column === 'created_at' ? 'text-foreground/90 font-semibold border-b-2 border-primary/40' : 'text-muted-foreground/80 hover:text-muted-foreground'}`}
               >
                 Created
                 {sort.column === 'created_at' ? (
@@ -266,7 +266,7 @@ export default function MemoriesPage() {
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-start justify-between p-5 border-b border-primary/10 flex-shrink-0">
+              <div className="flex items-start justify-between p-4 border-b border-primary/10 flex-shrink-0">
                 <div className="flex-1 min-w-0 pr-4">
                   <h3 className="text-sm font-semibold text-foreground/90 flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-cyan-400" />
@@ -287,7 +287,7 @@ export default function MemoriesPage() {
               </div>
 
               {/* Body */}
-              <div className="flex-1 overflow-y-auto p-5">
+              <div className="flex-1 overflow-y-auto p-4">
                 {reviewError ? (
                   <div className="flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
                     <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
@@ -300,11 +300,11 @@ export default function MemoriesPage() {
                   <div className="space-y-4">
                     {/* Summary badges */}
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                         <span className="text-sm font-medium text-emerald-300">{reviewResult.updated} kept</span>
                       </div>
-                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20">
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20">
                         <Trash2 className="w-3.5 h-3.5 text-red-400" />
                         <span className="text-sm font-medium text-red-300">{reviewResult.deleted} pruned</span>
                       </div>
@@ -316,13 +316,13 @@ export default function MemoriesPage() {
                         {reviewResult.details.map((d) => (
                           <div
                             key={d.id}
-                            className={`flex items-start gap-3 px-3 py-2 rounded-lg border ${
+                            className={`flex items-start gap-3 px-3 py-2 rounded-xl border ${
                               d.action === 'deleted'
                                 ? 'bg-red-500/5 border-red-500/15'
                                 : 'bg-emerald-500/5 border-emerald-500/15'
                             }`}
                           >
-                            <span className={`text-sm font-bold px-1.5 py-0.5 rounded-md flex-shrink-0 mt-0.5 ${
+                            <span className={`text-sm font-bold px-1.5 py-0.5 rounded-lg flex-shrink-0 mt-0.5 ${
                               d.score >= 7
                                 ? 'bg-emerald-500/15 text-emerald-400'
                                 : d.score >= 4

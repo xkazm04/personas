@@ -85,7 +85,7 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-2.5 py-1 rounded-md text-sm font-medium transition-colors ${
+            className={`px-2.5 py-1 rounded-xl text-sm font-medium transition-colors ${
               tab === t
                 ? `${AI_STATUS.bgColor} ${AI_STATUS.color} border ${AI_STATUS.borderColor}`
                 : 'text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/40'
@@ -127,13 +127,13 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
 
           {/* Alerts */}
           {!hasActivity && (
-            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${WARNING_STATUS.bgColor} border ${WARNING_STATUS.borderColor} ${WARNING_STATUS.color}`}>
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm ${WARNING_STATUS.bgColor} border ${WARNING_STATUS.borderColor} ${WARNING_STATUS.color}`}>
               <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
               No recorded usage. This credential may be unused.
             </div>
           )}
           {unusedDays !== null && unusedDays > 30 && (
-            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${WARNING_STATUS.bgColor} border ${WARNING_STATUS.borderColor} ${WARNING_STATUS.color}`}>
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm ${WARNING_STATUS.bgColor} border ${WARNING_STATUS.borderColor} ${WARNING_STATUS.color}`}>
               <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
               Last accessed {unusedDays} days ago. Consider reviewing if still needed.
             </div>
@@ -164,12 +164,12 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
               {dependents.map((dep) => (
                 <div
                   key={dep.persona_id}
-                  className="flex items-center justify-between px-3 py-2 bg-secondary/20 border border-primary/10 rounded-lg"
+                  className="flex items-center justify-between px-3 py-2 bg-secondary/20 border border-primary/10 rounded-xl"
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <div className="w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0" />
                     <span className="text-sm text-foreground/80 truncate">{dep.persona_name}</span>
-                    <span className={`text-sm px-1.5 py-0.5 rounded-md border ${
+                    <span className={`text-sm px-1.5 py-0.5 rounded-lg border ${
                       dep.link_type === 'tool_connector'
                         ? `${INFO_STATUS.bgColor} ${INFO_STATUS.borderColor} ${INFO_STATUS.color}`
                         : `${AI_STATUS.bgColor} ${AI_STATUS.borderColor} ${AI_STATUS.color}`
@@ -251,7 +251,7 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
 
 function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="flex items-center gap-2.5 px-3 py-2 bg-secondary/20 border border-primary/10 rounded-lg">
+    <div className="flex items-center gap-2.5 px-3 py-2 bg-secondary/20 border border-primary/10 rounded-xl">
       {icon}
       <div>
         <div className="text-sm font-semibold text-foreground/90 tabular-nums">{value}</div>

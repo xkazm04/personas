@@ -1,8 +1,10 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useClickOutside } from '@/hooks/utility/useClickOutside';
+import { useViewportClampFixed } from '@/hooks/utility/useViewportClamp';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Cpu, Power, PowerOff, Trash2, ChevronRight, Check, AlertTriangle } from 'lucide-react';
+import { Cpu, Copy, Power, PowerOff, Trash2, ChevronRight, Check, AlertTriangle } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
+import { useToastStore } from '@/stores/toastStore';
 import type { DbPersona } from '@/lib/types/types';
 import type { ModelProfile } from '@/lib/types/frontendTypes';
 import { profileToDropdownValue, OLLAMA_CLOUD_PRESETS, OLLAMA_CLOUD_BASE_URL } from '@/features/agents/sub_model_config/OllamaCloudPresets';
@@ -76,7 +78,10 @@ export function PersonaContextMenu({ state, onClose }: PersonaContextMenuProps) 
   const { persona, x, y } = state;
   const menuRef = useRef<HTMLDivElement>(null);
   const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
+  const duplicatePersona = usePersonaStore((s) => s.duplicatePersona);
+  const selectPersona = usePersonaStore((s) => s.selectPersona);
   const deletePersona = usePersonaStore((s) => s.deletePersona);
+  const addToast = useToastStore((s) => s.addToast);
 
   const [showModelSub, setShowModelSub] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -99,39 +104,37 @@ export function PersonaContextMenu({ state, onClose }: PersonaContextMenuProps) 
   useClickOutside(menuRef, true, onClose);
 
   // Clamp menu position to viewport
-  const [pos, setPos] = useState({ x, y });
-  useEffect(() => {
-    requestAnimationFrame(() => {
-      if (!menuRef.current) return;
-      const rect = menuRef.current.getBoundingClientRect();
-      let nx = x;
-      let ny = y;
-      if (nx + rect.width > window.innerWidth - 8) nx = window.innerWidth - rect.width - 8;
-      if (ny + rect.height > window.innerHeight - 8) ny = window.innerHeight - rect.height - 8;
-      if (nx < 4) nx = 4;
-      if (ny < 4) ny = 4;
-      setPos({ x: nx, y: ny });
-    });
-  }, [x, y]);
+  const pos = useViewportClampFixed(menuRef, x, y);
 
   const handleModelSwitch = useCallback(async (value: string) => {
     const profile = quickModelToProfile(value);
     try {
       await applyPersonaOp(persona.id, { kind: 'SwitchModel', model_profile: profile });
     } catch {
-      // store.error already set
+      addToast('Failed to switch model', 'error');
     }
     onClose();
-  }, [persona.id, applyPersonaOp, onClose]);
+  }, [persona.id, applyPersonaOp, onClose, addToast]);
 
   const handleToggleEnabled = useCallback(async () => {
     try {
       await applyPersonaOp(persona.id, { kind: 'ToggleEnabled', enabled: !persona.enabled });
     } catch {
-      // store.error already set
+      addToast('Failed to toggle agent', 'error');
     }
     onClose();
   }, [persona.id, persona.enabled, applyPersonaOp, onClose]);
+
+  const handleDuplicate = useCallback(async () => {
+    try {
+      const newPersona = await duplicatePersona(persona.id);
+      addToast(`Duplicated as "${newPersona.name}"`, 'success');
+      selectPersona(newPersona.id);
+    } catch {
+      addToast('Failed to duplicate agent', 'error');
+    }
+    onClose();
+  }, [persona.id, duplicatePersona, selectPersona, addToast, onClose]);
 
   const handleDelete = useCallback(async () => {
     if (!confirmDelete) {
@@ -288,6 +291,17 @@ export function PersonaContextMenu({ state, onClose }: PersonaContextMenuProps) 
             <span>Enable</span>
           </>
         )}
+      </button>
+
+      {/* Duplicate */}
+      <button
+        onClick={handleDuplicate}
+        className="w-full px-3 py-1.5 text-sm text-left hover:bg-secondary/60 flex items-center gap-2 text-foreground/90"
+        role="menuitem"
+        data-menuitem="true"
+      >
+        <Copy className="w-3.5 h-3.5 text-muted-foreground/80" />
+        <span>Duplicate</span>
       </button>
 
       {/* Separator */}

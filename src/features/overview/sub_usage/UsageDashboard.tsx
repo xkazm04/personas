@@ -197,9 +197,9 @@ export function UsageDashboard() {
             <div className="max-w-sm w-full flex flex-col items-center gap-6 relative z-10">
               <div className="relative group">
                 <div className="absolute -inset-4 bg-violet-500/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500/10 to-primary/5 border border-primary/10 shadow-sm flex items-center justify-center relative">
+                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-violet-500/10 to-primary/5 border border-primary/10 shadow-sm flex items-center justify-center relative">
                   <BarChart3 className="w-8 h-8 text-primary/70 group-hover:scale-110 transition-transform duration-500" />
-                  <div className="absolute inset-0 border border-white/5 rounded-2xl" />
+                  <div className="absolute inset-0 border border-white/5 rounded-xl" />
                 </div>
                 <Sparkles className="w-5 h-5 text-amber-400 absolute -top-2 -right-2 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)] animate-pulse" />
               </div>
@@ -226,13 +226,13 @@ export function UsageDashboard() {
                       done ? 'bg-emerald-500/20 text-emerald-400 shadow-inner' : 'bg-primary/10 text-muted-foreground/70'
                     }`}>{step}</span>
                     <span className={`text-sm font-medium ${done ? 'text-emerald-400' : 'text-foreground/80'}`}>{label}</span>
-                    {done && <span className="ml-auto text-sm font-bold uppercase tracking-widest text-emerald-400/60 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">Done</span>}
+                    {done && <span className="ml-auto text-sm font-bold uppercase tracking-widest text-emerald-400/60 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">Done</span>}
                   </div>
                 ))}
               </div>
               <button
                 onClick={() => setSidebarSection('personas')}
-                className="mt-2 flex items-center justify-center w-full gap-2 px-5 py-3 bg-gradient-to-b from-primary/15 to-primary/5 hover:from-primary/20 hover:to-primary/10 active:scale-[0.98] text-primary border border-primary/20 rounded-xl text-sm font-bold transition-all group shadow-sm"
+                className="mt-2 flex items-center justify-center w-full gap-2 px-4 py-3 bg-gradient-to-b from-primary/15 to-primary/5 hover:from-primary/20 hover:to-primary/10 active:scale-[0.98] text-primary border border-primary/20 rounded-xl text-sm font-bold transition-all group shadow-sm"
               >
                 {personas.length > 0 ? (
                   <><Play className="w-4 h-4 fill-primary/20" />Run a persona</>

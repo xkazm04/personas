@@ -110,7 +110,7 @@ export function AutomationCard({
             <button
               onClick={() => onTest(automation.id)}
               disabled={isTesting}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-border text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-colors disabled:opacity-40"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-border text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-colors disabled:opacity-40"
             >
               {isTesting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Activity className="w-3 h-3" />}
               Test
@@ -120,7 +120,7 @@ export function AutomationCard({
           {automation.deploymentStatus === 'draft' && (
             <button
               onClick={() => onEdit(automation.id)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-accent/25 text-foreground/80 bg-accent/10 hover:bg-accent/20 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-accent/25 text-foreground/80 bg-accent/10 hover:bg-accent/20 transition-colors"
             >
               Configure
             </button>
@@ -199,7 +199,7 @@ export function AutomationCard({
 
       {/* Test result */}
       {testResult && !isTesting && (
-        <div className={`mt-2.5 px-3 py-2 rounded-lg text-sm ${
+        <div className={`mt-2.5 px-3 py-2 rounded-xl text-sm ${
           testResult.success
             ? 'bg-brand-emerald/5 border border-brand-emerald/15 text-brand-emerald'
             : 'bg-brand-rose/5 border border-brand-rose/15 text-brand-rose'

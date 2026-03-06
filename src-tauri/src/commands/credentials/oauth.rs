@@ -19,6 +19,7 @@ use std::sync::Arc;
 use crate::db::repos::resources::audit_log;
 use crate::engine::crypto::{EncryptedToken, SecureString};
 use crate::error::AppError;
+use crate::ipc_auth::{require_privileged, require_privileged_sync};
 use crate::AppState;
 
 const GOOGLE_OAUTH_SESSION_TTL_SECS: u64 = 10 * 60;
@@ -182,7 +183,7 @@ fn now_unix_secs() -> u64 {
 
 fn cleanup_google_oauth_sessions() {
     let now = now_unix_secs();
-    let mut sessions = google_oauth_sessions().lock().unwrap();
+    let mut sessions = google_oauth_sessions().lock().unwrap_or_else(|e| e.into_inner());
     sessions.retain(|_, session| now.saturating_sub(session.created_at) <= GOOGLE_OAUTH_SESSION_TTL_SECS);
 }
 
@@ -222,6 +223,7 @@ pub async fn start_google_credential_oauth(
     connector_name: String,
     extra_scopes: Option<Vec<String>>,
 ) -> Result<serde_json::Value, AppError> {
+    require_privileged(&state, "start_google_credential_oauth").await?;
     let (resolved_client_id, resolved_client_secret, credential_source) =
         resolve_google_oauth_client_credentials(client_id, client_secret)?;
 
@@ -238,7 +240,7 @@ pub async fn start_google_credential_oauth(
         .port();
 
     {
-        let mut sessions = google_oauth_sessions().lock().unwrap();
+        let mut sessions = google_oauth_sessions().lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
         sessions.insert(
             session_id.clone(),
             GoogleCredentialOAuthSession {
@@ -322,7 +324,7 @@ pub async fn start_google_credential_oauth(
         )
         .await;
 
-        let mut sessions = google_oauth_sessions().lock().unwrap();
+        let mut sessions = google_oauth_sessions().lock().unwrap_or_else(|e| e.into_inner());
         if let Some(existing) = sessions.get_mut(&session_id_clone) {
             match outcome {
                 OAuthCallbackOutcome::Success(tokens) => {
@@ -373,11 +375,12 @@ pub async fn start_google_credential_oauth(
 
 #[tauri::command]
 pub fn get_google_credential_oauth_status(
-    _state: State<'_, Arc<AppState>>,
+    state: State<'_, Arc<AppState>>,
     session_id: String,
 ) -> Result<serde_json::Value, AppError> {
+    require_privileged_sync(&state, "get_google_credential_oauth_status")?;
     cleanup_google_oauth_sessions();
-    let mut sessions = google_oauth_sessions().lock().unwrap();
+    let mut sessions = google_oauth_sessions().lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
     if let Some(session) = sessions.get(&session_id) {
         // Decrypt tokens into short-lived SecureStrings for serialization only
         let decrypted_refresh = decrypt_token(&session.refresh_token);
@@ -675,23 +678,30 @@ fn validate_issuer_url(raw: &str) -> Result<url::Url, String> {
     Ok(parsed)
 }
 
-/// Extract an approximate registrable domain (last two labels) from a hostname.
+/// Check whether `candidate` is the same host as `base`, or a subdomain of it.
 ///
-/// This handles common TLDs (.com, .org, .io, .app, etc.) correctly.
-/// Multi-part public suffixes like .co.uk are not handled — for those,
-/// the base domain would be `co.uk` instead of `example.co.uk`. This is
-/// defence-in-depth alongside the HTTPS-only and SSRF-guard checks.
-fn base_domain(host: &str) -> &str {
-    if let Some(last_dot) = host.rfind('.') {
-        let before = &host[..last_dot];
-        if let Some(second_dot) = before.rfind('.') {
-            return &host[second_dot + 1..];
-        }
+/// For example, if `base` is `auth.example.co.uk`:
+/// - `auth.example.co.uk` → true (exact match)
+/// - `login.auth.example.co.uk` → true (subdomain)
+/// - `evil.com` → false
+/// - `attacker.com.auth.example.co.uk` → true (still a subdomain — safe)
+/// - `attacker-auth.example.co.uk` → false (not a subdomain)
+///
+/// This avoids the need for a public suffix list: we trust the issuer host
+/// as the anchor and only allow endpoints at or below that host.
+fn is_same_or_subdomain(candidate: &str, base: &str) -> bool {
+    let c = candidate.to_ascii_lowercase();
+    let b = base.to_ascii_lowercase();
+
+    if c == b {
+        return true;
     }
-    host
+
+    // candidate must end with ".base" to be a subdomain
+    c.ends_with(&format!(".{}", b))
 }
 
-/// Verify a discovered endpoint URL belongs to the same registrable domain
+/// Verify a discovered endpoint URL belongs to the same host (or a subdomain)
 /// as the OIDC issuer and uses HTTPS. Prevents a tampered discovery response
 /// from redirecting OAuth flows to attacker-controlled servers.
 fn validate_endpoint_domain(
@@ -717,13 +727,11 @@ fn validate_endpoint_domain(
         .host_str()
         .ok_or_else(|| format!("OIDC {endpoint_name} has no host"))?;
 
-    let issuer_base = base_domain(issuer_host);
-    let endpoint_base = base_domain(endpoint_host);
-
-    if !issuer_base.eq_ignore_ascii_case(endpoint_base) {
+    if !is_same_or_subdomain(endpoint_host, issuer_host) {
         return Err(format!(
-            "OIDC {endpoint_name} domain mismatch: issuer domain is '{issuer_host}' but {endpoint_name} points to '{endpoint_host}'. \
-             Discovery response may have been tampered with."
+            "OIDC {} domain mismatch: issuer host is '{}' but {} points to '{}'. \
+             The endpoint must be at the issuer host or a subdomain of it.",
+            endpoint_name, issuer_host, endpoint_name, endpoint_host
         ));
     }
 
@@ -820,7 +828,7 @@ fn oauth_sessions() -> &'static Mutex<HashMap<String, OAuthSession>> {
 
 fn cleanup_oauth_sessions() {
     let now = now_unix_secs();
-    let mut sessions = oauth_sessions().lock().unwrap();
+    let mut sessions = oauth_sessions().lock().unwrap_or_else(|e| e.into_inner());
     sessions.retain(|_, s| now.saturating_sub(s.created_at) <= OAUTH_SESSION_TTL_SECS);
 }
 
@@ -829,8 +837,9 @@ fn cleanup_oauth_sessions() {
 /// List available OAuth providers.
 #[tauri::command]
 pub fn list_oauth_providers(
-    _state: State<'_, Arc<AppState>>,
+    state: State<'_, Arc<AppState>>,
 ) -> Result<serde_json::Value, AppError> {
+    require_privileged_sync(&state, "list_oauth_providers")?;
     let providers: Vec<serde_json::Value> = PROVIDER_REGISTRY
         .iter()
         .map(|p| {
@@ -872,6 +881,7 @@ pub async fn start_oauth(
     use_pkce: Option<bool>,
     extra_params: Option<HashMap<String, String>>,
 ) -> Result<serde_json::Value, AppError> {
+    require_privileged(&state, "start_oauth").await?;
     // Wrap secret immediately so the bare String is dropped
     let client_secret: Option<SecureString> = client_secret.map(SecureString::new);
 
@@ -963,7 +973,7 @@ pub async fn start_oauth(
     let session_id = format!("oauth_{}_{}", now_unix_secs(), uuid::Uuid::new_v4());
 
     {
-        let mut sessions = oauth_sessions().lock().unwrap();
+        let mut sessions = oauth_sessions().lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
         sessions.insert(session_id.clone(), OAuthSession {
             status: "pending".into(),
             provider_id: provider_id.clone(),
@@ -1025,7 +1035,7 @@ pub async fn start_oauth(
         )
         .await;
 
-        let mut sessions = oauth_sessions().lock().unwrap();
+        let mut sessions = oauth_sessions().lock().unwrap_or_else(|e| e.into_inner());
         if let Some(s) = sessions.get_mut(&sid) {
             match outcome {
                 OAuthCallbackOutcome::Success(tokens) => {
@@ -1080,11 +1090,12 @@ pub async fn start_oauth(
 
 #[tauri::command]
 pub fn get_oauth_status(
-    _state: State<'_, Arc<AppState>>,
+    state: State<'_, Arc<AppState>>,
     session_id: String,
 ) -> Result<serde_json::Value, AppError> {
+    require_privileged_sync(&state, "get_oauth_status")?;
     cleanup_oauth_sessions();
-    let mut sessions = oauth_sessions().lock().unwrap();
+    let mut sessions = oauth_sessions().lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
     if let Some(s) = sessions.get(&session_id) {
         // Decrypt tokens into short-lived SecureStrings for serialization only
         let decrypted_access = decrypt_token(&s.access_token);
@@ -1125,6 +1136,7 @@ pub async fn refresh_oauth_token(
     token_url: Option<String>,
     oidc_issuer: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
+    require_privileged(&state, "refresh_oauth_token").await?;
     // Wrap secrets immediately so bare Strings are dropped
     let client_secret = client_secret.map(SecureString::new);
     let refresh_token = SecureString::new(refresh_token);

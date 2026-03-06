@@ -225,7 +225,7 @@ export default function MessageList() {
             </button>
             <button
               onClick={() => markAllMessagesAsRead()}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-blue-400/80 hover:text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15 transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium text-blue-400/80 hover:text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15 transition-all"
             >
               <CheckCheck className="w-3.5 h-3.5" />
               Mark All Read
@@ -291,7 +291,7 @@ export default function MessageList() {
                       const store = usePersonaStore.getState();
                       store.setSidebarSection('personas');
                     }}
-                    className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-primary bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors"
+                    className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium text-primary bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors"
                   >
                     <Send className="w-3.5 h-3.5" />
                     Go to Agents
@@ -343,7 +343,7 @@ export default function MessageList() {
                     >
                       <div role="gridcell" className="flex items-center gap-2 px-4 min-w-0">
                         <div
-                          className="w-6 h-6 rounded-md flex items-center justify-center text-sm border border-primary/15 flex-shrink-0"
+                          className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0"
                           style={{ backgroundColor: (message.persona_color || '#6366f1') + '15' }}
                         >
                           {message.persona_icon || '?'}
@@ -360,7 +360,7 @@ export default function MessageList() {
                       </div>
 
                       <div role="gridcell" className="px-4">
-                        <span className={`inline-flex px-2 py-0.5 rounded-md text-sm font-medium border ${priority.bgColor} ${priority.color} ${priority.borderColor}`}>
+                        <span className={`inline-flex px-2 py-0.5 rounded-lg text-sm font-medium border ${priority.bgColor} ${priority.color} ${priority.borderColor}`}>
                           {priority.label}
                         </span>
                       </div>
@@ -471,7 +471,7 @@ export default function MessageList() {
                       if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
                       confirmTimerRef.current = setTimeout(() => setConfirmingDelete(false), 3000);
                     }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     Delete
@@ -481,7 +481,7 @@ export default function MessageList() {
             }
           >
             {/* Content section */}
-            <div className="space-y-5">
+            <div className="space-y-6">
               <div>
                 <div className="text-sm font-mono text-muted-foreground/90 uppercase mb-2">Content</div>
                 <MarkdownRenderer content={selectedMsg.content} className="text-sm" />
@@ -511,7 +511,7 @@ export default function MessageList() {
                       return (
                         <div
                           key={d.id}
-                          className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg border ${statusCfg.bgColor} ${statusCfg.borderColor}`}
+                          className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl border ${statusCfg.bgColor} ${statusCfg.borderColor}`}
                         >
                           <StatusIcon className={`w-3.5 h-3.5 flex-shrink-0 ${statusCfg.color}`} />
                           <span className="text-sm font-medium text-foreground/90 min-w-[60px]">

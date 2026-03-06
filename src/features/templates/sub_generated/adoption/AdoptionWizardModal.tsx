@@ -322,7 +322,7 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
                   else handleNext();
                 }}
                 disabled={nextAction.disabled}
-                className={`flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-xl border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                   nextAction.variant === 'emerald'
                     ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25 hover:bg-emerald-500/25'
                     : 'bg-violet-500/15 text-violet-300 border-violet-500/25 hover:bg-violet-500/25'

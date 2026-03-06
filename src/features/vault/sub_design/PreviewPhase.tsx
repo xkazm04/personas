@@ -59,7 +59,7 @@ export function PreviewPhase() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className="space-y-5"
+      className="space-y-4"
     >
       {/* Save error banner */}
       {saveError && (
@@ -96,20 +96,20 @@ export function PreviewPhase() {
           <p className="text-sm text-muted-foreground/80">{result.summary}</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-secondary/50 border border-primary/10 text-sm text-foreground/85">
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-secondary/50 border border-primary/10 text-sm text-foreground/85">
             <ListChecks className="w-3 h-3" />
             {fields.length}
           </span>
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-secondary/50 border border-primary/10 text-sm text-foreground/85">
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-secondary/50 border border-primary/10 text-sm text-foreground/85">
             <KeyRound className="w-3 h-3" />
             {requiredCount}
           </span>
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-secondary/50 border border-primary/10 text-sm text-foreground/85">
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-secondary/50 border border-primary/10 text-sm text-foreground/85">
             <CircleHelp className="w-3 h-3" />
             {optionalCount}
           </span>
         </div>
-        <span className="px-2 py-0.5 bg-primary/10 text-primary/70 text-sm rounded-md font-mono">
+        <span className="px-2 py-0.5 bg-primary/10 text-primary/70 text-sm rounded-lg font-mono">
           {result.connector.category}
         </span>
       </div>
@@ -153,7 +153,7 @@ export function PreviewPhase() {
               </div>
               <button
                 onClick={() => setShowNegotiator(true)}
-                className={`shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${AI_STATUS.bgColor} ${AI_STATUS.borderColor} ${AI_STATUS.color} hover:opacity-90`}
+                className={`shrink-0 px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${AI_STATUS.bgColor} ${AI_STATUS.borderColor} ${AI_STATUS.color} hover:opacity-90`}
               >
                 Start
               </button>

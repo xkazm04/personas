@@ -55,7 +55,7 @@ export function CloudOAuthPanel({
             value={oauthCode}
             onChange={(e) => setOauthCode(e.target.value)}
             placeholder="Paste the code here"
-            className="w-full px-3 py-2 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground/80 placeholder:text-muted-foreground/80 focus:outline-none focus:border-indigo-500/40 transition-colors"
+            className="w-full px-3 py-2 text-sm rounded-xl bg-secondary/40 border border-primary/15 text-foreground/80 placeholder:text-muted-foreground/80 focus:outline-none focus:border-indigo-500/40 transition-colors"
           />
         </div>
 
@@ -63,13 +63,13 @@ export function CloudOAuthPanel({
           <button
             onClick={onCompleteOAuth}
             disabled={!oauthCode.trim()}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-indigo-500 text-foreground hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-indigo-500 text-foreground hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
             Complete Authorization
           </button>
           <button
             onClick={onCancelOAuth}
-            className="px-4 py-2 text-sm font-medium rounded-lg bg-secondary/40 border border-primary/15 text-foreground/90 hover:text-foreground/95 hover:border-primary/25 transition-colors cursor-pointer"
+            className="px-4 py-2 text-sm font-medium rounded-xl bg-secondary/40 border border-primary/15 text-foreground/90 hover:text-foreground/95 hover:border-primary/25 transition-colors cursor-pointer"
           >
             Cancel
           </button>
@@ -110,7 +110,7 @@ export function CloudOAuthPanel({
               {oauthStatus.scopes.map((scope) => (
                 <span
                   key={scope}
-                  className="text-sm px-2 py-0.5 rounded-md bg-secondary/40 border border-primary/15 text-muted-foreground/80"
+                  className="text-sm px-2 py-0.5 rounded-lg bg-secondary/40 border border-primary/15 text-muted-foreground/80"
                 >
                   {scope}
                 </span>
@@ -135,14 +135,14 @@ export function CloudOAuthPanel({
         <div className="flex gap-3">
           <button
             onClick={onRefreshOAuth}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-secondary/40 border border-primary/15 text-foreground/90 hover:text-foreground/95 hover:border-primary/25 transition-colors cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-secondary/40 border border-primary/15 text-foreground/90 hover:text-foreground/95 hover:border-primary/25 transition-colors cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             Refresh Token
           </button>
           <button
             onClick={onDisconnectOAuth}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer"
           >
             <ShieldX className="w-3.5 h-3.5" />
             Disconnect
@@ -165,7 +165,7 @@ export function CloudOAuthPanel({
 
       <button
         onClick={onStartOAuth}
-        className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-sm font-medium rounded-lg bg-indigo-500 text-foreground hover:bg-indigo-600 transition-colors cursor-pointer"
+        className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-sm font-medium rounded-xl bg-indigo-500 text-foreground hover:bg-indigo-600 transition-colors cursor-pointer"
       >
         <ExternalLink className="w-4 h-4" />
         {oauthStartUrl ? 'Refresh Authorization Link' : 'Connect Anthropic Account'}
@@ -175,7 +175,7 @@ export function CloudOAuthPanel({
           href={oauthStartUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-sm font-medium rounded-lg bg-indigo-500/10 border border-indigo-500/25 text-indigo-300 hover:bg-indigo-500/15 transition-colors"
+          className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-sm font-medium rounded-xl bg-indigo-500/10 border border-indigo-500/25 text-indigo-300 hover:bg-indigo-500/15 transition-colors"
         >
           <ExternalLink className="w-4 h-4" />
           Open Authorization Window

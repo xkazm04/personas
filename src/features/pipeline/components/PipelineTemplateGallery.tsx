@@ -315,7 +315,7 @@ function MiniCanvas({ template, hovered }: { template: PipelineTemplate; hovered
 function RoleBadge({ role }: { role: string }) {
   const colors = ROLE_COLORS[role] || { bg: 'bg-zinc-500/15', text: 'text-zinc-400', border: 'border-zinc-500/25' };
   return (
-    <span className={`inline-flex px-1.5 py-0.5 text-sm font-mono rounded-md ${colors.bg} ${colors.text} ${colors.border} border`}>
+    <span className={`inline-flex px-1.5 py-0.5 text-sm font-mono rounded-lg ${colors.bg} ${colors.text} ${colors.border} border`}>
       {role}
     </span>
   );
@@ -442,7 +442,7 @@ export default function PipelineTemplateGallery({ onAdopt }: PipelineTemplateGal
                             e.stopPropagation();
                             onAdopt(tpl);
                           }}
-                          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all"
+                          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all"
                           style={{
                             backgroundColor: tpl.color + '18',
                             borderColor: tpl.color + '30',

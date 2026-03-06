@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { GitLabConfig } from "@/lib/bindings/GitLabConfig";
 import type { GitLabUser } from "@/lib/bindings/GitLabUser";

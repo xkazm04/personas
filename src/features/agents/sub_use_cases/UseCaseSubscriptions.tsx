@@ -99,7 +99,7 @@ export function UseCaseSubscriptions({
               <button
                 onClick={() => onActivateTrigger(useCaseId, suggestedTrigger.type)}
                 disabled={activatingTriggers?.has(`${useCaseId}:${suggestedTrigger.type}`)}
-                className="flex items-center gap-1 px-2.5 py-1 text-sm rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/25 hover:bg-amber-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-1 px-2.5 py-1 text-sm rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/25 hover:bg-amber-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <Zap className="w-3 h-3" />
                 Activate
@@ -177,7 +177,7 @@ export function UseCaseSubscriptions({
           ) : (
             <button
               onClick={() => setShowAddForm(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-dashed border-primary/15 hover:border-primary/30 text-sm text-muted-foreground/70 hover:text-primary/80 transition-all w-full"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-dashed border-primary/15 hover:border-primary/30 text-sm text-muted-foreground/70 hover:text-primary/80 transition-all w-full"
             >
               <Plus className="w-3.5 h-3.5" /> Add Subscription
             </button>

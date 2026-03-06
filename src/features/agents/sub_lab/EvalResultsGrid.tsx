@@ -1,4 +1,5 @@
 import { useMemo, useEffect, useState } from 'react';
+import { useMotion } from '@/hooks/utility/useMotion';
 import { Trophy, Target, FileText, Shield, DollarSign, Clock } from 'lucide-react';
 import {
   PolarAngleAxis,
@@ -9,6 +10,7 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from 'recharts';
+import { ChartErrorBoundary } from '@/features/overview/sub_usage/charts/ChartErrorBoundary';
 import type { LabEvalResult } from '@/lib/bindings/LabEvalResult';
 import { compositeScore, scoreColor } from './labUtils';
 
@@ -39,7 +41,7 @@ interface VersionAggregate extends CellAggregate {
  */
 export function EvalResultsGrid({ results }: Props) {
   const [celebrateWinnerId, setCelebrateWinnerId] = useState<string | null>(null);
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const { shouldAnimate } = useMotion();
   const radarPalette = useMemo(
     () => ['#60A5FA', '#A78BFA', '#34D399', '#F59E0B', '#FB7185', '#22D3EE'],
     [],
@@ -118,15 +120,7 @@ export function EvalResultsGrid({ results }: Props) {
   }, [results]);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const update = () => setReducedMotion(mediaQuery.matches);
-    update();
-    mediaQuery.addEventListener('change', update);
-    return () => mediaQuery.removeEventListener('change', update);
-  }, []);
-
-  useEffect(() => {
-    if (reducedMotion) {
+    if (!shouldAnimate) {
       setCelebrateWinnerId(null);
       return;
     }
@@ -136,7 +130,7 @@ export function EvalResultsGrid({ results }: Props) {
       setCelebrateWinnerId((prev) => (prev === winnerId ? null : prev));
     }, 900);
     return () => window.clearTimeout(timer);
-  }, [winnerId, reducedMotion]);
+  }, [winnerId, shouldAnimate]);
 
   if (results.length === 0) {
     return (
@@ -188,7 +182,7 @@ export function EvalResultsGrid({ results }: Props) {
                     v{agg.versionNumber}
                   </span>
                   {isWinner && (
-                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-sm font-medium bg-primary/15 text-primary border border-primary/20">
+                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-sm font-medium bg-primary/15 text-primary border border-primary/20">
                       <Trophy className="w-3 h-3 animate-[pulse_3s_ease-in-out_infinite] motion-reduce:animate-none" /> Winner
                     </span>
                   )}
@@ -239,6 +233,7 @@ export function EvalResultsGrid({ results }: Props) {
           </h4>
           <div className="border border-primary/10 rounded-xl bg-background/20 p-3">
             <div className="h-[260px]" data-testid="eval-radar-chart">
+              <ChartErrorBoundary>
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart data={radarData} outerRadius="72%">
                   <PolarGrid stroke="rgba(148, 163, 184, 0.25)" />
@@ -266,12 +261,13 @@ export function EvalResultsGrid({ results }: Props) {
                   ))}
                 </RadarChart>
               </ResponsiveContainer>
+              </ChartErrorBoundary>
             </div>
             <div className="mt-2 flex flex-wrap gap-2">
               {radarVersions.map((agg, idx) => (
                 <span
                   key={agg.versionId}
-                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-sm border border-primary/10 bg-secondary/20 text-foreground/80"
+                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm border border-primary/10 bg-secondary/20 text-foreground/80"
                 >
                   <span
                     className="w-2 h-2 rounded-full"

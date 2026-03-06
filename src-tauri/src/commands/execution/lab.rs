@@ -13,6 +13,7 @@ use crate::db::repos::resources::tools as tool_repo;
 use crate::engine::test_runner::{self, TestModelConfig};
 use crate::engine::types::EphemeralPersona;
 use crate::error::AppError;
+use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 // ============================================================================
@@ -27,6 +28,7 @@ pub async fn lab_start_arena(
     models: Vec<serde_json::Value>,
     use_case_filter: Option<String>,
 ) -> Result<LabArenaRun, AppError> {
+    require_auth(&state).await?;
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
     let tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
     let ephemeral = EphemeralPersona::from_persisted(persona, tools);
@@ -52,7 +54,7 @@ pub async fn lab_start_arena(
 
     let cancelled = Arc::new(std::sync::atomic::AtomicBool::new(false));
     {
-        let mut flags = state.active_test_run_cancelled.lock().unwrap();
+        let mut flags = state.active_test_run_cancelled.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
         flags.insert(run_id.clone(), cancelled.clone());
     }
 
@@ -88,6 +90,7 @@ pub fn lab_list_arena_runs(
     persona_id: String,
     limit: Option<i64>,
 ) -> Result<Vec<LabArenaRun>, AppError> {
+    require_auth_sync(&state)?;
     arena_repo::get_runs_by_persona(&state.db, &persona_id, limit)
 }
 
@@ -96,6 +99,7 @@ pub fn lab_get_arena_results(
     state: State<'_, Arc<AppState>>,
     run_id: String,
 ) -> Result<Vec<LabArenaResult>, AppError> {
+    require_auth_sync(&state)?;
     arena_repo::get_results_by_run(&state.db, &run_id)
 }
 
@@ -104,6 +108,7 @@ pub fn lab_delete_arena_run(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     arena_repo::delete_run(&state.db, &id)
 }
 
@@ -112,6 +117,7 @@ pub fn lab_cancel_arena(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
     if let Ok(flags) = state.active_test_run_cancelled.lock() {
         if let Some(flag) = flags.get(&id) {
             flag.store(true, std::sync::atomic::Ordering::Release);
@@ -138,6 +144,7 @@ pub async fn lab_start_ab(
     use_case_filter: Option<String>,
     test_input: Option<String>,
 ) -> Result<LabAbRun, AppError> {
+    require_auth(&state).await?;
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
     let tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
 
@@ -179,7 +186,7 @@ pub async fn lab_start_ab(
 
     let cancelled = Arc::new(std::sync::atomic::AtomicBool::new(false));
     {
-        let mut flags = state.active_test_run_cancelled.lock().unwrap();
+        let mut flags = state.active_test_run_cancelled.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
         flags.insert(run_id.clone(), cancelled.clone());
     }
 
@@ -239,6 +246,7 @@ pub fn lab_list_ab_runs(
     persona_id: String,
     limit: Option<i64>,
 ) -> Result<Vec<LabAbRun>, AppError> {
+    require_auth_sync(&state)?;
     ab_repo::get_runs_by_persona(&state.db, &persona_id, limit)
 }
 
@@ -247,6 +255,7 @@ pub fn lab_get_ab_results(
     state: State<'_, Arc<AppState>>,
     run_id: String,
 ) -> Result<Vec<LabAbResult>, AppError> {
+    require_auth_sync(&state)?;
     ab_repo::get_results_by_run(&state.db, &run_id)
 }
 
@@ -255,6 +264,7 @@ pub fn lab_delete_ab_run(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     ab_repo::delete_run(&state.db, &id)
 }
 
@@ -263,6 +273,7 @@ pub fn lab_cancel_ab(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
     if let Ok(flags) = state.active_test_run_cancelled.lock() {
         if let Some(flag) = flags.get(&id) {
             flag.store(true, std::sync::atomic::Ordering::Release);
@@ -286,6 +297,7 @@ pub async fn lab_start_matrix(
     models: Vec<serde_json::Value>,
     use_case_filter: Option<String>,
 ) -> Result<LabMatrixRun, AppError> {
+    require_auth(&state).await?;
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
     let tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
     let ephemeral = EphemeralPersona::from_persisted(persona, tools);
@@ -317,7 +329,7 @@ pub async fn lab_start_matrix(
 
     let cancelled = Arc::new(std::sync::atomic::AtomicBool::new(false));
     {
-        let mut flags = state.active_test_run_cancelled.lock().unwrap();
+        let mut flags = state.active_test_run_cancelled.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
         flags.insert(run_id.clone(), cancelled.clone());
     }
 
@@ -353,6 +365,7 @@ pub fn lab_list_matrix_runs(
     persona_id: String,
     limit: Option<i64>,
 ) -> Result<Vec<LabMatrixRun>, AppError> {
+    require_auth_sync(&state)?;
     matrix_repo::get_runs_by_persona(&state.db, &persona_id, limit)
 }
 
@@ -361,6 +374,7 @@ pub fn lab_get_matrix_results(
     state: State<'_, Arc<AppState>>,
     run_id: String,
 ) -> Result<Vec<LabMatrixResult>, AppError> {
+    require_auth_sync(&state)?;
     matrix_repo::get_results_by_run(&state.db, &run_id)
 }
 
@@ -369,6 +383,7 @@ pub fn lab_delete_matrix_run(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     matrix_repo::delete_run(&state.db, &id)
 }
 
@@ -377,6 +392,7 @@ pub fn lab_cancel_matrix(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
     if let Ok(flags) = state.active_test_run_cancelled.lock() {
         if let Some(flag) = flags.get(&id) {
             flag.store(true, std::sync::atomic::Ordering::Release);
@@ -392,6 +408,7 @@ pub fn lab_accept_matrix_draft(
     state: State<'_, Arc<AppState>>,
     run_id: String,
 ) -> Result<Persona, AppError> {
+    require_auth_sync(&state)?;
     let run = matrix_repo::get_run_by_id(&state.db, &run_id)?;
 
     let draft_json = run.draft_prompt_json.ok_or_else(|| {
@@ -434,6 +451,7 @@ pub async fn lab_start_eval(
     use_case_filter: Option<String>,
     test_input: Option<String>,
 ) -> Result<LabEvalRun, AppError> {
+    require_auth(&state).await?;
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
     let tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
 
@@ -483,7 +501,7 @@ pub async fn lab_start_eval(
 
     let cancelled = Arc::new(std::sync::atomic::AtomicBool::new(false));
     {
-        let mut flags = state.active_test_run_cancelled.lock().unwrap();
+        let mut flags = state.active_test_run_cancelled.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
         flags.insert(run_id.clone(), cancelled.clone());
     }
 
@@ -532,6 +550,7 @@ pub fn lab_list_eval_runs(
     persona_id: String,
     limit: Option<i64>,
 ) -> Result<Vec<LabEvalRun>, AppError> {
+    require_auth_sync(&state)?;
     eval_repo::get_runs_by_persona(&state.db, &persona_id, limit)
 }
 
@@ -540,6 +559,7 @@ pub fn lab_get_eval_results(
     state: State<'_, Arc<AppState>>,
     run_id: String,
 ) -> Result<Vec<LabEvalResult>, AppError> {
+    require_auth_sync(&state)?;
     eval_repo::get_results_by_run(&state.db, &run_id)
 }
 
@@ -548,6 +568,7 @@ pub fn lab_delete_eval_run(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     eval_repo::delete_run(&state.db, &id)
 }
 
@@ -556,6 +577,7 @@ pub fn lab_cancel_eval(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
     if let Ok(flags) = state.active_test_run_cancelled.lock() {
         if let Some(flag) = flags.get(&id) {
             flag.store(true, std::sync::atomic::Ordering::Release);
@@ -576,6 +598,7 @@ pub fn lab_get_versions(
     persona_id: String,
     limit: Option<i64>,
 ) -> Result<Vec<PersonaPromptVersion>, AppError> {
+    require_auth_sync(&state)?;
     metrics_repo::get_prompt_versions(&state.db, &persona_id, limit)
 }
 
@@ -585,6 +608,7 @@ pub fn lab_tag_version(
     id: String,
     tag: String,
 ) -> Result<PersonaPromptVersion, AppError> {
+    require_auth_sync(&state)?;
     let valid_tags = ["production", "experimental", "archived"];
     if !valid_tags.contains(&tag.as_str()) {
         return Err(AppError::Validation(format!(
@@ -609,6 +633,7 @@ pub fn lab_rollback_version(
     state: State<'_, Arc<AppState>>,
     version_id: String,
 ) -> Result<PersonaPromptVersion, AppError> {
+    require_auth_sync(&state)?;
     let version = metrics_repo::get_prompt_version_by_id(&state.db, &version_id)?;
 
     let conn = state.db.get()?;
@@ -640,5 +665,6 @@ pub fn lab_get_error_rate(
     persona_id: String,
     window: Option<i64>,
 ) -> Result<f64, AppError> {
+    require_auth_sync(&state)?;
     metrics_repo::get_recent_error_rate(&state.db, &persona_id, window.unwrap_or(10))
 }

@@ -43,7 +43,7 @@ export function ReviewExpandedDetail({
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* 1. Summary Card */}
       {designResult.summary && (
         <div className="bg-gradient-to-r from-violet-500/5 to-transparent border border-violet-500/10 rounded-xl px-4 py-3">
@@ -107,14 +107,14 @@ export function ReviewExpandedDetail({
             <button
               onClick={() => onApplyAdjustment(adjustment.suggestion)}
               disabled={isRunning}
-              className="px-3 py-1.5 text-sm rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+              className="px-3 py-1.5 text-sm rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
             >
               <RotateCcw className="w-3 h-3" />
               Apply &amp; Re-run
             </button>
           </div>
           <p className="text-sm text-muted-foreground/90">{adjustment.reason}</p>
-          <div className="bg-background/50 rounded-md px-3 py-2 text-sm text-foreground/90 border border-primary/10">
+          <div className="bg-background/50 rounded-xl px-3 py-2 text-sm text-foreground/90 border border-primary/10">
             {adjustment.suggestion}
           </div>
           <div className="flex flex-wrap gap-1.5">

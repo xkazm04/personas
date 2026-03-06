@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Trash2, X } from 'lucide-react';
+import { useViewportClampFixed } from '@/hooks/utility/useViewportClamp';
 import { CONNECTION_TYPE_STYLES, getConnectionStyle } from './teamConstants';
 
 interface EdgeDeleteTooltipProps {
@@ -31,6 +32,7 @@ export default function EdgeDeleteTooltip({
 }: EdgeDeleteTooltipProps) {
   const ref = useRef<HTMLDivElement>(null);
   const style = getConnectionStyle(connectionType);
+  const clampedPos = useViewportClampFixed(ref, x, y);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -50,7 +52,7 @@ export default function EdgeDeleteTooltip({
       exit={{ opacity: 0, scale: 0.85 }}
       transition={{ type: 'spring', stiffness: 500, damping: 30 }}
       className="fixed z-50 flex flex-col gap-2 p-3 rounded-xl bg-secondary/95 backdrop-blur-md border border-primary/15 shadow-xl shadow-black/20 min-w-[180px]"
-      style={{ left: x, top: y, transform: 'translate(-50%, -120%)' }}
+      style={{ left: clampedPos.x, top: clampedPos.y, transform: 'translate(-50%, -120%)' }}
     >
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
@@ -65,7 +67,7 @@ export default function EdgeDeleteTooltip({
         </div>
         <button
           onClick={onClose}
-          className="p-0.5 rounded-md text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/80 transition-colors"
+          className="p-0.5 rounded-lg text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/80 transition-colors"
         >
           <X className="w-3 h-3" />
         </button>
@@ -121,7 +123,7 @@ export default function EdgeDeleteTooltip({
       {/* Delete button */}
       <button
         onClick={onDelete}
-        className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-red-400 hover:bg-red-500/15 border border-red-500/20 bg-red-500/5 transition-colors"
+        className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl text-red-400 hover:bg-red-500/15 border border-red-500/20 bg-red-500/5 transition-colors"
       >
         <Trash2 className="w-3 h-3" />
         Delete Connection

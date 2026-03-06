@@ -38,7 +38,7 @@ export function PopupColorPicker({ value, onChange, size = 'sm' }: PopupColorPic
       >
         {value ? (
           <div
-            className="w-6 h-6 rounded-md"
+            className="w-6 h-6 rounded-lg"
             style={{ backgroundColor: value }}
           />
         ) : (

@@ -17,6 +17,10 @@ use std::time::Instant;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+/// Maximum number of spans a single execution trace may accumulate.
+/// When exceeded, the oldest non-root completed spans are dropped.
+const MAX_SPANS: usize = 10_000;
+
 // =============================================================================
 // Span types
 // =============================================================================
@@ -222,7 +226,19 @@ impl TraceCollector {
             metadata,
         };
 
-        self.spans.lock().unwrap().push(span);
+        let mut spans = self.spans.lock().unwrap_or_else(|e| e.into_inner());
+
+        // Evict oldest completed non-root spans when at capacity.
+        if spans.len() >= MAX_SPANS {
+            if let Some(pos) = spans.iter().position(|s| {
+                s.span_id != self.root_span_id && s.end_ms.is_some()
+            }) {
+                spans.remove(pos);
+            }
+        }
+
+        spans.push(span);
+        drop(spans);
         span_id
     }
 
@@ -236,7 +252,7 @@ impl TraceCollector {
         output_tokens: Option<u64>,
     ) {
         let end_ms = self.epoch.elapsed().as_millis() as u64;
-        let mut spans = self.spans.lock().unwrap();
+        let mut spans = self.spans.lock().unwrap_or_else(|e| e.into_inner());
 
         if let Some(span) = spans.iter_mut().find(|s| s.span_id == span_id) {
             span.end_ms = Some(end_ms);
@@ -265,6 +281,8 @@ impl TraceCollector {
     }
 
     /// Finalize the trace: close the root span and build the ExecutionTrace.
+    ///
+    /// Drains the internal span vec instead of cloning it to avoid a deep copy.
     pub fn finalize(
         &self,
         total_cost_usd: Option<f64>,
@@ -273,7 +291,7 @@ impl TraceCollector {
         error: Option<String>,
     ) -> ExecutionTrace {
         let end_ms = self.epoch.elapsed().as_millis() as u64;
-        let mut spans = self.spans.lock().unwrap();
+        let mut spans = self.spans.lock().unwrap_or_else(|e| e.into_inner());
 
         // Close root span
         if let Some(root) = spans.iter_mut().find(|s| s.span_id == self.root_span_id) {
@@ -290,7 +308,7 @@ impl TraceCollector {
             execution_id: self.execution_id.clone(),
             persona_id: self.persona_id.clone(),
             chain_trace_id: self.chain_trace_id.clone(),
-            spans: spans.clone(),
+            spans: spans.drain(..).collect(),
             total_duration_ms: Some(end_ms),
             created_at: chrono::Utc::now().to_rfc3339(),
         }

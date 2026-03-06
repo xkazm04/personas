@@ -93,6 +93,7 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
       const result = await ops.fetchActivity(triggerId);
       setActivityLog(result.ok && result.data ? result.data : []);
     } catch {
+      // intentional: non-critical — activity log fetch failed, show empty list
       setActivityLog([]);
     } finally {
       setActivityLoading(false);
@@ -126,7 +127,7 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
       await navigator.clipboard.writeText(`http://localhost:9420/webhook/${triggerId}`);
       setCopiedUrl(true);
       setTimeout(() => setCopiedUrl(false), 2000);
-    } catch { /* clipboard API fallback */ }
+    } catch { /* intentional: non-critical — clipboard write best-effort */ }
   }, [triggerId]);
 
   const copyCurlCommand = useCallback(async (e: React.MouseEvent) => {
@@ -137,7 +138,7 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
       await navigator.clipboard.writeText(cmd);
       setCopiedCurl(true);
       setTimeout(() => setCopiedCurl(false), 2000);
-    } catch { /* clipboard API fallback */ }
+    } catch { /* intentional: non-critical — clipboard write best-effort */ }
   }, [triggerId]);
 
   const clearDryRunResult = useCallback(() => setDryRunResult(null), []);

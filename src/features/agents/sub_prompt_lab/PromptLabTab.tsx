@@ -62,7 +62,7 @@ export function PromptLabTab() {
         </div>
 
         {pv.error && (
-          <div data-testid="prompt-lab-error" className="mb-2 px-3 py-2 text-sm text-red-300 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center justify-between">
+          <div data-testid="prompt-lab-error" className="mb-2 px-3 py-2 text-sm text-red-300 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-between">
             <span>{pv.error}</span>
             <button onClick={() => pv.setError(null)} data-testid="prompt-lab-error-dismiss-btn" className="ml-2 text-red-400 hover:text-red-300">&times;</button>
           </div>
@@ -141,7 +141,7 @@ export function PromptLabTab() {
             <button
               key={tab.id} onClick={() => setActivePanel(tab.id)}
               data-testid={`prompt-lab-tab-${tab.id}`}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl transition-colors ${
                 activePanel === tab.id
                   ? 'bg-primary/10 text-foreground/80 border border-primary/20'
                   : 'text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'
@@ -168,7 +168,7 @@ export function PromptLabTab() {
                 {pv.versions.length >= 2 ? (
                   <button
                     onClick={() => { pv.setCompareAId(pv.versions[0]!.id); pv.setCompareBId(pv.versions[1]!.id); }}
-                    className="mt-1 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
+                    className="mt-1 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
                   >
                     <ArrowLeftRight className="w-3.5 h-3.5" />Start comparing
                   </button>

@@ -66,7 +66,7 @@ export function AutoCredReview({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className="space-y-5"
+      className="space-y-4"
     >
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -106,7 +106,7 @@ export function AutoCredReview({
           type="text"
           value={credentialName}
           onChange={(e) => onCredentialNameChange(e.target.value)}
-          className="w-full px-3 py-2 rounded-lg border border-primary/15 bg-secondary/25 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="w-full px-3 py-2 rounded-xl border border-primary/15 bg-secondary/25 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
       </div>
 
@@ -146,7 +146,7 @@ export function AutoCredReview({
             }
           }}
           disabled={isHealthchecking}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-primary/15 hover:bg-secondary/40 text-muted-foreground/70 hover:text-foreground transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-primary/15 hover:bg-secondary/40 text-muted-foreground/70 hover:text-foreground transition-colors"
         >
           {isHealthchecking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
           {isHealthchecking ? 'Testing...' : 'Test Connection'}
@@ -168,13 +168,13 @@ export function AutoCredReview({
         <div className="flex gap-2">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-sm text-muted-foreground/70 hover:text-foreground rounded-lg hover:bg-secondary/40 transition-colors"
+            className="px-4 py-2 text-sm text-muted-foreground/70 hover:text-foreground rounded-xl hover:bg-secondary/40 transition-colors"
           >
             Discard
           </button>
           <button
             onClick={onRetry}
-            className="flex items-center gap-1.5 px-4 py-2 text-sm text-cyan-400/80 hover:text-cyan-400 rounded-lg border border-cyan-500/15 hover:bg-cyan-500/10 transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 text-sm text-cyan-400/80 hover:text-cyan-400 rounded-xl border border-cyan-500/15 hover:bg-cyan-500/10 transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             Re-run Browser
@@ -189,7 +189,7 @@ export function AutoCredReview({
             <button
               onClick={handleSaveProcedure}
               disabled={savingProcedure || procedureSaved}
-              className={`flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-2 text-sm rounded-xl border transition-colors ${
                 procedureSaved
                   ? 'bg-violet-500/10 text-violet-400 border-violet-500/20'
                   : 'border-violet-500/20 text-violet-400/80 hover:bg-violet-500/10 hover:text-violet-400'
@@ -209,7 +209,7 @@ export function AutoCredReview({
           <button
             onClick={onSave}
             disabled={isSaving || !healthResult?.success}
-            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-emerald-600/20"
+            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-emerald-600/20"
           >
             {isSaving ? (
               <Loader2 className="w-4 h-4 animate-spin" />

@@ -121,7 +121,7 @@ export function CreateStep() {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: 'spring', damping: 15, stiffness: 300 }}
-        className="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center"
+        className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center"
       >
         <motion.div
           initial={{ scale: 0 }}
@@ -189,7 +189,7 @@ export function CreateStep() {
         >
           <button
             onClick={onReset}
-            className="flex items-center gap-2 px-4 py-2 text-sm rounded-lg border border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/15 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm rounded-xl border border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/15 transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             Adopt Another
@@ -219,9 +219,9 @@ export function CreateStep() {
   return (
     <div className="space-y-4">
       {/* Persona preview card */}
-      <div className="rounded-2xl border border-primary/10 bg-secondary/20 p-5">
+      <div className="rounded-xl border border-primary/10 bg-secondary/20 p-4">
         {/* Icon + name + description */}
-        <div className="flex items-center gap-4 mb-5">
+        <div className="flex items-center gap-4 mb-4">
           <motion.div
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
@@ -359,7 +359,7 @@ export function CreateStep() {
               transition={MOTION.smooth.framer}
               className="overflow-hidden"
             >
-              <div className="min-h-[400px] rounded-2xl border border-primary/10 bg-secondary/10 p-4">
+              <div className="min-h-[400px] rounded-xl border border-primary/10 bg-secondary/10 p-4">
                 <DraftEditStep
                   draft={draft}
                   draftJson={draftJson}

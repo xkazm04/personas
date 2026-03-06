@@ -12,8 +12,15 @@ interface UseAppSettingResult {
 /**
  * Load and persist a single app setting by key.
  * Handles load-on-mount, save-with-feedback, and error handling.
+ *
+ * @param validate - Optional validator. If provided, loaded values that fail
+ *   validation are discarded and `defaultValue` is used instead.
  */
-export function useAppSetting(key: string, defaultValue = ''): UseAppSettingResult {
+export function useAppSetting(
+  key: string,
+  defaultValue = '',
+  validate?: (value: string) => boolean,
+): UseAppSettingResult {
   const [value, setValueRaw] = useState(defaultValue);
   const [loaded, setLoaded] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -21,7 +28,14 @@ export function useAppSetting(key: string, defaultValue = ''): UseAppSettingResu
   useEffect(() => {
     getAppSetting(key)
       .then((val) => {
-        if (val) setValueRaw(val);
+        if (val) {
+          if (validate && !validate(val)) {
+            console.warn(`App setting "${key}" failed validation, using default`);
+            setValueRaw(defaultValue);
+          } else {
+            setValueRaw(val);
+          }
+        }
       })
       .catch((err) => {
         console.error(`Failed to load app setting "${key}":`, err);

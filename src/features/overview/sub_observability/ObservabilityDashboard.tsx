@@ -118,6 +118,7 @@ export default function ObservabilityDashboard() {
           );
           if (active) setPromptAnnotations(byPersona.flat());
         } catch {
+          // intentional: non-critical — background annotation preload
           if (active) setPromptAnnotations([]);
         }
       };
@@ -156,6 +157,7 @@ export default function ObservabilityDashboard() {
           );
           if (active) setRotationAnnotations(byCredential.flat());
         } catch {
+          // intentional: non-critical — background annotation preload
           if (active) setRotationAnnotations([]);
         }
       };
@@ -342,7 +344,7 @@ export default function ObservabilityDashboard() {
               <p className="text-sm font-medium text-red-300">Metrics unavailable — data shown may be stale</p>
               <p className="text-sm text-red-400/70 mt-0.5">{observabilityError}</p>
             </div>
-            <button onClick={refreshAll} className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-lg bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors">
+            <button onClick={refreshAll} className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors">
               <RefreshCw className="w-3 h-3" /> Retry
             </button>
           </div>
@@ -362,7 +364,7 @@ export default function ObservabilityDashboard() {
                 {budgetWarnings.map((w) => (
                     <span
                       key={w.personaId}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm border ${
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-sm border ${
                         w.exceeded
                           ? 'bg-red-500/15 text-red-300 border-red-500/25'
                           : 'bg-amber-500/15 text-amber-300 border-amber-500/25'
@@ -392,7 +394,7 @@ export default function ObservabilityDashboard() {
               <p className="text-sm font-medium text-amber-300">Budget data unavailable</p>
               <p className="text-sm text-amber-400/70 mt-0.5">{budgetError}</p>
             </div>
-            <button onClick={refreshAll} className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-lg bg-amber-500/15 border border-amber-500/25 text-amber-300 hover:bg-amber-500/25 transition-colors">
+            <button onClick={refreshAll} className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-amber-500/15 border border-amber-500/25 text-amber-300 hover:bg-amber-500/25 transition-colors">
               <RefreshCw className="w-3 h-3" /> Retry
             </button>
           </div>
@@ -419,16 +421,16 @@ export default function ObservabilityDashboard() {
       />
 
       {/* Health Issues Section */}
-      <div className="rounded-2xl border border-primary/10 bg-secondary/20 shadow-sm overflow-hidden flex flex-col">
+      <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-sm overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-primary/5 bg-gradient-to-r from-secondary/40 to-transparent">
+        <div className="flex items-center justify-between px-4 py-4 border-b border-primary/5 bg-gradient-to-r from-secondary/40 to-transparent">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 shadow-inner flex items-center justify-center">
               <Stethoscope className="w-4 h-4 text-cyan-400" />
             </div>
             <h3 className="text-sm font-bold text-foreground/90 uppercase tracking-widest">Health Issues</h3>
             {healingIssues.length > 0 && (
-              <span className="px-2 py-0.5 text-sm font-black tracking-wide rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm">
+              <span className="px-2 py-0.5 text-sm font-black tracking-wide rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm">
                 {healingIssues.length}
               </span>
             )}
@@ -454,7 +456,7 @@ export default function ObservabilityDashboard() {
 
         {/* Analysis Result Summary */}
         {analysisResult && !healingRunning && (
-          <div className="flex items-center justify-between px-5 py-2.5 bg-cyan-500/10 border-b border-cyan-500/20">
+          <div className="flex items-center justify-between px-4 py-2.5 bg-cyan-500/10 border-b border-cyan-500/20">
             <div className="flex items-center gap-2">
               <CheckCircle className="w-3.5 h-3.5 text-cyan-400" />
               <span className="text-sm text-cyan-300">
@@ -473,7 +475,7 @@ export default function ObservabilityDashboard() {
         )}
 
         {analysisError && !healingRunning && (
-          <div className="flex items-center justify-between px-5 py-2.5 bg-red-500/10 border-b border-red-500/20">
+          <div className="flex items-center justify-between px-4 py-2.5 bg-red-500/10 border-b border-red-500/20">
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
               <span className="text-sm text-red-300">{analysisError}</span>
@@ -492,7 +494,7 @@ export default function ObservabilityDashboard() {
 
         {/* Filter Chips */}
         {healingIssues.length > 0 && (
-          <div className="px-5 py-2.5 border-b border-primary/10 flex items-center gap-1">
+          <div className="px-4 py-2.5 border-b border-primary/10 flex items-center gap-1">
             {([
               { key: 'all' as const, label: 'All', count: issueCounts.all },
               { key: 'open' as const, label: 'Open', count: issueCounts.open },
@@ -501,7 +503,7 @@ export default function ObservabilityDashboard() {
               <button
                 key={chip.key}
                 onClick={() => setIssueFilter(chip.key)}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-medium transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-sm font-medium transition-all ${
                   issueFilter === chip.key
                     ? 'bg-background text-foreground shadow-sm border border-primary/20'
                     : 'text-muted-foreground/80 hover:text-muted-foreground'
@@ -524,7 +526,7 @@ export default function ObservabilityDashboard() {
         {healingIssues.length === 0 ? (
           <div className="flex items-center justify-center py-10">
             <div className="text-center flex flex-col items-center">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 shadow-inner flex items-center justify-center mb-4 opacity-70">
+              <div className="w-14 h-14 rounded-xl bg-emerald-500/10 border border-emerald-500/20 shadow-inner flex items-center justify-center mb-4 opacity-70">
                 <CheckCircle2 className="w-6 h-6 text-emerald-400" />
               </div>
               <p className="text-sm font-medium text-foreground/80">No open issues</p>
@@ -543,23 +545,23 @@ export default function ObservabilityDashboard() {
               const isCircuitBreaker = issue.is_circuit_breaker;
 
               return (
-                <div key={issue.id} className={`flex items-center gap-4 px-5 py-4 hover:bg-white/[0.03] transition-colors group cursor-pointer ${isAutoFixed ? 'opacity-70' : ''} ${isCircuitBreaker ? 'bg-red-500/5' : ''}`}>
+                <div key={issue.id} className={`flex items-center gap-4 px-4 py-4 hover:bg-white/[0.03] transition-colors group cursor-pointer ${isAutoFixed ? 'opacity-70' : ''} ${isCircuitBreaker ? 'bg-red-500/5' : ''}`}>
                   {isCircuitBreaker ? (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono uppercase rounded-md border bg-red-500/15 text-red-400 border-red-500/25">
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono uppercase rounded-lg border bg-red-500/15 text-red-400 border-red-500/25">
                       <Zap className="w-3 h-3" />
                       breaker
                     </span>
                   ) : isAutoFixed ? (
-                    <span className="inline-flex px-1.5 py-0.5 text-sm font-mono uppercase rounded-md border bg-emerald-500/15 text-emerald-400 border-emerald-500/20">
+                    <span className="inline-flex px-1.5 py-0.5 text-sm font-mono uppercase rounded-lg border bg-emerald-500/15 text-emerald-400 border-emerald-500/20">
                       fixed
                     </span>
                   ) : (
-                    <span className={`inline-flex px-1.5 py-0.5 text-sm font-mono uppercase rounded-md ${badgeClass(sevBadge)}`}>
+                    <span className={`inline-flex px-1.5 py-0.5 text-sm font-mono uppercase rounded-lg ${badgeClass(sevBadge)}`}>
                       {issue.severity}
                     </span>
                   )}
                   {isAutoFixed && issue.execution_id && (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" title="Auto-healed via retry">
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" title="Auto-healed via retry">
                       <RefreshCw className="w-2.5 h-2.5" />
                       retry
                     </span>
@@ -577,7 +579,7 @@ export default function ObservabilityDashboard() {
                   {!isAutoFixed && (
                     <button
                       onClick={() => resolveHealingIssue(issue.id)}
-                      className="px-2 py-1 text-sm font-medium text-emerald-400 hover:bg-emerald-500/10 rounded-md transition-colors"
+                      className="px-2 py-1 text-sm font-medium text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
                     >
                       Resolve
                     </button>
@@ -648,7 +650,7 @@ function HealingIssueSummary({ issues }: { issues: PersonaHealingIssue[] }) {
   const trendLabel = stats.trend === 'improving' ? 'Improving' : stats.trend === 'worsening' ? 'Worsening' : 'Stable';
 
   return (
-    <div className="px-5 py-3 border-b border-primary/10 bg-secondary/20">
+    <div className="px-4 py-3 border-b border-primary/10 bg-secondary/20">
       <div className="flex items-center gap-4 flex-wrap text-sm">
         {/* Open issues */}
         <div className="flex items-center gap-1.5">
@@ -667,7 +669,7 @@ function HealingIssueSummary({ issues }: { issues: PersonaHealingIssue[] }) {
         <span className="text-primary/15">|</span>
 
         {/* Trend */}
-        <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md ${trendBg}`}>
+        <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-lg ${trendBg}`}>
           <TrendIcon className={`w-3 h-3 ${trendColor}`} />
           <span className={`font-medium ${trendColor}`}>{trendLabel}</span>
         </div>

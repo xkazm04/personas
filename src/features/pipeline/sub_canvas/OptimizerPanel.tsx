@@ -152,7 +152,7 @@ export default function OptimizerPanel({
                   <div className="flex-1" />
                   <button
                     onClick={(e) => { e.stopPropagation(); onRefresh(); }}
-                    className="p-1 rounded-md hover:bg-primary/10 transition-colors"
+                    className="p-1 rounded-lg hover:bg-primary/10 transition-colors"
                     title="Refresh analytics"
                   >
                     <RotateCcw className={`w-3 h-3 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
@@ -203,7 +203,7 @@ export default function OptimizerPanel({
                       }`}
                     >
                       <div className="flex items-start gap-2">
-                        <div className={`mt-0.5 p-1 rounded-md ${colors.bg} border ${colors.border}`}>
+                        <div className={`mt-0.5 p-1 rounded-lg ${colors.bg} border ${colors.border}`}>
                           <Icon className={`w-3 h-3 ${colors.text}`} />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -221,14 +221,14 @@ export default function OptimizerPanel({
                             <div className="flex items-center gap-1">
                               <button
                                 onClick={() => onAcceptSuggestion(s)}
-                                className="p-1 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+                                className="p-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
                                 title="Accept suggestion"
                               >
                                 <Check className="w-3 h-3" />
                               </button>
                               <button
                                 onClick={() => onDismissSuggestion(s.id)}
-                                className="p-1 rounded-md bg-primary/5 text-muted-foreground border border-primary/15 hover:bg-primary/10 transition-colors"
+                                className="p-1 rounded-lg bg-primary/5 text-muted-foreground border border-primary/15 hover:bg-primary/10 transition-colors"
                                 title="Dismiss"
                               >
                                 <X className="w-3 h-3" />

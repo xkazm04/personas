@@ -1,6 +1,7 @@
 import { useElapsedTimer } from '@/hooks';
 import { formatElapsed } from '@/lib/utils/formatters';
 import { Square, Copy, Check, Maximize2, Minimize2 } from 'lucide-react';
+import { Tooltip } from './Tooltip';
 
 interface TerminalHeaderProps {
   isRunning: boolean;
@@ -47,13 +48,14 @@ export function TerminalHeader({ isRunning, lineCount, onCopy, copied, onStop, l
 
       <div className="flex items-center gap-2">
         {onToggleFullscreen && (
-          <button
-            onClick={onToggleFullscreen}
-            className="flex items-center px-2 py-1 text-muted-foreground/70 hover:text-foreground/90 transition-colors"
-            title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
-          >
-            {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-          </button>
+          <Tooltip content={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}>
+            <button
+              onClick={onToggleFullscreen}
+              className="flex items-center px-2 py-1 text-muted-foreground/70 hover:text-foreground/90 transition-colors"
+            >
+              {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+            </button>
+          </Tooltip>
         )}
         {!isRunning && lineCount > 0 && (
           <button
@@ -68,7 +70,7 @@ export function TerminalHeader({ isRunning, lineCount, onCopy, copied, onStop, l
         {isRunning && onStop && (
           <button
             onClick={onStop}
-            className="flex items-center gap-1.5 px-3 py-1 bg-red-500/15 hover:bg-red-500/25 border border-red-500/20 text-red-400 rounded-lg text-sm font-medium transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1 bg-red-500/15 hover:bg-red-500/25 border border-red-500/20 text-red-400 rounded-xl text-sm font-medium transition-colors"
           >
             <Square className="w-3 h-3" />
             Stop

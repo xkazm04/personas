@@ -148,7 +148,7 @@ export function PromptPerformanceDashboard({
           <button
             type="button"
             onClick={() => setCompareDeltaMode((prev) => !prev)}
-            className={`ml-auto px-2 py-1 rounded-md border text-sm font-medium transition-colors ${
+            className={`ml-auto px-2 py-1 rounded-lg border text-sm font-medium transition-colors ${
               compareDeltaMode
                 ? 'bg-primary/15 border-primary/30 text-primary'
                 : 'bg-secondary/30 border-primary/10 text-muted-foreground/70 hover:bg-secondary/45'

@@ -52,7 +52,7 @@ export function DesignResultPreview({
   const suggestedChannels = result.suggested_notification_channels ?? [];
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <PromptTabsPreview designResult={result} />
 
       <ConnectorsSection

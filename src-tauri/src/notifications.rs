@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
 use tauri_plugin_notification::NotificationExt;
 
@@ -30,6 +30,19 @@ fn default_true() -> bool {
     true
 }
 
+/// A configured external notification channel (Slack, Telegram, Email).
+#[derive(Debug, Clone, Deserialize, Serialize)]
+struct ExternalChannel {
+    #[serde(rename = "type")]
+    channel_type: String,
+    #[serde(default)]
+    enabled: bool,
+    #[serde(default)]
+    credential_id: Option<String>,
+    #[serde(default)]
+    config: std::collections::HashMap<String, String>,
+}
+
 fn parse_prefs(json: Option<&str>) -> NotificationPrefs {
     match json {
         Some(json_str) => {
@@ -41,6 +54,217 @@ fn parse_prefs(json: Option<&str>) -> NotificationPrefs {
         }
         None => NotificationPrefs::default(),
     }
+}
+
+/// Parse the array-format notification channels from JSON.
+fn parse_channels(json: Option<&str>) -> Vec<ExternalChannel> {
+    match json {
+        Some(json_str) if json_str.trim_start().starts_with('[') => {
+            serde_json::from_str(json_str).unwrap_or_default()
+        }
+        _ => vec![],
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Multi-channel delivery
+// ---------------------------------------------------------------------------
+
+/// Deliver a notification to all enabled external channels (fire-and-forget).
+fn deliver_to_channels(channels_json: Option<&str>, title: &str, body: &str) {
+    let channels = parse_channels(channels_json);
+    let enabled: Vec<_> = channels.into_iter().filter(|c| c.enabled).collect();
+    if enabled.is_empty() {
+        return;
+    }
+    let title = title.to_owned();
+    let body = body.to_owned();
+    tokio::spawn(async move {
+        for ch in enabled {
+            let result = match ch.channel_type.as_str() {
+                "slack" => deliver_slack(&ch, &title, &body).await,
+                "telegram" => deliver_telegram(&ch, &title, &body).await,
+                "email" => deliver_email(&ch, &title, &body).await,
+                other => {
+                    tracing::debug!("Unknown channel type: {}", other);
+                    Ok(())
+                }
+            };
+            if let Err(e) = result {
+                tracing::warn!("Failed to deliver to {} channel: {}", ch.channel_type, e);
+            }
+        }
+    });
+}
+
+/// POST to Slack incoming webhook URL.
+async fn deliver_slack(
+    ch: &ExternalChannel,
+    title: &str,
+    body: &str,
+) -> Result<(), String> {
+    let webhook_url = ch
+        .config
+        .get("webhook_url")
+        .filter(|u| !u.is_empty())
+        .ok_or("Slack webhook_url not configured")?;
+
+    let channel = ch.config.get("channel").cloned().unwrap_or_default();
+    let text = if channel.is_empty() {
+        format!("*{}*\n{}", title, body)
+    } else {
+        format!("*{}*\n{}\n_{}_", title, body, channel)
+    };
+
+    let payload = serde_json::json!({ "text": text });
+
+    let resp = reqwest::Client::new()
+        .post(webhook_url)
+        .json(&payload)
+        .timeout(std::time::Duration::from_secs(10))
+        .send()
+        .await
+        .map_err(|e| format!("Slack request failed: {e}"))?;
+
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let body = resp.text().await.unwrap_or_default();
+        return Err(format!("Slack returned {status}: {body}"));
+    }
+    Ok(())
+}
+
+/// Send message via Telegram Bot API.
+async fn deliver_telegram(
+    ch: &ExternalChannel,
+    title: &str,
+    body: &str,
+) -> Result<(), String> {
+    let bot_token = ch
+        .config
+        .get("bot_token")
+        .filter(|t| !t.is_empty())
+        .ok_or("Telegram bot_token not configured")?;
+    let chat_id = ch
+        .config
+        .get("chat_id")
+        .filter(|c| !c.is_empty())
+        .ok_or("Telegram chat_id not configured")?;
+
+    let text = format!("*{}*\n{}", title, body);
+    let url = format!("https://api.telegram.org/bot{bot_token}/sendMessage");
+
+    let resp = reqwest::Client::new()
+        .post(&url)
+        .json(&serde_json::json!({
+            "chat_id": chat_id,
+            "text": text,
+            "parse_mode": "Markdown",
+        }))
+        .timeout(std::time::Duration::from_secs(10))
+        .send()
+        .await
+        .map_err(|e| format!("Telegram request failed: {e}"))?;
+
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let body = resp.text().await.unwrap_or_default();
+        return Err(format!("Telegram returned {status}: {body}"));
+    }
+    Ok(())
+}
+
+/// Send email via HTTP email service (SendGrid / Resend).
+/// Supports two providers detected by the presence of config keys:
+///   - `sendgrid_api_key` → SendGrid v3 API
+///   - `resend_api_key`   → Resend API
+/// Falls back to no-op if neither is configured.
+async fn deliver_email(
+    ch: &ExternalChannel,
+    title: &str,
+    body: &str,
+) -> Result<(), String> {
+    let to = ch
+        .config
+        .get("to")
+        .filter(|t| !t.is_empty())
+        .ok_or("Email 'to' address not configured")?;
+    let from = ch
+        .config
+        .get("from")
+        .cloned()
+        .unwrap_or_else(|| "noreply@personas.app".to_string());
+
+    if let Some(api_key) = ch.config.get("sendgrid_api_key").filter(|k| !k.is_empty()) {
+        return send_via_sendgrid(api_key, &from, to, title, body).await;
+    }
+    if let Some(api_key) = ch.config.get("resend_api_key").filter(|k| !k.is_empty()) {
+        return send_via_resend(api_key, &from, to, title, body).await;
+    }
+
+    Err("No email provider configured (set sendgrid_api_key or resend_api_key)".into())
+}
+
+async fn send_via_sendgrid(
+    api_key: &str,
+    from: &str,
+    to: &str,
+    subject: &str,
+    body: &str,
+) -> Result<(), String> {
+    let payload = serde_json::json!({
+        "personalizations": [{ "to": [{ "email": to }] }],
+        "from": { "email": from },
+        "subject": subject,
+        "content": [{ "type": "text/plain", "value": body }],
+    });
+
+    let resp = reqwest::Client::new()
+        .post("https://api.sendgrid.com/v3/mail/send")
+        .bearer_auth(api_key)
+        .json(&payload)
+        .timeout(std::time::Duration::from_secs(10))
+        .send()
+        .await
+        .map_err(|e| format!("SendGrid request failed: {e}"))?;
+
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let text = resp.text().await.unwrap_or_default();
+        return Err(format!("SendGrid returned {status}: {text}"));
+    }
+    Ok(())
+}
+
+async fn send_via_resend(
+    api_key: &str,
+    from: &str,
+    to: &str,
+    subject: &str,
+    body: &str,
+) -> Result<(), String> {
+    let payload = serde_json::json!({
+        "from": from,
+        "to": [to],
+        "subject": subject,
+        "text": body,
+    });
+
+    let resp = reqwest::Client::new()
+        .post("https://api.resend.com/emails")
+        .bearer_auth(api_key)
+        .json(&payload)
+        .timeout(std::time::Duration::from_secs(10))
+        .send()
+        .await
+        .map_err(|e| format!("Resend request failed: {e}"))?;
+
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let text = resp.text().await.unwrap_or_default();
+        return Err(format!("Resend returned {status}: {text}"));
+    }
+    Ok(())
 }
 
 // ---------------------------------------------------------------------------
@@ -58,11 +282,10 @@ pub fn notify_execution_completed(
         return;
     }
     let duration_str = format!("{:.1}s", duration_ms as f64 / 1000.0);
-    send(
-        app,
-        &format!("Execution {status}"),
-        &format!("{persona_name} finished in {duration_str}"),
-    );
+    let title = format!("Execution {}", status);
+    let body = format!("{} finished in {}", persona_name, duration_str);
+    send(app, &title, &body);
+    deliver_to_channels(channels, &title, &body);
 }
 
 pub fn notify_manual_review(
@@ -74,11 +297,10 @@ pub fn notify_manual_review(
     if !parse_prefs(channels).manual_review {
         return;
     }
-    send(
-        app,
-        "Manual Review Needed",
-        &format!("{persona_name}: {title}"),
-    );
+    let heading = "Manual Review Needed";
+    let body = format!("{}: {}", persona_name, title);
+    send(app, heading, &body);
+    deliver_to_channels(channels, heading, &body);
 }
 
 pub fn notify_new_message(
@@ -90,11 +312,9 @@ pub fn notify_new_message(
     if !parse_prefs(channels).new_message {
         return;
     }
-    send(
-        app,
-        &format!("Message from {persona_name}"),
-        title,
-    );
+    let heading = format!("Message from {}", persona_name);
+    send(app, &heading, title);
+    deliver_to_channels(channels, &heading, title);
 }
 
 pub fn notify_healing_issue(
@@ -117,11 +337,9 @@ pub fn notify_healing_issue(
         Some(fix) => format!("{persona_name}: {title}\nFix: {fix}"),
         None => format!("{persona_name}: {title}"),
     };
-    send(
-        app,
-        &format!("Healing Alert ({severity})"),
-        &body,
-    );
+    let heading = format!("Healing Alert ({})", severity);
+    send(app, &heading, &body);
+    deliver_to_channels(channels, &heading, &body);
 }
 
 pub fn notify_n8n_transform_completed(
@@ -158,7 +376,31 @@ pub fn send_app_notification(
 }
 
 // ---------------------------------------------------------------------------
-// Low-level send
+// Test notification command — delivers a test message to a single channel
+// ---------------------------------------------------------------------------
+
+#[tauri::command]
+pub async fn test_notification_channel(
+    channel_json: String,
+) -> Result<String, String> {
+    let channel: ExternalChannel = serde_json::from_str(&channel_json)
+        .map_err(|e| format!("Invalid channel config: {e}"))?;
+
+    let title = "Personas — Test Notification";
+    let body = "If you see this, your notification channel is working correctly.";
+
+    match channel.channel_type.as_str() {
+        "slack" => deliver_slack(&channel, title, body).await?,
+        "telegram" => deliver_telegram(&channel, title, body).await?,
+        "email" => deliver_email(&channel, title, body).await?,
+        other => return Err(format!("Unknown channel type: {other}")),
+    }
+
+    Ok("Notification delivered successfully".into())
+}
+
+// ---------------------------------------------------------------------------
+// Low-level OS send
 // ---------------------------------------------------------------------------
 
 fn send(app: &AppHandle, title: &str, body: &str) {

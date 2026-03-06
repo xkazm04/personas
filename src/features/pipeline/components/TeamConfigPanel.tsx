@@ -30,6 +30,7 @@ function extractToolCount(designResult: string | null): number {
     const dr = JSON.parse(designResult) as DesignAnalysisResult;
     return dr.suggested_tools?.length ?? 0;
   } catch {
+    // intentional: non-critical — JSON parse fallback
     return 0;
   }
 }
@@ -115,7 +116,7 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-5">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* Persona Info */}
           <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary/40 border border-primary/10">
             <PersonaAvatar icon={personaIcon} color={personaColor} size="lg" />
@@ -142,7 +143,7 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
               <StatPill icon={Zap} label="Triggers" value={String(stats.triggerCount)} color="#f59e0b" />
               <StatPill icon={Link} label="Connectors" value={String(stats.connectorCount)} color="#10b981" />
               {stats.lastRun && (
-                <div className="col-span-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-secondary/30 border border-primary/8">
+                <div className="col-span-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-secondary/30 border border-primary/8">
                   <Clock className="w-3 h-3 text-muted-foreground/50 shrink-0" />
                   <span className="text-sm text-muted-foreground/70">Last run</span>
                   <span className="text-sm text-foreground/80 font-medium ml-auto">{formatRelativeTime(stats.lastRun)}</span>
@@ -161,7 +162,7 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
                 <button
                   key={role.value}
                   onClick={() => onRoleChange(member.id, role.value)}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg border transition-all ${
+                  className={`w-full text-left px-3 py-2.5 rounded-xl border transition-all ${
                     member.role === role.value
                       ? 'bg-indigo-500/10 border-indigo-500/25'
                       : 'bg-secondary/30 border-primary/10 hover:bg-secondary/50'
@@ -198,13 +199,13 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
                       onRemove(member.id);
                       onClose();
                     }}
-                    className="flex-1 px-3 py-1.5 text-sm font-medium rounded-lg bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors"
+                    className="flex-1 px-3 py-1.5 text-sm font-medium rounded-xl bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors"
                   >
                     Confirm
                   </button>
                   <button
                     onClick={() => setConfirmRemove(false)}
-                    className="flex-1 px-3 py-1.5 text-sm font-medium rounded-lg bg-secondary/50 text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/70 transition-colors"
+                    className="flex-1 px-3 py-1.5 text-sm font-medium rounded-xl bg-secondary/50 text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/70 transition-colors"
                   >
                     Cancel
                   </button>
@@ -217,7 +218,7 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
                 onClick={() => setConfirmRemove(true)}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-red-500/20 bg-red-500/5 text-red-400 hover:bg-red-500/15 text-sm font-medium transition-all"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-red-500/20 bg-red-500/5 text-red-400 hover:bg-red-500/15 text-sm font-medium transition-all"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 Remove from Team
@@ -233,7 +234,7 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
 /** Compact stat pill for the stats grid */
 function StatPill({ icon: Icon, label, value, color }: { icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; label: string; value: string; color: string }) {
   return (
-    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-secondary/30 border border-primary/8">
+    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-secondary/30 border border-primary/8">
       <Icon className="w-3 h-3 shrink-0" style={{ color: color + 'aa' }} />
       <span className="text-sm text-muted-foreground/70 truncate">{label}</span>
       <span className="text-sm text-foreground/80 font-semibold ml-auto">{value}</span>

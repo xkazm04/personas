@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Smile } from 'lucide-react';
 import { useClickOutside } from '@/hooks/utility/useClickOutside';
+import { useViewportClampAbsolute } from '@/hooks/utility/useViewportClamp';
 import { IconSelector, EMOJI_PRESETS } from '@/features/shared/components/IconSelector';
 import { sanitizeIconUrl } from '@/lib/utils/sanitizeUrl';
 import type { ConnectorDefinition } from '@/lib/types/types';
@@ -16,8 +17,10 @@ interface PopupIconSelectorProps {
 export function PopupIconSelector({ value, onChange, connectors = [], size = 'sm' }: PopupIconSelectorProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
   const close = useCallback(() => setOpen(false), []);
   useClickOutside(containerRef, open, close);
+  const clampStyle = useViewportClampAbsolute(popupRef, open);
 
   const handleChange = (icon: string) => {
     onChange(icon);
@@ -55,11 +58,13 @@ export function PopupIconSelector({ value, onChange, connectors = [], size = 'sm
       <AnimatePresence>
         {open && (
           <motion.div
+            ref={popupRef}
             initial={{ opacity: 0, y: -4, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.97 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
             className="absolute top-full mt-1 left-0 bg-background border border-primary/15 rounded-xl shadow-lg z-50 p-3 min-w-[260px]"
+            style={{ transform: clampStyle.transform }}
           >
             <IconSelector
               value={value}

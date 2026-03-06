@@ -247,7 +247,7 @@ export default function ManualReviewList() {
               <button
                 onClick={toggleSelectAll}
                 data-testid="review-select-all-btn"
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm text-muted-foreground/90 hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm text-muted-foreground/90 hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
               >
                 {activeSelectionCount === selectablePendingIds.size ? (
                   <CheckSquare className="w-3.5 h-3.5" />
@@ -342,7 +342,7 @@ export default function ManualReviewList() {
                           <td className="px-3 py-2.5 align-middle min-w-[120px]">
                             <div className="flex items-center gap-2">
                               <div
-                                className="w-6 h-6 rounded-md flex items-center justify-center text-sm border border-primary/15 flex-shrink-0"
+                                className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0"
                                 style={{ backgroundColor: (review.persona_color || '#6366f1') + '15' }}
                               >
                                 {review.persona_icon || '?'}
@@ -372,7 +372,7 @@ export default function ManualReviewList() {
 
                           {/* Status badge */}
                           <td className="px-3 py-2.5 align-middle w-24">
-                            <span className={`inline-block px-2 py-0.5 rounded-md text-sm font-medium border ${status.bgColor} ${status.color} ${status.borderColor}`}>
+                            <span className={`inline-block px-2 py-0.5 rounded-lg text-sm font-medium border ${status.bgColor} ${status.color} ${status.borderColor}`}>
                               {statusLabel}
                             </span>
                           </td>
@@ -407,7 +407,7 @@ export default function ManualReviewList() {
                   <button
                     onClick={() => handleModalAction('approved')}
                     disabled={isModalProcessing}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Check className="w-3.5 h-3.5" />
                     {isModalProcessing ? 'Processing…' : 'Approve'}
@@ -415,7 +415,7 @@ export default function ManualReviewList() {
                   <button
                     onClick={() => handleModalAction('rejected')}
                     disabled={isModalProcessing}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <X className="w-3.5 h-3.5" />
                     {isModalProcessing ? 'Processing…' : 'Reject'}
@@ -513,14 +513,14 @@ export default function ManualReviewList() {
                   <button
                     onClick={() => setConfirmAction(null)}
                     disabled={isBulkProcessing}
-                    className="px-3 py-1.5 rounded-lg text-sm border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 transition-colors"
+                    className="px-3 py-1.5 rounded-xl text-sm border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={() => handleBulkAction(confirmAction)}
                     disabled={isBulkProcessing}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors flex items-center gap-1.5 ${
+                    className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-colors flex items-center gap-1.5 ${
                       confirmAction === 'approved'
                         ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25'
                         : 'bg-red-500/15 text-red-400 border-red-500/30 hover:bg-red-500/25'
@@ -538,20 +538,20 @@ export default function ManualReviewList() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setSelectedIds(new Set())}
-                    className="px-3 py-1.5 rounded-lg text-sm border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 transition-colors"
+                    className="px-3 py-1.5 rounded-xl text-sm border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 transition-colors"
                   >
                     Deselect
                   </button>
                   <button
                     onClick={() => setConfirmAction('approved')}
-                    className="px-3 py-1.5 rounded-lg text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors flex items-center gap-1.5"
                   >
                     <Check className="w-3.5 h-3.5" />
                     Approve All
                   </button>
                   <button
                     onClick={() => setConfirmAction('rejected')}
-                    className="px-3 py-1.5 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-xl text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors flex items-center gap-1.5"
                   >
                     <X className="w-3.5 h-3.5" />
                     Reject All

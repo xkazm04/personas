@@ -63,7 +63,7 @@ function FindingRow({ finding }: { finding: ScanFinding }) {
             <p className="text-sm uppercase tracking-wider text-muted-foreground/40 mb-1">
               Source: <span className="text-muted-foreground/60">{finding.source}</span>
             </p>
-            <pre className="text-sm text-muted-foreground/70 whitespace-pre-wrap font-mono bg-black/20 rounded-md px-2.5 py-2 leading-relaxed">
+            <pre className="text-sm text-muted-foreground/70 whitespace-pre-wrap font-mono bg-black/20 rounded-xl px-2.5 py-2 leading-relaxed">
               {finding.context}
             </pre>
           </div>

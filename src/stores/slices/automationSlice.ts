@@ -7,13 +7,16 @@ import type {
   CreateAutomationInput,
   UpdateAutomationInput,
 } from "@/lib/bindings/PersonaAutomation";
-import type { DeployAutomationInput, DeployAutomationResult } from "@/api/automations";
+import type { DeployAutomationInput, DeployAutomationResult, ZapierZap, ZapierWebhookResult } from "@/api/automations";
 import * as api from "@/api/automations";
+import { useToastStore } from "@/stores/toastStore";
 
 export interface AutomationSlice {
   // State
   automations: PersonaAutomation[];
   automationRuns: Record<string, AutomationRun[]>;
+  zapierZaps: ZapierZap[];
+  zapierZapsLoading: boolean;
 
   // Actions
   fetchAutomations: (personaId: string) => Promise<void>;
@@ -24,18 +27,22 @@ export interface AutomationSlice {
   testAutomation: (id: string) => Promise<AutomationRun | null>;
   fetchAutomationRuns: (automationId: string) => Promise<void>;
   deployAutomation: (input: DeployAutomationInput) => Promise<DeployAutomationResult | null>;
+  fetchZapierZaps: (credentialId: string) => Promise<void>;
+  zapierTestWebhook: (credentialId: string, webhookUrl: string, body?: Record<string, unknown>) => Promise<ZapierWebhookResult | null>;
 }
 
 export const createAutomationSlice: StateCreator<PersonaStore, [], [], AutomationSlice> = (set, get) => ({
   automations: [],
   automationRuns: {},
+  zapierZaps: [],
+  zapierZapsLoading: false,
 
   fetchAutomations: async (personaId) => {
     try {
       const automations = await api.listAutomations(personaId);
       set({ automations });
     } catch {
-      // Non-critical — silently ignore like fetchPersonaSummaries
+      useToastStore.getState().addToast('Failed to load automations', 'error');
     }
   },
 
@@ -100,7 +107,7 @@ export const createAutomationSlice: StateCreator<PersonaStore, [], [], Automatio
         automationRuns: { ...get().automationRuns, [automationId]: runs },
       });
     } catch {
-      // Non-critical
+      useToastStore.getState().addToast('Failed to load automation runs', 'error');
     }
   },
 
@@ -111,6 +118,26 @@ export const createAutomationSlice: StateCreator<PersonaStore, [], [], Automatio
       return result;
     } catch (err) {
       set({ error: errMsg(err, "Failed to deploy automation") });
+      return null;
+    }
+  },
+
+  fetchZapierZaps: async (credentialId) => {
+    set({ zapierZapsLoading: true });
+    try {
+      const zaps = await api.zapierListZaps(credentialId);
+      set({ zapierZaps: zaps, zapierZapsLoading: false });
+    } catch {
+      set({ zapierZapsLoading: false });
+      useToastStore.getState().addToast('Failed to load Zapier zaps', 'error');
+    }
+  },
+
+  zapierTestWebhook: async (credentialId, webhookUrl, body) => {
+    try {
+      return await api.zapierTriggerWebhook(credentialId, webhookUrl, body);
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to trigger Zapier webhook") });
       return null;
     }
   },

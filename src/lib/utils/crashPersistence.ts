@@ -29,6 +29,6 @@ export function persistCrash(
       JSON.stringify(crashes.slice(0, MAX_ENTRIES)),
     );
   } catch {
-    // localStorage may be full or unavailable
+    // intentional: non-critical -- localStorage may be full or unavailable
   }
 }

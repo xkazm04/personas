@@ -1,6 +1,8 @@
 import { forwardRef, useState, useRef, useCallback, useMemo, useEffect, type SelectHTMLAttributes } from 'react';
 import { ChevronDown, Search, Check } from 'lucide-react';
 import { useClickOutside } from '@/hooks/utility/useClickOutside';
+import { useDebounce } from '@/hooks/utility/useDebounce';
+import { highlightMatch } from '@/lib/ui/highlightMatch';
 
 export interface ThemedSelectOption {
   value: string;
@@ -46,11 +48,13 @@ function FilterableSelect({
     if (open) setTimeout(() => inputRef.current?.focus(), 0);
   }, [open]);
 
+  const debouncedQuery = useDebounce(query, 150);
+
   const filtered = useMemo(() => {
-    if (!query) return options;
-    const q = query.toLowerCase();
+    if (!debouncedQuery) return options;
+    const q = debouncedQuery.toLowerCase();
     return options.filter((o) => o.label.toLowerCase().includes(q) || o.value.toLowerCase().includes(q));
-  }, [options, query]);
+  }, [options, debouncedQuery]);
 
   const selectedLabel = options.find((o) => o.value === value)?.label;
 
@@ -61,7 +65,7 @@ function FilterableSelect({
 
   const baseClasses = [
     'w-full appearance-none cursor-pointer',
-    'px-3 py-2 pr-8 text-sm rounded-lg',
+    'px-3 py-2 pr-8 text-sm rounded-xl',
     'bg-background/50 text-foreground border border-primary/15',
     'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/30',
     'transition-all text-left',
@@ -109,7 +113,7 @@ function FilterableSelect({
                 <span className="w-4 flex-shrink-0">
                   {opt.value === value && <Check className="w-3.5 h-3.5 text-primary" />}
                 </span>
-                <span className="truncate">{opt.label}</span>
+                <span className="truncate">{highlightMatch(opt.label, debouncedQuery.trim())}</span>
               </button>
             ))}
           </div>
@@ -148,7 +152,7 @@ export const ThemedSelect = forwardRef<HTMLSelectElement, ThemedSelectProps>(
           ref={ref}
           className={[
             'w-full appearance-none cursor-pointer',
-            'px-3 py-2 pr-8 text-sm rounded-lg',
+            'px-3 py-2 pr-8 text-sm rounded-xl',
             'bg-background/50 text-foreground border border-primary/15',
             'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/30',
             'transition-all',

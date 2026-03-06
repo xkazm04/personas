@@ -7,12 +7,14 @@ use crate::db::repos::execution::tool_usage;
 use crate::db::repos::resources::tools as repo;
 use crate::engine::tool_runner::{self, ToolInvocationResult};
 use crate::error::AppError;
+use crate::ipc_auth::{require_auth_sync, require_privileged};
 use crate::AppState;
 
 #[tauri::command]
 pub fn list_tool_definitions(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<PersonaToolDefinition>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_all_definitions(&state.db)
 }
 
@@ -21,6 +23,7 @@ pub fn get_tool_definition(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<PersonaToolDefinition, AppError> {
+    require_auth_sync(&state)?;
     repo::get_definition_by_id(&state.db, &id)
 }
 
@@ -29,6 +32,7 @@ pub fn get_tool_definitions_by_category(
     state: State<'_, Arc<AppState>>,
     category: String,
 ) -> Result<Vec<PersonaToolDefinition>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_definitions_by_category(&state.db, &category)
 }
 
@@ -37,6 +41,7 @@ pub fn create_tool_definition(
     state: State<'_, Arc<AppState>>,
     input: CreateToolDefinitionInput,
 ) -> Result<PersonaToolDefinition, AppError> {
+    require_auth_sync(&state)?;
     repo::create_definition(&state.db, input)
 }
 
@@ -46,6 +51,7 @@ pub fn update_tool_definition(
     id: String,
     input: UpdateToolDefinitionInput,
 ) -> Result<PersonaToolDefinition, AppError> {
+    require_auth_sync(&state)?;
     repo::update_definition(&state.db, &id, input)
 }
 
@@ -54,6 +60,7 @@ pub fn delete_tool_definition(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     repo::delete_definition(&state.db, &id)
 }
 
@@ -64,6 +71,7 @@ pub fn assign_tool(
     tool_id: String,
     tool_config: Option<String>,
 ) -> Result<PersonaTool, AppError> {
+    require_auth_sync(&state)?;
     repo::assign_tool(&state.db, &persona_id, &tool_id, tool_config)
 }
 
@@ -73,6 +81,7 @@ pub fn unassign_tool(
     persona_id: String,
     tool_id: String,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     repo::unassign_tool(&state.db, &persona_id, &tool_id)
 }
 
@@ -82,6 +91,7 @@ pub fn bulk_assign_tools(
     persona_id: String,
     tool_ids: Vec<String>,
 ) -> Result<u32, AppError> {
+    require_auth_sync(&state)?;
     repo::bulk_assign_tools(&state.db, &persona_id, &tool_ids)
 }
 
@@ -91,6 +101,7 @@ pub fn bulk_unassign_tools(
     persona_id: String,
     tool_ids: Vec<String>,
 ) -> Result<u32, AppError> {
+    require_auth_sync(&state)?;
     repo::bulk_unassign_tools(&state.db, &persona_id, &tool_ids)
 }
 
@@ -100,6 +111,7 @@ pub fn get_tool_usage_summary(
     since: String,
     persona_id: Option<String>,
 ) -> Result<Vec<serde_json::Value>, AppError> {
+    require_auth_sync(&state)?;
     tool_usage::get_usage_summary(&state.db, &since, persona_id.as_deref())
 }
 
@@ -109,6 +121,7 @@ pub fn get_tool_usage_over_time(
     since: String,
     persona_id: Option<String>,
 ) -> Result<Vec<serde_json::Value>, AppError> {
+    require_auth_sync(&state)?;
     tool_usage::get_usage_over_time(&state.db, &since, persona_id.as_deref())
 }
 
@@ -117,6 +130,7 @@ pub fn get_tool_usage_by_persona(
     state: State<'_, Arc<AppState>>,
     since: String,
 ) -> Result<Vec<serde_json::Value>, AppError> {
+    require_auth_sync(&state)?;
     tool_usage::get_usage_by_persona(&state.db, &since)
 }
 
@@ -127,6 +141,7 @@ pub async fn invoke_tool_direct(
     persona_id: String,
     input_json: String,
 ) -> Result<ToolInvocationResult, AppError> {
+    require_privileged(&state, "invoke_tool_direct").await?;
     let tool = repo::get_definition_by_id(&state.db, &tool_id)?;
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
     tool_runner::invoke_tool_direct(&state.db, &tool, &persona_id, &persona.name, &input_json).await

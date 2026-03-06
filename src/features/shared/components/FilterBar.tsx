@@ -65,7 +65,7 @@ export function FilterBar<T extends string = string>({
             key={opt.id}
             onClick={() => onChange(opt.id)}
             data-testid={`filter-btn-${opt.id}`}
-            className={`relative px-3 py-1.5 rounded-lg text-sm font-medium transition-all border flex items-center gap-1.5 ${
+            className={`relative px-3 py-1.5 rounded-xl text-sm font-medium transition-all border flex items-center gap-1.5 ${
               isActive
                 ? 'bg-primary/15 text-primary border-primary/30'
                 : 'bg-secondary/30 text-muted-foreground/80 border-primary/15 hover:text-muted-foreground hover:bg-secondary/50'

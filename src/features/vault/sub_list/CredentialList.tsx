@@ -352,7 +352,7 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
         >
           {/* Heading */}
           <div className="text-center pt-6 pb-2">
-            <div className="w-12 h-12 mx-auto rounded-2xl bg-secondary/60 border border-primary/15 flex items-center justify-center mb-3">
+            <div className="w-12 h-12 mx-auto rounded-xl bg-secondary/60 border border-primary/15 flex items-center justify-center mb-3">
               <Key className="w-6 h-6 text-muted-foreground/90" />
             </div>
             <h3 className="text-sm font-medium text-foreground/90">Connect your first service</h3>
@@ -431,7 +431,7 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
                     <button
                       key={connector.id}
                       onClick={() => onQuickStart(connector)}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-primary/10 bg-secondary/20 hover:bg-secondary/50 hover:border-primary/20 transition-all text-sm"
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-primary/10 bg-secondary/20 hover:bg-secondary/50 hover:border-primary/20 transition-all text-sm"
                     >
                       <div
                         className="w-4.5 h-4.5 rounded flex items-center justify-center"

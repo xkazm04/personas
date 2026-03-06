@@ -111,6 +111,12 @@ pub struct CompositeSubscription {
     pub pool: DbPool,
 }
 
+/// Auto-rollback subscription: periodically checks personas with auto-rollback
+/// enabled and reverts to the previous prompt version when error rate exceeds 2x.
+pub struct AutoRollbackSubscription {
+    pub pool: DbPool,
+}
+
 // ---------------------------------------------------------------------------
 // Implementations
 // ---------------------------------------------------------------------------
@@ -279,6 +285,27 @@ impl ReactiveSubscription for CompositeSubscription {
 
     async fn tick(&self) {
         super::composite::composite_tick(&self.pool);
+    }
+}
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for AutoRollbackSubscription {
+    fn name(&self) -> &'static str {
+        "auto_rollback"
+    }
+
+    fn interval(&self) -> Duration {
+        // Check every 5 minutes — auto-rollback doesn't need to be instant
+        Duration::from_secs(300)
+    }
+
+    fn initial_delay(&self) -> Duration {
+        // Wait 60 seconds after startup before first check
+        Duration::from_secs(60)
+    }
+
+    async fn tick(&self) {
+        super::auto_rollback::auto_rollback_tick(&self.pool);
     }
 }
 

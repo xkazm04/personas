@@ -62,7 +62,7 @@ export function CredentialCardDetails({
         <button
           onClick={() => health.checkStored()}
           disabled={isHealthchecking}
-          className="flex items-center gap-1.5 px-4 py-2 min-h-[36px] bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 rounded-lg text-sm font-medium transition-all disabled:opacity-50"
+          className="flex items-center gap-1.5 px-4 py-2 min-h-[36px] bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 rounded-xl text-sm font-medium transition-all disabled:opacity-50"
         >
           {isHealthchecking ? (
             <div className="w-3.5 h-3.5 border border-emerald-400 border-t-transparent rounded-full animate-spin" />
@@ -73,7 +73,7 @@ export function CredentialCardDetails({
         </button>
         <button
           onClick={onStartEditing}
-          className="flex items-center gap-1.5 px-4 py-2 min-h-[36px] bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/90 rounded-lg text-sm font-medium transition-all"
+          className="flex items-center gap-1.5 px-4 py-2 min-h-[36px] bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/90 rounded-xl text-sm font-medium transition-all"
         >
           <Pencil className="w-3.5 h-3.5" />
           Edit
@@ -171,7 +171,7 @@ export function CredentialCardDetails({
               setExpandedSection(expandedSection === tab.key ? null : tab.key);
               if (tab.key === 'rotation' && expandedSection !== 'rotation') fetchRotationStatus();
             }}
-            className={`relative flex items-center gap-1.5 px-3 py-2 min-h-[38px] rounded-md text-sm font-medium transition-colors ${
+            className={`relative flex items-center gap-1.5 px-3 py-2 min-h-[38px] rounded-xl text-sm font-medium transition-colors ${
               expandedSection === tab.key
                 ? 'text-foreground'
                 : 'text-muted-foreground/70 hover:text-foreground/80 hover:bg-secondary/25'

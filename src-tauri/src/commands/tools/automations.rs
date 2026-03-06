@@ -4,6 +4,7 @@ use tauri::State;
 use crate::db::models::{AutomationRun, CreateAutomationInput, PersonaAutomation, UpdateAutomationInput};
 use crate::db::repos::resources::automations as repo;
 use crate::error::AppError;
+use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 #[tauri::command]
@@ -11,6 +12,7 @@ pub fn list_automations(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
 ) -> Result<Vec<PersonaAutomation>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_by_persona(&state.db, &persona_id)
 }
 
@@ -19,6 +21,7 @@ pub fn get_automation(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<PersonaAutomation, AppError> {
+    require_auth_sync(&state)?;
     repo::get_by_id(&state.db, &id)
 }
 
@@ -27,6 +30,7 @@ pub fn create_automation(
     state: State<'_, Arc<AppState>>,
     input: CreateAutomationInput,
 ) -> Result<PersonaAutomation, AppError> {
+    require_auth_sync(&state)?;
     repo::create(&state.db, input)
 }
 
@@ -36,6 +40,7 @@ pub fn update_automation(
     id: String,
     input: UpdateAutomationInput,
 ) -> Result<PersonaAutomation, AppError> {
+    require_auth_sync(&state)?;
     repo::update(&state.db, &id, input)
 }
 
@@ -44,6 +49,7 @@ pub fn delete_automation(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     repo::delete(&state.db, &id)
 }
 
@@ -54,6 +60,7 @@ pub async fn trigger_automation(
     input_data: Option<String>,
     execution_id: Option<String>,
 ) -> Result<AutomationRun, AppError> {
+    require_auth(&state).await?;
     let automation = repo::get_by_id(&state.db, &id)?;
 
     if automation.deployment_status != "active" {
@@ -77,6 +84,7 @@ pub async fn test_automation_webhook(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<AutomationRun, AppError> {
+    require_auth(&state).await?;
     let automation = repo::get_by_id(&state.db, &id)?;
 
     // For testing, we send a minimal sample payload
@@ -100,5 +108,6 @@ pub fn get_automation_runs(
     automation_id: String,
     limit: Option<i64>,
 ) -> Result<Vec<AutomationRun>, AppError> {
+    require_auth_sync(&state)?;
     repo::get_runs_by_automation(&state.db, &automation_id, limit)
 }

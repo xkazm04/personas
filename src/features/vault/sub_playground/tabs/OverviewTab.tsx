@@ -72,7 +72,7 @@ export function OverviewTab({
       usePersonaStore.setState((s) => ({
         credentials: s.credentials.map((c) => (c.id === credential.id ? updated : c)),
       }));
-    } catch { /* best-effort */ }
+    } catch { /* intentional: non-critical — tag metadata update is best-effort */ }
   }, [credential]);
 
   const addTag = useCallback((tag: string) => {
@@ -97,7 +97,7 @@ export function OverviewTab({
       setCopiedId(true);
       if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
       copiedTimerRef.current = setTimeout(() => setCopiedId(false), 1500);
-    } catch { /* clipboard denied */ }
+    } catch { /* intentional: non-critical — clipboard copy may be denied by browser */ }
   }, [credential.id]);
 
   useEffect(() => {
@@ -107,7 +107,7 @@ export function OverviewTab({
   }, []);
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="p-6 space-y-6">
       {editError && (
         <VaultErrorBanner message={editError} onDismiss={() => setEditError(null)} variant="inline" />
       )}
@@ -145,7 +145,7 @@ export function OverviewTab({
             <button
               onClick={() => health.checkStored()}
               disabled={isHealthchecking}
-              className="flex items-center gap-1.5 px-4 py-2 min-h-[36px] bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 rounded-lg text-sm font-medium transition-all disabled:opacity-50"
+              className="flex items-center gap-1.5 px-4 py-2 min-h-[36px] bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 rounded-xl text-sm font-medium transition-all disabled:opacity-50"
             >
               {isHealthchecking ? (
                 <div className="w-3.5 h-3.5 border border-emerald-400 border-t-transparent rounded-full animate-spin" />
@@ -156,7 +156,7 @@ export function OverviewTab({
             </button>
             <button
               onClick={() => setIsEditing(true)}
-              className="flex items-center gap-1.5 px-4 py-2 min-h-[36px] bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/90 rounded-lg text-sm font-medium transition-all"
+              className="flex items-center gap-1.5 px-4 py-2 min-h-[36px] bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/90 rounded-xl text-sm font-medium transition-all"
             >
               <Pencil className="w-3.5 h-3.5" />
               Edit Fields
@@ -167,13 +167,13 @@ export function OverviewTab({
                   <span className="text-sm text-red-400/80">Delete this credential?</span>
                   <button
                     onClick={() => onDelete(credential.id)}
-                    className="px-3 py-1.5 bg-red-500/15 hover:bg-red-500/25 border border-red-500/25 text-red-400 rounded-lg text-sm font-medium transition-all"
+                    className="px-3 py-1.5 bg-red-500/15 hover:bg-red-500/25 border border-red-500/25 text-red-400 rounded-xl text-sm font-medium transition-all"
                   >
                     Confirm
                   </button>
                   <button
                     onClick={() => setShowDeleteConfirm(false)}
-                    className="px-3 py-1.5 bg-secondary/40 hover:bg-secondary/60 border border-primary/15 text-foreground/70 rounded-lg text-sm font-medium transition-all"
+                    className="px-3 py-1.5 bg-secondary/40 hover:bg-secondary/60 border border-primary/15 text-foreground/70 rounded-xl text-sm font-medium transition-all"
                   >
                     Cancel
                   </button>

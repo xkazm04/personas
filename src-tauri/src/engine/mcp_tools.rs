@@ -14,6 +14,15 @@ use crate::db::repos::resources::credentials as cred_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
 
+/// Maximum allowed MCP JSON-RPC response payload (10 MB).
+const MAX_MCP_PAYLOAD_BYTES: usize = 10 * 1024 * 1024;
+
+/// Maximum nesting depth for MCP tool arguments.
+const MAX_ARGUMENT_DEPTH: usize = 20;
+
+/// Maximum serialized size for MCP tool arguments (1 MB).
+const MAX_ARGUMENT_BYTES: usize = 1024 * 1024;
+
 /// An MCP tool definition as returned by `tools/list`.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct McpTool {
@@ -61,12 +70,18 @@ pub async fn list_tools(
 }
 
 /// Execute a tool on an MCP server.
+///
+/// Validates arguments against structural limits (depth, size) and the tool's
+/// declared `input_schema` before forwarding to the MCP server.
 pub async fn execute_tool(
     pool: &DbPool,
     credential_id: &str,
     tool_name: &str,
     arguments: serde_json::Value,
 ) -> Result<McpToolResult, AppError> {
+    // Structural validation: reject oversized or deeply nested arguments early.
+    validate_argument_structure(&arguments)?;
+
     let credential = cred_repo::get_by_id(pool, credential_id)?;
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
 
@@ -181,8 +196,16 @@ async fn execute_tool_stdio(
     });
     write_jsonrpc(&mut child, &initialized).await?;
 
+    // List tools to get input_schema for validation
+    let list_req = jsonrpc_request(2, "tools/list", serde_json::json!({}));
+    write_jsonrpc(&mut child, &list_req).await?;
+    let list_resp = read_jsonrpc(&mut child).await?;
+
+    let schema = extract_tool_schema(&list_resp, tool_name)?;
+    validate_arguments_against_schema(arguments, schema.as_ref())?;
+
     // Call tool
-    let call_req = jsonrpc_request(2, "tools/call", serde_json::json!({
+    let call_req = jsonrpc_request(3, "tools/call", serde_json::json!({
         "name": tool_name,
         "arguments": arguments,
     }));
@@ -263,8 +286,15 @@ async fn execute_tool_sse(
     }));
     let _init_resp = send_sse_request(&client, url, auth_token, &init_payload).await?;
 
+    // List tools to get input_schema for validation
+    let list_payload = jsonrpc_request(2, "tools/list", serde_json::json!({}));
+    let list_resp = send_sse_request(&client, url, auth_token, &list_payload).await?;
+
+    let schema = extract_tool_schema(&list_resp, tool_name)?;
+    validate_arguments_against_schema(arguments, schema.as_ref())?;
+
     // Call tool
-    let call_payload = jsonrpc_request(2, "tools/call", serde_json::json!({
+    let call_payload = jsonrpc_request(3, "tools/call", serde_json::json!({
         "name": tool_name,
         "arguments": arguments,
     }));
@@ -306,6 +336,121 @@ async fn send_sse_request(
 }
 
 // ============================================================================
+// Argument validation
+// ============================================================================
+
+/// Reject arguments that exceed structural limits (depth, serialized size).
+fn validate_argument_structure(arguments: &serde_json::Value) -> Result<(), AppError> {
+    let serialized_len = serde_json::to_string(arguments)
+        .map_err(|e| AppError::Validation(format!("Cannot serialize arguments: {e}")))?
+        .len();
+
+    if serialized_len > MAX_ARGUMENT_BYTES {
+        return Err(AppError::Validation(format!(
+            "MCP tool arguments exceed maximum size ({serialized_len} bytes > {MAX_ARGUMENT_BYTES} byte limit)"
+        )));
+    }
+
+    let depth = json_depth(arguments);
+    if depth > MAX_ARGUMENT_DEPTH {
+        return Err(AppError::Validation(format!(
+            "MCP tool arguments exceed maximum nesting depth ({depth} > {MAX_ARGUMENT_DEPTH} limit)"
+        )));
+    }
+
+    Ok(())
+}
+
+/// Compute the maximum nesting depth of a JSON value.
+fn json_depth(value: &serde_json::Value) -> usize {
+    match value {
+        serde_json::Value::Array(arr) => {
+            1 + arr.iter().map(json_depth).max().unwrap_or(0)
+        }
+        serde_json::Value::Object(obj) => {
+            1 + obj.values().map(json_depth).max().unwrap_or(0)
+        }
+        _ => 0,
+    }
+}
+
+/// Extract the `input_schema` for a specific tool from a `tools/list` response.
+/// Returns `Ok(None)` if the tool exists but has no schema.
+/// Returns `Err` if the tool is not found in the server's tool list.
+fn extract_tool_schema(
+    list_resp: &serde_json::Value,
+    tool_name: &str,
+) -> Result<Option<serde_json::Value>, AppError> {
+    let tools_arr = list_resp
+        .get("result")
+        .and_then(|r| r.get("tools"))
+        .and_then(|t| t.as_array())
+        .ok_or_else(|| AppError::Internal("Invalid tools/list response".into()))?;
+
+    let tool = tools_arr
+        .iter()
+        .find(|t| t.get("name").and_then(|n| n.as_str()) == Some(tool_name))
+        .ok_or_else(|| {
+            AppError::Validation(format!(
+                "Tool '{tool_name}' not found on MCP server"
+            ))
+        })?;
+
+    Ok(tool.get("inputSchema").or_else(|| tool.get("input_schema")).cloned())
+}
+
+/// Validate arguments against the tool's declared JSON Schema.
+/// Skips validation if no schema is declared (permissive by default).
+fn validate_arguments_against_schema(
+    arguments: &serde_json::Value,
+    schema: Option<&serde_json::Value>,
+) -> Result<(), AppError> {
+    let schema = match schema {
+        Some(s) => s,
+        None => return Ok(()), // No schema declared; allow any arguments
+    };
+
+    let validator = match jsonschema::validator_for(schema) {
+        Ok(v) => v,
+        Err(e) => {
+            // If the schema itself is invalid, log and skip validation rather
+            // than blocking all calls to a tool with a broken schema.
+            tracing::warn!("MCP tool has invalid input_schema, skipping validation: {e}");
+            return Ok(());
+        }
+    };
+
+    let errors: Vec<String> = validator
+        .iter_errors(arguments)
+        .map(|err| {
+            let path = err.instance_path.to_string();
+            if path.is_empty() {
+                err.to_string()
+            } else {
+                format!("{path}: {err}")
+            }
+        })
+        .collect();
+
+    if !errors.is_empty() {
+        let summary = if errors.len() <= 3 {
+            errors.join("; ")
+        } else {
+            format!(
+                "{}; ... and {} more errors",
+                errors[..3].join("; "),
+                errors.len() - 3
+            )
+        };
+        return Err(AppError::Validation(format!(
+            "MCP tool arguments failed schema validation: {summary}"
+        )));
+    }
+
+    Ok(())
+}
+
+// ============================================================================
 // Helpers
 // ============================================================================
 
@@ -319,10 +464,16 @@ fn jsonrpc_request(id: u64, method: &str, params: serde_json::Value) -> serde_js
 }
 
 fn parse_env_vars(fields: &HashMap<String, String>) -> HashMap<String, String> {
-    fields
+    let raw: HashMap<String, String> = fields
         .get("env_vars")
-        .and_then(|v| serde_json::from_str::<HashMap<String, String>>(v).ok())
-        .unwrap_or_default()
+        .and_then(|v| serde_json::from_str(v).ok())
+        .unwrap_or_default();
+
+    raw.into_iter()
+        .filter_map(|(k, v)| {
+            super::runner::sanitize_env_name(&k).map(|safe_key| (safe_key, v))
+        })
+        .collect()
 }
 
 fn spawn_mcp_process(
@@ -399,37 +550,50 @@ async fn read_jsonrpc(
 
     let mut reader = tokio::io::BufReader::new(stdout);
 
-    // Read Content-Length header
-    let mut content_length: usize = 0;
-    loop {
-        let mut line = String::new();
-        let bytes_read = tokio::time::timeout(
-            std::time::Duration::from_secs(30),
-            reader.read_line(&mut line),
-        )
-        .await
-        .map_err(|_| AppError::Internal("Timeout reading from MCP server".into()))?
-        .map_err(|e| AppError::Internal(format!("Failed to read from MCP stdout: {e}")))?;
+    // Read headers with a total timeout (prevents slowloris-style attacks
+    // where the server sends headers one byte at a time).
+    let content_length: usize = tokio::time::timeout(
+        std::time::Duration::from_secs(30),
+        async {
+            let mut cl: usize = 0;
+            loop {
+                let mut line = String::new();
+                let bytes_read = reader
+                    .read_line(&mut line)
+                    .await
+                    .map_err(|e| AppError::Internal(format!("Failed to read from MCP stdout: {e}")))?;
 
-        if bytes_read == 0 {
-            return Err(AppError::Internal("MCP process closed stdout unexpectedly".into()));
-        }
+                if bytes_read == 0 {
+                    return Err(AppError::Internal("MCP process closed stdout unexpectedly".into()));
+                }
 
-        let trimmed = line.trim();
-        if trimmed.is_empty() {
-            break; // End of headers
-        }
+                let trimmed = line.trim();
+                if trimmed.is_empty() {
+                    break; // End of headers
+                }
 
-        if let Some(len_str) = trimmed.strip_prefix("Content-Length:") {
-            content_length = len_str
-                .trim()
-                .parse()
-                .map_err(|_| AppError::Internal("Invalid Content-Length from MCP server".into()))?;
-        }
-    }
+                if let Some(len_str) = trimmed.strip_prefix("Content-Length:") {
+                    cl = len_str
+                        .trim()
+                        .parse()
+                        .map_err(|_| AppError::Internal("Invalid Content-Length from MCP server".into()))?;
+                }
+            }
+            Ok(cl)
+        },
+    )
+    .await
+    .map_err(|_| AppError::Internal("Timeout reading headers from MCP server".into()))??;
 
     if content_length == 0 {
         return Err(AppError::Internal("MCP server sent no Content-Length header".into()));
+    }
+
+    if content_length > MAX_MCP_PAYLOAD_BYTES {
+        return Err(AppError::Internal(format!(
+            "MCP response too large: Content-Length {} exceeds limit of {} bytes",
+            content_length, MAX_MCP_PAYLOAD_BYTES,
+        )));
     }
 
     // Read exact body

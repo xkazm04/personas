@@ -31,7 +31,7 @@ export function ToolSelector() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <ToolSearchFilter
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -81,7 +81,7 @@ export function ToolSelector() {
             </span>
             <button
               onClick={handleUndo}
-              className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-lg bg-primary/15 text-primary border border-primary/25 hover:bg-primary/25 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-primary/15 text-primary border border-primary/25 hover:bg-primary/25 transition-colors"
             >
               <Undo2 className="w-3 h-3" />
               Undo

@@ -21,7 +21,7 @@ export function getTagStyle(tag: string) {
 
 function parseMetadata(metadata: string | null): Record<string, unknown> {
   if (!metadata) return {};
-  try { return JSON.parse(metadata) as Record<string, unknown>; } catch { return {}; }
+  try { return JSON.parse(metadata) as Record<string, unknown>; } catch { /* intentional: non-critical -- JSON parse fallback */ return {}; }
 }
 
 export function getCredentialTags(credential: CredentialMetadata): string[] {

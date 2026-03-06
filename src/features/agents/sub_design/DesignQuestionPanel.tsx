@@ -62,7 +62,7 @@ export function DesignQuestionPanel({
       <TransformProgress mode="analysis" lines={outputLines} isRunning={false} />
 
       {/* Question card */}
-      <div className="bg-gradient-to-br from-accent/10 via-primary/5 to-transparent border border-accent/25 rounded-[var(--radius-interactive)] p-5 space-y-4">
+      <div className="bg-gradient-to-br from-accent/10 via-primary/5 to-transparent border border-accent/25 rounded-[var(--radius-interactive)] p-4 space-y-4">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-[var(--radius-secondary)] bg-accent/10 border border-accent/25 flex items-center justify-center">
             <MessageCircleQuestion className="w-4 h-4 text-accent" />
@@ -132,7 +132,7 @@ export function DesignQuestionPanel({
               }
             }}
             disabled={!questionAnswer.trim()}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
               !questionAnswer.trim()
                 ? 'bg-secondary/40 text-muted-foreground/80 cursor-not-allowed'
                 : 'bg-accent/15 text-accent border border-accent/25 hover:bg-accent/25'
@@ -148,7 +148,7 @@ export function DesignQuestionPanel({
       {/* Cancel */}
       <button
         onClick={onCancelAnalysis}
-        className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground/90 hover:text-foreground/95 transition-colors"
+        className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium text-muted-foreground/90 hover:text-foreground/95 transition-colors"
       >
         Cancel Design
       </button>

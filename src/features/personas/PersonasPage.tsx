@@ -1,5 +1,6 @@
-import { useEffect, useState, lazy, Suspense } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { useEffect, useState, useCallback, lazy, Suspense } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useMotion } from '@/hooks/utility/useMotion';
 import { usePersonaStore } from '@/stores/personaStore';
 import Sidebar from '@/features/shared/components/Sidebar';
 import HomePage from '@/features/home/components/HomePage';
@@ -12,13 +13,15 @@ import CloudDeployPanel from '@/features/deployment/components/CloudDeployPanel'
 import SettingsPage from '@/features/settings/components/SettingsPage';
 import CreationWizard from '@/features/agents/components/CreationWizard';
 import { CredentialNavProvider } from '@/features/vault/hooks/CredentialNavContext';
+import PanelSkeleton from '@/features/shared/components/PanelSkeleton';
+import { ErrorBanner } from '@/features/shared/components/ErrorBanner';
 
 const TeamCanvas = lazy(() => import('@/features/pipeline/components/TeamCanvas'));
 const OverviewPage = lazy(() => import('@/features/overview/components/OverviewPage'));
 const GitLabPanel = lazy(() => import('@/features/gitlab/components/GitLabPanel'));
 
 export default function PersonasPage() {
-  const prefersReducedMotion = useReducedMotion();
+  const { shouldAnimate, transition } = useMotion();
   const sidebarSection = usePersonaStore((s) => s.sidebarSection);
   const cloudTab = usePersonaStore((s) => s.cloudTab);
   const selectedPersonaId = usePersonaStore((s) => s.selectedPersonaId);
@@ -36,20 +39,17 @@ export default function PersonasPage() {
 
   const fetchDetail = usePersonaStore((s) => s.fetchDetail);
 
-  const lazyFallback = (
-    <div className="flex h-full items-center justify-center text-sm text-muted-foreground/80">
-      Loading panel...
-    </div>
-  );
+  const lazyFallback = <PanelSkeleton />;
 
   // True only after fetchPersonas has settled (success or fail).
   // Prevents showing CreationWizard before the first load completes.
   const [personasFetched, setPersonasFetched] = useState(false);
 
-  useEffect(() => {
+  const runStartup = useCallback(() => {
     // Run all startup fetches in parallel and collect failures.
     // Using Promise.allSettled prevents any single call's error from overwriting
     // the others — the final store.error is the aggregate of all failures.
+    setError(null);
     const STARTUP_LABELS = ['personas', 'tools', 'credentials', 'recipes', 'pending review', 'groups'] as const;
     Promise.allSettled([
       fetchPersonas(),
@@ -68,6 +68,10 @@ export default function PersonasPage() {
       }
     });
   }, [fetchPersonas, fetchToolDefinitions, fetchCredentials, fetchRecipes, fetchPendingReviewCount, fetchGroups, setError]);
+
+  useEffect(() => {
+    runStartup();
+  }, [runStartup]);
 
   // Hydrate persisted persona selection on app restart
   useEffect(() => {
@@ -100,10 +104,10 @@ export default function PersonasPage() {
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={cloudTab}
-            initial={{ opacity: 0, x: prefersReducedMotion ? 0 : cloudTab === 'gitlab' ? 14 : -14 }}
+            initial={{ opacity: 0, x: shouldAnimate ? (cloudTab === 'gitlab' ? 14 : -14) : 0 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: prefersReducedMotion ? 0 : cloudTab === 'gitlab' ? -14 : 14 }}
-            transition={{ duration: prefersReducedMotion ? 0.12 : 0.24, ease: [0.22, 1, 0.36, 1] }}
+            exit={{ opacity: 0, x: shouldAnimate ? (cloudTab === 'gitlab' ? -14 : 14) : 0 }}
+            transition={transition}
             className="h-full"
           >
             {cloudTab === 'gitlab' ? (
@@ -146,15 +150,25 @@ export default function PersonasPage() {
         <Sidebar />
 
         {/* Content area */}
-        <motion.div
-          key={sidebarSection + (selectedPersonaId || '')}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-          className="flex-1 flex flex-col overflow-x-auto overflow-y-hidden"
-        >
-          {renderContent()}
-        </motion.div>
+        <div className="flex-1 flex flex-col overflow-x-auto overflow-y-hidden">
+          {error && (
+            <ErrorBanner
+              message={error}
+              variant="banner"
+              onRetry={runStartup}
+              onDismiss={() => setError(null)}
+            />
+          )}
+          <motion.div
+            key={sidebarSection + (selectedPersonaId || '')}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="flex-1 flex flex-col overflow-x-auto overflow-y-hidden"
+          >
+            {renderContent()}
+          </motion.div>
+        </div>
       </div>
       </div>
     </CredentialNavProvider>

@@ -99,7 +99,7 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
   return (
     <SectionCard size="lg" blur>
       <SectionHeader
-        className="mb-5"
+        className="mb-6"
         icon={<Radio className="w-3.5 h-3.5" />}
         label="Event Subscriptions"
         trailing={<span className="text-sm text-muted-foreground/80">{activeCount} active</span>}
@@ -107,7 +107,7 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
 
       <div className="space-y-3">
         {error && (
-          <div className="px-3 py-2 rounded-lg border border-red-500/20 bg-red-500/10 text-sm text-red-400/80">
+          <div className="px-3 py-2 rounded-xl border border-red-500/20 bg-red-500/10 text-sm text-red-400/80">
             {error}
           </div>
         )}

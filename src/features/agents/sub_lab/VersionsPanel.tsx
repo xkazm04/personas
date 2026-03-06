@@ -142,7 +142,7 @@ export function VersionsPanel() {
         {compareA && compareB && (
           <button
             onClick={() => setLabMode('ab')}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary/80 hover:bg-primary/15 transition-colors text-sm self-start"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 text-primary/80 hover:bg-primary/15 transition-colors text-sm self-start"
           >
             Run these versions in A/B test
           </button>

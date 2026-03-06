@@ -10,6 +10,7 @@
 //! a "not yet supported" error with guidance.
 
 use std::collections::HashMap;
+use std::sync::OnceLock;
 use std::time::Instant;
 
 use serde_json::Value;
@@ -21,6 +22,62 @@ use crate::error::AppError;
 
 /// Maximum rows returned per query to prevent memory exhaustion.
 const MAX_ROWS: usize = 500;
+
+/// HTTP request timeout for all database REST API calls (30 seconds).
+const HTTP_TIMEOUT_SECS: u64 = 30;
+
+/// Build a `reqwest::Client` with a sensible timeout so that unresponsive
+/// databases don't block the async executor indefinitely.
+fn http_client() -> Result<reqwest::Client, AppError> {
+    reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(HTTP_TIMEOUT_SECS))
+        .build()
+        .map_err(|e| AppError::Internal(format!("Failed to build HTTP client: {e}")))
+}
+
+/// Strip credential material from error messages before they reach the UI,
+/// Sentry breadcrumbs, or log files.
+///
+/// Removes connection strings (`postgresql://...`), bearer tokens, API keys
+/// in common header patterns, and basic auth credentials.
+///
+/// Regexes are compiled once and cached via `OnceLock` to avoid per-call overhead.
+fn sanitize_error(msg: &str, fields: &HashMap<String, String>) -> String {
+    static RE_CONNSTR: OnceLock<regex::Regex> = OnceLock::new();
+    static RE_BEARER: OnceLock<regex::Regex> = OnceLock::new();
+    static RE_BASIC: OnceLock<regex::Regex> = OnceLock::new();
+
+    let mut sanitized = msg.to_string();
+
+    // Strip all field values that look like secrets (anything non-empty)
+    for (key, value) in fields {
+        if value.len() >= 8 {
+            // Only redact values long enough to be meaningful secrets.
+            // Short values (booleans, ports) aren't sensitive.
+            sanitized = sanitized.replace(value, &format!("[REDACTED:{}]", key));
+        }
+    }
+
+    // Strip common connection string patterns (postgresql://user:pass@host/db)
+    let re_connstr = RE_CONNSTR.get_or_init(|| {
+        regex::Regex::new(r"(?i)postgres(?:ql)?://[^\s,\]})']+" ).unwrap()
+    });
+    sanitized = re_connstr.replace_all(&sanitized, "[REDACTED:connection_string]").to_string();
+
+    // Strip Bearer tokens that may appear in echoed headers
+    let re_bearer = RE_BEARER.get_or_init(|| {
+        regex::Regex::new(r"(?i)Bearer\s+[A-Za-z0-9._\-]+").unwrap()
+    });
+    sanitized = re_bearer.replace_all(&sanitized, "Bearer [REDACTED]").to_string();
+
+    // Strip Basic auth credentials
+    let re_basic = RE_BASIC.get_or_init(|| {
+        regex::Regex::new(r"(?i)Basic\s+[A-Za-z0-9+/=]+").unwrap()
+    });
+    sanitized = re_basic.replace_all(&sanitized, "Basic [REDACTED]").to_string();
+
+    sanitized
+}
 
 /// Execute a query against the database credential's service.
 pub async fn execute_query(
@@ -53,7 +110,7 @@ pub async fn execute_query(
             qr.duration_ms = duration_ms;
             Ok(qr)
         }
-        Err(e) => Err(e),
+        Err(e) => Err(AppError::Internal(sanitize_error(&e.to_string(), &fields))),
     }
 }
 
@@ -93,7 +150,7 @@ pub async fn introspect_tables(
     let duration_ms = start.elapsed().as_millis() as u64;
     match result {
         Ok(mut qr) => { qr.duration_ms = duration_ms; Ok(qr) }
-        Err(e) => Err(e),
+        Err(e) => Err(AppError::Internal(sanitize_error(&e.to_string(), &fields))),
     }
 }
 
@@ -112,22 +169,26 @@ pub async fn introspect_columns(
     let result = match credential.service_type.as_str() {
         "supabase" => introspect_supabase_columns(&fields, &safe_name).await,
         "neon" => {
-            let q = format!(
+            execute_neon_parameterized(
+                &fields,
                 "SELECT column_name, data_type, is_nullable, column_default \
                  FROM information_schema.columns \
-                 WHERE table_schema = 'public' AND table_name = '{safe_name}' \
-                 ORDER BY ordinal_position"
-            );
-            execute_neon(&fields, &q).await
+                 WHERE table_schema = 'public' AND table_name = $1 \
+                 ORDER BY ordinal_position",
+                &[&safe_name],
+            )
+            .await
         }
         "planetscale" => {
-            let q = format!(
+            execute_planetscale_parameterized(
+                &fields,
                 "SELECT column_name, column_type, is_nullable, column_default \
                  FROM information_schema.columns \
-                 WHERE table_schema = DATABASE() AND table_name = '{safe_name}' \
-                 ORDER BY ordinal_position"
-            );
-            execute_planetscale(&fields, &q).await
+                 WHERE table_schema = DATABASE() AND table_name = ? \
+                 ORDER BY ordinal_position",
+                &[&safe_name],
+            )
+            .await
         }
         "convex" => introspect_convex_columns(&fields, &safe_name).await,
         other => Err(AppError::Internal(format!(
@@ -138,7 +199,7 @@ pub async fn introspect_columns(
     let duration_ms = start.elapsed().as_millis() as u64;
     match result {
         Ok(mut qr) => { qr.duration_ms = duration_ms; Ok(qr) }
-        Err(e) => Err(e),
+        Err(e) => Err(AppError::Internal(sanitize_error(&e.to_string(), &fields))),
     }
 }
 
@@ -268,7 +329,7 @@ async fn fetch_supabase_openapi_spec(
 
     let spec_url = format!("{}/rest/v1/", project_url.trim_end_matches('/'));
 
-    let client = reqwest::Client::new();
+    let client = http_client()?;
     let resp = client
         .get(&spec_url)
         .header("apikey", api_key)
@@ -340,7 +401,7 @@ pub(crate) async fn execute_supabase(
         url.push_str(&format!("&{filter}"));
     }
 
-    let client = reqwest::Client::new();
+    let client = http_client()?;
     let resp = client
         .get(&url)
         .header("apikey", api_key)
@@ -554,7 +615,7 @@ fn parse_postgrest_filter(cond: &str) -> Option<String> {
             let val = cond[pos + op.len()..]
                 .trim()
                 .trim_matches(|c: char| c == '\'' || c == '"');
-            return Some(format!("{col}={pg_op}.{val}"));
+            return Some(format!("{}={}.{}", col, pg_op, urlencoding::encode(val)));
         }
     }
 
@@ -567,7 +628,7 @@ fn parse_postgrest_filter(cond: &str) -> Option<String> {
             .trim()
             .trim_matches(|c: char| c == '\'' || c == '"')
             .replace('%', "*");
-        return Some(format!("{col}=like.{val}"));
+        return Some(format!("{}=like.{}", col, urlencoding::encode(&val)));
     }
     if let Some(pos) = upper.find(" ILIKE ") {
         let col = cond[..pos]
@@ -577,7 +638,7 @@ fn parse_postgrest_filter(cond: &str) -> Option<String> {
             .trim()
             .trim_matches(|c: char| c == '\'' || c == '"')
             .replace('%', "*");
-        return Some(format!("{col}=ilike.{val}"));
+        return Some(format!("{}=ilike.{}", col, urlencoding::encode(&val)));
     }
 
     None
@@ -605,12 +666,54 @@ pub(crate) async fn execute_neon(
 
     let sql_url = format!("https://{host}/sql");
 
-    let client = reqwest::Client::new();
+    let client = http_client()?;
     let resp = client
         .post(&sql_url)
         .header("Neon-Connection-String", connection_string)
         .header("Content-Type", "application/json")
         .json(&serde_json::json!({ "query": query_text, "params": [] }))
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("Neon request failed: {e}")))?;
+
+    let status = resp.status();
+    let body = resp
+        .text()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to read Neon response: {e}")))?;
+
+    if !status.is_success() {
+        return Err(AppError::Internal(format!(
+            "Neon query failed (HTTP {status}): {body}"
+        )));
+    }
+
+    parse_neon_response(&body)
+}
+
+/// Execute a parameterized query against Neon (used for introspection to prevent SQL injection).
+async fn execute_neon_parameterized(
+    fields: &HashMap<String, String>,
+    query_text: &str,
+    params: &[&str],
+) -> Result<QueryResult, AppError> {
+    let connection_string = fields
+        .get("connection_string")
+        .or_else(|| fields.get("database_url"))
+        .ok_or_else(|| AppError::Validation("Missing connection_string field for Neon".into()))?;
+
+    let host = extract_pg_host(connection_string).ok_or_else(|| {
+        AppError::Validation("Cannot extract host from Neon connection string".into())
+    })?;
+
+    let sql_url = format!("https://{}/sql", host);
+
+    let client = http_client()?;
+    let resp = client
+        .post(&sql_url)
+        .header("Neon-Connection-String", connection_string)
+        .header("Content-Type", "application/json")
+        .json(&serde_json::json!({ "query": query_text, "params": params }))
         .send()
         .await
         .map_err(|e| AppError::Internal(format!("Neon request failed: {e}")))?;
@@ -660,7 +763,7 @@ pub(crate) async fn execute_upstash(
 
     let url = redis_url.trim_end_matches('/').to_string();
 
-    let client = reqwest::Client::new();
+    let client = http_client()?;
     let resp = client
         .post(&url)
         .header("Authorization", format!("Bearer {token}"))
@@ -708,13 +811,82 @@ pub(crate) async fn execute_planetscale(
 
     let url = format!("https://{host}/psdb.v1alpha1.Database/Execute");
 
-    let client = reqwest::Client::new();
+    let client = http_client()?;
     let resp = client
         .post(&url)
         .basic_auth(username, Some(password))
         .header("Content-Type", "application/json")
         .json(&serde_json::json!({
             "query": query_text
+        }))
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("PlanetScale request failed: {e}")))?;
+
+    let status = resp.status();
+    let body = resp
+        .text()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to read PlanetScale response: {e}")))?;
+
+    if !status.is_success() {
+        return Err(AppError::Internal(format!(
+            "PlanetScale query failed (HTTP {status}): {body}"
+        )));
+    }
+
+    parse_planetscale_response(&body)
+}
+
+/// Execute a parameterized query against PlanetScale (used for introspection to prevent SQL injection).
+async fn execute_planetscale_parameterized(
+    fields: &HashMap<String, String>,
+    query_text: &str,
+    params: &[&str],
+) -> Result<QueryResult, AppError> {
+    let host = fields
+        .get("host")
+        .or_else(|| fields.get("database_host"))
+        .ok_or_else(|| AppError::Validation("Missing host field for PlanetScale".into()))?;
+
+    let username = fields
+        .get("username")
+        .ok_or_else(|| AppError::Validation("Missing username field for PlanetScale".into()))?;
+
+    let password = fields
+        .get("password")
+        .ok_or_else(|| AppError::Validation("Missing password field for PlanetScale".into()))?;
+
+    let url = format!("https://{}/psdb.v1alpha1.Database/Execute", host);
+
+    // PlanetScale Vitess API accepts typed bind variables
+    let bind_vars: serde_json::Map<String, Value> = params
+        .iter()
+        .enumerate()
+        .map(|(i, v)| {
+            (
+                format!("v{}", i + 1),
+                serde_json::json!({ "type": "VARCHAR", "value": v }),
+            )
+        })
+        .collect();
+
+    // Replace ? placeholders with :v1, :v2, etc. for Vitess bind variable syntax
+    let mut vitess_query = query_text.to_string();
+    for i in (0..params.len()).rev() {
+        if let Some(pos) = vitess_query.rfind('?') {
+            vitess_query.replace_range(pos..pos + 1, &format!(":v{}", i + 1));
+        }
+    }
+
+    let client = http_client()?;
+    let resp = client
+        .post(&url)
+        .basic_auth(username, Some(password))
+        .header("Content-Type", "application/json")
+        .json(&serde_json::json!({
+            "query": vitess_query,
+            "bindings": bind_vars
         }))
         .send()
         .await
@@ -1897,5 +2069,55 @@ mod tests {
     fn test_postgrest_rejects_group_by() {
         let result = parse_select_to_postgrest("SELECT role, COUNT(*) FROM users GROUP BY role");
         assert!(result.is_none());
+    }
+
+    // ── sanitize_error tests ──────────────────────────────────────────
+
+    #[test]
+    fn test_sanitize_strips_connection_string() {
+        let fields = HashMap::new();
+        let msg = "Error: postgresql://admin:s3cret@db.example.com:5432/mydb connection refused";
+        let result = sanitize_error(msg, &fields);
+        assert!(!result.contains("admin"));
+        assert!(!result.contains("s3cret"));
+        assert!(result.contains("[REDACTED:connection_string]"));
+    }
+
+    #[test]
+    fn test_sanitize_strips_bearer_token() {
+        let fields = HashMap::new();
+        let msg = "Request failed with header Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.payload.sig";
+        let result = sanitize_error(msg, &fields);
+        assert!(!result.contains("eyJhbGciOiJIUzI1NiJ9"));
+        assert!(result.contains("Bearer [REDACTED]"));
+    }
+
+    #[test]
+    fn test_sanitize_strips_basic_auth() {
+        let fields = HashMap::new();
+        let msg = "Auth header was Basic dXNlcjpwYXNz and it failed";
+        let result = sanitize_error(msg, &fields);
+        assert!(!result.contains("dXNlcjpwYXNz"));
+        assert!(result.contains("Basic [REDACTED]"));
+    }
+
+    #[test]
+    fn test_sanitize_strips_field_values() {
+        let mut fields = HashMap::new();
+        fields.insert("api_key".to_string(), "sk-super-secret-key-12345".to_string());
+        fields.insert("port".to_string(), "5432".to_string()); // short — should NOT be redacted
+        let msg = "Failed with key sk-super-secret-key-12345 on port 5432";
+        let result = sanitize_error(msg, &fields);
+        assert!(!result.contains("sk-super-secret-key-12345"));
+        assert!(result.contains("[REDACTED:api_key]"));
+        assert!(result.contains("5432")); // short value not redacted
+    }
+
+    #[test]
+    fn test_sanitize_no_secrets_unchanged() {
+        let fields = HashMap::new();
+        let msg = "Connection timed out after 30s";
+        let result = sanitize_error(msg, &fields);
+        assert_eq!(result, msg);
     }
 }

@@ -18,7 +18,7 @@ export function UseCaseChannelDropdown({ channels, onToggle }: UseCaseChannelDro
           type="button"
           onClick={toggle}
           aria-expanded={isOpen}
-          className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm font-medium border transition-all w-full ${
+          className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-sm font-medium border transition-all w-full ${
             channels.length > 0
               ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
               : 'bg-secondary/40 border-primary/10 text-muted-foreground/80 hover:border-primary/20'

@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { ExecutionKnowledge } from '@/lib/bindings/ExecutionKnowledge';
 import type { KnowledgeGraphSummary } from '@/lib/bindings/KnowledgeGraphSummary';

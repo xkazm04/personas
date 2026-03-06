@@ -91,6 +91,7 @@ export default function PersonaHoverPreview({ personaId, triggerCount, anchorRef
       }
       return parsed.model ?? 'Custom';
     } catch {
+      // intentional: non-critical — hover preview JSON parse fallback
       return raw;
     }
   }, [persona?.model_profile]);
@@ -173,7 +174,7 @@ export default function PersonaHoverPreview({ personaId, triggerCount, anchorRef
 
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span
-                  className="text-sm font-mono px-1.5 py-0.5 rounded-md border bg-primary/5 border-primary/15 text-muted-foreground/80 max-w-[170px] truncate"
+                  className="text-sm font-mono px-1.5 py-0.5 rounded-lg border bg-primary/5 border-primary/15 text-muted-foreground/80 max-w-[170px] truncate"
                   title={modelLabel}
                 >
                   {modelLabel}

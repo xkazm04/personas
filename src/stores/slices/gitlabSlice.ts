@@ -82,7 +82,7 @@ export const createGitLabSlice: StateCreator<PersonaStore, [], [], GitLabSlice> 
       const config = await gitlabGetConfig();
       set({ gitlabConfig: config });
     } catch {
-      // No config stored — that's fine
+      // intentional: non-critical — no config stored yet is expected on first launch
     }
   },
 

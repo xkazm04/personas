@@ -63,7 +63,7 @@ export function buildDraft(persona: { name: string; description?: string | null;
       customModelName = mp.model;
     }
   } catch {
-    // ignore
+    // intentional: non-critical — JSON parse fallback
   }
   return {
     name: persona.name,

@@ -34,7 +34,7 @@ export function DesignPhaseAnalyzing({ instruction, outputLines, savedDesignResu
 
       <button
         onClick={onCancel}
-        className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+        className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
       >
         <X className="w-3.5 h-3.5" />
         Cancel

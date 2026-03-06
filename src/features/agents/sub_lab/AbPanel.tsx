@@ -115,7 +115,7 @@ export function AbPanel() {
   return (
     <div className="space-y-6">
       <div className="border border-primary/15 rounded-xl overflow-hidden backdrop-blur-sm bg-secondary/40">
-        <div className="p-5 space-y-4">
+        <div className="p-4 space-y-4">
           {/* Version pickers */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
@@ -131,7 +131,7 @@ export function AbPanel() {
                   <button
                     onClick={toggle}
                     disabled={isLabRunning}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm border transition-all ${
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm border transition-all ${
                       isOpen ? 'bg-blue-500/10 border-blue-500/30' : 'bg-background/30 border-primary/10 hover:border-primary/20'
                     } ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   >
@@ -171,7 +171,7 @@ export function AbPanel() {
                   <button
                     onClick={toggle}
                     disabled={isLabRunning}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm border transition-all ${
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm border transition-all ${
                       isOpen ? 'bg-violet-500/10 border-violet-500/30' : 'bg-background/30 border-primary/10 hover:border-primary/20'
                     } ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   >
@@ -222,7 +222,7 @@ export function AbPanel() {
                     });
                   }}
                   disabled={isLabRunning}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                  className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${
                     selectedModels.has(m.id)
                       ? 'bg-primary/15 text-primary border-primary/30'
                       : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20'
@@ -252,7 +252,7 @@ export function AbPanel() {
                   <button
                     onClick={toggle}
                     disabled={isLabRunning}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm border transition-all ${
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm border transition-all ${
                       isOpen ? 'bg-primary/10 border-primary/30' : 'bg-background/30 border-primary/10 hover:border-primary/20'
                     } ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   >
@@ -288,7 +288,7 @@ export function AbPanel() {
               onChange={(e) => setTestInput(e.target.value)}
               placeholder='{"task": "Summarize the latest sales report"}'
               disabled={isLabRunning}
-              className="w-full h-20 px-3 py-2 text-sm bg-background/50 border border-primary/15 rounded-lg text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none font-mono disabled:opacity-50"
+              className="w-full h-20 px-3 py-2 text-sm bg-background/50 border border-primary/15 rounded-xl text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none font-mono disabled:opacity-50"
             />
           </div>
 
@@ -296,7 +296,7 @@ export function AbPanel() {
           {isLabRunning ? (
             <button
               onClick={() => void handleCancel()}
-              className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-2xl font-medium text-sm transition-all bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20"
+              className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20"
             >
               <Square className="w-4 h-4" />
               Cancel A/B Test
@@ -305,7 +305,7 @@ export function AbPanel() {
             <button
               onClick={() => void handleStart()}
               disabled={!versionAId || !versionBId || selectedModels.size === 0}
-              className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-2xl font-medium text-sm transition-all bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               <Play className="w-4 h-4" />
               Run A/B Test
@@ -326,7 +326,7 @@ export function AbPanel() {
 
         {abRuns.length === 0 ? (
           <div className="text-center py-12 bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl">
-            <div className="w-14 h-14 rounded-2xl bg-primary/8 border border-primary/12 flex items-center justify-center mx-auto mb-4">
+            <div className="w-14 h-14 rounded-xl bg-primary/8 border border-primary/12 flex items-center justify-center mx-auto mb-4">
               <GitBranch className="w-7 h-7 text-primary/40" />
             </div>
             <p className="text-sm text-muted-foreground/80">No A/B test runs yet</p>

@@ -89,6 +89,26 @@ impl ConcurrencyTracker {
         }
     }
 
+    /// Update the max queue depth (e.g. when tier changes).
+    pub fn set_max_queue_depth(&mut self, depth: usize) {
+        self.max_queue_depth = depth;
+    }
+
+    /// Return the configured max queue depth.
+    pub fn max_queue_depth(&self) -> usize {
+        self.max_queue_depth
+    }
+
+    /// Total running executions across all personas.
+    pub fn total_running(&self) -> usize {
+        self.running.values().map(|set| set.len()).sum()
+    }
+
+    /// Total queued executions across all personas.
+    pub fn total_queued(&self) -> usize {
+        self.queues.values().map(|q| q.len()).sum()
+    }
+
     /// Check if a persona has capacity for another execution.
     ///
     /// `max_concurrent <= 0` means unlimited capacity.

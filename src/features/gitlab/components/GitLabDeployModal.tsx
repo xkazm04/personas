@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Loader2, Rocket, Check, ExternalLink, ShieldCheck, KeyRound } from 'lucide-react';
 import type { GitLabProject, GitLabDeployResult } from '@/api/gitlab';
 import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
+import { CiCdTemplatesPicker } from './CiCdTemplatesPicker';
+import type { CiCdTemplate, GitLabTierId } from '../data/cicdTemplates';
 
 interface GitLabDeployModalProps {
   projects: GitLabProject[];
@@ -10,6 +12,8 @@ interface GitLabDeployModalProps {
   onSelectProject: (id: number) => void;
   onFetchProjects: () => Promise<void>;
   onDeploy: (personaId: string, projectId: number, provisionCredentials: boolean) => Promise<GitLabDeployResult>;
+  onCreateFromTemplate?: (template: CiCdTemplate) => Promise<string>;
+  gitlabTier?: GitLabTierId;
 }
 
 export function GitLabDeployModal({
@@ -19,16 +23,32 @@ export function GitLabDeployModal({
   onSelectProject,
   onFetchProjects,
   onDeploy,
+  onCreateFromTemplate,
+  gitlabTier = 'free',
 }: GitLabDeployModalProps) {
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
   const [provisionCredentials, setProvisionCredentials] = useState(false);
   const [isDeploying, setIsDeploying] = useState(false);
+  const [isCreatingFromTemplate, setIsCreatingFromTemplate] = useState(false);
   const [result, setResult] = useState<GitLabDeployResult | null>(null);
   const deployingRef = useRef(false);
 
   useEffect(() => {
     onFetchProjects();
   }, [onFetchProjects]);
+
+  const handleSelectTemplate = async (template: CiCdTemplate) => {
+    if (!onCreateFromTemplate || isCreatingFromTemplate) return;
+    setIsCreatingFromTemplate(true);
+    try {
+      const newPersonaId = await onCreateFromTemplate(template);
+      setSelectedPersonaId(newPersonaId);
+    } catch {
+      // intentional: error state handled locally via store + ErrorBanner
+    } finally {
+      setIsCreatingFromTemplate(false);
+    }
+  };
 
   const handleDeploy = async () => {
     if (deployingRef.current) return;
@@ -40,7 +60,7 @@ export function GitLabDeployModal({
       const res = await onDeploy(selectedPersonaId, selectedProjectId, provisionCredentials);
       setResult(res);
     } catch {
-      // Error handled by store
+      // intentional: error state handled locally via store + ErrorBanner
     } finally {
       setIsDeploying(false);
       deployingRef.current = false;
@@ -83,6 +103,20 @@ export function GitLabDeployModal({
         </ThemedSelect>
       </div>
 
+      {/* CI/CD Agent Templates */}
+      <div className="p-3 rounded-xl border border-primary/10 bg-secondary/10">
+        <CiCdTemplatesPicker
+          userTier={gitlabTier}
+          onSelectTemplate={handleSelectTemplate}
+        />
+        {isCreatingFromTemplate && (
+          <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground/60">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            Creating persona from template...
+          </div>
+        )}
+      </div>
+
       {/* Credential provisioning toggle */}
       <div className="p-3 rounded-lg border border-primary/10 bg-primary/[0.02]">
         <label className="flex items-start gap-3 cursor-pointer">
@@ -120,7 +154,7 @@ export function GitLabDeployModal({
       <button
         onClick={handleDeploy}
         disabled={isDeploying || !selectedPersonaId || !selectedProjectId}
-        className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-orange-500/15 border border-orange-500/25 text-orange-400 hover:bg-orange-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-orange-500/15 border border-orange-500/25 text-orange-400 hover:bg-orange-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {isDeploying ? (
           <span role="status" aria-live="polite" className="inline-flex items-center gap-2">

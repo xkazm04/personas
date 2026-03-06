@@ -24,7 +24,7 @@ function parseToolSteps(raw: string | null): ToolCallStep[] {
   try {
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
-  } catch {
+  } catch { // intentional: non-critical — JSON parse fallback
     return [];
   }
 }
@@ -66,7 +66,7 @@ function ToolCallCard({ step }: { step: ToolCallStep }) {
         </div>
 
         <div className="ml-auto">
-          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-sm font-mono border ${durationColor(step.duration_ms)}`}>
+          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-sm font-mono border ${durationColor(step.duration_ms)}`}>
             <Clock className="w-3 h-3" />
             {step.duration_ms !== undefined ? formatDuration(step.duration_ms) : 'pending'}
           </span>

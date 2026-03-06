@@ -83,7 +83,7 @@ export function DatabaseListView({ onBack: _onBack }: DatabaseListViewProps) {
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col items-center justify-center py-20 text-center"
       >
-        <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-4">
+        <div className="w-14 h-14 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-4">
           <Database className="w-7 h-7 text-blue-400/60" />
         </div>
         <h3 className="text-sm font-medium text-foreground/80 mb-1">No database credentials</h3>
@@ -109,7 +109,7 @@ export function DatabaseListView({ onBack: _onBack }: DatabaseListViewProps) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Filter databases..."
-            className="w-full pl-9 pr-3 py-2 rounded-lg bg-secondary/30 border border-primary/10 text-sm text-foreground/90 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/30 transition-colors"
+            className="w-full pl-9 pr-3 py-2 rounded-xl bg-secondary/30 border border-primary/10 text-sm text-foreground/90 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/30 transition-colors"
           />
         </div>
 

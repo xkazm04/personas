@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { PersonaMemory } from "@/lib/bindings/PersonaMemory";
 import type { CreatePersonaMemoryInput } from "@/lib/bindings/CreatePersonaMemoryInput";

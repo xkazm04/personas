@@ -9,6 +9,7 @@ import { extractConnectorNames } from '@/lib/personas/utils';
 import PersonaHoverPreview from './PersonaHoverPreview';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import { PersonaHealthIndicator } from './PersonaHealthIndicator';
+import { WeeklyPerformanceReport } from '@/features/agents/sub_prompt_lab/WeeklyPerformanceReport';
 
 export default function PersonaOverviewPage() {
   const personas = usePersonaStore(s => s.personas);
@@ -105,6 +106,11 @@ export default function PersonaOverviewPage() {
       />
 
       <ContentBody>
+      {/* Weekly Performance Report */}
+      <div className="mb-4">
+        <WeeklyPerformanceReport onNavigateToAgent={(id) => selectPersona(id)} />
+      </div>
+
       <div ref={gridRef} role="grid" aria-label="Agent overview" className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
         {personas.map((persona, i) => {
           const connectors = extractConnectorNames(persona);
@@ -158,7 +164,7 @@ export default function PersonaOverviewPage() {
                 <PersonaHealthIndicator persona={persona} health={health} />
                 <div className="flex items-center gap-1.5">
                   <div className={`w-2 h-2 rounded-full ${persona.enabled ? 'bg-emerald-400' : 'bg-muted-foreground/20'}`} />
-                  <span className={`text-sm font-medium px-1.5 py-0.5 rounded-md ${persona.enabled ? 'text-emerald-400 bg-emerald-500/10' : 'text-muted-foreground/80 bg-muted-foreground/10'}`}>
+                  <span className={`text-sm font-medium px-1.5 py-0.5 rounded-lg ${persona.enabled ? 'text-emerald-400 bg-emerald-500/10' : 'text-muted-foreground/80 bg-muted-foreground/10'}`}>
                     {persona.enabled ? 'Active' : 'Inactive'}
                   </span>
                 </div>
@@ -183,7 +189,7 @@ export default function PersonaOverviewPage() {
                   </span>
                 )}
                 {persona.model_profile && (
-                  <span className="text-sm font-mono px-1.5 py-0.5 rounded-md bg-primary/5 text-muted-foreground/80 truncate max-w-[100px]" title={persona.model_profile}>
+                  <span className="text-sm font-mono px-1.5 py-0.5 rounded-lg bg-primary/5 text-muted-foreground/80 truncate max-w-[100px]" title={persona.model_profile}>
                     {persona.model_profile}
                   </span>
                 )}

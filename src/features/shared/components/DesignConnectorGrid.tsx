@@ -231,7 +231,7 @@ export function DesignConnectorGrid({
   designResult: DesignAnalysisResult;
 }) {
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <ConnectorsToolsSection designResult={designResult} />
       <EventsTriggersSection designResult={designResult} />
       <MessagesNotificationsSection designResult={designResult} />

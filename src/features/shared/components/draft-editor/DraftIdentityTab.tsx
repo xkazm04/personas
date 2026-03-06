@@ -31,7 +31,7 @@ export function DraftIdentityTab({ draft, disabled, updateDraft }: DraftIdentity
             <button
               key={tab.id}
               onClick={() => setSubtab(tab.id)}
-              className={`w-full flex items-center gap-2 px-2.5 py-2 text-sm font-medium rounded-lg transition-colors text-left ${
+              className={`w-full flex items-center gap-2 px-2.5 py-2 text-sm font-medium rounded-xl transition-colors text-left ${
                 active
                   ? 'bg-primary/10 text-foreground/80 border border-primary/20'
                   : 'text-muted-foreground/90 hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'

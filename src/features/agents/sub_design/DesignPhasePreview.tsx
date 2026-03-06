@@ -130,14 +130,14 @@ export function DesignPhasePreview({
       <div className="flex items-center gap-2">
         <button
           onClick={actions.onApply}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm bg-gradient-to-r from-primary to-accent text-foreground hover:from-primary/90 hover:to-accent/90 shadow-lg shadow-primary/20 transition-all hover:scale-[1.01] active:scale-[0.99]"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm bg-gradient-to-r from-primary to-accent text-foreground hover:from-primary/90 hover:to-accent/90 shadow-lg shadow-primary/20 transition-all hover:scale-[1.01] active:scale-[0.99]"
         >
           <Check className="w-3.5 h-3.5" />
           Apply Changes
         </button>
         <button
           onClick={actions.onRefine}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm bg-secondary/50 text-foreground/90 hover:bg-secondary/70 transition-colors"
+          className="flex items-center gap-2 px-3 py-2 rounded-xl font-medium text-sm bg-secondary/50 text-foreground/90 hover:bg-secondary/70 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           Refine
@@ -151,7 +151,7 @@ export function DesignPhasePreview({
             }
             setConfirmDiscard(true);
           }}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition-colors ${
+          className={`flex items-center gap-2 px-3 py-2 rounded-xl font-medium text-sm transition-colors ${
             confirmDiscard
               ? 'text-red-400 hover:text-red-300'
               : 'text-muted-foreground hover:text-foreground/95'
@@ -178,7 +178,7 @@ export function DesignPhasePreview({
         <button
           onClick={refinement.onSend}
           disabled={!refinement.message.trim()}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
             !refinement.message.trim()
               ? 'bg-secondary/40 text-muted-foreground/80 cursor-not-allowed'
               : 'bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20'

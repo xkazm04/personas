@@ -14,6 +14,7 @@ use crate::engine::compiler::{self, CompilationInput, ParseOutcome};
 use crate::engine::design;
 use crate::engine::prompt;
 use crate::error::AppError;
+use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 // ── Event payloads ──────────────────────────────────────────────
@@ -60,7 +61,7 @@ fn spawn_design_run(
     // CLI processes, but only the last PID is tracked — earlier ones become
     // unkillable orphans that silently consume API credits.
     {
-        let old_pid = state.active_design_child_pid.lock().unwrap().take();
+        let old_pid = state.active_design_child_pid.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?.take();
         if let Some(pid) = old_pid {
             tracing::info!(pid = pid, "Killing previous design analysis before starting new one");
             engine::kill_process(pid);
@@ -68,7 +69,7 @@ fn spawn_design_run(
     }
 
     {
-        let mut guard = state.active_design_id.lock().unwrap();
+        let mut guard = state.active_design_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
         *guard = Some(design_id.clone());
     }
 
@@ -99,6 +100,7 @@ pub async fn start_design_analysis(
     instruction: String,
     design_id: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth(&state).await?;
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
     let tools = tool_repo::get_all_definitions(&state.db)?;
     let connectors = connector_repo::get_all(&state.db)?;
@@ -134,6 +136,7 @@ pub async fn refine_design(
     design_id: Option<String>,
     conversation_id: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth(&state).await?;
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
 
     // Prefer the caller-supplied result (from preview state) over the DB value,
@@ -178,6 +181,7 @@ pub fn test_design_feasibility(
     state: State<'_, Arc<AppState>>,
     design_result: String,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
     let tools = tool_repo::get_all_definitions(&state.db)?;
     let connectors = connector_repo::get_all(&state.db)?;
 
@@ -192,11 +196,12 @@ pub fn test_design_feasibility(
 pub fn cancel_design_analysis(
     state: State<'_, Arc<AppState>>,
 ) -> Result<(), AppError> {
-    let mut guard = state.active_design_id.lock().unwrap();
+    require_auth_sync(&state)?;
+    let mut guard = state.active_design_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
     *guard = None;
 
     // Kill the CLI child process to stop API credit consumption immediately.
-    let pid = state.active_design_child_pid.lock().unwrap().take();
+    let pid = state.active_design_child_pid.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?.take();
     if let Some(pid) = pid {
         tracing::info!(pid = pid, "Killing design analysis CLI child process");
         engine::kill_process(pid);
@@ -217,6 +222,7 @@ pub async fn compile_from_intent(
     intent: String,
     design_id: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth(&state).await?;
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
     let tools = tool_repo::get_all_definitions(&state.db)?;
     let connectors = connector_repo::get_all(&state.db)?;
@@ -323,7 +329,7 @@ async fn run_design_analysis(params: DesignRunParams) {
 
     // Register child PID so cancel can kill it
     if let Some(pid) = child.id() {
-        *active_child_pid.lock().unwrap() = Some(pid);
+        *active_child_pid.lock().unwrap_or_else(|e| e.into_inner()) = Some(pid);
     }
 
     // Write prompt to stdin
@@ -367,7 +373,7 @@ async fn run_design_analysis(params: DesignRunParams) {
     if stream_result.is_err() {
         let _ = child.kill().await;
         let _ = child.wait().await;
-        *active_child_pid.lock().unwrap() = None;
+        *active_child_pid.lock().unwrap_or_else(|e| e.into_inner()) = None;
         let _ = app.emit(
             "design-status",
             DesignStatusEvent {
@@ -383,11 +389,11 @@ async fn run_design_analysis(params: DesignRunParams) {
 
     // Normal exit — wait for process and clear the PID
     let _ = child.wait().await;
-    *active_child_pid.lock().unwrap() = None;
+    *active_child_pid.lock().unwrap_or_else(|e| e.into_inner()) = None;
 
     // Check if this analysis was cancelled before persisting
     let is_cancelled = {
-        let guard = active_design_id.lock().unwrap();
+        let guard = active_design_id.lock().unwrap_or_else(|e| e.into_inner());
         guard.as_deref() != Some(&design_id)
     };
 
@@ -442,7 +448,7 @@ async fn run_design_analysis(params: DesignRunParams) {
 
             // Clear active design ID on successful completion
             {
-                let mut guard = active_design_id.lock().unwrap();
+                let mut guard = active_design_id.lock().unwrap_or_else(|e| e.into_inner());
                 if guard.as_deref() == Some(&design_id) {
                     *guard = None;
                 }
@@ -462,7 +468,7 @@ async fn run_design_analysis(params: DesignRunParams) {
         ParseOutcome::Failed => {
             // Clear active design ID on failure
             {
-                let mut guard = active_design_id.lock().unwrap();
+                let mut guard = active_design_id.lock().unwrap_or_else(|e| e.into_inner());
                 if guard.as_deref() == Some(&design_id) {
                     *guard = None;
                 }
@@ -529,6 +535,7 @@ pub fn preview_prompt(
     persona_id: String,
     structured_prompt_json: Option<String>,
 ) -> Result<String, AppError> {
+    require_auth_sync(&state)?;
     let mut persona = persona_repo::get_by_id(&state.db, &persona_id)?;
 
     // Apply the draft override when provided

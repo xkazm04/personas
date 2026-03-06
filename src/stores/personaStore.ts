@@ -30,6 +30,10 @@ import { createGitLabSlice } from "./slices/gitlabSlice";
 import { createDatabaseSlice } from "./slices/databaseSlice";
 import { createRecipeSlice } from "./slices/recipeSlice";
 import { createAutomationSlice } from "./slices/automationSlice";
+import { createOnboardingSlice } from "./slices/onboardingSlice";
+import { createCronAgentsSlice } from "./slices/cronAgentsSlice";
+import { createMiniPlayerSlice } from "./slices/miniPlayerSlice";
+import { createHealthCheckSlice } from "./slices/healthCheckSlice";
 import { AUTH_LOGIN_EVENT } from "./authStore";
 
 // ── Store ──────────────────────────────────────────────────────────────
@@ -58,6 +62,10 @@ export const usePersonaStore = create<PersonaStore>()(
         ...createDatabaseSlice(...a),
         ...createRecipeSlice(...a),
         ...createAutomationSlice(...a),
+        ...createOnboardingSlice(...a),
+        ...createCronAgentsSlice(...a),
+        ...createMiniPlayerSlice(...a),
+        ...createHealthCheckSlice(...a),
       }),
       {
         name: "persona-ui-state",
@@ -69,6 +77,7 @@ export const usePersonaStore = create<PersonaStore>()(
           editorTab: state.editorTab,
           cloudTab: state.cloudTab,
           settingsTab: state.settingsTab,
+          onboardingCompleted: state.onboardingCompleted,
         }),
       },
     ),
