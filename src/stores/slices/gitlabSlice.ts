@@ -1,5 +1,7 @@
 import type { StateCreator } from "zustand";
 import type { PersonaStore } from "../storeTypes";
+import { translateGitLabError } from "./deployTarget";
+import { emitDeploymentEvent } from "@/hooks/realtime/emitDeploymentEvent";
 import {
   gitlabConnect,
   gitlabDisconnect,
@@ -14,32 +16,6 @@ import {
   type GitLabAgent,
   type GitLabDeployResult,
 } from "@/api/gitlab";
-
-/** Translate raw backend error strings into user-friendly messages. */
-function translateGitLabError(err: unknown): string {
-  const raw = String(err).toLowerCase();
-
-  if (raw.includes("not connected")) {
-    return "Not connected to GitLab. Please connect first.";
-  }
-  if (raw.includes("401") || raw.includes("unauthorized")) {
-    return "Invalid personal access token. Please check your token and try again.";
-  }
-  if (raw.includes("403") || raw.includes("forbidden")) {
-    return "Access denied. Your token may not have the required scopes (api, read_api).";
-  }
-  if (raw.includes("not reachable") || raw.includes("connection refused")) {
-    return "Could not reach GitLab. Check your network connection.";
-  }
-  if (raw.includes("token must not be empty")) {
-    return "Please enter your GitLab personal access token.";
-  }
-  if (raw.includes("keyring")) {
-    return "Could not access stored credentials. You may need to reconnect.";
-  }
-
-  return String(err).replace(/^GitLab error:\s*/i, "");
-}
 
 export interface GitLabSlice {
   // State
@@ -127,12 +103,18 @@ export const createGitLabSlice: StateCreator<PersonaStore, [], [], GitLabSlice> 
     projectId: number,
     provisionCredentials: boolean,
   ) => {
+    emitDeploymentEvent({ eventType: 'deploy_started', target: 'gitlab', personaId, status: 'pending' });
     try {
       const result = await gitlabDeployPersona(personaId, projectId, provisionCredentials);
       set({ gitlabError: null });
+      emitDeploymentEvent({ eventType: 'deploy_succeeded', target: 'gitlab', personaId, detail: `project:${projectId}` });
+      if (provisionCredentials) {
+        emitDeploymentEvent({ eventType: 'credential_provisioned', target: 'gitlab', personaId, detail: `project:${projectId}` });
+      }
       return result;
     } catch (err) {
       set({ gitlabError: translateGitLabError(err) });
+      emitDeploymentEvent({ eventType: 'deploy_failed', target: 'gitlab', personaId, status: 'failed' });
       throw err;
     }
   },
@@ -163,6 +145,7 @@ export const createGitLabSlice: StateCreator<PersonaStore, [], [], GitLabSlice> 
       // Refresh the list
       const agents = await gitlabListAgents(projectId);
       set({ gitlabAgents: agents, gitlabError: null });
+      emitDeploymentEvent({ eventType: 'agent_undeployed', target: 'gitlab', detail: `agent:${agentId}` });
     } catch (err) {
       set({ gitlabError: translateGitLabError(err) });
     }

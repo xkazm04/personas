@@ -110,19 +110,24 @@ export function useN8nSession(
     if (dbTimerRef.current) clearTimeout(dbTimerRef.current);
     dbTimerRef.current = setTimeout(() => {
       dbTimerRef.current = null;
+      // Read the freshest state at write time to avoid syncing a stale snapshot
+      const freshSlice = deriveDbSlice(latestStateRef.current);
+      const freshId = latestStateRef.current.sessionId;
+      if (!freshId) return;
+      if (lastSyncedSliceRef.current && slicesEqual(lastSyncedSliceRef.current, freshSlice)) return;
       void (async () => {
         try {
-          await updateN8nSession(id, {
-            step: currentSlice.step,
-            status: currentSlice.status,
-            parserResult: currentSlice.parserResult,
-            draftJson: currentSlice.draftJson,
-            questionsJson: currentSlice.questionsJson,
-            userAnswers: currentSlice.userAnswers,
-            transformId: currentSlice.transformId,
-            error: currentSlice.error,
+          await updateN8nSession(freshId, {
+            step: freshSlice.step,
+            status: freshSlice.status,
+            parserResult: freshSlice.parserResult,
+            draftJson: freshSlice.draftJson,
+            questionsJson: freshSlice.questionsJson,
+            userAnswers: freshSlice.userAnswers,
+            transformId: freshSlice.transformId,
+            error: freshSlice.error,
           });
-          lastSyncedSliceRef.current = currentSlice;
+          lastSyncedSliceRef.current = freshSlice;
         } catch {
           // intentional: non-critical — DB sync will be retried on next state change
         }

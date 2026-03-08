@@ -27,8 +27,11 @@ export interface AutoCredBrowserResult {
   partial: boolean;
 }
 
+/** IPC timeout for browser sessions — 10 minutes to allow manual sign-in steps. */
+const BROWSER_SESSION_TIMEOUT_MS = 10 * 60 * 1000;
+
 export async function startAutoCredBrowser(request: AutoCredBrowserRequest): Promise<AutoCredBrowserResult> {
-  return invoke<AutoCredBrowserResult>('start_auto_cred_browser', { request });
+  return invoke<AutoCredBrowserResult>('start_auto_cred_browser', { request }, undefined, BROWSER_SESSION_TIMEOUT_MS);
 }
 
 export async function savePlaywrightProcedure(

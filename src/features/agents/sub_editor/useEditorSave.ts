@@ -71,7 +71,7 @@ export function useEditorSave({ draft, baseline, setBaseline, pendingPersonaId }
     if (!selectedPersona) return;
     const d = draftRef.current;
 
-    let profile: string | null = null;
+    let profile: string | null;
     const ollamaPreset = getOllamaPreset(d.selectedModel);
     const copilotPreset = getCopilotPreset(d.selectedModel);
 
@@ -93,7 +93,7 @@ export function useEditorSave({ draft, baseline, setBaseline, pendingPersonaId }
         base_url: d.baseUrl || undefined,
         auth_token: d.authToken || undefined,
       } satisfies ModelProfile);
-    } else if (d.selectedModel !== '') {
+    } else {
       profile = JSON.stringify({
         model: d.selectedModel,
         provider: 'anthropic',

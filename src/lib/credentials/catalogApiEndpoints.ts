@@ -19,6 +19,40 @@ const ep = (method: string, path: string, summary: string, params: EP['parameter
 const jsonBody = (required = true): EP['request_body'] =>
   ({ content_type: 'application/json', schema_json: null, required });
 
+// ── Azure DevOps ────────────────────────────────────────────────────
+
+const azure_devops: EP[] = [
+  ep('GET', '/_apis/projects', 'List projects', [
+    queryP('api-version', true, '7.1'),
+  ], ['Projects']),
+  ep('GET', '/{project}/_apis/wit/workitems/{id}', 'Get work item', [
+    pathP('project', 'Project name or ID'),
+    pathP('id', 'Work item ID'),
+    queryP('api-version', true, '7.1'),
+  ], ['Work Items']),
+  ep('GET', '/{project}/_apis/git/repositories', 'List repositories', [
+    pathP('project'),
+    queryP('api-version', true, '7.1'),
+  ], ['Git']),
+  ep('GET', '/{project}/_apis/git/repositories/{repositoryId}/pullrequests', 'List pull requests', [
+    pathP('project'), pathP('repositoryId'),
+    queryP('api-version', true, '7.1'),
+    queryP('searchCriteria.status', false, 'active, completed, abandoned, all'),
+  ], ['Git']),
+  ep('GET', '/{project}/_apis/build/builds', 'List builds', [
+    pathP('project'),
+    queryP('api-version', true, '7.1'),
+  ], ['Build']),
+  ep('GET', '/{project}/_apis/pipelines', 'List pipelines', [
+    pathP('project'),
+    queryP('api-version', true, '7.1'),
+  ], ['Pipelines']),
+  ep('POST', '/{project}/_apis/wit/workitems/$Task', 'Create work item', [
+    pathP('project'),
+    queryP('api-version', true, '7.1'),
+  ], ['Work Items'], jsonBody(), 'Body: [{ "op": "add", "path": "/fields/System.Title", "value": "..." }]'),
+];
+
 // ── GitHub ───────────────────────────────────────────────────────────
 
 const github: EP[] = [
@@ -490,6 +524,28 @@ const notion: EP[] = [
   ], ['Blocks']),
 ];
 
+// ── Cal.com ──────────────────────────────────────────────────────────
+
+const cal_com: EP[] = [
+  ep('GET', '/v2/me', 'Get current user profile', [], ['Users']),
+  ep('GET', '/v2/bookings', 'List bookings', [
+    queryP('status', false, 'upcoming, recurring, past, cancelled, unconfirmed'),
+  ], ['Bookings']),
+  ep('GET', '/v2/bookings/{bookingUid}', 'Get booking by UID', [
+    pathP('bookingUid', 'Booking UID'),
+  ], ['Bookings']),
+  ep('POST', '/v2/bookings', 'Create a booking', [], ['Bookings'], jsonBody(), 'Body: { "start": "2025-01-01T10:00:00Z", "eventTypeId": 123, "attendee": { "name": "...", "email": "..." } }'),
+  ep('GET', '/v2/event-types', 'List event types', [], ['Event Types']),
+  ep('GET', '/v2/event-types/{eventTypeId}', 'Get event type by ID', [
+    pathP('eventTypeId', 'Event type ID'),
+  ], ['Event Types']),
+  ep('GET', '/v2/schedules', 'List schedules', [], ['Schedules']),
+  ep('GET', '/v2/calendars/busy-times', 'Check calendar availability', [
+    queryP('dateFrom', true, 'ISO 8601 start'),
+    queryP('dateTo', true, 'ISO 8601 end'),
+  ], ['Availability']),
+];
+
 // ── Calendly (community spec) ────────────────────────────────────────
 
 const calendly: EP[] = [
@@ -727,6 +783,50 @@ const asana: EP[] = [
   ], ['Tasks'], jsonBody(), 'Body: { "data": { "name": "Updated title", "completed": true } }'),
 ];
 
+// ── Kubernetes ───────────────────────────────────────────────────────
+
+const kubernetes: EP[] = [
+  ep('GET', '/api', 'Get API versions', [], ['Core']),
+  ep('GET', '/api/v1/namespaces', 'List namespaces', [], ['Core']),
+  ep('GET', '/api/v1/namespaces/{namespace}/pods', 'List pods in namespace', [
+    pathP('namespace', 'Namespace name'),
+  ], ['Core']),
+  ep('GET', '/api/v1/namespaces/{namespace}/services', 'List services in namespace', [
+    pathP('namespace'),
+  ], ['Core']),
+  ep('GET', '/apis/apps/v1/namespaces/{namespace}/deployments', 'List deployments', [
+    pathP('namespace'),
+  ], ['Apps']),
+  ep('GET', '/api/v1/nodes', 'List nodes', [], ['Core']),
+  ep('GET', '/api/v1/namespaces/{namespace}/configmaps', 'List configmaps', [
+    pathP('namespace'),
+  ], ['Core']),
+  ep('GET', '/api/v1/namespaces/{namespace}/events', 'List events', [
+    pathP('namespace'),
+  ], ['Core']),
+];
+
+// ── Leonardo AI ──────────────────────────────────────────────────────
+
+const leonardo_ai: EP[] = [
+  ep('GET', '/me', 'Get current user info', [], ['Users']),
+  ep('POST', '/generations', 'Create image generation', [], ['Generations'], jsonBody(), 'Body: { "prompt": "...", "modelId": "...", "width": 1024, "height": 1024, "num_images": 1 }'),
+  ep('GET', '/generations/{id}', 'Get generation by ID', [
+    pathP('id', 'Generation ID'),
+  ], ['Generations']),
+  ep('GET', '/generations/user/{userId}', 'List user generations', [
+    pathP('userId', 'User ID'),
+    queryP('limit', false, 'Max results (default 10)'),
+    queryP('offset', false, 'Pagination offset'),
+  ], ['Generations']),
+  ep('DELETE', '/generations/{id}', 'Delete a generation', [
+    pathP('id', 'Generation ID'),
+  ], ['Generations']),
+  ep('GET', '/platformModels', 'List platform models', [], ['Models']),
+  ep('POST', '/init-image', 'Upload an init image', [], ['Images'], jsonBody(), 'Body: { "extension": "png" }'),
+  ep('POST', '/variations/upscale', 'Upscale an image', [], ['Variations'], jsonBody(), 'Body: { "id": "generation-id" }'),
+];
+
 // ── LinkedIn ────────────────────────────────────────────────────────
 
 const linkedin: EP[] = [
@@ -740,6 +840,7 @@ const linkedin: EP[] = [
 // ── Export ────────────────────────────────────────────────────────────
 
 export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
+  azure_devops,
   github,
   slack,
   discord,
@@ -763,6 +864,7 @@ export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
   twilio_segment,
   planetscale,
   notion,
+  cal_com,
   calendly,
   telegram,
   buffer,
@@ -778,5 +880,7 @@ export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
   upstash,
   github_actions,
   asana,
+  kubernetes,
+  leonardo_ai,
   linkedin,
 };

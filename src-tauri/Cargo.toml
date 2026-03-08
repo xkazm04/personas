@@ -66,6 +66,7 @@ arboard = "3"
 tempfile = "3"
 zip = { version = "2", default-features = false, features = ["deflate"] }
 jsonschema = { version = "0.28", default-features = false }
+which = "8.0.1"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.58", features = [

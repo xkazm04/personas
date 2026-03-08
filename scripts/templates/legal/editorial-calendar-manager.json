@@ -723,6 +723,28 @@
           }
         ]
       }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Escalation to human for critical or ambiguous items",
+        "context": "Escalation logic detected in instructions"
+      },
+      {
+        "type": "user_message",
+        "label": "Email notifications for reports, digests, and alerts (periodic digests, critical alerts, completion confirmations, error notifications)",
+        "context": "1 notification channel(s) configured: email"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Deduplication memory tracking known items across runs",
+        "context": "Tracks: recurring patterns, known items for deduplication"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits events: execution failed, item created, threshold breached, escalation triggered",
+        "context": "2 event subscription(s) configured — agent participates in event bus"
+      }
     ]
   }
 }

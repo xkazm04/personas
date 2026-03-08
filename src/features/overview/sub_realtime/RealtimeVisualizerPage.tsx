@@ -9,6 +9,8 @@ import RealtimeStatsBar from '@/features/overview/sub_realtime/RealtimeStatsBar'
 import EventBusVisualization from '@/features/overview/sub_realtime/EventBusVisualization';
 import EventDetailDrawer from '@/features/overview/sub_realtime/EventDetailDrawer';
 import TimelinePlayer from '@/features/overview/sub_realtime/TimelinePlayer';
+import EventBusFilterBar from '@/features/overview/sub_realtime/EventBusFilterBar';
+import { useEventBusFilter } from '@/features/overview/sub_realtime/useEventBusFilter';
 
 export default function RealtimeVisualizerPage() {
   const personas = usePersonaStore((s) => s.personas);
@@ -20,6 +22,7 @@ export default function RealtimeVisualizerPage() {
     isPaused,
     isConnected,
     selectedEvent,
+    droppedCount,
     togglePause,
     selectEvent,
     triggerTestFlow,
@@ -30,7 +33,33 @@ export default function RealtimeVisualizerPage() {
   const timeline = useTimelineReplay();
 
   // When replay is active, feed replay events to the visualization
-  const displayEvents = timeline.active ? timeline.replayEvents : liveEvents;
+  const rawDisplayEvents = timeline.active ? timeline.replayEvents : liveEvents;
+
+  // ── Event bus filter ──────────────────────────────────────────────
+  const {
+    filter,
+    setFilter,
+    filteredEvents,
+    filteredCount,
+    totalCount,
+    savedViews,
+    activeViewId,
+    applyView,
+    saveCurrentView,
+    deleteView,
+  } = useEventBusFilter(rawDisplayEvents);
+
+  const displayEvents = filteredEvents;
+
+  // Collect discovered sources from events for the filter dropdown
+  const discoveredSources = useMemo(() => {
+    const sources = new Set<string>();
+    for (const evt of rawDisplayEvents) {
+      const src = evt.source_id || evt.source_type;
+      if (src) sources.add(src);
+    }
+    return [...sources].sort();
+  }, [rawDisplayEvents]);
 
   // Map personas to the shape expected by EventBusVisualization
   const personaInfos = useMemo(
@@ -69,11 +98,27 @@ export default function RealtimeVisualizerPage() {
         />
       )}
 
+      {/* Filter bar */}
+      <EventBusFilterBar
+        filter={filter}
+        onFilterChange={setFilter}
+        savedViews={savedViews}
+        activeViewId={activeViewId}
+        onApplyView={applyView}
+        onSaveView={saveCurrentView}
+        onDeleteView={deleteView}
+        personas={personaInfos}
+        discoveredSources={discoveredSources}
+        filteredCount={filteredCount}
+        totalCount={totalCount}
+      />
+
       {/* Main visualization area */}
       <div className="flex-1 relative overflow-hidden">
         <EventBusVisualization
           events={displayEvents}
           personas={personaInfos}
+          droppedCount={timeline.active ? 0 : droppedCount}
           onSelectEvent={selectEvent}
         />
 

@@ -1,11 +1,11 @@
 import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { ChevronRight, Zap } from 'lucide-react';
+import { ChevronRight, Zap, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 import * as api from '@/api/tauriApi';
 import { getTriggerHealthMap } from '@/api/triggers';
 import type { PersonaTrigger } from '@/lib/types/types';
-import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, parseTriggerConfig } from '@/lib/utils/triggerConstants';
+import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, parseTriggerConfig, WEBHOOK_BASE_URL } from '@/lib/utils/triggerConstants';
 import { formatTimestamp, formatCountdown } from '@/lib/utils/formatters';
 import EmptyState from '@/features/shared/components/EmptyState';
 
@@ -255,6 +255,7 @@ interface TriggerListProps {
 
 export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
   const personas = usePersonaStore((state) => state.personas);
+  const triggerRateLimits = usePersonaStore((s) => s.triggerRateLimits);
   const [allTriggers, setAllTriggers] = useState<Record<string, PersonaTrigger[]>>({});
   const [triggerHealthMap, setTriggerHealthMap] = useState<Record<string, TriggerHealth>>({});
 
@@ -387,13 +388,24 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
                                 {trigger.enabled ? 'On' : 'Off'}
                               </span>
                               <HealthDot health={triggerHealthMap[trigger.id] ?? 'unknown'} />
+                              {triggerRateLimits[trigger.id]?.isThrottled && (
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-sm bg-red-500/15 text-red-400 border border-red-500/20 font-medium">
+                                  <Shield className="w-2.5 h-2.5" />
+                                  Throttled
+                                </span>
+                              )}
+                              {(triggerRateLimits[trigger.id]?.queueDepth ?? 0) > 0 && (
+                                <span className="px-1.5 py-0.5 rounded-full text-sm bg-amber-500/15 text-amber-400 border border-amber-500/20 font-mono">
+                                  {triggerRateLimits[trigger.id]!.queueDepth} queued
+                                </span>
+                              )}
                             </div>
 
                             <div className="mt-1.5 text-sm text-muted-foreground/80 space-y-0.5">
                               <div>Last: {formatTimestamp(trigger.last_triggered_at, 'Never')}</div>
                               {trigger.trigger_type === 'webhook' && (
                                 <div className="font-mono text-sm text-muted-foreground/80 truncate mt-0.5">
-                                  localhost:9420/webhook/{trigger.id.slice(0, 8)}...
+                                  {WEBHOOK_BASE_URL.replace(/^https?:\/\//, '')}/webhook/{trigger.id.slice(0, 8)}...
                                 </div>
                               )}
                             </div>

@@ -63,6 +63,7 @@ export function getCategoryMeta(name: string) {
 // ── Sort Options ─────────────────────────────────────────────────
 
 export const SORT_OPTIONS = [
+  { value: 'readiness', label: 'Ready to Deploy', dir: 'desc' },
   { value: 'created_at', label: 'Newest First', dir: 'desc' },
   { value: 'created_at_asc', label: 'Oldest First', dir: 'asc' },
   { value: 'name', label: 'Name A-Z', dir: 'asc' },

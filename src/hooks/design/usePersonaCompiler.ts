@@ -59,6 +59,7 @@ export function usePersonaCompiler() {
     result: design.result,
     error: design.error,
     applyWarnings: design.applyWarnings,
+    failedOperations: design.failedOperations,
     question: design.question,
 
     // ── Compiler actions ───────────────────────────────────────
@@ -74,6 +75,8 @@ export function usePersonaCompiler() {
     cancel: design.cancelAnalysis,
     /** Apply the compiled result to the persona. */
     applyCompilation: design.applyResult,
+    /** Retry only the previously failed operations. */
+    retryFailed: design.retryFailed,
     /** Reset the compiler to idle state. */
     reset: design.reset,
     /** Set the conversation ID for multi-turn context. */

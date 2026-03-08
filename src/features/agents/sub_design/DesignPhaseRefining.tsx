@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { TransformProgress } from '@/features/shared/components/TransformProgress';
+import { CompilationStepper } from './CompilationStepper';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 
 interface DesignPhaseRefiningProps {
@@ -25,6 +26,8 @@ export function DesignPhaseRefining({ outputLines, result, onCancel }: DesignPha
           <p className="text-sm text-foreground/90">{result.summary}</p>
         </div>
       )}
+
+      <CompilationStepper outputLines={outputLines} isRunning={true} />
 
       <TransformProgress mode="analysis" lines={outputLines} isRunning={true} />
 

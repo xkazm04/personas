@@ -715,6 +715,28 @@
           }
         ]
       }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Confirmation required for high-priority actions",
+        "context": "High-priority confirmation gate detected"
+      },
+      {
+        "type": "user_message",
+        "label": "Real-time Slack alerts plus email digests and summaries (critical alerts, completion confirmations, error notifications)",
+        "context": "3 notification channel(s) configured: slack, slack, email"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Deduplication memory tracking known items across runs",
+        "context": "Tracks: recurring patterns, known items for deduplication"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits events: item created, threshold breached",
+        "context": "2 event subscription(s) configured — agent participates in event bus"
+      }
     ]
   }
 }

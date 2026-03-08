@@ -212,6 +212,79 @@ pub fn update_importance(pool: &DbPool, id: &str, importance: i32) -> Result<boo
     Ok(rows > 0)
 }
 
+pub fn update(
+    pool: &DbPool,
+    id: &str,
+    title: Option<&str>,
+    content: Option<&str>,
+    category: Option<&str>,
+    importance: Option<i32>,
+) -> Result<TeamMemory, AppError> {
+    let conn = pool.get()?;
+
+    // Read existing memory to build revision log from current values
+    let existing = get_by_id(pool, id)?;
+
+    // Build revision entry from current state (stored in tags as JSON array)
+    let now = chrono::Utc::now().to_rfc3339();
+    let revision = serde_json::json!({
+        "title": existing.title,
+        "content": existing.content,
+        "category": existing.category,
+        "importance": existing.importance,
+        "edited_at": now,
+    });
+
+    // Parse existing tags to append revision
+    let mut tags_obj: serde_json::Value = existing
+        .tags
+        .as_deref()
+        .and_then(|t| serde_json::from_str(t).ok())
+        .unwrap_or_else(|| {
+            // If tags is a simple string like "auto" or "manual", preserve it
+            let base = existing.tags.clone().unwrap_or_default();
+            serde_json::json!({ "source": base, "revisions": [] })
+        });
+
+    // Ensure revisions array exists
+    if tags_obj.get("revisions").is_none() {
+        let source = if tags_obj.is_string() {
+            tags_obj.as_str().unwrap_or("").to_string()
+        } else {
+            "".to_string()
+        };
+        tags_obj = serde_json::json!({ "source": source, "revisions": [] });
+    }
+
+    if let Some(revisions) = tags_obj.get_mut("revisions").and_then(|v| v.as_array_mut()) {
+        // Keep at most 20 revisions
+        if revisions.len() >= 20 {
+            revisions.remove(0);
+        }
+        revisions.push(revision);
+    }
+
+    let tags_str = serde_json::to_string(&tags_obj).unwrap_or_default();
+    let new_title = title.unwrap_or(&existing.title);
+    let new_content = content.unwrap_or(&existing.content);
+    let new_category = category.unwrap_or(&existing.category);
+    let new_importance = importance.unwrap_or(existing.importance);
+
+    if new_title.trim().is_empty() {
+        return Err(AppError::Validation("Title cannot be empty".into()));
+    }
+    if new_content.trim().is_empty() {
+        return Err(AppError::Validation("Content cannot be empty".into()));
+    }
+
+    conn.execute(
+        "UPDATE team_memories SET title = ?1, content = ?2, category = ?3, importance = ?4, tags = ?5, updated_at = ?6 WHERE id = ?7",
+        params![new_title, new_content, new_category, new_importance, tags_str, now, id],
+    )?;
+
+    get_by_id(pool, id)
+}
+
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     let conn = pool.get()?;
     let rows = conn.execute("DELETE FROM team_memories WHERE id = ?1", params![id])?;
@@ -260,8 +333,9 @@ pub fn get_total_count(
     if let Some(cat) = category {
         conditions.push(format!("category = ?{param_idx}"));
         param_values.push(Box::new(cat.to_string()));
-        let _ = param_idx;
+        param_idx += 1;
     }
+    let _ = param_idx; // suppress unused-assignment warning; keep idx correct for future filters
 
     let where_clause = format!("WHERE {}", conditions.join(" AND "));
     let sql = format!("SELECT COUNT(*) FROM team_memories {where_clause}");
@@ -272,31 +346,71 @@ pub fn get_total_count(
     Ok(count)
 }
 
-pub fn get_stats(pool: &DbPool, team_id: &str) -> Result<TeamMemoryStats, AppError> {
+pub fn get_stats(
+    pool: &DbPool,
+    team_id: &str,
+    category: Option<&str>,
+    search: Option<&str>,
+) -> Result<TeamMemoryStats, AppError> {
     let conn = pool.get()?;
 
+    // Build shared WHERE clause for all three queries
+    let mut conditions: Vec<String> = vec!["team_id = ?1".to_string()];
+    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> =
+        vec![Box::new(team_id.to_string())];
+    let mut param_idx = 2u32;
+
+    if let Some(cat) = category {
+        conditions.push(format!("category = ?{param_idx}"));
+        param_values.push(Box::new(cat.to_string()));
+        param_idx += 1;
+    }
+    if let Some(q) = search {
+        let trimmed = q.trim();
+        if !trimmed.is_empty() {
+            let pattern = format!("%{}%", escape_like(trimmed));
+            conditions.push(format!(
+                "(title LIKE ?{} ESCAPE '\\' OR content LIKE ?{} ESCAPE '\\')",
+                param_idx,
+                param_idx + 1
+            ));
+            param_values.push(Box::new(pattern.clone()));
+            param_values.push(Box::new(pattern));
+            param_idx += 2;
+        }
+    }
+    let _ = param_idx;
+
+    let where_clause = format!("WHERE {}", conditions.join(" AND "));
+    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+        param_values.iter().map(|p| p.as_ref()).collect();
+
     // Total + avg importance
-    let (total, avg_importance): (i64, f64) = conn.query_row(
-        "SELECT COUNT(*), COALESCE(AVG(importance), 0) FROM team_memories WHERE team_id = ?1",
-        params![team_id],
-        |row| Ok((row.get(0)?, row.get(1)?)),
-    )?;
+    let sql_agg = format!(
+        "SELECT COUNT(*), COALESCE(AVG(importance), 0) FROM team_memories {where_clause}"
+    );
+    let (total, avg_importance): (i64, f64) =
+        conn.query_row(&sql_agg, params_ref.as_slice(), |row| {
+            Ok((row.get(0)?, row.get(1)?))
+        })?;
 
     // Category breakdown
-    let mut cat_stmt = conn.prepare(
-        "SELECT category, COUNT(*) as cnt FROM team_memories WHERE team_id = ?1 GROUP BY category ORDER BY cnt DESC",
-    )?;
+    let sql_cat = format!(
+        "SELECT category, COUNT(*) as cnt FROM team_memories {where_clause} GROUP BY category ORDER BY cnt DESC"
+    );
+    let mut cat_stmt = conn.prepare(&sql_cat)?;
     let category_counts: Vec<(String, i64)> = cat_stmt
-        .query_map(params![team_id], |row| Ok((row.get(0)?, row.get(1)?)))?
+        .query_map(params_ref.as_slice(), |row| Ok((row.get(0)?, row.get(1)?)))?
         .collect::<Result<Vec<_>, _>>()
         .map_err(AppError::Database)?;
 
     // Run breakdown
-    let mut run_stmt = conn.prepare(
-        "SELECT COALESCE(run_id, 'manual'), COUNT(*) as cnt FROM team_memories WHERE team_id = ?1 GROUP BY run_id ORDER BY cnt DESC",
-    )?;
+    let sql_run = format!(
+        "SELECT COALESCE(run_id, 'manual'), COUNT(*) as cnt FROM team_memories {where_clause} GROUP BY run_id ORDER BY cnt DESC"
+    );
+    let mut run_stmt = conn.prepare(&sql_run)?;
     let run_counts: Vec<(String, i64)> = run_stmt
-        .query_map(params![team_id], |row| Ok((row.get(0)?, row.get(1)?)))?
+        .query_map(params_ref.as_slice(), |row| Ok((row.get(0)?, row.get(1)?)))?
         .collect::<Result<Vec<_>, _>>()
         .map_err(AppError::Database)?;
 

@@ -7,19 +7,21 @@ import {
   AlertTriangle,
   Check,
   Loader2,
-  ArrowRightLeft,
+  ShieldCheck,
+  KeyRound,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import {
   getExportStats,
   exportFull,
   importPortabilityBundle,
-  previewCompetitiveImport,
+  exportCredentials,
+  importCredentials,
 } from '@/api/dataPortability';
 import type {
   ExportStats,
   PortabilityImportResult,
-  CompetitiveImportPreview,
+  CredentialImportResult,
 } from '@/api/dataPortability';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
@@ -32,8 +34,13 @@ export default function DataPortabilitySettings() {
   const [importStatus, setImportStatus] = useState<Status>('idle');
   const [importResult, setImportResult] = useState<PortabilityImportResult | null>(null);
 
-  const [competitiveStatus, setCompetitiveStatus] = useState<Status>('idle');
-  const [competitivePreviews, setCompetitivePreviews] = useState<CompetitiveImportPreview[]>([]);
+  const [credExportStatus, setCredExportStatus] = useState<Status>('idle');
+  const [credImportStatus, setCredImportStatus] = useState<Status>('idle');
+  const [credImportResult, setCredImportResult] = useState<CredentialImportResult | null>(null);
+  const [credExportPassphrase, setCredExportPassphrase] = useState('');
+  const [credImportPassphrase, setCredImportPassphrase] = useState('');
+  const [showCredExportInput, setShowCredExportInput] = useState(false);
+  const [showCredImportInput, setShowCredImportInput] = useState(false);
 
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -80,23 +87,49 @@ export default function DataPortabilitySettings() {
     }
   }, []);
 
-  const handleCompetitiveImport = useCallback(async () => {
-    setCompetitiveStatus('loading');
-    setCompetitivePreviews([]);
+  const handleCredExport = useCallback(async () => {
+    if (credExportPassphrase.length < 8) {
+      setErrorMsg('Passphrase must be at least 8 characters');
+      return;
+    }
+    setCredExportStatus('loading');
     setErrorMsg('');
     try {
-      const previews = await previewCompetitiveImport();
-      if (previews) {
-        setCompetitivePreviews(previews);
-        setCompetitiveStatus('success');
-      } else {
-        setCompetitiveStatus('idle'); // user cancelled
+      const saved = await exportCredentials(credExportPassphrase);
+      setCredExportStatus(saved ? 'success' : 'idle');
+      if (saved) {
+        setShowCredExportInput(false);
+        setCredExportPassphrase('');
       }
     } catch (e) {
       setErrorMsg(String(e));
-      setCompetitiveStatus('error');
+      setCredExportStatus('error');
     }
-  }, []);
+  }, [credExportPassphrase]);
+
+  const handleCredImport = useCallback(async () => {
+    if (!credImportPassphrase) {
+      setErrorMsg('Please enter the passphrase used during export');
+      return;
+    }
+    setCredImportStatus('loading');
+    setCredImportResult(null);
+    setErrorMsg('');
+    try {
+      const result = await importCredentials(credImportPassphrase);
+      if (result) {
+        setCredImportResult(result);
+        setCredImportStatus('success');
+        setShowCredImportInput(false);
+        setCredImportPassphrase('');
+      } else {
+        setCredImportStatus('idle');
+      }
+    } catch (e) {
+      setErrorMsg(String(e));
+      setCredImportStatus('error');
+    }
+  }, [credImportPassphrase]);
 
   return (
     <ContentBox>
@@ -139,14 +172,15 @@ export default function DataPortabilitySettings() {
             )}
           </div>
 
-          {/* Export section */}
+          {/* Workspace Export & Import */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
             <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
-              Export
+              Workspace Export & Import
             </h2>
             <p className="text-sm text-muted-foreground/70">
               Export your workspace to a portable ZIP archive containing all personas, teams,
-              tools, connectors, memories, and test suites.
+              tools, connectors, memories, and test suites. Import restores from a previously
+              exported archive — imported items are created as new entities (disabled by default).
             </p>
 
             <div className="flex flex-wrap gap-3">
@@ -168,22 +202,9 @@ export default function DataPortabilitySettings() {
                   ? 'Exporting...'
                   : exportStatus === 'success'
                     ? 'Exported!'
-                    : 'Full Export'}
+                    : 'Export Workspace'}
               </button>
-            </div>
-          </div>
 
-          {/* Import section */}
-          <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
-            <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
-              Import
-            </h2>
-            <p className="text-sm text-muted-foreground/70">
-              Restore from a previously exported archive. Imported items are created as new
-              entities (disabled by default) to avoid conflicts.
-            </p>
-
-            <div className="flex flex-wrap gap-3">
               <button
                 onClick={handleImport}
                 disabled={importStatus === 'loading'}
@@ -244,76 +265,149 @@ export default function DataPortabilitySettings() {
             )}
           </div>
 
-          {/* Competitive import section */}
+          {/* Credential vault export/import */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
             <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
-              Migrate from Other Platforms
+              Credential Vault
             </h2>
-            <p className="text-sm text-muted-foreground/70">
-              Import workflows from n8n, Zapier, or Make/Integromat. Select a workflow
-              JSON export to preview how it maps to persona agents.
-            </p>
-
-            <div className="flex flex-wrap gap-3">
-              <button
-                onClick={handleCompetitiveImport}
-                disabled={competitiveStatus === 'loading'}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium
-                  bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/15
-                  transition-colors disabled:opacity-50"
-              >
-                {competitiveStatus === 'loading' ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <ArrowRightLeft className="w-4 h-4" />
-                )}
-                {competitiveStatus === 'loading' ? 'Analyzing...' : 'Import Workflow'}
-              </button>
+            <div className="flex items-start gap-2 text-sm text-muted-foreground/70">
+              <ShieldCheck className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-400/70" />
+              <p>
+                Workspace exports do not include credential secrets. Use this section to
+                export and import your vault with password-protected AES-256 encryption.
+              </p>
             </div>
 
-            {/* Competitive preview results */}
-            {competitivePreviews.length > 0 && (
-              <div className="space-y-3">
-                {competitivePreviews.map((preview, i) => (
-                  <div
-                    key={i}
-                    className="rounded-lg border border-violet-500/20 bg-violet-500/5 p-4 space-y-2"
+            <div className="flex flex-wrap gap-3">
+              {/* Export credentials */}
+              <div className="space-y-2">
+                {!showCredExportInput ? (
+                  <button
+                    onClick={() => setShowCredExportInput(true)}
+                    disabled={credExportStatus === 'loading'}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium
+                      bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/15
+                      transition-colors disabled:opacity-50"
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-400 border border-violet-500/25 font-medium">
-                        {preview.source_platform}
-                      </span>
-                      <span className="text-sm font-medium text-foreground/90">
-                        {preview.workflow_name}
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground/70">{preview.description}</p>
-                    {preview.suggested_tools.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {preview.suggested_tools.map((tool, j) => (
-                          <span
-                            key={j}
-                            className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-muted-foreground/80 border border-primary/10"
-                          >
-                            {tool}
-                          </span>
-                        ))}
-                      </div>
+                    {credExportStatus === 'success' ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      <KeyRound className="w-4 h-4" />
                     )}
-                    {preview.suggested_triggers.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {preview.suggested_triggers.map((trigger, j) => (
-                          <span
-                            key={j}
-                            className="text-xs px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400/80 border border-amber-500/15"
-                          >
-                            {trigger}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                    {credExportStatus === 'success' ? 'Exported!' : 'Export Credentials'}
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="password"
+                      placeholder="Passphrase (min 8 chars)"
+                      value={credExportPassphrase}
+                      onChange={(e) => setCredExportPassphrase(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleCredExport()}
+                      className="px-3 py-2 rounded-lg border border-primary/15 bg-secondary/20 text-sm
+                        text-foreground/90 placeholder:text-muted-foreground/40 outline-none
+                        focus:border-amber-500/30 w-56"
+                      autoFocus
+                    />
+                    <button
+                      onClick={handleCredExport}
+                      disabled={credExportStatus === 'loading'}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium
+                        bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/15
+                        transition-colors disabled:opacity-50"
+                    >
+                      {credExportStatus === 'loading' ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Download className="w-4 h-4" />
+                      )}
+                      Export
+                    </button>
+                    <button
+                      onClick={() => { setShowCredExportInput(false); setCredExportPassphrase(''); }}
+                      className="text-xs text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors"
+                    >
+                      Cancel
+                    </button>
                   </div>
-                ))}
+                )}
+              </div>
+
+              {/* Import credentials */}
+              <div className="space-y-2">
+                {!showCredImportInput ? (
+                  <button
+                    onClick={() => setShowCredImportInput(true)}
+                    disabled={credImportStatus === 'loading'}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium
+                      bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15
+                      transition-colors disabled:opacity-50"
+                  >
+                    {credImportStatus === 'success' ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      <Upload className="w-4 h-4" />
+                    )}
+                    {credImportStatus === 'success' ? 'Imported!' : 'Import Credentials'}
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="password"
+                      placeholder="Passphrase"
+                      value={credImportPassphrase}
+                      onChange={(e) => setCredImportPassphrase(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleCredImport()}
+                      className="px-3 py-2 rounded-lg border border-primary/15 bg-secondary/20 text-sm
+                        text-foreground/90 placeholder:text-muted-foreground/40 outline-none
+                        focus:border-blue-500/30 w-56"
+                      autoFocus
+                    />
+                    <button
+                      onClick={handleCredImport}
+                      disabled={credImportStatus === 'loading'}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium
+                        bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15
+                        transition-colors disabled:opacity-50"
+                    >
+                      {credImportStatus === 'loading' ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Upload className="w-4 h-4" />
+                      )}
+                      Import
+                    </button>
+                    <button
+                      onClick={() => { setShowCredImportInput(false); setCredImportPassphrase(''); }}
+                      className="text-xs text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Import result */}
+            {credImportResult && (
+              <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium text-emerald-400">
+                  <PackageCheck className="w-4 h-4" />
+                  Credential Import Complete
+                </div>
+                <p className="text-sm text-muted-foreground/80">
+                  {credImportResult.created} credential(s) imported
+                </p>
+                {credImportResult.warnings.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    <p className="text-sm font-medium text-amber-400">Warnings:</p>
+                    {credImportResult.warnings.map((w, i) => (
+                      <p key={i} className="text-sm text-muted-foreground/70 pl-2">
+                        - {w}
+                      </p>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>

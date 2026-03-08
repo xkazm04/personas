@@ -23,7 +23,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://cdn.simpleicons.org https://*.googleusercontent.com data:; font-src 'self' data:; connect-src 'self' https://raw.githubusercontent.com https://gist.githubusercontent.com https://github.com https://*.ingest.sentry.io; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'; manifest-src 'self'; media-src 'self'",
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://cdn.simpleicons.org https://lh3.googleusercontent.com; font-src 'self'; connect-src 'self' https://raw.githubusercontent.com https://gist.githubusercontent.com https://github.com https://*.ingest.sentry.io; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'; manifest-src 'self'; media-src 'self'",
       "devCsp": "default-src 'self' http://localhost:*; script-src 'self' http://localhost:*; style-src 'self' 'unsafe-inline' http://localhost:*; img-src 'self' https://cdn.simpleicons.org https://*.googleusercontent.com data: http://localhost:*; font-src 'self' data: http://localhost:*; connect-src 'self' http://localhost:* ws://localhost:* https://raw.githubusercontent.com https://gist.githubusercontent.com https://github.com https://*.ingest.sentry.io; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'; manifest-src 'self'; media-src 'self'",
       "freezePrototype": true
     },

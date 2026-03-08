@@ -43,7 +43,7 @@ pub async fn run_healthcheck(
     }
 
     // Resolve auth token via connector strategy
-    let strategy = connector_strategy::registry().get(&cred.service_type, connector.metadata.as_deref());
+    let strategy = connector_strategy::registry()?.get(&cred.service_type, connector.metadata.as_deref());
     let token = strategy.resolve_auth_token(connector.metadata.as_deref(), &fields).await?;
 
     execute_healthcheck_request_with_strategy(strategy, &hc_config, &fields, token).await
@@ -64,7 +64,7 @@ pub async fn run_healthcheck_with_fields(
         });
     }
 
-    let strategy = connector_strategy::registry().get(service_type, connector.metadata.as_deref());
+    let strategy = connector_strategy::registry()?.get(service_type, connector.metadata.as_deref());
     let token = strategy.resolve_auth_token(connector.metadata.as_deref(), fields).await?;
 
     execute_healthcheck_request_with_strategy(strategy, &hc_config, fields, token).await

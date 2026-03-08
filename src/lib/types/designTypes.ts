@@ -118,7 +118,7 @@ export interface ProtocolCapability {
 }
 
 /** Phase of the design analysis lifecycle */
-export type DesignPhase = "idle" | "analyzing" | "preview" | "applying" | "applied" | "refining" | "awaiting-input";
+export type DesignPhase = "idle" | "analyzing" | "preview" | "applying" | "applied" | "refining" | "awaiting-input" | "error";
 
 /** Result of a design feasibility test */
 export interface DesignTestResult {

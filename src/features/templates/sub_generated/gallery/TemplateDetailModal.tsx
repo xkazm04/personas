@@ -16,9 +16,11 @@ import { DesignConnectorGrid } from '@/features/shared/components/DesignConnecto
 import { DimensionRadial } from '../shared/DimensionRadial';
 import { BaseModal } from '../shared/BaseModal';
 import { TabTransition } from '../shared/TabTransition';
+import { AdoptionPrerequisitesPanel } from './AdoptionPrerequisitesPanel';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { DesignAnalysisResult, SuggestedConnector } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
+import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { parseJsonSafe } from '@/lib/utils/parseJson';
 
 type DetailTab = 'overview' | 'prompt' | 'connectors' | 'json';
@@ -38,6 +40,13 @@ interface TemplateDetailModalProps {
   onDelete: (id: string) => void;
   onViewFlows: (review: PersonaDesignReview) => void;
   onTryIt: (review: PersonaDesignReview) => void;
+  credentials?: CredentialMetadata[];
+  connectorDefinitions?: ConnectorDefinition[];
+  onAddCredential?: (
+    connectorName: string,
+    suggestedConnector: SuggestedConnector | null,
+    connectorDefinition: ConnectorDefinition | null,
+  ) => void;
 }
 
 export function TemplateDetailModal({
@@ -48,6 +57,9 @@ export function TemplateDetailModal({
   onDelete,
   onViewFlows,
   onTryIt,
+  credentials = [],
+  connectorDefinitions = [],
+  onAddCredential,
 }: TemplateDetailModalProps) {
   const [activeTab, setActiveTab] = useState<DetailTab>('overview');
 
@@ -68,6 +80,8 @@ export function TemplateDetailModal({
   }[review.status] || { Icon: Clock, color: 'text-muted-foreground bg-secondary/30 border-primary/10', label: review.status };
 
   const StatusIcon = statusBadge.Icon;
+
+  const hasPrerequisites = designResult?.suggested_connectors && designResult.suggested_connectors.length > 0;
 
   return (
     <BaseModal
@@ -162,39 +176,79 @@ export function TemplateDetailModal({
           </TabTransition>
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-3 border-t border-primary/10 flex items-center justify-between flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => onAdopt(review)}
-              className="px-4 py-2 text-sm rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2"
-            >
-              <Download className="w-4 h-4" />
-              Adopt as Persona
-            </button>
-            {designResult && (
+        {/* Footer — Prerequisites panel or simple actions */}
+        <div className="px-6 py-4 border-t border-primary/10 flex-shrink-0">
+          {hasPrerequisites && onAddCredential ? (
+            <div className="flex gap-6">
+              <div className="flex-1 min-w-0">
+                <AdoptionPrerequisitesPanel
+                  designResult={designResult}
+                  credentials={credentials}
+                  connectorDefinitions={connectorDefinitions}
+                  onAddCredential={onAddCredential}
+                  onAdopt={() => onAdopt(review)}
+                />
+              </div>
+              <div className="flex flex-col items-end gap-2 flex-shrink-0 pt-7">
+                {designResult && (
+                  <button
+                    onClick={() => {
+                      onClose();
+                      onTryIt(review);
+                    }}
+                    className="px-4 py-2 text-sm rounded-xl bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center gap-2"
+                  >
+                    <Play className="w-4 h-4" />
+                    Try It
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    onDelete(review.id);
+                    onClose();
+                  }}
+                  className="px-3 py-2 text-sm rounded-xl text-red-400/70 hover:bg-red-500/10 transition-colors flex items-center gap-1.5"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Delete
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => onAdopt(review)}
+                  className="px-4 py-2 text-sm rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  Adopt as Persona
+                </button>
+                {designResult && (
+                  <button
+                    onClick={() => {
+                      onClose();
+                      onTryIt(review);
+                    }}
+                    className="px-4 py-2 text-sm rounded-xl bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center gap-2"
+                  >
+                    <Play className="w-4 h-4" />
+                    Try It
+                  </button>
+                )}
+              </div>
               <button
                 onClick={() => {
+                  onDelete(review.id);
                   onClose();
-                  onTryIt(review);
                 }}
-                className="px-4 py-2 text-sm rounded-xl bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center gap-2"
+                className="px-3 py-2 text-sm rounded-xl text-red-400/70 hover:bg-red-500/10 transition-colors flex items-center gap-1.5"
               >
-                <Play className="w-4 h-4" />
-                Try It
+                <Trash2 className="w-3.5 h-3.5" />
+                Delete
               </button>
-            )}
-          </div>
-          <button
-            onClick={() => {
-              onDelete(review.id);
-              onClose();
-            }}
-            className="px-3 py-2 text-sm rounded-xl text-red-400/70 hover:bg-red-500/10 transition-colors flex items-center gap-1.5"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            Delete
-          </button>
+            </div>
+          )}
         </div>
     </BaseModal>
   );

@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Key, LayoutTemplate, Sparkles, Plug, ArrowRight, ChevronDown, Tag, X } from 'lucide-react';
+import { Key, LayoutTemplate, Sparkles, Plug, ArrowRight, ChevronDown, Tag, X, Globe } from 'lucide-react';
 import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { CredentialCard } from '@/features/vault/sub_card/CredentialCard';
 import { CredentialPlaygroundModal } from '@/features/vault/sub_playground/CredentialPlaygroundModal';
@@ -13,7 +13,7 @@ import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types'
 const QUICK_START_SERVICES = ['openai', 'slack', 'github', 'linear'] as const;
 
 function capitalize(s: string) {
-  return s.charAt(0).toUpperCase() + s.slice(1);
+  return s.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
 // ── Filter types ─────────────────────────────────────────────────────
@@ -49,9 +49,10 @@ interface CredentialListProps {
   onQuickStart?: (connector: ConnectorDefinition) => void;
   onGoToCatalog?: () => void;
   onGoToAddNew?: () => void;
+  onWorkspaceConnect?: () => void;
 }
 
-export function CredentialList({ credentials, connectorDefinitions, searchTerm, onDelete, onQuickStart, onGoToCatalog, onGoToAddNew }: CredentialListProps) {
+export function CredentialList({ credentials, connectorDefinitions, searchTerm, onDelete, onQuickStart, onGoToCatalog, onGoToAddNew, onWorkspaceConnect }: CredentialListProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [healthFilter, setHealthFilter] = useState<HealthFilter>('all');
@@ -326,15 +327,17 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
               {capitalize(category)}
             </p>
           )}
-          {items.map(({ credential, connector }) => (
-            <CredentialCard
-              key={credential.id}
-              credential={credential}
-              connector={connector}
-              onSelect={() => setSelectedId(credential.id)}
-              onDelete={onDelete}
-            />
-          ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {items.map(({ credential, connector }) => (
+              <CredentialCard
+                key={credential.id}
+                credential={credential}
+                connector={connector}
+                onSelect={() => setSelectedId(credential.id)}
+                onDelete={onDelete}
+              />
+            ))}
+          </div>
         </div>
       ))}
 
@@ -414,6 +417,26 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
               </span>
             </button>
           </div>
+
+          {/* Workspace Connect — full width */}
+          {onWorkspaceConnect && (
+            <button
+              onClick={onWorkspaceConnect}
+              className="w-full text-left p-4 rounded-xl bg-gradient-to-r from-blue-500/5 to-emerald-500/5 border border-blue-500/15 hover:from-blue-500/10 hover:to-emerald-500/10 hover:border-blue-500/25 transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                  <Globe className="w-4.5 h-4.5 text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground/80">Workspace Connect</p>
+                  <p className="text-sm text-muted-foreground/60">
+                    One Google login creates Gmail, Calendar, Drive, and Sheets credentials
+                  </p>
+                </div>
+              </div>
+            </button>
+          )}
 
           {/* Quick-start row */}
           {(() => {

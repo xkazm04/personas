@@ -1,7 +1,11 @@
 import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import { Zap, Eye, EyeOff, Copy, CheckCircle2, Clock, CalendarClock, Plus, X } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, TRIGGER_TEMPLATES, type CompositeCondition } from '@/lib/utils/triggerConstants';
+import {
+  TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, TRIGGER_TEMPLATES,
+  TRIGGER_CATEGORIES, TRIGGER_TYPE_OPTIONS, getTriggerCategory,
+  type CompositeCondition, type TriggerCategory,
+} from '@/lib/utils/triggerConstants';
 import { formatInterval } from '@/lib/utils/formatters';
 import { previewCronSchedule, type CronPreview } from '@/api/triggers';
 import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
@@ -170,6 +174,7 @@ export interface TriggerAddFormProps {
 }
 
 export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel }: TriggerAddFormProps) {
+  const [selectedCategory, setSelectedCategory] = useState<TriggerCategory | null>(null);
   const [triggerType, setTriggerType] = useState<string>('manual');
   const [scheduleMode, setScheduleMode] = useState<'interval' | 'cron'>('interval');
   const [interval, setInterval] = useState('3600');
@@ -350,6 +355,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
     const tpl = TRIGGER_TEMPLATES.find((t) => t.id === templateId);
     if (!tpl) return;
     setValidationError(null);
+    setSelectedCategory(getTriggerCategory(tpl.triggerType));
     setTriggerType(tpl.triggerType);
     const cfg = tpl.config;
     if (tpl.triggerType === 'file_watcher') {
@@ -398,75 +404,127 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
         </div>
       </div>
 
+      {/* Category selection: 3 cards + manual */}
       <div>
         <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-          Trigger Type
+          Trigger Category
         </label>
-        <div
-          className="grid grid-cols-3 gap-2"
-          role="radiogroup"
-          aria-label="Trigger type"
-        >
-          {([
-            { type: 'manual', label: 'Manual', description: 'Run on demand' },
-            { type: 'schedule', label: 'Schedule', description: 'Run on a timer or cron' },
-            { type: 'polling', label: 'Polling', description: 'Check an endpoint' },
-            { type: 'webhook', label: 'Webhook', description: 'HTTP webhook listener' },
-            { type: 'event_listener', label: 'Event Listener', description: 'React to internal events' },
-            { type: 'file_watcher', label: 'File Watcher', description: 'React to file system changes' },
-            { type: 'clipboard', label: 'Clipboard', description: 'React to clipboard changes' },
-            { type: 'app_focus', label: 'App Focus', description: 'React to app focus changes' },
-            { type: 'composite', label: 'Composite', description: 'Multiple conditions + time window' },
-          ] as const).map((option, index) => {
-            const meta = TRIGGER_TYPE_META[option.type] || DEFAULT_TRIGGER_META;
-            const Icon = meta.Icon;
-            const colorClass = meta.color;
-            const isSelected = triggerType === option.type;
-
+        <div className="grid grid-cols-2 gap-2">
+          {TRIGGER_CATEGORIES.map((cat) => {
+            const isActive = selectedCategory === cat.id;
+            const firstType = cat.types[0];
+            const CatIcon = firstType ? (TRIGGER_TYPE_META[firstType] || DEFAULT_TRIGGER_META).Icon : Zap;
             return (
               <button
-                key={option.type}
-                ref={(el) => { triggerTypeRefs.current[index] = el; }}
+                key={cat.id}
                 type="button"
-                role="radio"
-                aria-checked={isSelected}
-                tabIndex={isSelected ? 0 : -1}
-                onClick={() => setTriggerType(option.type)}
-                onKeyDown={(e) => {
-                  const types = ['manual', 'schedule', 'polling', 'webhook', 'event_listener', 'file_watcher', 'clipboard', 'app_focus', 'composite'] as const;
-                  let nextIndex = -1;
-                  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    nextIndex = (index + 1) % types.length;
-                  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    nextIndex = (index - 1 + types.length) % types.length;
-                  }
-                  if (nextIndex >= 0) {
-                    setTriggerType(types[nextIndex]!);
-                    triggerTypeRefs.current[nextIndex]?.focus();
-                  }
+                onClick={() => {
+                  setSelectedCategory(isActive ? null : cat.id);
+                  if (!isActive) setTriggerType(cat.types[0]!);
                 }}
-                className={`flex flex-col gap-2 p-3 rounded-xl border text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background ${
-                  isSelected
-                    ? 'border-primary/30 bg-primary/5 ring-1 ring-primary/20'
+                className={`flex flex-col gap-1.5 p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                  isActive
+                    ? `${cat.bgColor} ${cat.borderColor} ring-1 ring-primary/15`
                     : 'border-primary/15 bg-background/50 hover:border-primary/25 hover:bg-secondary/30'
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <Icon className={`w-4 h-4 ${colorClass}`} />
-                  <span className={`text-sm font-medium ${isSelected ? 'text-foreground/90' : 'text-foreground/90'}`}>
-                    {option.label}
-                  </span>
+                  <CatIcon className={`w-4 h-4 ${cat.color}`} />
+                  <span className="text-sm font-semibold text-foreground/90">{cat.label}</span>
+                  <span className="ml-auto text-xs text-muted-foreground/50">{cat.types.length}</span>
                 </div>
-                <span className="text-sm text-muted-foreground/90">
-                  {option.description}
-                </span>
+                <span className="text-xs text-muted-foreground/70">{cat.description}</span>
               </button>
             );
           })}
+          {/* Manual card */}
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedCategory('manual');
+              setTriggerType('manual');
+            }}
+            className={`flex flex-col gap-1.5 p-3 rounded-xl border text-left transition-all cursor-pointer ${
+              selectedCategory === 'manual'
+                ? 'bg-emerald-500/10 border-emerald-500/20 ring-1 ring-primary/15'
+                : 'border-primary/15 bg-background/50 hover:border-primary/25 hover:bg-secondary/30'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {(() => { const ManualIcon = TRIGGER_TYPE_META.manual?.Icon ?? Zap; return <ManualIcon className="w-4 h-4 text-emerald-400" />; })()}
+              <span className="text-sm font-semibold text-foreground/90">Manual</span>
+            </div>
+            <span className="text-xs text-muted-foreground/70">Run on demand</span>
+          </button>
         </div>
       </div>
+
+      {/* Subtype selection within selected category */}
+      {selectedCategory && selectedCategory !== 'manual' && (() => {
+        const cat = TRIGGER_CATEGORIES.find((c) => c.id === selectedCategory);
+        if (!cat) return null;
+        const typeOptions = TRIGGER_TYPE_OPTIONS.filter((o) => cat.types.includes(o.type));
+        return (
+          <div>
+            <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+              Trigger Type
+            </label>
+            <div
+              className="grid grid-cols-3 gap-2"
+              role="radiogroup"
+              aria-label="Trigger type"
+            >
+              {typeOptions.map((option, index) => {
+                const meta = TRIGGER_TYPE_META[option.type] || DEFAULT_TRIGGER_META;
+                const Icon = meta.Icon;
+                const colorClass = meta.color;
+                const isSelected = triggerType === option.type;
+
+                return (
+                  <button
+                    key={option.type}
+                    ref={(el) => { triggerTypeRefs.current[index] = el; }}
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    tabIndex={isSelected ? 0 : -1}
+                    onClick={() => setTriggerType(option.type)}
+                    onKeyDown={(e) => {
+                      let nextIndex = -1;
+                      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        nextIndex = (index + 1) % typeOptions.length;
+                      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        nextIndex = (index - 1 + typeOptions.length) % typeOptions.length;
+                      }
+                      if (nextIndex >= 0) {
+                        setTriggerType(typeOptions[nextIndex]!.type);
+                        triggerTypeRefs.current[nextIndex]?.focus();
+                      }
+                    }}
+                    className={`flex flex-col gap-1.5 p-3 rounded-xl border text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background ${
+                      isSelected
+                        ? 'border-primary/30 bg-primary/5 ring-1 ring-primary/20'
+                        : 'border-primary/15 bg-background/50 hover:border-primary/25 hover:bg-secondary/30'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Icon className={`w-4 h-4 ${colorClass}`} />
+                      <span className="text-sm font-medium text-foreground/90">
+                        {option.label}
+                      </span>
+                    </div>
+                    <span className="text-xs text-muted-foreground/70">
+                      {option.description}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Schedule trigger: mode toggle + interval or cron config */}
       {triggerType === 'schedule' && (

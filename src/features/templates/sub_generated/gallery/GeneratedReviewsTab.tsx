@@ -1,10 +1,11 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import {
+  CheckCircle2,
   ChevronDown,
   ChevronRight,
   Download,
   Loader2,
-  Play,
+  ShieldCheck,
   Sparkles,
   Workflow,
 } from 'lucide-react';
@@ -14,9 +15,9 @@ import { usePersonaStore } from '@/stores/personaStore';
 import { useTemplateGallery } from '@/hooks/design/useTemplateGallery';
 import { deleteDesignReview, cleanupDuplicateReviews, backfillServiceFlow, backfillRelatedTools } from '@/api/reviews';
 import { deriveConnectorReadiness } from '../shared/ConnectorReadiness';
+import { computeAdoptionReadiness, readinessTier } from '../shared/adoptionReadiness';
 import { TemplateSearchBar } from './TemplateSearchBar';
 import { TemplateDetailModal } from './TemplateDetailModal';
-import { CreateTemplateModal } from '../generation/CreateTemplateModal';
 import { ADOPT_CONTEXT_KEY } from '../adoption/useAdoptReducer';
 import AdoptionWizardModal from '../adoption/AdoptionWizardModal';
 import { RebuildModal } from './RebuildModal';
@@ -26,7 +27,6 @@ import { TemplatePreviewModal } from './TemplatePreviewModal';
 import { useModalStack } from './useModalStack';
 import { ConnectorCredentialModal } from '@/features/vault/sub_forms/ConnectorCredentialModal';
 import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
-import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
 import { highlightMatch } from '@/lib/ui/highlightMatch';
 import { getCategoryMeta } from './searchConstants';
 import type { Density } from './DensityToggle';
@@ -35,11 +35,12 @@ import type { DesignAnalysisResult, SuggestedConnector } from '@/lib/types/desig
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 
 import { RowActionMenu } from './RowActionMenu';
-import { ConnectorIconButton } from './ConnectorIconButton';
+import { deriveArchCategories, userHasCategoryCredential } from './architecturalCategories';
 import { CatalogCredentialModal } from './CatalogCredentialModal';
 import { ExpandedRowContent } from './ExpandedRowContent';
 import { BackgroundBanners } from './BackgroundBanners';
 import { TrendingCarousel } from './TrendingCarousel';
+import { RecommendedModal } from './RecommendedModal';
 import { EmptyState } from './EmptyState';
 import { ExploreView } from './ExploreView';
 
@@ -54,11 +55,9 @@ type TemplateModal =
   | { type: 'detail'; review: PersonaDesignReview }
   | { type: 'rebuild'; review: PersonaDesignReview }
   | { type: 'preview'; review: PersonaDesignReview }
-  | { type: 'create' };
+  | { type: 'recommended' };
 
 interface Props {
-  isRunning: boolean;
-  handleStartReview: () => void;
   credentials?: CredentialMetadata[];
   connectorDefinitions?: ConnectorDefinition[];
   onPersonaCreated?: () => void;
@@ -67,8 +66,6 @@ interface Props {
 }
 
 export default function GeneratedReviewsTab({
-  isRunning,
-  handleStartReview,
   credentials = [],
   connectorDefinitions = [],
   onPersonaCreated,
@@ -76,6 +73,8 @@ export default function GeneratedReviewsTab({
   onTotalChange,
 }: Props) {
   const templateAdoptActive = usePersonaStore((s) => s.templateAdoptActive);
+  const adoptionDraft = usePersonaStore((s) => s.adoptionDraft);
+  const setAdoptionDraft = usePersonaStore((s) => s.setAdoptionDraft);
   const credentialServiceTypesArray = useMemo(
     () => credentials.map((c) => c.service_type),
     [credentials],
@@ -109,6 +108,40 @@ export default function GeneratedReviewsTab({
     () => new Set(credentials.map((c) => c.service_type)),
     [credentials],
   );
+
+  // ── Readiness scoring & sorting ──────────────────────────────────
+  const isReadinessSort = gallery.sortBy === 'readiness';
+
+  /** Readiness score cache for current items — always computed. */
+  const readinessScores = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const item of gallery.allItems) {
+      map.set(item.id, computeAdoptionReadiness(item, installedConnectorNames, credentialServiceTypes));
+    }
+    return map;
+  }, [gallery.allItems, installedConnectorNames, credentialServiceTypes]);
+
+  /** Coverage counts for filter badges */
+  const coverageCounts = useMemo(() => {
+    let ready = 0;
+    let partial = 0;
+    for (const [, score] of readinessScores) {
+      if (score === 100) ready++;
+      else if (score > 0) partial++;
+    }
+    return { all: gallery.total, ready, partial };
+  }, [readinessScores, gallery.total]);
+
+  /** Items sorted by readiness score (descending), breaking ties by adoption count. */
+  const displayItems = useMemo(() => {
+    if (!isReadinessSort) return gallery.allItems;
+    return [...gallery.allItems].sort((a, b) => {
+      const sa = readinessScores.get(a.id) ?? 0;
+      const sb = readinessScores.get(b.id) ?? 0;
+      if (sb !== sa) return sb - sa;
+      return b.adoption_count - a.adoption_count;
+    });
+  }, [isReadinessSort, gallery.allItems, readinessScores]);
 
   // -- Connector credential modal state --
   const [credentialModalTarget, setCredentialModalTarget] = useState<{
@@ -208,17 +241,32 @@ export default function GeneratedReviewsTab({
     } catch { /* intentional: non-critical — JSON parse fallback */ }
   };
 
+  // Resume from a saved draft — find the review and re-open the modal
+  const handleResumeDraft = (draft: import('@/stores/slices/uiSlice').AdoptionDraft) => {
+    const match = gallery.allItems.find((r) => r.id === draft.reviewId);
+    if (match) {
+      modals.open({ type: 'adopt', review: match });
+    } else {
+      console.warn(`[ResumeDraft] Review "${draft.reviewId}" not found — draft may be stale.`);
+      setAdoptionDraft(null);
+    }
+  };
+
+  const handleDiscardDraft = () => {
+    setAdoptionDraft(null);
+  };
+
   // ── Virtual list ────────────────────────────────────────────────────
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const estimateRowSize = density === 'compact' ? 40 : 72;
 
   const virtualizer = useVirtualizer({
-    count: gallery.allItems.length,
+    count: displayItems.length,
     getScrollElement: () => scrollContainerRef.current,
     estimateSize: () => estimateRowSize,
     overscan: 10,
-    getItemKey: (index) => gallery.allItems[index]?.id ?? index,
+    getItemKey: (index) => displayItems[index]?.id ?? index,
   });
 
   // Re-measure all rows when density changes
@@ -231,10 +279,10 @@ export default function GeneratedReviewsTab({
     const virtualItems = virtualizer.getVirtualItems();
     const lastItem = virtualItems[virtualItems.length - 1];
     if (!lastItem) return;
-    if (lastItem.index >= gallery.allItems.length - 10 && gallery.hasMore && !gallery.isFetchingMore && !gallery.isLoading) {
+    if (lastItem.index >= displayItems.length - 10 && gallery.hasMore && !gallery.isFetchingMore && !gallery.isLoading) {
       gallery.fetchMore();
     }
-  }, [virtualizer.getVirtualItems(), gallery.allItems.length, gallery.hasMore, gallery.isFetchingMore, gallery.isLoading, gallery.fetchMore]);
+  }, [virtualizer.getVirtualItems(), displayItems.length, gallery.hasMore, gallery.isFetchingMore, gallery.isLoading, gallery.fetchMore]);
 
   // Loading state
   if (gallery.isLoading && gallery.allItems.length === 0 && gallery.total === 0) {
@@ -248,19 +296,12 @@ export default function GeneratedReviewsTab({
   // Empty state
   if (gallery.total === 0 && !gallery.search && gallery.connectorFilter.length === 0 && gallery.categoryFilter.length === 0 && gallery.coverageFilter === 'all' && !gallery.aiSearchActive) {
     return (
-      <EmptyState
-        handleStartReview={handleStartReview}
-        isRunning={isRunning}
-        isCreateOpen={modals.isOpen('create')}
-        onOpenCreate={() => modals.open({ type: 'create' })}
-        onCloseCreate={() => modals.close('create')}
-        onRefresh={gallery.refresh}
-        onPersonaCreated={onPersonaCreated}
-      />
+      <EmptyState />
     );
   }
 
-  const showTrending = gallery.trendingTemplates.length > 0 && !gallery.search && gallery.connectorFilter.length === 0 && gallery.categoryFilter.length === 0;
+  const noActiveFilters = !gallery.search && gallery.connectorFilter.length === 0 && gallery.categoryFilter.length === 0;
+  const showTrending = gallery.trendingTemplates.length > 0 && noActiveFilters;
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -269,6 +310,9 @@ export default function GeneratedReviewsTab({
         templateAdoptActive={templateAdoptActive}
         adoptModalOpen={modals.isOpen('adopt')}
         onResumeAdoption={handleResumeAdoption}
+        adoptionDraft={adoptionDraft}
+        onResumeDraft={handleResumeDraft}
+        onDiscardDraft={handleDiscardDraft}
         rebuildIsActive={rebuild.isActive}
         rebuildModalOpen={modals.isOpen('rebuild')}
         rebuildReviewName={rebuild.reviewName ?? null}
@@ -301,7 +345,6 @@ export default function GeneratedReviewsTab({
         availableCategories={gallery.availableCategories}
         total={gallery.total}
         loadedCount={gallery.allItems.length}
-        onNewTemplate={() => modals.open({ type: 'create' })}
         onCleanupDuplicates={handleCleanupDuplicates}
         isCleaningUp={isCleaningUp}
         onBackfillPipeline={handleBackfillPipeline}
@@ -310,6 +353,7 @@ export default function GeneratedReviewsTab({
         isBackfillingTools={isBackfillingTools}
         coverageFilter={gallery.coverageFilter}
         onCoverageFilterChange={gallery.setCoverageFilter}
+        coverageCounts={coverageCounts}
         density={density}
         onDensityChange={setDensity}
         viewMode={viewMode}
@@ -324,6 +368,8 @@ export default function GeneratedReviewsTab({
         aiSearchActive={gallery.aiSearchActive}
         onAiSearchSubmit={(q) => gallery.triggerAiSearch(q)}
         aiCliLog={gallery.aiCliLog}
+        hasRecommendations={gallery.recommendedTemplates.length > 0}
+        onOpenRecommended={() => modals.open({ type: 'recommended' })}
       />
 
       {/* Trending Carousel (list mode only) */}
@@ -351,7 +397,7 @@ export default function GeneratedReviewsTab({
         />
       ) : (
       <div className="flex-1 flex flex-col overflow-hidden">
-        {gallery.allItems.length > 0 ? (
+        {displayItems.length > 0 ? (
           <>
             {/* Sticky header */}
             <div className="flex items-center border-b border-primary/10 bg-secondary/80 flex-shrink-0" style={{ backgroundColor: 'hsl(var(--background))' }}>
@@ -360,7 +406,7 @@ export default function GeneratedReviewsTab({
               {density === 'comfortable' && (
                 <div className="w-28 text-center text-sm font-medium text-muted-foreground/70 px-4 py-2">Adoptions</div>
               )}
-              {density === 'comfortable' && <div className="w-36 px-6 py-2" />}
+              {density === 'comfortable' && <div className="w-12 px-3 py-2" />}
             </div>
 
             {/* Scrollable virtual list */}
@@ -376,7 +422,7 @@ export default function GeneratedReviewsTab({
                 }}
               >
                 {virtualizer.getVirtualItems().map((virtualRow) => {
-                  const review = gallery.allItems[virtualRow.index];
+                  const review = displayItems[virtualRow.index];
                   if (!review) return null;
 
                   const isExpanded = density === 'comfortable' && expandedRow === review.id;
@@ -392,6 +438,8 @@ export default function GeneratedReviewsTab({
                     const status = readinessStatuses.find((s) => s.connector_name === c);
                     return status?.health === 'ready';
                   });
+
+                  const readinessScore = readinessScores.get(review.id) ?? 0;
 
                   const categoryMeta = review.category ? getCategoryMeta(review.category) : null;
                   const CategoryIcon = categoryMeta?.icon ?? null;
@@ -437,21 +485,29 @@ export default function GeneratedReviewsTab({
                             )}
                           </div>
                           <div className="flex items-center gap-3 flex-shrink-0 ml-2">
+                            <span
+                              className={`inline-flex items-center gap-1 text-sm font-mono ${
+                                readinessScore === 100
+                                  ? 'text-emerald-400/80'
+                                  : readinessScore > 0
+                                    ? 'text-amber-400/70'
+                                    : 'text-muted-foreground/40'
+                              }`}
+                              title={`${readinessScore}% ready`}
+                            >
+                              {readinessScore === 100 ? (
+                                <CheckCircle2 className="w-3 h-3" />
+                              ) : (
+                                <ShieldCheck className="w-3 h-3" />
+                              )}
+                              {readinessScore}%
+                            </span>
                             {review.adoption_count > 0 && (
                               <span className="inline-flex items-center gap-1 text-sm font-mono text-emerald-400/70">
                                 <Download className="w-2.5 h-2.5" />
                                 {review.adoption_count}
                               </span>
                             )}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                modals.open({ type: 'adopt', review });
-                              }}
-                              className={`px-2 py-1 text-sm rounded-lg border transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 ${BUTTON_VARIANTS.adopt.bg} ${BUTTON_VARIANTS.adopt.text} ${BUTTON_VARIANTS.adopt.border} ${BUTTON_VARIANTS.adopt.hover}`}
-                            >
-                              Adopt
-                            </button>
                           </div>
                         </div>
                       ) : (
@@ -490,13 +546,16 @@ export default function GeneratedReviewsTab({
                                         {review.adoption_count}
                                       </span>
                                     )}
-                                  </div>
-                                  {/* Second line: instruction + clickable flow count */}
-                                  <div className="flex items-center gap-2 mt-0.5">
-                                    <span className="text-sm text-muted-foreground/60 truncate flex-1 min-w-0">
-                                      {review.instruction.length > 80
-                                        ? review.instruction.slice(0, 80) + '...'
-                                        : review.instruction}
+                                    <span
+                                      className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono rounded border flex-shrink-0 ${readinessTier(readinessScore).bgClass}`}
+                                      title={`${readinessScore}% of connectors ready`}
+                                    >
+                                      {readinessScore === 100 ? (
+                                        <CheckCircle2 className="w-2.5 h-2.5" />
+                                      ) : (
+                                        <ShieldCheck className="w-2.5 h-2.5" />
+                                      )}
+                                      {readinessScore}% ready
                                     </span>
                                     {flowCount > 0 && (
                                       <button
@@ -512,26 +571,43 @@ export default function GeneratedReviewsTab({
                                       </button>
                                     )}
                                   </div>
+                                  {/* Second line: instruction */}
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                    <span className="text-sm text-muted-foreground/60 truncate flex-1 min-w-0">
+                                      {review.instruction.length > 80
+                                        ? review.instruction.slice(0, 80) + '...'
+                                        : review.instruction}
+                                    </span>
+                                  </div>
                                 </div>
-                                {/* Connector icons */}
+                                {/* Architectural category icons */}
                                 {connectors.length > 0 && (
                                   <div className="flex items-center gap-1.5 flex-shrink-0">
-                                    {connectors.map((c) => {
-                                      const meta = getConnectorMeta(c);
-                                      const status = readinessStatuses.find((s) => s.connector_name === c);
-                                      const isReady = status?.health === 'ready';
+                                    {deriveArchCategories(connectors).map((cat) => {
+                                      const hasIt = userHasCategoryCredential(cat.key, credentialServiceTypes);
+                                      const CatIcon = cat.icon;
                                       return (
-                                        <ConnectorIconButton
-                                          key={c}
-                                          connectorName={c}
-                                          meta={meta}
-                                          isReady={isReady}
-                                          onAddCredential={(name) => {
-                                            const sugConn = designResult?.suggested_connectors?.find((sc) => sc.name === name) ?? null;
-                                            const connDef = connectorDefinitions.find((d) => d.name === name) ?? null;
-                                            handleConnectorCredentialClick(name, sugConn, connDef);
-                                          }}
-                                        />
+                                        <div
+                                          key={cat.key}
+                                          className="relative flex-shrink-0"
+                                          title={`${cat.label}${hasIt ? ' (ready)' : ''}`}
+                                        >
+                                          <div
+                                            className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                                              hasIt ? '' : 'grayscale opacity-60'
+                                            }`}
+                                            style={{ backgroundColor: `${cat.color}18` }}
+                                          >
+                                            <CatIcon className="w-4 h-4" style={{ color: cat.color }} />
+                                          </div>
+                                          <span
+                                            className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full ${
+                                              hasIt
+                                                ? 'bg-emerald-500'
+                                                : 'bg-amber-500/60 border border-dashed border-amber-500/30'
+                                            }`}
+                                          />
+                                        </div>
                                       );
                                     })}
                                   </div>
@@ -550,33 +626,8 @@ export default function GeneratedReviewsTab({
                                 )}
                               </div>
                             </div>
-                            <div className="w-36 px-6 py-4 flex-shrink-0">
-                              <div className="flex items-center justify-end gap-1.5">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (preview.reviewId !== review.id || preview.phase === 'completed' || preview.phase === 'failed') {
-                                      preview.resetPreview();
-                                    }
-                                    modals.open({ type: 'preview', review });
-                                  }}
-                                  className={`px-2.5 py-1.5 text-sm rounded-xl border transition-colors inline-flex items-center gap-1 opacity-0 group-hover:opacity-100 focus:opacity-100 ${BUTTON_VARIANTS.tryIt.bg} ${BUTTON_VARIANTS.tryIt.text} ${BUTTON_VARIANTS.tryIt.border} ${BUTTON_VARIANTS.tryIt.hover}`}
-                                  title="Run a sample preview"
-                                >
-                                  <Play className="w-3 h-3" />
-                                  Try It
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    modals.open({ type: 'adopt', review });
-                                  }}
-                                  className={`px-2.5 py-1.5 text-sm rounded-xl border transition-colors inline-flex items-center gap-1 opacity-0 group-hover:opacity-100 focus:opacity-100 ${BUTTON_VARIANTS.adopt.bg} ${BUTTON_VARIANTS.adopt.text} ${BUTTON_VARIANTS.adopt.border} ${BUTTON_VARIANTS.adopt.hover}`}
-                                  title="Adopt this template"
-                                >
-                                  <Download className="w-3 h-3" />
-                                  Adopt
-                                </button>
+                            <div className="w-12 px-3 py-4 flex-shrink-0">
+                              <div className="flex items-center justify-end">
                                 <RowActionMenu
                                   reviewId={review.id}
                                   onDelete={handleDeleteReview}
@@ -599,6 +650,7 @@ export default function GeneratedReviewsTab({
                                 designResult={designResult}
                                 allConnectorsReady={allConnectorsReady}
                                 readinessStatuses={readinessStatuses}
+                                credentialServiceTypes={credentialServiceTypes}
                                 onAdopt={() => modals.open({ type: 'adopt', review })}
                                 onTryIt={() => {
                                   if (preview.reviewId !== review.id || preview.phase === 'completed' || preview.phase === 'failed') {
@@ -656,6 +708,9 @@ export default function GeneratedReviewsTab({
           modals.close('detail');
           modals.open({ type: 'preview', review });
         }}
+        credentials={credentials}
+        connectorDefinitions={connectorDefinitions}
+        onAddCredential={handleConnectorCredentialClick}
       />
 
       {/* Adoption Wizard Modal */}
@@ -666,17 +721,6 @@ export default function GeneratedReviewsTab({
         credentials={credentials}
         connectorDefinitions={connectorDefinitions}
         onPersonaCreated={handlePersonaCreated}
-      />
-
-      {/* Create Template Modal */}
-      <CreateTemplateModal
-        isOpen={modals.isOpen('create')}
-        onClose={() => modals.close('create')}
-        onTemplateCreated={() => {
-          modals.close('create');
-          gallery.refresh();
-          onPersonaCreated?.();
-        }}
       />
 
       {/* Rebuild Modal */}
@@ -707,6 +751,18 @@ export default function GeneratedReviewsTab({
         hasStarted={preview.hasStarted}
         onStartPreview={(rId, rName, draftJson) => preview.startPreview(rId, rName, draftJson)}
         onRetryPreview={(draftJson) => preview.retryPreview(draftJson)}
+      />
+
+      {/* Recommended Modal */}
+      <RecommendedModal
+        isOpen={modals.isOpen('recommended')}
+        onClose={() => modals.close('recommended')}
+        recommendedTemplates={gallery.recommendedTemplates}
+        onSelectTemplate={(t) => {
+          modals.close('recommended');
+          setExpandedRow(t.id);
+          modals.open({ type: 'detail', review: t });
+        }}
       />
 
       {/* Connector Credential Modal */}

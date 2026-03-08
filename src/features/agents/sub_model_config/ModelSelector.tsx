@@ -25,7 +25,7 @@ interface ModelDef {
 const ANTHROPIC_MODELS: ModelDef[] = [
   { value: 'haiku', name: 'Haiku', cost: '~$0.25/1K' },
   { value: 'sonnet', name: 'Sonnet', cost: '~$3/1K' },
-  { value: '', name: 'Opus', cost: '~$15/1K' },
+  { value: 'opus', name: 'Opus', cost: '~$15/1K' },
 ];
 
 const OLLAMA_MODELS: ModelDef[] = OLLAMA_CLOUD_PRESETS.map((p) => ({
@@ -128,7 +128,7 @@ export function ModelSelector({
                 const isSelected = selectedModel === model.value;
                 return (
                   <button
-                    key={model.value || '__default__'}
+                    key={model.value}
                     type="button"
                     onClick={() => onSelectModel(model.value)}
                     className={`w-full flex items-center gap-1.5 py-1.5 pr-2 rounded-lg border transition-all transition-shadow duration-300 text-left ${

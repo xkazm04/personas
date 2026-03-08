@@ -9,6 +9,7 @@ export function FilterChips({
   onConnectorFilterChange,
   coverageFilter,
   onCoverageFilterChange,
+  coverageCounts,
 }: {
   selectedCategory: string | null;
   connectorFilter: string[];
@@ -16,6 +17,7 @@ export function FilterChips({
   onConnectorFilterChange: (connectors: string[]) => void;
   coverageFilter?: string;
   onCoverageFilterChange?: (value: string) => void;
+  coverageCounts?: { all: number; ready: number; partial: number };
 }) {
   const activeCategoryMeta = selectedCategory ? getCategoryMeta(selectedCategory) : null;
   const ActiveCategoryIcon = activeCategoryMeta?.icon ?? null;
@@ -67,12 +69,13 @@ export function FilterChips({
           {(selectedCategory || connectorFilter.length > 0) && <div className="w-px h-5 bg-primary/10 mx-0.5" />}
           <div className="inline-flex items-center rounded-lg border border-primary/15 overflow-hidden flex-shrink-0">
             {([
-              { value: 'all', label: 'All', color: 'violet' },
-              { value: 'full', label: 'Ready', color: 'emerald', icon: CheckCircle2 },
-              { value: 'partial', label: 'Partial', color: 'amber', icon: AlertCircle },
-            ] as const).map((opt) => {
+              { value: 'all', label: 'All', color: 'violet', countKey: 'all' as const },
+              { value: 'full', label: 'Ready', color: 'emerald', icon: CheckCircle2, countKey: 'ready' as const },
+              { value: 'partial', label: 'Partial', color: 'amber', icon: AlertCircle, countKey: 'partial' as const },
+            ]).map((opt) => {
               const isActive = (coverageFilter ?? 'all') === opt.value;
               const Icon = 'icon' in opt ? opt.icon : null;
+              const count = coverageCounts?.[opt.countKey];
               return (
                 <button
                   key={opt.value}
@@ -89,6 +92,11 @@ export function FilterChips({
                 >
                   {Icon && <Icon className="w-3 h-3" />}
                   {opt.label}
+                  {count !== undefined && count > 0 && (
+                    <span className={`ml-0.5 text-sm tabular-nums ${isActive ? 'opacity-80' : 'opacity-50'}`}>
+                      {count}
+                    </span>
+                  )}
                 </button>
               );
             })}

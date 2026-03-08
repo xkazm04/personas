@@ -1,5 +1,5 @@
 import type { DbPersonaTrigger } from '@/lib/types/types';
-import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, parseTriggerConfig } from '@/lib/utils/triggerConstants';
+import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, parseTriggerConfig, getTriggerCategoryMeta } from '@/lib/utils/triggerConstants';
 import { formatInterval } from '@/lib/utils/formatters';
 
 interface TriggerStatusSummaryProps {
@@ -12,6 +12,7 @@ export function TriggerStatusSummary({ trigger }: TriggerStatusSummaryProps) {
   const Icon = meta.Icon;
   const colorClass = meta.color;
   const config = parseTriggerConfig(trigger.trigger_type, trigger.config);
+  const catMeta = getTriggerCategoryMeta(trigger.trigger_type);
 
   const parts: string[] = [];
 
@@ -42,6 +43,11 @@ export function TriggerStatusSummary({ trigger }: TriggerStatusSummaryProps) {
   return (
     <>
       <Icon className={`w-4 h-4 flex-shrink-0 ${colorClass}`} />
+      {catMeta && (
+        <span className={`px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded ${catMeta.bgColor} ${catMeta.color} ${catMeta.borderColor} border`}>
+          {catMeta.label}
+        </span>
+      )}
       <span className={`text-sm font-medium ${colorClass}`}>
         {trigger.trigger_type === 'event_listener' ? 'Event Listener' : trigger.trigger_type.charAt(0).toUpperCase() + trigger.trigger_type.slice(1)}
       </span>

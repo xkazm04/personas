@@ -1,14 +1,18 @@
 import { useState } from 'react';
-import { MessageSquare, Clock, Trash2, ChevronDown, ChevronRight, User, Bot, CheckCircle2 } from 'lucide-react';
+import { MessageSquare, Clock, Trash2, ChevronDown, ChevronRight, User, Bot, CheckCircle2, AlertTriangle, X, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { DesignConversation, DesignConversationMessage } from '@/lib/types/designTypes';
 import { parseConversationMessages } from '@/lib/types/designTypes';
+import type { DesignDriftEvent } from '@/lib/design/designDrift';
+import { DRIFT_KIND_META } from '@/lib/design/designDrift';
 
 interface DesignConversationHistoryProps {
   conversations: DesignConversation[];
   activeConversationId: string | null;
   onResumeConversation: (conversation: DesignConversation) => void;
   onDeleteConversation: (id: string) => void;
+  driftEvents?: DesignDriftEvent[];
+  onDismissDrift?: (id: string) => void;
 }
 
 function formatRelativeTime(dateStr: string): string {
@@ -158,36 +162,111 @@ function ConversationCard({
   );
 }
 
+function DriftNotificationCard({
+  event,
+  onDismiss,
+}: {
+  event: DesignDriftEvent;
+  onDismiss: () => void;
+}) {
+  const meta = DRIFT_KIND_META[event.kind];
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: -4 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, x: -12, height: 0 }}
+      className={`group relative rounded-lg border ${meta.borderClass} ${meta.bgClass} p-2.5 transition-colors`}
+    >
+      <button
+        onClick={onDismiss}
+        className="absolute top-1.5 right-1.5 p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-white/10 text-muted-foreground/50 hover:text-foreground/70 transition-all"
+        title="Dismiss"
+      >
+        <X className="w-2.5 h-2.5" />
+      </button>
+      <div className="flex items-start gap-2">
+        <AlertTriangle className={`w-3.5 h-3.5 ${meta.textClass} flex-shrink-0 mt-0.5`} />
+        <div className="min-w-0 flex-1 space-y-0.5">
+          <div className="flex items-center gap-1.5">
+            <span className={`text-sm font-semibold ${meta.textClass}`}>{event.title}</span>
+            <span className={`text-[10px] px-1 py-0.5 rounded ${meta.bgClass} ${meta.textClass} font-medium uppercase tracking-wider`}>
+              {meta.label}
+            </span>
+          </div>
+          <p className="text-sm text-foreground/70 line-clamp-2">{event.description}</p>
+          <div className="flex items-center gap-1 pt-0.5">
+            <ArrowRight className="w-2.5 h-2.5 text-muted-foreground/50" />
+            <p className="text-sm text-muted-foreground/70 italic">{event.suggestion}</p>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 export function DesignConversationHistory({
   conversations,
   activeConversationId,
   onResumeConversation,
   onDeleteConversation,
+  driftEvents,
+  onDismissDrift,
 }: DesignConversationHistoryProps) {
-  if (conversations.length === 0) {
+  const visibleDrift = driftEvents?.filter((e) => !e.dismissed) ?? [];
+  const hasContent = conversations.length > 0 || visibleDrift.length > 0;
+
+  if (!hasContent) {
     return null;
   }
 
   return (
-    <div className="space-y-1.5" data-testid="design-conversation-history">
-      <div className="flex items-center gap-1.5 px-1">
-        <MessageSquare className="w-3.5 h-3.5 text-muted-foreground/60" />
-        <span className="text-sm font-medium text-muted-foreground/80 uppercase tracking-wide">
-          Design Sessions
-        </span>
-        <span className="text-sm text-muted-foreground/50">({conversations.length})</span>
-      </div>
-      <div className="space-y-1">
-        {conversations.map((conv) => (
-          <ConversationCard
-            key={conv.id}
-            conversation={conv}
-            isActive={conv.id === activeConversationId}
-            onResume={() => onResumeConversation(conv)}
-            onDelete={() => onDeleteConversation(conv.id)}
-          />
-        ))}
-      </div>
+    <div className="space-y-2.5" data-testid="design-conversation-history">
+      {/* Design Drift Notifications */}
+      {visibleDrift.length > 0 && (
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5 px-1">
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-400/70" />
+            <span className="text-sm font-medium text-amber-400/80 uppercase tracking-wide">
+              Design Drift
+            </span>
+            <span className="text-sm text-muted-foreground/50">({visibleDrift.length})</span>
+          </div>
+          <AnimatePresence mode="popLayout">
+            {visibleDrift.map((event) => (
+              <DriftNotificationCard
+                key={event.id}
+                event={event}
+                onDismiss={() => onDismissDrift?.(event.id)}
+              />
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
+
+      {/* Design Sessions */}
+      {conversations.length > 0 && (
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5 px-1">
+            <MessageSquare className="w-3.5 h-3.5 text-muted-foreground/60" />
+            <span className="text-sm font-medium text-muted-foreground/80 uppercase tracking-wide">
+              Design Sessions
+            </span>
+            <span className="text-sm text-muted-foreground/50">({conversations.length})</span>
+          </div>
+          <div className="space-y-1">
+            {conversations.map((conv) => (
+              <ConversationCard
+                key={conv.id}
+                conversation={conv}
+                isActive={conv.id === activeConversationId}
+                onResume={() => onResumeConversation(conv)}
+                onDelete={() => onDeleteConversation(conv.id)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

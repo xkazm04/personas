@@ -1,4 +1,4 @@
-import { RefreshCw, ExternalLink, Shield, ShieldCheck, ShieldX } from 'lucide-react';
+import { RefreshCw, ExternalLink, Shield, ShieldAlert, ShieldCheck, ShieldX } from 'lucide-react';
 import { DEPLOYMENT_TOKENS } from './deploymentTokens';
 
 export interface CloudOAuthPanelProps {
@@ -80,14 +80,31 @@ export function CloudOAuthPanel({
 
   // State: connected
   if (oauthStatus?.connected) {
+    // isExpired: true = confirmed expired, false = confirmed valid, null = not checked
     const isExpired = oauthStatus.isExpired === true;
+    const isUnknown = oauthStatus.isExpired === null;
+
+    const StatusIcon = isExpired ? ShieldX : isUnknown ? ShieldAlert : ShieldCheck;
+    const statusBg = isExpired
+      ? 'bg-amber-500/10 border border-amber-500/25'
+      : isUnknown
+        ? 'bg-slate-500/10 border border-slate-500/25'
+        : `${DEPLOYMENT_TOKENS.connectedBg} border ${DEPLOYMENT_TOKENS.connectedBorder}`;
+    const statusColor = isExpired ? 'text-amber-400' : isUnknown ? 'text-slate-400' : 'text-emerald-400';
+    const statusTextColor = isExpired ? 'text-amber-300' : isUnknown ? 'text-slate-300' : 'text-emerald-400';
+    const statusLabel = isExpired
+      ? 'Anthropic Token Expired'
+      : isUnknown
+        ? 'Anthropic Account Connected (status unknown)'
+        : 'Anthropic Account Connected';
+
     return (
       <div className={DEPLOYMENT_TOKENS.panelSpacing}>
-        <div className={`flex items-center gap-3 p-4 ${DEPLOYMENT_TOKENS.cardRadius} ${isExpired ? 'bg-amber-500/10 border border-amber-500/25' : `${DEPLOYMENT_TOKENS.connectedBg} border ${DEPLOYMENT_TOKENS.connectedBorder}`}`}>
-          <ShieldCheck className={`w-5 h-5 ${isExpired ? 'text-amber-400' : 'text-emerald-400'}`} />
+        <div className={`flex items-center gap-3 p-4 ${DEPLOYMENT_TOKENS.cardRadius} ${statusBg}`}>
+          <StatusIcon className={`w-5 h-5 ${statusColor}`} />
           <div>
-            <p className={`text-sm font-medium ${isExpired ? 'text-amber-300' : 'text-emerald-400'}`}>
-              {isExpired ? 'Anthropic Token Expired' : 'Anthropic Account Connected'}
+            <p className={`text-sm font-medium ${statusTextColor}`}>
+              {statusLabel}
             </p>
           </div>
         </div>
@@ -96,6 +113,14 @@ export function CloudOAuthPanel({
           <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/25">
             <p className="text-sm text-amber-200/90 leading-relaxed">
               This OAuth token has expired{oauthStatus.expiresAt ? ` (expired ${new Date(oauthStatus.expiresAt).toLocaleString()})` : ''}. Refresh now to restore cloud execution access.
+            </p>
+          </div>
+        )}
+
+        {isUnknown && (
+          <div className="p-4 rounded-lg bg-slate-500/10 border border-slate-500/25">
+            <p className="text-sm text-slate-300/90 leading-relaxed">
+              Token validity could not be verified. Refresh the token to confirm it is still active.
             </p>
           </div>
         )}

@@ -72,8 +72,10 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   discord:            { label: 'Discord',            color: '#5865F2', iconUrl: 'https://cdn.simpleicons.org/discord/5865F2',          Icon: MessageSquare },
   telegram:           { label: 'Telegram',           color: '#26A5E4', iconUrl: 'https://cdn.simpleicons.org/telegram/26A5E4',        Icon: MessageSquare },
   personas_messages:  { label: 'In-App Messages',    color: '#8B5CF6', iconUrl: null,                                                  Icon: Bell },
+  personas_database:  { label: 'Built-in Database',  color: '#06B6D4', iconUrl: null,                                                  Icon: Database },
 
   // ── Source Control & CI/CD ────────────────────────────────────
+  azure_devops:       { label: 'Azure DevOps',       color: '#0078D7', iconUrl: '/icons/connectors/azure-devops.svg',                   Icon: GitBranch },
   github:             { label: 'GitHub',             color: '#24292e', iconUrl: 'https://cdn.simpleicons.org/github/f0f0f0',          Icon: Github },
   gitlab:             { label: 'GitLab',             color: '#FC6D26', iconUrl: 'https://cdn.simpleicons.org/gitlab/FC6D26',          Icon: GitBranch },
   circleci:           { label: 'CircleCI',           color: '#343434', iconUrl: 'https://cdn.simpleicons.org/circleci/f0f0f0',        Icon: Circle },
@@ -103,6 +105,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   cloudflare:         { label: 'Cloudflare',         color: '#F38020', iconUrl: 'https://cdn.simpleicons.org/cloudflare/F38020',       Icon: Shield },
   aws:                { label: 'AWS',                color: '#FF9900', iconUrl: '/icons/connectors/aws.svg',                            Icon: Cloud },
   firebase:           { label: 'Firebase',           color: '#DD2C00', iconUrl: 'https://cdn.simpleicons.org/firebase/DD2C00',         Icon: Flame },
+  kubernetes:         { label: 'Kubernetes',         color: '#326CE5', iconUrl: '/icons/connectors/kubernetes.svg',                     Icon: Cloud },
 
   // ── Database ──────────────────────────────────────────────────
   supabase:           { label: 'Supabase',           color: '#3FCF8E', iconUrl: 'https://cdn.simpleicons.org/supabase/3FCF8E',         Icon: Database },
@@ -155,6 +158,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   plaid:              { label: 'Plaid',              color: '#111111', iconUrl: null,                                                    Icon: Link },
 
   // ── Scheduling ────────────────────────────────────────────────
+  cal_com:            { label: 'Cal.com',             color: '#292929', iconUrl: '/icons/connectors/cal-com.svg',                        Icon: Calendar },
   calendly:           { label: 'Calendly',           color: '#006BFF', iconUrl: 'https://cdn.simpleicons.org/calendly/006BFF',         Icon: Calendar },
 
   // ── CMS ───────────────────────────────────────────────────────
@@ -181,6 +185,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   greenhouse:         { label: 'Greenhouse',         color: '#24A47F', iconUrl: null,                                                   Icon: Sprout },
 
   // ── AI ────────────────────────────────────────────────────────
+  leonardo_ai:        { label: 'Leonardo AI',        color: '#6C3AEF', iconUrl: '/icons/connectors/leonardo-ai.svg',                    Icon: Bot },
   openai:             { label: 'OpenAI',             color: '#412991', iconUrl: '/icons/connectors/openai.svg',                         Icon: Bot },
   replicate:          { label: 'Replicate',          color: '#3D3D3D', iconUrl: '/icons/connectors/replicate.svg',                      Icon: Bot },
 
@@ -200,6 +205,13 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
 
   // ── Built-in ─────────────────────────────────────────────────
   'in-app-messaging': { label: 'In-app Messaging',   color: '#10B981', iconUrl: null,                                                   Icon: Bell },
+
+  // ── Desktop Apps ────────────────────────────────────────────
+  desktop_vscode:     { label: 'VS Code',            color: '#007ACC', iconUrl: '/icons/connectors/vscode.svg',                          Icon: MonitorCheck },
+  desktop_docker:     { label: 'Docker',             color: '#2496ED', iconUrl: '/icons/connectors/docker.svg',                          Icon: HardDrive },
+  desktop_terminal:   { label: 'Terminal',           color: '#4D4D4D', iconUrl: '/icons/connectors/terminal.svg',                        Icon: MonitorCheck },
+  desktop_obsidian:   { label: 'Obsidian',           color: '#7C3AED', iconUrl: '/icons/connectors/obsidian.svg',                        Icon: FileText },
+  desktop_browser:    { label: 'Browser',            color: '#4285F4', iconUrl: '/icons/connectors/chrome.svg',                          Icon: Globe },
 };
 
 export function getConnectorMeta(name: string): ConnectorMeta {

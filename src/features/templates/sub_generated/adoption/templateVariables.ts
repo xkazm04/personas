@@ -56,11 +56,17 @@ function replaceVars(text: string, values: Record<string, string>): string {
 }
 
 /**
- * Substitute {{key}} placeholders in all text fields of a DesignAnalysisResult.
- * Returns a NEW DesignAnalysisResult with variables replaced.
+ * Filter a DesignAnalysisResult to only include user-selected entities.
+ *
+ * **Connector swap contract**: `connectorSwaps` maps an original connector name
+ * to a replacement name (e.g. `{ "Slack": "Discord" }`). When a swap is present,
+ * the original connector is kept in the filtered result if either it or its
+ * replacement is selected, and its `name` is rewritten to the replacement.
+ * The same rename is applied to `service_flow` pipeline steps.
+ *
+ * This is distinct from credential mapping (`connectorCredentialMap`), which
+ * links a connector name to a credential ID for authentication.
  */
-/** Filter a DesignAnalysisResult to only include user-selected entities.
- *  When `connectorSwaps` is provided, swapped connectors are included and renamed. */
 export function filterDesignResult(
   design: DesignAnalysisResult,
   selections: {
@@ -72,15 +78,6 @@ export function filterDesignResult(
   },
   connectorSwaps?: Record<string, string>,
 ): DesignAnalysisResult {
-  // Build a reverse-swap map (replacement → original) so we can keep connectors
-  // whose original name was swapped out but whose replacement is now selected.
-  const reverseSwaps: Record<string, string> = {};
-  if (connectorSwaps) {
-    for (const [original, replacement] of Object.entries(connectorSwaps)) {
-      reverseSwaps[replacement] = original;
-    }
-  }
-
   let filteredConnectors = design.suggested_connectors?.filter((c) => {
     // Keep if directly selected, or if its swap replacement is selected
     if (selections.selectedConnectorNames.has(c.name)) return true;

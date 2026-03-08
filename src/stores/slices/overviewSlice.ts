@@ -8,20 +8,9 @@ import type {
 } from "@/lib/types/types";
 import { enrichWithPersona } from "@/lib/types/types";
 import type { ObservabilityMetrics } from "@/lib/bindings/ObservabilityMetrics";
-import type { PersonaMonthlySpend } from "@/lib/bindings/PersonaMonthlySpend";
 import type { ExecutionDashboardData } from "@/lib/bindings/ExecutionDashboardData";
 import type { MetricsChartPoint } from "@/lib/bindings/MetricsChartPoint";
 import * as api from "@/api/tauriApi";
-
-// ── Budget alert types ────────────────────────────────────────────────
-export interface BudgetWarning {
-  personaId: string;
-  name: string;
-  spend: number;
-  budget: number;
-  ratio: number;
-  exceeded: boolean;
-}
 
 export interface OverviewSlice {
   // State — navigation
@@ -47,11 +36,6 @@ export interface OverviewSlice {
   executionDashboardLoading: boolean;
   executionDashboardError: string | null;
 
-  // State — monthly spend (centralized)
-  monthlySpend: PersonaMonthlySpend[];
-  monthlySpendLoading: boolean;
-  monthlySpendError: string | null;
-
   // Actions
   setOverviewTab: (tab: OverviewTab) => void;
   fetchGlobalExecutions: (reset?: boolean, status?: string) => Promise<void>;
@@ -60,38 +44,6 @@ export interface OverviewSlice {
   fetchPendingReviewCount: () => Promise<void>;
   fetchObservabilityMetrics: (days?: number, personaId?: string) => Promise<void>;
   fetchExecutionDashboard: (days?: number) => Promise<void>;
-  fetchMonthlySpend: () => Promise<void>;
-}
-
-// ── Budget selectors (pure functions over slice state) ─────────────────
-export function selectMonthlySpendMap(spend: PersonaMonthlySpend[]): Record<string, number> {
-  const map: Record<string, number> = {};
-  for (const d of spend) map[d.id] = d.spend ?? 0;
-  return map;
-}
-
-export function selectTotalMonthlySpend(spend: PersonaMonthlySpend[]): number {
-  return spend.reduce((sum, d) => sum + (d.spend ?? 0), 0);
-}
-
-export function selectBudgetWarnings(spend: PersonaMonthlySpend[]): BudgetWarning[] {
-  return spend
-    .filter((d) => d.max_budget_usd != null && d.max_budget_usd > 0 && d.spend >= d.max_budget_usd * 0.8)
-    .map((d) => {
-      const ratio = d.spend / d.max_budget_usd!;
-      return {
-        personaId: d.id,
-        name: d.name,
-        spend: d.spend,
-        budget: d.max_budget_usd!,
-        ratio,
-        exceeded: ratio >= 1,
-      };
-    });
-}
-
-export function selectBudgetData(spend: PersonaMonthlySpend[]): Array<{ personaId: string; name: string; spend: number; budget: number | null }> {
-  return spend.map((d) => ({ personaId: d.id, name: d.name, spend: d.spend, budget: d.max_budget_usd }));
 }
 
 // ── Execution dashboard derivation ──────────────────────────────────────
@@ -109,10 +61,10 @@ export function selectDerivedChartPoints(data: ExecutionDashboardData | null): M
   }));
 }
 
-// Grow-the-window pagination: each "Load More" widens the per-persona fetch limit.
-let currentPerPersonaLimit = 25;
-const PER_PERSONA_PAGE_SIZE = 25;
-const MAX_PER_PERSONA_LIMIT = 250;
+// Server-side pagination: each "Load More" increases the global limit.
+let currentGlobalLimit = 50;
+const GLOBAL_PAGE_SIZE = 50;
+const MAX_GLOBAL_LIMIT = 500;
 
 export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSlice> = (set, get) => ({
   overviewTab: "home" as OverviewTab,
@@ -128,51 +80,44 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
   executionDashboard: null,
   executionDashboardLoading: false,
   executionDashboardError: null,
-  monthlySpend: [],
-  monthlySpendLoading: false,
-  monthlySpendError: null,
 
   setOverviewTab: (tab) => set({ overviewTab: tab }),
 
-  fetchGlobalExecutions: async (reset = false) => {
+  fetchGlobalExecutions: async (reset = false, status?: string) => {
     try {
       if (reset) {
-        currentPerPersonaLimit = PER_PERSONA_PAGE_SIZE;
+        currentGlobalLimit = GLOBAL_PAGE_SIZE;
       } else {
-        currentPerPersonaLimit = Math.min(
-          currentPerPersonaLimit + PER_PERSONA_PAGE_SIZE,
-          MAX_PER_PERSONA_LIMIT,
+        currentGlobalLimit = Math.min(
+          currentGlobalLimit + GLOBAL_PAGE_SIZE,
+          MAX_GLOBAL_LIMIT,
         );
       }
 
-      const { personas } = get();
-      let anyAtLimit = false;
-      const failedPersonaNames: string[] = [];
-      const allExecs = await Promise.all(
-        personas.map(async (p) => {
-          try {
-            const execs = await api.listExecutions(p.id, currentPerPersonaLimit);
-            if (execs.length >= currentPerPersonaLimit) anyAtLimit = true;
-            return enrichWithPersona(execs, [p]);
-          } catch {
-            // intentional: error state handled by store — per-persona failures collected in globalExecutionsWarning
-            failedPersonaNames.push(p.name);
-            return [];
-          }
-        }),
-      );
-      const merged = allExecs
-        .flat()
-        .sort((a, b) => b.created_at.localeCompare(a.created_at));
+      const statusFilter = status === 'running' ? 'running' : status;
+      const rows = await api.listAllExecutions(currentGlobalLimit, statusFilter);
+
+      // Map GlobalExecutionRow to GlobalExecution (field names already match)
+      // Deduplicate by id to prevent React duplicate-key warnings
+      const seen = new Set<string>();
+      const merged: GlobalExecution[] = [];
+      for (const r of rows) {
+        if (seen.has(r.id)) continue;
+        seen.add(r.id);
+        merged.push({
+          ...r,
+          persona_name: r.persona_name ?? undefined,
+          persona_icon: r.persona_icon ?? undefined,
+          persona_color: r.persona_color ?? undefined,
+        });
+      }
 
       set({
         globalExecutions: merged,
-        // Signal hasMore: offset < total only when some persona may have more rows
-        globalExecutionsTotal: merged.length + (anyAtLimit ? 1 : 0),
+        // Signal hasMore when result count equals the limit
+        globalExecutionsTotal: merged.length + (merged.length >= currentGlobalLimit ? 1 : 0),
         globalExecutionsOffset: merged.length,
-        globalExecutionsWarning: failedPersonaNames.length > 0
-          ? `Execution data is incomplete. Failed to load ${failedPersonaNames.length} persona${failedPersonaNames.length === 1 ? '' : 's'}: ${failedPersonaNames.join(', ')}`
-          : null,
+        globalExecutionsWarning: null,
       });
     } catch (err) {
       set({ error: errMsg(err, "Failed to fetch global executions") });
@@ -244,15 +189,4 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
       set({ executionDashboardError: errMsg(err, "Failed to load execution dashboard"), executionDashboardLoading: false });
     }
   },
-
-  fetchMonthlySpend: async () => {
-    set({ monthlySpendLoading: true });
-    try {
-      const data = await api.getAllMonthlySpend();
-      set({ monthlySpend: data, monthlySpendError: null, monthlySpendLoading: false });
-    } catch (err) {
-      set({ monthlySpend: [], monthlySpendError: errMsg(err, "Failed to load monthly spend"), monthlySpendLoading: false });
-    }
-  },
-
 });

@@ -1,304 +1,263 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { startDesignAnalysis, refineDesign, cancelDesignAnalysis, compileFromIntent } from '@/api/design';
-import { createTrigger } from '@/api/triggers';
-import { createSubscription } from '@/api/events';
 import { usePersonaStore } from '@/stores/personaStore';
+import { useTauriStream } from './useTauriStream';
+import { applyDesignResult, retryFailedOperations, type ApplyDesignSelections, type FailedOperation } from './applyDesignResult';
 import type { DesignPhase, DesignAnalysisResult, DesignQuestion } from '@/lib/types/designTypes';
 
-interface DesignOutputPayload {
-  design_id: string;
-  line: string;
-}
+// ── Stream outcome discriminator ────────────────────────────────────
+// The design status event produces three outcomes (result, question, error).
+// useTauriStream natively handles result + error; we encode questions as
+// a result variant and route them in a useEffect.
 
-interface DesignStatusPayload {
-  design_id: string;
-  status: string;
-  result?: DesignAnalysisResult;
-  error?: string;
-  question?: DesignQuestion;
-}
+type DesignStreamOutcome =
+  | { kind: 'result'; data: DesignAnalysisResult }
+  | { kind: 'question'; data: DesignQuestion };
 
 const MAX_OUTPUT_LINES = 500;
 
+// ── Stable stream option callbacks ──────────────────────────────────
+// Defined outside the hook so they don't recreate on every render.
+// They reference `designIdRef` which is a ref — always current.
+
+let _designIdRef: React.RefObject<string | null>;
+
+function getLine(payload: Record<string, unknown>): string {
+  if (_designIdRef.current && payload.design_id !== _designIdRef.current) return '';
+  return payload.line as string;
+}
+
+function resolveStatus(payload: Record<string, unknown>):
+  | { result: DesignStreamOutcome }
+  | { error: string }
+  | null {
+  if (_designIdRef.current && payload.design_id !== _designIdRef.current) return null;
+  const status = payload.status as string;
+  if (status === 'completed' && payload.result) {
+    return { result: { kind: 'result', data: payload.result as DesignAnalysisResult } };
+  }
+  if (status === 'awaiting-input' && payload.question) {
+    return { result: { kind: 'question', data: payload.question as DesignQuestion } };
+  }
+  if (status === 'failed') {
+    return { error: (payload.error as string) || 'Design analysis failed' };
+  }
+  return null;
+}
+
+// ── Hook ────────────────────────────────────────────────────────────
+
 export function useDesignAnalysis() {
-  const [phase, setPhase] = useState<DesignPhase>('idle');
-  const [outputLines, setOutputLines] = useState<string[]>([]);
-  const [result, setResult] = useState<DesignAnalysisResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [applyWarnings, setApplyWarnings] = useState<string[]>([]);
+  // Design-specific state (layered on top of the generic stream)
+  const [designResult, setDesignResult] = useState<DesignAnalysisResult | null>(null);
+  const [designPhase, setDesignPhase] = useState<DesignPhase>('idle');
   const [question, setQuestion] = useState<DesignQuestion | null>(null);
+  const [applyWarnings, setApplyWarnings] = useState<string[]>([]);
+  const [failedOperations, setFailedOperations] = useState<FailedOperation[]>([]);
+
   const personaIdRef = useRef<string | null>(null);
   const designIdRef = useRef<string | null>(null);
   const conversationIdRef = useRef<string | null>(null);
-  const unlistenersRef = useRef<UnlistenFn[]>([]);
   const applyingRef = useRef(false);
+
+  // Share the ref with the module-level callbacks
+  _designIdRef = designIdRef;
 
   const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
   const refreshPersonas = usePersonaStore((s) => s.fetchPersonas);
 
-  const cleanup = useCallback(() => {
-    for (const unlisten of unlistenersRef.current) {
-      unlisten();
+  // ── Core streaming via useTauriStream ─────────────────────────────
+  // Handles: listener lifecycle, line accumulation, cleanup on unmount,
+  // timeout, and basic phase + error management.
+  const stream = useTauriStream<DesignStreamOutcome>({
+    progressEvent: 'design-output',
+    statusEvent: 'design-status',
+    getLine,
+    resolveStatus,
+    completedPhase: '__design_done__',
+    runningPhase: '__design_running__',
+  });
+
+  // ── Route stream outcomes to design-specific state ────────────────
+
+  useEffect(() => {
+    const outcome = stream.result;
+    if (!outcome) return;
+
+    if (outcome.kind === 'result') {
+      setDesignResult(outcome.data);
+      setQuestion(null);
+      setDesignPhase('preview');
+    } else if (outcome.kind === 'question') {
+      setQuestion(outcome.data);
+      setDesignPhase('awaiting-input');
     }
-    unlistenersRef.current = [];
-  }, []);
+  }, [stream.result]);
 
-  // Clean up Tauri event listeners on unmount to prevent stale callbacks
-  // from firing on unmounted components.
-  useEffect(() => cleanup, [cleanup]);
+  // Route stream errors — refine failures fall back to 'preview' (preserving
+  // the previous result), while analysis failures go to 'error'.
+  useEffect(() => {
+    if (stream.phase === 'error' && stream.error) {
+      setDesignPhase((prev) => (prev === 'refining' ? 'preview' : 'error'));
+    }
+  }, [stream.phase, stream.error]);
 
-  const setupDesignListeners = useCallback(async (
-    failureMessage: string,
-    failurePhase: DesignPhase,
+  // ── Derived output (filtered empty strings from design-id guard + capped) ──
+  const outputLines = useMemo(() => {
+    const filtered = stream.lines.filter(Boolean);
+    return filtered.length > MAX_OUTPUT_LINES ? filtered.slice(-MAX_OUTPUT_LINES) : filtered;
+  }, [stream.lines]);
+
+  // ── Start methods ─────────────────────────────────────────────────
+
+  const startAnalysis = useCallback(async (
+    personaId: string,
+    instruction: string,
+    conversationId?: string | null,
   ) => {
-    // Register both listeners in parallel to avoid a race where the Tauri
-    // command emits events before the second sequential listener is attached.
-    const [unlistenOutput, unlistenStatus] = await Promise.all([
-      listen<DesignOutputPayload>('design-output', (event) => {
-        if (designIdRef.current && event.payload.design_id !== designIdRef.current) return;
-        setOutputLines((prev) => {
-          const next = [...prev, event.payload.line];
-          return next.length > MAX_OUTPUT_LINES ? next.slice(-MAX_OUTPUT_LINES) : next;
-        });
-      }),
-      listen<DesignStatusPayload>('design-status', (event) => {
-        if (designIdRef.current && event.payload.design_id !== designIdRef.current) return;
-        const { status, result: designResult, error: designError, question: designQuestion } = event.payload;
-
-        if (status === 'awaiting-input' && designQuestion) {
-          setQuestion(designQuestion);
-          setPhase('awaiting-input');
-          cleanup();
-        } else if (status === 'completed' && designResult) {
-          setResult(designResult);
-          setPhase('preview');
-          cleanup();
-        } else if (status === 'failed') {
-          setError(designError || failureMessage);
-          setPhase(failurePhase);
-          cleanup();
-        }
-      }),
-    ]);
-
-    unlistenersRef.current = [unlistenOutput, unlistenStatus];
-  }, [cleanup]);
-
-  const startAnalysis = useCallback(async (personaId: string, instruction: string, conversationId?: string | null) => {
-    cleanup();
-    setPhase('analyzing');
-    setOutputLines([]);
-    setResult(null);
-    setError(null);
-    setQuestion(null);
     personaIdRef.current = personaId;
     conversationIdRef.current = conversationId ?? null;
-
-    // Generate design_id client-side and set it BEFORE listeners to prevent
-    // the race where events arrive before designIdRef is set, bypassing the
-    // guard and accepting events from stale/overlapping analyses.
     const clientDesignId = crypto.randomUUID();
     designIdRef.current = clientDesignId;
 
-    try {
-      await setupDesignListeners('Design analysis failed', 'idle');
-      await startDesignAnalysis(instruction, personaId, clientDesignId);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to start analysis');
-      setPhase('idle');
-      cleanup();
-    }
-  }, [cleanup, setupDesignListeners]);
+    setDesignPhase('analyzing');
+    setDesignResult(null);
+    setQuestion(null);
+    setApplyWarnings([]);
+    setFailedOperations([]);
+
+    await stream.start(() => startDesignAnalysis(instruction, personaId, clientDesignId));
+    // If start() failed internally, stream.error is set and the error effect
+    // routes designPhase to 'error'.
+  }, [stream.start]);
 
   const startIntentCompilation = useCallback(async (personaId: string, intent: string) => {
-    cleanup();
-    setPhase('analyzing');
-    setOutputLines([]);
-    setResult(null);
-    setError(null);
-    setQuestion(null);
     personaIdRef.current = personaId;
     conversationIdRef.current = null;
-
     const clientDesignId = crypto.randomUUID();
     designIdRef.current = clientDesignId;
 
-    try {
-      await setupDesignListeners('Intent compilation failed', 'idle');
-      await compileFromIntent(personaId, intent, clientDesignId);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to compile intent');
-      setPhase('idle');
-      cleanup();
-    }
-  }, [cleanup, setupDesignListeners]);
+    setDesignPhase('analyzing');
+    setDesignResult(null);
+    setQuestion(null);
+    setApplyWarnings([]);
+    setFailedOperations([]);
+
+    await stream.start(() => compileFromIntent(personaId, intent, clientDesignId));
+  }, [stream.start]);
 
   const refineAnalysis = useCallback(async (feedback: string) => {
     if (!personaIdRef.current) return;
-
-    // Capture the current previewed result before clearing state, so we can
-    // send it to the backend instead of relying on the (potentially stale) DB value.
-    const currentResultJson = result ? JSON.stringify(result) : null;
-
-    cleanup();
-    setPhase('refining');
-    setOutputLines([]);
-    setError(null);
-    setQuestion(null);
-
-    // Generate design_id client-side to prevent event race (same as startAnalysis)
+    const currentResultJson = designResult ? JSON.stringify(designResult) : null;
     const clientDesignId = crypto.randomUUID();
     designIdRef.current = clientDesignId;
 
-    try {
-      await setupDesignListeners('Refinement failed', 'preview');
-      await refineDesign(personaIdRef.current, feedback, currentResultJson, clientDesignId, conversationIdRef.current);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to refine design');
-      setPhase('preview');
-      cleanup();
-    }
-  }, [cleanup, setupDesignListeners, result]);
+    setDesignPhase('refining');
+    setQuestion(null);
+    // Note: designResult is NOT cleared — preserved for fallback on failure.
+
+    await stream.start(() =>
+      refineDesign(
+        personaIdRef.current!,
+        feedback,
+        currentResultJson,
+        clientDesignId,
+        conversationIdRef.current,
+      ),
+    );
+  }, [stream.start, designResult]);
 
   const answerQuestion = useCallback((answer: string) => {
     if (!personaIdRef.current) return;
-    // Clear the question and continue analysis — the answer is sent as
-    // a refinement message which re-runs the CLI with the answer context.
     setQuestion(null);
     refineAnalysis(answer);
   }, [refineAnalysis]);
 
   const cancelAnalysis = useCallback(() => {
     cancelDesignAnalysis().catch(() => {});
-    cleanup();
+    stream.cancel();
     designIdRef.current = null;
-    setPhase('idle');
-    setOutputLines([]);
-    setError(null);
+    setDesignPhase('idle');
     setQuestion(null);
-  }, [cleanup]);
+  }, [stream.cancel]);
 
-  const applyResult = useCallback(async (selections?: {
-    selectedTools?: Set<string>;
-    selectedTriggerIndices?: Set<number>;
-    selectedChannelIndices?: Set<number>;
-    selectedSubscriptionIndices?: Set<number>;
-  }) => {
-    if (!personaIdRef.current || !result || applyingRef.current) return;
+  // ── Apply result ──────────────────────────────────────────────────
+
+  const applyResultCb = useCallback(async (selections?: ApplyDesignSelections) => {
+    if (!personaIdRef.current || !designResult || applyingRef.current) return;
     applyingRef.current = true;
     const personaId = personaIdRef.current;
 
-    setPhase('applying');
+    setDesignPhase('applying');
     try {
-      // Filter result through user selections before saving
-      const filteredResult: DesignAnalysisResult = {
-        ...result,
-        suggested_tools: selections?.selectedTools
-          ? result.suggested_tools.filter((t) => selections.selectedTools!.has(t))
-          : result.suggested_tools,
-        suggested_triggers: selections?.selectedTriggerIndices
-          ? result.suggested_triggers.filter((_, i) => selections.selectedTriggerIndices!.has(i))
-          : result.suggested_triggers,
-        suggested_notification_channels: selections?.selectedChannelIndices
-          ? (result.suggested_notification_channels ?? []).filter((_, i) => selections.selectedChannelIndices!.has(i))
-          : result.suggested_notification_channels,
-        suggested_event_subscriptions: selections?.selectedSubscriptionIndices
-          ? (result.suggested_event_subscriptions ?? []).filter((_, i) => selections.selectedSubscriptionIndices!.has(i))
-          : result.suggested_event_subscriptions,
-      };
-
-      // Update persona with the filtered design result
-      const updates: import("@/api/personas").PartialPersonaUpdate = {
-        last_design_result: JSON.stringify(filteredResult),
-      };
-
-      // Apply structured prompt if present
-      if (filteredResult.structured_prompt) {
-        updates.structured_prompt = JSON.stringify(filteredResult.structured_prompt);
-      }
-
-      // Apply full prompt as system_prompt
-      if (filteredResult.full_prompt_markdown) {
-        updates.system_prompt = filteredResult.full_prompt_markdown;
-      }
-
-      await applyPersonaOp(personaId, { kind: 'ApplyDesignResult', updates });
-
-      // Create actual triggers for each selected suggestion, collecting failures
-      const warnings: string[] = [];
-      for (const trigger of filteredResult.suggested_triggers) {
-        try {
-          await createTrigger({
-            persona_id: personaId,
-            trigger_type: trigger.trigger_type,
-            config: trigger.config ? JSON.stringify(trigger.config) : null,
-            enabled: true,
-            use_case_id: null,
-          });
-        } catch {
-          // intentional: non-critical — individual trigger failures collected as warnings
-          warnings.push(`Trigger "${trigger.trigger_type}" failed to create`);
-        }
-      }
-
-      // Create actual event subscriptions for each selected suggestion
-      for (const sub of filteredResult.suggested_event_subscriptions ?? []) {
-        try {
-          await createSubscription({
-            persona_id: personaId,
-            event_type: sub.event_type,
-            source_filter: sub.source_filter ? JSON.stringify(sub.source_filter) : null,
-            enabled: true,
-            use_case_id: null,
-          });
-        } catch {
-          // intentional: non-critical — individual subscription failures collected as warnings
-          warnings.push(`Subscription "${sub.event_type}" failed to create`);
-        }
-      }
-
-      await refreshPersonas();
+      const { warnings, failedOperations: failed } = await applyDesignResult(
+        personaId,
+        designResult,
+        { applyPersonaOp, refreshPersonas },
+        selections,
+      );
       setApplyWarnings(warnings);
-      setPhase('applied');
+      setFailedOperations(failed);
+      setDesignPhase('applied');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to apply design');
-      setPhase('preview');
+      stream.setError(err instanceof Error ? err.message : 'Failed to apply design');
+      setDesignPhase('preview');
     } finally {
       applyingRef.current = false;
     }
-  }, [result, applyPersonaOp, refreshPersonas]);
+  }, [designResult, applyPersonaOp, refreshPersonas, stream.setError]);
 
-  /** Update the conversation ID (used when a conversation is started externally) */
+  const retryFailedCb = useCallback(async () => {
+    if (!personaIdRef.current || failedOperations.length === 0 || applyingRef.current) return;
+    applyingRef.current = true;
+    setDesignPhase('applying');
+    try {
+      const { warnings, failedOperations: stillFailed } = await retryFailedOperations(
+        personaIdRef.current,
+        failedOperations,
+        { refreshPersonas },
+      );
+      setApplyWarnings(stillFailed.length > 0 ? warnings : []);
+      setFailedOperations(stillFailed);
+      setDesignPhase('applied');
+    } catch (err) {
+      stream.setError(err instanceof Error ? err.message : 'Retry failed');
+      setDesignPhase('applied');
+    } finally {
+      applyingRef.current = false;
+    }
+  }, [failedOperations, refreshPersonas, stream.setError]);
+
   const setConversationId = useCallback((id: string | null) => {
     conversationIdRef.current = id;
   }, []);
 
   const reset = useCallback(() => {
-    cleanup();
+    stream.reset();
     designIdRef.current = null;
     conversationIdRef.current = null;
-    setPhase('idle');
-    setOutputLines([]);
-    setResult(null);
-    setError(null);
+    setDesignPhase('idle');
+    setDesignResult(null);
     setApplyWarnings([]);
+    setFailedOperations([]);
     setQuestion(null);
-  }, [cleanup]);
+  }, [stream.reset]);
 
   return {
-    phase,
+    phase: designPhase,
     outputLines,
-    result,
-    error,
+    result: designResult,
+    error: stream.error,
     applyWarnings,
+    failedOperations,
     question,
     startAnalysis,
     startIntentCompilation,
     refineAnalysis,
     answerQuestion,
     cancelAnalysis,
-    applyResult,
+    applyResult: applyResultCb,
+    retryFailed: retryFailedCb,
     reset,
     setConversationId,
   };

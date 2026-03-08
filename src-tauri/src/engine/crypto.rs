@@ -203,6 +203,22 @@ impl std::fmt::Debug for EncryptedToken {
 
 static MASTER_KEY: OnceLock<[u8; 32]> = OnceLock::new();
 
+/// Tracks where the master key was loaded from, so we can upgrade later.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
+pub enum KeySource {
+    /// Key loaded from or stored in the OS keychain (most secure).
+    Keychain,
+    /// Key loaded from DPAPI-protected local file (fallback for missing keychain).
+    LocalFallback,
+}
+
+static KEY_SOURCE: OnceLock<KeySource> = OnceLock::new();
+
+/// Returns how the master key was sourced, if initialised.
+pub fn key_source() -> Option<KeySource> {
+    KEY_SOURCE.get().copied()
+}
+
 /// Error type for crypto operations.
 #[derive(Debug, thiserror::Error)]
 pub enum CryptoError {
@@ -243,25 +259,31 @@ pub fn get_master_key() -> Result<&'static [u8; 32], CryptoError> {
 
     let result = KEY_RESULT.get_or_init(|| {
         match try_keychain() {
-            Ok(key) => Ok(key),
+            Ok(key) => {
+                let _ = KEY_SOURCE.set(KeySource::Keychain);
+                Ok(key)
+            }
             Err(e) => {
-                // Only allow the local-file fallback if explicitly opted-in.
-                if std::env::var("PERSONAS_ALLOW_FALLBACK_KEY").unwrap_or_default() == "1" {
-                    tracing::warn!(
-                        "Keychain unavailable ({}) but PERSONAS_ALLOW_FALLBACK_KEY=1 — \
-                         using local fallback key. Credential encryption is less protected.",
-                        e
-                    );
-                    Ok(derive_fallback_key())
-                } else {
+                // Desktop app: auto-fallback to DPAPI-protected local key file.
+                // This is safe because the local key is still encrypted with DPAPI
+                // (tied to the user's Windows login session) and has restrictive ACLs.
+                // Users can opt out with PERSONAS_DENY_FALLBACK_KEY=1 for strict mode.
+                if std::env::var("PERSONAS_DENY_FALLBACK_KEY").unwrap_or_default() == "1" {
                     tracing::error!(
-                        "Keychain unavailable ({}) and PERSONAS_ALLOW_FALLBACK_KEY is not set. \
-                         Refusing to store credentials without OS keychain protection. \
-                         Set PERSONAS_ALLOW_FALLBACK_KEY=1 to allow local fallback in headless environments.",
+                        "Keychain unavailable ({}) and PERSONAS_DENY_FALLBACK_KEY=1 is set. \
+                         Refusing to store credentials without OS keychain protection.",
                         e
                     );
-                    Err(format!("Keychain unavailable: {e}"))
+                    return Err(format!("Keychain unavailable: {e}"));
                 }
+
+                tracing::warn!(
+                    "Keychain unavailable ({}). Using DPAPI-protected local fallback key. \
+                     Credentials are still encrypted at rest.",
+                    e
+                );
+                let _ = KEY_SOURCE.set(KeySource::LocalFallback);
+                Ok(derive_fallback_key())
             }
         }
     });
@@ -377,13 +399,43 @@ fn load_local_fallback_key() -> Result<Option<[u8; 32]>, CryptoError> {
         return Ok(None);
     }
 
-    let raw = fs::read_to_string(&path)
-        .map_err(|e| CryptoError::KeyManagement(format!("Failed reading local key file: {}", e)))?;
+    let raw = match fs::read_to_string(&path) {
+        Ok(content) => content,
+        Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied => {
+            tracing::warn!(
+                "Local key file has wrong permissions ({}), attempting repair",
+                e
+            );
+            // Try to repair permissions on the file
+            if repair_key_file_permissions(&path) {
+                // Retry the read after permission repair
+                match fs::read_to_string(&path) {
+                    Ok(content) => content,
+                    Err(e2) => {
+                        tracing::warn!(
+                            "Still cannot read key file after repair ({}), removing stale file",
+                            e2
+                        );
+                        let _ = fs::remove_file(&path);
+                        return Ok(None); // Will trigger fresh key generation
+                    }
+                }
+            } else {
+                tracing::warn!("Cannot repair key file permissions, removing stale file");
+                let _ = fs::remove_file(&path);
+                return Ok(None); // Will trigger fresh key generation
+            }
+        }
+        Err(e) => {
+            return Err(CryptoError::KeyManagement(format!(
+                "Failed reading local key file: {}",
+                e
+            )));
+        }
+    };
     let trimmed = raw.trim();
 
-    let key_bytes = if trimmed.starts_with(DPAPI_PREFIX) {
-        // DPAPI-protected format: "DPAPI:<base64(dpapi_ciphertext)>"
-        let protected_b64 = &trimmed[DPAPI_PREFIX.len()..];
+    let key_bytes = if let Some(protected_b64) = trimmed.strip_prefix(DPAPI_PREFIX) {
         let protected_bytes = B64.decode(protected_b64)?;
         platform_unprotect(&protected_bytes)?
     } else {
@@ -511,6 +563,85 @@ fn restrict_file_permissions(_path: &std::path::Path) -> Result<(), CryptoError>
     ))
 }
 
+/// Best-effort attempt to repair permissions on a key file that has become
+/// inaccessible (e.g., created by a different elevation level or session).
+/// Returns `true` if the repair succeeded.
+#[cfg(windows)]
+fn repair_key_file_permissions(path: &std::path::Path) -> bool {
+    let path_str = path.to_string_lossy();
+    let username = whoami::username();
+
+    // Grant current user full control (additive, then re-restrict)
+    let result = std::process::Command::new("icacls")
+        .args([
+            &*path_str,
+            "/grant",
+            &format!("{username}:(F)"),
+        ])
+        .output();
+
+    match result {
+        Ok(output) if output.status.success() => {
+            tracing::info!("Repaired key file permissions for current user");
+            true
+        }
+        Ok(output) => {
+            tracing::warn!(
+                "icacls repair failed (exit {}): {}",
+                output.status,
+                String::from_utf8_lossy(&output.stderr).trim()
+            );
+            false
+        }
+        Err(e) => {
+            tracing::warn!("Failed to run icacls for permission repair: {}", e);
+            false
+        }
+    }
+}
+
+#[cfg(not(windows))]
+fn repair_key_file_permissions(path: &std::path::Path) -> bool {
+    use std::os::unix::fs::PermissionsExt;
+    match fs::set_permissions(path, fs::Permissions::from_mode(0o600)) {
+        Ok(_) => {
+            tracing::info!("Repaired key file permissions to 0600");
+            true
+        }
+        Err(e) => {
+            tracing::warn!("Failed to repair key file permissions: {}", e);
+            false
+        }
+    }
+}
+
+/// Attempt to upgrade the master key from local fallback to OS keychain.
+///
+/// Call this when the keychain becomes available (e.g., after authentication).
+/// The same key bytes are stored in the keychain — no credential re-encryption
+/// is needed because the encryption key itself doesn't change.
+#[allow(dead_code)]
+pub fn try_upgrade_to_keychain() -> Result<bool, CryptoError> {
+    if key_source() != Some(KeySource::LocalFallback) {
+        return Ok(false); // Already on keychain or not initialised
+    }
+
+    let current_key = get_master_key()?;
+
+    let entry = keyring::Entry::new("personas-desktop", "credential-master-key")
+        .map_err(|e| CryptoError::KeyManagement(format!("Keychain entry error: {e}")))?;
+
+    entry
+        .set_password(&B64.encode(current_key))
+        .map_err(|e| CryptoError::KeyManagement(format!("Failed storing key in keychain: {e}")))?;
+
+    tracing::info!(
+        "Master key upgraded from local fallback to OS keychain. \
+         All existing credentials remain valid (same key, different storage)."
+    );
+    Ok(true)
+}
+
 // ---------------------------------------------------------------------------
 // Platform-specific key protection (DPAPI on Windows, passthrough elsewhere)
 // ---------------------------------------------------------------------------
@@ -561,7 +692,7 @@ fn dpapi_protect(plaintext: &[u8]) -> Result<Vec<u8>, CryptoError> {
     use windows::core::PCWSTR;
 
     unsafe {
-        let mut data_in = CRYPT_INTEGER_BLOB {
+        let data_in = CRYPT_INTEGER_BLOB {
             cbData: plaintext.len() as u32,
             pbData: plaintext.as_ptr() as *mut u8,
         };
@@ -571,7 +702,7 @@ fn dpapi_protect(plaintext: &[u8]) -> Result<Vec<u8>, CryptoError> {
         };
 
         CryptProtectData(
-            &mut data_in,
+            &data_in,
             PCWSTR::null(),
             None,
             None,
@@ -598,7 +729,7 @@ fn dpapi_unprotect(ciphertext: &[u8]) -> Result<Vec<u8>, CryptoError> {
     };
 
     unsafe {
-        let mut data_in = CRYPT_INTEGER_BLOB {
+        let data_in = CRYPT_INTEGER_BLOB {
             cbData: ciphertext.len() as u32,
             pbData: ciphertext.as_ptr() as *mut u8,
         };
@@ -608,7 +739,7 @@ fn dpapi_unprotect(ciphertext: &[u8]) -> Result<Vec<u8>, CryptoError> {
         };
 
         CryptUnprotectData(
-            &mut data_in,
+            &data_in,
             None,
             None,
             None,
@@ -627,16 +758,12 @@ fn dpapi_unprotect(ciphertext: &[u8]) -> Result<Vec<u8>, CryptoError> {
     }
 }
 
-/// Returns the key source: "keychain" or "fallback".
-pub fn key_source() -> &'static str {
-    // Try the keychain probe — if we can access it, the key came from there.
-    let entry = keyring::Entry::new("personas-desktop", "credential-master-key");
-    match entry {
-        Ok(e) => match e.get_password() {
-            Ok(_) => "keychain",
-            Err(_) => "fallback",
-        },
-        Err(_) => "fallback",
+/// Returns the key source as a string for IPC/serialization: "keychain", "local_fallback", or "unknown".
+pub fn key_source_label() -> &'static str {
+    match key_source() {
+        Some(KeySource::Keychain) => "keychain",
+        Some(KeySource::LocalFallback) => "local_fallback",
+        None => "unknown",
     }
 }
 

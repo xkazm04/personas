@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Plus, LayoutGrid, Save, ChevronDown, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, LayoutGrid, Save, ChevronDown, Check, Loader2, StickyNote } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { PersonaAvatar } from './teamConstants';
 
@@ -9,10 +9,11 @@ interface TeamToolbarProps {
   onAutoLayout: () => void;
   onSave: () => void;
   onAddMember: (personaId: string) => void;
+  onAddNote?: () => void;
   saveStatus?: 'saved' | 'saving' | 'unsaved';
 }
 
-export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, onAddMember, saveStatus = 'saved' }: TeamToolbarProps) {
+export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, onAddMember, onAddNote, saveStatus = 'saved' }: TeamToolbarProps) {
   const personas = usePersonaStore((s) => s.personas);
   const teamMembers = usePersonaStore((s) => s.teamMembers);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -82,6 +83,17 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
             </div>
           )}
         </div>
+
+        {/* Add Sticky Note */}
+        {onAddNote && (
+          <button
+            onClick={onAddNote}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 hover:bg-amber-500/20 text-sm font-medium transition-all"
+          >
+            <StickyNote className="w-3.5 h-3.5" />
+            Note
+          </button>
+        )}
 
         {/* Auto Layout */}
         <button

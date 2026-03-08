@@ -1,5 +1,8 @@
 import type { PersonaCredential } from '@/lib/types/types';
 
+/** Minimum connector name length for fuzzy (prefix / substring) matching. */
+const MIN_FUZZY_LENGTH = 4;
+
 /**
  * Canonical credential-to-connector matching.
  *
@@ -7,6 +10,10 @@ import type { PersonaCredential } from '@/lib/types/types';
  * 1. Exact service_type match
  * 2. Prefix match (service_type starts with connector name or vice versa)
  * 3. Credential name contains connector name (case-insensitive)
+ *
+ * Steps 2 & 3 are skipped when the connector name is shorter than
+ * {@link MIN_FUZZY_LENGTH} to avoid vacuous matches on short generic
+ * names like "api", "db", or "http".
  */
 export function matchCredentialToConnector(
   credentials: PersonaCredential[],
@@ -15,6 +22,8 @@ export function matchCredentialToConnector(
   // 1. Exact service_type match
   const exact = credentials.find((c) => c.service_type === connectorName);
   if (exact) return exact;
+
+  if (connectorName.length < MIN_FUZZY_LENGTH) return null;
 
   // 2. Prefix match (either direction) — only if unambiguous (single match)
   const prefixMatches = credentials.filter(
@@ -47,22 +56,26 @@ export function rankCredentialsForConnector(
   const matching: PersonaCredential[] = [];
   const others: PersonaCredential[] = [];
 
+  const fuzzyEligible = connectorName.length >= MIN_FUZZY_LENGTH;
+
   // Pre-compute prefix matches to detect ambiguity
-  const prefixHits = new Set(
-    credentials
-      .filter(
-        (c) =>
-          c.service_type.startsWith(connectorName) ||
-          connectorName.startsWith(c.service_type),
+  const prefixHits = fuzzyEligible
+    ? new Set(
+        credentials
+          .filter(
+            (c) =>
+              c.service_type.startsWith(connectorName) ||
+              connectorName.startsWith(c.service_type),
+          )
+          .map((c) => c.id),
       )
-      .map((c) => c.id),
-  );
+    : new Set<string>();
   const prefixUnambiguous = prefixHits.size === 1;
 
   for (const cred of credentials) {
     const isExact = cred.service_type === connectorName;
     const isPrefix = prefixUnambiguous && prefixHits.has(cred.id);
-    const isNameMatch = cred.name.toLowerCase().includes(lower);
+    const isNameMatch = fuzzyEligible && cred.name.toLowerCase().includes(lower);
 
     if (isExact || isPrefix || isNameMatch) {
       matching.push(cred);

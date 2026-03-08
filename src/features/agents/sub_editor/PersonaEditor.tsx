@@ -4,9 +4,11 @@ import { usePersonaStore } from '@/stores/personaStore';
 import { useToastStore } from '@/stores/toastStore';
 import { ContentBox } from '@/features/shared/components/ContentLayout';
 import { type PersonaDraft, buildDraft } from '@/features/agents/sub_editor/PersonaDraft';
-import { EditorDirtyProvider, useEditorDirtyState } from '@/features/agents/sub_editor/EditorDocument';
+import { EditorDirtyProvider, useEditorDirtyState, TabSaveError } from '@/features/agents/sub_editor/EditorDocument';
+import { tabIdsToLabels } from '@/features/agents/sub_editor/editorTabConstants';
 import { useEditorSave } from '@/features/agents/sub_editor/useEditorSave';
 import { UnsavedChangesBanner, DesignNudgeBanner, CloudNudgeBanner } from '@/features/agents/sub_editor/EditorBanners';
+import { OnboardingBanner } from '@/features/agents/components/onboarding/OnboardingChecklist';
 import { EditorTabBar } from '@/features/agents/sub_editor/EditorTabBar';
 import { PersonaEditorHeader } from '@/features/agents/sub_editor/PersonaEditorHeader';
 import PanelSkeleton from '@/features/shared/components/PanelSkeleton';
@@ -128,7 +130,15 @@ function PersonaEditorInner() {
     isSwitchingRef.current = true;
     cancelAllDebouncedSaves();
     try {
-      try { await saveAllTabs(); } catch { useToastStore.getState().addToast('Failed to save changes', 'error'); return; }
+      try {
+        await saveAllTabs();
+      } catch (err) {
+        const label = err instanceof TabSaveError
+          ? `Failed to save ${tabIdsToLabels(err.failedTabs)}`
+          : 'Failed to save changes';
+        useToastStore.getState().addToast(label, 'error');
+        return;
+      }
       const target = pendingPersonaId;
       setPendingPersonaId(null);
       dirtyRef.current = false;
@@ -161,6 +171,7 @@ function PersonaEditorInner() {
       <EditorTabBar dirtyTabs={allDirtyTabs} connectorsMissing={connectorsMissing} />
       <DesignNudgeBanner />
       <CloudNudgeBanner />
+      <OnboardingBanner personaId={selectedPersona.id} />
 
       <div className="flex-1 overflow-y-auto p-4">
         {/* Prompt Performance Summary Card — shown on prompt and use-cases tabs */}

@@ -1,7 +1,14 @@
+use std::collections::HashMap;
 use std::io::{Read as IoRead, Write as IoWrite};
 use std::sync::Arc;
 
+use aes_gcm::aead::{Aead, KeyInit, OsRng};
+use aes_gcm::{Aes256Gcm, Nonce};
+use base64::engine::general_purpose::STANDARD as B64;
+use base64::Engine;
+use pbkdf2::pbkdf2_hmac;
 use serde::{Deserialize, Serialize};
+use sha2::Sha256;
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
 
@@ -11,7 +18,8 @@ use crate::db::repos::core::{
 };
 use crate::db::repos::execution::{test_suites as suite_repo};
 use crate::db::repos::resources::{
-    connectors as connector_repo, teams as team_repo, tools as tool_repo, triggers as trigger_repo,
+    connectors as connector_repo, credentials as cred_repo, teams as team_repo,
+    tools as tool_repo, triggers as trigger_repo,
 };
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -282,7 +290,7 @@ pub async fn import_portability_bundle(
         .into_path()
         .map_err(|e| AppError::Internal(format!("Invalid file path: {e}")))?;
 
-    let content = if path.extension().map_or(false, |ext| ext == "zip") {
+    let content = if path.extension().is_some_and(|ext| ext == "zip") {
         read_zip_bundle(&path)?
     } else {
         tokio::fs::read_to_string(&path)
@@ -860,6 +868,7 @@ fn import_bundle(
             crate::db::models::CreateTeamInput {
                 name: format!("{} (imported)", t.name),
                 project_id: None,
+                parent_team_id: None,
                 description: t.description.clone(),
                 canvas_data: t.canvas_data.clone(),
                 team_config: t.team_config.clone(),
@@ -966,13 +975,13 @@ fn is_n8n_workflow(v: &serde_json::Value) -> bool {
 
 fn is_zapier_workflow(v: &serde_json::Value) -> bool {
     // Zapier exports have "steps" array and often a "title" field
-    v.get("steps").map_or(false, |s| s.is_array())
+    v.get("steps").is_some_and(|s| s.is_array())
         && v.get("title").is_some()
 }
 
 fn is_make_workflow(v: &serde_json::Value) -> bool {
     // Make/Integromat exports have "modules" array
-    v.get("modules").map_or(false, |s| s.is_array())
+    v.get("modules").is_some_and(|s| s.is_array())
         || v.get("scenario").is_some()
 }
 
@@ -1103,4 +1112,233 @@ fn parse_make_preview(v: &serde_json::Value) -> Result<Vec<CompetitiveImportPrev
         suggested_tools: tools,
         suggested_triggers: vec![],
     }])
+}
+
+// ============================================================================
+// Encrypted credential export / import
+// ============================================================================
+
+const PBKDF2_ITERATIONS: u32 = 600_000;
+const CREDENTIAL_EXPORT_FORMAT: &str = "personas_credentials_v1";
+
+#[derive(Debug, Serialize, Deserialize)]
+struct CredentialExportBundle {
+    format_version: u32,
+    exported_at: String,
+    credentials: Vec<CredentialExportEntry>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct CredentialExportEntry {
+    name: String,
+    service_type: String,
+    metadata: Option<String>,
+    fields: HashMap<String, String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct CredentialExportEnvelope {
+    format: String,
+    salt: String,
+    nonce: String,
+    ciphertext: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CredentialImportResult {
+    pub created: u32,
+    pub warnings: Vec<String>,
+}
+
+/// Derive a 32-byte key from a passphrase using PBKDF2-HMAC-SHA256.
+fn derive_key(passphrase: &str, salt: &[u8]) -> [u8; 32] {
+    let mut key = [0u8; 32];
+    pbkdf2_hmac::<Sha256>(passphrase.as_bytes(), salt, PBKDF2_ITERATIONS, &mut key);
+    key
+}
+
+/// Export all credential secrets to a password-protected encrypted file.
+#[tauri::command]
+pub async fn export_credentials(
+    state: State<'_, Arc<AppState>>,
+    app: AppHandle,
+    passphrase: String,
+) -> Result<bool, AppError> {
+    require_privileged(&state, "export_credentials").await?;
+
+    if passphrase.len() < 8 {
+        return Err(AppError::Validation(
+            "Passphrase must be at least 8 characters".into(),
+        ));
+    }
+
+    let pool = &state.db;
+    let all_creds = cred_repo::get_all(pool)?;
+
+    let mut entries = Vec::with_capacity(all_creds.len());
+    for cred in &all_creds {
+        let fields = cred_repo::get_decrypted_fields(pool, cred)
+            .unwrap_or_default();
+        entries.push(CredentialExportEntry {
+            name: cred.name.clone(),
+            service_type: cred.service_type.clone(),
+            metadata: cred.metadata.clone(),
+            fields,
+        });
+    }
+
+    let bundle = CredentialExportBundle {
+        format_version: 1,
+        exported_at: chrono::Utc::now().to_rfc3339(),
+        credentials: entries,
+    };
+
+    let plaintext = serde_json::to_vec(&bundle)
+        .map_err(|e| AppError::Internal(format!("Serialization failed: {e}")))?;
+
+    // Generate random salt and nonce
+    use aes_gcm::aead::rand_core::RngCore;
+    let mut salt = [0u8; 16];
+    let mut nonce_bytes = [0u8; 12];
+    OsRng.fill_bytes(&mut salt);
+    OsRng.fill_bytes(&mut nonce_bytes);
+
+    let key = derive_key(&passphrase, &salt);
+    let cipher = Aes256Gcm::new_from_slice(&key)
+        .map_err(|e| AppError::Internal(format!("Cipher init failed: {e}")))?;
+    let nonce = Nonce::from_slice(&nonce_bytes);
+
+    let ciphertext = cipher
+        .encrypt(nonce, plaintext.as_ref())
+        .map_err(|e| AppError::Internal(format!("Encryption failed: {e}")))?;
+
+    let envelope = CredentialExportEnvelope {
+        format: CREDENTIAL_EXPORT_FORMAT.into(),
+        salt: B64.encode(salt),
+        nonce: B64.encode(nonce_bytes),
+        ciphertext: B64.encode(ciphertext),
+    };
+
+    let envelope_json = serde_json::to_string_pretty(&envelope)
+        .map_err(|e| AppError::Internal(format!("Envelope serialization failed: {e}")))?;
+
+    let timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S");
+    let file_name = format!("personas_credentials_{}.cred.enc", timestamp);
+    let app_clone = app.clone();
+
+    let save_path = tokio::task::spawn_blocking(move || {
+        app_clone
+            .dialog()
+            .file()
+            .set_file_name(&file_name)
+            .add_filter("Encrypted Credentials", &["enc"])
+            .blocking_save_file()
+    })
+    .await
+    .map_err(|e| AppError::Internal(format!("Dialog task failed: {e}")))?;
+
+    if let Some(file_path) = save_path {
+        let path = file_path
+            .into_path()
+            .map_err(|e| AppError::Internal(format!("Invalid file path: {e}")))?;
+        tokio::fs::write(&path, envelope_json)
+            .await
+            .map_err(|e| AppError::Internal(format!("Failed to write file: {e}")))?;
+        return Ok(true);
+    }
+
+    Ok(false)
+}
+
+/// Import credentials from a password-protected encrypted file.
+#[tauri::command]
+pub async fn import_credentials(
+    state: State<'_, Arc<AppState>>,
+    app: AppHandle,
+    passphrase: String,
+) -> Result<Option<CredentialImportResult>, AppError> {
+    require_privileged(&state, "import_credentials").await?;
+
+    let app_clone = app.clone();
+    let file_path = tokio::task::spawn_blocking(move || {
+        app_clone
+            .dialog()
+            .file()
+            .add_filter("Encrypted Credentials", &["enc"])
+            .blocking_pick_file()
+    })
+    .await
+    .map_err(|e| AppError::Internal(format!("Dialog task failed: {e}")))?;
+
+    let Some(file_path) = file_path else {
+        return Ok(None);
+    };
+
+    let path = file_path
+        .into_path()
+        .map_err(|e| AppError::Internal(format!("Invalid file path: {e}")))?;
+
+    let content = tokio::fs::read_to_string(&path)
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to read file: {e}")))?;
+
+    let envelope: CredentialExportEnvelope = serde_json::from_str(&content)
+        .map_err(|e| AppError::Validation(format!("Invalid credential export file: {e}")))?;
+
+    if envelope.format != CREDENTIAL_EXPORT_FORMAT {
+        return Err(AppError::Validation(format!(
+            "Unsupported format: {} (expected {})",
+            envelope.format, CREDENTIAL_EXPORT_FORMAT
+        )));
+    }
+
+    let salt = B64
+        .decode(&envelope.salt)
+        .map_err(|e| AppError::Validation(format!("Invalid salt: {e}")))?;
+    let nonce_bytes = B64
+        .decode(&envelope.nonce)
+        .map_err(|e| AppError::Validation(format!("Invalid nonce: {e}")))?;
+    let ciphertext = B64
+        .decode(&envelope.ciphertext)
+        .map_err(|e| AppError::Validation(format!("Invalid ciphertext: {e}")))?;
+
+    let key = derive_key(&passphrase, &salt);
+    let cipher = Aes256Gcm::new_from_slice(&key)
+        .map_err(|e| AppError::Internal(format!("Cipher init failed: {e}")))?;
+    let nonce = Nonce::from_slice(&nonce_bytes);
+
+    let plaintext = cipher
+        .decrypt(nonce, ciphertext.as_ref())
+        .map_err(|_| {
+            AppError::Validation("Decryption failed — wrong passphrase or corrupted file".into())
+        })?;
+
+    let bundle: CredentialExportBundle = serde_json::from_slice(&plaintext)
+        .map_err(|e| AppError::Validation(format!("Invalid inner data: {e}")))?;
+
+    let pool = &state.db;
+    let mut result = CredentialImportResult {
+        created: 0,
+        warnings: Vec::new(),
+    };
+
+    for entry in &bundle.credentials {
+        let input = crate::db::models::CreateCredentialInput {
+            name: format!("{} (imported)", entry.name),
+            service_type: entry.service_type.clone(),
+            encrypted_data: String::new(),
+            iv: String::new(),
+            metadata: entry.metadata.clone(),
+            session_encrypted_data: None,
+        };
+
+        match cred_repo::create_with_fields(pool, input, &entry.fields) {
+            Ok(_) => result.created += 1,
+            Err(e) => result
+                .warnings
+                .push(format!("Credential '{}': {}", entry.name, e)),
+        }
+    }
+
+    Ok(Some(result))
 }

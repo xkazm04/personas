@@ -4,7 +4,7 @@
   "label": "Jira",
   "color": "#0052CC",
   "icon_url": "/icons/connectors/jira.svg",
-  "category": "development",
+  "category": "task_management",
   "fields": [
     {
       "key": "domain",

@@ -34,6 +34,15 @@ export const MODEL_KEYS = [
   'maxBudget', 'maxTurns',
 ] as const satisfies readonly (keyof PersonaDraft)[];
 
+// ── Compile-time exhaustiveness check ────────────────────────────
+// If a new field is added to PersonaDraft but not to SETTINGS_KEYS or
+// MODEL_KEYS, this line will produce a TypeScript error.
+type _CoveredKeys = (typeof SETTINGS_KEYS)[number] | (typeof MODEL_KEYS)[number];
+type _AssertAllCovered = keyof PersonaDraft extends _CoveredKeys ? true : never;
+type _AssertNoExtra = _CoveredKeys extends keyof PersonaDraft ? true : never;
+const _exhaustiveCheck: _AssertAllCovered & _AssertNoExtra = true;
+void _exhaustiveCheck;
+
 /**
  * Returns true if any of the listed keys differ between draft and baseline.
  * Using key arrays means new PersonaDraft fields are only included in dirty

@@ -1,8 +1,13 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, lazy, Suspense, type ReactNode } from 'react';
 import { ChevronDown, ChevronUp, X, Copy, Check } from 'lucide-react';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 import { useCopyToClipboard } from '@/hooks/utility/useCopyToClipboard';
 import { Tooltip } from './Tooltip';
+import type { CliOperation } from '@/features/settings/sub_engine/engineCapabilities';
+
+const EngineCapabilityBadge = lazy(() =>
+  import('@/features/settings/sub_engine/EngineCapabilityBadge').then(m => ({ default: m.EngineCapabilityBadge }))
+);
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -29,6 +34,8 @@ interface TerminalStripProps {
   lineClassName?: (line: string) => string;
   /** Max-height class for the expanded panel. Default `"max-h-40"`. */
   expandedMaxHeight?: string;
+  /** CLI operation type — when set, shows the engine capability badge. */
+  operation?: CliOperation;
 }
 
 // ── Default line classifier ───────────────────────────────────────────
@@ -49,6 +56,7 @@ export function TerminalStrip({
   counters,
   lineClassName = defaultLineClassName,
   expandedMaxHeight = 'max-h-40',
+  operation,
 }: TerminalStripProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { copied, copy } = useCopyToClipboard();
@@ -72,6 +80,13 @@ export function TerminalStrip({
         {/* Consumer-provided counters / badges */}
         {counters}
 
+        {/* Engine capability badge */}
+        {operation && (
+          <Suspense fallback={null}>
+            <EngineCapabilityBadge operation={operation} compact />
+          </Suspense>
+        )}
+
         {/* Last log line */}
         <span className="flex-1 font-mono text-sm text-muted-foreground/50 truncate">
           {lastLine}
@@ -81,6 +96,7 @@ export function TerminalStrip({
         {!isRunning && lines.length > 0 && (
           <Tooltip content="Copy log">
             <button
+              title="Copy log"
               onClick={() => copy(lines.join('\n'))}
               className="p-1 rounded hover:bg-secondary/40 text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors shrink-0"
             >
@@ -92,6 +108,7 @@ export function TerminalStrip({
         {/* Expand / collapse */}
         <Tooltip content={isExpanded ? 'Collapse log' : 'Expand log'}>
           <button
+            title={isExpanded ? 'Collapse log' : 'Expand log'}
             onClick={onToggle}
             className="p-1 rounded hover:bg-secondary/40 text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors shrink-0"
           >
@@ -103,6 +120,7 @@ export function TerminalStrip({
         {!isRunning && onClear && lines.length > 0 && (
           <Tooltip content="Dismiss">
             <button
+              title="Dismiss"
               onClick={onClear}
               className="p-1 rounded hover:bg-secondary/40 text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors shrink-0"
             >

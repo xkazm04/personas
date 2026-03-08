@@ -16,6 +16,7 @@ import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types'
 import { SectionHeader } from '@/features/shared/components/SectionHeader';
 import EmptyState from '@/features/shared/components/EmptyState';
 import { LinkedRecipesSection } from '@/features/recipes/sub_list/LinkedRecipesSection';
+import { ModelABCompare } from '@/features/agents/sub_model_config/ModelABCompare';
 
 const MemoUseCaseRow = memo(UseCaseRow);
 
@@ -117,6 +118,9 @@ export function PersonaUseCasesTab({ draft, patch, modelDirty, credentials, conn
     <div className="space-y-6">
       {/* Persona Default Model */}
       <DefaultModelSection draft={draft} patch={patch} modelDirty={modelDirty} />
+
+      {/* Model A/B Comparison */}
+      <ModelABCompare />
 
       {/* Use Cases Section */}
       {useCases.length === 0 ? (

@@ -795,6 +795,28 @@
         "label": "Recommended Airtable Schema",
         "content": "Revenue Tracker table fields:\n| Field | Type | Description |\n|-------|------|-------------|\n| CustomerName | Text | Full name from Stripe |\n| Email | Email | Customer email |\n| StripeCustomerId | Text | Unique key (cus_xxx) |\n| Plan | Single Select | Subscription plan name |\n| MRR | Currency | Monthly contribution |\n| Status | Single Select | Active / Churned / At Risk |\n| StartDate | Date | Subscription start |\n| EndDate | Date | Cancellation date (if churned) |\n| FailedPaymentCount | Number | Consecutive failures |\n| LifetimeValue | Currency | Total revenue to date |\n| LastEventDate | Date | Most recent Stripe event |\n| Notes | Long Text | Refund reasons, special notes |"
       }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Escalation to human for critical or ambiguous items",
+        "context": "Escalation logic detected in instructions"
+      },
+      {
+        "type": "user_message",
+        "label": "Email notifications for reports, digests, and alerts (periodic digests, critical alerts, completion confirmations, error notifications)",
+        "context": "1 notification channel(s) configured: email"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Historical baselines and trend data for comparative analysis",
+        "context": "Tracks: recurring patterns, calibrated thresholds"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits events: execution failed, item created, threshold breached, escalation triggered",
+        "context": "4 event subscription(s) configured — agent participates in event bus"
+      }
     ]
   }
 }

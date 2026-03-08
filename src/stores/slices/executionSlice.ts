@@ -9,6 +9,9 @@ import {
   completeTrace,
 } from "@/lib/execution/pipeline";
 import type { Continuation } from "@/lib/bindings/Continuation";
+import type { DesignDriftEvent } from "@/lib/design/designDrift";
+import { detectDesignDrift, loadDriftEvents, saveDriftEvents } from "@/lib/design/designDrift";
+import type { DesignAnalysisResult } from "@/lib/types/designTypes";
 import * as api from "@/api/tauriApi";
 
 /** Maximum terminal output lines kept in memory to prevent OOM on long executions. */
@@ -102,6 +105,8 @@ export interface ExecutionSlice {
   queuePosition: number | null;
   /** Total queue depth when queued. */
   queueDepth: number | null;
+  /** Design drift events detected from execution outcomes. */
+  designDriftEvents: DesignDriftEvent[];
 
   // Actions
   executePersona: (personaId: string, inputData?: object, useCaseId?: string, continuation?: Continuation) => Promise<string | null>;
@@ -111,6 +116,7 @@ export interface ExecutionSlice {
   appendExecutionOutput: (line: string) => void;
   clearExecutionOutput: () => void;
   setQueueStatus: (position: number | null, depth: number | null) => void;
+  dismissDriftEvent: (eventId: string) => void;
 }
 
 export const createExecutionSlice: StateCreator<PersonaStore, [], [], ExecutionSlice> = (set, get) => {
@@ -128,6 +134,7 @@ export const createExecutionSlice: StateCreator<PersonaStore, [], [], ExecutionS
   pipelineTrace: null,
   queuePosition: null,
   queueDepth: null,
+  designDriftEvents: loadDriftEvents(),
 
   executePersona: async (personaId, inputData, useCaseId, continuation) => {
     // Guard: reject concurrent executions. The store tracks a single active
@@ -194,6 +201,11 @@ export const createExecutionSlice: StateCreator<PersonaStore, [], [], ExecutionS
     // we reset execution state.
     flushTerminalBatch();
 
+    // Capture context for drift detection before resetting state
+    const execPersonaId = get().executionPersonaId;
+    const execId = get().activeExecutionId;
+    const terminalOutput = get().executionOutput;
+
     // Pipeline: frontend_complete stage
     let trace = get().pipelineTrace;
     if (trace) {
@@ -204,6 +216,79 @@ export const createExecutionSlice: StateCreator<PersonaStore, [], [], ExecutionS
     set({ isExecuting: false, activeExecutionId: null, activeUseCaseId: null, queuePosition: null, queueDepth: null });
     const personaId = get().selectedPersona?.id;
     if (personaId) get().fetchExecutions(personaId);
+    // Notify guided tour that an execution completed
+    get().emitTourEvent('tour:execution-complete');
+
+    // Design drift detection — async, non-blocking
+    if (execPersonaId && execId && _status) {
+      queueMicrotask(() => {
+        try {
+          const state = get();
+          const persona = state.personas.find(p => p.id === execPersonaId);
+          if (!persona) return;
+
+          // Parse summary from terminal output to get cost/duration
+          let durationMs: number | null = null;
+          let costUsd = 0;
+          let errorMessage: string | null = null;
+          for (let i = terminalOutput.length - 1; i >= 0; i--) {
+            const line = terminalOutput[i]!;
+            if (line.startsWith('[SUMMARY]')) {
+              try {
+                const summary = JSON.parse(line.slice(9));
+                durationMs = summary.duration_ms ?? null;
+                costUsd = summary.cost_usd ?? 0;
+              } catch { /* ignore parse errors */ }
+            }
+            if (line.startsWith('[ERROR]') && !errorMessage) {
+              errorMessage = line.slice(8);
+            }
+          }
+
+          // Count recent consecutive failures for this persona
+          const recentExecs = state.executions
+            .filter(e => e.persona_id === execPersonaId)
+            .slice(0, 5);
+          let recentFailureCount = 0;
+          for (const e of recentExecs) {
+            if (e.status === 'failed') recentFailureCount++;
+            else break;
+          }
+
+          let lastDesignResult: DesignAnalysisResult | null = null;
+          if (persona.last_design_result) {
+            try { lastDesignResult = JSON.parse(persona.last_design_result); } catch { /* ignore */ }
+          }
+
+          const driftEvents = detectDesignDrift(
+            {
+              status: _status,
+              durationMs,
+              costUsd,
+              errorMessage,
+              toolSteps: null,
+              executionId: execId,
+            },
+            {
+              personaId: execPersonaId,
+              personaName: persona.name,
+              timeoutMs: persona.timeout_ms,
+              maxBudgetUsd: persona.max_budget_usd ?? null,
+              lastDesignResult,
+              recentFailureCount,
+            },
+          );
+
+          if (driftEvents.length > 0) {
+            const all = [...get().designDriftEvents, ...driftEvents];
+            saveDriftEvents(all);
+            set({ designDriftEvents: all });
+          }
+        } catch {
+          // Drift detection is non-critical — never break execution flow
+        }
+      });
+    }
   },
 
   fetchExecutions: async (personaId) => {
@@ -241,6 +326,14 @@ export const createExecutionSlice: StateCreator<PersonaStore, [], [], ExecutionS
 
   setQueueStatus: (position, depth) => {
     set({ queuePosition: position, queueDepth: depth });
+  },
+
+  dismissDriftEvent: (eventId) => {
+    const updated = get().designDriftEvents.map((e) =>
+      e.id === eventId ? { ...e, dismissed: true } : e,
+    );
+    saveDriftEvents(updated);
+    set({ designDriftEvents: updated });
   },
 });
 };

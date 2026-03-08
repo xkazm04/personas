@@ -37,8 +37,7 @@ export function profileToDropdownValue(mp: ModelProfile): string {
   if (!mp.provider || mp.provider === 'anthropic') {
     if (mp.model === 'haiku') return 'haiku';
     if (mp.model === 'sonnet') return 'sonnet';
-    if (mp.model === 'opus') return 'opus';
-    if (!mp.model) return '';
+    if (mp.model === 'opus' || !mp.model) return 'opus';
   }
   return 'custom';
 }

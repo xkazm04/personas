@@ -675,7 +675,7 @@ export function PersonaRunner() {
       </AnimatePresence>
 
       {/* AI Self-Healing Strip (dev-mode only) */}
-      {import.meta.env.VITE_DEVELOPMENT === 'true' && aiHealing.phase !== 'idle' && (
+      {import.meta.env.DEV && aiHealing.phase !== 'idle' && (
         <TerminalStrip
           lastLine={aiHealing.lastLine}
           lines={aiHealing.lines}
@@ -686,6 +686,7 @@ export function PersonaRunner() {
           }
           isExpanded={showHealingLog}
           onToggle={() => setShowHealingLog((v) => !v)}
+          operation="healing_analysis"
           counters={
             <AiHealingCounters
               phase={aiHealing.phase}

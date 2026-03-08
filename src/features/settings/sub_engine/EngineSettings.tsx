@@ -1,88 +1,36 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
-import { Cpu, Check, AlertTriangle } from 'lucide-react';
+import { Cpu, RotateCcw, AlertTriangle, Check, X, Minus, Lock } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
-import { useAppSetting } from '@/hooks/utility/useAppSetting';
-import { systemHealthCheck } from '@/api';
+import { useEngineCapabilities } from '@/hooks/utility/useEngineCapabilities';
+import { CLI_OPERATIONS, PROVIDERS, DEFAULT_CAPABILITIES } from './engineCapabilities';
 import type { CliEngine } from '@/lib/types/types';
-
-interface EngineOption {
-  id: CliEngine;
-  name: string;
-  description: string;
-  contextFile: string;
-}
-
-const ENGINES: EngineOption[] = [
-  {
-    id: 'claude_code',
-    name: 'Claude Code CLI',
-    description: "Anthropic's agentic coding CLI. Best protocol compliance and session resume support.",
-    contextFile: 'CLAUDE.md',
-  },
-  {
-    id: 'codex_cli',
-    name: 'Codex CLI',
-    description: "OpenAI's coding agent. Requires an OpenAI API key.",
-    contextFile: 'AGENTS.md',
-  },
-  {
-    id: 'gemini_cli',
-    name: 'Gemini CLI',
-    description: "Google's Gemini agent. Free tier available with 1M token context window.",
-    contextFile: 'GEMINI.md',
-  },
-  {
-    id: 'copilot_cli',
-    name: 'Copilot CLI',
-    description: "GitHub Copilot's coding agent. Free GPT 5 mini tier. Requires GitHub Copilot subscription.",
-    contextFile: 'COPILOT.md',
-  },
-];
-
-const VALID_ENGINE_IDS = new Set<string>(ENGINES.map((e) => e.id));
+import type { CliOperation } from './engineCapabilities';
 
 export default function EngineSettings() {
-  const setting = useAppSetting('cli_engine', 'claude_code', (v) => VALID_ENGINE_IDS.has(v));
-  const hasLoadedOnce = useRef(false);
-  const [healthStatus, setHealthStatus] = useState<Record<string, { status: string; detail?: string }>>({});
+  const {
+    installedProviders,
+    loaded,
+    isEnabled,
+    toggle,
+    resetToDefaults,
+  } = useEngineCapabilities();
 
-  // Auto-save whenever value changes (skip the initial load)
-  useEffect(() => {
-    if (!setting.loaded) return;
-    if (!hasLoadedOnce.current) {
-      hasLoadedOnce.current = true;
-      return;
-    }
-    setting.save();
-  }, [setting.value]);
-
-  // Load health status for each engine
-  useEffect(() => {
-    systemHealthCheck().then((report) => {
-      const localSection = report.sections.find((s) => s.id === 'local');
-      if (!localSection) return;
-
-      const statusMap: Record<string, { status: string; detail?: string }> = {};
-      for (const item of localSection.items) {
-        if (item.id === 'claude_cli') {
-          statusMap['claude_code'] = { status: item.status, detail: item.detail ?? undefined };
-        } else if (item.id === 'codex_cli') {
-          statusMap['codex_cli'] = { status: item.status, detail: item.detail ?? undefined };
-        } else if (item.id === 'gemini_cli') {
-          statusMap['gemini_cli'] = { status: item.status, detail: item.detail ?? undefined };
-        } else if (item.id === 'copilot_cli') {
-          statusMap['copilot_cli'] = { status: item.status, detail: item.detail ?? undefined };
-        }
-      }
-      setHealthStatus(statusMap);
-    }).catch(() => {});
-  }, [setting.value]);
-
-  const selectEngine = useCallback((id: CliEngine) => {
-    setting.setValue(id);
-  }, [setting]);
-
-  const activeEngine = (setting.value || 'claude_code') as CliEngine;
+  if (!loaded) {
+    return (
+      <ContentBox>
+        <ContentHeader
+          icon={<Cpu className="w-5 h-5 text-cyan-400" />}
+          iconColor="cyan"
+          title="Engine"
+          subtitle="Loading engine capabilities..."
+        />
+        <ContentBody centered>
+          <div className="h-40 flex items-center justify-center text-muted-foreground/40 text-sm">
+            Detecting installed providers...
+          </div>
+        </ContentBody>
+      </ContentBox>
+    );
+  }
 
   return (
     <ContentBox>
@@ -90,93 +38,189 @@ export default function EngineSettings() {
         icon={<Cpu className="w-5 h-5 text-cyan-400" />}
         iconColor="cyan"
         title="Engine"
-        subtitle="Select which CLI agent engine powers your personas"
+        subtitle="Configure which CLI providers handle each operation"
       />
 
       <ContentBody centered>
         <div className="space-y-4">
-          {/* Engine selector cards */}
+          {/* Capability matrix */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
-            <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Active Engine</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
+                Operation Capability Map
+              </h2>
+              <button
+                onClick={resetToDefaults}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Reset to defaults
+              </button>
+            </div>
 
-            <div className="space-y-3">
-              {ENGINES.map((engine) => {
-                const isActive = activeEngine === engine.id;
-                const health = healthStatus[engine.id];
-                const isInstalled = health?.status === 'ok';
-                const isError = health?.status === 'error' || health?.status === 'warn';
-
-                return (
-                  <button
-                    key={engine.id}
-                    onClick={() => selectEngine(engine.id)}
-                    className={`w-full text-left p-4 rounded-xl border transition-all ${
-                      isActive
-                        ? 'border-primary/30 bg-primary/5'
-                        : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                        isActive
-                          ? 'border-primary bg-primary'
-                          : 'border-muted-foreground/30'
-                      }`}>
-                        {isActive && <Check className="w-3 h-3 text-primary-foreground" />}
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className={`text-sm font-medium ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>
-                            {engine.name}
-                          </span>
-                          {health && (
-                            <span className={`text-sm px-1.5 py-0.5 rounded-full ${
-                              isInstalled
-                                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
-                                : isError
-                                  ? 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
-                                  : 'bg-secondary/50 text-muted-foreground/70 border border-primary/10'
-                            }`}>
-                              {isInstalled ? 'Installed' : isError ? 'Not found' : 'Not installed'}
+            {/* Matrix grid */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-primary/10">
+                    <th className="text-left py-2 pr-4 text-muted-foreground/70 font-medium w-[45%]">
+                      Operation
+                    </th>
+                    {PROVIDERS.map((p) => {
+                      const installed = installedProviders.has(p.id);
+                      return (
+                        <th key={p.id} className="py-2 px-2 text-center font-medium min-w-[90px]">
+                          <div className="flex flex-col items-center gap-0.5">
+                            <span className={installed ? 'text-muted-foreground/90' : 'text-muted-foreground/30'}>
+                              {p.shortLabel}
                             </span>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground/70 mt-1">
-                          {engine.description}
-                        </p>
-                        <p className="text-sm text-muted-foreground/50 mt-0.5">
-                          Context file: <code className="text-sm">{engine.contextFile}</code>
-                        </p>
-                        {health?.detail && isInstalled && (
-                          <p className="text-sm text-muted-foreground/50 mt-0.5">{health.detail}</p>
-                        )}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                              installed
+                                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
+                                : 'bg-rose-500/10 text-rose-400/60 border border-rose-500/20'
+                            }`}>
+                              {installed ? 'installed' : 'missing'}
+                            </span>
+                          </div>
+                        </th>
+                      );
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {CLI_OPERATIONS.map((op) => (
+                    <OperationRow
+                      key={op.id}
+                      operation={op.id}
+                      label={op.label}
+                      description={op.description}
+                      installedProviders={installedProviders}
+                      isEnabled={isEnabled}
+                      onToggle={toggle}
+                    />
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
 
-          {/* Warning note */}
+          {/* Legend */}
+          <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-2">
+            <h3 className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider">Legend</h3>
+            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground/70">
+              <span className="flex items-center gap-1.5">
+                <span className="w-4 h-4 rounded bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
+                  <Check className="w-2.5 h-2.5 text-emerald-400" />
+                </span>
+                Enabled
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-4 h-4 rounded bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
+                  <Lock className="w-2.5 h-2.5 text-rose-400/40" />
+                </span>
+                Unsupported (locked)
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-4 h-4 rounded bg-secondary/30 border border-primary/10 flex items-center justify-center">
+                  <Minus className="w-2.5 h-2.5 text-muted-foreground/30" />
+                </span>
+                Not installed
+              </span>
+            </div>
+          </div>
+
+          {/* Protocol warning */}
           <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 flex items-start gap-3">
             <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
             <div className="text-sm text-muted-foreground/80">
-              <p className="font-medium text-amber-400/90 mb-1">Protocol Compatibility</p>
+              <p className="font-medium text-amber-400/90 mb-1">Defaults from Integration Tests</p>
               <p>
-                Communication protocols (agent memory, manual review, execution flow tracking, outcome assessment)
-                are optimized for Claude Code CLI. Other engines may have reduced protocol compliance, which can affect
-                features like memory persistence and execution status tracking.
+                The default map is derived from Round 9 business-level integration tests that validate
+                each provider against the exact JSON schemas the backend parses. Enabling a provider for
+                an operation it failed may cause unparseable responses. Claude Code is the only provider
+                that passed all operations at 100%.
               </p>
             </div>
           </div>
-
-          {setting.saved && (
-            <p className="text-sm text-emerald-400 text-center">Engine setting saved</p>
-          )}
         </div>
       </ContentBody>
     </ContentBox>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Row component
+// ═══════════════════════════════════════════════════════════════════════════
+
+function OperationRow({
+  operation,
+  label,
+  description,
+  installedProviders,
+  isEnabled,
+  onToggle,
+}: {
+  operation: CliOperation;
+  label: string;
+  description: string;
+  installedProviders: Set<CliEngine>;
+  isEnabled: (op: CliOperation, p: CliEngine) => boolean;
+  onToggle: (op: CliOperation, p: CliEngine) => void;
+}) {
+  return (
+    <tr className="border-b border-primary/5 hover:bg-primary/[0.02] transition-colors">
+      <td className="py-2.5 pr-4">
+        <div className="flex flex-col">
+          <span className="text-sm text-foreground/90">{label}</span>
+          <span className="text-[11px] text-muted-foreground/50 leading-tight">{description}</span>
+        </div>
+      </td>
+      {PROVIDERS.map((p) => {
+        const installed = installedProviders.has(p.id);
+        const defaultEnabled = DEFAULT_CAPABILITIES[operation]?.[p.id] ?? false;
+        const enabled = isEnabled(operation, p.id);
+        // Lock cells where the default is false — CLI failed the test, not toggleable
+        const locked = !defaultEnabled;
+
+        return (
+          <td key={p.id} className="py-2.5 px-2 text-center">
+            {!installed ? (
+              <div className="flex justify-center">
+                <span className="w-6 h-6 rounded bg-secondary/20 border border-primary/5 flex items-center justify-center cursor-not-allowed">
+                  <Minus className="w-3 h-3 text-muted-foreground/20" />
+                </span>
+              </div>
+            ) : locked ? (
+              <div className="flex justify-center">
+                <span
+                  className="w-6 h-6 rounded bg-rose-500/10 border border-rose-500/20 flex items-center justify-center cursor-not-allowed"
+                  title={`${label} is not supported by ${p.shortLabel} — failed integration tests`}
+                >
+                  <Lock className="w-2.5 h-2.5 text-rose-400/40" />
+                </span>
+              </div>
+            ) : (
+              <div className="flex justify-center">
+                <button
+                  onClick={() => onToggle(operation, p.id)}
+                  className={`w-6 h-6 rounded border flex items-center justify-center transition-all ${
+                    enabled
+                      ? 'bg-emerald-500/20 border-emerald-500/30 hover:bg-emerald-500/30'
+                      : 'bg-rose-500/10 border-rose-500/20 hover:bg-rose-500/20'
+                  }`}
+                  title={`${enabled ? 'Disable' : 'Enable'} ${label} for ${p.shortLabel}`}
+                >
+                  {enabled ? (
+                    <Check className="w-3 h-3 text-emerald-400" />
+                  ) : (
+                    <X className="w-3 h-3 text-rose-400/60" />
+                  )}
+                </button>
+              </div>
+            )}
+          </td>
+        );
+      })}
+    </tr>
   );
 }

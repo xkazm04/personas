@@ -417,7 +417,7 @@ pub fn build_n8n_unified_prompt(
     // Wrap untrusted workflow data in XML boundary tags
     let wrapped_workflow_name = wrap_xml_boundary("workflow_name", &workflow_name);
     let wrapped_parser_result = wrap_xml_boundary("parser_result", &parser_result_json);
-    let wrapped_workflow_preview = wrap_xml_boundary("workflow_json_preview", &workflow_preview);
+    let wrapped_workflow_preview = wrap_xml_boundary("workflow_json_preview", workflow_preview);
 
     format!(
         r#"You are a senior Personas architect. You will analyze a {platform_label} workflow and either ask

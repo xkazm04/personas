@@ -1,0 +1,49 @@
+{
+  "id": "builtin-azure-devops",
+  "name": "azure_devops",
+  "label": "Azure DevOps",
+  "color": "#0078D7",
+  "icon_url": "/icons/connectors/azure-devops.svg",
+  "category": "development",
+  "fields": [
+    {
+      "key": "organization",
+      "label": "Organization",
+      "type": "text",
+      "required": true,
+      "placeholder": "my-org",
+      "helpText": "Your Azure DevOps organization name (from dev.azure.com/{organization})"
+    },
+    {
+      "key": "pat",
+      "label": "Personal Access Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "Generate at dev.azure.com/{org}/_usersSettings/tokens with required scopes"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://dev.azure.com/{{organization}}/_apis/projects?api-version=7.1",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Basic {{base64(:pat)}}"
+    },
+    "description": "Validates PAT via Azure DevOps projects endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Azure DevOps for repositories, work items, pipelines, and CI/CD.",
+    "auth_type": "pat",
+    "auth_type_label": "PAT",
+    "docs_url": "https://learn.microsoft.com/en-us/rest/api/azure/devops/",
+    "setup_guide": "1. Go to dev.azure.com and sign in\n2. Click User Settings (gear icon) → Personal Access Tokens\n3. Click 'New Token', set scopes (e.g. Code, Work Items, Build)\n4. Copy the generated token\n5. Enter your organization name and paste the token",
+    "pricing_tier": "freemium",
+    "auth_methods": [
+      {"id": "pat", "label": "PAT", "type": "credential", "is_default": true},
+      {"id": "mcp", "label": "MCP", "type": "mcp", "package": "@azure-devops/mcp", "transport": "stdio", "suggested_env": {"AZURE_DEVOPS_ORG": "", "AZURE_DEVOPS_PAT": ""}}
+    ]
+  }
+}

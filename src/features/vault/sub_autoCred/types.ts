@@ -26,6 +26,67 @@ export type AutoCredMode = 'playwright' | 'guided';
 /** Values extracted from the browser session, keyed by field key */
 export type ExtractedValues = Record<string, string>;
 
+// ── Partial Extraction Contract ──────────────────────────────────────
+
+/**
+ * An extraction is **partial** when the adapter could not fill every
+ * required field defined in the connector schema.
+ *
+ * Adapters MUST set `partial: true` when:
+ *  - One or more required fields have an empty or missing value.
+ *  - The browser session was interrupted before all fields were captured.
+ *  - The adapter detected a page layout it could not parse fully.
+ *
+ * Adapters SHOULD set `partial: false` only when every required field
+ * has a non-empty value.
+ */
+
+/** Per-field completeness status produced by `checkFieldCompleteness`. */
+export interface FieldCompletenessEntry {
+  key: string;
+  label: string;
+  required: boolean;
+  filled: boolean;
+}
+
+/** Summary of extraction completeness across all fields. */
+export interface ExtractionCompleteness {
+  /** True when one or more required fields are empty. */
+  isPartial: boolean;
+  /** Number of required fields that have a non-empty value. */
+  filledRequired: number;
+  /** Total number of required fields. */
+  totalRequired: number;
+  /** Per-field breakdown. */
+  fields: FieldCompletenessEntry[];
+  /** Keys of required fields that are missing. */
+  missingKeys: string[];
+}
+
+/** Compute field-level completeness for extracted values against a schema. */
+export function checkFieldCompleteness(
+  fields: CredentialTemplateField[],
+  values: ExtractedValues,
+): ExtractionCompleteness {
+  const entries: FieldCompletenessEntry[] = fields.map((f) => ({
+    key: f.key,
+    label: f.label,
+    required: !!f.required,
+    filled: !!(values[f.key] ?? '').trim(),
+  }));
+
+  const requiredEntries = entries.filter((e) => e.required);
+  const missingKeys = requiredEntries.filter((e) => !e.filled).map((e) => e.key);
+
+  return {
+    isPartial: missingKeys.length > 0,
+    filledRequired: requiredEntries.length - missingKeys.length,
+    totalRequired: requiredEntries.length,
+    fields: entries,
+    missingKeys,
+  };
+}
+
 /** Structured error returned from backend (JSON-parsed from error string) */
 export interface AutoCredErrorInfo {
   kind: 'cli_not_found' | 'spawn_failed' | 'timeout' | 'env_conflict' | 'cli_error' | 'extraction_failed';

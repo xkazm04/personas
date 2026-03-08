@@ -736,6 +736,28 @@
         "label": "Anomaly Detection Rules",
         "content": "The agent uses a multi-signal scoring system for transaction anomalies:\n\n**Flags (each adds to severity score):**\n- Amount > $500: +2 points\n- Amount > $1,000: +3 points (replaces the $500 flag)\n- Merchant never seen before in history: +2 points\n- Transaction between midnight and 5am local time: +1 point\n- Foreign currency on a domestic account: +3 points\n- Duplicate amount to same merchant within 24 hours: +2 points\n- Amount > 3x the average for that merchant: +2 points\n- Category mismatch (e.g., 'in-store' purchase for an online-only merchant): +2 points\n\n**Severity levels:**\n- Score 1–2: Log only, no alert\n- Score 3–4: Standard alert (Slack only)\n- Score 5+: High severity (Slack + Gmail with recommended actions)"
       }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Human approval for financial transactions and reconciliation discrepancies",
+        "context": "Inferred from template category — every e2e process needs a human gate"
+      },
+      {
+        "type": "user_message",
+        "label": "Real-time Slack alerts plus email digests and summaries (periodic digests, critical alerts, error notifications)",
+        "context": "2 notification channel(s) configured: slack, email"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Deduplication memory tracking known items across runs",
+        "context": "Tracks: recurring patterns, calibrated thresholds, known items for deduplication, processing checkpoints"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits events: execution failed, threshold breached",
+        "context": "4 event subscription(s) configured — agent participates in event bus"
+      }
     ]
   }
 }

@@ -1,6 +1,7 @@
 import { Pencil, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { TransformProgress } from '@/features/shared/components/TransformProgress';
+import { CompilationStepper } from './CompilationStepper';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 
 interface DesignPhaseAnalyzingProps {
@@ -29,6 +30,8 @@ export function DesignPhaseAnalyzing({ instruction, outputLines, savedDesignResu
       <div className="bg-secondary/30 rounded-xl px-4 py-3 text-sm text-foreground/90 border border-primary/15">
         {instruction}
       </div>
+
+      <CompilationStepper outputLines={outputLines} isRunning={true} />
 
       <TransformProgress mode="analysis" lines={outputLines} isRunning={true} />
 

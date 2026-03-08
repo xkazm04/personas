@@ -1,17 +1,15 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Key, Wrench, Zap, Pencil, Tag, X, Plus, Copy, Check, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
+import { Key, Wrench, Zap, Pencil, Copy, Check, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import { CredentialEditForm } from '@/features/vault/sub_forms/CredentialEditForm';
 import { CredentialEventConfig } from '@/features/vault/sub_features/CredentialEventConfig';
+import { CredentialIntelligence } from '@/features/vault/sub_features/CredentialIntelligence';
 import { VaultErrorBanner } from '@/features/vault/sub_card/VaultErrorBanner';
-import { getCredentialTags, buildMetadataWithTags, getTagStyle, SUGGESTED_TAGS } from '@/features/vault/utils/credentialTags';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
-import { toCredentialMetadata } from '@/lib/types/types';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { RotationStatus } from '@/api/rotation';
 import type { HealthResult } from '@/features/vault/hooks/useCredentialHealth';
 import type { GoogleOAuthState } from '@/features/vault/hooks/useGoogleOAuth';
-import * as credApi from '@/api/credentials';
 
 export interface OverviewTabProps {
   credential: CredentialMetadata;
@@ -47,49 +45,12 @@ export function OverviewTab({
   onDelete,
 }: OverviewTabProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [tagInput, setTagInput] = useState('');
-  const [showTagInput, setShowTagInput] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
   const [expandedSection, setExpandedSection] = useState<'services' | 'events' | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const tagInputRef = useRef<HTMLInputElement>(null);
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const updateCredential = usePersonaStore((s) => s.updateCredential);
-  const currentTags = getCredentialTags(credential);
-
-  const persistTags = useCallback(async (nextTags: string[]) => {
-    const metadata = buildMetadataWithTags(credential, nextTags);
-    try {
-      const updatedRaw = await credApi.updateCredential(credential.id, {
-        name: null,
-        service_type: null,
-        encrypted_data: null,
-        metadata,
-      });
-      const updated = toCredentialMetadata(updatedRaw);
-      usePersonaStore.setState((s) => ({
-        credentials: s.credentials.map((c) => (c.id === credential.id ? updated : c)),
-      }));
-    } catch { /* intentional: non-critical — tag metadata update is best-effort */ }
-  }, [credential]);
-
-  const addTag = useCallback((tag: string) => {
-    const trimmed = tag.trim().toLowerCase();
-    if (!trimmed || currentTags.includes(trimmed)) return;
-    persistTags([...currentTags, trimmed]);
-    setTagInput('');
-    setShowSuggestions(false);
-  }, [currentTags, persistTags]);
-
-  const removeTag = useCallback((tag: string) => {
-    persistTags(currentTags.filter((t) => t !== tag));
-  }, [currentTags, persistTags]);
-
-  const filteredSuggestions = SUGGESTED_TAGS.filter(
-    (s) => !currentTags.includes(s) && s.includes(tagInput.toLowerCase()),
-  );
 
   const copyCredentialId = useCallback(async () => {
     try {
@@ -202,69 +163,11 @@ export function OverviewTab({
             </div>
           )}
 
-          {/* Tags row */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <Tag className="w-3 h-3 text-muted-foreground/40 shrink-0" />
-            {currentTags.map((tag) => {
-              const style = getTagStyle(tag);
-              return (
-                <span
-                  key={tag}
-                  className={`inline-flex items-center gap-1 text-sm font-medium px-1.5 py-0.5 rounded border ${style.bg} ${style.text} ${style.border}`}
-                >
-                  {tag}
-                  <button
-                    onClick={() => removeTag(tag)}
-                    className="hover:opacity-70 transition-opacity"
-                    title={`Remove tag "${tag}"`}
-                  >
-                    <X className="w-2.5 h-2.5" />
-                  </button>
-                </span>
-              );
-            })}
-            {showTagInput ? (
-              <div className="relative">
-                <input
-                  ref={tagInputRef}
-                  type="text"
-                  value={tagInput}
-                  onChange={(e) => { setTagInput(e.target.value); setShowSuggestions(true); }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && tagInput.trim()) addTag(tagInput);
-                    if (e.key === 'Escape') { setShowTagInput(false); setTagInput(''); setShowSuggestions(false); }
-                  }}
-                  onBlur={() => { setTimeout(() => { setShowTagInput(false); setTagInput(''); setShowSuggestions(false); }, 150); }}
-                  autoFocus
-                  placeholder="Add tag..."
-                  className="w-24 text-sm px-1.5 py-0.5 rounded border border-primary/20 bg-background/50 text-foreground/80 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/30"
-                />
-                {showSuggestions && filteredSuggestions.length > 0 && (
-                  <div className="absolute top-full mt-1 left-0 z-20 bg-background border border-primary/15 rounded-lg shadow-lg py-1 min-w-[100px]">
-                    {filteredSuggestions.map((s) => (
-                      <button
-                        key={s}
-                        onMouseDown={(e) => { e.preventDefault(); addTag(s); }}
-                        className="w-full text-left px-2.5 py-1 text-sm hover:bg-secondary/50 transition-colors text-foreground/80"
-                      >
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <button
-                onClick={() => { setShowTagInput(true); setTimeout(() => tagInputRef.current?.focus(), 0); }}
-                className="inline-flex items-center gap-0.5 text-sm text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors"
-                title="Add tag"
-              >
-                <Plus className="w-2.5 h-2.5" /> tag
-              </button>
-            )}
+          {/* Credential ID */}
+          <div className="flex items-center">
             <button
               onClick={copyCredentialId}
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-primary/10 bg-secondary/20 text-sm text-muted-foreground/70 hover:text-foreground/80 transition-colors ml-auto"
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-primary/10 bg-secondary/20 text-sm text-muted-foreground/70 hover:text-foreground/80 transition-colors"
               title="Copy credential ID"
             >
               <span className="font-mono">id</span>
@@ -277,20 +180,6 @@ export function OverviewTab({
               )}
             </button>
           </div>
-
-          {/* Field keys */}
-          {connector.fields.length > 0 && (
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/40 mb-2">Fields</p>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {connector.fields.map((f) => (
-                  <span key={f.key} className="text-sm px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/8 text-muted-foreground/60 font-mono">
-                    {f.key}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Collapsible sections: Services and Events */}
           {connector.services.length > 0 && (
@@ -348,6 +237,10 @@ export function OverviewTab({
               )}
             </div>
           )}
+          {/* Intelligence */}
+          <div className="border border-primary/10 rounded-xl p-4">
+            <CredentialIntelligence credentialId={credential.id} />
+          </div>
         </>
       )}
     </div>

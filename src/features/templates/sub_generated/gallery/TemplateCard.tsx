@@ -19,6 +19,7 @@ import {
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { Tooltip } from '@/features/shared/components/Tooltip';
 import { deriveConnectorReadiness } from '../shared/ConnectorReadiness';
+import { computeAdoptionReadiness, readinessTier } from '../shared/adoptionReadiness';
 import { DimensionRadial } from '../shared/DimensionRadial';
 import { TrustBadge } from '../shared/TrustBadge';
 import { verifyTemplate } from '@/lib/templates/templateVerification';
@@ -102,6 +103,12 @@ export function TemplateCard({
     ? deriveConnectorReadiness(designResult.suggested_connectors, installedConnectorNames, credentialServiceTypes)
     : [];
 
+  const readinessScore = useMemo(
+    () => computeAdoptionReadiness(review, installedConnectorNames, credentialServiceTypes),
+    [review, installedConnectorNames, credentialServiceTypes],
+  );
+  const tier = readinessTier(readinessScore);
+
   const verification = useMemo(() => verifyTemplate({
     testCaseId: review.test_case_id,
     testRunId: review.test_run_id,
@@ -133,6 +140,17 @@ export function TemplateCard({
                 {review.test_case_name}
               </h3>
               <TrustBadge trustLevel={verification.trustLevel} compact />
+              <span
+                className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-mono rounded border ${tier.bgClass}`}
+                title={`${readinessScore}% of connectors ready`}
+              >
+                {readinessScore === 100 ? (
+                  <CheckCircle2 className="w-2.5 h-2.5" />
+                ) : (
+                  <XCircle className="w-2.5 h-2.5" />
+                )}
+                {readinessScore}%
+              </span>
             </div>
             <p className="text-sm text-muted-foreground/70 mt-1 line-clamp-2 leading-relaxed">
               {review.instruction.length > 120

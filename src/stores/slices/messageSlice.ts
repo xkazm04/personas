@@ -10,6 +10,8 @@ export interface MessageSlice {
   messages: PersonaMessage[];
   messagesTotal: number;
   unreadMessageCount: number;
+  /** IDs of messages with in-flight markAsRead calls (not yet confirmed by backend). */
+  _pendingReadIds: Set<string>;
 
   // Actions
   fetchMessages: (reset?: boolean) => Promise<void>;
@@ -23,6 +25,7 @@ export const createMessageSlice: StateCreator<PersonaStore, [], [], MessageSlice
   messages: [],
   messagesTotal: 0,
   unreadMessageCount: 0,
+  _pendingReadIds: new Set(),
 
   fetchMessages: async (reset = true) => {
     try {
@@ -51,29 +54,47 @@ export const createMessageSlice: StateCreator<PersonaStore, [], [], MessageSlice
   },
 
   markMessageAsRead: async (id) => {
-    // Guard: no-op if already read to prevent count drift
-    const msg = get().messages.find((m) => m.id === id);
-    if (!msg || msg.is_read) return;
+    // Guard: no-op if already read or already pending to prevent count drift
+    const { messages, _pendingReadIds } = get();
+    const msg = messages.find((m) => m.id === id);
+    if (!msg || msg.is_read || _pendingReadIds.has(id)) return;
 
     const prevReadAt = msg.read_at;
 
-    set((state) => ({
-      messages: state.messages.map((m) =>
-        m.id === id ? { ...m, is_read: true, read_at: new Date().toISOString() } : m,
-      ),
-      unreadMessageCount: Math.max(0, state.unreadMessageCount - 1),
-    }));
+    // Optimistically mark as read and add to pending set
+    set((state) => {
+      const nextPending = new Set(state._pendingReadIds);
+      nextPending.add(id);
+      return {
+        messages: state.messages.map((m) =>
+          m.id === id ? { ...m, is_read: true, read_at: new Date().toISOString() } : m,
+        ),
+        _pendingReadIds: nextPending,
+        unreadMessageCount: Math.max(0, state.unreadMessageCount - 1),
+      };
+    });
     try {
       await api.markMessageRead(id);
+      // Success: remove from pending set (count is already correct)
+      set((state) => {
+        const nextPending = new Set(state._pendingReadIds);
+        nextPending.delete(id);
+        return { _pendingReadIds: nextPending };
+      });
     } catch (err) {
       console.warn("[messageSlice] markMessageAsRead failed, recovering state:", err);
-      // Restore only the affected message to preserve pagination/scroll state.
-      set((state) => ({
-        messages: state.messages.map((m) =>
-          m.id === id ? { ...m, is_read: false, read_at: prevReadAt ?? null } : m,
-        ),
-        unreadMessageCount: state.unreadMessageCount + 1,
-      }));
+      // Rollback: remove from pending set and restore the message
+      set((state) => {
+        const nextPending = new Set(state._pendingReadIds);
+        nextPending.delete(id);
+        return {
+          messages: state.messages.map((m) =>
+            m.id === id ? { ...m, is_read: false, read_at: prevReadAt ?? null } : m,
+          ),
+          _pendingReadIds: nextPending,
+          unreadMessageCount: state.unreadMessageCount + 1,
+        };
+      });
       set({ error: errMsg(err, "Failed to mark message as read") });
     }
   },

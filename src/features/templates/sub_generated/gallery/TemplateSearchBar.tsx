@@ -1,13 +1,13 @@
 import { useMemo } from 'react';
 import {
   Search,
-  Plus,
   X,
   Sparkles,
   Loader2,
   Send,
   List,
   Compass,
+  Star,
 } from 'lucide-react';
 import type { ConnectorWithCount, CategoryWithCount } from '@/api/reviews';
 import { ConnectorFilterDropdown } from './ConnectorFilterDropdown';
@@ -37,7 +37,6 @@ interface TemplateSearchBarProps {
   availableCategories: CategoryWithCount[];
   total: number;
   loadedCount: number;
-  onNewTemplate: () => void;
   onCleanupDuplicates?: () => void;
   isCleaningUp?: boolean;
   onBackfillPipeline?: () => void;
@@ -46,6 +45,7 @@ interface TemplateSearchBarProps {
   isBackfillingTools?: boolean;
   coverageFilter?: string;
   onCoverageFilterChange?: (value: string) => void;
+  coverageCounts?: { all: number; ready: number; partial: number };
   // Density & view mode
   density?: Density;
   onDensityChange?: (d: Density) => void;
@@ -59,6 +59,9 @@ interface TemplateSearchBarProps {
   aiSearchActive?: boolean;
   onAiSearchSubmit?: (query: string) => void;
   aiCliLog?: string[];
+  // Recommended
+  hasRecommendations?: boolean;
+  onOpenRecommended?: () => void;
 }
 
 // ── Main Component ───────────────────────────────────────────────
@@ -78,7 +81,6 @@ export function TemplateSearchBar({
   availableCategories,
   total,
   loadedCount,
-  onNewTemplate,
   onCleanupDuplicates,
   isCleaningUp,
   onBackfillPipeline,
@@ -87,6 +89,7 @@ export function TemplateSearchBar({
   isBackfillingTools,
   coverageFilter,
   onCoverageFilterChange,
+  coverageCounts,
   density,
   onDensityChange,
   viewMode,
@@ -98,6 +101,8 @@ export function TemplateSearchBar({
   aiSearchActive,
   onAiSearchSubmit,
   aiCliLog,
+  hasRecommendations,
+  onOpenRecommended,
 }: TemplateSearchBarProps) {
   const query = useStructuredQuery(onCategoryFilterChange, onSearchChange);
 
@@ -110,9 +115,6 @@ export function TemplateSearchBar({
       && total > 0 && total < 3
       && search.trim().length >= 5;
   }, [aiSearchActive, aiSearchLoading, aiSearchMode, total, search]);
-
-  // Show filter chips row only when active filters exist
-  const hasActiveFilters = selectedCategory || connectorFilter.length > 0 || (coverageFilter && coverageFilter !== 'all');
 
   return (
     <div className="border-b border-primary/10 flex-shrink-0">
@@ -283,15 +285,6 @@ export function TemplateSearchBar({
           </div>
         )}
 
-        {/* Connector filter (list mode only) */}
-        {viewMode !== 'explore' && (
-          <ConnectorFilterDropdown
-            availableConnectors={availableConnectors}
-            connectorFilter={connectorFilter}
-            setConnectorFilter={onConnectorFilterChange}
-          />
-        )}
-
         {/* Density toggle (list mode only) */}
         {viewMode !== 'explore' && density && onDensityChange && (
           <DensityToggle density={density} onChange={onDensityChange} />
@@ -309,14 +302,16 @@ export function TemplateSearchBar({
           />
         )}
 
-        {/* New Template */}
-        <button
-          onClick={onNewTemplate}
-          className="px-2.5 py-1.5 text-sm rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors flex items-center gap-1.5 flex-shrink-0"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          New
-        </button>
+        {/* Recommended for You */}
+        {hasRecommendations && onOpenRecommended && (
+          <button
+            onClick={onOpenRecommended}
+            className="p-2 rounded-lg border border-primary/10 hover:bg-amber-500/10 text-amber-400/60 hover:text-amber-400 transition-colors flex-shrink-0"
+            title="Recommended for you"
+          >
+            <Star className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* AI search status bar */}
@@ -345,8 +340,8 @@ export function TemplateSearchBar({
         </div>
       )}
 
-      {/* Row 2 -- Filter chips (conditional) + admin tools */}
-      {(hasActiveFilters || (import.meta.env.VITE_DEVELOPMENT === 'true' && (onCleanupDuplicates || onBackfillPipeline))) && (
+      {/* Row 2 -- Filter chips + connector filter + admin tools */}
+      {viewMode !== 'explore' && (
         <div className="px-4 pb-2.5 flex items-center gap-2">
           <FilterChips
             selectedCategory={selectedCategory}
@@ -355,12 +350,19 @@ export function TemplateSearchBar({
             onConnectorFilterChange={onConnectorFilterChange}
             coverageFilter={coverageFilter}
             onCoverageFilterChange={onCoverageFilterChange}
+            coverageCounts={coverageCounts}
+          />
+
+          <ConnectorFilterDropdown
+            availableConnectors={availableConnectors}
+            connectorFilter={connectorFilter}
+            setConnectorFilter={onConnectorFilterChange}
           />
 
           <div className="flex-1" />
 
           {/* Admin tools dropdown -- dev mode only */}
-          {import.meta.env.VITE_DEVELOPMENT === 'true' && (onCleanupDuplicates || onBackfillPipeline || onBackfillTools) && (
+          {import.meta.env.DEV && (onCleanupDuplicates || onBackfillPipeline || onBackfillTools) && (
             <AdminToolsDropdown
               onCleanupDuplicates={onCleanupDuplicates}
               isCleaningUp={isCleaningUp}

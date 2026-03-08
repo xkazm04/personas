@@ -178,7 +178,7 @@ async fn deliver_telegram(
 /// Supports two providers detected by the presence of config keys:
 ///   - `sendgrid_api_key` → SendGrid v3 API
 ///   - `resend_api_key`   → Resend API
-/// Falls back to no-op if neither is configured.
+///     Falls back to no-op if neither is configured.
 async fn deliver_email(
     ch: &ExternalChannel,
     title: &str,

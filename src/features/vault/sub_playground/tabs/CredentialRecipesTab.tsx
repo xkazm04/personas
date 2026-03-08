@@ -195,7 +195,7 @@ export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps
                 {/* Progress + Terminal strip — visible while generating */}
                 {generator.phase === 'generating' && (
                   <div className="space-y-2">
-                    <EstimatedProgressBar isRunning estimatedSeconds={30} />
+                    <EstimatedProgressBar key={`progress-${generator.phase}`} isRunning={generator.phase === 'generating'} estimatedSeconds={30} />
                     <TerminalStrip
                     lastLine={generator.lines[generator.lines.length - 1] ?? 'Starting...'}
                     lines={generator.lines}
@@ -203,6 +203,7 @@ export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps
                     isExpanded={terminalExpanded}
                     onToggle={() => setTerminalExpanded((p) => !p)}
                     expandedMaxHeight="max-h-48"
+                    operation="recipe_execution"
                   />
                   </div>
                 )}

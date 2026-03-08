@@ -644,22 +644,8 @@ mod tests {
             &persona.id,
             UpdatePersonaInput {
                 name: Some("Updated Agent".into()),
-                description: None,
-                system_prompt: None,
-                structured_prompt: None,
-                icon: None,
-                color: None,
                 enabled: Some(false),
-                sensitive: None,
-                max_concurrent: None,
-                timeout_ms: None,
-                notification_channels: None,
-                last_design_result: None,
-                model_profile: None,
-                max_budget_usd: None,
-                max_turns: None,
-                design_context: None,
-                group_id: None,
+                ..Default::default()
             },
         )
         .unwrap();
@@ -735,11 +721,7 @@ mod tests {
             &persona.id,
             UpdatePersonaInput {
                 name: Some("".into()),
-                description: None, system_prompt: None, structured_prompt: None,
-                icon: None, color: None, enabled: None, sensitive: None, max_concurrent: None,
-                timeout_ms: None, notification_channels: None, last_design_result: None,
-                model_profile: None, max_budget_usd: None, max_turns: None,
-                design_context: None, group_id: None,
+                ..Default::default()
             },
         );
         assert!(result.is_err());
@@ -750,11 +732,7 @@ mod tests {
             &persona.id,
             UpdatePersonaInput {
                 name: Some("   ".into()),
-                description: None, system_prompt: None, structured_prompt: None,
-                icon: None, color: None, enabled: None, sensitive: None, max_concurrent: None,
-                timeout_ms: None, notification_channels: None, last_design_result: None,
-                model_profile: None, max_budget_usd: None, max_turns: None,
-                design_context: None, group_id: None,
+                ..Default::default()
             },
         );
         assert!(result.is_err());
@@ -795,13 +773,8 @@ mod tests {
             &pool,
             &persona.id,
             UpdatePersonaInput {
-                name: None, description: None,
                 system_prompt: Some("".into()),
-                structured_prompt: None,
-                icon: None, color: None, enabled: None, sensitive: None, max_concurrent: None,
-                timeout_ms: None, notification_channels: None, last_design_result: None,
-                model_profile: None, max_budget_usd: None, max_turns: None,
-                design_context: None, group_id: None,
+                ..Default::default()
             },
         );
         assert!(result.is_err());
@@ -811,13 +784,8 @@ mod tests {
             &pool,
             &persona.id,
             UpdatePersonaInput {
-                name: None, description: None,
                 system_prompt: Some("  \n  ".into()),
-                structured_prompt: None,
-                icon: None, color: None, enabled: None, sensitive: None, max_concurrent: None,
-                timeout_ms: None, notification_channels: None, last_design_result: None,
-                model_profile: None, max_budget_usd: None, max_turns: None,
-                design_context: None, group_id: None,
+                ..Default::default()
             },
         );
         assert!(result.is_err());
@@ -887,13 +855,7 @@ mod tests {
         )
         .unwrap();
 
-        let base = || UpdatePersonaInput {
-            name: None, description: None, system_prompt: None,
-            structured_prompt: None, icon: None, color: None, enabled: None,
-            sensitive: None, max_concurrent: None, timeout_ms: None, notification_channels: None,
-            last_design_result: None, model_profile: None, max_budget_usd: None,
-            max_turns: None, design_context: None, group_id: None,
-        };
+        let base = || UpdatePersonaInput::default();
 
         // max_concurrent < 1
         let mut input = base();

@@ -53,7 +53,12 @@ export function useDerivedCanvasState({
   return useMemo(() => {
     if (!selectedTeamId) return { nodes: [] as Node[], edges: [] as Edge[] };
 
-    const edgeCount = teamConnections.length;
+    // Per-node edge counts: how many connections touch each member
+    const nodeEdgeCounts = new Map<string, number>();
+    for (const c of teamConnections) {
+      nodeEdgeCounts.set(c.source_member_id, (nodeEdgeCounts.get(c.source_member_id) ?? 0) + 1);
+      nodeEdgeCounts.set(c.target_member_id, (nodeEdgeCounts.get(c.target_member_id) ?? 0) + 1);
+    }
 
     // Build lookup maps once for O(1) access instead of repeated .find()
     const personaMap = new Map(personas.map((p) => [p.id, p]));
@@ -74,7 +79,7 @@ export function useDerivedCanvasState({
         role: m.role || 'worker',
         memberId: m.id,
         personaId: m.persona_id,
-        edgeCount,
+        edgeCount: nodeEdgeCounts.get(m.id) ?? 0,
       };
 
       // Pipeline status enrichment

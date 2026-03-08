@@ -18,23 +18,29 @@ export interface TeamSlice {
   teamMemories: TeamMemory[];
   teamMemoriesTotal: number;
   teamMemoryStats: TeamMemoryStats | null;
+  memoryFilterCategory: string | undefined;
+  memoryFilterSearch: string | undefined;
 
   // Actions
   fetchTeams: () => Promise<void>;
   selectTeam: (teamId: string | null) => void;
   fetchTeamDetails: (teamId: string) => Promise<void>;
   createTeam: (data: { name: string; description?: string; icon?: string; color?: string }) => Promise<PersonaTeam | null>;
+  cloneTeam: (sourceTeamId: string) => Promise<PersonaTeam | null>;
   deleteTeam: (teamId: string) => Promise<void>;
   addTeamMember: (personaId: string, role?: string, posX?: number, posY?: number) => Promise<PersonaTeamMember | null>;
   removeTeamMember: (memberId: string) => Promise<void>;
   createTeamConnection: (sourceMemberId: string, targetMemberId: string, connectionType?: string, condition?: string, label?: string) => Promise<PersonaTeamConnection | null>;
   deleteTeamConnection: (connectionId: string) => Promise<void>;
   updateTeamConnection: (connectionId: string, connectionType: string) => Promise<void>;
+  setMemoryFilters: (category?: string, search?: string) => void;
   fetchTeamMemories: (teamId: string, category?: string, search?: string) => Promise<void>;
+  loadMoreTeamMemories: (teamId: string, category?: string, search?: string) => Promise<void>;
   createTeamMemory: (input: CreateTeamMemoryInput) => Promise<TeamMemory | null>;
   deleteTeamMemory: (id: string) => Promise<void>;
   batchDeleteTeamMemories: (ids: string[]) => Promise<void>;
   updateTeamMemoryImportance: (id: string, importance: number) => Promise<void>;
+  updateTeamMemory: (id: string, title?: string, content?: string, category?: string, importance?: number) => Promise<void>;
 }
 
 export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (set, get) => ({
@@ -45,6 +51,8 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
   teamMemories: [],
   teamMemoriesTotal: 0,
   teamMemoryStats: null,
+  memoryFilterCategory: undefined,
+  memoryFilterSearch: undefined,
 
   fetchTeams: async () => {
     try {
@@ -56,7 +64,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
   },
 
   selectTeam: (teamId) => {
-    set({ selectedTeamId: teamId, teamMembers: [], teamConnections: [], teamMemories: [], teamMemoriesTotal: 0, teamMemoryStats: null });
+    set({ selectedTeamId: teamId, teamMembers: [], teamConnections: [], teamMemories: [], teamMemoriesTotal: 0, teamMemoryStats: null, memoryFilterCategory: undefined, memoryFilterSearch: undefined });
     if (teamId) get().fetchTeamDetails(teamId);
   },
 
@@ -79,6 +87,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
       const team = await api.createTeam({
         name: data.name,
         project_id: null,
+        parent_team_id: null,
         description: data.description ?? null,
         canvas_data: null,
         team_config: null,
@@ -94,10 +103,22 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
     }
   },
 
+  cloneTeam: async (sourceTeamId) => {
+    try {
+      const team = await api.cloneTeam(sourceTeamId);
+      await get().fetchTeams();
+      useToastStore.getState().addToast('Team forked successfully', 'success');
+      return team;
+    } catch {
+      useToastStore.getState().addToast('Failed to fork team', 'error');
+      return null;
+    }
+  },
+
   deleteTeam: async (teamId) => {
     try {
       await api.deleteTeam(teamId);
-      if (get().selectedTeamId === teamId) set({ selectedTeamId: null, teamMembers: [], teamConnections: [], teamMemories: [], teamMemoriesTotal: 0, teamMemoryStats: null });
+      if (get().selectedTeamId === teamId) set({ selectedTeamId: null, teamMembers: [], teamConnections: [], teamMemories: [], teamMemoriesTotal: 0, teamMemoryStats: null, memoryFilterCategory: undefined, memoryFilterSearch: undefined });
       await get().fetchTeams();
     } catch {
       useToastStore.getState().addToast('Failed to delete team', 'error');
@@ -222,12 +243,17 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
     }
   },
 
+  setMemoryFilters: (category, search) => {
+    set({ memoryFilterCategory: category, memoryFilterSearch: search });
+  },
+
   fetchTeamMemories: async (teamId, category, search) => {
+    set({ memoryFilterCategory: category, memoryFilterSearch: search });
     try {
       const [memories, total, stats] = await Promise.all([
         api.listTeamMemories(teamId, undefined, category, search, 100),
         api.getTeamMemoryCount(teamId, undefined, category),
-        api.getTeamMemoryStats(teamId),
+        api.getTeamMemoryStats(teamId, category, search),
       ]);
       set({ teamMemories: memories, teamMemoriesTotal: total, teamMemoryStats: stats });
     } catch {
@@ -235,12 +261,22 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
     }
   },
 
+  loadMoreTeamMemories: async (teamId, category, search) => {
+    try {
+      const offset = get().teamMemories.length;
+      const more = await api.listTeamMemories(teamId, undefined, category, search, 100, offset);
+      set({ teamMemories: [...get().teamMemories, ...more] });
+    } catch {
+      useToastStore.getState().addToast('Failed to load more memories', 'error');
+    }
+  },
+
   createTeamMemory: async (input) => {
     try {
       const memory = await api.createTeamMemory(input);
-      // Refresh the list
-      const teamId = get().selectedTeamId;
-      if (teamId) get().fetchTeamMemories(teamId);
+      // Refresh the list preserving active filters
+      const { selectedTeamId: teamId, memoryFilterCategory, memoryFilterSearch } = get();
+      if (teamId) get().fetchTeamMemories(teamId, memoryFilterCategory, memoryFilterSearch);
       return memory;
     } catch {
       useToastStore.getState().addToast('Failed to create team memory', 'error');
@@ -280,6 +316,18 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
     } catch {
       set({ teamMemories: prev });
       useToastStore.getState().addToast('Failed to update memory importance', 'error');
+    }
+  },
+
+  updateTeamMemory: async (id, title, content, category, importance) => {
+    const prev = get().teamMemories;
+    try {
+      const updated = await api.updateTeamMemory(id, title, content, category, importance);
+      set({
+        teamMemories: prev.map((m) => (m.id === id ? updated : m)),
+      });
+    } catch {
+      useToastStore.getState().addToast('Failed to update memory', 'error');
     }
   },
 });

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bot, Loader2, CheckCircle2, XCircle, AlertTriangle, Clock, Globe, ChevronDown, ChevronUp, Wrench, MessageSquare, Copy, Check } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, AlertTriangle, Clock, Globe, ChevronDown, ChevronUp, Wrench, Copy, Check } from 'lucide-react';
 import type { CredentialDesignResult } from '@/hooks/design/useCredentialDesign';
 import type { AutoCredErrorInfo, AutoCredMode, BrowserLogEntry } from './types';
 import { useAutoCredSession } from './useAutoCredSession';
@@ -35,6 +35,17 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
 
   const adapter = mode === 'guided' ? tauriGuidedAdapter : tauriPlaywrightAdapter;
   const session = useAutoCredSession({ adapter });
+
+  // Kill running browser session on unmount (e.g. wizard closed, navigated away)
+  const sessionPhaseRef = useRef(session.phase);
+  sessionPhaseRef.current = session.phase;
+  useEffect(() => {
+    return () => {
+      if (sessionPhaseRef.current === 'browser') {
+        session.cancelBrowser();
+      }
+    };
+  }, []);
   const fieldsHash = useMemo(() => {
     return designResult.connector.fields
       .map((f) => `${f.key}:${f.type}:${f.required ? '1' : '0'}`)
@@ -55,21 +66,6 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
 
   return (
     <div className="space-y-4">
-      {/* Badge */}
-      <div className="flex items-center gap-2">
-        {mode === 'guided' ? (
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-violet-500/10 border border-violet-500/20">
-            <MessageSquare className="w-3.5 h-3.5 text-violet-400" />
-            <span className="text-sm font-medium text-violet-400">Guided Setup</span>
-          </div>
-        ) : (
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
-            <Bot className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="text-sm font-medium text-cyan-400">Auto-Setup via Playwright MCP</span>
-          </div>
-        )}
-      </div>
-
       <AnimatePresence mode="wait">
         {session.phase === 'consent' && (
           <AutoCredConsent
@@ -115,6 +111,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
             onCancel={handleCancel}
             isSaving={session.isSaving}
             isPartial={session.isPartial}
+            completeness={session.completeness}
           />
         )}
 

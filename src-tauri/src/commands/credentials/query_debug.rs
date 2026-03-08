@@ -294,7 +294,7 @@ async fn run_query_debug(params: RunParams) {
         emit_line(&app, &debug_id, &format!("> Attempt {} — executing extracted query...", attempt + 1));
 
         // Execute the extracted query
-        match db_query::execute_query(&pool, &credential_id, &query_to_run).await {
+        match db_query::execute_query(&pool, &credential_id, &query_to_run, None).await {
             Ok(result) => {
                 let summary = format!(
                     "> Query succeeded: {} row{} in {}ms",
@@ -514,7 +514,7 @@ async fn build_schema_context(
     pool: &crate::db::DbPool,
     credential_id: &str,
 ) -> String {
-    let tables_result = match db_query::introspect_tables(pool, credential_id).await {
+    let tables_result = match db_query::introspect_tables(pool, credential_id, None).await {
         Ok(r) => r,
         Err(_) => return String::new(),
     };
@@ -538,7 +538,7 @@ async fn build_schema_context(
     let mut ctx = String::new();
 
     for table_name in &table_names {
-        let cols = match db_query::introspect_columns(pool, credential_id, table_name).await {
+        let cols = match db_query::introspect_columns(pool, credential_id, table_name, None).await {
             Ok(r) => r,
             Err(_) => {
                 ctx.push_str(&format!("- {table_name}\n"));
@@ -658,7 +658,7 @@ mod tests {
 
     #[test]
     fn test_sanitize_db_error_generic() {
-        let msg = sanitize_db_error("some completely unknown error from the database driver");
+        let msg = sanitize_db_error("some completely unexpected error from the database driver");
         assert!(msg.contains("See application logs"));
         assert!(!msg.contains("database driver"));
     }

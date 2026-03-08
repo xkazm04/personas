@@ -13,6 +13,7 @@ import { PreviewPhase } from '@/features/vault/sub_design/PreviewPhase';
 import { DonePhase } from '@/features/vault/sub_design/DonePhase';
 import { ErrorPhase } from '@/features/vault/sub_design/ErrorPhase';
 import { AutoCredPanel } from '@/features/vault/sub_autoCred/AutoCredPanel';
+import { ImportSourcePicker, ImportInputPhase, ImportPreview, useCredentialImport } from '@/features/vault/sub_import';
 
 interface CredentialDesignModalProps {
   open: boolean;
@@ -31,6 +32,10 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
   const [showTemplates, setShowTemplates] = useState(false);
   const [templateSearch, setTemplateSearch] = useState('');
   const [expandedTemplateId, setExpandedTemplateId] = useState<string | null>(null);
+
+  // Import flow state
+  const [showImport, setShowImport] = useState(false);
+  const importFlow = useCredentialImport();
 
   // Auto-credential: when true, redirect to AutoCredPanel once design analysis completes
   const [autoSetupPending, setAutoSetupPending] = useState(false);
@@ -87,6 +92,8 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
       setExpandedTemplateId(null);
       setAutoSetupPending(false);
       setAutoSetupResult(null);
+      setShowImport(false);
+      importFlow.reset();
       fetchConnectorDefinitions();
 
       if (initialInstruction?.trim()) {
@@ -208,7 +215,25 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
 
   // ── Compute subtitle ──────────────────────────────────────────
 
-  const subtitle = autoSetupResult
+  /** Handle import completion: take the first result and load it as a template */
+  const handleImportComplete = () => {
+    const results = importFlow.buildResults();
+    if (results.length === 0) return;
+    // Load first group as template, additional groups can be imported in subsequent rounds
+    const first = results[0]!;
+    orch.loadTemplate(first);
+    orch.setInstruction(`${first.connector.label} credential (imported)`);
+    orch.invalidateHealth();
+    setShowImport(false);
+    importFlow.reset();
+  };
+
+  const subtitle = showImport
+    ? importFlow.phase === 'pick_source' ? 'Import from external vault'
+    : importFlow.phase === 'input' ? 'Paste secrets data'
+    : importFlow.phase === 'preview' ? 'Review and select secrets'
+    : 'Importing...'
+    : autoSetupResult
     ? `Auto-Setup: ${autoSetupResult.connector.label}`
     : autoSetupPending && orch.phase === 'analyzing'
     ? 'Designing credential for Auto-Setup...'
@@ -284,6 +309,43 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
                 orch.resetAll();
               }}
             />
+          ) : showImport ? (
+            <AnimatePresence mode="wait">
+              {importFlow.phase === 'pick_source' && (
+                <ImportSourcePicker
+                  key="import-pick"
+                  onSelect={importFlow.selectSource}
+                  onBack={() => { setShowImport(false); importFlow.reset(); }}
+                />
+              )}
+              {importFlow.phase === 'input' && importFlow.sourceId && (
+                <ImportInputPhase
+                  key="import-input"
+                  sourceId={importFlow.sourceId}
+                  rawInput={importFlow.rawInput}
+                  onInputChange={importFlow.setRawInput}
+                  onParse={importFlow.parse}
+                  onBack={importFlow.goBack}
+                />
+              )}
+              {importFlow.phase === 'preview' && importFlow.sourceId && importFlow.parseResult && (
+                <ImportPreview
+                  key="import-preview"
+                  sourceId={importFlow.sourceId}
+                  secrets={importFlow.parseResult.secrets}
+                  mappings={importFlow.mappings}
+                  selectedKeys={importFlow.selectedKeys}
+                  errors={importFlow.parseResult.errors}
+                  syncConfig={importFlow.syncConfig}
+                  onToggleKey={importFlow.toggleKey}
+                  onSelectAll={importFlow.selectAll}
+                  onDeselectAll={importFlow.deselectAll}
+                  onImport={handleImportComplete}
+                  onSyncConfigChange={importFlow.setSyncConfig}
+                  onBack={importFlow.goBack}
+                />
+              )}
+            </AnimatePresence>
           ) : (
           <AnimatePresence mode="wait">
             {orch.phase === 'idle' && (
@@ -293,6 +355,7 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
                 onInstructionChange={orch.setInstruction}
                 onStart={() => orch.start()}
                 onAutoSetup={handleAutoSetup}
+                onImportFrom={() => setShowImport(true)}
                 onKeyDown={handleKeyDown}
                 showTemplates={showTemplates}
                 onToggleTemplates={() => setShowTemplates((prev) => !prev)}
@@ -332,6 +395,7 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
               <DonePhase
                 key="done"
                 connectorLabel={orch.contextValue?.result.connector.label}
+                registeredConnectorName={orch.registeredConnectorName}
                 refinementCount={orch.refinementCount}
                 onClose={handleClose}
                 onViewCredential={orch.savedCredentialId ? handleViewCredential : undefined}

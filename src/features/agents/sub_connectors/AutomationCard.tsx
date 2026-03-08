@@ -63,7 +63,7 @@ export function AutomationCard({
         {/* Name + metadata */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-foreground/80 truncate">{automation.name}</p>
+            <p className="text-sm font-medium text-foreground/80 truncate" title={automation.name}>{automation.name}</p>
 
             {/* Status badge */}
             <motion.span

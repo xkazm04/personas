@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { ListChecks, FileText, Link, Settings, FlaskConical, Wand2, Check, Activity } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { EditorTab } from '@/lib/types/types';
+import { isTabDirty } from './editorTabConstants';
 
 const tabDefs: Array<{ id: EditorTab; label: string; icon: typeof FileText }> = [
   { id: 'use-cases', label: 'Use Cases', icon: ListChecks },
@@ -57,8 +58,7 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing }: EditorTabBarProps
         {tabDefs.map((tab) => {
           const Icon = tab.icon;
           const isActive = editorTab === tab.id;
-          const tabDirty = dirtyTabs.includes(tab.id)
-            || (tab.id === 'use-cases' && dirtyTabs.includes('model'));
+          const tabDirty = isTabDirty(tab.id, dirtyTabs);
           return (
             <button
               key={tab.id}

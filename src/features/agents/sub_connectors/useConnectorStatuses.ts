@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { sendAppNotification } from '@/api/system';
-import { parseDesignContext, mergeCredentialLink } from '@/features/shared/components/UseCasesList';
-import { applyDesignContextMutation } from '@/features/agents/sub_use_cases/useCaseHelpers';
-import type { ConnectorStatus } from './connectorTypes';
+import { parseDesignContext } from '@/features/shared/components/UseCasesList';
+import { mutateCredentialLink } from '@/hooks/design/useDesignContextMutator';
+import type { ConnectorStatus, ConnectorReadiness } from './connectorTypes';
+import { deriveReadiness } from './connectorTypes';
 
 export function useConnectorStatuses() {
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
@@ -47,6 +48,7 @@ export function useConnectorStatuses() {
           credentialName: existing?.credentialName ?? matchedCred?.name ?? linkedCred?.name ?? null,
           testing: existing?.testing ?? false,
           result: existing?.result ?? null,
+          linkError: existing?.linkError ?? null,
         };
       }),
     );
@@ -81,6 +83,19 @@ export function useConnectorStatuses() {
       inFlightTestsRef.current.delete(name);
     }
   }, [healthcheckCredential, updateStatus]);
+
+  // Reset auto-test guard when credentialId changes so re-linking triggers a fresh test.
+  const prevCredentialIdsRef = useRef<Map<string, string | null>>(new Map());
+  useEffect(() => {
+    for (const status of statuses) {
+      const prevCredId = prevCredentialIdsRef.current.get(status.name);
+      if (prevCredId !== undefined && prevCredId !== status.credentialId) {
+        // Credential changed — allow auto-test for this connector again
+        lastAutoTestedCredentialRef.current.delete(status.name);
+      }
+      prevCredentialIdsRef.current.set(status.name, status.credentialId);
+    }
+  }, [statuses]);
 
   // Auto-test when rows gain credentials, keyed by connector + credential.
   // This avoids duplicate auto-tests while still re-testing when a link changes.
@@ -120,32 +135,44 @@ export function useConnectorStatuses() {
     }
   };
 
-  const handleLinkCredential = useCallback(async (connectorName: string, credentialId: string, credentialName: string) => {
+  const handleLinkCredential = useCallback(async (connectorName: string, credentialId: string, credentialName: string): Promise<boolean> => {
     lastAutoTestedCredentialRef.current.delete(connectorName);
     setStatuses((prev) =>
       prev.map((s) =>
-        s.name === connectorName ? { ...s, credentialId, credentialName, result: null } : s,
+        s.name === connectorName ? { ...s, credentialId, credentialName, result: null, linkError: null } : s,
       ),
     );
     if (selectedPersona) {
       try {
-        await applyDesignContextMutation(selectedPersona.id, (ctx) =>
-          mergeCredentialLink(ctx, connectorName, credentialId),
-        );
+        await mutateCredentialLink(selectedPersona.id, connectorName, credentialId);
       } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : 'unknown error';
         // Revert optimistic update — the link was never persisted
         setStatuses((prev) =>
           prev.map((s) =>
             s.name === connectorName
-              ? { ...s, credentialId: null, credentialName: null, result: { success: false, message: `Link failed: ${err instanceof Error ? err.message : 'unknown error'}` } }
+              ? { ...s, credentialId: null, credentialName: null, result: null, linkError: `Link failed: ${errorMsg}` }
               : s,
           ),
         );
-        return;
+        return false;
       }
     }
     await testConnector(connectorName, credentialId);
+    return true;
   }, [selectedPersona, testConnector]);
+
+  const clearLinkError = useCallback((connectorName: string) => {
+    updateStatus(connectorName, { linkError: null });
+  }, [updateStatus]);
+
+  const readinessCounts = useMemo(() => {
+    const counts: Record<ConnectorReadiness, number> = {
+      unlinked: 0, linked_untested: 0, healthy: 0, unhealthy: 0,
+    };
+    for (const s of statuses) counts[deriveReadiness(s)]++;
+    return counts;
+  }, [statuses]);
 
   return {
     statuses,
@@ -153,9 +180,11 @@ export function useConnectorStatuses() {
     requiredCredTypes,
     credentials,
     testingAll,
+    readinessCounts,
     fetchCredentials,
     testConnector,
     handleTestAll,
     handleLinkCredential,
+    clearLinkError,
   };
 }

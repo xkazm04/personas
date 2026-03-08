@@ -1,18 +1,15 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Search, ArrowRight, Lock } from 'lucide-react';
+import { Search, ArrowRight } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { staggerContainer, staggerItem } from '@/features/templates/animationPresets';
 
 interface WizardServiceSelectProps {
   onSelect: (connector: ConnectorDefinition) => void;
-  isPro: boolean;
 }
 
-const FREE_LIMIT = 1;
-
-export function WizardServiceSelect({ onSelect, isPro }: WizardServiceSelectProps) {
+export function WizardServiceSelect({ onSelect }: WizardServiceSelectProps) {
   const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
   const [search, setSearch] = useState('');
 
@@ -60,17 +57,6 @@ export function WizardServiceSelect({ onSelect, isPro }: WizardServiceSelectProp
           className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-primary/15 bg-secondary/25 text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-violet-500/30 transition-all"
         />
       </div>
-
-      {!isPro && (
-        <div className="flex items-center gap-2 px-3.5 py-2.5 bg-amber-500/5 border border-amber-500/15 rounded-xl">
-          <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-          <p className="text-sm text-amber-200/70">
-            Free plan: {FREE_LIMIT} service at a time.{' '}
-            <span className="text-amber-400 font-medium">Upgrade to Pro</span>{' '}
-            for unlimited multi-service provisioning.
-          </p>
-        </div>
-      )}
 
       {/* Service grid */}
       <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1 -mr-1">

@@ -9,8 +9,8 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
 
 use crate::db::models::{
-    CategoryWithCount, ConnectorWithCount, CreateDesignReviewInput, ImportDesignReviewInput,
-    PersonaDesignReview, PersonaManualReview,
+    CategoryWithCount, ConnectorWithCount, CreateDesignReviewInput, CreateReviewMessageInput,
+    ImportDesignReviewInput, PersonaDesignReview, PersonaManualReview, ReviewMessage,
 };
 use crate::db::repos::communication::{manual_reviews as manual_repo, reviews as repo};
 use crate::db::repos::core::personas as persona_repo;
@@ -859,6 +859,115 @@ pub fn get_pending_review_count(
 ) -> Result<i64, AppError> {
     require_auth_sync(&state)?;
     manual_repo::get_pending_count(&state.db, persona_id.as_deref())
+}
+
+// ── Review Message Commands (Conversational Thread) ──────────
+
+#[tauri::command]
+pub fn list_review_messages(
+    state: State<'_, Arc<AppState>>,
+    review_id: String,
+) -> Result<Vec<ReviewMessage>, AppError> {
+    require_auth_sync(&state)?;
+    manual_repo::list_messages(&state.db, &review_id)
+}
+
+#[tauri::command]
+pub fn add_review_message(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    review_id: String,
+    role: String,
+    content: String,
+    metadata: Option<String>,
+) -> Result<ReviewMessage, AppError> {
+    require_auth_sync(&state)?;
+    let msg = manual_repo::create_message(
+        &state.db,
+        CreateReviewMessageInput {
+            review_id: review_id.clone(),
+            role,
+            content,
+            metadata,
+        },
+    )?;
+
+    let _ = app.emit("review-message-added", &msg);
+    Ok(msg)
+}
+
+// ── Dev Seed: create a mock manual review ────────────────────
+
+const MOCK_TITLES: &[&str] = &[
+    "Verify email notification content before sending",
+    "Review generated API response schema",
+    "Confirm financial transaction amount",
+    "Approve customer data export request",
+    "Check auto-generated report accuracy",
+    "Validate pipeline output format",
+    "Review suggested configuration changes",
+    "Confirm deletion of stale records",
+];
+
+const MOCK_DESCRIPTIONS: &[&str] = &[
+    "The generated output contains customer-facing content that should be reviewed for tone and accuracy before delivery.",
+    "This action involves modifying production data. Please verify the changes are correct before approving.",
+    "Automated analysis detected a potential anomaly in the results. Human review recommended.",
+    "The agent produced an output that exceeds the expected confidence threshold. Manual verification suggested.",
+    "A scheduled task completed with warnings. Please review the output and decide whether to proceed.",
+];
+
+const MOCK_SEVERITIES: &[&str] = &["info", "warning", "critical"];
+
+const MOCK_ACTIONS: &[&str] = &[
+    r#"["Approve and send","Edit content first","Reject and regenerate"]"#,
+    r#"["Accept changes","Request revision","Escalate to admin"]"#,
+    r#"["Confirm","Skip this step","Add manual override"]"#,
+];
+
+const MOCK_CONTEXT: &[&str] = &[
+    r#"{"source":"email-pipeline","recipients":3,"confidence":0.87}"#,
+    r#"{"records_affected":42,"estimated_cost":"$12.50","region":"us-east-1"}"#,
+    r#"{"model":"claude-sonnet-4-5-20250514","tokens_used":1580,"latency_ms":2340}"#,
+    r#"{"trigger":"cron-daily","last_success":"2026-03-06T08:00:00Z","retry_count":0}"#,
+];
+
+#[tauri::command]
+pub fn seed_mock_manual_review(
+    state: State<'_, Arc<AppState>>,
+) -> Result<PersonaManualReview, AppError> {
+    require_auth_sync(&state)?;
+
+    // Pick a random persona (or use a fallback id)
+    let personas = persona_repo::get_all(&state.db)?;
+    let idx = (chrono::Utc::now().timestamp_millis() as usize) % std::cmp::max(personas.len(), 1);
+
+    let persona_id = personas.get(idx).map(|p| p.id.clone())
+        .unwrap_or_else(|| "mock-persona".to_string());
+
+    // Create a dummy execution id
+    let execution_id = format!("mock-exec-{}", &uuid::Uuid::new_v4().to_string()[..8]);
+
+    let t = chrono::Utc::now().timestamp_millis() as usize;
+    let title = MOCK_TITLES[t % MOCK_TITLES.len()].to_string();
+    let description = Some(MOCK_DESCRIPTIONS[t % MOCK_DESCRIPTIONS.len()].to_string());
+    let sev = MOCK_SEVERITIES[t % MOCK_SEVERITIES.len()].to_string();
+    let suggested_actions = Some(MOCK_ACTIONS[t % MOCK_ACTIONS.len()].to_string());
+    let context_data = Some(MOCK_CONTEXT[t % MOCK_CONTEXT.len()].to_string());
+
+    // Insert directly — skip FK constraint on execution since this is a dev seed
+    let id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().to_rfc3339();
+    let conn = state.db.get()?;
+    conn.execute(
+        "INSERT INTO persona_manual_reviews
+         (id, execution_id, persona_id, title, description, severity, status,
+          context_data, suggested_actions, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'pending', ?7, ?8, ?9, ?9)",
+        rusqlite::params![id, execution_id, persona_id, title, description, sev, context_data, suggested_actions, now],
+    )?;
+
+    manual_repo::get_by_id(&state.db, &id)
 }
 
 /// Backfill categories for all reviews that currently have `category = NULL`.

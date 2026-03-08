@@ -42,6 +42,14 @@ export interface SchemaFormConfig {
   extraFields?: ExtraFieldDef[];
   buildExtraMetadata?: (subTypeId: string, extras: Record<string, unknown>) => Record<string, unknown>;
   buildExtraCredData?: (subTypeId: string, extras: Record<string, unknown>) => Record<string, string>;
+  /** Custom healthcheck that bypasses the HTTP-based design healthcheck.
+   *  When provided, CredentialSchemaForm calls this instead of the per-subType
+   *  healthcheck config. Used for non-HTTP protocols like MCP (stdio/SSE JSON-RPC). */
+  customHealthcheck?: (
+    subTypeId: string,
+    fieldValues: Record<string, string>,
+    extras: Record<string, unknown>,
+  ) => Promise<{ success: boolean; message: string }>;
 }
 
 export function sanitize(name: string): string {

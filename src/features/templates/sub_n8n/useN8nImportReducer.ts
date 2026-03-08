@@ -3,7 +3,24 @@ import type { N8nPersonaDraft, StreamingSection } from '@/api/n8nTransform';
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import type { WorkflowPlatform } from '@/lib/personas/workflowDetector';
-import { normalizeDraftFromUnknown } from './n8nTypes';
+import {
+  navigationReducer,
+  checkStepPrecondition,
+  INITIAL_NAVIGATION,
+} from './reducers/navigationReducer';
+import {
+  transformReducer,
+  INITIAL_TRANSFORM,
+} from './reducers/transformReducer';
+import {
+  testReducer,
+  INITIAL_TEST,
+} from './reducers/testReducer';
+import {
+  sessionReducer,
+  initSelectionsFromResult,
+  INITIAL_SESSION,
+} from './reducers/sessionReducer';
 
 // ── Wizard Steps ──
 
@@ -100,37 +117,10 @@ export interface N8nImportState {
 }
 
 const INITIAL_STATE: N8nImportState = {
-  step: 'upload',
-  sessionId: null,
-  rawWorkflowJson: '',
-  workflowName: '',
-  platform: 'n8n',
-  error: null,
-  sessionWarning: null,
-  parsedResult: null,
-  selectedToolIndices: new Set(),
-  selectedTriggerIndices: new Set(),
-  selectedConnectorNames: new Set(),
-  questions: null,
-  userAnswers: {},
-  transformSubPhase: 'idle',
-  transforming: false,
-  backgroundTransformId: null,
-  snapshotEpoch: 0,
-  adjustmentRequest: '',
-  transformPhase: 'idle',
-  transformLines: [],
-  draft: null,
-  draftJson: '',
-  draftJsonError: null,
-  streamingSections: [],
-  testStatus: 'idle',
-  testError: null,
-  testRunId: null,
-  testLines: [],
-  testPhase: 'idle',
-  confirming: false,
-  created: false,
+  ...INITIAL_NAVIGATION,
+  ...INITIAL_SESSION,
+  ...INITIAL_TRANSFORM,
+  ...INITIAL_TEST,
 };
 
 // ── Actions ──
@@ -187,259 +177,99 @@ export interface SessionLoadedPayload {
   recoveryWarning?: string | null;
 }
 
-// ── Helpers ──
+// ── Composed Reducer ──
+//
+// Cross-cutting actions (RESET, SESSION_LOADED) are handled at the
+// orchestrator level. Each sub-reducer manages its own state slice
+// and responds to the actions it cares about. Sub-reducers receive
+// the full previous state as a read-only parameter for cross-slice reads.
 
-function toggleInSet<T>(set: Set<T>, value: T): Set<T> {
-  const next = new Set(set);
-  if (next.has(value)) next.delete(value);
-  else next.add(value);
-  return next;
-}
+function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nImportState {
+  // Cross-cutting: full reset
+  if (action.type === 'RESET') return INITIAL_STATE;
 
-function initSelectionsFromResult(result: AgentIR): {
-  selectedToolIndices: Set<number>;
-  selectedTriggerIndices: Set<number>;
-  selectedConnectorNames: Set<string>;
-} {
+  // Cross-cutting: session restore hydrates all slices at once
+  if (action.type === 'SESSION_LOADED') {
+    return handleSessionLoaded(action.payload);
+  }
+
+  // Delegate to sub-reducers — each handles its own slice
+  const nav = navigationReducer({ step: state.step }, action, state);
+  const transform = transformReducer({
+    questions: state.questions,
+    userAnswers: state.userAnswers,
+    transformSubPhase: state.transformSubPhase,
+    transforming: state.transforming,
+    backgroundTransformId: state.backgroundTransformId,
+    snapshotEpoch: state.snapshotEpoch,
+    adjustmentRequest: state.adjustmentRequest,
+    transformPhase: state.transformPhase,
+    transformLines: state.transformLines,
+    streamingSections: state.streamingSections,
+    draft: state.draft,
+    draftJson: state.draftJson,
+    draftJsonError: state.draftJsonError,
+  }, action);
+  const test = testReducer({
+    testStatus: state.testStatus,
+    testError: state.testError,
+    testRunId: state.testRunId,
+    testLines: state.testLines,
+    testPhase: state.testPhase,
+  }, action);
+  const session = sessionReducer({
+    sessionId: state.sessionId,
+    rawWorkflowJson: state.rawWorkflowJson,
+    workflowName: state.workflowName,
+    platform: state.platform,
+    error: state.error,
+    sessionWarning: state.sessionWarning,
+    parsedResult: state.parsedResult,
+    selectedToolIndices: state.selectedToolIndices,
+    selectedTriggerIndices: state.selectedTriggerIndices,
+    selectedConnectorNames: state.selectedConnectorNames,
+    confirming: state.confirming,
+    created: state.created,
+  }, action, state);
+
   return {
-    selectedToolIndices: new Set(result.suggested_tools.map((_, i) => i)),
-    selectedTriggerIndices: new Set(result.suggested_triggers.map((_, i) => i)),
-    selectedConnectorNames: new Set((result.suggested_connectors ?? []).map((c) => c.name)),
+    ...nav,
+    ...session,
+    ...transform,
+    ...test,
   };
 }
 
-// ── Reducer ──
+/** Handle SESSION_LOADED: hydrates all slices from the persisted payload. */
+function handleSessionLoaded(p: SessionLoadedPayload): N8nImportState {
+  const selections = p.parsedResult ? initSelectionsFromResult(p.parsedResult) : {};
 
-function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nImportState {
-  switch (action.type) {
-    case 'FILE_PARSED': {
-      const selections = initSelectionsFromResult(action.parsedResult);
-      return {
-        ...INITIAL_STATE,
-        step: 'analyze',
-        workflowName: action.workflowName,
-        rawWorkflowJson: action.rawWorkflowJson,
-        parsedResult: action.parsedResult,
-        platform: action.platform ?? 'n8n',
-        ...selections,
-      };
-    }
-
-    case 'TOGGLE_TOOL':
-      return { ...state, selectedToolIndices: toggleInSet(state.selectedToolIndices, action.index) };
-
-    case 'TOGGLE_TRIGGER':
-      return { ...state, selectedTriggerIndices: toggleInSet(state.selectedTriggerIndices, action.index) };
-
-    case 'TOGGLE_CONNECTOR':
-      return { ...state, selectedConnectorNames: toggleInSet(state.selectedConnectorNames, action.name) };
-
-    case 'SET_ADJUSTMENT':
-      return { ...state, adjustmentRequest: action.text };
-
-    case 'QUESTIONS_GENERATED':
-      return {
-        ...state,
-        transforming: false,
-        transformSubPhase: 'answering',
-        questions: action.questions,
-        // Pre-fill default answers
-        userAnswers: action.questions.reduce<Record<string, string>>((acc, q) => {
-          if (q.default) acc[q.id] = q.default;
-          return acc;
-        }, {}),
-      };
-
-    case 'QUESTIONS_FAILED':
-      // Stay on transform step — user can still generate with defaults
-      return {
-        ...state,
-        transforming: false,
-        transformSubPhase: 'answering',
-        questions: null,
-        error: action.error || null,
-      };
-
-    case 'ANSWER_UPDATED':
-      return {
-        ...state,
-        userAnswers: { ...state.userAnswers, [action.questionId]: action.answer },
-      };
-
-    case 'TRANSFORM_STARTED':
-      return {
-        ...state,
-        step: 'transform',
-        transformSubPhase: action.subPhase ?? 'generating',
-        transforming: true,
-        backgroundTransformId: action.transformId,
-        snapshotEpoch: state.snapshotEpoch + 1,
-        transformPhase: 'running',
-        transformLines: [],
-        streamingSections: [],
-        error: null,
-      };
-
-    case 'TRANSFORM_LINES':
-      return { ...state, transformLines: action.lines };
-
-    case 'TRANSFORM_PHASE':
-      return { ...state, transformPhase: action.phase };
-
-    case 'TRANSFORM_SECTIONS':
-      return { ...state, streamingSections: action.sections };
-
-    case 'TRANSFORM_COMPLETED':
-      if (!normalizeDraftFromUnknown(action.draft) || !action.draft.system_prompt?.trim()) {
-        return {
-          ...state,
-          transforming: false,
-          transformSubPhase: 'failed',
-          transformPhase: 'failed',
-          error: 'Transform output was invalid. Please retry or refine your request.',
-        };
-      }
-      return {
-        ...state,
-        step: 'edit',
-        transforming: false,
-        transformSubPhase: 'completed',
-        transformPhase: 'completed',
-        draft: action.draft,
-        draftJson: JSON.stringify(action.draft, null, 2),
-        draftJsonError: null,
-      };
-
-    case 'TRANSFORM_FAILED':
-      return {
-        ...state,
-        transforming: false,
-        transformSubPhase: 'failed',
-        transformPhase: 'failed',
-        error: action.error,
-      };
-
-    case 'TRANSFORM_CANCELLED':
-      return {
-        ...state,
-        step: state.parsedResult ? 'analyze' : 'upload',
-        transforming: false,
-        transformSubPhase: 'idle',
-        backgroundTransformId: null,
-        transformPhase: 'idle',
-        transformLines: [],
-        error: null,
-      };
-
-    case 'DRAFT_UPDATED':
-      return {
-        ...state,
-        draft: action.draft,
-        draftJson: JSON.stringify(action.draft, null, 2),
-        draftJsonError: null,
-        testStatus: 'idle',
-        testError: null,
-        testRunId: null,
-        testLines: [],
-        testPhase: 'idle',
-      };
-
-    case 'DRAFT_JSON_EDITED':
-      return {
-        ...state,
-        draftJson: action.json,
-        draft: action.draft ?? state.draft,
-        draftJsonError: action.error,
-        testStatus: 'idle',
-        testError: null,
-        testRunId: null,
-        testLines: [],
-        testPhase: 'idle',
-      };
-
-    case 'TEST_STREAM_STARTED':
-      return { ...state, testRunId: action.testId, testStatus: 'running', testError: null, testLines: [], testPhase: 'running' };
-
-    case 'TEST_LINES':
-      return { ...state, testLines: action.lines };
-
-    case 'TEST_PHASE':
-      return { ...state, testPhase: action.phase };
-
-    case 'TEST_STARTED':
-      return { ...state, testStatus: 'running', testError: null };
-
-    case 'TEST_PASSED':
-      return { ...state, testStatus: 'passed', testError: null, testPhase: 'completed' };
-
-    case 'TEST_FAILED':
-      return { ...state, testStatus: 'failed', testError: action.error, testPhase: 'failed' };
-
-    case 'CONFIRM_STARTED':
-      return { ...state, confirming: true, error: null };
-
-    case 'CONFIRM_COMPLETED':
-      return { ...state, confirming: false, created: true };
-
-    case 'CONFIRM_FAILED':
-      return { ...state, confirming: false, error: action.error };
-
-    case 'SET_ERROR':
-      return { ...state, error: action.error };
-
-    case 'CLEAR_ERROR':
-      return { ...state, error: null };
-
-    case 'CLEAR_SESSION_WARNING':
-      return { ...state, sessionWarning: null };
-
-    case 'GO_TO_STEP':
-      return { ...state, step: action.step, error: null };
-
-    case 'RESTORE_CONTEXT':
-      return {
-        ...state,
-        step: 'transform',
-        transformSubPhase: 'generating',
-        workflowName: action.workflowName,
-        rawWorkflowJson: action.rawWorkflowJson,
-        parsedResult: action.parsedResult,
-        backgroundTransformId: action.transformId,
-        transforming: true,
-        transformPhase: 'running',
-        ...(action.parsedResult ? initSelectionsFromResult(action.parsedResult) : {}),
-      };
-
-    case 'SESSION_CREATED':
-      return { ...state, sessionId: action.sessionId };
-
-    case 'SESSION_LOADED': {
-      const p = action.payload;
-      const selections = p.parsedResult ? initSelectionsFromResult(p.parsedResult) : {};
-      return {
-        ...INITIAL_STATE,
-        sessionId: p.sessionId,
-        step: p.step,
-        workflowName: p.workflowName,
-        rawWorkflowJson: p.rawWorkflowJson,
-        parsedResult: p.parsedResult,
-        draft: p.draft,
-        draftJson: p.draft ? JSON.stringify(p.draft, null, 2) : '',
-        transformSubPhase: p.transformSubPhase,
-        questions: p.questions,
-        userAnswers: p.userAnswers,
-        backgroundTransformId: p.transformId,
-        sessionWarning: p.recoveryWarning ?? null,
-        ...selections,
-      };
-    }
-
-    case 'RESET':
-      return INITIAL_STATE;
-
-    default:
-      return state;
+  // Validate that the restored step's prerequisites are met;
+  // fall back to the latest valid step if not.
+  let safeStep = p.step;
+  const restoredState = { parsedResult: p.parsedResult, draft: p.draft, draftJsonError: null };
+  if (checkStepPrecondition(safeStep, restoredState)) {
+    if (p.draft) safeStep = 'edit';
+    else if (p.parsedResult) safeStep = 'analyze';
+    else safeStep = 'upload';
   }
+
+  return {
+    ...INITIAL_STATE,
+    sessionId: p.sessionId,
+    step: safeStep,
+    workflowName: p.workflowName,
+    rawWorkflowJson: p.rawWorkflowJson,
+    parsedResult: p.parsedResult,
+    draft: p.draft,
+    draftJson: p.draft ? JSON.stringify(p.draft, null, 2) : '',
+    transformSubPhase: p.transformSubPhase,
+    questions: p.questions,
+    userAnswers: p.userAnswers,
+    backgroundTransformId: p.transformId,
+    sessionWarning: p.recoveryWarning ?? null,
+    ...selections,
+  };
 }
 
 // ── Hook ──

@@ -33,10 +33,13 @@ import type { TransformQuestionResponse } from '@/api/n8nTransform';
 import type { AdoptState, PersistedAdoptContext } from './useAdoptReducer';
 import { ADOPT_CONTEXT_KEY, ADOPT_CONTEXT_MAX_AGE_MS } from './useAdoptReducer';
 
-// Module-level set of adopt IDs that have an in-flight confirmSave.
+// Module-level map of adopt IDs that have an in-flight confirmSave.
 // Survives component remounts, preventing duplicate persona creation
 // when the wizard unmounts and remounts while a confirm is pending.
-const inflight = new Set<string>();
+// Each entry stores a timeout that auto-cleans stale keys after 2 minutes,
+// so a hung or failed call doesn't permanently block retries.
+const inflight = new Map<string, ReturnType<typeof setTimeout>>();
+const INFLIGHT_TIMEOUT_MS = 120_000;
 
 async function waitForPersonaInStore(personaId: string, attempts = 10, delayMs = 50): Promise<boolean> {
   for (let attempt = 0; attempt < attempts; attempt += 1) {
@@ -374,7 +377,8 @@ export function useAsyncTransform({
     // Uses backgroundAdoptId (unique per adoption) as the idempotency key.
     const idempotencyKey = state.backgroundAdoptId ?? `anon-${Date.now()}`;
     if (inflight.has(idempotencyKey)) return;
-    inflight.add(idempotencyKey);
+    const autoCleanup = setTimeout(() => inflight.delete(idempotencyKey), INFLIGHT_TIMEOUT_MS);
+    inflight.set(idempotencyKey, autoCleanup);
 
     confirmingRef.current = true;
     try {
@@ -420,11 +424,16 @@ export function useAsyncTransform({
         void clearTemplateAdoptSnapshot(state.backgroundAdoptId).catch(() => {});
       }
       try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
+      // Emit tour event so the guided tour can advance
+      usePersonaStore.getState().emitTourEvent('tour:template-adopted');
+      usePersonaStore.getState().setTourCreatedPersona(response.persona.id);
       onPersonaCreated();
     } catch (err) {
       wizard.confirmFailed(err instanceof Error ? err.message : 'Failed to create persona.');
     } finally {
       confirmingRef.current = false;
+      const timer = inflight.get(idempotencyKey);
+      if (timer) clearTimeout(timer);
       inflight.delete(idempotencyKey);
     }
   }, [state, wizard, fetchPersonas, selectPersona, onPersonaCreated, reviewTestCaseName]);

@@ -27,6 +27,7 @@ export interface CredentialDesignContextValue {
   // Healthcheck state
   isHealthchecking: boolean;
   healthcheckResult: { success: boolean; message: string } | null;
+  oauthStatusMessage: { success: boolean; message: string } | null;
   canSaveCredential: boolean;
   lastSuccessfulTestAt: string | null;
 

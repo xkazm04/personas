@@ -78,6 +78,7 @@ export function useTimelineReplay(): UseTimelineReplayReturn {
   const nextEventIdxRef = useRef(0);
   const timerRef = useRef<number | null>(null);
   const lastTickRef = useRef(0);
+  const isSeekingRef = useRef(false);
 
   // Keep refs in sync
   useEffect(() => { playingRef.current = playing; }, [playing]);
@@ -100,7 +101,7 @@ export function useTimelineReplay(): UseTimelineReplayReturn {
 
   // ── Replay tick loop ─────────────────────────────────────────────
   const tick = useCallback(() => {
-    if (!playingRef.current) return;
+    if (!playingRef.current || isSeekingRef.current) return;
 
     const now = Date.now();
     const dt = now - lastTickRef.current;
@@ -233,6 +234,12 @@ export function useTimelineReplay(): UseTimelineReplayReturn {
   }, []);
 
   const seekTo = useCallback((value: number, isMs = false) => {
+    const wasPlaying = playingRef.current;
+
+    // Pause playback and flag seeking to prevent tick() from emitting mid-seek
+    isSeekingRef.current = true;
+    playingRef.current = false;
+
     const total = rangeEndRef.current - rangeStartRef.current;
     const ms = isMs ? Math.max(0, Math.min(value, total)) : Math.max(0, Math.min(value, 1)) * total;
 
@@ -246,6 +253,13 @@ export function useTimelineReplay(): UseTimelineReplayReturn {
     nextEventIdxRef.current = idx;
     setEmittedCount(idx);
     setReplayEvents([]); // clear current particles on seek
+
+    // Resume playback if it was active before the seek
+    isSeekingRef.current = false;
+    if (wasPlaying) {
+      lastTickRef.current = Date.now();
+      playingRef.current = true;
+    }
   }, [findFirstAfter]);
 
   return {

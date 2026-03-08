@@ -1,49 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, SlidersHorizontal, AlertTriangle } from 'lucide-react';
-import type {
-  FilterState,
-  StatusFilter,
-  ModelFilter,
-  HealthFilter,
-  RecencyFilter,
-  SmartTag,
-} from './usePersonaFilters';
-
-// ── Filter chip config ───────────────────────────────────────────────
-
-interface ChipOption<T extends string> {
-  value: T;
-  label: string;
-}
-
-const STATUS_OPTIONS: ChipOption<StatusFilter>[] = [
-  { value: 'enabled', label: 'Enabled' },
-  { value: 'disabled', label: 'Disabled' },
-];
-
-const MODEL_OPTIONS: ChipOption<ModelFilter>[] = [
-  { value: 'anthropic', label: 'Anthropic' },
-  { value: 'ollama', label: 'Ollama' },
-  { value: 'litellm', label: 'LiteLLM' },
-  { value: 'custom', label: 'Custom' },
-  { value: 'default', label: 'Default' },
-];
-
-const HEALTH_OPTIONS: ChipOption<HealthFilter>[] = [
-  { value: 'healthy', label: 'Healthy' },
-  { value: 'degraded', label: 'Degraded' },
-  { value: 'failing', label: 'Failing' },
-  { value: 'dormant', label: 'Dormant' },
-  { value: 'needs-attention', label: 'Needs Attention' },
-];
-
-const RECENCY_OPTIONS: ChipOption<RecencyFilter>[] = [
-  { value: 'today', label: 'Today' },
-  { value: 'week', label: 'This Week' },
-  { value: 'month', label: 'This Month' },
-  { value: 'stale', label: 'Stale' },
-];
+import { TAG_GROUPS } from './usePersonaFilters';
+import type { FilterState, SmartTag } from './usePersonaFilters';
 
 // ── Chip Component ───────────────────────────────────────────────────
 
@@ -77,28 +36,29 @@ function FilterChip({
   );
 }
 
-// ── Chip Group ───────────────────────────────────────────────────────
+// ── Tag Group Row ───────────────────────────────────────────────────
 
-function ChipGroup<T extends string>({
+function TagGroupRow({
   label,
-  options,
-  value,
-  onChange,
+  tags,
+  activeTags,
+  onToggle,
 }: {
   label: string;
-  options: ChipOption<T>[];
-  value: T | 'all';
-  onChange: (v: T) => void;
+  tags: SmartTag[];
+  activeTags: Set<string>;
+  onToggle: (tagId: string) => void;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-1">
       <span className="text-sm text-muted-foreground/60 font-medium mr-0.5 min-w-[52px]">{label}</span>
-      {options.map((opt) => (
+      {tags.map((tag) => (
         <FilterChip
-          key={opt.value}
-          label={opt.label}
-          active={value === opt.value}
-          onClick={() => onChange(opt.value)}
+          key={tag.id}
+          label={tag.label}
+          active={activeTags.has(tag.id)}
+          onClick={() => onToggle(tag.id)}
+          color={tag.color}
         />
       ))}
     </div>
@@ -112,13 +72,9 @@ interface SearchFilterBarProps {
   hasActiveFilters: boolean;
   matchCount: number;
   totalCount: number;
-  allTags: SmartTag[];
+  allAutoTags: SmartTag[];
   onSearchChange: (value: string) => void;
-  onStatusChange: (value: StatusFilter) => void;
-  onModelChange: (value: ModelFilter) => void;
-  onHealthChange: (value: HealthFilter) => void;
-  onRecencyChange: (value: RecencyFilter) => void;
-  onTagChange: (value: string | null) => void;
+  onToggleTag: (tagId: string) => void;
   onClear: () => void;
 }
 
@@ -127,13 +83,9 @@ export function SearchFilterBar({
   hasActiveFilters,
   matchCount,
   totalCount,
-  allTags,
+  allAutoTags,
   onSearchChange,
-  onStatusChange,
-  onModelChange,
-  onHealthChange,
-  onRecencyChange,
-  onTagChange,
+  onToggleTag,
   onClear,
 }: SearchFilterBarProps) {
   const [showFilters, setShowFilters] = useState(false);
@@ -153,12 +105,7 @@ export function SearchFilterBar({
     return () => window.clearTimeout(timer);
   }, [localSearch, filters.search, onSearchChange]);
 
-  // Auto-expand filters when a non-search filter is active
-  useEffect(() => {
-    if (hasActiveFilters && filters.search === '' && !showFilters) {
-      // Don't auto-expand, let user toggle
-    }
-  }, [hasActiveFilters, filters.search, showFilters]);
+  const activeTags = filters.tags;
 
   return (
     <div className="mb-2 space-y-1.5">
@@ -227,45 +174,24 @@ export function SearchFilterBar({
             className="overflow-hidden"
           >
             <div className="space-y-1.5 p-2 rounded-lg border border-primary/10 bg-secondary/20">
-              <ChipGroup
-                label="Status"
-                options={STATUS_OPTIONS}
-                value={filters.status}
-                onChange={onStatusChange}
-              />
-              <ChipGroup
-                label="Model"
-                options={MODEL_OPTIONS}
-                value={filters.model}
-                onChange={onModelChange}
-              />
-              <ChipGroup
-                label="Health"
-                options={HEALTH_OPTIONS}
-                value={filters.health}
-                onChange={onHealthChange}
-              />
-              <ChipGroup
-                label="Recency"
-                options={RECENCY_OPTIONS}
-                value={filters.recency}
-                onChange={onRecencyChange}
-              />
+              {TAG_GROUPS.map((group) => (
+                <TagGroupRow
+                  key={group.category}
+                  label={group.label}
+                  tags={group.tags}
+                  activeTags={activeTags}
+                  onToggle={onToggleTag}
+                />
+              ))}
 
-              {/* Smart tags */}
-              {allTags.length > 0 && (
-                <div className="flex flex-wrap items-center gap-1">
-                  <span className="text-sm text-muted-foreground/60 font-medium mr-0.5 min-w-[52px]">Tags</span>
-                  {allTags.map((tag) => (
-                    <FilterChip
-                      key={tag.id}
-                      label={tag.label}
-                      active={filters.tag === tag.id}
-                      onClick={() => onTagChange(tag.id)}
-                      color={tag.color}
-                    />
-                  ))}
-                </div>
+              {/* Auto/smart tags */}
+              {allAutoTags.length > 0 && (
+                <TagGroupRow
+                  label="Tags"
+                  tags={allAutoTags}
+                  activeTags={activeTags}
+                  onToggle={onToggleTag}
+                />
               )}
             </div>
           </motion.div>
@@ -273,9 +199,9 @@ export function SearchFilterBar({
       </AnimatePresence>
 
       {/* "Needs attention" quick filter (always visible when there are issues) */}
-      {!showFilters && allTags.some(t => t.id === 'auto:needs-attention') && filters.health !== 'needs-attention' && (
+      {!showFilters && allAutoTags.some(t => t.id === 'auto:needs-attention') && !activeTags.has('health:needs-attention') && (
         <button
-          onClick={() => onHealthChange('needs-attention')}
+          onClick={() => onToggleTag('health:needs-attention')}
           className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm text-amber-400/80 hover:text-amber-400 bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/10 hover:border-amber-500/20 transition-all w-full"
         >
           <AlertTriangle className="w-3 h-3" />

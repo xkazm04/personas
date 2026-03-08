@@ -1,22 +1,26 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMotion } from '@/hooks/utility/useMotion';
 import { usePersonaStore } from '@/stores/personaStore';
 import Sidebar from '@/features/shared/components/Sidebar';
 import HomePage from '@/features/home/components/HomePage';
 import PersonaEditor from '@/features/agents/sub_editor/PersonaEditor';
-import { EventsPage } from '@/features/triggers/components/EventsPage';
-import { CredentialManager } from '@/features/vault/sub_manager/CredentialManager';
 import PersonaOverviewPage from '@/features/agents/components/PersonaOverviewPage';
-import DesignReviewsPage from '@/features/templates/components/DesignReviewsPage';
-import CloudDeployPanel from '@/features/deployment/components/CloudDeployPanel';
-import SettingsPage from '@/features/settings/components/SettingsPage';
 import CreationWizard from '@/features/agents/components/CreationWizard';
 import { CredentialNavProvider } from '@/features/vault/hooks/CredentialNavContext';
 import { ErrorBanner } from '@/features/shared/components/ErrorBanner';
-import TeamCanvas from '@/features/pipeline/components/TeamCanvas';
-import OverviewPage from '@/features/overview/components/OverviewPage';
-import GitLabPanel from '@/features/gitlab/components/GitLabPanel';
+import { ErrorBoundary } from '@/features/shared/components/ErrorBoundary';
+import { CanvasDragProvider } from '@/features/pipeline/sub_canvas/CanvasDragContext';
+
+const OverviewPage = lazy(() => import('@/features/overview/components/OverviewPage'));
+const CredentialManager = lazy(() => import('@/features/vault/sub_manager/CredentialManager').then(m => ({ default: m.CredentialManager })));
+const TeamCanvas = lazy(() => import('@/features/pipeline/components/TeamCanvas'));
+const DesignReviewsPage = lazy(() => import('@/features/templates/components/DesignReviewsPage'));
+const SettingsPage = lazy(() => import('@/features/settings/components/SettingsPage'));
+const EventsPage = lazy(() => import('@/features/triggers/components/EventsPage').then(m => ({ default: m.EventsPage })));
+const CloudDeployPanel = lazy(() => import('@/features/deployment/components/CloudDeployPanel'));
+const GitLabPanel = lazy(() => import('@/features/gitlab/components/GitLabPanel'));
+const UnifiedDeploymentDashboard = lazy(() => import('@/features/deployment/components/UnifiedDeploymentDashboard'));
 
 export default function PersonasPage() {
   const { shouldAnimate, transition } = useMotion();
@@ -63,6 +67,8 @@ export default function PersonasPage() {
       if (failed.length > 0) {
         setError(`Startup failed — ${failed.join(', ')} could not be loaded`);
       }
+    }).catch(() => {
+      setPersonasFetched(true);
     });
   }, [fetchPersonas, fetchToolDefinitions, fetchCredentials, fetchRecipes, fetchPendingReviewCount, fetchGroups, setError]);
 
@@ -73,7 +79,7 @@ export default function PersonasPage() {
   // Hydrate persisted persona selection on app restart
   useEffect(() => {
     if (selectedPersonaId) {
-      fetchDetail(selectedPersonaId);
+      fetchDetail(selectedPersonaId).catch(() => {/* non-critical: persisted selection may be stale */});
     }
   }, []);
 
@@ -81,19 +87,21 @@ export default function PersonasPage() {
     // Show unified wizard when no personas exist OR when explicitly creating
     if (sidebarSection === 'personas') {
       if (personasFetched && !isLoading && !error && personas.length === 0) {
-        return <CreationWizard />;
+        return <ErrorBoundary name="CreationWizard"><CreationWizard /></ErrorBoundary>;
       }
       if (isCreatingPersona) {
-        return <CreationWizard canCancel />;
+        return <ErrorBoundary name="CreationWizard"><CreationWizard canCancel /></ErrorBoundary>;
       }
     }
 
-    if (sidebarSection === 'home') return <HomePage />;
+    if (sidebarSection === 'home') return <ErrorBoundary name="Home"><HomePage /></ErrorBoundary>;
     if (sidebarSection === 'team') {
-      return <TeamCanvas />;
+      return <ErrorBoundary name="Teams"><Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground">Loading...</div>}><TeamCanvas /></Suspense></ErrorBoundary>;
     }
     if (sidebarSection === 'cloud') {
       return (
+        <ErrorBoundary name="Cloud">
+        <Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground">Loading...</div>}>
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={cloudTab}
@@ -103,27 +111,32 @@ export default function PersonasPage() {
             transition={transition}
             className="h-full"
           >
-            {cloudTab === 'gitlab' ? (
+            {cloudTab === 'unified' ? (
+              <UnifiedDeploymentDashboard />
+            ) : cloudTab === 'gitlab' ? (
               <GitLabPanel />
             ) : (
               <CloudDeployPanel />
             )}
           </motion.div>
         </AnimatePresence>
+        </Suspense>
+        </ErrorBoundary>
       );
     }
     if (sidebarSection === 'overview') {
-      return <OverviewPage />;
+      return <ErrorBoundary name="Overview"><Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground">Loading...</div>}><OverviewPage /></Suspense></ErrorBoundary>;
     }
-    if (sidebarSection === 'credentials') return <CredentialManager />;
-    if (sidebarSection === 'events') return <EventsPage />;
-    if (sidebarSection === 'design-reviews') return <DesignReviewsPage />;
-    if (sidebarSection === 'settings') return <SettingsPage />;
-    if (selectedPersonaId) return <PersonaEditor />;
-    return <PersonaOverviewPage />;
+    if (sidebarSection === 'credentials') return <ErrorBoundary name="Vault"><Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground">Loading...</div>}><CredentialManager /></Suspense></ErrorBoundary>;
+    if (sidebarSection === 'events') return <ErrorBoundary name="Triggers"><Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground">Loading...</div>}><EventsPage /></Suspense></ErrorBoundary>;
+    if (sidebarSection === 'design-reviews') return <ErrorBoundary name="Design Reviews"><Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground">Loading...</div>}><DesignReviewsPage /></Suspense></ErrorBoundary>;
+    if (sidebarSection === 'settings') return <ErrorBoundary name="Settings"><Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground">Loading...</div>}><SettingsPage /></Suspense></ErrorBoundary>;
+    if (selectedPersonaId) return <ErrorBoundary name="Agent Editor"><PersonaEditor /></ErrorBoundary>;
+    return <ErrorBoundary name="Agent Overview"><PersonaOverviewPage /></ErrorBoundary>;
   };
 
   return (
+    <CanvasDragProvider>
     <CredentialNavProvider>
       <div className="flex flex-col h-full bg-background text-foreground overflow-hidden">
       {/* Background effects matching GoalsLayout */}
@@ -159,5 +172,6 @@ export default function PersonasPage() {
       </div>
       </div>
     </CredentialNavProvider>
+    </CanvasDragProvider>
   );
 }

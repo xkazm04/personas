@@ -1,6 +1,7 @@
 import { Server, Link, Database } from 'lucide-react';
 import type { SchemaFormConfig } from './schemaFormTypes';
 import { buildEnvMap, buildCustomHealthcheck } from './schemaFormTypes';
+import { healthcheckMcpPreview } from '@/api/mcpTools';
 
 export const MCP_SCHEMA: SchemaFormConfig = {
   headerIcon: (
@@ -23,6 +24,7 @@ export const MCP_SCHEMA: SchemaFormConfig = {
         { key: 'command', label: 'Command', type: 'text', required: true, placeholder: 'npx -y @modelcontextprotocol/server-filesystem', helpText: 'The shell command to start the MCP server process' },
         { key: 'working_directory', label: 'Working Directory', type: 'text', required: false, placeholder: '/home/user/project', helpText: 'Optional: directory to run the command from' },
       ],
+      testHint: 'Spawns the process, performs MCP handshake, and lists available tools.',
     },
     {
       id: 'sse',
@@ -33,6 +35,7 @@ export const MCP_SCHEMA: SchemaFormConfig = {
         { key: 'url', label: 'Server URL', type: 'url', required: true, placeholder: 'https://mcp.example.com/sse', helpText: 'The SSE endpoint URL for the MCP server' },
         { key: 'auth_token', label: 'Auth Token', type: 'password', required: false, placeholder: 'Bearer token or API key', helpText: 'Optional: authentication token sent with requests' },
       ],
+      testHint: 'Connects via SSE, performs MCP handshake, and lists available tools.',
     },
   ],
   subTypeLayout: 'flex',
@@ -60,6 +63,12 @@ export const MCP_SCHEMA: SchemaFormConfig = {
     const envMap = buildEnvMap(extras);
     if (Object.keys(envMap).length > 0) result.env_vars = JSON.stringify(envMap);
     return result;
+  },
+  customHealthcheck: async (subTypeId, fieldValues, extras) => {
+    const fields: Record<string, string> = { ...fieldValues, connection_type: subTypeId };
+    const envMap = buildEnvMap(extras);
+    if (Object.keys(envMap).length > 0) fields.env_vars = JSON.stringify(envMap);
+    return healthcheckMcpPreview(fields);
   },
 };
 

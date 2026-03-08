@@ -61,10 +61,13 @@ function CompletenessRing({ percent }: { percent: number }) {
 
 interface ChatCreatorProps {
   onCancel?: () => void;
-  onDraftPersonaIdChange?: (id: string | null) => void;
+  /** Called once when the draft persona is first created (for parent tracking). */
+  onCreated?: (id: string) => void;
+  /** Called after the agent is successfully activated. */
+  onActivated?: () => void;
 }
 
-export function ChatCreator({ onCancel, onDraftPersonaIdChange }: ChatCreatorProps) {
+export function ChatCreator({ onCancel, onCreated, onActivated }: ChatCreatorProps) {
   const createPersona = usePersonaStore((s) => s.createPersona);
   const selectPersona = usePersonaStore((s) => s.selectPersona);
   const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
@@ -80,6 +83,7 @@ export function ChatCreator({ onCancel, onDraftPersonaIdChange }: ChatCreatorPro
   const threadRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const accumulatedIntentRef = useRef('');
+  const MAX_INTENT_LENGTH = 4000;
   const isCreatingRef = useRef(false);
 
   const completeness = calcCompleteness(design.result);
@@ -154,6 +158,9 @@ export function ChatCreator({ onCancel, onDraftPersonaIdChange }: ChatCreatorPro
     }]);
     setInput('');
     accumulatedIntentRef.current += (accumulatedIntentRef.current ? '\n' : '') + text;
+    if (accumulatedIntentRef.current.length > MAX_INTENT_LENGTH) {
+      accumulatedIntentRef.current = accumulatedIntentRef.current.slice(-MAX_INTENT_LENGTH);
+    }
 
     // If answering a question from the design system
     if (design.phase === 'awaiting-input' && design.question) {
@@ -171,7 +178,7 @@ export function ChatCreator({ onCancel, onDraftPersonaIdChange }: ChatCreatorPro
           system_prompt: 'You are a helpful AI assistant.',
         });
         setDraftPersonaId(persona.id);
-        onDraftPersonaIdChange?.(persona.id);
+        onCreated?.(persona.id);
         await design.startIntentCompilation(persona.id, text);
       } catch (err) {
         isCreatingRef.current = false;
@@ -203,12 +210,12 @@ export function ChatCreator({ onCancel, onDraftPersonaIdChange }: ChatCreatorPro
       setSidebarSection('personas');
       selectPersona(draftPersonaId);
       setEditorTab('use-cases');
-      onDraftPersonaIdChange?.(null);
+      onActivated?.();
     } catch {
       useToastStore.getState().addToast('Failed to activate agent — check your connection', 'error');
       setIsActivating(false);
     }
-  }, [draftPersonaId, design, isActivating, selectPersona, setSidebarSection, setEditorTab, onDraftPersonaIdChange]);
+  }, [draftPersonaId, design, isActivating, selectPersona, setSidebarSection, setEditorTab, onActivated]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {

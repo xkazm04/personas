@@ -157,17 +157,5 @@ export function useBulkHealthcheck() {
     bulkSummaryCache.notify();
   }, []);
 
-  // Auto-dismiss after 30s
-  useEffect(() => {
-    if (!summary) return;
-    const timer = setTimeout(() => {
-      // Only dismiss if still showing the same summary
-      if (bulkSummaryCache.get('latest')?.completedAt === summary.completedAt) {
-        dismiss();
-      }
-    }, 30000);
-    return () => clearTimeout(timer);
-  }, [summary, dismiss]);
-
   return { isRunning, progress, summary, run, cancel, dismiss };
 }

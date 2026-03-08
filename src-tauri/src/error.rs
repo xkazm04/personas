@@ -44,8 +44,21 @@ pub enum AppError {
     #[error("Rate limited: {0}")]
     RateLimited(String),
 
+    #[error("Forbidden: {0}")]
+    Forbidden(String),
+
     #[error("{0}")]
     Internal(String),
+}
+
+/// Sanitize error messages to avoid leaking internal file paths or system details
+/// to the frontend. Keeps the human-readable portion but strips OS-level detail.
+fn sanitize_error_message(msg: &str) -> String {
+    // Strip absolute file paths (Unix and Windows)
+    let sanitized = regex::Regex::new(r#"(?:[A-Z]:\\|/(?:tmp|var|home|Users|C:))[^\s'":,]+"#)
+        .map(|re| re.replace_all(msg, "<path>").into_owned())
+        .unwrap_or_else(|_| msg.to_string());
+    sanitized
 }
 
 /// Tauri requires `Serialize` on command return errors.
@@ -57,7 +70,14 @@ impl Serialize for AppError {
     {
         use serde::ser::SerializeStruct;
         let mut s = serializer.serialize_struct("AppError", 2)?;
-        s.serialize_field("error", &self.to_string())?;
+        // Sanitize error messages to prevent leaking file paths to frontend
+        let message = match self {
+            AppError::Database(_) | AppError::Io(_) | AppError::Internal(_) => {
+                sanitize_error_message(&self.to_string())
+            }
+            _ => self.to_string(),
+        };
+        s.serialize_field("error", &message)?;
         s.serialize_field(
             "kind",
             match self {
@@ -74,6 +94,7 @@ impl Serialize for AppError {
                 AppError::Cloud(_) => "cloud",
                 AppError::GitLab(_) => "gitlab",
                 AppError::RateLimited(_) => "rate_limited",
+                AppError::Forbidden(_) => "forbidden",
                 AppError::Internal(_) => "internal",
             },
         )?;

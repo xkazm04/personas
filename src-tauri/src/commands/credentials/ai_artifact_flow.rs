@@ -314,7 +314,13 @@ pub async fn spawn_claude_and_collect(
     // Register child PID so cancel handlers can kill the process immediately
     if let Some(pid_ref) = child_pid_out {
         if let Some(pid) = child.id() {
-            *pid_ref.lock().unwrap_or_else(|e| e.into_inner()) = Some(pid);
+            match pid_ref.lock() {
+                Ok(mut guard) => *guard = Some(pid),
+                Err(e) => {
+                    tracing::warn!("Child PID mutex poisoned, recovering: {e}");
+                    *e.into_inner() = Some(pid);
+                }
+            }
         }
     }
 
@@ -370,6 +376,36 @@ pub async fn spawn_claude_and_collect(
     })
     .await;
 
+    // On timeout, kill the process BEFORE waiting — otherwise wait() hangs
+    // because the process is still running.
+    if stream_result.is_err() {
+        tracing::warn!("Claude CLI timed out after {timeout_secs}s — killing process");
+        let _ = child.kill().await;
+        // Also kill via PID tree on Windows to clean up child processes
+        if let Some(pid_ref) = child_pid_out {
+            let pid = pid_ref.lock().unwrap_or_else(|e| e.into_inner()).take();
+            if let Some(pid) = pid {
+                #[cfg(windows)]
+                {
+                    #[allow(unused_imports)]
+                    use std::os::windows::process::CommandExt;
+                    let _ = std::process::Command::new("taskkill")
+                        .args(["/F", "/T", "/PID", &pid.to_string()])
+                        .creation_flags(0x08000000)
+                        .stdout(std::process::Stdio::null())
+                        .stderr(std::process::Stdio::null())
+                        .status();
+                }
+                #[cfg(not(windows))]
+                {
+                    unsafe { libc::kill(pid as i32, libc::SIGTERM); }
+                }
+            }
+        }
+        let _ = child.wait().await; // Reap zombie
+        return Err(format!("Claude CLI timed out after {timeout_secs} seconds"));
+    }
+
     let exit_status = child
         .wait()
         .await
@@ -379,11 +415,6 @@ pub async fn spawn_claude_and_collect(
     // Clear the PID now that the process has exited
     if let Some(pid_ref) = child_pid_out {
         *pid_ref.lock().unwrap_or_else(|e| e.into_inner()) = None;
-    }
-
-    if stream_result.is_err() {
-        let _ = child.kill().await;
-        return Err(format!("Claude CLI timed out after {timeout_secs} seconds"));
     }
 
     if !exit_status.success() {

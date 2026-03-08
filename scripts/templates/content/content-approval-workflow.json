@@ -630,6 +630,28 @@
         "label": "Message Formatting Standards",
         "content": "**Email subjects** follow the pattern: `[Action] Content Title` — e.g., `[Review Requested]`, `[Published]`, `[Revision Needed]`. **Slack messages** use Block Kit with a header block (content title), section blocks (metadata fields), and context blocks (timestamps, links). Urgency indicators appear when a due date is within 48 hours — add a 🔴 emoji prefix and mention the due date prominently. All messages include a direct link back to the Notion page."
       }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Approval workflow for high-impact actions",
+        "context": "Approval workflow detected in instructions"
+      },
+      {
+        "type": "user_message",
+        "label": "Real-time Slack alerts plus email digests and summaries (periodic digests, critical alerts, completion confirmations, error notifications)",
+        "context": "2 notification channel(s) configured: slack, email"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Processing checkpoints and accumulated insights across runs",
+        "context": "Inferred from template role — persistent state enables continuity across executions"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits events: execution completed, execution failed, review requested, item created, threshold breached",
+        "context": "2 event subscription(s) configured — agent participates in event bus"
+      }
     ]
   }
 }

@@ -1,6 +1,7 @@
 import { useDroppable } from '@dnd-kit/core';
 import { DraggablePersonaCard } from '@/features/agents/components/sub_sidebar/DraggablePersonaCard';
 import type { DbPersona } from '@/lib/types/types';
+import type { DropPayload } from '@/lib/types/frontendTypes';
 
 interface UngroupedZoneProps {
   ungrouped: DbPersona[];
@@ -19,9 +20,10 @@ export function UngroupedZone({
   selectPersona,
   handleContextMenu,
 }: UngroupedZoneProps) {
+  const dropData: DropPayload = { type: 'ungrouped' };
   const { isOver, setNodeRef } = useDroppable({
     id: 'ungrouped',
-    data: { type: 'ungrouped' },
+    data: dropData,
   });
 
   return (

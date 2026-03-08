@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import type { CredentialDesignResult } from '@/hooks/design/useCredentialDesign';
 import { usePersonaStore } from '@/stores/personaStore';
 import type {
@@ -7,8 +7,9 @@ import type {
   ExtractedValues,
   AutoCredConnectorContext,
   AutoCredErrorInfo,
+  ExtractionCompleteness,
 } from './types';
-import { buildConnectorContext, parseAutoCredError } from './types';
+import { buildConnectorContext, parseAutoCredError, checkFieldCompleteness } from './types';
 
 /**
  * Playwright MCP adapter interface.
@@ -180,6 +181,13 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
     }
   }, [designResult, credentialName, extractedValues, createCredential, fetchCredentials]);
 
+  /** Field-level completeness derived from extracted values and connector fields. */
+  const completeness: ExtractionCompleteness | null = useMemo(() => {
+    if (!designResult) return null;
+    const ctx = buildConnectorContext(designResult);
+    return checkFieldCompleteness(ctx.fields, extractedValues);
+  }, [designResult, extractedValues]);
+
   /** Reset entire session */
   const reset = useCallback(() => {
     savingRef.current = false;
@@ -203,6 +211,7 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
     credentialName,
     error,
     isPartial,
+    completeness,
     healthResult,
     isSaving,
 

@@ -828,6 +828,28 @@
           }
         ]
       }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Human review for lead qualification overrides and deal decisions",
+        "context": "Inferred from template category — every e2e process needs a human gate"
+      },
+      {
+        "type": "user_message",
+        "label": "Real-time Slack alerts plus email digests and summaries (critical alerts, completion confirmations, error notifications)",
+        "context": "2 notification channel(s) configured: slack, email"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Deduplication memory tracking known items across runs",
+        "context": "Tracks: recurring patterns, calibrated thresholds, known items for deduplication, processing checkpoints"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits events: execution failed, item created, threshold breached",
+        "context": "3 event subscription(s) configured — agent participates in event bus"
+      }
     ]
   }
 }

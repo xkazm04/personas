@@ -1,12 +1,15 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Eye, BarChart3, RotateCw, Globe, Server, Plug, Key, BookOpen } from 'lucide-react';
+import { X, Eye, RotateCw, Globe, Server, Plug, Key, BookOpen, Plus } from 'lucide-react';
 import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { OverviewTab } from './tabs/OverviewTab';
 import { ApiExplorerTab } from './tabs/ApiExplorerTab';
 import { McpToolsTab } from './tabs/McpToolsTab';
-import { CredentialIntelligence } from '@/features/vault/sub_features/CredentialIntelligence';
 import { CredentialRotationSection } from '@/features/vault/sub_features/CredentialRotationSection';
+import { getCredentialTags, getTagStyle, buildMetadataWithTags, SUGGESTED_TAGS } from '@/features/vault/utils/credentialTags';
+import { toCredentialMetadata } from '@/lib/types/types';
+import { usePersonaStore } from '@/stores/personaStore';
+import * as credApi from '@/api/credentials';
 import { CredentialRecipesTab } from './tabs/CredentialRecipesTab';
 import { useCredentialHealth } from '@/features/vault/hooks/useCredentialHealth';
 import { useGoogleOAuth } from '@/features/vault/hooks/useGoogleOAuth';
@@ -19,7 +22,7 @@ import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types'
 
 // ── Tab types ────────────────────────────────────────────────────
 
-type PlaygroundTab = 'overview' | 'api-explorer' | 'recipes' | 'mcp-tools' | 'intelligence' | 'rotation';
+type PlaygroundTab = 'overview' | 'api-explorer' | 'recipes' | 'mcp-tools' | 'rotation';
 
 interface TabDef {
   id: PlaygroundTab;
@@ -46,7 +49,6 @@ function getAvailableTabs(connector: ConnectorDefinition | undefined): TabDef[] 
   }
 
   tabs.push(
-    { id: 'intelligence', label: 'Intelligence', icon: BarChart3 },
     { id: 'rotation', label: 'Rotation', icon: RotateCw },
   );
 
@@ -132,10 +134,52 @@ export function CredentialPlaygroundModal({
     return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
 
+  // ── Tag management ─────────────────────────────────────────
+
+  const [tagInput, setTagInput] = useState('');
+  const [showTagInput, setShowTagInput] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const tagInputRef = useRef<HTMLInputElement>(null);
+
+  const currentTags = getCredentialTags(credential);
+
+  const persistTags = useCallback(async (nextTags: string[]) => {
+    const metadata = buildMetadataWithTags(credential, nextTags);
+    try {
+      const updatedRaw = await credApi.updateCredential(credential.id, {
+        name: null,
+        service_type: null,
+        encrypted_data: null,
+        metadata,
+      });
+      const updated = toCredentialMetadata(updatedRaw);
+      usePersonaStore.setState((s) => ({
+        credentials: s.credentials.map((c) => (c.id === credential.id ? updated : c)),
+      }));
+    } catch { /* intentional: non-critical — tag metadata update is best-effort */ }
+  }, [credential]);
+
+  const addTag = useCallback((tag: string) => {
+    const trimmed = tag.trim().toLowerCase();
+    if (!trimmed || currentTags.includes(trimmed)) return;
+    persistTags([...currentTags, trimmed]);
+    setTagInput('');
+    setShowSuggestions(false);
+  }, [currentTags, persistTags]);
+
+  const removeTag = useCallback((tag: string) => {
+    persistTags(currentTags.filter((t) => t !== tag));
+  }, [currentTags, persistTags]);
+
+  const filteredSuggestions = SUGGESTED_TAGS.filter(
+    (s) => !currentTags.includes(s) && s.includes(tagInput.toLowerCase()),
+  );
+
   // ── Render ───────────────────────────────────────────────────
 
   const iconUrl = connector?.icon_url;
   const color = connector?.color || '#6B7280';
+  const fieldKeys = connector?.fields?.map((f) => f.key) ?? [];
 
   return (
     <AnimatePresence>
@@ -158,9 +202,9 @@ export function CredentialPlaygroundModal({
           className="relative w-full max-w-6xl h-[90vh] bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
         >
           {/* Header */}
-          <div className="flex items-center gap-3 px-6 py-4 border-b border-primary/10 bg-secondary/20 shrink-0">
+          <div className="flex items-center gap-3 px-6 py-3 border-b border-primary/10 bg-secondary/20 shrink-0">
             <div
-              className="w-9 h-9 rounded-lg flex items-center justify-center border border-primary/15"
+              className="w-9 h-9 rounded-lg flex items-center justify-center border border-primary/15 shrink-0"
               style={{ backgroundColor: `${color}15` }}
             >
               {iconUrl ? (
@@ -172,16 +216,77 @@ export function CredentialPlaygroundModal({
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="text-sm font-semibold text-foreground/90 truncate">
+              <h2 className="text-sm font-semibold text-foreground/90 truncate mb-1">
                 {credential.name}
               </h2>
-              <p className="text-sm text-muted-foreground/60">
-                Credential Playground — {connector?.label || credential.service_type}
-              </p>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {fieldKeys.map((key) => (
+                  <span key={key} className="text-xs px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/8 text-muted-foreground/60 font-mono">
+                    {key}
+                  </span>
+                ))}
+                {currentTags.map((tag) => {
+                  const style = getTagStyle(tag);
+                  return (
+                    <span
+                      key={tag}
+                      className={`inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded border ${style.bg} ${style.text} ${style.border}`}
+                    >
+                      {tag}
+                      <button
+                        onClick={() => removeTag(tag)}
+                        className="hover:opacity-70 transition-opacity"
+                        title={`Remove tag "${tag}"`}
+                      >
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                    </span>
+                  );
+                })}
+                {showTagInput ? (
+                  <div className="relative">
+                    <input
+                      ref={tagInputRef}
+                      type="text"
+                      value={tagInput}
+                      onChange={(e) => { setTagInput(e.target.value); setShowSuggestions(true); }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && tagInput.trim()) addTag(tagInput);
+                        if (e.key === 'Escape') { setShowTagInput(false); setTagInput(''); setShowSuggestions(false); }
+                      }}
+                      onBlur={() => { setTimeout(() => { setShowTagInput(false); setTagInput(''); setShowSuggestions(false); }, 150); }}
+                      autoFocus
+                      placeholder="Add tag..."
+                      className="w-24 text-xs px-1.5 py-0.5 rounded border border-primary/20 bg-background/50 text-foreground/80 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/30"
+                    />
+                    {showSuggestions && filteredSuggestions.length > 0 && (
+                      <div className="absolute top-full mt-1 left-0 z-20 bg-background border border-primary/15 rounded-lg shadow-lg py-1 min-w-[100px]">
+                        {filteredSuggestions.map((s) => (
+                          <button
+                            key={s}
+                            onMouseDown={(e) => { e.preventDefault(); addTag(s); }}
+                            className="w-full text-left px-2.5 py-1 text-xs hover:bg-secondary/50 transition-colors text-foreground/80"
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => { setShowTagInput(true); setTimeout(() => tagInputRef.current?.focus(), 0); }}
+                    className="inline-flex items-center gap-0.5 text-xs text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors"
+                    title="Add tag"
+                  >
+                    <Plus className="w-2.5 h-2.5" /> tag
+                  </button>
+                )}
+              </div>
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/60 hover:text-foreground/80"
+              className="p-2 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/60 hover:text-foreground/80 shrink-0"
             >
               <X className="w-4 h-4" />
             </button>
@@ -252,11 +357,6 @@ export function CredentialPlaygroundModal({
             )}
             {activeTab === 'mcp-tools' && (
               <McpToolsTab credentialId={credential.id} />
-            )}
-            {activeTab === 'intelligence' && (
-              <div className="p-6">
-                <CredentialIntelligence credentialId={credential.id} />
-              </div>
             )}
             {activeTab === 'rotation' && (
               <div className="p-6">

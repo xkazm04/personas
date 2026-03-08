@@ -19,7 +19,7 @@ interface CredentialPickerProps {
 type ConnectedFilter = 'all' | 'connected' | 'new';
 
 function capitalize(s: string) {
-  return s.charAt(0).toUpperCase() + s.slice(1);
+  return s.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
 const LICENSE_ICON: Record<LicenseTier, typeof User> = {

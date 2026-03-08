@@ -9,6 +9,8 @@ import { N8nTransformChat } from './N8nTransformChat';
 import { N8nEditStep } from './N8nEditStep';
 import { N8nConfirmStep } from './N8nConfirmStep';
 import { N8nSessionList } from './N8nSessionList';
+import { CredentialGapPanel } from './CredentialGapPanel';
+import { usePersonaStore } from '@/stores/personaStore';
 
 // ── Slide animation variants ──
 
@@ -49,6 +51,8 @@ export default function N8nImportTab() {
     fileInputRef,
     direction,
   } = useN8nWizard();
+
+  const credentials = usePersonaStore((s) => s.credentials);
 
   return (
     <div className="flex flex-col h-full">
@@ -131,19 +135,30 @@ export default function N8nImportTab() {
             )}
 
             {state.step === 'analyze' && state.parsedResult && (
-              <N8nParserResults
-                parsedResult={state.parsedResult}
-                workflowName={state.workflowName}
-                onReset={handleReset}
-                selectedToolIndices={state.selectedToolIndices}
-                selectedTriggerIndices={state.selectedTriggerIndices}
-                selectedConnectorNames={state.selectedConnectorNames}
-                onToggleTool={(i) => dispatch({ type: 'TOGGLE_TOOL', index: i })}
-                onToggleTrigger={(i) => dispatch({ type: 'TOGGLE_TRIGGER', index: i })}
-                onToggleConnector={(n) => dispatch({ type: 'TOGGLE_CONNECTOR', name: n })}
-                isAnalyzing={analyzing}
-                platform={state.platform}
-              />
+              <>
+                <N8nParserResults
+                  parsedResult={state.parsedResult}
+                  workflowName={state.workflowName}
+                  onReset={handleReset}
+                  selectedToolIndices={state.selectedToolIndices}
+                  selectedTriggerIndices={state.selectedTriggerIndices}
+                  selectedConnectorNames={state.selectedConnectorNames}
+                  onToggleTool={(i) => dispatch({ type: 'TOGGLE_TOOL', index: i })}
+                  onToggleTrigger={(i) => dispatch({ type: 'TOGGLE_TRIGGER', index: i })}
+                  onToggleConnector={(n) => dispatch({ type: 'TOGGLE_CONNECTOR', name: n })}
+                  isAnalyzing={analyzing}
+                  platform={state.platform}
+                />
+                {!analyzing && state.parsedResult.suggested_connectors && state.parsedResult.suggested_connectors.length > 0 && (
+                  <div className="mt-4">
+                    <CredentialGapPanel
+                      connectors={state.parsedResult.suggested_connectors}
+                      credentials={credentials}
+                      selectedConnectorNames={state.selectedConnectorNames}
+                    />
+                  </div>
+                )}
+              </>
             )}
 
             {state.step === 'transform' && (

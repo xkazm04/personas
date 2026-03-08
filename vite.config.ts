@@ -22,15 +22,29 @@ const host = process.env.TAURI_DEV_HOST;
 export default defineConfig(async () => ({
   plugins: [react(), tailwindcss()],
 
+  esbuild: {
+    // Strip verbose console calls in production; keep console.warn/error for Sentry
+    drop: process.env.NODE_ENV === "production" ? ["debugger"] : [],
+    pure: process.env.NODE_ENV === "production"
+      ? ["console.log", "console.debug", "console.info"]
+      : [],
+  },
+
   build: {
     sourcemap: "hidden",
     chunkSizeWarningLimit: 5500,
+    // Strip console.log and console.debug from production builds
+    minify: "esbuild",
     rollupOptions: {
       output: {
         manualChunks: {
           "react-vendor": ["react", "react-dom", "zustand"],
           "ui-vendor": ["framer-motion", "lucide-react"],
           "tauri-vendor": ["@tauri-apps/api/core", "@tauri-apps/api/event"],
+          "d3-vendor": ["d3-color", "d3-interpolate", "d3-scale", "d3-shape", "d3-array", "d3-format", "d3-time", "d3-time-format", "d3-path", "d3-drag", "d3-selection", "d3-zoom", "d3-ease", "d3-timer", "d3-dispatch", "d3-transition"],
+          "chart-vendor": ["recharts"],
+          "flow-vendor": ["@xyflow/react", "@xyflow/system"],
+          "hljs-vendor": ["highlight.js", "rehype-highlight", "lowlight"],
         },
       },
     },

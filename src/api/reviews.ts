@@ -2,6 +2,7 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { PersonaDesignReview } from "@/lib/bindings/PersonaDesignReview";
 import type { PersonaManualReview } from "@/lib/bindings/PersonaManualReview";
+import type { ReviewMessage } from "@/lib/bindings/ReviewMessage";
 
 // ============================================================================
 // Design Reviews
@@ -159,3 +160,26 @@ export const getPendingReviewCount = (personaId?: string) =>
   invoke<number>("get_pending_review_count", {
     personaId: personaId ?? null,
   });
+
+// ============================================================================
+// Review Messages (Conversational Thread)
+// ============================================================================
+
+export const listReviewMessages = (reviewId: string) =>
+  invoke<ReviewMessage[]>("list_review_messages", { reviewId });
+
+export const addReviewMessage = (
+  reviewId: string,
+  role: string,
+  content: string,
+  metadata?: string,
+) =>
+  invoke<ReviewMessage>("add_review_message", {
+    reviewId,
+    role,
+    content,
+    metadata: metadata ?? null,
+  });
+
+export const seedMockManualReview = () =>
+  invoke<PersonaManualReview>("seed_mock_manual_review", {});

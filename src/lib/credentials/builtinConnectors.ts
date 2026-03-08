@@ -5,9 +5,11 @@
 
 import airtable from '../../../scripts/connectors/builtin/airtable.json';
 import asana from '../../../scripts/connectors/builtin/asana.json';
+import azureDevops from '../../../scripts/connectors/builtin/azure-devops.json';
 import notion from '../../../scripts/connectors/builtin/notion.json';
 import clickup from '../../../scripts/connectors/builtin/clickup.json';
 import github from '../../../scripts/connectors/builtin/github.json';
+import calCom from '../../../scripts/connectors/builtin/cal-com.json';
 import calendly from '../../../scripts/connectors/builtin/calendly.json';
 import supabase from '../../../scripts/connectors/builtin/supabase.json';
 import sentry from '../../../scripts/connectors/builtin/sentry.json';
@@ -32,6 +34,8 @@ import cloudflare from '../../../scripts/connectors/builtin/cloudflare.json';
 import figma from '../../../scripts/connectors/builtin/figma.json';
 import hubspot from '../../../scripts/connectors/builtin/hubspot.json';
 import jira from '../../../scripts/connectors/builtin/jira.json';
+import kubernetes from '../../../scripts/connectors/builtin/kubernetes.json';
+import leonardoAi from '../../../scripts/connectors/builtin/leonardo-ai.json';
 import confluence from '../../../scripts/connectors/builtin/confluence.json';
 import neon from '../../../scripts/connectors/builtin/neon.json';
 import upstash from '../../../scripts/connectors/builtin/upstash.json';
@@ -67,9 +71,11 @@ export interface BuiltinConnectorDef {
 export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   airtable,
   asana,
+  azureDevops,
   notion,
   clickup,
   github,
+  calCom,
   calendly,
   supabase,
   sentry,
@@ -94,6 +100,8 @@ export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   figma,
   hubspot,
   jira,
+  kubernetes,
+  leonardoAi,
   confluence,
   neon,
   upstash,

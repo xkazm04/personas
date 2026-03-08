@@ -26,6 +26,7 @@ import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overvi
 import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
 import DeployFirstAutomationCard from '@/features/overview/components/DeployFirstAutomationCard';
 import { HealthDigestPanel } from '@/features/agents/health';
+import { MemoryActionsPanel } from '@/features/overview/sub_memories/MemoryActionCard';
 
 // ---------------------------------------------------------------------------
 // DashboardHome
@@ -42,6 +43,9 @@ export default function DashboardHome() {
   const fetchPendingReviewCount = usePersonaStore((s) => s.fetchPendingReviewCount);
   const fetchUnreadMessageCount = usePersonaStore((s) => s.fetchUnreadMessageCount);
   const setOverviewTab = usePersonaStore((s) => s.setOverviewTab);
+
+  const memoryActions = usePersonaStore((s) => s.memoryActions);
+  const dismissMemoryAction = usePersonaStore((s) => s.dismissMemoryAction);
 
   const { selectedPersonaId, setSelectedPersonaId } = useOverviewFilters();
   const executionDashboard = usePersonaStore((s) => s.executionDashboard);
@@ -132,24 +136,20 @@ export default function DashboardHome() {
           <Activity className="w-3 h-3" />
           {globalExecutionsTotal}
         </motion.button>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          onClick={() => setOverviewTab('analytics')}
+        <span
           title={`${stats.successRate}% success rate`}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-sm font-semibold border transition-colors hover:bg-violet-500/15 bg-violet-500/10 border-violet-500/20 text-violet-300"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-sm font-semibold border bg-violet-500/10 border-violet-500/20 text-violet-300"
         >
           <ShieldCheck className="w-3 h-3" />
           {stats.successRate}%
-        </motion.button>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          onClick={() => setOverviewTab('realtime')}
+        </span>
+        <span
           title={`${stats.activeAgents} active agents`}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-sm font-semibold border transition-colors hover:bg-rose-500/15 bg-rose-500/10 border-rose-500/20 text-rose-300"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-sm font-semibold border bg-rose-500/10 border-rose-500/20 text-rose-300"
         >
           <Cpu className="w-3 h-3" />
           {stats.activeAgents}
-        </motion.button>
+        </span>
       </div>
     </div>
   );
@@ -193,6 +193,9 @@ export default function DashboardHome() {
               personas={personas}
             />
           </div>
+
+          {/* Memory Insight Suggestions */}
+          <MemoryActionsPanel actions={memoryActions} onDismiss={dismissMemoryAction} />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 

@@ -44,24 +44,39 @@ pub trait ConnectorStrategy: Send + Sync {
 
     /// Perform rotation for this credential.
     /// The default implementation delegates to a healthcheck round-trip.
+    /// On failure, restores the original decrypted fields to prevent data loss.
     async fn rotate(
         &self,
         pool: &DbPool,
         credential: &PersonaCredential,
     ) -> Result<String, AppError> {
-        let result = super::healthcheck::run_healthcheck(pool, &credential.id).await?;
-        if result.success {
-            let fields = crate::db::repos::resources::credentials::get_decrypted_fields(pool, credential)?;
-            if self.is_oauth(&fields) {
-                Ok(format!("OAuth token refreshed and verified: {}", result.message))
-            } else {
-                Ok(format!("API key verified healthy: {}", result.message))
+        // 1. Snapshot current fields before rotation attempt
+        let original_fields = crate::db::repos::resources::credentials::get_decrypted_fields(pool, credential)?;
+
+        // 2. Attempt rotation via healthcheck
+        let result = super::healthcheck::run_healthcheck(pool, &credential.id).await;
+
+        match result {
+            Ok(hc) if hc.success => {
+                let fields = crate::db::repos::resources::credentials::get_decrypted_fields(pool, credential)?;
+                if self.is_oauth(&fields) {
+                    Ok(format!("OAuth token refreshed and verified: {}", hc.message))
+                } else {
+                    Ok(format!("API key verified healthy: {}", hc.message))
+                }
             }
-        } else {
-            Err(AppError::Internal(format!(
-                "Healthcheck failed during rotation: {}",
-                result.message
-            )))
+            Ok(hc) => {
+                // 3. Failed — restore original credentials
+                let _ = crate::db::repos::resources::credentials::save_fields(pool, &credential.id, &original_fields);
+                Err(AppError::Internal(format!(
+                    "Rotation failed (credentials restored): {}", hc.message
+                )))
+            }
+            Err(e) => {
+                // Restore original credentials on error
+                let _ = crate::db::repos::resources::credentials::save_fields(pool, &credential.id, &original_fields);
+                Err(e)
+            }
         }
     }
 }
@@ -146,6 +161,8 @@ pub fn init_registry() {
     REGISTRY.get_or_init(|| {
         let mut reg = StrategyRegistry::new();
         reg.register("google-oauth", Box::new(GoogleOAuthStrategy));
+        reg.register("buffer", Box::new(BufferStrategy));
+        reg.register("circleci", Box::new(CircleCIStrategy));
         reg.register("clickup", Box::new(ClickUpStrategy));
         reg.register("github", Box::new(GitHubStrategy));
         reg
@@ -153,9 +170,11 @@ pub fn init_registry() {
 }
 
 /// Get a reference to the global strategy registry.
-/// Panics if called before `init_registry()`.
-pub fn registry() -> &'static StrategyRegistry {
-    REGISTRY.get().expect("connector strategy registry not initialised — call init_registry() first")
+/// Returns an error if called before `init_registry()`.
+pub fn registry() -> Result<&'static StrategyRegistry, crate::error::AppError> {
+    REGISTRY.get().ok_or_else(|| crate::error::AppError::Internal(
+        "Connector strategy registry not initialised — call init_registry() first".into()
+    ))
 }
 
 // ── Shared helpers ─────────────────────────────────────────────────
@@ -181,6 +200,8 @@ fn find_auth_token(fields: &HashMap<String, String>) -> Option<String> {
         "bot_token",
         "access_token",
         "api_token",
+        "personal_access_token",
+        "personal_token",
         "apiKey",
         "apiToken",
         "accessToken",
@@ -289,6 +310,62 @@ async fn exchange_google_refresh_token(
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
         .ok_or_else(|| AppError::Internal("Google token refresh did not return access_token".into()))
+}
+
+// ── Buffer ─────────────────────────────────────────────────────────
+
+pub struct BufferStrategy;
+
+#[async_trait]
+impl ConnectorStrategy for BufferStrategy {
+    fn is_oauth(&self, _fields: &HashMap<String, String>) -> bool {
+        false
+    }
+
+    async fn resolve_auth_token(
+        &self,
+        _connector_metadata: Option<&str>,
+        fields: &HashMap<String, String>,
+    ) -> Result<Option<String>, AppError> {
+        Ok(find_auth_token(fields))
+    }
+
+    /// Buffer expects the access token as a query parameter, not a header.
+    fn apply_auth(
+        &self,
+        request: reqwest::RequestBuilder,
+        token: &str,
+    ) -> reqwest::RequestBuilder {
+        request.query(&[("access_token", token)])
+    }
+}
+
+// ── CircleCI ───────────────────────────────────────────────────────
+
+pub struct CircleCIStrategy;
+
+#[async_trait]
+impl ConnectorStrategy for CircleCIStrategy {
+    fn is_oauth(&self, _fields: &HashMap<String, String>) -> bool {
+        false
+    }
+
+    async fn resolve_auth_token(
+        &self,
+        _connector_metadata: Option<&str>,
+        fields: &HashMap<String, String>,
+    ) -> Result<Option<String>, AppError> {
+        Ok(find_auth_token(fields))
+    }
+
+    /// CircleCI expects a `Circle-Token` header, not Bearer.
+    fn apply_auth(
+        &self,
+        request: reqwest::RequestBuilder,
+        token: &str,
+    ) -> reqwest::RequestBuilder {
+        request.header("Circle-Token", token)
+    }
 }
 
 // ── ClickUp ────────────────────────────────────────────────────────

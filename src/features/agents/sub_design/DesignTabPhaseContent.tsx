@@ -7,10 +7,15 @@ import { DesignPhaseRefining } from './DesignPhaseRefining';
 import { DesignPhasePreview } from './DesignPhasePreview';
 import { DesignPhaseApplying } from './DesignPhaseApplying';
 import { DesignPhaseApplied } from './DesignPhaseApplied';
+import { DesignPhaseError } from './DesignPhaseError';
 import { DesignConversationHistory } from './DesignConversationHistory';
 import type { DesignAnalysisResult, IntentCompilationResult, DesignPhase, DesignQuestion, DesignConversation } from '@/lib/types/designTypes';
 import type { DesignFilesSection } from '@/lib/types/frontendTypes';
 import type { PersonaWithDetails, DbPersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
+import type { FailedOperation } from '@/hooks/design/applyDesignResult';
+import type { DesignDriftEvent } from '@/lib/design/designDrift';
+import type { ExamplePair } from './ExamplePairCollector';
+import type { DesignInputMode } from './useDesignTabState';
 
 export interface DesignTabPhaseContentProps {
   phase: DesignPhase;
@@ -27,7 +32,10 @@ export interface DesignTabPhaseContentProps {
   error: string | null;
   onStartAnalysis: () => void;
   intentMode: boolean;
-  onIntentModeChange: (v: boolean) => void;
+  inputMode: DesignInputMode;
+  onInputModeChange: (mode: DesignInputMode) => void;
+  examplePairs: ExamplePair[];
+  onExamplePairsChange: (pairs: ExamplePair[]) => void;
   outputLines: string[];
   result: DesignAnalysisResult | null;
   question: DesignQuestion | null;
@@ -49,11 +57,16 @@ export interface DesignTabPhaseContentProps {
   onDiscard: () => void;
   onSendRefinement: () => void;
   applyWarnings?: string[];
+  failedOperations?: FailedOperation[];
+  onRetryFailed?: () => void;
   onReset: () => void;
   conversations: DesignConversation[];
   activeConversationId: string | null;
   onResumeConversation: (conversation: DesignConversation) => void;
   onDeleteConversation: (id: string) => void;
+  onRetry: () => void;
+  driftEvents?: DesignDriftEvent[];
+  onDismissDrift?: (id: string) => void;
 }
 
 export function DesignTabPhaseContent({
@@ -71,7 +84,10 @@ export function DesignTabPhaseContent({
   error,
   onStartAnalysis,
   intentMode,
-  onIntentModeChange,
+  inputMode,
+  onInputModeChange,
+  examplePairs,
+  onExamplePairsChange,
   outputLines,
   result,
   question,
@@ -93,23 +109,30 @@ export function DesignTabPhaseContent({
   onDiscard,
   onSendRefinement,
   applyWarnings,
+  failedOperations,
+  onRetryFailed,
   onReset,
   conversations,
   activeConversationId,
   onResumeConversation,
   onDeleteConversation,
+  onRetry,
+  driftEvents,
+  onDismissDrift,
 }: DesignTabPhaseContentProps) {
   return (
     <div className="space-y-4" aria-live="polite" aria-atomic="true">
       <PhaseIndicator phase={phase} />
 
-      {/* Conversation history -- always visible in idle phase */}
-      {phase === 'idle' && conversations.length > 0 && (
+      {/* Conversation history + drift notifications -- always visible in idle phase */}
+      {phase === 'idle' && (conversations.length > 0 || (driftEvents && driftEvents.some(e => !e.dismissed))) && (
         <DesignConversationHistory
           conversations={conversations}
           activeConversationId={activeConversationId}
           onResumeConversation={onResumeConversation}
           onDeleteConversation={onDeleteConversation}
+          driftEvents={driftEvents}
+          onDismissDrift={onDismissDrift}
         />
       )}
 
@@ -130,7 +153,10 @@ export function DesignTabPhaseContent({
             error={error}
             onStartAnalysis={onStartAnalysis}
             intentMode={intentMode}
-            onIntentModeChange={onIntentModeChange}
+            inputMode={inputMode}
+            onInputModeChange={onInputModeChange}
+            examplePairs={examplePairs}
+            onExamplePairsChange={onExamplePairsChange}
           />
         )}
 
@@ -200,7 +226,11 @@ export function DesignTabPhaseContent({
         {phase === 'applying' && <DesignPhaseApplying />}
 
         {phase === 'applied' && (
-          <DesignPhaseApplied result={result} warnings={applyWarnings} onReset={onReset} />
+          <DesignPhaseApplied result={result} warnings={applyWarnings} failedOperations={failedOperations} onRetryFailed={onRetryFailed} onReset={onReset} />
+        )}
+
+        {phase === 'error' && (
+          <DesignPhaseError error={error} onRetry={onRetry} onReset={onReset} />
         )}
       </AnimatePresence>
     </div>

@@ -16,6 +16,7 @@ import { usePersonaStore } from '@/stores/personaStore';
 import { useAuthStore } from '@/stores/authStore';
 import type { SidebarSection } from '@/lib/types/types';
 import { useMemo } from 'react';
+import TourLauncher from '@/features/onboarding/components/TourLauncher';
 
 // ---------------------------------------------------------------------------
 // Card data
@@ -386,6 +387,9 @@ export default function HomeWelcome() {
                 : 'Get started by creating your first agent or exploring the platform.'}
             </motion.p>
           </motion.div>
+
+          {/* Guided tour CTA */}
+          <TourLauncher />
 
           {/* Section label */}
           <motion.div

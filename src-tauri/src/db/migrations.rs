@@ -221,6 +221,21 @@ CREATE INDEX IF NOT EXISTS idx_pmr_status  ON persona_manual_reviews(status);
 CREATE INDEX IF NOT EXISTS idx_pmr_created ON persona_manual_reviews(created_at DESC);
 
 -- ============================================================================
+-- Review Messages (conversational thread per review)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS review_messages (
+    id          TEXT PRIMARY KEY,
+    review_id   TEXT NOT NULL REFERENCES persona_manual_reviews(id) ON DELETE CASCADE,
+    role        TEXT NOT NULL DEFAULT 'user',
+    content     TEXT NOT NULL,
+    metadata    TEXT,
+    created_at  TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_rm_review ON review_messages(review_id);
+CREATE INDEX IF NOT EXISTS idx_rm_created ON review_messages(review_id, created_at ASC);
+
+-- ============================================================================
 -- Messages
 -- ============================================================================
 
@@ -412,17 +427,18 @@ CREATE INDEX IF NOT EXISTS idx_ppv_version ON persona_prompt_versions(persona_id
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS persona_teams (
-    id          TEXT PRIMARY KEY,
-    project_id  TEXT,
-    name        TEXT NOT NULL,
-    description TEXT,
-    canvas_data TEXT,
-    team_config TEXT,
-    icon        TEXT,
-    color       TEXT NOT NULL DEFAULT '#6B7280',
-    enabled     INTEGER NOT NULL DEFAULT 1,
-    created_at  TEXT NOT NULL,
-    updated_at  TEXT NOT NULL
+    id              TEXT PRIMARY KEY,
+    project_id      TEXT,
+    parent_team_id  TEXT REFERENCES persona_teams(id) ON DELETE SET NULL,
+    name            TEXT NOT NULL,
+    description     TEXT,
+    canvas_data     TEXT,
+    team_config     TEXT,
+    icon            TEXT,
+    color           TEXT NOT NULL DEFAULT '#6B7280',
+    enabled         INTEGER NOT NULL DEFAULT 1,
+    created_at      TEXT NOT NULL,
+    updated_at      TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS persona_team_members (

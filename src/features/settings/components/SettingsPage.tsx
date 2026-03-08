@@ -6,6 +6,7 @@ import NotificationSettings from '@/features/settings/sub_notifications/Notifica
 import EngineSettings from '@/features/settings/sub_engine/EngineSettings';
 import ByomSettings from '@/features/settings/sub_byom/ByomSettings';
 import DataPortabilitySettings from '@/features/settings/sub_portability/DataPortabilitySettings';
+import AdminSettings from '@/features/settings/sub_admin/AdminSettings';
 
 export default function SettingsPage() {
   const settingsTab = usePersonaStore((s) => s.settingsTab);
@@ -18,6 +19,7 @@ export default function SettingsPage() {
       case 'engine': return <EngineSettings />;
       case 'byom': return <ByomSettings />;
       case 'portability': return <DataPortabilitySettings />;
+      case 'admin': return <AdminSettings />;
       default: return <AccountSettings />;
     }
   })();

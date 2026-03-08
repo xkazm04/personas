@@ -65,6 +65,58 @@ export function profileToModelConfig(mp: ModelProfile): ModelTestConfig | null {
   return { id: mp.model || 'custom', provider: mp.provider, model: mp.model, base_url: mp.base_url, auth_token: mp.auth_token };
 }
 
+// ── Model resolution ────────────────────────────────────────────────
+
+export type ModelSource = 'override' | 'persona' | 'default';
+
+const DEFAULT_PROFILE: ModelProfile = { model: 'sonnet', provider: 'anthropic' };
+
+export interface ResolvedModel {
+  profile: ModelProfile;
+  config: ModelTestConfig | null;
+  label: string;
+  source: ModelSource;
+}
+
+/**
+ * Resolve the effective model for a use case by cascading:
+ *   1. use_case.model_override
+ *   2. persona.model_profile (JSON string)
+ *   3. hardcoded sonnet/anthropic default
+ */
+export function resolveEffectiveModel(
+  useCaseOverride: ModelProfile | undefined,
+  personaModelProfile: string | null | undefined,
+): ResolvedModel {
+  if (useCaseOverride) {
+    return {
+      profile: useCaseOverride,
+      config: profileToModelConfig(useCaseOverride),
+      label: profileToLabel(useCaseOverride),
+      source: 'override',
+    };
+  }
+  if (personaModelProfile) {
+    try {
+      const parsed = JSON.parse(personaModelProfile) as ModelProfile;
+      return {
+        profile: parsed,
+        config: profileToModelConfig(parsed),
+        label: profileToLabel(parsed),
+        source: 'persona',
+      };
+    } catch {
+      // intentional: non-critical — JSON parse fallback
+    }
+  }
+  return {
+    profile: DEFAULT_PROFILE,
+    config: profileToModelConfig(DEFAULT_PROFILE),
+    label: profileToLabel(DEFAULT_PROFILE),
+    source: 'default',
+  };
+}
+
 // ── Channel helpers ─────────────────────────────────────────────────
 
 export const CHANNEL_TYPES: { type: NotificationChannelType; label: string; Icon: typeof Hash }[] = [

@@ -291,7 +291,7 @@ pub fn vault_status(
     let total = all.len();
     let plaintext = all.iter().filter(|c| crypto::is_plaintext(&c.iv)).count();
     let encrypted = total - plaintext;
-    let source = crypto::key_source();
+    let source = crypto::key_source_label();
 
     Ok(serde_json::json!({
         "key_source": source,

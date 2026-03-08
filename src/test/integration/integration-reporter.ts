@@ -54,9 +54,9 @@ interface IntegrationReport {
 /* ------------------------------------------------------------------ */
 
 const PROVIDER_PATTERNS: [RegExp, string][] = [
+  [/copilot/i, 'Copilot CLI'],
   [/claude/i, 'Claude Code'],
   [/gemini/i, 'Gemini CLI'],
-  [/copilot/i, 'Copilot CLI'],
 ];
 
 const ROUND_PATTERNS: [RegExp, string][] = [
@@ -66,6 +66,9 @@ const ROUND_PATTERNS: [RegExp, string][] = [
   [/round4/i, 'round4-complex-reasoning'],
   [/round5/i, 'round5-resilience'],
   [/round6/i, 'round6-head-to-head'],
+  [/round7/i, 'round7-auto-cred-guided'],
+  [/round8/i, 'round8-feature-areas'],
+  [/round9/i, 'round9-business-tasks'],
 ];
 
 function detectProvider(name: string): string {

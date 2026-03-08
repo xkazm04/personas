@@ -141,7 +141,7 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
       {tailLines.length > 0 && (
         <div
           ref={tailRef}
-          className="px-3 py-2 rounded-xl bg-secondary/30 border border-primary/10 text-sm text-muted-foreground/80 font-mono max-h-[4.5rem] overflow-y-auto"
+          className="px-3 hidden py-2 rounded-xl bg-secondary/30 border border-primary/10 text-sm text-muted-foreground/80 font-mono max-h-[4.5rem] overflow-y-auto"
         >
           {tailLines.map((line, i) => (
             <div key={outputLines.length - tailLines.length + i}>{line}</div>

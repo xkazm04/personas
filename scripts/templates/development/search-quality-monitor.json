@@ -709,6 +709,28 @@
         "label": "Intelligent Query Grouping",
         "content": "Related queries are grouped using prefix matching and Levenshtein distance (threshold: 2 edits for queries under 15 characters). Examples: 'react hooks' + 'react hook' + 'react hooks tutorial' → single group. This prevents duplicate Notion tickets and consolidates search volume for more accurate prioritization."
       }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Confirmation required for high-priority actions",
+        "context": "High-priority confirmation gate detected"
+      },
+      {
+        "type": "user_message",
+        "label": "Real-time Slack notifications for status updates and alerts (periodic digests, critical alerts, error notifications)",
+        "context": "2 notification channel(s) configured: slack, slack"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Historical baselines and trend data for comparative analysis",
+        "context": "Tracks: recurring patterns, calibrated thresholds"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits events: execution completed, credential status change, threshold breached",
+        "context": "2 event subscription(s) configured — agent participates in event bus"
+      }
     ]
   }
 }

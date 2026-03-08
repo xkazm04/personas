@@ -4,7 +4,10 @@ import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/Co
 import { usePersonaStore } from '@/stores/personaStore';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { extractConnectorNames } from '@/lib/personas/utils';
+import { useOnboardingScore } from '@/features/agents/components/onboarding/useOnboardingChecklist';
+import { SidebarScoreRing } from '@/features/agents/components/onboarding/OnboardingChecklist';
 import type { DbPersona } from '@/lib/types/types';
+import type { DragPayload } from '@/lib/types/frontendTypes';
 
 export function SidebarPersonaCard({
   persona,
@@ -21,6 +24,7 @@ export function SidebarPersonaCard({
   const lastRun = usePersonaStore((s) => s.personaLastRun[persona.id]);
   const health = usePersonaStore((s) => s.personaHealthMap[persona.id]);
   const connectors = useMemo(() => extractConnectorNames(persona), [persona]);
+  const onboardingScore = useOnboardingScore(persona.id);
 
   // Health indicator color
   const healthColor = health?.status === 'failing' ? 'bg-red-400'
@@ -60,9 +64,10 @@ export function SidebarPersonaCard({
       <div className="flex items-center gap-1.5">
         <span className={`text-sm font-medium truncate flex-1 ${
           isSelected ? 'text-foreground' : 'text-muted-foreground/90'
-        }`}>
+        }`} title={persona.name}>
           {persona.name}
         </span>
+        <SidebarScoreRing score={onboardingScore} />
         <div
           className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
             persona.enabled ? healthColor : 'bg-muted-foreground/30'
@@ -102,9 +107,10 @@ export function DraggablePersonaCard({
   onClick: () => void;
   onContextMenu?: (e: React.MouseEvent) => void;
 }) {
+  const dragData: DragPayload = { type: 'persona', personaId: persona.id };
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: persona.id,
-    data: { type: 'persona', persona },
+    data: dragData,
   });
 
   const style = transform

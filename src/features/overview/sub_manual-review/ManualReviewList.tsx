@@ -1,16 +1,31 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, X, ClipboardCheck, CheckSquare, Square, AlertTriangle, ExternalLink } from 'lucide-react';
+import {
+  Check,
+  X,
+  ClipboardCheck,
+  Send,
+  MessageSquare,
+  ChevronRight,
+  AlertTriangle,
+  CheckSquare,
+  Square,
+  ExternalLink,
+  Bot,
+  User,
+  Zap,
+  Plus,
+} from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { FilterBar } from '@/features/shared/components/FilterBar';
-import DetailModal from '@/features/overview/components/DetailModal';
 import { PersonaSelect } from '@/features/overview/sub_usage/DashboardFilters';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/types/frontendTypes';
+import type { ReviewMessage } from '@/lib/bindings/ReviewMessage';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { STATUS_COLORS } from '@/lib/utils/designTokens';
-import { useVirtualList } from '@/hooks/utility/useVirtualList';
+import { listReviewMessages, addReviewMessage, seedMockManualReview } from '@/api/reviews';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -28,44 +43,34 @@ const SEVERITY_LABELS: Record<string, string> = {
   critical: 'Critical',
 };
 
-/** Renders distinct shapes per severity for WCAG 1.4.1 compliance */
 function SeverityIndicator({ severity }: { severity: string }) {
   const label = SEVERITY_LABELS[severity] ?? 'Info';
-
   if (severity === 'critical') {
-    // Triangle shape — red
     return (
       <span className="flex-shrink-0" aria-label={`${label} severity`} title={label}>
         <svg width="12" height="12" viewBox="0 0 12 12" className="block">
           <polygon points="6,1 11,11 1,11" fill="rgba(239,68,68,0.15)" stroke="rgba(239,68,68,0.5)" strokeWidth="1" />
           <text x="6" y="9.5" textAnchor="middle" fontSize="6" fontWeight="bold" fill="rgba(239,68,68,0.9)">!</text>
         </svg>
-        <span className="sr-only">{label} severity</span>
       </span>
     );
   }
-
   if (severity === 'warning') {
-    // Diamond shape — amber
     return (
       <span className="flex-shrink-0" aria-label={`${label} severity`} title={label}>
         <svg width="12" height="12" viewBox="0 0 12 12" className="block">
           <polygon points="6,1 11,6 6,11 1,6" fill="rgba(245,158,11,0.15)" stroke="rgba(245,158,11,0.5)" strokeWidth="1" />
           <text x="6" y="8.5" textAnchor="middle" fontSize="6" fontWeight="bold" fill="rgba(245,158,11,0.9)">!</text>
         </svg>
-        <span className="sr-only">{label} severity</span>
       </span>
     );
   }
-
-  // info — circle shape — blue (default)
   return (
     <span className="flex-shrink-0" aria-label={`${label} severity`} title={label}>
       <svg width="12" height="12" viewBox="0 0 12 12" className="block">
         <circle cx="6" cy="6" r="5" fill="rgba(59,130,246,0.15)" stroke="rgba(59,130,246,0.5)" strokeWidth="1" />
         <text x="6" y="8.5" textAnchor="middle" fontSize="6" fontWeight="bold" fill="rgba(59,130,246,0.9)">i</text>
       </svg>
-      <span className="sr-only">{label} severity</span>
     </span>
   );
 }
@@ -80,7 +85,385 @@ const FILTER_LABELS: Record<FilterStatus, string> = {
 };
 
 // ---------------------------------------------------------------------------
-// Component
+// Suggested Actions Parser
+// ---------------------------------------------------------------------------
+
+function parseSuggestedActions(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed.map(String);
+  } catch {
+    // not JSON — split by newlines or semicolons
+  }
+  return raw.split(/[;\n]+/).map((s) => s.trim()).filter(Boolean);
+}
+
+// ---------------------------------------------------------------------------
+// Context Data Renderer
+// ---------------------------------------------------------------------------
+
+function ContextDataPreview({ raw }: { raw: string | null | undefined }) {
+  if (!raw) return null;
+  let parsed: Record<string, unknown> | null;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return <p className="text-sm text-foreground/70 whitespace-pre-wrap">{raw}</p>;
+  }
+  if (!parsed || typeof parsed !== 'object') return null;
+
+  return (
+    <div className="space-y-1">
+      {Object.entries(parsed).map(([key, val]) => (
+        <div key={key} className="flex gap-2 text-sm">
+          <span className="text-muted-foreground/60 font-mono flex-shrink-0">{key}:</span>
+          <span className="text-foreground/80 break-all">{typeof val === 'string' ? val : JSON.stringify(val)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Review Inbox Item
+// ---------------------------------------------------------------------------
+
+function InboxItem({
+  review,
+  isActive,
+  onClick,
+}: {
+  review: ManualReviewItem;
+  isActive: boolean;
+  onClick: () => void;
+}) {
+  const status = STATUS_COLORS[review.status] ?? STATUS_COLORS.pending!;
+  const statusLabel = STATUS_LABELS[review.status] ?? 'Pending';
+
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full text-left px-3 py-2.5 border-b border-primary/[0.06] transition-colors group ${
+        isActive
+          ? 'bg-primary/[0.08] border-l-2 border-l-primary'
+          : 'border-l-2 border-l-transparent hover:bg-white/[0.04]'
+      }`}
+    >
+      <div className="flex items-start gap-2.5">
+        {/* Persona avatar */}
+        <div
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0 mt-0.5"
+          style={{ backgroundColor: (review.persona_color || '#6366f1') + '15' }}
+        >
+          {review.persona_icon || '?'}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sm font-medium text-foreground/90 truncate">
+              {review.persona_name || 'Unknown'}
+            </span>
+            <span className="text-xs text-muted-foreground/60 flex-shrink-0">
+              {formatRelativeTime(review.created_at)}
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground/70 truncate mt-0.5">
+            {review.content.slice(0, 80)}
+          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <SeverityIndicator severity={review.severity} />
+            <span
+              className={`inline-block px-1.5 py-0.5 rounded text-xs font-medium border ${status.bgColor} ${status.color} ${status.borderColor}`}
+            >
+              {statusLabel}
+            </span>
+          </div>
+        </div>
+        <ChevronRight className={`w-3.5 h-3.5 mt-1 flex-shrink-0 transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground/30 group-hover:text-muted-foreground/50'}`} />
+      </div>
+    </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Conversation Thread
+// ---------------------------------------------------------------------------
+
+function ConversationThread({
+  review,
+  onAction,
+  isProcessing,
+}: {
+  review: ManualReviewItem;
+  onAction: (status: ManualReviewStatus, notes?: string) => Promise<void>;
+  isProcessing: boolean;
+}) {
+  const [messages, setMessages] = useState<ReviewMessage[]>([]);
+  const [input, setInput] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Fetch conversation messages
+  useEffect(() => {
+    let cancelled = false;
+    listReviewMessages(review.id).then((msgs) => {
+      if (!cancelled) setMessages(msgs);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [review.id]);
+
+  // Auto-scroll on new messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages.length]);
+
+  const handleSend = useCallback(async () => {
+    const text = input.trim();
+    if (!text || isSending) return;
+    setIsSending(true);
+    try {
+      const msg = await addReviewMessage(review.id, 'user', text);
+      setMessages((prev) => [...prev, msg]);
+      setInput('');
+    } finally {
+      setIsSending(false);
+    }
+  }, [input, isSending, review.id]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    },
+    [handleSend],
+  );
+
+  // Parse suggested actions
+  const suggestedActions = useMemo(
+    () => parseSuggestedActions((review as unknown as { suggested_actions?: string }).suggested_actions),
+    [review],
+  );
+
+  // Parse context data — the ManualReviewItem doesn't have context_data directly,
+  // but we can access it from the raw review content or via the original data
+  const contextData = (review as unknown as { context_data?: string }).context_data;
+  const isPending = review.status === 'pending';
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Thread Header */}
+      <div className="flex-shrink-0 px-4 py-3 border-b border-primary/10 bg-secondary/20">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-base border border-primary/15 flex-shrink-0"
+              style={{ backgroundColor: (review.persona_color || '#6366f1') + '15' }}
+            >
+              {review.persona_icon || '?'}
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold text-foreground/90 truncate">
+                {review.persona_name || 'Unknown Persona'}
+              </h3>
+              <div className="flex items-center gap-2 mt-0.5">
+                <SeverityIndicator severity={review.severity} />
+                <span className="text-xs text-muted-foreground/60">
+                  {SEVERITY_LABELS[review.severity] ?? 'Info'} severity
+                </span>
+                <span className="text-xs text-muted-foreground/40">·</span>
+                <span className="text-xs text-muted-foreground/60">
+                  {formatRelativeTime(review.created_at)}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={() => {
+                const store = usePersonaStore.getState();
+                store.selectPersona(review.persona_id);
+                store.setEditorTab('use-cases');
+              }}
+              className="inline-flex items-center gap-1 text-xs text-blue-400/70 hover:text-blue-400 transition-colors"
+              title="View execution"
+            >
+              <ExternalLink className="w-3 h-3" />
+              Execution
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        {/* Initial review content as first "message" from persona */}
+        <div className="flex gap-3">
+          <div className="w-7 h-7 rounded-full bg-violet-500/15 border border-violet-500/25 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <Bot className="w-3.5 h-3.5 text-violet-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-medium text-violet-400">
+                {review.persona_name || 'Agent'}
+              </span>
+              <span className="text-xs text-muted-foreground/40">
+                {formatRelativeTime(review.created_at)}
+              </span>
+            </div>
+            <div className="rounded-xl bg-violet-500/[0.06] border border-violet-500/15 px-3.5 py-2.5">
+              <p className="text-sm text-foreground/85 leading-relaxed whitespace-pre-wrap">
+                {review.content}
+              </p>
+            </div>
+
+            {/* Context data preview */}
+            {contextData && (
+              <div className="mt-2 rounded-lg bg-secondary/30 border border-primary/10 px-3 py-2">
+                <div className="text-xs font-mono text-muted-foreground/60 uppercase mb-1">Context</div>
+                <ContextDataPreview raw={contextData} />
+              </div>
+            )}
+
+            {/* Suggested actions as interactive buttons */}
+            {suggestedActions.length > 0 && isPending && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {suggestedActions.map((action, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setInput(action)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/15 transition-colors"
+                  >
+                    <Zap className="w-3 h-3" />
+                    {action}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Thread messages */}
+        {messages.map((msg) => {
+          const isUser = msg.role === 'user';
+          return (
+            <motion.div
+              key={msg.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}
+            >
+              <div
+                className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 border ${
+                  isUser
+                    ? 'bg-blue-500/15 border-blue-500/25'
+                    : 'bg-violet-500/15 border-violet-500/25'
+                }`}
+              >
+                {isUser ? (
+                  <User className="w-3.5 h-3.5 text-blue-400" />
+                ) : (
+                  <Bot className="w-3.5 h-3.5 text-violet-400" />
+                )}
+              </div>
+              <div className={`flex-1 min-w-0 ${isUser ? 'flex flex-col items-end' : ''}`}>
+                <div className={`flex items-center gap-2 mb-1 ${isUser ? 'flex-row-reverse' : ''}`}>
+                  <span className={`text-xs font-medium ${isUser ? 'text-blue-400' : 'text-violet-400'}`}>
+                    {isUser ? 'You' : (review.persona_name || 'Agent')}
+                  </span>
+                  <span className="text-xs text-muted-foreground/40">
+                    {formatRelativeTime(msg.created_at)}
+                  </span>
+                </div>
+                <div
+                  className={`rounded-xl px-3.5 py-2.5 max-w-[85%] ${
+                    isUser
+                      ? 'bg-blue-500/[0.08] border border-blue-500/15'
+                      : 'bg-violet-500/[0.06] border border-violet-500/15'
+                  }`}
+                >
+                  <p className="text-sm text-foreground/85 leading-relaxed whitespace-pre-wrap">
+                    {msg.content}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
+
+        {/* Resolved notice */}
+        {!isPending && (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/30 border border-primary/10">
+            <Check className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="text-sm text-muted-foreground/70">
+              Review {review.status} {review.resolved_at ? `on ${new Date(review.resolved_at).toLocaleString()}` : ''}
+            </span>
+            {review.reviewer_notes && (
+              <span className="text-sm text-foreground/70 italic ml-1">— {review.reviewer_notes}</span>
+            )}
+          </div>
+        )}
+
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Action Bar */}
+      {isPending && (
+        <div className="flex-shrink-0 border-t border-primary/10 bg-secondary/20 px-4 py-3 space-y-2">
+          {/* Message input */}
+          <div className="flex items-end gap-2">
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Reply to this review..."
+              rows={1}
+              className="flex-1 text-sm bg-background/50 border border-primary/15 rounded-xl px-3 py-2 text-foreground/80 placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/30 max-h-24"
+              style={{ minHeight: '36px' }}
+            />
+            <button
+              onClick={handleSend}
+              disabled={!input.trim() || isSending}
+              className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+              title="Send message"
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground/50">
+              Enter to send · Shift+Enter for new line
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onAction('approved', input.trim() || undefined)}
+                disabled={isProcessing}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Check className="w-3.5 h-3.5" />
+                {isProcessing ? 'Processing…' : 'Approve'}
+              </button>
+              <button
+                onClick={() => onAction('rejected', input.trim() || undefined)}
+                disabled={isProcessing}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <X className="w-3.5 h-3.5" />
+                {isProcessing ? 'Processing…' : 'Reject'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main Component — Split Pane Layout
 // ---------------------------------------------------------------------------
 
 export default function ManualReviewList() {
@@ -90,21 +473,19 @@ export default function ManualReviewList() {
   const updateManualReview = usePersonaStore((s) => s.updateManualReview);
 
   const [filter, setFilter] = useState<FilterStatus>('all');
-  const [selectedReview, setSelectedReview] = useState<ManualReviewItem | null>(null);
-  const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
-  const [notes, setNotes] = useState('');
+  const [selectedPersonaId, setSelectedPersonaId] = useState('');
+  const [activeReviewId, setActiveReviewId] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmAction, setConfirmAction] = useState<ManualReviewStatus | null>(null);
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
-  const [bulkError, setBulkError] = useState<string | null>(null);
-  const [isModalProcessing, setIsModalProcessing] = useState(false);
 
-  // Always fetch all reviews so we can compute counts client-side
   useEffect(() => {
     fetchManualReviews();
   }, [fetchManualReviews]);
 
-  // Compute counts from the full reviews array
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = { all: manualReviews.length, pending: 0, approved: 0, rejected: 0 };
     for (const r of manualReviews) {
@@ -113,37 +494,35 @@ export default function ManualReviewList() {
     return counts;
   }, [manualReviews]);
 
-  // Filter client-side by status and persona
   const filteredReviews = useMemo(() => {
     let result = manualReviews;
-    if (filter !== 'all') {
-      result = result.filter((r) => r.status === filter);
-    }
-    if (selectedPersonaId) {
-      result = result.filter((r) => r.persona_id === selectedPersonaId);
-    }
+    if (filter !== 'all') result = result.filter((r) => r.status === filter);
+    if (selectedPersonaId) result = result.filter((r) => r.persona_id === selectedPersonaId);
     return result;
   }, [manualReviews, filter, selectedPersonaId]);
 
-  // Pending reviews in the current filtered view (selectable)
-  const selectablePendingIds = useMemo(
-    () => new Set(filteredReviews.filter((r) => r.status === 'pending').map((r) => r.id)),
-    [filteredReviews]
+  const activeReview = useMemo(
+    () => filteredReviews.find((r) => r.id === activeReviewId) ?? null,
+    [filteredReviews, activeReviewId],
   );
 
-  // Clear selection when filter changes
+  // Auto-select first review when list changes
+  useEffect(() => {
+    if (!activeReview && filteredReviews.length > 0) {
+      setActiveReviewId(filteredReviews[0]!.id);
+    }
+  }, [activeReview, filteredReviews]);
+
+  // Clear selection on filter change
   useEffect(() => {
     setSelectedIds(new Set());
     setConfirmAction(null);
-    setBulkError(null);
   }, [filter, selectedPersonaId]);
 
-  // Sync modal notes when opening a review
-  useEffect(() => {
-    if (selectedReview) {
-      setNotes(selectedReview.reviewer_notes || '');
-    }
-  }, [selectedReview]);
+  const selectablePendingIds = useMemo(
+    () => new Set(filteredReviews.filter((r) => r.status === 'pending').map((r) => r.id)),
+    [filteredReviews],
+  );
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
@@ -155,66 +534,63 @@ export default function ManualReviewList() {
   }, []);
 
   const toggleSelectAll = useCallback(() => {
-    setSelectedIds((prev) => {
-      if (prev.size === selectablePendingIds.size && selectablePendingIds.size > 0) {
-        return new Set();
-      }
-      return new Set(selectablePendingIds);
-    });
+    setSelectedIds((prev) =>
+      prev.size === selectablePendingIds.size && selectablePendingIds.size > 0
+        ? new Set()
+        : new Set(selectablePendingIds),
+    );
   }, [selectablePendingIds]);
 
-  const handleBulkAction = useCallback(async (status: ManualReviewStatus) => {
-    setIsBulkProcessing(true);
-    setBulkError(null);
-    try {
-      const ids = Array.from(selectedIds);
-      const results = await Promise.allSettled(
-        ids.map((id) => updateManualReview(id, { status }))
-      );
+  const handleAction = useCallback(
+    async (status: ManualReviewStatus, notes?: string) => {
+      if (!activeReview || isProcessing) return;
+      setIsProcessing(true);
+      try {
+        await updateManualReview(activeReview.id, {
+          status,
+          reviewer_notes: notes,
+        });
+        // Auto-advance to next pending review
+        const nextPending = filteredReviews.find(
+          (r) => r.id !== activeReview.id && r.status === 'pending',
+        );
+        if (nextPending) setActiveReviewId(nextPending.id);
+      } finally {
+        setIsProcessing(false);
+      }
+    },
+    [activeReview, isProcessing, updateManualReview, filteredReviews],
+  );
 
-      const failedIds = new Set<string>();
-      results.forEach((result, i) => {
-        if (result.status === 'rejected') failedIds.add(ids[i]!);
-      });
-
-      if (failedIds.size === 0) {
+  const handleBulkAction = useCallback(
+    async (status: ManualReviewStatus) => {
+      setIsBulkProcessing(true);
+      try {
+        await Promise.allSettled(
+          Array.from(selectedIds).map((id) => updateManualReview(id, { status })),
+        );
         setSelectedIds(new Set());
         setConfirmAction(null);
-      } else {
-        // Keep failed IDs selected so the user can retry
-        setSelectedIds(failedIds);
-        setConfirmAction(null);
-        const failedReviews = manualReviews.filter((r) => failedIds.has(r.id));
-        const names = failedReviews.map((r) => r.content.slice(0, 40)).join(', ');
-        setBulkError(
-          `${failedIds.size} of ${ids.length} review${ids.length !== 1 ? 's' : ''} failed: ${names}`
-        );
+      } finally {
+        setIsBulkProcessing(false);
       }
-    } finally {
-      setIsBulkProcessing(false);
-    }
-  }, [selectedIds, updateManualReview, manualReviews]);
-
-  const handleModalAction = useCallback(async (newStatus: ManualReviewStatus) => {
-    if (!selectedReview || isModalProcessing) return;
-    setIsModalProcessing(true);
-    try {
-      await updateManualReview(selectedReview.id, {
-        status: newStatus,
-        reviewer_notes: notes || undefined,
-      });
-      setSelectedReview(null);
-    } finally {
-      setIsModalProcessing(false);
-    }
-  }, [selectedReview, notes, updateManualReview, isModalProcessing]);
+    },
+    [selectedIds, updateManualReview],
+  );
 
   const activeSelectionCount = useMemo(
     () => Array.from(selectedIds).filter((id) => selectablePendingIds.has(id)).length,
-    [selectedIds, selectablePendingIds]
+    [selectedIds, selectablePendingIds],
   );
 
-  const { parentRef: reviewListRef, virtualizer } = useVirtualList(filteredReviews, 44);
+  const handleSeedReview = useCallback(async () => {
+    try {
+      await seedMockManualReview();
+      await fetchManualReviews();
+    } catch (err) {
+      console.error('Failed to seed mock review:', err);
+    }
+  }, [fetchManualReviews]);
 
   return (
     <ContentBox>
@@ -222,10 +598,21 @@ export default function ManualReviewList() {
         icon={<ClipboardCheck className="w-5 h-5 text-amber-400" />}
         iconColor="amber"
         title="Manual Reviews"
-        subtitle={`${manualReviews.length} review${manualReviews.length !== 1 ? 's' : ''} recorded`}
+        subtitle={`${manualReviews.length} review${manualReviews.length !== 1 ? 's' : ''} · ${statusCounts.pending ?? 0} pending`}
+        actions={
+          import.meta.env.DEV && (
+            <button
+              onClick={handleSeedReview}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors"
+              title="Seed a mock review (dev only)"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Mock Review
+            </button>
+          )
+        }
       />
 
-      {/* Filter bar */}
       <FilterBar<FilterStatus>
         options={(['all', 'pending', 'approved', 'rejected'] as FilterStatus[]).map((id) => ({
           id,
@@ -246,7 +633,6 @@ export default function ManualReviewList() {
             {selectablePendingIds.size > 0 && (
               <button
                 onClick={toggleSelectAll}
-                data-testid="review-select-all-btn"
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm text-muted-foreground/90 hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
               >
                 {activeSelectionCount === selectablePendingIds.size ? (
@@ -254,231 +640,84 @@ export default function ManualReviewList() {
                 ) : (
                   <Square className="w-3.5 h-3.5" />
                 )}
-                Select all pending
+                Select all
               </button>
             )}
           </div>
         }
       />
 
-      {/* Review table */}
       <ContentBody flex>
         {filteredReviews.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center p-4 md:p-6">
+          <div className="flex-1 flex items-center justify-center p-6">
             <div className="text-center">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
-                <ClipboardCheck className="w-5 h-5 text-muted-foreground/80" />
+              <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
+                <ClipboardCheck className="w-6 h-6 text-muted-foreground/60" />
               </div>
-              <p className="text-sm text-muted-foreground/90">No review items yet</p>
-              <p className="text-sm text-muted-foreground/80 mt-1">Items that require approval will appear here</p>
+              <p className="text-sm font-medium text-foreground/70">No review items yet</p>
+              <p className="text-sm text-muted-foreground/60 mt-1">
+                Items requiring approval will appear here
+              </p>
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <table className="w-full border-collapse">
-              <thead className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-primary/15">
-                <tr className="text-sm text-muted-foreground/80 uppercase tracking-wider">
-                  <th className="w-10 px-3 py-2.5 text-left font-medium">
-                    <span className="sr-only">Select</span>
-                  </th>
-                  <th className="px-3 py-2.5 text-left font-medium min-w-[120px]">Persona</th>
-                  <th className="px-3 py-2.5 text-left font-medium w-24">Severity</th>
-                  <th className="px-3 py-2.5 text-left font-medium">Content</th>
-                  <th className="px-3 py-2.5 text-left font-medium w-24">Status</th>
-                  <th className="px-3 py-2.5 text-right font-medium w-28">Created</th>
-                </tr>
-              </thead>
-            </table>
-            <div ref={reviewListRef} className="flex-1 overflow-y-auto">
-              <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
-                <table className="w-full border-collapse">
-                  <tbody>
-                    {virtualizer.getVirtualItems().map((virtualRow) => {
-                      const review = filteredReviews[virtualRow.index]!;
-                      const status = STATUS_COLORS[review.status] ?? STATUS_COLORS.pending!;
-                      const statusLabel = STATUS_LABELS[review.status] ?? 'Pending';
-                      const isPending = review.status === 'pending';
-                      const hoverAccent =
-                        review.status === 'approved'
-                          ? 'hover:border-l-emerald-400'
-                          : review.status === 'rejected'
-                            ? 'hover:border-l-red-400'
-                            : 'hover:border-l-amber-400';
-
-                      return (
-                        <tr
-                          key={review.id}
-                          onClick={() => setSelectedReview(review)}
-                          style={{
-                            position: 'absolute',
-                            top: 0,
-                            transform: `translateY(${virtualRow.start}px)`,
-                            width: '100%',
-                            height: `${virtualRow.size}px`,
-                            display: 'table',
-                            tableLayout: 'fixed',
-                          }}
-                          className={`cursor-pointer transition-colors border-b border-primary/[0.06] border-l-2 border-l-transparent hover:bg-white/[0.05] ${hoverAccent} ${virtualRow.index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
-                        >
-                          {/* Checkbox */}
-                          <td className="w-10 px-3 py-2.5 align-middle">
-                            {isPending ? (
-                              <button
-                                onClick={(e) => { e.stopPropagation(); toggleSelect(review.id); }}
-                                className="text-muted-foreground/80 hover:text-muted-foreground transition-colors flex-shrink-0"
-                              >
-                                {selectedIds.has(review.id) ? (
-                                  <CheckSquare className="w-3.5 h-3.5 text-primary" />
-                                ) : (
-                                  <Square className="w-3.5 h-3.5" />
-                                )}
-                              </button>
-                            ) : (
-                              <div className="w-3.5" />
-                            )}
-                          </td>
-
-                          {/* Persona */}
-                          <td className="px-3 py-2.5 align-middle min-w-[120px]">
-                            <div className="flex items-center gap-2">
-                              <div
-                                className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0"
-                                style={{ backgroundColor: (review.persona_color || '#6366f1') + '15' }}
-                              >
-                                {review.persona_icon || '?'}
-                              </div>
-                              <span className="text-sm text-muted-foreground/80 truncate">
-                                {review.persona_name || 'Unknown'}
-                              </span>
-                            </div>
-                          </td>
-
-                          {/* Severity */}
-                          <td className="px-3 py-2.5 align-middle w-24">
-                            <div className="flex items-center gap-1.5">
-                              <SeverityIndicator severity={review.severity} />
-                              <span className="text-sm text-muted-foreground/70">
-                                {SEVERITY_LABELS[review.severity] ?? 'Info'}
-                              </span>
-                            </div>
-                          </td>
-
-                          {/* Content (truncated) */}
-                          <td className="px-3 py-2.5 align-middle">
-                            <span className="text-sm text-foreground/80 truncate block">
-                              {review.content.slice(0, 100)}
-                            </span>
-                          </td>
-
-                          {/* Status badge */}
-                          <td className="px-3 py-2.5 align-middle w-24">
-                            <span className={`inline-block px-2 py-0.5 rounded-lg text-sm font-medium border ${status.bgColor} ${status.color} ${status.borderColor}`}>
-                              {statusLabel}
-                            </span>
-                          </td>
-
-                          {/* Created */}
-                          <td className="px-3 py-2.5 align-middle w-28 text-right">
-                            <span className="text-sm text-muted-foreground/80">
-                              {formatRelativeTime(review.created_at)}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+          <div className="flex-1 flex overflow-hidden">
+            {/* Left: Inbox list */}
+            <div className="w-[340px] flex-shrink-0 border-r border-primary/10 flex flex-col overflow-hidden">
+              <div className="flex-1 overflow-y-auto">
+                {filteredReviews.map((review) => (
+                  <div key={review.id} className="flex items-start">
+                    {/* Checkbox overlay for pending items */}
+                    {review.status === 'pending' && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleSelect(review.id);
+                        }}
+                        className="flex-shrink-0 w-8 flex items-center justify-center pt-3.5 text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                      >
+                        {selectedIds.has(review.id) ? (
+                          <CheckSquare className="w-3.5 h-3.5 text-primary" />
+                        ) : (
+                          <Square className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    )}
+                    <div className={`flex-1 min-w-0 ${review.status !== 'pending' ? 'pl-8' : ''}`}>
+                      <InboxItem
+                        review={review}
+                        isActive={review.id === activeReviewId}
+                        onClick={() => setActiveReviewId(review.id)}
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
+            </div>
+
+            {/* Right: Conversation thread */}
+            <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+              {activeReview ? (
+                <ConversationThread
+                  key={activeReview.id}
+                  review={activeReview}
+                  onAction={handleAction}
+                  isProcessing={isProcessing}
+                />
+              ) : (
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="text-center">
+                    <MessageSquare className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground/50">Select a review to view</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
       </ContentBody>
 
-      {/* Detail modal */}
-      <AnimatePresence>
-        {selectedReview && (
-          <DetailModal
-            title={selectedReview.persona_name || 'Unknown Persona'}
-            subtitle={`${STATUS_LABELS[selectedReview.status] ?? 'Pending'} \u00b7 ${SEVERITY_LABELS[selectedReview.severity] ?? 'Info'} severity`}
-            onClose={() => setSelectedReview(null)}
-            actions={
-              selectedReview.status === 'pending' ? (
-                <>
-                  <button
-                    onClick={() => handleModalAction('approved')}
-                    disabled={isModalProcessing}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Check className="w-3.5 h-3.5" />
-                    {isModalProcessing ? 'Processing…' : 'Approve'}
-                  </button>
-                  <button
-                    onClick={() => handleModalAction('rejected')}
-                    disabled={isModalProcessing}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                    {isModalProcessing ? 'Processing…' : 'Reject'}
-                  </button>
-                </>
-              ) : undefined
-            }
-          >
-            <div className="space-y-4">
-              {/* Content */}
-              <div>
-                <div className="text-sm font-mono text-muted-foreground/90 uppercase mb-1.5">Content</div>
-                <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">{selectedReview.content}</p>
-              </div>
-
-              {/* Reviewer notes textarea (pending items) */}
-              {selectedReview.status === 'pending' && (
-                <div>
-                  <div className="text-sm font-mono text-muted-foreground/90 uppercase mb-1.5">Reviewer Notes</div>
-                  <textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Add optional notes..."
-                    className="w-full h-20 text-sm bg-background/50 border border-primary/15 rounded-lg p-3 text-foreground/80 placeholder:text-muted-foreground/80 resize-none focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/30"
-                  />
-                </div>
-              )}
-
-              {/* Show reviewer notes for non-pending items */}
-              {selectedReview.status !== 'pending' && selectedReview.reviewer_notes && (
-                <div>
-                  <div className="text-sm font-mono text-muted-foreground/90 uppercase mb-1.5">Reviewer Notes</div>
-                  <p className="text-sm text-foreground/80 italic">{selectedReview.reviewer_notes}</p>
-                </div>
-              )}
-
-              {/* Metadata */}
-              <div className="flex items-center gap-4 text-sm text-muted-foreground/80 pt-2 border-t border-primary/10">
-                <span>ID: <span className="font-mono">{selectedReview.id}</span></span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const store = usePersonaStore.getState();
-                    store.selectPersona(selectedReview.persona_id);
-                    store.setEditorTab('use-cases');
-                    setSelectedReview(null);
-                  }}
-                  className="inline-flex items-center gap-1 text-blue-400/70 hover:text-blue-400 transition-colors"
-                  title={`View execution ${selectedReview.execution_id}`}
-                >
-                  View Execution
-                  <ExternalLink className="w-3 h-3" />
-                </button>
-                {selectedReview.resolved_at && (
-                  <span>Resolved: {new Date(selectedReview.resolved_at).toLocaleString()}</span>
-                )}
-              </div>
-            </div>
-          </DetailModal>
-        )}
-      </AnimatePresence>
-
-      {/* Sticky bulk action bar */}
+      {/* Bulk action bar */}
       <AnimatePresence>
         {activeSelectionCount > 0 && (
           <motion.div
@@ -488,25 +727,14 @@ export default function ManualReviewList() {
             transition={{ duration: 0.2 }}
             className="flex-shrink-0 border-t border-primary/15 bg-secondary/40 backdrop-blur-sm px-4 py-3"
           >
-            {bulkError && (
-              <div className="flex items-center gap-2 mb-2 px-2 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400">
-                <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
-                <span className="flex-1 truncate">{bulkError}</span>
-                <button
-                  onClick={() => setBulkError(null)}
-                  className="text-red-400/60 hover:text-red-400 transition-colors flex-shrink-0"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            )}
             {confirmAction ? (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm">
                   <AlertTriangle className="w-4 h-4 text-amber-400" />
                   <span className="text-foreground/80">
                     {confirmAction === 'approved' ? 'Approve' : 'Reject'}{' '}
-                    <span className="font-semibold">{activeSelectionCount}</span> review{activeSelectionCount !== 1 ? 's' : ''}?
+                    <span className="font-semibold">{activeSelectionCount}</span> review
+                    {activeSelectionCount !== 1 ? 's' : ''}?
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -520,20 +748,21 @@ export default function ManualReviewList() {
                   <button
                     onClick={() => handleBulkAction(confirmAction)}
                     disabled={isBulkProcessing}
-                    className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-colors flex items-center gap-1.5 ${
+                    className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-colors ${
                       confirmAction === 'approved'
                         ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25'
                         : 'bg-red-500/15 text-red-400 border-red-500/30 hover:bg-red-500/25'
                     }`}
                   >
-                    {isBulkProcessing ? 'Processing...' : 'Confirm'}
+                    {isBulkProcessing ? 'Processing…' : 'Confirm'}
                   </button>
                 </div>
               </div>
             ) : (
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground/80">
-                  <span className="font-semibold text-foreground/90">{activeSelectionCount}</span> pending review{activeSelectionCount !== 1 ? 's' : ''} selected
+                  <span className="font-semibold text-foreground/90">{activeSelectionCount}</span>{' '}
+                  pending review{activeSelectionCount !== 1 ? 's' : ''} selected
                 </span>
                 <div className="flex items-center gap-2">
                   <button

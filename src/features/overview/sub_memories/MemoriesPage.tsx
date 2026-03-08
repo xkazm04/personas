@@ -6,6 +6,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { MemoryRow } from '@/features/overview/sub_memories/MemoryCard';
 import { InlineAddMemoryForm } from '@/features/overview/sub_memories/CreateMemoryForm';
 import { MemoryFilterBar } from '@/features/overview/sub_memories/MemoryFilterBar';
+import { MemoryConflictReview } from '@/features/overview/sub_memories/MemoryConflictReview';
 import { useVirtualList } from '@/hooks/utility/useVirtualList';
 import type { MemoryReviewResult } from '@/api/memories';
 
@@ -167,6 +168,13 @@ export default function MemoriesPage() {
           <InlineAddMemoryForm onClose={() => setShowAddForm(false)} />
         )}
       </AnimatePresence>
+
+      {/* Conflict Detection */}
+      {memories.length > 1 && (
+        <div className="py-2">
+          <MemoryConflictReview />
+        </div>
+      )}
 
       {/* Table */}
       <ContentBody flex>

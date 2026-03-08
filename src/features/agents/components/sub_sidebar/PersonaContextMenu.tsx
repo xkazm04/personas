@@ -18,7 +18,7 @@ interface QuickModel {
 }
 
 const QUICK_MODELS: QuickModel[] = [
-  { value: '', label: 'Opus', provider: 'Anthropic' },
+  { value: 'opus', label: 'Opus', provider: 'Anthropic' },
   { value: 'sonnet', label: 'Sonnet', provider: 'Anthropic' },
   { value: 'haiku', label: 'Haiku', provider: 'Anthropic' },
   ...OLLAMA_CLOUD_PRESETS.map((p) => ({
@@ -41,9 +41,7 @@ function quickModelToProfile(value: string): string | null {
       } satisfies ModelProfile);
     }
   }
-  // Opus = default (empty string value -> null profile)
-  if (value === '') return null;
-  // Standard Anthropic model
+  // Standard Anthropic model (opus, sonnet, haiku)
   return JSON.stringify({
     model: value,
     provider: 'anthropic',
@@ -52,7 +50,7 @@ function quickModelToProfile(value: string): string | null {
 
 /** Read the current dropdown value from a persona's model_profile JSON. */
 function currentModelValue(persona: DbPersona): string {
-  if (!persona.model_profile) return ''; // Opus default
+  if (!persona.model_profile) return 'opus';
   try {
     const mp: ModelProfile = JSON.parse(persona.model_profile);
     return profileToDropdownValue(mp);

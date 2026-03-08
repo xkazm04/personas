@@ -1,11 +1,14 @@
 import { motion } from 'framer-motion';
-import { Sparkles, Server, Link, Database, ArrowLeft, Radar } from 'lucide-react';
+import { Sparkles, Server, Link, Database, ArrowLeft, Radar, Monitor, Bot, Globe } from 'lucide-react';
 
 interface CredentialTypePickerProps {
   onSelectApiTool: () => void;
   onSelectMcp: () => void;
   onSelectCustom: () => void;
   onSelectDatabase: () => void;
+  onSelectDesktop: () => void;
+  onSelectWizard: () => void;
+  onWorkspaceConnect: () => void;
   onForage: () => void;
   onBack: () => void;
 }
@@ -39,6 +42,20 @@ const TYPES = [
     description: 'PostgreSQL, Supabase, Convex, or MongoDB with optional schema specification.',
     color: '#10B981',
   },
+  {
+    id: 'desktop',
+    icon: Monitor,
+    title: 'Desktop App',
+    description: 'Connect to local apps like VS Code, Docker, Terminal, Obsidian, or import Claude Desktop MCP servers.',
+    color: '#F97316',
+  },
+  {
+    id: 'wizard',
+    icon: Bot,
+    title: 'AI Setup Wizard',
+    description: 'Auto-detect services and set up credentials with AI-guided browser automation.',
+    color: '#7C3AED',
+  },
 ] as const;
 
 export function CredentialTypePicker({
@@ -46,6 +63,9 @@ export function CredentialTypePicker({
   onSelectMcp,
   onSelectCustom,
   onSelectDatabase,
+  onSelectDesktop,
+  onSelectWizard,
+  onWorkspaceConnect,
   onForage,
   onBack,
 }: CredentialTypePickerProps) {
@@ -54,6 +74,8 @@ export function CredentialTypePicker({
     'mcp': onSelectMcp,
     'custom': onSelectCustom,
     'database': onSelectDatabase,
+    'desktop': onSelectDesktop,
+    'wizard': onSelectWizard,
   };
 
   return (
@@ -100,6 +122,24 @@ export function CredentialTypePicker({
           );
         })}
       </div>
+
+      {/* Workspace Connect — full width */}
+      <button
+        onClick={onWorkspaceConnect}
+        className="w-full text-left p-4 bg-gradient-to-r from-blue-500/5 to-emerald-500/5 border border-blue-500/15 rounded-xl hover:from-blue-500/10 hover:to-emerald-500/10 hover:border-blue-500/25 transition-all"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center border bg-blue-500/10 border-blue-500/20">
+            <Globe className="w-4.5 h-4.5 text-blue-400" />
+          </div>
+          <div>
+            <h4 className="text-sm font-medium text-foreground">Workspace Connect</h4>
+            <p className="text-sm text-muted-foreground/60">
+              One Google login creates Gmail, Calendar, Drive, and Sheets credentials automatically
+            </p>
+          </div>
+        </div>
+      </button>
 
       {/* Foraging — full width at bottom */}
       <button

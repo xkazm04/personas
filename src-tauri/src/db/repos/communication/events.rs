@@ -345,6 +345,17 @@ pub fn get_subscriptions_by_persona(
     Ok(collect_rows(rows, "get_subscriptions_by_persona"))
 }
 
+pub fn get_all_subscriptions(
+    pool: &DbPool,
+) -> Result<Vec<PersonaEventSubscription>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT * FROM persona_event_subscriptions ORDER BY created_at DESC",
+    )?;
+    let rows = stmt.query_map([], row_to_subscription)?;
+    Ok(collect_rows(rows, "get_all_subscriptions"))
+}
+
 pub fn get_subscriptions_by_event_type(
     pool: &DbPool,
     event_type: &str,

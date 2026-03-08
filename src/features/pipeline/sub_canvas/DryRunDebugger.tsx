@@ -10,9 +10,11 @@ import {
   ChevronUp,
   X,
   Bug,
+  AlertTriangle,
 } from 'lucide-react';
 import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
 import type { PersonaTeamConnection } from '@/lib/bindings/PersonaTeamConnection';
+import { buildTeamGraph } from './teamGraph';
 
 // ============================================================================
 // Types
@@ -109,55 +111,8 @@ function generateMockOutput(role: string, name: string): Record<string, unknown>
   }
 }
 
-// ============================================================================
-// Topological Sort
-// ============================================================================
-
-function topologicalSort(
-  members: PersonaTeamMember[],
-  connections: PersonaTeamConnection[],
-): string[] {
-  const memberIds = members.map((m) => m.id);
-  const idSet = new Set(memberIds);
-  const inDegree = new Map<string, number>();
-  const adj = new Map<string, string[]>();
-
-  for (const id of memberIds) {
-    inDegree.set(id, 0);
-    adj.set(id, []);
-  }
-
-  for (const c of connections) {
-    if (!idSet.has(c.source_member_id) || !idSet.has(c.target_member_id)) continue;
-    // Skip feedback edges for ordering (they create cycles)
-    if (c.connection_type === 'feedback') continue;
-    adj.get(c.source_member_id)!.push(c.target_member_id);
-    inDegree.set(c.target_member_id, (inDegree.get(c.target_member_id) || 0) + 1);
-  }
-
-  const queue: string[] = [];
-  for (const [id, deg] of inDegree) {
-    if (deg === 0) queue.push(id);
-  }
-
-  const sorted: string[] = [];
-  while (queue.length > 0) {
-    const node = queue.shift()!;
-    sorted.push(node);
-    for (const neighbor of adj.get(node) || []) {
-      const newDeg = (inDegree.get(neighbor) || 1) - 1;
-      inDegree.set(neighbor, newDeg);
-      if (newDeg === 0) queue.push(neighbor);
-    }
-  }
-
-  // Add any remaining nodes (cycles)
-  for (const id of memberIds) {
-    if (!sorted.includes(id)) sorted.push(id);
-  }
-
-  return sorted;
-}
+// Feedback edges are skipped for dry-run ordering (they create cycles)
+const SKIP_FEEDBACK = new Set(['feedback']);
 
 // ============================================================================
 // Component
@@ -182,6 +137,7 @@ export default function DryRunDebugger({
   const [activeEdge, setActiveEdge] = useState<string | null>(null);
   const [inspectedNode, setInspectedNode] = useState<string | null>(null);
   const [panelCollapsed, setPanelCollapsed] = useState(false);
+  const [cycleNodeIds, setCycleNodeIds] = useState<Set<string>>(new Set());
   const autoStepRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pausedRef = useRef(paused);
   pausedRef.current = paused;
@@ -192,8 +148,10 @@ export default function DryRunDebugger({
 
   // Initialize execution order and node data
   useEffect(() => {
-    const order = topologicalSort(members, connections);
+    const graph = buildTeamGraph(members.map((m) => m.id), connections, SKIP_FEEDBACK);
+    const order = graph.sorted;
     setExecutionOrder(order);
+    setCycleNodeIds(graph.cycleNodes);
 
     const initial = new Map<string, DryRunNodeData>();
     for (const id of order) {
@@ -462,6 +420,21 @@ export default function DryRunDebugger({
         )}
       </AnimatePresence>
 
+      {/* Cycle Warning Banner */}
+      {cycleNodeIds.size > 0 && (
+        <div className="mx-4 mb-2 flex items-start gap-2 rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2">
+          <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
+          <div className="text-sm text-amber-300">
+            <span className="font-semibold">Cycle detected</span>
+            <span className="text-amber-300/80">
+              {' — '}Execution order is arbitrary for:{' '}
+              {Array.from(cycleNodeIds).map((id) => agentNames[id] || id).join(', ')}
+              . Consider removing circular connections or marking them as feedback edges.
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Debugger Controls Bar */}
       <div className="bg-secondary/95 backdrop-blur-md border-t border-border/30 px-4 py-2.5">
         <div className="flex items-center gap-3">
@@ -532,7 +505,7 @@ export default function DryRunDebugger({
                   }
                 }}
                 className="relative group/dot"
-                title={`${item.name} (${item.role})${item.hasBreakpoint ? ' [BREAKPOINT]' : ''}`}
+                title={`${item.name} (${item.role})${item.hasBreakpoint ? ' [BREAKPOINT]' : ''}${cycleNodeIds.has(item.id) ? ' [CYCLE]' : ''}`}
               >
                 <div
                   className={`w-3.5 h-3.5 rounded-full border-2 transition-all ${

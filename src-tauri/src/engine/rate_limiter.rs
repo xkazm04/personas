@@ -172,10 +172,10 @@ mod tests {
 
         // Create an expired bucket under a different key
         rl.check("old_key", 1000, short_window).unwrap();
-        thread::sleep(Duration::from_millis(60));
+        thread::sleep(Duration::from_millis(150));
 
-        // Advance call_count to just before the prune interval fires
-        rl.call_count.store(super::AUTO_PRUNE_INTERVAL - 1, Ordering::Relaxed);
+        // Advance call_count so the next fetch_add returns a multiple of AUTO_PRUNE_INTERVAL
+        rl.call_count.store(super::AUTO_PRUNE_INTERVAL, Ordering::Relaxed);
 
         // This call should trigger auto-prune (count hits the interval boundary)
         rl.check("new_key", 1000, short_window).unwrap();

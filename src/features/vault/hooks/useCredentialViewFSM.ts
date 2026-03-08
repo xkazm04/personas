@@ -4,6 +4,24 @@ import { getAuthMethods } from '@/lib/types/types';
 import { isGoogleOAuthConnector } from '@/lib/utils/connectors';
 import { useCredentialNav, type CredentialNavKey } from './CredentialNavContext';
 
+// ── View names (the finite states) ──────────────────────────────────
+
+export type ViewName =
+  | 'list'
+  | 'catalog-browse'
+  | 'catalog-form'
+  | 'catalog-auto-setup'
+  | 'add-new'
+  | 'add-api-tool'
+  | 'add-mcp'
+  | 'add-custom'
+  | 'add-database'
+  | 'add-desktop'
+  | 'add-wizard'
+  | 'workspace-connect'
+  | 'foraging'
+  | 'databases';
+
 // ── Discriminated union: each state carries exactly the data it needs ──
 
 export type CredentialViewState =
@@ -16,6 +34,9 @@ export type CredentialViewState =
   | { view: 'add-mcp' }
   | { view: 'add-custom' }
   | { view: 'add-database' }
+  | { view: 'add-desktop' }
+  | { view: 'add-wizard' }
+  | { view: 'workspace-connect' }
   | { view: 'foraging' }
   | { view: 'databases' };
 
@@ -34,104 +55,184 @@ export type CredentialViewAction =
   | { type: 'GO_ADD_MCP' }
   | { type: 'GO_ADD_CUSTOM' }
   | { type: 'GO_ADD_DATABASE' }
+  | { type: 'GO_ADD_DESKTOP' }
+  | { type: 'GO_ADD_WIZARD' }
+  | { type: 'GO_WORKSPACE_CONNECT' }
   | { type: 'GO_FORAGING' }
   | { type: 'GO_DATABASES' };
 
-// ── Nav key for sidebar highlighting ──
+// ── Transition Table ────────────────────────────────────────────────
+//
+// Explicit map of (sourceView, actionType) → allowed.
+// If a transition isn't listed, it's invalid and the reducer ignores it.
+// This makes the navigation graph inspectable and prevents impossible states.
 
-export function getNavKey(state: CredentialViewState): CredentialNavKey {
-  switch (state.view) {
-    case 'list':
-      return 'credentials';
-    case 'catalog-browse':
-    case 'catalog-form':
-    case 'catalog-auto-setup':
-      return 'from-template';
-    case 'add-new':
-    case 'add-api-tool':
-    case 'add-mcp':
-    case 'add-custom':
-    case 'add-database':
-    case 'foraging':
-      return 'add-new';
-    case 'databases':
-      return 'databases';
+type ActionType = CredentialViewAction['type'];
+
+/**
+ * For each view, the set of action types that are valid transitions.
+ * Actions not listed for a given view are silently ignored (no-op).
+ */
+// Sidebar navigation actions are valid from any view
+const GLOBAL_ACTIONS: ActionType[] = ['GO_LIST', 'GO_CATALOG', 'GO_ADD_NEW', 'GO_ADD_WIZARD', 'GO_WORKSPACE_CONNECT', 'GO_DATABASES'];
+
+/** View-specific transitions (in addition to global actions). */
+const VIEW_TRANSITIONS: Record<ViewName, readonly ActionType[]> = {
+  'list':               [],
+  'catalog-browse':     ['PICK_CONNECTOR', 'SET_CATALOG_SEARCH'],
+  'catalog-form':       ['CANCEL_FORM', 'GO_AUTO_SETUP', 'SET_CREDENTIAL_NAME'],
+  'catalog-auto-setup': ['CANCEL_FORM'],
+  'add-new':            ['GO_ADD_API_TOOL', 'GO_ADD_MCP', 'GO_ADD_CUSTOM', 'GO_ADD_DATABASE', 'GO_ADD_DESKTOP', 'GO_ADD_WIZARD', 'GO_WORKSPACE_CONNECT', 'GO_FORAGING'],
+  'add-api-tool':       [],
+  'add-mcp':            [],
+  'add-custom':         [],
+  'add-database':       [],
+  'add-desktop':        [],
+  'add-wizard':         [],
+  'workspace-connect':  [],
+  'foraging':           [],
+  'databases':          [],
+};
+
+function buildTransitionTable(): Record<ViewName, ReadonlySet<ActionType>> {
+  const table = {} as Record<ViewName, ReadonlySet<ActionType>>;
+  for (const view of Object.keys(VIEW_TRANSITIONS) as ViewName[]) {
+    table[view] = new Set([...GLOBAL_ACTIONS, ...VIEW_TRANSITIONS[view]]);
   }
+  return table;
 }
 
-// ── Reducer ──
+const TRANSITION_TABLE = buildTransitionTable();
+
+/** Check whether a transition is valid for the current view. */
+function isValidTransition(view: ViewName, action: ActionType): boolean {
+  return TRANSITION_TABLE[view].has(action);
+}
+
+// ── Nav key for sidebar highlighting ──
+
+const NAV_KEY_MAP: Record<ViewName, CredentialNavKey> = {
+  'list':               'credentials',
+  'catalog-browse':     'from-template',
+  'catalog-form':       'from-template',
+  'catalog-auto-setup': 'from-template',
+  'add-new':            'add-new',
+  'add-api-tool':       'add-new',
+  'add-mcp':            'add-new',
+  'add-custom':         'add-new',
+  'add-database':       'add-new',
+  'add-desktop':        'add-new',
+  'add-wizard':         'add-new',
+  'workspace-connect':  'add-new',
+  'foraging':           'add-new',
+  'databases':          'databases',
+};
+
+export function getNavKey(state: CredentialViewState): CredentialNavKey {
+  return NAV_KEY_MAP[state.view];
+}
+
+// ── Action handlers ─────────────────────────────────────────────────
+//
+// Each handler produces the next state for its action type.
+// These are only called after the transition table validates the action.
+
+type ActionHandler<A extends CredentialViewAction = CredentialViewAction> =
+  (state: CredentialViewState, action: A) => CredentialViewState;
+
+const GO_LIST: ActionHandler = () => ({ view: 'list' });
+const GO_CATALOG: ActionHandler = () => ({ view: 'catalog-browse', search: '' });
+const GO_ADD_NEW: ActionHandler = () => ({ view: 'add-new' });
+const GO_ADD_API_TOOL: ActionHandler = () => ({ view: 'add-api-tool' });
+const GO_ADD_MCP: ActionHandler = () => ({ view: 'add-mcp' });
+const GO_ADD_CUSTOM: ActionHandler = () => ({ view: 'add-custom' });
+const GO_ADD_DATABASE: ActionHandler = () => ({ view: 'add-database' });
+const GO_ADD_DESKTOP: ActionHandler = () => ({ view: 'add-desktop' });
+const GO_ADD_WIZARD: ActionHandler = () => ({ view: 'add-wizard' });
+const GO_WORKSPACE_CONNECT: ActionHandler = () => ({ view: 'workspace-connect' });
+const GO_FORAGING: ActionHandler = () => ({ view: 'foraging' });
+const GO_DATABASES: ActionHandler = () => ({ view: 'databases' });
+
+const PICK_CONNECTOR: ActionHandler<Extract<CredentialViewAction, { type: 'PICK_CONNECTOR' }>> =
+  (_state, action) => {
+    const methods = getAuthMethods(action.connector);
+    const defaultMethod = methods.find((m) => m.is_default) ?? methods[0];
+    const name = `${action.connector.label} ${defaultMethod?.label ?? 'Credential'}`;
+    return {
+      view: 'catalog-form',
+      connector: action.connector,
+      credentialName: name,
+      parentSearch: action.parentSearch,
+    };
+  };
+
+const GO_AUTO_SETUP: ActionHandler<Extract<CredentialViewAction, { type: 'GO_AUTO_SETUP' }>> =
+  (state, action) => ({
+    view: 'catalog-auto-setup',
+    connector: action.connector,
+    parentSearch: state.view === 'catalog-form' ? state.parentSearch : '',
+  });
+
+const SET_CREDENTIAL_NAME: ActionHandler<Extract<CredentialViewAction, { type: 'SET_CREDENTIAL_NAME' }>> =
+  (state, action) => {
+    if (state.view === 'catalog-form' && state.credentialName !== action.name) {
+      return { ...state, credentialName: action.name };
+    }
+    return state;
+  };
+
+const SET_CATALOG_SEARCH: ActionHandler<Extract<CredentialViewAction, { type: 'SET_CATALOG_SEARCH' }>> =
+  (state, action) => {
+    if (state.view === 'catalog-browse' && state.search !== action.search) {
+      return { ...state, search: action.search };
+    }
+    return state;
+  };
+
+const CANCEL_FORM: ActionHandler = (state) => {
+  if (state.view === 'catalog-form' || state.view === 'catalog-auto-setup') {
+    return { view: 'catalog-browse', search: state.parentSearch || '' };
+  }
+  return { view: 'list' };
+};
+
+/** Map action type to handler. */
+const ACTION_HANDLERS: Record<ActionType, ActionHandler<never>> = {
+  GO_LIST: GO_LIST as ActionHandler<never>,
+  GO_CATALOG: GO_CATALOG as ActionHandler<never>,
+  PICK_CONNECTOR: PICK_CONNECTOR as ActionHandler<never>,
+  GO_AUTO_SETUP: GO_AUTO_SETUP as ActionHandler<never>,
+  SET_CREDENTIAL_NAME: SET_CREDENTIAL_NAME as ActionHandler<never>,
+  SET_CATALOG_SEARCH: SET_CATALOG_SEARCH as ActionHandler<never>,
+  CANCEL_FORM: CANCEL_FORM as ActionHandler<never>,
+  GO_ADD_NEW: GO_ADD_NEW as ActionHandler<never>,
+  GO_ADD_API_TOOL: GO_ADD_API_TOOL as ActionHandler<never>,
+  GO_ADD_MCP: GO_ADD_MCP as ActionHandler<never>,
+  GO_ADD_CUSTOM: GO_ADD_CUSTOM as ActionHandler<never>,
+  GO_ADD_DATABASE: GO_ADD_DATABASE as ActionHandler<never>,
+  GO_ADD_DESKTOP: GO_ADD_DESKTOP as ActionHandler<never>,
+  GO_ADD_WIZARD: GO_ADD_WIZARD as ActionHandler<never>,
+  GO_WORKSPACE_CONNECT: GO_WORKSPACE_CONNECT as ActionHandler<never>,
+  GO_FORAGING: GO_FORAGING as ActionHandler<never>,
+  GO_DATABASES: GO_DATABASES as ActionHandler<never>,
+};
+
+// ── Reducer ─────────────────────────────────────────────────────────
 
 function reducer(state: CredentialViewState, action: CredentialViewAction): CredentialViewState {
-  switch (action.type) {
-    case 'GO_LIST':
-      return { view: 'list' };
-
-    case 'GO_CATALOG':
-      return { view: 'catalog-browse', search: '' };
-
-    case 'PICK_CONNECTOR': {
-      const methods = getAuthMethods(action.connector);
-      const defaultMethod = methods.find((m) => m.is_default) ?? methods[0];
-      const name = `${action.connector.label} ${defaultMethod?.label ?? 'Credential'}`;
-      return {
-        view: 'catalog-form',
-        connector: action.connector,
-        credentialName: name,
-        parentSearch: action.parentSearch,
-      };
+  if (!isValidTransition(state.view, action.type)) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(`[CredentialFSM] Invalid transition: ${state.view} + ${action.type}`);
     }
-
-    case 'GO_AUTO_SETUP':
-      return {
-        view: 'catalog-auto-setup',
-        connector: action.connector,
-        parentSearch: state.view === 'catalog-form' ? state.parentSearch : '',
-      };
-
-    case 'SET_CREDENTIAL_NAME':
-      if (state.view === 'catalog-form' && state.credentialName !== action.name) {
-        return { ...state, credentialName: action.name };
-      }
-      return state;
-
-    case 'SET_CATALOG_SEARCH':
-      if (state.view === 'catalog-browse' && state.search !== action.search) {
-        return { ...state, search: action.search };
-      }
-      return state;
-
-    case 'CANCEL_FORM':
-      if (state.view === 'catalog-form' || state.view === 'catalog-auto-setup') {
-        return { view: 'catalog-browse', search: state.parentSearch || '' };
-      }
-      return { view: 'list' };
-
-    case 'GO_ADD_NEW':
-      return { view: 'add-new' };
-
-    case 'GO_ADD_API_TOOL':
-      return { view: 'add-api-tool' };
-
-    case 'GO_ADD_MCP':
-      return { view: 'add-mcp' };
-
-    case 'GO_ADD_CUSTOM':
-      return { view: 'add-custom' };
-
-    case 'GO_ADD_DATABASE':
-      return { view: 'add-database' };
-
-    case 'GO_FORAGING':
-      return { view: 'foraging' };
-
-    case 'GO_DATABASES':
-      return { view: 'databases' };
+    return state;
   }
+  const handler = ACTION_HANDLERS[action.type];
+  return handler(state, action as never);
 }
 
 const INITIAL_STATE: CredentialViewState = { view: 'list' };
 
-// ── Hook ──
+// ── Hook ────────────────────────────────────────────────────────────
 
 export function useCredentialViewFSM(connectorDefinitions: ConnectorDefinition[]) {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
@@ -139,7 +240,6 @@ export function useCredentialViewFSM(connectorDefinitions: ConnectorDefinition[]
 
   const navKey = getNavKey(state);
 
-  // Navigate from sidebar nav key
   const navigateFromSidebar = useCallback((key: CredentialNavKey) => {
     switch (key) {
       case 'credentials':
@@ -157,7 +257,6 @@ export function useCredentialViewFSM(connectorDefinitions: ConnectorDefinition[]
     }
   }, []);
 
-  // Sync FSM navigation handler and nav key to context.
   useEffect(() => {
     nav.setNavigateHandler(navigateFromSidebar);
     return () => { nav.setNavigateHandler(null); };
@@ -167,7 +266,6 @@ export function useCredentialViewFSM(connectorDefinitions: ConnectorDefinition[]
     nav.setCurrentKey(navKey);
   }, [nav, navKey]);
 
-  // Derived: filtered connectors (only available in catalog-browse)
   const filteredConnectors = useMemo(() => {
     if (state.view !== 'catalog-browse') return connectorDefinitions;
     const q = state.search.trim().toLowerCase();
@@ -180,7 +278,6 @@ export function useCredentialViewFSM(connectorDefinitions: ConnectorDefinition[]
     );
   }, [state, connectorDefinitions]);
 
-  // Derived: template form helpers (only meaningful in catalog-form)
   const catalogFormData = useMemo(() => {
     if (state.view !== 'catalog-form') return null;
     const { connector, credentialName } = state;

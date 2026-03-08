@@ -8,12 +8,77 @@
 
 export type ProviderName = 'claude' | 'gemini' | 'copilot';
 
+export interface ModelSpec {
+  id: string;
+  label: string;
+  tier: 'budget' | 'standard' | 'premium';
+}
+
+export const PROVIDER_MODELS: Record<ProviderName, ModelSpec[]> = {
+  claude: [
+    { id: 'claude-sonnet-4-6', label: 'Sonnet 4.6', tier: 'standard' },
+    { id: 'claude-haiku-4-5', label: 'Haiku 4.5', tier: 'budget' },
+    { id: 'claude-opus-4-6', label: 'Opus 4.6', tier: 'premium' },
+  ],
+  gemini: [
+    { id: 'gemini-2.5-flash-lite', label: 'Flash Lite 3.1', tier: 'budget' },
+  ],
+  copilot: [
+    { id: 'gpt-5.1-codex-mini', label: 'GPT-5.1 Codex Mini', tier: 'budget' },
+    { id: 'claude-sonnet-4.6', label: 'Claude Sonnet 4.6', tier: 'standard' },
+    { id: 'gpt-5.4', label: 'GPT-5.4', tier: 'premium' },
+  ],
+};
+
 export interface ProviderInfo {
   name: ProviderName;
   displayName: string;
   model: string;
   available: boolean;
   version?: string;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Test matrix configuration (env-driven scoping)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface TestMatrixEntry {
+  provider: ProviderInfo;
+  model: ModelSpec;
+}
+
+export type FeatureArea =
+  | 'persona-design'
+  | 'credential-design'
+  | 'persona-testing'
+  | 'credential-healthcheck'
+  | 'auto-cred-browser'
+  | 'n8n-transform'
+  | 'automation-design'
+  | 'recipe-generation'
+  | 'healing-diagnosis'
+  | 'smart-search'
+  | 'credential-negotiation'
+  | 'persona-execution'
+  | 'template-adopt'
+  | 'query-debug';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Quality scoring (business + technical)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface QualityDimension {
+  name: string;
+  score: number;   // 0-1
+  weight: number;   // relative importance
+  detail: string;
+}
+
+export interface QualityReport {
+  technical: QualityDimension[];
+  business: QualityDimension[];
+  overallScore: number;
+  grade: 'A' | 'B' | 'C' | 'D' | 'F';
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -138,7 +203,11 @@ export type FixtureTemplate =
   | 'code-review'
   | 'sql-debugging'
   | 'multi-file-project'
-  | 'large-input';
+  | 'large-input'
+  | 'persona-design'
+  | 'credential-design'
+  | 'n8n-workflow'
+  | 'healing-diagnosis';
 
 export interface WorkspaceContext {
   rootDir: string;
