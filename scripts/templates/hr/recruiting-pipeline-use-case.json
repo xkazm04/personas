@@ -147,7 +147,7 @@
             "key": "refresh_token",
             "label": "Refresh Token",
             "type": "password",
-            "placeholder": "1//xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "placeholder": "1//EXAMPLE_REFRESH_TOKEN_REPLACE_ME",
             "helpText": "Obtained after OAuth consent flow. Use the OAuth Playground or your app's auth flow to generate.",
             "required": true
           }
@@ -171,7 +171,7 @@
             "key": "bot_token",
             "label": "Bot User OAuth Token",
             "type": "password",
-            "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
+            "placeholder": "xoxb-EXAMPLE_TOKEN_REPLACE_ME",
             "helpText": "From your Slack App → OAuth & Permissions → Bot User OAuth Token. Starts with 'xoxb-'.",
             "required": true
           }

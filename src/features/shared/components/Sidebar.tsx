@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Users, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload, List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu, Network, Database, Home, Compass, Sparkles, HardDriveDownload, Shield, type LucideIcon } from 'lucide-react';
+import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Users, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload, List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu, Network, Database, Home, Compass, Sparkles, HardDriveDownload, Shield, CalendarClock, type LucideIcon } from 'lucide-react';
 import { SidebarIconStyles, SIDEBAR_ICONS } from './SidebarIcons';
 import { getVersion } from '@tauri-apps/api/app';
 import { usePersonaStore } from '@/stores/personaStore';
@@ -210,6 +210,7 @@ export default function Sidebar() {
     { id: 'knowledge', icon: Brain, label: 'Knowledge' },
     { id: 'sla', icon: Shield, label: 'SLA' },
     { id: 'cron-agents', icon: Cpu, label: 'Cron Agents' },
+    { id: 'schedules', icon: CalendarClock, label: 'Schedules' },
   ];
 
   // Badge maps (only computed for sections that use them)

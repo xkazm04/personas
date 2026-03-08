@@ -113,7 +113,7 @@
             "key": "refresh_token",
             "label": "Refresh Token",
             "type": "password",
-            "placeholder": "1//0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "placeholder": "1//0EXAMPLE_REFRESH_TOKEN_REPLACE_ME",
             "helpText": "Obtained during OAuth2 consent flow with analytics.readonly scope.",
             "required": true
           },
@@ -162,7 +162,7 @@
             "key": "refresh_token",
             "label": "Refresh Token",
             "type": "password",
-            "placeholder": "1//0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "placeholder": "1//0EXAMPLE_REFRESH_TOKEN_REPLACE_ME",
             "helpText": "Obtained during OAuth2 consent flow with webmasters.readonly scope. Can use the same token as GA4 if both scopes were requested.",
             "required": true
           },
@@ -211,7 +211,7 @@
             "key": "refresh_token",
             "label": "Refresh Token",
             "type": "password",
-            "placeholder": "1//0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "placeholder": "1//0EXAMPLE_REFRESH_TOKEN_REPLACE_ME",
             "helpText": "Obtained during the OAuth2 consent flow with Gmail send and read scopes.",
             "required": true
           }
@@ -235,7 +235,7 @@
             "key": "bot_token",
             "label": "Bot User OAuth Token",
             "type": "password",
-            "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
+            "placeholder": "xoxb-EXAMPLE_TOKEN_REPLACE_ME",
             "helpText": "From your Slack App -> OAuth & Permissions -> Bot User OAuth Token. Requires scopes: chat:write, users:read, users:read.email",
             "required": true
           }

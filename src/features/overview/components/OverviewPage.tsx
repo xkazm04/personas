@@ -8,6 +8,7 @@ import EventLogList from '@/features/overview/sub_events/components/EventLogList
 import KnowledgeHub from '@/features/overview/components/KnowledgeHub';
 import SLADashboard from '@/features/overview/sub_sla/components/SLADashboard';
 import CronAgentsPage from '@/features/overview/sub_cron_agents/components/CronAgentsPage';
+import ScheduleTimeline from '@/features/overview/sub_schedules/components/ScheduleTimeline';
 import { OverviewFilterProvider } from '@/features/overview/components/OverviewFilterContext';
 
 export default function OverviewPage() {
@@ -30,6 +31,7 @@ export default function OverviewPage() {
         overviewTab === 'knowledge' ? <KnowledgeHub /> :
         overviewTab === 'sla' ? <SLADashboard /> :
         overviewTab === 'cron-agents' ? <CronAgentsPage /> :
+        overviewTab === 'schedules' ? <ScheduleTimeline /> :
         <DashboardWithSubtabs />}
       </motion.div>
     </OverviewFilterProvider>

@@ -135,7 +135,7 @@
             "key": "bot_token",
             "label": "Bot User OAuth Token",
             "type": "password",
-            "placeholder": "xoxb-xxxxxxxxxxxx-xxxx...",
+            "placeholder": "xoxb-EXAMPLE_TOKEN_REPLACE_ME",
             "helpText": "From api.slack.com/apps → your app → OAuth & Permissions → Bot User OAuth Token. Required scopes: chat:write, files:write, channels:read.",
             "required": true
           }

@@ -182,7 +182,7 @@
             "key": "refresh_token",
             "label": "Refresh Token",
             "type": "password",
-            "placeholder": "1//0xxxxxxxxx",
+            "placeholder": "1//0EXAMPLE_REFRESH_TOKEN_REPLACE_ME",
             "helpText": "Obtained during OAuth2 consent flow. Enable Gmail API and Sheets API in your project.",
             "required": true
           },
@@ -218,7 +218,7 @@
             "key": "bot_token",
             "label": "Bot User OAuth Token",
             "type": "password",
-            "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
+            "placeholder": "xoxb-EXAMPLE_TOKEN_REPLACE_ME",
             "helpText": "From Slack App → OAuth & Permissions → Bot User OAuth Token. Requires chat:write scope.",
             "required": true
           },

@@ -151,7 +151,7 @@
             "key": "bot_token",
             "label": "Slack Bot User OAuth Token",
             "type": "password",
-            "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
+            "placeholder": "xoxb-EXAMPLE_TOKEN_REPLACE_ME",
             "helpText": "Create a Slack App at api.slack.com/apps. Under 'OAuth & Permissions', add scopes: chat:write, chat:write.public, users:read. Install the app to your workspace and copy the 'Bot User OAuth Token'.",
             "required": true
           },

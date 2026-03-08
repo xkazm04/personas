@@ -138,7 +138,7 @@
             "key": "bot_token",
             "label": "Bot User OAuth Token",
             "type": "password",
-            "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
+            "placeholder": "xoxb-EXAMPLE_TOKEN_REPLACE_ME",
             "helpText": "Found in your Slack App → OAuth & Permissions → Bot User OAuth Token. Starts with xoxb-.",
             "required": true
           }
@@ -180,7 +180,7 @@
             "key": "refresh_token",
             "label": "Refresh Token",
             "type": "password",
-            "placeholder": "1//xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "placeholder": "1//EXAMPLE_REFRESH_TOKEN_REPLACE_ME",
             "helpText": "Obtained during the OAuth2 consent flow. Needed for offline access to Gmail.",
             "required": true
           }

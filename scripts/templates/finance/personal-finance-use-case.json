@@ -156,7 +156,7 @@
             "key": "client_secret",
             "label": "OAuth Client Secret",
             "type": "password",
-            "placeholder": "GOCSPX-xxx",
+            "placeholder": "GOCSPX-EXAMPLE_SECRET_REPLACE_ME",
             "helpText": "From the same OAuth 2.0 Client ID entry in Google Cloud Console",
             "required": true
           },
@@ -191,7 +191,7 @@
             "key": "bot_token",
             "label": "Bot User OAuth Token",
             "type": "password",
-            "placeholder": "xoxb-xxxx-xxxx-xxxx",
+            "placeholder": "xoxb-EXAMPLE_TOKEN_REPLACE_ME",
             "helpText": "From your Slack App → OAuth & Permissions → Bot User OAuth Token. Requires chat:write scope.",
             "required": true
           },

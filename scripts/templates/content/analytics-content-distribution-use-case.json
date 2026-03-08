@@ -218,7 +218,7 @@
             "key": "refresh_token",
             "label": "OAuth2 Refresh Token",
             "type": "password",
-            "placeholder": "1//0xxxxxxxx",
+            "placeholder": "1//0EXAMPLE_REFRESH_TOKEN_REPLACE_ME",
             "helpText": "Generated during the OAuth2 consent flow. Use the Google OAuth Playground (https://developers.google.com/oauthplayground/) with scope 'https://www.googleapis.com/auth/analytics.readonly' to generate one.",
             "required": true
           }
