@@ -1,0 +1,218 @@
+/* ══════════════════════════════════════════════════════════════════════════════
+   Typography System
+   Single source of truth for fonts, text styles, and script-aware rendering.
+
+   How it works:
+   1. [data-lang] on <html> selects the correct font stack
+   2. Semantic .typo-* classes define text roles (hero, heading, body, etc.)
+   3. Font-feature presets (.font-data, .font-code) add OpenType polish
+   4. Script-specific tuning adjusts line-height, spacing, and direction
+
+   Usage:
+     <h1 className="typo-hero">Welcome</h1>
+     <p className="typo-body">Description text</p>
+     <span className="typo-data">$1,234.56</span>
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Font Loading ──────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
+
+/* ── Language Font Stacks ────────────────────────────────────────────────────
+   Driven by [data-lang] on <html>, set by useTypography() hook.
+   Each language gets its preferred font first, falling back to the app default. */
+
+:root {
+  --font-lang: var(--font-sans);
+}
+
+[data-lang="en"]  { --font-lang: var(--font-sans); }
+[data-lang="ru"]  { --font-lang: var(--font-sans); }
+[data-lang="id"]  { --font-lang: var(--font-sans); }
+[data-lang="zh"]  { --font-lang: 'Noto Sans SC', var(--font-sans); }
+[data-lang="ar"]  { --font-lang: 'Noto Sans Arabic', var(--font-sans); }
+[data-lang="hi"]  { --font-lang: 'Noto Sans Devanagari', var(--font-sans); }
+
+/* Apply language font to body — everything inherits */
+body {
+  font-family: var(--font-lang);
+}
+
+/* ── RTL & Script-Specific Tuning ────────────────────────────────────────────
+   Arabic needs RTL direction + looser line heights.
+   CJK/Devanagari need taller line heights for readability. */
+
+/* Arabic text direction — scoped to text content only, not app layout.
+   Apply .typo-rtl on text containers that need right-to-left flow. */
+.typo-rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Script-aware line height adjustments — complex scripts need more breathing room */
+[data-lang="zh"] .typo-body,
+[data-lang="hi"] .typo-body,
+[data-lang="ar"] .typo-body {
+  line-height: 1.85;
+}
+
+[data-lang="zh"] .typo-hero,
+[data-lang="hi"] .typo-hero,
+[data-lang="ar"] .typo-hero {
+  line-height: 1.3;
+}
+
+[data-lang="zh"] .typo-heading,
+[data-lang="hi"] .typo-heading,
+[data-lang="ar"] .typo-heading {
+  line-height: 1.45;
+}
+
+/* Arabic letter spacing — tighter tracking suits Arabic calligraphic flow */
+[data-lang="ar"] .typo-label {
+  letter-spacing: 0.02em;
+}
+
+/* CJK doesn't benefit from uppercase or wide tracking */
+[data-lang="zh"] .typo-label {
+  text-transform: none;
+  letter-spacing: 0.05em;
+}
+
+/* ── Semantic Typography Classes ─────────────────────────────────────────────
+   Use these instead of raw Tailwind combos. Each class defines a complete
+   text role: size, weight, line-height, tracking, and features. */
+
+/* Hero — main page greeting (e.g. "Good Morning, Alex") */
+.typo-hero {
+  font-size: 2.25rem;            /* text-4xl */
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  font-feature-settings: "kern" 1, "liga" 1;
+}
+
+/* Heading — section titles, card headers */
+.typo-heading {
+  font-size: 0.875rem;           /* text-sm */
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.025em;
+  font-feature-settings: "kern" 1, "liga" 1;
+}
+
+/* Heading large — page-level headings */
+.typo-heading-lg {
+  font-size: 1.25rem;            /* text-xl */
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  font-feature-settings: "kern" 1, "liga" 1;
+}
+
+/* Body — paragraphs, descriptions */
+.typo-body {
+  font-size: 0.875rem;           /* text-sm */
+  font-weight: 400;
+  line-height: 1.65;
+  font-feature-settings: "kern" 1, "liga" 1;
+}
+
+/* Body large — prominent descriptions, summaries */
+.typo-body-lg {
+  font-size: 1rem;               /* text-base */
+  font-weight: 400;
+  line-height: 1.7;
+  font-feature-settings: "kern" 1, "liga" 1;
+}
+
+/* Caption — small secondary text, timestamps, hints */
+.typo-caption {
+  font-size: 0.75rem;            /* text-xs */
+  font-weight: 500;
+  line-height: 1.4;
+  font-feature-settings: "kern" 1, "liga" 1;
+}
+
+/* Label — uppercase category markers, dividers, badges */
+.typo-label {
+  font-size: 0.75rem;            /* text-xs */
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-feature-settings: "kern" 1, "liga" 1, "smcp" 0;
+}
+
+/* Data — numbers, stats, metrics. Tabular nums for alignment. */
+.typo-data {
+  font-size: 0.875rem;           /* text-sm */
+  font-weight: 500;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "kern" 1, "tnum" 1, "lnum" 1;
+}
+
+/* Data large — hero metrics, big counters */
+.typo-data-lg {
+  font-size: 1.5rem;             /* text-2xl */
+  font-weight: 700;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "kern" 1, "tnum" 1, "lnum" 1;
+}
+
+/* Code — monospace text, IDs, technical values */
+.typo-code {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;            /* text-xs */
+  font-weight: 400;
+  line-height: 1.5;
+  font-feature-settings: "kern" 1, "zero" 1, "liga" 0;
+}
+
+/* ── Font Feature Presets ────────────────────────────────────────────────────
+   Composable modifiers — add to any element for OpenType polish.
+   Leverages Tailwind 4.2 font-feature-settings utilities where possible,
+   and provides classes for combinations not available as single utilities. */
+
+/* Tabular + lining nums — for aligned numeric columns */
+.font-data {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+/* Slashed zero — distinguish 0 from O in technical contexts */
+.font-code {
+  font-feature-settings: "zero" 1, "liga" 0;
+}
+
+/* Display — ligatures + kerning for large decorative text */
+.font-display {
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+}
+
+/* Small caps — elegant label variant */
+.font-smallcaps {
+  font-feature-settings: "smcp" 1, "kern" 1;
+  text-transform: lowercase; /* smcp works on lowercase letters */
+}
+
+/* ── Text Scale Integration ──────────────────────────────────────────────────
+   Hooks into the existing data-text-scale system in globals.css.
+   Semantic classes scale proportionally. */
+
+[data-text-scale="large"] .typo-hero { font-size: 2.5rem; }
+[data-text-scale="large"] .typo-body { font-size: 0.9375rem; }
+[data-text-scale="large"] .typo-body-lg { font-size: 1.0625rem; }
+[data-text-scale="large"] .typo-caption { font-size: 0.8rem; }
+[data-text-scale="large"] .typo-label { font-size: 0.8rem; }
+[data-text-scale="large"] .typo-data { font-size: 0.9375rem; }
+[data-text-scale="large"] .typo-code { font-size: 0.8rem; }
+
+[data-text-scale="larger"] .typo-hero { font-size: 2.75rem; }
+[data-text-scale="larger"] .typo-body { font-size: 1rem; }
+[data-text-scale="larger"] .typo-body-lg { font-size: 1.125rem; }
+[data-text-scale="larger"] .typo-caption { font-size: 0.85rem; }
+[data-text-scale="larger"] .typo-label { font-size: 0.85rem; }
+[data-text-scale="larger"] .typo-data { font-size: 1rem; }
+[data-text-scale="larger"] .typo-code { font-size: 0.85rem; }

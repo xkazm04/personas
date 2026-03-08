@@ -49,6 +49,8 @@ fn well_known_base_url(service_type: &str) -> Option<&'static str> {
         "linkedin" => Some("https://api.linkedin.com"),
         "sentry" => Some("https://sentry.io"),
         "google_workspace_oauth_template" => Some("https://www.googleapis.com"),
+        "google_sheets" => Some("https://sheets.googleapis.com"),
+        "gmail" => Some("https://gmail.googleapis.com"),
         _ => None,
     }
 }

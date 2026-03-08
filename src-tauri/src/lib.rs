@@ -567,6 +567,11 @@ pub fn run() {
             // Credentials — Query Debug (AI-assisted)
             commands::credentials::query_debug::start_query_debug,
             commands::credentials::query_debug::cancel_query_debug,
+            // Credentials — Schema Proposal (AI-assisted)
+            commands::credentials::schema_proposal::start_schema_proposal,
+            commands::credentials::schema_proposal::get_schema_proposal_snapshot,
+            commands::credentials::schema_proposal::cancel_schema_proposal,
+            commands::credentials::schema_proposal::validate_db_schema,
             // Credentials — API Proxy
             commands::credentials::api_proxy::execute_api_request,
             commands::credentials::api_proxy::parse_api_definition,

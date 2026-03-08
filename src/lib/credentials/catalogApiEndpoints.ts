@@ -827,6 +827,83 @@ const leonardo_ai: EP[] = [
   ep('POST', '/variations/upscale', 'Upscale an image', [], ['Variations'], jsonBody(), 'Body: { "id": "generation-id" }'),
 ];
 
+// ── Gmail ───────────────────────────────────────────────────────────
+
+const gmail: EP[] = [
+  ep('GET', '/gmail/v1/users/{userId}/messages', 'List messages', [
+    pathP('userId', 'User ID (use "me" for authenticated user)'),
+    queryP('q', false, 'Gmail search query (e.g. "is:unread")'),
+    queryP('maxResults', false, 'Max messages to return'),
+    queryP('labelIds', false, 'Filter by label IDs'),
+  ], ['Messages']),
+  ep('GET', '/gmail/v1/users/{userId}/messages/{id}', 'Get message', [
+    pathP('userId', 'User ID (use "me")'),
+    pathP('id', 'Message ID'),
+    queryP('format', false, 'full, metadata, minimal, raw'),
+  ], ['Messages']),
+  ep('POST', '/gmail/v1/users/{userId}/messages/send', 'Send message', [
+    pathP('userId', 'User ID (use "me")'),
+  ], ['Messages'], jsonBody(), 'Body: { "raw": "<base64url-encoded RFC 2822 message>" }'),
+  ep('GET', '/gmail/v1/users/{userId}/labels', 'List labels', [
+    pathP('userId', 'User ID (use "me")'),
+  ], ['Labels']),
+  ep('GET', '/gmail/v1/users/{userId}/threads', 'List threads', [
+    pathP('userId', 'User ID (use "me")'),
+    queryP('q', false, 'Gmail search query'),
+    queryP('maxResults', false, 'Max threads to return'),
+  ], ['Threads']),
+  ep('GET', '/gmail/v1/users/{userId}/threads/{id}', 'Get thread', [
+    pathP('userId', 'User ID (use "me")'),
+    pathP('id', 'Thread ID'),
+    queryP('format', false, 'full, metadata, minimal'),
+  ], ['Threads']),
+  ep('GET', '/gmail/v1/users/{userId}/drafts', 'List drafts', [
+    pathP('userId', 'User ID (use "me")'),
+    queryP('maxResults', false, 'Max drafts to return'),
+  ], ['Drafts']),
+  ep('GET', '/gmail/v1/users/{userId}/profile', 'Get user profile', [
+    pathP('userId', 'User ID (use "me")'),
+  ], ['Users']),
+];
+
+// ── Google Sheets ───────────────────────────────────────────────────
+
+const google_sheets: EP[] = [
+  ep('POST', '/v4/spreadsheets', 'Create a spreadsheet', [], ['Spreadsheets'], jsonBody(), 'Body: { "properties": { "title": "My Spreadsheet" } }'),
+  ep('GET', '/v4/spreadsheets/{spreadsheetId}', 'Get spreadsheet metadata', [
+    pathP('spreadsheetId', 'Spreadsheet ID'),
+    queryP('includeGridData', false, 'true to include cell data'),
+  ], ['Spreadsheets']),
+  ep('GET', '/v4/spreadsheets/{spreadsheetId}/values/{range}', 'Get cell values', [
+    pathP('spreadsheetId', 'Spreadsheet ID'),
+    pathP('range', 'A1 notation range (e.g. Sheet1!A1:D10)'),
+    queryP('majorDimension', false, 'ROWS or COLUMNS'),
+    queryP('valueRenderOption', false, 'FORMATTED_VALUE, UNFORMATTED_VALUE, FORMULA'),
+  ], ['Values']),
+  ep('PUT', '/v4/spreadsheets/{spreadsheetId}/values/{range}', 'Update cell values', [
+    pathP('spreadsheetId', 'Spreadsheet ID'),
+    pathP('range', 'A1 notation range'),
+    queryP('valueInputOption', true, 'RAW or USER_ENTERED'),
+  ], ['Values'], jsonBody(), 'Body: { "values": [["A1","B1"],["A2","B2"]] }'),
+  ep('POST', '/v4/spreadsheets/{spreadsheetId}/values/{range}:append', 'Append rows', [
+    pathP('spreadsheetId', 'Spreadsheet ID'),
+    pathP('range', 'A1 notation range (e.g. Sheet1!A:A)'),
+    queryP('valueInputOption', true, 'RAW or USER_ENTERED'),
+    queryP('insertDataOption', false, 'INSERT_ROWS or OVERWRITE'),
+  ], ['Values'], jsonBody(), 'Body: { "values": [["new","row"]] }'),
+  ep('GET', '/v4/spreadsheets/{spreadsheetId}/values:batchGet', 'Batch get values', [
+    pathP('spreadsheetId', 'Spreadsheet ID'),
+    queryP('ranges', true, 'Comma-separated A1 ranges'),
+    queryP('majorDimension', false, 'ROWS or COLUMNS'),
+  ], ['Values']),
+  ep('POST', '/v4/spreadsheets/{spreadsheetId}/values:batchUpdate', 'Batch update values', [
+    pathP('spreadsheetId', 'Spreadsheet ID'),
+  ], ['Values'], jsonBody(), 'Body: { "valueInputOption": "USER_ENTERED", "data": [{ "range": "Sheet1!A1", "values": [["val"]] }] }'),
+  ep('POST', '/v4/spreadsheets/{spreadsheetId}:batchUpdate', 'Batch update spreadsheet', [
+    pathP('spreadsheetId', 'Spreadsheet ID'),
+  ], ['Spreadsheets'], jsonBody(), 'Body: { "requests": [{ "addSheet": { "properties": { "title": "New Sheet" } } }] }'),
+];
+
 // ── LinkedIn ────────────────────────────────────────────────────────
 
 const linkedin: EP[] = [
@@ -883,4 +960,6 @@ export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
   kubernetes,
   leonardo_ai,
   linkedin,
+  google_sheets,
+  gmail,
 };

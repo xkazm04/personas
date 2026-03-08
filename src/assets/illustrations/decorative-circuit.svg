@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <style>
+    .node { fill: currentColor; }
+    .line { stroke: currentColor; fill: none; stroke-width: 1.2; }
+    .petal { fill: currentColor; opacity: 0.15; }
+    .ring { stroke: currentColor; fill: none; stroke-width: 0.6; opacity: 0.1; }
+    @keyframes pulse-node {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
+    }
+    @keyframes flow {
+      0% { stroke-dashoffset: 16; }
+      100% { stroke-dashoffset: 0; }
+    }
+    @keyframes orbit {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .node { animation: pulse-node 3s ease-in-out infinite; }
+    .line { stroke-dasharray: 4 4; animation: flow 2s linear infinite; }
+    .orbit-cw { animation: orbit 60s linear infinite; transform-origin: 200px 200px; }
+    .orbit-ccw { animation: orbit 45s linear infinite reverse; transform-origin: 200px 200px; }
+  </style>
+
+  <!-- Faint concentric rings -->
+  <circle class="ring" cx="200" cy="200" r="40" />
+  <circle class="ring" cx="200" cy="200" r="80" />
+  <circle class="ring" cx="200" cy="200" r="120" />
+  <circle class="ring" cx="200" cy="200" r="160" />
+
+  <!-- Central flower: 12 petals -->
+  <g class="orbit-ccw">
+    <ellipse class="petal" cx="200" cy="172" rx="5" ry="14" />
+    <ellipse class="petal" cx="214" cy="175" rx="5" ry="14" transform="rotate(30 200 200)" />
+    <ellipse class="petal" cx="225" cy="186" rx="5" ry="14" transform="rotate(60 200 200)" />
+    <ellipse class="petal" cx="228" cy="200" rx="5" ry="14" transform="rotate(90 200 200)" />
+    <ellipse class="petal" cx="225" cy="214" rx="5" ry="14" transform="rotate(120 200 200)" />
+    <ellipse class="petal" cx="214" cy="225" rx="5" ry="14" transform="rotate(150 200 200)" />
+    <ellipse class="petal" cx="200" cy="228" rx="5" ry="14" transform="rotate(180 200 200)" />
+    <ellipse class="petal" cx="186" cy="225" rx="5" ry="14" transform="rotate(210 200 200)" />
+    <ellipse class="petal" cx="175" cy="214" rx="5" ry="14" transform="rotate(240 200 200)" />
+    <ellipse class="petal" cx="172" cy="200" rx="5" ry="14" transform="rotate(270 200 200)" />
+    <ellipse class="petal" cx="175" cy="186" rx="5" ry="14" transform="rotate(300 200 200)" />
+    <ellipse class="petal" cx="186" cy="175" rx="5" ry="14" transform="rotate(330 200 200)" />
+  </g>
+
+  <!-- Center node -->
+  <circle class="node" cx="200" cy="200" r="5" opacity="0.9" />
+
+  <!-- Inner ring: 8 nodes at r=45, every 45deg -->
+  <circle class="node" cx="200" cy="155" r="3.5" style="animation-delay:0s" />
+  <circle class="node" cx="232" cy="168" r="3.5" style="animation-delay:0.4s" />
+  <circle class="node" cx="245" cy="200" r="3.5" style="animation-delay:0.8s" />
+  <circle class="node" cx="232" cy="232" r="3.5" style="animation-delay:1.2s" />
+  <circle class="node" cx="200" cy="245" r="3.5" style="animation-delay:1.6s" />
+  <circle class="node" cx="168" cy="232" r="3.5" style="animation-delay:2.0s" />
+  <circle class="node" cx="155" cy="200" r="3.5" style="animation-delay:2.4s" />
+  <circle class="node" cx="168" cy="168" r="3.5" style="animation-delay:2.8s" />
+
+  <!-- Inner spokes: center → inner ring -->
+  <line class="line" x1="200" y1="200" x2="200" y2="155" />
+  <line class="line" x1="200" y1="200" x2="232" y2="168" />
+  <line class="line" x1="200" y1="200" x2="245" y2="200" />
+  <line class="line" x1="200" y1="200" x2="232" y2="232" />
+  <line class="line" x1="200" y1="200" x2="200" y2="245" />
+  <line class="line" x1="200" y1="200" x2="168" y2="232" />
+  <line class="line" x1="200" y1="200" x2="155" y2="200" />
+  <line class="line" x1="200" y1="200" x2="168" y2="168" />
+
+  <!-- Mid ring: 8 nodes at r=85 (cardinal arms meet here) -->
+  <g class="orbit-cw">
+    <circle class="node" cx="200" cy="115" r="3" style="animation-delay:0.2s" />
+    <circle class="node" cx="260" cy="140" r="3" style="animation-delay:0.6s" />
+    <circle class="node" cx="285" cy="200" r="3" style="animation-delay:1.0s" />
+    <circle class="node" cx="260" cy="260" r="3" style="animation-delay:1.4s" />
+    <circle class="node" cx="200" cy="285" r="3" style="animation-delay:1.8s" />
+    <circle class="node" cx="140" cy="260" r="3" style="animation-delay:2.2s" />
+    <circle class="node" cx="115" cy="200" r="3" style="animation-delay:2.6s" />
+    <circle class="node" cx="140" cy="140" r="3" style="animation-delay:3.0s" />
+  </g>
+
+  <!-- Outer spokes: inner ring → mid ring (curves via quadratic bezier) -->
+  <path class="line" d="M200,155 Q210,135 200,115" style="animation-delay:0.1s" />
+  <path class="line" d="M232,168 Q250,148 260,140" style="animation-delay:0.5s" />
+  <path class="line" d="M245,200 Q265,190 285,200" style="animation-delay:0.9s" />
+  <path class="line" d="M232,232 Q250,252 260,260" style="animation-delay:1.3s" />
+  <path class="line" d="M200,245 Q190,265 200,285" style="animation-delay:1.7s" />
+  <path class="line" d="M168,232 Q148,252 140,260" style="animation-delay:2.1s" />
+  <path class="line" d="M155,200 Q135,210 115,200" style="animation-delay:2.5s" />
+  <path class="line" d="M168,168 Q148,148 140,140" style="animation-delay:2.9s" />
+
+  <!-- Cross-bridges between mid-ring nodes -->
+  <path class="line" d="M200,115 Q235,120 260,140" style="opacity:0.2; animation-delay:0.3s" />
+  <path class="line" d="M260,140 Q280,170 285,200" style="opacity:0.2; animation-delay:0.7s" />
+  <path class="line" d="M285,200 Q280,235 260,260" style="opacity:0.2; animation-delay:1.1s" />
+  <path class="line" d="M260,260 Q235,280 200,285" style="opacity:0.2; animation-delay:1.5s" />
+  <path class="line" d="M200,285 Q165,280 140,260" style="opacity:0.2; animation-delay:1.9s" />
+  <path class="line" d="M140,260 Q118,235 115,200" style="opacity:0.2; animation-delay:2.3s" />
+  <path class="line" d="M115,200 Q118,165 140,140" style="opacity:0.2; animation-delay:2.7s" />
+  <path class="line" d="M140,140 Q165,120 200,115" style="opacity:0.2; animation-delay:3.1s" />
+
+  <!-- Outer floating nodes (antennae terminals) -->
+  <!-- Cardinal: N/E/S/W at r=155 -->
+  <circle class="node" cx="200" cy="55" r="4.5" style="animation-delay:0.15s; opacity:0.5" />
+  <circle class="node" cx="345" cy="200" r="4.5" style="animation-delay:1.15s; opacity:0.5" />
+  <circle class="node" cx="200" cy="345" r="4.5" style="animation-delay:2.15s; opacity:0.5" />
+  <circle class="node" cx="55" cy="200" r="4.5" style="animation-delay:3.15s; opacity:0.5" />
+
+  <!-- Diagonal: NE/SE/SW/NW at r=135 -->
+  <circle class="node" cx="297" cy="103" r="3.5" style="animation-delay:0.55s; opacity:0.4" />
+  <circle class="node" cx="297" cy="297" r="3.5" style="animation-delay:1.55s; opacity:0.4" />
+  <circle class="node" cx="103" cy="297" r="3.5" style="animation-delay:2.55s; opacity:0.4" />
+  <circle class="node" cx="103" cy="103" r="3.5" style="animation-delay:3.55s; opacity:0.4" />
+
+  <!-- Antennae lines: mid-ring → outer floating nodes -->
+  <line class="line" x1="200" y1="115" x2="200" y2="55" style="opacity:0.15" />
+  <line class="line" x1="285" y1="200" x2="345" y2="200" style="opacity:0.15" />
+  <line class="line" x1="200" y1="285" x2="200" y2="345" style="opacity:0.15" />
+  <line class="line" x1="115" y1="200" x2="55" y2="200" style="opacity:0.15" />
+  <line class="line" x1="260" y1="140" x2="297" y2="103" style="opacity:0.12" />
+  <line class="line" x1="260" y1="260" x2="297" y2="297" style="opacity:0.12" />
+  <line class="line" x1="140" y1="260" x2="103" y2="297" style="opacity:0.12" />
+  <line class="line" x1="140" y1="140" x2="103" y2="103" style="opacity:0.12" />
+</svg>

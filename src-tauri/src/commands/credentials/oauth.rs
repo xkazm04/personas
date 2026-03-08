@@ -426,6 +426,11 @@ fn default_google_scopes_for_connector(connector_name: &str) -> Vec<String> {
             "https://www.googleapis.com/auth/drive.file".into(),
             "https://www.googleapis.com/auth/drive.readonly".into(),
         ],
+        "google_sheets" => vec![
+            "https://www.googleapis.com/auth/spreadsheets".into(),
+            "https://www.googleapis.com/auth/spreadsheets.readonly".into(),
+            "https://www.googleapis.com/auth/drive.file".into(),
+        ],
         _ => DEFAULT_GOOGLE_OAUTH_SCOPES.iter().map(|s| (*s).to_string()).collect(),
     };
     // Always include identity scopes regardless of connector

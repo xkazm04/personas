@@ -15,4 +15,5 @@ pub mod mcp_tools;
 pub mod desktop;
 pub mod desktop_bridges;
 pub mod query_debug;
+pub mod schema_proposal;
 pub mod auth_detect;

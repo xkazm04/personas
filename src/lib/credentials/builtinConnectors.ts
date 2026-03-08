@@ -46,6 +46,8 @@ import postgres from '../../../scripts/connectors/builtin/postgres.json';
 import mongodb from '../../../scripts/connectors/builtin/mongodb.json';
 import redis from '../../../scripts/connectors/builtin/redis.json';
 import duckdb from '../../../scripts/connectors/builtin/duckdb.json';
+import googleSheets from '../../../scripts/connectors/builtin/google-sheets.json';
+import gmail from '../../../scripts/connectors/builtin/gmail.json';
 
 export interface BuiltinConnectorDef {
   id: string;
@@ -112,4 +114,6 @@ export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   mongodb,
   redis,
   duckdb,
+  googleSheets,
+  gmail,
 ] as BuiltinConnectorDef[];
