@@ -152,9 +152,18 @@ export function isOAuthFlow(flow: CredentialFlow): boolean {
   return flow.kind === 'google_oauth' || flow.kind === 'provider_oauth';
 }
 
+/** Known OAuth providers with built-in healthcheck endpoints. */
+const PROVIDERS_WITH_HEALTHCHECK = new Set([
+  'github', 'slack', 'microsoft', 'atlassian',
+  'discord', 'linear', 'notion', 'spotify',
+]);
+
 /** Whether to show the healthcheck (test connection) button. */
 export function showsHealthcheck(flow: CredentialFlow): boolean {
-  return flow.kind !== 'provider_oauth';
+  if (flow.kind === 'provider_oauth') {
+    return PROVIDERS_WITH_HEALTHCHECK.has(flow.providerId.toLowerCase());
+  }
+  return true;
 }
 
 /** Whether to show the AI auto-provision negotiator. */
