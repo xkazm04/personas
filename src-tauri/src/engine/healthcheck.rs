@@ -103,8 +103,32 @@ fn resolve_connector_healthcheck(
     let hc_config = match &connector.healthcheck_config {
         Some(json_str) => parse_healthcheck_config(json_str),
         None => None,
-    }
-    .ok_or_else(|| AppError::Validation("No healthcheck configured for this connector".into()))?;
+    };
+
+    // If no connector-level config, try OAuth provider fallback
+    let hc_config = match hc_config {
+        Some(hc) => hc,
+        None => {
+            // Check if credential fields or connector metadata indicate an OAuth provider
+            let provider = fields
+                .and_then(|f| f.get("oauth_provider").or_else(|| f.get("oauth_scope").and(None)))
+                .cloned()
+                .or_else(|| {
+                    connector.metadata.as_deref()
+                        .and_then(|m| serde_json::from_str::<serde_json::Value>(m).ok())
+                        .and_then(|v| v.get("oauth_type").and_then(|t| t.as_str().map(String::from)))
+                });
+
+            match provider.as_deref().and_then(resolve_oauth_provider_healthcheck) {
+                Some(hc) => hc,
+                None => {
+                    return Err(AppError::Validation(
+                        "No healthcheck configured for this connector".into(),
+                    ));
+                }
+            }
+        }
+    };
 
     Ok((connector, hc_config))
 }
