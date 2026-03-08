@@ -323,6 +323,46 @@ pub fn patch_metadata_atomic(
     get_by_id(pool, id)
 }
 
+/// Record a usage event for a credential: increment usage_count and set last_used_at.
+pub fn record_usage(pool: &DbPool, credential_id: &str) -> Result<(), AppError> {
+    let now = chrono::Utc::now().to_rfc3339();
+    let conn = pool.get()?;
+
+    // Update last_used_at on the credential row
+    conn.execute(
+        "UPDATE persona_credentials SET last_used_at = ?1, updated_at = ?1 WHERE id = ?2",
+        params![now, credential_id],
+    )?;
+
+    // Increment usage_count in metadata JSON
+    let row: Option<String> = conn
+        .query_row(
+            "SELECT metadata FROM persona_credentials WHERE id = ?1",
+            params![credential_id],
+            |r| r.get(0),
+        )
+        .optional()?;
+
+    let mut meta: serde_json::Value = row
+        .as_deref()
+        .and_then(|s| serde_json::from_str(s).ok())
+        .unwrap_or(serde_json::json!({}));
+
+    let count = meta.get("usage_count").and_then(|v| v.as_u64()).unwrap_or(0);
+    meta.as_object_mut().map(|obj| {
+        obj.insert("usage_count".to_string(), serde_json::json!(count + 1));
+        obj.insert("last_used_at".to_string(), serde_json::json!(now));
+    });
+
+    let meta_str = serde_json::to_string(&meta).ok();
+    conn.execute(
+        "UPDATE persona_credentials SET metadata = ?1 WHERE id = ?2",
+        params![meta_str, credential_id],
+    )?;
+
+    Ok(())
+}
+
 pub fn mark_used(pool: &DbPool, id: &str) -> Result<(), AppError> {
     let now = chrono::Utc::now().to_rfc3339();
     let conn = pool.get()?;

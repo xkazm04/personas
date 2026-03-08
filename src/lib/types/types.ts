@@ -87,6 +87,10 @@ export interface CredentialMetadata {
   healthcheck_last_message: string | null;
   healthcheck_last_tested_at: string | null;
   healthcheck_last_success_at: string | null;
+  oauth_refresh_count: number;
+  oauth_last_refresh_at: string | null;
+  oauth_token_expires_at: string | null;
+  usage_count: number;
   last_used_at: string | null;
   created_at: string;
   updated_at: string;
@@ -108,6 +112,18 @@ export function toCredentialMetadata(c: PersonaCredential): CredentialMetadata {
   const lastSuccessAt = typeof parsedMetadata?.healthcheck_last_success_at === "string"
     ? parsedMetadata.healthcheck_last_success_at
     : null;
+  const oauthRefreshCount = typeof parsedMetadata?.oauth_refresh_count === "number"
+    ? parsedMetadata.oauth_refresh_count
+    : 0;
+  const oauthLastRefreshAt = typeof parsedMetadata?.oauth_last_refresh_at === "string"
+    ? parsedMetadata.oauth_last_refresh_at
+    : null;
+  const oauthTokenExpiresAt = typeof parsedMetadata?.oauth_token_expires_at === "string"
+    ? parsedMetadata.oauth_token_expires_at
+    : null;
+  const usageCount = typeof parsedMetadata?.usage_count === "number"
+    ? parsedMetadata.usage_count
+    : 0;
 
   return {
     id: c.id,
@@ -118,6 +134,10 @@ export function toCredentialMetadata(c: PersonaCredential): CredentialMetadata {
     healthcheck_last_message: lastMessage,
     healthcheck_last_tested_at: lastTestedAt,
     healthcheck_last_success_at: lastSuccessAt,
+    oauth_refresh_count: oauthRefreshCount,
+    oauth_last_refresh_at: oauthLastRefreshAt,
+    oauth_token_expires_at: oauthTokenExpiresAt,
+    usage_count: usageCount,
     last_used_at: c.last_used_at,
     created_at: c.created_at,
     updated_at: c.updated_at,
