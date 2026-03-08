@@ -117,6 +117,11 @@ pub struct AutoRollbackSubscription {
     pub pool: DbPool,
 }
 
+/// OAuth token refresh subscription: proactively refresh tokens before expiry.
+pub struct OAuthRefreshSubscription {
+    pub pool: DbPool,
+}
+
 // ---------------------------------------------------------------------------
 // Implementations
 // ---------------------------------------------------------------------------
@@ -306,6 +311,25 @@ impl ReactiveSubscription for AutoRollbackSubscription {
 
     async fn tick(&self) {
         super::auto_rollback::auto_rollback_tick(&self.pool);
+    }
+}
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for OAuthRefreshSubscription {
+    fn name(&self) -> &'static str {
+        "oauth_refresh"
+    }
+
+    fn interval(&self) -> Duration {
+        Duration::from_secs(300) // 5 minutes
+    }
+
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(45) // Let the app fully start
+    }
+
+    async fn tick(&self) {
+        super::oauth_refresh::oauth_refresh_tick(&self.pool).await;
     }
 }
 

@@ -208,6 +208,7 @@ function BadgeRow({
       label: 'OAuth Activity',
       node: (
         <OAuthActivityBadge
+          credentialId={credential.id}
           oauthRefreshCount={credential.oauth_refresh_count}
           oauthLastRefreshAt={credential.oauth_last_refresh_at}
           oauthTokenExpiresAt={credential.oauth_token_expires_at}
