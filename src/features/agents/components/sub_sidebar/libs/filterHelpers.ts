@@ -1,4 +1,3 @@
-import { useState, useMemo, useCallback, useRef } from 'react';
 import type { DbPersona } from '@/lib/types/types';
 import type { ModelProfile } from '@/lib/types/frontendTypes';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
@@ -73,7 +72,7 @@ export interface FilterState {
   tags: Set<string>;
 }
 
-const defaultFilters: FilterState = { search: '', tags: new Set() };
+export const defaultFilters: FilterState = { search: '', tags: new Set() };
 
 // ── Parse model profile ──────────────────────────────────────────────
 
@@ -94,7 +93,7 @@ function getProviderLabel(persona: DbPersona): string {
 
 // ── Compute all tags for a persona ───────────────────────────────────
 
-function computePersonaTags(
+export function computePersonaTags(
   persona: DbPersona,
   health: PersonaHealth | undefined,
   lastRun: string | null | undefined,
@@ -102,13 +101,9 @@ function computePersonaTags(
   const tags = new Set<string>();
   const now = Date.now();
 
-  // Status dimension
   tags.add(persona.enabled ? 'status:enabled' : 'status:disabled');
-
-  // Model dimension
   tags.add(`model:${getProviderLabel(persona)}`);
 
-  // Health dimension
   const healthStatus = health?.status ?? 'dormant';
   tags.add(`health:${healthStatus}`);
   const runState = getPersonaRunState(lastRun, 7);
@@ -119,7 +114,6 @@ function computePersonaTags(
     tags.add('health:needs-attention');
   }
 
-  // Recency dimension
   if (runState === 'never_run') {
     tags.add('recency:never_run');
   } else if (runState === 'stale') {
@@ -132,7 +126,6 @@ function computePersonaTags(
     if (age <= 30 * 86_400_000) tags.add('recency:month');
   }
 
-  // Auto tags — connector-based
   const connectors = extractConnectorNames(persona, 10);
   for (const name of connectors) {
     const lower = name.toLowerCase();
@@ -147,7 +140,6 @@ function computePersonaTags(
     else tags.add(`auto:${lower}`);
   }
 
-  // Auto tags — run state
   if (runState === 'never_run') tags.add('auto:never-run');
   if (tags.has('health:needs-attention')) tags.add('auto:needs-attention');
 
@@ -169,7 +161,7 @@ const AUTO_TAG_META: Record<string, { label: string; color: string }> = {
   'auto:needs-attention': { label: 'needs attention', color: '#EF4444' },
 };
 
-function resolveAutoTag(id: string): SmartTag {
+export function resolveAutoTag(id: string): SmartTag {
   const meta = AUTO_TAG_META[id];
   return {
     id,
@@ -177,140 +169,5 @@ function resolveAutoTag(id: string): SmartTag {
     color: meta?.color ?? '#6B7280',
     category: 'auto',
     auto: true,
-  };
-}
-
-// ── Hook ─────────────────────────────────────────────────────────────
-
-export function usePersonaFilters(
-  personas: DbPersona[],
-  healthMap: Record<string, PersonaHealth>,
-  lastRunMap: Record<string, string | null>,
-) {
-  const [filters, setFilters] = useState<FilterState>(defaultFilters);
-  const tagCacheRef = useRef(new Map<string, { fingerprint: string; tags: Set<string> }>());
-
-  const setSearch = useCallback((search: string) => setFilters(f => ({ ...f, search })), []);
-
-  const toggleTag = useCallback((tagId: string) => {
-    setFilters(f => {
-      const next = new Set(f.tags);
-      if (next.has(tagId)) {
-        next.delete(tagId);
-      } else {
-        // Within same category, replace (radio behavior)
-        const category = tagId.split(':')[0] as TagCategory;
-        if (category !== 'auto') {
-          for (const existing of next) {
-            if (existing.startsWith(`${category}:`)) {
-              next.delete(existing);
-            }
-          }
-        }
-        next.add(tagId);
-      }
-      return { ...f, tags: next };
-    });
-  }, []);
-
-  const clearFilters = useCallback(() => setFilters(defaultFilters), []);
-
-  const hasActiveFilters = filters.search !== '' || filters.tags.size > 0;
-
-  // Build per-persona tag sets
-  const personaTagsMap = useMemo(() => {
-    const map: Record<string, Set<string>> = {};
-    for (const p of personas) {
-      const health = healthMap[p.id];
-      const lastRun = lastRunMap[p.id];
-      const connectorFingerprint = extractConnectorNames(p, 10).join('|').toLowerCase();
-      const fingerprint = `${p.enabled}::${p.model_profile ?? ''}::${connectorFingerprint}::${health?.status ?? 'none'}::${lastRun ?? 'never'}`;
-
-      const cached = tagCacheRef.current.get(p.id);
-      if (cached && cached.fingerprint === fingerprint) {
-        map[p.id] = cached.tags;
-        continue;
-      }
-
-      const tags = computePersonaTags(p, health, lastRun);
-      tagCacheRef.current.set(p.id, { fingerprint, tags });
-      map[p.id] = tags;
-    }
-    return map;
-  }, [personas, healthMap, lastRunMap]);
-
-  // Build SmartTag[] map for backward compat (auto tags only, for display)
-  const smartTagsMap = useMemo(() => {
-    const map: Record<string, SmartTag[]> = {};
-    for (const [pid, tagSet] of Object.entries(personaTagsMap)) {
-      map[pid] = Array.from(tagSet)
-        .filter(id => id.startsWith('auto:'))
-        .map(resolveAutoTag);
-    }
-    return map;
-  }, [personaTagsMap]);
-
-  // Collect all unique auto tags for the tag chip palette
-  const allAutoTags = useMemo(() => {
-    const tagMap = new Map<string, SmartTag>();
-    for (const tags of Object.values(smartTagsMap)) {
-      for (const t of tags) {
-        if (!tagMap.has(t.id)) tagMap.set(t.id, t);
-      }
-    }
-    return Array.from(tagMap.values());
-  }, [smartTagsMap]);
-
-  // All tags available for filtering (dimension + auto)
-  const allTags = useMemo(() => {
-    const result: SmartTag[] = [];
-    for (const group of TAG_GROUPS) {
-      result.push(...group.tags);
-    }
-    result.push(...allAutoTags);
-    return result;
-  }, [allAutoTags]);
-
-  // Filter personas — single tag-intersection operation
-  const filteredIds = useMemo(() => {
-    const query = filters.search.toLowerCase().trim();
-    const activeTags = filters.tags;
-
-    const ids = new Set<string>();
-    for (const p of personas) {
-      // Search filter
-      if (query) {
-        const haystack = [p.name, p.description ?? '', p.system_prompt ?? ''].join(' ').toLowerCase();
-        if (!haystack.includes(query)) continue;
-      }
-
-      // Tag intersection: persona must have ALL active tags
-      if (activeTags.size > 0) {
-        const pTags = personaTagsMap[p.id];
-        if (!pTags) continue;
-        let match = true;
-        for (const tag of activeTags) {
-          if (!pTags.has(tag)) { match = false; break; }
-        }
-        if (!match) continue;
-      }
-
-      ids.add(p.id);
-    }
-    return ids;
-  }, [personas, filters, personaTagsMap]);
-
-  return {
-    filters,
-    setSearch,
-    toggleTag,
-    clearFilters,
-    hasActiveFilters,
-    filteredIds,
-    smartTagsMap,
-    allTags,
-    allAutoTags,
-    /** Lookup: is a dimension tag relevant (any persona has it)? */
-    personaTagsMap,
   };
 }

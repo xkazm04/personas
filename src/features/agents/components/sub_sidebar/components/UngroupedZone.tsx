@@ -1,5 +1,5 @@
 import { useDroppable } from '@dnd-kit/core';
-import { DraggablePersonaCard } from '@/features/agents/components/sub_sidebar/DraggablePersonaCard';
+import { DraggablePersonaCard } from './DraggablePersonaCard';
 import type { DbPersona } from '@/lib/types/types';
 import type { DropPayload } from '@/lib/types/frontendTypes';
 
