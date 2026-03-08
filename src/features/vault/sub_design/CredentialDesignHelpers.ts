@@ -104,8 +104,14 @@ export function isSaveReady(
   switch (flow.kind) {
     case 'google_oauth':
       return Boolean(oauthValues.refresh_token);
-    case 'provider_oauth':
-      return Boolean(oauthValues.access_token);
+    case 'provider_oauth': {
+      if (!oauthValues.access_token) return false;
+      // If this provider has a healthcheck endpoint, require it to pass
+      if (PROVIDERS_WITH_HEALTHCHECK.has(flow.providerId.toLowerCase())) {
+        return healthcheckSuccess;
+      }
+      return true;
+    }
     case 'api_key':
       return healthcheckSuccess && testedConfig !== null;
   }
